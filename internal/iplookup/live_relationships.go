@@ -14,6 +14,7 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 		*t = CompactTopology(*t)
 	}
 	t.RelationshipMeta = LiveMeta{Status: "success", Source: "caida"}
+	applyTier1PeerEvidence(t)
 	targets := relationshipTargets(*t)
 	for _, origin := range targets {
 		s.originRelationships(ctx, t, origin)

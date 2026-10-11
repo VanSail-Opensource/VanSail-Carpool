@@ -102,8 +102,18 @@ func projectObservedTopology(t BGPTopology) BGPTopology {
 
 // relationshipTargets keeps closest, most observed ASNs ahead of distant carriers.
 func relationshipTargets(t BGPTopology) []uint32 {
+	tier1 := map[uint32]bool{}
+	for _, node := range t.Nodes {
+		tier1[node.ASN] = node.Tier1 != nil && *node.Tier1
+	}
 	if t.ProjectionVersion != 2 {
-		return append([]uint32{}, t.Origins...)
+		ids := []uint32{}
+		for _, origin := range t.Origins {
+			if !tier1[origin] {
+				ids = append(ids, origin)
+			}
+		}
+		return ids
 	}
 	distance := map[uint32]int{}
 	for _, route := range t.RouteSummaries {
@@ -136,7 +146,9 @@ func relationshipTargets(t BGPTopology) []uint32 {
 	})
 	ids := make([]uint32, 0, min(32, len(nodes)))
 	for _, node := range nodes[:min(32, len(nodes))] {
-		ids = append(ids, node.ASN)
+		if !tier1[node.ASN] {
+			ids = append(ids, node.ASN)
+		}
 	}
 	return ids
 }

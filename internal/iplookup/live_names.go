@@ -51,7 +51,7 @@ func (s *LiveService) resolveNames(ctx context.Context, t *BGPTopology, c Config
 		end := min(start+100, len(t.Nodes))
 		queries := []string{}
 		for _, node := range t.Nodes[start:end] {
-			if node.Name == "" {
+			if node.Name == "" && (node.Tier1 == nil || !*node.Tier1) {
 				queries = append(queries, "AS"+asnText(node.ASN))
 			}
 		}
@@ -73,7 +73,7 @@ func (s *LiveService) resolveNames(ctx context.Context, t *BGPTopology, c Config
 		}
 		missing := []string{}
 		for _, node := range t.Nodes[start:end] {
-			if s.cachedName(node.ASN) == "" {
+			if s.cachedName(node.ASN) == "" && (node.Tier1 == nil || !*node.Tier1) {
 				missing = append(missing, asnText(node.ASN))
 			}
 		}
@@ -115,7 +115,7 @@ func (s *LiveService) resolveNames(ctx context.Context, t *BGPTopology, c Config
 	count := 0
 	for i, node := range t.Nodes {
 		name := s.cachedName(node.ASN)
-		if name == "" && priority[node.ASN] && count < 12 && ctx.Err() == nil {
+		if name == "" && (node.Tier1 == nil || !*node.Tier1) && priority[node.ASN] && count < 12 && ctx.Err() == nil {
 			count++
 			data, err := s.liveHTTP(ctx, "ripe", "/data/as-overview/data.json", url.Values{"resource": {"AS" + asnText(node.ASN)}}, nil, "")
 			if err == nil {
