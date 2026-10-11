@@ -93,6 +93,8 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 		if err != nil {
 			return err
 		}
+	} else if err := scheduleIPLookupReportRetryTx(ctx, tx, report.ID, report, now); err != nil {
+		return err
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=?`, report.ID)
 	if err != nil {

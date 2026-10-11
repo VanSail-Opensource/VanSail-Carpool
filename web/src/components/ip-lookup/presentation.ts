@@ -7,6 +7,14 @@ export function ipLookupErrorText(code: string): string {
 }
 
 export function providerName(id: string): string { return t(`ipLookup.providers.${id}`) }
+
+const progressTaskSections = new Set(['topology', 'relationships', 'names', 'asns', 'scores', 'block', 'ptr', 'shodan'])
+
+// Live sections and the refresh phase use ipLookupProgress labels; anything
+// else is a reputation provider id.
+export function taskLabel(key: string): string {
+  return progressTaskSections.has(key) || key === 'live' ? t(`ipLookupProgress.${key}`) : providerName(key)
+}
 export function sourceText(source: string | undefined): string {
   return source?.split(',').map(value => value.split(':').map(providerName).join(' · ')).join(', ') ?? ''
 }

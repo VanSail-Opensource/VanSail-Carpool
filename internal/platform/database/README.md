@@ -345,7 +345,7 @@ Retained agreement revisions also qualify returning accounts. `remna_provisionin
 - `ip_lookup_settings.go` atomically saves encrypted settings, combo quotas and the admin audit.
 - `ip_lookup_queries.go` reads fresh quota/pricing quotes and owner-scoped immutable report receipts.
 - `ip_lookup_commands.go` atomically debits quota/TXB and coalesces checks into shared cached or fresh reports.
-- `ip_lookup_completion.go` persists minimal attempt checkpoints and settles joined checks atomically. Contacted-provider outages produce charged, cacheable partial reports; only a never-attempted infrastructure failure restores costs exactly once.
+- `ip_lookup_completion.go` persists minimal attempt checkpoints and settles joined checks atomically. Contacted-provider outages produce charged, cacheable partial reports; only a never-attempted infrastructure failure restores costs exactly once. Freezing a partial report schedules its delayed background repair job in the same transaction.
 - `ip_lookup_test.go` covers cache sharing, prices, replays, refunds and purchase quota lifecycle for CI.
 - `ip_lookup_migration_test.go` covers the one-check gift for live members, excluding queued and expired purchases.
 
@@ -362,11 +362,13 @@ Retained agreement revisions also qualify returning accounts. `remna_provisionin
 
 ## Persistent realtime IP evidence
 
-- `ip_lookup_live_cache.go` stores compact shared snapshots and selects exact or IPv4 /24 evidence using the same timestamp/rowid ordering as quality reports. Snapshots do not expire or depend on current credentials.
+- `ip_lookup_live_cache.go` stores compact shared snapshots and selects exact or IPv4 /24 evidence using the same timestamp/rowid ordering as quality reports. Snapshots do not expire or depend on current credentials. Storing a partial snapshot transactionally schedules its first background section retry through the shared outbox using the current settings policy.
 - `ip_lookup_live_stage.go` claims the report's realtime phase, records actual queued attempts and recovers stored snapshot references before any replay. The live checkpoint is independent of quality checkpoint writes.
 - `ip_lookup_live_check.go` adds live-phase progress and the referenced final snapshot to owner-scoped receipts without exposing recovery state.
 - `ip_lookup_live_cache_test.go` covers persistent matching, restart reads, nanosecond/tie ordering and absence of original paths in hosted CI.
 - `ip_lookup_live_refresh_test.go` covers combined refresh pricing, subnet eligibility, replay-safe snapshot recovery and maintenance settlement without refund after live attempts.
+- `ip_lookup_retry_jobs.go` schedules delayed first repair jobs for partial reports/snapshots inside the freezing transaction (payload attempt counters keep chains deduplicated) and exposes guarded in-place repair writes: partial-only cache updates keep `completed_at` so newer paid refreshes keep winning, and missing rows map to silent chain termination.
+- `ip_lookup_retry_jobs_test.go` covers first-attempt scheduling with the default delay, no scheduling for succeeded freezes, partial-guard conflicts, unchanged completion timestamps and live section retry payloads in hosted CI.
 
 Migration 069 creates snapshots and a private JSON live checkpoint on existing
 quality reports. Legacy receipts default to no realtime phase; no backfill calls

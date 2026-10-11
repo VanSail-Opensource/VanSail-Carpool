@@ -3,9 +3,11 @@ package iplookup
 import "encoding/json"
 
 // EncodeReport persists only the compact projection and minimal recovery state.
+// Partial reports keep their checkpoint because they stay eligible for
+// background repair; terminal reports drop it.
 func EncodeReport(r Report) ([]byte, error) {
 	foldLegacy(&r, DefaultConfig())
-	if r.Status != "processing" {
+	if r.Status != "processing" && r.Status != "partial" {
 		r.Checkpoint = nil
 	}
 	return json.Marshal(struct {
@@ -27,7 +29,7 @@ func DecodeReport(raw []byte) (Report, error) {
 	r := saved.Report
 	r.Checkpoint, r.Providers = saved.Checkpoint, saved.Providers
 	foldLegacy(&r, DefaultConfig())
-	if r.Status != "processing" {
+	if r.Status != "processing" && r.Status != "partial" {
 		r.Checkpoint = nil
 	}
 	normalizeReport(&r)

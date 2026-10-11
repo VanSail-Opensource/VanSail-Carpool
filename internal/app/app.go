@@ -138,8 +138,11 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(err)
 	}
-	ipLookupService, err := newIPLookupService(store, settings, upstreams, operationDispatcher, cfg.MasterKey)
+	ipLookupService, ipLookupWorker, ipLookupLive, err := newIPLookupService(store, settings, upstreams, operationDispatcher, cfg.MasterKey)
 	if err != nil {
+		return cleanup(err)
+	}
+	if err := registerIPLookupOutboxHandlers(outboxWorker, ipLookupWorker, ipLookupLive); err != nil {
 		return cleanup(err)
 	}
 	if err := registerPaymentOperationHandlers(operationDispatcher, billingService); err != nil {

@@ -36,7 +36,7 @@ func RecordProvider(r *Report, p ProviderResult, c Config) {
 		if stage.Status == "success" || stage.Status == "partial" || stage.Status == "error" {
 			return
 		}
-		stage.Status, stage.Attempted = p.Status, true
+		stage.Status, stage.Attempted, stage.Complete = p.Status, true, p.Complete
 		applyProvider(r, p, c)
 		syncFacts(r)
 		return
@@ -79,7 +79,8 @@ func Aggregate(r Report, now time.Time) Report {
 			r.Verdict = "suitable"
 		}
 	}
-	r.Checkpoint = nil
+	// The checkpoint survives aggregation so background repair of partial
+	// reports can resume folding exactly where the original run stopped.
 	r.Providers = nil
 	return r
 }

@@ -14,7 +14,8 @@ settings and hashes the frozen configuration. `worker.go` owns recovery and earl
 stopping. `verdict.go` folds transient evidence; `refusals.go` contains refusal
 policy. `geo.go`, `provider_geo.go`, and `provider_sources.go` select coherent
 location data and preserve enrichment lineage. `report_codec.go` is the sole
-report persistence boundary.
+report persistence boundary. `retry_policy.go`, `worker_retry.go`, and
+`live_retry.go` own background repair of partial results.
 
 - `address.go` canonicalizes public IPs; `service.go` signs quotes and exposes read-only cache previews.
 - `registry.go` describes provider capabilities; `provider_http.go` executes bounded fixed-endpoint requests through the existing queue.
@@ -35,8 +36,10 @@ Region, ISP, provider-wide scores, and negative per-database flags are not store
 While processing, `_checkpoint` retains only stage IDs/statuses/attempt markers,
 aggregate risk coverage, majority votes, and the winning location/comparison
 metadata. Before each provider call the attempted marker is durable. Completed
-stages never replay; interrupted attempted stages become unavailable. Terminal
-reports clear `_checkpoint`. `RecordProvider` folds a stage exactly once.
+stages never replay; interrupted attempted stages become unavailable. Persisted
+partial and processing reports keep `_checkpoint` so repair can resume; encoded
+terminal reports drop it. `RecordProvider` folds a stage exactly once and marks
+the per-stage `complete` flag used to recompute aggregate completeness on repair.
 
 Legacy payloads are compacted on decoding/migration. Completed provider evidence
 is folded into the checkpoint, preserving stage markers without new requests.
@@ -72,6 +75,26 @@ inconclusive results. They never set `RefundRequired`, including an all-provider
 outage or an outage before a later refusal. Actual infrastructure failures before
 any provider attempt are distinguished using `ReportAttempted` and settled by
 the database recovery path. Old refunded outcomes remain unchanged.
+
+## Background retry of partial results
+
+After a partial result reaches the member, the database schedules the first
+repair job through the shared outbox when the frozen policy allows it. The wait
+applies before the first retry and between retries (`available_at = now +
+delay`), bounded by `MaxAttempts` (default 3, max 10) and `DelaySeconds`
+(default 60, max 86400); a stored config without `retry` keeps the enabled
+defaults. `Worker.HandleReportRetryOutbox` re-runs only error/processing/queued
+stages of the frozen cache row — refusal-skipped, disabled, and successful
+stages never replay — using the report's frozen credentials. Repairs update
+the shared cache row in place under a `status='partial'` guard (conflict or a
+disappeared row stops the chain silently) without touching receipts, billing,
+or `completed_at`, so newer paid refreshes keep winning cache selection.
+
+`LiveService.HandleLiveRetryOutbox` applies the same policy shape to partial
+live snapshots: only failed sections refetch (a topology failure cascades to
+graph/block/ASN sections), the merged snapshot replaces the frozen row, and
+the chain continues while sections stay failed. Every outbound call still
+flows through the existing upstream queues; repair jobs never bypass them.
 
 ## Location selection
 
@@ -152,18 +175,20 @@ fetches remain independent of billing; quoted paid refreshes update quality and
 realtime phases together. Realtime evidence never changes suitability policy. Requested IPs are canonical
 public addresses, even when reputation previews reuse a neighboring IP.
 
-- `live_transport.go` owns bounded, fixed-origin, redacted HTTP through existing `upstreamqueue` workers.
+- `live_transport.go` owns bounded, fixed-origin, redacted HTTP through existing `upstreamqueue` workers. The 15-second per-call budget applies only to HTTP execution once a job is dispatched; queue wait is bounded by the caller's flight deadline, so slower shared pacing cannot starve tail calls.
+
+Live source queues are process-shared by all concurrent lookups and paced per source in `internal/app/ip_lookup.go`: RIPEstat and CAIDA at 600 ms (two in-flight), Cloudflare Radar at 800 ms (one in-flight), BGPKIT/RouteViews/InternetDB at 500 ms, and reputation providers plus DNS at 250 ms. Queue throughput is one request per interval regardless of worker count; workers only cap simultaneous in-flight requests. Worst-case cold lookups stay inside the 60-second flight budget at the cost of higher latency.
 - `live_bgp.go` selects the longest observed prefix, uses original paths transiently, collapses visual prepends into edges, supports multiple origins, and bounds paths/nodes. RIPE Looking Glass falls back to RouteViews, then the explicitly dated RIPE BGP snapshot.
 - `live_relationships.go` and `live_relationship_bulk.go` use bounded, paginated CAIDA origin-neighborhood queries and optional Cloudflare fallback. Only existing observed pairs are annotated, both endpoint orientations are handled, partial valid data is preserved, and indirect/unavailable relationships remain observed adjacency.
 - `live_names.go` caches only successful ASN names, with seven-day expiry and 4,096-entry LRU eviction. Keyed IPAPI bulk, BGPKIT, and bounded RIPE holder lookups fill missing names. Collector exchange scope is observation context, never an invented physical hop.
 - `live_asn.go` selects registration from RIPE RIR `lod=2`, routing totals from RIPE/RouteViews, and dated relationship degrees from CAIDA/Cloudflare.
 - `live_asn_prefetch.go` overlaps independent ASN reads through a lookup-local request memo.
 - `live_requests.go` coalesces identical queued HTTP reads within a lookup and tracks transient failures.
-- `live_pipeline.go` emits immutable section snapshots and progress over eight fixed logical phases; topology arrives before contextual enrichment finishes.
+- `live_pipeline.go` emits immutable section snapshots and progress over eight fixed logical phases; topology arrives before contextual enrichment finishes. `live_tasks.go` derives one `ProgressTask` per phase from each finished section's `LiveMeta` (observed emptiness is success, unconfigured credentials are skipped, mixed ASN sources are partial), and every progress event carries the ordered per-task list.
 - `live_events.go` defines progress/section/complete/error stream events and optional refresh behavior. JSON clients keep the same response projection.
 - `live_cache.go` bounds concurrent shared work to 64 flights; completion evidence lives in SQLite. Free reads match exact IP then IPv4 /24 without expiry or credential invalidation. `RefreshRun` is worker-only and uses a separate durable run identity. A shared lookup is cancelled when its last subscriber leaves.
 - `live_classification.go` reads CAIDA's authoritative dated `dataset.clique` and bulk ASN names. The API's per-ASN `cliqueMember` flag incorrectly marks non-members true and is never used; absent/invalid membership lists stay unknown, without degree-based guesses.
-- `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence.
+- `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence. Check progress appends one provider task per checkpoint stage; the realtime refresh phase of a paid check surfaces as a single trailing `live` task (`ip_lookup_live_check.go`), since per-section progress stays in the in-memory stream and is never persisted per section.
 - `live_cache_test.go` covers persistent reads, rejected free refreshes, attempted outage caching, pre-attempt exclusion and early streaming in hosted CI.
 - `live_ip.go` supplies keyed contextual IPAPI scores, distinct AbuseIPDB reported addresses in the announced block (30 days), exact decimal address capacity, and queued PTR lookups. Missing data remains nullable; block-plan restrictions never silently narrow the subnet.
 - `live_traffic.go` requests Cloudflare Radar's BOT_CLASS, DEVICE_TYPE, and IP_VERSION summaries for the ASN over seven days; returned Other device values and actual date windows are preserved.

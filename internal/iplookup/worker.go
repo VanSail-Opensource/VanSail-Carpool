@@ -69,13 +69,29 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 	if r.Checkpoint == nil {
 		return &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
 	}
+	if err := w.runQueuedStages(ctx, &r, c, func(progress Report) error {
+		return w.repository.SaveIPLookupProgress(ctx, progress)
+	}); err != nil {
+		return err
+	}
+	if err := w.refreshLive(ctx, r, c); err != nil {
+		return err
+	}
+	r = Aggregate(r, w.now().UTC())
+	return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
+}
+
+// runQueuedStages executes every pending stage in order. The persist callback
+// receives the report after each durable transition; repair passes nil-free
+// persistence against the frozen cache row instead of live progress.
+func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persist func(Report) error) error {
 	for index := range r.Checkpoint.Stages {
 		p := &r.Checkpoint.Stages[index]
 		if p.Status == "disabled" || p.Status == "skipped" {
 			continue
 		}
 		if len(r.Refusals) > 0 {
-			skipLater(&r, index)
+			skipLater(r, index)
 			break
 		}
 		if p.Status == "success" || p.Status == "partial" || p.Status == "error" {
@@ -90,8 +106,10 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 			p.Attempted = true
 		} else {
 			p.Status, p.Attempted = "processing", true
-			if err := w.repository.SaveIPLookupProgress(ctx, r); err != nil {
-				return err
+			if persist != nil {
+				if err := persist(*r); err != nil {
+					return err
+				}
 			}
 			adapter := w.providers[p.ID]
 			if adapter != nil {
@@ -109,20 +127,18 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 				}
 			}
 		}
-		RecordProvider(&r, result, c)
-		if err := w.repository.SaveIPLookupProgress(ctx, r); err != nil {
-			return err
+		RecordProvider(r, result, c)
+		if persist != nil {
+			if err := persist(*r); err != nil {
+				return err
+			}
 		}
 		if len(r.Refusals) > 0 {
-			skipLater(&r, index)
+			skipLater(r, index)
 			break
 		}
 	}
-	if err := w.refreshLive(ctx, r, c); err != nil {
-		return err
-	}
-	r = Aggregate(r, w.now().UTC())
-	return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
+	return nil
 }
 
 func skipLater(r *Report, index int) {

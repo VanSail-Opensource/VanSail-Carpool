@@ -10,6 +10,7 @@ import { ipLookupErrorText } from '@/components/ip-lookup/presentation'
 import ProviderSettings from './ProviderSettings.vue'
 import ComboQuotas from './ComboQuotas.vue'
 import ProviderOrder from './ProviderOrder.vue'
+import RetrySettings from './RetrySettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
 
 const { settings, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
@@ -21,6 +22,11 @@ const checkOrder = computed({
 const schema = computed(() => z.object({
   lookupFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
+  retry: z.object({
+    enabled: z.boolean(),
+    maxAttempts: z.number().int().min(1).max(10, t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
+    delaySeconds: z.number().int().min(1).max(86400, t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
+  }),
 }).passthrough())
 </script>
 
@@ -42,6 +48,7 @@ const schema = computed(() => z.object({
           <ProviderOrder v-model="settings.geolocationOrder" :title="$t('ipLookup.geolocationOrder')" :help="$t('ipLookup.geolocationOrderHelp')" :disabled="busy" />
         </div>
         <ProviderSettings v-model="settings" />
+        <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         <ComboQuotas v-model="settings.comboQuotas" :combos="combos" />
         <UButton type="submit" :loading="busy" :disabled="busy" :label="$t('common.save')" class="lookup-save" />
       </UForm>

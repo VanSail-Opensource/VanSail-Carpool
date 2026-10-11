@@ -75,11 +75,21 @@ func (s *Store) SaveIPDetails(ctx context.Context, run string, r iplookup.LiveDe
 	if iplookup.LivePartial(r) {
 		status = "partial"
 	}
+	var retryDelay time.Duration
+	retryEnabled := false
+	if status == "partial" {
+		retryDelay, retryEnabled = s.ipLiveRetryDelay(ctx)
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = tx.Rollback() }()
 	if run == "" {
 		var fetched string
-		err := s.db.QueryRowContext(ctx, `SELECT json_extract(details_json,'$.fetchedAt') FROM ip_lookup_live_snapshots WHERE ip=? ORDER BY julianday(completed_at) DESC,rowid DESC LIMIT 1`, r.IP).Scan(&fetched)
+		err := tx.QueryRowContext(ctx, `SELECT json_extract(details_json,'$.fetchedAt') FROM ip_lookup_live_snapshots WHERE ip=? ORDER BY julianday(completed_at) DESC,rowid DESC LIMIT 1`, r.IP).Scan(&fetched)
 		if err != nil && err != sql.ErrNoRows {
 			return "", err
 		}
@@ -90,14 +100,28 @@ func (s *Store) SaveIPDetails(ctx context.Context, run string, r iplookup.LiveDe
 			return "", nil
 		}
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO ip_lookup_live_snapshots(id,ip,status,details_json,completed_at,run_key) VALUES(?,?,?,?,?,?) ON CONFLICT(run_key) DO NOTHING`, id, r.IP, status, string(raw), stamp(now), runKey)
+	result, err := tx.ExecContext(ctx, `INSERT INTO ip_lookup_live_snapshots(id,ip,status,details_json,completed_at,run_key) VALUES(?,?,?,?,?,?) ON CONFLICT(run_key) DO NOTHING`, id, r.IP, status, string(raw), stamp(now), runKey)
 	if err != nil {
 		return "", err
 	}
-	if run != "" {
-		err = s.db.QueryRowContext(ctx, `SELECT id FROM ip_lookup_live_snapshots WHERE run_key=?`, run).Scan(&id)
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		return "", err
 	}
-	return id, err
+	if inserted == 1 && retryEnabled {
+		if err := scheduleIPLiveRetryTx(ctx, tx, id, retryDelay, now); err != nil {
+			return "", err
+		}
+	}
+	if run != "" {
+		if err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_live_snapshots WHERE run_key=?`, run).Scan(&id); err != nil {
+			return "", err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 func liveSnapshotForRunTx(ctx context.Context, tx *sql.Tx, run string) (string, string, error) {

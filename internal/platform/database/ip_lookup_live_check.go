@@ -18,9 +18,18 @@ func (s *Store) ipLookupCheckLive(ctx context.Context, check *iplookup.Check, ra
 			p.Phase, p.CurrentProvider = "live", ""
 		}
 		p.Total++
-		if stage.Status == "succeeded" || stage.Status == "partial" || stage.Status == "error" {
+		// The realtime refresh surfaces as one task; per-section progress
+		// stays in the in-memory stream, never persisted per section.
+		liveTask := iplookup.ProgressTask{Key: "live", Status: "active"}
+		switch stage.Status {
+		case "succeeded", "partial", "error":
+			liveTask.Status = stage.Status
+			if stage.Status == "succeeded" {
+				liveTask.Status = "success"
+			}
 			p.Completed++
 		}
+		p.Tasks = append(p.Tasks, liveTask)
 	}
 	if stage.SnapshotID == "" || status == "processing" {
 		return nil

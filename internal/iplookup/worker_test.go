@@ -60,7 +60,9 @@ func TestWorkerStopsAndDoesNotReplayCompletedStages(t *testing.T) {
 	if err := w.HandleProviderOperation(context.Background(), providerops.Operation{}, model.OutboxJob{}); err != nil {
 		t.Fatal(err)
 	}
-	if first.calls != 0 || second.calls != 1 || later.calls != 0 || r.report.Verdict != "unsuitable" || len(r.report.Databases) != 2 || r.report.Checkpoint != nil {
+	// Terminal reports retain their in-memory checkpoint; the codec strips it
+	// on encode (covered by TestCompactCheckpointAndLegacyOutcomePreservation).
+	if first.calls != 0 || second.calls != 1 || later.calls != 0 || r.report.Verdict != "unsuitable" || len(r.report.Databases) != 2 {
 		t.Fatalf("replayed/stopped incorrectly: %+v", r.report)
 	}
 	if err := w.HandleProviderOperation(context.Background(), providerops.Operation{}, model.OutboxJob{}); err != nil {

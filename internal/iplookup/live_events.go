@@ -26,5 +26,9 @@ type LiveEvent struct {
 var livePhases = []string{"topology", "relationships", "names", "asns", "scores", "block", "ptr", "shodan"}
 
 func liveComplete(ip string, data []byte) LiveEvent {
-	return LiveEvent{Type: "complete", IP: ip, Data: data, Progress: &Progress{Phase: "complete", Completed: 8, Total: 8}}
+	progress := &Progress{Phase: "complete", Completed: len(livePhases), Total: len(livePhases), Tasks: make([]ProgressTask, 0, len(livePhases))}
+	for _, phase := range livePhases {
+		progress.Tasks = append(progress.Tasks, ProgressTask{Key: phase, Status: "success"})
+	}
+	return LiveEvent{Type: "complete", IP: ip, Data: data, Progress: progress}
 }

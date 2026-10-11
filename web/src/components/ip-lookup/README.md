@@ -74,6 +74,7 @@ sent by the browser review or the offline PM fixtures.
 ## Compact progress and graph responsibilities
 
 - `IPLookupProgress.vue` displays completed logical work with accessible Nuxt progress; percentages are not time estimates.
+- `IPLookupProgressTasks.vue` renders the per-task checklist under that progress: live sections and reputation providers each show pending, active, success, partial, error, or skipped state with localized labels; legacy progress events without tasks fall back to the bar alone.
 - `IPRefusals.vue` and `refusalPresentation.ts` group all distinct refusal types, deduplicate exact evidence and expose every source/value on tap.
 - `refusalPresentation.test.ts` verifies evidence preservation in hosted CI.
 - `bgpLayout.ts` orders layered nodes with crossing reduction and routes shared trunks, separate ports and non-adjacent connections without inventing AS hops.

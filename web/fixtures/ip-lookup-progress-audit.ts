@@ -16,18 +16,24 @@ export function denseTopology(result: IPLookupLiveDetails) {
 export async function publishLiveAudit(result: IPLookupLiveDetails, params: URLSearchParams, signal?: AbortSignal, emit?: (event: IPLookupLiveEvent) => void) {
   const sectionNames = ['topology', 'scores', 'ptr', 'block', 'asns', 'shodan'] as const
   const phases = ['topology', 'scores', 'ptr', 'block', 'asns', 'relationships', 'names', 'shodan'] as const
+  // ?live=degraded completes the asns step with partial coverage to audit warning states.
+  const degraded = params.get('live') === 'degraded'
+  const tasks = (active: number) => phases.map((phase, index) => ({
+    key: phase,
+    status: index < active ? (degraded && phase === 'asns' ? 'partial' as const : 'success' as const) : index === active ? 'active' as const : 'pending' as const,
+  }))
   for (let i = 0; i < phases.length; i++) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    emit?.({ type: 'progress', ip: result.ip, progress: { phase: phases[i]!, completed: i, total: 8 } })
+    emit?.({ type: 'progress', ip: result.ip, progress: { phase: phases[i]!, completed: i, total: 8, tasks: tasks(i) } })
     if (i < sectionNames.length) {
       const section = sectionNames[i]!
       emit?.({ type: 'section', ip: result.ip, section, data: result[section] })
     }
     if (params.get('live') === 'stream-error' && i === 2) throw new ApiError(502, { code: 'IP_DETAILS_UNAVAILABLE', message: 'Constructed stream interruption' })
-    if (params.get('live') === 'slow') await new Promise<void>((resolve, reject) => {
+    if (params.get('live') === 'slow' || degraded) await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(resolve, 350)
       signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
     })
   }
-  emit?.({ type: 'complete', ip: result.ip, data: result, progress: { phase: 'complete', completed: 8, total: 8 } })
+  emit?.({ type: 'complete', ip: result.ip, data: result, progress: { phase: 'complete', completed: 8, total: 8, tasks: phases.map(phase => ({ key: phase, status: 'success' as const })) } })
 }

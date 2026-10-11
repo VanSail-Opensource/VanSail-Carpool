@@ -34,7 +34,7 @@ func CredentialKey(id string) string { return "ip_lookup." + id + ".credential" 
 
 // DefaultConfig leaves prices unconfigured and all providers disabled.
 func DefaultConfig() Config {
-	c := Config{Providers: []ProviderConfig{}, GeolocationOrder: DefaultGeolocationOrder()}
+	c := Config{Providers: []ProviderConfig{}, GeolocationOrder: DefaultGeolocationOrder(), Retry: nil}
 	for _, id := range IDs {
 		c.Providers = append(c.Providers, ProviderConfig{ID: id})
 	}
@@ -85,6 +85,9 @@ func DecodeConfig(raw string) (Config, error) {
 			c.Providers = append(c.Providers, ProviderConfig{ID: id})
 		}
 	}
+	if err := validateRetryPolicy(c.Retry); err != nil {
+		return c, err
+	}
 	if c.GeolocationOrder == nil {
 		c.GeolocationOrder = DefaultGeolocationOrder()
 	}
@@ -121,6 +124,21 @@ func ConfigHash(c Config) string {
 	b, _ := json.Marshal(c)
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
+}
+
+// validateRetryPolicy bounds explicit repair settings; nil stays nil so
+// deployments without the fields keep the enabled defaults.
+func validateRetryPolicy(p *RetryPolicy) error {
+	if p == nil {
+		return nil
+	}
+	if p.MaxAttempts < 0 || p.MaxAttempts > 10 {
+		return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
+	}
+	if p.DelaySeconds < 0 || p.DelaySeconds > 86400 {
+		return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
+	}
+	return nil
 }
 
 // ErrorCode prevents HTTP clients and queue logs from leaking credential-bearing URLs.

@@ -21,6 +21,7 @@ type Config struct {
 	RefreshFeeTXB    string           `json:"refreshFeeTxb"`
 	Providers        []ProviderConfig `json:"providers"`
 	GeolocationOrder []string         `json:"geolocationOrder"`
+	Retry            *RetryPolicy     `json:"retry,omitempty"`
 }
 
 // CredentialEdit replaces or explicitly clears a write-only credential.

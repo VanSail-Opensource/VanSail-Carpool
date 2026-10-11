@@ -19,9 +19,12 @@ func (s *LiveService) liveHTTPRequest(ctx context.Context, source, path string, 
 	if !ok || s.queues[source] == nil {
 		return nil, &CodeError{"IP_DETAILS_UNAVAILABLE"}
 	}
-	callCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	return upstreamqueue.Do(callCtx, s.queues[source], func(ctx context.Context) ([]byte, error) {
+	// Queue wait is bounded by the caller's flight deadline; the per-call
+	// budget below applies only to HTTP execution once the job is dispatched,
+	// so slower shared pacing cannot starve tail calls of their budget.
+	return upstreamqueue.Do(ctx, s.queues[source], func(ctx context.Context) ([]byte, error) {
+		callCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
 		method := http.MethodGet
 		var payload []byte
 		if body != nil {
@@ -36,7 +39,7 @@ func (s *LiveService) liveHTTPRequest(ctx context.Context, source, path string, 
 		if len(query) > 0 {
 			endpoint += "?" + query.Encode()
 		}
-		req, err := http.NewRequestWithContext(ctx, method, endpoint, bytes.NewReader(payload))
+		req, err := http.NewRequestWithContext(callCtx, method, endpoint, bytes.NewReader(payload))
 		if err != nil {
 			return nil, &CodeError{"IP_DETAILS_UNAVAILABLE"}
 		}
@@ -51,7 +54,7 @@ func (s *LiveService) liveHTTPRequest(ctx context.Context, source, path string, 
 		if source == CloudflareID {
 			req.Header.Set("Authorization", "Bearer "+credential)
 		}
-		if err := markLiveAttempt(ctx); err != nil {
+		if err := markLiveAttempt(callCtx); err != nil {
 			return nil, err
 		}
 		res, err := s.client.Do(req)

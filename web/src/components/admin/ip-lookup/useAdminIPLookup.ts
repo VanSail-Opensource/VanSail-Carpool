@@ -6,10 +6,18 @@ import type { Combo } from '@/api/types'
 import { useSessionStore } from '@/stores/session'
 import { useIPLookupAvailability } from '@/composables/useIPLookupAvailability'
 
+// Stored settings predating the retry policy decode without it; the enabled
+// server defaults apply until an administrator saves explicit values.
+const defaultRetry = () => ({ enabled: true, maxAttempts: 3, delaySeconds: 60 })
+
+function normalizeRetry(settings: IPLookupAdminSettings): void {
+  if (!settings.retry) settings.retry = defaultRetry()
+}
+
 export function useAdminIPLookup() {
   const session = useSessionStore()
   const availability = useIPLookupAvailability()
-  const settings = reactive<IPLookupAdminSettings>({ enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: [], geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], credentials: {}, configured: {}, comboQuotas: {} })
+  const settings = reactive<IPLookupAdminSettings>({ enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: [], geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], retry: defaultRetry(), credentials: {}, configured: {}, comboQuotas: {} })
   const combos = shallowRef<Combo[]>([])
   const loading = shallowRef(true)
   const busy = shallowRef(false)
@@ -26,6 +34,7 @@ export function useAdminIPLookup() {
       const [value, catalog] = await Promise.all([ipLookupApi.settings(), api.getAdminResource<{ items: Combo[] }>('combos')])
       if (disposed || current !== version || owner !== session.user?.id) return
       Object.assign(settings, value)
+      normalizeRetry(settings)
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       combos.value = catalog.items
       errorCode.value = ''
@@ -43,6 +52,7 @@ export function useAdminIPLookup() {
       const value = await ipLookupApi.saveSettings(settings)
       if (disposed || current !== version) return
       Object.assign(settings, value)
+      normalizeRetry(settings)
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       saved.value = true
       await availability.refresh()

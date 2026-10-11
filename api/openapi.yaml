@@ -175,6 +175,7 @@ components:
   schemas: {
     IPLookupProviderConfig: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupProviderConfig"},
     IPLookupCredentialEdit: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupCredentialEdit"},
+    IPLookupRetryPolicy: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupRetryPolicy"},
     IPLookupLiveMeta: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupLiveMeta' },
     IPLookupBGPNode: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupBGPNode' },
     IPLookupBGPEdge: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupBGPEdge' },
@@ -189,6 +190,7 @@ components:
     IPLookupPTRDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupPTRDetails' },
     IPLookupLiveDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupLiveDetails' },
     IPLookupProgress: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupProgress' },
+    IPLookupProgressTask: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupProgressTask' },
     IPLookupLiveEvent: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupLiveEvent' },
     IPLookupShodanDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupShodanDetails' },
     IPLookupAdminSettings: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupAdminSettings"},

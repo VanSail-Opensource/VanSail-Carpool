@@ -107,6 +107,9 @@ func reconcileStaleIPLookupsTx(ctx context.Context, tx *sql.Tx, now time.Time) e
 		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=?,report_json=?,completed_at=? WHERE id=?`, report.Status, string(raw), stamp(now), run.id); err != nil {
 			return err
 		}
+		if err := scheduleIPLookupReportRetryTx(ctx, tx, run.id, report, now); err != nil {
+			return err
+		}
 		checkRows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=?`, run.id)
 		if err != nil {
 			return err

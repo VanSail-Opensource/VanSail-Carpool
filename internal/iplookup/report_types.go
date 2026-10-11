@@ -26,6 +26,9 @@ type Stage struct {
 	ID        string `json:"id"`
 	Status    string `json:"status"`
 	Attempted bool   `json:"attempted"`
+	// Complete freezes the provider's own completeness flag so background
+	// repair can recompute aggregate completeness exactly.
+	Complete bool `json:"complete,omitempty"`
 }
 
 // GeoCandidate is one coherent location and its application comparison metadata.
