@@ -9,7 +9,7 @@ import (
 )
 
 func (s *LiveService) shodan(ctx context.Context, ip string) ShodanDetails {
-	result := ShodanDetails{Hostnames: []string{}, Ports: []int{}}
+	result := ShodanDetails{Hostnames: []string{}, Ports: []int{}, CPEs: []string{}, Tags: []string{}, Vulns: []string{}}
 	data, err := s.liveHTTP(ctx, "shodan", "/"+url.PathEscape(ip), nil, nil, "")
 	result.LiveMeta = liveMeta("shodan:internetdb", err)
 	if ErrorCode(err) == "IP_DETAILS_NOT_FOUND" {
@@ -26,9 +26,20 @@ func (s *LiveService) shodan(ctx context.Context, ip string) ShodanDetails {
 	}
 	var ports []int
 	var hostnames []string
-	if json.Unmarshal(o["ports"], &ports) != nil || json.Unmarshal(o["hostnames"], &hostnames) != nil || string(o["ports"]) == "null" || string(o["hostnames"]) == "null" {
+	portsErr, namesErr := json.Unmarshal(o["ports"], &ports), json.Unmarshal(o["hostnames"], &hostnames)
+	if portsErr != nil || namesErr != nil || string(o["ports"]) == "null" || string(o["hostnames"]) == "null" {
 		result.LiveMeta = liveMeta("shodan:internetdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
-		return result
+	}
+	// Preserve valid findings even when another field has malformed coverage.
+	for _, field := range []struct {
+		key   string
+		items *[]string
+	}{{"cpes", &result.CPEs}, {"tags", &result.Tags}, {"vulns", &result.Vulns}} {
+		items, valid := shodanItems(o[field.key])
+		*field.items = items
+		if !valid && result.Status == "success" {
+			result.Status, result.ErrorCode = "partial", "IP_DETAILS_INVALID_RESPONSE"
+		}
 	}
 	seenPorts, seenNames := map[int]bool{}, map[string]bool{}
 	for _, port := range ports {
@@ -59,8 +70,31 @@ func (s *LiveService) shodan(ctx context.Context, ip string) ShodanDetails {
 		result.Status = "partial"
 	}
 	// InternetDB does not expose a per-host observation timestamp.
-	if len(result.Ports) == 0 && len(result.Hostnames) == 0 && result.Status == "success" {
+	if len(result.Ports) == 0 && len(result.Hostnames) == 0 && len(result.CPEs) == 0 && len(result.Tags) == 0 && len(result.Vulns) == 0 && result.Status == "success" {
 		result.Status = "empty"
 	}
 	return result
+}
+
+func shodanItems(raw json.RawMessage) ([]string, bool) {
+	items := []string{}
+	var values []json.RawMessage
+	if json.Unmarshal(raw, &values) != nil || values == nil {
+		return items, false
+	}
+	valid, seen := true, map[string]bool{}
+	for _, value := range values {
+		var item string
+		if json.Unmarshal(value, &item) != nil || strings.TrimSpace(item) == "" {
+			valid = false
+			continue
+		}
+		item = strings.TrimSpace(item)
+		if !seen[item] {
+			items = append(items, item)
+			seen[item] = true
+		}
+	}
+	sort.Strings(items)
+	return items, valid
 }

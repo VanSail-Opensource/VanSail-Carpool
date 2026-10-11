@@ -55,6 +55,7 @@ func Aggregate(r Report, now time.Time) Report {
 	}
 	syncFacts(&r)
 	applyRPKIRefusals(&r)
+	applyShodanRefusals(&r)
 	r.RefundRequired = false
 	r.CheckedAt = now.UTC().Format(time.RFC3339Nano)
 	r.Status, r.Verdict = "succeeded", "inconclusive"

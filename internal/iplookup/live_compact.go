@@ -92,6 +92,15 @@ func compactLegacyTopology(t BGPTopology) BGPTopology {
 // CompactLiveDetails is the single public and persistence projection boundary.
 func CompactLiveDetails(r LiveDetails) LiveDetails {
 	r.Topology = CompactTopology(r.Topology)
+	if r.Shodan.CPEs == nil {
+		r.Shodan.CPEs = []string{}
+	}
+	if r.Shodan.Tags == nil {
+		r.Shodan.Tags = []string{}
+	}
+	if r.Shodan.Vulns == nil {
+		r.Shodan.Vulns = []string{}
+	}
 	if r.SourceIP == "" {
 		r.SourceIP = r.IP
 	}

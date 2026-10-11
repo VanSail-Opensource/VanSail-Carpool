@@ -1,6 +1,7 @@
 import { ipLookupApi, type IPLookupLiveDetails } from '@/api/ipLookup'
 import { ApiError } from '@/api/http'
 import { denseTopology, publishLiveAudit } from './ip-lookup-progress-audit'
+import { shodanAuditDetails } from './ip-lookup-shodan-audit'
 
 export function installLiveIPAudit(params: URLSearchParams) {
   let calls = 0
@@ -32,20 +33,21 @@ export function installLiveIPAudit(params: URLSearchParams) {
       transfers: { ...meta, source: 'ripe:transfer-history', transfers: [{ sourceResource: '8.8.0.0/16', recipientResource: '8.8.8.0/24', sourceHolderName: 'Previous network operator', recipientHolderName: 'Current network operator', sourceRegistry: 'ARIN', recipientRegistry: 'RIPE NCC', transferTime: '2025-08-12T00:00:00Z', transferType: 'POLICY' }] },
       shodan: { ...meta, source: 'shodan:internetdb', observedAt: '', hostnames: ['dns.google'], ports: [53, 443, 853] },
     }
+    result.shodan = shodanAuditDetails(params, result.shodan)
     for (const asn of result.asns) { asn.abuseContacts = ['abuse@cloudflare.com']; asn.website = 'https://www.cloudflare.com'; asn.sources.abuseContacts = { ...meta, source: 'ripe:abuse-contact-finder' }; asn.sources.website = { ...meta, source: 'peeringdb' } }
     result.topology.paths.push({ asPath: [701, 48266, 174, 13335], collector: 'RRC21', exchange: '', observedAt: now })
     if (params.get('live') === 'empty') {
       result.topology = { ...result.topology, status: 'empty', prefix: '', origins: [], nodes: [], edges: [], paths: [] }
       result.transfers = { ...result.transfers!, status: 'empty', transfers: [] }
       result.asns = []; result.ptr = { ...result.ptr, status: 'empty', domains: [] }
-      result.shodan = { ...result.shodan, status: 'empty', hostnames: [], ports: [] }
+      result.shodan = { ...result.shodan, status: 'empty', hostnames: [], ports: [], cpes: [], tags: [], vulns: [] }
       result.scores = { ...result.scores, status: 'unconfigured', company: { ratio: null, label: '' }, asn: { ratio: null, label: '' } }
       result.block = { ...result.block, status: 'empty', reportedAddresses: null, addressCapacity: '' }
     }
     if (params.get('live') === 'partial') {
       result.block = { ...result.block, status: 'restricted', reportedAddresses: null, errorCode: 'IP_DETAILS_PLAN_RESTRICTED' }
       result.ptr = { ...result.ptr, status: 'error', domains: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
-      result.shodan = { ...result.shodan, status: 'error', hostnames: [], ports: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
+      result.shodan = { ...result.shodan, status: 'error', hostnames: [], ports: [], cpes: [], tags: [], vulns: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
       for (const summary of Object.values(result.asns[0]!.traffic)) { summary.status = 'unconfigured'; summary.values = {} }
     }
     if (params.get('live') === 'moas') {

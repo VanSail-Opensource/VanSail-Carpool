@@ -279,3 +279,23 @@ Hosted tests: `proxy_parser_test.go` covers endpoint formats, encoded input and 
 `subnet_test.go` uses a queued synthetic block response to verify source order, per-address short-circuiting and requested-IP response reuse without external requests in hosted CI.
 
 `worker_provider_context.go` folds reusable IPAPI context and starts inventory assessment after the first reported country, keeping the provider executor small.
+
+## Shodan quality policy, residential-v6
+
+`live_shodan.go` reads InternetDB through the existing queued transport and retains
+all normalized CPEs, tags and vulnerability identifiers alongside hostnames and
+ports. Valid findings survive malformed neighboring fields; missing/null or
+invalid arrays mark coverage incomplete. Lists are deduplicated without an item
+cap. `shodan_verdict.go` adds one idempotent refusal per tag or vulnerability;
+`Aggregate` and `applyEnhancedVerdict` enforce unsuitable quality, including when
+other checks are partial. CPEs alone are informational. The existing subnet gate
+skips neighbor checks after a Shodan refusal.
+
+Evidence and refusals use the existing report JSON; no tables, charges or extra
+requests are added. New arrays are optional in the public schema for older
+clients/snapshots and normalized to empty arrays at the compact boundary. Older
+completed reports retain their frozen outcome; an explicit refresh obtains new
+Shodan fields. `live_shodan_test.go` and `shodan_verdict_test.go` cover single-field
+refusals, malformed coverage, untruncated CPEs, idempotency and persistence in
+hosted CI. Upstream contract:
+[InternetDB OpenAPI](https://internetdb.shodan.io/openapi.json).

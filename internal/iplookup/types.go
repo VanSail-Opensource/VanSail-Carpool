@@ -5,7 +5,7 @@ import "github.com/txyyddss/Remna-User-Panel/internal/model"
 
 const SettingKey = "ip_lookup.config"
 const OperationKind = "ip_reputation_lookup"
-const Version = "residential-v5"
+const Version = "residential-v6"
 
 // ProviderConfig is public configuration; credentials live in the secret vault.
 type ProviderConfig struct {

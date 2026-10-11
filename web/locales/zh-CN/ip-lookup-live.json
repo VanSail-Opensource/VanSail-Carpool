@@ -91,9 +91,14 @@
       "observations": "{count} 条观测路由"
     },
     "shodanTitle": "Shodan InternetDB",
-    "shodanHostnames": "关联域名",
-    "shodanPorts": "观察到的开放端口",
-    "shodanContext": "实时查询 Shodan 每周更新的数据集，不代表即时端口扫描；来源不提供单个地址的观测时间。",
+    "shodanFields": {
+      "hostnames": "关联域名",
+      "ports": "观察到的开放端口",
+      "tags": "检测到的标签",
+      "vulns": "报告的漏洞",
+      "cpes": "检测到的软件（CPE）"
+    },
+    "shodanContext": "Shodan 返回标签或漏洞时，IP 质量检查不通过。CPE 用于标识软件。数据集每周更新，漏洞匹配基于服务元数据，来源不提供单个地址的观测时间。",
     "about": "说明",
     "cacheExact": "缓存数据 · {date}",
     "cacheSubnet": "使用同 /24 中 {ip} 的缓存数据 · {date}",

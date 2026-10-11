@@ -116,7 +116,9 @@
     },
     "refusals": {
       "proxy_list": "匹配代理数据库",
-      "active_proxy": "发现代理服务"
+      "active_proxy": "发现代理服务",
+      "shodan_tag": "Shodan 检测到标签",
+      "shodan_vuln": "Shodan 报告了漏洞"
     }
   }
 }

@@ -196,3 +196,24 @@ queued RPKI probe validated the real covering prefixes for all three addresses.
 ## Background combined report presentation
 
 `useSharedIPProgress.ts` retrieves identity-free exact-IP work on entry, polls every five visible seconds and resumes immediately after returning. `IPPortProbes.vue` shows per-port coverage, suspected/confirmed evidence and long observation milestones; `IPProxyEvidence.vue` displays administrator source names and compact coverage rows; `IPSubnetGrid.vue` renders 255 neighboring blocks with touch/keyboard details and an independent requested-IP indicator. Completed reports provide all three projections without extra fresh requests. Latitude/longitude remain in map inputs and API data but no longer appear as text facts.
+
+## Shodan findings
+
+`IPShodanDetails.vue` presents the saved or streamed Shodan section through a typed
+`result` prop. It shows every CPE, tag and vulnerability alongside hostnames and
+ports, wrapping long identifiers on phones and using two columns on desktop.
+Tags and vulnerabilities use the error color; CPEs are informational.
+`IPRefusals.vue` opens Shodan refusal groups by default so detected items appear
+beside the unsuitable verdict. `presentation.ts` resolves their source name.
+The backend owns the verdict; this component performs no extra requests or
+billing and accepts legacy snapshots with absent arrays. Labels and policy copy
+are localized in English and Chinese. Browser fixtures accept `shodan=tags`,
+`vulns`, `both`, `cpes`, `many-cpes`, `partial` or `legacy`.
+
+Chrome DevTools MCP reviewed initial/loading/populated/empty/error and legacy
+states at 320/390px mobile and 1280px desktop, English/Chinese copy, native
+disclosures and streamed completion. Tag-only and vulnerability-only reports
+showed Refuse; CPE-only reports showed Pass. A 300-CPE fixture rendered through
+the final item, long identifiers wrapped without horizontal overflow, and console
+and network checks were clear. These browser reports use constructed evidence;
+backend parser/verdict/persistence regressions run in hosted CI.

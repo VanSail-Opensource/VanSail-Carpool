@@ -91,9 +91,14 @@
       "observations": "{count} observed routes"
     },
     "shodanTitle": "Shodan InternetDB",
-    "shodanHostnames": "Associated hostnames",
-    "shodanPorts": "Observed open ports",
-    "shodanContext": "Queried live from Shodan's weekly-updated dataset. This is not a fresh port scan; no per-host observation time is supplied.",
+    "shodanFields": {
+      "hostnames": "Associated hostnames",
+      "ports": "Observed open ports",
+      "tags": "Detected tags",
+      "vulns": "Reported vulnerabilities",
+      "cpes": "Detected software (CPEs)"
+    },
+    "shodanContext": "Shodan tags or vulnerabilities fail the IP quality check. CPEs identify software. The dataset updates weekly; vulnerability matches come from service metadata, and no per-host observation time is supplied.",
     "about": "Details",
     "cacheExact": "Cached data · {date}",
     "cacheSubnet": "Cached data for {ip} in the same /24 · {date}",

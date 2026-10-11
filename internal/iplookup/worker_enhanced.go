@@ -101,6 +101,7 @@ func applyProxyRefusal(r *Report) {
 }
 func applyEnhancedVerdict(r *Report) {
 	applyProxyRefusal(r)
+	applyShodanRefusals(r)
 	for _, port := range r.Ports {
 		for _, finding := range port.Findings {
 			if finding.Confidence == "confirmed" {

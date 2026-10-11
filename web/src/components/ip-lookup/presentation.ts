@@ -16,5 +16,5 @@ export function taskLabel(key: string): string {
   return progressTaskSections.has(key) || key === 'live' ? t(`ipLookupProgress.${key}`) : providerName(key)
 }
 export function sourceText(source: string | undefined): string {
-  return source?.split(',').map(value => value.split(':').map(providerName).join(' · ')).join(', ') ?? ''
+  return source?.split(',').map(value => value === 'shodan:internetdb' ? t('ipLookupLive.shodanTitle') : value.split(':').map(providerName).join(' · ')).join(', ') ?? ''
 }

@@ -155,4 +155,7 @@ type ShodanDetails struct {
 	LiveMeta
 	Hostnames []string `json:"hostnames"`
 	Ports     []int    `json:"ports"`
+	CPEs      []string `json:"cpes"`
+	Tags      []string `json:"tags"`
+	Vulns     []string `json:"vulns"`
 }

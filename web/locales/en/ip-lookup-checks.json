@@ -116,7 +116,9 @@
     },
     "refusals": {
       "proxy_list": "Proxy inventory match",
-      "active_proxy": "Proxy service detected"
+      "active_proxy": "Proxy service detected",
+      "shodan_tag": "Shodan tags detected",
+      "shodan_vuln": "Shodan vulnerabilities reported"
     }
   }
 }

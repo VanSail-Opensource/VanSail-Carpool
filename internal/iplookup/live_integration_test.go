@@ -115,7 +115,7 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 			body = `{"data":{"networkAddress":"1.1.1.0","netmask":"255.255.255.0","reportedAddress":[]}}`
 		case r.URL.Host == "internetdb.shodan.io":
 			hosts.Add(1)
-			body = fmt.Sprintf(`{"ip":%q,"hostnames":["one.one.one.one"],"ports":[443,53]}`, strings.TrimPrefix(r.URL.Path, "/"))
+			body = fmt.Sprintf(`{"ip":%q,"hostnames":["one.one.one.one"],"ports":[443,53],"cpes":[],"tags":[],"vulns":[]}`, strings.TrimPrefix(r.URL.Path, "/"))
 		case strings.Contains(r.URL.Path, "/radar/http/summary/"):
 			values := map[string]string{"bot": "12.3", "human": "87.7"}
 			if strings.HasSuffix(r.URL.Path, "DEVICE_TYPE") {

@@ -13,6 +13,7 @@ import AdminIPLookupPage from '@/components/admin/ip-lookup/AdminIPLookupPage.vu
 import IPLookupAudit from './IPLookupAudit.vue'
 import { installLiveIPAudit } from './ip-lookup-live-audit'
 import { installEnhancedIPAudit } from './ip-lookup-enhanced-audit'
+import { decorateShodanAudit } from './ip-lookup-shodan-audit'
 
 const params = new URLSearchParams(location.search)
 const enhancedAudit = installEnhancedIPAudit(params)
@@ -87,7 +88,9 @@ function makeReport(ip: string): IPLookupReport {
     report.sources.latitude = report.sources.longitude = 'scamalytics:ipinfo'
   }
   if (params.has('many-refusals')) { report.verdict = 'unsuitable'; report.refusals = [{ kind: 'proxy', source: 'scamalytics:ip2proxy', value: 'Residential proxy provider with a long network name and multiple services' }, { kind: 'fraud_score', source: 'scamalytics', value: 73 }, { kind: 'vpn', source: 'ipapi', value: 'Commercial VPN organization and exit infrastructure' }, { kind: 'user_count', source: 'maxmind', value: 14 }] }
-  return enhancedAudit.decorate(report)
+  enhancedAudit.decorate(report)
+  decorateShodanAudit(report, params)
+  return report
 }
 async function pause() {
   if (mode === 'loading') await new Promise(resolve => setTimeout(resolve, 5000))

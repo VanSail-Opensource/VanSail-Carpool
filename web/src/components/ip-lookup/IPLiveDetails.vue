@@ -9,6 +9,7 @@ import IPASNDetails from './IPASNDetails.vue'
 import LiveSourceNote from './LiveSourceNote.vue'
 import IPLookupProgress from './IPLookupProgress.vue'
 import IPTransferHistory from './IPTransferHistory.vue'
+import IPShodanDetails from './IPShodanDetails.vue'
 const props = defineProps<{ requestedIp: string; report: IPLookupReport; snapshot: IPLookupLiveDetails | null; refreshQuote: IPLookupQuote | null; busy: boolean }>()
 defineEmits<{ refresh: [] }>()
 const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.requestedIp, () => props.report.status === 'processing' ? '' : `${props.report.id}:${props.report.checkedAt}`, () => props.snapshot)
@@ -31,7 +32,7 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
         <section v-if="details.ptr" class="ptr-facts"><h3>{{ $t('ipLookupLive.ptrTitle') }}</h3><ul v-if="details.ptr.domains.length"><li v-for="domain in details.ptr.domains" :key="domain"><code>{{ domain }}</code></li></ul><LiveSourceNote :meta="details.ptr" /></section>
       </div>
       <IPTransferHistory :history="details.transfers" :loading="loading && !details.transfers" :failed="!!errorCode" />
-      <section v-if="details.shodan" class="live-shodan"><h3>{{ $t('ipLookupLive.shodanTitle') }}</h3><dl><div><dt>{{ $t('ipLookupLive.shodanHostnames') }}</dt><dd>{{ details.shodan.hostnames.length ? details.shodan.hostnames.join(', ') : $t('ipLookupLive.status.empty') }}</dd></div><div><dt>{{ $t('ipLookupLive.shodanPorts') }}</dt><dd><code>{{ details.shodan.ports.length ? details.shodan.ports.join(', ') : $t('ipLookupLive.status.empty') }}</code></dd></div></dl><LiveSourceNote :meta="details.shodan" /><details><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.shodanContext') }}</p></details></section>
+      <IPShodanDetails v-if="details.shodan" :result="details.shodan" />
       <p v-if="details.fetchedAt" class="live-fetch-time">{{ $t('ipLookupLive.fetchedAt', { date: new Date(details.fetchedAt).toLocaleString() }) }}</p>
     </template>
   </section>
@@ -51,12 +52,5 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
 .live-ip-facts dd span { margin-left: 0.5rem; color: var(--text-muted); }
 .live-ip-facts p, .live-ip-facts code { font-size: 0.82rem; overflow-wrap: anywhere; }
 .live-ip-facts .ptr-facts ul { margin: 0.3rem 0; padding: 0; list-style: none; display: grid; gap: 0.2rem; }
-.live-shodan { padding-block: 1rem; border-top: 1px solid var(--line); }
-.live-shodan h3 { font-size: 1rem; margin: 0; }
-.live-shodan dl { display: grid; gap: 0.9rem; margin-block: 0.75rem; }
-.live-shodan dt, .live-shodan p { font-size: 0.78rem; color: var(--text-muted); }
-.live-shodan dd { margin: 0.25rem 0 0; font-size: 0.85rem; overflow-wrap: anywhere; }
-.live-shodan summary { color: var(--text-muted); font-size: 0.72rem; cursor: pointer; }
-@media (min-width: 640px) { .live-shodan dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .live-ip-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>
