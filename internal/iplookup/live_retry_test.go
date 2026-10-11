@@ -114,7 +114,7 @@ func retryLiveService(t *testing.T, resolver interface {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = queue.Shutdown(context.Background()) })
-	settings := liveConfigSettings{SettingKey: `{"enabled":true,"lookupFeeTxb":"0","refreshFeeTxb":"0","providers":[]}`}
+	settings := liveConfigSettings{SettingKey: `{"enabled":true,"lookupFeeTxb":"0","refreshFeeTxb":"0","providers":[{"id":"abuseipdb","enabled":true}]}`}
 	s := NewLiveService(settings, map[string]*upstreamqueue.Queue{"dns": queue}, repository)
 	s.resolver = resolver
 	return s
