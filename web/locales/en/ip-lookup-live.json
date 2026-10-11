@@ -22,7 +22,8 @@
       "empty": "No data",
       "error": "Source unavailable",
       "unconfigured": "Provider not configured or enabled",
-      "restricted": "Provider plan restriction"
+      "restricted": "Provider plan restriction",
+      "skipped": "Skipped"
     },
     "errors": {
       "IP_DETAILS_UNAVAILABLE": "Live details are temporarily unavailable. Try refreshing.",
@@ -34,7 +35,7 @@
       "IP_LOOKUP_DISABLED": "IP Lookup is disabled.",
       "IP_LOOKUP_INVALID_IP": "Enter a public IPv4 or IPv6 address.",
       "IP_LOOKUP_FAILED": "Live details could not be loaded. Try refreshing.",
-      "IP_LOOKUP_REFRESH_REQUIRED": "Use paid refresh to update IP quality and network data."
+      "IP_LOOKUP_REFRESH_REQUIRED": "Run a fresh check to collect network data."
     },
     "fields": {
       "registeredAt": "Registration date",
@@ -134,6 +135,9 @@
     "complete": "Complete",
     "live": "Network data",
     "transfers": "Transfers",
-    "rpki": "RPKI validation"
+    "rpki": "RPKI validation",
+    "proxy": "Proxy inventories",
+    "probes": "Port probes",
+    "subnet": "Subnet checks"
   }
 }

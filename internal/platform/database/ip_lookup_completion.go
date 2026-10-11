@@ -68,6 +68,12 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 	if err != nil {
 		return err
 	}
+	if report.LiveDetails != nil {
+		liveStage = iplookup.LiveStage{Status: "succeeded", Attempted: true}
+		if err := saveLiveStageTx(ctx, tx, report.ID, liveStage); err != nil {
+			return err
+		}
+	}
 	if liveStage.Status == "queued" || liveStage.Status == "processing" {
 		return &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
 	}
@@ -127,6 +133,9 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 		if err := finishIPCheckTx(ctx, tx, id, report.ID, status, now); err != nil {
 			return err
 		}
+	}
+	if err := replaceIPCacheTx(ctx, tx, report); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

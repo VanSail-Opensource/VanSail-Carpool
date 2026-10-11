@@ -63,5 +63,6 @@ func CheckProgress(r Report) *Progress {
 		}
 		p.Tasks = append(p.Tasks, task)
 	}
+	appendEnhancedProgress(p, r)
 	return p
 }

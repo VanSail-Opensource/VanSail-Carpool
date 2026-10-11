@@ -56,3 +56,5 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 `PMPendingContentAudit.vue`, `pm-pending-content-audit.ts` and `pm-pending-content-audit.html` exercise the real delivery dialog with expired/invalid pending-content receipts in English and Chinese without Telegram mutations.
 
 - `ip-lookup-progress-audit.ts` supplies progressive, interrupted and 300-node/1,500-edge/1,000-path browser fixtures. The live fixture counts simulated upstream runs and implements a 60-second reuse window with forced refresh.
+
+`ip-lookup-enhanced-audit.ts` provides constructed named-source, subnet, full-probe progress and return-to-IP states. Use `enhanced=clean|risk|partial|skipped` and `checking` or `progress-error`; `__ipEnhancedAudit.start()` / `.finish()` control shared work without charges.

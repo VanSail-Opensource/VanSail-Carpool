@@ -22,7 +22,8 @@
       "empty": "暂无数据",
       "error": "来源不可用",
       "unconfigured": "提供商尚未配置或启用",
-      "restricted": "提供商套餐限制"
+      "restricted": "提供商套餐限制",
+      "skipped": "已跳过"
     },
     "errors": {
       "IP_DETAILS_UNAVAILABLE": "实时信息暂时不可用，请尝试刷新。",
@@ -34,7 +35,7 @@
       "IP_LOOKUP_DISABLED": "IP 查询已关闭。",
       "IP_LOOKUP_INVALID_IP": "请输入公网 IPv4 或 IPv6 地址。",
       "IP_LOOKUP_FAILED": "无法加载实时信息，请尝试刷新。",
-      "IP_LOOKUP_REFRESH_REQUIRED": "请使用付费刷新来更新 IP 质量和网络数据。"
+      "IP_LOOKUP_REFRESH_REQUIRED": "请发起新的检查以获取网络数据。"
     },
     "fields": {
       "registeredAt": "注册日期",
@@ -134,6 +135,9 @@
     "complete": "完成",
     "live": "网络数据",
     "transfers": "转移历史",
-    "rpki": "RPKI 验证"
+    "rpki": "RPKI 验证",
+    "proxy": "代理数据库",
+    "probes": "端口探测",
+    "subnet": "子网检查"
   }
 }

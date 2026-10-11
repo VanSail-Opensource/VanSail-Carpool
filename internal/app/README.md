@@ -105,3 +105,5 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 `member_subscription_test.go` covers shared/hidden/excluded host joins, unique native key matching and credential-rotation rejection in hosted CI.
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
+
+`ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before SQLite closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.

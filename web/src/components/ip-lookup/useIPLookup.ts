@@ -5,6 +5,7 @@ import { ipLookupApi, type IPLookupCheck, type IPLookupQuote, type IPLookupState
 import { ApiError } from '@/api/http'
 import { useSessionStore } from '@/stores/session'
 import { createUuid } from '@/utils/browserCompatibility'
+import { useSharedIPProgress } from './useSharedIPProgress'
 
 const terminal = new Set(['succeeded', 'partial', 'failed', 'compensated', 'pending_review'])
 const ipSchema = z.union([z.ipv4(), z.ipv6()])
@@ -25,6 +26,12 @@ export function useIPLookup() {
   const busy = shallowRef(false)
   const errorCode = shallowRef('')
   const validIP = computed(() => ipSchema.safeParse(ip.value.trim()).success)
+  const { activeRun, checking, reloadProgress, progressUnavailable } = useSharedIPProgress(() => state.value?.enabled && validIP.value ? ip.value.trim() : '', () => {
+    busy.value = false
+    if (check.value?.operation.id) void poll(check.value.operation.id, ownerSnapshot())
+    else { void load(); void updateQuote() }
+  })
+  const displayBusy = computed(() => busy.value || checking.value)
   let disposed = false
   let revision = 0
   let sessionRevision = 0
@@ -64,27 +71,28 @@ export function useIPLookup() {
   }
 
   async function poll(id: string, owner: ReturnType<typeof ownerSnapshot>): Promise<void> {
+    const viewIP = ip.value.trim()
     try {
       const value = await ipLookupApi.check(id)
-      if (!isCurrent(owner)) return
+      if (!isCurrent(owner) || (viewIP && ip.value.trim() !== viewIP)) return
       check.value = value
-      if (!ip.value && value.report) ip.value = value.requestedIP || value.report.ip
+      if (!ip.value) ip.value = value.requestedIP || value.report?.ip || ''
       if (terminal.has(value.operation.status)) {
         busy.value = false
         errorCode.value = value.operation.errorCode ?? ''
         await load()
         if (isCurrent(owner)) await updateQuote()
-      } else pollTimer = setTimeout(() => void poll(id, owner), 1000)
+      } else pollTimer = setTimeout(() => { if (!document.hidden) void poll(id, owner) }, 5000)
     } catch (error) {
       if (!isCurrent(owner)) return
       setError(error)
       if (error instanceof ApiError && error.status < 500 && error.status !== 429) { busy.value = false; return }
-      pollTimer = setTimeout(() => void poll(id, owner), 3000)
+      pollTimer = setTimeout(() => { if (!document.hidden) void poll(id, owner) }, 5000)
     }
   }
 
   async function submit(refresh = false): Promise<void> {
-    if (busy.value) return
+    if (busy.value || checking.value) return
     const selected = refresh ? refreshQuote.value : quote.value
     if (!selected || (!refresh && selected.cachedReport) || !validIP.value) return
     if (pendingSubmission && pendingSubmission.quote.refresh !== refresh) return
@@ -98,6 +106,7 @@ export function useIPLookup() {
       const operation = await ipLookupApi.submit(pendingSubmission.quote, pendingSubmission.key)
       if (!isCurrent(owner)) return
       pendingSubmission = null
+      void reloadProgress()
       void router.replace({ query: { ...route.query, check: operation.id } }).catch(() => undefined)
       await poll(operation.id, owner)
     } catch (error) {
@@ -118,6 +127,8 @@ export function useIPLookup() {
     previousCacheMatch.value = 'none'
     if (!busy.value) { errorCode.value = ''; pendingSubmission = null; check.value = null }
     clearTimeout(quoteTimer)
+    clearTimeout(pollTimer)
+    if (check.value?.requestedIP !== ip.value.trim()) { busy.value = false; check.value = null; pendingSubmission = null }
     quoteTimer = setTimeout(() => void updateQuote(), 350)
   })
   watch(() => session.user?.id, () => {
@@ -141,5 +152,5 @@ export function useIPLookup() {
     }
   }, { immediate: true })
   onScopeDispose(() => { disposed = true; revision++; clearTimeout(quoteTimer); clearTimeout(pollTimer) })
-  return { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy, errorCode, validIP, submit, load }
+  return { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy: displayBusy, activeRun, progressUnavailable, errorCode, validIP, submit, load }
 }

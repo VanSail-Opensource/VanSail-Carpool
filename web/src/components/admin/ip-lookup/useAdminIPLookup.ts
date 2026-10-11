@@ -12,6 +12,10 @@ const defaultRetry = () => ({ enabled: true, maxAttempts: 3, delaySeconds: 60 })
 
 function normalizeRetry(settings: IPLookupAdminSettings): void {
   if (!settings.retry) settings.retry = defaultRetry()
+  settings.refreshQuotaCost ??= 0
+  settings.proxySources ??= []
+  settings.dnsResolvers ??= ['1.1.1.1:53', '8.8.8.8:53', '9.9.9.9:53']
+  settings.probePorts ??= [443, 4430, 8443]
 }
 
 export function useAdminIPLookup() {

@@ -1,0 +1,122 @@
+{
+  "ipLookup": {
+    "backgroundReminder": "检查将在后台继续。你可以稍后返回，输入同一 IP 查看进度。部分探测阶段最长等待 605 秒。",
+    "progressUnavailable": "暂时无法读取进度，将自动重试。读取检查状态前无法重复发起检查。",
+    "portHeading": "端口探测",
+    "proxyHeading": "代理数据库",
+    "noProxyMatch": "未匹配代理记录",
+    "proxyIncomplete": "代理数据库覆盖不完整",
+    "proxyCoverage": "来源覆盖",
+    "probeCoverage": "探测覆盖",
+    "probeElapsed": "已等待 {seconds} 秒",
+    "probeMilestone": "观察节点：{seconds} 秒",
+    "subnetHeading": "/24 检查",
+    "requestedAddress": "查询 IP",
+    "usedQuotaCount": "已使用 {count} 次免费额度",
+    "refreshIncluded": "刷新 · {count} 次免费额度",
+    "proxySettings": "代理来源与探测",
+    "proxySettingsHelp": "代理 IP 池在内存中缓存 30 分钟，完整端口探测在后台运行。",
+    "sourceEnabled": "启用",
+    "sourceName": "来源名称",
+    "sourceURL": "来源链接",
+    "addSource": "添加来源",
+    "removeSource": "移除来源",
+    "dnsResolvers": "DNS 服务器",
+    "dnsResolversHelp": "每行一个公网 IP:端口。查询失败时尝试其他服务器。",
+    "probePorts": "额外探测端口",
+    "probePortsHelp": "使用逗号分隔。始终包含 443、4430、8443 和 Shodan 报告的端口。",
+    "refreshQuotaCost": "每次刷新消耗的免费额度",
+    "refreshQuotaHelp": "0 表示使用 TXB；大于 0 时优先消耗指定额度，不足时使用 TXB。",
+    "probes": {
+      "tcp": "TCP 连接",
+      "socks5": "SOCKS5",
+      "socks4": "SOCKS4",
+      "http": "HTTP 代理",
+      "tls": "TLS / Reality",
+      "shadowsocks": "Shadowsocks",
+      "trojan_alpn": "Trojan ALPN",
+      "trojan_short": "Trojan 短请求",
+      "trojan_close": "Trojan 关闭时序",
+      "trojan_incomplete": "Trojan 不完整请求",
+      "trojan_overbuffer": "Trojan 重复请求头"
+    },
+    "protocols": {
+      "socks5": "SOCKS5",
+      "socks4": "SOCKS4",
+      "http": "HTTP 代理",
+      "tls": "TLS",
+      "shadowsocks": "Shadowsocks",
+      "trojan": "Trojan",
+      "reality": "Reality"
+    },
+    "confidence": {
+      "confirmed": "已确认服务",
+      "suspected": "疑似",
+      "observed": "已观察",
+      "unavailable": "未知"
+    },
+    "probeStatuses": {
+      "pending": "排队中",
+      "processing": "检查中",
+      "active": "检查中",
+      "success": "已完成",
+      "partial": "部分完成",
+      "error": "不可用",
+      "skipped": "已跳过",
+      "unavailable": "不可用",
+      "closed": "关闭"
+    },
+    "subnetStates": {
+      "clean": "未发现风险",
+      "flagged": "滥用 / 代理",
+      "unknown": "不完整"
+    },
+    "subnetSources": {
+      "proxy": "代理列表",
+      "abuse": "AbuseIPDB",
+      "ipapi": "IPAPI"
+    },
+    "subnetSourceStates": {
+      "success": "未发现风险",
+      "partial": "不完整",
+      "error": "不可用",
+      "pending": "待检查",
+      "processing": "检查中",
+      "skipped": "已跳过",
+      "unconfigured": "未配置",
+      "restricted": "套餐限制",
+      "flagged": "已发现",
+      "empty": "无报告"
+    },
+    "subnetReasons": {
+      "ip_not_passed": "已跳过子网检查：查询 IP 未通过全部检查。",
+      "proxy_incomplete": "已跳过子网检查：代理来源覆盖不完整。",
+      "probes_incomplete": "已跳过子网检查：端口探测不完整。",
+      "ipv6": "IPv6 /64 滥用报告，不逐个枚举地址。"
+    },
+    "sources": {
+      "proxy_lists": "代理数据库",
+      "socks4": "SOCKS4 探测",
+      "socks5": "SOCKS5 探测",
+      "http": "HTTP 代理探测"
+    },
+    "probeEvidence": {
+      "authentication_required": "需要认证",
+      "no_authentication": "无需认证",
+      "protocol_response": "协议响应",
+      "dns_unavailable": "DNS 覆盖不完整",
+      "feasible_tls_dns_mismatch": "TLS 条件符合，域名 DNS 不包含此 IP",
+      "length_dependent_close": "连接关闭与请求长度相关",
+      "alpn_http_mismatch": "ALPN 与 HTTP 响应不匹配",
+      "close_30_seconds": "约 30 秒后关闭连接",
+      "overbuffer_peer_close": "重复请求头期间远端关闭连接",
+      "trojan_short_timing": "150 秒观察",
+      "trojan_incomplete_timing": "完整 605 秒观察",
+      "trojan_overbuffer_timing": "重复请求头观察"
+    },
+    "refusals": {
+      "proxy_list": "匹配代理数据库",
+      "active_proxy": "发现代理服务"
+    }
+  }
+}

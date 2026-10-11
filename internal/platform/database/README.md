@@ -375,3 +375,7 @@ quality reports. Legacy receipts default to no realtime phase; no backfill calls
 run. Joined checks share one refreshed snapshot. Attempted failures settle
 partial without changing the quality verdict; pre-attempt failures retain the
 existing refund path. Ledger changes and receipt settlement remain atomic.
+
+`ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined /24 report generation, detaches historical receipt references and deletes superseded payloads. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
+
+`ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, duplicate billing rejection, exact refresh-unit refunds and combined-cache replacement with preserved receipts in hosted CI.

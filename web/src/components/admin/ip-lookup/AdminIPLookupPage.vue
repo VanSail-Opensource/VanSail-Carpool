@@ -11,10 +11,12 @@ import ProviderSettings from './ProviderSettings.vue'
 import ComboQuotas from './ComboQuotas.vue'
 import ProviderOrder from './ProviderOrder.vue'
 import RetrySettings from './RetrySettings.vue'
+import ProxyProbeSettings from './ProxyProbeSettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
 
 const { settings, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
 const { t } = useI18n()
+const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
 const checkOrder = computed({
   get: () => settings.providers.map(provider => provider.id),
   set: ids => { settings.providers = ids.flatMap(id => settings.providers.filter(provider => provider.id === id)) },
@@ -22,6 +24,10 @@ const checkOrder = computed({
 const schema = computed(() => z.object({
   lookupFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
+  refreshQuotaCost: z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(0, invalidConfig.value).max(1000000, invalidConfig.value),
+  proxySources: z.array(z.object({ id: z.string().min(1, invalidConfig.value), name: z.string().trim().min(1, invalidConfig.value).max(80, invalidConfig.value), url: z.url({ error: invalidConfig.value }).refine(value => /^https?:\/\//.test(value), invalidConfig.value), enabled: z.boolean() })).max(64, invalidConfig.value),
+  dnsResolvers: z.array(z.string().min(1, invalidConfig.value)).min(1, invalidConfig.value).max(8, invalidConfig.value),
+  probePorts: z.array(z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(1, invalidConfig.value).max(65535, invalidConfig.value)).max(128, invalidConfig.value),
   retry: z.object({
     enabled: z.boolean(),
     maxAttempts: z.number().int().min(1).max(10, t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
@@ -48,6 +54,7 @@ const schema = computed(() => z.object({
           <ProviderOrder v-model="settings.geolocationOrder" :title="$t('ipLookup.geolocationOrder')" :help="$t('ipLookup.geolocationOrderHelp')" :disabled="busy" />
         </div>
         <ProviderSettings v-model="settings" />
+        <ProxyProbeSettings v-model="settings" :disabled="busy" />
         <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         <ComboQuotas v-model="settings.comboQuotas" :combos="combos" />
         <UButton type="submit" :loading="busy" :disabled="busy" :label="$t('common.save')" class="lookup-save" />

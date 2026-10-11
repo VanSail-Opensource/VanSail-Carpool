@@ -8,6 +8,7 @@ import (
 // LiveOptions controls completion-cache reuse and request-local event delivery.
 type LiveOptions struct {
 	Refresh   bool
+	CacheOnly bool
 	Emit      func(LiveEvent) error
 	runKey    string
 	onAttempt func(context.Context) error

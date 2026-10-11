@@ -5,7 +5,7 @@ const CloudflareID = "cloudflare_radar"
 
 // QueueIDs includes the existing reputation queues and live enrichment sources.
 func QueueIDs() []string {
-	return append(append([]string{}, IDs...), "ripe", "routeviews", "caida", "bgpkit", CloudflareID, "dns", "shodan", "peeringdb")
+	return append(append([]string{}, IDs...), "ripe", "routeviews", "caida", "bgpkit", CloudflareID, "dns", "shodan", "peeringdb", "checks", "proxy_lists", "probes")
 }
 
 // LiveMeta describes one source's availability and observation time.
@@ -128,11 +128,21 @@ type NetworkScores struct {
 }
 
 type AbuseBlock struct {
+	MinAddress string         `json:"-"`
+	MaxAddress string         `json:"-"`
+	Addresses  []AbuseAddress `json:"addresses,omitempty"`
 	LiveMeta
 	Prefix            string `json:"prefix"`
 	ReportedAddresses *int   `json:"reportedAddresses"`
 	AddressCapacity   string `json:"addressCapacity"`
 	WindowDays        int    `json:"windowDays"`
+}
+
+// AbuseAddress is compact block evidence without comments or reporter identities.
+type AbuseAddress struct {
+	IP      string  `json:"ip"`
+	Reports int     `json:"reports"`
+	Score   float64 `json:"score"`
 }
 
 type PTRDetails struct {

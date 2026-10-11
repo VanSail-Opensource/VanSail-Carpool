@@ -13,14 +13,15 @@ func refundIPCheckTx(ctx context.Context, tx *sql.Tx, operationID string, now ti
 	var charge int64
 	var allowance sql.NullString
 	var refunded int
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,charge_minor,allowance_id,refunded FROM ip_lookup_checks WHERE operation_id=?`, operationID).Scan(&user, &charge, &allowance, &refunded); err != nil {
+	var quota int
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,charge_minor,allowance_id,refunded,quota_consumed FROM ip_lookup_checks WHERE operation_id=?`, operationID).Scan(&user, &charge, &allowance, &refunded, &quota); err != nil {
 		return err
 	}
 	if refunded == 1 {
 		return nil
 	}
 	if allowance.Valid {
-		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used-1 WHERE purchase_id=? AND used>0`, allowance.String); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used-? WHERE purchase_id=? AND used>=?`, quota, allowance.String, quota); err != nil {
 			return err
 		}
 	}

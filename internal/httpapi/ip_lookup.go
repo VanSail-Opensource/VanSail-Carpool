@@ -12,6 +12,7 @@ import (
 func (s *Server) mountIPLookup(r chi.Router) {
 	r.Get("/api/v1/ip-lookup", s.ipLookupState)
 	r.Get("/api/v1/ip-lookup/details", s.ipLookupDetails)
+	r.Get("/api/v1/ip-lookup/progress", s.ipLookupProgress)
 	r.Post("/api/v1/ip-lookup/quote", s.ipLookupQuote)
 	r.Post("/api/v1/ip-lookup/checks", s.ipLookupSubmit)
 	r.Get("/api/v1/ip-lookup/checks/{id}", s.ipLookupCheck)

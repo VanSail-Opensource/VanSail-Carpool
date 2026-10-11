@@ -6,9 +6,9 @@ export function ipLookupErrorText(code: string): string {
   return t(`ipLookup.errors.${knownErrors.has(code) ? code : 'IP_LOOKUP_FAILED'}`)
 }
 
-export function providerName(id: string): string { return t(`ipLookup.providers.${id}`) }
+export function providerName(id: string): string { return id.includes(':') && /^\d+:/.test(id) ? id.split(':')[0]! + ' · ' + t(`ipLookup.probes.${id.split(':')[1]}`) : ['proxy_lists', 'socks4', 'socks5', 'http'].includes(id) ? t(`ipLookup.sources.${id}`) : t(`ipLookup.providers.${id}`) }
 
-const progressTaskSections = new Set(['topology', 'relationships', 'names', 'asns', 'scores', 'block', 'ptr', 'shodan', 'transfers', 'rpki'])
+const progressTaskSections = new Set(['topology', 'relationships', 'names', 'asns', 'scores', 'block', 'ptr', 'shodan', 'transfers', 'rpki', 'proxy', 'probes', 'subnet'])
 
 // Live sections and the refresh phase use ipLookupProgress labels; anything
 // else is a reputation provider id.

@@ -16,9 +16,11 @@ export type IPLookupASNDetails = components['schemas']['IPLookupASNDetails']
 export type IPLookupTrafficSummary = components['schemas']['IPLookupTrafficSummary']
 export type IPLookupProgress = components['schemas']['IPLookupProgress']
 export type IPLookupProgressTask = components['schemas']['IPLookupProgressTask']
+export type IPLookupSharedProgress = components['schemas']['IPLookupSharedProgress']
 export type IPLookupLiveEvent = LiveEvent
 
 export const ipLookupApi = {
+  progress: (ip: string, signal?: AbortSignal) => request<IPLookupSharedProgress | null>('/api/v1/ip-lookup/progress', { query: { ip }, cache: 'no-store', signal }),
   details: (ip: string, signal?: AbortSignal, refresh = false, onEvent?: (event: LiveEvent) => void) => onEvent
     ? streamIPDetails(ip, signal, refresh, onEvent)
     : request<IPLookupLiveDetails>('/api/v1/ip-lookup/details', { query: { ip, ...(refresh ? { refresh } : {}) }, cache: 'no-store', signal }),
@@ -29,6 +31,7 @@ export const ipLookupApi = {
       ip: quote.ip, refresh: quote.refresh, charge: quote.charge, useQuota: quote.useQuota,
       purchaseId: quote.purchaseId, remaining: quote.remaining, cacheReportId: quote.cacheReportId,
       configHash: quote.configHash, expiresAt: quote.expiresAt, token: quote.token,
+      ...(quote.quotaCost ? { quotaCost: quote.quotaCost } : {}),
     }
     return request<components['schemas']['OperationReceipt']>('/api/v1/ip-lookup/checks', { method: 'POST', body, headers: { 'Idempotency-Key': key } })
   },

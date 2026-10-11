@@ -35,12 +35,19 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 	if replay {
 		return op.Receipt, tx.Commit()
 	}
+	var running int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&running); err != nil {
+		return model.OperationReceipt{}, err
+	}
+	if running > 0 {
+		return model.OperationReceipt{}, &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
+	}
 	fresh, c, err := ipQuoteTx(ctx, tx, user, q.IP, q.Refresh, now)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	becameCached := !q.Refresh && fresh.CacheReportID != ""
-	if q.ExpiresAt <= now.Unix() || fresh.ConfigHash != q.ConfigHash || (!becameCached && (fresh.Charge.Minor != q.Charge.Minor || fresh.UseQuota != q.UseQuota || (!q.Refresh && (fresh.PurchaseID != q.PurchaseID || fresh.Remaining != q.Remaining)))) {
+	becameCached := fresh.CacheReportID != "" && (!q.Refresh || fresh.CacheReportID != q.CacheReportID)
+	if q.ExpiresAt <= now.Unix() || fresh.ConfigHash != q.ConfigHash || (!becameCached && (fresh.Charge.Minor != q.Charge.Minor || fresh.UseQuota != q.UseQuota || (q.QuotaCost != 0 && fresh.QuotaCost != q.QuotaCost) || (fresh.UseQuota && (fresh.PurchaseID != q.PurchaseID || fresh.Remaining != q.Remaining)))) {
 		return model.OperationReceipt{}, &iplookup.CodeError{Code: "IP_LOOKUP_QUOTE_CHANGED"}
 	}
 	reportID, cached, err := selectIPRunTx(ctx, tx, q, fresh, c, now)
@@ -50,11 +57,13 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 	charge := fresh.Charge.MinorInt64()
 	if cached && q.Refresh {
 		charge = 0
+		fresh.UseQuota = false
+		fresh.QuotaCost = 0
 	}
 	var allowance any
 	if fresh.UseQuota {
 		allowance = fresh.PurchaseID
-		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+1 WHERE purchase_id=? AND used<total`, allowance)
+		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+? WHERE purchase_id=? AND used+?<=total`, fresh.QuotaCost, allowance, fresh.QuotaCost)
 		if err != nil {
 			return model.OperationReceipt{}, err
 		}
@@ -76,7 +85,7 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 			return model.OperationReceipt{}, err
 		}
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_checks(id,operation_id,user_id,report_id,allowance_id,charge_minor,cached) VALUES(?,?,?,?,?,?,?)`, checkID, op.Receipt.ID, user, reportID, allowance, charge, boolInt(cached))
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_checks(id,operation_id,user_id,report_id,allowance_id,charge_minor,cached,quota_consumed) VALUES(?,?,?,?,?,?,?,?)`, checkID, op.Receipt.ID, user, reportID, allowance, charge, boolInt(cached), fresh.QuotaCost)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -91,7 +100,7 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 			cacheMatch = "subnet"
 		}
 	}
-	metadata, err := json.Marshal(map[string]any{"reportId": reportID, "usedQuota": fresh.UseQuota, "requestedIP": q.IP, "cacheMatch": cacheMatch})
+	metadata, err := json.Marshal(map[string]any{"reportId": reportID, "usedQuota": fresh.UseQuota, "quotaConsumed": fresh.QuotaCost, "requestedIP": q.IP, "cacheMatch": cacheMatch})
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -163,6 +172,6 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 	if q.Refresh {
 		liveState = `{"status":"queued","attempted":false,"snapshotId":""}`
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at,live_state_json) VALUES(?,?,'processing',?,?,?,?)`, id, q.IP, string(configJSON), string(encoded), stamp(now), liveState)
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at,live_state_json,cache_key) VALUES(?,?,'processing',?,?,?,?,?)`, id, q.IP, string(configJSON), string(encoded), stamp(now), liveState, iplookup.CacheKey(q.IP))
 	return id, false, err
 }

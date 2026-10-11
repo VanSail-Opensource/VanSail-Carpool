@@ -145,6 +145,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerIPLookupOutboxHandlers(outboxWorker, ipLookupWorker, ipLookupLive); err != nil {
 		return cleanup(err)
 	}
+	ipLookupWorker.OnBackgroundError = func(code string) { logger.Error("background IP lookup interrupted", "code", code) }
 	if err := registerPaymentOperationHandlers(operationDispatcher, billingService); err != nil {
 		return cleanup(err)
 	}
@@ -225,5 +226,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService, abuse: abuseService,
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		connectivity: connectivityService,
+		ipLookup:     ipLookupWorker,
 	}, nil
 }

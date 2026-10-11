@@ -34,7 +34,7 @@ func CredentialKey(id string) string { return "ip_lookup." + id + ".credential" 
 
 // DefaultConfig leaves prices unconfigured and all providers disabled.
 func DefaultConfig() Config {
-	c := Config{Providers: []ProviderConfig{}, GeolocationOrder: DefaultGeolocationOrder(), Retry: nil}
+	c := Config{Providers: []ProviderConfig{}, GeolocationOrder: DefaultGeolocationOrder(), Retry: nil, ProxySources: DefaultProxySources(), DNSResolvers: defaultResolvers(), ProbePorts: []int{443, 4430, 8443}}
 	for _, id := range IDs {
 		c.Providers = append(c.Providers, ProviderConfig{ID: id})
 	}
@@ -86,6 +86,9 @@ func DecodeConfig(raw string) (Config, error) {
 		}
 	}
 	if err := validateRetryPolicy(c.Retry); err != nil {
+		return c, err
+	}
+	if err := normalizeEnhancedConfig(&c); err != nil {
 		return c, err
 	}
 	if c.GeolocationOrder == nil {

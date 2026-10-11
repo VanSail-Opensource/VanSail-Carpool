@@ -1,0 +1,122 @@
+{
+  "ipLookup": {
+    "backgroundReminder": "This check continues in the background. You can return later and enter this IP to see progress. Some probe stages wait up to 605 seconds.",
+    "progressUnavailable": "Progress is temporarily unavailable. Try again shortly; a new check is disabled until its status can be read.",
+    "portHeading": "Port probes",
+    "proxyHeading": "Proxy inventories",
+    "noProxyMatch": "No inventory match",
+    "proxyIncomplete": "Inventory coverage incomplete",
+    "proxyCoverage": "Source coverage",
+    "probeCoverage": "Probe coverage",
+    "probeElapsed": "{seconds}s elapsed",
+    "probeMilestone": "Observation at {seconds}s",
+    "subnetHeading": "/24 checks",
+    "requestedAddress": "Requested IP",
+    "usedQuotaCount": "{count} included checks used",
+    "refreshIncluded": "Refresh · {count} included checks",
+    "proxySettings": "Proxy sources and probes",
+    "proxySettingsHelp": "Inventories are cached in memory for 30 minutes. Full port probes run in the background.",
+    "sourceEnabled": "Enabled",
+    "sourceName": "Source name",
+    "sourceURL": "Source URL",
+    "addSource": "Add source",
+    "removeSource": "Remove source",
+    "dnsResolvers": "DNS servers",
+    "dnsResolversHelp": "Public IP:port, one per line. Failed queries try another server.",
+    "probePorts": "Additional probe ports",
+    "probePortsHelp": "Comma-separated ports. 443, 4430, 8443 and Shodan ports are always included.",
+    "refreshQuotaCost": "Included checks per refresh",
+    "refreshQuotaHelp": "Zero uses TXB. Otherwise use this many included checks, falling back to TXB when insufficient.",
+    "probes": {
+      "tcp": "TCP connection",
+      "socks5": "SOCKS5",
+      "socks4": "SOCKS4",
+      "http": "HTTP proxy",
+      "tls": "TLS / Reality",
+      "shadowsocks": "Shadowsocks",
+      "trojan_alpn": "Trojan ALPN",
+      "trojan_short": "Trojan short request",
+      "trojan_close": "Trojan close timing",
+      "trojan_incomplete": "Trojan incomplete request",
+      "trojan_overbuffer": "Trojan repeated headers"
+    },
+    "protocols": {
+      "socks5": "SOCKS5",
+      "socks4": "SOCKS4",
+      "http": "HTTP proxy",
+      "tls": "TLS",
+      "shadowsocks": "Shadowsocks",
+      "trojan": "Trojan",
+      "reality": "Reality"
+    },
+    "confidence": {
+      "confirmed": "Confirmed service",
+      "suspected": "Suspected",
+      "observed": "Observed",
+      "unavailable": "Unknown"
+    },
+    "probeStatuses": {
+      "pending": "Queued",
+      "processing": "Checking",
+      "active": "Checking",
+      "success": "Complete",
+      "partial": "Partial",
+      "error": "Unavailable",
+      "skipped": "Skipped",
+      "unavailable": "Unavailable",
+      "closed": "Closed"
+    },
+    "subnetStates": {
+      "clean": "Clean",
+      "flagged": "Abuse / proxy",
+      "unknown": "Incomplete"
+    },
+    "subnetSources": {
+      "proxy": "Proxy list",
+      "abuse": "AbuseIPDB",
+      "ipapi": "IPAPI"
+    },
+    "subnetSourceStates": {
+      "success": "Clear",
+      "partial": "Incomplete",
+      "error": "Unavailable",
+      "pending": "Pending",
+      "processing": "Checking",
+      "skipped": "Skipped",
+      "unconfigured": "Not configured",
+      "restricted": "Plan restricted",
+      "flagged": "Detected",
+      "empty": "No reports"
+    },
+    "subnetReasons": {
+      "ip_not_passed": "Subnet checks skipped: the requested IP did not pass all checks.",
+      "proxy_incomplete": "Subnet checks skipped: proxy coverage is incomplete.",
+      "probes_incomplete": "Subnet checks skipped: port probes are incomplete.",
+      "ipv6": "IPv6 /64 abuse reports; addresses are not enumerated."
+    },
+    "sources": {
+      "proxy_lists": "Proxy inventories",
+      "socks4": "SOCKS4 probe",
+      "socks5": "SOCKS5 probe",
+      "http": "HTTP proxy probe"
+    },
+    "probeEvidence": {
+      "authentication_required": "Authentication required",
+      "no_authentication": "No authentication required",
+      "protocol_response": "Protocol response",
+      "dns_unavailable": "DNS coverage incomplete",
+      "feasible_tls_dns_mismatch": "Feasible TLS; domain DNS excludes this IP",
+      "length_dependent_close": "Length-dependent connection closure",
+      "alpn_http_mismatch": "ALPN / HTTP response mismatch",
+      "close_30_seconds": "Connection closed after about 30 seconds",
+      "overbuffer_peer_close": "Peer closed during repeated headers",
+      "trojan_short_timing": "150-second observation",
+      "trojan_incomplete_timing": "Full 605-second observation",
+      "trojan_overbuffer_timing": "Repeated-header observation"
+    },
+    "refusals": {
+      "proxy_list": "Proxy inventory match",
+      "active_proxy": "Proxy service detected"
+    }
+  }
+}

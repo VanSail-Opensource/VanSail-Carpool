@@ -24,7 +24,7 @@ func (s *Server) ipLookupDetails(w http.ResponseWriter, r *http.Request) {
 		s.ipLookupError(w, r, &iplookup.CodeError{Code: "IP_DETAILS_UNAVAILABLE"})
 		return
 	}
-	options := iplookup.LiveOptions{Refresh: r.URL.Query().Get("refresh") == "true"}
+	options := iplookup.LiveOptions{Refresh: r.URL.Query().Get("refresh") == "true", CacheOnly: true}
 	started := false
 	if strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
 		options.Emit = func(event iplookup.LiveEvent) error {

@@ -17,7 +17,8 @@
       "x4bnet": "X4B",
       "ipsum": "IPsum",
       "spamhaus_drop": "Spamhaus DROP",
-      "google": "Google", "ripe_rpki": "RIPEstat RPKI"
+      "google": "Google",
+      "ripe_rpki": "RIPEstat RPKI"
     },
     "scores": {
       "abuse_confidence": "滥用置信度",
@@ -36,8 +37,6 @@
       "asn": "ASN",
       "networkType": "网络类型",
       "asnName": "ASN 名称",
-      "latitude": "纬度",
-      "longitude": "经度",
       "maxmind": {
         "ip_risk_snapshot": "IP 风险快照",
         "static_ip_score": "静态 IP 评分",
@@ -181,7 +180,8 @@
       "abuse_confidence": "滥用评分",
       "fraud_score": "欺诈评分",
       "user_count": "用户 > 5",
-      "rpki_invalid_asn": "RPKI 源 ASN 无效", "rpki_invalid_length": "RPKI 前缀长度无效"
+      "rpki_invalid_asn": "RPKI 源 ASN 无效",
+      "rpki_invalid_length": "RPKI 前缀长度无效"
     },
     "subnetCache": "/24 缓存 · {ip}",
     "mapTitle": "IP 大致位置",

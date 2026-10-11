@@ -11,7 +11,7 @@ The feature uses Vue Composition API, existing dark-theme controls and English/C
 
 - `useIPLookup.test.ts` covers quote-only reads, duplicate suppression, ambiguous submission replay and polling cleanup for hosted CI.
 
-Quote reads automatically display exact-IP or IPv4 /24 cached reports without creating a paid receipt or consuming quota. A /24 reuse labels both the requested address and the original cached address. Cached addresses have no refresh action. Provider API errors stay in the cached completed report and do not trigger refunds; application/queue failures remain distinct operational errors.
+Quote reads automatically display exact-IP or IPv4 /24 cached reports without creating a paid receipt or consuming quota. A /24 reuse labels both the requested address and the original cached address. Cached addresses offer a signed refresh action. Provider API errors stay in the cached completed report and do not trigger refunds; application/queue failures remain distinct operational errors.
 
 The map uses only a fixed HTTPS OpenStreetMap origin with a bounded nondegenerate extent, a lazy iframe, a localized accessible title and no referrer. The HTTP CSP permits that frame origin without expanding parent script, image or connection origins. Backend coordinates and country/city are selected together; the frontend does not mix database locations.
 
@@ -49,7 +49,7 @@ reputation report. It emits combined paid refresh intent to the parent; realtime
 - `LiveSourceNote.vue` presents independent source availability and observation times.
 - `useLiveIPDetails.test.ts` and `bgpGraph.test.ts` cover requested-IP isolation, cancelled/late responses, refresh, multiple origins and bounded graph visibility in hosted CI.
 
-The backend persists compact details without expiry: exact IP first, then IPv4 /24; IPv6 exact-only. Cache reads and the first fetch are free. The priced refresh updates quality and realtime data in one durable operation without quota use. ASN names retain their existing cache. Live frontend data is scope-local
+The backend persists compact details without expiry: exact IP first, then IPv4 /24; IPv6 exact-only. Cache reads are free; all fresh collection uses a quoted operation. Refresh consumes the configured allowance quantity when available, otherwise TXB. ASN names retain their existing cache. Live frontend data is scope-local
 and excluded from browser response snapshots by the existing IP Lookup cache
 policy. Long refusal reasons use a fixed icon column and wrapping text.
 
@@ -192,3 +192,7 @@ and `118.127.59.0` (19 nodes, retaining AS9280/AS38195/AS58511/AS7473 and exclud
 unrelated collectors). Every rendered column sorted by observation count.
 Reputation and billing in these browser fixtures were constructed; the separate
 queued RPKI probe validated the real covering prefixes for all three addresses.
+
+## Background combined report presentation
+
+`useSharedIPProgress.ts` retrieves identity-free exact-IP work on entry, polls every five visible seconds and resumes immediately after returning. `IPPortProbes.vue` shows per-port coverage, suspected/confirmed evidence and long observation milestones; `IPProxyEvidence.vue` displays administrator source names and compact coverage rows; `IPSubnetGrid.vue` renders 255 neighboring blocks with touch/keyboard details and an independent requested-IP indicator. Completed reports provide all three projections without extra fresh requests. Latitude/longitude remain in map inputs and API data but no longer appear as text facts.

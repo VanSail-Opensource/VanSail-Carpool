@@ -11,7 +11,7 @@ IPLookupProgress:
   additionalProperties: false
   required: [phase, completed, total]
   properties:
-    phase: { type: string, enum: [queued, checking, live, topology, relationships, names, asns, scores, block, ptr, shodan, transfers, rpki, complete] }
+    phase: { type: string, enum: [queued, checking, live, topology, relationships, names, asns, scores, block, ptr, shodan, transfers, rpki, proxy, probes, subnet, complete] }
     completed: { type: integer, minimum: 0 }
     total: { type: integer, minimum: 0 }
     currentProvider: { type: string }

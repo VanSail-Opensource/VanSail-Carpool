@@ -21,6 +21,9 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	if err != nil {
 		return fmt.Errorf("select stale operations: %w", err)
 	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id IN (SELECT c.operation_id FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE r.status='processing' AND julianday(r.heartbeat_at)>julianday(?))`, stamp(now.Add(-2*time.Minute))); err != nil {
+		return err
+	}
 	if err := reconcileExpiredPMOperationsTx(ctx, tx, now, counts); err != nil {
 		return err
 	}

@@ -6,3 +6,5 @@ owns scan, block, expiry, and unblock copy; `home.json` owns the adjustable UTC 
 declares the supported locales and ordered domains, including global render recovery, Home, the visual
 onboarding editor, audited administrator workflows, and reviewed node compensation. Vite validates key and
 placeholder parity on every build.
+
+`ip-lookup-checks.json` owns proxy inventories, background reminders, subnet coverage, full port probes and refresh quota copy.

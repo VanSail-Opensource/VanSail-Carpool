@@ -5,6 +5,9 @@ import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
 import IPRefusals from './IPRefusals.vue'
 import IPRPKIStatus from './IPRPKIStatus.vue'
+import IPProxyEvidence from './IPProxyEvidence.vue'
+import IPPortProbes from './IPPortProbes.vue'
+import IPSubnetGrid from './IPSubnetGrid.vue'
 import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
@@ -24,6 +27,9 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
     <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
     <IPRefusals :refusals="report.refusals" />
     <IPRPKIStatus :result="report.rpki" />
+    <IPProxyEvidence v-if="report.proxy" :result="report.proxy" />
+    <IPPortProbes v-if="report.ports?.length" :ports="report.ports" :source-ip="report.ip" />
+    <IPSubnetGrid v-if="report.subnet" :result="report.subnet" :requested-ip="requestedIp" />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">
       <dl v-if="rows.length" class="report-facts">
         <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>
@@ -35,7 +41,7 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
     </div>
     <footer class="report-note">
       <time :datetime="report.checkedAt">{{ $t('ipLookup.checkedAt', { date: new Date(report.checkedAt).toLocaleString() }) }}</time>
-      <span v-if="check">{{ check.refunded ? $t('ipLookup.outageRefund') : check.usedQuota ? $t('ipLookup.usedIncluded') : formatMoney(check.charge) }}</span>
+      <span v-if="check">{{ check.refunded ? $t('ipLookup.outageRefund') : check.usedQuota ? $t('ipLookup.usedQuotaCount', { count: check.quotaConsumed ?? 1 }) : formatMoney(check.charge) }}</span>
       <span v-else-if="cacheMatch !== 'none'">{{ $t('ipLookup.cachedFree') }}</span>
     </footer>
   </section>
@@ -52,7 +58,8 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
 .verdict-suitable { color: var(--ui-success); }
 .report-note { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0; }
 .report-content { display: grid; gap: 1rem; min-width: 0; }
-.report-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.6rem 0.75rem; margin: 0; }
+.report-facts { display: grid; align-content: start; margin: 0; }
+.report-facts > div { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
 .report-facts dt { display: flex; align-items: center; gap: 0.3rem; }
 .report-facts dd { margin: 0.2rem 0 0; overflow-wrap: anywhere; font-size: 0.9rem; }
 .report-facts small { display: block; margin-top: 0.1rem; font-size: 0.7rem; }
@@ -61,7 +68,7 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
 .report-databases .database-error, .report-databases .database-partial { color: var(--warning); }
 @media (min-width: 900px) {
   .report-content-mapped { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .report-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .report-content-mapped .report-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .report-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; }
+  .report-content-mapped .report-facts { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

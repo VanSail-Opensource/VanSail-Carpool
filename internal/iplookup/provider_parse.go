@@ -135,6 +135,7 @@ func parseIPAPI(p *ProviderResult, ip string, o object) error {
 		return &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
 	}
 	asn, company, location := nested(o, "asn"), nested(o, "company"), nested(o, "location")
+	p.ContextScores = &NetworkScores{Company: score(company), ASN: score(asn)}
 	p.Facts = Facts{Country: textField(location, "country_code"), City: textField(location, "city"), ASN: textField(asn, "asn")}
 	p.Signals = Signals{Abuse: flag(o, "is_abuser"), Datacenter: flag(o, "is_datacenter"), VPN: ipapiVPN(o), Proxy: flag(o, "is_proxy"), Tor: flag(o, "is_tor")}
 	p.Facts.NetworkType = ipapiNetwork(o)

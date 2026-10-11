@@ -31,6 +31,9 @@ func score(o object) NetworkScore {
 }
 
 func (s *LiveService) scores(ctx context.Context, ip string, c Config) NetworkScores {
+	if scores, ok := ctx.Value(qualityScoresKey{}).(*NetworkScores); ok && scores != nil {
+		return *scores
+	}
 	result := NetworkScores{LiveMeta: LiveMeta{Status: "unconfigured", Source: "ipapi"}}
 	key, err := s.credential(ctx, "ipapi", c)
 	if err != nil {
@@ -93,6 +96,7 @@ func (s *LiveService) block(ctx context.Context, ip string, c Config) AbuseBlock
 		return result
 	}
 	d := nested(liveObject(data), "data")
+	result.MinAddress, result.MaxAddress = textField(d, "minAddress"), textField(d, "maxAddress")
 	addr, err := netip.ParseAddr(textField(d, "networkAddress"))
 	if err != nil || addr != p.Masked().Addr() {
 		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
@@ -121,6 +125,18 @@ func (s *LiveService) block(ctx context.Context, ip string, c Config) AbuseBlock
 			return result
 		}
 		seen[addr.String()] = true
+		item := AbuseAddress{IP: addr.String()}
+		if count := numeric(row, "numReports"); count != nil {
+			item.Reports = int(*count)
+		} else {
+			result.Status = "partial"
+		}
+		if confidence := numeric(row, "abuseConfidenceScore"); confidence != nil {
+			item.Score = *confidence
+		} else {
+			result.Status = "partial"
+		}
+		result.Addresses = append(result.Addresses, item)
 	}
 	count := len(seen)
 	result.ReportedAddresses = &count

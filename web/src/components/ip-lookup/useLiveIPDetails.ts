@@ -46,7 +46,9 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string,
     progress.value = null
     loading.value = false
     errorCode.value = ''
-    if (snapshot()?.ip === address()) details.value = snapshot()
+    const supplied = snapshot()
+    const sameSubnet = supplied?.cacheMatch === 'subnet' && !address().includes(':') && (supplied.sourceIP ?? supplied.ip).split('.').slice(0, 3).join('.') === address().split('.').slice(0, 3).join('.')
+    if (supplied && (supplied.ip === address() || sameSubnet)) details.value = supplied
     else void refresh()
   }, { immediate: true })
   onScopeDispose(() => { revision++; controller?.abort() })

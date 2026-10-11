@@ -41,7 +41,7 @@ func (s *Store) IPLookupState(ctx context.Context, user string, now time.Time) (
 	if err != nil {
 		return iplookup.State{}, err
 	}
-	state := iplookup.State{Enabled: c.Enabled}
+	state := iplookup.State{Enabled: c.Enabled, RefreshQuotaCost: c.RefreshQuotaCost}
 	for index, raw := range []string{c.LookupFeeTXB, c.RefreshFeeTXB} {
 		if raw == "" {
 			continue
@@ -97,13 +97,20 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 		q.PurchaseID = a.PurchaseID
 		q.Remaining = a.Remaining
 	}
-	q.UseQuota = !refresh && a != nil && a.Remaining > 0
+	q.QuotaCost = 1
+	if refresh {
+		q.QuotaCost = c.RefreshQuotaCost
+	}
+	q.UseQuota = q.QuotaCost > 0 && a != nil && a.Remaining >= q.QuotaCost
 	if q.UseQuota {
 		amount = 0
+	} else {
+		q.QuotaCost = 0
 	}
 	if !refresh && q.CacheReportID != "" {
 		amount = 0
 		q.UseQuota = false
+		q.QuotaCost = 0
 	}
 	q.Charge = model.TXBMoney(amount)
 	return q, c, nil
@@ -127,7 +134,7 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 	var cached, refunded int
 	var usedQuota int
 	var charge int64
-	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,r.live_state_json,c.cached,c.refunded,COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END) FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(r.report_json,''),COALESCE(r.live_state_json,'{}'),c.cached,c.refunded,COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip,''),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END),c.quota_consumed FROM ip_lookup_checks c LEFT JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch, &result.QuotaConsumed)
 	if err == sql.ErrNoRows {
 		return result, ErrNotFound
 	}
@@ -138,12 +145,26 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 	if err != nil {
 		return result, err
 	}
+	result.Cached, result.Refunded, result.UsedQuota = cached == 1, refunded == 1, usedQuota == 1
+	if result.Refunded {
+		charge = 0
+	}
+	result.Charge = model.TXBMoney(charge)
+	if raw == "" {
+		return result, nil
+	}
 	report, err := iplookup.DecodeReport([]byte(raw))
 	if err != nil {
 		return result, err
 	}
 	result.Progress = iplookup.CheckProgress(report)
-	if err := s.ipLookupCheckLive(ctx, &result, liveRaw, report.Status); err != nil {
+	if report.LiveDetails != nil {
+		details := *report.LiveDetails
+		details.CacheMatch = result.CacheMatch
+		details.SourceIP = report.IP
+		details.IP = result.RequestedIP
+		result.LiveDetails = &details
+	} else if err := s.ipLookupCheckLive(ctx, &result, liveRaw, report.Status); err != nil {
 		return result, err
 	}
 	if report.Status != "processing" && report.Status != "failed" {

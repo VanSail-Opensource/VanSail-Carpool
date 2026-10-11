@@ -1,5 +1,8 @@
 {
-  "locales": ["en", "zh-CN"],
+  "locales": [
+    "en",
+    "zh-CN"
+  ],
   "domains": [
     "core",
     "settings",
@@ -27,6 +30,7 @@
     "abuse",
     "admin-abuse",
     "ip-lookup",
-    "ip-lookup-live"
+    "ip-lookup-live",
+    "ip-lookup-checks"
   ]
 }

@@ -54,10 +54,6 @@ func (s *LiveService) shodan(ctx context.Context, ip string) ShodanDetails {
 	}
 	sort.Ints(result.Ports)
 	sort.Strings(result.Hostnames)
-	if len(result.Ports) > 2048 {
-		result.Ports = result.Ports[:2048]
-		result.Status = "partial"
-	}
 	if len(result.Hostnames) > 256 {
 		result.Hostnames = result.Hostnames[:256]
 		result.Status = "partial"

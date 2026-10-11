@@ -12,8 +12,10 @@ import IPLookupPage from '@/components/ip-lookup/IPLookupPage.vue'
 import AdminIPLookupPage from '@/components/admin/ip-lookup/AdminIPLookupPage.vue'
 import IPLookupAudit from './IPLookupAudit.vue'
 import { installLiveIPAudit } from './ip-lookup-live-audit'
+import { installEnhancedIPAudit } from './ip-lookup-enhanced-audit'
 
 const params = new URLSearchParams(location.search)
+const enhancedAudit = installEnhancedIPAudit(params)
 const liveCounters = installLiveIPAudit(params)
 const mode = params.get('mode') ?? 'empty'
 const ids = ['abuseipdb', 'scamalytics', 'ipapi', 'maxmind', 'ipqs', 'ip2location'] as const
@@ -85,12 +87,13 @@ function makeReport(ip: string): IPLookupReport {
     report.sources.latitude = report.sources.longitude = 'scamalytics:ipinfo'
   }
   if (params.has('many-refusals')) { report.verdict = 'unsuitable'; report.refusals = [{ kind: 'proxy', source: 'scamalytics:ip2proxy', value: 'Residential proxy provider with a long network name and multiple services' }, { kind: 'fraud_score', source: 'scamalytics', value: 73 }, { kind: 'vpn', source: 'ipapi', value: 'Commercial VPN organization and exit infrastructure' }, { kind: 'user_count', source: 'maxmind', value: 14 }] }
-  return report
+  return enhancedAudit.decorate(report)
 }
 async function pause() {
   if (mode === 'loading') await new Promise(resolve => setTimeout(resolve, 5000))
   if (mode === 'error') throw new ApiError(502, { code: 'IP_LOOKUP_FAILED', message: 'Constructed unavailable application' })
 }
+ipLookupApi.progress = enhancedAudit.progress
 ipLookupApi.state = async () => { await pause(); return structuredClone(state) }
 ipLookupApi.settings = async () => { await pause(); return structuredClone(settings) }
 ipLookupApi.saveSettings = async value => {

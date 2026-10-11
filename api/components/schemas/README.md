@@ -45,3 +45,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `ip-lookup-report.yaml` defines compact merged facts, source provenance, refusal evidence, nullable MaxMind fields and owner-scoped receipts with the requested IP and cache match.
 `ip-lookup-live.yaml` defines source timestamps/status, bounded BGP paths/topology, ASN metrics, nullable contextual scores, block counts, PTR records, and Cloudflare traffic windows.
 - `ip-lookup-progress.yaml` describes derived check progress and typed live stream events.
+
+`ip-lookup-enhanced.yaml` defines named inventories, compact matches, per-address subnet coverage, protocol evidence, durable probe progress and the identity-free shared progress response. Coordinates remain in the report facts for map rendering.

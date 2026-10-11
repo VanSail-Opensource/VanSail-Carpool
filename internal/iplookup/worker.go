@@ -25,12 +25,15 @@ type Provider interface {
 
 // Worker resumes report stages in the single existing durable operation lane.
 type Worker struct {
-	mu         sync.Mutex
-	runs       map[string]*workerRun
-	Live       *LiveService
-	repository WorkerRepository
-	providers  map[string]Provider
-	now        func() time.Time
+	mu                sync.Mutex
+	runs              map[string]*workerRun
+	Live              *LiveService
+	repository        WorkerRepository
+	providers         map[string]Provider
+	now               func() time.Time
+	background        *backgroundRuntime
+	Enhanced          *EnhancedService
+	OnBackgroundError func(string)
 }
 
 // NewWorker registers adapters without coupling verdict or billing to their HTTP schemas.
@@ -44,6 +47,13 @@ func NewWorker(repo WorkerRepository, providers []Provider) *Worker {
 
 // HandleProviderOperation persists completed stages and does not retry interrupted HTTP calls.
 func (w *Worker) HandleProviderOperation(ctx context.Context, operation providerops.Operation, _ model.OutboxJob) error {
+	if w.background != nil {
+		return w.launchBackground(operation.Receipt.ID)
+	}
+	return w.executeOperation(ctx, operation)
+}
+
+func (w *Worker) executeOperation(ctx context.Context, operation providerops.Operation) error {
 	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
 		return nil
 	}
@@ -66,6 +76,9 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 		return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
 	}
 	foldLegacy(&r, c)
+	if w.Enhanced != nil && r.Checkpoint != nil && r.Checkpoint.Enhanced == nil {
+		r.Checkpoint.Enhanced = &EnhancedCheckpoint{Phase: "checking"}
+	}
 	if r.Checkpoint == nil {
 		return &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
 	}
@@ -76,6 +89,14 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 	}
 	if err := w.runRPKI(ctx, &r, func(progress Report) error { return w.repository.SaveIPLookupProgress(ctx, progress) }); err != nil {
 		return err
+	}
+	if w.Enhanced != nil {
+		if err := w.runEnhanced(ctx, &r, c); err != nil {
+			return err
+		}
+		r = Aggregate(r, w.now().UTC())
+		applyEnhancedVerdict(&r)
+		return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
 	}
 	if err := w.refreshLive(ctx, r, c); err != nil {
 		return err
@@ -131,6 +152,9 @@ func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persi
 			}
 		}
 		RecordProvider(r, result, c)
+		if err := w.recordEnhancedContext(ctx, r, c, result, persist); err != nil {
+			return err
+		}
 		if persist != nil {
 			if err := persist(*r); err != nil {
 				return err

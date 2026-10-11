@@ -43,6 +43,10 @@ func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (
 		return nil, "none", err
 	}
 	public := iplookup.PublicReport(report)
+	if public.LiveDetails != nil {
+		public.LiveDetails.CacheMatch = match
+		public.LiveDetails.SourceIP = report.IP
+	}
 	return &public, match, nil
 }
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IPLookupCheck } from '@/api/ipLookup'
 import { ApiError } from '@/api/http'
 
-const mocks = vi.hoisted(() => ({ state: vi.fn(), quote: vi.fn(), submit: vi.fn(), check: vi.fn(), replace: vi.fn(), routeQuery: { check: undefined as string | undefined } }))
+const mocks = vi.hoisted(() => ({ state: vi.fn(), progress: vi.fn(), quote: vi.fn(), submit: vi.fn(), check: vi.fn(), replace: vi.fn(), routeQuery: { check: undefined as string | undefined } }))
 vi.mock('@/api/ipLookup', () => ({ ipLookupApi: mocks }))
 vi.mock('vue-router', () => ({ useRoute: () => ({ query: mocks.routeQuery }), useRouter: () => ({ replace: mocks.replace }) }))
 const account = reactive({ user: { id: 'member' } })
@@ -22,6 +22,7 @@ describe('IP Lookup request safety', () => {
     account.user.id = 'member'
     mocks.routeQuery.check = undefined
     mocks.state.mockResolvedValue({ enabled: true, lookupFee: quote.charge, refreshFee: quote.charge, allowance: null })
+    mocks.progress.mockResolvedValue(null)
     mocks.quote.mockResolvedValue(quote)
     mocks.replace.mockResolvedValue(undefined)
     mocks.check.mockResolvedValue({ operation: { status: 'succeeded' }, report: null })

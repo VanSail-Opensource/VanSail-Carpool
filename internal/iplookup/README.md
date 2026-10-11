@@ -140,7 +140,7 @@ Member receipts separately retain `requestedIP` and the original report's IP.
 Reports have no automatic expiry. Exact-IP cache matches win; otherwise IPv4
 can reuse a completed report in the same /24. IPv6 stays exact-only. Cache previews are free and offer the existing signed refresh price.
 Refreshes from exact or IPv4 /24 previews target the requested IP, update quality
-and realtime data, charge once per idempotent command and never consume quota. Configuration changes
+and realtime data, charging once per idempotent command using the configured refresh quota quantity or TXB fallback. Configuration changes
 do not rewrite cached policy/verdict. Fresh lookups consume TXB or an allowance
 snapshotted at first successful purchase activation; polling never charges.
 
@@ -174,9 +174,7 @@ legacy compaction; `config_order_test.go` checks administrator order validation;
 `live_service.go` owns the `GET /api/v1/ip-lookup/details` workflow,
 member admission (one active request, six starts/minute), cancellation, and a
 60-second total deadline. `live_types.go` defines the public projection and queue
-source identifiers; these sources are not reputation providers. Realtime evidence is persisted as a compact shared snapshot. Free reads and first
-fetches remain independent of billing; quoted paid refreshes update quality and
-realtime phases together. Realtime evidence never changes suitability policy. Requested IPs are canonical
+source identifiers; these sources are not reputation providers. New realtime evidence is embedded in the combined report. Public reads serve saved evidence; quoted checks and refreshes update quality and realtime phases together. Realtime evidence never changes suitability policy. Requested IPs are canonical
 public addresses, even when reputation previews reuse a neighboring IP.
 
 - `live_transport.go` owns bounded, fixed-origin, redacted HTTP through existing `upstreamqueue` workers. The 15-second per-call budget applies only to HTTP execution once a job is dispatched; queue wait is bounded by the caller's flight deadline, so slower shared pacing cannot starve tail calls.
@@ -190,7 +188,7 @@ Live source queues are process-shared by all concurrent lookups and paced per so
 - `live_requests.go` coalesces identical queued HTTP reads within a lookup and tracks transient failures.
 - `live_pipeline.go` emits immutable section snapshots and progress over nine fixed logical phases; topology arrives before contextual enrichment finishes. `live_tasks.go` derives one `ProgressTask` per phase from each finished section's `LiveMeta` (observed emptiness is success, unconfigured credentials are skipped, mixed ASN sources are partial), and every progress event carries the ordered per-task list.
 - `live_events.go` defines progress/section/complete/error stream events and optional refresh behavior. JSON clients keep the same response projection.
-- `live_cache.go` bounds concurrent shared work to 64 flights; completion evidence lives in SQLite. Free reads match exact IP then IPv4 /24 without expiry or credential invalidation. `RefreshRun` is worker-only and uses a separate durable run identity. A shared lookup is cancelled when its last subscriber leaves.
+- `live_cache.go` bounds concurrent shared work to 64 flights; completion evidence lives in SQLite. Free reads match exact IP then IPv4 /24 without expiry or credential invalidation. `RefreshRun` is worker-only and uses a separate durable run identity. Legacy internal live flights cancel when their last subscriber leaves; fresh combined work belongs to the application runtime.
 - `live_classification.go` reads CAIDA's authoritative dated `dataset.clique` and bulk ASN names. The API's per-ASN `cliqueMember` flag incorrectly marks non-members true and is never used; absent/invalid membership lists stay unknown, without degree-based guesses.
 - `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence. Check progress appends one provider task per checkpoint stage; the realtime refresh phase of a paid check surfaces as a single trailing `live` task (`ip_lookup_live_check.go`), since per-section progress stays in the in-memory stream and is never persisted per section.
 - `live_cache_test.go` covers persistent reads, rejected free refreshes, attempted outage caching, pre-attempt exclusion and early streaming in hosted CI.
@@ -265,3 +263,19 @@ Public references: [RPKI validation](https://stat.ripe.net/docs/data-api/api-end
 [transfer history](https://stat.ripe.net/docs/data-api/api-endpoints/transfer-history),
 [abuse contacts](https://stat.ripe.net/docs/data-api/api-endpoints/abuse-contact-finder),
 and [PeeringDB query limits](https://docs.peeringdb.com/howto/work_within_peeringdbs_query_limits/).
+
+## Background combined reports
+
+Fresh operations execute independently of HTTP viewers. `background.go` owns application lifecycle, bounded admission, recovery, one-minute leases and 15-second heartbeats. `cache_key.go` defines IPv4 /24 and exact IPv6 cache identity. `enhanced_types.go` and `enhanced_progress.go` define compact evidence and the identity-free progress projection. `worker_enhanced.go` sequences proxy, short live enrichment, full probes and the gated subnet phase. `live_block_gate.go` defers AbuseIPDB block requests until the requested address passes.
+
+`proxy_config.go` validates administrator-named inventories and resolver/port defaults. `proxy_parser.go` extracts endpoint hosts; `proxy_encoding.go` handles URI, structured configuration and encoded subscriptions. `proxy_pool.go` coalesces inventories for 30 minutes; `proxy_transport.go` bounds downloads and pins public DNS answers to prevent private-network redirects/rebinding; `proxy_dns.go` distributes queued DNS queries across configured public resolvers. Lists and subscription secrets are never persisted.
+
+`probe_runner.go` checkpoints two concurrent ports per operation; `probe_dispatch.go` sends every network action through shared queue workers. `probe_handshake.go` observes SOCKS/HTTP and bounded Shadowsocks reactions; `probe_tls.go` records TLS feasibility and the Reality DNS heuristic. `probe_trojan.go`, `probe_trojan_request.go` and `probe_trojan_observation.go` retain all five research profiles, 12,000 streamed headers and 150/595/605-second observation milestones. `subnet.go` checks proxy membership, one AbuseIPDB block, then separate IPAPI requests, short-circuiting each positive address. Neighbor findings never refuse an otherwise suitable requested IP.
+
+The public live-details endpoint serves saved combined report evidence only; the internal live service keeps legacy adapters for recovery compatibility. New reports embed live data and never create independent live snapshots. All fresh and refresh work uses the signed billing operation. A positive refresh quota cost uses the configured number of allowance units before TXB fallback; zero preserves TXB-only refreshes. Cache replacement detaches old report references while retaining receipts and quota/ledger history.
+
+Hosted tests: `proxy_parser_test.go` covers endpoint formats, encoded input and URL boundaries; `probe_trojan_test.go` simulates full timing without wall-clock sleeps and verifies the complete streamed request; `enhanced_verdict_test.go` covers gating, suspected findings and neighbor isolation. Local automated suites remain prohibited.
+
+`subnet_test.go` uses a queued synthetic block response to verify source order, per-address short-circuiting and requested-IP response reuse without external requests in hosted CI.
+
+`worker_provider_context.go` folds reusable IPAPI context and starts inventory assessment after the first reported country, keeping the provider executor small.

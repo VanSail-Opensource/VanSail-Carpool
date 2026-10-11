@@ -33,3 +33,5 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `host-connectivity.json` owns host-check configuration, progress, retained history, status and sanitized diagnostic translations.
 - `ip-lookup.json` owns English IP Lookup member/admin copy, stable errors and report labels.
 `ip-lookup-live.json` owns the independent ipLookupLive namespace for BGP, ASN, PTR, block counts, traffic, source states and Cloudflare credential guidance.
+
+`ip-lookup-checks.json` contains background, proxy, subnet, probe and refresh-quota labels.

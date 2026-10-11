@@ -16,3 +16,5 @@ Chinese on 2026-10-10. A constructed save retained independent reordered lists,
 All ordering controls measured 44px; no overflow or console errors appeared.
 These are browser/constructed-handler results, not a production settings write.
 ProviderSettings.vue also manages the optional vaulted cloudflare_radar token with configured/keep/replace/clear behavior, independent of the risk-provider order.
+
+`ProxyProbeSettings.vue` edits source names/URLs, resolver addresses, additional ports and the quota cost of refreshes inside the existing atomic settings form. Server defaults include all supplied inventories; credentials remain write-only.

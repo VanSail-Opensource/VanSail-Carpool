@@ -40,6 +40,10 @@ func DecodeReport(raw []byte) (Report, error) {
 func PublicReport(r Report) Report {
 	r.Checkpoint, r.Providers = nil, nil
 	normalizeReport(&r)
+	if r.LiveDetails != nil {
+		details := CompactLiveDetails(*r.LiveDetails)
+		r.LiveDetails = &details
+	}
 	return r
 }
 

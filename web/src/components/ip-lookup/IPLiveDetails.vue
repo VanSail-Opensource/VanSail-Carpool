@@ -16,7 +16,7 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
 
 <template>
   <section class="live-details">
-    <header class="live-heading"><h2><UIcon name="i-ph-network" aria-hidden="true" />{{ $t('ipLookupLive.title') }}</h2><UButton v-if="refreshQuote" color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :loading="busy" :disabled="loading || busy" :label="$t('ipLookupLive.refresh', { fee: formatMoney(refreshQuote.charge) })" @click="$emit('refresh')" /></header>
+    <header class="live-heading"><h2><UIcon name="i-ph-network" aria-hidden="true" />{{ $t('ipLookupLive.title') }}</h2><UButton v-if="refreshQuote" color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :loading="busy" :disabled="loading || busy" :label="refreshQuote.useQuota ? $t('ipLookup.refreshIncluded', { count: refreshQuote.quotaCost ?? 1 }) : $t('ipLookupLive.refresh', { fee: formatMoney(refreshQuote.charge) })" @click="$emit('refresh')" /></header>
     <IPLookupProgress v-if="loading" :progress="progress" />
     <SkeletonBlock v-if="loading && !details" height="8rem" />
     <InlineNotice v-if="errorCode" tone="warning">{{ $t(`ipLookupLive.errors.${errorCode}`) }}</InlineNotice>

@@ -3,6 +3,7 @@ info: { title: TX Carpool API, version: 1.0.0, description: "HTTP contract for t
 security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
 paths:
   /api/v1/ip-lookup: { $ref: './paths/api-v1-ip-lookup.yaml' }
+  /api/v1/ip-lookup/progress: { $ref: './paths/api-v1-ip-lookup-progress.yaml' }
   /api/v1/ip-lookup/details: { $ref: './paths/api-v1-ip-lookup-details.yaml' }
   /api/v1/ip-lookup/quote: { $ref: './paths/api-v1-ip-lookup-quote.yaml' }
   /api/v1/ip-lookup/checks: { $ref: './paths/api-v1-ip-lookup-checks.yaml' }
@@ -173,6 +174,16 @@ components:
   }
   responses: { BadRequest: { $ref: './components/responses.yaml#/BadRequest' }, Unauthorized: { $ref: './components/responses.yaml#/Unauthorized' }, Forbidden: { $ref: './components/responses.yaml#/Forbidden' }, NotFound: { $ref: './components/responses.yaml#/NotFound' }, Conflict: { $ref: './components/responses.yaml#/Conflict' }, Unprocessable: { $ref: './components/responses.yaml#/Unprocessable' }, PayloadTooLarge: { $ref: './components/responses.yaml#/PayloadTooLarge' }, TooManyRequests: { $ref: './components/responses.yaml#/TooManyRequests' }, InternalFailure: { $ref: './components/responses.yaml#/InternalFailure' }, UpstreamFailure: { $ref: './components/responses.yaml#/UpstreamFailure' }, ServiceUnavailable: { $ref: './components/responses.yaml#/ServiceUnavailable' } }
   schemas: {
+    IPLookupProxySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySource' },
+    IPLookupProxySourceResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceResult' },
+    IPLookupProxyAssessment: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxyAssessment' },
+    IPLookupSubnetAddress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSubnetAddress' },
+    IPLookupSubnetResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSubnetResult' },
+    IPLookupProbeFinding: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeFinding' },
+    IPLookupProbeTask: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeTask' },
+    IPLookupPortProbe: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupPortProbe' },
+    IPLookupSharedProgress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSharedProgress' },
+    IPLookupAbuseAddress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupAbuseAddress' },
     IPLookupProviderConfig: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupProviderConfig"},
     IPLookupCredentialEdit: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupCredentialEdit"},
     IPLookupRetryPolicy: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupRetryPolicy"},

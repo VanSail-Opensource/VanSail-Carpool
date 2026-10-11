@@ -19,8 +19,19 @@ func (s *Store) CachedIPDetails(ctx context.Context, ip string) (*iplookup.LiveD
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	combined, match, err := ipCachedReportTx(ctx, tx, ip, true)
+	if err != nil {
+		return nil, err
+	}
+	if combined != nil && combined.LiveDetails != nil {
+		details := *combined.LiveDetails
+		details.CacheMatch = match
+		details.SourceIP = combined.IP
+		details.IP = ip
+		return &details, nil
+	}
 	id, err := newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip=?", ip)
-	match := "exact"
+	match = "exact"
 	if err != nil {
 		return nil, err
 	}

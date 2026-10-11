@@ -26,20 +26,15 @@ func TestIPLookupCacheCoalescingQuotaAndPaidRefresh(t *testing.T) {
 	if err != nil || replay.ID != first.ID {
 		t.Fatalf("replay=%+v err=%v", replay, err)
 	}
-	if _, err := service.Submit(ctx, user, "stale", q); iplookup.ErrorCode(err) != "IP_LOOKUP_QUOTE_CHANGED" {
+	if _, err := service.Submit(ctx, user, "stale", q); iplookup.ErrorCode(err) != "IP_LOOKUP_BUSY" {
 		t.Fatalf("stale quote accepted: %v", err)
 	}
-	second := submitIP(t, service, user, "second", false)
 	r1, _, _ := store.IPLookupRun(ctx, first.ID)
-	r2, _, _ := store.IPLookupRun(ctx, second.ID)
-	if r1.ID != r2.ID {
-		t.Fatal("concurrent misses were not coalesced")
-	}
 	if err := store.MarkPurchaseSyncResult(ctx, purchase, true, now); err != nil {
 		t.Fatal(err)
 	}
 	state, err := service.State(ctx, user)
-	if err != nil || state.Allowance.Remaining != 0 {
+	if err != nil || state.Allowance.Remaining != 1 {
 		t.Fatalf("sync refilled quota: %+v %v", state, err)
 	}
 	finishIP(t, store, first.ID, false)
@@ -56,13 +51,11 @@ func TestIPLookupCacheCoalescingQuotaAndPaidRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	refresh2, err := service.Submit(ctx, user, "refresh-joined", refreshQ)
-	if err != nil {
-		t.Fatal(err)
+	if _, err := service.Submit(ctx, user, "refresh-joined", refreshQ); iplookup.ErrorCode(err) != "IP_LOOKUP_BUSY" {
+		t.Fatalf("duplicate refresh charged: %v", err)
 	}
 	newReport, _, _ := store.IPLookupRun(ctx, refresh.ID)
-	joined, _, _ := store.IPLookupRun(ctx, refresh2.ID)
-	if newReport.ID == r1.ID || joined.ID != newReport.ID {
+	if newReport.ID == r1.ID {
 		t.Fatal("refresh was cached or duplicated")
 	}
 	finishIP(t, store, refresh.ID, false)

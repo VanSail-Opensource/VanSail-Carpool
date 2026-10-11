@@ -16,7 +16,7 @@ const cost = computed(() => props.quote?.cachedReport ? t('ipLookup.cachedFree')
   <section class="lookup-input">
     <form class="lookup-form" @submit.prevent="$emit('check')">
       <UFormField name="ip" :label="$t('ipLookup.address')" class="lookup-field">
-        <UInput v-model.trim="ip" class="w-full" inputmode="text" autocomplete="off" autocapitalize="off" :spellcheck="false" :disabled="busy" :placeholder="$t('ipLookup.placeholder')" />
+        <UInput v-model.trim="ip" class="w-full" inputmode="text" autocomplete="off" autocapitalize="off" :spellcheck="false" :placeholder="$t('ipLookup.placeholder')" />
       </UFormField>
       <UButton type="submit" class="lookup-submit" icon="i-ph-magnifying-glass" :loading="busy" :disabled="busy || !validIp || !quote || !!quote.cachedReport" :aria-label="cost" :title="cost" />
     </form>

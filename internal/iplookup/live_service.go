@@ -125,5 +125,8 @@ func (s *LiveService) DetailsWithOptions(ctx context.Context, user, rawIP string
 			return emitCachedDetails(*cached, options.Emit)
 		}
 	}
+	if options.CacheOnly {
+		return LiveDetails{}, &CodeError{"IP_LOOKUP_REFRESH_REQUIRED"}
+	}
 	return s.liveShared(ctx, ip, ip, c, options)
 }

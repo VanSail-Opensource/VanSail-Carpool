@@ -1,0 +1,19 @@
+get:
+  tags: [IP Lookup]
+  operationId: getIPLookupProgress
+  parameters:
+    - in: query
+      name: ip
+      required: true
+      schema: { type: string }
+  responses:
+    '200':
+      description: Shared exact-IP work, or null when no check is running. Never contains member identity or billing data.
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - $ref: ../openapi.yaml#/components/schemas/IPLookupSharedProgress
+              - { type: 'null' }
+    '401': { $ref: ../openapi.yaml#/components/responses/Unauthorized }
+    '422': { $ref: ../openapi.yaml#/components/responses/Unprocessable }

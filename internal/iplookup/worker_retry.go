@@ -67,6 +67,9 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 		return err
 	}
 	r = Aggregate(r, w.now().UTC())
+	if r.Proxy != nil {
+		applyEnhancedVerdict(&r)
+	}
 	if err := repository.UpdateIPLookupCachedReport(ctx, r); err != nil {
 		if errors.Is(err, ErrRepairConflict) {
 			return nil

@@ -152,3 +152,5 @@ cancellable fake probe for hosted execution without external network traffic.
 `member_subscription.go` serves authenticated onboarded GET `/api/v1/connectivity/summary` and `/api/v1/subscription` through the catalog authorization facade. Both return `Cache-Control: no-store`; only the subscription response contains that member's native links. Neither exposes monitoring account identity, raw configurations, latency or HTTP diagnostic numbers.
 - `ip_lookup.go` mounts signed member and admin IP Lookup routes with owner scoping and safe errors.
 `ip_lookup_details.go` serves authenticated, non-billed, no-store live IP enrichment with feature/onboarding guards and member admission errors.
+
+`ip_lookup_progress.go` serves authenticated exact-IP background progress with no member identity or billing fields. Both progress and combined-cache live-details responses are no-store.

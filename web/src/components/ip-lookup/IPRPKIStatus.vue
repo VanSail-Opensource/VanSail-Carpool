@@ -21,8 +21,9 @@ defineProps<{ result?: IPLookupReport['rpki'] }>()
 .rpki-status { border-top: 1px solid var(--line); padding-top: 0.6rem; font-size: 0.78rem; }
 .rpki-status h3 { font-size: 0.85rem; margin: 0 0 0.35rem; }
 .rpki-status > p, .rpki-status summary, .rpki-status span { color: var(--text-muted); }
-.rpki-status dl { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin: 0.4rem 0; }
-.rpki-status dd { margin: 0.25rem 0 0; }
+.rpki-status dl { margin: 0.3rem 0; display: grid; gap: 0; }
+.rpki-status dl > div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid var(--line); }
+.rpki-status dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem; }
 .rpki-status .rpki-invalid { color: var(--ui-error); }
 .rpki-status details p { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; overflow-wrap: anywhere; }
 .rpki-status summary { cursor: pointer; }

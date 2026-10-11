@@ -38,6 +38,20 @@ func (s *Service) State(ctx context.Context, user string) (State, error) {
 	return s.repository.IPLookupState(ctx, user, s.now().UTC())
 }
 
+// Progress reads shared work without creating a receipt or changing costs.
+func (s *Service) Progress(ctx context.Context, raw string) (*SharedProgress, error) {
+	ip, err := CanonicalIP(raw)
+	if err != nil {
+		return nil, err
+	}
+	if repo, ok := s.repository.(interface {
+		IPLookupSharedProgress(context.Context, string) (*SharedProgress, error)
+	}); ok {
+		return repo.IPLookupSharedProgress(ctx, ip)
+	}
+	return nil, nil
+}
+
 // Quote returns a two-minute signed price for a canonical public IP.
 func (s *Service) Quote(ctx context.Context, user, rawIP string, refresh bool) (Quote, error) {
 	ip, err := CanonicalIP(rawIP)

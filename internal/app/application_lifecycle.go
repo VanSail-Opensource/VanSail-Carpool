@@ -23,12 +23,18 @@ func (a *Application) Run(ctx context.Context) error {
 		return fmt.Errorf("start upstream queues: %w", err)
 	}
 	profileCtx, cancelProfiles := context.WithTimeout(runCtx, 5*time.Minute)
+	if a.ipLookup != nil {
+		a.ipLookup.StartBackground(runCtx, a.upstreams.iplookup["checks"])
+	}
 	if err := a.paymentProfiles.RefreshAll(profileCtx); err != nil && !errors.Is(err, context.Canceled) {
 		a.logger.Error("BEPUSDT payment profile refresh was partial", "error", err)
 	}
 	cancelProfiles()
 	if err := runCtx.Err(); err != nil {
 		cancelRun()
+		if a.ipLookup != nil {
+			a.ipLookup.WaitBackground()
+		}
 		_ = a.upstreams.shutdown(context.Background())
 		return err
 	}
@@ -102,6 +108,9 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 	<-statisticsDone
 	<-abuseDone
 	<-notificationsDone
+	if a.ipLookup != nil {
+		a.ipLookup.WaitBackground()
+	}
 	flushCtx, cancelFlush := context.WithTimeout(context.Background(), 5*time.Second)
 	flushErr := a.store.FlushGroupMessageFacts(flushCtx)
 	cancelFlush()

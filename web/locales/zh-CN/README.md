@@ -33,3 +33,5 @@ than in Vue templates, composables, or API clients.
 `host-connectivity.json` owns translated host-check configuration, progress, retained history, status and sanitized diagnostic copy.
 - `ip-lookup.json` owns Simplified Chinese IP Lookup member/admin copy and report labels.
 `ip-lookup-live.json` provides matching Simplified Chinese ipLookupLive labels, source states, graph controls and Cloudflare credential guidance.
+
+`ip-lookup-checks.json` contains localized background, proxy, subnet, probe and refresh-quota labels.
