@@ -17,10 +17,10 @@ const showNames = computed(() => scale.value >= 0.8)
     <header><h3>{{ $t('ipLookupLive.bgpTitle') }}</h3><code v-if="topology.prefix">{{ topology.prefix }}</code></header>
     <template v-if="topology.nodes.length">
       <div class="graph-toolbar">
+        <div class="graph-legend"><span v-for="relation in ['upstream', 'peer', 'customer', 'observed', 'path']" :key="relation" :class="`legend-${relation}`">{{ $t(`ipLookupLive.graph.relationship.${relation}`) }}</span></div>
         <span>{{ $t('ipLookupLive.graph.count', { shown: layout.nodes.length, total: topology.nodes.length }) }}</span>
         <UButton color="neutral" variant="ghost" icon="i-ph-corners-out" :aria-label="$t('ipLookupLive.graph.reset')" :title="$t('ipLookupLive.graph.reset')" @click="fit" />
       </div>
-      <div class="graph-legend"><span v-for="relation in ['upstream', 'peer', 'customer', 'observed', 'path']" :key="relation" :class="`legend-${relation}`">{{ $t(`ipLookupLive.graph.relationship.${relation}`) }}</span></div>
       <div ref="viewport" class="graph-viewport" tabindex="0" role="region" :aria-label="$t('ipLookupLive.graph.instructions')" @wheel="wheel" @pointerdown="pointerDown" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @keydown="keyboard">
         <svg :viewBox="`0 0 ${viewportSize.width} ${viewportSize.height}`" :aria-label="$t('ipLookupLive.bgpTitle')">
           <g class="graph-scene" :transform="`translate(${offset.x}, ${offset.y}) scale(${scale})`">
@@ -48,7 +48,7 @@ const showNames = computed(() => scale.value >= 0.8)
 .bgp-topology header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.7rem; }
 .bgp-topology h3 { font-size: 0.9rem; margin: 0; }
 .bgp-topology header code { font-size: 0.78rem; }
-.graph-toolbar { display: flex; align-items: center; gap: 0.4rem; margin-block: 0.55rem; }
+.graph-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-block: 0.55rem; }
 .graph-toolbar > span { color: var(--text-muted); font-size: 0.7rem; margin-left: auto; white-space: nowrap; }
 .graph-viewport { height: 340px; overflow: hidden; position: relative; touch-action: none; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: grab; }
 .graph-viewport:active { cursor: grabbing; }

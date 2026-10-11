@@ -135,6 +135,16 @@ func TestIPLookupLatestCacheHandlesFractionalTimestampOrdering(t *testing.T) {
 		t.Fatal(err)
 	}
 	newReport.Status, newReport.Verdict = "succeeded", "suitable"
+	stage, claimed, err := store.ClaimIPLookupLiveStage(ctx, newReport.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if claimed {
+		stage.Status = "succeeded"
+		if err := store.FinishIPLookupLiveStage(ctx, newReport.ID, stage); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := store.FinishIPLookupRun(ctx, newReport, wholeSecond.Add(time.Millisecond)); err != nil {
 		t.Fatal(err)
 	}

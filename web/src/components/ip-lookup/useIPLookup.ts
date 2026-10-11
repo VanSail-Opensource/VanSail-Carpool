@@ -8,6 +8,7 @@ import { createUuid } from '@/utils/browserCompatibility'
 
 const terminal = new Set(['succeeded', 'partial', 'failed', 'compensated', 'pending_review'])
 const ipSchema = z.union([z.ipv4(), z.ipv6()])
+type CacheMatch = IPLookupQuote['cacheMatch']
 
 export function useIPLookup() {
   const session = useSessionStore()
@@ -18,7 +19,7 @@ export function useIPLookup() {
   const quote = shallowRef<IPLookupQuote | null>(null)
   const refreshQuote = shallowRef<IPLookupQuote | null>(null)
   const previousReport = shallowRef<IPLookupReport | null>(null)
-  const previousCacheMatch = shallowRef('none')
+  const previousCacheMatch = shallowRef<CacheMatch>('none')
   const check = shallowRef<IPLookupCheck | null>(null)
   const loading = shallowRef(true)
   const busy = shallowRef(false)
