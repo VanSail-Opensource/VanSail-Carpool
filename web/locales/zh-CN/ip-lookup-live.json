@@ -86,7 +86,11 @@
       "page": "{page}/{total}",
       "previous": "上一页路由",
       "next": "下一页路由",
-      "tierBadge": "T1"
+      "tierBadge": "T1",
+      "upstreamsEmpty": {
+        "none": "未观察到直属中转上游。",
+        "unknown": "直属连接尚未分类，无法确认中转上游。"
+      }
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "关联域名",

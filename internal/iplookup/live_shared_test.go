@@ -58,16 +58,19 @@ func TestLiveSubscribersShareWorkAndCancelIndependently(t *testing.T) {
 	}
 }
 
-func TestLiveClassificationUsesExplicitDatedMembership(t *testing.T) {
+func TestLiveClassificationUsesDatasetDespiteFalsePositiveASNFlags(t *testing.T) {
 	s := liveTestService(t, "caida", func(*http.Request) (int, string) {
-		return 200, `{"data":{"dataset":{"date":"2026-10-01"},"n0":{"asnName":"Transit","cliqueMember":true},"n1":{"asnName":"Regional","cliqueMember":false},"n2":{"asnName":"Unknown"}},"errors":[]}`
+		return 200, `{"data":{"dataset":{"date":"2026-10-01","clique":["174","7018"]},"asns":{"edges":[{"node":{"asn":"174","asnName":"Cogent","cliqueMember":true}},{"node":{"asn":"6939","asnName":"Hurricane","cliqueMember":true}},{"node":{"asn":"13335","asnName":"Cloudflare","cliqueMember":true}},{"node":{"asn":"5650","asnName":"Frontier","cliqueMember":true}}]}},"errors":[]}`
 	})
-	graph := BGPTopology{Nodes: []BGPNode{{ASN: 174}, {ASN: 6939}, {ASN: 12345}}}
+	graph := BGPTopology{Nodes: []BGPNode{{ASN: 174}, {ASN: 6939}, {ASN: 13335}, {ASN: 5650}, {ASN: 7018}}}
 	s.classify(context.Background(), &graph)
-	if graph.Nodes[0].Tier1 == nil || !*graph.Nodes[0].Tier1 || graph.Nodes[1].Tier1 == nil || *graph.Nodes[1].Tier1 || graph.Nodes[2].Tier1 != nil {
-		t.Fatal("membership conflated false and unknown")
+	for _, node := range graph.Nodes {
+		want := node.ASN == 174 || node.ASN == 7018
+		if node.Tier1 == nil || *node.Tier1 != want {
+			t.Fatalf("AS%d: false-positive clique recognition", node.ASN)
+		}
 	}
-	if graph.ClassificationMeta.ObservedAt != "2026-10-01" || graph.ClassificationMeta.Status != "partial" {
+	if graph.ClassificationMeta.ObservedAt != "2026-10-01" || graph.ClassificationMeta.Status != "success" {
 		t.Fatal("lost inference provenance")
 	}
 }

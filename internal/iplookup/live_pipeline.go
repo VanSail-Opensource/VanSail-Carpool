@@ -85,6 +85,8 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 	launch(func() {
 		graph := cloneTopology(topology)
 		s.classify(ctx, &graph)
+		classified := cloneTopology(graph)
+		p.update("", "topology", classified, func(r *LiveDetails) { r.Topology = classified })
 		s.relationships(ctx, &graph, c)
 		p.update("relationships", "topology", graph, func(r *LiveDetails) { r.Topology = graph })
 		nameCtx, cancel := context.WithTimeout(ctx, 10*time.Second)

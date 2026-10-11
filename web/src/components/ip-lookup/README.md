@@ -88,6 +88,12 @@ proof of membership. Names appear only at readable zoom levels; raw AS paths
 and collector dates stay available through the path list. Gesture handlers are
 scoped to the graph and do not change Telegram navigation.
 
+Membership now comes from `dataset.clique`, not the faulty per-ASN API boolean.
+Direct upstreams include only observed, classified transit pairs. An origin
+with classified peers/customers and no providers receives an explicit empty
+message; unavailable direct classifications receive a separate unknown message.
+This distinction keeps transit-free origins useful without inventing upstreams.
+
 ## Browser review, 2026-10-11
 
 Chrome DevTools MCP 0.26.0 and 1.10.1 with isolated Chrome 154 reviewed
@@ -112,3 +118,19 @@ interaction work while retaining complete observed evidence.
 The SVG itself stays viewport-sized. At distant zoom, unreadable labels are
 hidden and coincident straight route trunks are merged without joining gaps;
 selected paths retain their precise route geometry.
+
+## Live-source correction review, 2026-10-11
+
+Queued public-source probes reproduced both issues on `47.181.58.83` and
+`172.127.58.147`: the per-ASN clique flag marked every observed ASN true, and
+50-link queries timed out. Dataset membership and bounded origin connections
+now classify Frontier AS5650 as non-T1, retain AT&T AS7018 as T1, and identify
+observed Frontier upstreams AS174 and AS701. AT&T's observed direct connections
+are peers, so its transit-upstream preset correctly reports an empty result.
+
+Chrome DevTools MCP 1.10.1 reviewed these actual queued projections at 390px
+mobile and 1280px desktop widths, including false-positive exclusion, direct
+upstreams, valid empty results, constructed unclassified-data errors, initial
+fit, English/Chinese, console and network checks. Viewports did not overflow;
+final reviews had no console warnings/errors or failed requests. Reputation
+and billing were constructed fixtures; no paid checks or Telegram messages ran.

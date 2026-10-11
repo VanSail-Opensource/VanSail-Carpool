@@ -36,6 +36,7 @@ const showNames = computed(() => scale.value >= 0.8)
         </svg>
       </div>
       <p v-if="layout.fallback" class="graph-note">{{ $t('ipLookupLive.graph.tier1Fallback') }}</p>
+      <p v-if="layout.upstreamsEmpty" class="graph-note">{{ $t(`ipLookupLive.graph.upstreamsEmpty.${layout.upstreamsEmpty}`) }}</p>
       <p v-if="topology.truncated" class="graph-note">{{ $t('ipLookupLive.graph.truncated') }}</p>
       <div class="graph-provenance"><LiveSourceNote :meta="topology" /><LiveSourceNote v-if="topology.edges.length" :meta="topology.relationshipMeta" /><LiveSourceNote v-if="topology.classificationMeta" :meta="topology.classificationMeta" /></div>
       <IPBGPPaths :paths="topology.paths" :selected-asn="selectedASN" :selected-path="selectedPath" :name="selectedNode ? `AS${selectedNode.asn} ${selectedNode.name}` : ''" @select="showPath" />

@@ -54,9 +54,13 @@ export function graphLayout(index: ReturnType<typeof indexTopology>, preset: Gra
     topology.nodes.filter(node => distance.get(node.asn) === 1).forEach(node => visible.add(node.asn))
   }
   const nodes = topology.nodes.filter(node => visible.has(node.asn))
+  const directEdges = [...index.edges.values()].filter(edge => origins.has(edge.to) || origins.has(edge.from))
+  const upstreamsEmpty = preset === 'upstreams' && !focusPath && visible.size === origins.size
+    ? directEdges.some(edge => edge.relationship === 'observed') ? 'unknown' : 'none'
+    : null
   const edges = [...index.edges.entries()].filter(([id, edge]) => visible.has(edge.from) && visible.has(edge.to) && (!allowedEdges || allowedEdges.has(id))).map(([id, edge]) => ({ ...edge, id }))
   const placed = placeNodes(nodes, edges, distance, index.frequency)
-  return { ...placed, edges: routeEdges(placed.nodes, edges), hidden: topology.nodes.length - nodes.length, fallback }
+  return { ...placed, edges: routeEdges(placed.nodes, edges), hidden: topology.nodes.length - nodes.length, fallback, upstreamsEmpty }
 }
 
 export function pathEdges(path: number[]) {

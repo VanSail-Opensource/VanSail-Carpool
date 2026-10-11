@@ -31,4 +31,22 @@ describe('BGP graph visibility', () => {
     expect(fallback.nodes).toHaveLength(18)
     expect(pathEdges([174, 174, 13335])).toEqual(new Set(['174-13335']))
   })
+  it('distinguishes an observed Tier-1 peer-only origin from unavailable classifications', () => {
+    const topology: IPLookupBGPTopology = {
+      status: 'success', source: 'ripe', observedAt: '', errorCode: '', prefix: '172.127.0.0/16', origins: [7018],
+      nodes: [{ asn: 7018, name: 'AT&T', tier1: true }, { asn: 174, name: 'Cogent', tier1: true }, { asn: 6939, name: 'Hurricane Electric', tier1: false }],
+      edges: [{ from: 174, to: 7018, relationship: 'peer' }, { from: 6939, to: 7018, relationship: 'peer' }],
+      paths: [{ asPath: [174, 7018], collector: 'RRC', exchange: '', observedAt: '' }], truncated: false,
+      relationshipMeta: { status: 'success', source: 'caida', observedAt: '2026-10-01', errorCode: '' },
+    }
+    expect(graphLayout(indexTopology(topology), 'upstreams').upstreamsEmpty).toBe('none')
+    expect(graphLayout(indexTopology(topology), 'upstreams').nodes.map(node => node.asn)).toEqual([7018])
+    topology.edges[0]!.relationship = 'observed'
+    expect(graphLayout(indexTopology(topology), 'upstreams').upstreamsEmpty).toBe('unknown')
+    topology.edges[0]!.relationship = 'upstream'
+    const upstream = graphLayout(indexTopology(topology), 'upstreams')
+    expect(upstream.upstreamsEmpty).toBeNull()
+    expect(upstream.nodes.map(node => node.asn)).toEqual([7018, 174])
+    expect(graphLayout(indexTopology(topology), 'tier1').nodes.some(node => node.asn === 6939)).toBe(false)
+  })
 })

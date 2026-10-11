@@ -72,13 +72,27 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 		case r.URL.Host == "api.asrank.caida.org":
 			var input map[string]string
 			_ = json.NewDecoder(r.Body).Decode(&input)
-			data := map[string]any{"dataset": map[string]string{"date": "2026-10-01"}, "asn": map[string]any{"asnName": "Origin", "source": "ARIN", "asnDegree": map[string]int{"peer": 0, "provider": 2}}}
+			data := map[string]any{"dataset": map[string]any{"date": "2026-10-01", "clique": []string{"174", "3257"}}, "asn": map[string]any{"asnName": "Origin", "source": "ARIN", "asnDegree": map[string]int{"peer": 0, "provider": 2}}}
 			pattern := regexp.MustCompile(`(e\d+):asnLink\(asn0:"(\d+)",asn1:"(\d+)"\)`)
 			for _, m := range pattern.FindAllStringSubmatch(input["query"], -1) {
 				data[m[1]] = map[string]any{"relationship": "provider", "date": "2026-10-01", "asn0": map[string]string{"asn": m[2], "asnName": "Origin"}, "asn1": map[string]string{"asn": m[3], "asnName": "Transit"}}
 			}
-			for _, m := range regexp.MustCompile(`(n\d+):asn\(asn:"(\d+)"\)`).FindAllStringSubmatch(input["query"], -1) {
-				data[m[1]] = map[string]any{"asnName": "Network", "cliqueMember": m[2] == "174" || m[2] == "3257"}
+			if match := regexp.MustCompile(`asns\(asns:\[([^\]]+)\],first:`).FindStringSubmatch(input["query"]); len(match) > 0 {
+				var ids []string
+				_ = json.Unmarshal([]byte("["+match[1]+"]"), &ids)
+				rows := []map[string]any{}
+				for _, id := range ids {
+					rows = append(rows, map[string]any{"node": map[string]string{"asn": id, "asnName": "Network"}})
+				}
+				data["asns"] = map[string]any{"edges": rows}
+			}
+			if match := regexp.MustCompile(`asnLinks\(asn:"(\d+)"`).FindStringSubmatch(input["query"]); len(match) > 0 {
+				rows := []map[string]any{}
+				neighbor := map[string]string{"13335": "174", "48266": "3257"}[match[1]]
+				if neighbor != "" {
+					rows = append(rows, map[string]any{"node": map[string]any{"asn0": map[string]string{"asn": match[1]}, "asn1": map[string]string{"asn": neighbor}, "relationship": "provider", "date": "2026-10-01"}})
+				}
+				data["asnLinks"] = map[string]any{"totalCount": len(rows), "edges": rows}
 			}
 			b, _ := json.Marshal(map[string]any{"data": data})
 			body = string(b)

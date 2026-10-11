@@ -86,7 +86,11 @@
       "page": "{page}/{total}",
       "previous": "Previous routes",
       "next": "Next routes",
-      "tierBadge": "T1"
+      "tierBadge": "T1",
+      "upstreamsEmpty": {
+        "none": "No observed direct transit upstreams.",
+        "unknown": "Direct connections are unclassified; transit upstreams are unknown."
+      }
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "Associated hostnames",
