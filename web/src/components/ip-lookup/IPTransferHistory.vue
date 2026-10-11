@@ -24,7 +24,7 @@ watch(() => props.history, () => { page.value = 1 })
           <dl><div><dt>{{ $t('ipLookupLive.transfers.from') }}</dt><dd>{{ transfer.sourceHolderName || $t('ipLookupLive.status.empty') }}<span v-if="transfer.sourceRegistry">{{ transfer.sourceRegistry }}</span><code v-if="transfer.sourceResource && transfer.sourceResource !== transfer.recipientResource">{{ transfer.sourceResource }}</code></dd></div><div><dt>{{ $t('ipLookupLive.transfers.to') }}</dt><dd>{{ transfer.recipientHolderName || $t('ipLookupLive.status.empty') }}<span v-if="transfer.recipientRegistry">{{ transfer.recipientRegistry }}</span></dd></div></dl>
         </li>
       </ol>
-      <nav v-if="pages > 1" :aria-label="$t('ipLookupLive.transfers.title')"><UButton color="neutral" variant="ghost" icon="i-ph-caret-left" :disabled="page === 1" :aria-label="$t('ipLookupLive.graph.focusPrevious')" @click="page--" /><span>{{ page }}/{{ pages }}</span><UButton color="neutral" variant="ghost" icon="i-ph-caret-right" :disabled="page === pages" :aria-label="$t('ipLookupLive.graph.focusNext')" @click="page++" /></nav>
+      <nav v-if="pages > 1" :aria-label="$t('ipLookupLive.transfers.title')"><UButton color="neutral" variant="ghost" icon="i-ph-caret-left" :disabled="page === 1" :aria-label="$t('ipLookupLive.transfers.previous')" @click="page--" /><span>{{ page }}/{{ pages }}</span><UButton color="neutral" variant="ghost" icon="i-ph-caret-right" :disabled="page === pages" :aria-label="$t('ipLookupLive.transfers.next')" @click="page++" /></nav>
       <LiveSourceNote :meta="history" />
     </template>
   </section>

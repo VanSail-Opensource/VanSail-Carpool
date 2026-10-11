@@ -93,7 +93,7 @@ func TestLiveStreamPublishesTopologyBeforeSlowSourceAndCompletes(t *testing.T) {
 	if err := <-finished; err != nil {
 		t.Fatal(err)
 	}
-	if last != 8 {
+	if last != len(livePhases) {
 		t.Fatal("stream never completed")
 	}
 }
