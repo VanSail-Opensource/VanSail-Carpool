@@ -157,6 +157,8 @@ func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, 
 	if len(p.sources) == 0 {
 		p.complete = false
 	}
+	// The full 30-minute reuse window starts after downloads and DNS finish.
+	p.expires = time.Now().Add(30 * time.Minute)
 	return p, nil
 }
 func (p *proxyPool) assessment(ip string) *ProxyAssessment {
