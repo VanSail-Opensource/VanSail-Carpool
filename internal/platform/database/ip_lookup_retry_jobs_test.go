@@ -83,8 +83,15 @@ func outboxRetryRows(t *testing.T, store *Store, kind string) []struct {
 func TestFreezingPartialReportSchedulesDelayedFirstRetry(t *testing.T) {
 	t.Parallel()
 	store, service, user, _, _ := ipLookupFixture(t, 0)
-	before := time.Now().UTC().Truncate(time.Second)
 	r := freezePartialRun(t, store, service, user, "retry-first", "partial")
+	var completedAt string
+	if err := store.DB().QueryRowContext(context.Background(), `SELECT completed_at FROM ip_lookup_reports WHERE id=?`, r.ID).Scan(&completedAt); err != nil {
+		t.Fatal(err)
+	}
+	completed, err := time.Parse(time.RFC3339Nano, completedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
 	jobs := outboxRetryRows(t, store, iplookup.ReportRetryOutboxKind)
 	if len(jobs) != 1 {
 		t.Fatalf("expected one scheduled retry, got %d", len(jobs))
@@ -97,7 +104,7 @@ func TestFreezingPartialReportSchedulesDelayedFirstRetry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if available.Before(before.Add(59*time.Second)) || available.After(before.Add(61*time.Second)) {
+	if !available.Equal(completed.Add(time.Minute)) {
 		t.Fatalf("retry not delayed by the default minute: %v", job.availableAt)
 	}
 }
