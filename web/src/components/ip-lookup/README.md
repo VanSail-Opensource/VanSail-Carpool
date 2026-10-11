@@ -40,16 +40,16 @@ provider-request workaround was added to production code.
 `useLiveIPDetails.ts` fetches once per requested-address/account/report identity,
 uses signed no-store streaming with JSON fallback, cancels obsolete work, and owns explicit refresh. Completed sections remain visible during refresh failures.
 `IPLiveDetails.vue` composes independent source sections beside the frozen
-reputation report. It never submits paid checks or changes the verdict.
+reputation report. It emits combined paid refresh intent to the parent; realtime evidence never changes the quality verdict.
 
-- `IPBGPTopology.vue` renders a native SVG with All T1/direct upstream/direct neighbor/all-route presets, anchored wheel/pinch zoom, pointer/keyboard pan, full two-dimensional fitting and route highlighting. Original AS paths and collector exchange context remain available in the path list.
-- `bgpGraph.ts` precomputes topology indexes and preset visibility; `useGraphViewport.ts` owns transform interaction without persistent state.
+- `IPBGPTopology.vue` renders a native SVG with a fixed origin/direct-neighbor/observed-T1 layout, anchored wheel/pinch zoom, pointer/keyboard pan, full two-dimensional fitting and route highlighting. Only compact route summaries remain public; full AS paths are transient on the backend.
+- `bgpGraph.ts` precomputes compact topology indexes and route focus; `useGraphViewport.ts` owns transform interaction without persistent state.
 - `IPASNDetails.vue` selects multiple origins, displays nullable registration/routing metrics and their dated provenance.
 - `IPTrafficBars.vue` preserves Cloudflare percentages, Other devices, source status, and actual seven-day windows.
 - `LiveSourceNote.vue` presents independent source availability and observation times.
 - `useLiveIPDetails.test.ts` and `bgpGraph.test.ts` cover requested-IP isolation, cancelled/late responses, refresh, multiple origins and bounded graph visibility in hosted CI.
 
-The backend reuses eligible completed live details for at most 60 seconds; Refresh bypasses completed cache. ASN names retain their existing cache. Live frontend data is scope-local
+The backend persists compact details without expiry: exact IP first, then IPv4 /24; IPv6 exact-only. Cache reads and the first fetch are free. The priced refresh updates quality and realtime data in one durable operation without quota use. ASN names retain their existing cache. Live frontend data is scope-local
 and excluded from browser response snapshots by the existing IP Lookup cache
 policy. Long refusal reasons use a fixed icon column and wrapping text.
 
@@ -77,15 +77,14 @@ sent by the browser review or the offline PM fixtures.
 - `IPRefusals.vue` and `refusalPresentation.ts` group all distinct refusal types, deduplicate exact evidence and expose every source/value on tap.
 - `refusalPresentation.test.ts` verifies evidence preservation in hosted CI.
 - `bgpLayout.ts` orders layered nodes with crossing reduction and routes shared trunks, separate ports and non-adjacent connections without inventing AS hops.
-- `useBGPGraph.ts` owns preset/selection state, viewport culling, resize observation and camera preservation during enrichment.
-- `IPBGPPaths.vue` paginates all retained original collector paths in batches of 50; selection focuses the observed path.
+- `useBGPGraph.ts` owns ASN/route selection state, viewport culling, resize observation and camera preservation during enrichment.
+- `IPBGPFocus.vue` paginates compact observed routes to the selected ASN; choosing a route highlights only its links without switching the graph layout.
 - `useGraphViewport.test.ts` checks fit bounds, zoom anchors and multi-pointer cleanup in hosted CI.
 - `bgpLayout.test.ts` checks that merged visual trunks preserve gaps and separate carriers; no new AS connectivity is inferred.
 
 Tier-1 labels use CAIDA's explicit dated transit-free clique inference. Unknown
 classification falls back to direct neighbors; zero upstream degree is never
-proof of membership. Names appear only at readable zoom levels; raw AS paths
-and collector dates stay available through the path list. Gesture handlers are
+proof of membership. Names appear only at readable zoom levels; compact observed route summaries and compressed hop counts stay available through ASN selection. Gesture handlers are
 scoped to the graph and do not change Telegram navigation.
 
 Membership now comes from `dataset.clique`, not the faulty per-ASN API boolean.
@@ -134,3 +133,17 @@ upstreams, valid empty results, constructed unclassified-data errors, initial
 fit, English/Chinese, console and network checks. Viewports did not overflow;
 final reviews had no console warnings/errors or failed requests. Reputation
 and billing were constructed fixtures; no paid checks or Telegram messages ran.
+
+## Persistent cache and combined refresh UI
+
+`useIPLookup.ts` obtains a signed refresh quote and owns idempotent submission,
+receipt polling, owner isolation and current-price display. `IPLiveDetails.vue`
+receives the completed `liveDetails` snapshot and emits refresh intent;
+`useLiveIPDetails.ts` performs free cancellable reads and retains current data
+during refresh. A neighboring-IP cache displays its source IP and original fetch
+time so PTR/InternetDB observations are not presented as evidence for the
+requested host. Blue upstreams, green peers, muted customer/unknown links and
+dashed compressed paths have an always-visible localized legend. Selection,
+keyboard operation, anchored zoom, pan and fit stay in the existing SVG/view
+composables. Earlier browser reviews below predate persistent cache and billing;
+new validation must exercise these revised contracts independently.

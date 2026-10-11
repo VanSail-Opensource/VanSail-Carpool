@@ -66,6 +66,21 @@ func finishIP(t *testing.T, store *Store, operationID string, failed bool) iploo
 		r.Status, r.Verdict = "failed", "inconclusive"
 	}
 	r.CheckedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	stage, claimed, err := store.ClaimIPLookupLiveStage(ctx, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if claimed {
+		details := iplookup.LiveDetails{IP: r.IP, FetchedAt: r.CheckedAt, Topology: iplookup.BGPTopology{LiveMeta: iplookup.LiveMeta{Status: "empty"}}}
+		stage.SnapshotID, err = store.SaveIPDetails(ctx, r.ID, details, time.Now().UTC())
+		if err != nil {
+			t.Fatal(err)
+		}
+		stage.Status = "succeeded"
+		if err := store.FinishIPLookupLiveStage(ctx, r.ID, stage); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := store.FinishIPLookupRun(ctx, r, time.Now().UTC()); err != nil {
 		t.Fatal(err)
 	}

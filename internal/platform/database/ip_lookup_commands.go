@@ -48,6 +48,9 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 		return model.OperationReceipt{}, err
 	}
 	charge := fresh.Charge.MinorInt64()
+	if cached && q.Refresh {
+		charge = 0
+	}
 	var allowance any
 	if fresh.UseQuota {
 		allowance = fresh.PurchaseID
@@ -133,6 +136,11 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 		if iplookup.ConfigHash(previous) != q.ConfigHash {
 			return "", false, &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
 		}
+		if q.Refresh {
+			if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=json_set(live_state_json,'$.status','queued') WHERE id=? AND COALESCE(json_extract(live_state_json,'$.status'),'')=''`, id); err != nil {
+				return "", false, err
+			}
+		}
 		return id, false, nil
 	}
 	if err != sql.ErrNoRows {
@@ -151,6 +159,10 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 	if err != nil {
 		return "", false, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at) VALUES(?,?,'processing',?,?,?)`, id, q.IP, string(configJSON), string(encoded), stamp(now))
+	liveState := `{}`
+	if q.Refresh {
+		liveState = `{"status":"queued","attempted":false,"snapshotId":""}`
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at,live_state_json) VALUES(?,?,'processing',?,?,?,?)`, id, q.IP, string(configJSON), string(encoded), stamp(now), liveState)
 	return id, false, err
 }

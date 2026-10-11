@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { IPLookupReport } from '@/api/ipLookup'
+import type { IPLookupReport, IPLookupLiveDetails, IPLookupQuote } from '@/api/ipLookup'
+import { formatMoney } from '@/utils/format'
 import { useLiveIPDetails } from './useLiveIPDetails'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
@@ -7,17 +8,20 @@ import IPBGPTopology from './IPBGPTopology.vue'
 import IPASNDetails from './IPASNDetails.vue'
 import LiveSourceNote from './LiveSourceNote.vue'
 import IPLookupProgress from './IPLookupProgress.vue'
-const props = defineProps<{ requestedIp: string; report: IPLookupReport }>()
-const { details, progress, loading, errorCode, refresh } = useLiveIPDetails(() => props.requestedIp, () => props.report.status === 'processing' ? '' : `${props.report.id}:${props.report.checkedAt}`)
+const props = defineProps<{ requestedIp: string; report: IPLookupReport; snapshot: IPLookupLiveDetails | null; refreshQuote: IPLookupQuote | null; busy: boolean }>()
+defineEmits<{ refresh: [] }>()
+const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.requestedIp, () => props.report.status === 'processing' ? '' : `${props.report.id}:${props.report.checkedAt}`, () => props.snapshot)
 </script>
 
 <template>
   <section class="live-details">
-    <header class="live-heading"><h2><UIcon name="i-ph-network" aria-hidden="true" />{{ $t('ipLookupLive.title') }}</h2><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :loading="loading" :disabled="loading" :aria-label="$t('ipLookupLive.refresh')" :title="$t('ipLookupLive.refresh')" @click="refresh()" /></header>
+    <header class="live-heading"><h2><UIcon name="i-ph-network" aria-hidden="true" />{{ $t('ipLookupLive.title') }}</h2><UButton v-if="refreshQuote" color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :loading="busy" :disabled="loading || busy" :label="$t('ipLookupLive.refresh', { fee: formatMoney(refreshQuote.charge) })" @click="$emit('refresh')" /></header>
     <IPLookupProgress v-if="loading" :progress="progress" />
     <SkeletonBlock v-if="loading && !details" height="8rem" />
     <InlineNotice v-if="errorCode" tone="warning">{{ $t(`ipLookupLive.errors.${errorCode}`) }}</InlineNotice>
     <template v-if="details">
+      <p v-if="details.cacheMatch === 'subnet'" class="live-fetch-time">{{ $t('ipLookupLive.cacheSubnet', { ip: details.sourceIP ?? details.ip!, date: new Date(details.fetchedAt!).toLocaleString() }) }}</p>
+      <p v-else-if="details.cacheMatch === 'exact'" class="live-fetch-time">{{ $t('ipLookupLive.cacheExact', { date: new Date(details.fetchedAt!).toLocaleString() }) }}</p>
       <IPBGPTopology v-if="details.topology" :topology="details.topology" />
       <IPASNDetails v-if="details.asns" :asns="details.asns" />
       <div class="live-ip-facts">

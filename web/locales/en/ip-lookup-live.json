@@ -1,8 +1,8 @@
 {
   "ipLookupLive": {
     "title": "Network",
-    "description": "Recent source data. Refresh requests new data; no extra charge.",
-    "refresh": "Refresh",
+    "description": "Cached data is free. Paid refresh updates quality and network data.",
+    "refresh": "Refresh IP data · {fee}",
     "fetchedAt": "Fetched {date}",
     "bgpTitle": "BGP routes",
     "asnTitle": "Autonomous system",
@@ -33,7 +33,8 @@
       "IP_DETAILS_INVALID_RESPONSE": "The provider returned incomplete or invalid data.",
       "IP_LOOKUP_DISABLED": "IP Lookup is disabled.",
       "IP_LOOKUP_INVALID_IP": "Enter a public IPv4 or IPv6 address.",
-      "IP_LOOKUP_FAILED": "Live details could not be loaded. Try refreshing."
+      "IP_LOOKUP_FAILED": "Live details could not be loaded. Try refreshing.",
+      "IP_LOOKUP_REFRESH_REQUIRED": "Use paid refresh to update IP quality and network data."
     },
     "fields": {
       "registeredAt": "Registration date",
@@ -61,42 +62,37 @@
     "graph": {
       "reset": "Fit graph",
       "unknownName": "Name unavailable",
-      "routes": "Observed paths",
       "instructions": "Scroll or pinch to zoom. Drag to pan. Keyboard: arrows, + / -, 0 to fit.",
       "truncated": "Results are bounded; some paths or origins were omitted.",
-      "exchangeContext": "Collector context: {name}",
-      "context": "Edges follow observed AS paths. Transit/peer labels are dated relationship inferences. Exchange names describe collector context, not verified physical hops.",
+      "context": "Direct links use observed paths and dated relationship inferences. Compressed T1 links may span multiple AS hops; they do not imply physical adjacency.",
       "relationship": {
         "observed": "Observed neighbor",
         "upstream": "Inferred transit upstream",
         "peer": "Inferred peer",
-        "customer": "Inferred customer"
+        "customer": "Inferred customer",
+        "path": "Compressed observed path"
       },
-      "presets": {
-        "tier1": "All T1",
-        "upstreams": "Direct upstreams",
-        "neighbors": "Direct neighbors",
-        "all": "All routes"
-      },
-      "preset": "Route preset",
-      "count": "{shown}/{total} ASNs",
+      "count": "{shown} ASNs",
       "tier1Fallback": "No classified T1 path; showing direct neighbors.",
       "tier1Context": "T1 uses CAIDA's dated transit-free clique inference. Unknown classifications stay unknown; commercial agreements are not verified.",
-      "pathPages": "Route pages",
-      "page": "{page}/{total}",
-      "previous": "Previous routes",
-      "next": "Next routes",
       "tierBadge": "T1",
       "upstreamsEmpty": {
         "none": "No observed direct transit upstreams.",
         "unknown": "Direct connections are unclassified; transit upstreams are unknown."
-      }
+      },
+      "hops": "{hops} AS hops",
+      "focused": "Observed routes to AS{asn}",
+      "focusPrevious": "Previous routes",
+      "focusNext": "Next routes",
+      "focusHelp": "Select a route to focus its links. AS hops describes the compressed neighbor-to-T1 path."
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "Associated hostnames",
     "shodanPorts": "Observed open ports",
     "shodanContext": "Queried live from Shodan's weekly-updated dataset. This is not a fresh port scan; no per-host observation time is supplied.",
-    "about": "Details"
+    "about": "Details",
+    "cacheExact": "Cached data · {date}",
+    "cacheSubnet": "Cached data for {ip} in the same /24 · {date}"
   },
   "ipLookupProgress": {
     "label": "Lookup progress",
@@ -110,6 +106,7 @@
     "block": "Reported block",
     "ptr": "Reverse DNS",
     "shodan": "Host observations",
-    "complete": "Complete"
+    "complete": "Complete",
+    "live": "Network data"
   }
 }

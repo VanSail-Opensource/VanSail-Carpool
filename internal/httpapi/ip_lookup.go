@@ -127,7 +127,7 @@ func (s *Server) ipLookupError(w http.ResponseWriter, r *http.Request, err error
 	if errors.As(err, &typed) {
 		status = http.StatusUnprocessableEntity
 	}
-	if code == "IP_LOOKUP_QUOTE_CHANGED" || code == "IP_LOOKUP_BUSY" {
+	if code == "IP_LOOKUP_QUOTE_CHANGED" || code == "IP_LOOKUP_BUSY" || code == "IP_LOOKUP_REFRESH_REQUIRED" {
 		status = http.StatusConflict
 	}
 	if code == "IP_DETAILS_BUSY" {

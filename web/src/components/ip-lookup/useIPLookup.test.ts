@@ -2,6 +2,7 @@ import { defineComponent, reactive } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IPLookupCheck } from '@/api/ipLookup'
+import { ApiError } from '@/api/http'
 
 const mocks = vi.hoisted(() => ({ state: vi.fn(), quote: vi.fn(), submit: vi.fn(), check: vi.fn(), replace: vi.fn(), routeQuery: { check: undefined as string | undefined } }))
 vi.mock('@/api/ipLookup', () => ({ ipLookupApi: mocks }))
@@ -26,6 +27,22 @@ describe('IP Lookup request safety', () => {
     mocks.check.mockResolvedValue({ operation: { status: 'succeeded' }, report: null })
   })
   afterEach(() => { vi.useRealTimers() })
+
+  it('submits the signed combined refresh price and keeps the preview through a balance error', async () => {
+    const cachedReport = { id: 'cached', ip: quote.ip, status: 'succeeded', checkedAt: 'date' }
+    mocks.quote.mockImplementation(async (_ip, refresh) => ({ ...quote, refresh, expiresAt: Math.floor(Date.now() / 1000) + 120, cachedReport, cacheMatch: 'exact', cacheReportId: 'cached', charge: { ...quote.charge, minor: refresh ? '350' : '0' } }))
+    mocks.submit.mockRejectedValueOnce(new ApiError(409, { code: 'INSUFFICIENT_BALANCE', message: 'balance' }))
+    const wrapper = mount(Harness)
+    await flushPromises()
+    state.ip.value = quote.ip
+    await vi.advanceTimersByTimeAsync(400)
+    await state.submit(true)
+    expect(mocks.submit.mock.calls[0]![0]).toMatchObject({ refresh: true, charge: { minor: '350' }, useQuota: false })
+    expect(state.report.value).toEqual(cachedReport)
+    expect(state.cacheMatch.value).toBe('exact')
+    expect(state.errorCode.value).toBe('INSUFFICIENT_BALANCE')
+    wrapper.unmount()
+  })
 
   it('does not charge for loading, quoting or invalid addresses', async () => {
     const wrapper = mount(Harness)
@@ -78,8 +95,8 @@ describe('IP Lookup request safety', () => {
     expect(state.report.value).toEqual(cachedReport)
     expect(state.requestedIP.value).toBe('8.8.8.8')
     expect(state.cacheMatch.value).toBe('subnet')
-    expect(mocks.quote).toHaveBeenCalledTimes(1)
-    expect(mocks.quote).toHaveBeenCalledWith(quote.ip, false)
+    expect(mocks.quote).toHaveBeenCalledTimes(2)
+    expect(mocks.quote).toHaveBeenCalledWith(quote.ip, true)
     await state.submit()
     expect(mocks.submit).not.toHaveBeenCalled()
     wrapper.unmount()

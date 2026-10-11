@@ -10,34 +10,36 @@ import (
 	"time"
 )
 
-func TestLiveCompletionCacheExpiryRefreshAndCredentials(t *testing.T) {
+func TestLivePersistentCacheDoesNotExpireOrInvalidateAndRejectsFreeRefresh(t *testing.T) {
 	s, scores, _ := integratedLiveService(t, false)
+	s.repository = &snapshotMemory{}
 	now := time.Now()
 	s.now = func() time.Time { return now }
-	load := func(refresh bool) {
-		t.Helper()
-		if _, err := s.DetailsWithOptions(context.Background(), "member", "1.1.1.1", LiveOptions{Refresh: refresh}); err != nil {
+	for range 2 {
+		if _, err := s.Details(context.Background(), "member", "1.1.1.1"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	load(false)
-	load(false)
 	if scores.Load() != 1 {
 		t.Fatal("cache hit contacted upstream")
 	}
-	load(true)
-	if scores.Load() != 2 {
-		t.Fatal("refresh reused completed cache")
+	if _, err := s.DetailsWithOptions(context.Background(), "member", "1.1.1.1", LiveOptions{Refresh: true}); ErrorCode(err) != "IP_LOOKUP_REFRESH_REQUIRED" {
+		t.Fatal("free refresh accepted")
+	}
+	c, err := DecodeConfig(s.settings.(liveConfigSettings)[SettingKey])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RefreshRun(context.Background(), "1.1.1.1", c, "paid-run", nil); err != nil {
+		t.Fatal(err)
 	}
 	s.settings.(liveConfigSettings)[CredentialKey("ipapi")] = "replacement"
-	load(false)
-	if scores.Load() != 3 {
-		t.Fatal("credential edit reused prior completion")
+	now = now.Add(24 * time.Hour)
+	if _, err := s.Details(context.Background(), "member", "1.1.1.1"); err != nil {
+		t.Fatal(err)
 	}
-	now = now.Add(time.Minute)
-	load(false)
-	if scores.Load() != 4 {
-		t.Fatal("expired completion reused")
+	if scores.Load() != 2 {
+		t.Fatal("cache expired or was invalidated")
 	}
 }
 
@@ -96,8 +98,10 @@ func TestLiveStreamPublishesTopologyBeforeSlowSourceAndCompletes(t *testing.T) {
 	}
 }
 
-func TestLiveOutageNotCachedAndByteBound(t *testing.T) {
+func TestLiveAttemptedOutageCachedAndPreAttemptFailureExcluded(t *testing.T) {
 	s, scores, _ := integratedLiveService(t, false)
+	snapshots := &snapshotMemory{}
+	s.repository = snapshots
 	original := s.client.Transport
 	s.client.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		if r.URL.Host == "internetdb.shodan.io" {
@@ -105,25 +109,20 @@ func TestLiveOutageNotCachedAndByteBound(t *testing.T) {
 		}
 		return original.RoundTrip(r)
 	})
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		if _, err := s.Details(context.Background(), "a", "1.1.1.1"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if scores.Load() != 2 || len(s.cache) != 0 {
-		t.Fatal("outage was cached")
+	if scores.Load() != 1 || len(snapshots.rows) != 1 {
+		t.Fatal("attempted outage was not cached")
 	}
-	s.mu.Lock()
-	for i := 0; i < 70; i++ {
-		s.storeLiveCache(asnText(uint32(i)), make([]byte, 300000))
+	s.queues = nil
+	if _, err := s.Details(context.Background(), "a", "8.8.8.8"); err != nil {
+		t.Fatal(err)
 	}
-	s.mu.Unlock()
-	bytes := 0
-	for _, entry := range s.cache {
-		bytes += len(entry.data)
-	}
-	if len(s.cache) > 64 || bytes > 16*1024*1024 {
-		t.Fatal("unbounded live cache")
+	if len(snapshots.rows) != 1 {
+		t.Fatal("pre-attempt failure cached")
 	}
 }
 

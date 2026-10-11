@@ -51,6 +51,9 @@ func (s *LiveService) liveHTTPRequest(ctx context.Context, source, path string, 
 		if source == CloudflareID {
 			req.Header.Set("Authorization", "Bearer "+credential)
 		}
+		if err := markLiveAttempt(ctx); err != nil {
+			return nil, err
+		}
 		res, err := s.client.Do(req)
 		if err != nil {
 			return nil, &CodeError{"IP_DETAILS_UNAVAILABLE"}

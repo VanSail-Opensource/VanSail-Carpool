@@ -71,7 +71,7 @@ func TestIPLookupCacheCoalescingQuotaAndPaidRefresh(t *testing.T) {
 		t.Fatal(err)
 	}
 	lateCheck, err := service.Check(ctx, user, late.ID)
-	if err != nil || lateCheck.Report.ID != newReport.ID || lateCheck.Charge.Minor != "350" {
+	if err != nil || lateCheck.Report.ID != newReport.ID || lateCheck.Charge.Minor != "0" {
 		t.Fatalf("late refresh=%+v %v", lateCheck, err)
 	}
 	if _, err := service.Check(ctx, "another-owner", first.ID); !errors.Is(err, ErrNotFound) {

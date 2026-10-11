@@ -2,57 +2,28 @@ package iplookup
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"time"
 )
 
-type liveCacheEntry struct {
-	data          []byte
-	expires, used time.Time
-}
-
 type liveFlight struct {
-	changed  chan struct{}
-	events   []LiveEvent
-	data     []byte
-	err      error
-	finished bool
-	waiters  int
-	cancel   context.CancelFunc
+	changed    chan struct{}
+	events     []LiveEvent
+	data       []byte
+	err        error
+	finished   bool
+	waiters    int
+	cancel     context.CancelFunc
+	snapshotID string
 }
 
-func (s *LiveService) liveCacheKey(ctx context.Context, ip, config string) (string, error) {
-	h := sha256.New()
-	for _, value := range []string{ip, config} {
-		_, _ = h.Write([]byte(value + "\x00"))
-	}
-	for _, id := range []string{"ipapi", "abuseipdb", CloudflareID} {
-		value, err := s.settings.Optional(ctx, CredentialKey(id))
-		if err != nil {
-			return "", &CodeError{"IP_DETAILS_UNAVAILABLE"}
-		}
-		_, _ = h.Write([]byte(value + "\x00"))
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
+// RefreshRun is called only by an admitted, charged durable operation.
+func (s *LiveService) RefreshRun(ctx context.Context, ip string, c Config, run string, attempt func(context.Context) error) (LiveDetails, error) {
+	return s.liveShared(ctx, "refresh:"+run, ip, c, LiveOptions{runKey: run, onAttempt: attempt})
 }
 
 func (s *LiveService) liveShared(ctx context.Context, key, ip string, c Config, options LiveOptions) (LiveDetails, error) {
 	s.mu.Lock()
-	if entry, ok := s.cache[key]; ok && !options.Refresh && s.now().Before(entry.expires) {
-		entry.used = s.now()
-		s.cache[key] = entry
-		s.mu.Unlock()
-		if options.Emit != nil {
-			if err := options.Emit(liveComplete(ip, entry.data)); err != nil {
-				return LiveDetails{}, err
-			}
-		}
-		var result LiveDetails
-		err := json.Unmarshal(entry.data, &result)
-		return result, err
-	}
 	f := s.flights[key]
 	if f == nil {
 		if len(s.flights) >= 64 {
@@ -62,7 +33,7 @@ func (s *LiveService) liveShared(ctx context.Context, key, ip string, c Config, 
 		workCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 60*time.Second)
 		f = &liveFlight{changed: make(chan struct{}), cancel: cancel}
 		s.flights[key] = f
-		go s.runLiveFlight(workCtx, key, ip, c, f)
+		go s.runLiveFlight(workCtx, key, ip, c, f, options)
 	}
 	f.waiters++
 	s.mu.Unlock()
@@ -95,6 +66,7 @@ func (s *LiveService) liveShared(ctx context.Context, key, ip string, c Config, 
 			var result LiveDetails
 			if err == nil {
 				err = json.Unmarshal(data, &result)
+				result.SnapshotID = f.snapshotID
 			}
 			return result, err
 		}
@@ -106,7 +78,7 @@ func (s *LiveService) liveShared(ctx context.Context, key, ip string, c Config, 
 	}
 }
 
-func (s *LiveService) runLiveFlight(ctx context.Context, key, ip string, c Config, f *liveFlight) {
+func (s *LiveService) runLiveFlight(ctx context.Context, key, ip string, c Config, f *liveFlight, options LiveOptions) {
 	defer f.cancel()
 	emit := func(event LiveEvent) {
 		s.mu.Lock()
@@ -116,23 +88,28 @@ func (s *LiveService) runLiveFlight(ctx context.Context, key, ip string, c Confi
 		f.changed = make(chan struct{})
 	}
 	workCtx := withLiveRequests(ctx)
-	result := s.livePipeline(workCtx, ip, c, emit)
 	requests := workCtx.Value(liveRequestsKey{}).(*liveRequests)
+	requests.onAttempt = options.onAttempt
+	result := s.livePipeline(workCtx, ip, c, emit)
 	requests.mu.Lock()
-	failed := requests.failed
+	attempted, attemptErr := requests.attempted, requests.attemptErr
 	requests.mu.Unlock()
 	data, err := json.Marshal(result)
+	if attemptErr != nil {
+		err = attemptErr
+	}
 	if ctx.Err() != nil {
 		err = ctx.Err()
 	}
+	var snapshotID string
+	if err == nil && attempted && s.repository != nil {
+		snapshotID, err = s.repository.SaveIPDetails(ctx, options.runKey, result, s.now().UTC())
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	f.data, f.err, f.finished = data, err, true
+	f.data, f.err, f.finished, f.snapshotID = data, err, true, snapshotID
 	if s.flights[key] == f {
 		delete(s.flights, key)
-		if err == nil && !failed && liveCacheable(result) {
-			s.storeLiveCache(key, data)
-		}
 	}
 	if err == nil {
 		f.events = append(f.events, liveComplete(ip, data))

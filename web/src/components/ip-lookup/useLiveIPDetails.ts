@@ -3,7 +3,7 @@ import { ipLookupApi, type IPLookupLiveDetails, type IPLookupProgress } from '@/
 import { ApiError } from '@/api/http'
 import { useSessionStore } from '@/stores/session'
 
-export function useLiveIPDetails(address: () => string, reportKey: () => string) {
+export function useLiveIPDetails(address: () => string, reportKey: () => string, snapshot: () => IPLookupLiveDetails | null = () => null) {
   const session = useSessionStore()
   const details = shallowRef<Partial<IPLookupLiveDetails> | null>(null)
   const progress = shallowRef<IPLookupProgress | null>(null)
@@ -12,7 +12,7 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string)
   let controller: AbortController | undefined
   let revision = 0
 
-  async function refresh(force = true): Promise<void> {
+  async function refresh(): Promise<void> {
     const ip = address()
     if (!reportKey() || !session.user?.id || loading.value) return
     controller?.abort()
@@ -22,7 +22,7 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string)
     progress.value = { phase: 'topology', completed: 0, total: 8 }
     errorCode.value = ''
     try {
-      const result = await ipLookupApi.details(ip, active.signal, force, event => {
+      const result = await ipLookupApi.details(ip, active.signal, false, event => {
         if (current !== revision || active.signal.aborted || event.ip !== ip) return
         if ('progress' in event) progress.value = event.progress
         if (event.type === 'section') details.value = { ...details.value, ip, [event.section]: event.data }
@@ -36,14 +36,18 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string)
     } finally { if (current === revision) loading.value = false }
   }
 
-  watch(() => `${session.user?.id ?? ''}|${address()}|${reportKey()}`, () => {
+  let scope = ''
+  watch(() => [session.user?.id, address(), reportKey(), snapshot()], () => {
     revision++
     controller?.abort()
-    details.value = null
+    const nextScope = `${session.user?.id ?? ''}|${address()}`
+    if (nextScope !== scope) details.value = null
+    scope = nextScope
     progress.value = null
     loading.value = false
     errorCode.value = ''
-    void refresh(false)
+    if (snapshot()?.ip === address()) details.value = snapshot()
+    else void refresh()
   }, { immediate: true })
   onScopeDispose(() => { revision++; controller?.abort() })
   return { details, progress, loading, errorCode, refresh }

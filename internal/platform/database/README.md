@@ -359,3 +359,17 @@ Retained agreement revisions also qualify returning accounts. `remna_provisionin
 - `ip_lookup_maintenance_test.go` covers durable receipts and the distinct settlement of never-attempted jobs versus interrupted, chargeable provider calls in hosted CI.
 - `ip_lookup_policy_test.go` covers free cache reads with available quota, charged partial/refused/all-error reports, repeat settlement, and fractional completion timestamps in hosted CI.
 `telegram_pm_content.go` encrypts operation-bound pending outbound text using the existing application vault, reads live envelopes, and distinguishes content-free expiry/settlement markers from legacy reference-only jobs. `telegram_pm_content_test.go` covers duplicate updates, encryption/AAD binding, outbox privacy, transactional settlement erasure and 24-hour repair expiry. Generic operation completion clears settled ciphertext; PM retention clears expired content while operation pruning cascades the marker.
+
+## Persistent realtime IP evidence
+
+- `ip_lookup_live_cache.go` stores compact shared snapshots and selects exact or IPv4 /24 evidence using the same timestamp/rowid ordering as quality reports. Snapshots do not expire or depend on current credentials.
+- `ip_lookup_live_stage.go` claims the report's realtime phase, records actual queued attempts and recovers stored snapshot references before any replay. The live checkpoint is independent of quality checkpoint writes.
+- `ip_lookup_live_check.go` adds live-phase progress and the referenced final snapshot to owner-scoped receipts without exposing recovery state.
+- `ip_lookup_live_cache_test.go` covers persistent matching, restart reads, nanosecond/tie ordering and absence of original paths in hosted CI.
+- `ip_lookup_live_refresh_test.go` covers combined refresh pricing, subnet eligibility, replay-safe snapshot recovery and maintenance settlement without refund after live attempts.
+
+Migration 069 creates snapshots and a private JSON live checkpoint on existing
+quality reports. Legacy receipts default to no realtime phase; no backfill calls
+run. Joined checks share one refreshed snapshot. Attempted failures settle
+partial without changing the quality verdict; pre-attempt failures retain the
+existing refund path. Ledger changes and receipt settlement remain atomic.

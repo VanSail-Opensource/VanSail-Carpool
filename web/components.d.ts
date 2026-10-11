@@ -150,7 +150,7 @@ declare module 'vue' {
     InternationalNetworkProfileFields: typeof import('./src/components/admin/squad-profile/InternationalNetworkProfileFields.vue')['default']
     IntroSequence: typeof import('./src/components/onboarding/IntroSequence.vue')['default']
     IPASNDetails: typeof import('./src/components/ip-lookup/IPASNDetails.vue')['default']
-    IPBGPPaths: typeof import('./src/components/ip-lookup/IPBGPPaths.vue')['default']
+    IPBGPFocus: typeof import('./src/components/ip-lookup/IPBGPFocus.vue')['default']
     IPBGPTopology: typeof import('./src/components/ip-lookup/IPBGPTopology.vue')['default']
     IPLiveDetails: typeof import('./src/components/ip-lookup/IPLiveDetails.vue')['default']
     IPLocationMap: typeof import('./src/components/ip-lookup/IPLocationMap.vue')['default']

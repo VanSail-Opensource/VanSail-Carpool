@@ -8,7 +8,7 @@ import IPLookupProgress from './IPLookupProgress.vue'
 import { useIPLookup } from './useIPLookup'
 import { ipLookupErrorText } from './presentation'
 
-const { ip, state, quote, check, report, requestedIP, cacheMatch, loading, busy, errorCode, validIP, submit, load } = useIPLookup()
+const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy, errorCode, validIP, submit, load } = useIPLookup()
 </script>
 
 <template>
@@ -22,9 +22,9 @@ const { ip, state, quote, check, report, requestedIP, cacheMatch, loading, busy,
       <InlineNotice v-if="state && !state.enabled" tone="info">{{ $t('ipLookup.disabled') }}</InlineNotice>
       <IPLookupForm v-if="state?.enabled" v-model="ip" :state="state" :quote="quote" :busy="busy" :valid-ip="validIP" @check="submit()" />
       <IPLookupProgress v-if="busy" :progress="check?.progress" />
-      <IPLookupReport v-if="report" :report="report" :requested-ip="requestedIP" :cache-match="cacheMatch" :check="check" />
+      <IPLookupReport v-if="report" :report="report" :requested-ip="requestedIP" :cache-match="cacheMatch" :check="displayCheck" />
       <p v-else-if="!busy && state?.enabled" class="ip-lookup-empty">{{ $t('ipLookup.empty') }}</p>
-      <IPLiveDetails v-if="report" :report="report" :requested-ip="requestedIP" />
+      <IPLiveDetails v-if="report" :report="report" :requested-ip="requestedIP" :snapshot="check?.liveDetails ?? null" :refresh-quote="refreshQuote" :busy="busy" @refresh="submit(true)" />
       <UButton v-if="!state" color="neutral" variant="outline" :label="$t('common.tryAgain')" @click="load" />
     </template>
   </main>

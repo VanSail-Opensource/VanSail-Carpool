@@ -1,8 +1,8 @@
 {
   "ipLookupLive": {
     "title": "网络",
-    "description": "展示近期来源数据。刷新获取新数据，不额外收费。",
-    "refresh": "刷新",
+    "description": "缓存数据免费查看；付费刷新同时更新质量与网络数据。",
+    "refresh": "刷新 IP 数据 · {fee}",
     "fetchedAt": "查询时间：{date}",
     "bgpTitle": "BGP 路由",
     "asnTitle": "自治系统",
@@ -33,7 +33,8 @@
       "IP_DETAILS_INVALID_RESPONSE": "提供商返回了不完整或无效的数据。",
       "IP_LOOKUP_DISABLED": "IP 查询已关闭。",
       "IP_LOOKUP_INVALID_IP": "请输入公网 IPv4 或 IPv6 地址。",
-      "IP_LOOKUP_FAILED": "无法加载实时信息，请尝试刷新。"
+      "IP_LOOKUP_FAILED": "无法加载实时信息，请尝试刷新。",
+      "IP_LOOKUP_REFRESH_REQUIRED": "请使用付费刷新来更新 IP 质量和网络数据。"
     },
     "fields": {
       "registeredAt": "注册日期",
@@ -61,42 +62,37 @@
     "graph": {
       "reset": "适应视图",
       "unknownName": "名称不可用",
-      "routes": "观察到的路径",
       "instructions": "滚轮或双指缩放，拖动平移。键盘：方向键、+ / -，0 适应视图。",
       "truncated": "结果有数量上限，部分路径或源 ASN 已省略。",
-      "exchangeContext": "采集器环境：{name}",
-      "context": "连线来自观察到的 AS 路径。上游和对等标签来自注明日期的关系推断。交换中心名称表示采集器环境，不代表已验证的物理跳点。",
+      "context": "直连关系基于观测路径和有日期的关系推断。通向 T1 的压缩连线可能跨越多个 AS，不代表物理直连。",
       "relationship": {
         "observed": "观察到的邻居",
         "upstream": "推断的转接上游",
         "peer": "推断的对等网络",
-        "customer": "推断的客户网络"
+        "customer": "推断的客户网络",
+        "path": "压缩观测路径"
       },
-      "presets": {
-        "tier1": "全部 T1",
-        "upstreams": "直属上游",
-        "neighbors": "直属邻居",
-        "all": "全部路由"
-      },
-      "preset": "路由预设",
-      "count": "{shown}/{total} ASN",
+      "count": "{shown} 个 ASN",
       "tier1Fallback": "未找到已分类的 T1 路径，展示直属邻居。",
       "tier1Context": "T1 基于 CAIDA 带日期的无上游核心网络推断。未知分类保持未知，不验证商业协议。",
-      "pathPages": "路由分页",
-      "page": "{page}/{total}",
-      "previous": "上一页路由",
-      "next": "下一页路由",
       "tierBadge": "T1",
       "upstreamsEmpty": {
         "none": "未观察到直属中转上游。",
         "unknown": "直属连接尚未分类，无法确认中转上游。"
-      }
+      },
+      "hops": "{hops} 个 AS 跳点",
+      "focused": "通往 AS{asn} 的观测路径",
+      "focusPrevious": "上一页路径",
+      "focusNext": "下一页路径",
+      "focusHelp": "选择一条路径可聚焦连线。AS 跳点数表示邻居到 T1 的压缩路径长度。"
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "关联域名",
     "shodanPorts": "观察到的开放端口",
     "shodanContext": "实时查询 Shodan 每周更新的数据集，不代表即时端口扫描；来源不提供单个地址的观测时间。",
-    "about": "说明"
+    "about": "说明",
+    "cacheExact": "缓存数据 · {date}",
+    "cacheSubnet": "使用同 /24 中 {ip} 的缓存数据 · {date}"
   },
   "ipLookupProgress": {
     "label": "查询进度",
@@ -110,6 +106,7 @@
     "block": "网段报告",
     "ptr": "反向 DNS",
     "shodan": "主机观测",
-    "complete": "完成"
+    "complete": "完成",
+    "live": "网络数据"
   }
 }

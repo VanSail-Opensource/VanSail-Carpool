@@ -131,7 +131,7 @@ func TestLiveEnrichmentKeepsRequestedIPsSeparate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if r.IP != ip || len(r.Topology.Origins) != 2 || len(r.ASNs) != 2 || r.Topology.Paths[0].ASPath[2] != 13335 {
+		if r.IP != ip || len(r.Topology.Origins) != 2 || len(r.ASNs) != 2 || len(r.Topology.Paths) != 0 {
 			t.Fatalf("topology/origins: %+v", r.Topology)
 		}
 		if r.Scores.Company.Ratio == nil || *r.Scores.Company.Ratio != 0 || r.Block.ReportedAddresses == nil || *r.Block.ReportedAddresses != 0 || len(r.PTR.Domains) != 1 || len(r.Shodan.Ports) != 2 {

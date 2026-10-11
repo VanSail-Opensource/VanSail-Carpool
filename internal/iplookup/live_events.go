@@ -1,11 +1,16 @@
 package iplookup
 
-import "encoding/json"
+import (
+	"context"
+	"encoding/json"
+)
 
 // LiveOptions controls completion-cache reuse and request-local event delivery.
 type LiveOptions struct {
-	Refresh bool
-	Emit    func(LiveEvent) error
+	Refresh   bool
+	Emit      func(LiveEvent) error
+	runKey    string
+	onAttempt func(context.Context) error
 }
 
 // LiveEvent carries immutable snapshots; section events replace one projection.

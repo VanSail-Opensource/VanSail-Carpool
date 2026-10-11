@@ -63,7 +63,27 @@ func reconcileStaleIPLookupsTx(ctx context.Context, tx *sql.Tx, now time.Time) e
 		if err != nil {
 			return err
 		}
-		attempted := iplookup.ReportAttempted(report)
+		liveStage, err := ipLiveStageTx(ctx, tx, run.id)
+		if err != nil {
+			return err
+		}
+		if liveStage.Status == "processing" {
+			snapshot, status, err := liveSnapshotForRunTx(ctx, tx, run.id)
+			if err != nil {
+				return err
+			}
+			liveStage.SnapshotID, liveStage.Status = snapshot, status
+			if snapshot == "" {
+				liveStage.Status = "error"
+			}
+		}
+		if liveStage.Status == "queued" || (liveStage.Status == "" && liveStage.Attempted) {
+			liveStage.Status = "error"
+		}
+		if err := saveLiveStageTx(ctx, tx, run.id, liveStage); err != nil {
+			return err
+		}
+		attempted := iplookup.ReportAttempted(report) || liveStage.Attempted
 		if report.Checkpoint != nil {
 			for i := range report.Checkpoint.Stages {
 				stage := &report.Checkpoint.Stages[i]
@@ -76,6 +96,9 @@ func reconcileStaleIPLookupsTx(ctx context.Context, tx *sql.Tx, now time.Time) e
 		report = iplookup.Aggregate(report, now)
 		if !attempted {
 			report.Status, report.Verdict = "failed", "inconclusive"
+		}
+		if attempted && report.Status == "failed" {
+			report.Status = "partial"
 		}
 		raw, err := iplookup.EncodeReport(report)
 		if err != nil {
@@ -108,7 +131,11 @@ func reconcileStaleIPLookupsTx(ctx context.Context, tx *sql.Tx, now time.Time) e
 					return err
 				}
 			}
-			if err := finishIPCheckTx(ctx, tx, id, run.id, report.Status, now); err != nil {
+			status := report.Status
+			if status == "succeeded" && (liveStage.Status == "partial" || liveStage.Status == "error") {
+				status = "partial"
+			}
+			if err := finishIPCheckTx(ctx, tx, id, run.id, status, now); err != nil {
 				return err
 			}
 		}

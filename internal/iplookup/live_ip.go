@@ -117,7 +117,12 @@ func (s *LiveService) ptr(ctx context.Context, ip string) PTRDetails {
 		result.LiveMeta = liveMeta("dns", &CodeError{"IP_DETAILS_UNAVAILABLE"})
 		return result
 	}
-	domains, err := upstreamqueue.Do(ctx, s.queues["dns"], func(ctx context.Context) ([]string, error) { return s.resolver.LookupAddr(ctx, ip) })
+	domains, err := upstreamqueue.Do(ctx, s.queues["dns"], func(ctx context.Context) ([]string, error) {
+		if err := markLiveAttempt(ctx); err != nil {
+			return nil, err
+		}
+		return s.resolver.LookupAddr(ctx, ip)
+	})
 	result.LiveMeta = liveMeta("dns", &CodeError{"IP_DETAILS_UNAVAILABLE"})
 	var dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {

@@ -18,27 +18,39 @@ type LiveMeta struct {
 
 // LiveDetails is response-only information for the requested address.
 type LiveDetails struct {
-	IP        string        `json:"ip"`
-	FetchedAt string        `json:"fetchedAt"`
-	Topology  BGPTopology   `json:"topology"`
-	ASNs      []ASNDetails  `json:"asns"`
-	Scores    NetworkScores `json:"scores"`
-	Block     AbuseBlock    `json:"block"`
-	PTR       PTRDetails    `json:"ptr"`
-	Shodan    ShodanDetails `json:"shodan"`
+	SnapshotID string        `json:"-"`
+	SourceIP   string        `json:"sourceIP"`
+	CacheMatch string        `json:"cacheMatch"`
+	IP         string        `json:"ip"`
+	FetchedAt  string        `json:"fetchedAt"`
+	Topology   BGPTopology   `json:"topology"`
+	ASNs       []ASNDetails  `json:"asns"`
+	Scores     NetworkScores `json:"scores"`
+	Block      AbuseBlock    `json:"block"`
+	PTR        PTRDetails    `json:"ptr"`
+	Shodan     ShodanDetails `json:"shodan"`
 }
 
 // BGPTopology preserves observed paths separately from inferred relationships.
 type BGPTopology struct {
 	LiveMeta
-	Prefix             string    `json:"prefix"`
-	Origins            []uint32  `json:"origins"`
-	Nodes              []BGPNode `json:"nodes"`
-	Edges              []BGPEdge `json:"edges"`
-	Paths              []BGPPath `json:"paths"`
-	Truncated          bool      `json:"truncated"`
-	RelationshipMeta   LiveMeta  `json:"relationshipMeta"`
-	ClassificationMeta LiveMeta  `json:"classificationMeta"`
+	Prefix             string      `json:"prefix"`
+	Origins            []uint32    `json:"origins"`
+	Nodes              []BGPNode   `json:"nodes"`
+	Edges              []BGPEdge   `json:"edges"`
+	Paths              []BGPPath   `json:"paths"`
+	Tier1Links         []Tier1Link `json:"tier1Links"`
+	Truncated          bool        `json:"truncated"`
+	RelationshipMeta   LiveMeta    `json:"relationshipMeta"`
+	ClassificationMeta LiveMeta    `json:"classificationMeta"`
+}
+
+// Tier1Link summarizes an observed path, never an inferred adjacent AS pair.
+type Tier1Link struct {
+	Origin   uint32 `json:"origin"`
+	Neighbor uint32 `json:"neighbor"`
+	Tier1    uint32 `json:"tier1"`
+	Hops     int    `json:"hops"`
 }
 
 type BGPNode struct {

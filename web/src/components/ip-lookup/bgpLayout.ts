@@ -1,7 +1,8 @@
 import type { IPLookupBGPTopology } from '@/api/ipLookup'
 
 type Node = IPLookupBGPTopology['nodes'][number]
-type Edge = IPLookupBGPTopology['edges'][number] & { id: string }
+export type GraphEdge = Omit<IPLookupBGPTopology['edges'][number], 'relationship'> & { id: string; relationship: IPLookupBGPTopology['edges'][number]['relationship'] | 'path'; hops?: number }
+type Edge = GraphEdge
 export type PlacedNode = Node & { layer: number; x: number; y: number }
 export const nodeWidth = 168
 export const nodeHeight = 44

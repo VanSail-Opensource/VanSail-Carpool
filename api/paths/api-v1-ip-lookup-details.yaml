@@ -6,14 +6,14 @@ get:
       name: ip
       required: true
       schema: { type: string }
-      description: Requested public IPv4 or IPv6 address, independent of any cached report address.
+      description: Requested public IPv4 or IPv6 address. sourceIP identifies the actual cached observation address.
     - in: query
       name: refresh
       schema: { type: boolean, default: false }
-      description: Bypass the 60-second completion cache; identical running lookups can still be shared.
+      description: Deprecated. true is rejected; use a signed paid refresh through quote/checks.
   responses:
     "200":
-      description: Source-attributed details, reused for at most 60 seconds unless refreshed. Accept text/event-stream for progressive section snapshots and final completion.
+      description: Source-attributed persistent cache (exact IP, then IPv4 /24), or a free first fetch. Accept text/event-stream for progressive section snapshots and final completion.
       headers:
         Cache-Control: { schema: { type: string }, description: Always no-store. }
       content:

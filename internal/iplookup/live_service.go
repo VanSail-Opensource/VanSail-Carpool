@@ -20,7 +20,13 @@ type nameEntry struct {
 	expires, used time.Time
 }
 
-// LiveService owns non-persistent enrichment and bounded source/name admission.
+// LiveRepository stores compact shared evidence independently of paid receipts.
+type LiveRepository interface {
+	CachedIPDetails(context.Context, string) (*LiveDetails, error)
+	SaveIPDetails(context.Context, string, LiveDetails, time.Time) (string, error)
+}
+
+// LiveService owns persistent enrichment and bounded source/name admission.
 type LiveService struct {
 	settings Settings
 	queues   map[string]*upstreamqueue.Queue
@@ -28,17 +34,21 @@ type LiveService struct {
 	resolver interface {
 		LookupAddr(context.Context, string) ([]string, error)
 	}
-	mu      sync.Mutex
-	users   map[string]*liveAdmission
-	names   map[uint32]nameEntry
-	cache   map[string]liveCacheEntry
-	flights map[string]*liveFlight
-	now     func() time.Time
+	mu         sync.Mutex
+	users      map[string]*liveAdmission
+	names      map[uint32]nameEntry
+	repository LiveRepository
+	flights    map[string]*liveFlight
+	now        func() time.Time
 }
 
 // NewLiveService reuses the existing upstream queue implementation for every source.
-func NewLiveService(settings Settings, queues map[string]*upstreamqueue.Queue) *LiveService {
-	return &LiveService{settings: settings, queues: queues, client: &http.Client{Timeout: 12 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, resolver: net.DefaultResolver, users: map[string]*liveAdmission{}, names: map[uint32]nameEntry{}, cache: map[string]liveCacheEntry{}, flights: map[string]*liveFlight{}, now: time.Now}
+func NewLiveService(settings Settings, queues map[string]*upstreamqueue.Queue, repositories ...LiveRepository) *LiveService {
+	s := &LiveService{settings: settings, queues: queues, client: &http.Client{Timeout: 12 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, resolver: net.DefaultResolver, users: map[string]*liveAdmission{}, names: map[uint32]nameEntry{}, flights: map[string]*liveFlight{}, now: time.Now}
+	if len(repositories) > 0 {
+		s.repository = repositories[0]
+	}
+	return s
 }
 
 func (s *LiveService) admit(user string) (func(), error) {
@@ -82,6 +92,9 @@ func (s *LiveService) Details(ctx context.Context, user, rawIP string) (LiveDeta
 
 // DetailsWithOptions streams shared work and optionally bypasses completed cache entries.
 func (s *LiveService) DetailsWithOptions(ctx context.Context, user, rawIP string, options LiveOptions) (LiveDetails, error) {
+	if options.Refresh {
+		return LiveDetails{}, &CodeError{"IP_LOOKUP_REFRESH_REQUIRED"}
+	}
 	ip, err := CanonicalIP(rawIP)
 	if err != nil {
 		return LiveDetails{}, err
@@ -102,9 +115,14 @@ func (s *LiveService) DetailsWithOptions(ctx context.Context, user, rawIP string
 		return LiveDetails{}, err
 	}
 	defer release()
-	key, err := s.liveCacheKey(ctx, ip, raw)
-	if err != nil {
-		return LiveDetails{}, err
+	if s.repository != nil {
+		cached, err := s.repository.CachedIPDetails(ctx, ip)
+		if err != nil {
+			return LiveDetails{}, err
+		}
+		if cached != nil {
+			return emitCachedDetails(*cached, options.Emit)
+		}
 	}
-	return s.liveShared(ctx, key, ip, c, options)
+	return s.liveShared(ctx, ip, ip, c, options)
 }

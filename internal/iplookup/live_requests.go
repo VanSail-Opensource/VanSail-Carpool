@@ -15,9 +15,30 @@ type liveRequestResult struct {
 	err  error
 }
 type liveRequests struct {
-	mu      sync.Mutex
-	results map[[32]byte]*liveRequestResult
-	failed  bool
+	mu          sync.Mutex
+	results     map[[32]byte]*liveRequestResult
+	failed      bool
+	attempted   bool
+	attemptOnce sync.Once
+	attemptErr  error
+	onAttempt   func(context.Context) error
+}
+
+func markLiveAttempt(ctx context.Context) error {
+	memo, ok := ctx.Value(liveRequestsKey{}).(*liveRequests)
+	if !ok {
+		return nil
+	}
+	memo.attemptOnce.Do(func() {
+		var err error
+		if memo.onAttempt != nil {
+			err = memo.onAttempt(ctx)
+		}
+		memo.mu.Lock()
+		memo.attemptErr, memo.attempted = err, err == nil
+		memo.mu.Unlock()
+	})
+	return memo.attemptErr
 }
 
 func withLiveRequests(ctx context.Context) context.Context {

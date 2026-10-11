@@ -1,7 +1,7 @@
 import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import { z } from 'zod'
 import { useRoute, useRouter } from 'vue-router'
-import { ipLookupApi, type IPLookupCheck, type IPLookupQuote, type IPLookupState } from '@/api/ipLookup'
+import { ipLookupApi, type IPLookupCheck, type IPLookupQuote, type IPLookupState, type IPLookupReport } from '@/api/ipLookup'
 import { ApiError } from '@/api/http'
 import { useSessionStore } from '@/stores/session'
 import { createUuid } from '@/utils/browserCompatibility'
@@ -16,6 +16,9 @@ export function useIPLookup() {
   const ip = shallowRef('')
   const state = shallowRef<IPLookupState | null>(null)
   const quote = shallowRef<IPLookupQuote | null>(null)
+  const refreshQuote = shallowRef<IPLookupQuote | null>(null)
+  const previousReport = shallowRef<IPLookupReport | null>(null)
+  const previousCacheMatch = shallowRef('none')
   const check = shallowRef<IPLookupCheck | null>(null)
   const loading = shallowRef(true)
   const busy = shallowRef(false)
@@ -29,9 +32,10 @@ export function useIPLookup() {
   let pendingSubmission: { quote: IPLookupQuote; key: string } | null = null
   const ownerSnapshot = () => ({ id: session.user?.id, version: sessionRevision })
   const isCurrent = (owner: ReturnType<typeof ownerSnapshot>) => !disposed && owner.id === session.user?.id && owner.version === sessionRevision
-  const report = computed(() => check.value?.report ?? quote.value?.cachedReport ?? null)
+  const report = computed(() => check.value?.report ?? quote.value?.cachedReport ?? previousReport.value)
   const requestedIP = computed(() => check.value?.requestedIP ?? quote.value?.ip ?? ip.value)
-  const cacheMatch = computed(() => check.value?.cacheMatch ?? quote.value?.cacheMatch ?? 'none')
+  const cacheMatch = computed(() => check.value?.report ? check.value.cacheMatch : quote.value?.cacheMatch ?? previousCacheMatch.value)
+  const displayCheck = computed(() => check.value?.report ? check.value : null)
   const setError = (error: unknown) => { errorCode.value = error instanceof ApiError ? error.code : 'IP_LOOKUP_FAILED' }
 
   async function load(): Promise<void> {
@@ -45,11 +49,16 @@ export function useIPLookup() {
     const version = ++revision
     const owner = ownerSnapshot()
     quote.value = null
+    refreshQuote.value = null
     if (!validIP.value || !state.value?.enabled || busy.value) return
     try {
       const value = await ipLookupApi.quote(ip.value.trim(), false)
       if (version !== revision || !isCurrent(owner)) return
       quote.value = value
+      if (value.cachedReport) {
+        const priced = await ipLookupApi.quote(value.ip, true)
+        if (version === revision && isCurrent(owner)) refreshQuote.value = priced
+      }
     } catch (error) { if (version === revision && isCurrent(owner)) setError(error) }
   }
 
@@ -73,10 +82,13 @@ export function useIPLookup() {
     }
   }
 
-  async function submit(): Promise<void> {
+  async function submit(refresh = false): Promise<void> {
     if (busy.value) return
-    const selected = quote.value
-    if (!selected || selected.cachedReport || !validIP.value) return
+    const selected = refresh ? refreshQuote.value : quote.value
+    if (!selected || (!refresh && selected.cachedReport) || !validIP.value) return
+    if (pendingSubmission && pendingSubmission.quote.refresh !== refresh) return
+    if (!pendingSubmission && selected.expiresAt <= Math.floor(Date.now() / 1000)) { await updateQuote(); return }
+    if (refresh) { previousReport.value = report.value; previousCacheMatch.value = cacheMatch.value }
     busy.value = true
     errorCode.value = ''
     const owner = ownerSnapshot()
@@ -100,6 +112,9 @@ export function useIPLookup() {
     if (check.value?.requestedIP === ip.value.trim()) return
     revision++
     quote.value = null
+    refreshQuote.value = null
+    previousReport.value = null
+    previousCacheMatch.value = 'none'
     if (!busy.value) { errorCode.value = ''; pendingSubmission = null; check.value = null }
     clearTimeout(quoteTimer)
     quoteTimer = setTimeout(() => void updateQuote(), 350)
@@ -110,6 +125,9 @@ export function useIPLookup() {
     clearTimeout(quoteTimer)
     clearTimeout(pollTimer)
     state.value = quote.value = check.value = null
+    refreshQuote.value = null
+    previousReport.value = null
+    previousCacheMatch.value = 'none'
     ip.value = ''
     errorCode.value = ''
     pendingSubmission = null
@@ -122,5 +140,5 @@ export function useIPLookup() {
     }
   }, { immediate: true })
   onScopeDispose(() => { disposed = true; revision++; clearTimeout(quoteTimer); clearTimeout(pollTimer) })
-  return { ip, state, quote, check, report, requestedIP, cacheMatch, loading, busy, errorCode, validIP, submit, load }
+  return { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy, errorCode, validIP, submit, load }
 }

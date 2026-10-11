@@ -27,6 +27,8 @@ let submitCount = 0
 let quoteCount = 0
 let savedBody: IPLookupAdminSettings | null = null
 let lastQuote: IPLookupQuote | null = null
+let refreshedLive: Awaited<ReturnType<typeof liveCounters.refresh>> | null = null
+let refreshedOnce = false
 const receipt = () => ({ id: 'check-audit', kind: 'ip_reputation_lookup', status: 'queued' as const, errorCode: null, createdAt: now(), updatedAt: now(), completedAt: null })
 
 function makeReport(ip: string): IPLookupReport {
@@ -92,15 +94,15 @@ ipLookupApi.saveSettings = async value => {
 }
 ipLookupApi.quote = async (ip, refresh) => {
   quoteCount++
-  const useQuota = !cached && !!state.allowance?.remaining
+  const useQuota = !refresh && !cached && !!state.allowance?.remaining
   const cachedReport = cached ? makeReport(mode === 'subnet' ? '8.8.8.7' : ip) : null
-  return { ip, refresh, charge: money(cached || useQuota ? 0 : 250), useQuota, purchaseId: state.allowance?.purchaseId ?? '', remaining: state.allowance?.remaining ?? 0, cacheReportId: cached ? 'report-audit' : '', cacheMatch: cachedReport ? cachedReport.ip === ip ? 'exact' : 'subnet' : 'none', cachedReport, configHash: 'fixture-config', expiresAt: Math.floor(Date.now() / 1000) + 120, token: 'fixture-token' }
+  return { ip, refresh, charge: money(refresh ? 350 : cached || useQuota ? 0 : 250), useQuota, purchaseId: state.allowance?.purchaseId ?? '', remaining: state.allowance?.remaining ?? 0, cacheReportId: cached ? 'report-audit' : '', cacheMatch: cachedReport ? cachedReport.ip === ip ? 'exact' : 'subnet' : 'none', cachedReport, configHash: 'fixture-config', expiresAt: Math.floor(Date.now() / 1000) + 120, token: 'fixture-token' }
 }
 ipLookupApi.submit = async quote => {
   submitCount++; lastQuote = structuredClone(quote)
   if (mode === 'balance-error') throw new ApiError(409, { code: 'INSUFFICIENT_BALANCE', message: 'Constructed low balance' })
   if (quote.useQuota && state.allowance) state.allowance.remaining--
-  polls = 0
+  polls = 0; refreshedLive = null; refreshedOnce = false
   return receipt()
 }
 ipLookupApi.check = async () => {
@@ -108,7 +110,8 @@ ipLookupApi.check = async () => {
   const requestedIP = lastQuote?.ip ?? '8.8.8.8'
   const report = makeReport(requestedIP)
   const pending = polls < 3
-  const result: IPLookupCheck = { operation: { ...receipt(), status: pending ? 'processing' : report.status, completedAt: pending ? null : now() }, report: pending ? null : report, requestedIP, cacheMatch: 'none', cached: false, charge: lastQuote?.charge ?? money(0), usedQuota: lastQuote?.useQuota ?? false, refunded: false, progress: { phase: pending ? 'checking' : 'complete', completed: pending ? polls : 6, total: 6, currentProvider: pending ? ids[polls]! : undefined } }
+  if (!pending && lastQuote?.refresh && !refreshedOnce) { refreshedOnce = true; try { refreshedLive = await liveCounters.refresh(requestedIP) } catch { report.status = 'partial' } }
+  const result: IPLookupCheck = { operation: { ...receipt(), status: pending ? 'processing' : report.status, completedAt: pending ? null : now() }, report: pending ? null : report, liveDetails: refreshedLive, requestedIP, cacheMatch: 'none', cached: false, charge: lastQuote?.charge ?? money(0), usedQuota: lastQuote?.useQuota ?? false, refunded: false, progress: { phase: pending ? 'checking' : 'complete', completed: pending ? polls : 6, total: 6, currentProvider: pending ? ids[polls]! : undefined } }
   if (!pending) cached = true
   return result
 }
@@ -125,5 +128,5 @@ const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:p
 app.use(router); app.use(ui)
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 document.title = t('ipLookup.title')
-;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters() }), setCached: (value: boolean) => { cached = value } }
+;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
 void router.isReady().then(() => app.mount('#app'))

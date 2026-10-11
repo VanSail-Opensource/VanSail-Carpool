@@ -11,12 +11,22 @@ import { useLiveIPDetails } from './useLiveIPDetails'
 
 const ip = shallowRef('')
 const key = shallowRef('')
+const snapshot = shallowRef<IPLookupLiveDetails | null>(null)
 let state: ReturnType<typeof useLiveIPDetails>
-const Harness = defineComponent({ setup() { state = useLiveIPDetails(() => ip.value, () => key.value); return () => null } })
+const Harness = defineComponent({ setup() { state = useLiveIPDetails(() => ip.value, () => key.value, () => snapshot.value); return () => null } })
 
 describe('live IP details ownership and request boundaries', () => {
-  beforeEach(() => { vi.resetAllMocks(); account.user.id = 'member' })
-  it('queries the requested address once per report identity and refreshes without submission', async () => {
+  beforeEach(() => { vi.resetAllMocks(); account.user.id = 'member'; snapshot.value = null })
+  it('uses the completed paid snapshot without a second free fetch', async () => {
+    ip.value = '8.8.8.8'; key.value = 'refreshed'
+    snapshot.value = { ip: ip.value, sourceIP: ip.value, fetchedAt: 'date', cacheMatch: 'none' } as IPLookupLiveDetails
+    const wrapper = mount(Harness)
+    await flushPromises()
+    expect(mocks.details).not.toHaveBeenCalled()
+    expect(state.details.value).toEqual(snapshot.value)
+    wrapper.unmount()
+  })
+  it('queries requested address and only performs free cached reads', async () => {
     ip.value = '8.8.8.9'
     key.value = 'cached-report:date'
     mocks.details.mockImplementation(async (address: string) => ({ ip: address }))
@@ -53,8 +63,8 @@ describe('live IP details ownership and request boundaries', () => {
   })
   it('publishes partial sections and retains them when an explicit refresh fails', async () => {
     ip.value = '1.1.1.1'; key.value = 'report'
-    mocks.details.mockImplementation(async (address, _signal, refresh, emit) => {
-      if (refresh) throw new Error('source unavailable')
+    mocks.details.mockImplementation(async (address, _signal, _refresh, emit) => {
+      if (mocks.details.mock.calls.length > 1) throw new Error('source unavailable')
       emit({ type: 'section', ip: address, section: 'ptr', data: { domains: ['one.one.one.one'] } })
       emit({ type: 'progress', ip: address, progress: { phase: 'asns', completed: 3, total: 8 } })
       expect(state.details.value?.ptr?.domains).toEqual(['one.one.one.one'])
@@ -64,7 +74,7 @@ describe('live IP details ownership and request boundaries', () => {
     await flushPromises()
     expect(mocks.details.mock.calls[0]![2]).toBe(false)
     await state.refresh()
-    expect(mocks.details.mock.calls[1]![2]).toBe(true)
+    expect(mocks.details.mock.calls[1]![2]).toBe(false)
     expect(state.details.value?.ptr?.domains).toEqual(['one.one.one.one'])
     expect(state.errorCode.value).toBe('IP_DETAILS_UNAVAILABLE')
     wrapper.unmount()

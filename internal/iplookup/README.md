@@ -111,9 +111,9 @@ only the embedded `Quote`. Cache previews do not create checks or consume quota.
 Member receipts separately retain `requestedIP` and the original report's IP.
 
 Reports have no automatic expiry. Exact-IP cache matches win; otherwise IPv4
-can reuse a completed report in the same /24. IPv6 stays exact-only. Cache
-previews are free and offer no refresh action; the existing priced refresh API
-remains compatible. Configuration changes
+can reuse a completed report in the same /24. IPv6 stays exact-only. Cache previews are free and offer the existing signed refresh price.
+Refreshes from exact or IPv4 /24 previews target the requested IP, update quality
+and realtime data, charge once per idempotent command and never consume quota. Configuration changes
 do not rewrite cached policy/verdict. Fresh lookups consume TXB or an allowance
 snapshotted at first successful purchase activation; polling never charges.
 
@@ -147,12 +147,13 @@ legacy compaction; `config_order_test.go` checks administrator order validation;
 `live_service.go` owns the `GET /api/v1/ip-lookup/details` workflow,
 member admission (one active request, six starts/minute), cancellation, and a
 60-second total deadline. `live_types.go` defines the public projection and queue
-source identifiers; these sources are not reputation providers. No live result
-is persisted, billed, or fed into suitability policy. Requested IPs are canonical
+source identifiers; these sources are not reputation providers. Realtime evidence is persisted as a compact shared snapshot. Free reads and first
+fetches remain independent of billing; quoted paid refreshes update quality and
+realtime phases together. Realtime evidence never changes suitability policy. Requested IPs are canonical
 public addresses, even when reputation previews reuse a neighboring IP.
 
 - `live_transport.go` owns bounded, fixed-origin, redacted HTTP through existing `upstreamqueue` workers.
-- `live_bgp.go` selects the longest observed prefix, retains original paths/collector context, collapses visual prepends into edges, supports multiple origins, and bounds paths/nodes. RIPE Looking Glass falls back to RouteViews, then the explicitly dated RIPE BGP snapshot.
+- `live_bgp.go` selects the longest observed prefix, uses original paths transiently, collapses visual prepends into edges, supports multiple origins, and bounds paths/nodes. RIPE Looking Glass falls back to RouteViews, then the explicitly dated RIPE BGP snapshot.
 - `live_relationships.go` and `live_relationship_bulk.go` use bounded, paginated CAIDA origin-neighborhood queries and optional Cloudflare fallback. Only existing observed pairs are annotated, both endpoint orientations are handled, partial valid data is preserved, and indirect/unavailable relationships remain observed adjacency.
 - `live_names.go` caches only successful ASN names, with seven-day expiry and 4,096-entry LRU eviction. Keyed IPAPI bulk, BGPKIT, and bounded RIPE holder lookups fill missing names. Collector exchange scope is observation context, never an invented physical hop.
 - `live_asn.go` selects registration from RIPE RIR `lod=2`, routing totals from RIPE/RouteViews, and dated relationship degrees from CAIDA/Cloudflare.
@@ -160,10 +161,10 @@ public addresses, even when reputation previews reuse a neighboring IP.
 - `live_requests.go` coalesces identical queued HTTP reads within a lookup and tracks transient failures.
 - `live_pipeline.go` emits immutable section snapshots and progress over eight fixed logical phases; topology arrives before contextual enrichment finishes.
 - `live_events.go` defines progress/section/complete/error stream events and optional refresh behavior. JSON clients keep the same response projection.
-- `live_cache.go` shares concurrent lookups and stores eligible final projections for 60 seconds, bounded to 64 entries and 16 MiB. The cache key hashes canonical IP, configuration and live credentials; refresh bypasses completed cache, and transient failures prevent storage. A shared lookup is cancelled when its last subscriber leaves.
+- `live_cache.go` bounds concurrent shared work to 64 flights; completion evidence lives in SQLite. Free reads match exact IP then IPv4 /24 without expiry or credential invalidation. `RefreshRun` is worker-only and uses a separate durable run identity. A shared lookup is cancelled when its last subscriber leaves.
 - `live_classification.go` reads CAIDA's authoritative dated `dataset.clique` and bulk ASN names. The API's per-ASN `cliqueMember` flag incorrectly marks non-members true and is never used; absent/invalid membership lists stay unknown, without degree-based guesses.
 - `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence.
-- `live_cache_test.go` covers expiry, credential invalidation, forced refresh, byte bounds, early streaming and failure exclusion in hosted CI.
+- `live_cache_test.go` covers persistent reads, rejected free refreshes, attempted outage caching, pre-attempt exclusion and early streaming in hosted CI.
 - `live_ip.go` supplies keyed contextual IPAPI scores, distinct AbuseIPDB reported addresses in the announced block (30 days), exact decimal address capacity, and queued PTR lookups. Missing data remains nullable; block-plan restrictions never silently narrow the subnet.
 - `live_traffic.go` requests Cloudflare Radar's BOT_CLASS, DEVICE_TYPE, and IP_VERSION summaries for the ASN over seven days; returned Other device values and actual date windows are preserved.
 - `live_test.go` and `live_http_test.go` provide hosted regressions for prefix/origin/path preservation, name-only cache bounds, admission, queue enforcement, credentials, unknown/zero values, restrictions, and Cloudflare windows.
@@ -177,6 +178,22 @@ sections independently; external datasets retain their own observation dates.
 `live_shodan_test.go` covers sorted/deduplicated InternetDB hostnames and ports, unobserved addresses, provider outages, mismatched IPs, absent fields and invalid port ranges in hosted CI.
 `live_integration_test.go` exercises the complete queued response projection with multiple origins, original prepends, source fallback, zero/unknown fields, live neighboring-IP requests, name-only cache behavior and credential-free public JSON in hosted CI.
 Topology limits are 300 nodes, 1,500 edges and 1,000 original paths; omitted paths are disclosed. InternetDB retains at most 256 hostnames and 2,048 ports and marks larger observations partial.
-- `live_cache_storage.go` validates cache eligibility and enforces TTL, entry and byte bounds.
+- `live_snapshot.go` emits cached completion and classifies partial realtime coverage.
+- `live_compact.go` is the public and storage boundary: retain origins, direct neighbors, observed T1s and deduplicated reachability/hop summaries; original AS paths never enter streamed or persisted output.
+- `live_snapshot_test.go` covers compaction and lightweight repository fixtures in hosted CI.
+- `worker_live.go` owns durable refresh-phase claim, attempt and snapshot-reference recovery. Complete quality stages remain checkpointed before realtime begins; joined receipts settle together only after both phases finish.
+- `worker_lock.go` serializes shared report work with reference-counted locks, preventing joined jobs from overwriting checkpoints or duplicating external attempts.
+- `worker_live_test.go` verifies realtime refresh after early quality refusal and no replay of completed phases in hosted CI.
 - `live_shared_test.go` verifies shared subscriber cancellation and dataset membership despite false-positive per-ASN flags in hosted CI.
 - `live_relationship_bulk_test.go` covers direct-pair pagination, reversed endpoints, unknown indirect links, absent clique lists and preservation of valid partial GraphQL data.
+
+## Persistent realtime contracts
+
+`LiveRepository` supplies cache reads and normalized snapshot storage. Public
+`LiveDetails.ip` identifies the request; `sourceIP` identifies the original
+observation and `cacheMatch` exposes exact/subnet reuse without changing source
+timestamps. Snapshot IDs and `LiveStage` recovery markers stay private.
+`GET details?refresh=true` returns `IP_LOOKUP_REFRESH_REQUIRED`; only the signed
+quote/check workflow may force new observations. Interrupted work is not cached;
+attempted source errors are cacheable partial evidence. Persistence failures
+are retried through the existing durable lane, never through a second queue.

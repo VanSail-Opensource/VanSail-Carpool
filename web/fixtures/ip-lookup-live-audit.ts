@@ -5,22 +5,22 @@ import { denseTopology, publishLiveAudit } from './ip-lookup-progress-audit'
 export function installLiveIPAudit(params: URLSearchParams) {
   let calls = 0
   let upstreamCalls = 0
-  const cache = new Map<string, { result: IPLookupLiveDetails; expires: number }>()
+  const cache = new Map<string, IPLookupLiveDetails>()
   const requested: string[] = []
-  ipLookupApi.details = async (ip, signal, refresh, emit) => {
+  const fetchDetails = async (ip: string, signal?: AbortSignal, refresh = false, emit?: Parameters<typeof ipLookupApi.details>[3]): Promise<IPLookupLiveDetails> => {
     calls++; requested.push(ip)
-    const stored = cache.get(ip)
-    if (!refresh && stored && stored.expires > Date.now()) { emit?.({ type: 'complete', ip, data: stored.result, progress: { phase: 'complete', completed: 8, total: 8 } }); return stored.result }
+    const stored = cache.get(ip) ?? (!ip.includes(':') ? [...cache.values()].find(value => value.ip.split('.').slice(0, 3).join('.') === ip.split('.').slice(0, 3).join('.')) : undefined)
+    if (!refresh && stored) { const result = { ...structuredClone(stored), ip, sourceIP: stored.ip, cacheMatch: stored.ip === ip ? 'exact' as const : 'subnet' as const }; emit?.({ type: 'complete', ip, data: result, progress: { phase: 'complete', completed: 8, total: 8 } }); return result }
     upstreamCalls++
     if (params.get('live') === 'refresh-error' && calls > 1) throw new ApiError(502, { code: 'IP_DETAILS_UNAVAILABLE', message: 'Constructed refresh failure' })
     if (params.get('live') === 'error') throw new ApiError(429, { code: 'IP_DETAILS_RATE_LIMITED', message: 'Constructed rate limit' })
     const now = new Date().toISOString()
     const meta = { status: 'success' as const, source: 'ripe:looking-glass', observedAt: now, errorCode: '' }
     const asns = [174, 3257, 2914, 1299, 6461, 6939, 3356, 7018, 9002, 12956, 6453, 3491, 3549, 5511]
-    const names: Record<number, string> = { 13335: 'Cloudflare, Inc.', 174: 'Cogent Communications', 3257: 'GTT Communications', 2914: 'NTT DATA', 1299: 'Arelion', 6461: 'Zayo', 6939: 'Hurricane Electric', 3356: 'Lumen', 7018: 'AT&T', 9002: 'RETN', 12956: 'Telefónica', 6453: 'Tata Communications', 3491: 'PCCW Global', 3549: 'Level 3', 5511: 'Orange' }
+    const names: Record<number, string> = { 13335: 'Cloudflare, Inc.', 174: 'Cogent Communications', 3257: 'GTT Communications', 2914: 'NTT DATA', 1299: 'Arelion', 6461: 'Zayo', 6939: 'Hurricane Electric', 3356: 'Lumen', 7018: 'AT&T', 9002: 'RETN', 12956: 'Telefónica', 6453: 'Tata Communications', 3491: 'PCCW Global', 3549: 'Level 3', 5511: 'Orange', 701: 'Verizon' }
     const result: IPLookupLiveDetails = {
-      ip, fetchedAt: now,
-      topology: { ...meta, prefix: ip.includes(':') ? '2606:4700:4700::/48' : '8.8.8.0/24', origins: [13335], nodes: [13335, ...asns, 48266].map(asn => ({ asn, name: names[asn] ?? 'Catixs' })), edges: [...asns.map((asn, index) => ({ from: asn, to: 13335, relationship: index < 4 ? 'upstream' as const : 'observed' as const })), { from: 48266, to: 174, relationship: 'observed' }], paths: asns.map((asn, index) => ({ asPath: index === 0 ? [48266, asn, 13335, 13335] : [asn, 13335], collector: `RRC${String(index).padStart(2, '0')}`, exchange: index === 0 ? 'LINX / LONAP' : '', observedAt: now })), truncated: false, relationshipMeta: { ...meta, source: 'caida', observedAt: '2026-10-01' } },
+      ip, sourceIP: ip, cacheMatch: 'none', fetchedAt: now,
+      topology: { ...meta, prefix: ip.includes(':') ? '2606:4700:4700::/48' : '8.8.8.0/24', origins: [13335], nodes: [13335, ...asns, 48266, 701].map(asn => ({ asn, name: names[asn] ?? 'Catixs' })), edges: [...asns.map((asn, index) => ({ from: asn, to: 13335, relationship: index < 4 ? 'upstream' as const : 'observed' as const })), { from: 48266, to: 174, relationship: 'observed' }], paths: asns.map((asn, index) => ({ asPath: index === 0 ? [48266, asn, 13335, 13335] : [asn, 13335], collector: `RRC${String(index).padStart(2, '0')}`, exchange: index === 0 ? 'LINX / LONAP' : '', observedAt: now })), truncated: false, relationshipMeta: { ...meta, source: 'caida', observedAt: '2026-10-01' } },
       asns: [{ asn: 13335, name: names[13335]!, registeredAt: '2010-07-14T00:00:00Z', rir: 'ARIN', announced: true, ipv4Prefixes: 2676, ipv6Prefixes: 3049, observedNeighbors: 1543, peers: 362, upstreams: 109, sources: { registration: { ...meta, source: 'ripe:rir' }, rir: { ...meta, source: 'ripe:rir' }, routing: { ...meta, source: 'ripe:routing-status' }, relationships: { ...meta, source: 'caida', observedAt: '2026-10-01' } }, traffic: {
         botHuman: { ...meta, source: 'cloudflare', values: { bot: 32.7, human: 67.3 }, startTime: '2026-10-03', endTime: '2026-10-10' },
         devices: { ...meta, source: 'cloudflare', values: { desktop: 42.3, mobile: 55.8, other: 1.9 }, startTime: '2026-10-03', endTime: '2026-10-10' },
@@ -31,6 +31,7 @@ export function installLiveIPAudit(params: URLSearchParams) {
       ptr: { ...meta, source: 'dns', domains: ['dns.google', 'resolver.google'] },
       shodan: { ...meta, source: 'shodan:internetdb', observedAt: '', hostnames: ['dns.google'], ports: [53, 443, 853] },
     }
+    result.topology.paths.push({ asPath: [701, 48266, 174, 13335], collector: 'RRC21', exchange: '', observedAt: now })
     if (params.get('live') === 'empty') {
       result.topology = { ...result.topology, status: 'empty', prefix: '', origins: [], nodes: [], edges: [], paths: [] }
       result.asns = []; result.ptr = { ...result.ptr, status: 'empty', domains: [] }
@@ -51,13 +52,33 @@ export function installLiveIPAudit(params: URLSearchParams) {
       result.asns.push({ ...result.asns[0]!, asn: 48266, name: 'Catixs', rir: 'RIPE NCC' })
     }
     result.topology.classificationMeta = { ...meta, source: 'caida:clique', observedAt: '2026-10-01' }
-    const tiers = new Set([174, 3257, 2914, 1299, 6461, 3356, 7018, 12956, 6453, 3491, 5511])
+    const tiers = new Set([701, 174, 3257, 2914, 1299, 6461, 3356, 7018, 12956, 6453, 3491, 5511])
     result.topology.nodes = result.topology.nodes.map(node => ({ ...node, tier1: params.get('live') === 'unknown-t1' ? null : tiers.has(node.asn) }))
     if (params.get('live') === 'unknown-t1') result.topology.classificationMeta.status = 'partial'
     if (params.get('live') === 'large') denseTopology(result)
+    compactAuditTopology(result)
     await publishLiveAudit(result, params, signal, params.has('baseline') ? undefined : emit)
-    if (!['partial', 'stream-error'].includes(params.get('live') ?? '')) cache.set(ip, { result, expires: Date.now() + 60000 })
+    cache.set(ip, structuredClone(result))
     return result
   }
-  return () => ({ calls, requested, upstreamCalls })
+  ipLookupApi.details = (ip, signal, _refresh, emit) => fetchDetails(ip, signal, false, emit)
+  return { counters: () => ({ calls, requested, upstreamCalls }), refresh: (ip: string) => fetchDetails(ip, undefined, true) }
+}
+
+function compactAuditTopology(result: IPLookupLiveDetails) {
+ const t = result.topology, origins = new Set(t.origins)
+ const tiers = new Set(t.nodes.filter(node => node.tier1).map(node => node.asn))
+ const kept = new Set([...origins, ...tiers])
+ t.edges = t.edges.filter(edge => { const direct = origins.has(edge.from) || origins.has(edge.to); if (direct) { kept.add(edge.from); kept.add(edge.to) } return direct })
+ const links = new Map<string, NonNullable<typeof t.tier1Links>[number]>()
+ for (const route of t.paths) {
+  const clean = route.asPath.filter((asn, i) => i === 0 || asn !== route.asPath[i - 1])
+  if (clean.length < 3) continue
+  const origin = clean.at(-1)!, neighbor = clean.at(-2)!
+  for (let i = 0; i < clean.length - 2; i++) if (tiers.has(clean[i]!)) {
+   const tier1 = clean[i]!, hops = clean.length - 2 - i
+   links.set(`${origin}-${neighbor}-${tier1}`, { origin, neighbor, tier1, hops })
+  }
+ }
+ t.nodes = t.nodes.filter(node => kept.has(node.asn)); t.paths = []; t.tier1Links = [...links.values()]
 }

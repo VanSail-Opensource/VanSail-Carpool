@@ -2,6 +2,7 @@ package iplookup
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/txyyddss/Remna-User-Panel/internal/model"
@@ -24,6 +25,9 @@ type Provider interface {
 
 // Worker resumes report stages in the single existing durable operation lane.
 type Worker struct {
+	mu         sync.Mutex
+	runs       map[string]*workerRun
+	Live       *LiveService
 	repository WorkerRepository
 	providers  map[string]Provider
 	now        func() time.Time
@@ -49,6 +53,12 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 		}
 	}
 	r, c, err := w.repository.IPLookupRun(ctx, operation.Receipt.ID)
+	if err != nil {
+		return err
+	}
+	unlock := w.lockRun(r.ID)
+	defer unlock()
+	r, c, err = w.repository.IPLookupRun(ctx, operation.Receipt.ID)
 	if err != nil {
 		return err
 	}
@@ -107,6 +117,9 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 			skipLater(&r, index)
 			break
 		}
+	}
+	if err := w.refreshLive(ctx, r, c); err != nil {
+		return err
 	}
 	r = Aggregate(r, w.now().UTC())
 	return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())

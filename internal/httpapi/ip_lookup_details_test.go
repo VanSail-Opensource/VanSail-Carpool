@@ -27,6 +27,17 @@ type detailsRecorder struct {
 	deadline time.Time
 }
 
+func TestLiveDetailsRejectsFreeRefreshBeforeStreaming(t *testing.T) {
+	s := &Server{deps: Dependencies{IPLookup: &iplookup.Service{Live: iplookup.NewLiveService(detailsSettings{}, nil)}}}
+	r := httptest.NewRequest(http.MethodGet, "/api/v1/ip-lookup/details?ip=1.1.1.1&refresh=true", nil)
+	r = r.WithContext(context.WithValue(r.Context(), userContextKey, model.User{ID: "member", OnboardingState: "complete"}))
+	w := httptest.NewRecorder()
+	s.ipLookupDetails(w, r)
+	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "IP_LOOKUP_REFRESH_REQUIRED") {
+		t.Fatalf("free bypass accepted: %d %s", w.Code, w.Body.String())
+	}
+}
+
 func (w *detailsRecorder) SetWriteDeadline(at time.Time) error { w.deadline = at; return nil }
 
 func TestLiveDetailsNegotiatesStreamAndJSONWithRouteDeadline(t *testing.T) {

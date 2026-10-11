@@ -4,7 +4,7 @@ import type { IPLookupLiveDetails, IPLookupLiveEvent } from '@/api/ipLookup'
 export function denseTopology(result: IPLookupLiveDetails) {
   const origin = 13335
   const ids = Array.from({ length: 299 }, (_, i) => 20000 + i)
-  result.topology.nodes = [origin, ...ids].map((asn, i) => ({ asn, name: `Network ${asn}`, tier1: i > 0 && i <= 20 }))
+  result.topology.nodes = [origin, ...ids].map((asn, i) => ({ asn, name: `Network ${asn}`, tier1: i > 20 && i <= 40 }))
   result.topology.edges = ids.map((asn, i) => ({ from: asn, to: i < 20 ? origin : ids[i % 20]!, relationship: i < 20 ? 'upstream' as const : 'observed' as const }))
   for (let i = 0; result.topology.edges.length < 1500; i++) {
     const from = ids[i % ids.length]!, to = ids[(i * 17 + 23 + Math.floor(i / ids.length)) % ids.length]!

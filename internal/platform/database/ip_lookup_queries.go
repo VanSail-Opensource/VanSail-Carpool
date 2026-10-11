@@ -71,7 +71,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 		return q, c, &iplookup.CodeError{Code: "IP_LOOKUP_DISABLED"}
 	}
 	q.ConfigHash = iplookup.ConfigHash(c)
-	cached, _, err := ipCachedReportTx(ctx, tx, ip, !refresh)
+	cached, _, err := ipCachedReportTx(ctx, tx, ip, true)
 	if err != nil {
 		return q, c, err
 	}
@@ -123,11 +123,11 @@ func (s *Store) IPLookupQuote(ctx context.Context, user, ip string, refresh bool
 // IPLookupCheck returns an owner-scoped receipt with the immutable shared report.
 func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Check, error) {
 	var result iplookup.Check
-	var raw string
+	var raw, liveRaw string
 	var cached, refunded int
 	var usedQuota int
 	var charge int64
-	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,c.cached,c.refunded,COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END) FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch)
+	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,r.live_state_json,c.cached,c.refunded,COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END) FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch)
 	if err == sql.ErrNoRows {
 		return result, ErrNotFound
 	}
@@ -143,6 +143,9 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 		return result, err
 	}
 	result.Progress = iplookup.CheckProgress(report)
+	if err := s.ipLookupCheckLive(ctx, &result, liveRaw, report.Status); err != nil {
+		return result, err
+	}
 	if report.Status != "processing" && report.Status != "failed" {
 		public := iplookup.PublicReport(report)
 		result.Report = &public

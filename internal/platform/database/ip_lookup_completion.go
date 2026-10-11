@@ -64,6 +64,16 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	liveStage, err := ipLiveStageTx(ctx, tx, report.ID)
+	if err != nil {
+		return err
+	}
+	if liveStage.Status == "queued" || liveStage.Status == "processing" {
+		return &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
+	}
+	if report.Status == "failed" && liveStage.Attempted {
+		report.Status, report.Verdict = "partial", "inconclusive"
+	}
 	raw, err := iplookup.EncodeReport(report)
 	if err != nil {
 		return err
@@ -108,7 +118,11 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 				return err
 			}
 		}
-		if err := finishIPCheckTx(ctx, tx, id, report.ID, report.Status, now); err != nil {
+		status := report.Status
+		if status == "succeeded" && (liveStage.Status == "partial" || liveStage.Status == "error") {
+			status = "partial"
+		}
+		if err := finishIPCheckTx(ctx, tx, id, report.ID, status, now); err != nil {
 			return err
 		}
 	}

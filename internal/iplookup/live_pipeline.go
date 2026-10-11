@@ -24,6 +24,9 @@ func (p *livePipeline) update(phase, section string, value any, apply func(*Live
 		p.finished[phase] = true
 	}
 	if section != "" {
+		if graph, ok := value.(BGPTopology); ok {
+			value = CompactTopology(graph)
+		}
 		data, err := json.Marshal(value)
 		if err == nil {
 			p.emit(LiveEvent{Type: "section", IP: p.result.IP, Section: section, Data: data})
@@ -50,7 +53,7 @@ func cloneTopology(t BGPTopology) BGPTopology {
 }
 
 func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emit func(LiveEvent)) LiveDetails {
-	p := &livePipeline{result: LiveDetails{IP: ip, FetchedAt: s.now().UTC().Format(time.RFC3339), ASNs: []ASNDetails{}}, finished: map[string]bool{}, emit: emit}
+	p := &livePipeline{result: LiveDetails{IP: ip, FetchedAt: s.now().UTC().Format(time.RFC3339Nano), ASNs: []ASNDetails{}}, finished: map[string]bool{}, emit: emit}
 	p.update("", "", nil, nil)
 	var work sync.WaitGroup
 	launch := func(fn func()) { work.Add(1); go func() { defer work.Done(); fn() }() }
@@ -89,6 +92,7 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 		p.update("", "topology", classified, func(r *LiveDetails) { r.Topology = classified })
 		s.relationships(ctx, &graph, c)
 		p.update("relationships", "topology", graph, func(r *LiveDetails) { r.Topology = graph })
+		graph = CompactTopology(graph)
 		nameCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		s.resolveNames(nameCtx, &graph, c)
 		cancel()
@@ -97,5 +101,5 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 		p.update("names", "topology", graph, func(r *LiveDetails) { r.Topology = graph })
 	})
 	work.Wait()
-	return p.result
+	return CompactLiveDetails(p.result)
 }

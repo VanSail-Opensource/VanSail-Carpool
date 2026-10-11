@@ -57,10 +57,13 @@ func newIPLookupService(store *database.Store, settings *admin.SettingsService, 
 	for _, descriptor := range iplookup.Registry {
 		providers = append(providers, iplookup.NewHTTPProvider(descriptor.ID, queues.iplookup[descriptor.ID], settings))
 	}
-	if err := dispatcher.Register(iplookup.OperationKind, iplookup.NewWorker(store, providers)); err != nil {
+	live := iplookup.NewLiveService(settings, queues.iplookup, store)
+	worker := iplookup.NewWorker(store, providers)
+	worker.Live = live
+	if err := dispatcher.Register(iplookup.OperationKind, worker); err != nil {
 		return nil, err
 	}
 	service := iplookup.NewService(store, key)
-	service.Live = iplookup.NewLiveService(settings, queues.iplookup)
+	service.Live = live
 	return service, nil
 }

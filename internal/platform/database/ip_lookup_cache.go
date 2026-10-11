@@ -49,7 +49,12 @@ func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (
 // newestIPCacheTx parses full nanoseconds inside SQLite's newest coarse clock bucket.
 // Only metadata is streamed; rowid breaks ties between exactly equal completion times.
 func newestIPCacheTx(ctx context.Context, tx *sql.Tx, predicate string, args ...any) (string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT id,completed_at,rowid,julianday(completed_at) FROM ip_lookup_reports WHERE `+predicate+` AND status IN ('succeeded','partial') ORDER BY julianday(completed_at) DESC,rowid DESC`, args...)
+	return newestIPCacheTableTx(ctx, tx, "ip_lookup_reports", predicate, args...)
+}
+
+// Callers select a fixed internal table; predicates and tables never come from HTTP.
+func newestIPCacheTableTx(ctx context.Context, tx *sql.Tx, table, predicate string, args ...any) (string, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT id,completed_at,rowid,julianday(completed_at) FROM `+table+` WHERE `+predicate+` AND status IN ('succeeded','partial') ORDER BY julianday(completed_at) DESC,rowid DESC`, args...)
 	if err != nil {
 		return "", err
 	}
@@ -91,6 +96,6 @@ func (s *Store) IPLookupQuoteResponse(ctx context.Context, user, ip string, refr
 	if err != nil {
 		return iplookup.QuoteResponse{}, err
 	}
-	report, match, err := ipCachedReportTx(ctx, tx, ip, !refresh)
+	report, match, err := ipCachedReportTx(ctx, tx, ip, true)
 	return iplookup.QuoteResponse{Quote: quote, CachedReport: report, CacheMatch: match}, err
 }

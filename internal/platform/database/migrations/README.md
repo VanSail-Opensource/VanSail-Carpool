@@ -117,3 +117,5 @@ file instead.
 - `066_ip_lookup.sql` adds combo quotas, activation allowances, shared reports and paid check references.
 - `067_ip_lookup_compact.sql` indexes parsed cache completion times. Its transactional Go hook removes legacy per-provider snapshots, preserves minimal pending attempt markers, and leaves historical statuses and accounting unchanged.
 `068_telegram_pm_attribution.sql` adds bounded encrypted pending envelopes with content-free retry markers and attaches separately tracked footer phases to legacy unsent outbound messages.
+
+- `069_ip_lookup_live_snapshots.sql` adds compact persistent realtime snapshots and private per-report refresh recovery state; existing quality reports default to no realtime phase.
