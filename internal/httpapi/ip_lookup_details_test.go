@@ -15,6 +15,18 @@ import (
 
 type detailsSettings struct{}
 
+type savedDetails struct{ missing bool }
+
+func (s savedDetails) CachedIPDetails(_ context.Context, ip string) (*iplookup.LiveDetails, error) {
+	if s.missing {
+		return nil, nil
+	}
+	return &iplookup.LiveDetails{IP: ip, SourceIP: ip, CacheMatch: "exact"}, nil
+}
+func (savedDetails) SaveIPDetails(context.Context, string, iplookup.LiveDetails, time.Time) (string, error) {
+	return "", &iplookup.CodeError{Code: "IP_LOOKUP_FAILED"}
+}
+
 func (detailsSettings) Optional(_ context.Context, key string) (string, error) {
 	if key == iplookup.SettingKey {
 		return `{"enabled":true,"lookupFeeTxb":"0","refreshFeeTxb":"0","providers":[{"id":"ipapi","enabled":true}]}`, nil
@@ -43,7 +55,7 @@ func (w *detailsRecorder) SetWriteDeadline(at time.Time) error { w.deadline = at
 func TestLiveDetailsNegotiatesStreamAndJSONWithRouteDeadline(t *testing.T) {
 	for _, accept := range []string{"application/json", "text/event-stream"} {
 		t.Run(accept, func(t *testing.T) {
-			s := &Server{deps: Dependencies{IPLookup: &iplookup.Service{Live: iplookup.NewLiveService(detailsSettings{}, nil)}}}
+			s := &Server{deps: Dependencies{IPLookup: &iplookup.Service{Live: iplookup.NewLiveService(detailsSettings{}, nil, savedDetails{})}}}
 			r := httptest.NewRequest(http.MethodGet, "/api/v1/ip-lookup/details?ip=1.1.1.1", nil)
 			r.Header.Set("Accept", accept)
 			r = r.WithContext(context.WithValue(r.Context(), userContextKey, model.User{ID: "member", OnboardingState: "complete"}))
@@ -80,9 +92,20 @@ func TestLiveDetailsNegotiatesStreamAndJSONWithRouteDeadline(t *testing.T) {
 				}
 				last = event.Type
 			}
-			if last != "complete" || sections < 6 {
-				t.Fatal("missing sections or terminal event")
+			if last != "complete" || sections != 0 {
+				t.Fatal("cached stream refetched sections or lost its terminal event")
 			}
 		})
+	}
+}
+
+func TestLiveDetailsCacheMissRequiresQuotedCheck(t *testing.T) {
+	s := &Server{deps: Dependencies{IPLookup: &iplookup.Service{Live: iplookup.NewLiveService(detailsSettings{}, nil, savedDetails{missing: true})}}}
+	r := httptest.NewRequest(http.MethodGet, "/api/v1/ip-lookup/details?ip=1.1.1.1", nil)
+	r = r.WithContext(context.WithValue(r.Context(), userContextKey, model.User{ID: "member", OnboardingState: "complete"}))
+	w := httptest.NewRecorder()
+	s.ipLookupDetails(w, r)
+	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "IP_LOOKUP_REFRESH_REQUIRED") {
+		t.Fatalf("cache miss bypassed billing: %d %s", w.Code, w.Body.String())
 	}
 }

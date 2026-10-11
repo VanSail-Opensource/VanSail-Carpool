@@ -100,7 +100,7 @@ func ExtractProxyHosts(data []byte) ([]string, error) {
 				continue
 			}
 			if strings.HasPrefix(strings.ToLower(line), "vmess://") {
-				if b, e := decodeBase64(strings.TrimPrefix(line, "vmess://")); e == nil {
+				if b, e := decodeBase64(line[len("vmess://"):]); e == nil {
 					parse(string(b), depth+1)
 				}
 				continue

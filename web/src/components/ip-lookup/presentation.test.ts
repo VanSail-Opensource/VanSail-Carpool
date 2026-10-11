@@ -31,7 +31,8 @@ describe('IP location and compact evidence', () => {
       sources: { 'maxmind.user_count': 'maxmind' },
     }
     const rows = reportRows(report)
-    expect(rows.map(row => row.key)).toEqual(['latitude', 'longitude', 'maxmind.ip_risk_snapshot', 'maxmind.user_count'])
+    expect(rows.map(row => row.key)).toEqual(['maxmind.ip_risk_snapshot', 'maxmind.user_count'])
+    expect(ipLocationMap(report.facts.latitude, report.facts.longitude)).not.toBeNull()
     expect(rows.find(row => row.key === 'maxmind.user_count')).toMatchObject({ value: 0, source: 'MaxMind' })
     expect(sourceText('ipapi,maxmind')).toBe('IPAPI, MaxMind')
     expect(sourceText('scamalytics:maxmind_geolite2')).toBe('Scamalytics · MaxMind GeoLite2')

@@ -32,15 +32,15 @@ func endpointHost(raw string) string {
 	}
 	raw = strings.Trim(raw, "[]")
 	raw = strings.TrimSuffix(strings.ToLower(raw), ".")
-	if ascii, e := idna.Lookup.ToASCII(raw); e == nil {
-		raw = ascii
-	} else {
-		return ""
-	}
 	if ip := net.ParseIP(raw); ip != nil {
 		if h, e := CanonicalIP(raw); e == nil {
 			return h
 		}
+		return ""
+	}
+	if ascii, e := idna.Lookup.ToASCII(raw); e == nil {
+		raw = ascii
+	} else {
 		return ""
 	}
 	if len(raw) > 253 || !strings.Contains(raw, ".") || strings.ContainsAny(raw, " /\\@?#:=\t\r\n") {

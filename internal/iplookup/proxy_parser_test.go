@@ -23,6 +23,7 @@ func TestExtractProxyHostsFormats(t *testing.T) {
 		{"ipv6", "socks5://[2606:4700:4700::1111]:1080", []string{"2606:4700:4700::1111"}},
 		{"clash", "proxies:\n  - name: sample\n    server: edge.example.net\n    port: 443\n    sni: unrelated.example.org", []string{"edge.example.net"}},
 		{"vmess", "vmess://" + base64.StdEncoding.EncodeToString([]byte(`{"add":"edge.example.net","host":"unrelated.example.org","port":"443"}`)), []string{"edge.example.net"}},
+		{"uppercase_vmess", "VMESS://" + base64.StdEncoding.EncodeToString([]byte(`{"add":"edge.example.net","port":"443"}`)), []string{"edge.example.net"}},
 		{"base64", base64.StdEncoding.EncodeToString([]byte(uri)), []string{"edge.example.net"}},
 		{"decimal", decimal.String(), []string{"edge.example.net"}},
 		{"proxydb", `<table><tbody><tr><td><a href="/?ip=8.8.8.8">8.8.8.8</a></td></tr></tbody></table>`, []string{"8.8.8.8"}},
