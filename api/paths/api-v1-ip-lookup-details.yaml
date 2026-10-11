@@ -7,14 +7,20 @@ get:
       required: true
       schema: { type: string }
       description: Requested public IPv4 or IPv6 address, independent of any cached report address.
+    - in: query
+      name: refresh
+      schema: { type: boolean, default: false }
+      description: Bypass the 60-second completion cache; identical running lookups can still be shared.
   responses:
     "200":
-      description: Fresh source-attributed details; individual sources can be unavailable.
+      description: Source-attributed details, reused for at most 60 seconds unless refreshed. Accept text/event-stream for progressive section snapshots and final completion.
       headers:
         Cache-Control: { schema: { type: string }, description: Always no-store. }
       content:
         application/json:
           schema: { $ref: ../openapi.yaml#/components/schemas/IPLookupLiveDetails }
+        text/event-stream:
+          schema: { $ref: ../openapi.yaml#/components/schemas/IPLookupLiveEvent }
     "401": { $ref: ../openapi.yaml#/components/responses/Unauthorized }
     "409": { $ref: ../openapi.yaml#/components/responses/Conflict }
     "422": { $ref: ../openapi.yaml#/components/responses/Unprocessable }

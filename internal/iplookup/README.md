@@ -144,7 +144,7 @@ legacy compaction; `config_order_test.go` checks administrator order validation;
 
 ## Live network details
 
-`live_service.go` owns the response-only `GET /api/v1/ip-lookup/details` workflow,
+`live_service.go` owns the `GET /api/v1/ip-lookup/details` workflow,
 member admission (one active request, six starts/minute), cancellation, and a
 60-second total deadline. `live_types.go` defines the public projection and queue
 source identifiers; these sources are not reputation providers. No live result
@@ -156,6 +156,14 @@ public addresses, even when reputation previews reuse a neighboring IP.
 - `live_relationships.go` uses exact-pair CAIDA GraphQL queries (up to 200 pairs) and optional Cloudflare relationship fallback; missing relationships remain observed adjacency, never assumed transit.
 - `live_names.go` caches only successful ASN names, with seven-day expiry and 4,096-entry LRU eviction. Keyed IPAPI bulk, BGPKIT, and bounded RIPE holder lookups fill missing names. Collector exchange scope is observation context, never an invented physical hop.
 - `live_asn.go` selects registration from RIPE RIR `lod=2`, routing totals from RIPE/RouteViews, and dated relationship degrees from CAIDA/Cloudflare.
+- `live_asn_prefetch.go` overlaps independent ASN reads through a lookup-local request memo.
+- `live_requests.go` coalesces identical queued HTTP reads within a lookup and tracks transient failures.
+- `live_pipeline.go` emits immutable section snapshots and progress over eight fixed logical phases; topology arrives before contextual enrichment finishes.
+- `live_events.go` defines progress/section/complete/error stream events and optional refresh behavior. JSON clients keep the same response projection.
+- `live_cache.go` shares concurrent lookups and stores eligible final projections for 60 seconds, bounded to 64 entries and 16 MiB. The cache key hashes canonical IP, configuration and live credentials; refresh bypasses completed cache, and transient failures prevent storage. A shared lookup is cancelled when its last subscriber leaves.
+- `live_classification.go` batches explicit CAIDA clique membership with dataset dates; missing classifications remain nullable and never derive from degree counts.
+- `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence.
+- `live_cache_test.go` covers expiry, credential invalidation, forced refresh, byte bounds, early streaming and failure exclusion in hosted CI.
 - `live_ip.go` supplies keyed contextual IPAPI scores, distinct AbuseIPDB reported addresses in the announced block (30 days), exact decimal address capacity, and queued PTR lookups. Missing data remains nullable; block-plan restrictions never silently narrow the subnet.
 - `live_traffic.go` requests Cloudflare Radar's BOT_CLASS, DEVICE_TYPE, and IP_VERSION summaries for the ASN over seven days; returned Other device values and actual date windows are preserved.
 - `live_test.go` and `live_http_test.go` provide hosted regressions for prefix/origin/path preservation, name-only cache bounds, admission, queue enforcement, credentials, unknown/zero values, restrictions, and Cloudflare windows.
@@ -169,3 +177,5 @@ sections independently; external datasets retain their own observation dates.
 `live_shodan_test.go` covers sorted/deduplicated InternetDB hostnames and ports, unobserved addresses, provider outages, mismatched IPs, absent fields and invalid port ranges in hosted CI.
 `live_integration_test.go` exercises the complete queued response projection with multiple origins, original prepends, source fallback, zero/unknown fields, live neighboring-IP requests, name-only cache behavior and credential-free public JSON in hosted CI.
 Topology limits are 300 nodes, 1,500 edges and 1,000 original paths; omitted paths are disclosed. InternetDB retains at most 256 hostnames and 2,048 ports and marks larger observations partial.
+- `live_cache_storage.go` validates cache eligibility and enforces TTL, entry and byte bounds.
+- `live_shared_test.go` verifies shared subscriber cancellation and explicit dated CAIDA `cliqueMember` classification in hosted CI.

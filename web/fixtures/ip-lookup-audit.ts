@@ -108,7 +108,7 @@ ipLookupApi.check = async () => {
   const requestedIP = lastQuote?.ip ?? '8.8.8.8'
   const report = makeReport(requestedIP)
   const pending = polls < 3
-  const result: IPLookupCheck = { operation: { ...receipt(), status: pending ? 'processing' : report.status, completedAt: pending ? null : now() }, report: pending ? null : report, requestedIP, cacheMatch: 'none', cached: false, charge: lastQuote?.charge ?? money(0), usedQuota: lastQuote?.useQuota ?? false, refunded: false }
+  const result: IPLookupCheck = { operation: { ...receipt(), status: pending ? 'processing' : report.status, completedAt: pending ? null : now() }, report: pending ? null : report, requestedIP, cacheMatch: 'none', cached: false, charge: lastQuote?.charge ?? money(0), usedQuota: lastQuote?.useQuota ?? false, refunded: false, progress: { phase: pending ? 'checking' : 'complete', completed: pending ? polls : 6, total: 6, currentProvider: pending ? ids[polls]! : undefined } }
   if (!pending) cached = true
   return result
 }

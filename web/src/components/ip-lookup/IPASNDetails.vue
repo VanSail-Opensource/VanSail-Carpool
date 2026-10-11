@@ -5,7 +5,7 @@ import LiveSourceNote from './LiveSourceNote.vue'
 import IPTrafficBars from './IPTrafficBars.vue'
 const props = defineProps<{ asns: IPLookupASNDetails[] }>()
 const selected = shallowRef<number | null>(null)
-watch(() => props.asns, value => { selected.value = value[0]?.asn ?? null }, { immediate: true })
+watch(() => props.asns, value => { if (!value.some(asn => asn.asn === selected.value)) selected.value = value[0]?.asn ?? null }, { immediate: true })
 const current = computed(() => props.asns.find(asn => asn.asn === selected.value))
 const rows = computed(() => current.value ? [
   { key: 'registeredAt', value: current.value.registeredAt ? new Date(current.value.registeredAt).toLocaleDateString() : null, source: 'registration' },
@@ -24,20 +24,20 @@ const rows = computed(() => current.value ? [
     <p class="asn-identity"><code>AS{{ current.asn }}</code><span>{{ current.name }}</span><span class="asn-routing">{{ current.announced === null ? $t('ipLookupLive.status.empty') : current.announced ? $t('ipLookupLive.announced') : $t('ipLookupLive.notAnnounced') }}</span></p>
     <dl class="asn-facts"><div v-for="row in rows" :key="row.key"><dt>{{ $t(`ipLookupLive.fields.${row.key}`) }}</dt><dd>{{ row.value ?? $t('ipLookupLive.status.empty') }}<LiveSourceNote v-if="current.sources[row.source]" :meta="current.sources[row.source]!" /></dd></div></dl>
     <div class="asn-traffic"><IPTrafficBars :summary="current.traffic.botHuman" :title="$t('ipLookupLive.traffic.botHuman')" /><IPTrafficBars :summary="current.traffic.devices" :title="$t('ipLookupLive.traffic.devices')" /><IPTrafficBars :summary="current.traffic.ipVersion" :title="$t('ipLookupLive.traffic.ipVersion')" /></div>
-    <p class="asn-context">{{ $t('ipLookupLive.traffic.context') }}</p>
+    <details class="asn-context"><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.traffic.context') }}</p></details>
   </section>
 </template>
 
 <style scoped>
-.asn-details { padding-block: 1.1rem; border-top: 1px solid var(--line); }
+.asn-details { padding-block: 0.75rem; border-top: 1px solid var(--line); }
 .asn-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; }
 .asn-heading h3 { font-size: 1rem; margin: 0; }
 .asn-identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.7rem; margin: 0.75rem 0 1rem; font-size: 0.85rem; overflow-wrap: anywhere; }
 .asn-routing, .asn-facts dt, .asn-context { color: var(--text-muted); font-size: 0.78rem; }
-.asn-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin: 0; }
+.asn-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; margin: 0; }
 .asn-facts > div { min-width: 0; }
 .asn-facts dd { margin: 0.25rem 0 0; font-size: 0.88rem; overflow-wrap: anywhere; }
-.asn-traffic { display: grid; gap: 1.1rem; margin-top: 1.4rem; }
+.asn-traffic { display: grid; gap: 0.65rem; margin-top: 0.8rem; }
 .asn-context { line-height: 1.5; margin-bottom: 0; }
 @media (min-width: 900px) { .asn-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } .asn-traffic { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>

@@ -1,5 +1,6 @@
 import type { components } from './generated'
 import { request } from './http'
+import { streamIPDetails, type LiveEvent } from './ipLookupStream'
 
 export type IPLookupState = components['schemas']['IPLookupState']
 export type IPLookupQuote = components['schemas']['IPLookupQuoteResponse']
@@ -12,9 +13,13 @@ export type IPLookupLiveMeta = components['schemas']['IPLookupLiveMeta']
 export type IPLookupBGPTopology = components['schemas']['IPLookupBGPTopology']
 export type IPLookupASNDetails = components['schemas']['IPLookupASNDetails']
 export type IPLookupTrafficSummary = components['schemas']['IPLookupTrafficSummary']
+export type IPLookupProgress = components['schemas']['IPLookupProgress']
+export type IPLookupLiveEvent = LiveEvent
 
 export const ipLookupApi = {
-  details: (ip: string, signal?: AbortSignal) => request<IPLookupLiveDetails>('/api/v1/ip-lookup/details', { query: { ip }, cache: 'no-store', signal }),
+  details: (ip: string, signal?: AbortSignal, refresh = false, onEvent?: (event: LiveEvent) => void) => onEvent
+    ? streamIPDetails(ip, signal, refresh, onEvent)
+    : request<IPLookupLiveDetails>('/api/v1/ip-lookup/details', { query: { ip, ...(refresh ? { refresh } : {}) }, cache: 'no-store', signal }),
   state: () => request<IPLookupState>('/api/v1/ip-lookup', { cache: 'no-store' }),
   quote: (ip: string, refresh: boolean) => request<IPLookupQuote>('/api/v1/ip-lookup/quote', { method: 'POST', body: { ip, refresh }, cache: 'no-store' }),
   submit: (quote: IPLookupQuote, key: string) => {

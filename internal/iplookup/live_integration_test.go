@@ -77,6 +77,9 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 			for _, m := range pattern.FindAllStringSubmatch(input["query"], -1) {
 				data[m[1]] = map[string]any{"relationship": "provider", "date": "2026-10-01", "asn0": map[string]string{"asn": m[2], "asnName": "Origin"}, "asn1": map[string]string{"asn": m[3], "asnName": "Transit"}}
 			}
+			for _, m := range regexp.MustCompile(`(n\d+):asn\(asn:"(\d+)"\)`).FindAllStringSubmatch(input["query"], -1) {
+				data[m[1]] = map[string]any{"asnName": "Network", "cliqueMember": m[2] == "174" || m[2] == "3257"}
+			}
 			b, _ := json.Marshal(map[string]any{"data": data})
 			body = string(b)
 		case r.URL.Host == "api.ipapi.is":
@@ -107,7 +110,7 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 	return s, scores, hosts
 }
 
-func TestLiveEnrichmentRepeatsRequestedIPWithoutResultCache(t *testing.T) {
+func TestLiveEnrichmentKeepsRequestedIPsSeparate(t *testing.T) {
 	s, scores, hosts := integratedLiveService(t, false)
 	for _, ip := range []string{"1.1.1.9", "1.1.1.8"} {
 		r, err := s.Details(context.Background(), "member", ip)

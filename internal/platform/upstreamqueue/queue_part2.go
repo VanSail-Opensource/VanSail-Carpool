@@ -3,41 +3,65 @@ package upstreamqueue
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
 func (q *Queue) run(lifecycle context.Context, done chan struct{}) {
+	var active sync.WaitGroup
 	defer func() {
+		active.Wait()
 		q.mu.Lock()
 		q.state = stateStopped
 		q.mu.Unlock()
 		close(done)
 	}()
 	var nextStart time.Time
+	slots := make(chan struct{}, q.workers)
 	for {
-		if lifecycle.Err() != nil {
+		select {
+		case slots <- struct{}{}:
+		case <-lifecycle.Done():
 			return
 		}
 		select {
 		case <-lifecycle.Done():
 			return
 		case item := <-q.calls:
-			q.execute(lifecycle, item, &nextStart)
+			if err := waitUntil(item.ctx, lifecycle, nextStart); err != nil {
+				item.reject(err)
+				<-slots
+				continue
+			}
+			if err := item.ctx.Err(); err != nil {
+				item.reject(err)
+				<-slots
+				continue
+			}
+			// One scheduler owns pacing across every concurrent worker.
+			started := make(chan time.Time, 1)
+			active.Add(1)
+			go func() {
+				defer active.Done()
+				defer func() { <-slots }()
+				q.execute(lifecycle, item, started)
+			}()
+			if at, ok := <-started; ok {
+				nextStart = at.Add(q.minInterval)
+			}
 		}
 	}
 }
 
-func (q *Queue) execute(lifecycle context.Context, item call, nextStart *time.Time) {
+func (q *Queue) execute(lifecycle context.Context, item call, started chan<- time.Time) {
+	defer close(started)
+	if err := lifecycle.Err(); err != nil {
+		item.reject(err)
+		return
+	}
 	if err := item.ctx.Err(); err != nil {
 		item.reject(err)
 		return
-	}
-	if err := waitUntil(item.ctx, lifecycle, *nextStart); err != nil {
-		item.reject(err)
-		return
-	}
-	if q.minInterval > 0 {
-		*nextStart = time.Now().Add(q.minInterval)
 	}
 	executionCtx, cancel := mergeCancellation(item.ctx, lifecycle)
 	defer cancel()
@@ -46,6 +70,7 @@ func (q *Queue) execute(lifecycle context.Context, item call, nextStart *time.Ti
 			item.reject(fmt.Errorf("%s: %w", q.name, ErrTaskPanic))
 		}
 	}()
+	started <- time.Now()
 	item.run(executionCtx)
 }
 

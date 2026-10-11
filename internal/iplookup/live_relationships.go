@@ -25,7 +25,10 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 		q.WriteString("}")
 		data, err := s.liveHTTP(ctx, "caida", "/v2/graphql", nil, map[string]string{"query": q.String()}, "")
 		o := liveObject(data)
-		if err != nil || len(o["errors"]) > 0 {
+		if err != nil || graphqlFailed(o) {
+			if err == nil {
+				err = &CodeError{"IP_DETAILS_INVALID_RESPONSE"}
+			}
 			t.RelationshipMeta = liveMeta("caida", err)
 			t.RelationshipMeta.Status = "partial"
 			break

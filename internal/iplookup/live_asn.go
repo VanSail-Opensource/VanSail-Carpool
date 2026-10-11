@@ -8,6 +8,7 @@ import (
 )
 
 func (s *LiveService) asn(ctx context.Context, id uint32, c Config) ASNDetails {
+	s.prefetchASN(ctx, id)
 	a := ASNDetails{ASN: id, Name: s.cachedName(id), Sources: map[string]LiveMeta{}}
 	query := ripeQuery(id)
 	query.Set("lod", "2")
@@ -64,7 +65,7 @@ func (s *LiveService) asn(ctx context.Context, id uint32, c Config) ASNDetails {
 		v := *a.IPv4Prefixes > 0 || *a.IPv6Prefixes > 0
 		a.Announced = &v
 	}
-	data, err = s.liveHTTP(ctx, "caida", "/v2/graphql", nil, map[string]string{"query": "{dataset{date} asn(asn:\"" + asnText(id) + "\"){asnName source asnDegree{peer provider}}}"}, "")
+	data, err = s.liveHTTP(ctx, "caida", "/v2/graphql", nil, asnMetadataQuery(id), "")
 	d = nested(nested(liveObject(data), "data"), "asn")
 	meta = liveMeta("caida", err)
 	meta.ObservedAt = textField(nested(nested(liveObject(data), "data"), "dataset"), "date")

@@ -142,6 +142,7 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 	if err != nil {
 		return result, err
 	}
+	result.Progress = iplookup.CheckProgress(report)
 	if report.Status != "processing" && report.Status != "failed" {
 		public := iplookup.PublicReport(report)
 		result.Report = &public

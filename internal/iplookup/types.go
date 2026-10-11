@@ -137,6 +137,7 @@ type Report struct {
 
 // Check is an owner-scoped paid receipt referencing one shared report.
 type Check struct {
+	Progress    *Progress              `json:"progress,omitempty"`
 	Operation   model.OperationReceipt `json:"operation"`
 	Report      *Report                `json:"report"`
 	Cached      bool                   `json:"cached"`

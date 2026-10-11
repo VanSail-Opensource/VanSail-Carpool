@@ -1,4 +1,4 @@
-// Package upstreamqueue serializes synchronous calls to rate-sensitive upstream providers.
+// Package upstreamqueue paces and bounds synchronous calls to upstream providers.
 package upstreamqueue
 
 import (
@@ -18,12 +18,13 @@ var (
 	ErrTaskPanic = errors.New("upstream queue task panicked")
 )
 
-// Config controls one provider-specific worker and its bounded backlog.
+// Config controls a provider-specific worker limit and its bounded backlog.
 
 type Config struct {
 	Name        string
 	Capacity    int
 	MinInterval time.Duration
+	Workers     int // Zero preserves the single-worker default.
 }
 
 type lifecycleState uint8
@@ -41,12 +42,13 @@ type call struct {
 	reject func(error)
 }
 
-// Queue is a bounded FIFO with one context-owned worker. A Queue is started once.
+// Queue is a bounded FIFO with context-owned workers. A Queue is started once.
 
 type Queue struct {
 	name        string
 	capacity    int
 	minInterval time.Duration
+	workers     int
 	calls       chan call
 
 	mu        sync.RWMutex
@@ -68,39 +70,16 @@ func New(config Config) (*Queue, error) {
 	if config.MinInterval < 0 {
 		return nil, errors.New("upstream queue minimum interval cannot be negative")
 	}
+	if config.Workers < 0 || config.Workers > 32 {
+		return nil, errors.New("upstream queue workers must be between zero and 32")
+	}
 	return &Queue{
 		name:        config.Name,
 		capacity:    config.Capacity,
 		minInterval: config.MinInterval,
+		workers:     max(1, config.Workers),
 		calls:       make(chan call, config.Capacity),
 	}, nil
-}
-
-// Name returns the provider label used in diagnostic errors.
-
-func (q *Queue) Name() string {
-	if q == nil {
-		return ""
-	}
-	return q.name
-}
-
-// Capacity returns the maximum number of calls waiting behind the active call.
-
-func (q *Queue) Capacity() int {
-	if q == nil {
-		return 0
-	}
-	return q.capacity
-}
-
-// MinInterval returns the configured minimum delay between call start times.
-
-func (q *Queue) MinInterval() time.Duration {
-	if q == nil {
-		return 0
-	}
-	return q.minInterval
 }
 
 // Start attaches the worker to ctx. Cancellation stops admission and cancels the active call.

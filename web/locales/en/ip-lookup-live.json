@@ -1,7 +1,7 @@
 {
   "ipLookupLive": {
-    "title": "Live network details",
-    "description": "Fresh source lookups for this address. No additional TXB or included lookup is used.",
+    "title": "Network",
+    "description": "Recent source data. Refresh requests new data; no extra charge.",
     "refresh": "Refresh",
     "fetchedAt": "Fetched {date}",
     "bgpTitle": "BGP routes",
@@ -9,10 +9,10 @@
     "selectOrigin": "Select origin ASN",
     "announced": "Originating routes",
     "notAnnounced": "No originating routes observed",
-    "scores": "Network abuse ratios",
-    "blockTitle": "Reported IPs in this block",
+    "scores": "Abuse ratios",
+    "blockTitle": "Reported block",
     "blockCount": "{reported} reported addresses / {capacity} addresses, last {days} days",
-    "ptrTitle": "Reverse DNS / PTR",
+    "ptrTitle": "Reverse DNS",
     "cloudflareTitle": "Cloudflare Radar",
     "cloudflareToken": "API token",
     "cloudflareHelp": "Optional ASN traffic proportions. Configure an Account Radar Read token. Leave blank to keep the current token.",
@@ -59,18 +59,11 @@
       "context": "Cloudflare-observed HTTP traffic for the selected ASN over seven days. These proportions and network abuse ratios describe the wider network."
     },
     "graph": {
-      "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out",
-      "reset": "Reset view",
-      "moreDirect": "More neighbors",
-      "expand": "Expand routes",
-      "collapse": "Collapse",
+      "reset": "Fit graph",
       "unknownName": "Name unavailable",
       "routes": "Observed paths",
-      "instructions": "Drag to pan. Use zoom buttons or keyboard arrows and + / -.",
-      "hidden": "{count} ASNs collapsed.",
+      "instructions": "Scroll or pinch to zoom. Drag to pan. Keyboard: arrows, + / -, 0 to fit.",
       "truncated": "Results are bounded; some paths or origins were omitted.",
-      "routeLimit": "Showing the first 60 of {count} paths.",
       "exchangeContext": "Collector context: {name}",
       "context": "Edges follow observed AS paths. Transit/peer labels are dated relationship inferences. Exchange names describe collector context, not verified physical hops.",
       "relationship": {
@@ -78,11 +71,41 @@
         "upstream": "Inferred transit upstream",
         "peer": "Inferred peer",
         "customer": "Inferred customer"
-      }
+      },
+      "presets": {
+        "tier1": "All T1",
+        "upstreams": "Direct upstreams",
+        "neighbors": "Direct neighbors",
+        "all": "All routes"
+      },
+      "preset": "Route preset",
+      "count": "{shown}/{total} ASNs",
+      "tier1Fallback": "No classified T1 path; showing direct neighbors.",
+      "tier1Context": "T1 uses CAIDA's dated transit-free clique inference. Unknown classifications stay unknown; commercial agreements are not verified.",
+      "pathPages": "Route pages",
+      "page": "{page}/{total}",
+      "previous": "Previous routes",
+      "next": "Next routes",
+      "tierBadge": "T1"
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "Associated hostnames",
     "shodanPorts": "Observed open ports",
-    "shodanContext": "Queried live from Shodan's weekly-updated dataset. This is not a fresh port scan; no per-host observation time is supplied."
+    "shodanContext": "Queried live from Shodan's weekly-updated dataset. This is not a fresh port scan; no per-host observation time is supplied.",
+    "about": "Details"
+  },
+  "ipLookupProgress": {
+    "label": "Lookup progress",
+    "queued": "Queued",
+    "checking": "Checking",
+    "topology": "Routes",
+    "relationships": "Relationships",
+    "names": "Network names",
+    "asns": "ASN details",
+    "scores": "Abuse ratios",
+    "block": "Reported block",
+    "ptr": "Reverse DNS",
+    "shodan": "Host observations",
+    "complete": "Complete"
   }
 }

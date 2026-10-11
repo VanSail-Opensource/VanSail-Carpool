@@ -15,7 +15,13 @@ import (
 func newIPLookupQueues() (map[string]*upstreamqueue.Queue, error) {
 	result := map[string]*upstreamqueue.Queue{}
 	for _, id := range iplookup.QueueIDs() {
-		queue, err := upstreamqueue.New(upstreamqueue.Config{Name: "ip-lookup-" + id, Capacity: 32, MinInterval: 250 * time.Millisecond})
+		workers := 1
+		if id == "ripe" {
+			workers = 4
+		} else if id == "caida" || id == iplookup.CloudflareID {
+			workers = 2
+		}
+		queue, err := upstreamqueue.New(upstreamqueue.Config{Name: "ip-lookup-" + id, Capacity: 32, MinInterval: 250 * time.Millisecond, Workers: workers})
 		if err != nil {
 			return nil, err
 		}

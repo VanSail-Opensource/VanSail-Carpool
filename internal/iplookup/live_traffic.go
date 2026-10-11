@@ -5,10 +5,18 @@ import (
 	"math"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 func (s *LiveService) traffic(ctx context.Context, asn uint32, key string) ASNTraffic {
-	return ASNTraffic{BotHuman: s.trafficSummary(ctx, asn, "BOT_CLASS", key), Devices: s.trafficSummary(ctx, asn, "DEVICE_TYPE", key), IPVersion: s.trafficSummary(ctx, asn, "IP_VERSION", key)}
+	var result ASNTraffic
+	var work sync.WaitGroup
+	work.Add(3)
+	go func() { defer work.Done(); result.BotHuman = s.trafficSummary(ctx, asn, "BOT_CLASS", key) }()
+	go func() { defer work.Done(); result.Devices = s.trafficSummary(ctx, asn, "DEVICE_TYPE", key) }()
+	go func() { defer work.Done(); result.IPVersion = s.trafficSummary(ctx, asn, "IP_VERSION", key) }()
+	work.Wait()
+	return result
 }
 
 func (s *LiveService) trafficSummary(ctx context.Context, asn uint32, dimension, key string) TrafficSummary {

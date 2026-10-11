@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
-import { providerName, sourceText } from './presentation'
+import IPRefusals from './IPRefusals.vue'
+import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
 
@@ -20,9 +21,7 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
       <span>{{ cacheMatch !== 'none' ? $t('ipLookup.cached') : $t('ipLookup.fresh') }}</span>
     </header>
     <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
-    <ul v-if="report.refusals.length" class="report-refusals">
-      <li v-for="(item, index) in report.refusals" :key="`${item.source}-${item.kind}-${index}`"><UIcon name="i-ph-warning-circle" aria-hidden="true" /><span>{{ $t(`ipLookup.refusals.${item.kind}`) }} <strong>{{ item.value === true ? $t('ipLookup.detected') : item.value === false ? $t('ipLookup.notDetected') : item.value }}</strong><small>{{ sourceText(item.source) }}</small></span></li>
-    </ul>
+    <IPRefusals :refusals="report.refusals" />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">
       <dl v-if="rows.length" class="report-facts">
         <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>
@@ -41,27 +40,26 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
 </template>
 
 <style scoped>
-.lookup-report { display: grid; gap: 0.9rem; padding: 1.2rem 0; }
+.lookup-report { display: grid; gap: 0.65rem; padding: 0.9rem 0; }
 .report-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 0.6rem; }
 .report-heading span, .report-note, .report-facts dt, .report-facts small { color: var(--text-muted); font-size: 0.82rem; }
 .report-heading code { font-size: 1rem; overflow-wrap: anywhere; }
-.report-heading h2 { display: flex; align-items: center; gap: 0.4rem; margin: 0.35rem 0 0; font-size: 1.05rem; }
+.report-heading > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; }
+.report-heading h2 { display: flex; align-items: center; gap: 0.3rem; margin: 0; font-size: 0.9rem; }
 .verdict-unsuitable { color: var(--ui-error); }
 .verdict-suitable { color: var(--ui-success); }
 .report-note { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0; }
-.report-refusals { display: grid; gap: 0.55rem; list-style: none; padding: 0; margin: 0; }
-.report-refusals li { display: grid; grid-template-columns: 1.1rem minmax(0, 1fr); align-items: start; gap: 0.5rem; color: var(--danger); font-size: 0.85rem; line-height: 1.5; }
-.report-refusals li > :first-child { width: 1.1rem; height: 1.1rem; margin-top: 0.15rem; }
-.report-refusals li > span { min-width: 0; overflow-wrap: anywhere; }
-.report-refusals strong { margin-left: 0.25rem; white-space: normal; }
-.report-refusals small { display: block; margin-top: 0.1rem; color: var(--text-muted); font-size: 0.72rem; }
 .report-content { display: grid; gap: 1rem; min-width: 0; }
-.report-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.85rem 1rem; margin: 0; }
+.report-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0.6rem 0.75rem; margin: 0; }
 .report-facts dt { display: flex; align-items: center; gap: 0.3rem; }
 .report-facts dd { margin: 0.2rem 0 0; overflow-wrap: anywhere; font-size: 0.9rem; }
 .report-facts small { display: block; margin-top: 0.1rem; font-size: 0.7rem; }
 .report-databases { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--line); }
 .report-databases > span { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-muted); font-size: 0.75rem; }
 .report-databases .database-error, .report-databases .database-partial { color: var(--warning); }
-@media (min-width: 900px) { .report-content-mapped { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 900px) {
+  .report-content-mapped { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .report-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .report-content-mapped .report-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 </style>

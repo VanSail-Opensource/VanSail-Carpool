@@ -38,18 +38,18 @@ provider-request workaround was added to production code.
 ## Live enrichment
 
 `useLiveIPDetails.ts` fetches once per requested-address/account/report identity,
-uses no-store requests, cancels obsolete work, and owns explicit refresh.
+uses signed no-store streaming with JSON fallback, cancels obsolete work, and owns explicit refresh. Completed sections remain visible during refresh failures.
 `IPLiveDetails.vue` composes independent source sections beside the frozen
 reputation report. It never submits paid checks or changes the verdict.
 
-- `IPBGPTopology.vue` renders a native SVG with curved edges, keyboard/pointer pan, zoom/reset, twelve initial direct neighbors, expansion and route highlighting. Original AS paths and collector exchange context remain available in the path list.
-- `bgpGraph.ts` derives bounded, deterministic layered placement and source-based visibility; `useGraphViewport.ts` owns transform interaction without persistent state.
+- `IPBGPTopology.vue` renders a native SVG with All T1/direct upstream/direct neighbor/all-route presets, anchored wheel/pinch zoom, pointer/keyboard pan, full two-dimensional fitting and route highlighting. Original AS paths and collector exchange context remain available in the path list.
+- `bgpGraph.ts` precomputes topology indexes and preset visibility; `useGraphViewport.ts` owns transform interaction without persistent state.
 - `IPASNDetails.vue` selects multiple origins, displays nullable registration/routing metrics and their dated provenance.
 - `IPTrafficBars.vue` preserves Cloudflare percentages, Other devices, source status, and actual seven-day windows.
 - `LiveSourceNote.vue` presents independent source availability and observation times.
 - `useLiveIPDetails.test.ts` and `bgpGraph.test.ts` cover requested-IP isolation, cancelled/late responses, refresh, multiple origins and bounded graph visibility in hosted CI.
 
-Only ASN names can be cached by the backend. Live frontend data is scope-local
+The backend reuses eligible completed live details for at most 60 seconds; Refresh bypasses completed cache. ASN names retain their existing cache. Live frontend data is scope-local
 and excluded from browser response snapshots by the existing IP Lookup cache
 policy. Long refusal reasons use a fixed icon column and wrapping text.
 
@@ -70,3 +70,45 @@ registration, dated CAIDA degrees, and PTR records; source timeouts remained
 explicitly unavailable. InternetDB is queried live but its observations are
 weekly and do not certify current port reachability. No Telegram messages were
 sent by the browser review or the offline PM fixtures.
+
+## Compact progress and graph responsibilities
+
+- `IPLookupProgress.vue` displays completed logical work with accessible Nuxt progress; percentages are not time estimates.
+- `IPRefusals.vue` and `refusalPresentation.ts` group all distinct refusal types, deduplicate exact evidence and expose every source/value on tap.
+- `refusalPresentation.test.ts` verifies evidence preservation in hosted CI.
+- `bgpLayout.ts` orders layered nodes with crossing reduction and routes shared trunks, separate ports and non-adjacent connections without inventing AS hops.
+- `useBGPGraph.ts` owns preset/selection state, viewport culling, resize observation and camera preservation during enrichment.
+- `IPBGPPaths.vue` paginates all retained original collector paths in batches of 50; selection focuses the observed path.
+- `useGraphViewport.test.ts` checks fit bounds, zoom anchors and multi-pointer cleanup in hosted CI.
+- `bgpLayout.test.ts` checks that merged visual trunks preserve gaps and separate carriers; no new AS connectivity is inferred.
+
+Tier-1 labels use CAIDA's explicit dated transit-free clique inference. Unknown
+classification falls back to direct neighbors; zero upstream degree is never
+proof of membership. Names appear only at readable zoom levels; raw AS paths
+and collector dates stay available through the path list. Gesture handlers are
+scoped to the graph and do not change Telegram navigation.
+
+## Browser review, 2026-10-11
+
+Chrome DevTools MCP 0.26.0 and 1.10.1 with isolated Chrome 154 reviewed
+320/390px mobile and 1280px desktop layouts, English/Chinese, early/loading
+sections, empty/error/restricted/unconfigured states, IPv6/multiple origins,
+unknown T1 fallback, refusal evidence, wheel zoom, constructed pinch input,
+path focus/pagination and refresh failure retention. Document widths matched
+viewports; all initial preset nodes fitted both dimensions. Constructed pinch
+input disables capture only in the audit script, since synthetic pointers are
+not registered with the browser; this is not native-device evidence.
+
+With identical constructed delays, first data appeared after 409ms through
+streaming versus 3291ms with all-at-once display; completion remained about
+3.3 seconds. Returning to the same IP added no simulated upstream run; Refresh
+added one and retained the full quota with zero paid submissions. These timings
+and counters describe fixtures, not live paid-provider performance.
+
+The dense fixture retains 300 ASNs, 1,500 connections and 1,000 original paths.
+Connections render in grouped SVG paths by relationship/highlight rather than
+one DOM path per connection; viewport culling and 50-row pagination bound
+interaction work while retaining complete observed evidence.
+The SVG itself stays viewport-sized. At distant zoom, unreadable labels are
+hidden and coincident straight route trunks are merged without joining gaps;
+selected paths retain their precise route geometry.

@@ -1,7 +1,7 @@
 {
   "ipLookupLive": {
-    "title": "实时网络信息",
-    "description": "实时查询此地址的信息，不额外消耗 TXB 或套餐查询次数。",
+    "title": "网络",
+    "description": "展示近期来源数据。刷新获取新数据，不额外收费。",
     "refresh": "刷新",
     "fetchedAt": "查询时间：{date}",
     "bgpTitle": "BGP 路由",
@@ -9,10 +9,10 @@
     "selectOrigin": "选择源 ASN",
     "announced": "正在发布路由",
     "notAnnounced": "未观察到源路由",
-    "scores": "网络滥用比例",
-    "blockTitle": "此网段内被举报的 IP",
+    "scores": "滥用比例",
+    "blockTitle": "网段报告",
     "blockCount": "最近 {days} 天：{reported} 个被举报地址 / {capacity} 个地址",
-    "ptrTitle": "反向 DNS / PTR",
+    "ptrTitle": "反向 DNS",
     "cloudflareTitle": "Cloudflare Radar",
     "cloudflareToken": "API 令牌",
     "cloudflareHelp": "可选的 ASN 流量比例。请配置具有 Account Radar Read 权限的令牌。留空保留现有令牌。",
@@ -59,18 +59,11 @@
       "context": "所选 ASN 最近七天被 Cloudflare 观察到的 HTTP 流量。这些比例及网络滥用比例描述的是整个网络。"
     },
     "graph": {
-      "zoomIn": "放大",
-      "zoomOut": "缩小",
-      "reset": "重置视图",
-      "moreDirect": "更多邻居",
-      "expand": "展开路由",
-      "collapse": "折叠",
+      "reset": "适应视图",
       "unknownName": "名称不可用",
       "routes": "观察到的路径",
-      "instructions": "拖动平移，可使用缩放按钮或键盘方向键和 + / -。",
-      "hidden": "已折叠 {count} 个 ASN。",
+      "instructions": "滚轮或双指缩放，拖动平移。键盘：方向键、+ / -，0 适应视图。",
       "truncated": "结果有数量上限，部分路径或源 ASN 已省略。",
-      "routeLimit": "显示 {count} 条路径中的前 60 条。",
       "exchangeContext": "采集器环境：{name}",
       "context": "连线来自观察到的 AS 路径。上游和对等标签来自注明日期的关系推断。交换中心名称表示采集器环境，不代表已验证的物理跳点。",
       "relationship": {
@@ -78,11 +71,41 @@
         "upstream": "推断的转接上游",
         "peer": "推断的对等网络",
         "customer": "推断的客户网络"
-      }
+      },
+      "presets": {
+        "tier1": "全部 T1",
+        "upstreams": "直属上游",
+        "neighbors": "直属邻居",
+        "all": "全部路由"
+      },
+      "preset": "路由预设",
+      "count": "{shown}/{total} ASN",
+      "tier1Fallback": "未找到已分类的 T1 路径，展示直属邻居。",
+      "tier1Context": "T1 基于 CAIDA 带日期的无上游核心网络推断。未知分类保持未知，不验证商业协议。",
+      "pathPages": "路由分页",
+      "page": "{page}/{total}",
+      "previous": "上一页路由",
+      "next": "下一页路由",
+      "tierBadge": "T1"
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "关联域名",
     "shodanPorts": "观察到的开放端口",
-    "shodanContext": "实时查询 Shodan 每周更新的数据集，不代表即时端口扫描；来源不提供单个地址的观测时间。"
+    "shodanContext": "实时查询 Shodan 每周更新的数据集，不代表即时端口扫描；来源不提供单个地址的观测时间。",
+    "about": "说明"
+  },
+  "ipLookupProgress": {
+    "label": "查询进度",
+    "queued": "等待中",
+    "checking": "检查中",
+    "topology": "路由",
+    "relationships": "网络关系",
+    "names": "网络名称",
+    "asns": "ASN 详情",
+    "scores": "滥用比例",
+    "block": "网段报告",
+    "ptr": "反向 DNS",
+    "shodan": "主机观测",
+    "complete": "完成"
   }
 }

@@ -14,9 +14,13 @@ const message = computed(() => props.meta.status === 'error' || props.meta.statu
 </script>
 
 <template>
-  <p class="live-source-note"><span>{{ meta.source }}</span><span v-if="meta.status !== 'success'">{{ message }}</span><time v-if="time" :datetime="meta.observedAt">{{ time }}</time></p>
+  <details class="live-source-note"><summary><UIcon :name="meta.status === 'error' || meta.status === 'restricted' ? 'i-ph-warning-circle' : 'i-ph-info'" aria-hidden="true" /><span>{{ meta.source }}</span><span v-if="meta.status !== 'success'">{{ $t(`ipLookupLive.status.${meta.status}`) }}</span></summary><p>{{ message }}<time v-if="time" :datetime="meta.observedAt">{{ time }}</time></p></details>
 </template>
 
 <style scoped>
-.live-source-note { display: flex; flex-wrap: wrap; gap: 0.25rem 0.65rem; margin: 0.4rem 0 0; font-size: 0.72rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.live-source-note { margin: 0.3rem 0 0; font-size: 0.7rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.live-source-note summary, .live-source-note p { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.45rem; }
+.live-source-note summary { list-style: none; cursor: pointer; padding-block: 0.25rem; }
+.live-source-note summary::-webkit-details-marker { display: none; }
+.live-source-note p { margin: 0.3rem 0; }
 </style>

@@ -13,7 +13,7 @@ import (
 )
 
 // liveHTTP accepts fixed source identifiers and relative endpoint paths only.
-func (s *LiveService) liveHTTP(ctx context.Context, source, path string, query url.Values, body any, credential string) ([]byte, error) {
+func (s *LiveService) liveHTTPRequest(ctx context.Context, source, path string, query url.Values, body any, credential string) ([]byte, error) {
 	bases := map[string]string{"shodan": "https://internetdb.shodan.io", "ripe": "https://stat.ripe.net", "routeviews": "https://api.routeviews.org", "caida": "https://api.asrank.caida.org", "bgpkit": "https://api.bgpkit.com", "ipapi": "https://api.ipapi.is", "abuseipdb": "https://api.abuseipdb.com", CloudflareID: "https://api.cloudflare.com/client/v4"}
 	base, ok := bases[source]
 	if !ok || s.queues[source] == nil {

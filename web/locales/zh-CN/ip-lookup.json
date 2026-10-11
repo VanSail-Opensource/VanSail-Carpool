@@ -182,6 +182,8 @@
     "geolocationOrder": "位置优先顺序",
     "geolocationOrderHelp": "先比较置信度与精度，缺失或相同时按此顺序。",
     "moveUp": "{provider} 上移",
-    "moveDown": "{provider} 下移"
+    "moveDown": "{provider} 下移",
+    "allowanceShort": "剩余 {remaining}/{total}",
+    "refusalHeading": "拒绝原因"
   }
 }

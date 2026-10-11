@@ -64,7 +64,7 @@ func TestLiveAdmissionReleasesAndBoundsStarts(t *testing.T) {
 	}
 }
 
-func TestLiveOnlyNamesAreCachedWithExpiry(t *testing.T) {
+func TestLiveNameCacheHasIndependentExpiryAndBounds(t *testing.T) {
 	now := time.Now()
 	s := NewLiveService(nil, nil)
 	s.now = func() time.Time { return now }

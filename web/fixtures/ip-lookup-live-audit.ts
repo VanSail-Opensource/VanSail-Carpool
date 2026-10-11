@@ -1,15 +1,18 @@
 import { ipLookupApi, type IPLookupLiveDetails } from '@/api/ipLookup'
 import { ApiError } from '@/api/http'
+import { denseTopology, publishLiveAudit } from './ip-lookup-progress-audit'
 
 export function installLiveIPAudit(params: URLSearchParams) {
   let calls = 0
+  let upstreamCalls = 0
+  const cache = new Map<string, { result: IPLookupLiveDetails; expires: number }>()
   const requested: string[] = []
-  ipLookupApi.details = async (ip, signal) => {
+  ipLookupApi.details = async (ip, signal, refresh, emit) => {
     calls++; requested.push(ip)
-    if (params.get('live') === 'slow') await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(resolve, 1800)
-      signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
-    })
+    const stored = cache.get(ip)
+    if (!refresh && stored && stored.expires > Date.now()) { emit?.({ type: 'complete', ip, data: stored.result, progress: { phase: 'complete', completed: 8, total: 8 } }); return stored.result }
+    upstreamCalls++
+    if (params.get('live') === 'refresh-error' && calls > 1) throw new ApiError(502, { code: 'IP_DETAILS_UNAVAILABLE', message: 'Constructed refresh failure' })
     if (params.get('live') === 'error') throw new ApiError(429, { code: 'IP_DETAILS_RATE_LIMITED', message: 'Constructed rate limit' })
     const now = new Date().toISOString()
     const meta = { status: 'success' as const, source: 'ripe:looking-glass', observedAt: now, errorCode: '' }
@@ -47,7 +50,14 @@ export function installLiveIPAudit(params: URLSearchParams) {
       result.topology.edges.push({ from: 3257, to: 48266, relationship: 'upstream' })
       result.asns.push({ ...result.asns[0]!, asn: 48266, name: 'Catixs', rir: 'RIPE NCC' })
     }
+    result.topology.classificationMeta = { ...meta, source: 'caida:clique', observedAt: '2026-10-01' }
+    const tiers = new Set([174, 3257, 2914, 1299, 6461, 3356, 7018, 12956, 6453, 3491, 5511])
+    result.topology.nodes = result.topology.nodes.map(node => ({ ...node, tier1: params.get('live') === 'unknown-t1' ? null : tiers.has(node.asn) }))
+    if (params.get('live') === 'unknown-t1') result.topology.classificationMeta.status = 'partial'
+    if (params.get('live') === 'large') denseTopology(result)
+    await publishLiveAudit(result, params, signal, params.has('baseline') ? undefined : emit)
+    if (!['partial', 'stream-error'].includes(params.get('live') ?? '')) cache.set(ip, { result, expires: Date.now() + 60000 })
     return result
   }
-  return () => ({ calls, requested })
+  return () => ({ calls, requested, upstreamCalls })
 }

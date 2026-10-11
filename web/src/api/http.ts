@@ -128,3 +128,10 @@ export async function requestBlob(path: string, options: RequestOptions = {}): P
   if (!response.ok) throw await responseError(response)
   return response.blob()
 }
+
+// Streaming reads share the ordinary session, signatures and safe error handling.
+export async function requestResponse(path: string, options: RequestOptions = {}): Promise<Response> {
+  const response = await send(path, { ...options, cache: 'no-store' })
+  if (!response.ok) throw await responseError(response)
+  return response
+}

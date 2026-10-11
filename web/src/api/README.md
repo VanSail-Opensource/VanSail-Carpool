@@ -38,3 +38,6 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 `subscription.ts` exposes live authenticated member uptime and native import links. These endpoints are excluded from persistent rendering snapshots; neither test-account credentials nor raw resolved configurations are returned.
 - `ipLookup.ts` provides generated typed IP Lookup clients with fresh capability/receipt reads and quote-only cached report previews. Submission explicitly selects the signed action fields and excludes preview metadata; `ipLookup.test.ts` covers this strict transport shape for hosted CI.
+
+- `ipLookupStream.ts` decodes bounded UTF-8 SSE frames through the ordinary signed request transport, supports JSON fallback and requires explicit completion.
+- `ipLookupStream.test.ts` covers split Unicode frames, refresh, JSON fallback, address mismatch and truncated streams in hosted CI.

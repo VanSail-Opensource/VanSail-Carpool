@@ -146,8 +146,6 @@ func buildTopology(ip string, rows []routeObservation, meta LiveMeta) BGPTopolog
 
 func (s *LiveService) topology(ctx context.Context, ip string) BGPTopology {
 	resource := url.Values{"resource": {ip}}
-	info, _ := s.liveHTTP(ctx, "ripe", "/data/network-info/data.json", resource, nil, "")
-	hint := textField(nested(liveObject(info), "data"), "prefix")
 	data, err := s.liveHTTP(ctx, "ripe", "/data/looking-glass/data.json", resource, nil, "")
 	meta := liveMeta("ripe:looking-glass", err)
 	meta.ObservedAt = textField(nested(liveObject(data), "data"), "latest_time")
@@ -164,6 +162,8 @@ func (s *LiveService) topology(ctx context.Context, ip string) BGPTopology {
 	if len(t.Paths) > 0 {
 		return t
 	}
+	info, _ := s.liveHTTP(ctx, "ripe", "/data/network-info/data.json", resource, nil, "")
+	hint := textField(nested(liveObject(info), "data"), "prefix")
 	if hint == "" {
 		hint = ip
 	}

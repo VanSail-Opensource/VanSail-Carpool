@@ -1,0 +1,44 @@
+IPLookupProgress:
+  type: object
+  additionalProperties: false
+  required: [phase, completed, total]
+  properties:
+    phase: { type: string, enum: [queued, checking, topology, relationships, names, asns, scores, block, ptr, shodan, complete] }
+    completed: { type: integer, minimum: 0 }
+    total: { type: integer, minimum: 0 }
+    currentProvider: { type: string }
+IPLookupLiveEvent:
+  oneOf:
+    - type: object
+      required: [type, ip, progress]
+      properties:
+        type: { type: string, enum: [progress] }
+        ip: { type: string }
+        progress: { $ref: ../../openapi.yaml#/components/schemas/IPLookupProgress }
+    - type: object
+      required: [type, ip, section, data]
+      properties:
+        type: { type: string, enum: [section] }
+        ip: { type: string }
+        section: { type: string, enum: [topology, asns, scores, block, ptr, shodan] }
+        data:
+          oneOf:
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupBGPTopology }
+            - { type: array, items: { $ref: ../../openapi.yaml#/components/schemas/IPLookupASNDetails } }
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupNetworkScores }
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupAbuseBlock }
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupPTRDetails }
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupShodanDetails }
+    - type: object
+      required: [type, ip, data, progress]
+      properties:
+        type: { type: string, enum: [complete] }
+        ip: { type: string }
+        data: { $ref: ../../openapi.yaml#/components/schemas/IPLookupLiveDetails }
+        progress: { $ref: ../../openapi.yaml#/components/schemas/IPLookupProgress }
+    - type: object
+      required: [type, ip, errorCode]
+      properties:
+        type: { type: string, enum: [error] }
+        ip: { type: string }
+        errorCode: { type: string }

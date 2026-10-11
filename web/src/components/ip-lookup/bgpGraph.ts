@@ -1,43 +1,64 @@
 import type { IPLookupBGPTopology } from '@/api/ipLookup'
+import { placeNodes, routeEdges } from './bgpLayout'
 
-export function graphLayout(topology: IPLookupBGPTopology, directLimit: number, depth: number) {
-  const distance = new Map(topology.origins.map(asn => [asn, 0]))
+export type GraphPreset = 'tier1' | 'upstreams' | 'neighbors' | 'all'
+export const graphPresets: GraphPreset[] = ['tier1', 'upstreams', 'neighbors', 'all']
+
+export function indexTopology(topology: IPLookupBGPTopology) {
+  const origins = new Set(topology.origins)
+  const neighbors = new Map<number, Set<number>>()
   const frequency = new Map<number, number>()
-  for (const path of topology.paths) for (const asn of new Set(path.asPath)) frequency.set(asn, (frequency.get(asn) ?? 0) + 1)
-  const neighbors = new Map<number, number[]>()
-  for (const edge of topology.edges) neighbors.set(edge.to, [...neighbors.get(edge.to) ?? [], edge.from])
+  const edges = new Map(topology.edges.filter(edge => edge.from !== edge.to).map(edge => [`${edge.from}-${edge.to}`, edge]))
+  for (const edge of edges.values()) {
+    for (const [a, b] of [[edge.from, edge.to], [edge.to, edge.from]] as const) {
+      const group = neighbors.get(a) ?? new Set<number>()
+      group.add(b); neighbors.set(a, group)
+    }
+  }
+  for (const path of topology.paths) {
+    for (const asn of new Set(path.asPath)) frequency.set(asn, (frequency.get(asn) ?? 0) + 1)
+  }
+  const distance = new Map(topology.origins.map(asn => [asn, 0]))
   const queue = [...topology.origins]
-  for (let index = 0; index < queue.length; index++) for (const neighbor of neighbors.get(queue[index]!) ?? []) {
-    if (!distance.has(neighbor)) { distance.set(neighbor, distance.get(queue[index]!)! + 1); queue.push(neighbor) }
+  for (let i = 0; i < queue.length; i++) for (const asn of neighbors.get(queue[i]!) ?? []) {
+    if (!distance.has(asn)) { distance.set(asn, distance.get(queue[i]!)! + 1); queue.push(asn) }
   }
-  const direct = topology.nodes.filter(node => distance.get(node.asn) === 1).sort((a, b) => {
-    const upstream = (asn: number) => topology.edges.some(edge => edge.from === asn && topology.origins.includes(edge.to) && edge.relationship === 'upstream') ? 1 : 0
-    return upstream(b.asn) - upstream(a.asn) || (frequency.get(b.asn) ?? 0) - (frequency.get(a.asn) ?? 0) || a.asn - b.asn
-  })
-  const visible = new Set([...topology.origins, ...direct.slice(0, directLimit).map(node => node.asn)])
-  for (let layer = 1; layer < depth; layer++) for (const edge of topology.edges) {
-    if (visible.has(edge.to) && distance.get(edge.to) === layer && distance.get(edge.from) === layer + 1) visible.add(edge.from)
+  return { topology, origins, neighbors, frequency, edges, distance }
+}
+
+export function graphLayout(index: ReturnType<typeof indexTopology>, preset: GraphPreset, focusPath?: number[]) {
+  const { topology, origins, distance } = index
+  const tier1 = new Set(topology.nodes.filter(node => node.tier1 === true).map(node => node.asn))
+  const visible = new Set(origins)
+  let allowedEdges: Set<string> | undefined
+  if (focusPath) {
+    visible.clear(); focusPath.forEach(asn => visible.add(asn)); allowedEdges = pathEdges(focusPath)
+  } else if (preset === 'tier1') {
+    allowedEdges = new Set<string>()
+    for (const path of topology.paths) {
+      const first = path.asPath.findIndex(asn => tier1.has(asn))
+      if (first < 0) continue
+      const route = path.asPath.slice(first)
+      route.forEach(asn => visible.add(asn))
+      for (const id of pathEdges(route)) allowedEdges.add(id)
+    }
+  } else if (preset === 'all') topology.nodes.forEach(node => visible.add(node.asn))
+  else if (preset === 'neighbors') topology.nodes.filter(node => distance.get(node.asn) === 1).forEach(node => visible.add(node.asn))
+  else for (const edge of index.edges.values()) {
+    if (origins.has(edge.to) && edge.relationship === 'upstream') visible.add(edge.from)
+    if (origins.has(edge.from) && edge.relationship === 'customer') visible.add(edge.to)
   }
-  const nodes = topology.nodes.filter(node => visible.has(node.asn)).map(node => ({ ...node, layer: distance.get(node.asn) ?? 0, x: 0, y: 0 }))
-  const maximumLayer = Math.max(1, ...nodes.map(node => node.layer))
-  const largestColumn = Math.max(1, ...Array.from({ length: maximumLayer + 1 }, (_, layer) => nodes.filter(node => node.layer === layer).length))
-  const height = Math.max(300, largestColumn * 74 + 40)
-  for (let layer = 0; layer <= maximumLayer; layer++) {
-    const column = nodes.filter(node => node.layer === layer).sort((a, b) => a.asn - b.asn)
-    column.forEach((node, index) => { node.x = 24 + layer * 230; node.y = layer === 0 ? 120 + index * 74 : 24 + index * 74 })
+  const fallback = !focusPath && preset === 'tier1' && visible.size === origins.size
+  if (fallback) {
+    allowedEdges = undefined
+    topology.nodes.filter(node => distance.get(node.asn) === 1).forEach(node => visible.add(node.asn))
   }
-  const byASN = new Map(nodes.map(node => [node.asn, node]))
-  const edges = topology.edges.filter(edge => visible.has(edge.from) && visible.has(edge.to)).map(edge => {
-    const from = byASN.get(edge.from)!
-    const to = byASN.get(edge.to)!
-    const sign = from.x > to.x ? -1 : 1
-    const sx = sign < 0 ? from.x : from.x + 184, sy = from.y + 24, tx = sign < 0 ? to.x + 184 : to.x, ty = to.y + 24
-    const bend = Math.max(35, Math.abs(sx - tx) / 2)
-    return { ...edge, id: `${edge.from}-${edge.to}`, d: `M ${sx} ${sy} C ${sx + sign * bend} ${sy}, ${tx - sign * bend} ${ty}, ${tx} ${ty}` }
-  })
-  return { nodes, edges, width: maximumLayer * 230 + 232, height, directCount: direct.length, hidden: topology.nodes.length - nodes.length, maxDepth: Math.max(1, ...distance.values()) }
+  const nodes = topology.nodes.filter(node => visible.has(node.asn))
+  const edges = [...index.edges.entries()].filter(([id, edge]) => visible.has(edge.from) && visible.has(edge.to) && (!allowedEdges || allowedEdges.has(id))).map(([id, edge]) => ({ ...edge, id }))
+  const placed = placeNodes(nodes, edges, distance, index.frequency)
+  return { ...placed, edges: routeEdges(placed.nodes, edges), hidden: topology.nodes.length - nodes.length, fallback }
 }
 
 export function pathEdges(path: number[]) {
-  return new Set(path.slice(1).map((asn, index) => `${path[index]}-${asn}`))
+  return new Set(path.slice(1).flatMap((asn, i) => asn === path[i] ? [] : [`${path[i]}-${asn}`]))
 }

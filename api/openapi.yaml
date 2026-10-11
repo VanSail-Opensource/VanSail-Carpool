@@ -188,6 +188,8 @@ components:
     IPLookupAbuseBlock: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupAbuseBlock' },
     IPLookupPTRDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupPTRDetails' },
     IPLookupLiveDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupLiveDetails' },
+    IPLookupProgress: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupProgress' },
+    IPLookupLiveEvent: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupLiveEvent' },
     IPLookupShodanDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupShodanDetails' },
     IPLookupAdminSettings: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupAdminSettings"},
     IPLookupAllowance: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupAllowance"},

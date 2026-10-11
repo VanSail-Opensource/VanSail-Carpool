@@ -31,18 +31,20 @@ type LiveDetails struct {
 // BGPTopology preserves observed paths separately from inferred relationships.
 type BGPTopology struct {
 	LiveMeta
-	Prefix           string    `json:"prefix"`
-	Origins          []uint32  `json:"origins"`
-	Nodes            []BGPNode `json:"nodes"`
-	Edges            []BGPEdge `json:"edges"`
-	Paths            []BGPPath `json:"paths"`
-	Truncated        bool      `json:"truncated"`
-	RelationshipMeta LiveMeta  `json:"relationshipMeta"`
+	Prefix             string    `json:"prefix"`
+	Origins            []uint32  `json:"origins"`
+	Nodes              []BGPNode `json:"nodes"`
+	Edges              []BGPEdge `json:"edges"`
+	Paths              []BGPPath `json:"paths"`
+	Truncated          bool      `json:"truncated"`
+	RelationshipMeta   LiveMeta  `json:"relationshipMeta"`
+	ClassificationMeta LiveMeta  `json:"classificationMeta"`
 }
 
 type BGPNode struct {
-	ASN  uint32 `json:"asn"`
-	Name string `json:"name"`
+	ASN   uint32 `json:"asn"`
+	Name  string `json:"name"`
+	Tier1 *bool  `json:"tier1"`
 }
 
 type BGPEdge struct {
