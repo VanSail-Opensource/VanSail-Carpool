@@ -51,4 +51,5 @@ type Checkpoint struct {
 	Usable   int                 `json:"usable"`
 	Votes    map[string][]string `json:"votes"`
 	Geo      *GeoCandidate       `json:"geo"`
+	RPKI     *Stage              `json:"rpki,omitempty"`
 }

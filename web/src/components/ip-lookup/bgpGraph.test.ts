@@ -10,6 +10,21 @@ function fixture(): IPLookupBGPTopology {
     paths: [], truncated: false, relationshipMeta: { status: 'success', source: 'caida', observedAt: '', errorCode: '' } }
 }
 describe('fixed compact BGP graph', () => {
+  it('keeps intermediate transits and sorts each column by observations without inventing focus paths', () => {
+    const topology = fixture()
+    topology.projectionVersion = 2
+    topology.origins = [45671]
+    topology.nodes = [45671, 9280, 38195, 58511, 174, 701].map(asn => ({ asn, name: '', observedRoutes: asn === 58511 ? 8 : 3 }))
+    topology.edges = [{ from: 9280, to: 45671, relationship: 'upstream' }, { from: 38195, to: 9280, relationship: 'upstream' }, { from: 58511, to: 9280, relationship: 'upstream' }, { from: 174, to: 38195, relationship: 'upstream' }]
+    topology.routeSummaries = [{ asns: [45671, 9280, 38195, 174, 701], hops: [1, 1, 1, 3], observedRoutes: 3 }, { asns: [45671, 9280, 58511], hops: [1, 1], observedRoutes: 8 }]
+    const index = indexTopology(topology), layout = graphLayout(index)
+    expect(layout.nodes.find(node => node.asn === 58511)!.y).toBeLessThan(layout.nodes.find(node => node.asn === 38195)!.y)
+    expect(layout.nodes).toHaveLength(6)
+    const focused = routesToASN(index, 701)
+    expect(focused).toHaveLength(1)
+    expect(focused[0]!.edgeIds).toEqual(['45671-9280:upstream', '9280-38195:upstream', '38195-174:upstream', 'path:174-701:3'])
+    expect(focused[0]!.edgeIds.some(id => id.includes('58511'))).toBe(false)
+  })
   it('focuses only observed compact routes to the selected ASN', () => {
     const index = indexTopology(fixture())
     const routes = routesToASN(index, 701)

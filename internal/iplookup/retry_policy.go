@@ -100,6 +100,9 @@ func FailedStages(r Report) []string {
 			failed = append(failed, stage.ID)
 		}
 	}
+	if stage := r.Checkpoint.RPKI; stage != nil && (stage.Status == "error" || stage.Status == "processing" || stage.Status == "queued") {
+		failed = append(failed, "rpki")
+	}
 	return failed
 }
 
@@ -122,4 +125,7 @@ func PrepareRepair(r *Report) {
 		}
 	}
 	r.Checkpoint.Complete = complete
+	if stage := r.Checkpoint.RPKI; stage != nil && (stage.Status == "error" || stage.Status == "processing") {
+		stage.Status, stage.Attempted = "queued", false
+	}
 }

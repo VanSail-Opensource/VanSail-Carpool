@@ -8,6 +8,7 @@ import IPBGPTopology from './IPBGPTopology.vue'
 import IPASNDetails from './IPASNDetails.vue'
 import LiveSourceNote from './LiveSourceNote.vue'
 import IPLookupProgress from './IPLookupProgress.vue'
+import IPTransferHistory from './IPTransferHistory.vue'
 const props = defineProps<{ requestedIp: string; report: IPLookupReport; snapshot: IPLookupLiveDetails | null; refreshQuote: IPLookupQuote | null; busy: boolean }>()
 defineEmits<{ refresh: [] }>()
 const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.requestedIp, () => props.report.status === 'processing' ? '' : `${props.report.id}:${props.report.checkedAt}`, () => props.snapshot)
@@ -26,9 +27,10 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
       <IPASNDetails v-if="details.asns" :asns="details.asns" />
       <div class="live-ip-facts">
         <section v-if="details.scores"><h3>{{ $t('ipLookupLive.scores') }}</h3><dl><div v-for="kind in ['company', 'asn'] as const" :key="kind"><dt>{{ $t(`ipLookup.scores.${kind}_abuse_ratio`) }}</dt><dd>{{ details.scores[kind].ratio === null ? $t('ipLookupLive.status.empty') : `${(details.scores[kind].ratio! * 100).toFixed(3)}%` }}<span v-if="details.scores[kind].label">{{ details.scores[kind].label }}</span></dd></div></dl><LiveSourceNote :meta="details.scores" /></section>
-        <section v-if="details.block"><h3>{{ $t('ipLookupLive.blockTitle') }}</h3><code v-if="details.block.prefix">{{ details.block.prefix }}</code><p>{{ $t('ipLookupLive.blockCount', { reported: details.block.reportedAddresses ?? $t('ipLookupLive.status.empty'), capacity: details.block.addressCapacity || $t('ipLookupLive.status.empty'), days: details.block.windowDays }) }}</p><LiveSourceNote :meta="details.block" /></section>
-        <section v-if="details.ptr"><h3>{{ $t('ipLookupLive.ptrTitle') }}</h3><ul v-if="details.ptr.domains.length"><li v-for="domain in details.ptr.domains" :key="domain"><code>{{ domain }}</code></li></ul><LiveSourceNote :meta="details.ptr" /></section>
+        <section v-if="details.block"><h3>{{ $t('ipLookupLive.blockTitle') }}</h3><code v-if="details.block.prefix">{{ details.block.prefix }}</code><p v-if="details.block.errorCode !== 'IP_DETAILS_LEGACY'">{{ $t('ipLookupLive.blockCount', { reported: details.block.reportedAddresses ?? $t('ipLookupLive.status.empty'), capacity: details.block.addressCapacity || $t('ipLookupLive.status.empty'), days: details.block.windowDays }) }}</p><p v-if="details.block.errorCode === 'IP_DETAILS_LEGACY'">{{ $t('ipLookupLive.legacyData') }}</p><LiveSourceNote v-else :meta="details.block" /></section>
+        <section v-if="details.ptr" class="ptr-facts"><h3>{{ $t('ipLookupLive.ptrTitle') }}</h3><ul v-if="details.ptr.domains.length"><li v-for="domain in details.ptr.domains" :key="domain"><code>{{ domain }}</code></li></ul><LiveSourceNote :meta="details.ptr" /></section>
       </div>
+      <IPTransferHistory :history="details.transfers" :loading="loading && !details.transfers" :failed="!!errorCode" />
       <section v-if="details.shodan" class="live-shodan"><h3>{{ $t('ipLookupLive.shodanTitle') }}</h3><dl><div><dt>{{ $t('ipLookupLive.shodanHostnames') }}</dt><dd>{{ details.shodan.hostnames.length ? details.shodan.hostnames.join(', ') : $t('ipLookupLive.status.empty') }}</dd></div><div><dt>{{ $t('ipLookupLive.shodanPorts') }}</dt><dd><code>{{ details.shodan.ports.length ? details.shodan.ports.join(', ') : $t('ipLookupLive.status.empty') }}</code></dd></div></dl><LiveSourceNote :meta="details.shodan" /><details><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.shodanContext') }}</p></details></section>
       <p v-if="details.fetchedAt" class="live-fetch-time">{{ $t('ipLookupLive.fetchedAt', { date: new Date(details.fetchedAt).toLocaleString() }) }}</p>
     </template>
@@ -48,7 +50,7 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
 .live-ip-facts dd { margin: 0.25rem 0 0; font-size: 0.88rem; }
 .live-ip-facts dd span { margin-left: 0.5rem; color: var(--text-muted); }
 .live-ip-facts p, .live-ip-facts code { font-size: 0.82rem; overflow-wrap: anywhere; }
-.live-ip-facts ul { margin: 0.7rem 0; padding-left: 1rem; }
+.live-ip-facts .ptr-facts ul { margin: 0.3rem 0; padding: 0; list-style: none; display: grid; gap: 0.2rem; }
 .live-shodan { padding-block: 1rem; border-top: 1px solid var(--line); }
 .live-shodan h3 { font-size: 1rem; margin: 0; }
 .live-shodan dl { display: grid; gap: 0.9rem; margin-block: 0.75rem; }

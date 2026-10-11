@@ -61,7 +61,7 @@ func healthyMeta() LiveMeta { return LiveMeta{Status: "success", Source: "fixtur
 func partiallyFailingPTR() LiveDetails {
 	return LiveDetails{
 		SnapshotID: "snapshot", IP: "1.1.1.1", SourceIP: "1.1.1.1", FetchedAt: "2026-10-11T00:00:00Z",
-		Topology: BGPTopology{LiveMeta: healthyMeta(), RelationshipMeta: healthyMeta(), ClassificationMeta: healthyMeta(), Prefix: "1.1.1.0/24", Origins: []uint32{13335}},
+		Topology: BGPTopology{ProjectionVersion: 2, LiveMeta: healthyMeta(), RelationshipMeta: healthyMeta(), ClassificationMeta: healthyMeta(), Prefix: "1.1.1.0/24", Origins: []uint32{13335}},
 		Scores:   NetworkScores{LiveMeta: healthyMeta()},
 		Block:    AbuseBlock{LiveMeta: healthyMeta()},
 		Shodan:   ShodanDetails{LiveMeta: healthyMeta()},
@@ -82,7 +82,7 @@ func TestLiveRetryPlanCascadesTopologyFailures(t *testing.T) {
 	cascading := partiallyFailingPTR()
 	cascading.PTR.LiveMeta = healthyMeta()
 	cascading.Topology.LiveMeta = LiveMeta{Status: "error"}
-	if plan := liveRetryPlanOf(cascading); !plan.Topology || !plan.Graph || !plan.Block || !plan.ASNs || plan.PTR || plan.Scores || plan.Shodan {
+	if plan := liveRetryPlanOf(cascading); !plan.Topology || !plan.Graph || plan.Block || !plan.ASNs || plan.PTR || plan.Scores || plan.Shodan {
 		t.Fatalf("topology cascade lost: %+v", plan)
 	}
 

@@ -55,7 +55,9 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 		status := 200
 		switch {
 		case strings.Contains(r.URL.Path, "network-info"):
-			body = `{"data":{"prefix":"1.1.1.0/24"}}`
+			body = `{"data":{"prefix":"1.1.1.0/24","asns":[13335]}}`
+		case strings.Contains(r.URL.Path, "rpki-validation"):
+			body = `{"data":{"resource":"13335","prefix":"1.1.1.0/24","status":"valid"}}`
 		case strings.Contains(r.URL.Path, "looking-glass"):
 			if fallback {
 				status = 500
@@ -64,6 +66,12 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 			}
 		case strings.HasPrefix(r.URL.Path, "/prefix/"):
 			body = `[{"prefix":"1.0.0.0/8","reporting_peers":[{"as_path":"999 888"}]},{"prefix":"1.1.1.0/24","reporting_peers":[{"as_path":"174 13335","collector":"route-views6","timestamp":"2026-10-10"}]}]`
+		case strings.Contains(r.URL.Path, "transfer-history"):
+			body = fmt.Sprintf(`{"data":{"transfers":[],"parameters":{"resource":"%s","latest_time":"2026-10-11"}}}`, r.URL.Query().Get("resource"))
+		case strings.Contains(r.URL.Path, "abuse-contact-finder"):
+			body = fmt.Sprintf(`{"data":{"abuse_contacts":[],"parameters":{"resource":"%s"},"latest_time":"2026-10-11"}}`, strings.TrimPrefix(r.URL.Query().Get("resource"), "AS"))
+		case r.URL.Host == "www.peeringdb.com":
+			body = `{"data":[]}`
 		case strings.Contains(r.URL.Path, "/rir/"):
 			id := strings.TrimPrefix(r.URL.Query().Get("resource"), "AS")
 			body = fmt.Sprintf(`{"data":{"latest":"2026-10-09","rirs":[{"resource":"%s","rir":"ARIN","registration":"2010-07-14"}]}}`, id)
@@ -104,7 +112,7 @@ func integratedLiveService(t *testing.T, fallback bool) (*LiveService, *atomic.I
 				body = fmt.Sprintf(`{"ip":%q,"company":{"abuser_score":"0 (Low)"},"asn":{"abuser_score":"0.001 (Low)"}}`, ip)
 			}
 		case r.URL.Host == "api.abuseipdb.com":
-			body = `{"data":{"networkAddress":"1.1.1.0","reportedAddress":[]}}`
+			body = `{"data":{"networkAddress":"1.1.1.0","netmask":"255.255.255.0","reportedAddress":[]}}`
 		case r.URL.Host == "internetdb.shodan.io":
 			hosts.Add(1)
 			body = fmt.Sprintf(`{"ip":%q,"hostnames":["one.one.one.one"],"ports":[443,53]}`, strings.TrimPrefix(r.URL.Path, "/"))

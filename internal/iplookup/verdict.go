@@ -8,6 +8,7 @@ import (
 // NewReport reserves the configured stages without storing provider payloads.
 func NewReport(id, ip string, c Config) Report {
 	r := Report{ID: id, IP: ip, Status: "processing", Verdict: "inconclusive", Reasons: []string{}, Sources: map[string]string{}, Databases: []Database{}, Refusals: []Refusal{}, PolicyVersion: Version, ParserVersion: Version, Checkpoint: newCheckpoint()}
+	r.Checkpoint.RPKI = &Stage{ID: "rpki", Status: "queued"}
 	for _, p := range c.Providers {
 		status := "disabled"
 		if p.Enabled {
@@ -53,12 +54,16 @@ func Aggregate(r Report, now time.Time) Report {
 		return r
 	}
 	syncFacts(&r)
+	applyRPKIRefusals(&r)
 	r.RefundRequired = false
 	r.CheckedAt = now.UTC().Format(time.RFC3339Nano)
 	r.Status, r.Verdict = "succeeded", "inconclusive"
 	r.Reasons = []string{}
 	complete := r.Checkpoint.Complete && r.Checkpoint.Coverage == 31
 	if !r.Checkpoint.Complete || r.Checkpoint.Usable == 0 {
+		r.Status = "partial"
+	}
+	if r.RPKI != nil && liveMetaFailed(r.RPKI.LiveMeta) {
 		r.Status = "partial"
 	}
 	if len(r.Refusals) > 0 {

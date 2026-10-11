@@ -4,6 +4,7 @@ import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
 import IPRefusals from './IPRefusals.vue'
+import IPRPKIStatus from './IPRPKIStatus.vue'
 import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
@@ -22,6 +23,7 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
     </header>
     <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
     <IPRefusals :refusals="report.refusals" />
+    <IPRPKIStatus :result="report.rpki" />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">
       <dl v-if="rows.length" class="report-facts">
         <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>

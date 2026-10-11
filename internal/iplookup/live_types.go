@@ -5,7 +5,7 @@ const CloudflareID = "cloudflare_radar"
 
 // QueueIDs includes the existing reputation queues and live enrichment sources.
 func QueueIDs() []string {
-	return append(append([]string{}, IDs...), "ripe", "routeviews", "caida", "bgpkit", CloudflareID, "dns", "shodan")
+	return append(append([]string{}, IDs...), "ripe", "routeviews", "caida", "bgpkit", CloudflareID, "dns", "shodan", "peeringdb")
 }
 
 // LiveMeta describes one source's availability and observation time.
@@ -18,31 +18,34 @@ type LiveMeta struct {
 
 // LiveDetails is response-only information for the requested address.
 type LiveDetails struct {
-	SnapshotID string        `json:"-"`
-	SourceIP   string        `json:"sourceIP"`
-	CacheMatch string        `json:"cacheMatch"`
-	IP         string        `json:"ip"`
-	FetchedAt  string        `json:"fetchedAt"`
-	Topology   BGPTopology   `json:"topology"`
-	ASNs       []ASNDetails  `json:"asns"`
-	Scores     NetworkScores `json:"scores"`
-	Block      AbuseBlock    `json:"block"`
-	PTR        PTRDetails    `json:"ptr"`
-	Shodan     ShodanDetails `json:"shodan"`
+	SnapshotID string           `json:"-"`
+	SourceIP   string           `json:"sourceIP"`
+	CacheMatch string           `json:"cacheMatch"`
+	IP         string           `json:"ip"`
+	FetchedAt  string           `json:"fetchedAt"`
+	Topology   BGPTopology      `json:"topology"`
+	ASNs       []ASNDetails     `json:"asns"`
+	Scores     NetworkScores    `json:"scores"`
+	Block      AbuseBlock       `json:"block"`
+	PTR        PTRDetails       `json:"ptr"`
+	Shodan     ShodanDetails    `json:"shodan"`
+	Transfers  *TransferHistory `json:"transfers,omitempty"`
 }
 
 // BGPTopology preserves observed paths separately from inferred relationships.
 type BGPTopology struct {
 	LiveMeta
-	Prefix             string      `json:"prefix"`
-	Origins            []uint32    `json:"origins"`
-	Nodes              []BGPNode   `json:"nodes"`
-	Edges              []BGPEdge   `json:"edges"`
-	Paths              []BGPPath   `json:"paths"`
-	Tier1Links         []Tier1Link `json:"tier1Links"`
-	Truncated          bool        `json:"truncated"`
-	RelationshipMeta   LiveMeta    `json:"relationshipMeta"`
-	ClassificationMeta LiveMeta    `json:"classificationMeta"`
+	Prefix             string            `json:"prefix"`
+	Origins            []uint32          `json:"origins"`
+	Nodes              []BGPNode         `json:"nodes"`
+	Edges              []BGPEdge         `json:"edges"`
+	Paths              []BGPPath         `json:"paths"`
+	Tier1Links         []Tier1Link       `json:"tier1Links"`
+	Truncated          bool              `json:"truncated"`
+	RelationshipMeta   LiveMeta          `json:"relationshipMeta"`
+	ClassificationMeta LiveMeta          `json:"classificationMeta"`
+	ProjectionVersion  int               `json:"projectionVersion,omitempty"`
+	RouteSummaries     []BGPRouteSummary `json:"routeSummaries,omitempty"`
 }
 
 // Tier1Link summarizes an observed path, never an inferred adjacent AS pair.
@@ -54,15 +57,25 @@ type Tier1Link struct {
 }
 
 type BGPNode struct {
-	ASN   uint32 `json:"asn"`
-	Name  string `json:"name"`
-	Tier1 *bool  `json:"tier1"`
+	ASN            uint32 `json:"asn"`
+	Name           string `json:"name"`
+	Tier1          *bool  `json:"tier1"`
+	ObservedRoutes *int   `json:"observedRoutes,omitempty"`
 }
 
 type BGPEdge struct {
-	From         uint32 `json:"from"`
-	To           uint32 `json:"to"`
-	Relationship string `json:"relationship"`
+	From             uint32    `json:"from"`
+	To               uint32    `json:"to"`
+	Relationship     string    `json:"relationship"`
+	ObservedRoutes   *int      `json:"observedRoutes,omitempty"`
+	RelationshipMeta *LiveMeta `json:"relationshipMeta,omitempty"`
+}
+
+// BGPRouteSummary contains visible hops only; Hops records each segment's real length.
+type BGPRouteSummary struct {
+	ASNs           []uint32 `json:"asns"`
+	Hops           []int    `json:"hops"`
+	ObservedRoutes int      `json:"observedRoutes"`
 }
 
 type BGPPath struct {
@@ -86,6 +99,8 @@ type ASNDetails struct {
 	Upstreams         *int                `json:"upstreams"`
 	Sources           map[string]LiveMeta `json:"sources"`
 	Traffic           ASNTraffic          `json:"traffic"`
+	AbuseContacts     []string            `json:"abuseContacts,omitempty"`
+	Website           string              `json:"website,omitempty"`
 }
 
 type TrafficSummary struct {

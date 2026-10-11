@@ -2,9 +2,22 @@ package iplookup
 
 import "sort"
 
-// CompactTopology retains only origins, observed direct neighbors and dated T1s.
-// Original paths are used transiently to summarize reachability, then discarded.
+// CompactTopology preserves the versioned projection on repeated reads.
 func CompactTopology(t BGPTopology) BGPTopology {
+	if len(t.Paths) > 0 {
+		return projectObservedTopology(t)
+	}
+	if t.ProjectionVersion == 2 {
+		if t.Tier1Links == nil {
+			t.Tier1Links = []Tier1Link{}
+		}
+		return t
+	}
+	return compactLegacyTopology(t)
+}
+
+// compactLegacyTopology never upgrades snapshots whose original evidence is gone.
+func compactLegacyTopology(t BGPTopology) BGPTopology {
 	origins, visible, tiers := map[uint32]bool{}, map[uint32]bool{}, map[uint32]bool{}
 	for _, asn := range t.Origins {
 		origins[asn], visible[asn] = true, true
@@ -84,6 +97,10 @@ func CompactLiveDetails(r LiveDetails) LiveDetails {
 	}
 	if r.CacheMatch == "" {
 		r.CacheMatch = "none"
+	}
+	if r.Block.Prefix != "" && r.Block.Prefix != blockPrefix(r.SourceIP) {
+		r.Block.Prefix, r.Block.AddressCapacity, r.Block.ReportedAddresses = "", "", nil
+		r.Block.Status, r.Block.ErrorCode = "empty", "IP_DETAILS_LEGACY"
 	}
 	return r
 }

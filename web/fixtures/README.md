@@ -47,6 +47,12 @@ These files are for local visual audits. The production Vite build starts from t
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.
 - `ip-lookup-audit.html` is the browser fixture entry point; `admin`, `zh`, `no-combo` and `cached` flags select the relevant variants. `mode=cached|subnet` displays reports automatically when an IP is entered, without a submission. `risk`, `scamalytics-risk`, `maxmind-risk`, `partial`, `all-failed`, `nulls`, `zero` and `subsource` exercise compact evidence, cached API errors, source names and coordinate visibility; `loading`, `disabled`, `error`, `balance-error` and `save-error` cover recovery states. `__ipAudit.counters()` records quote/submission counts and the saved provider/geolocation order; `__ipAudit.setCached()` changes cache availability before a new address is entered.
 `ip-lookup-live-audit.ts` supplies constructed live topology, origin selection, zero/unknown metrics, traffic windows, errors, slow/cancelled responses and request counters for Chrome DevTools MCP reviews of the real IP Lookup components.
+
+IP Lookup routing audits additionally support `live=transits`, `live=legacy`,
+`live=transfer-error`, and `rpki=valid|invalid_asn|invalid_length|not_found|unavailable`.
+`window.__ipAudit.seedLive` accepts normalized queued public-source snapshots for
+browser inspection; reputation, billing and receipts remain constructed. The
+existing empty/slow/error/multiple-origin/large modes cover the new sections too.
 `PMPendingContentAudit.vue`, `pm-pending-content-audit.ts` and `pm-pending-content-audit.html` exercise the real delivery dialog with expired/invalid pending-content receipts in English and Chinese without Telegram mutations.
 
 - `ip-lookup-progress-audit.ts` supplies progressive, interrupted and 300-node/1,500-edge/1,000-path browser fixtures. The live fixture counts simulated upstream runs and implements a 60-second reuse window with forced refresh.

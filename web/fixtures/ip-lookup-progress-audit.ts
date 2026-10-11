@@ -14,8 +14,8 @@ export function denseTopology(result: IPLookupLiveDetails) {
 }
 
 export async function publishLiveAudit(result: IPLookupLiveDetails, params: URLSearchParams, signal?: AbortSignal, emit?: (event: IPLookupLiveEvent) => void) {
-  const sectionNames = ['topology', 'scores', 'ptr', 'block', 'asns', 'shodan'] as const
-  const phases = ['topology', 'scores', 'ptr', 'block', 'asns', 'relationships', 'names', 'shodan'] as const
+  const sectionNames = ['topology', 'scores', 'ptr', 'block', 'asns', 'shodan', 'transfers'] as const
+  const phases = ['topology', 'scores', 'ptr', 'block', 'asns', 'relationships', 'names', 'shodan', 'transfers'] as const
   // ?live=degraded completes the asns step with partial coverage to audit warning states.
   const degraded = params.get('live') === 'degraded'
   const tasks = (active: number) => phases.map((phase, index) => ({
@@ -24,7 +24,7 @@ export async function publishLiveAudit(result: IPLookupLiveDetails, params: URLS
   }))
   for (let i = 0; i < phases.length; i++) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    emit?.({ type: 'progress', ip: result.ip, progress: { phase: phases[i]!, completed: i, total: 8, tasks: tasks(i) } })
+    emit?.({ type: 'progress', ip: result.ip, progress: { phase: phases[i]!, completed: i, total: phases.length, tasks: tasks(i) } })
     if (i < sectionNames.length) {
       const section = sectionNames[i]!
       emit?.({ type: 'section', ip: result.ip, section, data: result[section] })
@@ -35,5 +35,5 @@ export async function publishLiveAudit(result: IPLookupLiveDetails, params: URLS
       signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
     })
   }
-  emit?.({ type: 'complete', ip: result.ip, data: result, progress: { phase: 'complete', completed: 8, total: 8, tasks: phases.map(phase => ({ key: phase, status: 'success' as const })) } })
+  emit?.({ type: 'complete', ip: result.ip, data: result, progress: { phase: 'complete', completed: phases.length, total: phases.length, tasks: phases.map(phase => ({ key: phase, status: 'success' as const })) } })
 }

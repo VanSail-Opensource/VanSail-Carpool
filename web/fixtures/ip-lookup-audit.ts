@@ -39,6 +39,14 @@ function makeReport(ip: string): IPLookupReport {
     maxmind: { ip_risk_snapshot: 0.4, static_ip_score: 0.95, user_count: 3, user_type: 'residential' },
     refusals: [], databases: ids.map(id => ({ id, status: 'success' })), checkedAt: now(), policyVersion: 'residential-v3', parserVersion: 'residential-v3',
   }
+  if (params.get('live') !== 'legacy' || lastQuote?.refresh) {
+    const validity = (params.get('rpki') ?? 'valid') as 'valid' | 'invalid_asn' | 'invalid_length' | 'not_found' | 'unavailable'
+    const meta = { status: validity === 'unavailable' ? 'error' as const : 'success' as const, source: 'ripe:rpki-validation', observedAt: now(), errorCode: validity === 'unavailable' ? 'IP_DETAILS_UNAVAILABLE' : '' }
+    report.rpki = { ...meta, prefix: ip.includes(':') ? '2606:4700:4700::/48' : `${ip.split('.').slice(0, 3).join('.')}.0/24`, routes: [{ ...meta, asn: 45671, validity, roas: validity === 'not_found' || validity === 'unavailable' ? [] : [{ asn: 45671, prefix: '118.127.0.0/18', maxLength: 24 }] }] }
+    report.policyVersion = 'residential-v4'
+    if (validity === 'invalid_asn' || validity === 'invalid_length') { report.verdict = 'unsuitable'; report.refusals = [{ kind: validity === 'invalid_asn' ? 'rpki_invalid_asn' : 'rpki_invalid_length', source: 'ripe_rpki', value: `AS45671 ${report.rpki.prefix}` }] }
+    if (validity === 'unavailable') report.status = 'partial'
+  }
   if (mode === 'risk' || mode === 'scamalytics-risk' || mode === 'maxmind-risk') {
     report.verdict = 'unsuitable'
     report.refusals = mode === 'risk' ? [{ kind: 'abuse_reports', source: 'abuseipdb', value: 1 }]
@@ -128,5 +136,5 @@ const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:p
 app.use(router); app.use(ui)
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 document.title = t('ipLookup.title')
-;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
+;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, seedLive: liveCounters.seed, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
 void router.isReady().then(() => app.mount('#app'))

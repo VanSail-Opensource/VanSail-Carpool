@@ -74,6 +74,9 @@ func (w *Worker) HandleProviderOperation(ctx context.Context, operation provider
 	}); err != nil {
 		return err
 	}
+	if err := w.runRPKI(ctx, &r, func(progress Report) error { return w.repository.SaveIPLookupProgress(ctx, progress) }); err != nil {
+		return err
+	}
 	if err := w.refreshLive(ctx, r, c); err != nil {
 		return err
 	}

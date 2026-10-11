@@ -8,7 +8,7 @@ export function ipLookupErrorText(code: string): string {
 
 export function providerName(id: string): string { return t(`ipLookup.providers.${id}`) }
 
-const progressTaskSections = new Set(['topology', 'relationships', 'names', 'asns', 'scores', 'block', 'ptr', 'shodan'])
+const progressTaskSections = new Set(['topology', 'relationships', 'names', 'asns', 'scores', 'block', 'ptr', 'shodan', 'transfers', 'rpki'])
 
 // Live sections and the refresh phase use ipLookupProgress labels; anything
 // else is a reputation provider id.

@@ -28,7 +28,7 @@
       "IP_DETAILS_UNAVAILABLE": "实时信息暂时不可用，请尝试刷新。",
       "IP_DETAILS_BUSY": "您的账号已有实时查询正在进行。",
       "IP_DETAILS_RATE_LIMITED": "实时查询频率已达上限，请稍后重试。",
-      "IP_DETAILS_PLAN_RESTRICTED": "此提供商套餐无法查询完整的已发布网段。",
+      "IP_DETAILS_PLAN_RESTRICTED": "当前服务商套餐无法检查此地址段。",
       "IP_DETAILS_AUTH": "提供商凭据未被接受。",
       "IP_DETAILS_INVALID_RESPONSE": "提供商返回了不完整或无效的数据。",
       "IP_LOOKUP_DISABLED": "IP 查询已关闭。",
@@ -43,7 +43,9 @@
       "ipv6Prefixes": "IPv6 前缀数",
       "observedNeighbors": "观察到的邻居",
       "peers": "推断的对等网络",
-      "upstreams": "推断的上游网络"
+      "upstreams": "推断的上游网络",
+      "abuseContacts": "滥用联系邮箱",
+      "website": "公司网站"
     },
     "traffic": {
       "botHuman": "机器人 / 人类",
@@ -64,7 +66,7 @@
       "unknownName": "名称不可用",
       "instructions": "滚轮或双指缩放，拖动平移。键盘：方向键、+ / -，0 适应视图。",
       "truncated": "结果有数量上限，部分路径或源 ASN 已省略。",
-      "context": "直连关系基于观测路径和有日期的关系推断。通向 T1 的压缩连线可能跨越多个 AS，不代表物理直连。",
+      "context": "图中保留三个观测跳数及观测到的 T1 节点。虚线路径表示省略的跳数，不代表直接相邻。",
       "relationship": {
         "observed": "观察到的邻居",
         "upstream": "推断的转接上游",
@@ -73,7 +75,7 @@
         "path": "压缩观测路径"
       },
       "count": "{shown} 个 ASN",
-      "tier1Fallback": "未找到已分类的 T1 路径，展示直属邻居。",
+      "tier1Fallback": "未识别到 T1 路径；显示观测跳数。",
       "tier1Context": "T1 基于 CAIDA 带日期的无上游核心网络推断。未知分类保持未知，不验证商业协议。",
       "tierBadge": "T1",
       "upstreamsEmpty": {
@@ -84,7 +86,8 @@
       "focused": "通往 AS{asn} 的观测路径",
       "focusPrevious": "上一页路径",
       "focusNext": "下一页路径",
-      "focusHelp": "选择一条路径可聚焦连线。AS 跳点数表示邻居到 T1 的压缩路径长度。"
+      "focusHelp": "选择路由可突出显示其观测连接。压缩片段会显示实际的 AS 跳数。",
+      "observations": "{count} 条观测路由"
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "关联域名",
@@ -92,7 +95,27 @@
     "shodanContext": "实时查询 Shodan 每周更新的数据集，不代表即时端口扫描；来源不提供单个地址的观测时间。",
     "about": "说明",
     "cacheExact": "缓存数据 · {date}",
-    "cacheSubnet": "使用同 /24 中 {ip} 的缓存数据 · {date}"
+    "cacheSubnet": "使用同 /24 中 {ip} 的缓存数据 · {date}",
+    "legacyData": "这是旧版缓存数据。刷新后可查看新的路由详情。",
+    "refreshRequired": "需要刷新",
+    "transfers": {
+      "title": "IP 转移历史",
+      "empty": "未找到转移记录。",
+      "from": "原持有者",
+      "to": "新持有者"
+    },
+    "rpki": {
+      "title": "RPKI 源验证",
+      "notRouted": "未找到已宣告的路由。",
+      "maxLength": "最大长度 /{length}",
+      "states": {
+        "valid": "有效",
+        "invalid_asn": "源 ASN 无效",
+        "invalid_length": "前缀长度无效",
+        "not_found": "未找到 ROA",
+        "unavailable": "数据源不可用"
+      }
+    }
   },
   "ipLookupProgress": {
     "label": "查询进度",
@@ -107,6 +130,8 @@
     "ptr": "反向 DNS",
     "shodan": "主机观测",
     "complete": "完成",
-    "live": "网络数据"
+    "live": "网络数据",
+    "transfers": "转移历史",
+    "rpki": "RPKI 验证"
   }
 }

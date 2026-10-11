@@ -80,7 +80,7 @@ func cloneTopology(t BGPTopology) BGPTopology {
 
 func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emit func(LiveEvent)) LiveDetails {
 	p := &livePipeline{result: LiveDetails{IP: ip, FetchedAt: s.now().UTC().Format(time.RFC3339Nano), ASNs: []ASNDetails{}}, finished: map[string]ProgressTask{}, active: map[string]bool{}, emit: emit}
-	for _, phase := range []string{"ptr", "scores", "shodan", "topology"} {
+	for _, phase := range []string{"ptr", "scores", "shodan", "topology", "block", "transfers"} {
 		p.active[phase] = true
 	}
 	p.update("", "", nil, nil)
@@ -92,6 +92,11 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 		p.update("scores", "scores", v, func(r *LiveDetails) { r.Scores = v })
 	})
 	launch(func() { v := s.shodan(ctx, ip); p.update("shodan", "shodan", v, func(r *LiveDetails) { r.Shodan = v }) })
+	launch(func() { v := s.block(ctx, ip, c); p.update("block", "block", v, func(r *LiveDetails) { r.Block = v }) })
+	launch(func() {
+		v := s.transfers(ctx, ip)
+		p.update("transfers", "transfers", v, func(r *LiveDetails) { r.Transfers = &v })
+	})
 	topology := s.topology(ctx, ip)
 	origins := topology.Origins
 	if len(origins) > 8 {
@@ -100,19 +105,9 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 	}
 	topology.ClassificationMeta = LiveMeta{Status: "empty", Source: "caida"}
 	p.update("topology", "topology", topology, func(r *LiveDetails) { r.Topology = topology })
-	p.start("block", "asns", "relationships")
+	p.start("asns", "relationships")
 	launch(func() {
-		v := s.block(ctx, topology.Prefix, c)
-		p.update("block", "block", v, func(r *LiveDetails) { r.Block = v })
-	})
-	launch(func() {
-		values := make([]ASNDetails, len(origins))
-		var asnWork sync.WaitGroup
-		for i, asn := range origins {
-			asnWork.Add(1)
-			go func() { defer asnWork.Done(); values[i] = s.asn(ctx, asn, c) }()
-		}
-		asnWork.Wait()
+		values := s.originDetails(ctx, origins, c)
 		p.update("asns", "asns", values, func(r *LiveDetails) { r.ASNs = values })
 	})
 	launch(func() {

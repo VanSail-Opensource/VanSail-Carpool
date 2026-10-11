@@ -16,6 +16,8 @@ func insertIPCache(t *testing.T, store *Store, id, ip, status string, completed 
 		c.Providers[i].Enabled = c.Providers[i].ID == "ipapi"
 	}
 	r := iplookup.NewReport(id, ip, c)
+	// This fixture completes quality stages; RPKI policy has separate hosted cases.
+	r.Checkpoint.RPKI.Status = "success"
 	negative := false
 	iplookup.RecordProvider(&r, iplookup.ProviderResult{ID: "ipapi", Status: "success", Complete: true, Facts: iplookup.Facts{Country: "JP", City: "Tokyo", NetworkType: "residential"}, Signals: iplookup.Signals{Abuse: &negative, Datacenter: &negative, VPN: &negative, Proxy: &negative, Tor: &negative}}, c)
 	r = iplookup.Aggregate(r, completed)

@@ -10,8 +10,12 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 	if len(t.Edges) == 0 {
 		return
 	}
+	if len(t.Paths) > 0 {
+		*t = CompactTopology(*t)
+	}
 	t.RelationshipMeta = LiveMeta{Status: "success", Source: "caida"}
-	for _, origin := range t.Origins {
+	targets := relationshipTargets(*t)
+	for _, origin := range targets {
 		s.originRelationships(ctx, t, origin)
 	}
 	for _, edge := range t.Edges {
@@ -22,9 +26,10 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 	}
 	key, _ := s.credential(ctx, CloudflareID, c)
 	if key == "" {
+		*t = pruneTransitContext(*t)
 		return
 	}
-	for _, asn := range t.Origins {
+	for _, asn := range targets {
 		needsFallback := false
 		for _, edge := range t.Edges {
 			needsFallback = needsFallback || (edge.Relationship == "observed" && (edge.To == asn || edge.From == asn))
@@ -39,11 +44,26 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 		result := nested(liveObject(data), "result")
 		applied := false
 		for _, r := range liveList(result, "rels") {
+			left, right := textField(r, "asn1"), textField(r, "asn2")
+			if left != asnText(asn) && right != asnText(asn) {
+				continue
+			}
 			for i, edge := range t.Edges {
-				if edge.Relationship == "observed" && textField(r, "asn1") == asnText(edge.To) && textField(r, "asn2") == asnText(edge.From) {
-					t.Edges[i].Relationship = relationship(textField(r, "rel"))
-					applied = applied || t.Edges[i].Relationship != "observed"
+				if edge.Relationship != "observed" {
+					continue
 				}
+				relation := relationship(textField(r, "rel"))
+				if left == asnText(edge.From) && right == asnText(edge.To) {
+					relation = reverseRelationship(relation)
+				} else if left != asnText(edge.To) || right != asnText(edge.From) {
+					continue
+				}
+				if relation == "observed" {
+					continue
+				}
+				t.Edges[i].Relationship = relation
+				t.Edges[i].RelationshipMeta = &LiveMeta{Status: "success", Source: "cloudflare", ObservedAt: textField(nested(result, "meta"), "data_time")}
+				applied = true
 			}
 		}
 		if applied && t.RelationshipMeta.Status != "success" {
@@ -54,6 +74,7 @@ func (s *LiveService) relationships(ctx context.Context, t *BGPTopology, c Confi
 			t.RelationshipMeta = LiveMeta{Status: "partial", Source: "caida,cloudflare", ObservedAt: date}
 		}
 	}
+	*t = pruneTransitContext(*t)
 }
 
 func relationship(value string) string {

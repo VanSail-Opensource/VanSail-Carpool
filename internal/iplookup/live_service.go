@@ -34,12 +34,13 @@ type LiveService struct {
 	resolver interface {
 		LookupAddr(context.Context, string) ([]string, error)
 	}
-	mu         sync.Mutex
-	users      map[string]*liveAdmission
-	names      map[uint32]nameEntry
-	repository LiveRepository
-	flights    map[string]*liveFlight
-	now        func() time.Time
+	mu          sync.Mutex
+	users       map[string]*liveAdmission
+	names       map[uint32]nameEntry
+	repository  LiveRepository
+	flights     map[string]*liveFlight
+	now         func() time.Time
+	webRequests map[string]*websiteRequest
 }
 
 // NewLiveService reuses the existing upstream queue implementation for every source.

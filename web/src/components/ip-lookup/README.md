@@ -42,7 +42,7 @@ uses signed no-store streaming with JSON fallback, cancels obsolete work, and ow
 `IPLiveDetails.vue` composes independent source sections beside the frozen
 reputation report. It emits combined paid refresh intent to the parent; realtime evidence never changes the quality verdict.
 
-- `IPBGPTopology.vue` renders a native SVG with a fixed origin/direct-neighbor/observed-T1 layout, anchored wheel/pinch zoom, pointer/keyboard pan, full two-dimensional fitting and route highlighting. Only compact route summaries remain public; full AS paths are transient on the backend.
+- `IPBGPTopology.vue` renders a native SVG with a versioned observed-hop/T1 layout, anchored wheel/pinch zoom, pointer/keyboard pan, full two-dimensional fitting and route highlighting. Only compact route summaries remain public; full AS paths are transient on the backend.
 - `bgpGraph.ts` precomputes compact topology indexes and route focus; `useGraphViewport.ts` owns transform interaction without persistent state.
 - `IPASNDetails.vue` selects multiple origins, displays nullable registration/routing metrics and their dated provenance.
 - `IPTrafficBars.vue` preserves Cloudflare percentages, Other devices, source status, and actual seven-day windows.
@@ -77,7 +77,7 @@ sent by the browser review or the offline PM fixtures.
 - `IPLookupProgressTasks.vue` renders the per-task checklist under that progress: live sections and reputation providers each show pending, active, success, partial, error, or skipped state with localized labels; legacy progress events without tasks fall back to the bar alone.
 - `IPRefusals.vue` and `refusalPresentation.ts` group all distinct refusal types, deduplicate exact evidence and expose every source/value on tap.
 - `refusalPresentation.test.ts` verifies evidence preservation in hosted CI.
-- `bgpLayout.ts` orders layered nodes with crossing reduction and routes shared trunks, separate ports and non-adjacent connections without inventing AS hops.
+- `bgpLayout.ts` orders layered nodes by observed-route count and routes shared trunks, separate ports and non-adjacent connections without inventing AS hops.
 - `useBGPGraph.ts` owns ASN/route selection state, viewport culling, resize observation and camera preservation during enrichment.
 - `IPBGPFocus.vue` paginates compact observed routes to the selected ASN; choosing a route highlights only its links without switching the graph layout.
 - `useGraphViewport.test.ts` checks fit bounds, zoom anchors and multi-pointer cleanup in hosted CI.
@@ -85,7 +85,7 @@ sent by the browser review or the offline PM fixtures.
 
 Tier-1 labels use CAIDA's explicit dated transit-free clique inference. Unknown
 classification falls back to direct neighbors; zero upstream degree is never
-proof of membership. Names appear only at readable zoom levels; compact observed route summaries and compressed hop counts stay available through ASN selection. Gesture handlers are
+proof of membership. Names remain rendered at every zoom level; compact observed route summaries and compressed hop counts stay available through ASN selection. Gesture handlers are
 scoped to the graph and do not change Telegram navigation.
 
 Membership now comes from `dataset.clique`, not the faulty per-ASN API boolean.
@@ -144,7 +144,51 @@ receives the completed `liveDetails` snapshot and emits refresh intent;
 during refresh. A neighboring-IP cache displays its source IP and original fetch
 time so PTR/InternetDB observations are not presented as evidence for the
 requested host. Blue upstreams, green peers, muted customer/unknown links and
-dashed compressed paths have an always-visible localized legend. Selection,
+dashed compressed paths have a localized legend inside Details. Selection,
 keyboard operation, anchored zoom, pan and fit stay in the existing SVG/view
 composables. Earlier browser reviews below predate persistent cache and billing;
 new validation must exercise these revised contracts independently.
+
+## Routing and registry presentation, version 2
+
+`IPBGPTopology.vue` always renders ASN/name labels, with readable scale-aware type
+and full accessible titles. Phones use a 440–600px stable-viewport height. All five
+relationship explanations live in the native Details disclosure. `bgpGraph.ts`
+indexes compact observed route summaries, normalizes edge direction and highlights
+only recorded segments. `bgpLayout.ts` sorts each column by observed-route count
+descending, then ASN; crossing reduction cannot override this ordering.
+`IPBGPFocus.vue` presents connection direction, count, hop length and source date.
+
+T1-origin snapshots show observed T1 context only. Other origins retain observed
+intermediates toward T1 and nearby inferred upstreams; irrelevant non-T1 collector
+branches are removed by the backend. Missing inference stays explicitly unknown.
+Older cached projections remain readable and require paid refresh for extra data.
+
+`IPRPKIStatus.vue` receives the optional frozen `report.rpki` projection and shows
+each origin's validity, source status and available ROA details beside quality.
+`IPTransferHistory.vue` receives the optional snapshot history and loading state;
+it displays newest-first holder/registry/resource rows with 25-row pagination,
+separate empty/error states and a legacy refresh hint. `IPASNDetails.vue` extends
+the existing origin selector with safe company links and abuse email contacts.
+`IPLiveDetails.vue` keeps PTR values flush with their heading and distinguishes
+suppressed legacy blocks. All new copy is localized in English and Chinese.
+
+The API schemas are additive; the existing details/check endpoints and signed
+refresh flow remain in use. New transfer events and RPKI tasks use actual progress
+totals. `useLiveIPDetails.ts` continues to cancel obsolete work and retain cached
+source identity; neighboring-IP evidence never becomes an exact-IP observation.
+
+Chrome DevTools MCP reviewed the revised components at 320/390px mobile and
+1280px desktop widths: initial/loading/populated/empty/error and interrupted
+streams, English/Chinese, all RPKI states, multiple origins, a 300-node graph,
+labels after zoom, route focus, keyboard pan/fit, Details and legacy paid refresh.
+PTR indentation measured zero and document widths matched viewport widths;
+final console and network checks were clear. Constructed refresh consumed no
+quota, and subnet cache reuse made no additional upstream run or paid submission.
+
+Queued public-source snapshots were also rendered for `172.127.58.147` (15 T1
+nodes only), `23.151.104.0` (22 nodes with transit/peer intermediates retained),
+and `118.127.59.0` (19 nodes, retaining AS9280/AS38195/AS58511/AS7473 and excluding
+unrelated collectors). Every rendered column sorted by observation count.
+Reputation and billing in these browser fixtures were constructed; the separate
+queued RPKI probe validated the real covering prefixes for all three addresses.

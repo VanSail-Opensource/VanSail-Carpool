@@ -19,7 +19,7 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string,
     const active = controller = new AbortController()
     const current = ++revision
     loading.value = true
-    progress.value = { phase: 'topology', completed: 0, total: 8 }
+    progress.value = { phase: 'topology', completed: 0, total: 9 }
     errorCode.value = ''
     try {
       const result = await ipLookupApi.details(ip, active.signal, false, event => {
@@ -29,7 +29,7 @@ export function useLiveIPDetails(address: () => string, reportKey: () => string,
       })
       if (current === revision && !active.signal.aborted && result.ip === ip) {
         details.value = result
-        progress.value = { phase: 'complete', completed: 8, total: 8 }
+        progress.value = { phase: 'complete', completed: progress.value?.total ?? 9, total: progress.value?.total ?? 9 }
       }
     } catch (error) {
       if (current === revision && !active.signal.aborted) errorCode.value = error instanceof ApiError ? error.code : 'IP_DETAILS_UNAVAILABLE'

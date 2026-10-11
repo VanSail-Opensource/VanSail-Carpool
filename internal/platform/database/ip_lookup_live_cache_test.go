@@ -30,7 +30,7 @@ func TestPersistentLiveCacheMatchingRestartAndCompactStorage(t *testing.T) {
 			}
 			continue
 		}
-		if cached == nil || cached.IP != tc.ip || cached.SourceIP != r.IP || cached.CacheMatch != tc.match || cached.SnapshotID != id || len(cached.Topology.Paths) != 0 || len(cached.Topology.Nodes) != 2 {
+		if cached == nil || cached.IP != tc.ip || cached.SourceIP != r.IP || cached.CacheMatch != tc.match || cached.SnapshotID != id || len(cached.Topology.Paths) != 0 || len(cached.Topology.Nodes) != 3 {
 			t.Fatalf("invalid cache: %+v", cached)
 		}
 	}

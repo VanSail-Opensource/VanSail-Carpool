@@ -5,38 +5,20 @@ export type GraphEdge = Omit<IPLookupBGPTopology['edges'][number], 'relationship
 type Edge = GraphEdge
 export type PlacedNode = Node & { layer: number; x: number; y: number }
 export const nodeWidth = 168
-export const nodeHeight = 44
+export const nodeHeight = 56
 
-export function placeNodes(nodes: Node[], edges: Edge[], distance: Map<number, number>, frequency: Map<number, number>) {
+export function placeNodes(nodes: Node[], _edges: Edge[], distance: Map<number, number>, frequency: Map<number, number>) {
   const furthest = Math.max(0, ...distance.values())
   const placed: PlacedNode[] = nodes.map(node => ({ ...node, layer: distance.get(node.asn) ?? furthest + 1, x: 0, y: 0 }))
   const columns = new Map<number, PlacedNode[]>()
-  const adjacency = new Map<number, number[]>()
-  for (const edge of edges) {
-    for (const [a, b] of [[edge.from, edge.to], [edge.to, edge.from]] as const) {
-      const group = adjacency.get(a) ?? []; group.push(b); adjacency.set(a, group)
-    }
-  }
   for (const node of placed) { const column = columns.get(node.layer) ?? []; column.push(node); columns.set(node.layer, column) }
   const layers = [...columns.keys()].sort((a, b) => a - b)
   for (const column of columns.values()) column.sort((a, b) => (frequency.get(b.asn) ?? 0) - (frequency.get(a.asn) ?? 0) || a.asn - b.asn)
-  const ranks = new Map<number, number>()
-  const rank = () => { for (const column of columns.values()) column.forEach((node, i) => ranks.set(node.asn, i)) }
-  rank()
-  for (let pass = 0; pass < 6; pass++) {
-    for (const layer of pass % 2 ? [...layers].reverse() : layers) {
-      const score = (node: PlacedNode) => {
-        const adjacent = (adjacency.get(node.asn) ?? []).filter(asn => ranks.has(asn))
-        return adjacent.length ? adjacent.reduce((sum, asn) => sum + ranks.get(asn)!, 0) / adjacent.length : ranks.get(node.asn)!
-      }
-      columns.get(layer)!.sort((a, b) => score(a) - score(b) || a.asn - b.asn)
-      rank()
-    }
-  }
-  const height = Math.max(240, Math.max(0, ...[...columns.values()].map(column => column.length)) * 64 + 64)
+  const rowGap = nodeHeight + 20
+  const height = Math.max(240, Math.max(0, ...[...columns.values()].map(column => column.length)) * rowGap + 64)
   for (const [layer, column] of columns) column.forEach((node, i) => {
     node.x = 32 + layer * 220
-    node.y = (height - (column.length * 64 - 20)) / 2 + i * 64
+    node.y = (height - (column.length * rowGap - 20)) / 2 + i * rowGap
   })
   return { nodes: placed, width: Math.max(264, (layers.at(-1) ?? 0) * 220 + 264), height }
 }
@@ -52,7 +34,7 @@ export function routeEdges(nodes: PlacedNode[], edges: Edge[]) {
     return other(a) - other(b) || a.id.localeCompare(b.id)
   })
   const portPositions = new Map<string, number>()
-  for (const [asn, group] of ports) group.forEach((edge, i) => portPositions.set(`${asn}:${edge.id}`, byASN.get(Number(asn))!.y + 6 + (i + 1) * 32 / (group.length + 1)))
+  for (const [asn, group] of ports) group.forEach((edge, i) => portPositions.set(`${asn}:${edge.id}`, byASN.get(Number(asn))!.y + 6 + (i + 1) * (nodeHeight - 12) / (group.length + 1)))
   const portY = (node: PlacedNode, edge: Edge) => portPositions.get(`${node.asn}:${edge.id}`)!
   return edges.map((edge, i) => {
     const from = byASN.get(edge.from)!, to = byASN.get(edge.to)!

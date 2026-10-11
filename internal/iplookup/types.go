@@ -5,7 +5,7 @@ import "github.com/txyyddss/Remna-User-Panel/internal/model"
 
 const SettingKey = "ip_lookup.config"
 const OperationKind = "ip_reputation_lookup"
-const Version = "residential-v3"
+const Version = "residential-v4"
 
 // ProviderConfig is public configuration; credentials live in the secret vault.
 type ProviderConfig struct {
@@ -134,6 +134,7 @@ type Report struct {
 	ParserVersion  string            `json:"parserVersion"`
 	Checkpoint     *Checkpoint       `json:"-"`
 	Providers      []ProviderResult  `json:"-"` // Legacy in-memory input only; never serialized.
+	RPKI           *RPKIResult       `json:"rpki,omitempty"`
 }
 
 // Check is an owner-scoped paid receipt referencing one shared report.

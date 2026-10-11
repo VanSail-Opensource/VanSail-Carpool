@@ -8,8 +8,8 @@ import { useBGPGraph } from './useBGPGraph'
 const props = defineProps<{ topology: IPLookupBGPTopology }>()
 const viewport = useTemplateRef<globalThis.HTMLDivElement>('viewport')
 const { scale, offset, viewportSize, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, edgeGroups, visibleEdges, fit, select, focusRoute, wheel, pointerDown, pointerMove, pointerUp, keyboard } = useBGPGraph(() => props.topology, viewport)
-const showASNs = computed(() => scale.value >= 0.15)
-const showNames = computed(() => scale.value >= 0.8)
+const selectedConnections = computed(() => layout.value.edges.filter(edge => edge.from === selectedASN.value || edge.to === selectedASN.value))
+const nameLimit = computed(() => Math.max(4, Math.floor((nodeWidth - 20) / (Math.min(20, 10 / scale.value) * 0.53))))
 </script>
 
 <template>
@@ -17,7 +17,6 @@ const showNames = computed(() => scale.value >= 0.8)
     <header><h3>{{ $t('ipLookupLive.bgpTitle') }}</h3><code v-if="topology.prefix">{{ topology.prefix }}</code></header>
     <template v-if="topology.nodes.length">
       <div class="graph-toolbar">
-        <div class="graph-legend"><span v-for="relation in ['upstream', 'peer', 'customer', 'observed', 'path']" :key="relation" :class="`legend-${relation}`">{{ $t(`ipLookupLive.graph.relationship.${relation}`) }}</span></div>
         <span>{{ $t('ipLookupLive.graph.count', { shown: layout.nodes.length, total: topology.nodes.length }) }}</span>
         <UButton color="neutral" variant="ghost" icon="i-ph-corners-out" :aria-label="$t('ipLookupLive.graph.reset')" :title="$t('ipLookupLive.graph.reset')" @click="fit" />
       </div>
@@ -27,17 +26,18 @@ const showNames = computed(() => scale.value >= 0.8)
             <g class="graph-edges"><path v-for="group in edgeGroups" :key="group.id" :d="group.d" :data-edge-count="group.count" :class="[`edge-${group.relationship}`, `edge-${group.state}`]"><title>{{ $t(`ipLookupLive.graph.relationship.${group.relationship}`) }}</title></path></g>
             <path v-for="edge in visibleEdges.filter(item => item.hops)" :key="edge.id" :d="edge.d" class="graph-path-hit"><title>{{ $t('ipLookupLive.graph.hops', { hops: edge.hops ?? 0 }) }}</title></path>
             <g v-for="node in visibleNodes" :key="node.asn" :data-asn="node.asn" :transform="`translate(${node.x}, ${node.y})`" class="graph-node" :class="{ 'graph-origin': node.layer === 0, 'graph-selected': node.asn === selectedASN, 'graph-tier1': node.tier1 }" role="button" tabindex="0" :aria-label="`AS${node.asn} ${node.name}`" @click="select(node.asn)" @keydown.enter.stop="select(node.asn, true)" @keydown.space.stop.prevent="select(node.asn, true)">
-              <title>{{ `AS${node.asn} ${node.name}` }}</title><rect :width="nodeWidth" :height="nodeHeight" :rx="showASNs ? 5 : 0" /><text v-if="showASNs" x="10" :y="showNames ? 17 : 27" :style="{ fontSize: `${Math.min(24, 12 / scale)}px` }">AS{{ node.asn }}<tspan v-if="node.tier1" class="graph-tier-label"> {{ $t('ipLookupLive.graph.tierBadge') }}</tspan></text><text v-if="showNames" x="10" y="33" class="graph-node-name">{{ node.name.length > 23 ? `${node.name.slice(0, 22)}…` : node.name || $t('ipLookupLive.graph.unknownName') }}</text>
+              <title>{{ `AS${node.asn} ${node.name}` }}</title><rect :width="nodeWidth" :height="nodeHeight" rx="5" /><text x="10" y="22" :style="{ fontSize: `${Math.min(24, 12 / scale)}px` }">AS{{ node.asn }}<tspan v-if="node.tier1" class="graph-tier-label"> {{ $t('ipLookupLive.graph.tierBadge') }}</tspan></text><text x="10" y="44" class="graph-node-name" :style="{ fontSize: `${Math.min(20, 10 / scale)}px` }">{{ node.name.length > nameLimit ? `${node.name.slice(0, nameLimit - 1)}…` : node.name || $t('ipLookupLive.graph.unknownName') }}</text>
             </g>
           </g>
         </svg>
       </div>
       <p v-if="layout.fallback" class="graph-note">{{ $t('ipLookupLive.graph.tier1Fallback') }}</p>
-      <IPBGPFocus v-if="selectedASN !== null" :asn="selectedASN" :routes="focusedRoutes" :selected-route="selectedRoute" @focus="focusRoute" />
+      <IPBGPFocus v-if="selectedASN !== null" :asn="selectedASN" :routes="focusedRoutes" :edges="selectedConnections" :selected-route="selectedRoute" @focus="focusRoute" />
+      <p v-if="topology.projectionVersion !== 2" class="graph-note">{{ $t('ipLookupLive.legacyData') }}</p>
       <p v-if="layout.upstreamsEmpty" class="graph-note">{{ $t(`ipLookupLive.graph.upstreamsEmpty.${layout.upstreamsEmpty}`) }}</p>
       <p v-if="topology.truncated" class="graph-note">{{ $t('ipLookupLive.graph.truncated') }}</p>
       <div class="graph-provenance"><LiveSourceNote :meta="topology" /><LiveSourceNote v-if="topology.edges.length" :meta="topology.relationshipMeta" /><LiveSourceNote v-if="topology.classificationMeta" :meta="topology.classificationMeta" /></div>
-      <details class="graph-note"><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.graph.instructions') }}</p><div class="graph-legend"><span v-for="relation in ['upstream', 'peer', 'observed']" :key="relation" :class="`legend-${relation}`">{{ $t(`ipLookupLive.graph.relationship.${relation}`) }}</span></div><p>{{ $t('ipLookupLive.graph.context') }}</p><p>{{ $t('ipLookupLive.graph.tier1Context') }}</p></details>
+      <details class="graph-note"><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.graph.instructions') }}</p><div class="graph-legend"><span v-for="relation in ['upstream', 'peer', 'customer', 'observed', 'path']" :key="relation" :class="`legend-${relation}`">{{ $t(`ipLookupLive.graph.relationship.${relation}`) }}</span></div><p>{{ $t('ipLookupLive.graph.context') }}</p><p>{{ $t('ipLookupLive.graph.tier1Context') }}</p></details>
     </template>
     <LiveSourceNote v-else :meta="topology" />
   </section>
@@ -50,7 +50,7 @@ const showNames = computed(() => scale.value >= 0.8)
 .bgp-topology header code { font-size: 0.78rem; }
 .graph-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-block: 0.55rem; }
 .graph-toolbar > span { color: var(--text-muted); font-size: 0.7rem; margin-left: auto; white-space: nowrap; }
-.graph-viewport { height: 340px; overflow: hidden; position: relative; touch-action: none; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: grab; }
+.graph-viewport { height: clamp(440px, 65svh, 600px); overflow: hidden; position: relative; touch-action: none; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: grab; }
 .graph-viewport:active { cursor: grabbing; }
 .graph-viewport:focus-visible { outline: 2px solid var(--ui-info); outline-offset: 2px; }
 .graph-viewport svg { display: block; width: 100%; height: 100%; user-select: none; }

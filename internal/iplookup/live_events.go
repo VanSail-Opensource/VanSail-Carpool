@@ -23,7 +23,7 @@ type LiveEvent struct {
 	ErrorCode string          `json:"errorCode,omitempty"`
 }
 
-var livePhases = []string{"topology", "relationships", "names", "asns", "scores", "block", "ptr", "shodan"}
+var livePhases = []string{"topology", "relationships", "names", "asns", "scores", "block", "ptr", "shodan", "transfers"}
 
 func liveComplete(ip string, data []byte) LiveEvent {
 	progress := &Progress{Phase: "complete", Completed: len(livePhases), Total: len(livePhases), Tasks: make([]ProgressTask, 0, len(livePhases))}

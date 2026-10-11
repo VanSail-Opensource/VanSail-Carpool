@@ -34,6 +34,8 @@ func ipLookupTuning(id string) ipLookupQueueTuning {
 		return ipLookupQueueTuning{MinInterval: 800 * time.Millisecond, Workers: 1}
 	case "bgpkit", "routeviews", "shodan":
 		return ipLookupQueueTuning{MinInterval: 500 * time.Millisecond, Workers: 1}
+	case "peeringdb":
+		return ipLookupQueueTuning{MinInterval: 3 * time.Second, Workers: 1}
 	default:
 		// Reputation providers execute serially with admin-configured quotas;
 		// DNS PTR resolution is a cheap non-rate-limited lookup.

@@ -58,7 +58,20 @@ func (s *LiveService) scores(ctx context.Context, ip string, c Config) NetworkSc
 	return result
 }
 
-func (s *LiveService) block(ctx context.Context, prefix string, c Config) AbuseBlock {
+func blockPrefix(ip string) string {
+	address, err := netip.ParseAddr(ip)
+	if err != nil {
+		return ""
+	}
+	bits := 64
+	if address.Is4() {
+		bits = 24
+	}
+	return netip.PrefixFrom(address, bits).Masked().String()
+}
+
+func (s *LiveService) block(ctx context.Context, ip string, c Config) AbuseBlock {
+	prefix := blockPrefix(ip)
 	result := AbuseBlock{LiveMeta: LiveMeta{Status: "unconfigured", Source: "abuseipdb"}, Prefix: prefix, WindowDays: 30}
 	p, err := netip.ParsePrefix(prefix)
 	if err != nil {
@@ -82,6 +95,12 @@ func (s *LiveService) block(ctx context.Context, prefix string, c Config) AbuseB
 	d := nested(liveObject(data), "data")
 	addr, err := netip.ParseAddr(textField(d, "networkAddress"))
 	if err != nil || addr != p.Masked().Addr() {
+		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
+		return result
+	}
+	mask, maskErr := netip.ParseAddr(textField(d, "netmask"))
+	ones, bits := net.IPMask(mask.AsSlice()).Size()
+	if maskErr != nil || bits != p.Addr().BitLen() || ones != p.Bits() {
 		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
 		return result
 	}
@@ -135,7 +154,7 @@ func (s *LiveService) ptr(ctx context.Context, ip string) PTRDetails {
 	result.LiveMeta = LiveMeta{Status: "success", Source: "dns", ObservedAt: s.now().UTC().Format(time.RFC3339)}
 	seen := map[string]bool{}
 	for _, domain := range domains {
-		domain = strings.TrimSuffix(domain, ".")
+		domain = strings.TrimSuffix(strings.TrimSpace(domain), ".")
 		if domain != "" && len(domain) <= 253 {
 			seen[domain] = true
 		}

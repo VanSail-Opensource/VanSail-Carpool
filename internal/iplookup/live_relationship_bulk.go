@@ -55,10 +55,12 @@ func (s *LiveService) originRelationships(ctx context.Context, t *BGPTopology, o
 			}
 			for _, i := range indices[[2]uint32{uint32(left), uint32(right)}] {
 				t.Edges[i].Relationship = relation
+				t.Edges[i].RelationshipMeta = &LiveMeta{Status: "success", Source: "caida", ObservedAt: date}
 				delete(unresolved, i)
 			}
 			for _, i := range indices[[2]uint32{uint32(right), uint32(left)}] {
 				t.Edges[i].Relationship = reverseRelationship(relation)
+				t.Edges[i].RelationshipMeta = &LiveMeta{Status: "success", Source: "caida", ObservedAt: date}
 				delete(unresolved, i)
 			}
 		}

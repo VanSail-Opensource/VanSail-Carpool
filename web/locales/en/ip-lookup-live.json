@@ -28,7 +28,7 @@
       "IP_DETAILS_UNAVAILABLE": "Live details are temporarily unavailable. Try refreshing.",
       "IP_DETAILS_BUSY": "A live lookup is already running for your account.",
       "IP_DETAILS_RATE_LIMITED": "Live lookup rate limit reached. Try again shortly.",
-      "IP_DETAILS_PLAN_RESTRICTED": "This provider plan cannot check the complete announced block.",
+      "IP_DETAILS_PLAN_RESTRICTED": "This provider plan cannot check this block.",
       "IP_DETAILS_AUTH": "Provider credentials could not be accepted.",
       "IP_DETAILS_INVALID_RESPONSE": "The provider returned incomplete or invalid data.",
       "IP_LOOKUP_DISABLED": "IP Lookup is disabled.",
@@ -43,7 +43,9 @@
       "ipv6Prefixes": "IPv6 prefixes",
       "observedNeighbors": "Observed neighbors",
       "peers": "Inferred peers",
-      "upstreams": "Inferred upstreams"
+      "upstreams": "Inferred upstreams",
+      "abuseContacts": "Abuse contact",
+      "website": "Company website"
     },
     "traffic": {
       "botHuman": "Bot / human",
@@ -64,7 +66,7 @@
       "unknownName": "Name unavailable",
       "instructions": "Scroll or pinch to zoom. Drag to pan. Keyboard: arrows, + / -, 0 to fit.",
       "truncated": "Results are bounded; some paths or origins were omitted.",
-      "context": "Direct links use observed paths and dated relationship inferences. Compressed T1 links may span multiple AS hops; they do not imply physical adjacency.",
+      "context": "The graph retains three observed hops and observed T1 endpoints. Dashed paths summarize omitted hops; they do not imply adjacency.",
       "relationship": {
         "observed": "Observed neighbor",
         "upstream": "Inferred transit upstream",
@@ -73,7 +75,7 @@
         "path": "Compressed observed path"
       },
       "count": "{shown} ASNs",
-      "tier1Fallback": "No classified T1 path; showing direct neighbors.",
+      "tier1Fallback": "No classified T1 path; showing observed hops.",
       "tier1Context": "T1 uses CAIDA's dated transit-free clique inference. Unknown classifications stay unknown; commercial agreements are not verified.",
       "tierBadge": "T1",
       "upstreamsEmpty": {
@@ -84,7 +86,8 @@
       "focused": "Observed routes to AS{asn}",
       "focusPrevious": "Previous routes",
       "focusNext": "Next routes",
-      "focusHelp": "Select a route to focus its links. AS hops describes the compressed neighbor-to-T1 path."
+      "focusHelp": "Select a route to focus its observed links. Compressed segments show their actual AS hop count.",
+      "observations": "{count} observed routes"
     },
     "shodanTitle": "Shodan InternetDB",
     "shodanHostnames": "Associated hostnames",
@@ -92,7 +95,27 @@
     "shodanContext": "Queried live from Shodan's weekly-updated dataset. This is not a fresh port scan; no per-host observation time is supplied.",
     "about": "Details",
     "cacheExact": "Cached data · {date}",
-    "cacheSubnet": "Cached data for {ip} in the same /24 · {date}"
+    "cacheSubnet": "Cached data for {ip} in the same /24 · {date}",
+    "legacyData": "Older cached data. Refresh to load the new routing details.",
+    "refreshRequired": "Refresh required",
+    "transfers": {
+      "title": "IP transfer history",
+      "empty": "No transfers found.",
+      "from": "Previous holder",
+      "to": "New holder"
+    },
+    "rpki": {
+      "title": "RPKI origin validation",
+      "notRouted": "No announced route found.",
+      "maxLength": "Maximum length /{length}",
+      "states": {
+        "valid": "Valid",
+        "invalid_asn": "Invalid origin ASN",
+        "invalid_length": "Invalid prefix length",
+        "not_found": "No ROA found",
+        "unavailable": "Source unavailable"
+      }
+    }
   },
   "ipLookupProgress": {
     "label": "Lookup progress",
@@ -107,6 +130,8 @@
     "ptr": "Reverse DNS",
     "shodan": "Host observations",
     "complete": "Complete",
-    "live": "Network data"
+    "live": "Network data",
+    "transfers": "Transfers",
+    "rpki": "RPKI validation"
   }
 }

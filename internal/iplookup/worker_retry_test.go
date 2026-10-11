@@ -46,6 +46,7 @@ func (r *reportRetryRepo) EnqueueOutbox(_ context.Context, kind, payload string,
 func partialReport(t *testing.T, c Config) Report {
 	t.Helper()
 	r := NewReport("report", "150.249.241.62", c)
+	r.Checkpoint.RPKI.Status = "success"
 	RecordProvider(&r, ProviderResult{ID: "abuseipdb", Status: "success", Complete: true}, c)
 	RecordProvider(&r, ProviderResult{ID: "scamalytics", Status: "error"}, c)
 	r = Aggregate(r, time.Now().UTC())

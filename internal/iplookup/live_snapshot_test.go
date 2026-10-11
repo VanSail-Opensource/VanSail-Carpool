@@ -39,18 +39,13 @@ func TestCompactTopologyRetainsAllObservedT1sWithoutOriginalPaths(t *testing.T) 
 		Edges: []BGPEdge{{From: 20, To: 10, Relationship: "upstream"}, {From: 11, To: 21, Relationship: "customer"}, {From: 30, To: 20}},
 		Paths: []BGPPath{{ASPath: []uint32{701, 174, 30, 20, 20, 10, 10}}, {ASPath: []uint32{174, 21, 11}}}}
 	compact := CompactTopology(graph)
-	if len(compact.Paths) != 0 || len(compact.Nodes) != 6 || len(compact.Edges) != 2 || len(compact.Tier1Links) != 3 {
+	if len(compact.Paths) != 0 || len(compact.Nodes) != 7 || len(compact.Edges) != 3 || len(compact.RouteSummaries) != 2 || compact.ProjectionVersion != 2 {
 		t.Fatalf("invalid compact projection: %+v", compact)
 	}
 	if len(graph.Paths) != 2 || len(graph.Nodes) != 7 {
 		t.Fatal("mutated transient source")
 	}
-	for _, link := range compact.Tier1Links {
-		if link.Origin == 10 && link.Tier1 == 701 && link.Hops != 3 {
-			t.Fatal("lost compressed hop count")
-		}
-	}
-	if len(CompactTopology(compact).Tier1Links) != 3 {
+	if len(CompactTopology(compact).RouteSummaries) != 2 {
 		t.Fatal("compaction not idempotent")
 	}
 }

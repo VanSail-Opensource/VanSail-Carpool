@@ -183,18 +183,18 @@ public addresses, even when reputation previews reuse a neighboring IP.
 
 Live source queues are process-shared by all concurrent lookups and paced per source in `internal/app/ip_lookup.go`: RIPEstat and CAIDA at 600 ms (two in-flight), Cloudflare Radar at 800 ms (one in-flight), BGPKIT/RouteViews/InternetDB at 500 ms, and reputation providers plus DNS at 250 ms. Queue throughput is one request per interval regardless of worker count; workers only cap simultaneous in-flight requests. Worst-case cold lookups stay inside the 60-second flight budget at the cost of higher latency.
 - `live_bgp.go` selects the longest observed prefix, uses original paths transiently, collapses visual prepends into edges, supports multiple origins, and bounds paths/nodes. RIPE Looking Glass falls back to RouteViews, then the explicitly dated RIPE BGP snapshot.
-- `live_relationships.go` and `live_relationship_bulk.go` use bounded, paginated CAIDA origin-neighborhood queries and optional Cloudflare fallback. Only existing observed pairs are annotated, both endpoint orientations are handled, partial valid data is preserved, and indirect/unavailable relationships remain observed adjacency.
+- `live_relationships.go` and `live_relationship_bulk.go` use bounded, paginated CAIDA observed-neighborhood queries and optional Cloudflare fallback. Only existing observed pairs are annotated, both endpoint orientations are handled, partial valid data is preserved, and indirect/unavailable relationships remain observed adjacency.
 - `live_names.go` caches only successful ASN names, with seven-day expiry and 4,096-entry LRU eviction. Keyed IPAPI bulk, BGPKIT, and bounded RIPE holder lookups fill missing names. Collector exchange scope is observation context, never an invented physical hop.
 - `live_asn.go` selects registration from RIPE RIR `lod=2`, routing totals from RIPE/RouteViews, and dated relationship degrees from CAIDA/Cloudflare.
 - `live_asn_prefetch.go` overlaps independent ASN reads through a lookup-local request memo.
 - `live_requests.go` coalesces identical queued HTTP reads within a lookup and tracks transient failures.
-- `live_pipeline.go` emits immutable section snapshots and progress over eight fixed logical phases; topology arrives before contextual enrichment finishes. `live_tasks.go` derives one `ProgressTask` per phase from each finished section's `LiveMeta` (observed emptiness is success, unconfigured credentials are skipped, mixed ASN sources are partial), and every progress event carries the ordered per-task list.
+- `live_pipeline.go` emits immutable section snapshots and progress over nine fixed logical phases; topology arrives before contextual enrichment finishes. `live_tasks.go` derives one `ProgressTask` per phase from each finished section's `LiveMeta` (observed emptiness is success, unconfigured credentials are skipped, mixed ASN sources are partial), and every progress event carries the ordered per-task list.
 - `live_events.go` defines progress/section/complete/error stream events and optional refresh behavior. JSON clients keep the same response projection.
 - `live_cache.go` bounds concurrent shared work to 64 flights; completion evidence lives in SQLite. Free reads match exact IP then IPv4 /24 without expiry or credential invalidation. `RefreshRun` is worker-only and uses a separate durable run identity. A shared lookup is cancelled when its last subscriber leaves.
 - `live_classification.go` reads CAIDA's authoritative dated `dataset.clique` and bulk ASN names. The API's per-ASN `cliqueMember` flag incorrectly marks non-members true and is never used; absent/invalid membership lists stay unknown, without degree-based guesses.
 - `progress.go` projects private durable checkpoints into check progress without exposing unfinished verdicts or changing persistence. Check progress appends one provider task per checkpoint stage; the realtime refresh phase of a paid check surfaces as a single trailing `live` task (`ip_lookup_live_check.go`), since per-section progress stays in the in-memory stream and is never persisted per section.
 - `live_cache_test.go` covers persistent reads, rejected free refreshes, attempted outage caching, pre-attempt exclusion and early streaming in hosted CI.
-- `live_ip.go` supplies keyed contextual IPAPI scores, distinct AbuseIPDB reported addresses in the announced block (30 days), exact decimal address capacity, and queued PTR lookups. Missing data remains nullable; block-plan restrictions never silently narrow the subnet.
+- `live_ip.go` supplies keyed contextual IPAPI scores, distinct AbuseIPDB reported addresses in the masked IPv4 /24 or IPv6 /64 (30 days), exact decimal address capacity, and queued PTR lookups. Missing data remains nullable; block-plan restrictions never silently narrow the subnet.
 - `live_traffic.go` requests Cloudflare Radar's BOT_CLASS, DEVICE_TYPE, and IP_VERSION summaries for the ASN over seven days; returned Other device values and actual date windows are preserved.
 - `live_test.go` and `live_http_test.go` provide hosted regressions for prefix/origin/path preservation, name-only cache bounds, admission, queue enforcement, credentials, unknown/zero values, restrictions, and Cloudflare windows.
 
@@ -208,7 +208,7 @@ sections independently; external datasets retain their own observation dates.
 `live_integration_test.go` exercises the complete queued response projection with multiple origins, original prepends, source fallback, zero/unknown fields, live neighboring-IP requests, name-only cache behavior and credential-free public JSON in hosted CI.
 Topology limits are 300 nodes, 1,500 edges and 1,000 original paths; omitted paths are disclosed. InternetDB retains at most 256 hostnames and 2,048 ports and marks larger observations partial.
 - `live_snapshot.go` emits cached completion and classifies partial realtime coverage.
-- `live_compact.go` is the public and storage boundary: retain origins, direct neighbors, observed T1s and deduplicated reachability/hop summaries; original AS paths never enter streamed or persisted output.
+- `live_compact.go` is the public and storage boundary: retain the versioned observed-hop/T1 projection and deduplicated reachability/hop summaries; original AS paths never enter streamed or persisted output.
 - `live_snapshot_test.go` covers compaction and lightweight repository fixtures in hosted CI.
 - `worker_live.go` owns durable refresh-phase claim, attempt and snapshot-reference recovery. Complete quality stages remain checkpointed before realtime begins; joined receipts settle together only after both phases finish.
 - `worker_lock.go` serializes shared report work with reference-counted locks, preventing joined jobs from overwriting checkpoints or duplicating external attempts.
@@ -226,3 +226,41 @@ timestamps. Snapshot IDs and `LiveStage` recovery markers stay private.
 quote/check workflow may force new observations. Interrupted work is not cached;
 attempted source errors are cacheable partial evidence. Persistence failures
 are retried through the existing durable lane, never through a second queue.
+
+## Routing projection and registry enrichment, version 2
+
+- `live_graph_projection.go` freezes per-observation ASN/edge counts, collapses prepends and retains three observed hops plus observed T1 endpoints. Original paths stay transient; compact route summaries preserve the real length of omitted segments. Repeated reads preserve the versioned projection unchanged.
+- `live_transit_context.go` retains non-T1 intermediates toward the first observed T1, including peer connections that carry the origin's route, plus classified nearby upstreams. It excludes non-T1 collector branches beyond T1 and unrelated classified peers/customers. Missing T1 classification retains observed fallback evidence. A T1 origin shows only observed T1 context.
+- `live_relationship_bulk.go` annotates retained observed pairs with dated per-edge provenance. Work covers at most 32 ASNs ordered by hop distance, observation count and ASN, using four bounded pages each and the existing flight deadline. Source failures remain explicit and cannot invent connections.
+- `live_contacts.go` fetches origin abuse emails from RIPEstat, validates/deduplicates them and composes at most eight origin panels. `live_websites.go` batches origin website reads from PeeringDB through a fixed-source queue paced at three seconds. A bounded process-local one-minute request memo honors duplicate-query limits; only safe HTTP(S) links are published.
+- `live_transfer.go` fetches RIPEstat history for the exact source IP, retains normalized resource/holder/registry/date fields, sorts newest first and distinguishes no transfers from failed coverage. The snapshot JSON holds these fields without mirroring a registry dataset.
+- `live_ip.go` derives the AbuseIPDB query from the address itself: IPv4 /24 and IPv6 /64, with a 30-day window. Routing failure does not suppress the check. Legacy mismatched block observations are suppressed without a new request. PTR values are trimmed before trailing-dot removal and deduplication.
+- `live_graph_projection_test.go`, `live_transit_context_test.go` and `live_metadata_test.go` cover path/count preservation, the three requested IP examples, peer intermediates, irrelevant branches, source validation and coalescing in hosted CI.
+
+Older completed projections are never upgraded by reads or background jobs; an
+explicit paid refresh supplies version 2. New source errors retain the existing
+bounded repair policy. Transfer history adds a ninth streaming phase; phase totals
+and per-source availability remain independent of the quality verdict.
+
+## RPKI quality policy, residential-v4
+
+`rpki_types.go` defines compact normalized origin/ROA evidence. `rpki_lookup.go`
+resolves the actual RIS covering prefix and validates each distinct observed origin
+through the RIPE queue with two workers. `worker_rpki.go` owns a separate durable
+checkpoint after reputation stages and before final aggregation. Attempt markers
+are persisted before dispatch; interrupted or completed work is not replayed.
+The evidence lives in report JSON, and the private stage lives in its checkpoint.
+
+An invalid origin ASN or prefix length adds a refusal with ASN/prefix evidence.
+Valid, no-ROA, unrouted and unavailable results are neutral for suitability;
+unavailable coverage marks the report partial so the existing outbox can repair it.
+`rpki_repair.go` refetches failed frozen pairs without erasing successful invalid
+evidence. Provider order, coverage, charges, quota and refund accounting are
+unchanged. Older reports with no RPKI checkpoint keep their original policy.
+`rpki_lookup_test.go` and `worker_rpki_test.go` cover validation, mismatches,
+multi-origin policy, durable ordering, repair, interruption and codec boundaries.
+
+Public references: [RPKI validation](https://stat.ripe.net/docs/data-api/api-endpoints/rpki-validation),
+[transfer history](https://stat.ripe.net/docs/data-api/api-endpoints/transfer-history),
+[abuse contacts](https://stat.ripe.net/docs/data-api/api-endpoints/abuse-contact-finder),
+and [PeeringDB query limits](https://docs.peeringdb.com/howto/work_within_peeringdbs_query_limits/).

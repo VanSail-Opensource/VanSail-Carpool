@@ -41,7 +41,7 @@ func TestLiveHTTPRequiresQueueAndRedactsFailure(t *testing.T) {
 		return 402, `{"error":"fixture-secret"}`
 	})
 	c := Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}}
-	r := s.block(context.Background(), "1.1.1.0/24", c)
+	r := s.block(context.Background(), "1.1.1.1", c)
 	if !called.Load() || r.Status != "restricted" || r.ReportedAddresses != nil || r.AddressCapacity != "256" {
 		t.Fatalf("%+v", r)
 	}
@@ -60,9 +60,9 @@ func TestLiveBlockCountsDistinctAndRejectsUnknown(t *testing.T) {
 		count int
 	}{{`[]`, true, 0}, {`[{"ipAddress":"1.1.1.1"},{"ipAddress":"1.1.1.1"}]`, true, 1}, {`null`, false, 0}, {`[{"ipAddress":"8.8.8.8"}]`, false, 0}} {
 		s := liveTestService(t, "abuseipdb", func(*http.Request) (int, string) {
-			return 200, `{"data":{"networkAddress":"1.1.1.0","reportedAddress":` + tc.rows + `}}`
+			return 200, `{"data":{"networkAddress":"1.1.1.0","netmask":"255.255.255.0","reportedAddress":` + tc.rows + `}}`
 		})
-		r := s.block(context.Background(), "1.1.1.0/24", Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}})
+		r := s.block(context.Background(), "1.1.1.1", Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}})
 		if (r.ReportedAddresses != nil) != tc.known || tc.known && *r.ReportedAddresses != tc.count {
 			t.Fatalf("%s: %+v", tc.rows, r)
 		}

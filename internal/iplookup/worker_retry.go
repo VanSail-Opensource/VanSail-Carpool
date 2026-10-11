@@ -60,6 +60,12 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 		}
 		return err
 	}
+	if err := w.runRPKI(ctx, &r, persist); err != nil {
+		if errors.Is(err, ErrRepairConflict) {
+			return nil
+		}
+		return err
+	}
 	r = Aggregate(r, w.now().UTC())
 	if err := repository.UpdateIPLookupCachedReport(ctx, r); err != nil {
 		if errors.Is(err, ErrRepairConflict) {

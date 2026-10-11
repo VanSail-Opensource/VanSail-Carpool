@@ -21,13 +21,14 @@ type liveRetryRepository interface {
 // liveRetryPlan names the sections worth refetching. A failed topology
 // cascades to every dependent section because their inputs would be stale.
 type liveRetryPlan struct {
-	Topology bool
-	Graph    bool
-	Block    bool
-	ASNs     bool
-	Scores   bool
-	PTR      bool
-	Shodan   bool
+	Topology  bool
+	Graph     bool
+	Block     bool
+	ASNs      bool
+	Scores    bool
+	PTR       bool
+	Shodan    bool
+	Transfers bool
 }
 
 func liveMetaFailed(m LiveMeta) bool {
@@ -38,7 +39,8 @@ func liveRetryPlanOf(r LiveDetails) liveRetryPlan {
 	var plan liveRetryPlan
 	plan.Topology = liveMetaFailed(r.Topology.LiveMeta)
 	plan.Graph = plan.Topology || liveMetaFailed(r.Topology.RelationshipMeta) || liveMetaFailed(r.Topology.ClassificationMeta)
-	plan.Block = plan.Topology || liveMetaFailed(r.Block.LiveMeta)
+	plan.Block = liveMetaFailed(r.Block.LiveMeta)
+	plan.Transfers = r.Transfers != nil && liveMetaFailed(r.Transfers.LiveMeta)
 	plan.Scores = liveMetaFailed(r.Scores.LiveMeta)
 	plan.PTR = liveMetaFailed(r.PTR.LiveMeta)
 	plan.Shodan = liveMetaFailed(r.Shodan.LiveMeta)
@@ -53,7 +55,7 @@ func liveRetryPlanOf(r LiveDetails) liveRetryPlan {
 }
 
 func (p liveRetryPlan) empty() bool {
-	return !p.Topology && !p.Graph && !p.Block && !p.ASNs && !p.Scores && !p.PTR && !p.Shodan
+	return !p.Topology && !p.Graph && !p.Block && !p.ASNs && !p.Scores && !p.PTR && !p.Shodan && !p.Transfers
 }
 
 // HandleLiveRetryOutbox refetches only the failed sections of one frozen
@@ -88,6 +90,10 @@ func (s *LiveService) HandleLiveRetryOutbox(ctx context.Context, job model.Outbo
 		return err
 	}
 	if status != "partial" {
+		return nil
+	}
+	// Older projections require an explicit paid refresh, including queued repair jobs.
+	if details.Topology.ProjectionVersion != 2 {
 		return nil
 	}
 	plan := liveRetryPlanOf(details)
@@ -131,7 +137,7 @@ func (s *LiveService) scheduleNextLiveRetry(ctx context.Context, repository live
 // before launch so dependent fetchers never race graph rewrites.
 func (s *LiveService) repairLiveSections(ctx context.Context, details LiveDetails, c Config, plan liveRetryPlan) (LiveDetails, error) {
 	r := details
-	prefix, origins := r.Topology.Prefix, r.Topology.Origins
+	origins := r.Topology.Origins
 	if plan.Topology {
 		topology := s.topology(ctx, r.IP)
 		origins = topology.Origins
@@ -141,7 +147,6 @@ func (s *LiveService) repairLiveSections(ctx context.Context, details LiveDetail
 		}
 		topology.ClassificationMeta = LiveMeta{Status: "empty", Source: "caida"}
 		r.Topology = topology
-		prefix = topology.Prefix
 	}
 	var work sync.WaitGroup
 	launch := func(fn func()) { work.Add(1); go func() { defer work.Done(); fn() }() }
@@ -155,18 +160,14 @@ func (s *LiveService) repairLiveSections(ctx context.Context, details LiveDetail
 		launch(func() { r.Shodan = s.shodan(ctx, r.IP) })
 	}
 	if plan.Block {
-		launch(func() { r.Block = s.block(ctx, prefix, c) })
+		launch(func() { r.Block = s.block(ctx, r.IP, c) })
+	}
+	if plan.Transfers {
+		launch(func() { v := s.transfers(ctx, r.IP); r.Transfers = &v })
 	}
 	if plan.ASNs {
 		launch(func() {
-			values := make([]ASNDetails, len(origins))
-			var asnWork sync.WaitGroup
-			for i, asn := range origins {
-				asnWork.Add(1)
-				go func() { defer asnWork.Done(); values[i] = s.asn(ctx, asn, c) }()
-			}
-			asnWork.Wait()
-			r.ASNs = values
+			r.ASNs = s.originDetails(ctx, origins, c)
 		})
 	}
 	if plan.Graph {

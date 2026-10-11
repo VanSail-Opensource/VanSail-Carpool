@@ -17,7 +17,7 @@
       "x4bnet": "X4B",
       "ipsum": "IPsum",
       "spamhaus_drop": "Spamhaus DROP",
-      "google": "Google"
+      "google": "Google", "ripe_rpki": "RIPEstat RPKI"
     },
     "scores": {
       "abuse_confidence": "Abuse confidence",
@@ -180,7 +180,8 @@
       "abuse_reports": "Reports",
       "abuse_confidence": "Abuse score",
       "fraud_score": "Fraud score",
-      "user_count": "Users > 5"
+      "user_count": "Users > 5",
+      "rpki_invalid_asn": "RPKI origin ASN is invalid", "rpki_invalid_length": "RPKI prefix length is invalid"
     },
     "subnetCache": "/24 cache · {ip}",
     "mapTitle": "Approximate IP location",

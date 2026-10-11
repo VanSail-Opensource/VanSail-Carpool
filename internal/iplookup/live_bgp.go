@@ -65,7 +65,7 @@ func routeviewsRows(data []byte) []routeObservation {
 }
 
 func buildTopology(ip string, rows []routeObservation, meta LiveMeta) BGPTopology {
-	t := BGPTopology{LiveMeta: meta, Origins: []uint32{}, Nodes: []BGPNode{}, Edges: []BGPEdge{}, Paths: []BGPPath{}, RelationshipMeta: LiveMeta{Status: "empty", Source: "caida"}}
+	t := BGPTopology{LiveMeta: meta, ProjectionVersion: 2, Origins: []uint32{}, Nodes: []BGPNode{}, Edges: []BGPEdge{}, Paths: []BGPPath{}, RelationshipMeta: LiveMeta{Status: "empty", Source: "caida"}}
 	address, _ := netip.ParseAddr(ip)
 	longest := -1
 	for _, r := range rows {

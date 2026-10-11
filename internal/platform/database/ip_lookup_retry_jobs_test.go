@@ -18,6 +18,7 @@ func freezePartialRun(t *testing.T, store *Store, service *iplookup.Service, use
 	if err != nil {
 		t.Fatal(err)
 	}
+	r.Checkpoint.RPKI.Status = "success"
 	for i := range r.Checkpoint.Stages {
 		if r.Checkpoint.Stages[i].Status == "queued" {
 			r.Checkpoint.Stages[i].Status = "error"

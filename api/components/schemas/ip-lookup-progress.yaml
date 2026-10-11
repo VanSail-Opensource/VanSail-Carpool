@@ -11,7 +11,7 @@ IPLookupProgress:
   additionalProperties: false
   required: [phase, completed, total]
   properties:
-    phase: { type: string, enum: [queued, checking, live, topology, relationships, names, asns, scores, block, ptr, shodan, complete] }
+    phase: { type: string, enum: [queued, checking, live, topology, relationships, names, asns, scores, block, ptr, shodan, transfers, rpki, complete] }
     completed: { type: integer, minimum: 0 }
     total: { type: integer, minimum: 0 }
     currentProvider: { type: string }
@@ -32,7 +32,7 @@ IPLookupLiveEvent:
       properties:
         type: { type: string, enum: [section] }
         ip: { type: string }
-        section: { type: string, enum: [topology, asns, scores, block, ptr, shodan] }
+        section: { type: string, enum: [topology, asns, scores, block, ptr, shodan, transfers] }
         data:
           oneOf:
             - { $ref: ../../openapi.yaml#/components/schemas/IPLookupBGPTopology }
@@ -41,6 +41,7 @@ IPLookupLiveEvent:
             - { $ref: ../../openapi.yaml#/components/schemas/IPLookupAbuseBlock }
             - { $ref: ../../openapi.yaml#/components/schemas/IPLookupPTRDetails }
             - { $ref: ../../openapi.yaml#/components/schemas/IPLookupShodanDetails }
+            - { $ref: ../../openapi.yaml#/components/schemas/IPLookupTransferHistory }
     - type: object
       required: [type, ip, data, progress]
       properties:

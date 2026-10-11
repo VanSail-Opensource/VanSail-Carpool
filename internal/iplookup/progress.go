@@ -49,5 +49,19 @@ func CheckProgress(r Report) *Progress {
 	if p.CurrentProvider == "" && p.Completed == 0 {
 		p.Phase = "queued"
 	}
+	if stage := r.Checkpoint.RPKI; stage != nil {
+		task := ProgressTask{Key: "rpki", Status: stage.Status}
+		p.Total++
+		switch stage.Status {
+		case "queued":
+			task.Status = "pending"
+		case "processing":
+			task.Status = "active"
+			p.Phase = "rpki"
+		case "success", "error":
+			p.Completed++
+		}
+		p.Tasks = append(p.Tasks, task)
+	}
 	return p
 }
