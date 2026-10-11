@@ -96,6 +96,10 @@ graph/block/ASN sections), the merged snapshot replaces the frozen row, and
 the chain continues while sections stay failed. Every outbound call still
 flows through the existing upstream queues; repair jobs never bypass them.
 
+- `retry_policy_test.go` covers policy defaults, attempt bounds, failed-stage selection, checkpoint repair and payload deduplication in hosted CI.
+- `worker_retry_test.go` covers delayed report repair chains, exhausted policies, missing reports, healthy reports and conflicting cache writes in hosted CI.
+- `live_retry_test.go` covers section repair planning, topology dependency cascades, PTR recovery, delayed retries and terminal/conflicting snapshot handling in hosted CI.
+
 ## Location selection
 
 Each location candidate is one coherent source bundle; country, city, and

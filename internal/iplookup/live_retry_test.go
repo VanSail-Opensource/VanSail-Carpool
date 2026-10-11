@@ -62,10 +62,10 @@ func partiallyFailingPTR() LiveDetails {
 	return LiveDetails{
 		SnapshotID: "snapshot", IP: "1.1.1.1", SourceIP: "1.1.1.1", FetchedAt: "2026-10-11T00:00:00Z",
 		Topology: BGPTopology{LiveMeta: healthyMeta(), RelationshipMeta: healthyMeta(), ClassificationMeta: healthyMeta(), Prefix: "1.1.1.0/24", Origins: []uint32{13335}},
-		Scores:    NetworkScores{LiveMeta: healthyMeta()},
-		Block:     AbuseBlock{LiveMeta: healthyMeta()},
-		Shodan:    ShodanDetails{LiveMeta: healthyMeta()},
-		PTR:       PTRDetails{LiveMeta: LiveMeta{Status: "error", Source: "dns", ErrorCode: "IP_DETAILS_UNAVAILABLE"}},
+		Scores:   NetworkScores{LiveMeta: healthyMeta()},
+		Block:    AbuseBlock{LiveMeta: healthyMeta()},
+		Shodan:   ShodanDetails{LiveMeta: healthyMeta()},
+		PTR:      PTRDetails{LiveMeta: LiveMeta{Status: "error", Source: "dns", ErrorCode: "IP_DETAILS_UNAVAILABLE"}},
 	}
 }
 

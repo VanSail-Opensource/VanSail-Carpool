@@ -4,6 +4,7 @@
 - `ProviderSettings.vue` edits provider switches, MaxMind account ID and write-only credential changes.
 - `ProviderOrder.vue` supplies accessible 44px up/down controls for two independent lists: the provider execution sequence and geolocation priority.
 - `ComboQuotas.vue` edits the next-term included quota for each core combo.
+- `RetrySettings.vue` edits the shared retry switch, attempt limit and delay through the existing settings model, localized controls and bounded numeric inputs.
 
 The feature uses Vue Composition API, existing dark-theme controls and English/Chinese localization. Route views only compose feature components. Async results are scoped to the current member, and scope disposal cancels future polling and quote updates. Browser fixtures exercise these real components through Chrome DevTools MCP. No local automated test suite is required or permitted.
 

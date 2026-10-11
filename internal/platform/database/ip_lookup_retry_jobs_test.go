@@ -81,7 +81,6 @@ func outboxRetryRows(t *testing.T, store *Store, kind string) []struct {
 
 func TestFreezingPartialReportSchedulesDelayedFirstRetry(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 	store, service, user, _, _ := ipLookupFixture(t, 0)
 	before := time.Now().UTC().Truncate(time.Second)
 	r := freezePartialRun(t, store, service, user, "retry-first", "partial")
