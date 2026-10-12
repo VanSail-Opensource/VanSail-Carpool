@@ -8,6 +8,8 @@ Fresh checks and paid refreshes use one shared `checks` executor. `background_ru
 
 `probe_cloudflare_test.go` verifies a named Cloudflare trace still succeeds when the same endpoint rejects unnamed TLS, without turning the named certificate into Reality evidence.
 
+The existing rating policy also reads the requested address's subnet port observations: a newly observed/open/suspected port remains `good`, even if it was absent from configured/Shodan full probes. Neighbor-only concerns remain `excellent`; closed/unavailable ports remain neutral. `rating_test.go` covers these distinctions without collecting or upgrading older cached reports.
+
 ## Responsibility and entry points
 
 This module owns queued public-IP reputation checks, compact source-attributed

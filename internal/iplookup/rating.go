@@ -71,7 +71,7 @@ func updateRating(r *Report) {
 		r.Rating = "average"
 		return
 	}
-	if businessUsage(*r) || !probesPassed(r.Ports) || observedPorts(r.Ports) {
+	if businessUsage(*r) || !probesPassed(r.Ports) || requestedPortObservations(*r) {
 		r.Rating = "good"
 		return
 	}
@@ -94,6 +94,20 @@ func observedPorts(ports []PortProbe) bool {
 		for _, finding := range port.Findings {
 			if finding.Confidence == "observed" || finding.Confidence == "suspected" {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+func requestedPortObservations(r Report) bool {
+	if observedPorts(r.Ports) {
+		return true
+	}
+	if r.Subnet != nil {
+		for _, row := range r.Subnet.Addresses {
+			if row.IP == r.IP {
+				return observedPorts(row.Ports)
 			}
 		}
 	}

@@ -33,6 +33,20 @@ func TestRatingPrecedenceAndCompleteness(t *testing.T) {
 			r.Ports[0].Tasks = []ProbeTask{{Key: "tcp", Status: "success"}}
 		}},
 		{"closed TCP", "perfect", func(r *Report) { r.Ports[0].Tasks = []ProbeTask{{Key: "tcp", Status: "success"}} }},
+		{"requested subnet open port", "good", func(r *Report) {
+			r.Subnet.Addresses[8].Ports = []PortProbe{{Port: 80, Status: "success", Tasks: []ProbeTask{{Key: "tcp", Status: "success"}}}}
+		}},
+		{"requested subnet Reality", "good", func(r *Report) {
+			r.Subnet.Addresses[8].Status = "suspected"
+			r.Subnet.Addresses[8].Ports = []PortProbe{{Port: 80, Status: "success", Findings: []ProbeFinding{{Protocol: "reality", Confidence: "suspected"}}}}
+		}},
+		{"neighbor Reality only", "excellent", func(r *Report) {
+			r.Subnet.Addresses[9].Status = "suspected"
+			r.Subnet.Addresses[9].Ports = []PortProbe{{Port: 80, Status: "success", Findings: []ProbeFinding{{Protocol: "reality", Confidence: "suspected"}}}}
+		}},
+		{"requested subnet closed port", "perfect", func(r *Report) {
+			r.Subnet.Addresses[8].Ports = []PortProbe{{Port: 80, Status: "closed", Tasks: []ProbeTask{{Key: "tcp", Status: "closed"}}}}
+		}},
 		{"observed TLS", "good", func(r *Report) {
 			r.Ports[0].Status = "success"
 			r.Ports[0].Findings = []ProbeFinding{{Protocol: "tls", Confidence: "observed"}}
