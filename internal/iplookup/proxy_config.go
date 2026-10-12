@@ -92,10 +92,11 @@ func normalizeEnhancedConfig(c *Config) error {
 		if e != nil || pe != nil || n < 1 || n > 65535 {
 			return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
 		}
-		if _, e := CanonicalIP(h); e != nil {
+		canonical, e := CanonicalIP(h)
+		if e != nil {
 			return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
 		}
-		c.DNSResolvers[i] = raw
+		c.DNSResolvers[i] = net.JoinHostPort(canonical, strconv.Itoa(n))
 	}
 	unique := []string{}
 	resolverSeen := map[string]bool{}

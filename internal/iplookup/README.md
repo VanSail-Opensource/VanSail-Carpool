@@ -315,3 +315,5 @@ hosted CI. Upstream contract:
 `proxy_source_test_runner.go` owns queued diagnostic settlement and joins callbacks after cancellation before releasing admission or completing application shutdown. Probe response/evidence policies follow zgrab2 SOCKS5, fall-star/proxy_detector prober and Nmap proxy-script references without importing scanner dependencies or forwarding traffic.
 
 `proxy_inventory_test.go` verifies complete-only 12-hour reuse and no-address endpoint skipping independently from DNS transport coverage.
+
+Negative DNS memoization requires an SOA and uses the smaller SOA TTL/MINIMUM capped at five minutes; replies without SOA are not cached. A fully cooling resolver pool is unavailable evidence, never an observed empty answer. Resolver IP/port normalization prevents aliases from counting as independent evidence.

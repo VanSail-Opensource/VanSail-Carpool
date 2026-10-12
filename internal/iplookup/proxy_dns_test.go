@@ -97,6 +97,10 @@ func TestDNSNoDataAndResolverCooldown(t *testing.T) {
 	if r.status != "no_address" || len(r.ips) != 0 || calls.Load() != 2 {
 		t.Fatalf("NODATA: %+v calls=%d", r, calls.Load())
 	}
+	s.resolveDNS(context.Background(), "nodata.example.net", []string{server}, 0, false, false)
+	if calls.Load() != 4 {
+		t.Fatal("negative reply without SOA was cached")
+	}
 	s.resolvers["cooling"] = resolverHealth{cooldown: time.Now().Add(time.Minute)}
 	counts := map[string]int{}
 	for range 6 {

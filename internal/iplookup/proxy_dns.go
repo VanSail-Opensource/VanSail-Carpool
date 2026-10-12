@@ -105,7 +105,8 @@ func (s *EnhancedService) resolveAt(ctx context.Context, host, server string, fa
 			r.status = "error"
 			continue
 		}
-		negative := time.Minute
+		// RFC 2308: without an SOA, there is no reusable negative TTL.
+		negative := time.Duration(0)
 		for _, rr := range answer.Ns {
 			if soa, ok := rr.(*dns.SOA); ok {
 				negative = min(time.Duration(min(soa.Hdr.Ttl, soa.Minttl))*time.Second, 5*time.Minute)

@@ -15,6 +15,8 @@ func TestRealityDNSMatchAndIndependentMismatchEvidence(t *testing.T) {
 		{"two mismatch", []DNSObservation{{Server: "one", Status: "success", Addresses: []string{"1.1.1.1"}}, {Server: "two", Status: "success", Addresses: []string{"9.9.9.9"}}}, 3, "reality", "suspected"},
 		{"sole configured", []DNSObservation{{Server: "one", Status: "success", Addresses: []string{"1.1.1.1"}}}, 1, "reality", "suspected"},
 		{"no address", []DNSObservation{{Server: "one", Status: "no_address"}}, 3, "reality", "observed"},
+		{"no healthy resolvers", nil, 3, "reality", "unavailable"},
+		{"empty answers", []DNSObservation{{Server: "one", Status: "success"}, {Server: "two", Status: "success"}}, 3, "reality", "observed"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := classifyReality("8.8.8.8", "example.net", tc.obs, tc.configured)
