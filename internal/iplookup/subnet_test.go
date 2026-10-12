@@ -89,6 +89,9 @@ func TestSubnetSkipsAbuseItemWhenBlockIsClean(t *testing.T) {
 	}
 	defer func() { _ = queue.Shutdown(context.Background()) }()
 	c := DefaultConfig()
+	for i := range c.Providers {
+		c.Providers[i].Enabled = c.Providers[i].ID == "abuseipdb" || c.Providers[i].ID == "ipapi"
+	}
 	live := NewLiveService(providerSettings{value: "key"}, map[string]*upstreamqueue.Queue{"abuseipdb": queue})
 	live.client.Transport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		t.Errorf("unexpected block request after a clean /24: %s", req.URL.RawQuery)

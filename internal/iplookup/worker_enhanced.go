@@ -140,6 +140,7 @@ func applyEnhancedVerdict(r *Report) {
 	}
 	updateRating(r)
 }
+
 // probesPassed treats unavailable probes as passing: a port whose probe
 // errored (for example filtered or not open from the prober) carries no
 // adverse evidence, so it must not degrade the verdict, status, or rating.
