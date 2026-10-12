@@ -2,61 +2,74 @@ package iplookup
 
 import (
 	"context"
+	"net/netip"
 	"time"
-
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
-// The queue can return cancellation before its callback exits. Join entered
-// callbacks and reject late starts before releasing the diagnostic admission slot.
-func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, test ProxySourceTest, source ProxySource, c Config) {
+func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, job sourceRefreshJob, c Config, ctx context.Context) {
+	cache := job.cache
 	defer b.work.Done()
-	callCtx, cancel := context.WithTimeout(b.ctx, 20*time.Minute)
+	defer job.cancel()
+	select {
+	case b.slots <- struct{}{}:
+		defer func() { <-b.slots }()
+	case <-ctx.Done():
+		s.finishSource(b, job, nil, interruptedSource(job.source))
+		return
+	}
+	// Waiting for bounded admission must not consume the collection deadline.
+	collectCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancel()
-	finished := make(chan struct{})
-	entered, abandoned := false, false // Both flags are protected by b.mu.
-	runErr := upstreamqueue.Execute(callCtx, s.queues["checks"], func(ctx context.Context) error {
+	update := func(result ProxySourceResult) {
 		b.mu.Lock()
-		if abandoned {
-			b.mu.Unlock()
-			return context.Canceled
+		defer b.mu.Unlock()
+		result.Name = cache.source.Name
+		b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "processing", Result: result}}
+		if b.sources[job.source.ID] == cache {
+			cache.result = result
 		}
-		entered = true
-		b.mu.Unlock()
-		defer close(finished)
-		update := func(result ProxySourceResult) {
-			b.mu.Lock()
-			b.entries[test.ID] = sourceTestEntry{test: ProxySourceTest{ID: test.ID, Status: "processing", Result: result}}
-			b.mu.Unlock()
-		}
-		_, result := s.collectSource(ctx, source, c, true, update)
-		if ctx.Err() != nil {
-			result.Status = "partial"
-			result.ErrorCode = "IP_PROXY_INTERRUPTED"
-		}
-		b.mu.Lock()
-		b.entries[test.ID] = sourceTestEntry{test: ProxySourceTest{ID: test.ID, Status: "completed", Result: result}, expires: time.Now().Add(15 * time.Minute)}
-		b.mu.Unlock()
-		return ctx.Err()
-	})
+	}
+	ips, result := s.collectSource(collectCtx, job.source, c, true, update)
+	if collectCtx.Err() != nil {
+		result.Status, result.ErrorCode = "partial", "IP_PROXY_INTERRUPTED"
+	}
+	s.finishSource(b, job, ips, result)
+}
+
+func interruptedSource(source ProxySource) ProxySourceResult {
+	return ProxySourceResult{ID: source.ID, Name: source.Name, URL: safeSourceURL(source.URL), Status: "partial", Phase: "complete", ErrorCode: "IP_PROXY_INTERRUPTED"}
+}
+
+func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJob, ips map[netip.Addr]bool, result ProxySourceResult) {
+	cache := job.cache
 	b.mu.Lock()
-	wait := entered
-	if !wait {
-		abandoned = true
+	defer b.mu.Unlock()
+	result.Name = cache.source.Name
+	now := time.Now()
+	if result.ObservedAt == "" {
+		result.ObservedAt = now.UTC().Format(time.RFC3339)
 	}
-	b.mu.Unlock()
-	if wait {
-		<-finished
+	if b.sources[job.source.ID] == cache {
+		if result.Status != "success" {
+			// Retain positive evidence without certifying negative matches.
+			if ips == nil {
+				ips = map[netip.Addr]bool{}
+			}
+			for ip := range cache.ips {
+				if len(ips) < 1000000 {
+					ips[ip] = true
+				}
+			}
+		}
+		cache.ips, cache.result, cache.complete = ips, result, result.Status == "success"
+		cache.result.Count = len(ips)
+		if cache.complete {
+			cache.expires = now.Add(proxyInventoryTTL)
+		}
+		cache.nextRefresh = now.Add(proxyInventoryTTL)
+		result = cache.result
 	}
-	b.mu.Lock()
-	entry := b.entries[test.ID]
-	if runErr != nil && entry.test.Status != "completed" {
-		entry.test.Status = "completed"
-		entry.test.Result.Status = "partial"
-		entry.test.Result.ErrorCode = "IP_PROXY_INTERRUPTED"
-		entry.expires = time.Now().Add(15 * time.Minute)
-		b.entries[test.ID] = entry
-	}
-	b.active = false
-	b.mu.Unlock()
+	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}
+	close(job.done)
+	cache.done = nil
 }

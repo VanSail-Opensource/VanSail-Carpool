@@ -32,7 +32,7 @@ func TestProviderVariantsAndRiskScope(t *testing.T) {
 		{"null fraud", "ipqs", `{"success":true,"fraud_score":null,"recent_abuse":false,"proxy":false,"vpn":false,"tor":false}`, false, false, false},
 		{"provider rejection", "ipqs", `{"success":false,"message":"quota"}`, false, false, true},
 		{"IP2 free tier", "ip2location", `{"ip":"150.249.241.62","is_proxy":false,"country_code":"JP"}`, false, false, false},
-		{"IP2 datacenter", "ip2location", `{"ip":"150.249.241.62","usage_type":"DCH"}`, true, false, false},
+		{"IP2 datacenter warning", "ip2location", `{"ip":"150.249.241.62","usage_type":"DCH"}`, false, false, false},
 		{"wrong IP", "ipapi", `{"ip":"8.8.8.8"}`, false, false, true},
 	}
 	for _, tc := range cases {
@@ -77,7 +77,7 @@ func TestVerdictRequiresCoverageAndResidentialEvidence(t *testing.T) {
 		{"mobile", []ProviderResult{clean}, "suitable", "succeeded"},
 		{"outage", []ProviderResult{clean, {ID: "maxmind", Status: "error"}}, "inconclusive", "partial"},
 		{"all unavailable", []ProviderResult{{ID: "ipapi", Status: "error"}}, "inconclusive", "partial"},
-		{"risk wins", []ProviderResult{clean, {ID: "maxmind", Status: "partial", Signals: Signals{Datacenter: boolean(true)}}}, "unsuitable", "partial"},
+		{"risk wins", []ProviderResult{clean, {ID: "maxmind", Status: "partial", Signals: Signals{Proxy: boolean(true)}}}, "unsuitable", "partial"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Aggregate(Report{Providers: tc.results}, time.Now())

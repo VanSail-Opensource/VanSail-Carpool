@@ -14,7 +14,7 @@ func providerRefusals(p ProviderResult) []Refusal {
 	for _, flag := range []struct {
 		kind  string
 		value *bool
-	}{{"abuse", p.Signals.Abuse}, {"datacenter", p.Signals.Datacenter}, {"vpn", p.Signals.VPN}, {"proxy", p.Signals.Proxy}, {"tor", p.Signals.Tor}} {
+	}{{"abuse", p.Signals.Abuse}, {"vpn", p.Signals.VPN}, {"proxy", p.Signals.Proxy}, {"tor", p.Signals.Tor}} {
 		if flag.value == nil || !*flag.value {
 			continue
 		}

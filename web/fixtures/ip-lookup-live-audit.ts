@@ -34,6 +34,8 @@ export function installLiveIPAudit(params: URLSearchParams) {
       shodan: { ...meta, source: 'shodan:internetdb', observedAt: '', hostnames: ['dns.google'], ports: [53, 443, 853] },
     }
     result.shodan = shodanAuditDetails(params, result.shodan)
+    if (params.has('many-transfers')) result.transfers!.transfers = Array.from({ length: 12 }, (_, i) => ({ ...result.transfers!.transfers[0]!, sourceHolderName: `Previous network operator ${i + 1}`, recipientHolderName: `Current network operator ${i + 1}`, transferTime: new Date(Date.UTC(2025, 0, i + 1)).toISOString() }))
+    if (params.has('long-labels')) for (const node of result.topology.nodes) node.name = 'WorldwideNetworkOperatorWithAnExtremelyLongOrganizationName'.repeat(3)
     for (const asn of result.asns) { asn.abuseContacts = ['abuse@cloudflare.com']; asn.website = 'https://www.cloudflare.com'; asn.sources.abuseContacts = { ...meta, source: 'ripe:abuse-contact-finder' }; asn.sources.website = { ...meta, source: 'peeringdb' } }
     result.topology.paths.push({ asPath: [701, 48266, 174, 13335], collector: 'RRC21', exchange: '', observedAt: now })
     if (params.get('live') === 'empty') {

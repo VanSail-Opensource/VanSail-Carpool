@@ -123,7 +123,7 @@
     "checkPaid": "查询 · {fee}",
     "refreshPaid": "刷新 · {fee}",
     "processing": "查询中…",
-    "empty": "输入 IP",
+    "empty": "检查你的 IP 是否适合使用 AI 工具。",
     "billingNote": "缓存免费",
     "cached": "缓存",
     "fresh": "最新",

@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import IPLookupForm from './IPLookupForm.vue'
 import IPLookupReport from './IPLookupReport.vue'
 import IPLiveDetails from './IPLiveDetails.vue'
 import IPLookupProgress from './IPLookupProgress.vue'
-import IPPortProbes from './IPPortProbes.vue'
+import IPRefusals from './IPRefusals.vue'
+import { portWarnings } from './probePresentation'
 import IPSubnetGrid from './IPSubnetGrid.vue'
 import { useIPLookup } from './useIPLookup'
 import { ipLookupErrorText } from './presentation'
 
 const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP, cacheMatch, loading, busy, activeRun, progressUnavailable, errorCode, validIP, submit, load } = useIPLookup()
+const activeWarnings = computed(() => portWarnings(activeRun.value?.ports ?? []))
 </script>
 
 <template>
@@ -26,7 +29,7 @@ const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP
       <InlineNotice v-if="activeRun || (busy && check)" tone="info">{{ $t('ipLookup.backgroundReminder') }}</InlineNotice>
       <InlineNotice v-if="progressUnavailable" tone="warning">{{ $t('ipLookup.progressUnavailable') }}</InlineNotice>
       <IPLookupProgress v-if="busy" :progress="activeRun?.progress ?? check?.progress" />
-      <IPPortProbes v-if="activeRun?.ports?.length" :ports="activeRun.ports" :source-ip="activeRun.ip" />
+      <IPRefusals v-if="activeWarnings.length" :refusals="activeWarnings" warning />
       <IPLookupReport v-if="report" :report="report" :requested-ip="requestedIP" :cache-match="cacheMatch" :check="displayCheck" />
       <p v-else-if="!busy && state?.enabled" class="ip-lookup-empty">{{ $t('ipLookup.empty') }}</p>
       <IPLiveDetails v-if="report" :report="report" :requested-ip="requestedIP" :snapshot="report.liveDetails ?? check?.liveDetails ?? null" :refresh-quote="refreshQuote" :busy="busy" @refresh="submit(true)" />

@@ -47,3 +47,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `ip-lookup-progress.yaml` describes derived check progress and typed live stream events.
 
 `ip-lookup-enhanced.yaml` defines named inventories, compact matches, per-address subnet coverage, protocol evidence, durable probe progress and the identity-free shared progress response. Coordinates remain in the report facts for map rendering.
+
+`ip-lookup-enhanced.yaml` defines independent administrator source cache status and combined unique counts. `ip-lookup-report.yaml` adds optional AI suitability ratings and datacenter warnings while retaining verdict compatibility.

@@ -1,21 +1,18 @@
 {
   "ipLookup": {
-    "backgroundReminder": "This check continues in the background. You can return later and enter this IP to see progress. Some probe stages wait up to 605 seconds.",
+    "backgroundReminder": "This check continues in the background. Return later and enter this IP to see progress.",
     "progressUnavailable": "Progress is temporarily unavailable. Try again shortly; a new check is disabled until its status can be read.",
-    "portHeading": "Port probes",
     "proxyHeading": "Proxy inventories",
     "noProxyMatch": "No inventory match",
     "proxyIncomplete": "Inventory coverage incomplete",
     "proxyCoverage": "Source coverage",
     "probeCoverage": "Probe coverage",
-    "probeElapsed": "{seconds}s elapsed",
-    "probeMilestone": "Observation at {seconds}s",
     "subnetHeading": "/24 checks",
     "requestedAddress": "Requested IP",
     "usedQuotaCount": "{count} included checks used",
     "refreshIncluded": "Refresh · {count} included checks",
     "proxySettings": "Proxy sources and probes",
-    "proxySettingsHelp": "Complete inventories are cached in memory for 12 hours. Full source tests and port probes run in the background.",
+    "proxySettingsHelp": "Enabled sources refresh at startup and every 6 hours. Refresh one source without starting an IP check.",
     "sourceEnabled": "Enabled",
     "sourceName": "Source name",
     "sourceURL": "Source URL",
@@ -48,7 +45,8 @@
       "shadowsocks": "Shadowsocks",
       "trojan": "Trojan",
       "reality": "Reality",
-      "web_server": "Web server"
+      "web_server": "Web server",
+      "tcp": "TCP"
     },
     "confidence": {
       "confirmed": "Confirmed service",
@@ -65,7 +63,8 @@
       "error": "Unavailable",
       "skipped": "Skipped",
       "unavailable": "Unavailable",
-      "closed": "Closed"
+      "closed": "Closed",
+      "disabled": "Disabled"
     },
     "subnetStates": {
       "clean": "Clean",
@@ -96,40 +95,24 @@
       "ipv6": "IPv6 /64 abuse reports; addresses are not enumerated."
     },
     "sources": {
-      "proxy_lists": "Proxy inventories",
+      "proxy_lists": "Proxy lists",
       "socks4": "SOCKS4 probe",
       "socks5": "SOCKS5 probe",
       "http": "HTTP proxy probe"
     },
-    "probeEvidence": {
-      "authentication_required": "Authentication required",
-      "no_authentication": "No authentication required",
-      "protocol_response": "Protocol response",
-      "dns_unavailable": "DNS coverage incomplete",
-      "feasible_tls_dns_mismatch": "Feasible TLS; domain DNS excludes this IP",
-      "length_dependent_close": "Length-dependent connection closure",
-      "alpn_http_mismatch": "ALPN / HTTP response mismatch",
-      "close_30_seconds": "Connection closed after about 30 seconds",
-      "overbuffer_peer_close": "Peer closed during repeated headers",
-      "trojan_short_timing": "150-second observation",
-      "trojan_incomplete_timing": "Full 605-second observation",
-      "trojan_overbuffer_timing": "Repeated-header observation",
-      "dns_matches_ip": "Domain DNS contains this IP",
-      "dns_no_address": "No concrete domain with a public address"
-    },
     "refusals": {
-      "proxy_list": "Proxy inventory match",
+      "proxy_list": "Proxy detected",
       "active_proxy": "Proxy service detected",
       "shodan_tag": "Shodan tags detected",
-      "shodan_vuln": "Shodan vulnerabilities reported"
+      "shodan_vuln": "Shodan vulnerabilities reported",
+      "port_observation": "Observed or suspected services"
     },
     "qualityHeading": "IP quality",
-    "testSource": "Test",
-    "sourceSaveFirst": "Save source or DNS changes before testing.",
+    "sourceSaveFirst": "Save source or DNS changes before refreshing.",
     "inventoryIPs": "{count} unique IPs",
     "inventoryProgress": "{done}/{total} endpoints processed",
     "inventorySkipped": "{count} without a public IP",
-    "inventoryDNSFailed": "{count} DNS failures",
+    "inventoryDNSFailed": "{count} DNS failures skipped",
     "probeResults": {
       "detected": "Detected",
       "not_detected": "Not detected",
@@ -153,8 +136,24 @@
       "IP_PROXY_EMPTY": "No supported endpoints were found.",
       "IP_PROXY_LIMIT": "The inventory exceeded the IP limit.",
       "IP_DNS_UNAVAILABLE": "Some endpoint DNS lookups failed after resolver failover.",
-      "IP_PROXY_INTERRUPTED": "The diagnostic was interrupted or reached its time limit.",
+      "IP_PROXY_INTERRUPTED": "The refresh was interrupted or reached its time limit.",
       "IP_PROXY_SOURCE_NOT_FOUND": "This saved source or diagnostic is no longer available."
-    }
+    },
+    "refreshSource": "Refresh cache",
+    "retrySource": "Retry",
+    "cacheStale": "Coverage incomplete",
+    "inventoryTotal": "{count} unique IPs across enabled sources",
+    "sourceUpdated": "Updated {date}",
+    "sourceNextRefresh": "Next refresh {date}",
+    "ratings": {
+      "perfect": "Perfect",
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "Average",
+      "poor": "Poor",
+      "incomplete": "Incomplete"
+    },
+    "warningHeading": "Warnings",
+    "portWarning": "Port {port}: {confidence}"
   }
 }

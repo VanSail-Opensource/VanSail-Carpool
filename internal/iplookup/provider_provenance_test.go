@@ -55,7 +55,7 @@ func TestRefusalAfterOutageStaysPartialWithoutRefund(t *testing.T) {
 	if r.Status != "partial" || r.Verdict != "unsuitable" || r.RefundRequired {
 		t.Fatalf("report=%+v", r)
 	}
-	if len(r.Refusals) != 2 || r.Refusals[0].Value != "HostPapa" || r.Refusals[1].Value != "NordVPN" {
+	if len(r.Refusals) != 1 || r.Refusals[0].Value != "NordVPN" || len(r.Warnings) != 1 || r.Warnings[0].Value != "HostPapa" {
 		t.Fatalf("lost refusal data: %v", r.Refusals)
 	}
 }

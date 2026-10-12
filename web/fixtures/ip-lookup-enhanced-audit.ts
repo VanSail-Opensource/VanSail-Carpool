@@ -28,9 +28,20 @@ export function installEnhancedIPAudit(params: URLSearchParams) {
     return active && ip === activeIP ? { ip, status: 'processing', progress: { phase: 'probes', completed: 8, total: 11, currentProvider: '443:trojan_incomplete', tasks: [{ key: 'proxy', status: 'success' }, { key: 'probes', status: 'active' }, { key: 'subnet', status: 'pending' }] }, ports: ports(), subnet: null, updatedAt: new Date().toISOString() } : null
   }
   let sourcePolls = 0
+  let refreshingSource = params.has('source-warming') ? 'named-source' : ''
+  ipLookupApi.sourcesStatus = async () => {
+    if (params.has('source-status-error')) throw new ApiError(502, { code: 'IP_LOOKUP_FAILED', message: 'Constructed source status outage' })
+    if (refreshingSource) sourcePolls++
+    const processing = refreshingSource !== '' && sourcePolls < 3
+    const failed = params.has('source-partial') && !processing
+    const now = new Date().toISOString()
+    const sources = ['named-source', 'disabled-source'].map(id => ({ id, name: id === 'named-source' ? 'Community proxy inventory' : 'Disabled inventory', enabled: id === 'named-source', status: processing && refreshingSource === id ? 'processing' : id === 'disabled-source' ? 'disabled' : failed ? 'error' : 'success', refreshing: processing && refreshingSource === id, stale: failed, observedAt: now, count: id === 'named-source' ? 188 : 0, phase: processing ? 'dns' : 'complete', errorCode: failed && id === 'named-source' ? 'IP_PROXY_DOWNLOAD' : '', expiresAt: new Date(Date.now() + 21600000).toISOString(), nextRefreshAt: new Date(Date.now() + 21600000).toISOString() }))
+    return { sources, uniqueIPs: 188 }
+  }
   ipLookupApi.testSource = async id => {
     if (params.has('source-error')) throw new ApiError(502, { code: 'IP_LOOKUP_FAILED', message: 'Constructed source outage' })
     sourcePolls = 0
+    refreshingSource = id
     return { id: 'source-test', status: 'queued', result: { id, name: 'Community proxy inventory', status: 'pending', observedAt: '', count: 0, phase: 'download', hosts: 200, processed: 0 } }
   }
   ipLookupApi.sourceTest = async () => {

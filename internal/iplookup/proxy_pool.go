@@ -51,6 +51,9 @@ func proxyPoolKey(c Config) [32]byte {
 	return sha256.Sum256(raw)
 }
 func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error) {
+	if s.tests != nil {
+		return s.cachedPool(ctx, c)
+	}
 	key := proxyPoolKey(c)
 	s.mu.Lock()
 	cached := s.pools[key]
@@ -73,7 +76,7 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	p, err := s.buildPool(ctx, c)
 	s.mu.Lock()
 	f.pool, f.err = p, err
-	if err == nil && p.complete {
+	if err == nil {
 		for k, v := range s.pools {
 			if !v.expires.After(time.Now()) {
 				delete(s.pools, k)

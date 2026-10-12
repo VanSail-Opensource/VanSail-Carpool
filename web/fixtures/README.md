@@ -58,3 +58,5 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 - `ip-lookup-progress-audit.ts` supplies progressive, interrupted and 300-node/1,500-edge/1,000-path browser fixtures. The live fixture counts simulated upstream runs and implements a 60-second reuse window with forced refresh.
 
 `ip-lookup-enhanced-audit.ts` provides constructed named-source, subnet, full-probe progress and return-to-IP states. Use `enhanced=clean|risk|partial|skipped` and `checking` or `progress-error`; `__ipEnhancedAudit.start()` / `.finish()` control shared work without charges.
+
+`ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). The enhanced fixture supports `source-warming`, `source-partial`, `source-error` and `source-status-error` for shared admin polling/refresh; `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.

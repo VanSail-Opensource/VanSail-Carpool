@@ -13,8 +13,11 @@ import ProviderOrder from './ProviderOrder.vue'
 import RetrySettings from './RetrySettings.vue'
 import ProxyProbeSettings from './ProxyProbeSettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
+import { useProxySources } from './useProxySources'
 
 const { settings, savedSourceConfig, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
+const sources = useProxySources()
+async function saveSettings() { await save(); if (saved.value) await sources.load() }
 const { t } = useI18n()
 const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
 const checkOrder = computed({
@@ -43,7 +46,7 @@ const schema = computed(() => z.object({
     <template v-else>
       <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
       <InlineNotice v-if="saved" tone="success">{{ $t('ipLookup.saved') }}</InlineNotice>
-      <UForm :state="settings" :schema="schema" class="lookup-settings" @submit="save">
+      <UForm :state="settings" :schema="schema" class="lookup-settings" @submit="saveSettings">
         <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="$t('ipLookup.enable')" :help="$t('ipLookup.enableHelp')" />
         <div class="lookup-fees">
           <TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="$t('ipLookup.lookupFee')" min-minor="0" />
@@ -54,7 +57,7 @@ const schema = computed(() => z.object({
           <ProviderOrder v-model="settings.geolocationOrder" :title="$t('ipLookup.geolocationOrder')" :help="$t('ipLookup.geolocationOrderHelp')" :disabled="busy" />
         </div>
         <ProviderSettings v-model="settings" />
-        <ProxyProbeSettings v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" />
+        <ProxyProbeSettings v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" :source-status="sources.status.value" :starting="sources.starting.value" :error-code="sources.errorCode.value" @refresh="sources.refreshSource" />
         <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         <ComboQuotas v-model="settings.comboQuotas" :combos="combos" />
         <UButton type="submit" :loading="busy" :disabled="busy" :label="$t('common.save')" class="lookup-save" />

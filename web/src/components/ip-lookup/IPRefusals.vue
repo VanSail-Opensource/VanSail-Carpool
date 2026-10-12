@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { IPLookupReport } from '@/api/ipLookup'
-import { refusalGroups } from './refusalPresentation'
-const props = defineProps<{ refusals: IPLookupReport['refusals'] }>()
+import { refusalGroups, type DisplayEvidence } from './refusalPresentation'
+const props = defineProps<{ refusals: DisplayEvidence[]; warning?: boolean }>()
 const groups = computed(() => refusalGroups(props.refusals))
 </script>
 
 <template>
-  <div v-if="groups.length" class="refusals" :aria-label="$t('ipLookup.refusalHeading')">
-    <details v-for="group in groups" :key="group.kind" :open="group.kind === 'shodan_tag' || group.kind === 'shodan_vuln'">
+  <div v-if="groups.length" class="refusals" :class="{ warnings: warning }" :aria-label="$t(warning ? 'ipLookup.warningHeading' : 'ipLookup.refusalHeading')">
+    <details v-for="group in groups" :key="group.kind" :open="group.kind === 'shodan_tag' || group.kind === 'shodan_vuln' || group.kind === 'port_observation'">
       <summary><UIcon :name="group.icon" aria-hidden="true" /><span>{{ $t(`ipLookup.refusals.${group.kind}`) }}</span><small v-if="group.items.length > 1">{{ group.items.length }}</small><UIcon name="i-ph-caret-down" aria-hidden="true" /></summary>
       <ul><li v-for="(item, index) in group.items" :key="index"><strong>{{ item.value === true ? $t('ipLookup.detected') : item.value === false ? $t('ipLookup.notDetected') : item.value }}</strong><span>{{ item.source }}</span></li></ul>
     </details>
@@ -20,6 +19,7 @@ const groups = computed(() => refusalGroups(props.refusals))
 .refusals details { min-width: 0; }
 .refusals summary { display: flex; align-items: center; gap: 0.35rem; min-height: 44px; font-size: 0.78rem; color: var(--ui-error); cursor: pointer; list-style: none; }
 .refusals summary::-webkit-details-marker { display: none; }
+.warnings summary { color: var(--warning); }
 .refusals summary > span { min-width: 0; overflow-wrap: anywhere; }
 .refusals summary > :last-child { flex-shrink: 0; margin-left: auto; width: 0.75rem; }
 .refusals details[open] summary > :last-child { transform: rotate(180deg); }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed, useId, useTemplateRef } from 'vue'
 import type { IPLookupBGPTopology } from '@/api/ipLookup'
 import LiveSourceNote from './LiveSourceNote.vue'
 import IPBGPFocus from './IPBGPFocus.vue'
 import { nodeWidth, nodeHeight } from './bgpLayout'
 import { useBGPGraph } from './useBGPGraph'
 const props = defineProps<{ topology: IPLookupBGPTopology }>()
+const labelClip = `bgp-label-${useId()}`
 const viewport = useTemplateRef<globalThis.HTMLDivElement>('viewport')
 const { scale, offset, viewportSize, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, edgeGroups, visibleEdges, fit, select, focusRoute, wheel, pointerDown, pointerMove, pointerUp, keyboard } = useBGPGraph(() => props.topology, viewport)
 const selectedConnections = computed(() => layout.value.edges.filter(edge => edge.from === selectedASN.value || edge.to === selectedASN.value))
@@ -22,11 +23,12 @@ const nameLimit = computed(() => Math.max(4, Math.floor((nodeWidth - 20) / (Math
       </div>
       <div ref="viewport" class="graph-viewport" tabindex="0" role="region" :aria-label="$t('ipLookupLive.graph.instructions')" @wheel="wheel" @pointerdown="pointerDown" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @keydown="keyboard">
         <svg :viewBox="`0 0 ${viewportSize.width} ${viewportSize.height}`" :aria-label="$t('ipLookupLive.bgpTitle')">
+          <defs><clipPath :id="labelClip" clipPathUnits="userSpaceOnUse"><rect x="8" y="5" :width="nodeWidth - 16" :height="nodeHeight - 10" /></clipPath></defs>
           <g class="graph-scene" :transform="`translate(${offset.x}, ${offset.y}) scale(${scale})`">
             <g class="graph-edges"><path v-for="group in edgeGroups" :key="group.id" :d="group.d" :data-edge-count="group.count" :class="[`edge-${group.relationship}`, `edge-${group.state}`]"><title>{{ $t(`ipLookupLive.graph.relationship.${group.relationship}`) }}</title></path></g>
             <path v-for="edge in visibleEdges.filter(item => item.hops)" :key="edge.id" :d="edge.d" class="graph-path-hit"><title>{{ $t('ipLookupLive.graph.hops', { hops: edge.hops ?? 0 }) }}</title></path>
             <g v-for="node in visibleNodes" :key="node.asn" :data-asn="node.asn" :transform="`translate(${node.x}, ${node.y})`" class="graph-node" :class="{ 'graph-origin': node.layer === 0, 'graph-selected': node.asn === selectedASN, 'graph-tier1': node.tier1 }" role="button" tabindex="0" :aria-label="`AS${node.asn} ${node.name}`" @click="select(node.asn)" @keydown.enter.stop="select(node.asn, true)" @keydown.space.stop.prevent="select(node.asn, true)">
-              <title>{{ `AS${node.asn} ${node.name}` }}</title><rect :width="nodeWidth" :height="nodeHeight" rx="5" /><text x="10" y="22" :style="{ fontSize: `${Math.min(24, 12 / scale)}px` }">AS{{ node.asn }}<tspan v-if="node.tier1" class="graph-tier-label"> {{ $t('ipLookupLive.graph.tierBadge') }}</tspan></text><text x="10" y="44" class="graph-node-name" :style="{ fontSize: `${Math.min(20, 10 / scale)}px` }">{{ node.name.length > nameLimit ? `${node.name.slice(0, nameLimit - 1)}…` : node.name || $t('ipLookupLive.graph.unknownName') }}</text>
+              <title>{{ `AS${node.asn} ${node.name}` }}</title><rect :width="nodeWidth" :height="nodeHeight" rx="5" /><g :clip-path="`url(#${labelClip})`"><text x="10" y="22" :style="{ fontSize: `${Math.min(24, 12 / scale)}px` }">AS{{ node.asn }}<tspan v-if="node.tier1" class="graph-tier-label"> {{ $t('ipLookupLive.graph.tierBadge') }}</tspan></text><text x="10" y="44" class="graph-node-name" :style="{ fontSize: `${Math.min(20, 10 / scale)}px` }">{{ node.name.length > nameLimit ? `${node.name.slice(0, nameLimit - 1)}…` : node.name || $t('ipLookupLive.graph.unknownName') }}</text></g>
             </g>
           </g>
         </svg>

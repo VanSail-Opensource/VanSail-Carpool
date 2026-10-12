@@ -19,6 +19,8 @@ ProviderSettings.vue also manages the optional vaulted cloudflare_radar token wi
 
 `ProxyProbeSettings.vue` edits source names/URLs, resolver addresses, additional ports and the quota cost of refreshes inside the existing atomic settings form. Server defaults include all supplied inventories; credentials remain write-only.
 
-`ProxySourceTestControl.vue` and `useProxySourceTest.ts` start full tests of saved sources and poll typed no-store diagnostics every two seconds while visible. Disposal aborts polling without cancelling backend collection. A last-saved source/resolver signature disables Test for unsaved edits. Disabled saved sources can still be tested. Results reuse the expanded IPProxySourceDetails renderer.
+`ProxySourceTestControl.vue` presents cache status/counts and Refresh cache or Retry for one saved source. `useProxySources.ts` owns one no-store polling stream for every row (two seconds during collection, fifteen when idle), rejects late account results and aborts reads on disposal. Unsaved source/resolver edits disable refresh. Disabled saved sources can be refreshed manually, but never contribute to the active inventory. `useProxySources.test.ts` covers selected-source admission, startup joins, retained counts after errors and account/disposal boundaries in hosted CI.
 
 Chrome DevTools MCP reviewed saved disabled-source tests, in-progress/completed/partial/error diagnostics, unsaved-edit disabling and save re-enabling at 390px and 1280px. Tests did not submit the settings form. Console checks were clear in the reviewed constructed flows.
+
+The revised shared-cache controls were reviewed through Chrome DevTools MCP at 390px and 1280px on 2026-10-12: startup/in-flight/completed/error states, unique counts, Refresh/Retry, unsaved-edit disabling and save recovery, retained cached counts after failure, and UTF-8 Chinese labels. Constructed refresh/save handlers made no paid check or quote; reviewed console results were clear.

@@ -7,9 +7,9 @@ defineProps<{ asns: IPLookupASNDetails[]; rpki: IPLookupReport['rpki'] }>()
 
 <template>
   <section class="live-asn-section">
-    <IPASNDetails v-if="asns.length" :asns="asns" />
+    <IPASNDetails v-if="asns.length" :asns="asns" :rpki="rpki" />
     <h3 v-else>{{ $t('ipLookupLive.asnTitle') }}</h3>
-    <IPRPKIStatus :result="rpki" />
+    <IPRPKIStatus v-if="!asns.length" :result="rpki" />
   </section>
 </template>
 

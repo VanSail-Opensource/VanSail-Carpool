@@ -141,8 +141,8 @@
     "live": "Network data",
     "transfers": "Transfers",
     "rpki": "RPKI validation",
-    "proxy": "Proxy inventories",
-    "probes": "Port probes",
+    "proxy": "Proxy check",
+    "probes": "Service checks",
     "subnet": "Subnet checks"
   }
 }

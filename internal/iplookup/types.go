@@ -6,6 +6,7 @@ import "github.com/txyyddss/Remna-User-Panel/internal/model"
 const SettingKey = "ip_lookup.config"
 const OperationKind = "ip_reputation_lookup"
 const Version = "residential-v6"
+const RatingPolicyVersion = "ai-suitability-v1"
 
 // ProviderConfig is public configuration; credentials live in the secret vault.
 type ProviderConfig struct {
@@ -130,6 +131,8 @@ type Report struct {
 	IP             string            `json:"ip"`
 	Status         string            `json:"status"`
 	Verdict        string            `json:"verdict"`
+	Rating         string            `json:"rating,omitempty"`
+	Warnings       []Refusal         `json:"warnings,omitempty"`
 	Reasons        []string          `json:"reasons"`
 	Facts          Facts             `json:"facts"`
 	Sources        map[string]string `json:"sources"`

@@ -12,20 +12,17 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 	checkpoint := r.Checkpoint.Enhanced
 	save := func() error { return w.repository.SaveIPLookupProgress(ctx, *r) }
 	if r.Proxy == nil {
-		if len(r.Facts.Country) == 2 {
-			checkpoint.Phase = "proxy"
-			if err := save(); err != nil {
-				return err
-			}
-			pool, err := w.Enhanced.pool(ctx, c)
-			if err != nil {
-				return err
-			}
-			r.Proxy = pool.assessment(r.IP)
-			applyProxyRefusal(r)
-		} else {
-			r.Proxy = &ProxyAssessment{Status: "unavailable", Sources: []ProxySourceResult{}, Matches: []string{}}
+		checkpoint.Phase = "proxy"
+		if err := save(); err != nil {
+			return err
 		}
+		// Global inventory membership does not depend on optional geolocation.
+		pool, err := w.Enhanced.pool(ctx, c)
+		if err != nil {
+			return err
+		}
+		r.Proxy = pool.assessment(r.IP)
+		applyProxyRefusal(r)
 	}
 	if !checkpoint.LiveDone {
 		checkpoint.Phase = "live"
@@ -106,6 +103,7 @@ func applyProxyRefusal(r *Report) {
 	}
 }
 func applyEnhancedVerdict(r *Report) {
+	moveDatacenterWarnings(r)
 	applyProxyRefusal(r)
 	applyShodanRefusals(r)
 	for _, port := range r.Ports {
@@ -140,6 +138,7 @@ func applyEnhancedVerdict(r *Report) {
 	if r.Subnet != nil && r.Subnet.Status == "partial" {
 		r.Status = "partial"
 	}
+	updateRating(r)
 }
 func probesPassed(ports []PortProbe) bool {
 	if len(ports) == 0 {

@@ -38,6 +38,9 @@ func DecodeReport(raw []byte) (Report, error) {
 
 // PublicReport removes private recovery metadata from member responses.
 func PublicReport(r Report) Report {
+	if r.Rating == "" {
+		updateRating(&r)
+	}
 	r.Checkpoint, r.Providers = nil, nil
 	normalizeReport(&r)
 	if r.LiveDetails != nil {
@@ -60,6 +63,7 @@ func ReportAttempted(r Report) bool {
 }
 
 func normalizeReport(r *Report) {
+	moveDatacenterWarnings(r)
 	if r.Sources == nil {
 		r.Sources = map[string]string{}
 	}

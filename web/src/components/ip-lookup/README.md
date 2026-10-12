@@ -195,7 +195,7 @@ queued RPKI probe validated the real covering prefixes for all three addresses.
 
 ## Background combined report presentation
 
-`useSharedIPProgress.ts` retrieves identity-free exact-IP work on entry, polls every five visible seconds and resumes immediately after returning. `IPPortProbes.vue` shows per-port coverage, suspected/confirmed evidence and long observation milestones; `IPProxyEvidence.vue` displays administrator source names and compact coverage rows; `IPSubnetGrid.vue` renders 255 neighboring blocks with touch/keyboard details and an independent requested-IP indicator. Completed reports provide all three projections without extra fresh requests. Latitude/longitude remain in map inputs and API data but no longer appear as text facts.
+`useSharedIPProgress.ts` retrieves identity-free exact-IP work on entry, polls every five visible seconds and resumes immediately after returning. `IPRefusals.vue` shows observed or suspected ports as warnings and confirmed proxy evidence as failures; proxy inventory details are confined to administration; `IPSubnetGrid.vue` renders 255 neighboring blocks with touch/keyboard details and an independent requested-IP indicator. Completed reports provide all three projections without extra fresh requests. Latitude/longitude remain in map inputs and API data but no longer appear as text facts.
 
 ## Shodan findings
 
@@ -218,6 +218,14 @@ the final item, long identifiers wrapped without horizontal overflow, and consol
 and network checks were clear. These browser reports use constructed evidence;
 backend parser/verdict/persistence regressions run in hosted CI.
 
-`IPLiveASNSection.vue` groups ASN enrichment and RPKI, preserving RPKI when enrichment is unavailable. `IPProxySourceDetails.vue` renders safe URLs, timestamps, counts and failure diagnostics shared by reports and admin tests. Inventories follow MaxMind user type; the page owns the final subnet section. Port probes use one/two/three columns with expanded task/DNS evidence. Live source notes show availability without disclosure clicks. Optional legacy evidence remains absent until refreshed. English and Chinese locale keys own all labels.
+`IPLiveASNSection.vue` groups ASN enrichment and RPKI, preserving RPKI when enrichment is unavailable. Source-cache diagnostics stay in administration; the page owns the final subnet section. Port probes omit task, timing and DNS procedure details. Live source notes show availability without disclosure clicks. Optional legacy evidence remains absent until refreshed. English and Chinese locale keys own all labels.
 
 On 2026-10-12, Chrome DevTools MCP reviewed 320/390px mobile and 1280px desktop fixtures: aligned header, expanded evidence, Web server/pass, unavailable Trojan completion, ASN/RPKI fallback, final single subnet section, loading/empty/error/progress, English/Chinese, and IPv6 wrapping. No reviewed console errors or document/request failures appeared. Browser evidence uses constructed data; backend regressions run in hosted CI.
+
+## Compact suitability presentation
+
+`IPLookupReport.vue` displays backend Perfect/Excellent/Good/Average/Poor/Incomplete ratings and uses `IPRefusals.vue` for separate datacenter warnings. Proxy source names appear only in confirmed match reasons. `probePresentation.ts` derives localized observed/suspected port warnings for the existing evidence component, removes closed/unavailable-only ports and coalesces repeated profile evidence; `probePresentation.test.ts` covers these boundaries in hosted CI. `IPLookupProgress.vue` retains generic phase progress without individual probe procedures. `IPASNDetails.vue` places RPKI beside inferred upstreams, while `IPLiveASNSection.vue` retains the missing-ASN fallback. `IPBGPTopology.vue` clips every node label using component-unique SVG definitions without changing graph controls or accessible full names. Shodan hides empty fields and retains every populated value; `IPTransferHistory.vue` sorts newest first and displays five compact source-to-recipient rows per page. All wording uses existing English/Chinese locale domains and dark-theme tokens.
+
+Observed/suspected services appear in the warning area alongside datacenter evidence; there is no separate port-probe display. Confirmed service evidence remains a blocking refusal.
+
+Chrome DevTools MCP reviewed the revised warning layout at 390px mobile and 1280px desktop on 2026-10-12: all six rating labels, source-name isolation, observed/TCP warnings, generic progress, RPKI beside upstreams, clipped long graph labels and focused routes, five-row transfer pagination, empty/error/loading views, all 300 CPE entries, and English/Chinese text. Reviewed console and document/map request results were clear. Evidence is constructed; backend policy and concurrency tests run only in hosted CI.

@@ -14,6 +14,7 @@ import IPLookupAudit from './IPLookupAudit.vue'
 import { installLiveIPAudit } from './ip-lookup-live-audit'
 import { installEnhancedIPAudit } from './ip-lookup-enhanced-audit'
 import { decorateShodanAudit } from './ip-lookup-shodan-audit'
+import { decorateRatingAudit } from './ip-lookup-rating-audit'
 
 const params = new URLSearchParams(location.search)
 const enhancedAudit = installEnhancedIPAudit(params)
@@ -90,6 +91,7 @@ function makeReport(ip: string): IPLookupReport {
   if (params.has('many-refusals')) { report.verdict = 'unsuitable'; report.refusals = [{ kind: 'proxy', source: 'scamalytics:ip2proxy', value: 'Residential proxy provider with a long network name and multiple services' }, { kind: 'fraud_score', source: 'scamalytics', value: 73 }, { kind: 'vpn', source: 'ipapi', value: 'Commercial VPN organization and exit infrastructure' }, { kind: 'user_count', source: 'maxmind', value: 14 }] }
   enhancedAudit.decorate(report)
   decorateShodanAudit(report, params)
+  decorateRatingAudit(report, params)
   return report
 }
 async function pause() {

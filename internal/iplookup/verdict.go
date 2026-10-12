@@ -7,7 +7,7 @@ import (
 
 // NewReport reserves the configured stages without storing provider payloads.
 func NewReport(id, ip string, c Config) Report {
-	r := Report{ID: id, IP: ip, Status: "processing", Verdict: "inconclusive", Reasons: []string{}, Sources: map[string]string{}, Databases: []Database{}, Refusals: []Refusal{}, PolicyVersion: Version, ParserVersion: Version, Checkpoint: newCheckpoint()}
+	r := Report{ID: id, IP: ip, Status: "processing", Verdict: "inconclusive", Reasons: []string{}, Sources: map[string]string{}, Databases: []Database{}, Refusals: []Refusal{}, PolicyVersion: RatingPolicyVersion, ParserVersion: Version, Checkpoint: newCheckpoint()}
 	r.Checkpoint.RPKI = &Stage{ID: "rpki", Status: "queued"}
 	for _, p := range c.Providers {
 		status := "disabled"
@@ -77,7 +77,7 @@ func Aggregate(r Report, now time.Time) Report {
 			r.Status = "partial"
 			r.Reasons = append(r.Reasons, "incomplete_coverage")
 		}
-		eligible := r.Facts.NetworkType == "residential" || r.Facts.NetworkType == "mobile"
+		eligible := eligibleNetwork(r)
 		if !eligible {
 			r.Reasons = append(r.Reasons, "residential_unknown")
 		}
@@ -88,6 +88,7 @@ func Aggregate(r Report, now time.Time) Report {
 	// The checkpoint survives aggregation so background repair of partial
 	// reports can resume folding exactly where the original run stopped.
 	r.Providers = nil
+	updateRating(&r)
 	return r
 }
 
@@ -111,6 +112,7 @@ func applyProvider(r *Report, p ProviderResult, c Config) {
 		state.Votes[kind] = append(state.Votes[kind], source(p, "networkType"))
 	}
 	r.Refusals = append(r.Refusals, providerRefusals(p)...)
+	r.Warnings = appendWarning(r.Warnings, providerWarnings(p)...)
 	if p.ID == "maxmind" {
 		r.MaxMind = p.MaxMind
 	}

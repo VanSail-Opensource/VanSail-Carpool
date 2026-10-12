@@ -4,8 +4,7 @@ import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
 import IPRefusals from './IPRefusals.vue'
-import IPProxyEvidence from './IPProxyEvidence.vue'
-import IPPortProbes from './IPPortProbes.vue'
+import { portWarnings } from './probePresentation'
 import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
@@ -13,28 +12,29 @@ import { ipLocationMap } from './map'
 const props = defineProps<{ report: IPLookupReport; requestedIp: string; cacheMatch: 'none' | 'exact' | 'subnet'; check?: IPLookupCheck | null }>()
 const rows = computed(() => reportRows(props.report))
 const hasMap = computed(() => !!ipLocationMap(props.report.facts.latitude, props.report.facts.longitude))
+const rating = computed(() => props.report.rating ?? (props.report.refusals.some(item => item.kind !== 'datacenter') ? 'poor' : 'incomplete'))
+const warnings = computed(() => [...(props.report.warnings ?? []), ...portWarnings(props.report.ports ?? [])])
 const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circle' : status === 'error' || status === 'partial' ? 'i-ph-warning-circle' : 'i-ph-minus-circle'
 </script>
 
 <template>
   <section class="lookup-report" aria-live="polite">
     <header class="report-heading">
-      <div><code>{{ requestedIp }}</code><h2 :class="`verdict-${report.verdict}`"><UIcon :name="report.verdict === 'suitable' ? 'i-ph-check-circle' : report.verdict === 'unsuitable' ? 'i-ph-x-circle' : 'i-ph-question'" aria-hidden="true" />{{ $t(`ipLookup.verdicts.${report.verdict}`) }}</h2></div>
+      <div><code>{{ requestedIp }}</code><h2 :class="`rating-${rating}`"><UIcon :name="rating === 'poor' ? 'i-ph-x-circle' : rating === 'incomplete' ? 'i-ph-question' : rating === 'average' ? 'i-ph-warning-circle' : 'i-ph-check-circle'" aria-hidden="true" />{{ $t(`ipLookup.ratings.${rating}`) }}</h2></div>
       <span class="report-cache">{{ cacheMatch !== 'none' ? $t('ipLookup.cached') : $t('ipLookup.fresh') }}</span>
     </header>
     <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
     <IPRefusals :refusals="report.refusals" />
+    <IPRefusals :refusals="warnings" warning />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">
       <section class="report-quality">
         <h3>{{ $t('ipLookup.qualityHeading') }}</h3>
         <dl v-if="rows.length" class="report-facts">
           <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>
         </dl>
-        <IPProxyEvidence v-if="report.proxy" :result="report.proxy" />
       </section>
       <IPLocationMap :latitude="report.facts.latitude" :longitude="report.facts.longitude" />
     </div>
-    <IPPortProbes v-if="report.ports?.length" :ports="report.ports" :source-ip="report.ip" />
     <div class="report-databases" :aria-label="$t('ipLookup.providerHeading')">
       <span v-for="database in report.databases" :key="database.id" :title="$t(`ipLookup.statuses.${database.status}`)" :class="`database-${database.status}`"><UIcon :name="databaseIcon(database.status)" aria-hidden="true" />{{ providerName(database.id) }}<small>{{ $t(`ipLookup.statuses.${database.status}`) }}</small></span>
     </div>
@@ -56,8 +56,9 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
 .report-quality h3 { margin: 0 0 0.4rem; font-size: 0.85rem; }
 .report-cache { white-space: nowrap; }
 .report-heading h2 { display: flex; align-items: center; gap: 0.3rem; margin: 0; font-size: 0.9rem; }
-.verdict-unsuitable { color: var(--ui-error); }
-.verdict-suitable { color: var(--ui-success); }
+.rating-poor { color: var(--ui-error); }
+.rating-perfect, .rating-excellent, .rating-good { color: var(--ui-success); }
+.rating-average, .rating-incomplete { color: var(--warning); }
 .report-note { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0; }
 .report-content { display: grid; gap: 1rem; min-width: 0; }
 .report-facts { display: grid; align-content: start; margin: 0; }

@@ -1,21 +1,18 @@
 {
   "ipLookup": {
-    "backgroundReminder": "检查将在后台继续。你可以稍后返回，输入同一 IP 查看进度。部分探测阶段最长等待 605 秒。",
+    "backgroundReminder": "检查将在后台继续。稍后输入此 IP 即可查看进度。",
     "progressUnavailable": "暂时无法读取进度，将自动重试。读取检查状态前无法重复发起检查。",
-    "portHeading": "端口探测",
     "proxyHeading": "代理数据库",
     "noProxyMatch": "未匹配代理记录",
     "proxyIncomplete": "代理数据库覆盖不完整",
     "proxyCoverage": "来源覆盖",
     "probeCoverage": "探测覆盖",
-    "probeElapsed": "已等待 {seconds} 秒",
-    "probeMilestone": "观察节点：{seconds} 秒",
     "subnetHeading": "/24 检查",
     "requestedAddress": "查询 IP",
     "usedQuotaCount": "已使用 {count} 次免费额度",
     "refreshIncluded": "刷新 · {count} 次免费额度",
     "proxySettings": "代理来源与探测",
-    "proxySettingsHelp": "完整获取成功的代理列表在内存中缓存 12 小时。完整代理源测试和端口探测在后台运行。",
+    "proxySettingsHelp": "已启用来源在启动时及每 6 小时自动刷新。单独刷新来源不会启动 IP 检查。",
     "sourceEnabled": "启用",
     "sourceName": "来源名称",
     "sourceURL": "来源链接",
@@ -48,7 +45,8 @@
       "shadowsocks": "Shadowsocks",
       "trojan": "Trojan",
       "reality": "Reality",
-      "web_server": "网页服务器"
+      "web_server": "网页服务器",
+      "tcp": "TCP"
     },
     "confidence": {
       "confirmed": "已确认服务",
@@ -65,7 +63,8 @@
       "error": "不可用",
       "skipped": "已跳过",
       "unavailable": "不可用",
-      "closed": "关闭"
+      "closed": "关闭",
+      "disabled": "未启用"
     },
     "subnetStates": {
       "clean": "未发现风险",
@@ -96,40 +95,24 @@
       "ipv6": "IPv6 /64 滥用报告，不逐个枚举地址。"
     },
     "sources": {
-      "proxy_lists": "代理数据库",
+      "proxy_lists": "代理列表",
       "socks4": "SOCKS4 探测",
       "socks5": "SOCKS5 探测",
       "http": "HTTP 代理探测"
     },
-    "probeEvidence": {
-      "authentication_required": "需要认证",
-      "no_authentication": "无需认证",
-      "protocol_response": "协议响应",
-      "dns_unavailable": "DNS 覆盖不完整",
-      "feasible_tls_dns_mismatch": "TLS 条件符合，域名 DNS 不包含此 IP",
-      "length_dependent_close": "连接关闭与请求长度相关",
-      "alpn_http_mismatch": "ALPN 与 HTTP 响应不匹配",
-      "close_30_seconds": "约 30 秒后关闭连接",
-      "overbuffer_peer_close": "重复请求头期间远端关闭连接",
-      "trojan_short_timing": "150 秒观察",
-      "trojan_incomplete_timing": "完整 605 秒观察",
-      "trojan_overbuffer_timing": "重复请求头观察",
-      "dns_matches_ip": "域名 DNS 包含此 IP",
-      "dns_no_address": "无可解析到公网地址的具体域名"
-    },
     "refusals": {
-      "proxy_list": "匹配代理数据库",
+      "proxy_list": "检测到代理",
       "active_proxy": "发现代理服务",
       "shodan_tag": "Shodan 检测到标签",
-      "shodan_vuln": "Shodan 报告了漏洞"
+      "shodan_vuln": "Shodan 报告了漏洞",
+      "port_observation": "观察到或疑似的服务"
     },
     "qualityHeading": "IP 质量",
-    "testSource": "测试",
-    "sourceSaveFirst": "请先保存代理源或 DNS 修改，再进行测试。",
+    "sourceSaveFirst": "刷新前请先保存来源或 DNS 更改。",
     "inventoryIPs": "{count} 个独立 IP",
     "inventoryProgress": "已处理 {done}/{total} 个端点",
     "inventorySkipped": "{count} 个无公网 IP",
-    "inventoryDNSFailed": "{count} 个 DNS 失败",
+    "inventoryDNSFailed": "已跳过 {count} 个 DNS 失败域名",
     "probeResults": {
       "detected": "已检测到",
       "not_detected": "未检测到",
@@ -153,8 +136,24 @@
       "IP_PROXY_EMPTY": "未找到支持的端点。",
       "IP_PROXY_LIMIT": "代理列表超过 IP 数量限制。",
       "IP_DNS_UNAVAILABLE": "更换 DNS 服务器后，部分端点仍无法解析。",
-      "IP_PROXY_INTERRUPTED": "测试已中断或达到时间限制。",
+      "IP_PROXY_INTERRUPTED": "刷新已中断或达到时间限制。",
       "IP_PROXY_SOURCE_NOT_FOUND": "此代理源或测试结果已不可用。"
-    }
+    },
+    "refreshSource": "刷新缓存",
+    "retrySource": "重试",
+    "cacheStale": "覆盖不完整",
+    "inventoryTotal": "已启用来源共 {count} 个唯一 IP",
+    "sourceUpdated": "更新于 {date}",
+    "sourceNextRefresh": "下次刷新 {date}",
+    "ratings": {
+      "perfect": "完美",
+      "excellent": "优秀",
+      "good": "良好",
+      "average": "一般",
+      "poor": "较差",
+      "incomplete": "检查不完整"
+    },
+    "warningHeading": "警告",
+    "portWarning": "端口 {port}：{confidence}"
   }
 }

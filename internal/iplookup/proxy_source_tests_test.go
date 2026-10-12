@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestSavedDisabledSourceFullTestIsEphemeralAndSerialized(t *testing.T) {
+func TestSavedDisabledSourceRefreshIsSharedAndDeduplicated(t *testing.T) {
 	s := diagnosticService(t)
 	c := DefaultConfig()
 	c.ProxySources = []ProxySource{{ID: "saved", Name: "Saved", URL: "https://example.net/saved", Enabled: false}}
@@ -42,8 +42,8 @@ func TestSavedDisabledSourceFullTestIsEphemeralAndSerialized(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("test did not enter existing queue")
 	}
-	if _, err := s.TestSource(context.Background(), "saved"); ErrorCode(err) != "IP_LOOKUP_BUSY" {
-		t.Fatal("parallel source test admitted")
+	if joined, err := s.TestSource(context.Background(), "saved"); err != nil || joined.ID != job.ID {
+		t.Fatal("parallel refresh did not join the existing job")
 	}
 	close(release)
 	deadline := time.After(2 * time.Second)
@@ -58,8 +58,9 @@ func TestSavedDisabledSourceFullTestIsEphemeralAndSerialized(t *testing.T) {
 			if result.Result.Count != 2 || result.Result.Processed != 2 || result.Result.Status != "success" {
 				t.Fatalf("incomplete full test: %+v", result)
 			}
-			if len(s.pools) != 0 {
-				t.Fatal("test populated shared inventory cache")
+			status, err := s.SourcesStatus(context.Background())
+			if err != nil || status.Sources[0].Count != 2 || status.UniqueIPs != 0 {
+				t.Fatal("disabled-source cache was not retained or entered the active pool")
 			}
 			break
 		}

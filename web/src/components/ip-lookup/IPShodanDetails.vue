@@ -5,29 +5,30 @@ import LiveSourceNote from './LiveSourceNote.vue'
 
 const props = defineProps<{ result: IPLookupLiveDetails['shodan'] }>()
 const fields = ['hostnames', 'ports', 'tags', 'vulns', 'cpes'] as const
-const rows = computed(() => fields.map(key => ({ key, items: props.result[key] ?? [], detected: key === 'tags' || key === 'vulns' })))
+const rows = computed(() => fields.map(key => ({ key, items: props.result[key] ?? [], detected: key === 'tags' || key === 'vulns' })).filter(row => row.items.length > 0))
 </script>
 
 <template>
   <section class="shodan-details">
     <h3 class="shodan-title">{{ $t('ipLookupLive.shodanTitle') }}</h3>
-    <dl class="shodan-facts">
+    <dl v-if="rows.length" class="shodan-facts">
       <div v-for="row in rows" :key="row.key" :class="{ 'shodan-cpes': row.key === 'cpes', 'shodan-detected': row.detected && row.items.length > 0 }">
         <dt>{{ $t(`ipLookupLive.shodanFields.${row.key}`) }}</dt>
         <dd>
           <ul v-if="row.items.length" class="shodan-items"><li v-for="(item, index) in row.items" :key="index"><code>{{ item }}</code></li></ul>
-          <span v-else>{{ $t('ipLookupLive.status.empty') }}</span>
         </dd>
       </div>
     </dl>
-    <LiveSourceNote :meta="result" />
-    <details class="shodan-about"><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.shodanContext') }}</p></details>
+    <LiveSourceNote v-if="rows.length" :meta="result" />
+    <p v-else class="shodan-empty">{{ $t(`ipLookupLive.status.${result.status === 'success' ? 'empty' : result.status}`) }}</p>
+    <details v-if="rows.length" class="shodan-about"><summary>{{ $t('ipLookupLive.about') }}</summary><p>{{ $t('ipLookupLive.shodanContext') }}</p></details>
   </section>
 </template>
 
 <style scoped>
 .shodan-details { min-width: 0; padding-block: 1rem; border-top: 1px solid var(--line); }
 .shodan-title { font-size: 1rem; margin: 0; }
+.shodan-empty { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0; }
 .shodan-facts { display: grid; gap: 0.9rem; margin-block: 0.75rem; }
 .shodan-facts > div { min-width: 0; }
 .shodan-facts dt, .shodan-about p { font-size: 0.78rem; color: var(--text-muted); }

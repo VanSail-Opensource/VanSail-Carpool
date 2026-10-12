@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestPoolCachesOnlyCompleteInventoriesForTwelveHours(t *testing.T) {
+func TestPoolIgnoresEndpointDNSFailuresAndCachesForSixHours(t *testing.T) {
 	for _, complete := range []bool{true, false} {
 		t.Run(map[bool]string{true: "complete", false: "partial"}[complete], func(t *testing.T) {
 			s := diagnosticService(t)
@@ -28,8 +28,11 @@ func TestPoolCachesOnlyCompleteInventoriesForTwelveHours(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if p.complete != complete || time.Until(p.expires) < 12*time.Hour-time.Minute {
+			if !p.complete || time.Until(p.expires) < 6*time.Hour-time.Minute {
 				t.Fatalf("pool: %+v", p)
+			}
+			if !complete && (p.sources[0].Skipped != 1 || p.sources[0].DNSFailed != 1 || p.sources[0].ErrorCode != "") {
+				t.Fatal("DNS failures were not ignored as skipped endpoints")
 			}
 			if p.sources[0].URL != "https://example.net/list" {
 				t.Fatal("query secret exposed")
@@ -37,10 +40,7 @@ func TestPoolCachesOnlyCompleteInventoriesForTwelveHours(t *testing.T) {
 			if _, err := s.pool(context.Background(), c); err != nil {
 				t.Fatal(err)
 			}
-			want := 2
-			if complete {
-				want = 1
-			}
+			want := 1
 			if calls != want {
 				t.Fatalf("downloads=%d want=%d", calls, want)
 			}

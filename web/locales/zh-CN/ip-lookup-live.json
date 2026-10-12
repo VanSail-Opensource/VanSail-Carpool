@@ -141,8 +141,8 @@
     "live": "网络数据",
     "transfers": "转移历史",
     "rpki": "RPKI 验证",
-    "proxy": "代理数据库",
-    "probes": "端口探测",
+    "proxy": "代理检查",
+    "probes": "服务检查",
     "subnet": "子网检查"
   }
 }

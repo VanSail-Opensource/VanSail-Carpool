@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { IPLookupReport } from '@/api/ipLookup'
 import LiveSourceNote from './LiveSourceNote.vue'
-defineProps<{ result?: IPLookupReport['rpki'] }>()
+defineProps<{ result?: IPLookupReport['rpki']; compact?: boolean }>()
 </script>
 
 <template>
-  <section class="rpki-status">
+  <section class="rpki-status" :class="{ 'rpki-inline': compact }">
     <h3>{{ $t('ipLookupLive.rpki.title') }}</h3>
     <p v-if="!result">{{ $t('ipLookupLive.refreshRequired') }}</p>
     <template v-else>
@@ -19,6 +19,7 @@ defineProps<{ result?: IPLookupReport['rpki'] }>()
 
 <style scoped>
 .rpki-status { border-top: 1px solid var(--line); padding-top: 0.6rem; font-size: 0.78rem; }
+.rpki-inline { border-top: 0; padding-top: 0; }
 .rpki-status h3 { font-size: 0.85rem; margin: 0 0 0.35rem; }
 .rpki-status > p, .rpki-status span { color: var(--text-muted); }
 .rpki-status dl { margin: 0.3rem 0; display: grid; gap: 0; }

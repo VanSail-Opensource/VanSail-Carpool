@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const proxyInventoryTTL = 12 * time.Hour
+const proxyInventoryTTL = 6 * time.Hour
 
 func safeSourceURL(raw string) string {
 	u, err := url.Parse(raw)
@@ -97,15 +97,15 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 				r.Processed++
 				if resolved.status == "error" {
 					r.DNSFailed++
-					r.Status = "partial"
-					if r.ErrorCode == "" {
-						r.ErrorCode = "IP_DNS_UNAVAILABLE"
-					}
 				}
-				if resolved.status == "no_address" {
+				if resolved.status == "error" || resolved.status == "no_address" {
 					r.Skipped++
 				}
 				for _, ip := range resolved.ips {
+					if len(ips) >= 1000000 && !ips[ip] {
+						r.Status, r.ErrorCode = "partial", "IP_PROXY_LIMIT"
+						continue
+					}
 					ips[ip] = true
 				}
 				r.Count = len(ips)

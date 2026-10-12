@@ -18,6 +18,7 @@ func (s *Server) mountIPLookup(r chi.Router) {
 	r.Get("/api/v1/ip-lookup/checks/{id}", s.ipLookupCheck)
 	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup", s.adminIPLookupSettings)
 	r.With(s.requireAdmin).Put("/api/v1/admin/ip-lookup", s.adminSaveIPLookupSettings)
+	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup/proxy-sources", s.adminProxySources)
 	r.With(s.requireAdmin).Post("/api/v1/admin/ip-lookup/proxy-sources/{id}/test", s.adminTestProxySource)
 	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup/proxy-source-tests/{testId}", s.adminProxySourceTest)
 }
@@ -120,6 +121,10 @@ func (s *Server) adminSaveIPLookupSettings(w http.ResponseWriter, r *http.Reques
 	if err := s.deps.Settings.PutIPLookupSettings(r.Context(), currentUser(r).ID, input); err != nil {
 		s.ipLookupError(w, r, err)
 		return
+	}
+	if s.deps.IPLookup != nil && s.deps.IPLookup.Enhanced != nil {
+		// The settings commit succeeded; the lifecycle also retries reconciliation.
+		_ = s.deps.IPLookup.Enhanced.ReconcileSources(r.Context())
 	}
 	s.adminIPLookupSettings(w, r)
 }

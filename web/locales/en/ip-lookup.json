@@ -123,7 +123,7 @@
     "checkPaid": "Check · {fee}",
     "refreshPaid": "Refresh · {fee}",
     "processing": "Checking…",
-    "empty": "Enter an IP",
+    "empty": "Check whether your IP is suitable for AI tools.",
     "billingNote": "Cache free",
     "cached": "Cached",
     "fresh": "Fresh",
