@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -101,10 +102,18 @@ func TestIPLookupRepairsYieldToFreshChecksWithoutBurningAttempts(t *testing.T) {
 		t.Run(kind, func(t *testing.T) {
 			ctx := context.Background()
 			store, service, user, _, now := ipLookupFixture(t, 0)
+			var retry any = iplookup.ReportRetryPayload{ReportID: "frozen-report", Attempt: 1}
+			if kind == iplookup.LiveRetryOutboxKind {
+				retry = iplookup.LiveRetryPayload{SnapshotID: "frozen-snapshot", Attempt: 1}
+			}
+			payload, err := json.Marshal(retry)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if _, err := store.DB().ExecContext(ctx, `DELETE FROM outbox_jobs`); err != nil {
 				t.Fatal(err)
 			}
-			if err := store.EnqueueOutbox(ctx, kind, `{}`, now); err != nil {
+			if err := store.EnqueueOutbox(ctx, kind, string(payload), now); err != nil {
 				t.Fatal(err)
 			}
 			repair, err := store.ClaimOutboxJob(ctx, now.Add(time.Second))
@@ -124,7 +133,7 @@ func TestIPLookupRepairsYieldToFreshChecksWithoutBurningAttempts(t *testing.T) {
 			if _, err := store.DB().ExecContext(ctx, `DELETE FROM outbox_jobs`); err != nil {
 				t.Fatal(err)
 			}
-			if err := store.EnqueueOutbox(ctx, kind, `{}`, now); err != nil {
+			if err := store.EnqueueOutbox(ctx, kind, string(payload), now); err != nil {
 				t.Fatal(err)
 			}
 			if job, err := store.ClaimOutboxJob(ctx, now.Add(time.Second)); err != nil || job != nil {
