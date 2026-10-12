@@ -22,7 +22,7 @@ func TestProviderVariantsAndRiskScope(t *testing.T) {
 		{"network ratios contextual", "ipapi", `{"ip":"150.249.241.62","is_abuser":false,"is_datacenter":false,"is_vpn":false,"is_proxy":false,"is_tor":false,"company":{"abuser_score":"0.0002 (Very Low)"},"asn":{"abuser_score":"0.0003 (Very Low)"}}`, false, true, false},
 		{"truthy VPN", "ipapi", `{"ip":"150.249.241.62","is_abuser":false,"is_datacenter":false,"is_vpn":"detected","is_proxy":false,"is_tor":false}`, true, true, false},
 		{"missing keyed signals", "ipapi", `{"ip":"150.249.241.62","company":{"name":"ISP"}}`, false, false, false},
-		{"new anonymizer", "maxmind", `{"traits":{"ip_address":"150.249.241.62","user_type":"residential"},"anonymizer":{"is_hosting_provider":true}}`, true, true, false},
+		{"new anonymizer hosting warning", "maxmind", `{"traits":{"ip_address":"150.249.241.62","user_type":"residential"},"anonymizer":{"is_hosting_provider":true}}`, false, true, false},
 		{"legacy anonymizer", "maxmind", `{"traits":{"ip_address":"150.249.241.62","is_anonymous_vpn":true}}`, true, true, false},
 		{"true-only omission", "maxmind", `{"traits":{"ip_address":"150.249.241.62","user_type":"residential"}}`, false, true, false},
 		{"malformed anonymizer", "maxmind", `{"traits":{"ip_address":"150.249.241.62","user_type":"residential"},"anonymizer":{"is_hosting_provider":"unknown"}}`, false, false, false},
@@ -47,6 +47,9 @@ func TestProviderVariantsAndRiskScope(t *testing.T) {
 			}
 			if !tc.failed && ((len(RiskReasons(p)) > 0) != tc.wantRisk || p.Complete != tc.complete) {
 				t.Fatalf("result=%+v, want risk=%v complete=%v", p, tc.wantRisk, tc.complete)
+			}
+			if !tc.failed && p.Signals.Datacenter != nil && *p.Signals.Datacenter && len(providerWarnings(p)) != 1 {
+				t.Fatal("confirmed hosting evidence lost its warning")
 			}
 		})
 	}
