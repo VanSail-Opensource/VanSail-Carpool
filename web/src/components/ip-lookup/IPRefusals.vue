@@ -7,7 +7,7 @@ const groups = computed(() => refusalGroups(props.refusals))
 
 <template>
   <div v-if="groups.length" class="refusals" :class="{ warnings: warning }" :aria-label="$t(warning ? 'ipLookup.warningHeading' : 'ipLookup.refusalHeading')">
-    <details v-for="group in groups" :key="group.kind" :open="group.kind === 'shodan_tag' || group.kind === 'shodan_vuln' || group.kind === 'port_observation'">
+    <details v-for="group in groups" :key="group.kind" :open="group.kind === 'shodan_tag' || group.kind === 'shodan_vuln'">
       <summary><UIcon :name="group.icon" aria-hidden="true" /><span>{{ $t(`ipLookup.refusals.${group.kind}`) }}</span><small v-if="group.items.length > 1">{{ group.items.length }}</small><UIcon name="i-ph-caret-down" aria-hidden="true" /></summary>
       <ul><li v-for="(item, index) in group.items" :key="index"><strong>{{ item.value === true ? $t('ipLookup.detected') : item.value === false ? $t('ipLookup.notDetected') : item.value }}</strong><span>{{ item.source }}</span></li></ul>
     </details>

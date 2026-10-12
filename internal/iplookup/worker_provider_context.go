@@ -1,13 +1,10 @@
 package iplookup
 
-import (
-	"context"
-	"time"
-)
+import "time"
 
-func (w *Worker) recordEnhancedContext(ctx context.Context, r *Report, c Config, result ProviderResult, persist func(Report) error) error {
+func (w *Worker) recordEnhancedContext(r *Report, result ProviderResult) {
 	if w.Enhanced == nil {
-		return nil
+		return
 	}
 
 	if r.Checkpoint.Enhanced == nil {
@@ -30,21 +27,4 @@ func (w *Worker) recordEnhancedContext(ctx context.Context, r *Report, c Config,
 		}
 		r.Checkpoint.Enhanced.Scores = &scores
 	}
-	if r.Proxy == nil && len(r.Facts.Country) == 2 {
-		r.Checkpoint.Enhanced.Phase = "proxy"
-		if persist != nil {
-			if err := persist(*r); err != nil {
-				return err
-			}
-		}
-		pool, err := w.Enhanced.pool(ctx, c)
-		if err != nil {
-			return err
-		}
-		r.Proxy = pool.assessment(r.IP)
-		applyProxyRefusal(r)
-		r.Checkpoint.Enhanced.Phase = "checking"
-	}
-
-	return nil
 }

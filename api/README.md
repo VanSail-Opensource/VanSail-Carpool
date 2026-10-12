@@ -9,6 +9,7 @@
 - `components/parameters.yaml` contains reusable path, query, and idempotency parameters.
 - `components/responses.yaml` contains reusable API error responses.
 - `components/schemas/` contains bounded definitions grouped into shards with a schema index.
+- IP Lookup refusal kinds include inventory pool/database/abuse categories and `cloudflare_cdn`; confirmed services share one comma-separated protocol source per port. Public probe evidence preserves its existing schema, and private inventory checkpoints never enter the API response.
 - Automatic renewal is represented by one owner-only `GET`/`PUT /api/v1/purchases/{id}/auto-renewal` resource. It always quotes and schedules one next cycle; manual multi-term renewal is not part of the public contract.
 - Account-wide automatic traffic reset is represented by `GET`/`PUT /api/v1/me/traffic-reset-automation`; the update body contains only `enabled`.
 - Member-facing display currency is represented by `GET`/`PUT /api/v1/me/display-currency`; CNY and USD use server-managed TXB-per-currency rates only for presentation.

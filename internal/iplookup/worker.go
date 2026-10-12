@@ -109,6 +109,11 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 // receives the report after each durable transition; repair passes nil-free
 // persistence against the frozen cache row instead of live progress.
 func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persist func(Report) error) error {
+	if w.Enhanced != nil {
+		if err := w.runInventory(ctx, r, c, persist); err != nil {
+			return err
+		}
+	}
 	reconcilePendingStages(r, c)
 	for index := range r.Checkpoint.Stages {
 		p := &r.Checkpoint.Stages[index]
@@ -153,9 +158,7 @@ func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persi
 			}
 		}
 		RecordProvider(r, result, c)
-		if err := w.recordEnhancedContext(ctx, r, c, result, persist); err != nil {
-			return err
-		}
+		w.recordEnhancedContext(r, result)
 		if persist != nil {
 			if err := persist(*r); err != nil {
 				return err

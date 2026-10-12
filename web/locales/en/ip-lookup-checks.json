@@ -46,6 +46,7 @@
       "trojan": "Trojan",
       "reality": "Reality",
       "web_server": "Web server",
+      "cloudflare": "Cloudflare CDN",
       "tcp": "TCP"
     },
     "confidence": {
@@ -98,11 +99,13 @@
       "proxy_lists": "IP lists",
       "socks4": "SOCKS4 probe",
       "socks5": "SOCKS5 probe",
-      "http": "HTTP proxy probe"
+      "http": "HTTP proxy probe",
+      "cloudflare": "Cloudflare CDN"
     },
     "refusals": {
       "proxy_list": "Proxy Pool",
       "active_proxy": "Proxy service detected",
+      "cloudflare_cdn": "Cloudflare CDN detected",
       "shodan_tag": "Shodan tags detected",
       "shodan_vuln": "Shodan vulnerabilities reported",
       "port_observation": "Observed or suspected services",
@@ -157,6 +160,8 @@
     },
     "warningHeading": "Warnings",
     "portWarning": "Port {port}: {confidence}",
+    "portLabel": "Port {port}",
+    "portService": "{protocol} ({confidence})",
     "sourceCategory": "Category",
     "sourceCategories": {
       "proxy_pool": "Proxy Pool",

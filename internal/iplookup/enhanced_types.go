@@ -85,10 +85,11 @@ type ProxySourceTest struct {
 	Result ProxySourceResult `json:"result"`
 }
 type EnhancedCheckpoint struct {
-	Phase    string          `json:"phase"`
-	LiveDone bool            `json:"liveDone"`
-	IPAPI    *ProviderResult `json:"ipapi,omitempty"`
-	Scores   *NetworkScores  `json:"scores,omitempty"`
+	InventoryDone bool            `json:"inventoryDone,omitempty"`
+	Phase         string          `json:"phase"`
+	LiveDone      bool            `json:"liveDone"`
+	IPAPI         *ProviderResult `json:"ipapi,omitempty"`
+	Scores        *NetworkScores  `json:"scores,omitempty"`
 }
 
 // SharedProgress contains no ownership, billing, credentials, or private checkpoints.

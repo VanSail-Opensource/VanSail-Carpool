@@ -37,7 +37,7 @@ func applyMeta(task *ProgressTask, meta LiveMeta) {
 		task.Status, task.ErrorCode = "error", meta.ErrorCode
 	case "partial":
 		task.Status = "partial"
-	case "unconfigured":
+	case "unconfigured", "skipped":
 		task.Status = "skipped"
 	}
 }

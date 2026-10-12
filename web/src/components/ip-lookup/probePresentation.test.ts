@@ -26,7 +26,8 @@ describe('compact port observations', () => {
       { protocol: 'trojan', confidence: 'suspected', evidence: 'two_profiles' },
       { protocol: 'socks5', confidence: 'confirmed', evidence: 'response' },
     ] }])
-    expect(warnings.map(item => item.source)).toEqual(['tls', 'trojan'])
+    expect(warnings.map(item => item.source)).toEqual(['tls:observed,trojan:suspected'])
+    expect(warnings).toHaveLength(1)
     expect(warnings.every(item => item.kind === 'port_observation')).toBe(true)
   })
 })

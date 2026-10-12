@@ -25,16 +25,15 @@ func (s *EnhancedService) probeTLS(ctx context.Context, ip string, port int, c C
 	out.tls = true
 	out.findings = []ProbeFinding{{Protocol: "tls", Confidence: "observed", Evidence: "handshake"}}
 	state := client.ConnectionState()
-	if len(state.PeerCertificates) == 0 {
-		return out
+	web := false
+	if len(state.PeerCertificates) > 0 && state.Version == tls.VersionTLS13 && state.NegotiatedProtocol == "h2" {
+		finding := s.realityDNS(ctx, ip, state.PeerCertificates[0], c)
+		out.findings = append(out.findings, finding)
+		web = finding.Protocol == "web_server"
+		if finding.Confidence == "unavailable" {
+			out.status = "error"
+		}
 	}
-	if state.Version != tls.VersionTLS13 || state.NegotiatedProtocol != "h2" {
-		return out
-	}
-	finding := s.realityDNS(ctx, ip, state.PeerCertificates[0], c)
-	out.findings = append(out.findings, finding)
-	if finding.Confidence == "unavailable" {
-		out.status = "error"
-	}
+	out.findings = append(out.findings, probeWeb(ctx, ip, port, "https", web)...)
 	return out
 }

@@ -82,6 +82,10 @@ func (s *LiveService) block(ctx context.Context, ip string, c Config) AbuseBlock
 		return result
 	}
 	result.AddressCapacity = new(big.Int).Lsh(big.NewInt(1), uint(p.Addr().BitLen()-p.Bits())).String()
+	if deferred, _ := ctx.Value(deferBlockKey{}).(bool); deferred {
+		result.Status = "skipped"
+		return result
+	}
 	key, err := s.credential(ctx, "abuseipdb", c)
 	if err != nil {
 		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_UNAVAILABLE"})

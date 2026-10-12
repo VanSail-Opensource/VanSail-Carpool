@@ -9,13 +9,13 @@ type Finding = Port['findings'][number]
 export function visibleProbePorts(ports: Port[]) {
   return ports.filter(port => port.status !== 'closed').flatMap(port => {
     const findings = port.findings.filter(finding => ['confirmed', 'suspected', 'observed'].includes(finding.confidence))
-    const seen = new Set<string>()
-    const unique = findings.filter(finding => {
-      const key = `${finding.protocol}:${finding.confidence}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+    const byProtocol = new Map<string, Finding>()
+    const rank = { observed: 1, suspected: 2, confirmed: 3 }
+    for (const finding of findings) {
+      const previous = byProtocol.get(finding.protocol)
+      if (!previous || rank[finding.confidence as keyof typeof rank] > rank[previous.confidence as keyof typeof rank]) byProtocol.set(finding.protocol, finding)
+    }
+    const unique = [...byProtocol.values()]
     const open = port.tasks.some(task => task.key === 'tcp' && task.status === 'success')
     if (!unique.length && open) unique.push({ protocol: 'tcp', confidence: 'observed', evidence: '' } as Finding)
     return unique.length ? [{ port: port.port, findings: unique }] : []
@@ -24,8 +24,11 @@ export function visibleProbePorts(ports: Port[]) {
 
 /** Port observations share the existing warning presentation with datacenters. */
 export function portWarnings(ports: Port[]): DisplayEvidence[] {
-  return visibleProbePorts(ports).flatMap(port => port.findings.filter(finding => finding.confidence !== 'confirmed').map(finding => ({
-    kind: 'port_observation', source: finding.protocol,
-    value: t('ipLookup.portWarning', { port: port.port, confidence: t(`ipLookup.confidence.${finding.confidence}`) }),
-  })))
+  return visibleProbePorts(ports).flatMap(port => {
+    const findings = port.findings.filter(finding => finding.confidence !== 'confirmed')
+    return findings.length ? [{
+      kind: 'port_observation', source: findings.map(finding => `${finding.protocol}:${finding.confidence}`).join(','),
+      value: t('ipLookup.portLabel', { port: port.port }),
+    }] : []
+  })
 }

@@ -46,7 +46,8 @@
       "trojan": "Trojan",
       "reality": "Reality",
       "web_server": "网页服务器",
-      "tcp": "TCP"
+      "tcp": "TCP",
+      "cloudflare": "Cloudflare CDN"
     },
     "confidence": {
       "confirmed": "已确认服务",
@@ -98,7 +99,8 @@
       "proxy_lists": "IP 名单",
       "socks4": "SOCKS4 探测",
       "socks5": "SOCKS5 探测",
-      "http": "HTTP 代理探测"
+      "http": "HTTP 代理探测",
+      "cloudflare": "Cloudflare CDN"
     },
     "refusals": {
       "proxy_list": "代理池",
@@ -107,7 +109,8 @@
       "shodan_vuln": "Shodan 报告了漏洞",
       "port_observation": "观察到或疑似的服务",
       "proxy_database": "代理数据库",
-      "abuse_list": "滥用名单"
+      "abuse_list": "滥用名单",
+      "cloudflare_cdn": "发现 Cloudflare CDN"
     },
     "qualityHeading": "IP 质量",
     "sourceSaveFirst": "刷新前请先保存来源或 DNS 更改。",
@@ -162,6 +165,8 @@
       "proxy_pool": "代理池",
       "proxy_database": "代理数据库",
       "abuse": "滥用名单"
-    }
+    },
+    "portLabel": "端口 {port}",
+    "portService": "{protocol}（{confidence}）"
   }
 }

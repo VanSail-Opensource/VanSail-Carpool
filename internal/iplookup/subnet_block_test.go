@@ -25,3 +25,21 @@ func TestReportedBlockRunsWithSkippedSubnetAndIsReused(t *testing.T) {
 		t.Fatalf("block gated or replayed: %+v calls=%d", block, calls.Load())
 	}
 }
+
+func TestReportedBlockCanBeDeferredUntilRefusalsAreKnown(t *testing.T) {
+	var calls atomic.Int32
+	live := liveTestService(t, "abuseipdb", func(*http.Request) (int, string) {
+		calls.Add(1)
+		return 200, `{"data":{"networkAddress":"8.8.8.0","netmask":"255.255.255.0","reportedAddress":[]}}`
+	})
+	c := Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}}
+	ctx := context.WithValue(context.Background(), deferBlockKey{}, true)
+	block := live.block(ctx, "8.8.8.8", c)
+	if block.Status != "skipped" || calls.Load() != 0 || block.AddressCapacity != "256" || liveTaskStatus("block", block).Status != "skipped" {
+		t.Fatal("deferred block executed or lost prefix capacity")
+	}
+	block = live.block(context.Background(), "8.8.8.8", c)
+	if block.Status != "success" || calls.Load() != 1 {
+		t.Fatal("passing checks could not resume the block request")
+	}
+}

@@ -37,6 +37,8 @@ func handshakeProbe(ctx context.Context, ip string, port int, kind string) probe
 			_ = response.Body.Close()
 			if response.StatusCode == 407 && response.Header.Get("Proxy-Authenticate") != "" {
 				out.findings = []ProbeFinding{{Protocol: "http", Confidence: "confirmed", Evidence: "authentication_required"}}
+			} else {
+				out.findings = probeWeb(ctx, ip, port, "http", true)
 			}
 		}
 		return out

@@ -7,8 +7,11 @@ func appendEnhancedProgress(p *Progress, r Report) {
 		return
 	}
 	e := r.Checkpoint.Enhanced
-	p.Phase = e.Phase
-	for _, key := range []string{"proxy", "live", "probes", "subnet"} {
+	if e.Phase != "checking" {
+		p.Phase = e.Phase
+	}
+	inventoryTasks := []ProgressTask{}
+	for _, key := range []string{"proxy", "subnet", "live", "probes"} {
 		status := "pending"
 		switch key {
 		case "proxy":
@@ -50,8 +53,14 @@ func appendEnhancedProgress(p *Progress, r Report) {
 		if status != "pending" && status != "active" {
 			p.Completed++
 		}
-		p.Tasks = append(p.Tasks, ProgressTask{Key: key, Status: status})
+		task := ProgressTask{Key: key, Status: status}
+		if key == "proxy" || key == "subnet" {
+			inventoryTasks = append(inventoryTasks, task)
+		} else {
+			p.Tasks = append(p.Tasks, task)
+		}
 	}
+	p.Tasks = append(inventoryTasks, p.Tasks...)
 	for _, port := range r.Ports {
 		for _, task := range port.Tasks {
 			if task.Status == "active" {
