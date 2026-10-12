@@ -63,6 +63,23 @@ func TestRatingPrecedenceAndCompleteness(t *testing.T) {
 			r.LiveDetails.Transfers = &TransferHistory{LiveMeta: LiveMeta{Status: "error"}}
 		}},
 	}
+	cases = append(cases, []struct {
+		name, want string
+		change     func(*Report)
+	}{
+		{"legacy invalid origin without refusal", "poor", func(r *Report) {
+			r.Checkpoint = nil
+			r.RPKI.Routes = []RPKIRoute{{LiveMeta: LiveMeta{Status: "success"}, ASN: 1, Validity: "invalid_asn"}}
+		}},
+		{"legacy invalid length without refusal", "poor", func(r *Report) {
+			r.Checkpoint = nil
+			r.RPKI.Routes = []RPKIRoute{{LiveMeta: LiveMeta{Status: "success"}, ASN: 1, Validity: "invalid_length"}}
+		}},
+		{"legacy provider outage", "incomplete", func(r *Report) {
+			r.Checkpoint = nil
+			r.Databases[0].Status = "error"
+		}},
+	}...)
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := ratingReport()

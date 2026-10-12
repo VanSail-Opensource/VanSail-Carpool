@@ -15,6 +15,9 @@ func businessUsage(r Report) bool {
 
 func coreQualityPassed(r Report) bool {
 	complete := r.Verdict == "suitable" && len(r.Databases) > 0
+	for _, database := range r.Databases {
+		complete = complete && database.Status == "success"
+	}
 	if state := r.Checkpoint; state != nil {
 		complete = state.Complete && state.Coverage == 31 && state.Usable > 0 && eligibleNetwork(r)
 	}
@@ -40,6 +43,14 @@ func updateRating(r *Report) {
 	if len(r.Refusals) > 0 || (r.Proxy != nil && len(r.Proxy.Matches) > 0) {
 		r.Rating = "poor"
 		return
+	}
+	if r.RPKI != nil {
+		for _, route := range r.RPKI.Routes {
+			if route.Status == "success" && (route.Validity == "invalid_asn" || route.Validity == "invalid_length") {
+				r.Rating = "poor"
+				return
+			}
+		}
 	}
 	for _, port := range r.Ports {
 		for _, finding := range port.Findings {
