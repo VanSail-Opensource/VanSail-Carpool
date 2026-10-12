@@ -3,6 +3,7 @@ package iplookup
 import (
 	"context"
 	"github.com/miekg/dns"
+	"net/netip"
 	"testing"
 	"time"
 )
@@ -59,5 +60,17 @@ func TestInventoryNoAddressIsSkippedWithoutPartialCoverage(t *testing.T) {
 	ips, result := s.collectSource(context.Background(), ProxySource{ID: "one", URL: "https://example.net/list"}, c, true, nil)
 	if result.Status != "success" || result.Skipped != 1 || result.Processed != 2 || len(ips) != 1 {
 		t.Fatalf("result %+v", result)
+	}
+}
+
+func TestPartialInventoryPrioritizesPublishedEvidenceAtLimit(t *testing.T) {
+	previous := map[netip.Addr]bool{netip.MustParseAddr("8.8.8.8"): true, netip.MustParseAddr("9.9.9.9"): true}
+	incoming := map[netip.Addr]bool{netip.MustParseAddr("1.1.1.1"): true, netip.MustParseAddr("8.8.4.4"): true, netip.MustParseAddr("1.0.0.1"): true}
+	retained := retainSourceIPs(previous, incoming, 3)
+	if len(retained) != 3 || !retained[netip.MustParseAddr("8.8.8.8")] || !retained[netip.MustParseAddr("9.9.9.9")] {
+		t.Fatal("partial refresh displaced published positives at the limit")
+	}
+	if len(previous) != 2 || len(incoming) != 3 {
+		t.Fatal("retention mutated a published or collected map")
 	}
 }

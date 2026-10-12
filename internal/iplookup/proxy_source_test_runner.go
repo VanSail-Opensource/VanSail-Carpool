@@ -52,14 +52,7 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	if b.sources[job.source.ID] == cache {
 		if result.Status != "success" {
 			// Retain positive evidence without certifying negative matches.
-			if ips == nil {
-				ips = map[netip.Addr]bool{}
-			}
-			for ip := range cache.ips {
-				if len(ips) < 1000000 {
-					ips[ip] = true
-				}
-			}
+			ips = retainSourceIPs(cache.ips, ips, 1000000)
 		}
 		cache.ips, cache.result, cache.complete = ips, result, result.Status == "success"
 		cache.result.Count = len(ips)
@@ -72,4 +65,18 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}
 	close(job.done)
 	cache.done = nil
+}
+
+func retainSourceIPs(previous, incoming map[netip.Addr]bool, limit int) map[netip.Addr]bool {
+	retained := make(map[netip.Addr]bool, len(previous))
+	// Prior published evidence wins when a partial refresh fills the limit.
+	for ip := range previous {
+		retained[ip] = true
+	}
+	for ip := range incoming {
+		if len(retained) < limit || retained[ip] {
+			retained[ip] = true
+		}
+	}
+	return retained
 }
