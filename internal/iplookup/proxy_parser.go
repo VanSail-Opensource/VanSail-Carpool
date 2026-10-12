@@ -5,7 +5,6 @@ import (
 	"net/netip"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -17,21 +16,16 @@ const maxProxyHosts = 250000
 
 var endpointPattern = regexp.MustCompile(`(?i)(?:[a-z][a-z0-9+.-]*://[^\s<>"\x60]+|\[[0-9a-f:]+\](?::[0-9]+)?|[0-9a-f:.]+/[^\s<>"\x60,;]+|(?:[a-z0-9_-]+\.)+[a-z0-9_-]+:[0-9]+|(?:[0-9]{1,3}\.){3}[0-9]{1,3})`)
 
-// ExtractProxyHosts returns canonical endpoint hosts and CIDRs without retaining secrets.
-func ExtractProxyHosts(data []byte) ([]string, error) {
+func walkInventory(data []byte, emit func(string)) error {
 	if len(data) > maxProxyBody {
-		return nil, &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
+		return &CodeError{"IP_PROXY_PARSE"}
 	}
-	hosts := map[string]bool{}
-	partial := false
+	found := 0
 	add := func(raw string) {
 		h := proxyInventoryEntry(raw)
 		if h != "" {
-			if len(hosts) >= maxProxyHosts {
-				partial = true
-				return
-			}
-			hosts[h] = true
+			found++
+			emit(h)
 		}
 	}
 	var parse func(string, int)
@@ -48,7 +42,7 @@ func ExtractProxyHosts(data []byte) ([]string, error) {
 			var value any
 			if yaml.Unmarshal([]byte(raw), &value) == nil {
 				walkProxyConfig(value, "", add)
-				if len(hosts) > 0 {
+				if found > 0 {
 					return
 				}
 			}
@@ -130,15 +124,7 @@ func ExtractProxyHosts(data []byte) ([]string, error) {
 		}
 	}
 	parse(string(data), 0)
-	out := make([]string, 0, len(hosts))
-	for h := range hosts {
-		out = append(out, h)
-	}
-	sort.Strings(out)
-	if partial {
-		return out, &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
-	}
-	return out, nil
+	return nil
 }
 
 func proxyInventoryEntry(raw string) string {

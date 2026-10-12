@@ -3,7 +3,6 @@ package iplookup
 import (
 	"context"
 	"errors"
-	"net/netip"
 	"reflect"
 	"testing"
 	"time"
@@ -60,7 +59,7 @@ func TestSubnetCIDRMembershipSkipsAddressProviders(t *testing.T) {
 	s := NewEnhancedService(nil, nil, nil)
 	c := DefaultConfig()
 	s.pools[proxyPoolKey(c)] = &proxyPool{
-		prefixes: map[netip.Prefix][]string{netip.MustParsePrefix("102.129.155.0/24"): {"ranges"}},
+		indexes: []*prefixIndex{testPrefixIndex("102.129.155.0/24")}, sources: []ProxySourceResult{{ID: "ranges", Name: "Ranges", Category: ProxyPoolCategory}},
 		complete: true,
 		expires:  time.Now().Add(time.Minute),
 	}

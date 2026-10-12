@@ -33,10 +33,12 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			if cache != nil && cache.cancel != nil {
 				cache.cancel()
 			}
-			cache = &sourceCache{source: source, key: key, result: ProxySourceResult{ID: source.ID, Name: source.Name, URL: safeSourceURL(source.URL), Status: "pending"}}
+			cache = &sourceCache{source: source, key: key, result: ProxySourceResult{ID: source.ID, Name: source.Name, Category: sourceCategory(source.Category), URL: safeSourceURL(source.URL), Status: "pending"}}
 			b.sources[source.ID] = cache
+			b.revision++
 		} else {
 			cache.source.Name, cache.result.Name = source.Name, source.Name
+			cache.source.Category, cache.result.Category = source.Category, sourceCategory(source.Category)
 		}
 		if source.Enabled && cache.done == nil && !cache.nextRefresh.After(now) {
 			_, _ = s.startSourceLocked(b, cache, c) // Retry admission failures on the next tick.
@@ -48,6 +50,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 				cache.cancel()
 			}
 			delete(b.sources, id)
+			b.revision++
 		}
 	}
 }
@@ -66,6 +69,7 @@ func (s *EnhancedService) startSourceLocked(b *sourceTestRuntime, cache *sourceC
 	ctx, cancel := context.WithCancel(b.ctx)
 	cache.jobID, cache.done, cache.cancel = id, make(chan struct{}), cancel
 	cache.result.Status, cache.result.Phase, cache.result.ErrorCode = "pending", "download", ""
+	cache.result.Category = sourceCategory(cache.source.Category)
 	test := ProxySourceTest{ID: id, Status: "queued", Result: cache.result}
 	b.entries[id] = sourceTestEntry{test: test}
 	b.work.Add(1)

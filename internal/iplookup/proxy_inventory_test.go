@@ -58,7 +58,7 @@ func TestInventoryNoAddressIsSkippedWithoutPartialCoverage(t *testing.T) {
 	c := DefaultConfig()
 	c.DNSResolvers = []string{server}
 	ips, result := s.collectSource(context.Background(), ProxySource{ID: "one", URL: "https://example.net/list"}, c, true, nil)
-	if result.Status != "success" || result.Skipped != 1 || result.Processed != 2 || len(ips) != 1 {
+	if result.Status != "success" || result.Skipped != 1 || result.Processed != 2 || ips.count() != 1 {
 		t.Fatalf("result %+v", result)
 	}
 }
@@ -66,8 +66,15 @@ func TestInventoryNoAddressIsSkippedWithoutPartialCoverage(t *testing.T) {
 func TestPartialInventoryPrioritizesPublishedEvidenceAtLimit(t *testing.T) {
 	previous := map[netip.Prefix]bool{netip.MustParsePrefix("8.8.8.8/32"): true, netip.MustParsePrefix("9.9.9.9/32"): true}
 	incoming := map[netip.Prefix]bool{netip.MustParsePrefix("1.1.1.1/32"): true, netip.MustParsePrefix("8.8.4.4/32"): true, netip.MustParsePrefix("1.0.0.1/32"): true}
-	retained := retainSourcePrefixes(previous, incoming, 3)
-	if len(retained) != 3 || !retained[netip.MustParsePrefix("8.8.8.8/32")] || !retained[netip.MustParsePrefix("9.9.9.9/32")] {
+	toIndex := func(entries map[netip.Prefix]bool) *prefixIndex {
+		builder := newPrefixIndexBuilder(0)
+		for prefix := range entries {
+			builder.add(prefix)
+		}
+		return builder.freeze()
+	}
+	retained := mergePrefixIndexes(toIndex(previous), toIndex(incoming), 3)
+	if retained.count() != 3 || !retained.contains(netip.MustParseAddr("8.8.8.8")) || !retained.contains(netip.MustParseAddr("9.9.9.9")) {
 		t.Fatal("partial refresh displaced published positives at the limit")
 	}
 	if len(previous) != 2 || len(incoming) != 3 {

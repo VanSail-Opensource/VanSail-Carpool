@@ -14,6 +14,7 @@ function normalizeRetry(settings: IPLookupAdminSettings): void {
   if (!settings.retry) settings.retry = defaultRetry()
   settings.refreshQuotaCost ??= 0
   settings.proxySources ??= []
+  settings.proxySources.forEach(source => { source.category ??= 'proxy_pool' })
   settings.dnsResolvers ??= ['1.1.1.1:53', '8.8.8.8:53', '9.9.9.9:53']
   settings.probePorts ??= [443, 4430, 8443]
 }

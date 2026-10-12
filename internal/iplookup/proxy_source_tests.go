@@ -2,7 +2,6 @@ package iplookup
 
 import (
 	"context"
-	"net/netip"
 	"sync"
 	"time"
 )
@@ -14,7 +13,7 @@ type sourceTestEntry struct {
 type sourceCache struct {
 	source               ProxySource
 	key                  [32]byte
-	prefixes             map[netip.Prefix]bool // Published maps are immutable.
+	index                *prefixIndex
 	result               ProxySourceResult
 	complete             bool
 	expires, nextRefresh time.Time
@@ -30,12 +29,15 @@ type sourceRefreshJob struct {
 	cancel context.CancelFunc
 }
 type sourceTestRuntime struct {
-	ctx          context.Context
-	mu, configMu sync.Mutex
-	work         sync.WaitGroup
-	entries      map[string]sourceTestEntry
-	sources      map[string]*sourceCache
-	slots        chan struct{}
+	ctx               context.Context
+	mu, configMu      sync.Mutex
+	countMu           sync.Mutex
+	revision, counted uint64
+	uniqueEntries     int
+	work              sync.WaitGroup
+	entries           map[string]sourceTestEntry
+	sources           map[string]*sourceCache
+	slots             chan struct{}
 }
 
 // StartSourceTests starts shared refreshes independently of member traffic.
@@ -78,11 +80,13 @@ func (s *EnhancedService) ReconcileSources(ctx context.Context) error {
 		return err
 	}
 	b.mu.Lock()
-	defer b.mu.Unlock()
 	if b.ctx.Err() != nil {
+		b.mu.Unlock()
 		return b.ctx.Err()
 	}
 	s.reconcileSourcesLocked(b, c)
+	b.mu.Unlock()
+	b.refreshCount()
 	return nil
 }
 
@@ -110,16 +114,21 @@ func (s *EnhancedService) TestSource(ctx context.Context, id string) (ProxySourc
 		return ProxySourceTest{}, err
 	}
 	b.mu.Lock()
-	defer b.mu.Unlock()
 	if b.ctx.Err() != nil {
+		b.mu.Unlock()
 		return ProxySourceTest{}, &CodeError{"IP_LOOKUP_UNAVAILABLE"}
 	}
 	s.reconcileSourcesLocked(b, c)
 	cache := b.sources[id]
 	if cache == nil {
+		b.mu.Unlock()
+		b.refreshCount()
 		return ProxySourceTest{}, &CodeError{"IP_PROXY_SOURCE_NOT_FOUND"}
 	}
-	return s.startSourceLocked(b, cache, c)
+	test, err := s.startSourceLocked(b, cache, c)
+	b.mu.Unlock()
+	b.refreshCount()
+	return test, err
 }
 
 // SourceTest reads a refresh operation without triggering collection.

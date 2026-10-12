@@ -5,11 +5,17 @@ go 1.26.0
 toolchain go1.26.9
 
 require (
+	github.com/RoaringBitmap/roaring/v2 v2.29.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
 	github.com/xtls/xray-core v1.260327.1-0.20260710210335-64fada32b5b9
 	golang.org/x/crypto v0.57.0
 	modernc.org/sqlite v1.60.1
+)
+
+require (
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
+	github.com/mschoch/smat v0.2.0 // indirect
 )
 
 require (

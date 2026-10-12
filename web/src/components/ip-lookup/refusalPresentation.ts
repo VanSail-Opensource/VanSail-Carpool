@@ -1,7 +1,7 @@
 import { t } from '@/i18n'
 import { sourceText } from './presentation'
 
-const icons: Record<string, string> = { abuse: 'i-ph-shield-warning', datacenter: 'i-ph-buildings', vpn: 'i-ph-lock-key', proxy: 'i-ph-arrows-left-right', tor: 'i-ph-eye-slash', user_count: 'i-ph-users' }
+const icons: Record<string, string> = { abuse: 'i-ph-shield-warning', abuse_list: 'i-ph-shield-warning', proxy_list: 'i-ph-arrows-left-right', proxy_database: 'i-ph-database', datacenter: 'i-ph-buildings', vpn: 'i-ph-lock-key', proxy: 'i-ph-arrows-left-right', tor: 'i-ph-eye-slash', user_count: 'i-ph-users' }
 
 export type DisplayEvidence = { kind: string; source: string; value: string | number | boolean }
 

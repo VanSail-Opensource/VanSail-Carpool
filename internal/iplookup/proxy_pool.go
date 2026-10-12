@@ -13,7 +13,7 @@ import (
 )
 
 type proxyPool struct {
-	prefixes map[netip.Prefix][]string
+	indexes  []*prefixIndex
 	sources  []ProxySourceResult
 	complete bool
 	expires  time.Time
@@ -26,18 +26,19 @@ type poolFlight struct {
 
 // EnhancedService owns shared inventories, DNS memoization and queued probes.
 type EnhancedService struct {
-	settings       Settings
-	queues         map[string]*upstreamqueue.Queue
-	live           *LiveService
-	mu             sync.Mutex
-	pools          map[[32]byte]*proxyPool
-	flights        map[[32]byte]*poolFlight
-	dns            map[string]dnsEntry
-	ipapi          Provider
-	inventoryFetch func(context.Context, string, Config) ([]byte, error)
-	resolvers      map[string]resolverHealth
-	cursor         uint64
-	tests          *sourceTestRuntime
+	settings        Settings
+	queues          map[string]*upstreamqueue.Queue
+	live            *LiveService
+	mu              sync.Mutex
+	pools           map[[32]byte]*proxyPool
+	flights         map[[32]byte]*poolFlight
+	dns             map[string]dnsEntry
+	ipapi           Provider
+	inventoryFetch  func(context.Context, string, Config) ([]byte, error)
+	inventoryStream func(context.Context, string, Config, func(string)) error
+	resolvers       map[string]resolverHealth
+	cursor          uint64
+	tests           *sourceTestRuntime
 }
 
 // NewEnhancedService reuses existing queue workers for every outbound operation.
@@ -105,15 +106,10 @@ func (p *proxyPool) assessment(ip string) *ProxyAssessment {
 
 func (p *proxyPool) matchingSources(addr netip.Addr) []string {
 	matches := []string{}
-	seen := map[string]bool{}
 	addr = addr.Unmap()
-	// At most 129 map lookups, regardless of inventory size or CIDR capacity.
-	for bits := addr.BitLen(); bits >= 0 && addr.IsValid(); bits-- {
-		for _, id := range p.prefixes[netip.PrefixFrom(addr, bits).Masked()] {
-			if !seen[id] {
-				seen[id] = true
-				matches = append(matches, id)
-			}
+	for i, index := range p.indexes {
+		if index.contains(addr) {
+			matches = append(matches, p.sources[i].ID)
 		}
 	}
 	sort.Strings(matches)

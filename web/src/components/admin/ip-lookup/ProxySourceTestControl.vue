@@ -25,5 +25,5 @@ defineEmits<{ refresh: [] }>()
 .source-cache-status { display: flex; flex-wrap: wrap; gap: 0.25rem 0.7rem; grid-column: 1 / -1; min-width: 0; color: var(--text-muted); }
 .source-cache-status .source-error { color: var(--warning); }
 .source-test-control > button { grid-column: 1; }
-@media (min-width: 900px) { .source-test-control > button { grid-column: 4; grid-row: 1; min-width: 5rem; } }
+@media (min-width: 900px) { .source-test-control > button { grid-column: 5; grid-row: 1; min-width: 5rem; } }
 </style>

@@ -36,7 +36,7 @@ func TestCIDRSourceMatchesNetworksWithoutExpansionOrDNS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !p.complete || len(p.prefixes) != 17 || len(s.dns) != 0 || p.sources[0].Count != 17 || p.sources[0].Processed != 17 || p.sources[0].Skipped != 0 {
+	if !p.complete || p.indexes[0].count() != 17 || len(s.dns) != 0 || p.sources[0].Count != 17 || p.sources[0].Processed != 17 || p.sources[0].Skipped != 0 {
 		t.Fatalf("CIDRs expanded, skipped or sent to DNS: %+v", p.sources)
 	}
 	cases := []struct {

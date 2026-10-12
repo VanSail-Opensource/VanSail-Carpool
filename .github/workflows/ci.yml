@@ -185,6 +185,8 @@ jobs:
           merge-multiple: true
       - name: Require complete race coverage
         run: python3 scripts/ci/race_shards.py --verify --directory "$RUNNER_TEMP/race"
+      - name: Measure large inventory memory and lookup allocations
+        run: go test ./internal/iplookup -run '^$' -bench '^BenchmarkProxyInventory' -benchtime=1x -benchmem
       - name: Enforce domain coverage
         shell: bash
         run: |

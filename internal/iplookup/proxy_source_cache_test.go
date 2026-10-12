@@ -37,7 +37,7 @@ func awaitSource(t *testing.T, s *EnhancedService, id string) {
 	for time.Now().Before(deadline) {
 		s.tests.mu.Lock()
 		cache := s.tests.sources[id]
-		ready := cache != nil && cache.prefixes != nil && cache.done == nil
+		ready := cache != nil && cache.index != nil && cache.done == nil
 		s.tests.mu.Unlock()
 		if ready {
 			return

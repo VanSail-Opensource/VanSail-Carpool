@@ -11,7 +11,7 @@ import { useProxySources } from './useProxySources'
 
 let state: ReturnType<typeof useProxySources>
 const Harness = defineComponent({ setup() { state = useProxySources(); return () => null } })
-const status = (refreshing = false): IPLookupProxySourcesStatus => ({ uniqueIPs: 2, sources: ['one', 'two'].map(id => ({ id, name: id, status: refreshing ? 'processing' : 'success', refreshing, enabled: true, stale: false, count: 2, observedAt: '', expiresAt: '', nextRefreshAt: '' })) })
+const status = (refreshing = false): IPLookupProxySourcesStatus => ({ uniqueIPs: 2, sources: ['one', 'two'].map(id => ({ id, name: id, category: 'proxy_pool', status: refreshing ? 'processing' : 'success', refreshing, enabled: true, stale: false, count: 2, observedAt: '', expiresAt: '', nextRefreshAt: '' })) })
 
 describe('shared proxy source polling', () => {
   beforeEach(() => { vi.resetAllMocks(); vi.spyOn(document, 'hidden', 'get').mockReturnValue(false); account.user.id = 'admin' })

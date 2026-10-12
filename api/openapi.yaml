@@ -182,6 +182,7 @@ components:
     IPLookupProxySourceTest: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceTest' },
     IPLookupProxySourceCacheStatus: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceCacheStatus' },
     IPLookupProxySourcesStatus: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourcesStatus' },
+    IPLookupInventorySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupInventorySource' },
     IPLookupProxySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySource' },
     IPLookupProxySourceResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceResult' },
     IPLookupProxyAssessment: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxyAssessment' },

@@ -27,7 +27,11 @@ func DefaultProxySources() []ProxySource {
 	}
 	out := make([]ProxySource, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, ProxySource{ID: r[0], Name: r[1], URL: r[2], Enabled: true})
+		category := ProxyPoolCategory
+		if r[0] == "proxydb" {
+			category = ProxyDatabaseCategory
+		}
+		out = append(out, ProxySource{ID: r[0], Name: r[1], URL: r[2], Enabled: true, Category: category})
 	}
 	return out
 }
@@ -72,6 +76,10 @@ func normalizeEnhancedConfig(c *Config) error {
 	seen := map[string]bool{}
 	for i := range c.ProxySources {
 		p := &c.ProxySources[i]
+		p.Category = sourceCategory(p.Category)
+		if p.Category != ProxyPoolCategory && p.Category != ProxyDatabaseCategory && p.Category != AbuseCategory {
+			return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
+		}
 		p.Name = strings.TrimSpace(p.Name)
 		if p.ID == "" || len(p.ID) > 64 || strings.Trim(p.ID, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-") != "" || seen[p.ID] || p.Name == "" || utf8.RuneCountInString(p.Name) > 80 {
 			return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}

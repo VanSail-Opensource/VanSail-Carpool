@@ -2,7 +2,7 @@
   "ipLookup": {
     "backgroundReminder": "This check continues in the background. Return later and enter this IP to see progress.",
     "progressUnavailable": "Progress is temporarily unavailable. Try again shortly; a new check is disabled until its status can be read.",
-    "proxyHeading": "Proxy inventories",
+    "proxyHeading": "IP inventories",
     "noProxyMatch": "No inventory match",
     "proxyIncomplete": "Inventory coverage incomplete",
     "proxyCoverage": "Source coverage",
@@ -11,7 +11,7 @@
     "requestedAddress": "Requested IP",
     "usedQuotaCount": "{count} included checks used",
     "refreshIncluded": "Refresh · {count} included checks",
-    "proxySettings": "Proxy sources and probes",
+    "proxySettings": "IP sources and probes",
     "proxySettingsHelp": "Enabled sources refresh at startup and every 6 hours. Refresh one source without starting an IP check.",
     "sourceEnabled": "Enabled",
     "sourceName": "Source name",
@@ -73,7 +73,7 @@
     },
     "subnetSources": {
       "proxy": "Proxy list",
-      "abuse": "AbuseIPDB",
+      "abuse": "Abuse",
       "ipapi": "IPAPI"
     },
     "subnetSourceStates": {
@@ -95,21 +95,23 @@
       "ipv6": "IPv6 /64 abuse reports; addresses are not enumerated."
     },
     "sources": {
-      "proxy_lists": "Proxy lists",
+      "proxy_lists": "IP lists",
       "socks4": "SOCKS4 probe",
       "socks5": "SOCKS5 probe",
       "http": "HTTP proxy probe"
     },
     "refusals": {
-      "proxy_list": "Proxy detected",
+      "proxy_list": "Proxy Pool",
       "active_proxy": "Proxy service detected",
       "shodan_tag": "Shodan tags detected",
       "shodan_vuln": "Shodan vulnerabilities reported",
-      "port_observation": "Observed or suspected services"
+      "port_observation": "Observed or suspected services",
+      "proxy_database": "Proxy Database",
+      "abuse_list": "Abuse"
     },
     "qualityHeading": "IP quality",
     "sourceSaveFirst": "Save source or DNS changes before refreshing.",
-    "inventoryIPs": "{count} unique IPs",
+    "inventoryIPs": "{count} unique IP/CIDR entries",
     "inventoryProgress": "{done}/{total} endpoints processed",
     "inventorySkipped": "{count} without a public IP",
     "inventoryDNSFailed": "{count} DNS failures skipped",
@@ -134,7 +136,7 @@
       "IP_PROXY_DOWNLOAD": "The inventory could not be downloaded.",
       "IP_PROXY_PARSE": "The inventory exceeded parsing limits or could not be fully parsed.",
       "IP_PROXY_EMPTY": "No supported endpoints were found.",
-      "IP_PROXY_LIMIT": "The inventory exceeded the IP limit.",
+      "IP_PROXY_LIMIT": "The inventory exceeded its size or IP/CIDR entry limit.",
       "IP_DNS_UNAVAILABLE": "Some endpoint DNS lookups failed after resolver failover.",
       "IP_PROXY_INTERRUPTED": "The refresh was interrupted or reached its time limit.",
       "IP_PROXY_SOURCE_NOT_FOUND": "This saved source or diagnostic is no longer available."
@@ -142,7 +144,7 @@
     "refreshSource": "Refresh cache",
     "retrySource": "Retry",
     "cacheStale": "Coverage incomplete",
-    "inventoryTotal": "{count} unique IPs across enabled sources",
+    "inventoryTotal": "{count} unique IP/CIDR entries across enabled sources",
     "sourceUpdated": "Updated {date}",
     "sourceNextRefresh": "Next refresh {date}",
     "ratings": {
@@ -154,6 +156,12 @@
       "incomplete": "Incomplete"
     },
     "warningHeading": "Warnings",
-    "portWarning": "Port {port}: {confidence}"
+    "portWarning": "Port {port}: {confidence}",
+    "sourceCategory": "Category",
+    "sourceCategories": {
+      "proxy_pool": "Proxy Pool",
+      "proxy_database": "Proxy Database",
+      "abuse": "Abuse"
+    }
   }
 }

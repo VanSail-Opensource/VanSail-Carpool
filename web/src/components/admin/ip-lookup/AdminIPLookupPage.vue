@@ -28,7 +28,7 @@ const schema = computed(() => z.object({
   lookupFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshQuotaCost: z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(0, invalidConfig.value).max(1000000, invalidConfig.value),
-  proxySources: z.array(z.object({ id: z.string().min(1, invalidConfig.value), name: z.string().trim().min(1, invalidConfig.value).max(80, invalidConfig.value), url: z.url({ error: invalidConfig.value }).refine(value => /^https?:\/\//.test(value), invalidConfig.value), enabled: z.boolean() })).max(64, invalidConfig.value),
+  proxySources: z.array(z.object({ id: z.string().min(1, invalidConfig.value), name: z.string().trim().min(1, invalidConfig.value).max(80, invalidConfig.value), url: z.url({ error: invalidConfig.value }).refine(value => /^https?:\/\//.test(value), invalidConfig.value), enabled: z.boolean(), category: z.enum(['proxy_pool', 'proxy_database', 'abuse'], { error: invalidConfig.value }) })).max(64, invalidConfig.value),
   dnsResolvers: z.array(z.string().min(1, invalidConfig.value)).min(1, invalidConfig.value).max(8, invalidConfig.value),
   probePorts: z.array(z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(1, invalidConfig.value).max(65535, invalidConfig.value)).max(128, invalidConfig.value),
   retry: z.object({

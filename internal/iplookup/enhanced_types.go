@@ -2,24 +2,26 @@ package iplookup
 
 // ProxySource configures an administrator-named public endpoint inventory.
 type ProxySource struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	URL     string `json:"url"`
-	Enabled bool   `json:"enabled"`
+	ID       string              `json:"id"`
+	Name     string              `json:"name"`
+	URL      string              `json:"url"`
+	Enabled  bool                `json:"enabled"`
+	Category ProxySourceCategory `json:"category"`
 }
 type ProxySourceResult struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Status     string `json:"status"`
-	ObservedAt string `json:"observedAt"`
-	Count      int    `json:"count"`
-	URL        string `json:"url,omitempty"`
-	Phase      string `json:"phase,omitempty"`
-	Hosts      int    `json:"hosts,omitempty"`
-	Processed  int    `json:"processed,omitempty"`
-	Skipped    int    `json:"skipped,omitempty"`
-	DNSFailed  int    `json:"dnsFailed,omitempty"`
-	ErrorCode  string `json:"errorCode,omitempty"`
+	ID         string              `json:"id"`
+	Name       string              `json:"name"`
+	Category   ProxySourceCategory `json:"category"`
+	Status     string              `json:"status"`
+	ObservedAt string              `json:"observedAt"`
+	Count      int                 `json:"count"`
+	URL        string              `json:"url,omitempty"`
+	Phase      string              `json:"phase,omitempty"`
+	Hosts      int                 `json:"hosts,omitempty"`
+	Processed  int                 `json:"processed,omitempty"`
+	Skipped    int                 `json:"skipped,omitempty"`
+	DNSFailed  int                 `json:"dnsFailed,omitempty"`
+	ErrorCode  string              `json:"errorCode,omitempty"`
 }
 type ProxyAssessment struct {
 	Status  string              `json:"status"`
@@ -35,10 +37,11 @@ type SubnetAddress struct {
 	Sources []string `json:"sources"`
 }
 type SubnetResult struct {
-	Prefix    string          `json:"prefix"`
-	Status    string          `json:"status"`
-	Reason    string          `json:"reason"`
-	Addresses []SubnetAddress `json:"addresses"`
+	Prefix    string            `json:"prefix"`
+	Status    string            `json:"status"`
+	Reason    string            `json:"reason"`
+	Addresses []SubnetAddress   `json:"addresses"`
+	Sources   []InventorySource `json:"sources,omitempty"`
 }
 type ProbeFinding struct {
 	Protocol   string    `json:"protocol"`

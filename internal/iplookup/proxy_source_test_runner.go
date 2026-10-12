@@ -2,7 +2,6 @@ package iplookup
 
 import (
 	"context"
-	"net/netip"
 	"time"
 )
 
@@ -24,6 +23,7 @@ func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, job sourceRefreshJ
 		b.mu.Lock()
 		defer b.mu.Unlock()
 		result.Name = cache.source.Name
+		result.Category = sourceCategory(cache.source.Category)
 		b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "processing", Result: result}}
 		if b.sources[job.source.ID] == cache {
 			cache.result = result
@@ -37,46 +37,39 @@ func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, job sourceRefreshJ
 }
 
 func interruptedSource(source ProxySource) ProxySourceResult {
-	return ProxySourceResult{ID: source.ID, Name: source.Name, URL: safeSourceURL(source.URL), Status: "partial", Phase: "complete", ErrorCode: "IP_PROXY_INTERRUPTED"}
+	return ProxySourceResult{ID: source.ID, Name: source.Name, Category: sourceCategory(source.Category), URL: safeSourceURL(source.URL), Status: "partial", Phase: "complete", ErrorCode: "IP_PROXY_INTERRUPTED"}
 }
 
-func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJob, prefixes map[netip.Prefix]bool, result ProxySourceResult) {
+func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJob, index *prefixIndex, result ProxySourceResult) {
 	cache := job.cache
 	b.mu.Lock()
-	defer b.mu.Unlock()
+	previous := cache.index
+	b.mu.Unlock()
+	if result.Status != "success" {
+		index = mergePrefixIndexes(previous, index, maxInventoryEntries)
+	}
+	b.mu.Lock()
 	result.Name = cache.source.Name
+	result.Category = sourceCategory(cache.source.Category)
 	now := time.Now()
 	if result.ObservedAt == "" {
 		result.ObservedAt = now.UTC().Format(time.RFC3339)
 	}
 	if b.sources[job.source.ID] == cache {
-		if result.Status != "success" {
-			// Retain positive evidence without certifying negative matches.
-			prefixes = retainSourcePrefixes(cache.prefixes, prefixes, 1000000)
-		}
-		cache.prefixes, cache.result, cache.complete = prefixes, result, result.Status == "success"
-		cache.result.Count = len(prefixes)
+		cache.index, cache.result, cache.complete = index, result, result.Status == "success"
+		cache.result.Count = index.count()
+		b.revision++
 		if cache.complete {
 			cache.expires = now.Add(proxyInventoryTTL)
 		}
 		cache.nextRefresh = now.Add(proxyInventoryTTL)
 		result = cache.result
 	}
+	b.mu.Unlock()
+	b.refreshCount()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}
 	close(job.done)
 	cache.done = nil
-}
-
-func retainSourcePrefixes(previous, incoming map[netip.Prefix]bool, limit int) map[netip.Prefix]bool {
-	retained := make(map[netip.Prefix]bool, len(previous))
-	// Prior published evidence wins when a partial refresh fills the limit.
-	for prefix := range previous {
-		retained[prefix] = true
-	}
-	for prefix := range incoming {
-		if len(retained) < limit || retained[prefix] {
-			retained[prefix] = true
-		}
-	}
-	return retained
 }

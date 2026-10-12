@@ -6,6 +6,7 @@ const selectedIP = shallowRef('')
 const neighbors = computed(() => props.result.addresses.filter(row => row.ip !== props.requestedIp))
 const target = computed(() => props.result.addresses.find(row => row.ip === props.requestedIp))
 const selected = computed(() => props.result.addresses.find(row => row.ip === selectedIP.value))
+const selectedSources = computed(() => (props.result.sources ?? []).filter(source => selected.value?.sources.includes(source.id)))
 watch(() => props.result.prefix, () => { selectedIP.value = '' })
 </script>
 
@@ -20,7 +21,7 @@ watch(() => props.result.prefix, () => { selectedIP.value = '' })
       <div class="subnet-grid" :aria-label="$t('ipLookup.subnetHeading')">
         <UButton v-for="row in neighbors" :key="row.ip" color="neutral" variant="ghost" size="xs" :class="['subnet-cell', `cell-${row.status}`, { 'cell-selected': selectedIP === row.ip }]" :aria-label="`${row.ip}: ${$t(`ipLookup.subnetStates.${row.status}`)}`" :aria-pressed="selectedIP === row.ip" @click="selectedIP = row.ip">{{ row.ip.split('.').at(-1) }}</UButton>
       </div>
-      <dl v-if="selected" class="selected-address" aria-live="polite"><div><dt>{{ $t('ipLookup.address') }}</dt><dd><code>{{ selected.ip }}</code></dd></div><div v-for="source in ['proxy', 'abuse', 'ipapi'] as const" :key="source"><dt>{{ $t(`ipLookup.subnetSources.${source}`) }}</dt><dd>{{ $t(`ipLookup.subnetSourceStates.${selected[source]}`) }}</dd></div></dl>
+      <dl v-if="selected" class="selected-address" aria-live="polite"><div><dt>{{ $t('ipLookup.address') }}</dt><dd><code>{{ selected.ip }}</code></dd></div><div v-for="source in ['proxy', 'abuse', 'ipapi'] as const" :key="source"><dt>{{ $t(`ipLookup.subnetSources.${source}`) }}</dt><dd>{{ $t(`ipLookup.subnetSourceStates.${selected[source]}`) }}</dd></div><div v-for="source in selectedSources" :key="source.id"><dt>{{ $t(`ipLookup.sourceCategories.${source.category}`) }}</dt><dd>{{ source.name }}</dd></div></dl>
     </template>
   </section>
 </template>
@@ -45,5 +46,6 @@ watch(() => props.result.prefix, () => { selectedIP.value = '' })
 .selected-address > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 0.2rem 0; border-bottom: 1px solid var(--line); }
 .selected-address dt { color: var(--text-muted); }
 .selected-address dd { margin: 0; }
+.selected-address dt, .selected-address dd { min-width: 0; overflow-wrap: anywhere; }
 @media (min-width: 640px) { .subnet-cell { font-size: 0.7rem; padding-block: 0.35rem; } }
 </style>

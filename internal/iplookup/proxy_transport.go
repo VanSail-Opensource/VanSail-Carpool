@@ -2,20 +2,32 @@ package iplookup
 
 import (
 	"context"
-	"io"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
-func (s *EnhancedService) downloadInventory(ctx context.Context, raw string, c Config) ([]byte, error) {
-	return upstreamqueue.Do(ctx, s.queues["proxy_lists"], func(ctx context.Context) ([]byte, error) {
-		callCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+func (s *EnhancedService) downloadInventory(ctx context.Context, raw string, c Config, emit func(string)) error {
+	var gate sync.Mutex
+	started, stopped := false, false
+	done := make(chan struct{})
+	_, err := upstreamqueue.Do(ctx, s.queues["proxy_lists"], func(ctx context.Context) (bool, error) {
+		gate.Lock()
+		if stopped {
+			gate.Unlock()
+			return false, context.Canceled
+		}
+		started = true
+		gate.Unlock()
+		defer close(done)
+		callCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 		defer cancel()
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport.Proxy = nil
+		transport.ResponseHeaderTimeout = 30 * time.Second
 		transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
 			host, port, e := net.SplitHostPort(address)
 			if e != nil {
@@ -53,20 +65,25 @@ func (s *EnhancedService) downloadInventory(ctx context.Context, raw string, c C
 		}}
 		req, e := http.NewRequestWithContext(callCtx, http.MethodGet, raw, nil)
 		if e != nil {
-			return nil, e
+			return false, e
 		}
 		response, e := client.Do(req)
 		if e != nil {
-			return nil, &CodeError{"IP_LOOKUP_PROVIDER_UNAVAILABLE"}
+			return false, &CodeError{"IP_PROXY_DOWNLOAD"}
 		}
 		defer func() { _ = response.Body.Close() }()
 		if response.StatusCode != http.StatusOK {
-			return nil, &CodeError{"IP_LOOKUP_PROVIDER_UNAVAILABLE"}
+			return false, &CodeError{"IP_PROXY_DOWNLOAD"}
 		}
-		data, e := io.ReadAll(io.LimitReader(response.Body, maxProxyBody+1))
-		if e != nil || len(data) > maxProxyBody {
-			return nil, &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
-		}
-		return data, nil
+		return true, readInventory(callCtx, response.Body, emit)
 	})
+	// Cancellation can return from Do before its callback settles.
+	gate.Lock()
+	stopped = true
+	join := started
+	gate.Unlock()
+	if join {
+		<-done
+	}
+	return err
 }

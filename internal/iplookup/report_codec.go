@@ -64,6 +64,14 @@ func ReportAttempted(r Report) bool {
 
 func normalizeReport(r *Report) {
 	moveDatacenterWarnings(r)
+	if r.Proxy != nil {
+		proxy := *r.Proxy
+		proxy.Sources = append([]ProxySourceResult{}, proxy.Sources...)
+		for i := range proxy.Sources {
+			proxy.Sources[i].Category = sourceCategory(proxy.Sources[i].Category)
+		}
+		r.Proxy = &proxy
+	}
 	if r.Sources == nil {
 		r.Sources = map[string]string{}
 	}

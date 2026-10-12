@@ -3,6 +3,11 @@ import { ApiError } from '@/api/http'
 
 export function installEnhancedIPAudit(params: URLSearchParams) {
   const mode = params.get('enhanced') ?? ''
+  const inventorySources = [
+    { id: 'named-source', name: 'Community proxy inventory', category: 'proxy_pool' as const },
+    { id: 'firehol', name: 'FireHOL database', category: 'proxy_database' as const },
+    { id: 'abuse-source', name: 'Abuse feed', category: 'abuse' as const },
+  ]
   let active = params.has('checking')
   let activeIP = '8.8.8.8'
   const task = (key: string, status = 'success', milestone = 0) => ({ key, status: status as 'success' | 'active', startedAt: new Date(Date.now() - 170000).toISOString(), nextMilestone: milestone, errorCode: '', ...(params.has('trojan-unavailable') && key.startsWith('trojan_') ? { result: 'unavailable' as const } : {}) })
@@ -13,14 +18,19 @@ export function installEnhancedIPAudit(params: URLSearchParams) {
     if (mode === 'skipped' || mode === 'risk') return { prefix: '8.8.8.0/24', status: 'skipped', reason: 'ip_not_passed', addresses: [] }
     if (ip.includes(':')) return { prefix: '2606:4700:4700::/64', status: 'success', reason: 'ipv6', addresses: [] }
     const prefix = ip.split('.').slice(0, 3).join('.')
-    return { prefix: `${prefix}.0/24`, status: mode === 'partial' ? 'partial' : 'success', reason: '', addresses: Array.from({ length: 256 }, (_, last) => ({ ip: `${prefix}.${last}`, status: last % 17 === 0 ? 'flagged' as const : mode === 'partial' && last % 7 === 0 ? 'unknown' as const : 'clean' as const, proxy: last % 17 === 0 ? 'flagged' : 'success', abuse: last % 17 === 0 ? 'skipped' : 'success', ipapi: last % 17 === 0 ? 'skipped' : mode === 'partial' && last % 7 === 0 ? 'error' : 'success', sources: last % 17 === 0 ? ['named-source'] : [] })) }
+    return { sources: inventorySources, prefix: `${prefix}.0/24`, status: mode === 'partial' ? 'partial' : 'success', reason: '', addresses: Array.from({ length: 256 }, (_, last) => ({ ip: `${prefix}.${last}`, status: last % 17 === 0 ? 'flagged' as const : mode === 'partial' && last % 7 === 0 ? 'unknown' as const : 'clean' as const, proxy: last % 17 === 0 ? 'flagged' : 'success', abuse: last % 17 === 0 ? 'flagged' : 'success', ipapi: last % 17 === 0 ? 'skipped' : mode === 'partial' && last % 7 === 0 ? 'error' : 'success', sources: last % 17 === 0 ? inventorySources.map(source => source.id) : [] })) }
   }
   function decorate(report: IPLookupReport): IPLookupReport {
     if (!mode) return report
     report.proxy = { status: mode === 'partial' ? 'partial' : 'success', matches: mode === 'risk' ? ['named-source'] : [], sources: [{ id: 'named-source', name: 'Community proxy inventory', status: mode === 'partial' ? 'partial' : 'success', observedAt: new Date().toISOString(), count: 24018, url: 'https://example.net/proxies/list.txt', hosts: 200, processed: 200, skipped: 12, dnsFailed: mode === 'partial' ? 5 : 0, errorCode: mode === 'partial' ? 'IP_DNS_UNAVAILABLE' : '' }] }
     report.ports = ports()
     report.subnet = subnet(report.ip)
-    if (mode === 'risk') { report.verdict = 'unsuitable'; report.refusals.push({ kind: 'active_proxy', source: 'socks5', value: 8443 }) }
+    if (mode === 'risk' || mode === 'categories') {
+      report.verdict = 'unsuitable'
+      report.proxy.matches = inventorySources.map(source => source.id)
+      report.proxy.sources = inventorySources.map(source => ({ ...source, status: 'success', observedAt: new Date().toISOString(), count: 3000000 }))
+      report.refusals.push(...inventorySources.map(source => ({ kind: source.category === 'abuse' ? 'abuse_list' : source.category === 'proxy_database' ? 'proxy_database' : 'proxy_list', source: 'proxy_lists', value: source.name })))
+    }
     return report
   }
   async function progress(ip: string): Promise<IPLookupSharedProgress | null> {

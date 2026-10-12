@@ -2,7 +2,6 @@ package iplookup
 
 import (
 	"context"
-	"net/netip"
 	"time"
 )
 
@@ -42,28 +41,23 @@ func (s *EnhancedService) SourcesStatus(ctx context.Context) (ProxySourcesStatus
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	unique := map[netip.Prefix]bool{}
 	for _, source := range c.ProxySources {
 		row := ProxySourceCacheStatus{ProxySourceResult: ProxySourceResult{ID: source.ID, Name: source.Name, Status: "pending"}, Enabled: source.Enabled, Stale: true}
 		if cache := b.sources[source.ID]; cache != nil && cache.key == sourceCacheKey(source, c) {
 			row.ProxySourceResult = cache.result
-			row.Count = len(cache.prefixes)
+			row.Count = cache.index.count()
 			row.Refreshing = cache.done != nil
 			row.Stale = !cache.complete || !cache.expires.After(time.Now())
 			row.ExpiresAt, row.NextRefreshAt = sourceTime(cache.expires), sourceTime(cache.nextRefresh)
-			if source.Enabled {
-				for prefix := range cache.prefixes {
-					unique[prefix] = true
-				}
-			}
 		}
 		row.Name = source.Name
+		row.Category = sourceCategory(source.Category)
 		if !source.Enabled {
 			row.Status = "disabled"
 		}
 		result.Sources = append(result.Sources, row)
 	}
-	result.UniqueIPs = len(unique)
+	result.UniqueIPs = b.uniqueEntries
 	return result, nil
 }
 
@@ -72,7 +66,7 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 	b.mu.Lock()
 	waits := []<-chan struct{}{}
 	for _, source := range c.ProxySources {
-		if cache := b.sources[source.ID]; source.Enabled && cache != nil && cache.key == sourceCacheKey(source, c) && cache.prefixes == nil && cache.done != nil {
+		if cache := b.sources[source.ID]; source.Enabled && cache != nil && cache.key == sourceCacheKey(source, c) && cache.index == nil && cache.done != nil {
 			waits = append(waits, cache.done)
 		}
 	}
@@ -86,12 +80,13 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	p := &proxyPool{prefixes: map[netip.Prefix][]string{}, sources: []ProxySourceResult{}, complete: true, expires: time.Now().Add(proxyInventoryTTL)}
+	p := &proxyPool{sources: []ProxySourceResult{}, complete: true, expires: time.Now().Add(proxyInventoryTTL)}
 	for _, source := range c.ProxySources {
 		if !source.Enabled {
 			continue
 		}
 		row := ProxySourceResult{ID: source.ID, Name: source.Name, Status: "partial"}
+		var index *prefixIndex
 		cache := b.sources[source.ID]
 		if cache != nil && cache.source.Enabled && cache.key == sourceCacheKey(source, c) {
 			row = cache.result
@@ -101,18 +96,14 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 			} else {
 				row.Status = "partial"
 			}
-			for prefix := range cache.prefixes {
-				if len(p.prefixes) >= 1000000 && p.prefixes[prefix] == nil {
-					row.Status, row.ErrorCode = "partial", "IP_PROXY_LIMIT"
-					continue
-				}
-				p.prefixes[prefix] = append(p.prefixes[prefix], source.ID)
-			}
+			index = cache.index
 			if cache.expires.Before(p.expires) {
 				p.expires = cache.expires
 			}
 		}
 		row.Name = source.Name
+		row.Category = sourceCategory(source.Category)
+		p.indexes = append(p.indexes, index)
 		p.sources = append(p.sources, row)
 		p.complete = p.complete && row.Status == "success"
 	}

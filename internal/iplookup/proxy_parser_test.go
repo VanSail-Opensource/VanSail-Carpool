@@ -1,9 +1,11 @@
 package iplookup
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -30,6 +32,7 @@ func TestExtractProxyHostsFormats(t *testing.T) {
 		{"cidr_html", `<table><tr><td>102.129.155.0/24</td><td>2001:ac8:16::/48</td></tr></table>`, []string{"102.129.155.0/24", "2001:ac8:16::/48"}},
 		{"cidr_base64", base64.StdEncoding.EncodeToString([]byte("102.129.155.0/24\n2001:ac8:16::/48")), []string{"102.129.155.0/24", "2001:ac8:16::/48"}},
 		{"clash", "proxies:\n  - name: sample\n    server: edge.example.net\n    port: 443\n    sni: unrelated.example.org", []string{"edge.example.net"}},
+		{"clash_multiple", "proxies:\n  - name: first\n    server: edge.example.net\n    port: 443\n  - name: second\n    server: second.example.net\n    port: 8443", []string{"edge.example.net", "second.example.net"}},
 		{"vmess", "vmess://" + base64.StdEncoding.EncodeToString([]byte(`{"add":"edge.example.net","host":"unrelated.example.org","port":"443"}`)), []string{"edge.example.net"}},
 		{"uppercase_vmess", "VMESS://" + base64.StdEncoding.EncodeToString([]byte(`{"add":"edge.example.net","port":"443"}`)), []string{"edge.example.net"}},
 		{"base64", base64.StdEncoding.EncodeToString([]byte(uri)), []string{"edge.example.net"}},
@@ -43,6 +46,18 @@ func TestExtractProxyHostsFormats(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			streamed := map[string]bool{}
+			if err := readInventory(context.Background(), strings.NewReader(tc.input), func(host string) { streamed[host] = true }); err != nil {
+				t.Fatal(err)
+			}
+			streamHosts := make([]string, 0, len(streamed))
+			for host := range streamed {
+				streamHosts = append(streamHosts, host)
+			}
+			slices.Sort(streamHosts)
+			if !reflect.DeepEqual(streamHosts, tc.want) {
+				t.Fatalf("stream got %v want %v", streamHosts, tc.want)
+			}
 			got, err := ExtractProxyHosts([]byte(tc.input))
 			if err != nil {
 				t.Fatal(err)
