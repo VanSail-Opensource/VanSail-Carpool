@@ -51,7 +51,7 @@ func diagnosticDNS(t *testing.T, rcode int) (string, *atomic.Int32) {
 			r.Answer = []dns.RR{&dns.A{Hdr: dns.RR_Header{Name: req.Question[0].Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 120}, A: net.ParseIP("8.8.8.8")}}
 		}
 		if rcode == dns.RcodeNameError {
-			r.Ns = []dns.RR{&dns.SOA{Hdr: dns.RR_Header{Name: "example.net.", Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: 120}, Minttl: 60}}
+			r.Ns = []dns.RR{&dns.SOA{Hdr: dns.RR_Header{Name: "example.net.", Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: 120}, Ns: "ns.example.net.", Mbox: "hostmaster.example.net.", Serial: 1, Refresh: 3600, Retry: 600, Expire: 86400, Minttl: 60}}
 		}
 		if err := w.WriteMsg(r); err != nil {
 			t.Error(err)
