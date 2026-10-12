@@ -39,15 +39,12 @@ func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q ipl
 	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&running); err != nil {
 		return model.OperationReceipt{}, err
 	}
-	if running > 0 {
-		return model.OperationReceipt{}, &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
-	}
 	fresh, c, err := ipQuoteTx(ctx, tx, user, q.IP, q.Refresh, now)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
 	becameCached := fresh.CacheReportID != "" && (!q.Refresh || fresh.CacheReportID != q.CacheReportID)
-	if q.ExpiresAt <= now.Unix() || fresh.ConfigHash != q.ConfigHash || (!becameCached && (fresh.Charge.Minor != q.Charge.Minor || fresh.UseQuota != q.UseQuota || (q.QuotaCost != 0 && fresh.QuotaCost != q.QuotaCost) || (fresh.UseQuota && (fresh.PurchaseID != q.PurchaseID || fresh.Remaining != q.Remaining)))) {
+	if q.ExpiresAt <= now.Unix() || fresh.ConfigHash != q.ConfigHash || (running == 0 && !becameCached && (fresh.Charge.Minor != q.Charge.Minor || fresh.UseQuota != q.UseQuota || (q.QuotaCost != 0 && fresh.QuotaCost != q.QuotaCost) || (fresh.UseQuota && (fresh.PurchaseID != q.PurchaseID || fresh.Remaining != q.Remaining)))) {
 		return model.OperationReceipt{}, &iplookup.CodeError{Code: "IP_LOOKUP_QUOTE_CHANGED"}
 	}
 	reportID, cached, err := selectIPRunTx(ctx, tx, q, fresh, c, now)
@@ -131,22 +128,17 @@ func fmtBool(value bool) string {
 }
 
 func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c iplookup.Config, now time.Time) (string, bool, error) {
-	// A refresh completed since this quote already fulfills the quoted refresh.
-	if fresh.CacheReportID != "" && (!q.Refresh || fresh.CacheReportID != q.CacheReportID) {
-		return fresh.CacheReportID, true, nil
-	}
 	var id string
 	err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&id)
 	if err == nil {
-		if q.Refresh {
-			if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=json_set(live_state_json,'$.status','queued') WHERE id=? AND COALESCE(json_extract(live_state_json,'$.status'),'')=''`, id); err != nil {
-				return "", false, err
-			}
-		}
 		return id, false, nil
 	}
 	if err != sql.ErrNoRows {
 		return "", false, err
+	}
+	// A refresh completed since this quote already fulfills the quoted refresh.
+	if fresh.CacheReportID != "" && (!q.Refresh || fresh.CacheReportID != q.CacheReportID) {
+		return fresh.CacheReportID, true, nil
 	}
 	id, err = ids.New()
 	if err != nil {

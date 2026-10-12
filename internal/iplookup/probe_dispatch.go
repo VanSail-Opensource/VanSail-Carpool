@@ -27,6 +27,16 @@ func (s *EnhancedService) probe(ctx context.Context, ip string, port int, key st
 	if key == "tls" {
 		return s.probeTLS(ctx, ip, port, c)
 	}
+	if key == "reality" {
+		return s.probeRealityTLS(ctx, ip, port, c)
+	}
+	if key == "cloudflare" {
+		scheme := "https"
+		if port == 80 {
+			scheme = "http"
+		}
+		return probeCloudflare(ctx, ip, port, scheme)
+	}
 	if len(key) > 7 && key[:7] == "trojan_" {
 		return trojanProbe(ctx, ip, port, key, milestone)
 	}

@@ -25,7 +25,7 @@ const activeWarnings = computed(() => portWarnings(activeRun.value?.ports ?? [])
     <template v-else>
       <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
       <InlineNotice v-if="state && !state.enabled" tone="info">{{ $t('ipLookup.disabled') }}</InlineNotice>
-      <IPLookupForm v-if="state?.enabled" v-model="ip" :state="state" :quote="quote" :busy="busy" :valid-ip="validIP" @check="submit()" />
+      <IPLookupForm v-if="state?.enabled" v-model="ip" :state="state" :quote="quote" :busy="busy" :shared="!!activeRun && (!check || (!check.usedQuota && check.charge.minor === '0'))" :valid-ip="validIP" @check="submit()" />
       <InlineNotice v-if="activeRun || (busy && check)" tone="info">{{ $t('ipLookup.backgroundReminder') }}</InlineNotice>
       <InlineNotice v-if="progressUnavailable" tone="warning">{{ $t('ipLookup.progressUnavailable') }}</InlineNotice>
       <IPLookupProgress v-if="busy" :progress="activeRun?.progress ?? check?.progress" />

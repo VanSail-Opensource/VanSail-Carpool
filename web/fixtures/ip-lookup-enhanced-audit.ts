@@ -18,7 +18,20 @@ export function installEnhancedIPAudit(params: URLSearchParams) {
     if (mode === 'skipped' || mode === 'risk') return { prefix: '8.8.8.0/24', status: 'skipped', reason: 'ip_not_passed', addresses: [] }
     if (ip.includes(':')) return { prefix: '2606:4700:4700::/64', status: 'success', reason: 'ipv6', addresses: [] }
     const prefix = ip.split('.').slice(0, 3).join('.')
-    return { sources: inventorySources, prefix: `${prefix}.0/24`, status: mode === 'partial' ? 'partial' : 'success', reason: '', addresses: Array.from({ length: 256 }, (_, last) => ({ ip: `${prefix}.${last}`, status: last % 17 === 0 ? 'flagged' as const : mode === 'partial' && last % 7 === 0 ? 'unknown' as const : 'clean' as const, proxy: last % 17 === 0 ? 'flagged' : 'success', abuse: last % 17 === 0 ? 'flagged' : 'success', ipapi: last % 17 === 0 ? 'skipped' : mode === 'partial' && last % 7 === 0 ? 'error' : 'success', sources: last % 17 === 0 ? inventorySources.map(source => source.id) : [] })) }
+    const result: NonNullable<IPLookupReport['subnet']> = { sources: inventorySources, prefix: `${prefix}.0/24`, status: mode === 'partial' ? 'partial' : 'success', reason: '', addresses: Array.from({ length: 256 }, (_, last) => ({ ip: `${prefix}.${last}`, status: last % 17 === 0 ? 'flagged' as const : mode === 'partial' && last % 7 === 0 ? 'unknown' as const : 'clean' as const, proxy: last % 17 === 0 ? 'flagged' : 'success', abuse: last % 17 === 0 ? 'flagged' : 'success', ipapi: last % 17 === 0 ? 'skipped' : mode === 'partial' && last % 7 === 0 ? 'error' : 'success', sources: last % 17 === 0 ? inventorySources.map(source => source.id) : [] })) }
+    if (params.has('subnet-probes')) {
+      result.status = active ? 'processing' : 'success'
+      for (const [last, row] of result.addresses.entries()) {
+        if (row.status === 'flagged') continue
+        row.ports = [80, 443, 8443].map(port => ({ port, status: 'closed', tasks: [task('tcp', 'closed')], findings: [] }))
+        if (last === 10 || last === 11) {
+          row.status = last === 10 ? 'suspected' : 'flagged'
+          row.ports[1] = { port: 443, status: 'success', tasks: [task('tcp'), task('reality'), task('cloudflare')], findings: [{ protocol: last === 10 ? 'reality' : 'cloudflare', confidence: last === 10 ? 'suspected' : 'confirmed', evidence: last === 10 ? 'feasible_tls_dns_mismatch' : 'cdn_trace:SJC' }] }
+        }
+        if (last === 12) { row.status = 'unknown'; row.ipapi = 'error' }
+      }
+    }
+    return result
   }
   function decorate(report: IPLookupReport): IPLookupReport {
     if (!mode) return report
@@ -35,7 +48,7 @@ export function installEnhancedIPAudit(params: URLSearchParams) {
   }
   async function progress(ip: string): Promise<IPLookupSharedProgress | null> {
     if (params.has('progress-error')) throw new ApiError(502, { code: 'IP_LOOKUP_FAILED', message: 'Constructed progress outage' })
-    return active && ip === activeIP ? { ip, status: 'processing', progress: { phase: 'probes', completed: 8, total: 11, currentProvider: '443:trojan_incomplete', tasks: [{ key: 'proxy', status: 'success' }, { key: 'probes', status: 'active' }, { key: 'subnet', status: 'pending' }] }, ports: ports(), subnet: null, updatedAt: new Date().toISOString() } : null
+    return active && ip === activeIP ? { ip, status: 'processing', progress: { phase: params.has('queued') ? 'queued' : params.has('subnet-probes') ? 'subnet' : 'probes', completed: params.has('queued') ? 0 : 8, total: 11, currentProvider: params.has('queued') ? undefined : '443:trojan_incomplete', tasks: [{ key: 'proxy', status: params.has('queued') ? 'pending' : 'success' }, { key: 'probes', status: params.has('queued') ? 'pending' : 'active' }, { key: 'subnet', status: 'pending' }] }, ports: params.has('queued') ? [] : ports(), subnet: params.has('subnet-probes') && !params.has('queued') ? subnet(ip) : null, updatedAt: new Date().toISOString() } : null
   }
   let sourcePolls = 0
   let refreshingSource = params.has('source-warming') ? 'named-source' : ''

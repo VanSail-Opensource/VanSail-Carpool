@@ -10,7 +10,7 @@ import (
 
 // PendingIPLookupOperations recovers durable runs after process interruption.
 func (s *Store) PendingIPLookupOperations(ctx context.Context) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT MIN(c.operation_id) FROM ip_lookup_reports r JOIN ip_lookup_checks c ON c.report_id=r.id WHERE r.status='processing' GROUP BY r.id ORDER BY r.created_at LIMIT 32`)
+	rows, err := s.db.QueryContext(ctx, `SELECT (SELECT c.operation_id FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.report_id=r.id ORDER BY o.created_at,o.rowid LIMIT 1) FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY r.created_at,r.rowid LIMIT 1`)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +50,16 @@ func (s *Store) HeartbeatIPLookup(ctx context.Context, id, owner string, now tim
 	return nil
 }
 
-// ClaimIPLookupLease prevents concurrent process owners replaying external stages.
+// ClaimIPLookupLease admits only the oldest run, after every active run or repair.
 func (s *Store) ClaimIPLookupLease(ctx context.Context, id, owner string, now time.Time) (bool, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner=?,lease_expires_at=?,heartbeat_at=? WHERE status='processing' AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?) AND (lease_owner=? OR lease_expires_at IS NULL OR julianday(lease_expires_at)<=julianday(?))`, owner, stamp(now.Add(time.Minute)), stamp(now), id, owner, stamp(now))
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner=?,lease_expires_at=?,heartbeat_at=?
+		WHERE status='processing' AND id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?)
+		AND id=(SELECT r.id FROM ip_lookup_reports r WHERE r.status='processing' AND EXISTS(SELECT 1 FROM ip_lookup_checks c WHERE c.report_id=r.id) ORDER BY r.created_at,r.rowid LIMIT 1)
+		AND (lease_owner=? OR lease_expires_at IS NULL OR julianday(lease_expires_at)<=julianday(?))
+		AND NOT EXISTS(SELECT 1 FROM ip_lookup_reports other WHERE other.status='processing' AND other.id<>ip_lookup_reports.id AND julianday(other.lease_expires_at)>julianday(?))
+		AND NOT EXISTS(SELECT 1 FROM outbox_jobs WHERE kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND status='processing')`, owner, stamp(now.Add(time.Minute)), stamp(now), id, owner, stamp(now), stamp(now))
 	if err != nil {
 		return false, err
 	}

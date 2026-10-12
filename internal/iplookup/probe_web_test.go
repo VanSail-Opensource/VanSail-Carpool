@@ -13,7 +13,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
-const validCloudflareTrace = "fl=abc123\nh=example.net\nip=8.8.4.4\nts=1700000000.5\nvisit_scheme=http\nhttp=http/1.1\ncolo=SJC\n"
+const validCloudflareTrace = "fl=abc123\nh=cp.cloudflare.com\nip=8.8.4.4\nts=1700000000.5\nvisit_scheme=http\nhttp=http/1.1\ncolo=SJC\n"
 
 func TestCloudflareTraceSignature(t *testing.T) {
 	for _, tc := range []struct {
@@ -28,6 +28,7 @@ func TestCloudflareTraceSignature(t *testing.T) {
 		{"wrong scheme", strings.ReplaceAll(validCloudflareTrace, "visit_scheme=http", "visit_scheme=https"), false},
 		{"duplicate fields", validCloudflareTrace + "colo=LHR\n", false},
 		{"bad colo", strings.ReplaceAll(validCloudflareTrace, "SJC", "sjc"), false},
+		{"wrong host", strings.ReplaceAll(validCloudflareTrace, "cp.cloudflare.com", "example.net"), false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := cloudflareTrace([]byte(tc.body), "http") != ""; got != tc.valid {
@@ -57,6 +58,9 @@ func TestQueuedWebProbeCloudflareAndRedirectBoundaries(t *testing.T) {
 			defer redirect.Close()
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path == "/cdn-cgi/trace" {
+					if r.Host != cloudflareProbeHost || (tc.tls && r.TLS.ServerName != cloudflareProbeHost) {
+						t.Errorf("trace host/SNI not pinned: %q %+v", r.Host, r.TLS)
+					}
 					traceCalls.Add(1)
 					w.Header().Set("Server", "cloudflare")
 					w.Header().Set("Location", redirect.URL)

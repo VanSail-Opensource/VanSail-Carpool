@@ -56,14 +56,18 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 	}
 	if reason != "" {
 		finishInventorySubnet(r, reason)
-		checkpoint.Phase = "complete"
-		return save()
 	}
 	checkpoint.Phase = "subnet"
 	if err := save(); err != nil {
 		return err
 	}
-	if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
+	if reason == "" {
+		if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
+			return err
+		}
+	}
+	applyPortRefusals(r)
+	if err := w.Enhanced.probeSubnet(ctx, r, c, save); err != nil {
 		return err
 	}
 	checkpoint.Phase = "complete"

@@ -9,6 +9,7 @@
     "probeCoverage": "探测覆盖",
     "subnetHeading": "/24 检查",
     "requestedAddress": "查询 IP",
+    "sharedFree": "等待共享结果 · 免费",
     "usedQuotaCount": "已使用 {count} 次免费额度",
     "refreshIncluded": "刷新 · {count} 次免费额度",
     "proxySettings": "IP 数据源与端口探测",
@@ -69,6 +70,7 @@
     },
     "subnetStates": {
       "clean": "未发现风险",
+      "suspected": "疑似 Reality",
       "flagged": "滥用 / 代理",
       "unknown": "不完整"
     },

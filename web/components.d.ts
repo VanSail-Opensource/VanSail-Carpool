@@ -164,6 +164,7 @@ declare module 'vue' {
     IPRPKIStatus: typeof import('./src/components/ip-lookup/IPRPKIStatus.vue')['default']
     IPShodanDetails: typeof import('./src/components/ip-lookup/IPShodanDetails.vue')['default']
     IPSubnetGrid: typeof import('./src/components/ip-lookup/IPSubnetGrid.vue')['default']
+    IPSubnetProbeEvidence: typeof import('./src/components/ip-lookup/IPSubnetProbeEvidence.vue')['default']
     IPTrafficBars: typeof import('./src/components/ip-lookup/IPTrafficBars.vue')['default']
     IPTransferHistory: typeof import('./src/components/ip-lookup/IPTransferHistory.vue')['default']
     LanguageControl: typeof import('./src/components/layout/LanguageControl.vue')['default']

@@ -26,8 +26,8 @@ func TestIPLookupCacheCoalescingQuotaAndPaidRefresh(t *testing.T) {
 	if err != nil || replay.ID != first.ID {
 		t.Fatalf("replay=%+v err=%v", replay, err)
 	}
-	if _, err := service.Submit(ctx, user, "stale", q); iplookup.ErrorCode(err) != "IP_LOOKUP_BUSY" {
-		t.Fatalf("stale quote accepted: %v", err)
+	if _, err := service.Submit(ctx, user, "stale", q); err != nil {
+		t.Fatalf("shared quote rejected: %v", err)
 	}
 	r1, _, _ := store.IPLookupRun(ctx, first.ID)
 	if err := store.MarkPurchaseSyncResult(ctx, purchase, true, now); err != nil {
@@ -51,8 +51,8 @@ func TestIPLookupCacheCoalescingQuotaAndPaidRefresh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := service.Submit(ctx, user, "refresh-joined", refreshQ); iplookup.ErrorCode(err) != "IP_LOOKUP_BUSY" {
-		t.Fatalf("duplicate refresh charged: %v", err)
+	if _, err := service.Submit(ctx, user, "refresh-joined", refreshQ); err != nil {
+		t.Fatalf("shared refresh rejected: %v", err)
 	}
 	newReport, _, _ := store.IPLookupRun(ctx, refresh.ID)
 	if newReport.ID == r1.ID {

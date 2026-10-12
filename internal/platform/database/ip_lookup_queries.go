@@ -71,6 +71,10 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 		return q, c, &iplookup.CodeError{Code: "IP_LOOKUP_DISABLED"}
 	}
 	q.ConfigHash = iplookup.ConfigHash(c)
+	var running bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE ip=? AND status='processing')`, ip).Scan(&running); err != nil {
+		return q, c, err
+	}
 	cached, _, err := ipCachedReportTx(ctx, tx, ip, true)
 	if err != nil {
 		return q, c, err
@@ -78,7 +82,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 	if cached != nil {
 		q.CacheReportID = cached.ID
 	}
-	if refresh && q.CacheReportID == "" {
+	if refresh && q.CacheReportID == "" && !running {
 		return q, c, &iplookup.CodeError{Code: "IP_LOOKUP_REFRESH_UNAVAILABLE"}
 	}
 	a, err := ipAllowanceTx(ctx, tx, user, now)
@@ -107,7 +111,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 	} else {
 		q.QuotaCost = 0
 	}
-	if !refresh && q.CacheReportID != "" {
+	if running || (!refresh && q.CacheReportID != "") {
 		amount = 0
 		q.UseQuota = false
 		q.QuotaCost = 0

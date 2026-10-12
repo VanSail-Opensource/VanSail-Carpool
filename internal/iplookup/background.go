@@ -92,9 +92,10 @@ func (w *Worker) launchBackground(id string) error {
 		b.mu.Unlock()
 		return nil
 	}
-	if len(b.active) >= 32 {
+	if len(b.active) >= 1 {
 		b.mu.Unlock()
-		return &CodeError{"IP_LOOKUP_BUSY"}
+		// The report itself is the durable backlog; admission is retried by the scan.
+		return nil
 	}
 	b.active[id] = true
 	b.work.Add(1)
@@ -106,38 +107,9 @@ func (w *Worker) launchBackground(id string) error {
 		if !ok {
 			return
 		}
-		claimed, err := repo.ClaimIPLookupLease(b.ctx, id, b.owner, w.now().UTC())
-		if err != nil || !claimed {
-			return
-		}
-		runCtx, stopRun := context.WithCancel(b.ctx)
-		defer stopRun()
-		heartbeatCtx, cancel := context.WithCancel(runCtx)
-		heartbeatDone := make(chan struct{})
-		go func() {
-			defer close(heartbeatDone)
-			tick := time.NewTicker(15 * time.Second)
-			defer tick.Stop()
-			for {
-				if err := repo.HeartbeatIPLookup(heartbeatCtx, id, b.owner, w.now().UTC()); err != nil {
-					stopRun()
-					return
-				}
-				select {
-				case <-heartbeatCtx.Done():
-					return
-				case <-tick.C:
-				}
-			}
-		}()
-		defer func() { cancel(); <-heartbeatDone }()
 		// Failed executions retain their checkpoint; the recovery scan retries them.
-		err = upstreamqueue.Execute(runCtx, b.queue, func(ctx context.Context) error {
-			op, err := repo.ProviderOperationByID(ctx, id)
-			if err != nil {
-				return err
-			}
-			return w.executeOperation(ctx, op)
+		err := upstreamqueue.Execute(b.ctx, b.queue, func(ctx context.Context) error {
+			return w.executeBackground(ctx, repo, id)
 		})
 		if err != nil && b.ctx.Err() == nil && w.OnBackgroundError != nil {
 			w.OnBackgroundError(ErrorCode(err))

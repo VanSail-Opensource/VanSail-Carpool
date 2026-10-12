@@ -19,5 +19,5 @@ export function decorateShodanAudit(report: IPLookupReport, params: URLSearchPar
   if ((result.tags?.length ?? 0) + (result.vulns?.length ?? 0) > 0) report.verdict = 'unsuitable'
   if (params.has('shodan')) report.policyVersion = 'residential-v6'
   if (result.status === 'partial') report.status = 'partial'
-  if (report.verdict === 'unsuitable' && report.subnet) report.subnet = { ...report.subnet, status: 'skipped', reason: 'ip_not_passed', addresses: [] }
+  if (report.verdict === 'unsuitable' && report.subnet && !params.has('subnet-probes')) report.subnet = { ...report.subnet, status: 'skipped', reason: 'ip_not_passed', addresses: [] }
 }

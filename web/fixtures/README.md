@@ -1,5 +1,7 @@
 # Constructed browser fixtures
 
+IP Lookup's `subnet-probes` query flag adds per-address TCP/Reality/Cloudflare evidence with yellow, red, gray and legacy-compatible rows. Combine it with `checking` for live subnet progress, `queued` for shared waiting, or `enhanced=categories` for a refused primary IP with visible subnet probes. These fixtures exercise the real Vue components through Chrome DevTools MCP without production requests.
+
 `PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount real
 administration rows and dialogs with isolated reference-only operations.
 `empty`, `error`, `slow`, `reviewempty`, `reviewerror`, `reviewslow`, `pending`,

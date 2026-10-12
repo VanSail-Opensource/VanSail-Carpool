@@ -71,6 +71,9 @@ func TestLiveOnlyAttemptSurvivesStalledRunMaintenanceWithoutRefund(t *testing.T)
 	baseline := submitIP(t, service, user, "baseline", false)
 	finishIP(t, store, baseline.ID, false)
 	op := submitIP(t, service, user, "stalled-live", true)
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at='2000-01-01T00:00:00Z',lease_expires_at='2000-01-01T00:01:00Z' WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?)`, op.ID); err != nil {
+		t.Fatal(err)
+	}
 	r, _, err := store.IPLookupRun(ctx, op.ID)
 	if err != nil {
 		t.Fatal(err)

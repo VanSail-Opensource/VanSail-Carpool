@@ -9,6 +9,7 @@
     "probeCoverage": "Probe coverage",
     "subnetHeading": "/24 checks",
     "requestedAddress": "Requested IP",
+    "sharedFree": "Waiting for shared result · free",
     "usedQuotaCount": "{count} included checks used",
     "refreshIncluded": "Refresh · {count} included checks",
     "proxySettings": "IP sources and probes",
@@ -69,6 +70,7 @@
     },
     "subnetStates": {
       "clean": "Clean",
+      "suspected": "Suspected Reality",
       "flagged": "Abuse / proxy",
       "unknown": "Incomplete"
     },

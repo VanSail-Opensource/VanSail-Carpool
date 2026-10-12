@@ -26,7 +26,7 @@ type ipLookupQueueTuning struct {
 func ipLookupTuning(id string) ipLookupQueueTuning {
 	switch id {
 	case "checks":
-		return ipLookupQueueTuning{MinInterval: 250 * time.Millisecond, Workers: 2}
+		return ipLookupQueueTuning{MinInterval: 250 * time.Millisecond, Workers: 1}
 	case "probes":
 		return ipLookupQueueTuning{MinInterval: 100 * time.Millisecond, Workers: 4}
 	case "proxy_lists", "dns":

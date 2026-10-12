@@ -1,4 +1,6 @@
 # IP Lookup
+- `IPSubnetProbeEvidence.vue` renders compact selected-address port states and observations using the existing probe presentation helpers. `IPSubnetGrid.vue` supports Reality yellow, confirmed-risk red, requested-address selection and legacy rows with no probes. `IPSubnetGrid.test.ts` covers accessible selection, confidence evidence and legacy/prefix transitions in hosted CI.
+- Shared exact-IP progress uses the existing polling flow and a localized free-wait caption. Different-IP submissions retain their own queued receipts and quoted billing.
 - `useIPLookup.ts` owns quotes, idempotent submission, account isolation and receipt polling.
 - `IPLookupPage.vue` composes member loading, input, errors and report states.
 - `IPLookupForm.vue` keeps the address and 44px lookup control on one row, with the current quota or TXB price below.

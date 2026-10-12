@@ -5,10 +5,10 @@ import { useI18n } from '@/i18n'
 import { formatMoney } from '@/utils/format'
 
 const ip = defineModel<string>({ required: true })
-const props = defineProps<{ state: IPLookupState; quote: IPLookupQuote | null; busy: boolean; validIp: boolean }>()
+const props = defineProps<{ state: IPLookupState; quote: IPLookupQuote | null; busy: boolean; validIp: boolean; shared?: boolean }>()
 defineEmits<{ check: [] }>()
 const { t } = useI18n()
-const cost = computed(() => props.quote?.cachedReport ? t('ipLookup.cachedFree') : props.quote?.useQuota
+const cost = computed(() => props.shared ? t('ipLookup.sharedFree') : props.quote?.cachedReport ? t('ipLookup.cachedFree') : props.quote?.useQuota
   ? t('ipLookup.checkIncluded') : t('ipLookup.checkPaid', { fee: props.quote ? formatMoney(props.quote.charge) : props.state.lookupFee ? formatMoney(props.state.lookupFee) : '' }))
 </script>
 

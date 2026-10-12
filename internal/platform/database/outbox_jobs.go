@@ -17,7 +17,11 @@ func (s *Store) ClaimOutboxJob(ctx context.Context, now time.Time) (*model.Outbo
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	job, err := scanOutbox(tx.QueryRowContext(ctx, outboxSelect+` WHERE status='pending' AND available_at<=? ORDER BY available_at,created_at LIMIT 1`, stamp(now)))
+	job, err := scanOutbox(tx.QueryRowContext(ctx, outboxSelect+` WHERE status='pending' AND available_at<=?
+		AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
+			NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
+			AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
+		ORDER BY available_at,created_at LIMIT 1`, stamp(now)))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}

@@ -29,12 +29,13 @@ type ProxyAssessment struct {
 	Matches []string            `json:"matches"`
 }
 type SubnetAddress struct {
-	IP      string   `json:"ip"`
-	Status  string   `json:"status"`
-	Proxy   string   `json:"proxy"`
-	Abuse   string   `json:"abuse"`
-	IPAPI   string   `json:"ipapi"`
-	Sources []string `json:"sources"`
+	IP      string      `json:"ip"`
+	Status  string      `json:"status"`
+	Proxy   string      `json:"proxy"`
+	Abuse   string      `json:"abuse"`
+	IPAPI   string      `json:"ipapi"`
+	Sources []string    `json:"sources"`
+	Ports   []PortProbe `json:"ports,omitempty"`
 }
 type SubnetResult struct {
 	Prefix    string            `json:"prefix"`

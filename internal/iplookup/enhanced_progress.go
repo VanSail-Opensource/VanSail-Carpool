@@ -38,6 +38,21 @@ func appendEnhancedProgress(p *Progress, r Report) {
 		case "subnet":
 			if r.Subnet != nil {
 				status = r.Subnet.Status
+				for _, row := range r.Subnet.Addresses {
+					for _, port := range row.Ports {
+						for _, task := range port.Tasks {
+							p.Total++
+							if subnetProbeFinished(task.Status) {
+								p.Completed++
+							} else {
+								status = "pending"
+							}
+							if task.Status == "active" {
+								p.CurrentProvider = strconv.Itoa(port.Port) + ":" + task.Key
+							}
+						}
+					}
+				}
 			}
 		}
 		if key == e.Phase && (status == "pending" || status == "processing") {

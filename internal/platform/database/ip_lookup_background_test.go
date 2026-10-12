@@ -47,8 +47,13 @@ func TestIPLookupLeasesAndSharedProgressKeepReceiptPrivate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := service.Submit(ctx, user, "duplicate-background", q); iplookup.ErrorCode(err) != "IP_LOOKUP_BUSY" {
-		t.Fatalf("duplicate accepted: %v", err)
+	joined, err := service.Submit(ctx, user, "duplicate-background", q)
+	if err != nil {
+		t.Fatalf("shared request rejected: %v", err)
+	}
+	check, err := service.Check(ctx, user, joined.ID)
+	if err != nil || check.Charge.Minor != "0" || check.UsedQuota || check.QuotaConsumed != 0 {
+		t.Fatalf("shared request charged: %+v %v", check, err)
 	}
 	state, err := service.State(ctx, user)
 	if err != nil || state.Allowance.Remaining != 1 {

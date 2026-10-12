@@ -45,6 +45,7 @@ func initializeSubnet(ctx context.Context, r *Report, pool *proxyPool) error {
 		}
 		r.Subnet.Addresses = append(r.Subnet.Addresses, row)
 	}
+	prepareSubnetProbes(r)
 	return nil
 }
 
@@ -62,7 +63,7 @@ func finishInventorySubnet(r *Report, reason string) {
 		if row.IPAPI == "pending" {
 			row.IPAPI = "skipped"
 		}
-		if row.Status != "flagged" && row.Proxy == "success" {
+		if row.Status != "flagged" && row.Status != "suspected" && row.Proxy == "success" {
 			row.Status = "clean"
 		}
 		if row.Proxy == "partial" {

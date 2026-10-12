@@ -378,6 +378,10 @@ existing refund path. Ledger changes and receipt settlement remain atomic.
 
 `ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined /24 report generation, detaches historical receipt references and deletes superseded payloads. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
 
-`ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, duplicate billing rejection, exact refresh-unit refunds and combined-cache replacement with preserved receipts in hosted CI.
+`ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, free shared submissions, exact refresh-unit refunds and combined-cache replacement with preserved receipts in hosted CI.
+
+`ip_lookup_admission_test.go` covers global FIFO admission across process owners, free cross-user same-IP joining, quote/completion races, idempotency and repair deferral without burning attempts. `ip_lookup_background.go` admits only the oldest pending report and excludes active report/live repairs. `outbox_jobs.go` excludes those repair kinds while any fresh report waits or runs, while unrelated jobs remain claimable. `retention_operations.go` protects unstarted queue entries and live leases; only admitted, abandoned IP runs enter stale settlement. No new persistence is introduced.
+
+`ip_lookup_waiting_test.go` verifies an unstarted report and its receipt survive a long queue wait and remain eligible for admission after maintenance.
 
 IP lookup resumes and report repair read current saved settings. `ip_lookup_current_config_test.go` verifies column removal, retained checkpoints/references/rowids, and current settings reads. Signed quotes and settlement amounts remain transactional.
