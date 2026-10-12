@@ -18,7 +18,10 @@ func emitCachedDetails(r LiveDetails, emit func(LiveEvent) error) (LiveDetails, 
 
 // LivePartial reports missing/error coverage without changing the quality verdict.
 func LivePartial(r LiveDetails) bool {
-	metas := []LiveMeta{r.Topology.LiveMeta, r.Topology.RelationshipMeta, r.Topology.ClassificationMeta, r.Scores.LiveMeta, r.Block.LiveMeta, r.PTR.LiveMeta, r.Shodan.LiveMeta}
+	metas := []LiveMeta{r.Topology.LiveMeta, r.Topology.ClassificationMeta, r.Scores.LiveMeta, r.Block.LiveMeta, r.PTR.LiveMeta, r.Shodan.LiveMeta}
+	if relationshipMetaFailed(r.Topology.RelationshipMeta) {
+		return true
+	}
 	if r.Transfers != nil {
 		metas = append(metas, r.Transfers.LiveMeta)
 	}
@@ -34,4 +37,13 @@ func LivePartial(r LiveDetails) bool {
 		}
 	}
 	return false
+}
+
+// relationshipMetaFailed ignores code-less relationship degradation: edges
+// that stay merely "observed" reflect the inherent coverage of the dated
+// CAIDA dataset (routinely supplemented by cloudflare), not a fetch failure.
+// Such lineage must not mark the whole check partial; real relationship
+// errors always record an error code.
+func relationshipMetaFailed(m LiveMeta) bool {
+	return m.Status == "error" || (m.Status == "partial" && m.ErrorCode != "")
 }

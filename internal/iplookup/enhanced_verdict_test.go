@@ -6,7 +6,7 @@ func TestProbeGateAndSuspectedFindings(t *testing.T) {
 	cases := []struct {
 		name, status, confidence string
 		pass                     bool
-	}{{"closed", "closed", "", true}, {"clean", "success", "", true}, {"heuristic", "success", "suspected", true}, {"confirmed", "success", "confirmed", false}, {"unavailable", "error", "", false}, {"active", "processing", "", false}}
+	}{{"closed", "closed", "", true}, {"clean", "success", "", true}, {"heuristic", "success", "suspected", true}, {"confirmed", "success", "confirmed", false}, {"unavailable", "error", "", true}, {"active", "processing", "", false}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			p := PortProbe{Port: 443, Status: tc.status}

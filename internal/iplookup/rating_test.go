@@ -27,7 +27,7 @@ func TestRatingPrecedenceAndCompleteness(t *testing.T) {
 		{"business user type", "good", func(r *Report) { v := "business"; r.MaxMind.UserType = &v }},
 		{"no probes", "good", func(r *Report) { r.Ports = nil }},
 		{"unfinished probes", "good", func(r *Report) { r.Ports[0].Status = "processing" }},
-		{"unavailable probes", "good", func(r *Report) { r.Ports[0].Status = "error" }},
+		{"unavailable probes", "perfect", func(r *Report) { r.Ports[0].Status = "error" }},
 		{"observed TCP", "good", func(r *Report) {
 			r.Ports[0].Status = "success"
 			r.Ports[0].Tasks = []ProbeTask{{Key: "tcp", Status: "success"}}

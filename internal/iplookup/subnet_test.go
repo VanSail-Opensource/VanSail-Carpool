@@ -77,3 +77,55 @@ func TestSubnetShortCircuitsEachAddressInSourceOrder(t *testing.T) {
 		t.Fatal("per-address precedence violated")
 	}
 }
+func TestSubnetSkipsAbuseItemWhenBlockIsClean(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	queue, err := upstreamqueue.New(upstreamqueue.Config{Name: "abuseipdb", Capacity: 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := queue.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = queue.Shutdown(context.Background()) }()
+	c := DefaultConfig()
+	live := NewLiveService(providerSettings{value: "key"}, map[string]*upstreamqueue.Queue{"abuseipdb": queue})
+	live.client.Transport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		t.Errorf("unexpected block request after a clean /24: %s", req.URL.RawQuery)
+		return nil, nil
+	})
+	s := NewEnhancedService(providerSettings{value: "key"}, nil, live)
+	done := true
+	provider := &subnetProvider{blockDone: &done}
+	s.ipapi = provider
+	s.pools[proxyPoolKey(c)] = &proxyPool{ips: map[netip.Addr][]string{}, complete: true, expires: time.Now().Add(time.Minute)}
+	zero := 0
+	r := NewReport("subnet-clean", "8.8.8.8", c)
+	r.Checkpoint.Enhanced = &EnhancedCheckpoint{}
+	r.LiveDetails = &LiveDetails{IP: r.IP, Block: AbuseBlock{LiveMeta: LiveMeta{Status: "success", Source: "abuseipdb"}, Prefix: "8.8.8.0/24", ReportedAddresses: &zero}}
+	if err := s.checkSubnet(ctx, &r, c, func() error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if len(provider.calls) != 256 {
+		t.Fatalf("IPAPI calls=%d", len(provider.calls))
+	}
+	flagged := 0
+	for _, row := range r.Subnet.Addresses {
+		if row.Abuse != "skipped" {
+			t.Fatalf("abuse item not skipped for %s: %s", row.IP, row.Abuse)
+		}
+		if row.IP == "8.8.8.10" {
+			flagged++
+			if row.Status != "flagged" {
+				t.Fatalf("risk row not flagged: %+v", row)
+			}
+			continue
+		}
+		if row.Status != "clean" {
+			t.Fatalf("row %s not clean: %+v", row.IP, row)
+		}
+	}
+	if flagged != 1 || r.Subnet.Status != "success" {
+		t.Fatalf("subnet outcome wrong: flagged=%d status=%s", flagged, r.Subnet.Status)
+	}
+}

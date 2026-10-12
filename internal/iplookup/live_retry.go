@@ -38,7 +38,7 @@ func liveMetaFailed(m LiveMeta) bool {
 func liveRetryPlanOf(r LiveDetails) liveRetryPlan {
 	var plan liveRetryPlan
 	plan.Topology = liveMetaFailed(r.Topology.LiveMeta)
-	plan.Graph = plan.Topology || liveMetaFailed(r.Topology.RelationshipMeta) || liveMetaFailed(r.Topology.ClassificationMeta)
+	plan.Graph = plan.Topology || relationshipMetaFailed(r.Topology.RelationshipMeta) || liveMetaFailed(r.Topology.ClassificationMeta)
 	plan.Block = liveMetaFailed(r.Block.LiveMeta)
 	plan.Transfers = r.Transfers != nil && liveMetaFailed(r.Transfers.LiveMeta)
 	plan.Scores = liveMetaFailed(r.Scores.LiveMeta)

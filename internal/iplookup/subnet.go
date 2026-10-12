@@ -48,6 +48,17 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 			return err
 		}
 	}
+	// An earlier /24 AbuseIPDB block check that reported zero abusive
+	// addresses already covers the abuse item of this scan: skip it instead
+	// of re-evaluating every neighbor, while proxy membership and the
+	// per-address IPAPI checks continue unchanged.
+	if abuseBlockClean(r, prefix) {
+		for i := range r.Subnet.Addresses {
+			if r.Subnet.Addresses[i].Abuse == "pending" {
+				r.Subnet.Addresses[i].Abuse = "skipped"
+			}
+		}
+	}
 	needBlock := false
 	for _, row := range r.Subnet.Addresses {
 		needBlock = needBlock || row.Abuse == "pending"
@@ -121,7 +132,9 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 				row.Sources = append(row.Sources, "ipapi")
 			} else if flagsComplete(result) {
 				row.IPAPI = "success"
-				if row.Proxy == "success" && row.Abuse == "success" {
+				// A skipped abuse item means the earlier clean /24 block
+				// check already covered this address.
+				if row.Proxy == "success" && (row.Abuse == "success" || row.Abuse == "skipped") {
 					row.Status = "clean"
 				}
 			} else {

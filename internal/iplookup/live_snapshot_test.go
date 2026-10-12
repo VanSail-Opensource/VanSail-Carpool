@@ -49,3 +49,20 @@ func TestCompactTopologyRetainsAllObservedT1sWithoutOriginalPaths(t *testing.T) 
 		t.Fatal("compaction not idempotent")
 	}
 }
+
+func TestLivePartialIgnoresCoverageLimitedRelationshipLineage(t *testing.T) {
+	healthy := LiveDetails{Topology: BGPTopology{LiveMeta: LiveMeta{Status: "success"}, RelationshipMeta: LiveMeta{Status: "partial", Source: "caida,cloudflare"}, ClassificationMeta: LiveMeta{Status: "success"}}}
+	if LivePartial(healthy) {
+		t.Fatal("coverage-limited relationship lineage marked the snapshot partial")
+	}
+	failing := healthy
+	failing.Topology.RelationshipMeta = LiveMeta{Status: "partial", ErrorCode: "IP_DETAILS_INVALID_RESPONSE"}
+	if !LivePartial(failing) {
+		t.Fatal("relationship fetch failure lost its partial marker")
+	}
+	errored := healthy
+	errored.Topology.RelationshipMeta = LiveMeta{Status: "error", ErrorCode: "IP_DETAILS_UNAVAILABLE"}
+	if !LivePartial(errored) {
+		t.Fatal("relationship error lost its partial marker")
+	}
+}
