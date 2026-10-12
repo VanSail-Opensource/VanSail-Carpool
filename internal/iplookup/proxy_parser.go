@@ -2,6 +2,7 @@ package iplookup
 
 import (
 	"encoding/csv"
+	"net/netip"
 	"net/url"
 	"regexp"
 	"sort"
@@ -14,9 +15,9 @@ import (
 const maxProxyBody = 16 << 20
 const maxProxyHosts = 250000
 
-var endpointPattern = regexp.MustCompile(`(?i)(?:[a-z][a-z0-9+.-]*://[^\s<>"\x60]+|\[[0-9a-f:]+\](?::[0-9]+)?|(?:[a-z0-9_-]+\.)+[a-z0-9_-]+:[0-9]+|(?:[0-9]{1,3}\.){3}[0-9]{1,3})`)
+var endpointPattern = regexp.MustCompile(`(?i)(?:[a-z][a-z0-9+.-]*://[^\s<>"\x60]+|\[[0-9a-f:]+\](?::[0-9]+)?|[0-9a-f:.]+/[^\s<>"\x60,;]+|(?:[a-z0-9_-]+\.)+[a-z0-9_-]+:[0-9]+|(?:[0-9]{1,3}\.){3}[0-9]{1,3})`)
 
-// ExtractProxyHosts parses supported inventory formats without retaining secrets.
+// ExtractProxyHosts returns canonical endpoint hosts and CIDRs without retaining secrets.
 func ExtractProxyHosts(data []byte) ([]string, error) {
 	if len(data) > maxProxyBody {
 		return nil, &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
@@ -24,7 +25,7 @@ func ExtractProxyHosts(data []byte) ([]string, error) {
 	hosts := map[string]bool{}
 	partial := false
 	add := func(raw string) {
-		h := endpointHost(raw)
+		h := proxyInventoryEntry(raw)
 		if h != "" {
 			if len(hosts) >= maxProxyHosts {
 				partial = true
@@ -138,4 +139,26 @@ func ExtractProxyHosts(data []byte) ([]string, error) {
 		return out, &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
 	}
 	return out, nil
+}
+
+func proxyInventoryEntry(raw string) string {
+	raw = strings.Trim(strings.TrimSpace(raw), "\"'<>(),;")
+	if !strings.Contains(raw, "://") && strings.Contains(raw, "/") {
+		prefix, err := netip.ParsePrefix(raw)
+		if err != nil {
+			return ""
+		}
+		if prefix.Addr().Is4In6() {
+			if prefix.Bits() < 96 {
+				return ""
+			}
+			prefix = netip.PrefixFrom(prefix.Addr().Unmap(), prefix.Bits()-96)
+		}
+		prefix = prefix.Masked()
+		if _, err := CanonicalIP(prefix.Addr().String()); err != nil {
+			return ""
+		}
+		return prefix.String()
+	}
+	return endpointHost(raw)
 }

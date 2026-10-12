@@ -64,10 +64,10 @@ func TestInventoryNoAddressIsSkippedWithoutPartialCoverage(t *testing.T) {
 }
 
 func TestPartialInventoryPrioritizesPublishedEvidenceAtLimit(t *testing.T) {
-	previous := map[netip.Addr]bool{netip.MustParseAddr("8.8.8.8"): true, netip.MustParseAddr("9.9.9.9"): true}
-	incoming := map[netip.Addr]bool{netip.MustParseAddr("1.1.1.1"): true, netip.MustParseAddr("8.8.4.4"): true, netip.MustParseAddr("1.0.0.1"): true}
-	retained := retainSourceIPs(previous, incoming, 3)
-	if len(retained) != 3 || !retained[netip.MustParseAddr("8.8.8.8")] || !retained[netip.MustParseAddr("9.9.9.9")] {
+	previous := map[netip.Prefix]bool{netip.MustParsePrefix("8.8.8.8/32"): true, netip.MustParsePrefix("9.9.9.9/32"): true}
+	incoming := map[netip.Prefix]bool{netip.MustParsePrefix("1.1.1.1/32"): true, netip.MustParsePrefix("8.8.4.4/32"): true, netip.MustParsePrefix("1.0.0.1/32"): true}
+	retained := retainSourcePrefixes(previous, incoming, 3)
+	if len(retained) != 3 || !retained[netip.MustParsePrefix("8.8.8.8/32")] || !retained[netip.MustParsePrefix("9.9.9.9/32")] {
 		t.Fatal("partial refresh displaced published positives at the limit")
 	}
 	if len(previous) != 2 || len(incoming) != 3 {

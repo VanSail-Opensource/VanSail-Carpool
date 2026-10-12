@@ -29,18 +29,18 @@ func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, job sourceRefreshJ
 			cache.result = result
 		}
 	}
-	ips, result := s.collectSource(collectCtx, job.source, c, true, update)
+	prefixes, result := s.collectSource(collectCtx, job.source, c, true, update)
 	if collectCtx.Err() != nil {
 		result.Status, result.ErrorCode = "partial", "IP_PROXY_INTERRUPTED"
 	}
-	s.finishSource(b, job, ips, result)
+	s.finishSource(b, job, prefixes, result)
 }
 
 func interruptedSource(source ProxySource) ProxySourceResult {
 	return ProxySourceResult{ID: source.ID, Name: source.Name, URL: safeSourceURL(source.URL), Status: "partial", Phase: "complete", ErrorCode: "IP_PROXY_INTERRUPTED"}
 }
 
-func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJob, ips map[netip.Addr]bool, result ProxySourceResult) {
+func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJob, prefixes map[netip.Prefix]bool, result ProxySourceResult) {
 	cache := job.cache
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -52,10 +52,10 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	if b.sources[job.source.ID] == cache {
 		if result.Status != "success" {
 			// Retain positive evidence without certifying negative matches.
-			ips = retainSourceIPs(cache.ips, ips, 1000000)
+			prefixes = retainSourcePrefixes(cache.prefixes, prefixes, 1000000)
 		}
-		cache.ips, cache.result, cache.complete = ips, result, result.Status == "success"
-		cache.result.Count = len(ips)
+		cache.prefixes, cache.result, cache.complete = prefixes, result, result.Status == "success"
+		cache.result.Count = len(prefixes)
 		if cache.complete {
 			cache.expires = now.Add(proxyInventoryTTL)
 		}
@@ -67,15 +67,15 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	cache.done = nil
 }
 
-func retainSourceIPs(previous, incoming map[netip.Addr]bool, limit int) map[netip.Addr]bool {
-	retained := make(map[netip.Addr]bool, len(previous))
+func retainSourcePrefixes(previous, incoming map[netip.Prefix]bool, limit int) map[netip.Prefix]bool {
+	retained := make(map[netip.Prefix]bool, len(previous))
 	// Prior published evidence wins when a partial refresh fills the limit.
-	for ip := range previous {
-		retained[ip] = true
+	for prefix := range previous {
+		retained[prefix] = true
 	}
-	for ip := range incoming {
-		if len(retained) < limit || retained[ip] {
-			retained[ip] = true
+	for prefix := range incoming {
+		if len(retained) < limit || retained[prefix] {
+			retained[prefix] = true
 		}
 	}
 	return retained

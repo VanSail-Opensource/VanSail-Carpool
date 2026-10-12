@@ -14,7 +14,7 @@ type sourceTestEntry struct {
 type sourceCache struct {
 	source               ProxySource
 	key                  [32]byte
-	ips                  map[netip.Addr]bool // Published maps are immutable.
+	prefixes             map[netip.Prefix]bool // Published maps are immutable.
 	result               ProxySourceResult
 	complete             bool
 	expires, nextRefresh time.Time

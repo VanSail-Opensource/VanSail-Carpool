@@ -22,22 +22,22 @@ func safeSourceURL(raw string) string {
 }
 
 func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, error) {
-	p := &proxyPool{ips: map[netip.Addr][]string{}, sources: []ProxySourceResult{}, complete: true}
+	p := &proxyPool{prefixes: map[netip.Prefix][]string{}, sources: []ProxySourceResult{}, complete: true}
 	for _, source := range c.ProxySources {
 		if !source.Enabled {
 			continue
 		}
-		ips, result := s.collectSource(ctx, source, c, false, nil)
+		prefixes, result := s.collectSource(ctx, source, c, false, nil)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		for ip := range ips {
-			if len(p.ips) >= 1000000 && p.ips[ip] == nil {
+		for prefix := range prefixes {
+			if len(p.prefixes) >= 1000000 && p.prefixes[prefix] == nil {
 				result.Status = "partial"
 				result.ErrorCode = "IP_PROXY_LIMIT"
 				continue
 			}
-			p.ips[ip] = append(p.ips[ip], source.ID)
+			p.prefixes[prefix] = append(p.prefixes[prefix], source.ID)
 		}
 		p.sources = append(p.sources, result)
 		p.complete = p.complete && result.Status == "success"
@@ -49,7 +49,7 @@ func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, 
 	return p, nil
 }
 
-func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource, c Config, fresh bool, emit func(ProxySourceResult)) (map[netip.Addr]bool, ProxySourceResult) {
+func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource, c Config, fresh bool, emit func(ProxySourceResult)) (map[netip.Prefix]bool, ProxySourceResult) {
 	r := ProxySourceResult{ID: source.ID, Name: source.Name, URL: safeSourceURL(source.URL), Status: "processing", Phase: "download"}
 	update := func() {
 		if emit != nil {
@@ -57,7 +57,7 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 		}
 	}
 	update()
-	ips := map[netip.Addr]bool{}
+	prefixes := map[netip.Prefix]bool{}
 	fetch := s.downloadInventory
 	if s.inventoryFetch != nil {
 		fetch = s.inventoryFetch
@@ -67,7 +67,7 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 		r.Status = "error"
 		r.ErrorCode = "IP_PROXY_DOWNLOAD"
 		update()
-		return ips, r
+		return prefixes, r
 	}
 	r.Phase = "parse"
 	update()
@@ -92,7 +92,11 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 		go func() {
 			defer work.Done()
 			for host := range jobs {
-				resolved := s.resolveDNS(ctx, host, c.DNSResolvers, 0, fresh, false)
+				prefix, err := netip.ParsePrefix(host)
+				resolved := dnsResolution{status: "success"}
+				if err != nil {
+					resolved = s.resolveDNS(ctx, host, c.DNSResolvers, 0, fresh, false)
+				}
 				mu.Lock()
 				r.Processed++
 				if resolved.status == "error" {
@@ -101,14 +105,21 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 				if resolved.status == "error" || resolved.status == "no_address" {
 					r.Skipped++
 				}
+				entries := []netip.Prefix{}
+				if prefix.IsValid() {
+					entries = append(entries, prefix)
+				}
 				for _, ip := range resolved.ips {
-					if len(ips) >= 1000000 && !ips[ip] {
+					entries = append(entries, netip.PrefixFrom(ip, ip.BitLen()))
+				}
+				for _, entry := range entries {
+					if len(prefixes) >= 1000000 && !prefixes[entry] {
 						r.Status, r.ErrorCode = "partial", "IP_PROXY_LIMIT"
 						continue
 					}
-					ips[ip] = true
+					prefixes[entry] = true
 				}
-				r.Count = len(ips)
+				r.Count = len(prefixes)
 				update()
 				mu.Unlock()
 			}
@@ -132,5 +143,5 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 	r.Phase = "complete"
 	r.ObservedAt = time.Now().UTC().Format(time.RFC3339)
 	update()
-	return ips, r
+	return prefixes, r
 }

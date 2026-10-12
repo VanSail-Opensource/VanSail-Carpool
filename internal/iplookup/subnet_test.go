@@ -52,7 +52,7 @@ func TestSubnetShortCircuitsEachAddressInSourceOrder(t *testing.T) {
 	s := NewEnhancedService(providerSettings{value: "key"}, nil, live)
 	provider := &subnetProvider{blockDone: &blockDone}
 	s.ipapi = provider
-	s.pools[proxyPoolKey(c)] = &proxyPool{ips: map[netip.Addr][]string{netip.MustParseAddr("8.8.8.7"): {"named-list"}}, complete: true, expires: time.Now().Add(time.Minute)}
+	s.pools[proxyPoolKey(c)] = &proxyPool{prefixes: map[netip.Prefix][]string{netip.MustParsePrefix("8.8.8.7/32"): {"named-list"}}, complete: true, expires: time.Now().Add(time.Minute)}
 	flags := Signals{Abuse: boolean(false), Proxy: boolean(false), VPN: boolean(false), Tor: boolean(false)}
 	r := NewReport("subnet", "8.8.8.8", c)
 	r.Checkpoint.Enhanced = &EnhancedCheckpoint{IPAPI: &ProviderResult{Signals: flags, Status: "success"}}
@@ -101,7 +101,7 @@ func TestSubnetSkipsAbuseItemWhenBlockIsClean(t *testing.T) {
 	done := true
 	provider := &subnetProvider{blockDone: &done}
 	s.ipapi = provider
-	s.pools[proxyPoolKey(c)] = &proxyPool{ips: map[netip.Addr][]string{}, complete: true, expires: time.Now().Add(time.Minute)}
+	s.pools[proxyPoolKey(c)] = &proxyPool{prefixes: map[netip.Prefix][]string{}, complete: true, expires: time.Now().Add(time.Minute)}
 	zero := 0
 	r := NewReport("subnet-clean", "8.8.8.8", c)
 	r.Checkpoint.Enhanced = &EnhancedCheckpoint{}

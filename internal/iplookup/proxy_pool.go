@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"net/netip"
+	"sort"
 	"sync"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 type proxyPool struct {
-	ips      map[netip.Addr][]string
+	prefixes map[netip.Prefix][]string
 	sources  []ProxySourceResult
 	complete bool
 	expires  time.Time
@@ -94,10 +95,27 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 }
 func (p *proxyPool) assessment(ip string) *ProxyAssessment {
 	addr, _ := netip.ParseAddr(ip)
-	matches := append([]string{}, p.ips[addr.Unmap()]...)
+	matches := p.matchingSources(addr)
 	status := "success"
 	if !p.complete {
 		status = "partial"
 	}
 	return &ProxyAssessment{Status: status, Sources: append([]ProxySourceResult{}, p.sources...), Matches: matches}
+}
+
+func (p *proxyPool) matchingSources(addr netip.Addr) []string {
+	matches := []string{}
+	seen := map[string]bool{}
+	addr = addr.Unmap()
+	// At most 129 map lookups, regardless of inventory size or CIDR capacity.
+	for bits := addr.BitLen(); bits >= 0 && addr.IsValid(); bits-- {
+		for _, id := range p.prefixes[netip.PrefixFrom(addr, bits).Masked()] {
+			if !seen[id] {
+				seen[id] = true
+				matches = append(matches, id)
+			}
+		}
+	}
+	sort.Strings(matches)
+	return matches
 }

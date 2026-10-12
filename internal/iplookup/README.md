@@ -282,6 +282,12 @@ Hosted tests: `proxy_parser_test.go` covers endpoint formats, encoded input and 
 
 `subnet_test.go` uses a queued synthetic block response to verify source order, per-address short-circuiting and requested-IP response reuse without external requests in hosted CI.
 
+IPv6 neighbor scans are explicitly skipped with reason `ipv6` and no address
+rows, inventory collection or provider calls. Independently collected live
+AbuseIPDB block evidence remains available. `subnet_cidr_test.go` verifies that
+exclusion, persistence failures and IPv4 CIDR membership short-circuiting in
+hosted CI.
+
 `worker_provider_context.go` folds reusable IPAPI context and starts inventory assessment after the first reported country, keeping the provider executor small.
 
 ## Shodan quality policy, residential-v6
@@ -319,6 +325,17 @@ hosted CI. Upstream contract:
 `proxy_source_test_runner.go` owns queued diagnostic settlement and joins callbacks after cancellation before releasing admission or completing application shutdown. Probe response/evidence policies follow zgrab2 SOCKS5, fall-star/proxy_detector prober and Nmap proxy-script references without importing scanner dependencies or forwarding traffic.
 
 `proxy_inventory_test.go` verifies six-hour reuse with skipped DNS failures and no-address endpoint skipping independently from DNS transport coverage.
+
+`proxy_parser.go` also retains canonical public IPv4/IPv6 CIDRs from plain,
+structured, CSV, HTML and encoded inventories. Source caches store immutable
+prefix sets: individual endpoints use /32 or /128, and networks stay unexpanded
+and never enter DNS resolution. `proxy_pool.go` matches every covering prefix,
+deduplicates source IDs, and shares that membership with IPv4 neighbor checks.
+Inventory counts represent unique endpoint/prefix records; a CIDR counts once,
+regardless of its address capacity. Failed refreshes retain positive prefix
+evidence under the existing bounds and freshness policy. `proxy_cidr_test.go`
+covers supplied /24 and /48 examples, boundaries, overlap, cache attribution and
+failed-refresh retention in hosted CI.
 
 Negative DNS memoization requires an SOA and uses the smaller SOA TTL/MINIMUM capped at five minutes; replies without SOA are not cached. A fully cooling resolver pool is unavailable evidence, never an observed empty answer. Resolver IP/port normalization prevents aliases from counting as independent evidence.
 

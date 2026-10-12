@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
@@ -105,8 +106,16 @@ func decodeInventory(raw string) (string, bool) {
 		}
 	}
 	if !strings.Contains(raw, ":") && !strings.Contains(raw, "<") {
-		if b, e := decodeBase64(raw); e == nil && (strings.Contains(string(b), "://") || json.Valid(b)) {
-			return string(b), true
+		if b, e := decodeBase64(raw); e == nil {
+			decoded := string(b)
+			if strings.Contains(decoded, "://") || json.Valid(b) {
+				return decoded, true
+			}
+			for _, field := range strings.Fields(decoded) {
+				if _, e := netip.ParsePrefix(field); e == nil {
+					return decoded, true
+				}
+			}
 		}
 	}
 	return "", false

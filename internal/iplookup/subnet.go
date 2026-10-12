@@ -14,14 +14,15 @@ func flagsComplete(p ProviderResult) bool {
 	return p.Signals.Abuse != nil && p.Signals.Proxy != nil && p.Signals.VPN != nil && p.Signals.Tor != nil
 }
 func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, save func() error) error {
-	address, _ := netip.ParseAddr(r.IP)
-	prefix := blockPrefix(r.IP)
+	address, err := netip.ParseAddr(r.IP)
+	if err != nil || address.Zone() != "" {
+		return &CodeError{"IP_LOOKUP_INVALID_IP"}
+	}
+	address = address.Unmap()
+	prefix := blockPrefix(address.String())
 	if address.Is6() {
-		block := s.reportBlock(ctx, r, c)
-		if r.LiveDetails != nil {
-			r.LiveDetails.Block = block
-		}
-		r.Subnet = &SubnetResult{Prefix: prefix, Status: block.Status, Reason: "ipv6", Addresses: []SubnetAddress{}}
+		// Live block evidence is independent; never collect it from a neighbor scan.
+		r.Subnet = &SubnetResult{Prefix: prefix, Status: "skipped", Reason: "ipv6", Addresses: []SubnetAddress{}}
 		return save()
 	}
 	pool, err := s.pool(ctx, c)
@@ -36,7 +37,7 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 			if !pool.complete {
 				row.Proxy = "partial"
 			}
-			if ids := pool.ips[ip]; len(ids) > 0 {
+			if ids := pool.matchingSources(ip); len(ids) > 0 {
 				row.Status = "flagged"
 				row.Proxy = "flagged"
 				row.Abuse, row.IPAPI = "skipped", "skipped"
