@@ -21,7 +21,7 @@ type reportRetryRepository interface {
 // partial report directly in the shared cache row. It never touches receipts
 // or billing: members already received the partial verdict, and later polls
 // simply observe the improved evidence. The chain policy comes from the
-// report's frozen config, matching the credentials that produced it.
+// current saved settings while retaining completed evidence.
 func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJob) error {
 	repository, ok := w.repository.(reportRetryRepository)
 	if !ok {
@@ -40,7 +40,7 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 	}
 	unlock := w.lockRun(r.ID)
 	defer unlock()
-	r, _, err = repository.IPLookupReportByID(ctx, payload.ReportID)
+	r, c, err = repository.IPLookupReportByID(ctx, payload.ReportID)
 	if err != nil {
 		if errors.Is(err, ErrRepairGone) {
 			return nil
@@ -80,7 +80,7 @@ func (w *Worker) HandleReportRetryOutbox(ctx context.Context, job model.OutboxJo
 }
 
 // scheduleNextReportRetry continues the chain while the report stays partial
-// with failed stages and the frozen policy still allows another attempt.
+// with failed stages and the current policy still allows another attempt.
 func (w *Worker) scheduleNextReportRetry(ctx context.Context, repository reportRetryRepository, r Report, c Config, attempt int) error {
 	if r.Status != "partial" || len(FailedStages(r)) == 0 || !RetryAllowed(c, attempt+1) {
 		return nil

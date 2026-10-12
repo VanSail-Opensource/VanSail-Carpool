@@ -3,7 +3,21 @@ import type { IPLookupReport } from '@/api/ipLookup'
 import { setLocale } from '@/i18n'
 import { ipLocationMap } from './map'
 import { reportRows } from './reportPresentation'
-import { sourceText } from './presentation'
+import { sourceText, ipLookupErrorText } from './presentation'
+
+describe('IP lookup failure localization', () => {
+  it('keeps base failures and source diagnostic failures readable in both languages', () => {
+    for (const locale of ['en', 'zh-CN'] as const) {
+      setLocale(locale)
+      for (const code of ['IP_LOOKUP_FAILED', 'IP_PROXY_SOURCE_NOT_FOUND']) {
+        const message = ipLookupErrorText(code)
+        expect(message).not.toContain('ipLookup.')
+        expect(message).not.toBe(code)
+      }
+    }
+    setLocale('en')
+  })
+})
 
 describe('IP location and compact evidence', () => {
   it('keeps zero coordinates and an ordered valid map extent at world edges', () => {

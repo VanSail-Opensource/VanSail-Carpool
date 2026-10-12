@@ -25,19 +25,23 @@ type poolFlight struct {
 
 // EnhancedService owns shared inventories, DNS memoization and queued probes.
 type EnhancedService struct {
-	settings Settings
-	queues   map[string]*upstreamqueue.Queue
-	live     *LiveService
-	mu       sync.Mutex
-	pools    map[[32]byte]*proxyPool
-	flights  map[[32]byte]*poolFlight
-	dns      map[string]dnsEntry
-	ipapi    Provider
+	settings       Settings
+	queues         map[string]*upstreamqueue.Queue
+	live           *LiveService
+	mu             sync.Mutex
+	pools          map[[32]byte]*proxyPool
+	flights        map[[32]byte]*poolFlight
+	dns            map[string]dnsEntry
+	ipapi          Provider
+	inventoryFetch func(context.Context, string, Config) ([]byte, error)
+	resolvers      map[string]resolverHealth
+	cursor         uint64
+	tests          *sourceTestRuntime
 }
 
 // NewEnhancedService reuses existing queue workers for every outbound operation.
 func NewEnhancedService(settings Settings, queues map[string]*upstreamqueue.Queue, live *LiveService) *EnhancedService {
-	return &EnhancedService{settings: settings, queues: queues, live: live, pools: map[[32]byte]*proxyPool{}, flights: map[[32]byte]*poolFlight{}, dns: map[string]dnsEntry{}, ipapi: NewHTTPProvider("ipapi", queues["ipapi"], settings)}
+	return &EnhancedService{settings: settings, queues: queues, live: live, pools: map[[32]byte]*proxyPool{}, flights: map[[32]byte]*poolFlight{}, dns: map[string]dnsEntry{}, resolvers: map[string]resolverHealth{}, ipapi: NewHTTPProvider("ipapi", queues["ipapi"], settings)}
 }
 func proxyPoolKey(c Config) [32]byte {
 	raw, _ := json.Marshal(struct {
@@ -69,7 +73,7 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	p, err := s.buildPool(ctx, c)
 	s.mu.Lock()
 	f.pool, f.err = p, err
-	if err == nil {
+	if err == nil && p.complete {
 		for k, v := range s.pools {
 			if !v.expires.After(time.Now()) {
 				delete(s.pools, k)
@@ -84,82 +88,6 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	close(f.done)
 	s.mu.Unlock()
 	return p, err
-}
-func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, error) {
-	p := &proxyPool{ips: map[netip.Addr][]string{}, sources: []ProxySourceResult{}, complete: true, expires: time.Now().Add(30 * time.Minute)}
-	for _, source := range c.ProxySources {
-		if !source.Enabled {
-			continue
-		}
-		result := ProxySourceResult{ID: source.ID, Name: source.Name, Status: "success", ObservedAt: time.Now().UTC().Format(time.RFC3339)}
-		data, err := s.downloadInventory(ctx, source.URL, c)
-		hosts := []string{}
-		if err == nil {
-			hosts, err = ExtractProxyHosts(data)
-		}
-		if err != nil {
-			result.Status = "partial"
-			p.complete = false
-		}
-		var mu sync.Mutex
-		var work sync.WaitGroup
-		jobs := make(chan string)
-		for range 4 {
-			work.Add(1)
-			go func() {
-				defer work.Done()
-				for host := range jobs {
-					ips, err := s.resolve(ctx, host, c.DNSResolvers, false)
-					mu.Lock()
-					if err != nil {
-						result.Status = "partial"
-						p.complete = false
-					}
-					for _, ip := range ips {
-						if _, e := CanonicalIP(ip.String()); e != nil {
-							continue
-						}
-						if len(p.ips) >= 1000000 {
-							result.Status = "partial"
-							p.complete = false
-							continue
-						}
-						found := false
-						for _, id := range p.ips[ip] {
-							found = found || id == source.ID
-						}
-						if !found {
-							p.ips[ip] = append(p.ips[ip], source.ID)
-							result.Count++
-						}
-					}
-					mu.Unlock()
-				}
-			}()
-		}
-		for _, host := range hosts {
-			select {
-			case jobs <- host:
-			case <-ctx.Done():
-				close(jobs)
-				work.Wait()
-				return nil, ctx.Err()
-			}
-		}
-		close(jobs)
-		work.Wait()
-		if len(hosts) == 0 {
-			result.Status = "partial"
-			p.complete = false
-		}
-		p.sources = append(p.sources, result)
-	}
-	if len(p.sources) == 0 {
-		p.complete = false
-	}
-	// The full 30-minute reuse window starts after downloads and DNS finish.
-	p.expires = time.Now().Add(30 * time.Minute)
-	return p, nil
 }
 func (p *proxyPool) assessment(ip string) *ProxyAssessment {
 	addr, _ := netip.ParseAddr(ip)

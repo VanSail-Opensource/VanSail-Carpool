@@ -11,21 +11,13 @@ import (
 )
 
 // scheduleIPLookupReportRetryTx queues the first repair attempt when a freshly
-// frozen report is partial with failed stages and its frozen policy allows
+// frozen report is partial with failed stages and the current policy allows
 // background repair. The payload attempt counter keeps the chain deduplicated.
 func scheduleIPLookupReportRetryTx(ctx context.Context, tx *sql.Tx, id string, report iplookup.Report, now time.Time) error {
 	if report.Status != "partial" || len(iplookup.FailedStages(report)) == 0 {
 		return nil
 	}
-	var configJSON string
-	err := tx.QueryRowContext(ctx, `SELECT config_json FROM ip_lookup_reports WHERE id=?`, id).Scan(&configJSON)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	c, err := iplookup.DecodeConfig(configJSON)
+	c, err := ipConfigTx(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -67,10 +59,10 @@ func (s *Store) ipLiveRetryDelay(ctx context.Context) (time.Duration, bool) {
 	return iplookup.NextRetryDelay(c)
 }
 
-// IPLookupReportByID loads one report row with its frozen configuration.
+// IPLookupReportByID loads one report row with current saved settings.
 func (s *Store) IPLookupReportByID(ctx context.Context, id string) (iplookup.Report, iplookup.Config, error) {
 	var raw, configJSON string
-	err := s.db.QueryRowContext(ctx, `SELECT report_json,config_json FROM ip_lookup_reports WHERE id=?`, id).Scan(&raw, &configJSON)
+	err := s.db.QueryRowContext(ctx, `SELECT report_json,COALESCE((SELECT value FROM settings WHERE key=?),'') FROM ip_lookup_reports WHERE id=?`, iplookup.SettingKey, id).Scan(&raw, &configJSON)
 	if errors.Is(err, sql.ErrNoRows) {
 		return iplookup.Report{}, iplookup.Config{}, iplookup.ErrRepairGone
 	}

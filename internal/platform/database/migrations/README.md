@@ -121,3 +121,5 @@ file instead.
 - `069_ip_lookup_live_snapshots.sql` adds compact persistent realtime snapshots and private per-report refresh recovery state; existing quality reports default to no realtime phase.
 
 - `070_ip_lookup_background.sql` adds recovery heartbeats/leases, cache identity and exact quota consumption. It makes receipt report references nullable and clears old completed quality/live cache payloads without removing ledger or allowance history. In-flight report checkpoints survive and finish under the new worker.
+
+- `071_ip_lookup_current_config.sql` drops per-report config_json without replacing rows or removing checkpoints, receipt references, quotas or ledger records. Execution/retry settings are read from current settings.

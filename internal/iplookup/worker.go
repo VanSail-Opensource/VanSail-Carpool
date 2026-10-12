@@ -109,6 +109,7 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 // receives the report after each durable transition; repair passes nil-free
 // persistence against the frozen cache row instead of live progress.
 func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persist func(Report) error) error {
+	reconcilePendingStages(r, c)
 	for index := range r.Checkpoint.Stages {
 		p := &r.Checkpoint.Stages[index]
 		if p.Status == "disabled" || p.Status == "skipped" {

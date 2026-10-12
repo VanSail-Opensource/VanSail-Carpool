@@ -170,3 +170,5 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 `api-v1-ip-lookup-details.yaml` defines GET /api/v1/ip-lookup/details and source-independent partial outcomes without financial operations.
 
 `api-v1-ip-lookup-progress.yaml` documents the authenticated no-store exact-IP work projection. A null response means no check is running; reading progress never creates a receipt or consumes quota.
+
+`api-v1-admin-ip-lookup-source-test.yaml` defines admin diagnostic starts (202); `api-v1-admin-ip-lookup-source-test-id.yaml` defines no-store progress/result reads. Existing report contracts gain optional source diagnostics, task outcomes and bounded DNS evidence.

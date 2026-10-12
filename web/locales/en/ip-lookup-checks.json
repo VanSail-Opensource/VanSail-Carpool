@@ -15,7 +15,7 @@
     "usedQuotaCount": "{count} included checks used",
     "refreshIncluded": "Refresh · {count} included checks",
     "proxySettings": "Proxy sources and probes",
-    "proxySettingsHelp": "Inventories are cached in memory for 30 minutes. Full port probes run in the background.",
+    "proxySettingsHelp": "Complete inventories are cached in memory for 12 hours. Full source tests and port probes run in the background.",
     "sourceEnabled": "Enabled",
     "sourceName": "Source name",
     "sourceURL": "Source URL",
@@ -47,7 +47,8 @@
       "tls": "TLS",
       "shadowsocks": "Shadowsocks",
       "trojan": "Trojan",
-      "reality": "Reality"
+      "reality": "Reality",
+      "web_server": "Web server"
     },
     "confidence": {
       "confirmed": "Confirmed service",
@@ -59,7 +60,7 @@
       "pending": "Queued",
       "processing": "Checking",
       "active": "Checking",
-      "success": "Complete",
+      "success": "Completed",
       "partial": "Partial",
       "error": "Unavailable",
       "skipped": "Skipped",
@@ -112,13 +113,48 @@
       "overbuffer_peer_close": "Peer closed during repeated headers",
       "trojan_short_timing": "150-second observation",
       "trojan_incomplete_timing": "Full 605-second observation",
-      "trojan_overbuffer_timing": "Repeated-header observation"
+      "trojan_overbuffer_timing": "Repeated-header observation",
+      "dns_matches_ip": "Domain DNS contains this IP",
+      "dns_no_address": "No concrete domain with a public address"
     },
     "refusals": {
       "proxy_list": "Proxy inventory match",
       "active_proxy": "Proxy service detected",
       "shodan_tag": "Shodan tags detected",
       "shodan_vuln": "Shodan vulnerabilities reported"
+    },
+    "qualityHeading": "IP quality",
+    "testSource": "Test",
+    "sourceSaveFirst": "Save source or DNS changes before testing.",
+    "inventoryIPs": "{count} unique IPs",
+    "inventoryProgress": "{done}/{total} endpoints processed",
+    "inventorySkipped": "{count} without a public IP",
+    "inventoryDNSFailed": "{count} DNS failures",
+    "probeResults": {
+      "detected": "Detected",
+      "not_detected": "Not detected",
+      "unavailable": "Unavailable",
+      "not_applicable": "Not applicable"
+    },
+    "dnsStatuses": {
+      "success": "Resolved",
+      "no_address": "No public address",
+      "error": "Unavailable"
+    },
+    "sourcePhases": {
+      "download": "Downloading inventory",
+      "parse": "Parsing endpoints",
+      "dns": "Resolving endpoints",
+      "complete": "Completed"
+    },
+    "sourceErrors": {
+      "IP_PROXY_DOWNLOAD": "The inventory could not be downloaded.",
+      "IP_PROXY_PARSE": "The inventory exceeded parsing limits or could not be fully parsed.",
+      "IP_PROXY_EMPTY": "No supported endpoints were found.",
+      "IP_PROXY_LIMIT": "The inventory exceeded the IP limit.",
+      "IP_DNS_UNAVAILABLE": "Some endpoint DNS lookups failed after resolver failover.",
+      "IP_PROXY_INTERRUPTED": "The diagnostic was interrupted or reached its time limit.",
+      "IP_PROXY_SOURCE_NOT_FOUND": "This saved source or diagnostic is no longer available."
     }
   }
 }

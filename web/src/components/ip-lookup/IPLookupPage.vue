@@ -27,10 +27,10 @@ const { ip, state, quote, refreshQuote, check, displayCheck, report, requestedIP
       <InlineNotice v-if="progressUnavailable" tone="warning">{{ $t('ipLookup.progressUnavailable') }}</InlineNotice>
       <IPLookupProgress v-if="busy" :progress="activeRun?.progress ?? check?.progress" />
       <IPPortProbes v-if="activeRun?.ports?.length" :ports="activeRun.ports" :source-ip="activeRun.ip" />
-      <IPSubnetGrid v-if="activeRun?.subnet" :result="activeRun.subnet" :requested-ip="ip" />
       <IPLookupReport v-if="report" :report="report" :requested-ip="requestedIP" :cache-match="cacheMatch" :check="displayCheck" />
       <p v-else-if="!busy && state?.enabled" class="ip-lookup-empty">{{ $t('ipLookup.empty') }}</p>
       <IPLiveDetails v-if="report" :report="report" :requested-ip="requestedIP" :snapshot="report.liveDetails ?? check?.liveDetails ?? null" :refresh-quote="refreshQuote" :busy="busy" @refresh="submit(true)" />
+      <IPSubnetGrid v-if="activeRun?.subnet || report?.subnet" :result="(activeRun?.subnet ?? report?.subnet)!" :requested-ip="activeRun ? ip : requestedIP" />
       <UButton v-if="!state" color="neutral" variant="outline" :label="$t('common.tryAgain')" @click="load" />
     </template>
   </main>

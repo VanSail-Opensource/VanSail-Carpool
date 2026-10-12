@@ -29,6 +29,9 @@ type backgroundRuntime struct {
 
 // StartBackground attaches durable lookups to the application, never a browser request.
 func (w *Worker) StartBackground(ctx context.Context, queue *upstreamqueue.Queue) {
+	if w.Enhanced != nil {
+		w.Enhanced.StartSourceTests(ctx)
+	}
 	owner, err := ids.New()
 	if err != nil {
 		if w.OnBackgroundError != nil {
@@ -69,6 +72,9 @@ func (w *Worker) StartBackground(ctx context.Context, queue *upstreamqueue.Queue
 func (w *Worker) WaitBackground() {
 	if w.background != nil {
 		<-w.background.done
+	}
+	if w.Enhanced != nil {
+		w.Enhanced.WaitSourceTests()
 	}
 }
 

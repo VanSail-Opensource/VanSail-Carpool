@@ -5,7 +5,7 @@ import { useLiveIPDetails } from './useLiveIPDetails'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import IPBGPTopology from './IPBGPTopology.vue'
-import IPASNDetails from './IPASNDetails.vue'
+import IPLiveASNSection from './IPLiveASNSection.vue'
 import LiveSourceNote from './LiveSourceNote.vue'
 import IPLookupProgress from './IPLookupProgress.vue'
 import IPTransferHistory from './IPTransferHistory.vue'
@@ -21,11 +21,12 @@ const { details, progress, loading, errorCode } = useLiveIPDetails(() => props.r
     <IPLookupProgress v-if="loading" :progress="progress" />
     <SkeletonBlock v-if="loading && !details" height="8rem" />
     <InlineNotice v-if="errorCode" tone="warning">{{ $t(`ipLookupLive.errors.${errorCode}`) }}</InlineNotice>
+    <IPLiveASNSection v-if="!details" :asns="[]" :rpki="report.rpki" />
     <template v-if="details">
       <p v-if="details.cacheMatch === 'subnet'" class="live-fetch-time">{{ $t('ipLookupLive.cacheSubnet', { ip: details.sourceIP ?? details.ip!, date: new Date(details.fetchedAt!).toLocaleString() }) }}</p>
       <p v-else-if="details.cacheMatch === 'exact'" class="live-fetch-time">{{ $t('ipLookupLive.cacheExact', { date: new Date(details.fetchedAt!).toLocaleString() }) }}</p>
       <IPBGPTopology v-if="details.topology" :topology="details.topology" />
-      <IPASNDetails v-if="details.asns" :asns="details.asns" />
+      <IPLiveASNSection :asns="details.asns ?? []" :rpki="report.rpki" />
       <div class="live-ip-facts">
         <section v-if="details.scores"><h3>{{ $t('ipLookupLive.scores') }}</h3><dl><div v-for="kind in ['company', 'asn'] as const" :key="kind"><dt>{{ $t(`ipLookup.scores.${kind}_abuse_ratio`) }}</dt><dd>{{ details.scores[kind].ratio === null ? $t('ipLookupLive.status.empty') : `${(details.scores[kind].ratio! * 100).toFixed(3)}%` }}<span v-if="details.scores[kind].label">{{ details.scores[kind].label }}</span></dd></div></dl><LiveSourceNote :meta="details.scores" /></section>
         <section v-if="details.block"><h3>{{ $t('ipLookupLive.blockTitle') }}</h3><code v-if="details.block.prefix">{{ details.block.prefix }}</code><p v-if="details.block.errorCode !== 'IP_DETAILS_LEGACY'">{{ $t('ipLookupLive.blockCount', { reported: details.block.reportedAddresses ?? $t('ipLookupLive.status.empty'), capacity: details.block.addressCapacity || $t('ipLookupLive.status.empty'), days: details.block.windowDays }) }}</p><p v-if="details.block.errorCode === 'IP_DETAILS_LEGACY'">{{ $t('ipLookupLive.legacyData') }}</p><LiveSourceNote v-else :meta="details.block" /></section>

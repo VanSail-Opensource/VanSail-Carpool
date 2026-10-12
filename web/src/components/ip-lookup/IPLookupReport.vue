@@ -4,10 +4,8 @@ import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
 import IPRefusals from './IPRefusals.vue'
-import IPRPKIStatus from './IPRPKIStatus.vue'
 import IPProxyEvidence from './IPProxyEvidence.vue'
 import IPPortProbes from './IPPortProbes.vue'
-import IPSubnetGrid from './IPSubnetGrid.vue'
 import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
@@ -22,22 +20,23 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
   <section class="lookup-report" aria-live="polite">
     <header class="report-heading">
       <div><code>{{ requestedIp }}</code><h2 :class="`verdict-${report.verdict}`"><UIcon :name="report.verdict === 'suitable' ? 'i-ph-check-circle' : report.verdict === 'unsuitable' ? 'i-ph-x-circle' : 'i-ph-question'" aria-hidden="true" />{{ $t(`ipLookup.verdicts.${report.verdict}`) }}</h2></div>
-      <span>{{ cacheMatch !== 'none' ? $t('ipLookup.cached') : $t('ipLookup.fresh') }}</span>
+      <span class="report-cache">{{ cacheMatch !== 'none' ? $t('ipLookup.cached') : $t('ipLookup.fresh') }}</span>
     </header>
     <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
     <IPRefusals :refusals="report.refusals" />
-    <IPRPKIStatus :result="report.rpki" />
-    <IPProxyEvidence v-if="report.proxy" :result="report.proxy" />
-    <IPPortProbes v-if="report.ports?.length" :ports="report.ports" :source-ip="report.ip" />
-    <IPSubnetGrid v-if="report.subnet" :result="report.subnet" :requested-ip="requestedIp" />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">
-      <dl v-if="rows.length" class="report-facts">
-        <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>
-      </dl>
+      <section class="report-quality">
+        <h3>{{ $t('ipLookup.qualityHeading') }}</h3>
+        <dl v-if="rows.length" class="report-facts">
+          <div v-for="row in rows" :key="row.key"><dt><UIcon :name="row.icon" aria-hidden="true" />{{ row.label }}</dt><dd>{{ row.value }}<small v-if="row.source">{{ row.source }}</small></dd></div>
+        </dl>
+        <IPProxyEvidence v-if="report.proxy" :result="report.proxy" />
+      </section>
       <IPLocationMap :latitude="report.facts.latitude" :longitude="report.facts.longitude" />
     </div>
+    <IPPortProbes v-if="report.ports?.length" :ports="report.ports" :source-ip="report.ip" />
     <div class="report-databases" :aria-label="$t('ipLookup.providerHeading')">
-      <span v-for="database in report.databases" :key="database.id" :title="$t(`ipLookup.statuses.${database.status}`)" :class="`database-${database.status}`"><UIcon :name="databaseIcon(database.status)" aria-hidden="true" />{{ providerName(database.id) }}<span class="sr-only">{{ $t(`ipLookup.statuses.${database.status}`) }}</span></span>
+      <span v-for="database in report.databases" :key="database.id" :title="$t(`ipLookup.statuses.${database.status}`)" :class="`database-${database.status}`"><UIcon :name="databaseIcon(database.status)" aria-hidden="true" />{{ providerName(database.id) }}<small>{{ $t(`ipLookup.statuses.${database.status}`) }}</small></span>
     </div>
     <footer class="report-note">
       <time :datetime="report.checkedAt">{{ $t('ipLookup.checkedAt', { date: new Date(report.checkedAt).toLocaleString() }) }}</time>
@@ -49,10 +48,13 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
 
 <style scoped>
 .lookup-report { display: grid; gap: 0.65rem; padding: 0.9rem 0; }
-.report-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 0.6rem; }
+.report-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
 .report-heading span, .report-note, .report-facts dt, .report-facts small { color: var(--text-muted); font-size: 0.82rem; }
 .report-heading code { font-size: 1rem; overflow-wrap: anywhere; }
-.report-heading > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; }
+.report-heading > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem; }
+.report-quality { min-width: 0; }
+.report-quality h3 { margin: 0 0 0.4rem; font-size: 0.85rem; }
+.report-cache { white-space: nowrap; }
 .report-heading h2 { display: flex; align-items: center; gap: 0.3rem; margin: 0; font-size: 0.9rem; }
 .verdict-unsuitable { color: var(--ui-error); }
 .verdict-suitable { color: var(--ui-success); }

@@ -15,7 +15,7 @@
     "usedQuotaCount": "已使用 {count} 次免费额度",
     "refreshIncluded": "刷新 · {count} 次免费额度",
     "proxySettings": "代理来源与探测",
-    "proxySettingsHelp": "代理 IP 池在内存中缓存 30 分钟，完整端口探测在后台运行。",
+    "proxySettingsHelp": "完整获取成功的代理列表在内存中缓存 12 小时。完整代理源测试和端口探测在后台运行。",
     "sourceEnabled": "启用",
     "sourceName": "来源名称",
     "sourceURL": "来源链接",
@@ -47,7 +47,8 @@
       "tls": "TLS",
       "shadowsocks": "Shadowsocks",
       "trojan": "Trojan",
-      "reality": "Reality"
+      "reality": "Reality",
+      "web_server": "网页服务器"
     },
     "confidence": {
       "confirmed": "已确认服务",
@@ -112,13 +113,48 @@
       "overbuffer_peer_close": "重复请求头期间远端关闭连接",
       "trojan_short_timing": "150 秒观察",
       "trojan_incomplete_timing": "完整 605 秒观察",
-      "trojan_overbuffer_timing": "重复请求头观察"
+      "trojan_overbuffer_timing": "重复请求头观察",
+      "dns_matches_ip": "域名 DNS 包含此 IP",
+      "dns_no_address": "无可解析到公网地址的具体域名"
     },
     "refusals": {
       "proxy_list": "匹配代理数据库",
       "active_proxy": "发现代理服务",
       "shodan_tag": "Shodan 检测到标签",
       "shodan_vuln": "Shodan 报告了漏洞"
+    },
+    "qualityHeading": "IP 质量",
+    "testSource": "测试",
+    "sourceSaveFirst": "请先保存代理源或 DNS 修改，再进行测试。",
+    "inventoryIPs": "{count} 个独立 IP",
+    "inventoryProgress": "已处理 {done}/{total} 个端点",
+    "inventorySkipped": "{count} 个无公网 IP",
+    "inventoryDNSFailed": "{count} 个 DNS 失败",
+    "probeResults": {
+      "detected": "已检测到",
+      "not_detected": "未检测到",
+      "unavailable": "不可用",
+      "not_applicable": "不适用"
+    },
+    "dnsStatuses": {
+      "success": "已解析",
+      "no_address": "无公网地址",
+      "error": "不可用"
+    },
+    "sourcePhases": {
+      "download": "正在下载代理列表",
+      "parse": "正在解析端点",
+      "dns": "正在解析端点 DNS",
+      "complete": "已完成"
+    },
+    "sourceErrors": {
+      "IP_PROXY_DOWNLOAD": "无法下载代理列表。",
+      "IP_PROXY_PARSE": "代理列表超过解析限制或无法完整解析。",
+      "IP_PROXY_EMPTY": "未找到支持的端点。",
+      "IP_PROXY_LIMIT": "代理列表超过 IP 数量限制。",
+      "IP_DNS_UNAVAILABLE": "更换 DNS 服务器后，部分端点仍无法解析。",
+      "IP_PROXY_INTERRUPTED": "测试已中断或达到时间限制。",
+      "IP_PROXY_SOURCE_NOT_FOUND": "此代理源或测试结果已不可用。"
     }
   }
 }

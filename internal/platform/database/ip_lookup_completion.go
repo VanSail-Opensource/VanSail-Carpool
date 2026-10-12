@@ -14,7 +14,7 @@ func (s *Store) IPLookupRun(ctx context.Context, operationID string) (iplookup.R
 	var report iplookup.Report
 	var config iplookup.Config
 	var raw, configJSON string
-	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,r.config_json FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE c.operation_id=?`, operationID).Scan(&raw, &configJSON)
+	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,COALESCE((SELECT value FROM settings WHERE key=?),'') FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE c.operation_id=?`, iplookup.SettingKey, operationID).Scan(&raw, &configJSON)
 	if err == sql.ErrNoRows {
 		return report, config, ErrNotFound
 	}

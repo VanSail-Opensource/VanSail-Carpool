@@ -8,6 +8,8 @@ paths:
   /api/v1/ip-lookup/quote: { $ref: './paths/api-v1-ip-lookup-quote.yaml' }
   /api/v1/ip-lookup/checks: { $ref: './paths/api-v1-ip-lookup-checks.yaml' }
   /api/v1/ip-lookup/checks/{id}: { $ref: './paths/api-v1-ip-lookup-checks-id.yaml' }
+  /api/v1/admin/ip-lookup/proxy-sources/{id}/test: { $ref: './paths/api-v1-admin-ip-lookup-source-test.yaml' }
+  /api/v1/admin/ip-lookup/proxy-source-tests/{testId}: { $ref: './paths/api-v1-admin-ip-lookup-source-test-id.yaml' }
   /api/v1/admin/ip-lookup: { $ref: './paths/api-v1-admin-ip-lookup.yaml' }
   /api/v1/connectivity/summary: { $ref: './paths/api-v1-connectivity-summary.yaml' }
   /api/v1/subscription: { $ref: './paths/api-v1-subscription.yaml' }
@@ -174,6 +176,9 @@ components:
   }
   responses: { BadRequest: { $ref: './components/responses.yaml#/BadRequest' }, Unauthorized: { $ref: './components/responses.yaml#/Unauthorized' }, Forbidden: { $ref: './components/responses.yaml#/Forbidden' }, NotFound: { $ref: './components/responses.yaml#/NotFound' }, Conflict: { $ref: './components/responses.yaml#/Conflict' }, Unprocessable: { $ref: './components/responses.yaml#/Unprocessable' }, PayloadTooLarge: { $ref: './components/responses.yaml#/PayloadTooLarge' }, TooManyRequests: { $ref: './components/responses.yaml#/TooManyRequests' }, InternalFailure: { $ref: './components/responses.yaml#/InternalFailure' }, UpstreamFailure: { $ref: './components/responses.yaml#/UpstreamFailure' }, ServiceUnavailable: { $ref: './components/responses.yaml#/ServiceUnavailable' } }
   schemas: {
+    IPLookupDNSObservation: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupDNSObservation' },
+    IPLookupProbeDNS: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeDNS' },
+    IPLookupProxySourceTest: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceTest' },
     IPLookupProxySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySource' },
     IPLookupProxySourceResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceResult' },
     IPLookupProxyAssessment: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxyAssessment' },

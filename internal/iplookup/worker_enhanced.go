@@ -33,7 +33,7 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 			return err
 		}
 		// Enrichment has a short deadline; active probes have their own long budgets.
-		liveCtx, cancel := context.WithTimeout(withQualityScores(withoutBlock(ctx), checkpoint.Scores), 60*time.Second)
+		liveCtx, cancel := context.WithTimeout(withQualityScores(ctx, checkpoint.Scores), 60*time.Second)
 		details := w.Live.livePipeline(withLiveRequests(liveCtx), r.IP, c, func(LiveEvent) {})
 		cancel()
 		if ctx.Err() != nil {
@@ -42,6 +42,12 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 		details.SourceIP, details.CacheMatch = r.IP, "none"
 		r.LiveDetails = &details
 		checkpoint.LiveDone = true
+		if err := save(); err != nil {
+			return err
+		}
+	}
+	if checkpoint.LiveDone && r.LiveDetails != nil && r.LiveDetails.Block.Status == "skipped" {
+		r.LiveDetails.Block = w.Live.block(ctx, r.IP, c)
 		if err := save(); err != nil {
 			return err
 		}

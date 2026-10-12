@@ -13,6 +13,8 @@ var probeKeys = []string{"tcp", "socks5", "socks4", "http", "tls", "shadowsocks"
 
 type probeOutcome struct {
 	status   string
+	result   string
+	err      error
 	findings []ProbeFinding
 	tls      bool
 }
@@ -88,7 +90,8 @@ func (s *EnhancedService) probePorts(ctx context.Context, r *Report, c Config, s
 					}
 					if len(key) > 7 && key[:7] == "trojan_" && !tlsReady {
 						mu.Lock()
-						r.Ports[index].Tasks[taskIndex].Status = "skipped"
+						r.Ports[index].Tasks[taskIndex].Status = "success"
+						r.Ports[index].Tasks[taskIndex].Result = "unavailable"
 						err := save()
 						mu.Unlock()
 						if err != nil {
@@ -116,6 +119,9 @@ func (s *EnhancedService) probePorts(ctx context.Context, r *Report, c Config, s
 							return save()
 						}
 						outcome := s.probe(callCtx, r.IP, port.Port, key, c, milestone)
+						if outcome.err != nil {
+							return struct{}{}, outcome.err
+						}
 						if callCtx.Err() != nil {
 							return struct{}{}, callCtx.Err()
 						}
@@ -123,11 +129,12 @@ func (s *EnhancedService) probePorts(ctx context.Context, r *Report, c Config, s
 						defer mu.Unlock()
 						t = &r.Ports[index].Tasks[taskIndex]
 						t.Status = outcome.status
+						t.Result = outcome.result
 						t.NextMilestone = 0
 						if outcome.status == "error" {
 							t.ErrorCode = "IP_PROBE_UNAVAILABLE"
 						}
-						r.Ports[index].Findings = append(r.Ports[index].Findings, outcome.findings...)
+						recordProbeOutcome(&r.Ports[index], key, outcome)
 						tlsReady = tlsReady || outcome.tls
 						if key == "tcp" && outcome.status == "closed" {
 							r.Ports[index].Status = "closed"
@@ -178,5 +185,8 @@ func (s *EnhancedService) probePorts(ctx context.Context, r *Report, c Config, s
 	}
 	close(jobs)
 	work.Wait()
+	if firstErr == nil {
+		return ctx.Err()
+	}
 	return firstErr
 }

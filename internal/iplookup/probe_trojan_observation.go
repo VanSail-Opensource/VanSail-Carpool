@@ -28,25 +28,30 @@ func observeTrojan(client trojanReader, key, negotiated string, started time.Tim
 	for _, seconds := range deadlines {
 		if err := milestone(seconds); err != nil {
 			out.status = "error"
+			out.err = err
 			return out
 		}
 		if err := client.SetReadDeadline(started.Add(time.Duration(seconds) * time.Second)); err != nil {
 			out.status = "error"
+			out.err = err
 			return out
 		}
 		n, err := client.Read(response)
 		if n > 0 {
 			text := string(response[:n])
 			if negotiated == "h2" && strings.HasPrefix(text, "HTTP/1.") {
-				out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "suspected", Evidence: "alpn_http_mismatch"})
+				out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "observed", Evidence: "alpn_http_mismatch"})
 			}
 			if key == "trojan_close" {
 				received := now()
-				_ = client.SetReadDeadline(received.Add(35 * time.Second))
+				if err := client.SetReadDeadline(received.Add(35 * time.Second)); err != nil {
+					out.err = err
+					return out
+				}
 				_, closeErr := client.Read(response)
 				elapsed := now().Sub(received)
 				if closeErr == io.EOF && elapsed >= 29*time.Second && elapsed <= 31*time.Second {
-					out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "suspected", Evidence: "close_30_seconds"})
+					out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "observed", Evidence: "close_30_seconds"})
 				}
 			}
 			return out
@@ -56,13 +61,13 @@ func observeTrojan(client trojanReader, key, negotiated string, started time.Tim
 		}
 		if err != nil {
 			if timeout, ok := err.(interface{ Timeout() bool }); !ok || !timeout.Timeout() {
-				out.status = "error"
+				out.result = "unavailable"
 				return out
 			}
 		}
 	}
 	if key == "trojan_short" || key == "trojan_incomplete" || key == "trojan_overbuffer" {
-		out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "suspected", Evidence: key + "_timing"})
+		out.findings = append(out.findings, ProbeFinding{Protocol: "trojan", Confidence: "observed", Evidence: key + "_timing"})
 	}
 	return out
 }

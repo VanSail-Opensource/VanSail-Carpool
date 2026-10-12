@@ -23,6 +23,7 @@ type Repository interface {
 // Service signs owner-bound quotes; all financial decisions remain transactional.
 type Service struct {
 	Live       *LiveService
+	Enhanced   *EnhancedService
 	repository Repository
 	signingKey []byte
 	now        func() time.Time

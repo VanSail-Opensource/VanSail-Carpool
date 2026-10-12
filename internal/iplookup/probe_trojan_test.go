@@ -48,7 +48,7 @@ func TestTrojanFullObservationWindowsWithoutSleeping(t *testing.T) {
 			if !reflect.DeepEqual(milestones, tc.want) {
 				t.Fatalf("milestones %v", milestones)
 			}
-			if result.status != "success" || len(result.findings) != 1 || result.findings[0].Confidence != "suspected" {
+			if result.status != "success" || len(result.findings) != 1 || result.findings[0].Confidence != "observed" {
 				t.Fatalf("unexpected classification: %+v", result)
 			}
 		})

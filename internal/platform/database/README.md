@@ -379,3 +379,5 @@ existing refund path. Ledger changes and receipt settlement remain atomic.
 `ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined /24 report generation, detaches historical receipt references and deletes superseded payloads. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
 
 `ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, duplicate billing rejection, exact refresh-unit refunds and combined-cache replacement with preserved receipts in hosted CI.
+
+IP lookup resumes and report repair read current saved settings. `ip_lookup_current_config_test.go` verifies column removal, retained checkpoints/references/rowids, and current settings reads. Signed quotes and settlement amounts remain transactional.

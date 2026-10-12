@@ -154,3 +154,5 @@ cancellable fake probe for hosted execution without external network traffic.
 `ip_lookup_details.go` serves authenticated, non-billed, no-store live IP enrichment with feature/onboarding guards and member admission errors.
 
 `ip_lookup_progress.go` serves authenticated exact-IP background progress with no member identity or billing fields. Both progress and combined-cache live-details responses are no-store.
+
+`ip_lookup_proxy_sources.go` provides admin-only saved-source diagnostic starts (POST 202) and no-store memory-only progress/result reads. Existing shared queues execute source downloads and DNS calls.

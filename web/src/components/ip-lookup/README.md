@@ -217,3 +217,7 @@ showed Refuse; CPE-only reports showed Pass. A 300-CPE fixture rendered through
 the final item, long identifiers wrapped without horizontal overflow, and console
 and network checks were clear. These browser reports use constructed evidence;
 backend parser/verdict/persistence regressions run in hosted CI.
+
+`IPLiveASNSection.vue` groups ASN enrichment and RPKI, preserving RPKI when enrichment is unavailable. `IPProxySourceDetails.vue` renders safe URLs, timestamps, counts and failure diagnostics shared by reports and admin tests. Inventories follow MaxMind user type; the page owns the final subnet section. Port probes use one/two/three columns with expanded task/DNS evidence. Live source notes show availability without disclosure clicks. Optional legacy evidence remains absent until refreshed. English and Chinese locale keys own all labels.
+
+On 2026-10-12, Chrome DevTools MCP reviewed 320/390px mobile and 1280px desktop fixtures: aligned header, expanded evidence, Web server/pass, unavailable Trojan completion, ASN/RPKI fallback, final single subnet section, loading/empty/error/progress, English/Chinese, and IPv6 wrapping. No reviewed console errors or document/request failures appeared. Browser evidence uses constructed data; backend regressions run in hosted CI.

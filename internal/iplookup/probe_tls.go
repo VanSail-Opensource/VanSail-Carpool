@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/tls"
-	"strings"
 	"time"
 )
 
@@ -29,35 +28,13 @@ func (s *EnhancedService) probeTLS(ctx context.Context, ip string, port int, c C
 	if len(state.PeerCertificates) == 0 {
 		return out
 	}
-	cert := state.PeerCertificates[0]
-	if state.Version != tls.VersionTLS13 || state.NegotiatedProtocol != "h2" || cert.Subject.CommonName == "" || len(cert.Issuer.Organization) == 0 {
+	if state.Version != tls.VersionTLS13 || state.NegotiatedProtocol != "h2" {
 		return out
 	}
-	domain := cert.Subject.CommonName
-	if strings.HasPrefix(domain, "*.") {
-		for _, name := range cert.DNSNames {
-			if !strings.HasPrefix(name, "*.") {
-				domain = name
-				break
-			}
-		}
-	}
-	if strings.HasPrefix(domain, "*.") {
+	finding := s.realityDNS(ctx, ip, state.PeerCertificates[0], c)
+	out.findings = append(out.findings, finding)
+	if finding.Confidence == "unavailable" {
 		out.status = "error"
-		out.findings = append(out.findings, ProbeFinding{Protocol: "reality", Confidence: "unavailable", Evidence: "dns_unavailable"})
-		return out
 	}
-	ips, err := s.resolve(ctx, domain, c.DNSResolvers, true)
-	if err != nil {
-		out.status = "error"
-		out.findings = append(out.findings, ProbeFinding{Protocol: "reality", Confidence: "unavailable", Evidence: "dns_unavailable"})
-		return out
-	}
-	for _, address := range ips {
-		if address.String() == ip {
-			return out
-		}
-	}
-	out.findings = append(out.findings, ProbeFinding{Protocol: "reality", Confidence: "suspected", Evidence: "feasible_tls_dns_mismatch"})
 	return out
 }

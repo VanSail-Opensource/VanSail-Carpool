@@ -53,7 +53,7 @@ The administrator's `providers` array is the check sequence; omitted known
 providers are appended disabled. `geolocationOrder` is an independent complete
 permutation, defaulting to IP2Location, IPAPI, MaxMind, Scamalytics, AbuseIPDB.
 IPQS remains available for risk checks and network voting, outside location
-selection. Pending work uses its frozen configuration and matches adapters by ID.
+selection. Pending work uses current saved configuration and matches adapters by ID.
 
 Positive per-IP abuse, datacenter, VPN, proxy, Tor, report count, or applicable
 fraud-score evidence refuses the IP and stops subsequent providers. Scamalytics
@@ -268,7 +268,7 @@ and [PeeringDB query limits](https://docs.peeringdb.com/howto/work_within_peerin
 
 Fresh operations execute independently of HTTP viewers. `background.go` owns application lifecycle, bounded admission, recovery, one-minute leases and 15-second heartbeats. `cache_key.go` defines IPv4 /24 and exact IPv6 cache identity. `enhanced_types.go` and `enhanced_progress.go` define compact evidence and the identity-free progress projection. `worker_enhanced.go` sequences proxy, short live enrichment, full probes and the gated subnet phase. `live_block_gate.go` defers AbuseIPDB block requests until the requested address passes.
 
-`proxy_config.go` validates administrator-named inventories and resolver/port defaults. `proxy_parser.go` extracts endpoint hosts; `proxy_encoding.go` handles URI, structured configuration and encoded subscriptions. `proxy_pool.go` coalesces inventories for 30 minutes; `proxy_transport.go` bounds downloads and pins public DNS answers to prevent private-network redirects/rebinding; `proxy_dns.go` distributes queued DNS queries across configured public resolvers. Lists and subscription secrets are never persisted.
+`proxy_config.go` validates administrator-named inventories and resolver/port defaults. `proxy_parser.go` extracts endpoint hosts; `proxy_encoding.go` handles URI, structured configuration and encoded subscriptions. `proxy_pool.go` coalesces complete inventories for 12 hours; `proxy_transport.go` bounds downloads and pins public DNS answers to prevent private-network redirects/rebinding; `proxy_dns.go` distributes queued DNS queries across configured public resolvers. Lists and subscription secrets are never persisted.
 
 `probe_runner.go` checkpoints two concurrent ports per operation; `probe_dispatch.go` sends every network action through shared queue workers. `probe_handshake.go` observes SOCKS/HTTP and bounded Shadowsocks reactions; `probe_tls.go` records TLS feasibility and the Reality DNS heuristic. `probe_trojan.go`, `probe_trojan_request.go` and `probe_trojan_observation.go` retain all five research profiles, 12,000 streamed headers and 150/595/605-second observation milestones. `subnet.go` checks proxy membership, one AbuseIPDB block, then separate IPAPI requests, short-circuiting each positive address. Neighbor findings never refuse an otherwise suitable requested IP.
 
@@ -299,3 +299,19 @@ Shodan fields. `live_shodan_test.go` and `shodan_verdict_test.go` cover single-f
 refusals, malformed coverage, untruncated CPEs, idempotency and persistence in
 hosted CI. Upstream contract:
 [InternetDB OpenAPI](https://internetdb.shodan.io/openapi.json).
+
+## Resolver, inventory and probe evidence
+
+`proxy_dns.go` and `proxy_dns_transport.go` pace actual queries through shared queue workers, balance healthy resolvers, cool failures for 30 seconds, follow bounded CNAME chains and cache positive/negative responses. Inventories accept one complete resolver response; Reality compares independent same-family answers. `proxy_inventory.go` collects source diagnostics and skips authoritative no-address endpoints. `proxy_pool.go` caches only complete pools for 12 hours after collection. Raw subscriptions and credential-bearing URL queries are never exposed.
+
+`proxy_source_tests.go` runs one saved-source diagnostic under the application lifecycle through the existing checks/download/DNS queues, without billing or pool writes. Memory-only results expire 15 minutes after settlement. `proxy_source_tests_test.go` and `proxy_dns_test.go` provide hosted full-collection, failover, negative-cache and pool-cache coverage.
+
+`probe_reality.go` labels matching DNS evidence as a web server and requires two usable resolvers for suspected mismatch (one if only one is configured). `probe_evidence.go` associates findings with tasks and requires two distinct positive Trojan profiles on one port. Remote unavailability completes neutrally; scanner, queue and persistence failures remain errors. `probe_evidence_test.go` covers these rules. Full Trojan timings and streamed headers remain intact.
+
+`subnet_block.go` reuses independently collected reported-block evidence; `subnet_block_test.go` verifies that a skipped subnet scan still gets block evidence. `worker_config.go` reconciles unattempted planned stages using current saved provider settings/order. Completed evidence and attempt markers remain intact; newly enabled providers require a fresh check.
+
+`worker_config_test.go` verifies current pending-stage reconciliation without replaying completed evidence or adding newly enabled providers to an existing run.
+
+`proxy_source_test_runner.go` owns queued diagnostic settlement and joins callbacks after cancellation before releasing admission or completing application shutdown. Probe response/evidence policies follow zgrab2 SOCKS5, fall-star/proxy_detector prober and Nmap proxy-script references without importing scanner dependencies or forwarding traffic.
+
+`proxy_inventory_test.go` verifies complete-only 12-hour reuse and no-address endpoint skipping independently from DNS transport coverage.

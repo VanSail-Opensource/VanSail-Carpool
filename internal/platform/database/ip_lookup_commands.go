@@ -135,16 +135,9 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 	if fresh.CacheReportID != "" && (!q.Refresh || fresh.CacheReportID != q.CacheReportID) {
 		return fresh.CacheReportID, true, nil
 	}
-	var id, raw string
-	err := tx.QueryRowContext(ctx, `SELECT id,config_json FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&id, &raw)
+	var id string
+	err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&id)
 	if err == nil {
-		previous, decodeErr := iplookup.DecodeConfig(raw)
-		if decodeErr != nil {
-			return "", false, decodeErr
-		}
-		if iplookup.ConfigHash(previous) != q.ConfigHash {
-			return "", false, &iplookup.CodeError{Code: "IP_LOOKUP_BUSY"}
-		}
 		if q.Refresh {
 			if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=json_set(live_state_json,'$.status','queued') WHERE id=? AND COALESCE(json_extract(live_state_json,'$.status'),'')=''`, id); err != nil {
 				return "", false, err
@@ -164,14 +157,10 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 	if err != nil {
 		return "", false, err
 	}
-	configJSON, err := json.Marshal(c)
-	if err != nil {
-		return "", false, err
-	}
 	liveState := `{}`
 	if q.Refresh {
 		liveState = `{"status":"queued","attempted":false,"snapshotId":""}`
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at,live_state_json,cache_key) VALUES(?,?,'processing',?,?,?,?,?)`, id, q.IP, string(configJSON), string(encoded), stamp(now), liveState, iplookup.CacheKey(q.IP))
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,live_state_json,cache_key) VALUES(?,?,'processing',?,?,?,?)`, id, q.IP, string(encoded), stamp(now), liveState, iplookup.CacheKey(q.IP))
 	return id, false, err
 }

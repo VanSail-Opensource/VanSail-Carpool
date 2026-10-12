@@ -92,12 +92,7 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 		p.update("scores", "scores", v, func(r *LiveDetails) { r.Scores = v })
 	})
 	launch(func() { v := s.shodan(ctx, ip); p.update("shodan", "shodan", v, func(r *LiveDetails) { r.Shodan = v }) })
-	if deferred, _ := ctx.Value(deferBlockKey{}).(bool); deferred {
-		v := AbuseBlock{LiveMeta: LiveMeta{Status: "skipped", Source: "abuseipdb"}, Prefix: blockPrefix(ip), WindowDays: 30}
-		p.update("block", "block", v, func(r *LiveDetails) { r.Block = v })
-	} else {
-		launch(func() { v := s.block(ctx, ip, c); p.update("block", "block", v, func(r *LiveDetails) { r.Block = v }) })
-	}
+	launch(func() { v := s.block(ctx, ip, c); p.update("block", "block", v, func(r *LiveDetails) { r.Block = v }) })
 	launch(func() {
 		v := s.transfers(ctx, ip)
 		p.update("transfers", "transfers", v, func(r *LiveDetails) { r.Transfers = &v })

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -26,11 +25,7 @@ func insertIPCache(t *testing.T, store *Store, id, ip, status string, completed 
 	if err != nil {
 		t.Fatal(err)
 	}
-	config, err := json.Marshal(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.DB().ExecContext(context.Background(), `INSERT INTO ip_lookup_reports(id,ip,status,config_json,report_json,created_at,completed_at) VALUES(?,?,?,?,?,?,?)`, id, ip, status, string(config), string(raw), stamp(completed.Add(-time.Second)), stamp(completed)); err != nil {
+	if _, err := store.DB().ExecContext(context.Background(), `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,completed_at) VALUES(?,?,?,?,?,?)`, id, ip, status, string(raw), stamp(completed.Add(-time.Second)), stamp(completed)); err != nil {
 		t.Fatal(err)
 	}
 	return r

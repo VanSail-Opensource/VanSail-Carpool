@@ -1,0 +1,20 @@
+post:
+  tags: [IP Lookup]
+  operationId: testAdminIPLookupProxySource
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    '202':
+      description: Administrator source diagnostic
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/IPLookupProxySourceTest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }
+    '502': { $ref: '../openapi.yaml#/components/responses/UpstreamFailure' }

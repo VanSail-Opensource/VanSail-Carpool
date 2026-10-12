@@ -13,6 +13,13 @@ type ProxySourceResult struct {
 	Status     string `json:"status"`
 	ObservedAt string `json:"observedAt"`
 	Count      int    `json:"count"`
+	URL        string `json:"url,omitempty"`
+	Phase      string `json:"phase,omitempty"`
+	Hosts      int    `json:"hosts,omitempty"`
+	Processed  int    `json:"processed,omitempty"`
+	Skipped    int    `json:"skipped,omitempty"`
+	DNSFailed  int    `json:"dnsFailed,omitempty"`
+	ErrorCode  string `json:"errorCode,omitempty"`
 }
 type ProxyAssessment struct {
 	Status  string              `json:"status"`
@@ -34,9 +41,11 @@ type SubnetResult struct {
 	Addresses []SubnetAddress `json:"addresses"`
 }
 type ProbeFinding struct {
-	Protocol   string `json:"protocol"`
-	Confidence string `json:"confidence"`
-	Evidence   string `json:"evidence"`
+	Protocol   string    `json:"protocol"`
+	Confidence string    `json:"confidence"`
+	Evidence   string    `json:"evidence"`
+	TaskKey    string    `json:"taskKey,omitempty"`
+	DNS        *ProbeDNS `json:"dns,omitempty"`
 }
 type PortProbe struct {
 	Port     int            `json:"port"`
@@ -50,6 +59,27 @@ type ProbeTask struct {
 	StartedAt     string `json:"startedAt"`
 	NextMilestone int    `json:"nextMilestone"`
 	ErrorCode     string `json:"errorCode"`
+	Result        string `json:"result,omitempty"`
+}
+
+// ProbeDNS retains bounded DNS evidence without subscription payloads.
+type ProbeDNS struct {
+	Domain    string           `json:"domain"`
+	Resolvers []DNSObservation `json:"resolvers"`
+}
+
+// DNSObservation describes the response from one resolver.
+type DNSObservation struct {
+	Server    string   `json:"server"`
+	Status    string   `json:"status"`
+	Addresses []string `json:"addresses"`
+}
+
+// ProxySourceTest is an ephemeral administrator diagnostic.
+type ProxySourceTest struct {
+	ID     string            `json:"id"`
+	Status string            `json:"status"`
+	Result ProxySourceResult `json:"result"`
 }
 type EnhancedCheckpoint struct {
 	Phase    string          `json:"phase"`

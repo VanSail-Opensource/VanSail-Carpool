@@ -17,7 +17,7 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 	address, _ := netip.ParseAddr(r.IP)
 	prefix := blockPrefix(r.IP)
 	if address.Is6() {
-		block := s.live.block(ctx, r.IP, c)
+		block := s.reportBlock(ctx, r, c)
 		if r.LiveDetails != nil {
 			r.LiveDetails.Block = block
 		}
@@ -53,7 +53,7 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 		needBlock = needBlock || row.Abuse == "pending"
 	}
 	if needBlock {
-		block := s.live.block(ctx, r.IP, c)
+		block := s.reportBlock(ctx, r, c)
 		if r.LiveDetails != nil {
 			r.LiveDetails.Block = block
 		}

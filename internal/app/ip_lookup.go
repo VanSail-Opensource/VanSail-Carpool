@@ -100,5 +100,6 @@ func newIPLookupService(store *database.Store, settings *admin.SettingsService, 
 	}
 	service := iplookup.NewService(store, key)
 	service.Live = live
+	service.Enhanced = worker.Enhanced
 	return service, worker, live, nil
 }

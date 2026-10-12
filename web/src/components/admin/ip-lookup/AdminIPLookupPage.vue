@@ -14,7 +14,7 @@ import RetrySettings from './RetrySettings.vue'
 import ProxyProbeSettings from './ProxyProbeSettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
 
-const { settings, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
+const { settings, savedSourceConfig, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
 const { t } = useI18n()
 const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
 const checkOrder = computed({
@@ -54,7 +54,7 @@ const schema = computed(() => z.object({
           <ProviderOrder v-model="settings.geolocationOrder" :title="$t('ipLookup.geolocationOrder')" :help="$t('ipLookup.geolocationOrderHelp')" :disabled="busy" />
         </div>
         <ProviderSettings v-model="settings" />
-        <ProxyProbeSettings v-model="settings" :disabled="busy" />
+        <ProxyProbeSettings v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" />
         <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         <ComboQuotas v-model="settings.comboQuotas" :combos="combos" />
         <UButton type="submit" :loading="busy" :disabled="busy" :label="$t('common.save')" class="lookup-save" />

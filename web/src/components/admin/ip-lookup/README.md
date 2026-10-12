@@ -18,3 +18,7 @@ These are browser/constructed-handler results, not a production settings write.
 ProviderSettings.vue also manages the optional vaulted cloudflare_radar token with configured/keep/replace/clear behavior, independent of the risk-provider order.
 
 `ProxyProbeSettings.vue` edits source names/URLs, resolver addresses, additional ports and the quota cost of refreshes inside the existing atomic settings form. Server defaults include all supplied inventories; credentials remain write-only.
+
+`ProxySourceTestControl.vue` and `useProxySourceTest.ts` start full tests of saved sources and poll typed no-store diagnostics every two seconds while visible. Disposal aborts polling without cancelling backend collection. A last-saved source/resolver signature disables Test for unsaved edits. Disabled saved sources can still be tested. Results reuse the expanded IPProxySourceDetails renderer.
+
+Chrome DevTools MCP reviewed saved disabled-source tests, in-progress/completed/partial/error diagnostics, unsaved-edit disabling and save re-enabling at 390px and 1280px. Tests did not submit the settings form. Console checks were clear in the reviewed constructed flows.

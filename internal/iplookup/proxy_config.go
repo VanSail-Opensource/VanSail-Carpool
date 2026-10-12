@@ -97,6 +97,15 @@ func normalizeEnhancedConfig(c *Config) error {
 		}
 		c.DNSResolvers[i] = raw
 	}
+	unique := []string{}
+	resolverSeen := map[string]bool{}
+	for _, resolver := range c.DNSResolvers {
+		if !resolverSeen[resolver] {
+			unique = append(unique, resolver)
+			resolverSeen[resolver] = true
+		}
+	}
+	c.DNSResolvers = unique
 	for _, p := range c.ProbePorts {
 		if p < 1 || p > 65535 {
 			return &CodeError{"IP_LOOKUP_INVALID_CONFIG"}
