@@ -88,6 +88,9 @@ func ValidateConfig(c *Config) error {
 			}
 			e.LegacyGroup = ""
 			endpointIDs[e.ID] = true
+			if strings.ContainsAny(e.RPCURL, "\r\n\t") || strings.ContainsAny(e.WSURL, "\r\n\t") || strings.ContainsAny(e.IndexerURL, "\r\n\t") {
+				return ErrConfiguration
+			}
 			if e.RPCURL == "" && !e.RPCConfigured {
 				return ErrConfiguration
 			} else if e.RPCURL != "" && !validURL(e.RPCURL, spec.Family == "evm") {
@@ -115,8 +118,21 @@ func ValidateConfig(c *Config) error {
 }
 
 func validURL(raw string, ws bool) bool {
+	if strings.ContainsAny(raw, "\r\n\t") || len(raw) > 4096 {
+		return false
+	}
 	parsed, err := url.Parse(raw)
-	return err == nil && parsed.Hostname() != "" && parsed.User == nil && parsed.Fragment == "" && len(raw) <= 4096 && (parsed.Scheme == "http" || parsed.Scheme == "https" || (ws && (parsed.Scheme == "ws" || parsed.Scheme == "wss")))
+	if err != nil || parsed.Hostname() == "" || parsed.User != nil || parsed.Fragment != "" {
+		return false
+	}
+	switch parsed.Scheme {
+	case "http", "https":
+		return true
+	case "ws", "wss":
+		return ws
+	default:
+		return false
+	}
 }
 func validWSURL(raw string) bool { return strings.HasPrefix(raw, "ws") && validURL(raw, true) }
 

@@ -46,7 +46,7 @@ func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 			t.Fatalf("pinned token %s invalid: %v", spec.Network, err)
 		}
 	}
-	for _, mutate := range []func(*Config){func(c *Config) { c.Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Rate = "1e3" }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
+	for _, mutate := range []func(*Config){func(c *Config) { c.Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "https://rpc.example/\r\nX-Injected: true" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Rate = "1e3" }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
 		invalid := testConfig()
 		mutate(&invalid)
 		if err := ValidateConfig(&invalid); err == nil {
