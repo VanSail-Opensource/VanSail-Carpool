@@ -15,6 +15,7 @@ import (
 )
 
 const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+const maxRPCResponseBytes = 2 * 1024 * 1024
 
 type rpcReply struct {
 	ID     uint64          `json:"id"`
@@ -84,8 +85,8 @@ func (c *client) request(ctx context.Context, method, rawURL string, payload any
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return ErrRPC
 		}
-		data, err := io.ReadAll(io.LimitReader(resp.Body, 8*1024*1024+1))
-		if err != nil || len(data) > 8*1024*1024 {
+		data, err := io.ReadAll(io.LimitReader(resp.Body, maxRPCResponseBytes+1))
+		if err != nil || len(data) > maxRPCResponseBytes {
 			return ErrRPC
 		}
 		if json.Unmarshal(data, output) != nil {

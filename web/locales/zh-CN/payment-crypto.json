@@ -1,15 +1,15 @@
 {
   "cryptoPayment": {
-    "copyAmount": "??????",
-    "networkHint": "??????????????",
-    "builtinHint": "????????? TXB ????????????????",
+    "copyAmount": "复制准确金额",
+    "networkHint": "请在所选网络上转账，并使用准确金额。",
+    "builtinHint": "转账经链上验证后，TXB 将自动到账。超时转账需要管理员审核。",
     "chooseCurrency": "选择币种",
     "chooseNetwork": "选择网络",
-    "copyAddress": "复制支付地址",
+    "copyAddress": "复制收款地址",
     "timeRemaining": "剩余时间",
-    "expired": "订单时限已结束",
+    "expired": "订单支付时限已结束",
     "expiredTitle": "创建新订单",
-    "expiredDescription": "此支付地址的付款时限已结束。如果已经转账，请等待支付服务商确认，不要重复付款。",
+    "expiredDescription": "此地址的支付时限已结束。如果您已经转账，请等待服务商确认，不要重复付款。",
     "recreate": "创建新订单",
     "rejected": "{message}"
   }
