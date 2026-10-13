@@ -39,14 +39,14 @@
       "clientSecret": "客户端密钥",
       "secretStored": "已保存密钥，留空可保留现有值。",
       "secretNeeded": "请输入 BotFather 提供的客户端密钥。",
-      "callbackUrl": "回调地址",
-      "registration": "请在 BotFather 中将此回调地址及网站源地址注册为允许的 URL。",
+      "callbackUrl": "重定向 URL",
+      "registration": "请在 BotFather 中将此重定向 URL 及网站源地址注册为允许的 URL。",
       "clientRequired": "请输入有效的数字客户端 ID。",
       "secretTooLong": "客户端密钥不能超过 512 个字符。",
       "secretRequired": "启用登录需要提供客户端密钥。"
     },
     "oauthErrors": {
-      "OAUTH_PROVIDER_REJECTED": "Telegram 拒绝了登录请求。请检查 BotFather 允许的 URL 是否包含网站域名和管理访问设置中显示的完整回调地址，并确认客户端 ID 与密钥属于同一个机器人。",
+      "OAUTH_PROVIDER_REJECTED": "Telegram 拒绝了登录请求。请检查 BotFather 允许的 URL 是否包含网站域名和管理访问设置中显示的完整重定向 URL，并确认客户端 ID 与密钥属于同一个机器人。",
       "OAUTH_PROVIDER_UNAVAILABLE": "无法连接 Telegram 登录服务，请稍后重试。",
       "OAUTH_RESPONSE_INVALID": "无法验证 Telegram 返回的登录结果。请检查已配置的客户端 ID 和密钥后重试。",
       "OAUTH_STATE_INVALID": "登录请求已过期或无法验证，请重新开始。",

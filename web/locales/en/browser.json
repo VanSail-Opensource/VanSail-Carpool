@@ -39,8 +39,8 @@
       "clientSecret": "Client secret",
       "secretStored": "A secret is stored. Leave blank to keep it.",
       "secretNeeded": "Enter the client secret from BotFather.",
-      "callbackUrl": "Callback URL",
-      "registration": "Register this callback URL and the site's origin as allowed URLs in BotFather.",
+      "callbackUrl": "Redirect URL",
+      "registration": "Register this redirect URL and the site's origin as allowed URLs in BotFather.",
       "clientRequired": "Enter a valid numeric client ID.",
       "secretTooLong": "The client secret must be 512 characters or fewer.",
       "secretRequired": "A client secret is required to enable login."
@@ -49,7 +49,7 @@
       "OAUTH_STATE_INVALID": "The login request expired or could not be verified. Please start again.",
       "OAUTH_CANCELLED": "Telegram sign-in was cancelled.",
       "OAUTH_LOGIN_FAILED": "Telegram sign-in could not be completed. Please retry.",
-      "OAUTH_PROVIDER_REJECTED": "Telegram rejected the sign-in request. Check that the BotFather allowed URLs include this site's origin and the exact callback URL shown in Admin access settings, and that the client ID and secret belong to the same bot.",
+      "OAUTH_PROVIDER_REJECTED": "Telegram rejected the sign-in request. Check that the BotFather allowed URLs include this site's origin and the exact redirect URL shown in Admin access settings, and that the client ID and secret belong to the same bot.",
       "OAUTH_PROVIDER_UNAVAILABLE": "Could not reach Telegram sign-in. Please retry in a moment.",
       "OAUTH_RESPONSE_INVALID": "Telegram returned a sign-in response that could not be verified. Check the configured client ID and secret, then retry.",
       "OAUTH_NOT_CONFIGURED": "Browser sign-in is not configured. Use the Mini App access link."
