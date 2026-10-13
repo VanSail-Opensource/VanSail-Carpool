@@ -2,27 +2,27 @@
 
 `AdminUSDTPage` is composed by the independent browser console at `/admin/usdt`. It uses
 the shared API client, Nuxt UI forms, theme tokens and English/Chinese localization.
-Configuration, network, quota, and transfer review workspaces use desktop tabs.
+Configuration, network, and transfer review workspaces use desktop tabs.
 One network is edited at a time; receiving addresses and ordered endpoints remain
 editable through typed controls. Transfer evidence opens in a focused side panel. Credentials
 are write-only and remain blank after saving. Endpoint order expresses failover
-priority. Group IDs bind servers sharing one provider-account budget.
+priority. Every RPC and WS server shares the concurrency limit in general settings.
 
 Status and review reads never trigger chain work. Explicit probes use the backend
-queues. Credit resolution consumes persisted verified evidence once and can only
-override the original payment window, not token/address/amount identity. Amount
-mismatches use existing manual adjustments. The payment sheet and statistics chart
+queues. Credit resolution consumes persisted verified evidence once. Auto-credit
+requires an exact amount or one unique quote with a shortfall of at most 0.001 USDT;
+audited review can select an ambiguous quote within the same tolerance. It can
+override the original payment window but not the token or address. The payment sheet and statistics chart
 remain shared billing components. Composables guard stale responses after unmount.
 
 ## Files
 
 - `AdminUSDTPage.vue` ? Thin page composition, network selection, readiness and form wiring.
-- `configForm.test.ts` ? Hosted contract checks for masked credentials, protocols and quotas.
+- `configForm.test.ts` ? Hosted contract checks for masked credentials, protocols and concurrency bounds.
 - `configForm.ts` ? Typed defaults and localized Zod validation using existing UUID utilities.
-- `USDTEndpointEditor.vue` ? Write-only URLs/credentials, shared group and WS configuration.
-- `USDTGeneralSettings.vue` ? Provider enablement, exact TXB/USDT rate and payment window.
+- `USDTEndpointEditor.vue` ? Write-only URLs/credentials and WS configuration.
+- `USDTGeneralSettings.vue` ? Provider enablement, exact TXB/USDT rate, payment window and shared concurrency.
 - `USDTNetworkSettings.vue` ? Receiving address pools and ordered server entries.
-- `USDTQuotaSettings.vue` ? Provider-account limits and local usage/cooldown visibility.
 - `USDTReview.vue` ? Paginated verified transfer review table and evidence side panel.
 - `USDTReviewItem.vue` ? Transfer evidence and explicit audited order-credit input.
 - `useUSDTAdmin.ts` ? Independent loading, saves, probes, review and lifecycle cleanup.

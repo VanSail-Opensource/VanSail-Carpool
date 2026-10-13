@@ -28,7 +28,7 @@ type Service struct {
 
 // NewService uses the existing encrypted settings facade and SQLite repository.
 func NewService(repository Repository, settings Settings) *Service {
-	return &Service{repository: repository, settings: settings, executor: newExecutor(repository), states: map[string]NetworkStatus{}, done: make(chan struct{}), wake: make(chan struct{}, 1)}
+	return &Service{repository: repository, settings: settings, executor: newExecutor(), states: map[string]NetworkStatus{}, done: make(chan struct{}), wake: make(chan struct{}, 1)}
 }
 
 func (s *Service) config(ctx context.Context) (Config, error) {
@@ -116,10 +116,6 @@ func (s *Service) Resolve(ctx context.Context, id, orderID, actor, reason string
 func ErrorCode(err error) string {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return ErrRPC.Error()
-	}
-	var pause *Pause
-	if errors.As(err, &pause) {
-		return pause.Code
 	}
 	for _, known := range []error{ErrConfiguration, ErrUnavailable, ErrCapacity, ErrConflict, ErrRPC, ErrProof, ErrQuoteNotFound} {
 		if errors.Is(err, known) {

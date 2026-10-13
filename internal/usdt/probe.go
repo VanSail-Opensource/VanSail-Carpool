@@ -8,7 +8,7 @@ type CheckResult struct {
 	ErrorCode string `json:"errorCode"`
 }
 
-// Check probes configured servers through the same quota groups as the scanners.
+// Check probes configured servers through the shared scanner queue.
 func (s *Service) Check(ctx context.Context, network string) (CheckResult, error) {
 	c, err := s.config(ctx)
 	if err != nil {

@@ -43,7 +43,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 			t.Fatal(err)
 		}
 	}
-	if _, err := conn.ExecContext(ctx, "DELETE FROM schema_migrations WHERE version=?", usdtMigration); err != nil {
+	if _, err := conn.ExecContext(ctx, "DELETE FROM schema_migrations WHERE version IN (?,?)", usdtMigration, "073_remove_usdt_rpc_quotas.sql"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys=ON"); err != nil {
@@ -88,7 +88,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 		t.Fatalf("backups=%v %v", backups, err)
 	}
 	versions, _ := MigrationVersions()
-	if err := verifyMigrationBoundaryBackup(ctx, backups[0], len(versions)-1, usdtMigration); err != nil {
+	if err := verifyMigrationBoundaryBackup(ctx, backups[0], len(versions)-2, usdtMigration); err != nil {
 		t.Fatal("unverified upgrade backup", err)
 	}
 	createUSDTTestOrder(t, current, user.ID, "1.000")

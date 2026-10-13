@@ -56,8 +56,23 @@ func (s *Store) SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, re
 	if err != nil {
 		return model.PaymentOrder{}, false, err
 	}
-	if order.Provider != usdt.Provider || t.Network != q.Network || t.Token != q.Token || t.Recipient != q.Recipient || t.AtomicAmount != q.AtomicAmount {
+	if order.Provider != usdt.Provider || t.Network != q.Network || t.Token != q.Token || t.Recipient != q.Recipient {
 		return model.PaymentOrder{}, false, usdt.ErrConflict
+	}
+	if t.AtomicAmount != q.AtomicAmount {
+		spec, ok := usdt.Network(t.Network)
+		if !ok || !usdt.IsAmountShortfallWithinTolerance(t.AtomicAmount, q.AtomicAmount, spec.Decimals) {
+			return model.PaymentOrder{}, false, usdt.ErrConflict
+		}
+		if actorID == "" {
+			matched, found, err := matchUSDTQuote(ctx, tx, t)
+			if err != nil {
+				return model.PaymentOrder{}, false, err
+			}
+			if !found || matched.OrderID != orderID {
+				return model.PaymentOrder{}, false, usdt.ErrConflict
+			}
+		}
 	}
 	credited, err := courtesyCreditExistsTx(ctx, tx, order.ID)
 	if err != nil {

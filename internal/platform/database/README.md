@@ -400,10 +400,8 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 - `usdt_quotes.go` ? Permanent amount reservations and atomic checkout snapshots.
 - `usdt_transfers.go` ? Immutable verified receiving events committed before scan progress.
 - `usdt_transfer_queries.go` ? Local cursor, recovery and keyset review queries.
-- `usdt_settlement.go` ? Atomic receipt claim, exact identity validation, audited review and ledger credit.
-- `usdt_quotas.go` ? Restart-safe request admission, rolling counters and cooldowns.
+- `usdt_settlement.go` ? Atomic receipt claim, exact identity validation, bounded shortfall matching, audited review and ledger credit.
 - `usdt_test_helpers_test.go` ? Shared hosted quote and transfer fixtures.
 - `usdt_quotes_test.go` ? Concurrent allocation, permanence, exhaustion and BSC atomic-unit checks.
 - `usdt_settlement_test.go` ? Delayed observation, replay, role, amount, audit and failed-batch checks.
-- `usdt_quotas_test.go` ? Persistent shared budgets, failures, cooldowns and rolling reset checks.
 - `usdt_migration_test.go` ? Legacy payment/FK preservation and verified upgrade backup checks.

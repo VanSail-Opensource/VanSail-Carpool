@@ -13,12 +13,12 @@ func testConfig() Config {
 	c := DefaultConfig()
 	c.Enabled = true
 	c.Rate = "10"
-	c.Groups = []QuotaGroup{{ID: "shared", RequestsPerSecond: 1, RequestsPerMinute: 60, RequestsPerDay: 20000, Concurrency: 1}}
+	c.Concurrency = 1
 	for i := range c.Networks {
 		if c.Networks[i].Network == "ethereum" {
 			c.Networks[i].Enabled = true
 			c.Networks[i].Addresses = []string{"0x1111111111111111111111111111111111111111"}
-			c.Networks[i].Endpoints = []Endpoint{{ID: "primary", Group: "shared", RPCURL: "https://rpc.example/v2/secret-in-url", WSURL: "wss://rpc.example/ws/secret-in-url", APIKey: "secret-api-key", UseWS: true}}
+			c.Networks[i].Endpoints = []Endpoint{{ID: "primary", RPCURL: "https://rpc.example/v2/secret-in-url", WSURL: "wss://rpc.example/ws/secret-in-url", APIKey: "secret-api-key", UseWS: true}}
 		}
 	}
 	return c
@@ -46,7 +46,7 @@ func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 			t.Fatalf("pinned token %s invalid: %v", spec.Network, err)
 		}
 	}
-	for _, mutate := range []func(*Config){func(c *Config) { c.Groups[0].RequestsPerSecond = 0 }, func(c *Config) { c.Groups[0].Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Rate = "1e3" }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
+	for _, mutate := range []func(*Config){func(c *Config) { c.Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Rate = "1e3" }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
 		invalid := testConfig()
 		mutate(&invalid)
 		if err := ValidateConfig(&invalid); err == nil {

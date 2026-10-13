@@ -4,10 +4,9 @@ USDTNetworkID:
 USDTEndpoint:
   type: object
   additionalProperties: false
-  required: [id, group, rpcUrl, wsUrl, indexerUrl, apiKey, useWs, rpcConfigured, wsConfigured, indexerConfigured, keyConfigured, host]
+  required: [id, rpcUrl, wsUrl, indexerUrl, apiKey, useWs, rpcConfigured, wsConfigured, indexerConfigured, keyConfigured, host]
   properties:
     id: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
-    group: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
     rpcUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
     wsUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
     indexerUrl: { type: string, maxLength: 4096, description: 'Aptos GraphQL URL; write-only.' }
@@ -18,16 +17,6 @@ USDTEndpoint:
     indexerConfigured: { type: boolean }
     keyConfigured: { type: boolean }
     host: { type: string, description: 'Sanitized RPC hostname; no credential-bearing path or query.' }
-USDTQuotaGroup:
-  type: object
-  additionalProperties: false
-  required: [id, requestsPerSecond, requestsPerMinute, requestsPerDay, concurrency]
-  properties:
-    id: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
-    requestsPerSecond: { type: integer, minimum: 1, maximum: 50 }
-    requestsPerMinute: { type: integer, minimum: 1, maximum: 3000 }
-    requestsPerDay: { type: integer, minimum: 1, maximum: 1000000 }
-    concurrency: { type: integer, minimum: 1, maximum: 8 }
 USDTNetworkConfig:
   type: object
   additionalProperties: false
@@ -40,41 +29,31 @@ USDTNetworkConfig:
 USDTConfig:
   type: object
   additionalProperties: false
-  required: [enabled, name, rate, expiryMinutes, networks, groups]
+  required: [enabled, name, rate, expiryMinutes, concurrency, networks]
   properties:
     enabled: { type: boolean }
     name: { type: string, minLength: 1, maxLength: 64 }
     rate: { type: string, description: 'Exact TXB per USDT; required while enabled.' }
     expiryMinutes: { type: integer, minimum: 5, maximum: 120, default: 30 }
+    concurrency: { type: integer, minimum: 1, maximum: 8, description: 'One shared cap across all RPC, indexer, probe, reconnect and WebSocket requests.' }
     networks: { type: array, maxItems: 10, items: { $ref: '#/USDTNetworkConfig' } }
-    groups: { type: array, maxItems: 32, items: { $ref: '#/USDTQuotaGroup' } }
 USDTNetworkStatus:
   type: object
   additionalProperties: false
   required: [network, state, cursor, updatedAt, errorCode, connection]
   properties:
     network: { $ref: '#/USDTNetworkID' }
-    state: { type: string, enum: [disabled, ready, catching_up, error, paused] }
+    state: { type: string, enum: [disabled, ready, catching_up, error] }
     cursor: { type: string, description: 'Durable adapter-specific processed progress.' }
     updatedAt: { type: [string, 'null'], format: date-time }
     errorCode: { type: string }
     connection: { type: string, enum: ['', none, polling, websocket] }
-USDTQuotaStatus:
-  type: object
-  additionalProperties: false
-  required: [id, minuteUsed, dayUsed, cooldownUntil]
-  properties:
-    id: { type: string }
-    minuteUsed: { type: integer, minimum: 0 }
-    dayUsed: { type: integer, minimum: 0 }
-    cooldownUntil: { type: [string, 'null'], format: date-time }
 USDTStatus:
   type: object
   additionalProperties: false
-  required: [networks, quotas]
+  required: [networks]
   properties:
     networks: { type: array, items: { $ref: '#/USDTNetworkStatus' } }
-    quotas: { type: array, items: { $ref: '#/USDTQuotaStatus' } }
 USDTCheckRequest:
   type: object
   additionalProperties: false

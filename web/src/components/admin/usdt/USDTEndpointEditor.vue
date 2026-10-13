@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { USDTEndpoint, USDTNetworkID, USDTQuotaGroup } from '@/api/usdt'
+import type { USDTEndpoint, USDTNetworkID } from '@/api/usdt'
 import SwitchField from '@/components/common/SwitchField.vue'
 import { useI18n } from '@/i18n'
 import { supportsWS } from './configForm'
 const model = defineModel<USDTEndpoint>({ required: true })
-const props = defineProps<{ network: USDTNetworkID; groups: USDTQuotaGroup[]; index: number; last: boolean; prefix: string }>()
+const props = defineProps<{ network: USDTNetworkID; index: number; last: boolean; prefix: string }>()
 const emit = defineEmits<{ remove: []; move: [direction: number] }>()
 const { t } = useI18n()
-const groups = computed(() => props.groups.map(group => ({ label: group.id, value: group.id })))
 function set<K extends keyof USDTEndpoint>(key: K, value: USDTEndpoint[K]): void { model.value = { ...model.value, [key]: value } }
 const secretHint = (configured: boolean) => configured ? t('adminUsdt.keepSecret') : ''
 </script>
@@ -25,7 +23,6 @@ const secretHint = (configured: boolean) => configured ? t('adminUsdt.keepSecret
       </div>
     </div>
     <div class="usdt-form-grid">
-      <UFormField :name="`${prefix}.group`" :label="t('adminUsdt.quotaGroup')"><USelect :model-value="model.group" :items="groups" @update:model-value="set('group', String($event))" /></UFormField>
       <UFormField :name="`${prefix}.rpcUrl`" :label="t('adminUsdt.rpcUrl')" :description="t(`adminUsdt.apiKinds.${network}`)"><UInput :model-value="model.rpcUrl" type="password" autocomplete="new-password" :placeholder="secretHint(model.rpcConfigured)" @update:model-value="set('rpcUrl', String($event))" /></UFormField>
       <UFormField v-if="network === 'aptos'" :name="`${prefix}.indexerUrl`" :label="t('adminUsdt.indexerUrl')"><UInput :model-value="model.indexerUrl" type="password" autocomplete="new-password" :placeholder="secretHint(model.indexerConfigured)" @update:model-value="set('indexerUrl', String($event))" /></UFormField>
       <UFormField :name="`${prefix}.apiKey`" :label="t('adminUsdt.apiKey')"><UInput :model-value="model.apiKey" type="password" autocomplete="new-password" :placeholder="secretHint(model.keyConfigured)" @update:model-value="set('apiKey', String($event))" /></UFormField>

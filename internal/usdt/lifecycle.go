@@ -35,7 +35,7 @@ func (s *Service) run(ctx context.Context) {
 			s.report(err)
 		} else if key := fingerprint(c); key != current {
 			stop()
-			if err := s.executor.configure(ctx, c.Groups); err != nil {
+			if err := s.executor.configure(ctx, c.Concurrency); err != nil {
 				s.report(err)
 			} else {
 				current = key
@@ -85,13 +85,12 @@ func (s *Service) report(err error) {
 	}
 }
 
-// Status derives quota counters locally and copies immutable network snapshots.
+// Status copies immutable network snapshots; reads never contact a chain.
 func (s *Service) Status(ctx context.Context) (Status, error) {
-	c, err := s.config(ctx)
-	if err != nil {
+	if _, err := s.config(ctx); err != nil {
 		return Status{}, err
 	}
-	result := Status{Networks: []NetworkStatus{}, Quotas: []QuotaStatus{}}
+	result := Status{Networks: []NetworkStatus{}}
 	s.mu.RLock()
 	for _, spec := range Registry {
 		n, ok := s.states[spec.Network]
@@ -101,8 +100,7 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 		result.Networks = append(result.Networks, n)
 	}
 	s.mu.RUnlock()
-	result.Quotas, err = s.repository.USDTQuotaStatus(ctx, c.Groups, time.Now().UTC())
-	return result, err
+	return result, nil
 }
 
 func (s *Service) state(network, value, cursor, code string) {

@@ -17,11 +17,24 @@ func DecodeConfig(raw string) (Config, error) {
 	if raw == "" {
 		return DefaultConfig(), nil
 	}
+	var fields map[string]json.RawMessage
+	if json.Unmarshal([]byte(raw), &fields) != nil {
+		return Config{}, ErrConfiguration
+	}
 	var c Config
 	d := json.NewDecoder(bytes.NewBufferString(raw))
 	d.DisallowUnknownFields()
 	if d.Decode(&c) != nil || d.Decode(new(any)) != io.EOF {
 		return Config{}, ErrConfiguration
+	}
+	if _, configured := fields["concurrency"]; !configured {
+		for _, group := range c.LegacyGroups {
+			var groupConcurrency int
+			if json.Unmarshal(group["concurrency"], &groupConcurrency) == nil && groupConcurrency > 0 {
+				c.Concurrency += min(groupConcurrency, 8-c.Concurrency)
+			}
+		}
+		c.Concurrency = max(1, c.Concurrency)
 	}
 	if err := ValidateConfig(&c); err != nil {
 		return Config{}, err
@@ -31,27 +44,18 @@ func DecodeConfig(raw string) (Config, error) {
 
 // ValidateConfig normalizes addresses and rejects unsupported endpoint protocols.
 func ValidateConfig(c *Config) error {
-	if c.Groups == nil {
-		c.Groups = []QuotaGroup{}
-	}
 	if c.Networks == nil {
 		c.Networks = []NetworkConfig{}
 	}
-	if len(c.Name) == 0 || len(c.Name) > 64 || c.ExpiryMinutes < 5 || c.ExpiryMinutes > 120 || len(c.Networks) > 10 || len(c.Groups) > 32 {
+	if len(c.Name) == 0 || len(c.Name) > 64 || c.ExpiryMinutes < 5 || c.ExpiryMinutes > 120 || c.Concurrency < 1 || c.Concurrency > 8 || len(c.Networks) > 10 {
 		return ErrConfiguration
 	}
+	c.LegacyGroups = nil
 	if c.Rate != "" && (!positiveRate.MatchString(c.Rate) || strings.Trim(c.Rate, "0.") == "") {
 		return ErrConfiguration
 	}
 	if c.Enabled && c.Rate == "" {
 		return ErrConfiguration
-	}
-	groups := map[string]bool{}
-	for _, g := range c.Groups {
-		if !identifier.MatchString(g.ID) || groups[g.ID] || g.RequestsPerSecond < 1 || g.RequestsPerSecond > 50 || g.RequestsPerMinute < 1 || g.RequestsPerMinute > 3000 || g.RequestsPerDay < 1 || g.RequestsPerDay > 1000000 || g.Concurrency < 1 || g.Concurrency > 8 {
-			return ErrConfiguration
-		}
-		groups[g.ID] = true
 	}
 	seen := map[string]bool{}
 	endpointIDs := map[string]bool{}
@@ -77,10 +81,12 @@ func ValidateConfig(c *Config) error {
 			n.Addresses[j] = address
 			addresses[address] = true
 		}
-		for _, e := range n.Endpoints {
-			if !identifier.MatchString(e.ID) || endpointIDs[e.ID] || !groups[e.Group] || len(e.APIKey) > 4096 || strings.ContainsAny(e.APIKey, "\r\n") {
+		for j := range n.Endpoints {
+			e := &n.Endpoints[j]
+			if !identifier.MatchString(e.ID) || endpointIDs[e.ID] || len(e.APIKey) > 4096 || strings.ContainsAny(e.APIKey, "\r\n") {
 				return ErrConfiguration
 			}
+			e.LegacyGroup = ""
 			endpointIDs[e.ID] = true
 			if !validURL(e.RPCURL, spec.Family == "evm") || (e.WSURL != "" && !validWSURL(e.WSURL)) || (e.IndexerURL != "" && !validURL(e.IndexerURL, false)) {
 				return ErrConfiguration
@@ -110,9 +116,11 @@ func PublicConfig(c Config) Config {
 	raw, _ := json.Marshal(c)
 	var result Config
 	_ = json.Unmarshal(raw, &result)
+	result.LegacyGroups = nil
 	for i := range result.Networks {
 		for j := range result.Networks[i].Endpoints {
 			e := &result.Networks[i].Endpoints[j]
+			e.LegacyGroup = ""
 			e.RPCConfigured, e.WSConfigured, e.IndexerConfigured, e.KeyConfigured = e.RPCURL != "", e.WSURL != "" || strings.HasPrefix(e.RPCURL, "ws"), e.IndexerURL != "", e.APIKey != ""
 			parsed, err := url.Parse(e.RPCURL)
 			if err == nil {

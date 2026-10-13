@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { USDTConfig } from '@/api/usdt'
-import { configSchema, newEndpoint, newQuotaGroup } from './configForm'
+import { configSchema, newEndpoint } from './configForm'
 
 function config(): USDTConfig {
-  return { enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, groups: [newQuotaGroup('shared')], networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint('shared'), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
+  return { enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
 }
 
 describe('USDT configuration contracts', () => {
@@ -15,13 +15,12 @@ describe('USDT configuration contracts', () => {
     value.networks[0]!.endpoints[0]!.wsConfigured = true
     expect(configSchema().safeParse(value).success).toBe(true)
   })
-  it('rejects unsupported protocols, missing shared groups and unsafe rates', () => {
+  it('rejects unsupported protocols and unsafe values', () => {
     for (const mutate of [
       (value: USDTConfig) => { value.rate = '1e4' },
       (value: USDTConfig) => { value.networks[0]!.endpoints[0]!.rpcUrl = 'file:///private' },
-      (value: USDTConfig) => { value.networks[0]!.endpoints[0]!.group = 'missing' },
       (value: USDTConfig) => { value.networks[0]!.addresses = [] },
-      (value: USDTConfig) => { value.groups[0]!.concurrency = 9 },
+      (value: USDTConfig) => { value.concurrency = 9 },
     ]) { const value = config(); mutate(value); expect(configSchema().safeParse(value).success).toBe(false) }
   })
   it('requires HTTP for Solana and an indexer for Aptos', () => {

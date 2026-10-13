@@ -14,6 +14,7 @@ function set<K extends keyof USDTConfig>(key: K, value: USDTConfig[K]): void { m
       <UFormField name="name" :label="t('adminUsdt.name')"><UInput :model-value="model.name" @update:model-value="set('name', String($event))" /></UFormField>
       <UFormField name="rate" :label="t('adminUsdt.rate')" :description="t('adminUsdt.rateHint')"><UInput :model-value="model.rate" inputmode="decimal" @update:model-value="set('rate', String($event))" /></UFormField>
       <UFormField name="expiryMinutes" :label="t('adminUsdt.expiry')"><UInputNumber :model-value="model.expiryMinutes" :min="5" :max="120" @update:model-value="set('expiryMinutes', Number($event))" /></UFormField>
+      <UFormField name="concurrency" :label="t('adminUsdt.concurrency')" :description="t('adminUsdt.concurrencyHint')"><UInputNumber :model-value="model.concurrency" :min="1" :max="8" @update:model-value="set('concurrency', Number($event))" /></UFormField>
     </div>
   </div>
 </template>

@@ -66,3 +66,22 @@ func TransferAmount(raw string, decimals int) (string, error) {
 	}
 	return FormatAtomic(value, decimals), nil
 }
+
+// AmountShortfallTolerance returns 0.001 token in atomic units.
+func AmountShortfallTolerance(decimals int) *big.Int {
+	if decimals < 3 || decimals > 18 {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals-3)), nil)
+}
+
+// IsAmountShortfallWithinTolerance accepts only an underpayment within 0.001 token.
+func IsAmountShortfallWithinTolerance(actual, quoted string, decimals int) bool {
+	paid, paidOK := new(big.Int).SetString(actual, 10)
+	requested, requestedOK := new(big.Int).SetString(quoted, 10)
+	if !paidOK || !requestedOK || paid.Sign() <= 0 || requested.Cmp(paid) <= 0 {
+		return false
+	}
+	shortfall := new(big.Int).Sub(requested, paid)
+	return shortfall.Cmp(AmountShortfallTolerance(decimals)) <= 0
+}

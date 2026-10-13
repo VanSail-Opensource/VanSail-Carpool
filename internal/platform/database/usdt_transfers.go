@@ -3,8 +3,10 @@ package database
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"errors"
+	"math/big"
 	"time"
 
 	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
@@ -48,8 +50,11 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 			return err
 		}
 		t.Status, t.Reason = "review", "USDT_UNMATCHED"
-		q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE network=? AND token=? AND recipient=? AND atomic_amount=?", network, t.Token, t.Recipient, t.AtomicAmount))
-		if err == nil {
+		q, matched, err := matchUSDTQuote(ctx, tx, t)
+		if err != nil {
+			return err
+		}
+		if matched {
 			t.OrderID = q.OrderID
 			order, loadErr := paymentOrderTx(ctx, tx, q.OrderID)
 			if loadErr == nil {
@@ -62,8 +67,6 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 			} else if !errors.Is(loadErr, ErrNotFound) {
 				return loadErr
 			}
-		} else if !errors.Is(err, ErrNotFound) {
-			return err
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_transfers(id,network,token,recipient,atomic_amount,amount,tx_hash,event_id,occurred_at,order_id,status,reason,received_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, t.ID, t.Network, t.Token, t.Recipient, t.AtomicAmount, t.Amount, t.TxHash, t.EventID, stamp(t.OccurredAt), t.OrderID, t.Status, t.Reason, stamp(time.Now().UTC())); err != nil {
 			return err
@@ -73,4 +76,51 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 		return err
 	}
 	return tx.Commit()
+}
+
+func matchUSDTQuote(ctx context.Context, tx *sql.Tx, transfer usdt.Transfer) (usdt.Quote, bool, error) {
+	exact, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE network=? AND token=? AND recipient=? AND atomic_amount=?", transfer.Network, transfer.Token, transfer.Recipient, transfer.AtomicAmount))
+	if err == nil {
+		return exact, true, nil
+	}
+	if !errors.Is(err, ErrNotFound) {
+		return usdt.Quote{}, false, err
+	}
+	spec, ok := usdt.Network(transfer.Network)
+	if !ok || usdt.AmountShortfallTolerance(spec.Decimals).Sign() == 0 {
+		return usdt.Quote{}, false, nil
+	}
+	amount, ok := new(big.Int).SetString(transfer.AtomicAmount, 10)
+	if !ok || amount.Sign() <= 0 {
+		return usdt.Quote{}, false, usdt.ErrProof
+	}
+	tolerance := usdt.AmountShortfallTolerance(spec.Decimals)
+	maximum := new(big.Int).Add(new(big.Int).Set(amount), tolerance).String()
+	minimum := amount.String()
+	rows, err := tx.QueryContext(ctx, usdtQuoteSelect+` WHERE network=? AND token=? AND recipient=?
+		AND (length(atomic_amount)>length(?) OR (length(atomic_amount)=length(?) AND atomic_amount>?))
+		AND (length(atomic_amount)<length(?) OR (length(atomic_amount)=length(?) AND atomic_amount<=?))
+		ORDER BY length(atomic_amount),atomic_amount LIMIT 2`,
+		transfer.Network, transfer.Token, transfer.Recipient,
+		minimum, minimum, minimum, maximum, maximum, maximum)
+	if err != nil {
+		return usdt.Quote{}, false, err
+	}
+	defer func() { _ = rows.Close() }()
+	var candidate usdt.Quote
+	count := 0
+	for rows.Next() {
+		candidate, err = scanUSDTQuote(rows)
+		if err != nil {
+			return usdt.Quote{}, false, err
+		}
+		count++
+	}
+	if err := rows.Err(); err != nil {
+		return usdt.Quote{}, false, err
+	}
+	if count != 1 {
+		return usdt.Quote{}, false, nil
+	}
+	return candidate, true, nil
 }

@@ -8,36 +8,33 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-func TestHTTPRateLimitsArePersistedAndErrorsAreRedacted(t *testing.T) {
+func TestHTTPRateLimitedResponseDoesNotCreateCooldown(t *testing.T) {
 	t.Parallel()
-	c, repo := testClient(t, "ethereum", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Retry-After", "120"); w.WriteHeader(429) }))
+	var requests atomic.Int64
+	c, _ := testClient(t, "ethereum", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { requests.Add(1); w.WriteHeader(429) }))
 	var result string
-	err := c.rpc(context.Background(), "eth_chainId", []any{}, &result)
-	var pause *Pause
-	if !errors.As(err, &pause) || ErrorCode(err) != "USDT_RPC_RATE_LIMITED" || time.Until(repo.lastFailure) < time.Minute {
-		t.Fatalf("rate limit=%v cooldown=%v", err, repo.lastFailure)
+	for i := 0; i < 2; i++ {
+		if err := c.rpc(context.Background(), "eth_chainId", []any{}, &result); ErrorCode(err) != ErrRPC.Error() {
+			t.Fatalf("rate-limited request=%v", err)
+		}
+	}
+	if requests.Load() != 2 {
+		t.Fatalf("requests=%d; expected immediate retry without cooldown", requests.Load())
 	}
 	if ErrorCode(errors.New("https://host.example/secret")) != "USDT_STORAGE_UNAVAILABLE" {
 		t.Fatal("raw URL exposed")
 	}
-	if until := retryAfter("invalid"); time.Until(until) < 20*time.Second {
-		t.Fatal("missing fallback cooldown")
-	}
-	if until := retryAfter(time.Now().Add(time.Hour).UTC().Format(http.TimeFormat)); time.Until(until) < 30*time.Minute {
-		t.Fatal("HTTP date ignored")
-	}
 }
 
-func TestWebSocketAndHTTPShareAdmissionAndReconnect(t *testing.T) {
+func TestWebSocketAndHTTPRequestsReconnect(t *testing.T) {
 	t.Parallel()
 	var requests atomic.Int64
 	upgrader := websocket.Upgrader{}
-	c, repo := testClient(t, "ethereum", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, _ := testClient(t, "ethereum", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests.Add(1)
 		if websocket.IsWebSocketUpgrade(r) {
 			conn, err := upgrader.Upgrade(w, r, nil)
@@ -77,19 +74,9 @@ func TestWebSocketAndHTTPShareAdmissionAndReconnect(t *testing.T) {
 	if err := c.rpc(context.Background(), "eth_chainId", []any{}, &result); err != nil {
 		t.Fatal(err)
 	}
-	repo.mu.Lock()
-	repo.limit = repo.admissions
-	repo.mu.Unlock()
-	before := requests.Load()
-	if err := c.rpc(context.Background(), "eth_chainId", []any{}, &result); ErrorCode(err) != "USDT_RPC_QUOTA_EXHAUSTED" {
-		t.Fatalf("shared budget bypassed: %v", err)
+	if err := c.rpc(context.Background(), "eth_chainId", []any{}, &result); err != nil {
+		t.Fatal("HTTP request after WS subscription", err)
 	}
-	if requests.Load() != before {
-		t.Fatal("traffic sent after exhaustion")
-	}
-	repo.mu.Lock()
-	repo.limit = 0
-	repo.mu.Unlock()
 	c.close()
 	if err := c.subscribe(context.Background(), []string{"0x1111111111111111111111111111111111111111"}); err != nil {
 		t.Fatal("reconnect", err)

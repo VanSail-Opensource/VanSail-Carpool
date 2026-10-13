@@ -34,7 +34,7 @@ func Network(value string) (NetworkSpec, bool) {
 
 // DefaultConfig is disabled and contains no public RPCs or receiving addresses.
 func DefaultConfig() Config {
-	c := Config{Name: "USDT", ExpiryMinutes: 30, Networks: []NetworkConfig{}, Groups: []QuotaGroup{}}
+	c := Config{Name: "USDT", ExpiryMinutes: 30, Concurrency: 1, Networks: []NetworkConfig{}}
 	for _, spec := range Registry {
 		c.Networks = append(c.Networks, NetworkConfig{Network: spec.Network, Addresses: []string{}, Endpoints: []Endpoint{}})
 	}

@@ -57,8 +57,8 @@ func TestUSDTAdminRoutesMaskSecretsAndRequireConfiguredAdministrator(t *testing.
 		t.Fatal("unconfigured administrator accessed settings", w.Code)
 	}
 	c := usdt.DefaultConfig()
-	c.Groups = []usdt.QuotaGroup{{ID: "shared", RequestsPerSecond: 1, RequestsPerMinute: 60, RequestsPerDay: 20000, Concurrency: 1}}
-	c.Networks[1].Endpoints = []usdt.Endpoint{{ID: "node", Group: "shared", RPCURL: "https://rpc.example/secret-path?api=secret-query", APIKey: "secret-key"}}
+	c.Concurrency = 1
+	c.Networks[1].Endpoints = []usdt.Endpoint{{ID: "node", RPCURL: "https://rpc.example/secret-path?api=secret-query", APIKey: "secret-key"}}
 	body, _ := json.Marshal(c)
 	w := request("PUT", "/api/v1/admin/usdt", string(body), user)
 	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), "secret-") {

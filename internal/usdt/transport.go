@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -65,7 +64,7 @@ func (c *client) request(ctx context.Context, method, rawURL string, payload any
 			return ErrConfiguration
 		}
 	}
-	return c.executor.do(ctx, c.endpoint.Group, func(callCtx context.Context) error {
+	return c.executor.do(ctx, func(callCtx context.Context) error {
 		r, err := http.NewRequestWithContext(callCtx, method, rawURL, bytes.NewReader(body))
 		if err != nil {
 			return ErrRPC
@@ -80,7 +79,7 @@ func (c *client) request(ctx context.Context, method, rawURL string, payload any
 		}
 		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode == 429 {
-			return &Pause{Code: "USDT_RPC_RATE_LIMITED", Until: retryAfter(resp.Header.Get("Retry-After"))}
+			return ErrRPC
 		}
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return ErrRPC
@@ -99,17 +98,6 @@ func (c *client) request(ctx context.Context, method, rawURL string, payload any
 	})
 }
 
-func retryAfter(raw string) time.Time {
-	now := time.Now().UTC()
-	if seconds, err := strconv.ParseInt(raw, 10, 64); err == nil && seconds > 0 {
-		return now.Add(time.Duration(min(seconds, 86400)) * time.Second)
-	}
-	if until, err := http.ParseTime(raw); err == nil && until.After(now) {
-		return until
-	}
-	return now.Add(30 * time.Second)
-}
-
 func (c *client) rpc(ctx context.Context, method string, params any, out any) error {
 	id := c.id.Add(1)
 	payload := map[string]any{"jsonrpc": "2.0", "id": id, "method": method, "params": params}
@@ -119,7 +107,7 @@ func (c *client) rpc(ctx context.Context, method string, params any, out any) er
 		if err != nil {
 			return err
 		}
-		err = c.executor.do(ctx, c.endpoint.Group, func(callCtx context.Context) error { return sock.call(callCtx, id, payload, &reply) })
+		err = c.executor.do(ctx, func(callCtx context.Context) error { return sock.call(callCtx, id, payload, &reply) })
 		if err != nil {
 			return err
 		}
@@ -142,9 +130,6 @@ func decodeReply(reply rpcReply, id uint64, out any) error {
 func rpcFailure(reply rpcReply) error {
 	if reply.Error == nil {
 		return nil
-	}
-	if reply.Error.Code == 429 {
-		return &Pause{Code: "USDT_RPC_RATE_LIMITED", Until: time.Now().UTC().Add(30 * time.Second)}
 	}
 	return ErrRPC
 }

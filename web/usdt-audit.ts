@@ -12,8 +12,8 @@ const params = new URLSearchParams(location.search)
 const mode = params.get('state') ?? 'populated'
 const display = params.get('view') ?? 'admin'
 const networks = ['tron','ethereum','bsc','polygon','arbitrum','xlayer','plasma','solana','aptos','ton']
-const endpoint = { id:'node',group:'shared',rpcUrl:'',wsUrl:'',indexerUrl:'',apiKey:'',useWs:true,rpcConfigured:true,wsConfigured:true,indexerConfigured:false,keyConfigured:true,host:'rpc.example' }
-const config = { enabled:true,name:'USDT',rate:'10',expiryMinutes:30,groups:[{id:'shared',requestsPerSecond:1,requestsPerMinute:60,requestsPerDay:20000,concurrency:1}],networks:networks.map(network=>({network,enabled:network==='ethereum',addresses:network==='ethereum'?['0x1111111111111111111111111111111111111111']:[],endpoints:network==='ethereum'?[{...endpoint}]:[]})) }
+const endpoint = { id:'node',rpcUrl:'',wsUrl:'',indexerUrl:'',apiKey:'',useWs:true,rpcConfigured:true,wsConfigured:true,indexerConfigured:false,keyConfigured:true,host:'rpc.example' }
+const config = { enabled:true,name:'USDT',rate:'10',expiryMinutes:30,concurrency:2,networks:networks.map(network=>({network,enabled:network==='ethereum',addresses:network==='ethereum'?['0x1111111111111111111111111111111111111111']:[],endpoints:network==='ethereum'?[{...endpoint}]:[]})) }
 const transfer = { id:'a'.repeat(64),network:'ethereum',token:'0x'+'a'.repeat(40),recipient:'0x'+'1'.repeat(40),atomicAmount:'2001000',amount:'2.001000',txHash:'0x'+'b'.repeat(64),eventId:'0',occurredAt:new Date().toISOString(),orderId:'payment-order',status:'review',reason:'USDT_LATE_PAYMENT' }
 const calls: Array<{path:string;body:unknown}> = []
 Object.assign(window, { auditCalls:calls })
@@ -24,7 +24,7 @@ window.fetch = async (input, options) => {
   if (mode==='loading') await new Promise(resolve=>setTimeout(resolve,12000))
   if (mode==='error') return new Response(JSON.stringify({code:'USDT_RPC_UNAVAILABLE',message:'fixture'}),{status:502,headers:{'Content-Type':'application/json'}})
   let result: unknown = {}
-  if (path.endsWith('/status')) result={networks:networks.map(network=>({network,state:network==='ethereum'?(mode==='paused'?'paused':'ready'):'disabled',cursor:network==='ethereum'?'21004567':'',updatedAt:new Date().toISOString(),errorCode:network==='ethereum'&&mode==='paused'?'USDT_RPC_QUOTA_EXHAUSTED':'',connection:network==='ethereum'?'websocket':'none'})),quotas:[{id:'shared',minuteUsed:12,dayUsed:mode==='paused'?20000:3450,cooldownUntil:mode==='paused'?new Date(Date.now()+3600000).toISOString():null}]}
+  if (path.endsWith('/status')) result={networks:networks.map(network=>({network,state:network==='ethereum'?(mode==='rpc-error'?'error':'ready'):'disabled',cursor:network==='ethereum'?'21004567':'',updatedAt:new Date().toISOString(),errorCode:network==='ethereum'&&mode==='rpc-error'?'USDT_RPC_UNAVAILABLE':'',connection:network==='ethereum'?'websocket':'none'}))}
   else if (path.includes('/review/') && path.endsWith('/resolution')) result={orderId:'payment-order',transferId:transfer.id,credited:true,replayed:false}
   else if (path.includes('/review')) result={items:mode==='empty'?[]:[transfer],nextCursor:''}
   else if (path.endsWith('/check')) result={network:body.network,success:true,errorCode:''}

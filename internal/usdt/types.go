@@ -3,6 +3,7 @@ package usdt
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -24,12 +25,13 @@ var (
 
 // Config is encrypted as one setting; PublicConfig removes endpoint secrets.
 type Config struct {
-	Enabled       bool            `json:"enabled"`
-	Name          string          `json:"name"`
-	Rate          string          `json:"rate"`
-	ExpiryMinutes int             `json:"expiryMinutes"`
-	Networks      []NetworkConfig `json:"networks"`
-	Groups        []QuotaGroup    `json:"groups"`
+	Enabled       bool                     `json:"enabled"`
+	Name          string                   `json:"name"`
+	Rate          string                   `json:"rate"`
+	ExpiryMinutes int                      `json:"expiryMinutes"`
+	Concurrency   int                      `json:"concurrency"`
+	Networks      []NetworkConfig          `json:"networks"`
+	LegacyGroups  []legacyConcurrencyGroup `json:"groups,omitempty"`
 }
 
 type NetworkConfig struct {
@@ -42,7 +44,7 @@ type NetworkConfig struct {
 // Endpoint credentials and URLs are write-only in the administrative projection.
 type Endpoint struct {
 	ID                string `json:"id"`
-	Group             string `json:"group"`
+	LegacyGroup       string `json:"group,omitempty"`
 	RPCURL            string `json:"rpcUrl"`
 	WSURL             string `json:"wsUrl"`
 	IndexerURL        string `json:"indexerUrl"`
@@ -55,13 +57,7 @@ type Endpoint struct {
 	Host              string `json:"host"`
 }
 
-type QuotaGroup struct {
-	ID                string `json:"id"`
-	RequestsPerSecond int    `json:"requestsPerSecond"`
-	RequestsPerMinute int    `json:"requestsPerMinute"`
-	RequestsPerDay    int    `json:"requestsPerDay"`
-	Concurrency       int    `json:"concurrency"`
-}
+type legacyConcurrencyGroup map[string]json.RawMessage
 
 type Quote struct {
 	OrderID      string    `json:"orderId"`
@@ -110,29 +106,13 @@ type NetworkStatus struct {
 	Connection string     `json:"connection"`
 }
 
-type QuotaStatus struct {
-	ID            string     `json:"id"`
-	MinuteUsed    int        `json:"minuteUsed"`
-	DayUsed       int        `json:"dayUsed"`
-	CooldownUntil *time.Time `json:"cooldownUntil"`
-}
-
 type Status struct {
 	Networks []NetworkStatus `json:"networks"`
-	Quotas   []QuotaStatus   `json:"quotas"`
 }
 type ReviewPage struct {
 	Items      []Transfer `json:"items"`
 	NextCursor string     `json:"nextCursor"`
 }
-
-// Pause indicates admission was denied without sending an upstream request.
-type Pause struct {
-	Until time.Time
-	Code  string
-}
-
-func (e *Pause) Error() string { return e.Code }
 
 type Repository interface {
 	ReserveUSDTQuote(context.Context, string, NetworkSpec, []string, string) (Quote, error)
@@ -143,9 +123,6 @@ type Repository interface {
 	SettleUSDTTransfer(context.Context, string, string, string, string) (model.PaymentOrder, bool, error)
 	USDTReview(context.Context, string, int) (ReviewPage, error)
 	USDTReady(context.Context, int) ([]Transfer, error)
-	AdmitUSDTRPC(context.Context, QuotaGroup, time.Time) error
-	FinishUSDTRPC(context.Context, string, time.Time, bool) error
-	USDTQuotaStatus(context.Context, []QuotaGroup, time.Time) ([]QuotaStatus, error)
 }
 
 type Settings interface {

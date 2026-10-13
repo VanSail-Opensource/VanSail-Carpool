@@ -12,6 +12,10 @@ Fingerprints survive paid-order cleanup and are never reused. Capacity exhaustio
 requires another configured address. Expired/cancelled unpaid snapshots and review
 evidence remain available for late-transfer resolution. Transfers are consumed in
 the existing ledger transaction, including notifications and operation recovery.
+Exact amount matches take priority. Auto-credit accepts only an underpayment of at
+most 0.001 USDT when it identifies one quote for the same network and address;
+ambiguous matches stay in review. An administrator may select a matching quote in
+the review flow, and overpayments are never matched by this tolerance.
 
 The whole configuration uses the existing secret vault under `billing.usdt.config`.
 Administrative projections return only URL hostnames and configured flags. Blank
@@ -19,12 +23,10 @@ URL/key writes retain the saved value. The dedicated save validates outstanding
 quote coverage; generic setting writes cannot bypass it. No private keys, payouts,
 exchange-rate APIs or merchant callbacks are implemented.
 
-Quota groups must reflect actual shared provider accounts, including node/indexer
-and HTTP/WS endpoints. Defaults are 1/s, 60/minute, 20000 per rolling day and one
-worker. Durable minute buckets conservatively include window boundaries. Every
-attempt counts, including failures; provider cooldowns survive process restart.
-A quota pause blocks new quotes and preserves pending work. Configure budgets to
-match the provider plan and the number of monitored receiving addresses.
+All RPC, indexer, probe, reconnect and WS command work enters one FIFO queue with a
+single shared concurrent-request limit. Failed requests do not create persisted
+cooldowns or consume a daily or minute budget. The queue retains a bounded backlog;
+provider errors are retried by the normal scanner failover loop.
 
 EVM uses finalized heads (BSC native finality), filtered USDT receiving logs and
 successful receipts. TRON requires a TronGrid-compatible root; Aptos requires a
@@ -54,7 +56,7 @@ run in hosted CI.
 - `evm.go` ? Finalized filtered EVM log ranges and canonical cursor checks.
 - `evm_proof.go` ? Successful receipt/log consistency and exact hexadecimal quantities.
 - `evm_test.go` ? Hosted fixtures for evm behavior and failure paths.
-- `executor.go` ? Existing upstreamqueue admission grouped by provider account.
+- `executor.go` ? One shared upstreamqueue with a global concurrent-request limit.
 - `lifecycle.go` ? Context-owned reconciliation, status and durable receipt recovery.
 - `monitor.go` ? Shared network scans, bounded catch-up, endpoint priority and WS coalescing.
 - `pricing.go` ? Local payment availability, TXB rate and immutable quote creation.

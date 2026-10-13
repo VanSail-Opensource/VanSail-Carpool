@@ -27,18 +27,6 @@ func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 	if !c.Enabled {
 		return result, nil
 	}
-	quotas, err := s.repository.USDTQuotaStatus(ctx, c.Groups, time.Now().UTC())
-	if err != nil {
-		return nil, err
-	}
-	allowed := map[string]bool{}
-	for _, g := range c.Groups {
-		for _, q := range quotas {
-			if g.ID == q.ID {
-				allowed[g.ID] = q.CooldownUntil == nil && q.MinuteUsed < g.RequestsPerMinute && q.DayUsed < g.RequestsPerDay
-			}
-		}
-	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, n := range c.Networks {
@@ -47,11 +35,7 @@ func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 		}
 		spec, _ := Network(n.Network)
 		status := s.states[n.Network]
-		budget := false
-		for _, e := range n.Endpoints {
-			budget = budget || allowed[e.Group]
-		}
-		ready := s.fingerprint == fingerprint(c) && status.State == "ready" && status.UpdatedAt != nil && time.Since(*status.UpdatedAt) < 2*time.Minute && budget
+		ready := s.fingerprint == fingerprint(c) && status.State == "ready" && status.UpdatedAt != nil && time.Since(*status.UpdatedAt) < 2*time.Minute
 		result = append(result, model.PaymentMethod{ID: Provider + ":" + spec.Rail, Provider: Provider, ProviderName: c.Name, Rail: spec.Rail, Name: "USDT " + spec.Name, Currency: "USDT", CryptoCurrency: "USDT", Network: spec.Network, NetworkName: spec.Name, Available: ready, Mode: "order"})
 	}
 	return result, nil

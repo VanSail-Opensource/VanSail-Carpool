@@ -3,7 +3,6 @@ package usdt
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"sort"
 	"strings"
 	"time"
@@ -77,12 +76,7 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 			batch, err := reader.scan(ctx, cursor, addresses)
 			if err != nil {
 				code := ErrorCode(err)
-				state := "error"
-				var pause *Pause
-				if errors.As(err, &pause) {
-					state = "paused"
-				}
-				s.state(spec.Network, state, cursor.Value, code)
+				s.state(spec.Network, "error", cursor.Value, code)
 				continue
 			}
 			if err := s.repository.SaveUSDTBatch(ctx, spec.Network, batch); err != nil {
@@ -133,9 +127,6 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 }
 
 func (s *scanner) refreshSubscription(ctx context.Context, addresses []string) {
-	if time.Now().Before(s.subRetry) {
-		return
-	}
 	if len(addresses) > 128 {
 		addresses = addresses[:128]
 	}
@@ -166,7 +157,5 @@ func (s *scanner) refreshSubscription(ctx context.Context, addresses []string) {
 		s.client.mu.Lock()
 		s.subSocket = s.client.ws
 		s.client.mu.Unlock()
-	} else {
-		s.subRetry = time.Now().Add(30 * time.Second)
 	}
 }

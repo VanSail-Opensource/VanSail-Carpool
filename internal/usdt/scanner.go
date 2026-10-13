@@ -14,7 +14,6 @@ type scanner struct {
 	checked      bool
 	subscription string
 	subSocket    *socket
-	subRetry     time.Time
 }
 
 func (s *scanner) check(ctx context.Context) error {

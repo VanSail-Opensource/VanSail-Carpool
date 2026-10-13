@@ -286,7 +286,6 @@ declare module 'vue' {
     USDTEndpointEditor: typeof import('./src/components/admin/usdt/USDTEndpointEditor.vue')['default']
     USDTGeneralSettings: typeof import('./src/components/admin/usdt/USDTGeneralSettings.vue')['default']
     USDTNetworkSettings: typeof import('./src/components/admin/usdt/USDTNetworkSettings.vue')['default']
-    USDTQuotaSettings: typeof import('./src/components/admin/usdt/USDTQuotaSettings.vue')['default']
     USDTReview: typeof import('./src/components/admin/usdt/USDTReview.vue')['default']
     USDTReviewItem: typeof import('./src/components/admin/usdt/USDTReviewItem.vue')['default']
     USelect: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Select.vue')['default']

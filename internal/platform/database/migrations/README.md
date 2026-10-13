@@ -129,4 +129,5 @@ file instead.
 
 - `071_ip_lookup_current_config.sql` drops per-report config_json without replacing rows or removing checkpoints, receipt references, quotas or ledger records. Execution/retry settings are read from current settings.
 
-- `072_builtin_usdt.sql` ? Widens payment-provider identity and adds compact quotes, transfers, cursors and RPC admission records.
+- `072_builtin_usdt.sql` ? Widens payment-provider identity and adds compact quotes, transfers, cursors and legacy RPC admission records.
+- `073_remove_usdt_rpc_quotas.sql` removes the obsolete daily/minute usage and cooldown tables after RPC work moves to one in-memory shared concurrency queue.

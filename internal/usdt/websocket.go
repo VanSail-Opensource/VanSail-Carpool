@@ -36,19 +36,10 @@ func (c *client) connection(ctx context.Context) (*socket, error) {
 		endpoint = c.endpoint.RPCURL
 	}
 	var conn *websocket.Conn
-	err := c.executor.do(ctx, c.endpoint.Group, func(callCtx context.Context) error {
-		var responseErr error
+	err := c.executor.do(ctx, func(callCtx context.Context) error {
 		connected, resp, err := (&websocket.Dialer{HandshakeTimeout: 15 * time.Second}).DialContext(callCtx, endpoint, c.headers())
-		if resp != nil {
-			if resp.StatusCode == 429 {
-				responseErr = &Pause{Code: "USDT_RPC_RATE_LIMITED", Until: retryAfter(resp.Header.Get("Retry-After"))}
-			}
-			if resp.Body != nil {
-				_ = resp.Body.Close()
-			}
-		}
-		if responseErr != nil {
-			return responseErr
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
 		}
 		if err != nil {
 			return ErrRPC
@@ -165,7 +156,7 @@ func (c *client) subscribe(ctx context.Context, addresses []string) error {
 			method = "logsSubscribe"
 		}
 		var reply rpcReply
-		if err := c.executor.do(ctx, c.endpoint.Group, func(callCtx context.Context) error {
+		if err := c.executor.do(ctx, func(callCtx context.Context) error {
 			return s.call(callCtx, id, map[string]any{"jsonrpc": "2.0", "id": id, "method": method, "params": params}, &reply)
 		}); err != nil {
 			return err

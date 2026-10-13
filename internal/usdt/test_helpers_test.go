@@ -7,50 +7,20 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/txyyddss/Remna-User-Panel/internal/model"
 )
 
 type testRepository struct {
 	Repository
-	mu          sync.Mutex
-	admissions  int
-	limit       int
-	finishes    int
-	lastFailure time.Time
-	quote       *Quote
-	addresses   []string
-	cursor      Cursor
-	ready       []Transfer
-	settled     int
+	mu        sync.Mutex
+	quote     *Quote
+	addresses []string
+	cursor    Cursor
+	ready     []Transfer
+	settled   int
 }
 
-func (r *testRepository) AdmitUSDTRPC(_ context.Context, _ QuotaGroup, _ time.Time) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.limit > 0 && r.admissions >= r.limit {
-		return &Pause{Code: "USDT_RPC_QUOTA_EXHAUSTED", Until: time.Now().Add(time.Hour)}
-	}
-	r.admissions++
-	return nil
-}
-func (r *testRepository) FinishUSDTRPC(_ context.Context, _ string, until time.Time, ok bool) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.finishes++
-	if !ok {
-		r.lastFailure = until
-	}
-	return nil
-}
-func (r *testRepository) USDTQuotaStatus(_ context.Context, groups []QuotaGroup, _ time.Time) ([]QuotaStatus, error) {
-	q := []QuotaStatus{}
-	for _, g := range groups {
-		q = append(q, QuotaStatus{ID: g.ID})
-	}
-	return q, nil
-}
 func (r *testRepository) USDTQuote(_ context.Context, orderID string) (Quote, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -124,13 +94,13 @@ func testClient(t *testing.T, network string, handler http.Handler) (*client, *t
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	r := &testRepository{}
-	executor := newExecutor(r)
-	if err := executor.configure(ctx, []QuotaGroup{{ID: "shared", RequestsPerSecond: 50, RequestsPerMinute: 3000, RequestsPerDay: 20000, Concurrency: 1}}); err != nil {
+	executor := newExecutor()
+	if err := executor.configure(ctx, 1); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = executor.close(context.Background()) })
 	spec, _ := Network(network)
-	c := newClient(ctx, executor, Endpoint{ID: "primary", Group: "shared", RPCURL: server.URL, IndexerURL: server.URL}, spec)
+	c := newClient(ctx, executor, Endpoint{ID: "primary", RPCURL: server.URL, IndexerURL: server.URL}, spec)
 	t.Cleanup(c.close)
 	return c, r
 }
