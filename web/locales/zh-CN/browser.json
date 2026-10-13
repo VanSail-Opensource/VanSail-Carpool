@@ -46,6 +46,9 @@
       "secretRequired": "启用登录需要提供客户端密钥。"
     },
     "oauthErrors": {
+      "OAUTH_PROVIDER_REJECTED": "Telegram 拒绝了登录请求。请检查 BotFather 允许的 URL 是否包含网站域名和管理访问设置中显示的完整回调地址，并确认客户端 ID 与密钥属于同一个机器人。",
+      "OAUTH_PROVIDER_UNAVAILABLE": "无法连接 Telegram 登录服务，请稍后重试。",
+      "OAUTH_RESPONSE_INVALID": "无法验证 Telegram 返回的登录结果。请检查已配置的客户端 ID 和密钥后重试。",
       "OAUTH_STATE_INVALID": "登录请求已过期或无法验证，请重新开始。",
       "OAUTH_CANCELLED": "已取消 Telegram 登录。",
       "OAUTH_LOGIN_FAILED": "无法完成 Telegram 登录，请重试。",

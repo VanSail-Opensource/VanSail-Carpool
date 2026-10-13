@@ -20,6 +20,12 @@ import (
 
 const telegramIssuer = "https://oauth.telegram.org"
 
+var (
+	ErrProviderUnavailable = errors.New("Telegram OAuth provider unavailable")
+	ErrProviderRejected    = errors.New("Telegram OAuth provider rejected the code")
+	ErrInvalidOAuthResult  = errors.New("Telegram returned an invalid OAuth result")
+)
+
 // OAuthFlow holds a browser-bound state, PKCE verifier, nonce, and fixed expiry inside an encrypted cookie.
 type OAuthFlow struct {
 	State    string    `json:"state"`
@@ -84,24 +90,28 @@ func (s *Service) CompleteOAuth(ctx context.Context, flow OAuthFlow, state, code
 	request.SetBasicAuth(config.ClientID, config.ClientSecret)
 	response, err := s.client.Do(request)
 	if err != nil {
-		return model.TelegramProfile{}, errors.New("Telegram token exchange unavailable")
+		return model.TelegramProfile{}, ErrProviderUnavailable
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		return model.TelegramProfile{}, ErrUnauthorized
+		return model.TelegramProfile{}, ErrProviderRejected
 	}
 	var token struct {
 		IDToken string `json:"id_token"`
 	}
 	if err = json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&token); err != nil || token.IDToken == "" {
-		return model.TelegramProfile{}, ErrUnauthorized
+		return model.TelegramProfile{}, ErrInvalidOAuthResult
 	}
 	verifier := oidc.NewVerifier(telegramIssuer, s.keys, &oidc.Config{ClientID: config.ClientID, SupportedSigningAlgs: []string{oidc.RS256, oidc.ES256}, Now: s.now})
 	verified, err := verifier.Verify(ctx, token.IDToken)
 	if err != nil || verified.IssuedAt.IsZero() || verified.Subject == "" || subtle.ConstantTimeCompare([]byte(verified.Nonce), []byte(flow.Nonce)) != 1 || verified.IssuedAt.After(s.now().Add(time.Minute)) {
-		return model.TelegramProfile{}, ErrUnauthorized
+		return model.TelegramProfile{}, ErrInvalidOAuthResult
 	}
-	return telegramProfile(verified)
+	profile, err := telegramProfile(verified)
+	if err != nil {
+		return model.TelegramProfile{}, ErrInvalidOAuthResult
+	}
+	return profile, nil
 }
 
 func telegramProfile(token *oidc.IDToken) (model.TelegramProfile, error) {

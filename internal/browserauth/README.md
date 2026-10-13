@@ -11,7 +11,9 @@ existing database/vault, public URL, allowlist, and queued HTTP client.
 - `oauth.go` implements authorization-code exchange with PKCE, browser-bound
   state/nonce, and `coreos/go-oidc/v3` verification of issuer, audience, expiry,
   signature, and nonce. Telegram's numeric `id` determines administrator
-  eligibility independently of its OIDC `sub`. No userinfo call is made.
+  eligibility independently of its OIDC `sub`. Provider rejection, provider
+  unavailability, and unverifiable responses remain distinct for safe login
+  diagnostics. No userinfo call is made.
 - `queued_http.go` buffers bounded token/JWKS responses inside the existing
   Telegram upstream queue. The OIDC key cache is shared by the service;
   network calls have a 15-second timeout and cannot follow redirects.

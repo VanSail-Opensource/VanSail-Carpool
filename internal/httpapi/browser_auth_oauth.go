@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"crypto/subtle"
+	"errors"
 	"net/http"
 	"time"
 
@@ -38,13 +39,26 @@ func (s *Server) browserOAuthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/login?error=OAUTH_STATE_INVALID", http.StatusSeeOther)
 		return
 	}
-	if r.URL.Query().Get("error") != "" {
-		http.Redirect(w, r, "/admin/login?error=OAUTH_CANCELLED", http.StatusSeeOther)
+	if providerError := r.URL.Query().Get("error"); providerError != "" {
+		errorCode := "OAUTH_PROVIDER_REJECTED"
+		if providerError == "access_denied" {
+			errorCode = "OAUTH_CANCELLED"
+		}
+		http.Redirect(w, r, "/admin/login?error="+errorCode, http.StatusSeeOther)
 		return
 	}
 	profile, err := s.deps.BrowserAuth.CompleteOAuth(r.Context(), flow, r.URL.Query().Get("state"), r.URL.Query().Get("code"))
 	if err != nil {
-		http.Redirect(w, r, "/admin/login?error=OAUTH_LOGIN_FAILED", http.StatusSeeOther)
+		errorCode := "OAUTH_LOGIN_FAILED"
+		switch {
+		case errors.Is(err, browserauth.ErrProviderUnavailable):
+			errorCode = "OAUTH_PROVIDER_UNAVAILABLE"
+		case errors.Is(err, browserauth.ErrProviderRejected):
+			errorCode = "OAUTH_PROVIDER_REJECTED"
+		case errors.Is(err, browserauth.ErrInvalidOAuthResult):
+			errorCode = "OAUTH_RESPONSE_INVALID"
+		}
+		http.Redirect(w, r, "/admin/login?error="+errorCode, http.StatusSeeOther)
 		return
 	}
 	_, token, expires, err := s.deps.BrowserAuth.CreateSession(r.Context(), profile)
