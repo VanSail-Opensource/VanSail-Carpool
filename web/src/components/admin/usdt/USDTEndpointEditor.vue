@@ -4,7 +4,7 @@ import SwitchField from '@/components/common/SwitchField.vue'
 import { useI18n } from '@/i18n'
 import { supportsWS } from './configForm'
 const model = defineModel<USDTEndpoint>({ required: true })
-const props = defineProps<{ network: USDTNetworkID; index: number; last: boolean; prefix: string }>()
+defineProps<{ network: USDTNetworkID; index: number; last: boolean; prefix: string }>()
 const emit = defineEmits<{ remove: []; move: [direction: number] }>()
 const { t } = useI18n()
 function set<K extends keyof USDTEndpoint>(key: K, value: USDTEndpoint[K]): void { model.value = { ...model.value, [key]: value } }
