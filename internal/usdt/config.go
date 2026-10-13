@@ -88,13 +88,22 @@ func ValidateConfig(c *Config) error {
 			}
 			e.LegacyGroup = ""
 			endpointIDs[e.ID] = true
-			if !validURL(e.RPCURL, spec.Family == "evm") || (e.WSURL != "" && !validWSURL(e.WSURL)) || (e.IndexerURL != "" && !validURL(e.IndexerURL, false)) {
+			if e.RPCURL == "" && !e.RPCConfigured {
+				return ErrConfiguration
+			} else if e.RPCURL != "" && !validURL(e.RPCURL, spec.Family == "evm") {
 				return ErrConfiguration
 			}
-			if e.UseWS && ((spec.Family != "evm" && spec.Family != "solana") || (e.WSURL == "" && !strings.HasPrefix(e.RPCURL, "ws"))) {
+			if e.WSURL != "" && !validWSURL(e.WSURL) {
 				return ErrConfiguration
 			}
-			if spec.Family == "aptos" && e.IndexerURL == "" {
+			if e.IndexerURL == "" {
+				if spec.Family == "aptos" && !e.IndexerConfigured {
+					return ErrConfiguration
+				}
+			} else if !validURL(e.IndexerURL, false) {
+				return ErrConfiguration
+			}
+			if e.UseWS && ((spec.Family != "evm" && spec.Family != "solana") || (e.WSURL == "" && !e.WSConfigured && !strings.HasPrefix(e.RPCURL, "ws"))) {
 				return ErrConfiguration
 			}
 		}

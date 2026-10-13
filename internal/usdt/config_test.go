@@ -65,6 +65,18 @@ func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 	}
 }
 
+func TestUSDTMaskedEndpointConfigRemainsValid(t *testing.T) {
+	t.Parallel()
+	c := testConfig()
+	public := PublicConfig(c)
+	public.Networks[1].Endpoints[0].RPCURL = ""
+	public.Networks[1].Endpoints[0].WSURL = ""
+	public.Networks[1].Endpoints[0].APIKey = ""
+	if err := ValidateConfig(&public); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestUSDTMethodsAndIssuedQuotesSurviveSettingChanges(t *testing.T) {
 	t.Parallel()
 	c := testConfig()
