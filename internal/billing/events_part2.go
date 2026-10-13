@@ -7,6 +7,20 @@ import (
 )
 
 func (s *Service) loadNewRate(ctx context.Context, provider string) (Decimal, error) {
+	if provider == "builtin_usdt" {
+		if s.builtin == nil {
+			return Decimal{}, errRateNotConfigured
+		}
+		raw, err := s.builtin.Rate(ctx)
+		if err != nil {
+			return Decimal{}, err
+		}
+		rate, err := ParseDecimal(raw)
+		if err != nil || !rate.Positive() {
+			return Decimal{}, errRateNotConfigured
+		}
+		return rate, nil
+	}
 	rateRaw, err := s.settings.Plaintext(ctx, "billing.rate.txb_per_"+currencyCode(provider))
 	if err != nil {
 		return Decimal{}, fmt.Errorf("%w: %v", errRateNotConfigured, err)
@@ -24,6 +38,8 @@ func currencyCode(provider string) string {
 		return "cny"
 	case "bepusdt":
 		return "usd"
+	case "builtin_usdt":
+		return "usdt"
 	default:
 		return "xtr"
 	}

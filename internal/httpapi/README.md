@@ -156,3 +156,6 @@ cancellable fake probe for hosted execution without external network traffic.
 `ip_lookup_progress.go` serves authenticated exact-IP background progress with no member identity or billing fields. Both progress and combined-cache live-details responses are no-store.
 
 `ip_lookup_proxy_sources.go` provides admin-only saved-source diagnostic starts (POST 202) and no-store memory-only progress/result reads. Existing shared queues execute source downloads and DNS calls.
+
+- `usdt.go` ? Admin-only configuration, local status, queued probes and idempotent verified-transfer credit.
+- `usdt_test.go` ? Hosted authorization, encrypted credentials and masked read/write contract checks.

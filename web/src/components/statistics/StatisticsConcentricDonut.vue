@@ -17,7 +17,7 @@ interface ConcentricRing {
 }
 
 const props = defineProps<{
-  rings: readonly [ConcentricRing, ConcentricRing]
+  rings: readonly ConcentricRing[]
   centerLabel: string
   centerValue: string
   chartLabel: string
@@ -36,6 +36,8 @@ const hasSegments = computed(() => chartRings.value.some((ring) => ring.segments
 const allSegments = computed(() => chartRings.value.flatMap((ring) => ring.segments))
 const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(allSegments)
 const { reducedMotion } = useMotionPreferences()
+const ringRadius = (index: number) => 50 - index * (18 / Math.max(1, chartRings.value.length - 1))
+const ringStyle = computed(() => chartRings.value.length > 2 ? { strokeWidth: 6 } : undefined)
 </script>
 
 <template>
@@ -49,7 +51,8 @@ const { reducedMotion } = useMotionPreferences()
             :class="index === 0 ? 'statistics-concentric-ring--outer' : 'statistics-concentric-ring--inner'"
             cx="60"
             cy="60"
-            :r="index === 0 ? 50 : 32"
+            :r="ringRadius(index)"
+            :style="ringStyle"
             pathLength="100"
           />
           <circle
@@ -63,7 +66,8 @@ const { reducedMotion } = useMotionPreferences()
             ]"
             cx="60"
             cy="60"
-            :r="index === 0 ? 50 : 32"
+            :r="ringRadius(index)"
+            :style="ringStyle"
             pathLength="100"
             :stroke="segment.color"
             :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, strokeDasharray: '0 100' }"

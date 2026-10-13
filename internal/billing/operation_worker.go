@@ -102,6 +102,12 @@ func (w *OperationWorker) create(ctx context.Context, operation providerops.Oper
 	}
 	checkout, err := w.service.gateway.Create(ctx, request)
 	if err != nil {
+		if code, rejected := builtinCreateRejection(order.Provider, err); rejected {
+			if err := w.repository.FailPaymentOrder(ctx, order.ID); err != nil {
+				return err
+			}
+			return w.complete(ctx, operation, item, providerops.StatusFailed, code, "")
+		}
 		if message, rejected := providerCreateRejection(err); rejected {
 			if failErr := w.repository.FailPaymentOrder(ctx, order.ID); failErr != nil {
 				return failErr

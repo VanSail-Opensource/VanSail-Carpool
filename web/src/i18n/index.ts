@@ -32,10 +32,16 @@ function applyDocumentLocale(next: Locale): void {
 applyDocumentLocale(locale.value)
 
 function lookup(key: string, source: unknown): unknown {
-  return key.split('.').reduce<unknown>((value, segment) => {
+  const segments = key.split('.')
+  let value = source
+  for (let index = 0; index < segments.length; index++) {
     if (!value || typeof value !== 'object') return undefined
-    return (value as Record<string, unknown>)[segment]
-  }, source)
+    const record = value as Record<string, unknown>
+    const remaining = segments.slice(index).join('.')
+    if (Object.hasOwn(record, remaining)) return record[remaining]
+    value = record[segments[index]!]
+  }
+  return value
 }
 
 export function setLocale(next: Locale): void {

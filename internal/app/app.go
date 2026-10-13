@@ -36,6 +36,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
 	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
 	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 	"github.com/txyyddss/Remna-User-Panel/internal/webui"
 )
 
@@ -97,7 +98,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	settings.SetPMForumValidator(validatePMForum(queuedTelegramClient))
 	affiliateService := affiliates.NewService(store, queuedTelegramClient)
 	telegramBridge := telegramAdapter{client: queuedTelegramClient}
-	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store}
+	usdtService := usdt.NewService(store, settings)
+	usdtService.OnError = func(code string) { logger.Error("USDT collector interrupted", "code", code) }
+	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store, usdt: usdtService}
 	paymentProfiles := newPaymentProfileManager(settings, paymentChannels, upstreams.payment, queuedTelegramClient, store, cfg.AdminTelegramIDs, cfg.PublicBaseURL, logger)
 	backupService := backup.NewService(db, store, filepath.Join(cfg.DataDir, "backups"), cfg.BackupRetention)
 	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -115,6 +118,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	catalogService.SetConnectivity(connectivityService)
 	catalogService.SetAutomaticRenewalSettings(settings)
 	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL)
+	billingService.SetBuiltinUSDT(usdtService)
 	activityService := newActivityService(store, settings, queuedTelegramClient)
 	couponService := coupons.NewService(store, nil)
 	questionnaireService := questionnaires.NewService(store, questionnaires.CryptoCodeGenerator{}, nil)
@@ -197,6 +201,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(fmt.Errorf("preload embedded frontend: %w", err))
 	}
 	api, err := httpapi.New(httpapi.Dependencies{
+		USDT:         usdtService,
 		IPLookup:     ipLookupService,
 		PM:           pmService,
 		Connectivity: connectivityService,
@@ -227,5 +232,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		connectivity: connectivityService,
 		ipLookup:     ipLookupWorker,
+		usdt:         usdtService,
 	}, nil
 }

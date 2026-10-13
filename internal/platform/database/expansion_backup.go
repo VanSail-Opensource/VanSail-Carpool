@@ -140,6 +140,10 @@ func expansionBackupPaths(databasePath string) ([]string, error) {
 }
 
 func verifyExpansionBackup(ctx context.Context, path string, appliedCount int) error {
+	return verifyMigrationBoundaryBackup(ctx, path, appliedCount, destructiveExpansionMigration)
+}
+
+func verifyMigrationBoundaryBackup(ctx context.Context, path string, appliedCount int, pendingMigration string) error {
 	backupDB, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?mode=ro&_pragma=query_only(1)")
 	if err != nil {
 		return fmt.Errorf("open pre-expansion backup: %w", err)
@@ -156,7 +160,7 @@ func verifyExpansionBackup(ctx context.Context, path string, appliedCount int) e
 	if err := backupDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		return fmt.Errorf("inspect pre-expansion migrations: %w", err)
 	}
-	if err := backupDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations WHERE version=?`, destructiveExpansionMigration).Scan(&applied); err != nil {
+	if err := backupDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations WHERE version=?`, pendingMigration).Scan(&applied); err != nil {
 		return fmt.Errorf("inspect pre-expansion marker: %w", err)
 	}
 	if count != appliedCount || applied != 0 {

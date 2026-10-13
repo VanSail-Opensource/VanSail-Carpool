@@ -13,6 +13,7 @@ const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: fals
 
 const groups = [
   { labelKey: 'adminNav.commerce', sections: [
+    { value: 'usdt', labelKey: 'adminUsdt.title', icon: 'i-ph-currency-circle-dollar' },
     { value: 'catalog', labelKey: 'adminNav.catalog', icon: 'i-ph-package' },
     { value: 'coupons', labelKey: 'adminNav.coupons', icon: 'i-ph-ticket' },
   ] },

@@ -26,6 +26,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
 	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
 	"github.com/txyyddss/Remna-User-Panel/internal/telegrampm"
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -51,6 +52,7 @@ type telegramProvider interface {
 }
 
 type Dependencies struct {
+	USDT               *usdt.Service
 	IPLookup           *iplookup.Service
 	Connectivity       *connectivity.Service
 	PM                 *telegrampm.Service
@@ -169,6 +171,7 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Post("/api/v1/subscription/revoke", server.revokeSubscription)
 		server.mountMemberOperations(authenticated)
 		server.mountIPLookup(authenticated)
+		server.mountUSDT(authenticated)
 		authenticated.Get("/api/v1/balance", server.balance)
 		authenticated.Get("/api/v1/ledger", server.ledger)
 		authenticated.Get("/api/v1/affiliates", server.affiliateOverview)

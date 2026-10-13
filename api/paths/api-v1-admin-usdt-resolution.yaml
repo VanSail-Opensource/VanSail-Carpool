@@ -1,0 +1,21 @@
+parameters:
+  - { name: id, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
+put:
+  tags: [USDT]
+  operationId: resolveAdminUSDTTransfer
+  description: Consumes a verified transfer once; only its original payment window may be overridden.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/USDTResolutionRequest' }
+  responses:
+    '200':
+      description: Audited credit or the existing identical resolution
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTResolution' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

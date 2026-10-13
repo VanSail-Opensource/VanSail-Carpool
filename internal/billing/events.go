@@ -11,6 +11,10 @@ import (
 )
 
 func (s *Service) ValidateEvent(ctx context.Context, event ProviderEvent) (model.PaymentOrder, error) {
+	// Built-in receipts enter only the atomic verified-transfer repository path.
+	if event.Provider == "builtin_usdt" {
+		return model.PaymentOrder{}, ErrInvalidOrder
+	}
 	order, err := s.repository.PaymentOrderByID(ctx, event.OrderID)
 	if err != nil {
 		return model.PaymentOrder{}, err

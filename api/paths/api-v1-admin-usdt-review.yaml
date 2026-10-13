@@ -1,0 +1,14 @@
+get:
+  tags: [USDT]
+  operationId: getAdminUSDTReview
+  parameters:
+    - { name: cursor, in: query, schema: { type: string, maxLength: 64 } }
+    - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+  responses:
+    '200':
+      description: Verified transfers requiring administrator review
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTReviewPage' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }

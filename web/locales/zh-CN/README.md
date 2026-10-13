@@ -35,3 +35,5 @@ than in Vue templates, composables, or API clients.
 `ip-lookup-live.json` provides matching Simplified Chinese ipLookupLive labels, source states, graph controls and Cloudflare credential guidance.
 
 `ip-lookup-checks.json` contains localized background, proxy, subnet, probe and refresh-quota labels.
+
+- `admin-usdt.json` ? Chinese built-in USDT configuration, status and review copy.

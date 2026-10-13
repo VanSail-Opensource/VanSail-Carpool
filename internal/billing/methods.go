@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 )
 
 // ParseMethodSelection validates a payment method identifier and returns its
@@ -40,6 +41,13 @@ func ParseMethodSelection(methodID string) (provider, profileID, rail string, er
 	}
 	rail = parts[railIndex]
 	switch parts[0] {
+	case "builtin_usdt":
+		if len(parts) != 2 {
+			return "", "", "", ErrInvalidOrder
+		}
+		if spec, ok := usdt.Network(rail); !ok || spec.Rail != rail {
+			return "", "", "", ErrInvalidOrder
+		}
 	case "ezpay":
 		if _, ok := ezpayRails[rail]; !ok {
 			return "", "", "", fmt.Errorf("%w: unsupported EZPay rail", ErrInvalidOrder)
@@ -69,7 +77,7 @@ func CanonicalMethodID(methodID string) bool {
 		return true
 	}
 	_, _, _, err := ParseMethodSelection(methodID)
-	return err == nil && (strings.HasPrefix(methodID, "ezpay:") || strings.HasPrefix(methodID, "bepusdt:"))
+	return err == nil && (strings.HasPrefix(methodID, "ezpay:") || strings.HasPrefix(methodID, "bepusdt:") || strings.HasPrefix(methodID, "builtin_usdt:"))
 }
 
 func parseEnabledRails(raw string, allowed map[string]string) ([]string, error) {

@@ -2,6 +2,11 @@ openapi: 3.1.0
 info: { title: TX Carpool API, version: 1.0.0, description: "HTTP contract for the TX Carpool Telegram Mini App. User and admin endpoints use a Secure, HttpOnly session cookie established from validated Telegram Mini App `initData`. Every authenticated browser request also carries a five-minute HMAC timestamp, unique nonce, and signature derived from a same-origin companion key. Provider callbacks use provider-specific signatures and are never authenticated by the browser session. All identifiers and timestamps are strings. TXB values use integer hundredths encoded as decimal strings. Traffic byte counts are decimal strings. The server is authoritative for prices, exchange rates, entitlement dates, and payment state.", license: { name: Proprietary } }
 security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
 paths:
+  /api/v1/admin/usdt: { $ref: './paths/api-v1-admin-usdt.yaml' }
+  /api/v1/admin/usdt/status: { $ref: './paths/api-v1-admin-usdt-status.yaml' }
+  /api/v1/admin/usdt/check: { $ref: './paths/api-v1-admin-usdt-check.yaml' }
+  /api/v1/admin/usdt/review: { $ref: './paths/api-v1-admin-usdt-review.yaml' }
+  /api/v1/admin/usdt/review/{id}/resolution: { $ref: './paths/api-v1-admin-usdt-resolution.yaml' }
   /api/v1/ip-lookup: { $ref: './paths/api-v1-ip-lookup.yaml' }
   /api/v1/ip-lookup/progress: { $ref: './paths/api-v1-ip-lookup-progress.yaml' }
   /api/v1/ip-lookup/details: { $ref: './paths/api-v1-ip-lookup-details.yaml' }
@@ -177,6 +182,13 @@ components:
   }
   responses: { BadRequest: { $ref: './components/responses.yaml#/BadRequest' }, Unauthorized: { $ref: './components/responses.yaml#/Unauthorized' }, Forbidden: { $ref: './components/responses.yaml#/Forbidden' }, NotFound: { $ref: './components/responses.yaml#/NotFound' }, Conflict: { $ref: './components/responses.yaml#/Conflict' }, Unprocessable: { $ref: './components/responses.yaml#/Unprocessable' }, PayloadTooLarge: { $ref: './components/responses.yaml#/PayloadTooLarge' }, TooManyRequests: { $ref: './components/responses.yaml#/TooManyRequests' }, InternalFailure: { $ref: './components/responses.yaml#/InternalFailure' }, UpstreamFailure: { $ref: './components/responses.yaml#/UpstreamFailure' }, ServiceUnavailable: { $ref: './components/responses.yaml#/ServiceUnavailable' } }
   schemas: {
+    USDTConfig: { $ref: './components/schemas/usdt.yaml#/USDTConfig' }, USDTNetworkConfig: { $ref: './components/schemas/usdt.yaml#/USDTNetworkConfig' },
+    USDTNetworkID: { $ref: './components/schemas/usdt.yaml#/USDTNetworkID' }, USDTEndpoint: { $ref: './components/schemas/usdt.yaml#/USDTEndpoint' },
+    USDTQuotaGroup: { $ref: './components/schemas/usdt.yaml#/USDTQuotaGroup' }, USDTNetworkStatus: { $ref: './components/schemas/usdt.yaml#/USDTNetworkStatus' },
+    USDTStatus: { $ref: './components/schemas/usdt.yaml#/USDTStatus' }, USDTQuotaStatus: { $ref: './components/schemas/usdt.yaml#/USDTQuotaStatus' },
+    USDTCheckRequest: { $ref: './components/schemas/usdt.yaml#/USDTCheckRequest' }, USDTCheckResult: { $ref: './components/schemas/usdt.yaml#/USDTCheckResult' },
+    USDTTransfer: { $ref: './components/schemas/usdt.yaml#/USDTTransfer' }, USDTReviewPage: { $ref: './components/schemas/usdt.yaml#/USDTReviewPage' },
+    USDTResolutionRequest: { $ref: './components/schemas/usdt.yaml#/USDTResolutionRequest' }, USDTResolution: { $ref: './components/schemas/usdt.yaml#/USDTResolution' },
     IPLookupDNSObservation: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupDNSObservation' },
     IPLookupProbeDNS: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeDNS' },
     IPLookupProxySourceTest: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceTest' },

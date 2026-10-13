@@ -7,3 +7,5 @@
 - `../../locales/*/admin-operations.json` owns administrative setting labels and help, including the automatic-renewal rollover policy.
 - `index.ts` exposes locale state and translation helpers, and synchronizes the document language and localized title.
 - `index.test.ts` covers interpolation, locale persistence, and recovery copy registration.
+
+- `paymentKeys.test.ts` ? Hosted checks for dotted crypto rail keys and ordinary nested lookup.

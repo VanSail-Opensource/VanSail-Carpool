@@ -10,7 +10,7 @@ const props = defineProps<{ items: readonly NamedShare[] }>()
 const { t } = useI18n()
 const includedStatuses = new Set(['paid', 'expired', 'cancelled'])
 
-function providerItems(provider: 'ezpay' | 'bepusdt'): NamedShare[] {
+function providerItems(provider: 'ezpay' | 'bepusdt' | 'builtin_usdt'): NamedShare[] {
   return props.items
     .filter((item) => {
       const [itemProvider, status] = item.id.split(':')
@@ -24,11 +24,13 @@ function providerItems(provider: 'ezpay' | 'bepusdt'): NamedShare[] {
 
 const ezpayItems = computed(() => providerItems('ezpay'))
 const bepusdtItems = computed(() => providerItems('bepusdt'))
+const builtinItems = computed(() => providerItems('builtin_usdt'))
 const rings = computed(() => [
   { id: 'ezpay', label: t('statistics.provider.ezpay'), items: ezpayItems.value },
   { id: 'bepusdt', label: t('statistics.provider.bepusdt'), items: bepusdtItems.value },
+  ...(builtinItems.value.length ? [{ id: 'builtin_usdt', label: t('statistics.provider.builtin_usdt'), items: builtinItems.value }] : []),
 ] as const)
-const total = computed(() => shareTotal([...ezpayItems.value, ...bepusdtItems.value]))
+const total = computed(() => shareTotal([...ezpayItems.value, ...bepusdtItems.value, ...builtinItems.value]))
 const hasPayments = computed(() => total.value > 0)
 </script>
 

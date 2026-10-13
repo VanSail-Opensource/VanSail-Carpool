@@ -62,3 +62,5 @@ ledger references so repeated reasons remain separate audited operations.
 `pm_settings_test.go` covers fail-closed enabling, destination validation and disable-before-clear behavior.
 - `ip_lookup_settings.go` validates atomic IP Lookup settings, preserves independent check/geolocation ordering and protects write-only credentials. `ip_lookup_settings_test.go` covers encrypted credentials and ordering round trips without altering saved configuration on invalid input.
 - `ip_lookup_settings_test.go` covers credential encryption, keeping, clearing and generic-route rejection for CI.
+
+- `usdt_settings.go` ? Encrypted USDT configuration registration and validation.

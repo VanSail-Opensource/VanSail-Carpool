@@ -12,6 +12,13 @@ import (
 // when both its provider and new-direction rate are configured.
 func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 	result := []model.PaymentMethod{{ID: "coupon", Provider: "coupon", Name: "Coupon", Currency: "TXB", Available: true, Mode: "coupon_redemption"}}
+	if s.builtin != nil {
+		methods, err := s.builtin.Methods(ctx)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, methods...)
+	}
 	if profiles, ok := s.settings.(paymentProfileReader); ok {
 		items, err := profiles.PaymentProfiles(ctx)
 		if err != nil {

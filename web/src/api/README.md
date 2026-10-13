@@ -41,3 +41,5 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 - `ipLookupStream.ts` decodes bounded UTF-8 SSE frames through the ordinary signed request transport, supports JSON fallback and requires explicit completion.
 - `ipLookupStream.test.ts` covers split Unicode frames, refresh, JSON fallback, address mismatch and truncated streams in hosted CI.
+
+- `usdt.ts` ? Typed dedicated admin endpoints using the existing signed request client.

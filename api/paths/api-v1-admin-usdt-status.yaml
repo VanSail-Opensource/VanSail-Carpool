@@ -1,0 +1,11 @@
+get:
+  tags: [USDT]
+  operationId: getAdminUSDTStatus
+  responses:
+    '200':
+      description: Local scan and shared quota status
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTStatus' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }

@@ -22,6 +22,9 @@ func paymentSuccessAnnouncementTx(ctx context.Context, tx *sql.Tx, order model.P
 	if err != nil {
 		return "", err
 	}
+	if order.Provider == "builtin_usdt" && order.ActualCryptoAmount != nil {
+		order.PayableAmount = *order.ActualCryptoAmount
+	}
 	payload, err := json.Marshal(jobpayload.PaymentSuccessAnnouncement{
 		OrderID: order.ID, Provider: order.Provider, ProviderName: providerName, Channel: order.ProviderRail,
 		TXBMinor: order.TXBMinor, PayableAmount: order.PayableAmount,

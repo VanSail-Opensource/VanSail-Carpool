@@ -19,10 +19,12 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
 	"github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
 	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 )
 
 // Application owns all context-managed process resources.
 type Application struct {
+	usdt            *usdt.Service
 	config          config.Config
 	logger          *slog.Logger
 	httpServer      *http.Server

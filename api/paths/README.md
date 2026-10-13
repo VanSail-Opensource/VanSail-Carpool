@@ -174,3 +174,9 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 `api-v1-admin-ip-lookup-source-test.yaml` defines admin diagnostic starts (202); `api-v1-admin-ip-lookup-source-test-id.yaml` defines no-store progress/result reads. Existing report contracts gain optional source diagnostics, task outcomes and bounded DNS evidence.
 
 - `api-v1-admin-ip-lookup-sources.yaml`: admin-only read of shared source cache phase, unique-IP counts and freshness/scheduling metadata; single-source refresh retains the existing test operation routes.
+
+- `api-v1-admin-usdt-check.yaml` ? Dedicated administrator USDT check API contract.
+- `api-v1-admin-usdt-resolution.yaml` ? Dedicated administrator USDT resolution API contract.
+- `api-v1-admin-usdt-review.yaml` ? Dedicated administrator USDT review API contract.
+- `api-v1-admin-usdt-status.yaml` ? Dedicated administrator USDT status API contract.
+- `api-v1-admin-usdt.yaml` ? Dedicated administrator USDT  API contract.

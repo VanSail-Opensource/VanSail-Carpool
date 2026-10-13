@@ -1,0 +1,17 @@
+post:
+  tags: [USDT]
+  operationId: checkAdminUSDT
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/USDTCheckRequest' }
+  responses:
+    '200':
+      description: Queued mainnet and token-capability probe
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTCheckResult' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

@@ -92,7 +92,7 @@ function profileKey(method: FeaturePaymentMethod): string {
 
 function providerIcon(provider: PaymentProvider): string {
   if (provider === 'ezpay') return 'i-ph-credit-card'
-  if (provider === 'bepusdt') return 'i-ph-currency-circle-dollar'
+  if (provider === 'bepusdt' || provider === 'builtin_usdt') return 'i-ph-currency-circle-dollar'
   if (provider === 'stars') return 'i-ph-telegram-logo'
   return 'i-ph-ticket'
 }

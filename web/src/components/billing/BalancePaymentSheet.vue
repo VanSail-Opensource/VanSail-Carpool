@@ -128,7 +128,7 @@ watch(open, (next, previous) => {
 
       <template v-else-if="(stage === 'pending' || stage === 'cancelling') && order">
         <CryptoPaymentInstructions
-          v-if="order.provider === 'bepusdt'"
+          v-if="order.provider === 'bepusdt' || order.provider === 'builtin_usdt'"
           :order="order"
           :stage="stage"
           :qr-data-url="qrDataUrl"

@@ -33,7 +33,7 @@ const activitySettingKeys = new Set([
   'activity.group_message_threshold', 'activity.group_message_reward_txb',
 ])
 const clearableSettingKeys = new Set(['telegram.payment_announcement_chat_id', 'captcha.turnstile.site_key', 'telegram.pm.group_chat_id'])
-const legacyPaymentSetting = (key: string): boolean => key.startsWith('billing.ezpay.') || key.startsWith('billing.bepusdt.')
+const legacyPaymentSetting = (key: string): boolean => key.startsWith('billing.ezpay.') || key.startsWith('billing.bepusdt.') || key.startsWith('billing.usdt.')
 const grouped = computed(() => items.value.filter((item) => !item.key.startsWith('ip_lookup.') && item.key !== 'connectivity.config' && !activitySettingKeys.has(item.key) && !legacyPaymentSetting(item.key)).reduce<Record<string, AdminSetting[]>>((groups, item) => {
   const category = item.category
   groups[category] ??= []

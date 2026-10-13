@@ -19,7 +19,10 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 			WHERE item.target_type='payment' AND item.target_id=payment.id
 			AND operation.status IN ('queued','processing','pending_review','partial'))
 		AND NOT EXISTS (SELECT 1 FROM affiliate_settlements settlement WHERE settlement.payment_order_id=payment.id)
-		AND NOT EXISTS (SELECT 1 FROM courtesy_credits credit WHERE credit.payment_order_id=payment.id)`, stamp(cutoff))
+		AND NOT EXISTS (SELECT 1 FROM courtesy_credits credit WHERE credit.payment_order_id=payment.id)
+		AND NOT (payment.provider='builtin_usdt' AND payment.paid_at IS NULL
+			AND EXISTS (SELECT 1 FROM usdt_quotes quote WHERE quote.order_id=payment.id))
+		AND NOT EXISTS (SELECT 1 FROM usdt_transfers transfer WHERE transfer.order_id=payment.id AND transfer.status='review')`, stamp(cutoff))
 	if err != nil {
 		return fmt.Errorf("select payment cleanup set: %w", err)
 	}

@@ -1,0 +1,131 @@
+USDTNetworkID:
+  type: string
+  enum: [tron, ethereum, bsc, polygon, arbitrum, xlayer, plasma, solana, aptos, ton]
+USDTEndpoint:
+  type: object
+  additionalProperties: false
+  required: [id, group, rpcUrl, wsUrl, indexerUrl, apiKey, useWs, rpcConfigured, wsConfigured, indexerConfigured, keyConfigured, host]
+  properties:
+    id: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
+    group: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
+    rpcUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
+    wsUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
+    indexerUrl: { type: string, maxLength: 4096, description: 'Aptos GraphQL URL; write-only.' }
+    apiKey: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous key.' }
+    useWs: { type: boolean }
+    rpcConfigured: { type: boolean }
+    wsConfigured: { type: boolean }
+    indexerConfigured: { type: boolean }
+    keyConfigured: { type: boolean }
+    host: { type: string, description: 'Sanitized RPC hostname; no credential-bearing path or query.' }
+USDTQuotaGroup:
+  type: object
+  additionalProperties: false
+  required: [id, requestsPerSecond, requestsPerMinute, requestsPerDay, concurrency]
+  properties:
+    id: { type: string, pattern: '^[a-zA-Z0-9_-]{1,64}$' }
+    requestsPerSecond: { type: integer, minimum: 1, maximum: 50 }
+    requestsPerMinute: { type: integer, minimum: 1, maximum: 3000 }
+    requestsPerDay: { type: integer, minimum: 1, maximum: 1000000 }
+    concurrency: { type: integer, minimum: 1, maximum: 8 }
+USDTNetworkConfig:
+  type: object
+  additionalProperties: false
+  required: [network, enabled, addresses, endpoints]
+  properties:
+    network: { $ref: '#/USDTNetworkID' }
+    enabled: { type: boolean }
+    addresses: { type: array, maxItems: 128, items: { type: string } }
+    endpoints: { type: array, maxItems: 8, items: { $ref: '#/USDTEndpoint' } }
+USDTConfig:
+  type: object
+  additionalProperties: false
+  required: [enabled, name, rate, expiryMinutes, networks, groups]
+  properties:
+    enabled: { type: boolean }
+    name: { type: string, minLength: 1, maxLength: 64 }
+    rate: { type: string, description: 'Exact TXB per USDT; required while enabled.' }
+    expiryMinutes: { type: integer, minimum: 5, maximum: 120, default: 30 }
+    networks: { type: array, maxItems: 10, items: { $ref: '#/USDTNetworkConfig' } }
+    groups: { type: array, maxItems: 32, items: { $ref: '#/USDTQuotaGroup' } }
+USDTNetworkStatus:
+  type: object
+  additionalProperties: false
+  required: [network, state, cursor, updatedAt, errorCode, connection]
+  properties:
+    network: { $ref: '#/USDTNetworkID' }
+    state: { type: string, enum: [disabled, ready, catching_up, error, paused] }
+    cursor: { type: string, description: 'Durable adapter-specific processed progress.' }
+    updatedAt: { type: [string, 'null'], format: date-time }
+    errorCode: { type: string }
+    connection: { type: string, enum: ['', none, polling, websocket] }
+USDTQuotaStatus:
+  type: object
+  additionalProperties: false
+  required: [id, minuteUsed, dayUsed, cooldownUntil]
+  properties:
+    id: { type: string }
+    minuteUsed: { type: integer, minimum: 0 }
+    dayUsed: { type: integer, minimum: 0 }
+    cooldownUntil: { type: [string, 'null'], format: date-time }
+USDTStatus:
+  type: object
+  additionalProperties: false
+  required: [networks, quotas]
+  properties:
+    networks: { type: array, items: { $ref: '#/USDTNetworkStatus' } }
+    quotas: { type: array, items: { $ref: '#/USDTQuotaStatus' } }
+USDTCheckRequest:
+  type: object
+  additionalProperties: false
+  required: [network]
+  properties:
+    network: { $ref: '#/USDTNetworkID' }
+USDTCheckResult:
+  type: object
+  additionalProperties: false
+  required: [network, success, errorCode]
+  properties:
+    network: { $ref: '#/USDTNetworkID' }
+    success: { type: boolean }
+    errorCode: { type: string }
+USDTTransfer:
+  type: object
+  additionalProperties: false
+  required: [id, network, token, recipient, atomicAmount, amount, txHash, eventId, occurredAt, orderId, status, reason]
+  properties:
+    id: { type: string }
+    network: { $ref: '#/USDTNetworkID' }
+    token: { type: string }
+    recipient: { type: string }
+    atomicAmount: { type: string, pattern: '^[0-9]+$' }
+    amount: { type: string }
+    txHash: { type: string }
+    eventId: { type: string }
+    occurredAt: { type: string, format: date-time }
+    orderId: { type: string }
+    status: { type: string, enum: [ready, review, credited] }
+    reason: { type: string }
+USDTReviewPage:
+  type: object
+  additionalProperties: false
+  required: [items, nextCursor]
+  properties:
+    items: { type: array, items: { $ref: '#/USDTTransfer' } }
+    nextCursor: { type: string }
+USDTResolutionRequest:
+  type: object
+  additionalProperties: false
+  required: [orderId, reason]
+  properties:
+    orderId: { type: string, minLength: 1, maxLength: 128 }
+    reason: { type: string, minLength: 1, maxLength: 500 }
+USDTResolution:
+  type: object
+  additionalProperties: false
+  required: [orderId, transferId, credited, replayed]
+  properties:
+    orderId: { type: string }
+    transferId: { type: string }
+    credited: { type: boolean }
+    replayed: { type: boolean }

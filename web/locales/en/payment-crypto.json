@@ -1,5 +1,8 @@
 {
   "cryptoPayment": {
+    "copyAmount": "Copy exact amount",
+    "networkHint": "Send on the selected network and use the exact amount.",
+    "builtinHint": "TXB is credited after the transfer is verified on-chain. Late transfers require administrator review.",
     "chooseCurrency": "Choose a currency",
     "chooseNetwork": "Choose a network",
     "copyAddress": "Copy receiving address",

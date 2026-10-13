@@ -119,6 +119,7 @@
     "chooseChannel": "Choose a payment channel", "continueToChannel": "Choose channel",
     "backToProvider": "Change provider",
     "providers": {
+      "builtin_usdt": "USDT",
       "ezpay": "EZPay",
       "bepusdt": "BEPUSDT",
       "stars": "Telegram Stars",

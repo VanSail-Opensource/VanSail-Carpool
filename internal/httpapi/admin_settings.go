@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 	"net/http"
 )
 
@@ -22,6 +23,10 @@ func (s *Server) adminCreateSetting(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_SETTING", "A known setting key and value are required.")
 		return
 	}
+	if request.Key == usdt.ConfigKey {
+		s.usdtError(w, r, usdt.ErrConfiguration)
+		return
+	}
 	if err := s.deps.Admin.PutSetting(r.Context(), currentUser(r).ID, request.Key, request.Value); err != nil {
 		s.adminFailure(w, r, err)
 		return
@@ -30,6 +35,10 @@ func (s *Server) adminCreateSetting(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) adminUpdateSetting(w http.ResponseWriter, r *http.Request) {
+	if chiURLParam(r, "key") == usdt.ConfigKey {
+		s.usdtError(w, r, usdt.ErrConfiguration)
+		return
+	}
 	var request struct {
 		Value string `json:"value"`
 	}

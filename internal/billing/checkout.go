@@ -91,7 +91,7 @@ func validateCryptoCheckout(provider string, checkout ProviderCheckout) error {
 	}
 	actual, err := ParseDecimal(*checkout.ActualCryptoAmount)
 	currency := strings.ToUpper(*checkout.ActualCryptoCurrency)
-	if provider != "bepusdt" || err != nil || !actual.Positive() || (currency != "USDT" && currency != "USDC") {
+	if (provider != "bepusdt" && provider != "builtin_usdt") || err != nil || !actual.Positive() || (currency != "USDT" && currency != "USDC") || (provider == "builtin_usdt" && (currency != "USDT" || checkout.ReceivingAddress == nil || *checkout.ReceivingAddress == "")) {
 		return fmt.Errorf("create provider checkout: %w: invalid crypto pricing", ErrInvalidOrder)
 	}
 	return nil

@@ -123,3 +123,5 @@ file instead.
 - `070_ip_lookup_background.sql` adds recovery heartbeats/leases, cache identity and exact quota consumption. It makes receipt report references nullable and clears old completed quality/live cache payloads without removing ledger or allowance history. In-flight report checkpoints survive and finish under the new worker.
 
 - `071_ip_lookup_current_config.sql` drops per-report config_json without replacing rows or removing checkpoints, receipt references, quotas or ledger records. Execution/retry settings are read from current settings.
+
+- `072_builtin_usdt.sql` ? Widens payment-provider identity and adds compact quotes, transfers, cursors and RPC admission records.

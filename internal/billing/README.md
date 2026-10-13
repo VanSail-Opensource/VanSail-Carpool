@@ -41,3 +41,6 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
 - `README.md` documents the package layout.
 
 Exact TXB parsing in `decimal.go` delegates to `model.ParseTXBMajor`; this keeps the same arithmetic available to queued IP Lookup billing without introducing a database/package dependency cycle.
+
+- `builtin_usdt.go` ? Local built-in availability/pricing contract and deterministic create rejection.
+- `builtin_usdt_test.go` ? Hosted pricing, rail, callback exclusion and external-profile coexistence checks.

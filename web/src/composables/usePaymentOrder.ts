@@ -62,7 +62,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       configuration.amount.value = restored.amount
       configuration.selectedMethodId.value = restored.methodId
     }
-    canRecreate.value = candidate.provider === 'bepusdt' && restored !== null
+    canRecreate.value = (candidate.provider === 'bepusdt' || candidate.provider === 'builtin_usdt') && restored !== null
     stage.value = 'pending'
     const result = await target.present(candidate)
     if (result === 'pending') stage.value = 'pending'
@@ -99,7 +99,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
   async function recreateOrder(): Promise<void> {
     const current = target.order.value
     const methodId = configuration.selectedMethodId.value
-    if (!current || current.provider !== 'bepusdt' || !canRecreate.value || !methodId
+    if (!current || (current.provider !== 'bepusdt' && current.provider !== 'builtin_usdt') || !canRecreate.value || !methodId
       || Date.now() < new Date(current.expiresAt).getTime()) return
     target.stop()
     stage.value = 'creating'
@@ -127,7 +127,9 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       return
     }
     await target.remember(current)
-    localError.value = receipt.errorMessage
+    localError.value = receipt.errorCode?.startsWith('USDT_')
+      ? localizedError({ code: receipt.errorCode }, 'errors.paymentCreate')
+      : receipt.errorMessage
       ? t('cryptoPayment.rejected', { message: receipt.errorMessage })
       : t('payment.operationStatus', { status: t(`operations.status.${receipt.status}`) })
     if (current.status === 'paid') handlePaid()
@@ -137,7 +139,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     } else stage.value = receipt.status === 'failed' && command.kind === 'cancel' ? 'cancelled' : 'review'
   }
   async function presentCreatedOrder(current: FeaturePaymentOrder): Promise<void> {
-    canRecreate.value = current.provider === 'bepusdt' && configuration.canCreate.value
+    canRecreate.value = (current.provider === 'bepusdt' || current.provider === 'builtin_usdt') && configuration.canCreate.value
     const result = await target.present(current)
     if (result === 'pending') stage.value = 'pending'
     else if (result === 'missing') {

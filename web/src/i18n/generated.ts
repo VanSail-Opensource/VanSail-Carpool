@@ -1,4 +1,6 @@
 import enIPLookup from '../../locales/en/ip-lookup.json'
+import enAdminUsdt from '../../locales/en/admin-usdt.json'
+import zhAdminUsdt from '../../locales/zh-CN/admin-usdt.json'
 import zhIPLookup from '../../locales/zh-CN/ip-lookup.json'
 import enIPLookupChecks from '../../locales/en/ip-lookup-checks.json'
 import zhIPLookupChecks from '../../locales/zh-CN/ip-lookup-checks.json'
@@ -58,6 +60,7 @@ import zhStatistics from '../../locales/zh-CN/statistics.json'
 import zhSettings from '../../locales/zh-CN/settings.json'
 
 const en = {
+ ...enAdminUsdt,
  ipLookup: { ...enIPLookup.ipLookup, ...enIPLookupChecks.ipLookup, refusals: { ...enIPLookup.ipLookup.refusals, ...enIPLookupChecks.ipLookup.refusals } },
  ...enIPLookupLive,
   ...enHostConnectivity,
@@ -66,6 +69,7 @@ const en = {
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enAdminAbuse, ...enAbuse, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
+ ...zhAdminUsdt,
  ipLookup: { ...zhIPLookup.ipLookup, ...zhIPLookupChecks.ipLookup, refusals: { ...zhIPLookup.ipLookup.refusals, ...zhIPLookupChecks.ipLookup.refusals } },
  ...zhIPLookupLive,
   ...zhHostConnectivity,

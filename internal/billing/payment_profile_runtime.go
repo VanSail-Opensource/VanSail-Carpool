@@ -48,6 +48,9 @@ func (s *Service) BEPusdtCallbackProfile(ctx context.Context, orderID, capabilit
 }
 
 func (s *Service) providerMethodEnabled(ctx context.Context, provider, profileID, rail string) (bool, error) {
+	if provider == "builtin_usdt" {
+		return s.builtinEnabled(ctx, rail)
+	}
 	if reader, ok := s.settings.(paymentProfileReader); ok {
 		profiles, err := reader.PaymentProfiles(ctx)
 		if err != nil {

@@ -35,3 +35,5 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `ip-lookup-live.json` owns the independent ipLookupLive namespace for BGP, ASN, PTR, block counts, traffic, source states and Cloudflare credential guidance.
 
 `ip-lookup-checks.json` contains background, proxy, subnet, probe and refresh-quota labels.
+
+- `admin-usdt.json` ? English built-in USDT configuration, status and review copy.

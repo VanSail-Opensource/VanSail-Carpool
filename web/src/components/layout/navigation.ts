@@ -22,6 +22,7 @@ const mobileNavigation: readonly MobileNavigationItem[] = [
 ]
 
 const adminNavigation: readonly AdminNavigationItem[] = [
+  { labelKey: 'adminUsdt.title', to: '/admin/usdt', icon: 'i-ph-currency-circle-dollar' },
   { labelKey: 'ipLookup.adminTitle', to: '/admin/ip-lookup', icon: 'i-ph-globe-hemisphere-west' },
   { labelKey: 'adminNav.catalog', to: '/admin/catalog', icon: 'i-ph-package' },
   { labelKey: 'adminNav.coupons', to: '/admin/coupons', icon: 'i-ph-ticket' },

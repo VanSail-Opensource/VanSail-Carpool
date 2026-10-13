@@ -62,7 +62,7 @@ func validatePaymentSuccessAnnouncement(payload jobpayload.PaymentSuccessAnnounc
 	if expectedCurrency == "" || payload.PayableCurrency != expectedCurrency {
 		return errors.New("payment announcement provider currency is invalid")
 	}
-	if payload.Provider != "ezpay" && payload.Provider != "bepusdt" && payload.Provider != "stars" {
+	if payload.Provider != "ezpay" && payload.Provider != "bepusdt" && payload.Provider != "stars" && payload.Provider != "builtin_usdt" {
 		return errors.New("payment announcement provider is unsupported")
 	}
 	return nil
@@ -74,6 +74,8 @@ func paymentAnnouncementProvider(provider string) string {
 		return "EZPay"
 	case "bepusdt":
 		return "BEPUSDT"
+	case "builtin_usdt":
+		return "USDT"
 	case "stars":
 		return "Telegram Stars"
 	default:

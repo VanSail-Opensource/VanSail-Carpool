@@ -5,6 +5,7 @@ import { useClipboard } from '@/composables/useClipboard'
 import { usePaymentCountdown } from '@/composables/usePaymentCountdown'
 import { useI18n } from '@/i18n'
 import { formatMoney } from '@/utils/format'
+import { paymentChannelLabel } from './paymentOptions'
 
 const props = defineProps<{
   order: FeaturePaymentOrder
@@ -16,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{ cancel: []; recreate: []; retry: [] }>()
 const { t } = useI18n()
 const clipboard = useClipboard()
+const amountClipboard = useClipboard()
 const countdown = usePaymentCountdown(() => props.order.expiresAt)
 
 function copyAddress(): void {
@@ -28,6 +30,9 @@ function copyAddress(): void {
     <div class="payment-amount">
       <span>{{ t('payment.exactAmount') }}</span>
       <strong>{{ order.actualCryptoAmount }} {{ order.actualCryptoCurrency }}</strong>
+      <UButton color="neutral" variant="ghost" :icon="amountClipboard.copied.value ? 'i-ph-check-bold' : 'i-ph-copy'" :label="t('cryptoPayment.copyAmount')" @click="order.actualCryptoAmount && amountClipboard.copy(order.actualCryptoAmount)" />
+      <small>{{ paymentChannelLabel(order.providerRail, order.providerRail) }}</small>
+      <small>{{ t('cryptoPayment.networkHint') }}</small>
       <small>{{ t('payment.creditsAfter', { amount: formatMoney(order.txb) }) }}</small>
     </div>
 
@@ -98,7 +103,7 @@ function copyAddress(): void {
       data-haptic="destructive"
       @click="emit('cancel')"
     />
-    <p class="field-hint">{{ t('payment.callbackHint') }}</p>
+    <p class="field-hint">{{ t(order.provider === 'builtin_usdt' ? 'cryptoPayment.builtinHint' : 'payment.callbackHint') }}</p>
     <UAlert v-if="error" color="error" variant="soft" :description="error" />
   </div>
 </template>

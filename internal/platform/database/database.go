@@ -27,6 +27,9 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 	if err := PruneExpansionBackups(path, time.Now().UTC()); err != nil {
 		return nil, fmt.Errorf("retain expansion backups: %w", err)
 	}
+	if err := pruneUSDTMigrationBackups(path, time.Now().UTC()); err != nil {
+		return nil, err
+	}
 	dsn := "file:" + filepath.ToSlash(path) + "?_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)&_pragma=cache_size(-16384)&_pragma=mmap_size(134217728)&_pragma=temp_store(MEMORY)&_pragma=wal_autocheckpoint(1000)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -40,6 +43,10 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		return nil, fmt.Errorf("ping sqlite: %w", err)
 	}
 	if err := backupBeforeExpansionMigration(ctx, db, path); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	if err := backupBeforeUSDTMigration(ctx, db, path); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
@@ -86,6 +93,12 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		script, err := migrations.ReadFile("migrations/" + entry.Name())
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
+		}
+		if entry.Name() == usdtMigration {
+			if err := migrateUSDT(ctx, db, script); err != nil {
+				return fmt.Errorf("apply USDT migration: %w", err)
+			}
+			continue
 		}
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {

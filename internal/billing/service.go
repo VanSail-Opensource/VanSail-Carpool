@@ -66,6 +66,7 @@ type Service struct {
 	gateway    Gateway
 	publicURL  *url.URL
 	now        func() time.Time
+	builtin    BuiltinUSDT
 }
 
 // NewService creates a payment service.
@@ -109,6 +110,9 @@ func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID st
 		return model.PaymentOrder{}, ErrProviderDisabled
 	}
 	precision := 2
+	if provider == "builtin_usdt" {
+		precision = 3
+	}
 	if provider == "stars" {
 		precision = 0
 	}
@@ -117,6 +121,13 @@ func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID st
 		return model.PaymentOrder{}, err
 	}
 	now := s.now().UTC()
+	expiry := 30 * time.Minute
+	if provider == "builtin_usdt" {
+		expiry, err = s.builtin.Expiry(ctx)
+		if err != nil {
+			return model.PaymentOrder{}, err
+		}
+	}
 	canonicalMethodID := provider
 	if rail != "" {
 		if profileID != "" {
@@ -127,6 +138,6 @@ func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID st
 	return model.PaymentOrder{
 		UserID: user.ID, Provider: provider, MethodID: canonicalMethodID, ProviderRail: rail, Status: "creating", TXBMinor: txbMinor,
 		PayableAmount: payable, PayableCurrency: strings.ToUpper(currencyCode(provider)), RateSnapshot: rate.Canonical(),
-		RateDirection: "txb_per_currency", ExpiresAt: now.Add(30 * time.Minute),
+		RateDirection: "txb_per_currency", ExpiresAt: now.Add(expiry),
 	}, nil
 }

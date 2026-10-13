@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -21,8 +22,18 @@ func (s *Store) ResolvePaymentCreateOperation(ctx context.Context, orderID, prov
 		return fmt.Errorf("begin payment operation resolution: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	args := []any{providerReference, providerReference, string(result), stamp(now), stamp(now), orderID}
-	_, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',
+	if err := resolvePaymentCreateOperationTx(ctx, tx, orderID, providerReference, string(result), now); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit payment operation resolution: %w", err)
+	}
+	return nil
+}
+
+func resolvePaymentCreateOperationTx(ctx context.Context, tx *sql.Tx, orderID, providerReference, result string, now time.Time) error {
+	args := []any{providerReference, providerReference, result, stamp(now), stamp(now), orderID}
+	_, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',
 		provider_reference=CASE WHEN ?<>'' THEN ? ELSE provider_reference END,error_code='',result_json=?,
 		completed_at=?,updated_at=? WHERE target_type='payment_order' AND target_id=?
 		AND operation_id IN (SELECT id FROM provider_operations WHERE kind='payment_create')`, args...)
@@ -35,9 +46,6 @@ func (s *Store) ResolvePaymentCreateOperation(ctx context.Context, orderID, prov
 			SELECT operation_id FROM provider_operation_items WHERE target_type='payment_order' AND target_id=?)`, args...)
 	if err != nil {
 		return fmt.Errorf("resolve payment operation receipt: %w", err)
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit payment operation resolution: %w", err)
 	}
 	return nil
 }

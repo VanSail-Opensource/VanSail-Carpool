@@ -10,6 +10,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
 	"github.com/txyyddss/Remna-User-Panel/internal/model"
 	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,7 @@ func (a telegramAdapter) RevokeInviteLink(ctx context.Context, chatID, inviteLin
 }
 
 type paymentAdapter struct {
+	usdt     *usdt.Service
 	settings *admin.SettingsService
 	telegram *queuedTelegram
 	queue    *upstreamqueue.Queue
@@ -68,6 +70,16 @@ type paymentAdapter struct {
 
 func (a paymentAdapter) Create(ctx context.Context, request billing.ProviderCreateRequest) (billing.ProviderCheckout, error) {
 	switch request.Provider {
+	case "builtin_usdt":
+		if a.usdt == nil {
+			return billing.ProviderCheckout{}, usdt.ErrUnavailable
+		}
+		q, err := a.usdt.Create(ctx, request.OrderID, request.Rail, request.PayableAmount)
+		if err != nil {
+			return billing.ProviderCheckout{}, err
+		}
+		tradeID, currency := "builtin:"+q.OrderID, "USDT"
+		return billing.ProviderCheckout{TradeID: &tradeID, ReceivingAddress: &q.Recipient, ActualCryptoAmount: &q.Amount, ActualCryptoCurrency: &currency, PayableAmount: request.PayableAmount, PayableCurrency: "USDT", ExpiresAt: q.ExpiresAt}, nil
 	case "ezpay":
 		return a.createEZPay(ctx, request)
 	case "bepusdt":

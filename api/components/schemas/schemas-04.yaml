@@ -144,6 +144,8 @@ LedgerPage:
 PaymentMethodID:
   oneOf:
     - type: string
+      pattern: '^builtin_usdt:usdt\.(trc20|erc20|bep20|polygon|arbitrum|xlayer|plasma|solana|aptos|ton)$'
+    - type: string
       enum:
         - ezpay:alipay
         - ezpay:wxpay
@@ -183,7 +185,7 @@ PaymentOrderMethodID:
 
 PaymentProvider:
   type: string
-  enum: [ezpay, bepusdt, stars, coupon]
+  enum: [ezpay, bepusdt, stars, coupon, builtin_usdt]
 
 PaymentStatus:
   type: string

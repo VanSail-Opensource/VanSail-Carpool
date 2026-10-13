@@ -385,3 +385,16 @@ existing refund path. Ledger changes and receipt settlement remain atomic.
 `ip_lookup_waiting_test.go` verifies an unstarted report and its receipt survive a long queue wait and remain eligible for admission after maintenance.
 
 IP lookup resumes and report repair read current saved settings. `ip_lookup_current_config_test.go` verifies column removal, retained checkpoints/references/rowids, and current settings reads. Signed quotes and settlement amounts remain transactional.
+
+- `billing_settlement_tx.go` ? Shared transactional payment credit, ledger and outbox path.
+- `usdt_migration.go` ? Verified upgrade backup, dedicated connection table rebuild and FK restoration.
+- `usdt_quotes.go` ? Permanent amount reservations and atomic checkout snapshots.
+- `usdt_transfers.go` ? Immutable verified receiving events committed before scan progress.
+- `usdt_transfer_queries.go` ? Local cursor, recovery and keyset review queries.
+- `usdt_settlement.go` ? Atomic receipt claim, exact identity validation, audited review and ledger credit.
+- `usdt_quotas.go` ? Restart-safe request admission, rolling counters and cooldowns.
+- `usdt_test_helpers_test.go` ? Shared hosted quote and transfer fixtures.
+- `usdt_quotes_test.go` ? Concurrent allocation, permanence, exhaustion and BSC atomic-unit checks.
+- `usdt_settlement_test.go` ? Delayed observation, replay, role, amount, audit and failed-batch checks.
+- `usdt_quotas_test.go` ? Persistent shared budgets, failures, cooldowns and rolling reset checks.
+- `usdt_migration_test.go` ? Legacy payment/FK preservation and verified upgrade backup checks.

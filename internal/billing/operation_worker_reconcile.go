@@ -74,6 +74,11 @@ func (w *OperationWorker) reconcileOrder(ctx context.Context, operation provider
 
 func (w *OperationWorker) reconcileCreate(ctx context.Context, operation providerops.Operation,
 	item providerops.Item, order model.PaymentOrder, reference string) error {
+	// Local quote reservation is transactional and idempotent; an interrupted
+	// create can safely resume without repeating an external mutation.
+	if order.Provider == "builtin_usdt" && order.Status == "creating" && order.CancelledAt == nil {
+		return w.create(ctx, operation, item)
+	}
 	if order.PaidAt != nil || order.Status == "paid" || order.Status == "refunded" || order.Status == "pending" {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "", reference)
 	}

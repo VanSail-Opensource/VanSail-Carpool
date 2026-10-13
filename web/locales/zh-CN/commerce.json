@@ -115,6 +115,7 @@
     "chooseChannel": "选择支付渠道", "continueToChannel": "选择渠道",
     "backToProvider": "更换支付方",
     "providers": {
+      "builtin_usdt": "USDT ??",
       "ezpay": "彩虹易支付",
       "bepusdt": "BEPUSDT",
       "stars": "Telegram Stars",

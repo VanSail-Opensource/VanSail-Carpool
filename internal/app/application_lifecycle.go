@@ -23,6 +23,9 @@ func (a *Application) Run(ctx context.Context) error {
 		return fmt.Errorf("start upstream queues: %w", err)
 	}
 	profileCtx, cancelProfiles := context.WithTimeout(runCtx, 5*time.Minute)
+	if a.usdt != nil {
+		a.usdt.Start(runCtx)
+	}
 	if a.ipLookup != nil {
 		a.ipLookup.StartBackground(runCtx, a.upstreams.iplookup["checks"])
 	}
@@ -34,6 +37,9 @@ func (a *Application) Run(ctx context.Context) error {
 		cancelRun()
 		if a.ipLookup != nil {
 			a.ipLookup.WaitBackground()
+		}
+		if a.usdt != nil {
+			a.usdt.Wait()
 		}
 		_ = a.upstreams.shutdown(context.Background())
 		return err
@@ -108,6 +114,9 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 	<-statisticsDone
 	<-abuseDone
 	<-notificationsDone
+	if a.usdt != nil {
+		a.usdt.Wait()
+	}
 	if a.ipLookup != nil {
 		a.ipLookup.WaitBackground()
 	}

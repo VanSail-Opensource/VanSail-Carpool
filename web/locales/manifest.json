@@ -4,6 +4,7 @@
     "zh-CN"
   ],
   "domains": [
+    "admin-usdt",
     "core",
     "settings",
     "recovery",

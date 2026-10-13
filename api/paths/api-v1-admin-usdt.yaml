@@ -1,0 +1,28 @@
+get:
+  tags: [USDT]
+  operationId: getAdminUSDT
+  responses:
+    '200':
+      description: Masked built-in payment configuration
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTConfig' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+put:
+  tags: [USDT]
+  operationId: saveAdminUSDT
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/USDTConfig' }
+  responses:
+    '200':
+      description: Masked saved configuration
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/USDTConfig' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }
