@@ -39,7 +39,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 		t.Fatal(err)
 	}
 	for _, table := range []string{"usdt_quotes", "usdt_transfers", "usdt_scan_cursors", "usdt_rpc_state", "usdt_rpc_usage"} {
-		if _, err := conn.ExecContext(ctx, "DROP TABLE "+table); err != nil {
+		if _, err := conn.ExecContext(ctx, "DROP TABLE IF EXISTS "+table); err != nil {
 			t.Fatal(err)
 		}
 	}
