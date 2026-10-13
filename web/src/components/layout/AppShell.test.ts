@@ -52,7 +52,7 @@ describe('AppShell accessibility', () => {
         { path: '/activity', component: { template: '<div />' } },
         { path: '/questionnaire', component: { template: '<div />' } },
         { path: '/emby', component: { template: '<div />' } },
-        { path: '/admin/settings', component: { template: '<div />' } },
+        { path: '/settings/admin-access', component: { template: '<div />' } },
       ],
     })
     await router.push('/home')
@@ -105,7 +105,7 @@ describe('AppShell accessibility', () => {
         { path: '/home', component: { template: '<div />' } },
         { path: '/catalog', component: { template: '<div />' } },
         { path: '/activity', component: { template: '<div />' } },
-        { path: '/admin/settings', component: { template: '<div />' } },
+        { path: '/settings/admin-access', component: { template: '<div />' } },
       ],
     })
     await router.push('/home')
@@ -116,10 +116,10 @@ describe('AppShell accessibility', () => {
     const bottomNavigationItems = wrapper.findAll('.bottom-nav__item')
     expect(bottomNavigationItems).toHaveLength(4)
     expect(wrapper.find('.bottom-nav__locale').exists()).toBe(false)
-    expect(bottomNavigationItems[3]?.text()).toContain('Admin')
+    expect(bottomNavigationItems[3]?.text()).toContain('Admin access')
 
-    await router.push('/admin/settings')
-    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/admin/settings'))
+    await router.push('/settings/admin-access')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/settings/admin-access'))
     expect(wrapper.findAll('.bottom-nav__item[data-state="active"]')).toHaveLength(1)
 
     wrapper.unmount()

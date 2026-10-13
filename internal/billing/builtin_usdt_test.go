@@ -35,7 +35,7 @@ func TestBuiltinUSDTPricingAndMethodsCoexistWithProfiles(t *testing.T) {
 		t.Fatalf("methods=%+v %v", methods, err)
 	}
 	order, err := service.prepareOrder(ctx, model.User{ID: "user"}, "builtin_usdt:usdt.trc20", 100)
-	if err != nil || order.PayableAmount != "0.334" || order.PayableCurrency != "USDT" || order.RateSnapshot != "3" || time.Until(order.ExpiresAt) < 44*time.Minute {
+	if err != nil || order.PayableAmount != "0.334" || order.PayableCurrency != "USDT" || order.RateSnapshot != "3" || order.ExpiresAt.Sub(service.now()) != 45*time.Minute {
 		t.Fatalf("quote=%+v %v", order, err)
 	}
 	for _, spec := range usdt.Registry {

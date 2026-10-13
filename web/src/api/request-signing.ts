@@ -32,7 +32,8 @@ function readCookie(name: string): string | undefined {
     const value = part.trim()
     if (!value.startsWith(prefix)) continue
     try {
-      return decodeURIComponent(value.slice(prefix.length))
+      const decoded = decodeURIComponent(value.slice(prefix.length))
+      return decoded || undefined
     } catch {
       return undefined
     }

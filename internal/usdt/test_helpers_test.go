@@ -51,10 +51,10 @@ func (r *testRepository) USDTQuotaStatus(_ context.Context, groups []QuotaGroup,
 	}
 	return q, nil
 }
-func (r *testRepository) USDTQuote(context.Context, string) (Quote, error) {
+func (r *testRepository) USDTQuote(_ context.Context, orderID string) (Quote, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.quote != nil {
+	if r.quote != nil && r.quote.OrderID == orderID {
 		return *r.quote, nil
 	}
 	return Quote{}, ErrQuoteNotFound
