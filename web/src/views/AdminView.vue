@@ -4,7 +4,6 @@ import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AdminSettingsPanel from '@/components/admin/AdminSettingsPanel.vue'
-import AdminShell from '@/components/admin/AdminShell.vue'
 
 const route = useRoute()
 const panels: Record<string, Component> = {
@@ -28,9 +27,5 @@ const panel = computed(() => panels[String(route.params.section)] ?? AdminSettin
 </script>
 
 <template>
-  <div class="page page--admin">
-    <AdminShell>
-      <component :is="panel" :key="String(route.params.section)" />
-    </AdminShell>
-  </div>
+  <component :is="panel" :key="String(route.params.section)" />
 </template>

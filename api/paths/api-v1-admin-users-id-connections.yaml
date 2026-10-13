@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: requestAdminUserConnections
   summary: Start a queued connection scan for one administrator-selected user

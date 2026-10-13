@@ -26,17 +26,12 @@ watch(() => props.snapshot?.run?.finishedAt, (next, previous) => { if (next && n
       <USelect id="connectivity-history-host" v-model="hostFilter" class="w-full" :items="hostOptions" value-key="value" />
     </UFormField>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <p v-if="loading && !items.length" class="connectivity-history__empty" role="status">{{ t('common.loading') }}</p>
-    <p v-else-if="!items.length && !error" class="connectivity-history__empty">{{ t('hostConnectivity.noHistory') }}</p>
-    <ul v-if="items.length" class="connectivity-history__list">
-      <li v-for="item in items" :key="item.id" class="connectivity-history__row">
-        <div class="connectivity-history__identity">
-          <strong>{{ item.hostUuid ? hosts.get(item.hostUuid) || item.hostUuid : t('hostConnectivity.setupAttempt') }}</strong>
-          <small>{{ t(`hostConnectivity.trigger.${item.trigger}`) }}</small>
-        </div>
-        <ConnectivityAttemptSummary :attempt="item" />
-      </li>
-    </ul>
+    <UTable class="admin-table" :data="items" :loading="loading" :columns="[{ id: 'host', header: t('adminWorkspace.name') }, { id: 'trigger', header: t('adminWorkspace.type') }, { id: 'result', header: t('adminWorkspace.results') }]">
+      <template #host-cell="{ row }"><strong>{{ row.original.hostUuid ? hosts.get(row.original.hostUuid) || row.original.hostUuid : t('hostConnectivity.setupAttempt') }}</strong></template>
+      <template #trigger-cell="{ row }">{{ t(`hostConnectivity.trigger.${row.original.trigger}`) }}</template>
+      <template #result-cell="{ row }"><ConnectivityAttemptSummary :attempt="row.original" /></template>
+      <template #empty>{{ t('hostConnectivity.noHistory') }}</template>
+    </UTable>
     <UButton v-if="nextCursor" color="neutral" variant="outline" :label="t('hostConnectivity.loadMore')" :loading="loading" :disabled="loading" @click="load(true)" />
   </section>
 </template>

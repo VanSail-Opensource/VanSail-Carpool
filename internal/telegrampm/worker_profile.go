@@ -25,10 +25,6 @@ func (w *Worker) profile(ctx context.Context, run execution, item providerops.It
 			return phaseResult{}, err
 		}
 	}
-	botUsername := ""
-	if w.BotUsername != nil {
-		botUsername = w.BotUsername()
-	}
 	if (interrupted || conversation.ProfileState == "pending_review") && conversation.ProfileMessageID == 0 {
 		return phaseResult{status: providerops.StatusPendingReview, code: "PM_PROFILE_UNCERTAIN"}, nil
 	}
@@ -44,7 +40,7 @@ func (w *Worker) profile(ctx context.Context, run execution, item providerops.It
 				return telegram.TopicProfileRequest{}, ErrTopicUncertain
 			}
 			started.Store(true)
-			return Profile(current, facts, botUsername, w.Timezone), nil
+			return Profile(current, facts, w.PublicBaseURL, w.Timezone), nil
 		})
 		if !profileMissing(callErr) {
 			return w.callResult(ctx, run, item, callErr, started.Load(), false, strconv.FormatInt(messageID, 10), "PM_PROFILE_UNCERTAIN")
@@ -72,7 +68,7 @@ func (w *Worker) profile(ctx context.Context, run execution, item providerops.It
 		}
 		topicID.Store(current.TopicID)
 		started.Store(true)
-		return Profile(current, facts, botUsername, w.Timezone), nil
+		return Profile(current, facts, w.PublicBaseURL, w.Timezone), nil
 	})
 	if topicMissing(callErr) && run.job.Attempts < 10 {
 		if err := w.Repository.ResetMissingPMTopic(ctx, conversation.ID, run.operation.Receipt.ID, topicID.Load(), time.Now().UTC()); err != nil {

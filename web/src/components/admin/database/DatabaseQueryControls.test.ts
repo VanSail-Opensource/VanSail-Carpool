@@ -31,7 +31,7 @@ const FilterFieldsStub = defineComponent({
 function mountControls(filters: TextDatabaseFilter[] = initial) {
   return mount(DatabaseQueryControls, {
     props: { search: '', filters, columnItems: columns, operators },
-    global: { stubs: { Drawer: DrawerStub, Button: ButtonStub, Input: { template: '<div />' }, DatabaseFilterFields: FilterFieldsStub } },
+    global: { stubs: { Slideover: DrawerStub, Button: ButtonStub, Input: { template: '<div />' }, DatabaseFilterFields: FilterFieldsStub } },
   })
 }
 

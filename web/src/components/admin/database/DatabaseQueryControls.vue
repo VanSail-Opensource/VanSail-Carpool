@@ -21,7 +21,7 @@ const { t } = useI18n()
 const filterDrawerOpen = shallowRef(false)
 const mobileDraft = shallowRef<TextDatabaseFilter[]>([])
 const drawerUi = {
-  container: 'database-filter-drawer__container',
+  content: 'database-filter-drawer__content',
   header: 'database-filter-drawer__header',
   body: 'database-filter-drawer__body',
   footer: 'database-filter-drawer__footer',
@@ -71,7 +71,6 @@ function applyMobileFilters(): void {
         variant="outline"
         icon="i-ph-funnel"
         :label="t('adminDatabase.filterCount', { count: filters.length })"
-        data-haptic="open"
         @click="openMobileFilters"
       />
       <UButton
@@ -92,7 +91,7 @@ function applyMobileFilters(): void {
       :operators="operators"
       @update:filters="emit('update:filters', $event)"
     />
-    <UDrawer
+    <USlideover
       v-model:open="filterDrawerOpen"
       class="database-filter-drawer"
       :title="t('adminDatabase.filters')"
@@ -100,7 +99,7 @@ function applyMobileFilters(): void {
       :ui="drawerUi"
     >
       <template #close>
-        <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('common.cancel')" data-haptic="dismiss" />
+        <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('common.cancel')" />
       </template>
       <template #body>
         <motion.div layout :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
@@ -129,14 +128,13 @@ function applyMobileFilters(): void {
             variant="ghost"
             :disabled="!mobileDraft.length"
             :label="t('adminDatabase.clearFilters')"
-            data-haptic="dismiss"
             @click="mobileDraft = []"
           />
-          <UButton color="neutral" variant="outline" :label="t('common.cancel')" data-haptic="dismiss" @click="filterDrawerOpen = false" />
-          <UButton :label="t('adminDatabase.applyFilters')" data-haptic="confirm" @click="applyMobileFilters" />
+          <UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="filterDrawerOpen = false" />
+          <UButton :label="t('adminDatabase.applyFilters')" @click="applyMobileFilters" />
         </div>
       </template>
-    </UDrawer>
+    </USlideover>
   </section>
 </template>
 
@@ -149,13 +147,12 @@ function applyMobileFilters(): void {
 .database-query__mobile-add { margin-top: 0.75rem; }
 .database-query__drawer-actions { display: grid; gap: 0.55rem; }
 .database-query__drawer-actions :deep(button) { width: 100%; }
-:global(.database-filter-drawer__container) { height: 100%; gap: 0; overflow: hidden; }
+:global(.database-filter-drawer__content) { width: min(100vw, 560px); max-width: min(100vw, 560px); }
 :global(.database-filter-drawer__header) { flex: 0 0 auto; padding-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
 :global(.database-filter-drawer__body) { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 1rem; }
 :global(.database-filter-drawer__footer) { flex: 0 0 auto; padding-top: 0.75rem; border-top: 1px solid var(--line); }
 
 @media (max-width: 899px) {
-  :global(.database-filter-drawer) { height: min(80dvh, calc(var(--tg-viewport-height, 100dvh) - var(--app-safe-top) - 0.5rem)); }
 }
 
 @media (min-width: 900px) {

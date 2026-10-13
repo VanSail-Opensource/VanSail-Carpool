@@ -2,21 +2,11 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="data:," />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0d0c" />
     <meta name="color-scheme" content="dark" />
     <title></title>
-    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-    <script>
-      ;(() => {
-        const installFallback = (name, fallback) => {
-          if (typeof window[name] === 'function' || typeof fallback !== 'function') return
-          try { Object.defineProperty(window, name, { configurable: true, value: fallback, writable: true }) } catch {}
-        }
-        installFallback('PointerEvent', window.MouseEvent)
-        installFallback('FocusEvent', window.Event)
-      })()
-    </script>
   </head>
   <body>
     <div id="app" class="isolate"></div>

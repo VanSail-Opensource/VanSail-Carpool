@@ -1,0 +1,25 @@
+{
+  "get": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "getBrowserConfig",
+    "security": [],
+    "description": "Public browser entrance configuration",
+    "responses": {
+      "200": {
+        "description": "Public browser entrance configuration",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/BrowserConfig"
+            }
+          }
+        }
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
+      }
+    }
+  }
+}

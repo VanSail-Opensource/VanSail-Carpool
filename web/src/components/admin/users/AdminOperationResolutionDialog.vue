@@ -37,7 +37,7 @@ function submit(): void {
 </script>
 
 <template>
-  <UModal :open="open" :title="t('adminUserProfile.resolveTitle')" :description="t('adminUserProfile.resolveHint')" :dismissible="!busy" :close="false" :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end' }" @update:open="emit('update:open', $event)">
+  <UModal :open="open" :title="t('adminUserProfile.resolveTitle')" :description="t('adminUserProfile.resolveHint')" :dismissible="!busy" :close="false" :ui="{ header: 'admin-overlay-header', wrapper: 'admin-overlay-copy', footer: 'justify-end' }" @update:open="emit('update:open', $event)">
     <template #body>
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="workflowState" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">

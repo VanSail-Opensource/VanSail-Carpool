@@ -6,6 +6,7 @@ toolchain go1.26.9
 
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.29.0
+	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
 	github.com/xtls/xray-core v1.260327.1-0.20260710210335-64fada32b5b9
@@ -16,9 +17,11 @@ require (
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/xssnick/tonutils-go v1.19.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 )
 
 require (

@@ -27,7 +27,7 @@ function setRewardKind(kind: AffiliateReward['kind']): void {
     <div class="affiliate-tier-editor__actions">
       <UButton color="neutral" variant="ghost" square icon="i-ph-arrow-up" :disabled="index === 0" :aria-label="$t('adminAffiliates.moveUp')" @click="$emit('move', -1)" />
       <UButton color="neutral" variant="ghost" square icon="i-ph-arrow-down" :disabled="index === count - 1" :aria-label="$t('adminAffiliates.moveDown')" @click="$emit('move', 1)" />
-      <UButton color="error" variant="ghost" square icon="i-ph-trash" :disabled="count === 1" :aria-label="$t('adminAffiliates.removeTier')" data-haptic="destructive" @click="$emit('remove')" />
+      <UButton color="error" variant="ghost" square icon="i-ph-trash" :disabled="count === 1" :aria-label="$t('adminAffiliates.removeTier')" @click="$emit('remove')" />
     </div>
     <UFormField :label="$t('adminAffiliates.name')"><UInput :model-value="tier.name" class="w-full" :maxlength="48" @update:model-value="update({ name: String($event) })" /></UFormField>
     <UFormField :label="$t('adminAffiliates.threshold')"><UInputNumber :model-value="tier.threshold" :min="0" :step="1" @update:model-value="update({ threshold: Number($event) })" /></UFormField>

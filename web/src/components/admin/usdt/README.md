@@ -1,8 +1,10 @@
 # USDT administration
 
-`AdminUSDTPage` is composed by the existing admin shell at `/admin/usdt`. It uses
+`AdminUSDTPage` is composed by the independent browser console at `/admin/usdt`. It uses
 the shared API client, Nuxt UI forms, theme tokens and English/Chinese localization.
-One network is edited at a time; quota limits live in a native disclosure. Credentials
+Configuration, network, quota, and transfer review workspaces use desktop tabs.
+One network is edited at a time; receiving addresses and ordered endpoints remain
+editable through typed controls. Transfer evidence opens in a focused side panel. Credentials
 are write-only and remain blank after saving. Endpoint order expresses failover
 priority. Group IDs bind servers sharing one provider-account budget.
 
@@ -21,6 +23,9 @@ remain shared billing components. Composables guard stale responses after unmoun
 - `USDTGeneralSettings.vue` ? Provider enablement, exact TXB/USDT rate and payment window.
 - `USDTNetworkSettings.vue` ? Receiving address pools and ordered server entries.
 - `USDTQuotaSettings.vue` ? Provider-account limits and local usage/cooldown visibility.
-- `USDTReview.vue` ? Paginated verified transfer review list.
+- `USDTReview.vue` ? Paginated verified transfer review table and evidence side panel.
 - `USDTReviewItem.vue` ? Transfer evidence and explicit audited order-credit input.
 - `useUSDTAdmin.ts` ? Independent loading, saves, probes, review and lifecycle cleanup.
+
+Command failures remain visible beside transfer-credit inputs in the evidence
+side panel. Browser administration does not load Telegram controls or haptics.

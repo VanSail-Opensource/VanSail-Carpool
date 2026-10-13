@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from '../types'
-import { adminResources, memberResources } from './preloadRoutes'
+import { memberResources } from './preloadRoutes'
 import { isReadRequest } from './policy'
 
 describe('initial page preload inventory', () => {
@@ -25,15 +25,16 @@ describe('initial page preload inventory', () => {
     expect(resources.every(resource => isReadRequest(resource.path, resource.options?.method ?? 'GET'))).toBe(true)
   })
 
-  it('covers admin sections without running operational commands', () => {
-    const resources = adminResources()
-    expect(resources.map(resource => resource.path)).toEqual(expect.arrayContaining([
-      '/api/v1/admin/settings', '/api/v1/admin/users', '/api/v1/admin/combos',
-      '/api/v1/admin/activity-games', '/api/v1/admin/affiliates', '/api/v1/admin/coupons',
-      '/api/v1/admin/questionnaires', '/api/v1/admin/onboarding/content/agreements',
-      '/api/v1/admin/node-compensation/events', '/api/v1/admin/abuse/records',
-      '/api/v1/admin/backups', '/api/v1/admin/database/tables', '/api/v1/admin/audit-events',
-    ]))
-    expect(resources.every(resource => !resource.options?.method || resource.options.method === 'GET')).toBe(true)
+  it('loads only member resources for an onboarded Mini App administrator', () => {
+    const resources = memberResources(session('admin', 'complete'), 'en')
+    expect(resources).toEqual(memberResources(session('user', 'complete'), 'en'))
+    expect(resources.some(resource => resource.path.includes('/admin/') || resource.path.includes('/admin-access/'))).toBe(false)
+    expect(resources.every(resource => isReadRequest(resource.path, resource.options?.method ?? 'GET'))).toBe(true)
+  })
+
+  it('keeps an unonboarded administrator on optional onboarding content', () => {
+    expect(memberResources(session('admin', 'intro'), 'en')).toEqual([
+      { path: '/api/v1/onboarding/content', options: { query: { locale: 'en' } } },
+    ])
   })
 })

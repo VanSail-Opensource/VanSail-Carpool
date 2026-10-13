@@ -20,18 +20,3 @@ export function memberResources(session: Session, locale: string): PreloadResour
     onboarding,
   ]
 }
-
-export function adminResources(): PreloadResource[] {
-  return [
-    ...['settings', 'payment-profiles', 'activity-settings', 'combos', 'squad-products',
-      'activity-games', 'lucky-draw', 'affiliates', 'coupons', 'questionnaires',
-      'onboarding/content/welcome', 'onboarding/content/agreements', 'users',
-      'emby-accounts', 'node-compensation/config', 'abuse/policy', 'abuse/nodes',
-      'abuse/rules', 'abuse/punishments', 'abuse/records', 'abuse/statistics',
-      'abuse/whitelist', 'backups', 'jobs', 'database/tables', 'audit-events',
-    ].map(path => ({ path: `/api/v1/admin/${path}` })),
-    { path: '/api/v1/admin/node-compensation/events', options: { query: { limit: 25 } } },
-    // Admin settings includes amount limits even before member onboarding is complete.
-    { path: '/api/v1/balance' },
-  ]
-}

@@ -1,4 +1,5 @@
 get:
+  security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Authentication]
   operationId: getMe
   summary: Get the current identity and onboarding state

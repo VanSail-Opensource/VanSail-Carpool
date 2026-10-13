@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import { onMounted, onUnmounted, watch } from 'vue'
 
 import { getTelegramWebApp, supportsTelegramVersion, tryTelegramCall } from '@/utils/telegram'
+import { isBrowserExperience } from '@/utils/experience'
 
 const owners = new Map<number, Ref<boolean>>()
 let nextOwner = 0
@@ -31,6 +32,7 @@ function syncProtection(): void {
 
 // Prevent accidental WebView dismissal while a destructive workflow is active.
 export function useTelegramProtection(active: Ref<boolean>): void {
+  if (isBrowserExperience()) return
   const owner = nextOwner
   nextOwner += 1
 

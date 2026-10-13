@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'motion-v'
 
 import type { NodeCompensationEvent } from '@/api/contracts/compensation'
 import InlineNotice from '@/components/common/InlineNotice.vue'
-import { useTelegramProtection } from '@/composables/useTelegramProtection'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
 import { eventExtension, multiplierFactor } from './format'
@@ -25,11 +24,10 @@ const ready = computed(() => reason.value.trim().length >= 3 && Number.isInteger
   && minutes.value >= 1 && minutes.value <= 5_256_000)
 const workflowState = computed(() => props.busy ? 'applying' : props.error ? `error:${props.error}` : props.event ? `review:${props.event.id}` : 'empty')
 const { reducedMotion } = useMotionPreferences()
-useTelegramProtection(computed(() => open.value && (props.busy || reason.value.trim() !== '')))
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('adminCompensation.reviewTitle')" :description="t('adminCompensation.reviewCopy')" :dismissible="!busy" :close="false" :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end flex-wrap' }">
+  <UModal v-model:open="open" :title="t('adminCompensation.reviewTitle')" :description="t('adminCompensation.reviewCopy')" :dismissible="!busy" :close="false" :ui="{ header: 'admin-overlay-header', wrapper: 'admin-overlay-copy', footer: 'justify-end flex-wrap' }">
     <template v-if="event" #body>
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="workflowState" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
@@ -50,8 +48,8 @@ useTelegramProtection(computed(() => open.value && (props.busy || reason.value.t
       </AnimatePresence>
     </template>
     <template #footer>
-      <UButton color="neutral" variant="outline" :label="t('adminCompensation.dismiss')" :disabled="busy || reason.trim().length < 3" data-haptic="dismiss" @click="emit('review', 'dismiss', minutes, reason)" />
-      <UButton color="warning" icon="i-ph-check" :label="t('adminCompensation.approve')" :loading="busy" :disabled="busy || !ready" data-haptic="confirm" @click="emit('review', 'approve', minutes, reason)" />
+      <UButton color="neutral" variant="outline" :label="t('adminCompensation.dismiss')" :disabled="busy || reason.trim().length < 3" @click="emit('review', 'dismiss', minutes, reason)" />
+      <UButton color="warning" icon="i-ph-check" :label="t('adminCompensation.approve')" :loading="busy" :disabled="busy || !ready" @click="emit('review', 'approve', minutes, reason)" />
     </template>
   </UModal>
 </template>

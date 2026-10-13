@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: runAdminMaintenance
   summary: Queue a complete maintenance run now

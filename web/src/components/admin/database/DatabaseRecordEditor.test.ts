@@ -35,7 +35,7 @@ const DrawerStub = defineComponent({
     title: { type: String, default: '' }, description: { type: String, default: '' },
     ui: { type: Object, default: () => ({}) },
   },
-  template: `<div class="drawer" :data-container-ui="ui.container" :data-body-ui="ui.body" :data-footer-ui="ui.footer"><slot name="close" /><h2>{{ title }}</h2><slot name="body" /><footer data-test="drawer-footer"><slot name="footer" /></footer></div>`,
+  template: `<div class="drawer" :data-container-ui="ui.content" :data-body-ui="ui.body" :data-footer-ui="ui.footer"><slot name="close" /><h2>{{ title }}</h2><slot name="body" /><footer data-test="drawer-footer"><slot name="footer" /></footer></div>`,
 })
 const ButtonStub = defineComponent({
   inheritAttrs: false,
@@ -64,7 +64,7 @@ function mountEditor(action: 'insert' | 'delete' = 'insert', currentRow?: Databa
     props: { table, action, row: currentRow, review: null, busy: false },
     global: {
       stubs: {
-        Drawer: DrawerStub, Button: ButtonStub, Input: InputStub, Textarea: TextareaStub,
+        Slideover: DrawerStub, Button: ButtonStub, Input: InputStub, Textarea: TextareaStub,
         FormField: { template: '<div><slot /></div>' }, Alert: { template: '<div class="alert" />' },
         Checkbox: { template: '<div />' }, Icon: { template: '<span />' }, SwitchField: { template: '<div />' },
       },
@@ -83,7 +83,7 @@ describe('DatabaseRecordEditor', () => {
     expect(wrapper.emitted('review')?.[0]?.[0]).toMatchObject({ action: 'insert', reason: 'Repair imported role' })
     expect(wrapper.get('[data-test="drawer-footer"] [data-action="submit"]').attributes('data-form')).toBe('database-record-form')
     expect(wrapper.get('.drawer').attributes('data-body-ui')).toBe('database-record-editor__scroll-body')
-    expect(wrapper.get('.drawer').attributes('data-container-ui')).toBe('database-record-editor__container')
+    expect(wrapper.get('.drawer').attributes('data-container-ui')).toBe('database-record-editor__content')
   })
 
   it('switches to review-only content and gates Apply by typed confirmation', async () => {

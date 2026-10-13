@@ -6,7 +6,7 @@ import type { PaymentReturnProvider } from '@/api/features'
 import PaymentReceiptDetails from '@/components/billing/PaymentReceiptDetails.vue'
 import { useI18n } from '@/i18n'
 import { usePaymentReturn } from '@/composables/usePaymentReturn'
-import { isTelegramWebAppDetected } from '@/utils/telegram'
+import { isBrowserExperience } from '@/utils/experience'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +14,7 @@ const { t } = useI18n()
 const orderId = shallowRef('')
 const provider = shallowRef<PaymentReturnProvider | null>(null)
 const capability = shallowRef('')
-const browserReturn = !isTelegramWebAppDetected()
+const browserReturn = isBrowserExperience()
 let homeTimer: ReturnType<typeof globalThis.setTimeout> | undefined
 
 watch(() => [route.query.paymentOrder, route.query.provider, route.query.paymentCapability], ([rawOrder, rawProvider, rawCapability]) => {

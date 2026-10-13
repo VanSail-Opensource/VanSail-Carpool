@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: reviewAdminDatabaseMutation
   summary: Review a typed database mutation and its redacted diff

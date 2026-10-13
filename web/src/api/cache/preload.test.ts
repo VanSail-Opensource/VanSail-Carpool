@@ -18,15 +18,17 @@ describe('authenticated preload scheduling', () => {
     expect(request.mock.calls.some(([path]) => path === '/api/v1/emby/account')).toBe(true)
   })
 
-  it('preloads admin pages and the first database query, containing partial failure', async () => {
+  it('contains partial failures while Mini App admins preload only member data', async () => {
     request.mockImplementation(async (path: string) => {
       if (path === '/api/v1/statistics') throw { status: 503 }
-      return { items: path.endsWith('/database/tables') ? [{ name: 'users' }] : [] }
+      return { items: [] }
     })
     preloadSession(session('admin'))
     await vi.runAllTimersAsync()
-    expect(request.mock.calls.some(([path]) => path === '/api/v1/admin/audit-events')).toBe(true)
-    expect(request).toHaveBeenCalledWith('/api/v1/admin/database/tables/users/query', expect.objectContaining({ method: 'POST', body: { filters: [], limit: 50 } }))
+    expect(request.mock.calls.some(([path]) => path === '/api/v1/statistics')).toBe(true)
+    expect(request.mock.calls.some(([path]) => path === '/api/v1/emby/account')).toBe(true)
+    expect(request.mock.calls.some(([path]) => path === '/api/v1/onboarding/content')).toBe(true)
+    expect(request.mock.calls.some(([path]) => path.includes('/admin/') || path.includes('/database/'))).toBe(false)
   })
 
   it('limits pending work to five reads and cancels it on logout', async () => {

@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: applyAdminDatabaseMutation
   summary: Apply an exact reviewed mutation after a rescue backup

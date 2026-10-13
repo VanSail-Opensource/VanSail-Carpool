@@ -50,10 +50,11 @@ read receipt. Admin `/refund`, `/addtxb`, and `/deducttxb` commands
 are accepted only inside that member's PM topic and use existing refund, ledger,
 audit, and provider-operation services.
 
-The topic profile's `startapp` button uses the verified bot username and target
-user ID. Configure the bot's Main Mini App URL in BotFather; the client consumes
-the start parameter only as a route hint, then applies the existing admin session
-guard before loading the target profile.
+The topic profile's browser button uses `PUBLIC_BASE_URL` plus
+`/admin/users/{id}`. It carries only the target reference, with no bearer or
+session credentials. The browser console restores its independent admin session
+or displays Telegram OAuth login. Previously sent `admin_user_*` Mini App links
+continue through the client's access-panel bridge; new cards use browser links.
 
 Hosted regressions: `service_test.go` covers entry, supported media, commands,
 forum replies and callback identity/card scope. `worker_test_helpers_test.go`
@@ -61,7 +62,7 @@ supplies reference-only repositories/senders. `worker_delivery_test.go` covers
 execution-time moderation, success replay and definitive topic recovery;
 `worker_recovery_test.go` covers ambiguous phases, safe rate-limit retries and
 wrong-thread repair rejection. `profile_card_test.go` covers onboarding hiding,
-optional coupon details, traffic, rollover, and the Mini App deep link. No local
+optional coupon details, traffic, rollover, and the browser deep link. No local
 automated suites are required or run.
 
 ## Administrator attribution and pending content

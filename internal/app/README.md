@@ -1,5 +1,9 @@
 # Application composition
 
+`pm_workflows.go` injects `PUBLIC_BASE_URL` into the existing queued Telegram PM
+worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
+the independent browser session/OAuth flow authorizes the administrator.
+
 `connectivity_source.go` reads the monitoring account and protected raw subscription inside the Remnawave queue, preserving exact host UUIDs and keeping credentials server-side. `connectivity_source_test.go` covers accessible hidden hosts, disabled filtering, credential exclusion, and ambiguous identities. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
 
 `remna_member_squads.go` reads live names through the existing request queue.

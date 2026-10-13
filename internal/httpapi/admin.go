@@ -22,6 +22,7 @@ func (s *Server) mountAdmin(router chi.Router) {
 	router.Post("/settings", s.adminCreateSetting)
 	router.Put("/settings/{key}", s.adminUpdateSetting)
 	router.Put("/billing/amount-limits", s.adminUpdateBillingAmountLimits)
+	router.Get("/billing/amount-limits", s.adminBillingAmountLimits)
 	router.Get("/payment-profiles", s.adminPaymentProfiles)
 	router.Post("/payment-profiles", s.adminCreatePaymentProfile)
 	router.Put("/payment-profiles/{id}", s.adminSavePaymentProfile)

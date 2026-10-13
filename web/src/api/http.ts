@@ -73,6 +73,9 @@ async function responseError(response: Response): Promise<ApiError> {
     ? payload as ApiErrorBody
     : { code: 'HTTP_ERROR', message: String(payload || response.statusText) }
   const error = new ApiError(response.status, body)
+  if ((response.status === 401 || error.code === 'ADMIN_REQUIRED') && typeof document !== 'undefined' && document.documentElement.dataset.experience === 'browser' && typeof globalThis.dispatchEvent === 'function') {
+    globalThis.dispatchEvent(new Event('txc:browser-session-expired'))
+  }
   if ((error.code === 'ONBOARDING_REQUIRED' || error.code === 'CAPTCHA_REQUIRED') && typeof globalThis.dispatchEvent === 'function') {
     globalThis.dispatchEvent(new Event(onboardingRequiredEvent))
   }

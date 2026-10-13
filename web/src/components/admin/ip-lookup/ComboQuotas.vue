@@ -8,9 +8,9 @@ defineProps<{ combos: Combo[] }>()
 <template>
   <section class="combo-quotas">
     <h2>{{ $t('ipLookup.quotaHeading') }}</h2><p>{{ $t('ipLookup.quotaHelp') }}</p>
-    <UFormField v-for="combo in combos" :key="combo.id" :name="`quota-${combo.id}`" :label="combo.name" class="quota-row">
-      <UInputNumber v-model="quotas[combo.id]" class="w-full" :min="0" :max="1000000" :step="1" :placeholder="$t('ipLookup.unconfigured')" />
-    </UFormField>
+    <UTable class="admin-table" :data="combos" :columns="[{ accessorKey: 'name', header: $t('adminWorkspace.name') }, { id: 'quota', header: $t('ipLookup.quotaHeading') }]">
+      <template #quota-cell="{ row }"><UFormField :name="`quota-${row.original.id}`"><UInputNumber v-model="quotas[row.original.id]" :aria-label="row.original.name" :min="0" :max="1000000" :step="1" :placeholder="$t('ipLookup.unconfigured')" /></UFormField></template>
+    </UTable>
   </section>
 </template>
 

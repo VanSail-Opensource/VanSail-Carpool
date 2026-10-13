@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: getAdminHostConnectivityHistory
   summary: Page connectivity attempts retained for 24 hours

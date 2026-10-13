@@ -1,0 +1,226 @@
+{
+  "BrowserConfig": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "miniAppUrl",
+      "oauthEnabled"
+    ],
+    "properties": {
+      "miniAppUrl": {
+        "type": "string",
+        "format": "uri"
+      },
+      "oauthEnabled": {
+        "type": "boolean"
+      }
+    }
+  },
+  "OAuthSettings": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "enabled",
+      "clientId",
+      "clientSecretConfigured",
+      "callbackUrl"
+    ],
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "clientSecretConfigured": {
+        "type": "boolean"
+      },
+      "callbackUrl": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "OAuthSettingsInput": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "enabled",
+      "clientId"
+    ],
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "clientSecret": {
+        "type": "string",
+        "maxLength": 2048,
+        "description": "Omitted or empty preserves existing write-only secret."
+      }
+    }
+  },
+  "BrowserLinkInput": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "returnTo": {
+        "type": "string",
+        "description": "Local /admin destination; defaults to /admin/settings."
+      }
+    }
+  },
+  "BrowserLink": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "url",
+      "expiresAt"
+    ],
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "description": "Five-minute single-use handoff with bearer in URL fragment."
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "BrowserExchangeInput": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "token"
+    ],
+    "properties": {
+      "token": {
+        "type": "string",
+        "minLength": 43,
+        "maxLength": 43
+      }
+    }
+  },
+  "BrowserMemberIdentity": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "telegramId",
+      "firstName",
+      "lastName",
+      "telegramUsername"
+    ],
+    "properties": {
+      "telegramId": {
+        "type": "string",
+        "pattern": "^\\d+$"
+      },
+      "firstName": {
+        "type": "string"
+      },
+      "lastName": {
+        "type": "string"
+      },
+      "telegramUsername": {
+        "type": "string"
+      }
+    }
+  },
+  "BrowserAdminState": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "authenticated",
+      "kind",
+      "user",
+      "expiresAt"
+    ],
+    "properties": {
+      "authenticated": {
+        "type": "boolean",
+        "const": true
+      },
+      "kind": {
+        "type": "string",
+        "const": "admin"
+      },
+      "user": {
+        "$ref": "../../openapi.yaml#/components/schemas/User"
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "returnTo": {
+        "type": "string"
+      }
+    }
+  },
+  "BrowserMemberState": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "authenticated",
+      "kind",
+      "user",
+      "miniAppUrl"
+    ],
+    "properties": {
+      "authenticated": {
+        "type": "boolean",
+        "const": false
+      },
+      "kind": {
+        "type": "string",
+        "const": "member"
+      },
+      "user": {
+        "$ref": "#/BrowserMemberIdentity"
+      },
+      "miniAppUrl": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "BrowserAnonymousState": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "authenticated",
+      "kind",
+      "miniAppUrl"
+    ],
+    "properties": {
+      "authenticated": {
+        "type": "boolean",
+        "const": false
+      },
+      "kind": {
+        "type": "string",
+        "const": "anonymous"
+      },
+      "miniAppUrl": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "BrowserSessionState": {
+    "oneOf": [
+      {
+        "$ref": "#/BrowserAdminState"
+      },
+      {
+        "$ref": "#/BrowserMemberState"
+      },
+      {
+        "$ref": "#/BrowserAnonymousState"
+      }
+    ]
+  }
+}

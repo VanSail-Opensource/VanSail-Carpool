@@ -2,6 +2,7 @@ package telegrampm
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +25,7 @@ type ProfileFacts struct {
 }
 
 // Profile formats the current account facts and topic controls as MarkdownV2.
-func Profile(item model.PMConversation, facts ProfileFacts, botUsername, timezone string) telegram.TopicProfileRequest {
+func Profile(item model.PMConversation, facts ProfileFacts, publicBaseURL, timezone string) telegram.TopicProfileRequest {
 	name := strings.TrimSpace(item.FirstName + " " + item.LastName)
 	if item.Username != "" {
 		name += " (@" + item.Username + ")"
@@ -99,7 +100,7 @@ func Profile(item model.PMConversation, facts ProfileFacts, botUsername, timezon
 		{{Text: blockLabel, CallbackData: "pm:" + blockAction + ":" + item.ID}, {Text: muteLabel, CallbackData: "pm:" + muteAction + ":" + item.ID}},
 		{{Text: refreshLabel, CallbackData: "pm:refresh:" + item.ID}},
 	}
-	if profileURL := miniAppProfileURL(botUsername, item.UserID); profileURL != "" {
+	if profileURL := browserProfileURL(publicBaseURL, item.UserID); profileURL != "" {
 		buttons = append(buttons, []telegram.InlineKeyboardButton{{Text: profileLabel, URL: profileURL}})
 	}
 	return telegram.TopicProfileRequest{ChatID: item.ChatID, MessageThreadID: item.TopicID, MessageID: item.ProfileMessageID,
@@ -143,10 +144,15 @@ func formatProfileBytes(value int64) string {
 	return fmt.Sprintf("%.2f %s", amount, units[unit])
 }
 
-func miniAppProfileURL(botUsername, userID string) string {
-	username := strings.TrimPrefix(strings.TrimSpace(botUsername), "@")
-	if username == "" || userID == "" || strings.ContainsAny(username+userID, "/?# \t\r\n") {
+func browserProfileURL(publicBaseURL, userID string) string {
+	base, err := url.Parse(strings.TrimSpace(publicBaseURL))
+	if err != nil || (base.Scheme != "https" && base.Scheme != "http") || base.Host == "" || base.User != nil || base.RawQuery != "" || base.Fragment != "" || userID == "" {
 		return ""
 	}
-	return "https://t.me/" + username + "?startapp=admin_user_" + userID
+	for _, char := range userID {
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '-' || char == '_') {
+			return ""
+		}
+	}
+	return base.ResolveReference(&url.URL{Path: "/admin/users/" + userID}).String()
 }

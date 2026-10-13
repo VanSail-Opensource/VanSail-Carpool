@@ -1,4 +1,5 @@
 get:
+  security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags:
     - IP Lookup
   operationId: getIPLookupCheck

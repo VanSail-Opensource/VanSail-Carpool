@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: grantAdminUserCoupon
   summary: Grant one active purchase-discount coupon to a user wallet

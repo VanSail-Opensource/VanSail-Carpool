@@ -4,7 +4,6 @@ import { ApiError } from '@/api/http'
 import { ipLookupApi, type IPLookupAdminSettings } from '@/api/ipLookup'
 import type { Combo } from '@/api/types'
 import { useSessionStore } from '@/stores/session'
-import { useIPLookupAvailability } from '@/composables/useIPLookupAvailability'
 
 // Stored settings predating the retry policy decode without it; the enabled
 // server defaults apply until an administrator saves explicit values.
@@ -21,7 +20,6 @@ function normalizeRetry(settings: IPLookupAdminSettings): void {
 
 export function useAdminIPLookup() {
   const session = useSessionStore()
-  const availability = useIPLookupAvailability()
   const settings = reactive<IPLookupAdminSettings>({ enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: [], geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], retry: defaultRetry(), credentials: {}, configured: {}, comboQuotas: {} })
   const savedSourceConfig = shallowRef('')
   const combos = shallowRef<Combo[]>([])
@@ -63,7 +61,6 @@ export function useAdminIPLookup() {
       savedSourceConfig.value = JSON.stringify({ sources: settings.proxySources, resolvers: settings.dnsResolvers })
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       saved.value = true
-      await availability.refresh()
     } catch (error) { if (!disposed && current === version) setError(error) }
     finally { if (!disposed && current === version) busy.value = false }
   }

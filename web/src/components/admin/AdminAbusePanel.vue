@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, shallowRef } from 'vue'
 import { abuseApi } from '@/api/abuse'
 import AbuseNodesCard from '@/components/admin/abuse/AbuseNodesCard.vue'
 import AbusePolicyCard from '@/components/admin/abuse/AbusePolicyCard.vue'
@@ -13,13 +14,15 @@ import AdminSectionState from './AdminSectionState.vue'
 
 const { t } = useI18n()
 const state = useAdminAbuse()
+const workspace = shallowRef('policy')
+const tabs = computed(() => [{ value: 'policy', label: t('adminAbuse.policyTitle') }, { value: 'punishments', label: t('adminAbuse.punishmentsTitle') }, { value: 'rules', label: t('adminAbuse.rulesTitle') }, { value: 'nodes', label: t('adminAbuse.nodesTitle') }, { value: 'records', label: t('adminAbuse.recordsTitle') }])
 const clipboard = useClipboard()
 
 function copy(id: string): void {
   void state.execute(async () => {
     const value = await abuseApi.copyNodeKey(id)
     await clipboard.copy(value.key)
-  }, { errorKey: 'adminAbuse.copyFailed', reload: false, successHaptic: 'copy' })
+  }, { errorKey: 'adminAbuse.copyFailed', reload: false })
 }
 
 function rotate(id: string): void {
@@ -64,31 +67,38 @@ function setWhitelist(id: string, enabled: boolean): void {
       />
     </header>
 
+    <UTabs v-model="workspace" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
     <AdminSectionState :loading="state.loading.value" :error="state.loadError.value" @retry="state.load">
       <div v-if="state.policy.value" class="abuse-admin__grid">
         <InlineNotice v-if="state.operationError.value" class="abuse-admin__notice" tone="warning">
           {{ state.operationError.value }}
         </InlineNotice>
         <AbusePolicyCard
+          v-show="workspace === 'policy'"
           :policy="state.policy.value"
           :busy="state.busy.value"
           @save="savePolicy"
         />
         <AbusePunishmentLadder
+          v-show="workspace === 'punishments'"
           :punishments="state.punishments.value"
           :busy="state.busy.value"
+          :error="state.operationError.value"
           @save="savePunishment"
         />
         <AbuseRulesCard
+          v-show="workspace === 'rules'"
           :rules="state.rules.value"
           :whitelist="state.whitelist.value"
           :busy="state.busy.value"
+          :error="state.operationError.value"
           @save-rule="state.saveRule"
           @delete-rule="deleteRule"
           @whitelist="setWhitelist"
         />
-        <AbuseNodesCard :nodes="state.nodes.value" :statistics="state.statistics.value" :busy="state.busy.value" @copy="copy" @rotate="rotate" />
+        <AbuseNodesCard v-show="workspace === 'nodes'" :nodes="state.nodes.value" :statistics="state.statistics.value" :busy="state.busy.value" @copy="copy" @rotate="rotate" />
         <AbuseRecordsCard
+          v-show="workspace === 'records'"
           :records="state.records.value"
           :has-more="Boolean(state.nextRecordsCursor.value)"
           :loading-more="state.loadingMoreRecords.value"
@@ -100,31 +110,5 @@ function setWhitelist(id: string, enabled: boolean): void {
 </template>
 
 <style scoped>
-.admin-panel,
-.abuse-admin__grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.abuse-admin__notice { grid-column: 1 / -1; }
-
-.admin-panel__heading {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.abuse-admin__grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  align-items: start;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-@media (max-width: 620px) {
-  .admin-panel__heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-}
+.abuse-admin__grid { display: grid; gap: 1rem; min-width: 0; }
 </style>

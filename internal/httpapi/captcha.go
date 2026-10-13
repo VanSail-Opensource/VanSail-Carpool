@@ -10,6 +10,9 @@ import (
 
 func (s *Server) panelAuthState(r *http.Request, user model.User, entered bool) (authState, error) {
 	state := authState{Authenticated: true, User: mapUser(user)}
+	if browserScopedRequest(r) {
+		return state, nil
+	}
 	if s.deps.FirstEntry == nil {
 		return state, nil
 	}
@@ -20,6 +23,10 @@ func (s *Server) panelAuthState(r *http.Request, user model.User, entered bool) 
 
 func (s *Server) requireCaptcha(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if browserScopedRequest(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
 		if s.deps.FirstEntry == nil {
 			next.ServeHTTP(w, r)
 			return

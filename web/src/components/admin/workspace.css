@@ -1,0 +1,45 @@
+.admin-panel { min-width: 0; width: 100%; }
+.admin-panel__heading, .admin-subsection-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 0 0 1.25rem; border: 0; background: transparent; }
+.admin-panel__heading h2, .admin-subsection-heading h3 { margin: 0; font-size: 1.15rem; font-weight: 650; letter-spacing: -.025em; }
+.admin-panel__heading p, .admin-subsection-heading p { margin: .3rem 0 0; font-size: .8rem; color: var(--text-muted); }
+.admin-panel__heading::before { display: none; }
+.admin-table { width: 100%; min-width: 0; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.admin-table table { width: 100%; min-width: 640px; }
+.admin-table th { font-size: .7rem; font-weight: 600; }
+.admin-table td { font-size: .8rem; vertical-align: middle; }
+.admin-table [data-slot="empty"] { min-height: 160px; }
+.admin-cell { display: grid; gap: .2rem; min-width: 0; }
+.admin-cell small { color: var(--text-muted); font-size: .72rem; }
+.admin-cell code { font-size: .72rem; overflow-wrap: anywhere; }
+.admin-toolbar, .admin-pagination { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; padding: .8rem 0; }
+.admin-pagination { justify-content: flex-end; }
+.admin-row-actions { display: flex; justify-content: flex-end; align-items: center; gap: .25rem; }
+.admin-editor-form { display: grid; gap: 1rem; }
+.admin-editor-form [data-slot="root"], .admin-editor-form input, .admin-editor-form textarea { max-width: 100%; }
+.admin-editor-form [data-slot="root"]:has(input), .admin-editor-form [data-slot="root"]:has(textarea) { width: 100%; }
+.admin-workspace-tabs { margin-bottom: 1.25rem; }
+.admin-section { padding: 1.25rem 0; border-top: 1px solid var(--line); min-width: 0; }
+.admin-section h3, .admin-section h4 { margin: 0 0 .75rem; font-size: .95rem; }
+.admin-editor-form .button-row { display: flex; justify-content: flex-end; flex-wrap: wrap; }
+.admin-editor-form .catalog-editor__wide { grid-column: 1 / -1; }
+.admin-overlay-header { text-align: left; }
+.admin-overlay-copy { text-align: left; }
+.admin-workspace-grid { display: grid; gap: 1.25rem; }
+@media (min-width: 1024px) { .admin-workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 639px) { .admin-panel__heading { align-items: flex-start; } .admin-panel__heading > .row-actions { width: 100%; flex-wrap: wrap; } .admin-row-actions { flex-wrap: wrap; } .admin-row-actions button { min-height: 44px; min-width: 44px; } }
+.admin-profile-section { min-width: 0; padding: 1rem 0; border-top: 1px solid var(--line); }
+.admin-profile-section__heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+.admin-profile-section__heading h3, .admin-profile-section__heading p { margin: 0; }
+.admin-profile-section__heading h3 { font-size: 1rem; }
+.admin-profile-section__heading p, .admin-profile-empty { margin-top: .3rem; color: var(--text-muted); font-size: .8rem; }
+.admin-profile-history { display: grid; gap: 1.5rem; }
+.admin-profile-history__group { min-width: 0; }
+.admin-profile-history__group h4 { display: flex; align-items: center; gap: .5rem; margin: 0 0 .75rem; font-size: .85rem; }
+.admin-profile-section .row-actions { justify-content: flex-start; flex-wrap: wrap; }
+.admin-profile-row { display: grid; gap: .35rem; border-bottom: 1px solid var(--line); padding: .75rem 0; }
+.admin-profile-row small { display: block; color: var(--text-muted); font-size: .75rem; }
+.form-stack { display: grid; gap: 1rem; }
+.form-stack [data-slot='root']:has(input), .form-stack [data-slot='root']:has(textarea), .form-stack [role='combobox'] { width: 100%; }
+.field-hint { margin: 0; color: var(--text-muted); font-size: .8rem; }
+.admin-row-actions button, .admin-toolbar button, .admin-panel__heading button { white-space: nowrap; }
+.eyebrow { margin: 0 0 .3rem; font-size: .7rem; color: var(--text-muted); }

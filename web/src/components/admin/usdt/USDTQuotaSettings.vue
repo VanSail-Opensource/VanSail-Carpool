@@ -24,8 +24,8 @@ const cooldown = (id: string) => props.status?.quotas.find(item => item.id === i
 </script>
 
 <template>
-  <details class="usdt-quotas">
-    <summary>{{ t('adminUsdt.quotas') }}</summary>
+  <section class="usdt-quotas">
+    <h3>{{ t('adminUsdt.quotas') }}</h3>
     <p class="field-hint">{{ t('adminUsdt.quotaHint') }}</p>
     <div v-for="(group, index) in model" :key="index" class="usdt-quota">
       <div class="usdt-toolbar">
@@ -38,5 +38,5 @@ const cooldown = (id: string) => props.status?.quotas.find(item => item.id === i
       <p v-if="cooldown(group.id)" class="field-hint">{{ t('adminUsdt.cooldown', { time: formatDateTime(cooldown(group.id) ?? undefined) }) }}</p>
     </div>
     <UButton color="neutral" variant="outline" icon="i-ph-plus" :label="t('adminUsdt.addGroup')" :disabled="model.length >= 32" @click="model = [...model, newQuotaGroup()]" />
-  </details>
+  </section>
 </template>

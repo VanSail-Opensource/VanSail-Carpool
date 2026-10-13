@@ -47,7 +47,6 @@ function queueMaintenance(): void {
       :disabled="maintenance.busy.value"
       :loading="maintenance.busy.value"
       :label="t('adminBackups.maintenance')"
-      data-haptic="confirm"
       @click="showConfirmation"
     />
     <OperationStatusNotice

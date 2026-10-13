@@ -11,13 +11,13 @@ import (
 )
 
 type Worker struct {
-	Repository  WorkerRepository
-	Settings    Settings
-	Sender      Sender
-	Profiles    ProfileFactsReader
-	BotUsername func() string
-	Timezone    string
-	AdminIDs    map[int64]bool
+	Repository    WorkerRepository
+	Settings      Settings
+	Sender        Sender
+	Profiles      ProfileFactsReader
+	PublicBaseURL string
+	Timezone      string
+	AdminIDs      map[int64]bool
 }
 type execution struct {
 	operation      providerops.Operation

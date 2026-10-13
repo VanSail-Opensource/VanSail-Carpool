@@ -1,4 +1,5 @@
 delete:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: deleteAdminBackup
   summary: Delete a contained backup file and metadata consistently

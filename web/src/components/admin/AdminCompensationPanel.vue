@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
 
 import type { NodeCompensationEvent } from '@/api/contracts/compensation'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useNodeCompensation } from '@/composables/useNodeCompensation'
-import { motionSpring } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
+import { formatDateTime } from '@/utils/format'
+import { durationParts, multiplierFactor } from './compensation/format'
 import AdminSectionState from './AdminSectionState.vue'
 import CompensationConfigCard from './compensation/CompensationConfigCard.vue'
-import CompensationEventCard from './compensation/CompensationEventCard.vue'
 import CompensationReviewModal from './compensation/CompensationReviewModal.vue'
 import {
   compensationStatusChoices,
@@ -21,7 +19,9 @@ import {
 
 const { t } = useI18n()
 const state = useNodeCompensation()
-const { reducedMotion } = useMotionPreferences()
+const workspace = shallowRef('events')
+const tabs = computed(() => [{ value: 'events', label: t('adminWorkspace.records') }, { value: 'config', label: t('adminCompensation.configTitle') }])
+const columns = computed(() => [{ id: 'node', header: t('adminWorkspace.name') }, { id: 'time', header: t('adminWorkspace.date') }, { id: 'duration', header: t('adminWorkspace.duration') }, { accessorKey: 'thresholdMinutes', header: t('adminCompensation.thresholdShort') }, { id: 'multiplier', header: t('adminCompensation.multiplierShort') }, { accessorKey: 'frozenRecipientCount', header: t('adminCompensation.recipientsShort') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }])
 const reviewOpen = shallowRef(false)
 const selected = shallowRef<NodeCompensationEvent | null>(null)
 const statusChoice = computed<CompensationStatusChoice>({
@@ -31,6 +31,8 @@ const statusChoice = computed<CompensationStatusChoice>({
 const statusItems = computed(() => compensationStatusChoices.map(value => ({
   value, label: t(value === 'all' ? 'adminCompensation.allStatuses' : `adminCompensation.status.${value}`),
 })))
+
+function squadNames(event: NodeCompensationEvent): string { return event.squads.map(squad => squad.name).join(', ') }
 
 function openReview(event: NodeCompensationEvent): void {
   selected.value = event
@@ -44,35 +46,26 @@ async function review(action: 'approve' | 'dismiss', minutes: number, reason: st
 </script>
 
 <template>
-  <section class="admin-panel compensation-panel">
-    <div class="admin-panel__heading compensation-panel__heading">
-      <div><p class="eyebrow">{{ t('adminCompensation.eyebrow') }}</p><h2>{{ t('adminCompensation.title') }}</h2><p>{{ t('adminCompensation.copy') }}</p></div>
-    </div>
+  <section class="admin-panel">
+    <div class="admin-panel__heading"><div><h2>{{ t('adminCompensation.title') }}</h2><p>{{ t('adminCompensation.copy') }}</p></div></div>
+    <UTabs v-model="workspace" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
     <AdminSectionState :loading="state.loading.value" :error="state.error.value" @retry="state.load">
-      <CompensationConfigCard v-if="state.config.value" :config="state.config.value" :busy="state.busy.value" @save="state.saveConfig" />
-      <div class="compensation-panel__toolbar">
-        <UFormField :label="t('adminCompensation.filter')">
-          <USelect v-model="statusChoice" class="w-full" :items="statusItems" value-key="value" />
-        </UFormField>
+      <CompensationConfigCard v-if="state.config.value" v-show="workspace === 'config'" :config="state.config.value" :busy="state.busy.value" @save="state.saveConfig" />
+      <div v-show="workspace === 'events'">
+        <div class="admin-toolbar"><USelect v-model="statusChoice" :items="statusItems" :aria-label="t('adminCompensation.filter')" /></div>
+        <InlineNotice v-if="state.error.value" tone="warning">{{ state.error.value }}</InlineNotice>
+        <UTable class="admin-table" :data="state.events.value" :columns="columns">
+          <template #node-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.nodeName }}</strong><small>{{ squadNames(row.original) }}</small></div></template>
+          <template #time-cell="{ row }">{{ formatDateTime(row.original.offlineObservedAt) }}</template>
+          <template #duration-cell="{ row }">{{ row.original.observedDurationSeconds === null ? t('adminCompensation.ongoing') : t('adminCompensation.duration', durationParts(row.original.observedDurationSeconds)) }}</template>
+          <template #multiplier-cell="{ row }">{{ multiplierFactor(row.original.multiplierBps) }}</template>
+          <template #status-cell="{ row }"><div class="admin-cell"><UBadge :color="row.original.status === 'pending_review' ? 'warning' : 'neutral'" variant="subtle" :label="t(`adminCompensation.status.${row.original.status}`)" /><small v-if="row.original.ineligibleReason">{{ t(`adminCompensation.reason.${row.original.ineligibleReason}`) }}</small><small v-else-if="row.original.operation">{{ t('adminCompensation.operation', { status: row.original.operation.status }) }}</small></div></template>
+          <template #actions-cell="{ row }"><UButton v-if="row.original.status === 'pending_review'" color="warning" variant="ghost" icon="i-ph-magnifying-glass" :label="t('adminCompensation.review')" @click="openReview(row.original)" /></template>
+          <template #empty>{{ t('adminCompensation.none') }}</template>
+        </UTable>
+        <div v-if="state.nextCursor.value" class="admin-pagination"><UButton color="neutral" variant="outline" :label="t('adminCompensation.loadMore')" :loading="state.busy.value" @click="state.loadMore" /></div>
       </div>
-      <InlineNotice v-if="state.error.value" tone="warning">{{ state.error.value }}</InlineNotice>
-      <div class="compensation-panel__events">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.div v-for="event in state.events.value" :key="event.id" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 5 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0, y: reducedMotion ? 0 : -4 }" :transition="reducedMotion ? { duration: 0.08 } : motionSpring"><CompensationEventCard :event="event" @review="openReview" /></motion.div>
-        </AnimatePresence>
-        <div v-if="!state.events.value.length" class="empty-inline"><div><h3>{{ t('adminCompensation.none') }}</h3><p>{{ t('adminCompensation.noneHint') }}</p></div></div>
-      </div>
-      <UButton v-if="state.nextCursor.value" block color="neutral" variant="outline" icon="i-ph-caret-down" :label="t('adminCompensation.loadMore')" :loading="state.busy.value" @click="state.loadMore" />
     </AdminSectionState>
     <CompensationReviewModal v-model:open="reviewOpen" :event="selected" :busy="state.busy.value" :error="state.error.value" @review="review" />
   </section>
 </template>
-
-<style scoped>
-.compensation-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-.compensation-panel__heading { align-items: start; justify-items: start; text-align: left; }
-.compensation-panel__heading > :only-child { justify-self: start; }
-.compensation-panel__toolbar { display: grid; margin-top: 1rem; }
-.compensation-panel__events { display: grid; gap: 0.75rem; margin: 0.75rem 0; }
-@media (min-width: 700px) { .compensation-panel__toolbar { grid-template-columns: minmax(220px, 0.45fr); } }
-</style>

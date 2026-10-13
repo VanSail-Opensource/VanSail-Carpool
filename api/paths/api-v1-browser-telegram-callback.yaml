@@ -1,0 +1,48 @@
+{
+  "get": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "completeBrowserTelegramLogin",
+    "security": [],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "state",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "code",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "error",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "303": {
+        "description": "Verified administrator destination, member entrance, cancellation, or login error",
+        "headers": {
+          "Location": {
+            "description": "Local browser route",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "429": {
+        "$ref": "../openapi.yaml#/components/responses/TooManyRequests"
+      }
+    }
+  }
+}

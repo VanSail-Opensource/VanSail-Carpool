@@ -42,10 +42,6 @@ func (w *Worker) repair(ctx context.Context, run execution, item providerops.Ite
 			return phaseResult{}, err
 		}
 	}
-	botUsername := ""
-	if w.BotUsername != nil {
-		botUsername = w.BotUsername()
-	}
 	var started atomic.Bool
 	guard := func(callCtx context.Context) (telegram.TopicProfileRequest, error) {
 		current, err := w.current(callCtx, run)
@@ -57,7 +53,7 @@ func (w *Worker) repair(ctx context.Context, run execution, item providerops.Ite
 		}
 		current.TopicID, current.ProfileMessageID = topicID, profileID
 		started.Store(true)
-		profile := Profile(current, facts, botUsername, w.Timezone)
+		profile := Profile(current, facts, w.PublicBaseURL, w.Timezone)
 		if profileID > 0 {
 			label := "Profile checked at "
 			if chinese(current.Locale) {

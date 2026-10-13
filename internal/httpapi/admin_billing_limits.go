@@ -11,6 +11,15 @@ type billingAmountLimitsRequest struct {
 	MaximumTXBMinor string `json:"maximumTxbMinor"`
 }
 
+func (s *Server) adminBillingAmountLimits(w http.ResponseWriter, r *http.Request) {
+	bounds, err := s.deps.Store.AddTXBBounds(r.Context())
+	if err != nil {
+		s.adminFailure(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, bounds)
+}
+
 func (s *Server) adminUpdateBillingAmountLimits(w http.ResponseWriter, r *http.Request) {
 	var request billingAmountLimitsRequest
 	if err := decodeJSON(w, r, &request); err != nil {

@@ -1,4 +1,5 @@
 delete:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: deleteAdminJob
   summary: Delete a non-processing synchronization job

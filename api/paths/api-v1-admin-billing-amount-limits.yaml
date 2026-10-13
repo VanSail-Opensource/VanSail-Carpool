@@ -1,4 +1,17 @@
+get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  tags: [Admin, Billing]
+  operationId: getBillingAmountLimits
+  responses:
+    '200':
+      description: Global inclusive Add TXB bounds without member wallet state
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/BillingAmountLimits' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Billing]
   operationId: updateBillingAmountLimits
   summary: Atomically update the global inclusive Add TXB bounds

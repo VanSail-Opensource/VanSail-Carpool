@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: resolveAdminHostConnectivityTestUser
   summary: Resolve one exact Remnawave username to safe account identity

@@ -5,13 +5,11 @@ import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { motion } from 'motion-v'
 
 import { adminBillingApi } from '@/api/adminBilling'
-import { api } from '@/api/client'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { localizedError, useI18n } from '@/i18n'
 import { formatDateTime, moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
-import { notifyHaptic } from '@/utils/telegram'
 
 const maximumInt64Minor = '9223372036854775807'
 const draft = reactive({ minimum: '', maximum: '' })
@@ -36,21 +34,21 @@ const canSave = computed(() => {
 })
 
 async function load(): Promise<void> {
-  loading.value = !restoreCached<Awaited<ReturnType<typeof api.getBalance>>>('/api/v1/balance', response => {
-    draft.minimum = txbInputFromMinor(response.addAmountLimits.minimum.minor)
-    draft.maximum = txbInputFromMinor(response.addAmountLimits.maximum.minor)
-    updatedAt.value = response.addAmountLimits.updatedAt
+  loading.value = !restoreCached<Awaited<ReturnType<typeof adminBillingApi.getAmountLimits>>>('/api/v1/admin/billing/amount-limits', response => {
+    draft.minimum = txbInputFromMinor(response.minimum.minor)
+    draft.maximum = txbInputFromMinor(response.maximum.minor)
+    updatedAt.value = response.updatedAt
   })
   error.value = null
   saved.value = false
   const previous = { ...draft }
   try {
-    const response = await api.getBalance()
+    const response = await adminBillingApi.getAmountLimits()
     mergeRefreshedDraft(draft, {
-      minimum: txbInputFromMinor(response.addAmountLimits.minimum.minor),
-      maximum: txbInputFromMinor(response.addAmountLimits.maximum.minor),
+      minimum: txbInputFromMinor(response.minimum.minor),
+      maximum: txbInputFromMinor(response.maximum.minor),
     }, previous)
-    updatedAt.value = response.addAmountLimits.updatedAt
+    updatedAt.value = response.updatedAt
   } catch (caught) {
     error.value = localizedError(caught, 'errors.adminLoad')
   } finally {
@@ -69,10 +67,8 @@ async function save(): Promise<void> {
     draft.maximum = txbInputFromMinor(limits.maximum.minor)
     updatedAt.value = limits.updatedAt
     saved.value = true
-    notifyHaptic('success')
   } catch (caught) {
     error.value = localizedError(caught, 'errors.adminAction')
-    notifyHaptic('error')
   } finally {
     busy.value = false
   }

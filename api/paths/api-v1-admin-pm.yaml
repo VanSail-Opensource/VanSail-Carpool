@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Administration]
   operationId: listAdminPMConversations
   summary: List private-message conversations for panel administrators

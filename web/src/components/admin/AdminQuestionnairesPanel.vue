@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { restoreItems } from '@/api/cache/restore'
-import { onMounted, reactive, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
+import { computed, onMounted, reactive, shallowRef } from 'vue'
 
 import type { QuestionnaireAdminRecord } from '@/api/features'
 import { featuresApi } from '@/api/features'
@@ -9,7 +8,6 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { localizedError, useI18n } from '@/i18n'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 import QuestionnaireImportWorkflow from './questionnaires/QuestionnaireImportWorkflow.vue'
 
@@ -23,7 +21,7 @@ const closing = shallowRef<QuestionnaireAdminRecord | null>(null)
 const deleting = shallowRef<QuestionnaireAdminRecord | null>(null)
 const draft = reactive({ title: '', description: '', formUrl: '', rewardTxb: '5.00' })
 const { t } = useI18n()
-const { reducedMotion, offset } = useMotionPreferences()
+const columns = computed(() => [{ accessorKey: 'title', header: t('adminQuestionnaires.formTitle') }, { id: 'status', header: t('adminWorkspace.status') }, { accessorKey: 'participantCount', header: t('adminWorkspace.participants') }, { id: 'reward', header: t('adminWorkspace.reward') }, { id: 'actions', header: t('adminWorkspace.actions') }])
 
 async function load(): Promise<void> {
   loading.value = !restoreItems('/api/v1/admin/questionnaires', items); error.value = null
@@ -83,31 +81,35 @@ onMounted(() => void load())
 <template>
   <section class="admin-panel">
     <div class="admin-panel__heading"><div><h2>{{ t('adminQuestionnaires.title') }}</h2><p>{{ t('adminQuestionnaires.copy') }}</p></div><UButton icon="i-ph-plus" :label="t('adminQuestionnaires.new')" @click="edit()" /></div>
-    <form v-if="editingId !== undefined" class="catalog-editor" @submit.prevent="save">
-      <div class="catalog-editor__heading"><h3>{{ editingId ? t('adminQuestionnaires.edit') : t('adminQuestionnaires.draft') }}</h3></div>
-      <UFormField name="title" :label="t('adminQuestionnaires.formTitle')" required><UInput v-model.trim="draft.title" :maxlength="120" /></UFormField>
-      <UFormField name="url" :label="t('adminQuestionnaires.formUrl')" required><UInput v-model.trim="draft.formUrl" type="url" /></UFormField>
-      <UFormField class="catalog-editor__wide" name="description" :label="t('adminQuestionnaires.description')" required><UTextarea v-model.trim="draft.description" :rows="3" /></UFormField>
-      <TxbAmountField id="questionnaire-reward" v-model="draft.rewardTxb" :label="t('adminQuestionnaires.reward')" min-minor="1" required />
-      <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="editingId = undefined" /><UButton type="submit" :disabled="busy" :loading="busy" :label="busy ? t('common.saving') : t('adminQuestionnaires.saveDraft')" /></div>
-    </form>
+    <USlideover :open="editingId !== undefined" :title="editingId ? t('adminQuestionnaires.edit') : t('adminQuestionnaires.draft')" :description="t('adminQuestionnaires.copy')" :dismissible="!busy" @update:open="!$event && (editingId = undefined)">
+      <template #body>
+        <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+        <form class="admin-editor-form" @submit.prevent="save">
+          <div class="catalog-editor__heading"><h3>{{ editingId ? t('adminQuestionnaires.edit') : t('adminQuestionnaires.draft') }}</h3></div>
+          <UFormField name="title" :label="t('adminQuestionnaires.formTitle')" required><UInput v-model.trim="draft.title" :maxlength="120" /></UFormField>
+          <UFormField name="url" :label="t('adminQuestionnaires.formUrl')" required><UInput v-model.trim="draft.formUrl" type="url" /></UFormField>
+          <UFormField class="catalog-editor__wide" name="description" :label="t('adminQuestionnaires.description')" required><UTextarea v-model.trim="draft.description" :rows="3" /></UFormField>
+          <TxbAmountField id="questionnaire-reward" v-model="draft.rewardTxb" :label="t('adminQuestionnaires.reward')" min-minor="1" required />
+          <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="editingId = undefined" /><UButton type="submit" :disabled="busy" :loading="busy" :label="busy ? t('common.saving') : t('adminQuestionnaires.saveDraft')" /></div>
+        </form>
+      </template>
+    </USlideover>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <USkeleton v-if="loading" class="m-4 h-28" />
-    <motion.div v-else layout class="admin-list">
-      <AnimatePresence :initial="false" mode="popLayout">
-        <motion.article v-for="questionnaire in items" :key="questionnaire.id" layout class="admin-list-row admin-list-row--questionnaire questionnaire-row" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.17, ease: 'easeOut' }">
-          <div><strong>{{ questionnaire.title }}</strong><small>{{ t('adminQuestionnaires.summary', { status: statusLabel(questionnaire.status), count: questionnaire.participantCount, reward: txbInputFromMinor(questionnaire.rewardTxbMinor) }) }}</small></div>
-          <div class="row-actions">
-            <UButton v-if="questionnaire.status === 'draft'" size="sm" color="neutral" variant="outline" icon="i-ph-arrow-square-out" :disabled="busy" :label="t('adminQuestionnaires.activate')" @click="activate(questionnaire.id)" />
-            <UButton v-if="questionnaire.status === 'active'" size="sm" color="neutral" variant="outline" icon="i-ph-stop-circle" :disabled="busy" :label="t('common.close')" @click="closing = questionnaire" />
-            <UButton v-if="['active', 'closed', 'settled'].includes(questionnaire.status)" size="sm" color="neutral" variant="outline" icon="i-ph-file-csv" :label="t('adminQuestionnaires.importCsv')" @click="importing = questionnaire" />
-            <UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminQuestionnaires.editNamed', { name: questionnaire.title })" @click="edit(questionnaire)" />
-            <UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminQuestionnaires.deleteNamed', { name: questionnaire.title })" data-haptic="destructive" @click="deleting = questionnaire" />
-          </div>
-        </motion.article>
-        <motion.div v-if="!items.length" key="empty-questionnaires" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminQuestionnaires.none') }}</h3><p>{{ t('adminQuestionnaires.noneHint') }}</p></div></motion.div>
-      </AnimatePresence>
-    </motion.div>
+    <UTable class="admin-table" :data="items" :columns="columns" :loading="loading">
+      <template #loading><div class="admin-loading" role="status"><USkeleton class="h-10 w-full" /><span>{{ t('common.loading') }}</span></div></template>
+      <template #status-cell="{ row }"><UBadge :color="row.original.status === 'active' ? 'success' : 'neutral'" variant="subtle" :label="statusLabel(row.original.status)" /></template>
+      <template #reward-cell="{ row }">{{ txbInputFromMinor(row.original.rewardTxbMinor) }} TXB</template>
+      <template #actions-cell="{ row }">
+        <div class="admin-row-actions">
+          <UButton v-if="row.original.status === 'draft'" color="neutral" variant="ghost" :disabled="busy" :label="t('adminQuestionnaires.activate')" @click="activate(row.original.id)" />
+          <UButton v-if="row.original.status === 'active'" color="neutral" variant="ghost" :disabled="busy" :label="t('common.close')" @click="closing = row.original" />
+          <UButton v-if="['active', 'closed', 'settled'].includes(row.original.status)" color="neutral" variant="ghost" icon="i-ph-file-csv" :label="t('adminQuestionnaires.importCsv')" @click="importing = row.original" />
+          <UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminQuestionnaires.editNamed', { name: row.original.title })" @click="edit(row.original)" />
+          <UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminQuestionnaires.deleteNamed', { name: row.original.title })" @click="deleting = row.original" />
+        </div>
+      </template>
+      <template #empty>{{ t('adminQuestionnaires.none') }}</template>
+    </UTable>
     <QuestionnaireImportWorkflow v-if="importing" :questionnaire="importing" @close="importing = null" />
     <ConfirmDialog :open="Boolean(closing)" :title="t('adminQuestionnaires.closeTitle', { name: closing?.title ?? t('adminQuestionnaires.questionnaire') })" :description="t('adminQuestionnaires.closeDescription')" :confirm-label="t('common.close')" :busy="busy" @update:open="!$event && (closing = null)" @confirm="closeQuestionnaire" />
     <ConfirmDialog :open="Boolean(deleting)" :title="t('adminQuestionnaires.deleteTitle', { name: deleting?.title ?? t('adminQuestionnaires.questionnaire') })" :description="t('adminQuestionnaires.deleteDescription')" :confirm-label="t('adminQuestionnaires.deletePermanently')" :busy="busy" danger @update:open="!$event && (deleting = null)" @confirm="remove" />

@@ -17,10 +17,13 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	if counts["sessions"], err = deleteCount(ctx, tx, `DELETE FROM sessions WHERE expires_at<=?
 		OR user_id IN (SELECT id FROM users WHERE role='user' AND onboarding_state='intro' AND created_at<?
 			AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=users.id))
-		OR EXISTS (SELECT 1 FROM sessions newer WHERE newer.user_id=sessions.user_id
-			AND (newer.created_at>sessions.created_at OR (newer.created_at=sessions.created_at AND newer.token_hash>sessions.token_hash)))`,
+		OR (scope='miniapp' AND EXISTS (SELECT 1 FROM sessions newer WHERE newer.user_id=sessions.user_id AND newer.scope='miniapp'
+			AND (newer.created_at>sessions.created_at OR (newer.created_at=sessions.created_at AND newer.token_hash>sessions.token_hash))))`,
 		stamp(now), stamp(cutoff24Hours)); err != nil {
 		return fmt.Errorf("prune stale sessions: %w", err)
+	}
+	if counts["browser_access_links"], err = deleteCount(ctx, tx, `DELETE FROM browser_access_links WHERE expires_at<=?`, stamp(now)); err != nil {
+		return fmt.Errorf("prune browser access links: %w", err)
 	}
 	if err := pruneAbandonedUsersTx(ctx, tx, cutoff24Hours, counts); err != nil {
 		return err

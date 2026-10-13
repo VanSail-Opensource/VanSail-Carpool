@@ -78,7 +78,7 @@ function setCancelOpen(open: boolean): void {
             <div><strong>{{ entitlement.comboName }}</strong><small>{{ t('adminEntitlements.summary', { user: entitlement.userId, from: formatDate(entitlement.validFrom), to: formatDate(entitlement.validUntil) }) }}</small></div>
             <strong>{{ formatMoney(entitlement.price) }}</strong>
             <StatusBadge :tone="tone(entitlement.status)" :label="statusLabel(entitlement.status)" />
-            <UButton v-if="canCancel(entitlement)" size="sm" color="error" variant="ghost" icon="i-ph-prohibit" :label="t('common.cancel')" data-haptic="destructive" @click="selected = entitlement" />
+            <UButton v-if="canCancel(entitlement)" size="sm" color="error" variant="ghost" icon="i-ph-prohibit" :label="t('common.cancel')" @click="selected = entitlement" />
           </motion.article>
           <motion.div v-if="!entitlements.items.value.length" key="empty-entitlements" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminEntitlements.none') }}</h3><p>{{ t('adminEntitlements.noneHint') }}</p></div></motion.div>
         </AnimatePresence>

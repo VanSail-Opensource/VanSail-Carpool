@@ -1,152 +1,13 @@
 <script setup lang="ts">
-import { restoreItems } from '@/api/cache/restore'
-import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
-
-import type { AdminStatistics, BetGame, LuckyDrawAdmin, LuckyDrawWrite, StatisticsQuery } from '@/api/features'
-import { featuresApi } from '@/api/features'
-import { adminOperationsApi, type AdminCatalogOptions } from '@/api/adminOperations'
-import AdminLuckyDrawEditor from '@/components/admin/activity/AdminLuckyDrawEditor.vue'
-import SwitchField from '@/components/common/SwitchField.vue'
-import TxbAmountField from '@/components/common/TxbAmountField.vue'
-import { localizedError, useI18n } from '@/i18n'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
+import { useActivityWorkspace } from './activity/useActivityWorkspace'
+import AdminLuckyDrawEditor from './activity/AdminLuckyDrawEditor.vue'
 import AdminStatisticsPanel from './AdminStatisticsPanel.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-
-const games = shallowRef<BetGame[]>([])
-const draws = shallowRef<LuckyDrawAdmin[]>([])
-const catalogOptions = shallowRef<AdminCatalogOptions>({ combos: [], squads: [] })
-const editingGameId = shallowRef<string | null | undefined>(undefined)
-const editingDraw = shallowRef<LuckyDrawAdmin | null | undefined>(undefined)
-const loading = shallowRef(true)
-const busy = shallowRef(false)
-const error = shallowRef<string | null>(null)
-const gameDraft = reactive({ name: '', icon: 'dice', description: '', winChancePercent: 50, minStake: '1.00', maxStake: '20.00', returnMultiplier: 2, enabled: true })
-const statisticsTarget = shallowRef<{ kind: 'game' | 'draw'; id: string; title: string } | null>(null)
-const deleting = shallowRef<{ kind: 'game' | 'draw'; id: string; name: string } | null>(null)
-const { t } = useI18n()
-const { reducedMotion, offset } = useMotionPreferences()
-const iconItems = computed(() => ['dice', 'coin', 'cards', 'target', 'trophy', 'lightning', 'sparkle'].map((value) => ({ value, label: t(`adminActivityManagement.icons.${value}`) })))
-const comboItems = computed(() => catalogOptions.value.combos.map((combo) => ({ value: combo.id, label: combo.name })))
-const squadItems = computed(() => catalogOptions.value.squads.map((squad) => ({ value: squad.remnaSquadUuid, label: squad.name })))
-
-function loadStatistics(query: StatisticsQuery): Promise<AdminStatistics> {
-  if (!statisticsTarget.value) return Promise.reject(new Error(t('adminActivityManagement.chooseActivity')))
-  return statisticsTarget.value.kind === 'game'
-    ? featuresApi.getAdminActivityGameStatistics(statisticsTarget.value.id, query)
-    : featuresApi.getAdminLuckyDrawStatistics(statisticsTarget.value.id, query)
-}
-
-async function removeActivity(): Promise<void> {
-  if (!deleting.value || busy.value) return
-  busy.value = true
-  error.value = null
-  try {
-    if (deleting.value.kind === 'game') await featuresApi.deleteAdminActivityGame(deleting.value.id)
-    else await featuresApi.deleteAdminLuckyDraw(deleting.value.id)
-    deleting.value = null
-    await load()
-  } catch (caught) {
-    error.value = localizedError(caught, 'adminActivityManagement.deleteFailed')
-  } finally {
-    busy.value = false
-  }
-}
-
-async function load(): Promise<void> {
-  loading.value = ![
-    restoreItems('/api/v1/admin/activity-games', games),
-    restoreItems('/api/v1/admin/lucky-draw', draws),
-  ].every(Boolean)
-  error.value = null
-  try {
-    const optionsPromise = adminOperationsApi.getCatalogOptions().catch(() => null)
-    const [gameResponse, drawResponse] = await Promise.all([
-      featuresApi.getAdminActivityGames(),
-      featuresApi.getAdminLuckyDraws(),
-    ])
-    games.value = gameResponse.items
-    draws.value = drawResponse.items
-    const options = await optionsPromise
-    catalogOptions.value = options ?? { combos: [], squads: [] }
-    if (!options) error.value = t('adminDrawRedesign.catalogUnavailable')
-  } catch (caught) {
-    error.value = localizedError(caught, 'adminActivityManagement.loadFailed')
-  } finally {
-    loading.value = false
-  }
-}
-
-function editGame(game?: BetGame): void {
-  editingGameId.value = game?.id ?? null
-  Object.assign(gameDraft, game ? {
-    name: game.name,
-    icon: game.icon,
-    description: game.description,
-    winChancePercent: game.winChanceBps / 100,
-    minStake: txbInputFromMinor(game.minimumStakeMinor),
-    maxStake: txbInputFromMinor(game.maximumStakeMinor),
-    returnMultiplier: game.returnMultiplierBps / 10000,
-    enabled: game.enabled,
-  } : { name: '', icon: 'dice', description: '', winChancePercent: 50, minStake: '1.00', maxStake: '20.00', returnMultiplier: 2, enabled: true })
-}
-
-async function saveGame(): Promise<void> {
-  const minimumStakeMinor = moneyFromTxbInput(gameDraft.minStake)
-  const maximumStakeMinor = moneyFromTxbInput(gameDraft.maxStake)
-  if (!minimumStakeMinor || !maximumStakeMinor) return
-  busy.value = true
-  error.value = null
-  try {
-    await featuresApi.saveAdminActivityGame(editingGameId.value ?? null, {
-      name: gameDraft.name,
-      icon: gameDraft.icon,
-      description: gameDraft.description,
-      winChanceBps: Math.round(gameDraft.winChancePercent * 100),
-      minimumStakeMinor,
-      maximumStakeMinor,
-      returnMultiplierBps: Math.round(gameDraft.returnMultiplier * 10000),
-      enabled: gameDraft.enabled,
-    })
-    editingGameId.value = undefined
-    games.value = (await featuresApi.getAdminActivityGames()).items
-  } catch (caught) {
-    error.value = localizedError(caught, 'adminActivityManagement.gameSaveFailed')
-  } finally {
-    busy.value = false
-  }
-}
-
-async function saveDraw(value: LuckyDrawWrite): Promise<void> {
-  busy.value = true
-  error.value = null
-  try {
-    const saved = await featuresApi.saveAdminLuckyDraw(editingDraw.value?.id ?? null, value)
-    draws.value = (await featuresApi.getAdminLuckyDraws()).items
-    editingDraw.value = draws.value.find((draw) => draw.id === saved.id) ?? saved
-  } catch (caught) {
-    error.value = localizedError(caught, 'adminActivityManagement.drawSaveFailed')
-  } finally {
-    busy.value = false
-  }
-}
-async function publishDraw(id: string): Promise<void> {
-  if (busy.value) return
-  busy.value = true
-  error.value = null
-  try {
-    await featuresApi.publishAdminLuckyDraw(id)
-    draws.value = (await featuresApi.getAdminLuckyDraws()).items
-  } catch (caught) {
-    error.value = localizedError(caught, 'adminDrawRedesign.publishError')
-  } finally {
-    busy.value = false
-  }
-}
-
-onMounted(() => void load())
+import InlineNotice from '@/components/common/InlineNotice.vue'
+import SwitchField from '@/components/common/SwitchField.vue'
+import TxbAmountField from '@/components/common/TxbAmountField.vue'
+import { txbInputFromMinor } from '@/utils/format'
+const { games, draws, editingGameId, editingDraw, loading, busy, error, gameDraft, statisticsTarget, deleting, t, activeTab, tabs, gameColumns, drawColumns, iconItems, comboItems, squadItems, loadStatistics, removeActivity, editGame, saveGame, saveDraw, publishDraw } = useActivityWorkspace()
 </script>
 
 <template>
@@ -155,39 +16,47 @@ onMounted(() => void load())
       <div><h2>{{ t('adminActivityManagement.title') }}</h2><p>{{ t('adminActivityManagement.copy') }}</p></div>
     </div>
 
-    <section class="activity-admin-section">
+    <UTabs v-model="activeTab" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
+    <section v-show="activeTab === 'games'" class="activity-admin-section">
       <div class="activity-admin-section__heading"><div><h3>{{ t('adminActivityManagement.games') }}</h3><p>{{ t('adminActivityManagement.gamesHint') }}</p></div><UButton icon="i-ph-plus" :label="t('adminActivityManagement.newGame')" @click="editGame()" /></div>
-      <form v-if="editingGameId !== undefined" class="catalog-editor" @submit.prevent="saveGame">
-        <div class="catalog-editor__heading"><h3>{{ editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame') }}</h3></div>
-        <UFormField name="game-name" :label="t('adminActivityManagement.name')" required><UInput v-model.trim="gameDraft.name" class="w-full" :maxlength="80" /></UFormField>
-        <UFormField name="game-icon" :label="t('adminActivityManagement.icon')"><USelect v-model="gameDraft.icon" class="w-full" :items="iconItems" /></UFormField>
-        <UFormField class="catalog-editor__wide" name="game-description" :label="t('adminActivityManagement.description')"><UTextarea v-model.trim="gameDraft.description" class="w-full" :rows="2" :maxlength="300" /></UFormField>
-        <UFormField name="win-chance" :label="t('adminActivityManagement.winChance')" required><UInput v-model.number="gameDraft.winChancePercent" class="w-full" type="number" :min="0.01" :max="99.99" :step="0.01" /></UFormField>
-        <UFormField name="return-multiplier" :label="t('adminActivityManagement.returnMultiplier')" required><UInput v-model.number="gameDraft.returnMultiplier" class="w-full" type="number" :min="1.01" :step="0.01" /></UFormField>
-        <TxbAmountField id="game-min-stake" v-model="gameDraft.minStake" :label="t('adminActivityManagement.minimumStake')" min-minor="1" required />
-        <TxbAmountField id="game-max-stake" v-model="gameDraft.maxStake" :label="t('adminActivityManagement.maximumStake')" min-minor="1" required />
-        <SwitchField id="game-enabled" v-model="gameDraft.enabled" :label="t('adminActivityManagement.available')" :help="t('adminActivityManagement.availableHint')" />
-        <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="editingGameId = undefined" /><UButton type="submit" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminActivityManagement.saveGame')" /></div>
-      </form>
-      <USkeleton v-if="loading" class="h-24 w-full" />
-      <motion.div v-else layout class="admin-list">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="game in games" :key="game.id" layout class="admin-list-row admin-list-row--activity-game" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.16, ease: 'easeOut' }"><div><strong>{{ game.name }}</strong><small>{{ t('adminActivityManagement.gameSummary', { chance: (game.winChanceBps / 100).toFixed(2), multiplier: (game.returnMultiplierBps / 10000).toFixed(2), minimum: txbInputFromMinor(game.minimumStakeMinor), maximum: txbInputFromMinor(game.maximumStakeMinor) }) }}</small></div><div class="row-actions"><UButton color="neutral" variant="ghost" square icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: game.name })" @click="statisticsTarget = { kind: 'game', id: game.id, title: t('adminActivityManagement.statisticsTitle', { name: game.name }) }" /><UButton color="neutral" variant="ghost" square icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: game.name })" @click="editGame(game)" /><UButton color="error" variant="ghost" square icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: game.name })" data-haptic="destructive" @click="deleting = { kind: 'game', id: game.id, name: game.name }" /></div></motion.article>
-          <motion.div v-if="!games.length" key="empty-games" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminActivityManagement.noGames') }}</h3><p>{{ t('adminActivityManagement.noGamesHint') }}</p></div></motion.div>
-        </AnimatePresence>
-      </motion.div>
+      <USlideover :open="editingGameId !== undefined" :title="editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame')" :description="t('adminActivityManagement.gamesHint')" :dismissible="!busy" @update:open="!$event && (editingGameId = undefined)">
+        <template #body>
+          <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+          <form class="admin-editor-form" @submit.prevent="saveGame">
+            <div class="catalog-editor__heading"><h3>{{ editingGameId ? t('adminActivityManagement.editGame') : t('adminActivityManagement.newGame') }}</h3></div>
+            <UFormField name="game-name" :label="t('adminActivityManagement.name')" required><UInput v-model.trim="gameDraft.name" class="w-full" :maxlength="80" /></UFormField>
+            <UFormField name="game-icon" :label="t('adminActivityManagement.icon')"><USelect v-model="gameDraft.icon" class="w-full" :items="iconItems" /></UFormField>
+            <UFormField class="catalog-editor__wide" name="game-description" :label="t('adminActivityManagement.description')"><UTextarea v-model.trim="gameDraft.description" class="w-full" :rows="2" :maxlength="300" /></UFormField>
+            <UFormField name="win-chance" :label="t('adminActivityManagement.winChance')" required><UInput v-model.number="gameDraft.winChancePercent" class="w-full" type="number" :min="0.01" :max="99.99" :step="0.01" /></UFormField>
+            <UFormField name="return-multiplier" :label="t('adminActivityManagement.returnMultiplier')" required><UInput v-model.number="gameDraft.returnMultiplier" class="w-full" type="number" :min="1.01" :step="0.01" /></UFormField>
+            <TxbAmountField id="game-min-stake" v-model="gameDraft.minStake" :label="t('adminActivityManagement.minimumStake')" min-minor="1" required />
+            <TxbAmountField id="game-max-stake" v-model="gameDraft.maxStake" :label="t('adminActivityManagement.maximumStake')" min-minor="1" required />
+            <SwitchField id="game-enabled" v-model="gameDraft.enabled" :label="t('adminActivityManagement.available')" :help="t('adminActivityManagement.availableHint')" />
+            <div class="button-row"><UButton color="neutral" variant="outline" :label="t('common.cancel')" @click="editingGameId = undefined" /><UButton type="submit" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminActivityManagement.saveGame')" /></div>
+          </form>
+        </template>
+      </USlideover>
+      <UTable class="admin-table" :data="games" :columns="gameColumns" :loading="loading">
+        <template #loading><div class="admin-loading" role="status"><USkeleton class="h-10 w-full" /><span>{{ t('common.loading') }}</span></div></template>
+        <template #terms-cell="{ row }">{{ t('adminActivityManagement.gameSummary', { chance: (row.original.winChanceBps / 100).toFixed(2), multiplier: (row.original.returnMultiplierBps / 10000).toFixed(2), minimum: txbInputFromMinor(row.original.minimumStakeMinor), maximum: txbInputFromMinor(row.original.maximumStakeMinor) }) }}</template>
+        <template #status-cell="{ row }"><UBadge :color="row.original.enabled ? 'success' : 'neutral'" :label="t(row.original.enabled ? 'common.active' : 'adminCatalog.paused')" variant="subtle" /></template>
+        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'game', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editGame(row.original)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="deleting = { kind: 'game', id: row.original.id, name: row.original.name }" /></div></template>
+        <template #empty>{{ t('adminActivityManagement.noGames') }}</template>
+      </UTable>
       <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'game'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
     </section>
 
-    <section class="activity-admin-section">
+    <section v-show="activeTab === 'draws'" class="activity-admin-section">
       <div class="activity-admin-section__heading"><div><h3>{{ t('adminActivityManagement.draws') }}</h3><p>{{ t('adminDrawRedesign.drawsHint') }}</p></div><UButton icon="i-ph-plus" :label="t('adminActivityManagement.newDraw')" @click="editingDraw = null" /></div>
-      <AdminLuckyDrawEditor v-if="editingDraw !== undefined" :draw="editingDraw" :combo-items="comboItems" :squad-items="squadItems" :busy="busy" @save="saveDraw" @cancel="editingDraw = undefined" />
-      <motion.div layout class="admin-list">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="draw in draws" :key="draw.id" layout class="admin-list-row admin-list-row--activity-draw" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.16, ease: 'easeOut' }"><div class="admin-list-row__icon"><UIcon name="i-ph-gift" /></div><div><strong>{{ draw.name }}</strong><small>{{ t('adminDrawRedesign.drawSummary', { kind: t('adminDrawRedesign.' + draw.kind), price: txbInputFromMinor(draw.feeTxbMinor) + ' TXB', status: t('adminDrawRedesign.' + draw.status) }) }}</small><small v-if="draw.kind === 'raffle'">{{ t('adminDrawRedesign.currentSeats', { seats: draw.seats, threshold: draw.threshold ?? 0 }) }}</small></div><div class="row-actions"><UButton v-if="draw.kind === 'raffle' && draw.status === 'draft'" color="primary" variant="ghost" square icon="i-ph-paper-plane-tilt" :aria-label="t('adminDrawRedesign.publish')" :disabled="busy" @click="publishDraw(draw.id)" /><UButton color="neutral" variant="ghost" square icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: draw.name })" @click="statisticsTarget = { kind: 'draw', id: draw.id, title: t('adminActivityManagement.statisticsTitle', { name: draw.name }) }" /><UButton color="neutral" variant="ghost" square icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: draw.name })" @click="editingDraw = draw" /><UButton color="error" variant="ghost" square icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: draw.name })" data-haptic="destructive" @click="deleting = { kind: 'draw', id: draw.id, name: draw.name }" /></div></motion.article>
-          <motion.div v-if="!loading && !draws.length" key="empty-draws" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminActivityManagement.noDraws') }}</h3><p>{{ t('adminActivityManagement.noDrawsHint') }}</p></div></motion.div>
-        </AnimatePresence>
-      </motion.div>
+      <AdminLuckyDrawEditor v-if="editingDraw !== undefined" :draw="editingDraw" :combo-items="comboItems" :squad-items="squadItems" :busy="busy" :error="error" @save="saveDraw" @cancel="editingDraw = undefined" />
+      <UTable class="admin-table" :data="draws" :columns="drawColumns" :loading="loading">
+        <template #loading><div class="admin-loading" role="status"><USkeleton class="h-10 w-full" /><span>{{ t('common.loading') }}</span></div></template>
+        <template #type-cell="{ row }"><div class="admin-cell"><span>{{ t('adminDrawRedesign.' + row.original.kind) }}</span><small v-if="row.original.kind === 'raffle'">{{ t('adminDrawRedesign.currentSeats', { seats: row.original.seats, threshold: row.original.threshold ?? 0 }) }}</small></div></template>
+        <template #price-cell="{ row }">{{ txbInputFromMinor(row.original.feeTxbMinor) }} TXB</template>
+        <template #status-cell="{ row }"><UBadge color="neutral" variant="subtle" :label="t('adminDrawRedesign.' + row.original.status)" /></template>
+        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="row.original.kind === 'raffle' && row.original.status === 'draft'" variant="ghost" icon="i-ph-paper-plane-tilt" :aria-label="t('adminDrawRedesign.publish')" :disabled="busy" @click="publishDraw(row.original.id)" /><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'draw', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editingDraw = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="deleting = { kind: 'draw', id: row.original.id, name: row.original.name }" /></div></template>
+        <template #empty>{{ t('adminActivityManagement.noDraws') }}</template>
+      </UTable>
       <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'draw'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
     </section>
 

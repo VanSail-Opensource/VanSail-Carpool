@@ -51,12 +51,14 @@ Do not guess framework or component APIs when they can be verified through the a
 
 ### 3.1 Design
 
-The interface must be:
+The member Mini App must be mobile-first and premium-dark. The standalone browser
+admin console must be **desktop-first with mobile compatibility**, independent of
+Mini App styling, and support system light/dark appearance with a saved manual override.
 
-- **mobile-first**
-- fully usable on desktop
+Both interfaces must be:
+
+- fully usable on desktop and mobile
 - visually minimal
-- premium-dark in appearance
 - low in visual noise
 - consistent across pages
 - optimized for clarity and fast interaction
@@ -189,11 +191,21 @@ Technical identifiers, debug messages, protocol values, and data keys are not co
 
 ### 5.2 Responsiveness
 
-Design for mobile first.
+Design member Mini App views for mobile first. Design browser admin views for
+desktop workflows first, then support mobile with accessible sidebar navigation,
+stacked forms, and contained table scrolling.
 
 Every affected view must then be checked for reasonable behavior on desktop layouts.
 
-Avoid implementing desktop layouts first and shrinking them afterward.
+Keep the two experience roots, routers, initialization, and theme assets separate.
+Browser admin views must not use Telegram Web App SDK controls, haptics, host
+buttons, or WebView compatibility initialization. Existing backend Telegram
+services remain available through browser controls.
+
+The Mini App may expose only `/settings/admin-access` for admins: OAuth setup and
+short-lived one-use console links. Other administrator pages and their resource
+preloads belong exclusively to the browser console. Browser admin sessions must
+remain independent of Mini App sessions and other browser devices.
 
 ### 5.3 Validation
 

@@ -1,0 +1,28 @@
+{
+  "get": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "getBrowserSession",
+    "security": [],
+    "description": "Anonymous requests are unsigned. Existing browser or Mini App cookies require their corresponding HMAC. Member identities have no browser privileges.",
+    "responses": {
+      "200": {
+        "description": "Anonymous requests are unsigned. Existing browser or Mini App cookies require their corresponding HMAC. Member identities have no browser privileges.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/BrowserSessionState"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
+      }
+    }
+  }
+}

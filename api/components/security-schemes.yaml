@@ -4,6 +4,12 @@ cookieSession:
   name: txc_session
   description: Opaque seven-day session created only by validated Telegram Mini App init data.
 
+browserSession:
+  type: apiKey
+  in: cookie
+  name: txc_admin_session
+  description: Independent browser-admin session with rolling 30-day inactivity expiry; txc_admin_request_key signs requests.
+
 requestTimestamp:
   type: apiKey
   in: header

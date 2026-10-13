@@ -16,3 +16,8 @@ The backend remains authoritative for panel-admin permissions, recipient eligibi
 moderation, topic uniqueness and safe recovery. Frontend status resets start a new
 explicit action; they never replay a previous uncertain message. Dialogs reuse the
 existing Nuxt UI modal, notices and motion/accessibility behavior.
+
+Browser PM topic/message links use native browser windows with opener isolation.
+The repair dialog renders command failures beside its decimal reference inputs,
+so drafts remain available after a failed verification. No Telegram Web App SDK
+control participates in browser PM administration.

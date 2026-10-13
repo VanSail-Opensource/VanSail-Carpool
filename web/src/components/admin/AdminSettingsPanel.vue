@@ -7,11 +7,11 @@ import { featuresApi } from '@/api/features'
 import AdminActivitySettings from '@/components/admin/activity/AdminActivitySettings.vue'
 import AdminBillingAmountLimits from '@/components/admin/AdminBillingAmountLimits.vue'
 import AdminPaymentProfiles from '@/components/admin/AdminPaymentProfiles.vue'
+import AdminOAuthSettings from '@/components/settings/AdminOAuthSettings.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SwitchField from '@/components/common/SwitchField.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { localizedError, useI18n } from '@/i18n'
-import { notifyHaptic } from '@/utils/telegram'
 import { writeAdminSettings } from '@/utils/adminSettingWrites'
 import AdminSectionState from './AdminSectionState.vue'
 const { items, loading, busy, error, load, perform } = useAdminSection<AdminSetting>('settings')
@@ -28,6 +28,9 @@ const activitySettingsRef = useTemplateRef<Saveable>('activitySettings')
 const billingLimitsRef = useTemplateRef<Saveable>('billingLimits')
 const paymentProfilesRef = useTemplateRef<PaymentProfilesSaveable>('paymentProfiles')
 const { t } = useI18n()
+const workspace = shallowRef('runtime')
+const selectedCategory = shallowRef('')
+const tabs = computed(() => [{ value: 'runtime', label: t('adminNav.settings') }, { value: 'payments', label: t('adminPaymentProfiles.title') }, { value: 'activity', label: t('adminNav.activity') }, { value: 'access', label: t('browser.oauth.title') }])
 const activitySettingKeys = new Set([
   'activity.timezone', 'activity.daily_reward_min_txb', 'activity.daily_reward_max_txb',
   'activity.group_message_threshold', 'activity.group_message_reward_txb',
@@ -40,6 +43,8 @@ const grouped = computed(() => items.value.filter((item) => !item.key.startsWith
   groups[category].push(item)
   return groups
 }, {}))
+const categories = computed(() => Object.keys(grouped.value).map(value => ({ value, label: categoryLabel(value) })))
+const category = computed({ get: () => selectedCategory.value || categories.value[0]?.value || '', set: value => { selectedCategory.value = value } })
 const sectionsLoading = computed(() => loading.value
   || activityLoading.value
   || billingLimitsRef.value?.loading === true
@@ -127,10 +132,8 @@ async function saveActivitySettings(value: ActivitySettingsWrite): Promise<void>
   activityError.value = null
   try {
     activitySettings.value = await featuresApi.saveAdminActivitySettings(value)
-    notifyHaptic('success')
   } catch (caught) {
     activityError.value = localizedError(caught, 'errors.adminAction')
-    notifyHaptic('error')
   } finally {
     activityBusy.value = false
   }
@@ -139,56 +142,31 @@ onMounted(() => void loadActivitySettings())
 </script>
 <template>
   <section class="admin-panel">
-    <div class="admin-panel__heading">
-      <div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div>
-      <UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" @click="saveAll" />
-    </div>
+    <div class="admin-panel__heading"><div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div><UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" @click="saveAll" /></div>
+    <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <InlineNotice v-if="saved.visible" tone="success" :title="t('adminSettings.saved')">{{ t('adminSettings.savedHint') }}</InlineNotice>
-    <section class="settings-activity">
-      <AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" />
-      <InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice>
-    </section>
-    <AdminBillingAmountLimits ref="billingLimits" />
-    <AdminPaymentProfiles ref="paymentProfiles" />
-    <AdminSectionState :loading="loading" :error="error" @retry="load()">
-      <form class="settings-groups" @submit.prevent="saveAll">
-        <fieldset v-for="(settings, category) in grouped" :key="category" class="settings-group">
-          <legend>{{ categoryLabel(String(category)) }}</legend>
-          <div v-for="setting in settings" :key="setting.key" class="settings-field">
-            <span class="settings-field__label">
-              <span>{{ settingLabel(setting) }}</span>
-              <span v-if="setting.configured" class="configured-label"><UIcon name="i-ph-check" /> {{ t('common.configured') }}</span>
-            </span>
-            <SwitchField
-              v-if="isBoolean(setting)"
-              :id="`setting-${setting.key}`"
-              :model-value="draft[setting.key] === 'true'"
-              :label="t('common.enabled')"
-              :help="settingHelp(setting)"
-              @update:model-value="setBoolean(setting.key, $event)"
-            />
-            <UInput
-              v-if="!isBoolean(setting)"
-              v-model="draft[setting.key]"
-              :id="`setting-${setting.key}-input`"
-              :name="setting.key"
-              :aria-label="settingLabel(setting)"
-              :icon="isSensitive(setting) ? 'i-ph-key' : undefined"
-              :type="isSensitive(setting) ? 'password' : 'text'"
-              :placeholder="isSensitive(setting) && setting.configured ? t('adminSettings.keepSecret') : ''"
-              :autocomplete="isSensitive(setting) ? 'new-password' : 'off'"
-            />
-            <small v-if="!isBoolean(setting)">{{ isSensitive(setting) ? t('adminSettings.secretHint') : settingHelp(setting) }}</small>
-          </div>
-        </fieldset>
-      </form>
-    </AdminSectionState>
+    <section v-show="workspace === 'activity'" class="settings-activity"><AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" /><InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice></section>
+    <div v-show="workspace === 'payments'" class="settings-payment-workspace"><AdminBillingAmountLimits ref="billingLimits" /><AdminPaymentProfiles ref="paymentProfiles" /></div>
+    <AdminOAuthSettings v-show="workspace === 'access'" />
+    <div v-show="workspace === 'runtime'">
+      <AdminSectionState :loading="loading" :error="error" @retry="load()">
+        <div class="admin-toolbar"><USelect v-model="category" :items="categories" :aria-label="t('adminWorkspace.configuration')" /></div>
+        <form class="settings-workspace" @submit.prevent="saveAll">
+          <fieldset v-for="(settings, group) in grouped" v-show="category === group" :key="group" class="settings-workspace__fields">
+            <legend>{{ categoryLabel(String(group)) }}</legend>
+            <UFormField v-for="setting in settings" :key="setting.key" :name="setting.key" :label="settingLabel(setting)" :description="isSensitive(setting) ? t('adminSettings.secretHint') : settingHelp(setting)" :hint="setting.configured ? t('common.configured') : undefined">
+              <SwitchField v-if="isBoolean(setting)" :id="`setting-${setting.key}`" :model-value="draft[setting.key] === 'true'" :label="t('common.enabled')" @update:model-value="setBoolean(setting.key, $event)" />
+              <UInput v-else v-model="draft[setting.key]" :id="`setting-${setting.key}-input`" class="w-full" :name="setting.key" :aria-label="settingLabel(setting)" :icon="isSensitive(setting) ? 'i-ph-key' : undefined" :type="isSensitive(setting) ? 'password' : 'text'" :placeholder="isSensitive(setting) && setting.configured ? t('adminSettings.keepSecret') : ''" :autocomplete="isSensitive(setting) ? 'new-password' : 'off'" />
+            </UFormField>
+          </fieldset>
+        </form>
+      </AdminSectionState>
+    </div>
   </section>
 </template>
-
 <style scoped>
-.settings-activity { display: grid; gap: 0.75rem; padding: 1rem; border-bottom: 1px solid var(--line); }
-.settings-activity h3, .settings-activity p { margin: 0; }
-.settings-activity p { margin-top: 0.2rem; color: var(--text-muted); font-size: 0.8rem; }
-.settings-activity :deep(.activity-settings) { margin: 0; }
+.settings-workspace__fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.35rem; border: 0; padding: 1.25rem 0; margin: 0; }
+.settings-workspace__fields legend { color: var(--text-muted); font-size: .8rem; padding: 0; }
+.settings-payment-workspace, .settings-activity { display: grid; gap: 1.5rem; }
+@media (min-width: 1100px) { .settings-workspace__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

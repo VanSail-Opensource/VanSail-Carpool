@@ -10,6 +10,31 @@ onboarding, signed requests and the existing idempotent operation protections.
 
 ## Core transport
 
+- `browser_auth_routes.go` mounts public entrance, browser OAuth/session, and
+  the restricted `/admin-access` exception and selects signing-cookie scope.
+- `browser_auth_sessions.go` restores identity, consumes handoffs, and manages
+  independent browser cookies; `browser_auth_middleware.go` renews live admin
+  sessions and rechecks eligibility on every protected browser request.
+- `browser_auth_oauth.go` owns encrypted flow/result cookies, OAuth redirects,
+  masked configuration, and fragment-link issuance. OAuth state expires in
+  five minutes; exchange/renew/logout require the configured same-origin URL.
+- `browser_auth_test.go` covers signed identity restoration, cookie flags,
+  stable renewal, cross-origin exchange rejection, logout, and member redirects
+  in hosted CI; local automated suites remain prohibited.
+- `browser_auth_scope_test.go` covers Mini App rejection from browser admin
+  routes, signed-request replay, expired-cookie clearing, role revocation,
+  OAuth cancellation, and existing streamed-backup origin/device safeguards.
+- `browser_auth_member_test.go` checks that ordinary signed Mini App members
+  receive member redirect state while allowlisted Mini App administrators
+  retain the browser landing/login entrance until they establish browser scope.
+- `browser_shell_test.go` covers independent entry fallback, browser console
+  framing/SDK CSP isolation, and preserved Mini App embedding policies.
+- Administrator APIs require `txc_admin_session` plus signatures derived from
+  `txc_admin_request_key`. Mini App cookies authorize only member APIs and
+  restricted `/admin-access` routes. Shared `/me`, display-currency, and
+  IP Lookup browser-admin calls additionally send `X-TXC-Session-Scope: browser`.
+  Existing backup stream origin/idempotency safeguards remain enforced.
+
 - `server.go` constructs middleware, public routes, authenticated routes, and the SPA fallback.
 - `responses.go` owns compact JSON response serialization and request-correlated API errors.
 - `ip_lookup_details_test.go` covers signed-route-compatible JSON/SSE negotiation, flushed completion and the lookup-specific response deadline in hosted CI.
@@ -159,3 +184,4 @@ cancellable fake probe for hosted execution without external network traffic.
 
 - `usdt.go` ? Admin-only configuration, local status, queued probes and idempotent verified-transfer credit.
 - `usdt_test.go` ? Hosted authorization, encrypted credentials and masked read/write contract checks.
+`browser_legacy_entry.go` identifies old Telegram iframe launches for access-panel forwarding without granting authentication or exposing admin pages.

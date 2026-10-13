@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Activity]
   operationId: getAdminLuckyDrawStatistics
   summary: Get participation, fee, reward, house-net, and prize-distribution statistics

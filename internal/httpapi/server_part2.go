@@ -17,6 +17,10 @@ const userContextKey contextKey = "user"
 
 func (s *Server) requireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if browserScopedRequest(r) {
+			s.requireBrowserSession(next).ServeHTTP(w, r)
+			return
+		}
 		cookie, err := r.Cookie(sessionCookie)
 		if err != nil {
 			s.writeError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Open TX Carpool from Telegram to continue.")
@@ -70,6 +74,9 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' https://telegram.org https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com https://www.openstreetmap.org; frame-ancestors https://web.telegram.org https://*.telegram.org")
+		if (r.URL.Path == "/admin" || r.URL.Path == "/admin.html" || strings.HasPrefix(r.URL.Path, "/admin/")) && !legacyMiniAppFrame(r) {
+			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.openstreetmap.org; frame-ancestors 'none'")
+		}
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Cache-Control", "no-store")
 		}
@@ -106,19 +113,23 @@ func spaHandler(content fs.FS) http.Handler {
 			files.ServeHTTP(w, r)
 			return
 		}
-		index, err := fs.ReadFile(content, "index.html")
+		entry := "index.html"
+		if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/") {
+			entry = "admin.html"
+		}
+		index, err := fs.ReadFile(content, entry)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
-		setStaticCacheHeaders(w, "index.html")
+		setStaticCacheHeaders(w, entry)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(index)
 	})
 }
 
 func setStaticCacheHeaders(w http.ResponseWriter, path string) {
-	if path == "index.html" {
+	if path == "index.html" || path == "admin.html" {
 		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		return
 	}

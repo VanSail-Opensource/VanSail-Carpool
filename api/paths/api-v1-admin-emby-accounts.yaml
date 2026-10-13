@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Emby]
   operationId: listAdminEmbyAccounts
   summary: List safe local Emby provisioning state

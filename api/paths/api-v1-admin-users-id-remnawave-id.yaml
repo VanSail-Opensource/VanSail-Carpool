@@ -1,4 +1,5 @@
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: relinkAdminUserRemnawaveID
   summary: Verify and relink a user's remote identity without mutating the former account

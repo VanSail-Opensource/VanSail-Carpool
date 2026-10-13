@@ -92,6 +92,7 @@ func TestSPAHandlerServesAssetsAndFallsBackToIndex(t *testing.T) {
 
 	content := fstest.MapFS{
 		"index.html":    {Data: []byte("<main>TX Carpool</main>")},
+		"admin.html":    {Data: []byte("<main>TX Carpool Console</main>")},
 		"assets/app.js": {Data: []byte("window.txc = true")},
 	}
 	handler := spaHandler(content)
@@ -106,6 +107,9 @@ func TestSPAHandlerServesAssetsAndFallsBackToIndex(t *testing.T) {
 		{name: "index", path: "/", wantBody: "<main>TX Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
 		{name: "static asset", path: "/assets/app.js", wantBody: "window.txc = true", contentType: "text/javascript", cache: "public, max-age=31536000, immutable"},
 		{name: "client route", path: "/catalog/checkout", wantBody: "<main>TX Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin root", path: "/admin", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin deep link", path: "/admin/users/user-id", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin entry", path: "/admin.html", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
 	}
 
 	for _, test := range tests {

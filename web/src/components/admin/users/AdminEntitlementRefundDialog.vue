@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from 'motion-v'
 import type { AdminEntitlement } from '@/api/adminOperations'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
-import { useTelegramProtection } from '@/composables/useTelegramProtection'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
 import { formatBytes, formatMoney, moneyFromTxbInput } from '@/utils/format'
@@ -28,11 +27,10 @@ watch(() => [open.value, props.item?.id, props.item?.userId], () => {
   if (!open.value || !props.item) return
   reason.value = ''
 }, { immediate: true })
-useTelegramProtection(computed(() => open.value && (props.busy || reason.value.trim() !== '' || amount.value !== '')))
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('adminUserProfile.refundTitle')" :description="t('adminUserProfile.refundHint')" :dismissible="!busy" :close="false" :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('adminUserProfile.refundTitle')" :description="t('adminUserProfile.refundHint')" :dismissible="!busy" :close="false" :ui="{ header: 'admin-overlay-header', wrapper: 'admin-overlay-copy', footer: 'justify-end' }">
     <template #body>
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="workflowState" class="form-stack" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
@@ -50,8 +48,8 @@ useTelegramProtection(computed(() => open.value && (props.busy || reason.value.t
       </AnimatePresence>
     </template>
     <template #footer="{ close }">
-      <UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" data-haptic="dismiss" @click="close" />
-      <UButton color="warning" :label="t('adminUserProfile.issueRefund')" :disabled="!valid || busy" :loading="busy" data-haptic="destructive" @click="amountMinor && emit('refund', { reason, amountTxbMinor: amountMinor })" />
+      <UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="close" />
+      <UButton color="warning" :label="t('adminUserProfile.issueRefund')" :disabled="!valid || busy" :loading="busy" @click="amountMinor && emit('refund', { reason, amountTxbMinor: amountMinor })" />
     </template>
   </UModal>
 </template>

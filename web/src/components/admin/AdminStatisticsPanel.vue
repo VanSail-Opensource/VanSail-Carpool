@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
 
 import type { AdminStatistics, StatisticsQuery } from '@/api/features'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { txbInputFromMinor } from '@/utils/format'
 
 const props = defineProps<{ title: string; load: (query: StatisticsQuery) => Promise<AdminStatistics> }>()
@@ -18,7 +16,6 @@ const monthAgo = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 1
 const filters = reactive<Required<Pick<StatisticsQuery, 'from' | 'to' | 'bucket'>>>({ from: monthAgo, to: today, bucket: 'daily' })
 const maximumCount = computed(() => Math.max(1, ...(statistics.value?.series.map((point) => point.count) ?? [1])))
 const { t } = useI18n()
-const { reducedMotion, offset } = useMotionPreferences()
 const bucketItems = computed(() => [
   { value: 'daily', label: t('adminStatistics.daily') },
   { value: 'weekly', label: t('adminStatistics.weekly') },
@@ -77,19 +74,15 @@ onMounted(() => void refresh())
       <div class="statistics-chart" role="img" :aria-label="t('adminStatistics.chartLabel', { bucket: t(`adminStatistics.${statistics.bucket}`), from: statistics.from, to: statistics.to })">
         <span v-for="point in statistics.series" :key="point.periodStart" class="statistics-chart__bar" :style="{ height: `${Math.max(4, point.count / maximumCount * 100)}%` }" />
       </div>
-      <div class="statistics-table"><p>{{ t('adminStatistics.caption', { grouping: t(`adminStatistics.${statistics.bucket}`) }) }}</p><UTable :data="tableData" :columns="tableColumns" /></div>
-      <motion.ul v-if="statistics.distribution.length" layout class="statistics-distribution">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.li v-for="slice in statistics.distribution" :key="slice.id" layout :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><span>{{ slice.label }}</span><strong>{{ slice.count }}</strong></motion.li>
-        </AnimatePresence>
-      </motion.ul>
+      <div class="statistics-table"><p>{{ t('adminStatistics.caption', { grouping: t(`adminStatistics.${statistics.bucket}`) }) }}</p><UTable class="admin-table" :data="tableData" :columns="tableColumns" /></div>
+      <UTable v-if="statistics.distribution.length" class="admin-table" :data="statistics.distribution" :columns="[{ accessorKey: 'label', header: t('adminWorkspace.name') }, { accessorKey: 'count', header: t('adminStatistics.count') }]" />
     </div>
     <USkeleton v-else-if="loading" class="h-44 w-full" />
   </section>
 </template>
 
 <style scoped>
-.statistics-panel { min-width: 0; display: grid; gap: 0.8rem; margin: 0.8rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface-raised); }
+.statistics-panel { min-width: 0; display: grid; gap: 0.8rem; margin: 0; padding: 0; }
 .statistics-content, .statistics-filters, .statistics-filters > * { min-width: 0; }
 .statistics-panel__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; }
 .statistics-panel__header > div { min-width: 0; }
@@ -99,10 +92,10 @@ onMounted(() => void refresh())
 .statistics-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; align-items: end; }
 .statistics-filters > .button { width: 100%; }
 .statistics-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; margin: 0; }
-.statistics-summary div { padding: 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-control); }
+.statistics-summary div { padding: 0.6rem; border-bottom: 1px solid var(--line); }
 .statistics-summary dt { color: var(--text-faint); font-size: 0.62rem; }
 .statistics-summary dd { margin: 0.2rem 0 0; font-size: 0.8rem; font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.statistics-chart { height: 150px; display: flex; min-width: 0; align-items: end; gap: 3px; overflow: hidden; padding: 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-control); }
+.statistics-chart { height: 150px; display: flex; min-width: 0; align-items: end; gap: 3px; overflow: hidden; padding: 0.6rem; border-bottom: 1px solid var(--line); }
 .statistics-chart__bar { min-width: 4px; flex: 1; border-radius: 3px 3px 0 0; background: var(--accent); opacity: 0.78; }
 .statistics-table { min-width: 0; overflow-x: auto; }
 .statistics-table :deep(table) { min-width: 600px; }

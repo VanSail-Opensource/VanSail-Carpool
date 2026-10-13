@@ -18,16 +18,12 @@ const { t } = useI18n()
     <InlineNotice v-if="snapshot.stale" tone="warning">{{ t('hostConnectivity.stale') }}</InlineNotice>
     <InlineNotice v-if="snapshot.errorCode" tone="warning">{{ connectivityError(snapshot.errorCode) }}</InlineNotice>
     <InlineNotice v-else-if="snapshot.run?.errorCode" tone="warning">{{ connectivityError(snapshot.run.errorCode) }}</InlineNotice>
-    <p v-if="!snapshot.hosts.length && !snapshot.errorCode" class="connectivity-results__empty">{{ t('hostConnectivity.noHosts') }}</p>
-    <ul v-if="snapshot.hosts.length" class="connectivity-results__list">
-      <li v-for="host in snapshot.hosts" :key="host.hostUuid" class="connectivity-results__row">
-        <div class="connectivity-results__identity">
-          <strong>{{ host.remark || host.address || host.hostUuid }}</strong>
-          <small v-if="host.address && host.port > 0">{{ t('hostConnectivity.endpoint', { address: host.address, port: host.port }) }}</small>
-        </div>
-        <ConnectivityAttemptSummary :attempt="host.latest" />
-      </li>
-    </ul>
+    <UTable v-if="snapshot.hosts.length || !snapshot.errorCode" class="admin-table" :data="snapshot.hosts" :columns="[{ id: 'host', header: t('adminWorkspace.name') }, { id: 'endpoint', header: t('adminWorkspace.identity') }, { id: 'result', header: t('adminWorkspace.results') }]">
+      <template #host-cell="{ row }"><strong>{{ row.original.remark || row.original.address || row.original.hostUuid }}</strong></template>
+      <template #endpoint-cell="{ row }"><code v-if="row.original.address && row.original.port > 0">{{ t('hostConnectivity.endpoint', { address: row.original.address, port: row.original.port }) }}</code></template>
+      <template #result-cell="{ row }"><ConnectivityAttemptSummary :attempt="row.original.latest" /></template>
+      <template #empty>{{ t('hostConnectivity.noHosts') }}</template>
+    </UTable>
   </section>
 </template>
 

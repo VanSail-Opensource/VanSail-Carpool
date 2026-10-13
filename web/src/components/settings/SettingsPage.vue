@@ -5,6 +5,7 @@ import LanguageControl from '@/components/layout/LanguageControl.vue'
 import CurrencyControl from '@/components/layout/CurrencyControl.vue'
 import TrafficResetAutomationControl from '@/components/dashboard/TrafficResetAutomationControl.vue'
 import { usePreferencesStore } from '@/stores/preferences'
+import { useSessionStore } from '@/stores/session'
 import NotificationSettings from './NotificationSettings.vue'
 import SettingsSwitchRow from './SettingsSwitchRow.vue'
 import GroupMemberTagEditor from './GroupMemberTagEditor.vue'
@@ -12,6 +13,7 @@ import SettingsComboControls from './SettingsComboControls.vue'
 import { useSettings } from './useSettings'
 
 const preferences = usePreferencesStore()
+const session = useSessionStore()
 const settings = useSettings()
 onMounted(() => void preferences.refresh())
 </script>
@@ -19,6 +21,7 @@ onMounted(() => void preferences.refresh())
 <template>
   <div class="settings-page">
     <header class="page-header"><h1>{{ $t('settings.title') }}</h1></header>
+    <UButton v-if="session.isAdmin" to="/settings/admin-access" color="neutral" variant="outline" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" />
     <InlineNotice v-if="preferences.error" tone="warning">{{ preferences.error }}<UButton variant="link" :label="$t('common.tryAgain')" @click="preferences.refresh()" /></InlineNotice>
     <USkeleton v-if="preferences.loading && !preferences.value" class="h-48" />
     <NotificationSettings />

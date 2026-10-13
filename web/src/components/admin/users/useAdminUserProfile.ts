@@ -6,7 +6,6 @@ import { adminOperationsApi, type AdminCatalogOptions, type AdminUserDetail } fr
 import { ApiError } from '@/api/http'
 import { localizedError } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
-import { notifyHaptic } from '@/utils/telegram'
 
 export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   const detail = shallowRef<AdminUserDetail | null>(null)
@@ -61,13 +60,11 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
       await task(key)
       keys.delete(action)
       await load()
-      notifyHaptic('success')
       return true
     } catch (caught) {
       if (caught instanceof ApiError) keys.delete(action)
       conflict.value = caught instanceof ApiError && caught.status === 409
       actionError.value = localizedError(caught, conflict.value ? 'adminUserProfile.conflict' : 'adminUserProfile.actionFailed')
-      notifyHaptic('error')
       return false
     } finally {
       busyAction.value = null

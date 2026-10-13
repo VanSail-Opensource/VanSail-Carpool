@@ -42,8 +42,8 @@ describe('protected route decisions', () => {
     expect(resolveProtectedRoute(route('/admin/users'), user())).toBe('/home')
   })
 
-  it('sends a first-launch admin to settings instead of onboarding', () => {
-    expect(resolveProtectedRoute(route('/'), user({ role: 'admin', onboardingState: 'intro' }))).toBe('/admin/settings')
+  it('sends a first-launch admin to the OAuth/access exception', () => {
+    expect(resolveProtectedRoute(route('/'), user({ role: 'admin', onboardingState: 'intro' }))).toBe('/settings/admin-access')
   })
 
   it('lets an un-onboarded admin start optional signup from the dashboard', () => {
@@ -51,11 +51,18 @@ describe('protected route decisions', () => {
   })
 
   it('keeps an un-onboarded admin out of product routes', () => {
-    expect(resolveProtectedRoute(route('/catalog'), user({ role: 'admin', onboardingState: 'agreement' }))).toBe('/admin/settings')
+    expect(resolveProtectedRoute(route('/catalog'), user({ role: 'admin', onboardingState: 'agreement' }))).toBe('/settings/admin-access')
   })
 
-  it('lets an admin use every admin section before onboarding completes', () => {
-    expect(resolveProtectedRoute(route('/admin/settings'), user({ role: 'admin', onboardingState: 'username' }))).toBeNull()
+  it.each(['/admin/settings', '/admin/users', '/admin/users/user-1', '/admin/database'])('bridges legacy Mini App admin route %s to browser access', (path) => {
+    expect(resolveProtectedRoute(route(path), user({ role: 'admin', onboardingState: 'username' }))).toBe('/settings/admin-access')
+    expect(resolveProtectedRoute(route(path), user({ role: 'admin', onboardingState: 'complete' }))).toBe('/settings/admin-access')
+  })
+
+  it('permits only the access exception before administrator onboarding', () => {
+    expect(resolveProtectedRoute(route('/settings/admin-access'), user({ role: 'admin', onboardingState: 'intro' }))).toBeNull()
+    expect(resolveProtectedRoute(route('/settings/admin-access'), user())).toBe('/home')
+    expect(resolveProtectedRoute(route('/settings/admin-access'), user({ onboardingState: 'intro' }))).toBe('/home')
   })
 
   it('lets a completed admin use user-side routes', () => {

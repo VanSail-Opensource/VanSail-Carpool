@@ -36,4 +36,5 @@ function clearChanged(id: string, value: boolean | 'indeterminate'): void {
 .lookup-providers h2 { font-size: 1rem; margin: 0; }
 .lookup-providers p { color: var(--text-muted); font-size: 0.82rem; margin: 0; }
 .provider-settings { display: grid; gap: 0.7rem; padding-block: 1rem; border-top: 1px solid var(--line); }
+@media (min-width: 1100px) { .provider-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; column-gap: 1.5rem; }.provider-settings :deep(input) { width: 100%; } }
 </style>

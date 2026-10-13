@@ -1,5 +1,8 @@
 # Utilities
 
+- `experience.ts` selects browser or Mini App behavior without loading the Telegram SDK.
+- `feedback.ts` delegates member haptics installed by Mini App bootstrap and stays inactive in the browser console.
+
 - `browserClipboard.ts` isolates the clipboard API and selection fallback; `browserCompatibility.ts` re-exports `copyText` for existing callers while keeping browser capability checks focused.
 
 - `format.ts` formats authoritative money, dates, bytes, and TXB input; CNY/USD use `￥`/`$` prefixes. `displayCurrency.ts` converts member-facing TXB displays with `BigInt` fixed-point arithmetic only, falls back from a zero USD conversion to CNY and then to TXB, and supplies primary/approximate catalog price lines.

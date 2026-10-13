@@ -1,0 +1,35 @@
+{
+  "post": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "logoutBrowserSession",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      }
+    ],
+    "description": "Same-origin signed logout revokes only the current browser device.",
+    "responses": {
+      "200": {
+        "description": "Same-origin signed logout revokes only the current browser device.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/BrowserAnonymousState"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  }
+}

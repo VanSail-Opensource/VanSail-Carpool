@@ -1,10 +1,15 @@
 # Admin components
 
-Administrative collections use restrained local Motion presence/layout only for
-row insertion, removal, filtering, and state handoffs. Admin panels do not use
-generic page entrances, card cascades, or springy table transitions.
+Administrative views render exclusively inside the independent browser console.
+The console owns navigation, identity, appearance, and the desktop workspace.
+Feature panels use Nuxt UI tables, focused side editors, tabs, and compact
+toolbars; contained table scrolling supports smaller browsers.
 
 Localized route-level panels and shared admin-only Nuxt UI.
+
+`workspace.css` owns reusable table, editor, section, and profile geometry. It is
+imported by the browser stylesheet and does not depend on Mini App styles or
+Telegram viewport/safe-area tokens.
 
 Page loaders restore session response snapshots before refreshing. Editable settings,
 payment profiles, activity configuration, and onboarding/affiliate drafts preserve
@@ -13,7 +18,9 @@ edits made while refreshed data is pending. See `../../api/cache/README.md`.
 Admin section labels are locale-owned, use Nuxt UI controls, and avoid visual separator literals in component code.
 `AdminSectionState.vue` uses Vue's native sequential fade for loading, errors and
 content, avoiding external presence bookkeeping during immediate reloads.
-Admin controls inherit guarded action feedback, modal dismissal stays soft, audited confirmation uses rigid feedback, and destructive entry or confirmation uses heavy feedback.
+Administrative controls use browser feedback and native overlay focus management.
+Errors remain visible inside the overlay that initiated a failed mutation, and
+forms preserve their drafts so an administrator can correct or retry the action.
 
 - `AdminActivityPanel.vue` manages games and lucky draws; calendar and reward settings are in `AdminSettingsPanel.vue`.
 - `AdminAuditPanel.vue` filters the audit trail.
@@ -22,26 +29,23 @@ Admin controls inherit guarded action feedback, modal dismissal stays soft, audi
 - `AdminBillingAmountLimits.vue` loads the global inclusive Add TXB range and atomically saves exact minor-unit bounds.
 - `AdminCatalogEditor.vue` edits combo terms.
 - `AdminCatalogPanel.vue` manages combos and squads.
-- `AdminCompensationPanel.vue` composes the revisioned outage policy and recipient-safe event review flow, with a left-aligned localized heading and a shrinkable single-column grid for narrow phones.
-- `AdminAbusePanel.vue` lazy-loads the premium-dark detector policy, node-key, rule, statistics, and record surfaces. Typed script handlers own API mutations so template callbacks do not depend on compiler-specific imported-value unwrapping.
-- `abuse/` contains focused detector administration cards.
+- `AdminCompensationPanel.vue` composes the revisioned outage policy and recipient-safe event review flow, with configuration and event tabs, frozen-recipient event tables, and focused review dialogs.
+- `AdminAbusePanel.vue` composes policy, escalation, rules, node statistics, and record workspaces. Typed script handlers own API mutations so template callbacks do not depend on compiler-specific imported-value unwrapping.
+- `abuse/` contains typed detector tables and focused policy/rule/escalation editors.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
 - `AdminEmbyPanel.vue` monitors Emby provisioning.
 - `AdminEntitlementsPanel.vue` manages entitlements.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
-- `onboarding/` contains visual bilingual welcome and agreement card editors.
+- `onboarding/` contains bilingual content indexes with focused editors and text previews.
 - `AdminPaymentProfiles.vue` lists and edits masked provider accounts, keeps BEPUSDT channels discovery-owned, deletes profiles through a protected confirmation, and contributes remaining drafts to the parent settings save.
 - `AdminQuestionnairesPanel.vue` manages questionnaire lifecycles.
 - `AdminReasonDialog.vue` collects audited reasons and keeps action failures visible in the dialog.
-- `AdminSectionNavigation.vue` remains the grouped section-control building block; `AdminShell.vue` keeps only the mobile selector because the desktop sidebar owns administrator section navigation.
 - `AdminSectionState.vue` renders loading and error states.
-- `AdminSettingsPanel.vue` composes runtime settings, global payment bounds, specialized calendar/reward controls, and one coordinated Save action; payment interventions stay scoped to individual user histories.
-- `AdminShell.vue` provides the mobile admin section selector and sends optional signup through Vue Router without native anchor navigation.
-- `AdminShell.test.ts` covers shell navigation and onboarding actions.
+- `AdminSettingsPanel.vue` composes runtime, payment, activity, and OAuth access tabs while preserving one coordinated Save action for runtime/payment/activity drafts; payment interventions stay scoped to individual user histories.
 - `AdminSquadEditor.vue` edits sparse squad overrides; node access remains a live Remnawave projection.
 - `admin/squad-profile/` contains the typed Broadband, China Optimized, and International Network profile editor modules.
-- `AdminStatisticsPanel.vue` presents resource statistics with narrow-screen overflow protection.
+- `AdminStatisticsPanel.vue` presents resource statistics with contained table scrolling and exact server-calculated figures.
 - `AdminUsersPanel.vue` searches users with responsive state/combo/squad facets and adjusts balances.
 - `users/` contains the aggregate profile, wallet, provider-account, entitlement workflow, operation-resolution, and bulk-extension modules.
 - `compensation/` contains focused configuration, event-card, review-modal, and display-format modules.
@@ -53,4 +57,4 @@ admin endpoint for both credits and deductions.
 `AdminSquadEditor.vue` edits the default-on per-squad Geocheck switch alongside existing merchandising fields.
 - `AdminSectionState.vue` is the shared loading/error/content presence boundary. Panel roots stay still; focused child workflows own their local Motion state.
 
-`connectivity/` composes exact-account configuration, progress, latest results and 24-hour cursor history. Its exposed save/loading state joins `AdminSettingsPanel.vue`; the raw `connectivity.config` registry entry is excluded from generic settings fields and writes.
+`connectivity/` composes exact-account configuration, progress, latest results and 24-hour cursor history. Its exact-account configuration and run/history workflow remain independent; the raw `connectivity.config` registry entry is excluded from generic settings fields and writes.

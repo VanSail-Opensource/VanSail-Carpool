@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { restoreRef } from '@/api/cache/restore'
 import { computed, onMounted, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
 
 import { featuresApi, type OnboardingBundle, type OnboardingLocalizedContent } from '@/api/features'
 import InlineNotice from '@/components/common/InlineNotice.vue'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { localizedError, useI18n } from '@/i18n'
 import OnboardingAgreementEditor from './onboarding/OnboardingAgreementEditor.vue'
 import OnboardingWelcomeEditor from './onboarding/OnboardingWelcomeEditor.vue'
@@ -24,7 +22,6 @@ const kindItems = computed(() => [
   { value: 'welcome', label: t('adminOnboarding.welcome') },
   { value: 'agreements', label: t('adminOnboarding.agreements') },
 ])
-const { reducedMotion } = useMotionPreferences()
 
 function syncDraft(next: OnboardingBundle): void {
   draft.value = next.draft
@@ -86,39 +83,15 @@ onMounted(() => void load())
 
 <template>
   <section class="admin-panel onboarding-editor">
-    <div class="admin-panel__heading">
-      <div><h2>{{ t('adminOnboarding.title') }}</h2><p>{{ t('adminOnboarding.copy') }}</p></div>
-      <UFormField :label="t('adminOnboarding.bundle')"><USelect :model-value="kind" :items="kindItems" value-key="value" @update:model-value="load($event as BundleKind)" /></UFormField>
-    </div>
+    <div class="admin-panel__heading"><div><h2>{{ t('adminOnboarding.title') }}</h2><p>{{ t('adminOnboarding.copy') }}</p></div><div class="row-actions"><UButton color="neutral" variant="outline" icon="i-ph-floppy-disk" :disabled="Boolean(busy) || loading" :loading="busy === 'save'" :label="t('adminOnboarding.saveDraft')" @click="save" /><UButton icon="i-ph-cloud-arrow-up" :disabled="Boolean(busy) || loading" :loading="busy === 'publish'" :label="t('adminOnboarding.publish')" @click="publish" /></div></div>
+    <UTabs :model-value="kind" :items="kindItems" variant="link" :content="false" class="admin-workspace-tabs" @update:model-value="load($event as BundleKind)" />
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <InlineNotice v-if="message" tone="success">{{ message }}</InlineNotice>
-    <USkeleton v-if="loading" class="m-4 h-40" />
-    <AnimatePresence mode="wait" :initial="false">
-      <motion.div
-        v-if="!loading && bundle && draft"
-        :key="kind"
-        class="onboarding-editor__content"
-        layout
-        :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 5 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :exit="{ opacity: 0 }"
-        :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"
-      >
-        <div class="revision-strip" role="status"><UBadge color="neutral" variant="soft" :label="t('adminOnboarding.draftRevision', { revision: bundle.draftRevision })" /><UBadge color="neutral" variant="soft" :label="t('adminOnboarding.publishedRevision', { revision: bundle.publishedRevision })" /></div>
-        <p class="field-hint">{{ kind === 'welcome' ? t('adminOnboarding.welcomeHint') : t('adminOnboarding.agreementHint') }}</p>
-        <OnboardingWelcomeEditor v-if="kind === 'welcome'" :content="draft" @update:content="draft = $event" />
-        <OnboardingAgreementEditor v-else :content="draft" @update:content="draft = $event" />
-        <div class="button-row">
-          <UButton color="neutral" variant="outline" icon="i-ph-floppy-disk" :disabled="Boolean(busy)" :loading="busy === 'save'" :label="busy === 'save' ? t('common.saving') : t('adminOnboarding.saveDraft')" @click="save" />
-          <UButton icon="i-ph-cloud-arrow-up" :disabled="Boolean(busy)" :loading="busy === 'publish'" :label="busy === 'publish' ? t('adminOnboarding.publishing') : t('adminOnboarding.publish')" @click="publish" />
-        </div>
-      </motion.div>
-    </AnimatePresence>
+    <USkeleton v-if="loading" class="h-40" />
+    <template v-else-if="bundle && draft">
+      <div class="admin-toolbar"><span>{{ kind === 'welcome' ? t('adminOnboarding.welcomeHint') : t('adminOnboarding.agreementHint') }}</span><div class="row-actions"><UBadge color="neutral" variant="subtle" :label="t('adminOnboarding.draftRevision', { revision: bundle.draftRevision })" /><UBadge color="neutral" variant="subtle" :label="t('adminOnboarding.publishedRevision', { revision: bundle.publishedRevision })" /></div></div>
+      <OnboardingWelcomeEditor v-if="kind === 'welcome'" :content="draft" @update:content="draft = $event" />
+      <OnboardingAgreementEditor v-else :content="draft" @update:content="draft = $event" />
+    </template>
   </section>
 </template>
-
-<style scoped>
-.onboarding-editor, .onboarding-editor__content { display: grid; gap: 0.9rem; }
-.revision-strip { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0 1rem; }
-.onboarding-editor__content > .field-hint, .onboarding-editor__content > .button-row { margin-inline: 1rem; }
-</style>

@@ -2,14 +2,11 @@
 import { restoreItems } from '@/api/cache/restore'
 import { mergeRefreshedDraft } from '@/api/cache/drafts'
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
 
 import { api, type AdminPaymentProfile } from '@/api/client'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SwitchField from '@/components/common/SwitchField.vue'
-import { motionSpring } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { localizedError, useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -25,7 +22,9 @@ const providerItems = computed(() => (['ezpay', 'bepusdt'] as const).map((provid
   label: t(`payment.providers.${provider}`),
   value: provider,
 })))
-const { reducedMotion } = useMotionPreferences()
+const selectedId = shallowRef('')
+const selected = computed(() => profiles.value.find(profile => profile.id === selectedId.value))
+const columns = computed(() => [{ id: 'name', header: t('adminPaymentProfiles.providerName') }, { id: 'provider', header: t('adminPaymentProfiles.provider') }, { id: 'endpoint', header: t('adminPaymentProfiles.endpoint') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }])
 
 function channelItems(): { label: string; value: string }[] {
   return channelIds.map((channel) => ({
@@ -53,6 +52,7 @@ function addProfile(): void {
   const draft = emptyProfile()
   drafts[draft.id] = draft
   profiles.value = [...profiles.value, draft]
+  selectedId.value = draft.id
 }
 
 function providerChanged(profile: AdminPaymentProfile): void {
@@ -84,6 +84,7 @@ async function save(profile: AdminPaymentProfile): Promise<void> {
     const response = profile.id.startsWith('draft-')
       ? await api.createAdminPaymentProfile(draft)
       : await api.updateAdminPaymentProfile(profile.id, draft)
+    if (selectedId.value === profile.id) selectedId.value = response.id
     delete drafts[profile.id]
     drafts[response.id] = { ...response, enabledChannels: [...response.enabledChannels] }
     profiles.value = profiles.value.map((item) => item.id === profile.id ? response : item)
@@ -101,6 +102,7 @@ async function removeProfile(): Promise<void> {
     if (!profile.id.startsWith('draft-')) await api.deleteAdminPaymentProfile(profile.id)
     profiles.value = profiles.value.filter((item) => item.id !== profile.id)
     delete drafts[profile.id]
+    if (selectedId.value === profile.id) selectedId.value = ''
     deleting.value = null
     success.value = t('adminPaymentProfiles.deleted')
   } catch (caught) { error.value = localizedError(caught, 'errors.adminAction') } finally { busy.value = null }
@@ -119,47 +121,34 @@ onMounted(() => void load())
   <section class="payment-profiles">
     <div class="admin-panel__heading">
       <div><h2>{{ t('adminPaymentProfiles.title') }}</h2><p>{{ t('adminPaymentProfiles.copy') }}</p></div>
-      <UButton icon="i-ph-plus" :label="t('adminPaymentProfiles.add')" data-haptic="action" @click="addProfile" />
+      <UButton icon="i-ph-plus" :label="t('adminPaymentProfiles.add')" @click="addProfile" />
     </div>
     <InlineNotice v-if="success" tone="success">{{ success }}</InlineNotice>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <div v-if="loading" class="payment-profiles__loading"><USkeleton v-for="index in 2" :key="index" class="h-32" /></div>
-    <div v-else class="payment-profiles__grid">
-      <AnimatePresence :initial="false" mode="popLayout">
-        <motion.article
-          v-for="profile in profiles"
-          :key="profile.id"
-          class="payment-profile"
-          layout
-          :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 5 }"
-          :animate="{ opacity: 1, y: 0 }"
-          :exit="{ opacity: 0, y: reducedMotion ? 0 : -4 }"
-          :transition="reducedMotion ? { duration: 0.08 } : motionSpring"
-        >
-          <div class="payment-profile__header">
-            <div>
-              <span class="eyebrow">{{ t(`payment.providers.${drafts[profile.id].provider}`) }}</span>
-              <h3>{{ drafts[profile.id].providerName || t('adminPaymentProfiles.unnamed') }}</h3>
-            </div>
-            <div class="payment-profile__actions">
-              <SwitchField :id="`payment-profile-${profile.id}`" v-model="drafts[profile.id].enabled" :label="t('common.enabled')" />
-              <UTooltip :text="t('adminPaymentProfiles.delete')">
-                <UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminPaymentProfiles.delete')" :disabled="busy === profile.id" data-haptic="destructive" @click="deleting = profile" />
-              </UTooltip>
-            </div>
-          </div>
-          <motion.div v-if="profile.id.startsWith('draft-')" layout :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField :label="t('adminPaymentProfiles.provider')"><USelect v-model="drafts[profile.id].provider" :items="providerItems" @update:model-value="providerChanged(profile)" /></UFormField></motion.div>
-          <UFormField :label="t('adminPaymentProfiles.providerName')"><UInput v-model="drafts[profile.id].providerName" /></UFormField>
-          <motion.div v-if="drafts[profile.id].provider === 'ezpay'" layout :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField :label="t('adminPaymentProfiles.channels')" :description="t('adminPaymentProfiles.channelHint')"><UCheckboxGroup v-model="drafts[profile.id].enabledChannels" :items="channelItems()" orientation="vertical" variant="card" /></UFormField></motion.div>
-          <UAlert v-if="drafts[profile.id].provider === 'ezpay' && !drafts[profile.id].enabledChannels.length" color="warning" variant="soft" :description="t('adminPaymentProfiles.noChannels')" />
-          <UAlert v-else-if="drafts[profile.id].provider === 'bepusdt'" color="neutral" variant="soft" icon="i-ph-arrows-clockwise" :description="t('adminPaymentProfiles.discoveryHint')" />
-          <UFormField :label="t('adminPaymentProfiles.endpoint')"><UInput v-model="drafts[profile.id].endpoint" type="url" /></UFormField>
-          <motion.div v-if="drafts[profile.id].provider === 'ezpay'" layout :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField :label="t('adminPaymentProfiles.merchantId')"><UInput v-model="drafts[profile.id].merchantId" /></UFormField></motion.div>
-          <UFormField :label="t('adminPaymentProfiles.credential')"><UInput v-model="drafts[profile.id].credential" type="password" :placeholder="profile.configured ? t('adminPaymentProfiles.keepCredential') : ''" autocomplete="new-password" /></UFormField>
-          <UFormField :label="t('adminPaymentProfiles.acknowledgement')"><UInput v-model="drafts[profile.id].acknowledgement" /></UFormField>
-        </motion.article>
-      </AnimatePresence>
-    </div>
+    <UTable class="admin-table" :data="profiles" :columns="columns" :loading="loading">
+      <template #name-cell="{ row }">{{ drafts[row.original.id]?.providerName || t('adminPaymentProfiles.unnamed') }}</template>
+      <template #provider-cell="{ row }">{{ t(`payment.providers.${drafts[row.original.id]?.provider}`) }}</template>
+      <template #endpoint-cell="{ row }"><code>{{ drafts[row.original.id]?.endpoint }}</code></template>
+      <template #status-cell="{ row }"><UBadge :color="drafts[row.original.id]?.enabled ? 'success' : 'neutral'" variant="subtle" :label="t(drafts[row.original.id]?.enabled ? 'common.enabled' : 'common.disabled')" /></template>
+      <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminWorkspace.details')" @click="selectedId = row.original.id" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminPaymentProfiles.delete')" :disabled="busy === row.original.id" @click="deleting = row.original" /></div></template>
+    </UTable>
+    <USlideover :open="!!selected" :title="selected ? drafts[selected.id]?.providerName || t('adminPaymentProfiles.unnamed') : t('adminPaymentProfiles.title')" :description="t('adminPaymentProfiles.copy')" :dismissible="!busy" @update:open="!$event && (selectedId = '')">
+      <template #body>
+        <div v-if="selected && drafts[selected.id]" class="admin-editor-form">
+          <SwitchField :id="`payment-profile-${selected.id}`" v-model="drafts[selected.id].enabled" :label="t('common.enabled')" />
+          <div v-if="selected.id.startsWith('draft-')"><UFormField :label="t('adminPaymentProfiles.provider')"><USelect v-model="drafts[selected.id].provider" :items="providerItems" @update:model-value="providerChanged(selected)" /></UFormField></div>
+          <UFormField :label="t('adminPaymentProfiles.providerName')"><UInput v-model="drafts[selected.id].providerName" /></UFormField>
+          <div v-if="drafts[selected.id].provider === 'ezpay'"><UFormField :label="t('adminPaymentProfiles.channels')" :description="t('adminPaymentProfiles.channelHint')"><UCheckboxGroup v-model="drafts[selected.id].enabledChannels" :items="channelItems()" orientation="vertical" variant="list" /></UFormField></div>
+          <UAlert v-if="drafts[selected.id].provider === 'ezpay' && !drafts[selected.id].enabledChannels.length" color="warning" variant="soft" :description="t('adminPaymentProfiles.noChannels')" />
+          <UAlert v-else-if="drafts[selected.id].provider === 'bepusdt'" color="neutral" variant="soft" icon="i-ph-arrows-clockwise" :description="t('adminPaymentProfiles.discoveryHint')" />
+          <UFormField :label="t('adminPaymentProfiles.endpoint')"><UInput v-model="drafts[selected.id].endpoint" type="url" /></UFormField>
+          <div v-if="drafts[selected.id].provider === 'ezpay'"><UFormField :label="t('adminPaymentProfiles.merchantId')"><UInput v-model="drafts[selected.id].merchantId" /></UFormField></div>
+          <UFormField :label="t('adminPaymentProfiles.credential')"><UInput v-model="drafts[selected.id].credential" type="password" :placeholder="selected.configured ? t('adminPaymentProfiles.keepCredential') : ''" autocomplete="new-password" /></UFormField>
+          <UFormField :label="t('adminPaymentProfiles.acknowledgement')"><UInput v-model="drafts[selected.id].acknowledgement" /></UFormField>
+        </div>
+        <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+      </template><template #footer><UButton color="neutral" variant="outline" :label="t('common.close')" @click="selectedId = ''" /><UButton v-if="selected" icon="i-ph-floppy-disk" :loading="busy === selected.id" :label="t('common.save')" @click="save(selected)" /></template>
+    </USlideover>
     <ConfirmDialog
       :open="Boolean(deleting)"
       :title="t('adminPaymentProfiles.deleteTitle', { name: deleting?.providerName || t('adminPaymentProfiles.unnamed') })"
@@ -173,12 +162,4 @@ onMounted(() => void load())
   </section>
 </template>
 
-<style scoped>
-.payment-profiles, .payment-profiles__grid { display: grid; gap: 0.8rem; }
-.payment-profiles__grid { grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
-.payment-profile { display: grid; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface-raised); }
-.payment-profile__header { display: flex; align-items: start; justify-content: space-between; gap: 0.7rem; }
-.payment-profile__actions { display: flex; align-items: center; gap: 0.35rem; }
-.payment-profile h3, .payment-profile p { margin: 0; }
-.payment-profile h3 { font-size: 1rem; }
-</style>
+<style scoped>.payment-profiles { display: grid; gap: 1rem; }</style>

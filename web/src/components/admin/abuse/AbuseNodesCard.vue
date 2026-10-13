@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AbuseNode } from '@/api/abuse'
-import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
 
@@ -23,22 +22,16 @@ const statistics = computed(() => ['average', 'minimum', 'maximum'].map(name => 
         <strong>{{ item.value }}</strong>
       </span>
     </div>
-    <InlineNotice v-if="!nodes.length" tone="info">{{ t('adminAbuse.emptyNodes') }}</InlineNotice>
-    <article v-for="node in nodes" :key="node.uuid" class="node">
-      <div>
-        <strong>{{ node.name }}</strong>
-        <small>{{ node.lastReportAt ? formatDateTime(node.lastReportAt) : t('adminAbuse.neverReported') }}</small>
-      </div>
-      <div class="node-actions">
-        <UButton color="neutral" variant="ghost" icon="i-ph-copy" :aria-label="t('adminAbuse.copyKey')" data-haptic="copy" @click="emit('copy', node.uuid)" />
-        <UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :loading="busy" :aria-label="t('adminAbuse.rotateKey')" data-haptic="confirm" @click="emit('rotate', node.uuid)" />
-      </div>
-    </article>
+    <UTable class="admin-table" :data="nodes" :columns="[{ accessorKey: 'name', header: t('adminWorkspace.name') }, { accessorKey: 'uuid', header: t('adminWorkspace.identity') }, { id: 'reported', header: t('adminWorkspace.updated') }, { id: 'actions', header: t('adminWorkspace.actions') }]">
+      <template #reported-cell="{ row }">{{ row.original.lastReportAt ? formatDateTime(row.original.lastReportAt) : t('adminAbuse.neverReported') }}</template>
+      <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-copy" :aria-label="t('adminAbuse.copyKey')" :disabled="busy" @click="emit('copy', row.original.uuid)" /><UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :loading="busy" :aria-label="t('adminAbuse.rotateKey')" @click="emit('rotate', row.original.uuid)" /></div></template>
+      <template #empty>{{ t('adminAbuse.emptyNodes') }}</template>
+    </UTable>
   </section>
 </template>
 
 <style scoped>
-.card { display: grid; gap: 0.85rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface-raised); }
+.card { display: grid; gap: 0.85rem; padding: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
 .stats span { display: grid; gap: 0.15rem; }
 .node { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid var(--line); }

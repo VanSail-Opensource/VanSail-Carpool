@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [IP Lookup]
   operationId: getAdminIPLookupProxySources
   responses:

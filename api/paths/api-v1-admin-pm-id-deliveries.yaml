@@ -1,6 +1,7 @@
 parameters:
   - { name: id, in: path, required: true, schema: { $ref: '../openapi.yaml#/components/schemas/ID' } }
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Administration]
   operationId: listAdminPMDeliveries
   summary: Inspect bounded delivery receipts and Telegram references without message bodies

@@ -2,7 +2,6 @@ import { onMounted, onScopeDispose, shallowRef } from 'vue'
 import { usdtApi, type USDTConfig, type USDTNetworkID, type USDTReviewPage, type USDTStatus } from '@/api/usdt'
 import { localizedError, t } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { notifyHaptic } from '@/utils/telegram'
 
 export function useUSDTAdmin() {
   const draft = shallowRef<USDTConfig | null>(null)
@@ -47,7 +46,7 @@ export function useUSDTAdmin() {
     busy.value = true; error.value = null; saved.value = false
     try {
       const value = await usdtApi.save(draft.value)
-      if (active) { draft.value = value; saved.value = true; await refresh(); notifyHaptic('success') }
+      if (active) { draft.value = value; saved.value = true; await refresh(); }
     } catch (caught) { if (active) error.value = localizedError(caught, 'errors.adminAction') }
     finally { if (active) busy.value = false }
   }
@@ -67,7 +66,7 @@ export function useUSDTAdmin() {
   async function resolve(id: string, orderId: string, reason: string): Promise<void> {
     if (resolving.value) return
     resolving.value = id; error.value = null
-    try { await usdtApi.resolve(id, orderId, reason); if (active) { await loadReview(); notifyHaptic('success') } }
+    try { await usdtApi.resolve(id, orderId, reason); if (active) { await loadReview(); } }
     catch (caught) { if (active) error.value = localizedError(caught, 'errors.adminAction') }
     finally { if (active) resolving.value = null }
   }

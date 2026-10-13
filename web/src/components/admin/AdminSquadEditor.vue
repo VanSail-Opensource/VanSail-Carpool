@@ -4,6 +4,7 @@ import { motion } from 'motion-v'
 
 import type { SquadProduct, SquadProductWrite, SquadProfileWrite } from '@/api/types'
 import MarkdownEditorField from '@/components/common/MarkdownEditorField.vue'
+import InlineNotice from '@/components/common/InlineNotice.vue'
 import SwitchField from '@/components/common/SwitchField.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
@@ -15,6 +16,7 @@ import { editableProfile } from './squad-profile/profileForm'
 const props = defineProps<{
   squad: SquadProduct
   busy: boolean
+  error?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -74,24 +76,22 @@ function submit(): void {
 </script>
 
 <template>
-  <UForm :state="draft" class="catalog-editor squad-editor" @submit="submit">
-    <div class="catalog-editor__heading">
-      <div>
-        <h3>{{ t('adminSquad.edit', { name: squad.name }) }}</h3>
-        <p>{{ t('adminSquad.identityHint') }}</p>
-      </div>
-      <UButton color="neutral" variant="ghost" square icon="i-ph-x" :aria-label="t('adminSquad.close')" @click="emit('cancel')" />
-    </div>
-    <AdminSquadProfileEditor v-model:profile="draft.profile" :description="draft.description" :show-validation="profileAttempted" />
-    <MarkdownEditorField v-model="draft.description" class="catalog-editor__wide" :label="t('adminSquad.description')" :placeholder="t('adminSquad.descriptionPlaceholder')" :maxlength="1000" />
-    <TxbAmountField id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />
-    <UFormField name="squad-stock-limit" :label="t('adminSquad.stockLimit')" :hint="t('adminSquad.stockLimitHint')"><UInput v-model="draft.stockLimit" type="number" min="0" step="1" inputmode="numeric" :placeholder="t('adminSquad.stockUnlimited')" /></UFormField>
-    <SwitchField id="squad-visible" v-model="draft.visible" :label="t('adminSquad.visible')" :help="t('adminSquad.visibleHint')" />
-    <SwitchField id="squad-geocheck" v-model="draft.geocheckEnabled" :label="t('adminSquad.geocheckEnabled')" :help="t('adminSquad.geocheckHint')" />
-    <SwitchField id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
-    <motion.div v-if="draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
-    <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />
-  </UForm>
+  <USlideover :open="true" :title="t('adminSquad.edit', { name: squad.name })" :description="t('adminSquad.identityHint')" :dismissible="!busy" @update:open="!$event && emit('cancel')">
+    <template #body>
+      <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+      <UForm :state="draft" class="admin-editor-form" @submit="submit">
+        <AdminSquadProfileEditor v-model:profile="draft.profile" :description="draft.description" :show-validation="profileAttempted" />
+        <MarkdownEditorField v-model="draft.description" class="catalog-editor__wide" :label="t('adminSquad.description')" :placeholder="t('adminSquad.descriptionPlaceholder')" :maxlength="1000" />
+        <TxbAmountField id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />
+        <UFormField name="squad-stock-limit" :label="t('adminSquad.stockLimit')" :hint="t('adminSquad.stockLimitHint')"><UInput v-model="draft.stockLimit" type="number" min="0" step="1" inputmode="numeric" :placeholder="t('adminSquad.stockUnlimited')" /></UFormField>
+        <SwitchField id="squad-visible" v-model="draft.visible" :label="t('adminSquad.visible')" :help="t('adminSquad.visibleHint')" />
+        <SwitchField id="squad-geocheck" v-model="draft.geocheckEnabled" :label="t('adminSquad.geocheckEnabled')" :help="t('adminSquad.geocheckHint')" />
+        <SwitchField id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
+        <motion.div v-if="draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
+        <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />
+      </UForm>
+    </template>
+  </USlideover>
 </template>
 
 <style scoped>

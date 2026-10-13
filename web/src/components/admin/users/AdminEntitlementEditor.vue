@@ -81,7 +81,7 @@ function submit(): void {
 </script>
 
 <template>
-  <USlideover :open="open" :title="t('adminUserProfile.editorTitle')" :description="t('adminUserProfile.editorHint')" :dismissible="!busy" :close="{ 'data-haptic': 'dismiss' }" :ui="{ footer: 'justify-end' }" @update:open="emit('update:open', $event)">
+  <USlideover :open="open" :title="t('adminUserProfile.editorTitle')" :description="t('adminUserProfile.editorHint')" :dismissible="!busy" :ui="{ footer: 'justify-end' }" @update:open="emit('update:open', $event)">
     <template #body>
       <UAlert color="warning" variant="soft" icon="i-ph-warning-circle" :title="t('adminUserProfile.editorWarning')" :description="t('adminUserProfile.editorWarningHint')" />
       <motion.div layout :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">

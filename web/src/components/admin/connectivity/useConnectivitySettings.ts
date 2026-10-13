@@ -2,7 +2,6 @@ import { computed, onScopeDispose, reactive, shallowRef, watch, type ShallowRef 
 import { connectivityApi, type ConnectivitySnapshot, type ConnectivityUser, type ConnectivityConfig } from '@/api/connectivity'
 import { mergeRefreshedDraft } from '@/api/cache/drafts'
 import { t } from '@/i18n'
-import { notifyHaptic } from '@/utils/telegram'
 import { defaultConnectivityConfig, sameConnectivityConfig, validConnectivityConfig } from './config'
 import { connectivityError } from './presentation'
 
@@ -89,11 +88,10 @@ export function useConnectivitySettings(snapshot: ShallowRef<ConnectivitySnapsho
       baseline.value = value
       baselineUsername.value = submittedUsername
       saved.value = true
-      notifyHaptic('success')
       await refresh()
       return true
     } catch (caught) {
-      if (!disposed) { error.value = connectivityError(caught, 'hostConnectivity.saveFailed'); notifyHaptic('error') }
+      if (!disposed) { error.value = connectivityError(caught, 'hostConnectivity.saveFailed'); }
       return false
     } finally {
       if (!disposed) busy.value = false

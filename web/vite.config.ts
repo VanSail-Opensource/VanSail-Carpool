@@ -173,6 +173,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    entries: ['index.html', 'admin.html'],
     include: [
       '@tiptap/core', '@tiptap/vue-3', '@tiptap/markdown', '@tiptap/starter-kit',
       'prosemirror-state', 'prosemirror-view', 'prosemirror-model', 'prosemirror-transform',
@@ -182,6 +183,7 @@ export default defineConfig({
     ],
   },
   build: {
+    rolldownOptions: { input: { main: fileURLToPath(new URL('./index.html', import.meta.url)), admin: fileURLToPath(new URL('./admin.html', import.meta.url)) } },
     target: 'es2020',
     outDir: '../internal/webui/dist',
     emptyOutDir: true,

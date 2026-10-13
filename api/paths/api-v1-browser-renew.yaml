@@ -1,0 +1,38 @@
+{
+  "post": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "renewBrowserSession",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      }
+    ],
+    "description": "Same-origin signed renewal extends expiry once daily; tokens remain stable across tabs.",
+    "responses": {
+      "200": {
+        "description": "Same-origin signed renewal extends expiry once daily; tokens remain stable across tabs.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/BrowserAdminState"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
+      }
+    }
+  }
+}

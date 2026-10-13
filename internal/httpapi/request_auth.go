@@ -16,8 +16,9 @@ func (s *Server) requireSignedRequest(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		session, sessionErr := r.Cookie(sessionCookie)
-		clientKey, keyErr := r.Cookie(requestauth.ClientKeyCookie)
+		sessionName, keyName := requestCookieNames(r)
+		session, sessionErr := r.Cookie(sessionName)
+		clientKey, keyErr := r.Cookie(keyName)
 		if sessionErr != nil || keyErr != nil {
 			s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_REQUIRED", "Open TX Carpool from Telegram to refresh your secure session.")
 			return

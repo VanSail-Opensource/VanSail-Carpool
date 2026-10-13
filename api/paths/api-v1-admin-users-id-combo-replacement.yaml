@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: replaceAdminUserCombo
   summary: Replace active combo and add-ons without a TXB movement

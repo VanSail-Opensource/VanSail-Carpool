@@ -1,0 +1,38 @@
+{
+  "get": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "startBrowserTelegramLogin",
+    "security": [],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "returnTo",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "302": {
+        "description": "Redirect to Telegram OIDC with browser-bound state, nonce, and PKCE",
+        "headers": {
+          "Location": {
+            "description": "Telegram authorization URL",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "429": {
+        "$ref": "../openapi.yaml#/components/responses/TooManyRequests"
+      },
+      "503": {
+        "$ref": "../openapi.yaml#/components/responses/ServiceUnavailable"
+      }
+    }
+  }
+}

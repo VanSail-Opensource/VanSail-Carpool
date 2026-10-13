@@ -1,86 +1,62 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
-
+import { computed, shallowRef } from 'vue'
 import type { AdminUserDetail, OperationReceipt } from '@/api/adminOperations'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
-
 type Payment = AdminUserDetail['payments'][number]
-
 defineProps<{ detail: AdminUserDetail; busy: boolean }>()
-const emit = defineEmits<{
-  resolve: [operation: OperationReceipt]
-  refundPayment: [payment: Payment]
-  creditPayment: [payment: Payment]
-}>()
+const emit = defineEmits<{ resolve: [operation: OperationReceipt]; refundPayment: [payment: Payment]; creditPayment: [payment: Payment] }>()
 const { t } = useI18n()
-const { reducedMotion } = useMotionPreferences()
-
+const current = shallowRef('payments')
+const tabs = computed(() => [
+  { value: 'payments', label: t('adminUserProfile.payments') },
+  { value: 'refunds', label: t('adminUserProfile.refunds') },
+  { value: 'operations', label: t('adminUserProfile.openOperations') },
+  { value: 'emby', label: t('adminUserProfile.emby') },
+])
+const columns = computed(() => [
+  { id: 'identity', header: t('adminWorkspace.identity') },
+  { id: 'date', header: t('adminWorkspace.date') },
+  { id: 'amount', header: t('adminWorkspace.amount') },
+  { id: 'status', header: t('adminWorkspace.status') },
+  { id: 'actions', header: t('adminWorkspace.actions') },
+])
 function operationTone(status: OperationReceipt['status']): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'succeeded' || status === 'compensated') return 'success'
   if (status === 'failed') return 'danger'
   return status === 'queued' || status === 'processing' ? 'neutral' : 'warning'
 }
-
-function canIssueCourtesyCredit(payment: Payment): boolean {
-  return payment.status === 'failed' || payment.status === 'expired'
-}
 </script>
-
 <template>
-  <section class="admin-profile-section">
-    <div class="admin-profile-section__heading"><div><h3>{{ t('adminUserProfile.records') }}</h3><p>{{ t('adminUserProfile.recordsHint') }}</p></div></div>
-    <div class="admin-profile-history">
-      <section class="admin-profile-history__group">
-        <h4><UIcon name="i-ph-monitor-play" />{{ t('adminUserProfile.emby') }}</h4>
-        <div v-if="detail.embyAccounts.length" class="admin-profile-list admin-profile-list--compact">
-          <motion.article v-for="account in detail.embyAccounts" :key="account.id" class="admin-profile-row" layout :initial="false" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div class="admin-profile-row__main"><strong>{{ account.username }}</strong><small>{{ t('adminUserProfile.embyFacts', { libraries: account.disabledLibraryIds.length, date: formatDateTime(account.updatedAt) }) }}</small></div>
-            <StatusBadge :tone="account.status === 'active' ? 'success' : account.status === 'failed' ? 'danger' : 'warning'" :label="t(`adminUserProfile.embyStatus.${account.status}`)" />
-          </motion.article>
-        </div>
-        <p v-else class="admin-profile-empty">{{ t('adminUserProfile.noEmby') }}</p>
-      </section>
-
-      <section class="admin-profile-history__group">
-        <h4><UIcon name="i-ph-credit-card" />{{ t('adminUserProfile.payments') }}</h4>
-        <div v-if="detail.payments.length" class="admin-profile-list admin-profile-list--compact">
-          <motion.article v-for="payment in detail.payments" :key="payment.id" class="admin-profile-row" layout :initial="false" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div class="admin-profile-row__main"><strong>{{ payment.provider }} / {{ payment.providerRail }}</strong><small>{{ formatDateTime(payment.createdAt) }} / {{ payment.id }}</small></div>
-            <div class="admin-profile-row__meta"><strong>{{ formatMoney(payment.txb) }}</strong><StatusBadge :tone="payment.status === 'paid' ? 'success' : payment.status === 'failed' ? 'danger' : 'neutral'" :label="t(`adminUserProfile.paymentStatus.${payment.status}`)" /></div>
-            <div class="row-actions">
-              <UButton v-if="payment.status === 'paid'" size="sm" color="warning" variant="outline" icon="i-ph-arrow-counter-clockwise" :disabled="busy" :label="t('adminUserProfile.refundPayment')" @click="emit('refundPayment', payment)" />
-              <UButton v-if="canIssueCourtesyCredit(payment)" size="sm" color="primary" variant="outline" icon="i-ph-heart" :disabled="busy" :label="t('adminUserProfile.courtesyCredit')" @click="emit('creditPayment', payment)" />
-            </div>
-          </motion.article>
-        </div>
-        <p v-else class="admin-profile-empty">{{ t('adminUserProfile.noPayments') }}</p>
-      </section>
-
-      <section class="admin-profile-history__group">
-        <h4><UIcon name="i-ph-receipt" />{{ t('adminUserProfile.refunds') }}</h4>
-        <div v-if="detail.refunds.length" class="admin-profile-list admin-profile-list--compact">
-          <motion.article v-for="refund in detail.refunds" :key="refund.id" class="admin-profile-row" layout :initial="false" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div class="admin-profile-row__main"><strong>{{ refund.reason }}</strong><small>{{ formatDateTime(refund.createdAt) }} / {{ refund.paymentOrderId }}</small></div>
-            <strong>{{ formatMoney(refund.txb) }}</strong>
-          </motion.article>
-        </div>
-        <p v-else class="admin-profile-empty">{{ t('adminUserProfile.noRefunds') }}</p>
-      </section>
-
-      <section class="admin-profile-history__group admin-profile-history__group--wide">
-        <h4><UIcon name="i-ph-activity" />{{ t('adminUserProfile.openOperations') }}</h4>
-        <div v-if="detail.operations.length" class="admin-profile-list admin-profile-list--compact">
-          <motion.article v-for="operation in detail.operations" :key="operation.id" class="admin-profile-row" layout :initial="false" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div class="admin-profile-row__main"><strong>{{ operation.kind }}</strong><small>{{ formatDateTime(operation.updatedAt) }} / {{ operation.id }}</small></div>
-            <StatusBadge :tone="operationTone(operation.status)" :label="t(`adminUserProfile.operationStatus.${operation.status}`)" />
-            <UButton v-if="operation.status === 'pending_review' || operation.status === 'partial'" color="warning" variant="outline" icon="i-ph-gavel" :label="t('adminUserProfile.resolve')" :disabled="busy" @click="emit('resolve', operation)" />
-          </motion.article>
-        </div>
-        <p v-else class="admin-profile-empty">{{ t('adminUserProfile.noOpenOperations') }}</p>
-      </section>
-    </div>
+  <section class="admin-section">
+    <UTabs v-model="current" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
+    <UTable v-if="current === 'payments'" class="admin-table" :data="detail.payments" :columns="columns">
+      <template #identity-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.provider }} / {{ row.original.providerRail }}</strong><code>{{ row.original.id }}</code></div></template>
+      <template #date-cell="{ row }">{{ formatDateTime(row.original.createdAt) }}</template>
+      <template #amount-cell="{ row }">{{ formatMoney(row.original.txb) }}</template>
+      <template #status-cell="{ row }"><StatusBadge :tone="row.original.status === 'paid' ? 'success' : row.original.status === 'failed' ? 'danger' : 'neutral'" :label="t(`adminUserProfile.paymentStatus.${row.original.status}`)" /></template>
+      <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="row.original.status === 'paid'" color="warning" variant="ghost" :disabled="busy" :label="t('adminUserProfile.refundPayment')" @click="emit('refundPayment', row.original)" /><UButton v-if="['failed', 'expired'].includes(row.original.status)" variant="ghost" :disabled="busy" :label="t('adminUserProfile.courtesyCredit')" @click="emit('creditPayment', row.original)" /></div></template>
+      <template #empty>{{ t('adminUserProfile.noPayments') }}</template>
+    </UTable>
+    <UTable v-else-if="current === 'refunds'" class="admin-table" :data="detail.refunds" :columns="columns.slice(0, 3)">
+      <template #identity-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.reason }}</strong><code>{{ row.original.paymentOrderId }}</code></div></template>
+      <template #date-cell="{ row }">{{ formatDateTime(row.original.createdAt) }}</template>
+      <template #amount-cell="{ row }">{{ formatMoney(row.original.txb) }}</template>
+      <template #empty>{{ t('adminUserProfile.noRefunds') }}</template>
+    </UTable>
+    <UTable v-else-if="current === 'operations'" class="admin-table" :data="detail.operations" :columns="columns.filter(column => column.id !== 'amount')">
+      <template #identity-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.kind }}</strong><code>{{ row.original.id }}</code></div></template>
+      <template #date-cell="{ row }">{{ formatDateTime(row.original.updatedAt) }}</template>
+      <template #status-cell="{ row }"><StatusBadge :tone="operationTone(row.original.status)" :label="t(`adminUserProfile.operationStatus.${row.original.status}`)" /></template>
+      <template #actions-cell="{ row }"><UButton v-if="['pending_review', 'partial'].includes(row.original.status)" color="warning" variant="ghost" icon="i-ph-gavel" :label="t('adminUserProfile.resolve')" :disabled="busy" @click="emit('resolve', row.original)" /></template>
+      <template #empty>{{ t('adminUserProfile.noOpenOperations') }}</template>
+    </UTable>
+    <UTable v-else class="admin-table" :data="detail.embyAccounts" :columns="columns.slice(0, 4).filter(column => column.id !== 'amount')">
+      <template #identity-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.username }}</strong><small>{{ t('adminUserProfile.embyFacts', { libraries: row.original.disabledLibraryIds.length, date: formatDateTime(row.original.updatedAt) }) }}</small></div></template>
+      <template #date-cell="{ row }">{{ formatDateTime(row.original.updatedAt) }}</template>
+      <template #status-cell="{ row }"><StatusBadge :tone="row.original.status === 'active' ? 'success' : row.original.status === 'failed' ? 'danger' : 'warning'" :label="t(`adminUserProfile.embyStatus.${row.original.status}`)" /></template>
+      <template #empty>{{ t('adminUserProfile.noEmby') }}</template>
+    </UTable>
   </section>
 </template>

@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: listAdminCombos
   summary: List all combos, including inactive records
@@ -20,6 +21,7 @@ get:
     '403':
       $ref: '../openapi.yaml#/components/responses/Forbidden'
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: createAdminCombo
   summary: Create a validated combo

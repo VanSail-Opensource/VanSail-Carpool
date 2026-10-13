@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { selectionHaptic } from '@/utils/telegram'
+import { selectionHaptic } from '@/utils/feedback'
 
 withDefaults(defineProps<{
   id: string

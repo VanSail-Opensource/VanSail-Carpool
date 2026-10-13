@@ -16,6 +16,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/admin"
 	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
 	"github.com/txyyddss/Remna-User-Panel/internal/billing"
+	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
 	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
 	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
 	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
@@ -188,7 +189,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	pmService, err := newApplicationPMWorkflows(store, settings, queuedTelegramClient, cfg.AdminTelegramIDs,
-		operationDispatcher, outboxWorker, adminUserWorkflows, catalogService, affiliateService.BotUsername, cfg.Timezone, vault)
+		operationDispatcher, outboxWorker, adminUserWorkflows, catalogService, cfg.PublicBaseURL.String(), cfg.Timezone, vault)
 	if err != nil {
 		return cleanup(err)
 	}
@@ -201,6 +202,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(fmt.Errorf("preload embedded frontend: %w", err))
 	}
 	api, err := httpapi.New(httpapi.Dependencies{
+		BrowserAuth:  browserauth.New(store, vault, browserauth.QueuedHTTPClient(upstreams.telegram), cfg.PublicBaseURL, cfg.AdminTelegramIDs),
 		USDT:         usdtService,
 		IPLookup:     ipLookupService,
 		PM:           pmService,

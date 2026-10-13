@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Onboarding]
   operationId: publishAdminOnboarding
   summary: Publish the current validated draft

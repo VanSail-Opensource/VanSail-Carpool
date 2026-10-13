@@ -7,7 +7,6 @@ import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useDurableCommand } from '@/composables/useDurableCommand'
 import { useI18n } from '@/i18n'
-import { openExternalLink } from '@/utils/telegram'
 import PMDeliveryDialog from '../pm/PMDeliveryDialog.vue'
 import PMTopicRepairDialog from '../pm/PMTopicRepairDialog.vue'
 import { pmTopicLink } from '../pm/links'
@@ -48,7 +47,7 @@ function openTopic(): void {
   const item = props.conversation
   if (!item) return
   const link = pmTopicLink(item.chatId, item.topicId)
-  if (link) openExternalLink(link)
+  if (link) globalThis.open(link, '_blank', 'noopener,noreferrer')
 }
 </script>
 
@@ -75,7 +74,7 @@ function openTopic(): void {
     </div>
     <p v-else class="user-pm__empty">{{ t('pm.noConversationForUser') }}</p>
     <PMDeliveryDialog v-if="conversation" v-model:open="deliveriesOpen" :conversation="conversation" />
-    <PMTopicRepairDialog v-if="conversation" v-model:open="repairOpen" :conversation="conversation" :busy="busy" @confirm="repairTopic" />
+    <PMTopicRepairDialog v-if="conversation" v-model:open="repairOpen" :conversation="conversation" :busy="busy" :error="command.error.value" @confirm="repairTopic" />
   </section>
 </template>
 

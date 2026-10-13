@@ -4,6 +4,7 @@
     "zh-CN"
   ],
   "domains": [
+    "browser",
     "admin-usdt",
     "core",
     "settings",

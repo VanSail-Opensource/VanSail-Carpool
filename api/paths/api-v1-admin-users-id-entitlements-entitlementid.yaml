@@ -1,4 +1,5 @@
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: editAdminEntitlement
   summary: Replace exposed entitlement fields with optimistic locking and audit

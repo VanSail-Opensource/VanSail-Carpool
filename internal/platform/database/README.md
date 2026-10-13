@@ -1,5 +1,14 @@
 # SQLite store
 
+`browser_sessions.go` persists separate browser-device sessions, daily stable-token
+renewal, and single-device revocation. `browser_access_links.go` consumes hashed
+five-minute handoff references and creates their session in one transaction.
+The browser scope permits multiple devices; legacy `ReplaceSession` and
+`UserBySession` remain Mini App-only. Maintenance removes expired browser rows
+without applying Mini App replacement rules. `browser_sessions_test.go` and
+`browser_access_links_test.go` cover scope/device isolation, renewal, retention,
+atomic replay rejection, and expiry in hosted CI.
+
 `abuse_node_retention.go` reconciles key records against a successful complete
 upstream list without deleting historical incidents. `abuse_node_retention_test.go`
 covers deleted-key rejection and preserving credentials during provider outages.

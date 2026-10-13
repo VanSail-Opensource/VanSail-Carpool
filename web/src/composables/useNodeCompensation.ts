@@ -5,7 +5,6 @@ import { restoreCached, restoreRef } from '@/api/cache/restore'
 import type { NodeCompensationConfig, NodeCompensationConfigWrite, NodeCompensationEvent, NodeCompensationStatus } from '@/api/contracts/compensation'
 import { localizedError } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
-import { notifyHaptic } from '@/utils/telegram'
 
 export function useNodeCompensation() {
   const config = shallowRef<NodeCompensationConfig | null>(null)
@@ -57,11 +56,9 @@ export function useNodeCompensation() {
     error.value = null
     try {
       config.value = await compensationApi.saveConfig(input)
-      notifyHaptic('success')
       return true
     } catch (caught) {
       error.value = localizedError(caught, 'adminCompensation.saveFailed')
-      notifyHaptic('error')
       return false
     } finally {
       busy.value = false
@@ -81,11 +78,9 @@ export function useNodeCompensation() {
         : await compensationApi.dismiss(event.id, body, key)
       events.value = events.value.map((item) => item.id === updated.id ? updated : item)
       reviewKeys.delete(identity)
-      notifyHaptic('success')
       return true
     } catch (caught) {
       error.value = localizedError(caught, 'adminCompensation.reviewFailed')
-      notifyHaptic('error')
       return false
     } finally {
       busy.value = false

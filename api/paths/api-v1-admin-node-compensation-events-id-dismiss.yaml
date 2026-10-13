@@ -1,6 +1,7 @@
 parameters:
   - { name: id, in: path, required: true, schema: { $ref: '../openapi.yaml#/components/schemas/ID' } }
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: dismissNodeCompensationEvent
   summary: Dismiss one reviewed outage

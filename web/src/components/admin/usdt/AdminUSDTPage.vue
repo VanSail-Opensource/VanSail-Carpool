@@ -15,6 +15,8 @@ import USDTReview from './USDTReview.vue'
 const { t } = useI18n()
 const { draft, status, review, loading, busy, checking, resolving, error, saved, probe, load, refresh, save, check, loadReview, resolve } = useUSDTAdmin()
 const selected = shallowRef<USDTNetworkID>('tron')
+const workspace = shallowRef('general')
+const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'networks', label: t('adminUsdt.network') }, { value: 'quotas', label: t('adminUsdt.quotas') }, { value: 'review', label: t('adminUsdt.review') }])
 const schema = computed(() => configSchema())
 const networkItems = computed(() => draft.value?.networks.map(network => ({ value: network.network, label: paymentChannelLabel(networkRails[network.network], network.network) })) ?? [])
 const index = computed(() => draft.value?.networks.findIndex(network => network.network === selected.value) ?? -1)
@@ -42,11 +44,12 @@ function renameGroup(before: string, after: string): void {
     <div class="admin-panel__heading"><div><h2>{{ t('adminUsdt.title') }}</h2><p>{{ t('adminUsdt.copy') }}</p></div><UButton icon="i-ph-floppy-disk" type="submit" form="usdt-settings" :label="t('common.save')" :loading="busy" :disabled="busy || loading || !draft" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <InlineNotice v-if="saved" tone="success">{{ t('adminUsdt.saved') }}</InlineNotice>
+    <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <AdminSectionState :loading="loading" :error="draft ? null : error" @retry="load">
-      <UForm v-if="draft" id="usdt-settings" :schema="schema" :state="draft" @submit="save">
+      <UForm v-if="draft" v-show="workspace !== 'review'" id="usdt-settings" :schema="schema" :state="draft" @submit="save">
         <fieldset :disabled="busy" class="usdt-form">
-          <USDTGeneralSettings v-model="draft" />
-          <section class="usdt-network-section">
+          <USDTGeneralSettings v-show="workspace === 'general'" v-model="draft" />
+          <section v-show="workspace === 'networks'" class="usdt-network-section">
             <div class="usdt-toolbar">
               <UFormField :label="t('adminUsdt.network')"><USelect v-model="selected" :items="networkItems" /></UFormField>
               <UBadge :color="state === 'ready' ? 'success' : state === 'error' ? 'error' : 'neutral'" variant="soft" :label="t(`adminUsdt.states.${state}`)" />
@@ -57,17 +60,17 @@ function renameGroup(before: string, after: string): void {
             <InlineNotice v-if="probe" tone="info">{{ probe }}</InlineNotice>
             <USDTNetworkSettings v-if="network" v-model="network" :groups="draft.groups" :index="index" @ensure-group="ensureGroup" />
           </section>
-          <USDTQuotaSettings :model-value="draft.groups" :status="status" @update:model-value="setGroups" @rename="renameGroup" />
+          <USDTQuotaSettings v-show="workspace === 'quotas'" :model-value="draft.groups" :status="status" @update:model-value="setGroups" @rename="renameGroup" />
         </fieldset>
       </UForm>
-      <USDTReview :page="review" :resolving="resolving" @refresh="loadReview()" @more="loadReview(true)" @resolve="resolve" />
+      <USDTReview v-show="workspace === 'review'" :page="review" :resolving="resolving" :error="error" @refresh="loadReview()" @more="loadReview(true)" @resolve="resolve" />
     </AdminSectionState>
   </section>
 </template>
 
 <style scoped>
-.usdt-admin { max-width: 64rem; }
-.usdt-form { border: 0; margin: 0; padding: 1rem; min-width: 0; display: grid; gap: 1.25rem; }
+.usdt-admin { width: 100%; }
+.usdt-form { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1.25rem; }
 .usdt-admin :deep(.usdt-toolbar) { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .usdt-admin :deep(.usdt-form-grid), .usdt-admin :deep(.usdt-network), .usdt-admin :deep(.usdt-general) { display: grid; gap: .8rem; }
 .usdt-admin :deep(.usdt-form-grid > *), .usdt-admin :deep(.usdt-toolbar > *) { min-width: 0; }
@@ -75,7 +78,7 @@ function renameGroup(before: string, after: string): void {
 .usdt-admin :deep(.usdt-addresses) { width: 100%; }
 .usdt-admin :deep(.usdt-endpoint) { border: 0; border-top: 1px solid var(--line); padding: .8rem 0; margin: 0; min-width: 0; display: grid; gap: .75rem; }
 .usdt-admin :deep(.usdt-endpoint legend) { font-size: .8rem; color: var(--text-muted); padding: 0 .4rem 0 0; }
-.usdt-network-section { display: grid; gap: .8rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.usdt-network-section { display: grid; gap: .8rem; padding-top: 0; }
 .usdt-status { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; color: var(--text-muted); font-size: .75rem; }
 .usdt-status code { overflow-wrap: anywhere; }
 .usdt-admin :deep(.usdt-quotas summary) { cursor: pointer; font-size: .9rem; }

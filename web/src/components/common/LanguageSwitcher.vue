@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useI18n } from '@/i18n'
 import type { Locale } from '@/i18n/generated'
-import { selectionHaptic } from '@/utils/telegram'
+import { selectionHaptic } from '@/utils/feedback'
 
 const { locale, locales, setLocale, t } = useI18n()
 const items = computed(() => locales.value.map((value) => ({

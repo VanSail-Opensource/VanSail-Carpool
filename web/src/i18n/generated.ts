@@ -1,4 +1,6 @@
 import enIPLookup from '../../locales/en/ip-lookup.json'
+import enBrowser from '../../locales/en/browser.json'
+import zhBrowser from '../../locales/zh-CN/browser.json'
 import enAdminUsdt from '../../locales/en/admin-usdt.json'
 import zhAdminUsdt from '../../locales/zh-CN/admin-usdt.json'
 import zhIPLookup from '../../locales/zh-CN/ip-lookup.json'
@@ -79,12 +81,12 @@ const zhCN: typeof en = {
 }
 
 export const localeMessages = {
-  en,
-  'zh-CN': zhCN,
+  en: { ...en, ...enBrowser },
+  'zh-CN': { ...zhCN, ...zhBrowser },
 } as const
 
 export type Locale = keyof typeof localeMessages
-export type LocaleMessages = typeof en
+export type LocaleMessages = typeof localeMessages.en
 
 type LeafKeys<Value, Prefix extends string = ''> = Value extends object
   ? { [Key in keyof Value & string]: LeafKeys<Value[Key], Prefix extends '' ? Key : `${Prefix}.${Key}`> }[keyof Value & string]

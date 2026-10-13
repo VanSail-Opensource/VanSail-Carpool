@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { z } from 'zod'
 import { useI18n } from '@/i18n'
 import InlineNotice from '@/components/common/InlineNotice.vue'
@@ -19,6 +19,8 @@ const { settings, savedSourceConfig, combos, loading, busy, errorCode, saved, sa
 const sources = useProxySources()
 async function saveSettings() { await save(); if (saved.value) await sources.load() }
 const { t } = useI18n()
+const workspace = shallowRef('general')
+const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'providers', label: t('ipLookup.providerHeading') }, { value: 'proxy', label: t('ipLookup.proxySettings') }, { value: 'quotas', label: t('ipLookup.quotaHeading') }])
 const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
 const checkOrder = computed({
   get: () => settings.providers.map(provider => provider.id),
@@ -40,38 +42,30 @@ const schema = computed(() => z.object({
 </script>
 
 <template>
-  <main class="page admin-ip-lookup">
-    <header class="page-header"><div><p class="eyebrow">{{ $t('nav.admin') }}</p><h1>{{ $t('ipLookup.adminTitle') }}</h1><p>{{ $t('ipLookup.adminSubtitle') }}</p></div></header>
+  <section class="admin-panel admin-ip-lookup">
+    <div class="admin-panel__heading"><div><h2>{{ t('ipLookup.adminTitle') }}</h2><p>{{ t('ipLookup.adminSubtitle') }}</p></div><UButton type="submit" form="ip-lookup-settings" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy || loading" :label="t('common.save')" /></div>
+    <UTabs v-model="workspace" :items="tabs" :content="false" variant="link" class="admin-workspace-tabs" />
     <SkeletonBlock v-if="loading" height="14rem" />
     <template v-else>
       <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
-      <InlineNotice v-if="saved" tone="success">{{ $t('ipLookup.saved') }}</InlineNotice>
-      <UForm :state="settings" :schema="schema" class="lookup-settings" @submit="saveSettings">
-        <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="$t('ipLookup.enable')" :help="$t('ipLookup.enableHelp')" />
-        <div class="lookup-fees">
-          <TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="$t('ipLookup.lookupFee')" min-minor="0" />
-          <TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="$t('ipLookup.refreshFee')" min-minor="0" />
+      <InlineNotice v-if="saved" tone="success">{{ t('ipLookup.saved') }}</InlineNotice>
+      <UForm id="ip-lookup-settings" :state="settings" :schema="schema" class="lookup-settings" @submit="saveSettings">
+        <div v-show="workspace === 'general'" class="lookup-general">
+          <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="t('ipLookup.enable')" :help="t('ipLookup.enableHelp')" />
+          <div class="lookup-fees"><TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="t('ipLookup.lookupFee')" min-minor="0" /><TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="t('ipLookup.refreshFee')" min-minor="0" /></div>
+          <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="busy" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="busy" /></div>
+          <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         </div>
-        <div class="lookup-orders">
-          <ProviderOrder v-model="checkOrder" :title="$t('ipLookup.checkOrder')" :help="$t('ipLookup.checkOrderHelp')" :disabled="busy" />
-          <ProviderOrder v-model="settings.geolocationOrder" :title="$t('ipLookup.geolocationOrder')" :help="$t('ipLookup.geolocationOrderHelp')" :disabled="busy" />
-        </div>
-        <ProviderSettings v-model="settings" />
-        <ProxyProbeSettings v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" :source-status="sources.status.value" :starting="sources.starting.value" :error-code="sources.errorCode.value" @refresh="sources.refreshSource" />
-        <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
-        <ComboQuotas v-model="settings.comboQuotas" :combos="combos" />
-        <UButton type="submit" :loading="busy" :disabled="busy" :label="$t('common.save')" class="lookup-save" />
+        <ProviderSettings v-show="workspace === 'providers'" v-model="settings" />
+        <ProxyProbeSettings v-show="workspace === 'proxy'" v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" :source-status="sources.status.value" :starting="sources.starting.value" :error-code="sources.errorCode.value" @refresh="sources.refreshSource" />
+        <ComboQuotas v-show="workspace === 'quotas'" v-model="settings.comboQuotas" :combos="combos" />
       </UForm>
-      <UButton v-if="errorCode && !settings.providers.length" color="neutral" variant="outline" :label="$t('common.tryAgain')" @click="load" />
+      <UButton v-if="errorCode && !settings.providers.length" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="load" />
     </template>
-  </main>
+  </section>
 </template>
-
 <style scoped>
-.admin-ip-lookup { max-width: 1080px; }
-.lookup-settings { display: grid; gap: 1.5rem; }
-.lookup-fees { display: grid; gap: 1rem; }
-.lookup-orders { display: grid; gap: 1.25rem; }
-.lookup-save { justify-self: start; min-height: 44px; }
-@media (min-width: 900px) { .lookup-fees, .lookup-orders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lookup-settings, .lookup-general { display: grid; gap: 1.5rem; min-width: 0; }
+.lookup-fees, .lookup-orders { display: grid; gap: 1.25rem; }
+@media (min-width: 1024px) { .lookup-fees, .lookup-orders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

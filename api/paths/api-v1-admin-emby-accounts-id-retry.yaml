@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Emby]
   operationId: retryAdminEmbyAccount
   summary: Requeue a retryable Emby provisioning attempt

@@ -2,6 +2,7 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 
 import { BrowserCapabilityError, secureRandomBytes } from '@/utils/browserCompatibility'
+import { isBrowserExperience } from '@/utils/experience'
 
 const requestKeyCookie = 'txc_request_key'
 const keyPattern = /^[A-Za-z0-9_-]{43}$/
@@ -111,8 +112,11 @@ export async function applyRequestSignature(
   body: Uint8Array,
 ): Promise<void> {
   const target = canonicalTarget(url)
+  if (isBrowserExperience()) headers.set('X-TXC-Session-Scope', 'browser')
   if (!signingRequired(target)) return
-  const encodedKey = readCookie(requestKeyCookie)
+  const encodedKey = isBrowserExperience()
+    ? readCookie('txc_admin_request_key') ?? (method.toUpperCase() === 'GET' && target === '/api/v1/auth/browser/session' ? readCookie(requestKeyCookie) : undefined)
+    : readCookie(requestKeyCookie)
   if (!encodedKey || !keyPattern.test(encodedKey)) return
 
   const timestamp = Math.floor(Date.now() / 1000).toString()

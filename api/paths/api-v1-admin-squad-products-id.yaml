@@ -1,4 +1,5 @@
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: updateAdminSquadProduct
   summary: Set a squad product's local merchandising fields

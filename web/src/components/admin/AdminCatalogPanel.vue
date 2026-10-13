@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
+import { computed, shallowRef } from 'vue'
 
 import { featuresApi, type AdminStatistics, type StatisticsQuery } from '@/api/features'
 import type { Combo, SquadProduct, SquadProductWrite } from '@/api/types'
@@ -9,7 +8,6 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { useI18n } from '@/i18n'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { formatBytes, formatMoney } from '@/utils/format'
 import AdminCatalogEditor from './AdminCatalogEditor.vue'
 import AdminSectionState from './AdminSectionState.vue'
@@ -23,7 +21,9 @@ const deleting = shallowRef<Combo | null>(null)
 const editingSquad = shallowRef<SquadProduct | null>(null)
 const statisticsTarget = shallowRef<{ kind: 'combo' | 'squad'; id: string; title: string } | null>(null)
 const { t } = useI18n()
-const { reducedMotion, offset } = useMotionPreferences()
+const activeTab = shallowRef('combos')
+const tabs = computed(() => [{ value: 'combos', label: t('adminNav.catalog') }, { value: 'squads', label: t('adminCatalog.squads') }])
+const columns = computed(() => [{ id: 'name', header: t('adminWorkspace.name') }, { id: 'terms', header: t('adminWorkspace.details') }, { id: 'price', header: t('adminWorkspace.price') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }])
 
 function loadStatistics(query: StatisticsQuery): Promise<AdminStatistics> {
   const target = statisticsTarget.value
@@ -60,68 +60,35 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
 
 <template>
   <section class="admin-panel">
-    <div class="admin-panel__heading">
-      <div><h2>{{ t('adminCatalog.title') }}</h2><p>{{ t('adminCatalog.copy') }}</p></div>
-      <UButton icon="i-ph-plus" :label="t('adminCatalog.newCombo')" @click="editing = null" />
+    <div class="admin-panel__heading"><div><h2>{{ t('adminCatalog.title') }}</h2><p>{{ t('adminCatalog.copy') }}</p></div><div class="row-actions"><UButton v-if="activeTab === 'combos'" icon="i-ph-plus" :label="t('adminCatalog.newCombo')" @click="editing = null" /><UButton v-else color="neutral" variant="outline" icon="i-ph-arrow-clockwise" :loading="squads.busy.value" :disabled="squads.busy.value" :label="t('adminCatalog.refreshSquads')" @click="importSquads" /></div></div>
+    <UTabs v-model="activeTab" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
+    <div v-show="activeTab === 'combos'">
+      <AdminSectionState :loading="combos.loading.value" :error="combos.error.value" @retry="combos.load()">
+        <UTable class="admin-table" :data="combos.items.value" :columns="columns">
+          <template #name-cell="{ row }"><strong>{{ row.original.name }}</strong></template>
+          <template #terms-cell="{ row }"><div class="admin-cell"><span>{{ formatBytes(row.original.trafficLimitBytes) }}</span><small>{{ t('adminCatalog.comboSummary', { traffic: formatBytes(row.original.trafficLimitBytes), days: row.original.validityDays }) }}</small></div></template>
+          <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
+          <template #status-cell="{ row }"><StatusBadge :tone="row.original.active ? 'success' : 'neutral'" :label="t(row.original.active ? 'adminCatalog.available' : 'adminCatalog.paused')" /></template>
+          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'combo', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" @click="editing = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminCatalog.hideNamed', { name: row.original.name })" @click="deleting = row.original" /></div></template>
+          <template #empty>{{ t('adminCatalog.noCombos') }}</template>
+        </UTable>
+      </AdminSectionState>
     </div>
-    <AdminCatalogEditor v-if="editing !== undefined" :combo="editing ?? undefined" :squads="squads.items.value" :busy="combos.busy.value" @save="save" @cancel="editing = undefined" />
-    <AdminSectionState :loading="combos.loading.value" :error="combos.error.value" @retry="combos.load()">
-      <motion.div layout class="admin-list">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="combo in combos.items.value" :key="combo.id" layout class="admin-list-row admin-list-row--catalog" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div><strong>{{ combo.name }}</strong><small>{{ t('adminCatalog.comboSummary', { traffic: formatBytes(combo.trafficLimitBytes), days: combo.validityDays }) }}</small></div>
-            <strong>{{ formatMoney(combo.price) }}</strong>
-            <StatusBadge :tone="combo.active ? 'success' : 'neutral'" :label="combo.active ? t('adminCatalog.available') : t('adminCatalog.paused')" />
-            <div class="row-actions">
-              <UButton color="neutral" variant="ghost" square icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: combo.name })" @click="statisticsTarget = { kind: 'combo', id: combo.id, title: t('adminCatalog.statisticsTitle', { name: combo.name }) }" />
-              <UButton color="neutral" variant="ghost" square icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: combo.name })" @click="editing = combo" />
-              <UButton color="error" variant="ghost" square icon="i-ph-trash" :aria-label="t('adminCatalog.hideNamed', { name: combo.name })" data-haptic="destructive" @click="deleting = combo" />
-            </div>
-          </motion.article>
-          <motion.div v-if="!combos.items.value.length" key="empty-combos" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminCatalog.noCombos') }}</h3><p>{{ t('adminCatalog.noCombosHint') }}</p></div></motion.div>
-        </AnimatePresence>
-      </motion.div>
-    </AdminSectionState>
-    <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'combo'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
-
-    <div class="admin-subsection-heading">
-      <div><h3>{{ t('adminCatalog.squads') }}</h3><p>{{ t('adminCatalog.squadsHint') }}</p></div>
-      <UButton color="neutral" variant="outline" icon="i-ph-arrow-clockwise" :loading="squads.busy.value" :disabled="squads.busy.value" :label="t('adminCatalog.refreshSquads')" @click="importSquads" />
+    <div v-show="activeTab === 'squads'">
+      <AdminSectionState :loading="squads.loading.value" :error="squads.error.value" @retry="squads.load()">
+        <UTable class="admin-table" :data="squads.items.value" :columns="columns">
+          <template #name-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.name }}</strong><code>{{ row.original.remnaSquadUuid }}</code></div></template>
+          <template #terms-cell="{ row }"><SquadProfileSummary :profile="row.original.profile" :description="row.original.description" compact /></template>
+          <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
+          <template #status-cell="{ row }"><StatusBadge :tone="row.original.upstreamPresent && row.original.visible ? 'success' : 'neutral'" :label="t(row.original.upstreamPresent && row.original.visible ? 'adminCatalog.available' : 'adminCatalog.hidden')" /></template>
+          <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'squad', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" @click="editingSquad = row.original" /></div></template>
+          <template #empty>{{ t('adminCatalog.noSquads') }}</template>
+        </UTable>
+      </AdminSectionState>
     </div>
-    <AdminSquadEditor
-      v-if="editingSquad"
-      :squad="editingSquad"
-      :busy="squads.busy.value"
-      @save="saveSquad"
-      @cancel="editingSquad = null"
-    />
-    <AdminSectionState :loading="squads.loading.value" :error="squads.error.value" @retry="squads.load()">
-      <motion.div layout class="admin-list admin-list--compact">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="squad in squads.items.value" :key="squad.id" layout class="admin-list-row" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
-            <div><strong>{{ squad.name }}</strong><SquadProfileSummary :profile="squad.profile" :description="squad.description" compact /><small v-if="!squad.profile">{{ squad.remnaSquadUuid }}</small></div>
-            <strong>{{ formatMoney(squad.price) }}</strong>
-            <StatusBadge :tone="squad.upstreamPresent && squad.visible ? 'success' : 'neutral'" :label="squad.upstreamPresent && squad.visible ? t('adminCatalog.available') : t('adminCatalog.hidden')" />
-            <div class="row-actions">
-              <UButton color="neutral" variant="ghost" square icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: squad.name })" @click="statisticsTarget = { kind: 'squad', id: squad.id, title: t('adminCatalog.statisticsTitle', { name: squad.name }) }" />
-              <UButton color="neutral" variant="ghost" square icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: squad.name })" @click="editingSquad = squad" />
-            </div>
-          </motion.article>
-          <motion.div v-if="!squads.items.value.length" key="empty-squads" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminCatalog.noSquads') }}</h3><p>{{ t('adminCatalog.noSquadsHint') }}</p></div></motion.div>
-        </AnimatePresence>
-      </motion.div>
-    </AdminSectionState>
-    <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'squad'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
-
-    <ConfirmDialog
-      :open="deleting !== null"
-      :title="t('adminCatalog.hideTitle')"
-      :description="t('adminCatalog.hideDescription')"
-      :confirm-label="t('adminCatalog.hideCombo')"
-      :busy="combos.busy.value"
-      danger
-      @update:open="!$event && (deleting = null)"
-      @confirm="remove"
-    />
+    <AdminCatalogEditor v-if="editing !== undefined" :combo="editing ?? undefined" :squads="squads.items.value" :busy="combos.busy.value" :error="combos.error.value" @save="save" @cancel="editing = undefined" />
+    <AdminSquadEditor v-if="editingSquad" :squad="editingSquad" :busy="squads.busy.value" :error="squads.error.value" @save="saveSquad" @cancel="editingSquad = null" />
+    <USlideover :open="statisticsTarget !== null" :title="statisticsTarget?.title" @update:open="!$event && (statisticsTarget = null)"><template #body><AdminStatisticsPanel v-if="statisticsTarget" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" /></template></USlideover>
+    <ConfirmDialog :open="deleting !== null" :title="t('adminCatalog.hideTitle')" :description="t('adminCatalog.hideDescription')" :confirm-label="t('adminCatalog.hideCombo')" :busy="combos.busy.value" danger @update:open="!$event && (deleting = null)" @confirm="remove" />
   </section>
 </template>

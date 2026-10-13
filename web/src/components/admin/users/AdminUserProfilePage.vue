@@ -25,6 +25,12 @@ const props = defineProps<{ userId: string }>()
 const emit = defineEmits<{ back: [] }>()
 const { t } = useI18n()
 const profile = useAdminUserProfile(toRef(props, 'userId'))
+const activeTab = shallowRef('entitlements')
+const tabs = computed(() => [
+  { value: 'entitlements', label: t('adminUserProfile.entitlements') },
+  { value: 'history', label: t('adminUserProfile.records') },
+  { value: 'account', label: t('adminUserProfile.actionsAndContext') },
+])
 const editing = shallowRef<AdminEntitlement | null>(null)
 const refunding = shallowRef<AdminEntitlement | null>(null)
 const refundingPayment = shallowRef<AdminUserDetail['payments'][number] | null>(null)
@@ -160,18 +166,15 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     </div>
     <template v-else-if="profile.detail.value">
       <AdminUserOverview :detail="profile.detail.value" />
-      <div class="admin-profile__columns">
-        <aside class="admin-profile__rail" :aria-label="t('adminUserProfile.actionsAndContext')">
-          <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
-          <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
-          <AdminUserAccountContext :user-id="userId" :detail="profile.detail.value" @changed="refresh" />
-          <AdminUserPM :conversation="profile.detail.value.pmConversation" @changed="refresh" />
-          <AdminUserIPBlocks :items="profile.detail.value.ipBlocks" :busy="busy" @unblock="openIPUnblock" />
-        </aside>
-        <div class="admin-profile__main">
-          <AdminUserEntitlements :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
-          <AdminUserHistory :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
-        </div>
+      <UTabs v-model="activeTab" class="admin-workspace-tabs" :items="tabs" variant="link" :content="false" />
+      <AdminUserEntitlements v-show="activeTab === 'entitlements'" :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
+      <AdminUserHistory v-show="activeTab === 'history'" :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
+      <div v-show="activeTab === 'account'" class="admin-workspace-grid">
+        <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
+        <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
+        <AdminUserAccountContext :user-id="userId" :detail="profile.detail.value" @changed="refresh" />
+        <AdminUserPM :conversation="profile.detail.value.pmConversation" @changed="refresh" />
+        <AdminUserIPBlocks :items="profile.detail.value.ipBlocks" :busy="busy" @unblock="openIPUnblock" />
       </div>
     </template>
     <div v-else class="empty-inline"><div><h3>{{ t('adminUserProfile.unavailable') }}</h3><p>{{ t('adminUserProfile.unavailableHint') }}</p></div></div>

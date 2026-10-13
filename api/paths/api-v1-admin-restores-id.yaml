@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: getAdminRestoreStatus
   summary: Get staged restore and rollback status

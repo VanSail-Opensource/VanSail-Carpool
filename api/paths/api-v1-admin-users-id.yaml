@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: getAdminUser
   summary: Get aggregate user profile, entitlements, payments, refunds, and open operations

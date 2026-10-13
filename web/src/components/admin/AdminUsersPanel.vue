@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { restoreCatalogOptions } from '@/api/cache/catalogOptions'
-import { onMounted, onScopeDispose, reactive, shallowRef, watch } from 'vue'
+import { computed, onMounted, onScopeDispose, reactive, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { AnimatePresence, motion } from 'motion-v'
 
 import { adminOperationsApi, type AdminCatalogOptions, type OperationReceipt } from '@/api/adminOperations'
 import type { AdminUserSummary } from '@/api/types'
@@ -11,7 +10,6 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { localizedError, useI18n } from '@/i18n'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { formatDate, formatMoney, moneyFromTxbInput } from '@/utils/format'
 import AdminSectionState from './AdminSectionState.vue'
 import AdminBulkExtensionDialog from './users/AdminBulkExtensionDialog.vue'
@@ -28,7 +26,14 @@ const bulkOpen = shallowRef(false)
 const filterOptions = shallowRef<AdminCatalogOptions>({ combos: [], squads: [] })
 const filters = shallowRef<AdminUserSearchFiltersValue>({ state: '', comboIds: [], squadUuids: [], match: 'and' })
 const filterError = shallowRef<string | null>(null)
-const { reducedMotion, offset } = useMotionPreferences()
+const columns = computed(() => [
+  { id: 'member', header: t('adminWorkspace.member') },
+  { id: 'identity', header: t('adminWorkspace.identity') },
+  { id: 'balance', header: t('adminUserProfile.balance') },
+  { id: 'status', header: t('adminWorkspace.status') },
+  { id: 'created', header: t('adminWorkspace.created') },
+  { id: 'actions', header: t('adminWorkspace.actions') },
+])
 
 let searchTimer: ReturnType<typeof globalThis.setTimeout> | undefined
 
@@ -109,41 +114,33 @@ function bulkQueued(receipt: OperationReceipt): void {
     <InlineNotice v-if="success" tone="success">{{ success }}</InlineNotice>
     <InlineNotice v-if="filterError" tone="warning">{{ filterError }}</InlineNotice>
     <AdminSectionState :loading="loading" :error="error" @retry="reloadUsers">
-      <motion.div layout class="admin-list">
-        <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="summary in items" :key="summary.user.id" layout class="admin-list-row admin-list-row--user" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.16, ease: 'easeOut' }">
-            <UAvatar :text="displayName(summary).slice(0, 2).toUpperCase()" size="sm" />
-            <div>
-              <strong>{{ displayName(summary) }}</strong>
-              <small>{{ t('adminUsers.meta', { identity: summary.user.username ? `@${summary.user.username}` : summary.user.telegramId, date: formatDate(summary.createdAt) }) }}</small>
-            </div>
-            <strong>{{ formatMoney(summary.balance) }}</strong>
-            <StatusBadge :tone="summary.synchronization.status === 'synchronized' ? 'success' : 'warning'" :label="summary.synchronization.status === 'synchronized' ? t('adminUsers.synchronized') : t('adminUsers.notProvisioned')" />
-            <div class="row-actions">
-              <UButton size="sm" color="neutral" variant="outline" icon="i-ph-user-focus" :label="t('adminUserProfile.open')" @click="openProfile(summary)" />
-              <UButton size="sm" color="neutral" variant="ghost" icon="i-ph-coins" :label="t('adminUsers.adjust')" @click="selected = summary" />
-            </div>
-          </motion.article>
-          <motion.div v-if="!items.length" key="empty-users" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminUsers.none') }}</h3><p>{{ t('adminUsers.noneHint') }}</p></div></motion.div>
-        </AnimatePresence>
-      </motion.div>
+      <UTable class="admin-table" :data="items" :columns="columns" :loading="loading">
+        <template #member-cell="{ row }"><UButton color="neutral" variant="link" :label="displayName(row.original)" @click="openProfile(row.original)" /></template>
+        <template #identity-cell="{ row }"><div class="admin-cell"><span>{{ row.original.user.username ? `@${row.original.user.username}` : row.original.user.telegramId }}</span><code>{{ row.original.user.id }}</code></div></template>
+        <template #balance-cell="{ row }">{{ formatMoney(row.original.balance) }}</template>
+        <template #status-cell="{ row }"><StatusBadge :tone="row.original.synchronization.status === 'synchronized' ? 'success' : 'warning'" :label="t(row.original.synchronization.status === 'synchronized' ? 'adminUsers.synchronized' : 'adminUsers.notProvisioned')" /></template>
+        <template #created-cell="{ row }">{{ formatDate(row.original.createdAt) }}</template>
+        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton size="sm" color="neutral" variant="ghost" icon="i-ph-user-focus" :aria-label="t('adminUserProfile.open')" @click="openProfile(row.original)" /><UButton size="sm" color="neutral" variant="ghost" icon="i-ph-coins" :label="t('adminUsers.adjust')" @click="selected = row.original" /></div></template>
+        <template #empty><div class="empty-inline"><h3>{{ t('adminUsers.none') }}</h3><p>{{ t('adminUsers.noneHint') }}</p></div></template>
+      </UTable>
       <UButton v-if="nextCursor" class="database-load-more" color="neutral" variant="outline" icon="i-ph-arrow-down" :loading="loading" :disabled="loading" :label="t('adminUsers.loadMore')" @click="loadMore" />
     </AdminSectionState>
 
-    <UDrawer :open="Boolean(selected)" :title="selected ? t('adminUsers.adjustNamed', { name: displayName(selected) }) : t('adminUsers.adjust')" :description="t('adminUsers.adjustHint')" :close="{ 'data-haptic': 'dismiss' }" @update:open="!$event && (selected = null)">
+    <USlideover :open="Boolean(selected)" :title="selected ? t('adminUsers.adjustNamed', { name: displayName(selected) }) : t('adminUsers.adjust')" :description="t('adminUsers.adjustHint')" @update:open="!$event && (selected = null)">
       <template #body>
-        <form v-if="selected" class="form-stack" @submit.prevent>
+        <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
+        <form v-if="selected" class="admin-editor-form" @submit.prevent>
           <TxbAmountField id="balance-adjustment" v-model="form.amountTxb" :label="t('adminUsers.amount')" min-minor="1" required />
           <UFormField name="reason" :label="t('adminReason.reason')" required>
             <UInput v-model.trim="form.reason" :minlength="4" :maxlength="300" />
           </UFormField>
           <div class="button-row">
             <UButton color="neutral" variant="outline" icon="i-ph-plus" :disabled="busy" :label="t('adminUsers.add')" @click="adjust(1)" />
-            <UButton color="error" variant="ghost" icon="i-ph-minus" :disabled="busy" :label="t('adminUsers.deduct')" data-haptic="destructive" @click="adjust(-1)" />
+            <UButton color="error" variant="ghost" icon="i-ph-minus" :disabled="busy" :label="t('adminUsers.deduct')" @click="adjust(-1)" />
           </div>
         </form>
       </template>
-    </UDrawer>
+    </USlideover>
     <AdminBulkExtensionDialog v-model:open="bulkOpen" @queued="bulkQueued" />
   </section>
 </template>

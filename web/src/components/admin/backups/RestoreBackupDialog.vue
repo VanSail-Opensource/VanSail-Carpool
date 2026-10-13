@@ -3,10 +3,9 @@ import { computed, shallowRef, watch } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
 
 import { useI18n } from '@/i18n'
-import { useTelegramProtection } from '@/composables/useTelegramProtection'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
-const props = defineProps<{ open: boolean; backupName: string; busy: boolean }>()
+const props = defineProps<{ open: boolean; backupName: string; busy: boolean; error?: string | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean]; restore: [payload: { reason: string; confirmation: string }] }>()
 const { t } = useI18n()
 const reason = shallowRef('')
@@ -15,7 +14,6 @@ const requiredConfirmation = computed(() => `${t('restoreBackup.confirmationPref
 const canRestore = computed(() => reason.value.trim().length >= 4 && confirmation.value === requiredConfirmation.value)
 const workflowState = computed(() => props.busy ? 'restoring' : canRestore.value ? 'confirm' : 'warning')
 const { reducedMotion } = useMotionPreferences()
-useTelegramProtection(computed(() => props.open))
 
 watch(() => props.open, (open) => {
   if (open) { reason.value = ''; confirmation.value = '' }
@@ -23,8 +21,9 @@ watch(() => props.open, (open) => {
 </script>
 
 <template>
-  <UModal :open="open" :title="t('restoreBackup.title')" :description="t('restoreBackup.copy')" :dismissible="!busy" :close="false" :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end' }" @update:open="emit('update:open', $event)">
+  <UModal :open="open" :title="t('restoreBackup.title')" :description="t('restoreBackup.copy')" :dismissible="!busy" :close="false" :ui="{ header: 'admin-overlay-header', wrapper: 'admin-overlay-copy', footer: 'justify-end' }" @update:open="emit('update:open', $event)">
     <template #body>
+      <UAlert v-if="error" color="warning" variant="soft" :title="error" />
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="workflowState" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
           <UIcon name="i-ph-warning-fill" class="dialog-icon dialog-icon--danger" aria-hidden="true" />
@@ -35,7 +34,7 @@ watch(() => props.open, (open) => {
     </template>
     <template #footer>
       <UButton color="neutral" variant="outline" :label="t('common.cancel')" :disabled="busy" @click="emit('update:open', false)" />
-      <UButton color="error" :disabled="busy || !canRestore" :loading="busy" :label="busy ? t('restoreBackup.staging') : t('restoreBackup.confirm')" data-haptic="destructive" @click="emit('restore', { reason: reason.trim(), confirmation })" />
+      <UButton color="error" :disabled="busy || !canRestore" :loading="busy" :label="busy ? t('restoreBackup.staging') : t('restoreBackup.confirm')" @click="emit('restore', { reason: reason.trim(), confirmation })" />
     </template>
   </UModal>
 </template>

@@ -38,7 +38,7 @@ function durationText(): string {
       <motion.p v-if="event.ineligibleReason" :key="`reason:${event.ineligibleReason}`" class="compensation-event__note" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.16, ease: 'easeOut' }">{{ t(`adminCompensation.reason.${event.ineligibleReason}`) }}</motion.p>
       <motion.p v-else-if="event.operation" :key="`operation:${event.operation.status}`" class="compensation-event__note" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.16, ease: 'easeOut' }">{{ t('adminCompensation.operation', { status: event.operation.status }) }}</motion.p>
     </AnimatePresence>
-    <UButton v-if="event.status === 'pending_review'" block color="warning" variant="soft" icon="i-ph-magnifying-glass" :label="t('adminCompensation.review')" data-haptic="open" @click="$emit('review', event)" />
+    <UButton v-if="event.status === 'pending_review'" block color="warning" variant="soft" icon="i-ph-magnifying-glass" :label="t('adminCompensation.review')" @click="$emit('review', event)" />
   </article>
 </template>
 

@@ -4,7 +4,6 @@ import { api } from '@/api/client'
 import { restoreCached } from '@/api/cache/restore'
 import type { QueryValue } from '@/api/http'
 import type { AdminResource, Paginated } from '@/api/types'
-import { notifyHaptic } from '@/utils/telegram'
 import { localizedError } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
@@ -60,11 +59,9 @@ export function useAdminSection<T>(resource: AdminResource, options: { immediate
     try {
       await task()
       await load(lastQuery)
-      notifyHaptic('success')
       return true
     } catch (caught) {
       error.value = localizedError(caught, 'errors.adminAction')
-      notifyHaptic('error')
       return false
     } finally {
       busy.value = false

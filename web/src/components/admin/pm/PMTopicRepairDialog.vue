@@ -2,12 +2,13 @@
 import './modal.css'
 import { computed, reactive, watch } from 'vue'
 import { z } from 'zod'
+import InlineNotice from '@/components/common/InlineNotice.vue'
 import type { PMConversation } from '@/api/types'
 import { useI18n } from '@/i18n'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
 const open = defineModel<boolean>('open', { required: true })
-const props = defineProps<{ conversation: PMConversation | null; busy: boolean }>()
+const props = defineProps<{ conversation: PMConversation | null; busy: boolean; error?: string | null }>()
 const emit = defineEmits<{ confirm: [body: { topicId: string; profileMessageId?: string }] }>()
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
@@ -25,6 +26,7 @@ function submit(): void {
 <template>
   <UModal v-model:open="open" :title="t('pm.repair')" :description="t('pm.repairHint')" :dismissible="!busy" :close="!busy" :ui="{ content: reducedMotion ? 'pm-modal--reduced' : '', overlay: reducedMotion ? 'pm-modal--reduced' : '' }">
     <template #body>
+      <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
       <form class="pm-repair" @submit.prevent="submit">
         <UFormField name="topicId" :label="t('pm.topicId')" :hint="t('pm.topicIdHint')"><UInput v-model="draft.topicId" name="topicId" class="w-full" inputmode="numeric" :maxlength="19" :disabled="busy" :aria-label="t('pm.topicId')" /></UFormField>
         <UFormField name="profileMessageId" :label="t('pm.profileId')" :hint="t('pm.profileIdHint')"><UInput v-model="draft.profileMessageId" name="profileMessageId" class="w-full" inputmode="numeric" :maxlength="19" :disabled="busy" :aria-label="t('pm.profileId')" /></UFormField>

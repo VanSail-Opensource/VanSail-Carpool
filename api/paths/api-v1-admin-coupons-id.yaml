@@ -1,4 +1,5 @@
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Coupons]
   operationId: updateAdminCoupon
   summary: Partially replace a coupon definition
@@ -24,6 +25,7 @@ put:
     '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
     '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }
 delete:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Coupons]
   operationId: deactivateAdminCoupon
   summary: Deactivate a coupon without removing history

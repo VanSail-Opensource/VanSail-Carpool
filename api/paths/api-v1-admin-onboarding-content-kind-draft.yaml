@@ -1,4 +1,5 @@
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Onboarding]
   operationId: saveAdminOnboardingDraft
   summary: Save a complete English and Simplified Chinese draft

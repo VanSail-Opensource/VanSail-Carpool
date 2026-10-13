@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import type { IPLookupAdminSettings, IPLookupProxySourcesStatus } from '@/api/ipLookup'
 import { createUuid } from '@/utils/browserCompatibility'
-import SwitchField from '@/components/common/SwitchField.vue'
 import ProxySourceTestControl from './ProxySourceTestControl.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { ipLookupErrorText } from '@/components/ip-lookup/presentation'
@@ -24,14 +23,14 @@ function removeSource(id: string) { settings.value.proxySources = settings.value
     <h2>{{ $t('ipLookup.proxySettings') }}</h2><p>{{ $t('ipLookup.proxySettingsHelp') }}</p>
     <p v-if="sourceStatus">{{ $t('ipLookup.inventoryTotal', { count: sourceStatus.uniqueIPs }) }}</p>
     <InlineNotice v-if="errorCode" tone="warning">{{ ipLookupErrorText(errorCode) }}</InlineNotice>
-    <div v-for="(source, index) in settings.proxySources" :key="source.id" class="source-row">
-      <SwitchField :id="`proxy-${source.id}`" v-model="source.enabled" class="source-enabled" :label="$t('ipLookup.sourceEnabled')" :disabled="disabled" />
-      <UFormField class="source-name" :name="`proxySources.${index}.name`" :label="$t('ipLookup.sourceName')"><UInput v-model="source.name" class="w-full" :disabled="disabled" :maxlength="80" /></UFormField>
-      <UFormField class="source-category" :name="`proxySources.${index}.category`" :label="$t('ipLookup.sourceCategory')"><USelect v-model="source.category" class="w-full" :items="categories" :disabled="disabled" /></UFormField>
-      <UFormField class="source-url" :name="`proxySources.${index}.url`" :label="$t('ipLookup.sourceURL')"><UInput v-model="source.url" class="w-full" type="url" :disabled="disabled" /></UFormField>
-      <ProxySourceTestControl :source="statuses.get(source.id)" :starting="starting.includes(source.id)" :dirty="savedConfig !== JSON.stringify({ sources: settings.proxySources, resolvers: settings.dnsResolvers })" :disabled="disabled" @refresh="$emit('refresh', source.id)" />
-      <UButton class="source-remove" color="neutral" variant="ghost" icon="i-ph-trash" :aria-label="$t('ipLookup.removeSource')" :disabled="disabled" @click="removeSource(source.id)" />
-    </div>
+    <UTable class="admin-table" :data="settings.proxySources" :columns="[{ id: 'enabled', header: t('ipLookup.sourceEnabled') }, { id: 'name', header: t('ipLookup.sourceName') }, { id: 'category', header: t('ipLookup.sourceCategory') }, { id: 'url', header: t('ipLookup.sourceURL') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }]">
+      <template #enabled-cell="{ row }"><USwitch v-model="row.original.enabled" :aria-label="t('ipLookup.sourceEnabled')" :disabled="disabled" /></template>
+      <template #name-cell="{ row }"><UFormField :name="`proxySources.${row.index}.name`"><UInput v-model="row.original.name" :aria-label="t('ipLookup.sourceName')" :disabled="disabled" :maxlength="80" /></UFormField></template>
+      <template #category-cell="{ row }"><UFormField :name="`proxySources.${row.index}.category`"><USelect v-model="row.original.category" :aria-label="t('ipLookup.sourceCategory')" :items="categories" :disabled="disabled" /></UFormField></template>
+      <template #url-cell="{ row }"><UFormField :name="`proxySources.${row.index}.url`"><UInput v-model="row.original.url" type="url" :aria-label="t('ipLookup.sourceURL')" :disabled="disabled" /></UFormField></template>
+      <template #status-cell="{ row }"><ProxySourceTestControl :source="statuses.get(row.original.id)" :starting="starting.includes(row.original.id)" :dirty="savedConfig !== JSON.stringify({ sources: settings.proxySources, resolvers: settings.dnsResolvers })" :disabled="disabled" @refresh="$emit('refresh', row.original.id)" /></template>
+      <template #actions-cell="{ row }"><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('ipLookup.removeSource')" :disabled="disabled" @click="removeSource(row.original.id)" /></template>
+    </UTable>
     <UButton class="source-add" color="neutral" variant="outline" icon="i-ph-plus" :label="$t('ipLookup.addSource')" :disabled="disabled || (settings.proxySources?.length ?? 0) >= 64" @click="addSource" />
     <div class="probe-settings">
       <UFormField name="dnsResolvers" :label="$t('ipLookup.dnsResolvers')" :help="$t('ipLookup.dnsResolversHelp')"><UTextarea v-model="resolvers" class="w-full" :rows="3" :disabled="disabled" /></UFormField>

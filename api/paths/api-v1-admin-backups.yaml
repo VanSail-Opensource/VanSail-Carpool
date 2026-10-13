@@ -1,4 +1,5 @@
 get:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: listAdminBackups
   summary: List verified online database backups
@@ -20,6 +21,7 @@ get:
     '403':
       $ref: '../openapi.yaml#/components/responses/Forbidden'
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin, Database Administration]
   operationId: createAdminBackup
   summary: Run and verify an online SQLite backup now

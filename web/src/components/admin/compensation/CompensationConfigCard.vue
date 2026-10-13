@@ -49,12 +49,12 @@ function save(): void {
         <UInputNumber v-model="draft.multiplier" class="w-full" :min="0.01" :max="100" :step="0.01" />
       </UFormField>
     </div>
-    <UButton type="submit" block icon="i-ph-floppy-disk" :label="busy ? t('common.working') : t('common.save')" :loading="busy" :disabled="busy || !valid" data-haptic="confirm" />
+    <UButton type="submit" icon="i-ph-floppy-disk" :label="busy ? t('common.working') : t('common.save')" :loading="busy" :disabled="busy || !valid" />
   </motion.form>
 </template>
 
 <style scoped>
-.compensation-config { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface-raised); }
+.compensation-config { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 0; max-width: 48rem; }
 .compensation-config h3, .compensation-config p { margin: 0; }
 .compensation-config p:not(.eyebrow) { margin-top: 0.3rem; color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
 .compensation-config__fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }

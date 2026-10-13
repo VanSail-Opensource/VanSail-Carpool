@@ -80,9 +80,8 @@ function save(): void {
 }
 
 .card {
-  padding: 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--surface-raised);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 </style>

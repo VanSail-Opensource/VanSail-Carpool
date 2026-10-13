@@ -1,4 +1,5 @@
 post:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Admin]
   operationId: startAdminHostConnectivityCheck
   summary: Start a manual connectivity batch or return the active batch

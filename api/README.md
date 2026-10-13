@@ -1,5 +1,14 @@
 # TX Carpool OpenAPI contract
 
+- Browser access uses the `browser-auth.yaml` schemas and public browser/OIDC
+  paths. All administrator paths require browser-scoped session signatures;
+  `/admin-access` is the sole Mini App administrator exception. Shared `/me`,
+  display-currency, and browser IP Lookup calls explicitly select browser scope
+  with `X-TXC-Session-Scope: browser`. Browser session restoration also reports
+  verified member redirect state without creating member/browser privileges.
+- `GET /api/v1/admin/billing/amount-limits` returns global billing limits without
+  requiring member wallet access. Its shape matches the existing admin PUT.
+
 - IP Lookup subnet addresses add optional `ports` (the existing port/task/finding contract, at most three entries) and the `suspected` status. Red remains `flagged`; older saved rows can omit probes. Existing quote fields express free shared work with zero charge/quota, and existing progress endpoints distinguish queued from executing checks.
 
 - Active-term squad additions use `POST /api/v1/purchases/{id}/addons/quote` and idempotent `POST /api/v1/purchases/{id}/addons`; the regular purchase route remains full-term priced.

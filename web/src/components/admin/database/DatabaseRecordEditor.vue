@@ -15,6 +15,7 @@ const props = defineProps<{
   row?: DatabaseRow
   review: DeepReadonly<DatabaseMutationReview> | null
   busy: boolean
+  error?: string | null
 }>()
 const emit = defineEmits<{
   cancel: []
@@ -33,7 +34,7 @@ const canReview = computed(() => reason.value.trim().length >= 4)
 const canApply = computed(() => Boolean(props.review && confirmation.value === props.review.requiredConfirmation))
 const title = computed(() => t('databaseRecord.title', { action: t(`databaseRecord.actions.${props.action}`), table: props.table.name }))
 const drawerUi = {
-  container: 'database-record-editor__container',
+  content: 'database-record-editor__content',
   header: 'database-record-editor__header',
   body: 'database-record-editor__scroll-body',
   footer: 'database-record-editor__footer',
@@ -81,18 +82,20 @@ function submit(): void {
 </script>
 
 <template>
-  <UDrawer
+  <USlideover
     class="database-record-editor-drawer"
     :open="true"
     :title="title"
     :description="t('databaseRecord.copy')"
+    :dismissible="!busy"
     :ui="drawerUi"
     @update:open="!$event && emit('cancel')"
   >
     <template #close>
-      <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('databaseRecord.close')" data-haptic="dismiss" />
+      <UButton icon="i-ph-x" color="neutral" variant="ghost" :aria-label="t('databaseRecord.close')" />
     </template>
     <template #body>
+      <UAlert v-if="error" color="warning" variant="soft" :title="error" />
       <div class="database-record-editor__body">
         <AnimatePresence mode="wait" :initial="false">
           <motion.div :key="workflowState" class="database-record-editor__workflow" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
@@ -133,11 +136,11 @@ function submit(): void {
     </template>
     <template #footer>
       <div class="database-form-actions button-row">
-        <UButton v-if="review" type="button" color="neutral" variant="outline" :disabled="busy" :label="t('databaseRecord.changeDraft')" data-haptic="dismiss" @click="emit('invalidate')" />
-        <UButton type="submit" :form="formId" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy || (review ? !canApply : !canReview)" :label="busy ? t('databaseRecord.working') : review ? t('databaseRecord.apply') : t('databaseRecord.reviewChange')" data-haptic="confirm" />
+        <UButton v-if="review" type="button" color="neutral" variant="outline" :disabled="busy" :label="t('databaseRecord.changeDraft')" @click="emit('invalidate')" />
+        <UButton type="submit" :form="formId" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy || (review ? !canApply : !canReview)" :label="busy ? t('databaseRecord.working') : review ? t('databaseRecord.apply') : t('databaseRecord.reviewChange')" />
       </div>
     </template>
-  </UDrawer>
+  </USlideover>
 </template>
 
 <style scoped>
@@ -150,12 +153,11 @@ function submit(): void {
 .database-delete-summary code { font-family: var(--font-mono); font-size: 0.68rem; overflow-wrap: anywhere; }
 .database-delete-summary p { margin: 0; color: var(--text-muted); font-size: 0.68rem; }
 .database-form-actions { justify-content: flex-end; }
-:global(.database-record-editor__container) { height: 100%; gap: 0; overflow: hidden; }
+:global(.database-record-editor__content) { width: min(100vw, 720px); max-width: min(100vw, 720px); }
 :global(.database-record-editor__header) { flex: 0 0 auto; }
 :global(.database-record-editor__scroll-body) { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 :global(.database-record-editor__footer) { flex: 0 0 auto; }
 
-:global(.database-record-editor-drawer) { height: min(52rem, calc(var(--tg-viewport-height, 100dvh) - var(--app-safe-top) - 0.5rem)); }
 
 @media (max-width: 639px) {
   .database-form-actions { flex-direction: column; }

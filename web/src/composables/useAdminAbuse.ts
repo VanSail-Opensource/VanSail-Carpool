@@ -3,13 +3,11 @@ import { onMounted, onScopeDispose, shallowRef } from 'vue'
 import { abuseApi, type AbuseNode, type AbusePolicy, type AbusePunishment, type AbuseRecord, type AbuseRule } from '@/api/abuse'
 import { localizedError } from '@/i18n'
 import { restoreCached, restoreRef } from '@/api/cache/restore'
-import { haptic, notifyHaptic, type HapticIntent } from '@/utils/telegramHaptics'
 import { createLatestRequest } from '@/utils/latestRequest'
 
 interface ExecuteOptions {
   errorKey?: string
   reload?: boolean
-  successHaptic?: HapticIntent
 }
 
 export function useAdminAbuse() {
@@ -95,18 +93,15 @@ export function useAdminAbuse() {
 
   async function execute(work: () => Promise<void>, options: ExecuteOptions = {}): Promise<boolean> {
     if (busy.value) return false
-    const { errorKey = 'adminAbuse.saveFailed', reload = true, successHaptic } = options
+    const { errorKey = 'adminAbuse.saveFailed', reload = true } = options
     busy.value = true
     operationError.value = null
     try {
       await work()
       if (reload && !await load()) return false
-      if (successHaptic) haptic(successHaptic)
-      else notifyHaptic('success')
       return true
     } catch (caught) {
       operationError.value = localizedError(caught, errorKey)
-      notifyHaptic('error')
       return false
     } finally {
       busy.value = false

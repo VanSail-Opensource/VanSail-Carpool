@@ -152,10 +152,10 @@ func (s *Store) ReplaceSession(ctx context.Context, tokenHash []byte, userID str
 		return fmt.Errorf("begin session replacement: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=?`, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=? AND scope='miniapp'`, userID); err != nil {
 		return fmt.Errorf("remove previous session: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)`, tokenHash, userID, stamp(expiresAt), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,expires_at,created_at,renewed_at) VALUES(?,?,?,?,?)`, tokenHash, userID, stamp(expiresAt), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("replace session: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -166,7 +166,7 @@ func (s *Store) ReplaceSession(ctx context.Context, tokenHash []byte, userID str
 
 // UserBySession returns the owner of a non-expired session.
 func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.expires_at>?`, tokenHash, stamp(now)))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='miniapp' AND sessions.expires_at>?`, tokenHash, stamp(now)))
 }
 
 // DeleteExpiredSessions removes stale session rows.

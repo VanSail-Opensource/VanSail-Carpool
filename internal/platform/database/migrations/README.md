@@ -1,5 +1,10 @@
 # Database migrations
 
+`073_browser_admin_sessions.sql` preserves all legacy sessions as Mini App scope,
+replaces the global per-user unique index with a partial Mini App-only index,
+adds renewal timestamps, and creates hashed one-use browser handoff references.
+No raw bearer or OAuth profile dataset is persisted.
+
 `059_member_squad_preferences.sql` stores only disabled squad references per
 account; purchase ownership and upstream names are not duplicated.
 

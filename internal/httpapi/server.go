@@ -12,6 +12,7 @@ import (
 	"github.com/txyyddss/Remna-User-Panel/internal/admin"
 	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
 	"github.com/txyyddss/Remna-User-Panel/internal/billing"
+	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
 	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
 	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
 	"github.com/txyyddss/Remna-User-Panel/internal/connections"
@@ -52,6 +53,7 @@ type telegramProvider interface {
 }
 
 type Dependencies struct {
+	BrowserAuth        *browserauth.Service
 	USDT               *usdt.Service
 	IPLookup           *iplookup.Service
 	Connectivity       *connectivity.Service
@@ -117,6 +119,9 @@ func New(deps Dependencies) (*Server, error) {
 		return nil, err
 	}
 	server := &Server{deps: deps, requests: requestVerifier, authLimiter: newAuthLimiter(), adminTelegramIDs: adminTelegramIDs}
+	if server.deps.BrowserAuth == nil {
+		server.deps.BrowserAuth = browserauth.New(deps.Store, deps.AbuseVault, nil, deps.PublicURL, deps.AdminTelegramIDs)
+	}
 	if server.deps.FirstEntry == nil {
 		server.deps.FirstEntry = &accounts.FirstEntry{Repository: deps.Store, Settings: deps.Settings, Hostname: deps.PublicURL.Hostname(), AdminTelegramIDs: deps.AdminTelegramIDs}
 	}
@@ -131,6 +136,7 @@ func New(deps Dependencies) (*Server, error) {
 	router.Get("/healthz", server.health)
 	router.Get("/readyz", server.ready)
 	router.With(server.limitAuthentication).Post("/api/v1/auth/telegram", server.authenticate)
+	server.mountBrowserAuth(router)
 	router.Post("/api/v1/webhooks/telegram", server.telegramWebhook)
 	router.Get("/api/v1/webhooks/ezpay", server.ezpayWebhook)
 	router.Post("/api/v1/webhooks/bepusdt", server.bepusdtWebhook)

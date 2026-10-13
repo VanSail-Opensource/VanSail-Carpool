@@ -32,6 +32,10 @@ export function detectTelegramWebApp(app: TelegramWebApp | undefined): boolean {
   return typeof navigator !== 'undefined' && isTelegramUserAgent(navigator.userAgent)
 }
 
+export function hasTelegramLaunchContext(): boolean {
+  return hasTelegramWebViewBridge() || hasTelegramLaunchParameters() || Boolean(window.Telegram?.WebApp?.initData?.trim())
+}
+
 export async function waitForTelegramContext(timeoutMs = 3000): Promise<boolean> {
   if (detectTelegramWebApp(window.Telegram?.WebApp)) return true
   const startedAt = Date.now()

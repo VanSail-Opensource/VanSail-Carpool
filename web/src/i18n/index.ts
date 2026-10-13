@@ -1,6 +1,7 @@
 import { computed, readonly, shallowRef } from 'vue'
 
 import { localeMessages, type Locale, type LocaleKey } from './generated'
+import { isBrowserExperience } from '@/utils/experience'
 
 const storageKey = 'tx-carpool-locale'
 const supportedLocales = Object.keys(localeMessages) as Locale[]
@@ -16,8 +17,9 @@ function storedLocale(): string | null {
 function detectLocale(): Locale {
   const stored = storedLocale()
   if (stored && supportedLocales.includes(stored as Locale)) return stored as Locale
-  const telegramLanguage = window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.toLowerCase()
+  const telegramLanguage = !isBrowserExperience() ? window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code?.toLowerCase() : undefined
   if (telegramLanguage?.startsWith('zh')) return 'zh-CN'
+  if (isBrowserExperience() && navigator.language.toLowerCase().startsWith('zh')) return 'zh-CN'
   return 'en'
 }
 

@@ -28,3 +28,10 @@ The revised shared-cache controls were reviewed through Chrome DevTools MCP at 3
 Source categories use the existing USelect/UFormField and Zod settings validation. Pool, database and abuse labels are localized; missing legacy categories normalize to Proxy Pool. Category/name edits reuse source caches. Inventory totals label canonical IP/CIDR entries without expanding networks. Mobile source rows stack fields; desktop rows retain compact aligned controls.
 
 Chrome DevTools MCP reviewed this change on 2026-10-12 using constructed handlers: 320/390px mobile and 1280px desktop, category selection/save/readback, source warming/partial/status-error, loading/empty/error views, matched category reasons, selected neighbor attribution, and English/Chinese labels. Reviewed layouts had no horizontal overflow, console warnings/errors or observed failed requests. Backend tests and memory benchmarks run only in hosted CI.
+
+The browser admin page now separates general settings, provider credentials,
+proxy inventories/probes, and combo quotas into desktop tabs. Source controls and
+combo quotas use editable Nuxt tables with contained mobile scrolling. Saving
+admin settings does not refresh the Mini App availability endpoint. Atomic writes,
+write-only credentials, source-cache status polling, and billing policies remain
+owned by the existing APIs and composables.

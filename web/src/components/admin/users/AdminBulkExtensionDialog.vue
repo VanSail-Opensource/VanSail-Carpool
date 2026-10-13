@@ -97,7 +97,7 @@ async function create(): Promise<void> {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="t('adminBulkExtension.title')" :description="t('adminBulkExtension.copy')" :dismissible="!creating" :close="false" :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end' }">
+  <UModal v-model:open="open" :title="t('adminBulkExtension.title')" :description="t('adminBulkExtension.copy')" :dismissible="!creating" :close="false" :ui="{ header: 'admin-overlay-header', wrapper: 'admin-overlay-copy', footer: 'justify-end' }">
     <template #body>
       <AnimatePresence mode="wait" :initial="false">
         <motion.div :key="workflowState" :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">

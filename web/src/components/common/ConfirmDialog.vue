@@ -16,11 +16,13 @@ const props = withDefaults(defineProps<{
   danger?: boolean
   showClose?: boolean
   centered?: boolean
+  error?: string | null
 }>(), {
   busy: false,
   danger: false,
   showClose: false,
   centered: true,
+  error: null,
 })
 
 defineEmits<{ confirm: [] }>()
@@ -56,6 +58,7 @@ useTelegramProtection(computed(() => open.value && (props.danger || props.busy))
         </motion.span>
       </AnimatePresence>
     </template>
+    <template v-if="error" #body><UAlert color="warning" variant="soft" :title="error" /></template>
     <template #footer="{ close }">
       <UButton
         :label="t('common.cancel')"

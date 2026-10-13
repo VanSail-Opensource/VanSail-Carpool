@@ -1,5 +1,9 @@
 # Schema shards
 
+`browser-auth.yaml` defines public entrance configuration, write-only OAuth
+settings, one-use handoff inputs/results, and the discriminated browser
+administrator/member/anonymous session state.
+
 `schemas-24.yaml` defines owned squad controls, recoverable combo state and the
 full-duration early-activation quote.
 

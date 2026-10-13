@@ -1,6 +1,7 @@
 parameters:
   - { name: id, in: path, required: true, schema: { $ref: '../openapi.yaml#/components/schemas/ID' } }
 put:
+  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Administration]
   operationId: updateAdminPMModeration
   summary: Set block or silent-relay preferences and queue the profile card update

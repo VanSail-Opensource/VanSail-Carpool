@@ -93,7 +93,7 @@ func (s *Server) ipLookupCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ipLookupMember(w http.ResponseWriter, r *http.Request) bool {
-	if !s.requireOnboarded(w, r, currentUser(r)) {
+	if !browserScopedRequest(r) && !s.requireOnboarded(w, r, currentUser(r)) {
 		return false
 	}
 	if s.deps.IPLookup == nil {

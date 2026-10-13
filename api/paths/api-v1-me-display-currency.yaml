@@ -1,4 +1,5 @@
 get:
+  security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Authentication]
   operationId: getDisplayCurrency
   summary: Get the member's display currency and current conversion rates
@@ -11,6 +12,7 @@ get:
     '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
 
 put:
+  security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }, { browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
   tags: [Authentication]
   operationId: updateDisplayCurrency
   summary: Save the member's display currency

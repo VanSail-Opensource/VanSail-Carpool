@@ -9,6 +9,7 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `displayCurrency.ts` owns the member display-currency preference and server-managed CNY/USD conversion-rate requests.
 
 - `adminBilling.ts` owns the atomic administrator update for global Add TXB bounds.
+- `browserAccess.ts` owns browser identity, OAuth configuration, renewal/logout, and one-use Mini App handoffs with separate signing cookies and scope.
 - `abuse.ts` owns typed privacy-safe member and administrator detector resources, including configurable streaks, the revisioned abuse record cooldown (using the compatible `warningCooldownMinutes` field), and WebView-safe idempotency keys for mutations.
 - `abuse.test.ts` verifies detector mutations keep route-owned IDs out of strict JSON bodies and submit the complete streak policy.
 - `adminOperations.ts` owns aggregate user profiles, facet filtering, coupon wallet actions, exact entitlement refunds, queued provider-account actions, transient connection scans, bulk extensions, operation resolution, and streamed backup upload.

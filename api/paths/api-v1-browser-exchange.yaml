@@ -1,0 +1,44 @@
+{
+  "post": {
+    "tags": [
+      "Authentication"
+    ],
+    "operationId": "exchangeBrowserAccess",
+    "security": [],
+    "description": "Same-origin POST atomically consumes a five-minute handoff and sets independent 30-day browser cookies.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/BrowserExchangeInput"
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Same-origin POST atomically consumes a five-minute handoff and sets independent 30-day browser cookies.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/BrowserAdminState"
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../openapi.yaml#/components/responses/BadRequest"
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "429": {
+        "$ref": "../openapi.yaml#/components/responses/TooManyRequests"
+      }
+    }
+  }
+}
