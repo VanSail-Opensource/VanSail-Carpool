@@ -64,3 +64,5 @@ ledger references so repeated reasons remain separate audited operations.
 - `ip_lookup_settings_test.go` covers credential encryption, keeping, clearing and generic-route rejection for CI.
 
 - `usdt_settings.go` ? Encrypted USDT configuration registration and validation.
+
+`xnode_settings.go` Registers encrypted fleet configuration with typed validation.

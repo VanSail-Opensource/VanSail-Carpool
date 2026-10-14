@@ -27,7 +27,25 @@ func projectTarget(target Target) ([]byte, error) {
 	return data, nil
 }
 
+// ClientOutbound returns the checked native client projection, including owner
+// credentials. Callers must keep it out of public caches, logs and audit payloads.
+func ClientOutbound(target Target) (map[string]any, error) { return projectOutbound(target) }
+
 func projectOutbound(target Target) (map[string]any, error) {
+	if len(target.NativeOutbound) > 0 {
+		if len(target.NativeOutbound) > 64<<10 {
+			return nil, projectionError("INVALID_RESOLVED_CONFIG")
+		}
+		var outbound map[string]any
+		if json.Unmarshal(target.NativeOutbound, &outbound) != nil || outbound == nil {
+			return nil, projectionError("INVALID_RESOLVED_CONFIG")
+		}
+		outbound["tag"] = "connectivity-" + target.HostUUID
+		if err := validateProjectedOutbound(outbound); err != nil {
+			return nil, err
+		}
+		return outbound, nil
+	}
 	if len(target.Resolved) == 0 || len(target.Resolved) > 2<<20 {
 		return nil, projectionError("INVALID_RESOLVED_CONFIG")
 	}

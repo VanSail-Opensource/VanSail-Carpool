@@ -67,7 +67,11 @@ func (w *BlockWorker) HandleProviderOperation(ctx context.Context, operation pro
 	if err != nil {
 		return err
 	}
-	if callErr := w.remote.BlockIP(ctx, ip, block.NodeUUID, remaining); callErr != nil {
+	scoped, callErr := scopedControl(ctx, w.remote, block.UserID, ip, block.NodeUUID, false, remaining, false)
+	if !scoped {
+		callErr = w.remote.BlockIP(ctx, ip, block.NodeUUID, remaining)
+	}
+	if callErr != nil {
 		if w.remote.DefinitiveMutationFailure(callErr) {
 			return w.finish(ctx, operation, item, block, providerops.StatusFailed, "BLOCK_REJECTED")
 		}

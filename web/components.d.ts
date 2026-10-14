@@ -301,5 +301,16 @@ declare module 'vue' {
     UTextarea: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
     UTooltip: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
     WheelPresenter: typeof import('./src/components/activity/draw/presenters/WheelPresenter.vue')['default']
+    XNodeAccessGroups: typeof import('./src/components/admin/xnode/XNodeAccessGroups.vue')['default']
+    XNodeCertificateSettings: typeof import('./src/components/admin/xnode/XNodeCertificateSettings.vue')['default']
+    XNodeConfigurations: typeof import('./src/components/admin/xnode/XNodeConfigurations.vue')['default']
+    XNodeDDNSSettings: typeof import('./src/components/admin/xnode/XNodeDDNSSettings.vue')['default']
+    XNodeGlobalSettings: typeof import('./src/components/admin/xnode/XNodeGlobalSettings.vue')['default']
+    XNodeJsonEditor: typeof import('./src/components/admin/xnode/XNodeJsonEditor.vue')['default']
+    XNodeMetrics: typeof import('./src/components/admin/xnode/XNodeMetrics.vue')['default']
+    XNodeMigration: typeof import('./src/components/admin/xnode/XNodeMigration.vue')['default']
+    XNodeNodes: typeof import('./src/components/admin/xnode/XNodeNodes.vue')['default']
+    XNodeOperationalSettings: typeof import('./src/components/admin/xnode/XNodeOperationalSettings.vue')['default']
+    XNodeWorkspace: typeof import('./src/components/admin/xnode/XNodeWorkspace.vue')['default']
   }
 }

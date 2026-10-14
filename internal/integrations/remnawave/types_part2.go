@@ -15,7 +15,9 @@ type InternalSquad struct {
 // NodeInbound is one currently active inbound exposed by a Remnawave node.
 
 type NodeInbound struct {
-	UUID string `json:"uuid"`
+	UUID        string `json:"uuid"`
+	Tag         string `json:"tag"`
+	ProfileUUID string `json:"profileUuid"`
 }
 
 // NodeProvider is the display-safe provider identity returned with a live node.
@@ -40,6 +42,7 @@ type Node struct {
 	Versions              *NodeVersions `json:"versions"`
 	Provider              *NodeProvider `json:"provider"`
 	ConfigProfile         struct {
+		UUID           *string       `json:"activeConfigProfileUuid"`
 		ActiveInbounds []NodeInbound `json:"activeInbounds"`
 	} `json:"configProfile"`
 }

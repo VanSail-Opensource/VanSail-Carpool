@@ -28,11 +28,12 @@ type User struct {
 // Target contains transient upstream metadata and a resolved client configuration.
 // Resolved must never be persisted, logged, or returned to a browser.
 type Target struct {
-	HostUUID string          `json:"hostUuid"`
-	Remark   string          `json:"remark"`
-	Address  string          `json:"address"`
-	Port     int             `json:"port"`
-	Resolved json.RawMessage `json:"-"`
+	HostUUID       string          `json:"hostUuid"`
+	Remark         string          `json:"remark"`
+	Address        string          `json:"address"`
+	Port           int             `json:"port"`
+	Resolved       json.RawMessage `json:"-"`
+	NativeOutbound json.RawMessage `json:"-"`
 }
 
 // Outcome is a sanitized terminal probe result.

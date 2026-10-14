@@ -1,0 +1,23 @@
+{
+  "get": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "getXNodeMigration",
+    "responses": {
+      "200": {
+        "description": "X-Node response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeMigration"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      }
+    }
+  }
+}

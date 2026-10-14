@@ -111,3 +111,35 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
 
 `ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before SQLite closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.
+
+- `xnode_bridge.go`: Entry points: `reconcileBridgeUsage`, `resetBridge`, `requireBridgeSettlement`.
+
+- `xnode_bridge_policy.go`: Entry points: `bridgeEntitlement`, `applyBridgePolicy`, `bridgeGroups`.
+
+- `xnode_bridge_sync.go`: Entry points: `syncBridgeAccounts`.
+
+- `xnode_catalog.go`: Entry points: `Dashboard`, `RevokeSubscription`, `ListInternalSquads`, `ListCatalogSquads`.
+
+- `xnode_connections.go`: Entry points: `RequestConnectionScan`, `PollConnectionScan`, `ControlMemberIP`, `DropConnection`.
+
+- `xnode_connectivity.go`: Entry points: `Resolve`, `Validate`, `Load`.
+
+- `xnode_entitlements.go`: Entry points: `ApplyEntitlement`, `RemoveEntitlement`, `ResetTraffic`, `QuiesceForRollover`.
+
+- `xnode_member_subscription.go`: Entry points: `LoadMemberSubscription`.
+
+- `xnode_migration_setup.go`: Entry points: `migrationCredentials`.
+
+- `xnode_migration_source.go`: Entry points: `Capture`, `SetNodeDisabled`, `SyncUsage`.
+
+- `xnode_notifications.go`: Entry points: `ListNotificationUsers`.
+
+- `xnode_provider.go`: Entry points: `FindUserByUsername`, `FindUserByTelegramID`, `FindUserByID`, `CreateUser`.
+
+- `xnode_statistics.go`: Entry points: `Digest`, `Traffic`, `Nodes`.
+
+- `xnode_subscription_bridge.go`: Entry points: `legacyProxies`, `proxyFromOutbound`, `objectValue`.
+
+- `xnode_usage.go`: Entry points: `NodeUsage`.
+
+- `xnode_compensation.go` merges provider ownership and qualifies inbound identities for node compensation.

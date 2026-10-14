@@ -36,7 +36,11 @@ func (w *UnblockWorker) HandleProviderOperation(ctx context.Context, operation p
 	if err != nil {
 		return err
 	}
-	if callErr := w.remote.UnblockIP(ctx, ip, block.NodeUUID); callErr != nil {
+	scoped, callErr := scopedControl(ctx, w.remote, block.UserID, ip, block.NodeUUID, false, 0, true)
+	if !scoped {
+		callErr = w.remote.UnblockIP(ctx, ip, block.NodeUUID)
+	}
+	if callErr != nil {
 		status, code := providerops.StatusPendingReview, "UNBLOCK_OUTCOME_AMBIGUOUS"
 		if w.remote.DefinitiveMutationFailure(callErr) {
 			status, code = providerops.StatusFailed, "UNBLOCK_REJECTED"

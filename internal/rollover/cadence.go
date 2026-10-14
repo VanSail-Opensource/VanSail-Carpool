@@ -6,6 +6,11 @@ import (
 
 type cadencePeriod struct{ start, end time.Time }
 
+// CadenceAdvance is shared with panel-owned quota period scheduling.
+func CadenceAdvance(value time.Time, strategy string) time.Time {
+	return cadenceAdvance(value, strategy)
+}
+
 func cadencePeriods(anchor, start, end time.Time, strategy string) []cadencePeriod {
 	if strategy == "NO_RESET" {
 		return []cadencePeriod{{start: start, end: end}}

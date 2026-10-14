@@ -19,7 +19,7 @@ type memberWorkflowServices struct {
 	purchases   *purchaseops.Service
 }
 
-func newMemberWorkflows(store *database.Store, remna remnaAdapter, vault *secret.Vault, signingKey []byte) (memberWorkflowServices, *connections.Worker, *connections.ExpiryWorker, *providerops.Dispatcher, error) {
+func newMemberWorkflows(store *database.Store, remna proxyProvider, vault *secret.Vault, signingKey []byte) (memberWorkflowServices, *connections.Worker, *connections.ExpiryWorker, *providerops.Dispatcher, error) {
 	signer, err := connections.NewSigner(signingKey)
 	if err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, err
@@ -49,7 +49,7 @@ func newMemberWorkflows(store *database.Store, remna remnaAdapter, vault *secret
 	return services, connections.NewWorker(store, remna), connections.NewExpiryWorker(store, remna, secrets), dispatcher, nil
 }
 
-func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *database.Store, remna remnaAdapter) error {
+func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *database.Store, remna proxyProvider) error {
 	worker := admin.NewUserOperationWorker(store, remna)
 	for _, kind := range []string{providerops.KindAdminEntitlementEdit, providerops.KindAdminEntitlementRefund,
 		providerops.KindAdminComboReplacement, providerops.KindAdminBulkExtension, providerops.KindNodeCompensation} {

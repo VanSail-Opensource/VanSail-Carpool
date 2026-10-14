@@ -62,7 +62,10 @@ func (w *DropWorker) HandleProviderOperation(ctx context.Context, operation prov
 	if err != nil {
 		return err
 	}
-	callErr := w.remote.DropConnection(ctx, claims.IP, claims.NodeUUID)
+	scoped, callErr := scopedControl(ctx, w.remote, operation.OwnerUserID, claims.IP, claims.NodeUUID, true, 0, false)
+	if !scoped {
+		callErr = w.remote.DropConnection(ctx, claims.IP, claims.NodeUUID)
+	}
 	if callErr == nil {
 		return w.finish(ctx, operation, item, providerops.StatusSucceeded, "")
 	}

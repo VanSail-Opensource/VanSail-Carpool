@@ -39,3 +39,9 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `ip-lookup-checks.json` contains background, proxy, subnet, probe and refresh-quota labels.
 
 - `admin-usdt.json` ? English built-in USDT configuration, status and review copy.
+
+`xnode.json` owns node enrollment, shared policy, Xray/snippet editing and live metrics.
+
+- `xnode-migration.json` provides localized migration status, source setup and recovery guidance.
+
+- `public-subscription.json` provides public bearer subscription, format and import guidance.

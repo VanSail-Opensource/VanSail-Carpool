@@ -1,0 +1,60 @@
+{
+  "get": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "getXNodeGlobal",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeGlobal"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  },
+  "put": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "saveXNodeGlobal",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeGlobal"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeGlobal"
+          }
+        }
+      }
+    }
+  }
+}

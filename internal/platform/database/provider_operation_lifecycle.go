@@ -20,7 +20,7 @@ func (s *Store) BeginProviderOperationAttempt(ctx context.Context, operationID s
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='processing',attempts=attempts+1,
-		attempt_started_at=?,updated_at=? WHERE id=? AND status='queued'`, stamp(now), stamp(now), operationID)
+		attempt_started_at=?,updated_at=? WHERE id=? AND (status='queued' OR (status='processing' AND kind IN('xnode_command','xnode_migration')))`, stamp(now), stamp(now), operationID)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("mark provider attempt: %w", err)
 	}
@@ -41,6 +41,16 @@ func (s *Store) BeginProviderOperationAttempt(ctx context.Context, operationID s
 
 // CompleteProviderOperation persists a sanitized terminal result.
 func (s *Store) CompleteProviderOperation(ctx context.Context, operationID string, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
+	return s.completeProviderOperation(ctx, operationID, nil, completion, now)
+}
+
+// CompleteXNodeProviderOperation fences recovered asynchronous attempts. Node
+// commands are idempotent by receipt ID; older callbacks cannot overwrite replay.
+func (s *Store) CompleteXNodeProviderOperation(ctx context.Context, operationID string, attempt int, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
+	return s.completeProviderOperation(ctx, operationID, &attempt, completion, now)
+}
+
+func (s *Store) completeProviderOperation(ctx context.Context, operationID string, attempt *int, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
 	if !providerops.Terminal(completion.Status) {
 		return providerops.Operation{}, ErrConflict
 	}
@@ -59,8 +69,8 @@ func (s *Store) CompleteProviderOperation(ctx context.Context, operationID strin
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,
 		result_json=?,completed_at=?,updated_at=? WHERE id=? AND ((status='processing' AND attempt_started_at IS NOT NULL)
-		OR (status='queued' AND ?='failed'))`, completion.Status, completion.ProviderReference, completion.ErrorCode,
-		resultJSON, stamp(now), stamp(now), operationID, completion.Status)
+		OR (status='queued' AND ?='failed')) AND (? IS NULL OR attempts=?)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
+		resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("complete provider operation: %w", err)
 	}

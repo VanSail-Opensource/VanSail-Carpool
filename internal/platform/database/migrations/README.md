@@ -1,5 +1,9 @@
 # Database migrations
 
+`075_xnode_control_plane.sql` adds authoritative X-Node configuration and access
+references plus period accounting, immutable report cursors, rate boundaries and
+resumable migration metadata. Runtime connection observations remain in memory.
+
 `073_browser_admin_sessions.sql` preserves all legacy sessions as Mini App scope,
 replaces the global per-user unique index with a partial Mini App-only index,
 adds renewal timestamps, and creates hashed one-use browser handoff references.

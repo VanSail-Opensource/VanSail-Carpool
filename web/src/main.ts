@@ -5,6 +5,11 @@ import { setExperience } from './utils/experience'
 void bootstrap().catch(showBootstrapFailure)
 
 async function bootstrap(): Promise<void> {
+  if (location.pathname.startsWith('/subscription/')) {
+    setExperience('browser')
+    await import('./publicSubscription/main')
+    return
+  }
   const adminPath = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
   const browserAuthPath = location.pathname === '/admin/access' || location.pathname === '/admin/login'
   if (adminPath && !browserAuthPath && hasTelegramLaunchContext()) {

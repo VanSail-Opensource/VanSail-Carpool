@@ -1,0 +1,41 @@
+{
+  "xnodeMigration": {
+    "title": "迁移",
+    "loadFailed": "无法加载迁移状态。",
+    "actionFailed": "迁移操作未完成，请检查节点状态后重试。",
+    "continuity": "新购买的套餐可同时使用旧节点和已迁移节点，旧流量会持续同步并计入同一额度。请逐个迁移节点，保留其他可用节点。",
+    "sourceUrl": "Remnawave 面板地址",
+    "sourceToken": "Remnawave API 令牌",
+    "sourceBackup": "已验证的源面板备份记录",
+    "monitoring": "明确映射的监控账号（JSON）",
+    "preview": "预览导入",
+    "snapshot": "快照：{digest}",
+    "counts": "{nodes} 个节点 · {groups} 个分组 · {accounts} 个账号 · {endpoints} 个接入地址",
+    "requiresCorrection": "需要修正",
+    "review": "请检查",
+    "import": "导入或继续导入",
+    "panelBackup": "面板备份：{name}",
+    "empty": "尚无节点迁移记录。",
+    "ownership": "管理方",
+    "actions": "操作",
+    "recoveryPending": "恢复尚未完成，请先继续回滚，再尝试迁移。",
+    "cutover": "迁移至 X-Node",
+    "rollback": "恢复旧节点",
+    "signedAgent": "迁移需要已注册、兼容且经过签名的代理程序，并通过服务端和客户端配置检查。失败时会尝试回滚；源面板流量完成结算验证之前，财务结算保持待处理。",
+    "phases": {
+      "legacy": "Remnawave",
+      "preparing": "准备迁移",
+      "native": "X-Node",
+      "rolling_back": "恢复 Remnawave",
+      "review": "等待恢复"
+    },
+    "issues": {
+      "UNMATCHED_IDENTITY": "账号与已关联的面板身份不匹配。",
+      "INVALID_CONFIGURATION": "源 Xray 配置无效。",
+      "UNSUPPORTED_SHADOWSOCKS": "请在迁移前将此 Shadowsocks 入站改为允许的加密方式。",
+      "INCOMPLETE_TRAFFIC_HISTORY": "源节点流量序列与每日总量不一致。",
+      "INVALID_HOST": "源接入地址配置无效。",
+      "CLIENT_TEMPLATE_REQUIRES_CONVERSION": "请先转换旧客户端模板，再迁移此接入地址。"
+    }
+  }
+}

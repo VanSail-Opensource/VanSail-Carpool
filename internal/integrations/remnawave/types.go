@@ -53,6 +53,9 @@ type UserTraffic struct {
 // SubscriptionURL must be treated as a bearer credential by callers.
 
 type User struct {
+	VLESSUUID            string               `json:"-"`
+	TrojanPassword       string               `json:"-"`
+	ShadowsocksPassword  string               `json:"-"`
 	ID                   int64                `json:"id"`
 	ShortUUID            string               `json:"shortUuid"`
 	Username             string               `json:"username"`

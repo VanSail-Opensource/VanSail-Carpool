@@ -72,7 +72,7 @@
     "checkingAvailability": "正在检查可用性",
     "reserveUsername": "保留用户名"
   },
-  "common": {
+  "common": { "edit": "编辑", "name": "名称",
     "notScheduled": "尚未安排",
     "notAvailable": "暂不可用",
     "active": "已激活",

@@ -26,6 +26,8 @@ import (
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"io/fs"
@@ -53,6 +55,9 @@ type telegramProvider interface {
 }
 
 type Dependencies struct {
+	XNode              *xnode.Service
+	XNodeMigration     *xnodemigration.Service
+	XNodeMaster        *xnode.Master
 	BrowserAuth        *browserauth.Service
 	USDT               *usdt.Service
 	IPLookup           *iplookup.Service
@@ -137,6 +142,13 @@ func New(deps Dependencies) (*Server, error) {
 	router.Get("/readyz", server.ready)
 	router.With(server.limitAuthentication).Post("/api/v1/auth/telegram", server.authenticate)
 	server.mountBrowserAuth(router)
+	if deps.XNodeMaster != nil {
+		router.Get("/v1/agents/connect", deps.XNodeMaster.ServeHTTP)
+	}
+	if deps.XNode != nil {
+		router.Get("/api/v1/subscriptions/{token}/metadata", server.xnodeBearerMetadata)
+		router.Get("/api/v1/subscriptions/{token}", server.xnodeBearerSubscription)
+	}
 	router.Post("/api/v1/webhooks/telegram", server.telegramWebhook)
 	router.Get("/api/v1/webhooks/ezpay", server.ezpayWebhook)
 	router.Post("/api/v1/webhooks/bepusdt", server.bepusdtWebhook)
@@ -176,6 +188,7 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Put("/api/v1/purchases/{id}/auto-renewal", server.updateAutomaticRenewal)
 		authenticated.Post("/api/v1/subscription/revoke", server.revokeSubscription)
 		server.mountMemberOperations(authenticated)
+		server.mountXNodeMembers(authenticated)
 		server.mountIPLookup(authenticated)
 		server.mountUSDT(authenticated)
 		authenticated.Get("/api/v1/balance", server.balance)
@@ -197,6 +210,7 @@ func New(deps Dependencies) (*Server, error) {
 				deps.DatabaseAdmin.Mount(adminRouter)
 			}
 			server.mountAdmin(adminRouter)
+			server.mountXNodeAdmin(adminRouter)
 		})
 	})
 

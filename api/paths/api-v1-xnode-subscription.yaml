@@ -1,0 +1,23 @@
+{
+  "get": {
+    "tags": [
+      "Members"
+    ],
+    "operationId": "getXNodeOwnedSubscription",
+    "responses": {
+      "200": {
+        "description": "X-Node response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeSubscription"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      }
+    }
+  }
+}

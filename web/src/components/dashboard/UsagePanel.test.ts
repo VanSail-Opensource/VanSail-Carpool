@@ -28,9 +28,9 @@ describe('UsagePanel', () => {
     expect(wrapper.text()).toContain('OFFLINE')
     expect(wrapper.text()).toContain('No reset recorded')
     expect(wrapper.text()).toContain('25%')
-    expect(wrapper.text()).toContain('25 GB')
-    expect(wrapper.text()).toContain('75 GB')
-    expect(wrapper.text()).not.toContain('of 100 GB')
+    expect(wrapper.text()).toContain('25 GiB')
+    expect(wrapper.text()).toContain('75 GiB')
+    expect(wrapper.text()).not.toContain('of 100 GiB')
     wrapper.unmount()
   })
 

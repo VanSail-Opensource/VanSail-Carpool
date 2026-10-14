@@ -24,10 +24,10 @@ export function formatMoney(money: Money): string {
 
 export function formatBytes(raw: string | number): string {
   const normalized = typeof raw === 'number' ? String(Math.trunc(raw)) : raw.trim()
-  if (!/^\d+$/.test(normalized)) return '0 GB'
+  if (!/^\d+$/.test(normalized)) return '0 B'
   const bytes = BigInt(normalized)
-  if (bytes <= 0n) return '0 GB'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  if (bytes <= 0n) return '0 B'
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
   let index = 0
   let divisor = 1n
   while (index < units.length - 1 && bytes >= divisor * 1024n) {
@@ -47,13 +47,13 @@ export function formatBPS(value: number): string {
 }
 
 export function trafficBytesFromInput(value: string): string {
-  const match = /^\s*(\d+)(?:\.(\d+))?\s*(B|KB|MB|GB|TB)?\s*$/i.exec(value)
+  const match = /^\s*(\d+)(?:\.(\d+))?\s*(B|[KMGT]i?B)?\s*$/i.exec(value)
   if (!match) return ''
   const whole = BigInt(match[1])
   const fraction = match[2] ?? ''
   const scale = 10n ** BigInt(fraction.length)
   const unit = (match[3] ?? 'B').toUpperCase()
-  const powers: Record<string, bigint> = { B: 1n, KB: 1024n, MB: 1024n ** 2n, GB: 1024n ** 3n, TB: 1024n ** 4n }
+  const powers: Record<string, bigint> = { B: 1n, KB: 1024n, KIB: 1024n, MB: 1024n ** 2n, MIB: 1024n ** 2n, GB: 1024n ** 3n, GIB: 1024n ** 3n, TB: 1024n ** 4n, TIB: 1024n ** 4n }
   const multiplier = powers[unit]
   if (!multiplier) return ''
   const numerator = (whole * scale + BigInt(fraction || '0')) * multiplier

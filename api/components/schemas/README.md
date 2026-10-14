@@ -55,3 +55,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 `ip-lookup-enhanced.yaml` defines independent administrator source cache status and combined unique counts. `ip-lookup-report.yaml` adds optional AI suitability ratings and datacenter warnings while retaining verdict compatibility.
 
 - `usdt.yaml` ? Typed built-in USDT administration, quota, scan and review contracts.
+
+`xnode.yaml` defines authoritative nodes, per-node policy, global configuration, shared snippets, live metrics and enrollment. Live metrics remain nonpersistent.

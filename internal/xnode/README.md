@@ -1,0 +1,126 @@
+# X-Node control plane
+
+`Service` owns authoritative configurations, ordered snippets, node settings,
+access groups, endpoints, identities and accounting periods. `Master` accepts
+`/v1/agents/connect`, binds enrolled agents, owns per-socket queues, and joins
+their lifetimes before SQLite closes. Public wire/renderer packages come from a
+pinned X-Node revision; the same native core validates configuration.
+
+`compiler*.go` combines one base per node, global policy, node utilities, eligible
+paid users and owner-scoped customizations. `UserOutbound`/`UserRouting` are empty
+object markers in outbound/routing arrays; compiled native JSON removes them.
+The default outbound must precede the outbound marker. Shared snippets appear
+around member insertions: outbound snippets precede the member marker and shared routing fallback rules follow it. Native rendering and certificates contain credentials.
+
+`master*.go` handles revisions, memory-only reports, durable traffic ACKs,
+bidirectional firewall confirmation, command results and snapshot replacement.
+Command waiting never occupies the frame-send queue. Connection limits use fresh
+available node counts and block only new admission after the global threshold
+is exceeded. Missing nodes mark totals incomplete and do not force blocking.
+
+`credentials.go` preserves imported secrets and creates independent random
+SS-2022 128/256-bit user keys. SQLite stores encrypted desired configuration and
+credentials plus exact accounting; no live count, source-IP set, rate, log or
+connection-derived block decision enters persistence. `ports.go` keeps compact
+intervals. `public_transport.go` prevents private destinations and DNS rebinding
+when validating external asset links through the existing request queue.
+
+`validation_assets.go` substitutes node-local files only in an analysis copy,
+then runs native validation; actual activation still verifies node-local assets.
+Hosted cases cover port parsing, report freshness and invalid observations.
+
+`types.go` Defines authoritative node, config, group, endpoint and shared policy types.
+`accounting_types.go` Defines private identities, credentials, periods and migration state.
+`metrics_types.go` Defines transient collector, node and member metric projections.
+`repository.go` Defines storage/settings dependencies.
+`service.go` Owns injected dependencies and secret-safe readers.
+`global.go` Normalizes and validates fleet policy.
+`global_save.go` Merges write-only credentials and queues link validation.
+`service_nodes.go` Validates node utilities, enrollment and access/endpoint changes.
+`service_configuration.go` Validates and stores base configs and snippets.
+`compiler.go` Expands shared/member slots into one native config per node.
+`compiler_users.go` Projects current paid ownership, preferences, quotas and restrictions.
+`master.go` Owns socket/queue lifetimes and serialized outbound execution.
+`master_http.go` Authenticates WSS enrollment and agent/boot identity binding.
+`master_receive.go` Replaces reports, commits traffic before ACK and confirms firewall liveness.
+`master_sync.go` Serializes revisions and computes memory-only global connection controls.
+`master_commands.go` Waits for commands outside frame queues and verifies accounting barriers.
+`master_metrics.go` Projects fresh available fleet and owner-specific snapshots.
+`ports_test.go` Pins compact range normalization and invalid inputs for hosted CI.
+`master_metrics_test.go` Pins report freshness and invalid/empty count handling for hosted CI.
+
+- `access_window.go`: Entry points: `EffectivePurchase`.
+
+- `account_statistics.go`: Entry points: `MemberOperationState`, `Statistics`, `UsageSnapshotForRollover`, `Usage`.
+
+- `cadence.go`: Entry points: `ResetCadences`, `ResumeAccounting`, `RunAccounting`.
+
+- `command_arguments.go`: Entry points: `commandArguments`.
+
+- `compiler_snippets.go`: Entry points: `expandMarker`, `appendSharedSnippet`.
+
+- `controlplane_fixture_test.go`: Hosted regression coverage: `Optional`, `PutXNodeGlobal`.
+
+- `controlplane_test.go`: Hosted regression coverage: `TestRegistrationDoesNotAuthorizeProxyAccess`, `TestPaidAccountsOwnRoutingTagsAndMatchers`, `TestSubscriptionRevocationPreservesProxyCredentials`.
+
+- `custom_destinations.go`: Entry points: `resolvePublicProxy`, `preserveProxyHost`, `validateMemberRule`.
+
+- `custom_routing.go`: Entry points: `SaveOwnedOutbounds`, `SaveOwnedRouting`.
+
+- `custom_stream.go`: Entry points: `validateMemberStream`.
+
+- `custom_validation.go`: Entry points: `allowedFields`, `validateMemberOutbound`.
+
+- `customization_read.go`: Entry points: `OwnedCustomization`.
+
+- `endpoint_client_options.go`: Entry points: `optionObject`, `applyEndpointClient`.
+
+- `endpoint_clients.go`: Entry points: `ServiceProxy`.
+
+- `endpoint_inventory.go`: Entry points: `MemberProxies`.
+
+- `endpoint_options.go`: Entry points: `applyEndpointOptions`, `stringField`.
+
+- `endpoint_transport.go`: Entry points: `clientStream`.
+
+- `identities.go`: Entry points: `Identity`, `IdentityForUser`, `IdentityUser`, `UserByUsername`.
+
+- `identity_import.go`: Entry points: `ImportIdentity`.
+
+- `legacy_sync.go`: Entry points: `SyncLegacyUsage`.
+
+- `master_access.go`: Entry points: `Connected`, `Sync`.
+
+- `master_operations.go`: Entry points: `DeferOperation`.
+
+- `master_socket_test.go`: Hosted regression coverage: `TestEnrollmentReconnectAndReplayUseAuthoritativeRevisions`, `TestNodeSnapshotsReplaceCountsWithoutPersistingTelemetry`.
+
+- `migration_preflight.go`: Entry points: `VerifyClientEndpoints`.
+
+- `ownership.go`: Entry points: `NativeOwner`, `Candidate`, `XNodeMigration`.
+
+- `period_operations.go`: Entry points: `Quiesce`, `CloseForReplacement`, `ResetTraffic`, `RestorePurchase`.
+
+- `periods.go`: Entry points: `ApplyPurchase`.
+
+- `release_check.go`: Entry points: `AgentBuild`, `VerifyRelease`, `WaitApplied`.
+
+- `service_import.go`: Entry points: `ImportServiceIdentity`.
+
+- `service_users.go`: Entry points: `AuthorizeService`.
+
+- `subscriptions.go`: Entry points: `BearerMetadata`, `OwnedSubscription`, `BearerSubscription`, `RoutingTemplates`.
+
+- `validation_base.go`: Entry points: `ValidateConfigurationDocument`.
+
+- `validation_complete.go`: Entry points: `ValidateCompiled`.
+
+- `operations.go` queues durable node commands and dispatches waits through bounded controller-owned tasks, retaining and renewing outbox leases so purchases continue.
+
+- `member_metrics.go` returns scoped live member rates, connection counts and reasons.
+- `metric_scope.go` retains node scope when quota, expiry or restrictions deny admission.
+
+- `tag_ownership.go` reserves stored member tags, including inactive users, against administrator/shared outbounds and other owners.
+- `tag_ownership_test.go` covers ambiguous hyphen namespaces across active and expired members.
+
+- `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.

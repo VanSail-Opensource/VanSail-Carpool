@@ -1,4 +1,10 @@
 import enIPLookup from '../../locales/en/ip-lookup.json'
+import enPublicSubscription from '../../locales/en/public-subscription.json'
+import zhPublicSubscription from '../../locales/zh-CN/public-subscription.json'
+import enXNode from '../../locales/en/xnode.json'
+import zhXNode from '../../locales/zh-CN/xnode.json'
+import enXNodeMigration from '../../locales/en/xnode-migration.json'
+import zhXNodeMigration from '../../locales/zh-CN/xnode-migration.json'
 import enBrowser from '../../locales/en/browser.json'
 import zhBrowser from '../../locales/zh-CN/browser.json'
 import enAdminUsdt from '../../locales/en/admin-usdt.json'
@@ -62,6 +68,8 @@ import zhStatistics from '../../locales/zh-CN/statistics.json'
 import zhSettings from '../../locales/zh-CN/settings.json'
 
 const en = {
+ ...enPublicSubscription,
+ ...enXNode, ...enXNodeMigration,
  ...enAdminUsdt,
  ipLookup: { ...enIPLookup.ipLookup, ...enIPLookupChecks.ipLookup, refusals: { ...enIPLookup.ipLookup.refusals, ...enIPLookupChecks.ipLookup.refusals } },
  ...enIPLookupLive,
@@ -71,6 +79,8 @@ const en = {
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enAdminAbuse, ...enAbuse, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
+ ...zhPublicSubscription,
+ ...zhXNode, ...zhXNodeMigration,
  ...zhAdminUsdt,
  ipLookup: { ...zhIPLookup.ipLookup, ...zhIPLookupChecks.ipLookup, refusals: { ...zhIPLookup.ipLookup.refusals, ...zhIPLookupChecks.ipLookup.refusals } },
  ...zhIPLookupLive,

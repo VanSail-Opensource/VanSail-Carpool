@@ -60,7 +60,7 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
-				s.deps.Logger.Error("HTTP panic", "request_id", middleware.GetReqID(r.Context()), "method", r.Method, "path", r.URL.Path, "panic", recovered, "stack", string(debug.Stack()))
+				s.deps.Logger.Error("HTTP panic", "request_id", middleware.GetReqID(r.Context()), "method", r.Method, "path", redactedRequestPath(r.URL.Path), "panic", recovered, "stack", string(debug.Stack()))
 				s.writeError(w, r, http.StatusInternalServerError, "INTERNAL", "The request could not be completed.")
 			}
 		}()
@@ -74,7 +74,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' https://telegram.org https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com https://www.openstreetmap.org; frame-ancestors https://web.telegram.org https://*.telegram.org")
-		if (r.URL.Path == "/admin" || r.URL.Path == "/admin.html" || strings.HasPrefix(r.URL.Path, "/admin/")) && !legacyMiniAppFrame(r) {
+		if ((r.URL.Path == "/admin" || r.URL.Path == "/admin.html" || strings.HasPrefix(r.URL.Path, "/admin/")) && !legacyMiniAppFrame(r)) || strings.HasPrefix(r.URL.Path, "/subscription/") {
 			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.openstreetmap.org; frame-ancestors 'none'")
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/") {
@@ -89,12 +89,17 @@ func (s *Server) accessLog(next http.Handler) http.Handler {
 		start := time.Now()
 		wrapper := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		next.ServeHTTP(wrapper, r)
-		path := r.URL.Path
-		if strings.HasPrefix(path, "/api/v1/webhooks/bepusdt/") {
-			path = "/api/v1/webhooks/bepusdt/[redacted]"
-		}
+		path := redactedRequestPath(r.URL.Path)
 		s.deps.Logger.Info("HTTP request", "request_id", middleware.GetReqID(r.Context()), "method", r.Method, "path", path, "status", wrapper.Status(), "duration_ms", time.Since(start).Milliseconds())
 	})
+}
+func redactedRequestPath(path string) string {
+	for _, prefix := range []string{"/api/v1/webhooks/bepusdt/", "/api/v1/subscriptions/", "/subscription/"} {
+		if strings.HasPrefix(path, prefix) {
+			return prefix + "[redacted]"
+		}
+	}
+	return path
 }
 
 func spaHandler(content fs.FS) http.Handler {
@@ -117,18 +122,23 @@ func spaHandler(content fs.FS) http.Handler {
 		if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/") {
 			entry = "admin.html"
 		}
+		if strings.HasPrefix(r.URL.Path,"/subscription/") { entry = "subscription.html" }
 		index, err := fs.ReadFile(content, entry)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
 		setStaticCacheHeaders(w, entry)
+		if strings.HasPrefix(r.URL.Path, "/subscription/") {
+			w.Header().Set("Cache-Control", "no-store")
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(index)
 	})
 }
 
 func setStaticCacheHeaders(w http.ResponseWriter, path string) {
+	if path == "subscription.html" { w.Header().Set("Cache-Control","no-store");return }
 	if path == "index.html" || path == "admin.html" {
 		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		return

@@ -13,7 +13,10 @@ func (w *BlockWorker) disconnect(ctx context.Context, operation providerops.Oper
 	if err != nil || user.RemnaUserID == nil {
 		return w.finish(ctx, operation, item, block, providerops.StatusPartial, "DROP_RECONCILIATION_FAILED")
 	}
-	callErr := w.remote.DropConnection(ctx, ip, block.NodeUUID)
+	scoped, callErr := scopedControl(ctx, w.remote, block.UserID, ip, block.NodeUUID, true, 0, false)
+	if !scoped {
+		callErr = w.remote.DropConnection(ctx, ip, block.NodeUUID)
+	}
 	if callErr == nil {
 		return w.finish(ctx, operation, item, block, providerops.StatusSucceeded, "")
 	}

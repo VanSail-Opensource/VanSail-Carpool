@@ -188,3 +188,46 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-admin-usdt-review.yaml` ? Dedicated administrator USDT review API contract.
 - `api-v1-admin-usdt-status.yaml` ? Dedicated administrator USDT status API contract.
 - `api-v1-admin-usdt.yaml` ? Dedicated administrator USDT  API contract.
+
+`api-v1-admin-xnode-*.yaml` defines browser-scoped node, config, snippet, group, endpoint, enrollment, validation and metrics operations.
+
+`api-v1-admin-xnode-configurations-id.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-configurations-validate.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-configurations.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-endpoints-id.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-endpoints.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-global.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-groups-id.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-groups.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-metrics.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-nodes-id-enrollment.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-nodes-id.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-nodes.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-snippets-id.yaml` defines the matching browser-scoped X-Node resource operation.
+`api-v1-admin-xnode-snippets.yaml` defines the matching browser-scoped X-Node resource operation.
+
+- `api-v1-admin-xnode-migration-import.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-admin-xnode-migration-nodes-id-cutover.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-admin-xnode-migration-nodes-id-rollback.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-admin-xnode-migration-preview.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-admin-xnode-migration.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-admin-xnode-nodes-id-commands.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-metrics.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-routing-id-outbounds.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-routing-id-rules.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-routing-id.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-routing-templates.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-xnode-subscription.yaml` defines the typed X-Node contract for this resource.
+
+- `api-v1-subscriptions-token-metadata.yaml` defines owner-scoped bearer subscription metadata.

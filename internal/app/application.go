@@ -20,11 +20,14 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 // Application owns all context-managed process resources.
 type Application struct {
 	usdt            *usdt.Service
+	xnodeService    *xnode.Service
+	xnodeMaster     *xnode.Master
 	config          config.Config
 	logger          *slog.Logger
 	httpServer      *http.Server

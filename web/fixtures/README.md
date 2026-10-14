@@ -68,3 +68,7 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 `ip-lookup-enhanced-audit.ts` provides constructed named-source, subnet, full-probe progress and return-to-IP states. Use `enhanced=clean|risk|partial|skipped` and `checking` or `progress-error`; `__ipEnhancedAudit.start()` / `.finish()` control shared work without charges.
 
 `ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). The enhanced fixture supports `source-warming`, `source-partial`, `source-error` and `source-status-error` for shared admin polling/refresh; `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.
+
+- `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace and migration browser states. Query flags cover empty, slow, error, source preview, unsupported methods, pending receipts, recovery and Chinese localization. They never connect to production agents.
+
+- `public-subscription-audit.ts` and `public-subscription-audit.html` supply populated, loading, empty, partial and invalid/revoked-link browser cases. Metadata requests record credential omission; copy and QR remain local.

@@ -1,0 +1,28 @@
+{
+  "publicSubscription": {
+    "title": "订阅",
+    "unavailable": "此订阅链接不可用。",
+    "unavailableHint": "链接可能已过期或被替换，请从小程序获取当前链接。",
+    "account": "账号",
+    "usage": "已用流量",
+    "unlimited": "不限量",
+    "expiry": "访问有效期至",
+    "incomplete": "部分旧接入地址暂时不可用，订阅仍包含当前可用地址。",
+    "noAccess": "此账号当前没有可用的代理访问权限。",
+    "format": "订阅格式",
+    "url": "订阅地址",
+    "copy": "复制地址",
+    "qr": "二维码",
+    "qrHint": "使用代理客户端扫描二维码导入订阅。",
+    "qrFailed": "无法生成二维码。",
+    "import": "在客户端中打开",
+    "open": "打开配置",
+    "copyFailed": "无法复制地址，请选中后手动复制。",
+    "formats": {
+      "native": "原生链接",
+      "xray": "Xray JSON",
+      "sing-box": "sing-box JSON",
+      "clash": "Clash Meta YAML"
+    }
+  }
+}

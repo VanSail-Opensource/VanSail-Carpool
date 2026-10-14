@@ -1,0 +1,46 @@
+{
+  "post": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "validateXNodeConfiguration",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeValidation"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "document": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "document"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -45,7 +45,11 @@ func (w *ExpiryWorker) HandleOutbox(ctx context.Context, job model.OutboxJob) er
 	}
 	plaintext, err := w.secrets.Open(ipBlockSecretContext(block.UserID, block.NodeUUID, block.IPDigest), block.SealedIP)
 	if err == nil {
-		err = w.remote.UnblockIP(ctx, string(plaintext), block.NodeUUID)
+		scoped, controlErr := scopedControl(ctx, w.remote, block.UserID, string(plaintext), block.NodeUUID, false, 0, true)
+		err = controlErr
+		if !scoped {
+			err = w.remote.UnblockIP(ctx, string(plaintext), block.NodeUUID)
+		}
 	}
 	if err != nil {
 		if job.Attempts >= 10 {

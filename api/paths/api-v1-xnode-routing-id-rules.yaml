@@ -1,0 +1,43 @@
+{
+  "put": {
+    "tags": [
+      "Members"
+    ],
+    "operationId": "saveXNodeRules",
+    "responses": {
+      "200": {
+        "description": "X-Node response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeCustomization"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      }
+    },
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeCustomizationWrite"
+          }
+        }
+      }
+    }
+  }
+}

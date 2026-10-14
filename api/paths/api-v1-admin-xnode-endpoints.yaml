@@ -1,0 +1,72 @@
+{
+  "get": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "listXNodeEndpoints",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../openapi.yaml#/components/schemas/XNodeEndpoint"
+                  }
+                }
+              },
+              "required": [
+                "items"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  },
+  "post": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "createXNodeEndpoints",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeEndpoint"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeEndpoint"
+          }
+        }
+      }
+    }
+  }
+}

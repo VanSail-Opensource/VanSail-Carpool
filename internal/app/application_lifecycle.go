@@ -22,6 +22,13 @@ func (a *Application) Run(ctx context.Context) error {
 		_ = a.upstreams.shutdown(context.Background())
 		return fmt.Errorf("start upstream queues: %w", err)
 	}
+	if a.xnodeMaster != nil {
+		if err := a.xnodeMaster.Start(runCtx); err != nil {
+			cancelRun()
+			_ = a.upstreams.shutdown(context.Background())
+			return err
+		}
+	}
 	profileCtx, cancelProfiles := context.WithTimeout(runCtx, 5*time.Minute)
 	if a.usdt != nil {
 		a.usdt.Start(runCtx)
@@ -35,6 +42,9 @@ func (a *Application) Run(ctx context.Context) error {
 	cancelProfiles()
 	if err := runCtx.Err(); err != nil {
 		cancelRun()
+		if a.xnodeMaster != nil {
+			_ = a.xnodeMaster.Shutdown(context.Background())
+		}
 		if a.ipLookup != nil {
 			a.ipLookup.WaitBackground()
 		}
@@ -102,6 +112,10 @@ func (a *Application) Run(ctx context.Context) error {
 func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDone, statisticsDone, abuseDone, notificationsDone <-chan struct{}) error {
 	cancelRun()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.config.ShutdownTimeout)
+	var masterErr error
+	if a.xnodeMaster != nil {
+		masterErr = a.xnodeMaster.Shutdown(shutdownCtx)
+	}
 	serverErr := a.httpServer.Shutdown(shutdownCtx)
 	cancel()
 	if serverErr != nil {
@@ -114,6 +128,9 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 	<-statisticsDone
 	<-abuseDone
 	<-notificationsDone
+	if a.xnodeMaster != nil {
+		a.xnodeMaster.Wait()
+	}
 	if a.usdt != nil {
 		a.usdt.Wait()
 	}
@@ -127,7 +144,7 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 		flushErr = fmt.Errorf("flush group message facts: %w", flushErr)
 	}
 	queueErr := a.upstreams.shutdown(context.Background())
-	return errors.Join(serverErr, flushErr, queueErr)
+	return errors.Join(masterErr, serverErr, flushErr, queueErr)
 }
 
 // Close checkpoints the authoritative on-disk database after runtime workers stop.

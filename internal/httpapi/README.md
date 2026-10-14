@@ -184,3 +184,13 @@ cancellable fake probe for hosted execution without external network traffic.
 - `usdt.go` ? Admin-only configuration, local status, queued probes and idempotent verified-transfer credit.
 - `usdt_test.go` ? Hosted authorization, encrypted credentials and masked read/write contract checks.
 `browser_legacy_entry.go` identifies old Telegram iframe launches for access-panel forwarding without granting authentication or exposing admin pages.
+
+`xnode_routes.go` Mounts browser-scoped administration and safe error/global/metric responses.
+`xnode_nodes.go` Serves node policy, enrollment and group/endpoint mutations.
+`xnode_configurations.go` Serves config/snippet CRUD and realtime native validation.
+
+- `xnode_members.go`: Entry points: `mountXNodeMembers`, `xnodeMemberMetrics`, `xnodeOwnedSubscription`, `xnodeRoutingTemplates`.
+
+- `xnode_migration.go`: Entry points: `xnodeMigrationStatus`, `xnodeMigrationPreview`, `xnodeMigrationImport`, `xnodeMigrationCutover`.
+
+- `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.

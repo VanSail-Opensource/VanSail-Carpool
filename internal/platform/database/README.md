@@ -1,5 +1,11 @@
 # SQLite store
 
+`xnode_*.go` implements authoritative node/profile/group/endpoint configuration,
+encrypted identity references, periods, migration checkpoints and immutable
+report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
+counter ownership, sequence gaps and fixed-point multiplier carry in hosted CI.
+Live connections, rates, IP observations and logs have no storage interface.
+
 `vansail_migration_test.go` covers seeded-brand conversion, preservation of
 custom documents/revisions and live browser devices/handoffs, and removal of
 retired browser-login credentials in hosted CI.
@@ -409,3 +415,34 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 - `usdt_quotes_test.go` ? Concurrent allocation, permanence, exhaustion and BSC atomic-unit checks.
 - `usdt_settlement_test.go` ? Delayed observation, replay, role, amount, audit and failed-batch checks.
 - `usdt_migration_test.go` ? Legacy payment/FK preservation and verified upgrade backup checks.
+
+`xnode_nodes.go` Stores node metadata, credential digests and monotonic revisions.
+`xnode_configurations.go` Commits versioned base configs and ordered snippet references.
+`xnode_snippets.go` Stores versioned encrypted reusable snippets.
+`xnode_groups.go` Stores authoritative groups and node/inbound bindings.
+`xnode_endpoints.go` Stores subscription endpoints and encrypted client overrides.
+`xnode_identities.go` Stores stable proxy IDs and encrypted credential/token references.
+`xnode_periods.go` Stores accounting periods and reads exact byte aggregates.
+`xnode_traffic.go` Commits contiguous reports exactly once with transactional weighted-byte carry.
+`xnode_customizations.go` Stores owner/node customization revisions and encrypted inputs.
+`xnode_migrations.go` Stores migration and per-node handover checkpoints.
+`xnode_rates.go` Commits multiplier boundaries after accounting barriers.
+`xnode_restrictions.go` Projects existing manual access restrictions.
+
+- `outbox_heartbeat.go`: Entry points: `RenewOutboxJob`.
+
+- `xnode_barriers.go`: Entry points: `UserByUsername`, `XNodePeriods`, `TrackXNodePeriodNode`, `XNodePeriodNodes`.
+
+- `xnode_fleet_statistics.go`: Entry points: `XNodeFleetUsage`, `XNodeIdentityGrowth`.
+
+- `xnode_legacy_accounting.go`: Entry points: `SaveXNodeLegacyHistory`, `XNodeLegacyHistory`.
+
+- `xnode_legacy_usage.go`: Entry points: `XNodeLegacyUsage`, `SyncXNodeLegacyUsage`.
+
+- `xnode_legacy_usage_test.go`: Hosted regression coverage: `TestLegacySnapshotsKeepResetTailsAndNeverReimportTheBaseline`, `TestLegacyHistoryDoesNotChargeQuotaAndReconcilesMonotonically`, `TestImportedNodePublishesLegacyOwnershipAtomicallyAndPreservesResumeEdits`.
+
+- `xnode_migration_accounts.go`: Entry points: `MigrationPanelAccounts`.
+
+- `xnode_service_bindings.go`: Entry points: `XNodeServiceBindings`, `SaveXNodeServiceBinding`.
+
+- `xnode_operation_recovery_test.go` covers durable lease recovery and stale asynchronous receipt callbacks.

@@ -1,0 +1,28 @@
+{
+  "publicSubscription": {
+    "title": "Subscription",
+    "unavailable": "This subscription link is unavailable.",
+    "unavailableHint": "The link may have expired or been replaced. Get your current link from the Mini App.",
+    "account": "Account",
+    "usage": "Traffic used",
+    "unlimited": "Unlimited",
+    "expiry": "Access expires",
+    "incomplete": "Some legacy hosts are temporarily unavailable. Available hosts are included.",
+    "noAccess": "No active proxy access is available for this account.",
+    "format": "Subscription format",
+    "url": "Subscription URL",
+    "copy": "Copy URL",
+    "qr": "QR code",
+    "qrHint": "Scan with your proxy client to import this subscription.",
+    "qrFailed": "Could not generate the QR code.",
+    "import": "Open in client",
+    "open": "Open configuration",
+    "copyFailed": "Could not copy the URL. Select it and copy manually.",
+    "formats": {
+      "native": "Native links",
+      "xray": "Xray JSON",
+      "sing-box": "sing-box JSON",
+      "clash": "Clash Meta YAML"
+    }
+  }
+}

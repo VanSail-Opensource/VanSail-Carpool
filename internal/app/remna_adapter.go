@@ -50,6 +50,7 @@ type remnaAdapter struct {
 	settings         *admin.SettingsService
 	queue            *upstreamqueue.Queue
 	clientFactory    remnaClientFactory
+	sourceConfig     func(context.Context) (string, string, error)
 	multipliers      *nodeMultiplierCache
 	squadPreferences squadPreferenceSource
 }
@@ -61,6 +62,13 @@ func newRemnaAdapter(settings *admin.SettingsService, queue *upstreamqueue.Queue
 func (a remnaAdapter) client(ctx context.Context) (remnaClient, error) {
 	if a.clientFactory != nil {
 		return a.clientFactory(ctx)
+	}
+	if a.sourceConfig != nil {
+		base, token, err := a.sourceConfig(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return remnawave.NewClient(base, token)
 	}
 	if a.settings == nil {
 		return nil, errors.New("Remnawave settings are unavailable")

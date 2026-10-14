@@ -39,6 +39,8 @@ import (
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/webui"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 )
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
@@ -91,9 +93,15 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(err)
 	}
-	remna := newRemnaAdapter(settings, upstreams.remnawave)
-	remna.squadPreferences = store
-	connectivityService := connectivity.NewService(settings, connectivitySource{adapter: remna}, connectivity.NewXrayProbe(), store, upstreams.connectivity)
+	legacy := newRemnaAdapter(settings, upstreams.remnawave)
+	legacy.squadPreferences = store
+	legacy.sourceConfig = migrationCredentials(store, settings, vault)
+	xnodeService := xnode.NewService(store, settings, vault, cfg.PublicBaseURL, upstreams.xnodeValidation)
+	xnodeMaster := xnode.NewMaster(xnodeService, logger)
+	remna := proxyProvider{remnaAdapter: legacy, native: xnodeService, master: xnodeMaster, store: store}
+	xnodeService.SetLegacyProxies(remna.legacyProxies)
+	xnodeService.SetLegacySync(remna.syncBridgeAccounts)
+	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: remna}, connectivity.NewXrayProbe(), store, upstreams.connectivity)
 	settings.SetConnectivityValidation(connectivityService.ValidateConfig, connectivityService.Invalidate)
 	queuedTelegramClient := &queuedTelegram{client: telegramClient, queue: upstreams.telegram}
 	settings.SetPMForumValidator(validatePMForum(queuedTelegramClient))
@@ -104,6 +112,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store, usdt: usdtService}
 	paymentProfiles := newPaymentProfileManager(settings, paymentChannels, upstreams.payment, queuedTelegramClient, store, cfg.AdminTelegramIDs, cfg.PublicBaseURL, logger)
 	backupService := backup.NewService(db, store, filepath.Join(cfg.DataDir, "backups"), cfg.BackupRetention)
+	migrationService := xnodemigration.New(store, migrationSource{provider: remna}, xnodeService, xnodeMaster, vault, backupService)
 	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	reconcileErr := backupService.ReconcileUploads(reconcileCtx, migrationVersions)
 	reconcileCancel()
@@ -168,7 +177,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	statisticsService := productstats.NewService(store, remna)
 	compensationService := compensation.NewService(store, remna)
-	abuseService := abuse.NewService(store, remna)
+	abuseService := abuse.NewService(store, legacy)
 	if err := registerStatisticsOperationHandler(operationDispatcher, store, remna); err != nil {
 		return cleanup(err)
 	}
@@ -185,7 +194,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerBoostAppreciationHandler(outboxWorker, settings, queuedTelegramClient); err != nil {
 		return cleanup(err)
 	}
-	if err := registerAbuseOutboxHandlers(outboxWorker, store, remna, queuedTelegramClient); err != nil {
+	if err := registerAbuseOutboxHandlers(outboxWorker, store, legacy, queuedTelegramClient); err != nil {
 		return cleanup(err)
 	}
 	pmService, err := newApplicationPMWorkflows(store, settings, queuedTelegramClient, cfg.AdminTelegramIDs,
@@ -201,7 +210,15 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(fmt.Errorf("preload embedded frontend: %w", err))
 	}
+	if err = operationDispatcher.Register(xnode.OperationKind, xnodeService); err != nil {
+		return cleanup(err)
+	}
+	if err = operationDispatcher.Register(xnodemigration.OperationKind, migrationService); err != nil {
+		return cleanup(err)
+	}
 	api, err := httpapi.New(httpapi.Dependencies{
+		XNodeMigration: migrationService,
+		XNode:          xnodeService, XNodeMaster: xnodeMaster,
 		BrowserAuth:  browserauth.New(store, cfg.PublicBaseURL, cfg.AdminTelegramIDs),
 		USDT:         usdtService,
 		IPLookup:     ipLookupService,
@@ -228,6 +245,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20,
 	}
 	return &Application{
+		xnodeService: xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
 		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService, abuse: abuseService,

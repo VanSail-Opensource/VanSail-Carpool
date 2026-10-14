@@ -17,3 +17,5 @@
 - `admin_target_scan_test.go` verifies profile-target scoping on scan polling.
 
 Provider scans, plugin execution, and drops are invoked through the shared Remnawave queue. Browser payloads never choose a node or IP directly.
+
+- `scoped_control.go` dispatches IP mutations with authenticated user ownership.

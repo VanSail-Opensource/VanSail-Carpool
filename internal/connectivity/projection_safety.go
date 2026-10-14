@@ -18,7 +18,7 @@ func validateProjectedOutbound(outbound map[string]any) error {
 	settings := configObject(outbound["settings"])
 	var endpoint map[string]any
 	switch stringValue(outbound["protocol"]) {
-	case "vless":
+	case "vless", "vmess":
 		endpoint = singleConfigObject(settings["vnext"])
 		user := singleConfigObject(endpoint["users"])
 		if !nonemptyString(user["id"]) {
@@ -32,6 +32,8 @@ func validateProjectedOutbound(outbound map[string]any) error {
 		if outbound["protocol"] == "shadowsocks" && !nonemptyString(endpoint["method"]) {
 			return projectionError("INVALID_RESOLVED_CONFIG")
 		}
+	case "socks", "http":
+		endpoint = singleConfigObject(settings["servers"])
 	case "hysteria":
 		endpoint = settings
 		if numberValue(settings["version"]) != 2 {
@@ -45,12 +47,12 @@ func validateProjectedOutbound(outbound map[string]any) error {
 	}
 	stream := configObject(outbound["streamSettings"])
 	switch stringValue(stream["network"]) {
-	case "tcp", "ws", "grpc", "xhttp", "httpupgrade", "kcp", "hysteria":
+	case "", "raw", "tcp", "ws", "grpc", "xhttp", "httpupgrade", "kcp", "hysteria":
 	default:
 		return projectionError("UNSUPPORTED_TRANSPORT")
 	}
 	switch stringValue(stream["security"]) {
-	case "none", "tls", "reality":
+	case "", "none", "tls", "reality":
 	default:
 		return projectionError("UNSUPPORTED_SECURITY")
 	}

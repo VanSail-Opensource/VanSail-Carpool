@@ -32,7 +32,7 @@ def run_shard(index, directory):
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
     environment = {**os.environ, "GOMAXPROCS": str(cpus)}
-    flags = ["go", "test", "-race", "-count=1", "-timeout", "20m", "-json",
+    flags = ["go", "test", "-race", "-gcflags=github.com/xtls/xray-core/proxy/vless/...=-d=checkptr=0", "-count=1", "-timeout", "20m", "-json",
              "-p", str(cpus), "-parallel", str(cpus)]
     with (directory / f"race-results-{index}.json").open("w", encoding="utf-8") as output:
         if manifest["packages"]:

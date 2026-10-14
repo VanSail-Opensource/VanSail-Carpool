@@ -15,6 +15,10 @@ import (
 // ErrUnknownKind indicates that a persisted job has no registered owner.
 var ErrUnknownKind = errors.New("outbox job kind is not registered")
 
+// ErrDeferred means a runtime-owned task retains this durable lease. It will
+// complete the job itself; a process crash leaves it recoverable at startup.
+var ErrDeferred = errors.New("outbox completion is deferred")
+
 // Repository leases and completes durable jobs.
 type Repository interface {
 	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)
@@ -94,6 +98,9 @@ func (w *Worker) Drain(ctx context.Context, limit int) error {
 			return nil
 		}
 		jobErr := w.dispatch(ctx, *job)
+		if errors.Is(jobErr, ErrDeferred) {
+			continue
+		}
 		if err := w.repository.CompleteOutboxJob(ctx, job.ID, job.Attempts, jobErr, w.now().UTC()); err != nil {
 			return fmt.Errorf("complete outbox job %s: %w", job.ID, err)
 		}

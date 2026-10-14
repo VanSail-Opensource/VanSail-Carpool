@@ -28,14 +28,16 @@ describe('format utilities', () => {
   })
 
   it('formats byte counts without mutating the source value', () => {
-    expect(formatBytes('1073741824')).toBe('1 GB')
-    expect(formatBytes('1610612736')).toBe('1.5 GB')
-    expect(formatBytes('1342177280')).toBe('1.25 GB')
-    expect(formatBytes(0)).toBe('0 GB')
+    expect(formatBytes('1073741824')).toBe('1 GiB')
+    expect(formatBytes('1610612736')).toBe('1.5 GiB')
+    expect(formatBytes('1342177280')).toBe('1.25 GiB')
+    expect(formatBytes(0)).toBe('0 B')
   })
 
   it('converts binary traffic units to exact bytes', () => {
     expect(trafficBytesFromInput('10GB')).toBe('10737418240')
+    expect(trafficBytesFromInput('10GiB')).toBe('10737418240')
+    expect(trafficBytesFromInput('9007199254740993 B')).toBe('9007199254740993')
     expect(trafficBytesFromInput('100 MB')).toBe('104857600')
     expect(trafficBytesFromInput('1.5 KB')).toBe('1536')
     expect(trafficBytesFromInput('1.1 B')).toBe('')

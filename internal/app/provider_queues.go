@@ -21,13 +21,14 @@ const (
 )
 
 type providerQueues struct {
-	iplookup     map[string]*upstreamqueue.Queue
-	remnawave    *upstreamqueue.Queue
-	emby         *upstreamqueue.Queue
-	telegram     *upstreamqueue.Queue
-	payment      *upstreamqueue.Queue
-	turnstile    *upstreamqueue.Queue
-	connectivity *upstreamqueue.Queue
+	xnodeValidation *upstreamqueue.Queue
+	iplookup        map[string]*upstreamqueue.Queue
+	remnawave       *upstreamqueue.Queue
+	emby            *upstreamqueue.Queue
+	telegram        *upstreamqueue.Queue
+	payment         *upstreamqueue.Queue
+	turnstile       *upstreamqueue.Queue
+	connectivity    *upstreamqueue.Queue
 }
 
 func newProviderQueues() (*providerQueues, error) {
@@ -63,7 +64,11 @@ func newProviderQueues() (*providerQueues, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &providerQueues{iplookup: ipQueues, remnawave: remnawaveQueue, emby: embyQueue, telegram: telegramQueue, payment: paymentQueue, turnstile: turnstileQueue, connectivity: connectivityQueue}, nil
+	xnodeValidation, err := upstreamqueue.New(upstreamqueue.Config{Name: "xnode-validation", Capacity: 32})
+	if err != nil {
+		return nil, err
+	}
+	return &providerQueues{xnodeValidation: xnodeValidation, iplookup: ipQueues, remnawave: remnawaveQueue, emby: embyQueue, telegram: telegramQueue, payment: paymentQueue, turnstile: turnstileQueue, connectivity: connectivityQueue}, nil
 }
 
 func (q *providerQueues) start(ctx context.Context) error {
@@ -103,6 +108,12 @@ func (q *providerQueues) start(ctx context.Context) error {
 		_ = q.shutdown(context.Background())
 		return err
 	}
+	if q.xnodeValidation != nil {
+		if err := q.xnodeValidation.Start(ctx); err != nil {
+			_ = q.shutdown(context.Background())
+			return err
+		}
+	}
 	return nil
 }
 
@@ -110,7 +121,12 @@ func (q *providerQueues) shutdown(ctx context.Context) error {
 	if q == nil {
 		return nil
 	}
-	errorsByProvider := make(chan error, 7)
+	errorsByProvider := make(chan error, 8)
+	if q.xnodeValidation != nil {
+		go func() { errorsByProvider <- q.xnodeValidation.Shutdown(ctx) }()
+	} else {
+		errorsByProvider <- nil
+	}
 	go func() { errorsByProvider <- q.shutdownIPLookup(ctx) }()
 	go func() { errorsByProvider <- q.remnawave.Shutdown(ctx) }()
 	go func() { errorsByProvider <- q.emby.Shutdown(ctx) }()
@@ -118,5 +134,5 @@ func (q *providerQueues) shutdown(ctx context.Context) error {
 	go func() { errorsByProvider <- q.payment.Shutdown(ctx) }()
 	go func() { errorsByProvider <- q.turnstile.Shutdown(ctx) }()
 	go func() { errorsByProvider <- q.connectivity.Shutdown(ctx) }()
-	return errors.Join(<-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider)
+	return errors.Join(<-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider, <-errorsByProvider)
 }

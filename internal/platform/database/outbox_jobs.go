@@ -54,6 +54,17 @@ func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts in
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	var currentAttempts int
+	var currentStatus string
+	if err = tx.QueryRowContext(ctx, `SELECT attempts,status FROM outbox_jobs WHERE id=?`, jobID).Scan(&currentAttempts, &currentStatus); errors.Is(err, sql.ErrNoRows) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	// An older asynchronous attempt cannot remove or overwrite a recovered lease.
+	if currentAttempts != attempts || currentStatus != "processing" {
+		return nil
+	}
 	if jobErr == nil {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=?`, jobID); err != nil {
 			return fmt.Errorf("remove completed outbox job: %w", err)

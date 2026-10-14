@@ -82,6 +82,7 @@ func (a remnaAdapter) LoadMemberSubscription(ctx context.Context, remoteID strin
 
 func sameSubscriptionCredentials(before, after *remnawave.User) bool {
 	return before.ID == after.ID && before.ShortUUID == after.ShortUUID && before.SubscriptionURL == after.SubscriptionURL &&
+		before.VLESSUUID == after.VLESSUUID && before.TrojanPassword == after.TrojanPassword && before.ShadowsocksPassword == after.ShadowsocksPassword &&
 		sameRevocationTime(before.SubRevokedAt, after.SubRevokedAt) &&
 		after.Status == remnawave.UserStatusActive && after.ExpireAt.After(time.Now()) && sameRemoteSquads(before.ActiveInternalSquads, after.ActiveInternalSquads)
 }

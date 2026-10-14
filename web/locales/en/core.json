@@ -73,7 +73,7 @@
     "reserveUsername": "Reserve username"
   },
   "common": {
-    "refresh": "Refresh",
+    "edit": "Edit", "name": "Name", "refresh": "Refresh",
     "tryAgain": "Try again",
     "cancel": "Cancel",
     "clear": "Clear",

@@ -1,0 +1,85 @@
+{
+  "get": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "listXNodeNodes",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../openapi.yaml#/components/schemas/XNodeNode"
+                  }
+                }
+              },
+              "required": [
+                "items"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  },
+  "post": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "createXNodeNodes",
+    "responses": {
+      "200": {
+        "description": "X-Node resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeNode"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "node": {
+                "$ref": "../openapi.yaml#/components/schemas/XNodeNode"
+              },
+              "settings": {
+                "$ref": "../openapi.yaml#/components/schemas/XNodeSettings"
+              }
+            },
+            "required": [
+              "node",
+              "settings"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

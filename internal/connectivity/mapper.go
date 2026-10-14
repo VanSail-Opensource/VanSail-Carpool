@@ -12,8 +12,14 @@ var mapperHostPaths = []string{
 // Remnawave applies xrayJson operations in order. Missing copy sources and paths
 // blocked by primitives are skipped, matching its documented generator behavior.
 func applyXrayMapper(outbound, host map[string]any) (map[string]any, error) {
+	return ApplyClientMapper(outbound, host, "xrayJson")
+}
+
+// ApplyClientMapper shares the documented ordered host mapping semantics across
+// native Xray probes and owner-scoped subscription renderers.
+func ApplyClientMapper(outbound, host map[string]any, format string) (map[string]any, error) {
 	mapper := configObject(configObject(host["clientOverrides"])["mapper"])
-	operationsValue := mapper["xrayJson"]
+	operationsValue := mapper[format]
 	if operationsValue == nil {
 		return outbound, nil
 	}

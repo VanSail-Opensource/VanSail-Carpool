@@ -43,7 +43,7 @@ describe('CatalogConfirmation', () => {
     expect(wrapper.text()).toContain('9.00 TXB')
     expect(wrapper.text()).toContain('1.00 TXB')
     expect(wrapper.text()).toContain('Activating')
-    expect(wrapper.text()).toContain('1 GB')
+    expect(wrapper.text()).toContain('1 GiB')
 
     wrapper.unmount()
   })

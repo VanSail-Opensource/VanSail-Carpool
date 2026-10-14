@@ -44,3 +44,7 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `ipLookupStream.test.ts` covers split Unicode frames, refresh, JSON fallback, address mismatch and truncated streams in hosted CI.
 
 - `usdt.ts` ? Typed dedicated admin endpoints using the existing signed request client.
+
+`xnode.ts` exposes typed node administration and live metrics with nonpersistent secret/realtime reads.
+
+- `xnodeMember.ts` provides typed member metrics, routing and subscription APIs plus cookie-free public bearer metadata reads.
