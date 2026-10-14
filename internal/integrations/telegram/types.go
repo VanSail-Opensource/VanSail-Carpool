@@ -111,7 +111,7 @@ type PreCheckoutQuery struct {
 	InvoicePayload string `json:"invoice_payload"`
 }
 
-// Update is the webhook envelope for the update types TX Carpool subscribes to.
+// Update is the webhook envelope for the update types VanSail Carpool subscribes to.
 type Update struct {
 	UpdateID         int64              `json:"update_id"`
 	Message          *Message           `json:"message,omitempty"`

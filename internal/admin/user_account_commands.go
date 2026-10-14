@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 // GrantCoupon adds one active purchase-discount coupon to an administrator-selected wallet.

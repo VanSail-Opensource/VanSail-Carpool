@@ -69,11 +69,11 @@ var englishCopy = copySet{
 		"RESET_FAILED":          "The provider could not complete the reset", "REFUND_UNAVAILABLE": "The refund could not be completed",
 	},
 	guidance: map[string]string{
-		"expiration":                           "Open TX Carpool to restore access.",
-		"expiry_reminder":                      "Choose a new combo in TX Carpool before expiry.",
-		"traffic_threshold":                    "Check your remaining traffic in TX Carpool.",
-		"automatic_traffic_reset_insufficient": "Add TXB, then re-enable automatic reset in TX Carpool.",
-		"auto_renewal_failed":                  "Open TX Carpool to choose a new combo.",
+		"expiration":                           "Open VanSail Carpool to restore access.",
+		"expiry_reminder":                      "Choose a new combo in VanSail Carpool before expiry.",
+		"traffic_threshold":                    "Check your remaining traffic in VanSail Carpool.",
+		"automatic_traffic_reset_insufficient": "Add TXB, then re-enable automatic reset in VanSail Carpool.",
+		"auto_renewal_failed":                  "Open VanSail Carpool to choose a new combo.",
 	},
 }
 
@@ -139,11 +139,11 @@ var chineseCopy = copySet{
 		"RESET_FAILED":          "服务商未能完成重置", "REFUND_UNAVAILABLE": "退款未能完成",
 	},
 	guidance: map[string]string{
-		"expiration":                           "请前往 TX Carpool 重新开通。",
-		"expiry_reminder":                      "请在到期前前往 TX Carpool 选择新套餐。",
-		"traffic_threshold":                    "请前往 TX Carpool 查看剩余流量。",
-		"automatic_traffic_reset_insufficient": "请补充 TXB 后在 TX Carpool 重新开启自动重置。",
-		"auto_renewal_failed":                  "请前往 TX Carpool 选择新套餐。",
+		"expiration":                           "请前往 VanSail Carpool 重新开通。",
+		"expiry_reminder":                      "请在到期前前往 VanSail Carpool 选择新套餐。",
+		"traffic_threshold":                    "请前往 VanSail Carpool 查看剩余流量。",
+		"automatic_traffic_reset_insufficient": "请补充 TXB 后在 VanSail Carpool 重新开启自动重置。",
+		"auto_renewal_failed":                  "请前往 VanSail Carpool 选择新套餐。",
 	},
 }
 

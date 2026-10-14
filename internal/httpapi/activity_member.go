@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"net/http"
 	"strconv"
 	"time"

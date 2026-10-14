@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegrampm"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 )
 
 type pmProfileReader struct {

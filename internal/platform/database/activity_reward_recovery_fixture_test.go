@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 type recoveryIdentityRandom struct{}

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 const connectivityTestHost = "80000000-0000-4000-8000-000000000001"

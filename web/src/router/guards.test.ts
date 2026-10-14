@@ -42,7 +42,7 @@ describe('protected route decisions', () => {
     expect(resolveProtectedRoute(route('/admin/users'), user())).toBe('/home')
   })
 
-  it('sends a first-launch admin to the OAuth/access exception', () => {
+  it('sends a first-launch admin to the administrator access exception', () => {
     expect(resolveProtectedRoute(route('/'), user({ role: 'admin', onboardingState: 'intro' }))).toBe('/settings/admin-access')
   })
 

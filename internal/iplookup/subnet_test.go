@@ -2,7 +2,7 @@ package iplookup
 
 import (
 	"context"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"io"
 	"net/http"
 	"strings"

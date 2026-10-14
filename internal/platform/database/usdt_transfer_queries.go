@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 )
 
 const usdtTransferSelect = `SELECT id,network,token,recipient,atomic_amount,amount,tx_hash,event_id,occurred_at,order_id,status,reason FROM usdt_transfers`

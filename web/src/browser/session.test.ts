@@ -17,7 +17,7 @@ vi.mock('@/api/client', async () => {
 vi.mock('@/api/cache/preload', () => ({ preloadSession: mocks.preloadSession, stopSessionPreload: mocks.stopSessionPreload }))
 import { useBrowserSession } from './session'
 
-const config = { miniAppUrl: 'https://t.me/txcarpool_bot?startapp', oauthEnabled: true }
+const config = { miniAppUrl: 'https://t.me/txcarpool_bot?startapp' }
 const anonymous: BrowserSession = { authenticated: false, kind: 'anonymous', miniAppUrl: config.miniAppUrl }
 const admin: BrowserSession = {
   authenticated: true, kind: 'admin', expiresAt: '2026-11-12T00:00:00Z',

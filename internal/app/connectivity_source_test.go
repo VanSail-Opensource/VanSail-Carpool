@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func TestConnectivityTargetsIncludesHiddenAndSkipsDisabled(t *testing.T) {

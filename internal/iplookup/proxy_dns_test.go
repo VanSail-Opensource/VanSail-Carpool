@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"github.com/miekg/dns"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
 func diagnosticService(t *testing.T) *EnhancedService {

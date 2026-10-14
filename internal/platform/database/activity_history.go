@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 func (s *Store) ListActivityHistory(ctx context.Context, userID string, limit int) (activity.History, error) {

@@ -3,14 +3,14 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/bepusdt"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/ezpay"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/bepusdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/ezpay"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"strconv"
 	"strings"
 	"time"
@@ -165,7 +165,7 @@ func (a paymentAdapter) createStars(ctx context.Context, request billing.Provide
 	if err != nil || amount <= 0 {
 		return billing.ProviderCheckout{}, errors.New("invalid Stars amount")
 	}
-	link, err := a.telegram.CreateStarsInvoiceLink(ctx, telegram.StarsInvoiceRequest{Title: "TXB balance", Description: "Add TXB to your TX Carpool balance",
+	link, err := a.telegram.CreateStarsInvoiceLink(ctx, telegram.StarsInvoiceRequest{Title: "TXB balance", Description: "Add TXB to your VanSail Carpool balance",
 		Payload: request.OrderID, Label: "TXB credit", Amount: amount})
 	if err != nil {
 		return billing.ProviderCheckout{}, err

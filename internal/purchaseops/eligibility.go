@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ResetPriceMinor calculates a cadence share and rounds up to one TXB minor unit.

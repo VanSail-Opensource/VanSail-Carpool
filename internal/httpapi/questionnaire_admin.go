@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func (s *Server) adminQuestionnaires(w http.ResponseWriter, r *http.Request) {

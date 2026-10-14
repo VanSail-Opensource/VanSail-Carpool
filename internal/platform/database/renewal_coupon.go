@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 )
 
 // quoteRecurringRenewalCouponTx applies the recurring attachment recorded on

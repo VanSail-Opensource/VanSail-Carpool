@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 )
 
 func TestAutomaticRenewalAttachedCouponUsesLatestDiscountOnly(t *testing.T) {

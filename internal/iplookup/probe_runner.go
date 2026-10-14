@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 var probeKeys = []string{"tcp", "socks5", "socks4", "http", "tls", "shadowsocks", "trojan_alpn", "trojan_short", "trojan_close", "trojan_incomplete", "trojan_overbuffer"}

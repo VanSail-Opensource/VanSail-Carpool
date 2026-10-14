@@ -70,7 +70,7 @@ func TestClientHelpers(t *testing.T) {
 	}
 
 	link, err := client.CreateStarsInvoiceLink(ctx, StarsInvoiceRequest{
-		Title: "TXB", Description: "TX Carpool balance", Payload: "order-1", Label: "TXB", Amount: 25,
+		Title: "TXB", Description: "VanSail Carpool balance", Payload: "order-1", Label: "TXB", Amount: 25,
 	})
 	if err != nil || link == "" {
 		t.Fatalf("CreateStarsInvoiceLink() = %q, %v", link, err)

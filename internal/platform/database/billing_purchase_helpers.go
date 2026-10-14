@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"strings"
 	"time"
 )

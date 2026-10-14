@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/bepusdt"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/bepusdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 // PaymentProfileManager probes BEPUSDT profiles and publishes process-local rails.

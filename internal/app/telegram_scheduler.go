@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (a *Application) configureTelegram(ctx context.Context) {
@@ -32,7 +32,7 @@ func (a *Application) configureTelegram(ctx context.Context) {
 		a.logger.Error("configure Telegram webhook", "error", err)
 		return
 	}
-	if err := a.telegram.SetChatMenuButton(setupCtx, "Open TX Carpool", a.config.PublicBaseURL.String()); err != nil {
+	if err := a.telegram.SetChatMenuButton(setupCtx, "Open VanSail Carpool", a.config.PublicBaseURL.String()); err != nil {
 		a.logger.Error("configure Telegram menu", "error", err)
 	}
 	if err := a.configureTelegramCommands(setupCtx); err != nil {

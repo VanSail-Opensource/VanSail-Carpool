@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ProviderCreateRequest is the server-owned checkout input passed to an adapter.

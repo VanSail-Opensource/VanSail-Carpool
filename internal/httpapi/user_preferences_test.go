@@ -3,9 +3,9 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/preferences"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"

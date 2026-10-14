@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 )
 
 func TestUSDTSettlementRecoversExpiredOrdersAndClaimsTransfersOnce(t *testing.T) {

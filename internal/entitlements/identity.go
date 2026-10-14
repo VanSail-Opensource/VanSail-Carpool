@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // IdentityClient exposes only the queued provider identity operations.

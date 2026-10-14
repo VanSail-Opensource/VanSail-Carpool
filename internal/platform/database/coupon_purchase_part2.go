@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 )
 
 func scanCoupon(row rowScanner) (coupons.Coupon, error) {

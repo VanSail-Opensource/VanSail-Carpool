@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 )
 
 const embyAccountSelect = `SELECT id,user_id,base_username,remote_user_id,remote_username,candidate_username,status,

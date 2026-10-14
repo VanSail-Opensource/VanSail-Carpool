@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func topicMissing(err error) bool {

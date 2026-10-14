@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestEmbySetupDebitRefundAndRetryAreAtomic(t *testing.T) {

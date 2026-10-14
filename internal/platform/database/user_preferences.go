@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
-	"github.com/txyyddss/Remna-User-Panel/internal/preferences"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"time"
 )
 

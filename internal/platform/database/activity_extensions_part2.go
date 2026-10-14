@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"math/big"
 	"time"
 )

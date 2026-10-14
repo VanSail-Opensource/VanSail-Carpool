@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/botcommands"
-	"github.com/txyyddss/Remna-User-Panel/internal/currencydisplay"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/botcommands"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/currencydisplay"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Server) telegramSubscriptionReply(ctx context.Context, user model.User, copy botcommands.Copy) string {

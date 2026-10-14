@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 )
 
 func (s *Server) affiliateOverview(w http.ResponseWriter, r *http.Request) {

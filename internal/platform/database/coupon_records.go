@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 )
 
 const grantSelect = `SELECT coupon_grants.id,coupon_grants.user_id,coupon_grants.source_type,coupon_grants.source_id,coupon_grants.status,

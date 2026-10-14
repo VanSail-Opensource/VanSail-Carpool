@@ -1,5 +1,9 @@
 # SQLite store
 
+`vansail_migration_test.go` covers seeded-brand conversion, preservation of
+custom documents/revisions and live browser devices/handoffs, and removal of
+retired browser-login credentials in hosted CI.
+
 `browser_sessions.go` persists separate browser-device sessions, daily stable-token
 renewal, and single-device revocation. `browser_access_links.go` consumes hashed
 five-minute handoff references and creates their session in one transaction.

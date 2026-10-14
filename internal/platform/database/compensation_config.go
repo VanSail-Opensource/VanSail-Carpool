@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 // CompensationConfig returns the atomic singleton configuration.

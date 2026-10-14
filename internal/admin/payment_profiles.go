@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 // PaymentProfileRepository persists masked provider profiles and encrypted credentials.

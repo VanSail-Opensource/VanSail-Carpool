@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/google/uuid"
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
 )
 
 func (s *Server) connectivityAvailable(w http.ResponseWriter, r *http.Request) bool {

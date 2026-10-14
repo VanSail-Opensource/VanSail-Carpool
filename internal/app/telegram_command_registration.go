@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/botcommands"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/botcommands"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 func (a *Application) configureTelegramCommands(ctx context.Context) error {

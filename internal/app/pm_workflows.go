@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegrampm"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 )
 
 func newApplicationPMWorkflows(store *database.Store, settings *admin.SettingsService, sender *queuedTelegram, admins []int64,

@@ -5,8 +5,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 )
 
 func (a remnaAdapter) Digest(ctx context.Context, start, end time.Time) (productstats.Digest, error) {

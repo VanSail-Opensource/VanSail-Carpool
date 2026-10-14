@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (s *Server) cancelQueuedPurchase(w http.ResponseWriter, r *http.Request) {

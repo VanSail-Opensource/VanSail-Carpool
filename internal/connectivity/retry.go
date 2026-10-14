@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 func (s *Service) checkWithRetries(item *work, target Target) Outcome {

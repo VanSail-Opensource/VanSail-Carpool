@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 func playComboReward(t *testing.T, store *Store, userID, key string, reward activity.Reward, now time.Time) activity.DrawResult {

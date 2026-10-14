@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 type remnaClient interface {

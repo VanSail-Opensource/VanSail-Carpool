@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 // EditEntitlement validates and atomically queues one optimistic full edit.

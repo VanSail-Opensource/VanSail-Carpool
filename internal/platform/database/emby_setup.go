@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 )
 
 // QueueEmbySetup atomically debits setup and queues the legacy provisioning lane.

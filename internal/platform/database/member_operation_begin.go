@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 // MemberPurchaseFacts loads operation pricing and first-lineage state.

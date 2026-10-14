@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ListRefundsForUser returns immutable payment reversals for one aggregate profile.

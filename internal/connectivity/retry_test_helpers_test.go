@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 func retryFixture(t *testing.T, cfg Config, probe Probe) (*Service, *testRepository, *work) {

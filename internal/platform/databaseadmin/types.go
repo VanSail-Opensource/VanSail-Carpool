@@ -8,7 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"io"
 	"log/slog"
 	"sync"

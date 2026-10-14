@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 // BeginQuestionnaireSettlementOperation atomically confirms an import and queues its receipt.

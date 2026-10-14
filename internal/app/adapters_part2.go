@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/bepusdt"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/ezpay"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/bepusdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/ezpay"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (a paymentAdapter) bepusdtClient(ctx context.Context, profileID, rail string) (*bepusdt.Client, error) {

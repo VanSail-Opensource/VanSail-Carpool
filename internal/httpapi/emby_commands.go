@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func decodeEmbyPreferences(w http.ResponseWriter, r *http.Request, withPassword bool) (emby.Preferences, string, error) {

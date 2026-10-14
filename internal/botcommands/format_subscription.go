@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // RolloverState identifies the display outcome of the authoritative projection.

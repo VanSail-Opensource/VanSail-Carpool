@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 func TestDrawTrafficKeepsTemporaryAndRenewalAllowancesSeparate(t *testing.T) {

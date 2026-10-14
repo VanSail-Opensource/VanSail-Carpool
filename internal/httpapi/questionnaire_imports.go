@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func (s *Server) adminUploadQuestionnaireCSV(w http.ResponseWriter, r *http.Request) {

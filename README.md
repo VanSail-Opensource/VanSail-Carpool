@@ -1,4 +1,4 @@
-# TX Carpool
+# VanSail Carpool
 
 Administrators can configure built-in host connectivity checks in **Settings**.
 Resolve an existing Remnawave monitoring username, save the configuration, then
@@ -8,7 +8,7 @@ The engine tests authenticated HTTPS traffic and reports status, TTFB, and safe
 diagnostics. [Module details](internal/connectivity/README.md) describe supported
 configurations, lifecycle, retention, and extension points.
 
-TX Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared Remnawave access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, SQLite database, and static assets. Production therefore needs one container, one persistent volume, and one HTTP port.
+VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared Remnawave access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, SQLite database, and static assets. Production therefore needs one container, one persistent volume, and one HTTP port.
 
 ## What is included
 
@@ -70,7 +70,7 @@ make frontend-install
 make build
 
 # Export values from your secret environment file, then:
-./bin/tx-carpool serve
+./bin/vansail-carpool serve
 ```
 
 Useful targets:
@@ -82,22 +82,22 @@ Useful targets:
 | `make go-audit` | Check formatting, vet, lint, race-test with coverage, and run `govulncheck`. |
 | `make ci` | Run both audits and validate a production container build. |
 | `make run` | Build the SPA and run `cmd/server serve`. |
-| `make docker-build` | Build `tx-carpool:local` (override with `IMAGE=...`). |
+| `make docker-build` | Build `vansail-carpool:local` (override with `IMAGE=...`). |
 
 The combined coverage gate for `internal/accounts`, `internal/admin`, `internal/billing`, `internal/catalog`, and `internal/entitlements` is 80%; override `COVERAGE_MIN` only for local investigation, not CI. The complete Go package graph is still exercised with the race detector.
 
 ### Container
 
 ```sh
-docker build -t tx-carpool:local .
+docker build -t vansail-carpool:local .
 docker run --rm \
   --env-file .env \
   -p 8080:8080 \
   -v tx-carpool-data:/data \
-  tx-carpool:local
+  vansail-carpool:local
 ```
 
-The runtime image executes as UID/GID `10001`, exposes only port `8080`, persists only `/data`, and uses `tx-carpool healthcheck` against `/healthz`. `/readyz` remains unavailable until local storage works and the required dashboard setup is complete.
+The runtime image executes as UID/GID `10001`, exposes only port `8080`, persists only `/data`, and uses `vansail-carpool healthcheck` against `/healthz`. `/readyz` remains unavailable until local storage works and the required dashboard setup is complete.
 If a host bind mount is used instead of a named volume, make the mounted directory writable by UID/GID `10001` before startup.
 
 ## First-time setup
@@ -132,3 +132,6 @@ The admin API exposes domain operations plus an allowlisted, schema-aware table 
 Pull requests enforce source line limits, per-folder file maps, locale parity, icon/control policy, generated-contract freshness, frontend lint/type/test/build checks, npm audit, Go format/vet/race/coverage checks, `govulncheck`, and a production image build. Pushes to `main` and semantic `v*.*.*` tags run the same checks before publishing SBOM/provenance-enabled `linux/amd64` and `linux/arm64` images to `ghcr.io/txyyddss/remna-user-panel` with SHA, `latest`, and semantic tags as applicable.
 
 Dependabot checks the root Go module, `web` npm dependencies, Docker base images, and GitHub Actions weekly. Dependabot pull requests are eligible for squash auto-merge only after every reported check succeeds; enable repository auto-merge and protect `main` with the required checks for this policy to take effect.
+
+Existing deployments retain `/data/tx-carpool.db` and the `tx-carpool-data` volume.
+The product and executable names change without relocating persistent data.

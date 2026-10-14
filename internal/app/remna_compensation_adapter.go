@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 )
 
 func (a remnaAdapter) CompensationNodes(ctx context.Context) ([]compensation.Node, error) {

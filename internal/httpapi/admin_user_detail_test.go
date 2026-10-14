@@ -3,8 +3,8 @@ package httpapi
 import (
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestMapAdminUserDetailRestoresOwnerIDsOnNestedRecords(t *testing.T) {

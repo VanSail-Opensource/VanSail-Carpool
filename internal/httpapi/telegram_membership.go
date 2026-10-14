@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/botcommands"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/botcommands"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 func (s *Server) processTelegramMembershipUpdate(ctx context.Context, requestID string, update *telegram.ChatMemberUpdated) {

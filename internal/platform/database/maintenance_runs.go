@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 // ClaimMaintenanceRun acquires one durable lease for a configured local date.

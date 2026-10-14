@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 // OutboundContent contains only the delivery data unavailable through message references.

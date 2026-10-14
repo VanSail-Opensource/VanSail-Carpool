@@ -7,7 +7,6 @@ import { featuresApi } from '@/api/features'
 import AdminActivitySettings from '@/components/admin/activity/AdminActivitySettings.vue'
 import AdminBillingAmountLimits from '@/components/admin/AdminBillingAmountLimits.vue'
 import AdminPaymentProfiles from '@/components/admin/AdminPaymentProfiles.vue'
-import AdminOAuthSettings from '@/components/settings/AdminOAuthSettings.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SwitchField from '@/components/common/SwitchField.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
@@ -30,7 +29,7 @@ const paymentProfilesRef = useTemplateRef<PaymentProfilesSaveable>('paymentProfi
 const { t } = useI18n()
 const workspace = shallowRef('runtime')
 const selectedCategory = shallowRef('')
-const tabs = computed(() => [{ value: 'runtime', label: t('adminNav.settings') }, { value: 'payments', label: t('adminPaymentProfiles.title') }, { value: 'activity', label: t('adminNav.activity') }, { value: 'access', label: t('browser.oauth.title') }])
+const tabs = computed(() => [{ value: 'runtime', label: t('adminNav.settings') }, { value: 'payments', label: t('adminPaymentProfiles.title') }, { value: 'activity', label: t('adminNav.activity') }])
 const activitySettingKeys = new Set([
   'activity.timezone', 'activity.daily_reward_min_txb', 'activity.daily_reward_max_txb',
   'activity.group_message_threshold', 'activity.group_message_reward_txb',
@@ -147,7 +146,6 @@ onMounted(() => void loadActivitySettings())
     <InlineNotice v-if="saved.visible" tone="success" :title="t('adminSettings.saved')">{{ t('adminSettings.savedHint') }}</InlineNotice>
     <section v-show="workspace === 'activity'" class="settings-activity"><AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" /><InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice></section>
     <div v-show="workspace === 'payments'" class="settings-payment-workspace"><AdminBillingAmountLimits ref="billingLimits" /><AdminPaymentProfiles ref="paymentProfiles" /></div>
-    <AdminOAuthSettings v-show="workspace === 'access'" />
     <div v-show="workspace === 'runtime'">
       <AdminSectionState :loading="loading" :error="error" @retry="load()">
         <div class="admin-toolbar"><USelect v-model="category" :items="categories" :aria-label="t('adminWorkspace.configuration')" /></div>

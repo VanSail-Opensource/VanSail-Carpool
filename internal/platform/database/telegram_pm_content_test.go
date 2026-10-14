@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func pendingPMContent(t *testing.T) (*Store, *secret.Vault, model.OperationReceipt, time.Time) {

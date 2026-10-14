@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 )
 
 func TestClientWireContract(t *testing.T) {

@@ -4,10 +4,9 @@
 `api-v1-browser-session.yaml`, `api-v1-browser-exchange.yaml`,
 `api-v1-browser-renew.yaml`, and `api-v1-browser-logout.yaml` serve the scoped
 session lifecycle under `/api/v1/auth/browser`.
-`api-v1-browser-telegram-start.yaml` and `api-v1-browser-telegram-callback.yaml`
-serve browser OIDC authorization redirects. `api-v1-admin-access-settings.yaml`
-and `api-v1-admin-access-links.yaml` expose the sole signed Mini App administrator
-exception under `/api/v1/admin-access`.
+`api-v1-admin-access-links.yaml` exposes the sole signed Mini App administrator
+exception under `/api/v1/admin-access`. It issues a short-lived one-use browser
+handoff; Telegram OAuth endpoints and settings have been removed.
 
 `api-v1-me-internal-squads.yaml` reads owner-scoped active controls;
 `api-v1-me-internal-squads-uuid.yaml` queues validated access changes.

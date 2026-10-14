@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 // ListLuckyDraws returns only open instant draws to members.

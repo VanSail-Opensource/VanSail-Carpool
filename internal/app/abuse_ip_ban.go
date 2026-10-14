@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func handleAbuseIPBan(ctx context.Context, recordID string, item database.AbuseJob, store *database.Store, remna remnaAdapter) error {

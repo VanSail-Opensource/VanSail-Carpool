@@ -1,7 +1,7 @@
 // Package iplookup owns queued IP reputation checks and normalized reports.
 package iplookup
 
-import "github.com/txyyddss/Remna-User-Panel/internal/model"
+import "github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 
 const SettingKey = "ip_lookup.config"
 const OperationKind = "ip_reputation_lookup"

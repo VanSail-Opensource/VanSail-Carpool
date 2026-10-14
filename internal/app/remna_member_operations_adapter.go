@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connections"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 func (a remnaAdapter) RequestConnectionScan(ctx context.Context, remoteID string) (string, error) {

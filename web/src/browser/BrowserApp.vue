@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { en, zh_cn } from '@nuxt/ui/locale'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/i18n'
-import { browserLoginUrl } from '@/api/browserAccess'
 import BrowserConsole from './BrowserConsole.vue'
 import { useBrowserSession } from './session'
 
@@ -36,7 +35,7 @@ onUnmounted(() => {
     <UModal :open="session.expired && route.meta.console === true" :dismissible="false" :close="false" :title="t('browser.sessionExpired')" :description="t('browser.sessionExpiredHint')" :ui="{ overlay: 'z-[100]', content: 'z-[101]' }">
       <template v-if="session.error" #body><UAlert color="warning" variant="soft" :title="session.error" /></template>
       <template #footer>
-        <UButton :to="browserLoginUrl(route.fullPath)" external target="_blank" rel="noopener noreferrer" :label="t('browser.adminEntrance')" icon="i-ph-sign-in-bold" />
+        <UButton :to="session.config?.miniAppUrl || undefined" :disabled="!session.config?.miniAppUrl" external target="_blank" rel="noopener noreferrer" :label="t('browser.linkExpired')" icon="i-ph-sign-in-bold" />
         <UButton color="neutral" variant="outline" :label="t('common.tryAgain')" @click="refresh" />
       </template>
     </UModal>

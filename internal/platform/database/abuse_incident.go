@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Store) CreateIncident(ctx context.Context, userID string, bucket time.Time, qps, limit int, reasons, nodes []string, policy abuse.Policy, now time.Time) (bool, error) {

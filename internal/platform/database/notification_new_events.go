@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/notifications"
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 func productNames(products []model.SquadProduct) string {

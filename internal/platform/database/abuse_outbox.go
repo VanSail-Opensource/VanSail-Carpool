@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 type AbuseJob struct {

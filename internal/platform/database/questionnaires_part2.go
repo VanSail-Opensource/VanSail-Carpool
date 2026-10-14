@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 	"strings"
 	"time"
 )

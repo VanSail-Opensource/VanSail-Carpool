@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connections"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 const ipBlockSelect = `SELECT id,user_id,node_uuid,ip_digest,sealed_ip,status,

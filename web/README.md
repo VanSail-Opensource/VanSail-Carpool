@@ -1,6 +1,6 @@
-# TX Carpool web client
+# VanSail Carpool web client
 
-TX Carpool is a bilingual, mobile-first Telegram Mini App built with Vue 3.5, Vite 8, and Nuxt UI v4. The flat graphite-and-mint interface supports phone and tablet layouts, Telegram theme/safe-area variables, keyboard navigation, reduced motion, and short English or Simplified Chinese copy.
+VanSail Carpool is a bilingual, mobile-first Telegram Mini App built with Vue 3.5, Vite 8, and Nuxt UI v4. The flat graphite-and-mint interface supports phone and tablet layouts, Telegram theme/safe-area variables, keyboard navigation, reduced motion, and short English or Simplified Chinese copy.
 
 `vite.config.ts` prebundles the Nuxt editor's TipTap and ProseMirror imports together so development mode uses a single selection/plugin registry.
 

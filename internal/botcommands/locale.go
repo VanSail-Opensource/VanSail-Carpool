@@ -82,8 +82,8 @@ func Text(language Language) Copy {
 
 func englishCopy() Copy {
 	return Copy{
-		Descriptions: []Description{{Sub, "Show subscription usage"}, {Balance, "Show your TXB balance"}, {SignIn, "Claim today's check-in"}, {Start, "Open TX Carpool"}, {MyCombo, "Show combo and rollover details"}},
-		Start:        "Press Open TX Carpool to use the app. For help, send a message directly here after opening the panel and completing entry verification.", WelcomePrefix: "👋 Welcome ", WelcomeSuffix: " to TX Carpool!", MemberLabel: "new member",
+		Descriptions: []Description{{Sub, "Show subscription usage"}, {Balance, "Show your TXB balance"}, {SignIn, "Claim today's check-in"}, {Start, "Open VanSail Carpool"}, {MyCombo, "Show combo and rollover details"}},
+		Start:        "Press Open VanSail Carpool to use the app. For help, send a message directly here after opening the panel and completing entry verification.", WelcomePrefix: "👋 Welcome ", WelcomeSuffix: " to VanSail Carpool!", MemberLabel: "new member",
 		UnknownTitle: "Command unavailable", Unknown: "This command is not available.",
 		UnavailableTitle: "Temporarily unavailable", Unavailable: "The requested information is temporarily unavailable.",
 		NoSubscriptionTitle: "Subscription", NoSubscription: "No active subscription.", SubscriptionTitle: "My subscription", ComboTitle: "My combo", DeductTitle: "Balance deduction",
@@ -102,8 +102,8 @@ func englishCopy() Copy {
 
 func chineseCopy() Copy {
 	return Copy{
-		Descriptions: []Description{{Sub, "查看订阅用量"}, {Balance, "查看 TXB 余额"}, {SignIn, "领取今日签到奖励"}, {Start, "打开 TX Carpool"}, {MyCombo, "查看套餐与结转状态"}},
-		Start:        "请按“打开 TX Carpool”使用应用。如需帮助，请先打开面板并完成首次访问验证，再直接在这里发送消息。", WelcomePrefix: "👋 欢迎 ", WelcomeSuffix: " 加入 TX Carpool！", MemberLabel: "新成员",
+		Descriptions: []Description{{Sub, "查看订阅用量"}, {Balance, "查看 TXB 余额"}, {SignIn, "领取今日签到奖励"}, {Start, "打开 VanSail Carpool"}, {MyCombo, "查看套餐与结转状态"}},
+		Start:        "请按“打开 VanSail Carpool”使用应用。如需帮助，请先打开面板并完成首次访问验证，再直接在这里发送消息。", WelcomePrefix: "👋 欢迎 ", WelcomeSuffix: " 加入 VanSail Carpool！", MemberLabel: "新成员",
 		UnknownTitle: "命令不可用", Unknown: "此命令不可用。",
 		UnavailableTitle: "暂时不可用", Unavailable: "暂时无法获取所需信息。",
 		NoSubscriptionTitle: "订阅", NoSubscription: "当前没有生效中的订阅。", SubscriptionTitle: "我的订阅", ComboTitle: "我的套餐", DeductTitle: "余额扣减",

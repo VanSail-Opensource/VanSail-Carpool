@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 func registerBoostAppreciationHandler(worker *outbox.Worker, settings *admin.SettingsService, client *queuedTelegram) error {

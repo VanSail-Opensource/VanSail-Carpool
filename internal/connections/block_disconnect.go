@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func (w *BlockWorker) disconnect(ctx context.Context, operation providerops.Operation, item providerops.Item,

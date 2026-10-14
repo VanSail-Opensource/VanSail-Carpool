@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/entitlements"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/entitlements"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
 func (a remnaAdapter) ApplyEntitlement(ctx context.Context, remoteID string, trafficLimitBytes int64, resetStrategy string, squadUUIDs []string, expiresAt time.Time) error {

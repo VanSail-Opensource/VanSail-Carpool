@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 // BeginEmbySetupOperation atomically stores the debit, account, and provider command.

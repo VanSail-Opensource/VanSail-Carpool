@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connections"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func TestConnectionIPBlockAtomicCreationReplayAndIsolation(t *testing.T) {

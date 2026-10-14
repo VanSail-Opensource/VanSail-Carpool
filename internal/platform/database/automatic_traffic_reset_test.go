@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func TestAutomaticTrafficResetDebitIsIdempotentAndSuccessGated(t *testing.T) {

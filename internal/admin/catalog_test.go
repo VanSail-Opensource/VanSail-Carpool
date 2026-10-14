@@ -3,7 +3,7 @@ package admin
 import (
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 )
 
 func TestSettingValidatorsCoverOptionalFormats(t *testing.T) {

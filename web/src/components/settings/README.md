@@ -1,7 +1,6 @@
 # User settings
 
-- `AdminAccessPanel.vue` is the Mini App's sole admin surface, displaying one-use browser entrance links and OAuth setup.
-- `AdminOAuthSettings.vue` is the shared localized, validated, write-only OAuth configuration form for browser and Mini App admin access.
+- `AdminAccessPanel.vue` is the Mini App's sole admin surface, displaying one-use browser entrance links.
 
 `SettingsComboControls.vue` composes owned-squad switches, recoverable operation
 feedback and the eligible early-start action. `useComboControls.ts` owns loading,

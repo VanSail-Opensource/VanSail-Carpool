@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 const abuseClaimTimeout = time.Hour

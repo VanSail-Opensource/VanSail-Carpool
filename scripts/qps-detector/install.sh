@@ -2,7 +2,7 @@
 set -euo pipefail
 
 config_path=/etc/tx-carpool-qps-detector.conf
-reporter_path=/usr/local/sbin/tx-carpool-qps-detector-report
+reporter_path=/usr/local/sbin/vansail-carpool-qps-detector-report
 cron_path=/etc/cron.d/tx-carpool-qps-detector
 
 require_root() { [ "${EUID}" -eq 0 ] || { printf '%s\n' 'Run as root.' >&2; exit 1; }; }

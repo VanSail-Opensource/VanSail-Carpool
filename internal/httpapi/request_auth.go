@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 )
 
 func (s *Server) requireSignedRequest(next http.Handler) http.Handler {
@@ -20,7 +20,7 @@ func (s *Server) requireSignedRequest(next http.Handler) http.Handler {
 		session, sessionErr := r.Cookie(sessionName)
 		clientKey, keyErr := r.Cookie(keyName)
 		if sessionErr != nil || keyErr != nil {
-			s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_REQUIRED", "Open TX Carpool from Telegram to refresh your secure session.")
+			s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_REQUIRED", "Open VanSail Carpool from Telegram to refresh your secure session.")
 			return
 		}
 		if err := s.requests.Verify(r, session.Value, clientKey.Value); err != nil {
@@ -43,8 +43,8 @@ func (s *Server) writeRequestAuthError(w http.ResponseWriter, r *http.Request, e
 	case errors.Is(err, requestauth.ErrStale):
 		s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_STALE", "Refresh the app and retry this request.")
 	case errors.Is(err, requestauth.ErrRequired), errors.Is(err, requestauth.ErrMalformed):
-		s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_REQUIRED", "Open TX Carpool from Telegram to refresh your secure session.")
+		s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_REQUIRED", "Open VanSail Carpool from Telegram to refresh your secure session.")
 	default:
-		s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_INVALID", "Open TX Carpool from Telegram to refresh your secure session.")
+		s.writeError(w, r, http.StatusUnauthorized, "REQUEST_SIGNATURE_INVALID", "Open VanSail Carpool from Telegram to refresh your secure session.")
 	}
 }

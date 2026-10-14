@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (a remnaAdapter) Dashboard(ctx context.Context, remoteID string) (catalog.RemoteDashboard, error) {

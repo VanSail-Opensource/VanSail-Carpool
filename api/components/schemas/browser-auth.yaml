@@ -3,62 +3,12 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
-      "miniAppUrl",
-      "oauthEnabled"
+      "miniAppUrl"
     ],
     "properties": {
       "miniAppUrl": {
         "type": "string",
         "format": "uri"
-      },
-      "oauthEnabled": {
-        "type": "boolean"
-      }
-    }
-  },
-  "OAuthSettings": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": [
-      "enabled",
-      "clientId",
-      "clientSecretConfigured",
-      "callbackUrl"
-    ],
-    "properties": {
-      "enabled": {
-        "type": "boolean"
-      },
-      "clientId": {
-        "type": "string"
-      },
-      "clientSecretConfigured": {
-        "type": "boolean"
-      },
-      "callbackUrl": {
-        "type": "string",
-        "format": "uri"
-      }
-    }
-  },
-  "OAuthSettingsInput": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": [
-      "enabled",
-      "clientId"
-    ],
-    "properties": {
-      "enabled": {
-        "type": "boolean"
-      },
-      "clientId": {
-        "type": "string"
-      },
-      "clientSecret": {
-        "type": "string",
-        "maxLength": 2048,
-        "description": "Omitted or empty preserves existing write-only secret."
       }
     }
   },

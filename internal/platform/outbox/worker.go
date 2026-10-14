@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ErrUnknownKind indicates that a persisted job has no registered owner.

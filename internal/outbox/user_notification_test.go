@@ -3,7 +3,7 @@ package outbox
 import (
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestUserNotificationPayloadRoundTrip(t *testing.T) {

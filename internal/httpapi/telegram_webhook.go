@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegrampm"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 )
 
 func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {

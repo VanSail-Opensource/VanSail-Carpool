@@ -2,8 +2,8 @@ package httpapi
 
 import (
 	"context"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
 	"io/fs"
 	"net/http"
 	"runtime/debug"
@@ -23,7 +23,7 @@ func (s *Server) requireSession(next http.Handler) http.Handler {
 		}
 		cookie, err := r.Cookie(sessionCookie)
 		if err != nil {
-			s.writeError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Open TX Carpool from Telegram to continue.")
+			s.writeError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Open VanSail Carpool from Telegram to continue.")
 			return
 		}
 		user, err := s.deps.Accounts.UserBySession(r.Context(), cookie.Value)

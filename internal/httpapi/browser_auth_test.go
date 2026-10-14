@@ -12,14 +12,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
-	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
 )
 
 func testBrowserHTTP(t *testing.T) (*Server, http.Handler, model.User) {
@@ -34,10 +33,6 @@ func testBrowserHTTP(t *testing.T) (*Server, http.Handler, model.User) {
 		}
 	})
 	store := database.NewStore(db)
-	vault, err := secret.NewVault(make([]byte, 32))
-	if err != nil {
-		t.Fatal(err)
-	}
 	public, err := url.Parse("https://panel.example")
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +45,7 @@ func testBrowserHTTP(t *testing.T) (*Server, http.Handler, model.User) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := &Server{deps: Dependencies{Store: store, PublicURL: public, SecureCookies: true, BrowserAuth: browserauth.New(store, vault, nil, public, []int64{user.TelegramID}), Affiliates: affiliates.NewService(nil, nil)}, requests: verifier, authLimiter: newAuthLimiter(), adminTelegramIDs: map[int64]struct{}{user.TelegramID: {}}}
+	server := &Server{deps: Dependencies{Store: store, PublicURL: public, SecureCookies: true, BrowserAuth: browserauth.New(store, public, []int64{user.TelegramID}), Affiliates: affiliates.NewService(nil, nil)}, requests: verifier, authLimiter: newAuthLimiter(), adminTelegramIDs: map[int64]struct{}{user.TelegramID: {}}}
 	router := chi.NewRouter()
 	server.mountBrowserAuth(router)
 	return server, router, user
@@ -158,38 +153,39 @@ func TestBrowserHTTPExchangeOriginsCookiesRenewAndLogout(t *testing.T) {
 	}
 }
 
-func TestBrowserHTTPAnonymousUnsignedAndMemberResult(t *testing.T) {
-	server, handler, _ := testBrowserHTTP(t)
-	for _, test := range []struct {
-		name   string
-		member bool
-		kind   string
-	}{{"anonymous", false, "anonymous"}, {"member", true, "member"}} {
-		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, "/api/v1/auth/browser/session", nil)
-			if test.member {
-				state := browserMemberState{Profile: model.TelegramProfile{ID: 999, FirstName: "Member"}, Expires: time.Now().Add(time.Minute)}
-				encoded, err := server.deps.BrowserAuth.SealCookie(browserMemberCookie, state)
-				if err != nil {
-					t.Fatal(err)
-				}
-				request.AddCookie(&http.Cookie{Name: browserMemberCookie, Value: encoded})
-			}
-			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, request)
-			var state struct {
-				Authenticated bool   `json:"authenticated"`
-				Kind          string `json:"kind"`
-			}
-			if err := json.Unmarshal(response.Body.Bytes(), &state); err != nil || response.Code != 200 || state.Authenticated || state.Kind != test.kind {
-				t.Fatalf("identity=%+v,status=%d,error=%v", state, response.Code, err)
-			}
-		})
+func TestBrowserHTTPAnonymousIgnoresRetiredLoginCookie(t *testing.T) {
+	_, handler, _ := testBrowserHTTP(t)
+	for _, withCookie := range []bool{false, true} {
+		request := httptest.NewRequest(http.MethodGet, "/api/v1/auth/browser/session", nil)
+		if withCookie {
+			request.AddCookie(&http.Cookie{Name: "txc_browser_member", Value: "retired-login-result"})
+		}
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		var state struct {
+			Authenticated bool   `json:"authenticated"`
+			Kind          string `json:"kind"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &state); err != nil || response.Code != http.StatusOK || state.Authenticated || state.Kind != "anonymous" {
+			t.Fatalf("anonymous identity=%+v,status=%d,error=%v", state, response.Code, err)
+		}
 	}
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/auth/browser/telegram/callback?state=missing&error=access_denied", nil)
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
-	if response.Code != 303 || response.Header().Get("Location") != "/admin/login?error=OAUTH_STATE_INVALID" {
-		t.Fatalf("unbound callback=%d,%s", response.Code, response.Header().Get("Location"))
+}
+
+func createBrowserTestSession(t *testing.T, server *Server, user model.User) (model.User, string, time.Time, error) {
+	t.Helper()
+	link, _, err := server.deps.BrowserAuth.Link(context.Background(), user, "/admin/settings")
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
 	}
+	target, err := url.Parse(link)
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
+	}
+	fragment, err := url.ParseQuery(target.Fragment)
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
+	}
+	identity, token, expires, _, err := server.deps.BrowserAuth.Exchange(context.Background(), fragment.Get("token"))
+	return identity, token, expires, err
 }

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func abuseRecordCooldownBlockedTx(ctx context.Context, tx *sql.Tx, userID string, policy abuse.Policy, now time.Time) (bool, error) {

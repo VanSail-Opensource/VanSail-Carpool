@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ListAdminPurchasesPage returns a filtered stable page for the entitlement inventory.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Server) agentQPSReport(w http.ResponseWriter, r *http.Request) {

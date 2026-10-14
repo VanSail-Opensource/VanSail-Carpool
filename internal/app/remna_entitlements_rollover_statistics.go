@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
 // rolloverStatsTopNodesLimit prevents Remnawave's default top-20 response from

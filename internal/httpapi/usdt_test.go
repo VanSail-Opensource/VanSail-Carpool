@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
 )
 
 func TestUSDTAdminRoutesMaskSecretsAndRequireConfiguredAdministrator(t *testing.T) {

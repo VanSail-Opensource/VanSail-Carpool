@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 const validCloudflareTrace = "fl=abc123\nh=cp.cloudflare.com\nip=8.8.4.4\nts=1700000000.5\nvisit_scheme=http\nhttp=http/1.1\ncolo=SJC\n"

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 // CachedIPDetails reads exact evidence first, then IPv4 /24, without side effects.

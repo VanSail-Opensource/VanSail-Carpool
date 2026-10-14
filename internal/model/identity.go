@@ -11,7 +11,7 @@ type TelegramProfile struct {
 	LanguageCode string `json:"languageCode"`
 }
 
-// User is a TX Carpool account.
+// User is a VanSail Carpool account.
 type User struct {
 	ID                      string     `json:"id"`
 	TelegramID              int64      `json:"telegramId"`

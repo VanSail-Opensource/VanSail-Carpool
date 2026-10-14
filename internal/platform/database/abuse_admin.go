@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Store) NodeCredentials(ctx context.Context) ([]abuse.NodeCredential, error) {

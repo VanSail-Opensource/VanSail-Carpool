@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 // EntitlementContinuityLead is the provider-expiry preparation window.

@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 // LuckyDrawForecast is a current-catalog estimate, expressed in TXB minor units.

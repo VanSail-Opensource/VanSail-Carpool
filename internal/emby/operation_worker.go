@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 // HandleProviderOperation applies one Emby command without blindly replaying an ambiguous write.

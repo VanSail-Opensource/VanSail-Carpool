@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func (s *Server) requireIdempotencyKey(w http.ResponseWriter, r *http.Request) (string, bool) {

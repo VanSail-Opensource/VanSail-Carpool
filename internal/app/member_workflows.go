@@ -3,14 +3,14 @@ package app
 import (
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/connections"
-	"github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	platformoutbox "github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	platformoutbox "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 type memberWorkflowServices struct {

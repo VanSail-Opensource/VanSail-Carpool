@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 func ipLiveStageTx(ctx context.Context, tx *sql.Tx, id string) (iplookup.LiveStage, error) {

@@ -3,7 +3,7 @@ package billing
 import (
 	"sync"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // PaymentChannelCache keeps provider-discovered channels out of durable storage.

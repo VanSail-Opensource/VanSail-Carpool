@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func selectedSquadUUIDs(catalog model.Catalog, comboID string, addonIDs []string) []string {

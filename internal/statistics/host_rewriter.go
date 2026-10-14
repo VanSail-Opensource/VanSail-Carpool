@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 var standaloneMultiplier = regexp.MustCompile(`(^|[^[:alnum:]_.])([0-9]+\.[0-9]+)x([^[:alnum:]_.]|$)`)

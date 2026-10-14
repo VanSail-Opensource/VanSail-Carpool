@@ -9,5 +9,5 @@ The unmodified engine source for the pinned module revision
 
 `go.mod` and `go.sum` identify the exact engine and transitive dependencies.
 The production image includes this notice and license under
-`/usr/share/licenses/tx-carpool`. The panel-owned connectivity adapter projects
+`/usr/share/licenses/vansail-carpool`. The panel-owned connectivity adapter projects
 Remnawave's documented resolved configurations and exposes sanitized results.

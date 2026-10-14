@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 // SettleRaffle distributes the stock in one atomic transaction or reopens after refunds.

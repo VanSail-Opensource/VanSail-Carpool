@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 const cachedNodeUUID = "373f14bc-089a-4c3a-91c3-3421e7c83367"

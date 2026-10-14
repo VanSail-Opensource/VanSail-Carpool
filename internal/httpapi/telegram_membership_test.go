@@ -3,7 +3,7 @@ package httpapi
 import (
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 func TestTelegramMembershipJoined(t *testing.T) {

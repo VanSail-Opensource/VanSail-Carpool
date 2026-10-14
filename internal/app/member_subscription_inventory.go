@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 )
 
 func projectMemberInventory(raws []json.RawMessage, active []remnawave.SquadSummary, enabled []string, hosts []remnawave.Host, squads []remnawave.InternalSquad, nodes []remnawave.Node, keys *remnawave.ConnectionKeys) (connectivity.MemberSubscription, error) {

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 // FinalizeMemberRefund credits the original net debit and activates an independent successor atomically.

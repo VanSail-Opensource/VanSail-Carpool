@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 // BeginProviderOperationAttempt durably marks the attempt before provider mutation.

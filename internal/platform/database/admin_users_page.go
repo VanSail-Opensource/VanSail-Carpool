@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // AdminUserRecord is the list-safe user and aggregate balance projection.

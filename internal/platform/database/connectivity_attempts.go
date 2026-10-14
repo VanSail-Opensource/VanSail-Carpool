@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/google/uuid"
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
 )
 
 const connectivityRetention = 24 * time.Hour

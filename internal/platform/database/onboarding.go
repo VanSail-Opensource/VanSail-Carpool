@@ -9,8 +9,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/onboarding"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/onboarding"
 )
 
 func (s *Store) OnboardingBundle(ctx context.Context, kind string) (onboarding.Bundle, error) {

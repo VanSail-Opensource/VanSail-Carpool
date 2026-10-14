@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Service) createCheckout(ctx context.Context, user model.User, order model.PaymentOrder) (model.PaymentOrder, error) {

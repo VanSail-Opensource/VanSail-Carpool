@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/notifications"
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 const courtesyCreditSelect = `SELECT id,payment_order_id,actor_user_id,txb_minor,ledger_entry_id,reason,created_at FROM courtesy_credits`

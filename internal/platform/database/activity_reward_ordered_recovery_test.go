@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 const orderedCustomRecoveryMigration = "055_restore_ordered_custom_combo_rewards.sql"

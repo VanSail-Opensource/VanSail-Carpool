@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type embyAccountResponse struct {

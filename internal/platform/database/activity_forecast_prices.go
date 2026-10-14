@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 type drawPriceContext struct {

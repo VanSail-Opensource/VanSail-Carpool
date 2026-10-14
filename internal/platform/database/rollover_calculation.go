@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	rolloverpkg "github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	rolloverpkg "github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
 // RolloverEligible reports whether expiry may calculate rollover for the term.

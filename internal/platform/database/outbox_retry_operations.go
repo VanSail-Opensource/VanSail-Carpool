@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 // CompleteOutboxRetryOperation reactivates one job and completes its receipt atomically.

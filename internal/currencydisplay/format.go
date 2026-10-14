@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // Currency identifies a supported member-facing monetary display.

@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Store) loadRenewalBatch(ctx context.Context, batchID string) (model.RenewalBatch, error) {

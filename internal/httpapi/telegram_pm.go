@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"context"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 func (s *Server) processTelegramPM(ctx context.Context, update telegram.Update) (bool, error) {

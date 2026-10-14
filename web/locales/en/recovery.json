@@ -1,6 +1,6 @@
 {
   "recovery": {
-    "title": "TX Carpool could not open",
+    "title": "VanSail Carpool could not open",
     "description": "Reload the Mini App to restore a clean session.",
     "reload": "Reload"
   }

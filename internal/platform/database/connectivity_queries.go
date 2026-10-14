@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/google/uuid"
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
 )
 
 // LatestConnectivityAttempts derives one retained latest attempt per host for a configuration.

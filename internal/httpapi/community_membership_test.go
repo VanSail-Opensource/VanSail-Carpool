@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
 )
 
 var errCommunityTransport = errors.New("telegram unavailable")

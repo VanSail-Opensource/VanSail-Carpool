@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/backup"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/squadprofile"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/backup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
 )
 
 func (s *Server) adminFailure(w http.ResponseWriter, r *http.Request, err error) {

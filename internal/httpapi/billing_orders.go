@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (s *Server) createPaymentOrder(w http.ResponseWriter, r *http.Request) {

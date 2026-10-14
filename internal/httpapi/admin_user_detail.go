@@ -1,13 +1,13 @@
 package httpapi
 
 import (
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
-	"github.com/txyyddss/Remna-User-Panel/internal/connections"
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type adminEntitlementResponse struct {

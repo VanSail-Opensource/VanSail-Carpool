@@ -53,7 +53,7 @@ audit, and provider-operation services.
 The topic profile's browser button uses `PUBLIC_BASE_URL` plus
 `/admin/users/{id}`. It carries only the target reference, with no bearer or
 session credentials. The browser console restores its independent admin session
-or displays Telegram OAuth login. Previously sent `admin_user_*` Mini App links
+or displays Mini App access-link instructions. Previously sent `admin_user_*` Mini App links
 continue through the client's access-panel bridge; new cards use browser links.
 
 Hosted regressions: `service_test.go` covers entry, supported media, commands,

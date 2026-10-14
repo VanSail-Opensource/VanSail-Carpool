@@ -22,8 +22,8 @@ describe('i18n', () => {
   })
 
   it('includes localized recovery-boundary copy', () => {
-    expect(t('recovery.title')).toBe('TX Carpool could not open')
+    expect(t('recovery.title')).toBe('VanSail Carpool could not open')
     setLocale('zh-CN')
-    expect(t('recovery.title')).toBe('TX Carpool 无法打开')
+    expect(t('recovery.title')).toBe('VanSail Carpool 无法打开')
   })
 })

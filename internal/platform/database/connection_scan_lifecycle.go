@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 const connectionScanSelect = `SELECT id,user_id,idempotency_key,request_fingerprint,provider_job_id,status,

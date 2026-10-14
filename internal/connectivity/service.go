@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"github.com/google/uuid"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
 type work struct {

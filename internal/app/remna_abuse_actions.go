@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 )
 
 func (a remnaAdapter) AbuseRevoke(ctx context.Context, remoteID string) error {

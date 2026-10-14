@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 type questionnaireResponse struct {

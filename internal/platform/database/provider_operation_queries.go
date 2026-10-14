@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 const providerOperationSelect = `SELECT id,actor_user_id,owner_user_id,kind,idempotency_key,request_fingerprint,

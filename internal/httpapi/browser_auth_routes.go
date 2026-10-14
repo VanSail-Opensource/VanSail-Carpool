@@ -6,28 +6,22 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
 )
 
 const browserSessionCookie = "txc_admin_session"
 const browserRequestKeyCookie = "txc_admin_request_key"
-const oauthFlowCookie = "txc_admin_oauth_flow"
-const browserMemberCookie = "txc_browser_member"
 
 func (s *Server) mountBrowserAuth(router chi.Router) {
 	router.Get("/api/v1/browser/config", s.browserConfig)
-	router.With(s.limitAuthentication).Get("/api/v1/auth/browser/telegram/start", s.browserOAuthStart)
-	router.With(s.limitAuthentication).Get("/api/v1/auth/browser/telegram/callback", s.browserOAuthCallback)
 	router.Get("/api/v1/auth/browser/session", s.browserSession)
 	router.With(s.limitAuthentication, s.requireBrowserOrigin).Post("/api/v1/auth/browser/exchange", s.browserExchange)
 	router.With(s.requireBrowserOrigin, s.requireSignedRequest, s.requireSession).Post("/api/v1/auth/browser/session/renew", s.browserRenew)
 	router.With(s.requireBrowserOrigin, s.requireSignedRequest, s.requireSession).Post("/api/v1/auth/browser/logout", s.browserLogout)
 	router.Group(func(access chi.Router) {
 		access.Use(s.requireSignedRequest, s.requireSession, s.requireAdmin)
-		access.Get("/api/v1/admin-access/oauth-settings", s.browserOAuthSettings)
-		access.Put("/api/v1/admin-access/oauth-settings", s.browserSaveOAuthSettings)
 		access.Post("/api/v1/admin-access/links", s.browserLink)
 	})
 }
@@ -70,12 +64,7 @@ func (s *Server) miniAppURL() string {
 }
 
 func (s *Server) browserConfig(w http.ResponseWriter, r *http.Request) {
-	config, err := s.deps.BrowserAuth.Config(r.Context())
-	if err != nil {
-		s.browserFailure(w, r, http.StatusServiceUnavailable, "BROWSER_CONFIG_UNAVAILABLE")
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"miniAppUrl": s.miniAppURL(), "oauthEnabled": config.Enabled && config.ClientID != "" && config.ClientSecret != ""})
+	writeJSON(w, http.StatusOK, map[string]any{"miniAppUrl": s.miniAppURL()})
 }
 
 func (s *Server) browserFailure(w http.ResponseWriter, r *http.Request, status int, code string) {

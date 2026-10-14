@@ -10,20 +10,19 @@ onboarding, signed requests and the existing idempotent operation protections.
 
 ## Core transport
 
-- `browser_auth_routes.go` mounts public entrance, browser OAuth/session, and
+- `browser_auth_routes.go` mounts public entrance, browser link/session, and
   the restricted `/admin-access` exception and selects signing-cookie scope.
 - `browser_auth_sessions.go` restores identity, consumes handoffs, and manages
   independent browser cookies; `browser_auth_middleware.go` renews live admin
   sessions and rechecks eligibility on every protected browser request.
-- `browser_auth_oauth.go` owns encrypted flow/result cookies, OAuth redirects,
-  masked configuration, and fragment-link issuance. OAuth state expires in
-  five minutes; exchange/renew/logout require the configured same-origin URL.
+- `browser_auth_links.go` issues five-minute fragment links. Exchange, renewal,
+  and logout require the configured same-origin URL.
 - `browser_auth_test.go` covers signed identity restoration, cookie flags,
   stable renewal, cross-origin exchange rejection, logout, and member redirects
   in hosted CI; local automated suites remain prohibited.
 - `browser_auth_scope_test.go` covers Mini App rejection from browser admin
   routes, signed-request replay, expired-cookie clearing, role revocation,
-  OAuth cancellation, and existing streamed-backup origin/device safeguards.
+  removed login routes, and existing streamed-backup origin/device safeguards.
 - `browser_auth_member_test.go` checks that ordinary signed Mini App members
   receive member redirect state while allowlisted Mini App administrators
   retain the browser landing/login entrance until they establish browser scope.

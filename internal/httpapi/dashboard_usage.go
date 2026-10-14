@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 )
 
 func (s *Server) dashboardNodeUsage(w http.ResponseWriter, r *http.Request) {

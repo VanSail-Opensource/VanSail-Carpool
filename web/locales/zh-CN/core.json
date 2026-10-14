@@ -5,7 +5,7 @@
     "currencyCny": "人民币",
     "currencyUsd": "美元",
     "currencyRateUnavailable": "当前无法获取该币种汇率。",
-    "name": "TX Carpool",
+    "name": "VanSail Carpool",
     "language": "语言",
     "english": "English",
     "simplifiedChinese": "简体中文"
@@ -31,7 +31,7 @@
   },
   "auth": {
     "telegramAccess": "Telegram 访问",
-    "openInTelegram": "请在 Telegram 中打开 TX Carpool。",
+    "openInTelegram": "请在 Telegram 中打开 VanSail Carpool。",
     "telegramLoading": "Telegram 身份验证仍在加载，请稍后重试。",
     "tryAgain": "重试",
     "securingRide": "正在保护你的行程",

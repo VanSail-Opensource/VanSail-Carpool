@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 type cardField struct{ label, value string }
@@ -39,9 +39,9 @@ func Format(payload jobpayload.UserNotification, location *time.Location) (strin
 	}
 	guidance := copy.guidance[payload.Kind]
 	if payload.Kind == jobpayload.UserEventProvisionConflict {
-		guidance = "Choose a new username in TX Carpool to restore access."
+		guidance = "Choose a new username in VanSail Carpool to restore access."
 		if payload.Locale == "zh-CN" {
-			guidance = "请在 TX Carpool 中选择新用户名，重新开通套餐。"
+			guidance = "请在 VanSail Carpool 中选择新用户名，重新开通套餐。"
 		}
 	}
 	if guidance != "" {

@@ -1,6 +1,6 @@
 # Simplified Chinese messages
 
-- `browser.json` owns localized public entrance, browser preferences, OAuth/access and session copy.
+- `browser.json` owns localized public entrance, browser preferences, access-link and session copy.
 
 Each JSON file mirrors its English domain. Product text belongs here rather
 than in Vue templates, composables, or API clients.

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func ipLookupFixture(t *testing.T, quota int) (*Store, *iplookup.Service, string, string, time.Time) {

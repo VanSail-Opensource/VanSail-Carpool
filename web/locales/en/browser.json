@@ -1,19 +1,30 @@
 {
   "browser": {
     "tools": "Maintenance and upload",
-    "table": { "name": "Name", "size": "Size", "date": "Date", "status": "Status", "actions": "Actions", "action": "Action", "actor": "Actor", "target": "Target", "details": "Details", "loadMore": "Load more", "kind": "Type", "attempts": "Attempts" },
+    "table": {
+      "name": "Name",
+      "size": "Size",
+      "date": "Date",
+      "status": "Status",
+      "actions": "Actions",
+      "action": "Action",
+      "actor": "Actor",
+      "target": "Target",
+      "details": "Details",
+      "loadMore": "Load more",
+      "kind": "Type",
+      "attempts": "Attempts"
+    },
     "console": "Admin console",
     "administrator": "Administrator",
     "services": "Services",
     "logout": "Sign out",
     "logoutFailed": "Could not sign out. Please retry.",
     "adminAccess": "Admin access",
-    "adminEntrance": "Admin sign in",
+    "adminEntrance": "Get admin access link",
     "memberEntrance": "Open in Telegram",
     "backToEntrance": "Back to entrance",
     "loadFailed": "Could not load the entrance. Please retry.",
-    "saveFailed": "Could not save login settings. Please retry.",
-    "saved": "Login settings saved.",
     "signingIn": "Signing you in",
     "signingInHint": "Opening your browser admin session.",
     "linkInvalid": "This access link is invalid, expired, or already used. Generate a new link in the Mini App.",
@@ -26,33 +37,14 @@
     "linkCopied": "Access link copied.",
     "copyFailed": "Could not copy. Open the console using the button.",
     "sessionExpired": "Sign in again",
-    "sessionExpiredHint": "Your edits remain here. Sign in in another tab, then return to this page.",
+    "sessionExpiredHint": "Your edits remain here. Generate a new link in Mini App settings, sign in in another tab, then return here.",
     "memberTitle": "Welcome, {name}",
     "memberHint": "Member accounts use the Telegram Mini App. Opening it now.",
-    "oauthUnavailable": "Browser login is not configured yet. Admins can open the console from Mini App settings.",
-    "theme": { "label": "Appearance", "system": "System", "light": "Light", "dark": "Dark" },
-    "oauth": {
-      "title": "Telegram browser login",
-      "description": "Set up browser sign-in using your bot's Login Widget settings in BotFather.",
-      "enabled": "Enable browser sign-in",
-      "clientId": "Client ID",
-      "clientSecret": "Client secret",
-      "secretStored": "A secret is stored. Leave blank to keep it.",
-      "secretNeeded": "Enter the client secret from BotFather.",
-      "callbackUrl": "Redirect URL",
-      "registration": "Register this redirect URL and the site's origin as allowed URLs in BotFather.",
-      "clientRequired": "Enter a valid numeric client ID.",
-      "secretTooLong": "The client secret must be 512 characters or fewer.",
-      "secretRequired": "A client secret is required to enable login."
-    },
-    "oauthErrors": {
-      "OAUTH_STATE_INVALID": "The login request expired or could not be verified. Please start again.",
-      "OAUTH_CANCELLED": "Telegram sign-in was cancelled.",
-      "OAUTH_LOGIN_FAILED": "Telegram sign-in could not be completed. Please retry.",
-      "OAUTH_PROVIDER_REJECTED": "Telegram rejected the sign-in request. Check that the BotFather allowed URLs include this site's origin and the exact redirect URL shown in Admin access settings, and that the client ID and secret belong to the same bot.",
-      "OAUTH_PROVIDER_UNAVAILABLE": "Could not reach Telegram sign-in. Please retry in a moment.",
-      "OAUTH_RESPONSE_INVALID": "Telegram returned a sign-in response that could not be verified. Check the configured client ID and secret, then retry.",
-      "OAUTH_NOT_CONFIGURED": "Browser sign-in is not configured. Use the Mini App access link."
+    "theme": {
+      "label": "Appearance",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
     },
     "landing": {
       "eyebrow": "Shared services, managed together",
@@ -74,6 +66,7 @@
       "renewals": "Stay up to date",
       "renewalsHint": "Review subscription dates and manage automatic renewal from your account.",
       "footer": "Subscriptions, accounts, and renewals"
-    }
+    },
+    "accessInstructions": "Open the Telegram Mini App, go to Settings > Admin access, and generate a one-use console link."
   }
 }

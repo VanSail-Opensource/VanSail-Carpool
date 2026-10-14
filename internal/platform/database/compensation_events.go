@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 )
 
 const compensationEventSelect = `SELECT id,node_uuid,node_name,status,offline_observed_at,recovered_observed_at,

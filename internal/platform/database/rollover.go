@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	rolloverpkg "github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	rolloverpkg "github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"time"
 )
 

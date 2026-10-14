@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 func newEventFields(kind string, copy copySet, facts map[string]string, location *time.Location) ([]cardField, error) {

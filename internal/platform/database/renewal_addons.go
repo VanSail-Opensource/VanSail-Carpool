@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // renewalAddonsTx retains purchased squad identities and prices them from the

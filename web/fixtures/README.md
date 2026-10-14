@@ -1,5 +1,11 @@
 # Constructed browser fixtures
 
+`BrowserAuthAudit.vue`, `browser-auth-audit.ts`, and `browser-auth-audit.html`
+mount the real browser entrance, Mini App link panel, and browser exchange view.
+`link`, `exchange`, `slow`, `empty`, `error`, `expired`, `invalid`, and `zh`
+exercise link-only administrator access without production requests.
+`window.__browserAuthAudit` records mock issuance, exchange, and clipboard actions.
+
 IP Lookup's `subnet-probes` query flag adds per-address TCP/Reality/Cloudflare evidence with yellow, red, gray and legacy-compatible rows. Combine it with `checking` for live subnet progress, `queued` for shared waiting, or `enhanced=categories` for a refused primary IP with visible subnet probes. These fixtures exercise the real Vue components through Chrome DevTools MCP without production requests.
 
 `PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount real

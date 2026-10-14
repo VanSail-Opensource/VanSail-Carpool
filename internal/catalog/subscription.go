@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 type subscriptionSource interface {

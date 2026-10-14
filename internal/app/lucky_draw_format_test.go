@@ -5,8 +5,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 func TestDrawAnnouncementKeepsEntryAndProgressWithinTelegramLimit(t *testing.T) {

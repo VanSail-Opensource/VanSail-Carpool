@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 var paymentAnnouncementChannelsZH = map[string]string{

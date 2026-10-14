@@ -3,8 +3,8 @@ package emby
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func (s *OperationService) handlePreferences(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {

@@ -1,6 +1,6 @@
-# TX Carpool OpenAPI contract
+# VanSail Carpool OpenAPI contract
 
-- Browser access uses the `browser-auth.yaml` schemas and public browser/OIDC
+- Browser access uses the `browser-auth.yaml` schemas and public browser/session
   paths. All administrator paths require browser-scoped session signatures;
   `/admin-access` is the sole Mini App administrator exception. Shared `/me`,
   display-currency, and browser IP Lookup calls explicitly select browser scope

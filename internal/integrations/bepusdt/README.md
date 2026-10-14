@@ -1,7 +1,7 @@
 # BEPusdt integration
 - `transactions_part2.go` continues the focused implementation from its original package module.
 
-This package implements the narrow BEPusdt transaction and callback surface used by TX Carpool. Provider-mandated MD5 signatures are isolated to the callback protocol, compared in constant time, and never placed in errors.
+This package implements the narrow BEPusdt transaction and callback surface used by VanSail Carpool. Provider-mandated MD5 signatures are isolated to the callback protocol, compared in constant time, and never placed in errors.
 
 - `client.go` defines the sanitized API error, injectable HTTP transport, client options, and validated client construction.
 - `transactions.go` validates, signs, sends, and verifies direct transaction creation. It accepts the provider cashier URL as unused response metadata because the member flow renders the validated address directly.

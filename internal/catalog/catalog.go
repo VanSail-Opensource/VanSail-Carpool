@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // RemoteSquad is the live identity portion of a Remnawave internal squad.

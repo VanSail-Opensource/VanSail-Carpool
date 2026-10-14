@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/maintenance"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type maintenanceTaskResult struct {

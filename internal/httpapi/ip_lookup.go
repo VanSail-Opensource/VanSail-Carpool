@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
 )
 
 func (s *Server) mountIPLookup(r chi.Router) {

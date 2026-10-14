@@ -3,7 +3,7 @@
 import re
 import subprocess
 
-DATABASE_PACKAGE = "github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+DATABASE_PACKAGE = "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 SHARD_COUNT = 8
 
 

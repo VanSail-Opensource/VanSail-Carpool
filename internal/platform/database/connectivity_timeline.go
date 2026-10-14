@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 // ConnectivityTimeline reads retained terminal observations for one configuration.

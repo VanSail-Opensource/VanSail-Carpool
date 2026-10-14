@@ -3,7 +3,7 @@
 `073_browser_admin_sessions.sql` preserves all legacy sessions as Mini App scope,
 replaces the global per-user unique index with a partial Mini App-only index,
 adds renewal timestamps, and creates hashed one-use browser handoff references.
-No raw bearer or OAuth profile dataset is persisted.
+Only hashed browser bearer references are persisted.
 
 `059_member_squad_preferences.sql` stores only disabled squad references per
 account; purchase ownership and upstream names are not duplicated.
@@ -131,3 +131,5 @@ file instead.
 
 - `072_builtin_usdt.sql` ? Widens payment-provider identity and adds compact quotes, transfers, cursors and legacy RPC admission records.
 - `073_remove_usdt_rpc_quotas.sql` removes the obsolete daily/minute usage and cooldown tables after RPC work moves to one in-memory shared concurrency queue.
+
+- `074_vansail_brand_and_link_auth.sql` removes retired browser OAuth credentials and renames untouched seeded welcome copy. Existing device sessions, handoffs, customized documents, and agreement revisions are preserved.

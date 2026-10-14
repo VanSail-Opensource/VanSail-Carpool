@@ -1,6 +1,6 @@
 package botcommands
 
-import "github.com/txyyddss/Remna-User-Panel/internal/model"
+import "github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 
 // PMAdminCopy contains localized replies for commands used in administrator PM topics.
 type PMAdminCopy struct {

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 // RaffleTicketInfo contains the Telegram routing and current progress for a seat.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Service) cachedSquadNames() map[string]string {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // QuotePurchase performs the same catalog, coupon, and effective-date checks as

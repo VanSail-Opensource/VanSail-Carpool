@@ -72,7 +72,7 @@ type User struct {
 	UserTraffic          UserTraffic          `json:"userTraffic"`
 }
 
-// CreateUserRequest matches Remnawave's CreateUserBodyDto fields used by TX Carpool.
+// CreateUserRequest matches Remnawave's CreateUserBodyDto fields used by VanSail Carpool.
 
 type CreateUserRequest struct {
 	Username             string               `json:"username"`

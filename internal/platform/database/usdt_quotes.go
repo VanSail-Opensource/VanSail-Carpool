@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 )
 
 const usdtQuoteSelect = "SELECT order_id,network,token,recipient,amount,atomic_amount,expires_at FROM usdt_quotes"

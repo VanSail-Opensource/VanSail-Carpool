@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func TestConnectivityHistoryStablePaginationLimitsAndFilterBinding(t *testing.T) {

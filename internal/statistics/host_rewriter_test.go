@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func TestReplaceFirstStandaloneMultiplier(t *testing.T) {

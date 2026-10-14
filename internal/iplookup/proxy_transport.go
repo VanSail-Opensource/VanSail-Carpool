@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 func (s *EnhancedService) downloadInventory(ctx context.Context, raw string, c Config, emit func(string)) error {

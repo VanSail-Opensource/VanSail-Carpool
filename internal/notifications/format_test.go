@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 func TestFormatNotificationCards(t *testing.T) {
@@ -69,14 +69,14 @@ func TestFormatUsesExactOrderedLocalizedCards(t *testing.T) {
 			payload: notificationFixture(jobpayload.UserEventExpiration, "en", map[string]string{
 				FactCombo: "Pro", FactExpired: "2026-08-20T00:00:00Z",
 			}),
-			want: "🛑 *Subscription expired*\n*Combo:* Pro\n*Expired:* 2026\\-08\\-20 08:00 CST\n\nOpen TX Carpool to restore access\\.",
+			want: "🛑 *Subscription expired*\n*Combo:* Pro\n*Expired:* 2026\\-08\\-20 08:00 CST\n\nOpen VanSail Carpool to restore access\\.",
 		},
 		{
 			name: "Chinese reminder",
 			payload: notificationFixture(jobpayload.UserEventExpiryReminder, "zh-CN", map[string]string{
 				FactCombo: "专业版", FactExpires: "2026-08-20T00:00:00Z", FactAutoRenewal: "off", FactQueuedCombo: "none",
 			}),
-			want: "⏳ *订阅即将到期*\n*套餐:* 专业版\n*到期时间:* 2026\\-08\\-20 08:00 CST\n*自动续费:* 关闭\n*排队套餐:* 无\n\n请在到期前前往 TX Carpool 选择新套餐。",
+			want: "⏳ *订阅即将到期*\n*套餐:* 专业版\n*到期时间:* 2026\\-08\\-20 08:00 CST\n*自动续费:* 关闭\n*排队套餐:* 无\n\n请在到期前前往 VanSail Carpool 选择新套餐。",
 		},
 	}
 	for _, test := range tests {

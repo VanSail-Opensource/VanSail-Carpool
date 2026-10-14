@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestFormatStartAndBalanceExactOutput(t *testing.T) {
@@ -17,8 +17,8 @@ func TestFormatStartAndBalanceExactOutput(t *testing.T) {
 		start    string
 		balance  string
 	}{
-		{name: "English", language: English, start: `Press Open TX Carpool to use the app\. For help, send a message directly here after opening the panel and completing entry verification\.`, balance: "Balance: 12\\.50 TXB"},
-		{name: "Chinese", language: Chinese, start: "请按“打开 TX Carpool”使用应用。如需帮助，请先打开面板并完成首次访问验证，再直接在这里发送消息。", balance: "余额: 12\\.50 TXB"},
+		{name: "English", language: English, start: `Press Open VanSail Carpool to use the app\. For help, send a message directly here after opening the panel and completing entry verification\.`, balance: "Balance: 12\\.50 TXB"},
+		{name: "Chinese", language: Chinese, start: "请按“打开 VanSail Carpool”使用应用。如需帮助，请先打开面板并完成首次访问验证，再直接在这里发送消息。", balance: "余额: 12\\.50 TXB"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -117,8 +117,8 @@ func TestFormatWelcomeUsesLocalizedSafeMention(t *testing.T) {
 		language Language
 		want     string
 	}{
-		{language: English, want: `👋 Welcome [Ada \_\*](tg://user?id=12345) to TX Carpool\!`},
-		{language: Chinese, want: `👋 欢迎 [Ada \_\*](tg://user?id=12345) 加入 TX Carpool！`},
+		{language: English, want: `👋 Welcome [Ada \_\*](tg://user?id=12345) to VanSail Carpool\!`},
+		{language: Chinese, want: `👋 欢迎 [Ada \_\*](tg://user?id=12345) 加入 VanSail Carpool！`},
 	}
 	for _, test := range tests {
 		if got := FormatWelcome(Text(test.language), 12345, "Ada _*"); got != test.want {

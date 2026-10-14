@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"net/http"
 )
 

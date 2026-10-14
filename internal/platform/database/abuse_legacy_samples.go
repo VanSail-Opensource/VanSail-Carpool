@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func legacySamplesTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, limit int) ([]abuse.Sample, error) {

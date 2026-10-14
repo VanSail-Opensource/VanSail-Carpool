@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 func (s *Server) ipLookupDetails(w http.ResponseWriter, r *http.Request) {

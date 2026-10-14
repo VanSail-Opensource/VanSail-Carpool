@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Server) adminPayments(w http.ResponseWriter, r *http.Request) {

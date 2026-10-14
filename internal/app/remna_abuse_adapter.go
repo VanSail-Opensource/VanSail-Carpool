@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (a remnaAdapter) AbuseNodes(ctx context.Context) ([]abuse.Node, error) {

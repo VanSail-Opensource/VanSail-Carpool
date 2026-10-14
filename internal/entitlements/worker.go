@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 // Repository is the durable outbox and entitlement query surface.

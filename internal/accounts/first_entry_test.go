@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/turnstile"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/turnstile"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 type firstEntryStore struct {

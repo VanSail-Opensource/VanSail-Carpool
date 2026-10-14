@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func newUploadTestService(t *testing.T) (*Service, *database.Store, context.Context, []string) {

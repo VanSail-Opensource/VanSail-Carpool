@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
-	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
 const testRolloverMultiplierFP int64 = 1_000_000

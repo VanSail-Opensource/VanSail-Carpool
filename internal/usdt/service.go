@@ -8,7 +8,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // Service coordinates the single-process collector and local-only public reads.

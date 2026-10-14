@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (w *luckyDrawOutbox) resultNotice(ctx context.Context, id, kind string) error {

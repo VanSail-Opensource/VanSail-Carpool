@@ -1,6 +1,6 @@
 # Telegram integration
 
-This package contains the Telegram Bot API and Mini App authentication surface used by TX Carpool. Bot tokens remain confined to request URLs inside the transport, while returned and transport errors are sanitized before propagation.
+This package contains the Telegram Bot API and Mini App authentication surface used by VanSail Carpool. Bot tokens remain confined to request URLs inside the transport, while returned and transport errors are sanitized before propagation.
 
 - `client.go` defines the sanitized API error, client options, injected transport, and validated client construction.
 - `transport.go` performs bounded Bot API calls, decodes envelopes, sanitizes failures, and validates URLs and secrets.

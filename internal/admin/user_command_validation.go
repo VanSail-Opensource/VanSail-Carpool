@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/google/uuid"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
 )
 
 func validCommand(actorID, key, reason string) bool {

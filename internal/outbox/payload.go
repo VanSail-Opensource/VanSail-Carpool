@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // PaymentSuccessAnnouncement is the immutable payment snapshot carried by the

@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 func replaceIPCacheTx(ctx context.Context, tx *sql.Tx, r iplookup.Report) error {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 func (s *Store) ipLookupCheckLive(ctx context.Context, check *iplookup.Check, raw, status string) error {

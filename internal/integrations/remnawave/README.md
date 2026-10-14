@@ -3,7 +3,7 @@
 - `types_part2.go` continues the focused implementation from its original package module.
 - `users_part2.go` continues the focused implementation from its original package module.
 
-This package implements the Remnawave v3.3.0 operations used by TX Carpool. Endpoint and response shapes follow `reference/Upstream/Remnawave/api.json`; the shared transport applies bearer authentication and sanitizes provider errors.
+This package implements the Remnawave v3.3.0 operations used by VanSail Carpool. Endpoint and response shapes follow `reference/Upstream/Remnawave/api.json`; the shared transport applies bearer authentication and sanitizes provider errors.
 
 - `client.go` owns client construction, authenticated HTTP transport, bounded response decoding, and sanitized API errors; `response_limits.go` keeps the larger Geocheck SVG allowance isolated from the default response cap.
 - `users.go` implements user creation and identity lookup; `users_part2.go` implements documented stream pagination, update, credential revocation, and traffic reset operations.

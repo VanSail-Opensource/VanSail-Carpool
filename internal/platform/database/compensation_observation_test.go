@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 )
 
 func TestCompensationObservationPersistsMissingDisabledAndRepeatedNodes(t *testing.T) {

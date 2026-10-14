@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 // Keep NULL overrides intact until a recurring grant actually changes the base.

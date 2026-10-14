@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func TestAdminCouponGrantAndDiscardAreIdempotentAndHistorical(t *testing.T) {

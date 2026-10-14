@@ -1,4 +1,4 @@
-// Package app wires the single-container TX Carpool application.
+// Package app wires the single-container VanSail Carpool application.
 package app
 
 import (
@@ -11,34 +11,34 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
-	"github.com/txyyddss/Remna-User-Panel/internal/catalog"
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/entitlements"
-	"github.com/txyyddss/Remna-User-Panel/internal/httpapi"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/turnstile"
-	"github.com/txyyddss/Remna-User-Panel/internal/maintenance"
-	"github.com/txyyddss/Remna-User-Panel/internal/notifications"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/backup"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/config"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/databaseadmin"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
-	"github.com/txyyddss/Remna-User-Panel/internal/questionnaires"
-	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
-	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
-	"github.com/txyyddss/Remna-User-Panel/internal/usdt"
-	"github.com/txyyddss/Remna-User-Panel/internal/webui"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/entitlements"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/httpapi"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/turnstile"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/backup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/databaseadmin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
+	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/webui"
 )
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
@@ -202,7 +202,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(fmt.Errorf("preload embedded frontend: %w", err))
 	}
 	api, err := httpapi.New(httpapi.Dependencies{
-		BrowserAuth:  browserauth.New(store, vault, browserauth.QueuedHTTPClient(upstreams.telegram), cfg.PublicBaseURL, cfg.AdminTelegramIDs),
+		BrowserAuth:  browserauth.New(store, cfg.PublicBaseURL, cfg.AdminTelegramIDs),
 		USDT:         usdtService,
 		IPLookup:     ipLookupService,
 		PM:           pmService,

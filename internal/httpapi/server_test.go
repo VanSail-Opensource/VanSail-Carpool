@@ -8,7 +8,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestDecodeJSONAcceptsOneStrictDocument(t *testing.T) {
@@ -91,8 +91,8 @@ func TestSPAHandlerServesAssetsAndFallsBackToIndex(t *testing.T) {
 	t.Parallel()
 
 	content := fstest.MapFS{
-		"index.html":    {Data: []byte("<main>TX Carpool</main>")},
-		"admin.html":    {Data: []byte("<main>TX Carpool Console</main>")},
+		"index.html":    {Data: []byte("<main>VanSail Carpool</main>")},
+		"admin.html":    {Data: []byte("<main>VanSail Carpool Console</main>")},
 		"assets/app.js": {Data: []byte("window.txc = true")},
 	}
 	handler := spaHandler(content)
@@ -104,12 +104,12 @@ func TestSPAHandlerServesAssetsAndFallsBackToIndex(t *testing.T) {
 		contentType string
 		cache       string
 	}{
-		{name: "index", path: "/", wantBody: "<main>TX Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "index", path: "/", wantBody: "<main>VanSail Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
 		{name: "static asset", path: "/assets/app.js", wantBody: "window.txc = true", contentType: "text/javascript", cache: "public, max-age=31536000, immutable"},
-		{name: "client route", path: "/catalog/checkout", wantBody: "<main>TX Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
-		{name: "admin root", path: "/admin", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
-		{name: "admin deep link", path: "/admin/users/user-id", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
-		{name: "admin entry", path: "/admin.html", wantBody: "<main>TX Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "client route", path: "/catalog/checkout", wantBody: "<main>VanSail Carpool</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin root", path: "/admin", wantBody: "<main>VanSail Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin deep link", path: "/admin/users/user-id", wantBody: "<main>VanSail Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
+		{name: "admin entry", path: "/admin.html", wantBody: "<main>VanSail Carpool Console</main>", contentType: "text/html", cache: "no-cache, must-revalidate"},
 	}
 
 	for _, test := range tests {

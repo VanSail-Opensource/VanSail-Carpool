@@ -1,4 +1,4 @@
-// Package main starts the TX Carpool service.
+// Package main starts the VanSail Carpool service.
 package main
 
 import (
@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/app"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/config"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/app"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // IDs defines the built-in providers and the legacy default execution order.

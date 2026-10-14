@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 )
 
 type communityMembershipResponse struct {

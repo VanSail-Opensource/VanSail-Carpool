@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func (s *Server) memberConnectivitySummary(w http.ResponseWriter, r *http.Request) {

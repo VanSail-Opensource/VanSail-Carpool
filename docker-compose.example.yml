@@ -1,9 +1,9 @@
 name: remna-user-panel
 
 services:
-  tx-carpool:
+  vansail-carpool:
     image: ghcr.io/txyyddss/remna-user-panel:latest
-    hostname: tx-carpool
+    hostname: vansail-carpool
     restart: unless-stopped
     stop_grace_period: 30s
 
@@ -21,7 +21,7 @@ services:
       - tx-carpool-data:/data
 
     healthcheck:
-      test: ["CMD", "/usr/local/bin/tx-carpool", "healthcheck", "--url", "http://127.0.0.1:8080/healthz"]
+      test: ["CMD", "/usr/local/bin/vansail-carpool", "healthcheck", "--url", "http://127.0.0.1:8080/healthz"]
       interval: 30s
       timeout: 5s
       start_period: 10s

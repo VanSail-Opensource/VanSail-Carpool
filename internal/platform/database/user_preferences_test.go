@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"github.com/txyyddss/Remna-User-Panel/internal/preferences"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"testing"
 	"time"
 )

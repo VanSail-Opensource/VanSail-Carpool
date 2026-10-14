@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 )
 
 const httpTestSession = "c2Vzc2lvbi10b2tlbi0zMi1ieXRlcy0wMDAwMDAwMDA"

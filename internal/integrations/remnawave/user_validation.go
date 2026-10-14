@@ -26,7 +26,7 @@ const maxJSONSafeInteger = int64(9_007_199_254_740_991)
 type wireUser User
 
 // UnmarshalJSON enforces the required Remnawave v3.3.0 UserResponseDto
-// surface while discarding protocol credentials that TX Carpool must not keep.
+// surface while discarding protocol credentials that VanSail Carpool must not keep.
 func (user *User) UnmarshalJSON(data []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {

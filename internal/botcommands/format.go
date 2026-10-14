@@ -3,7 +3,7 @@ package botcommands
 import (
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 const MessageLimit = 4096

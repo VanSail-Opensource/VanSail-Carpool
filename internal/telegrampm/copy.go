@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func chinese(locale string) bool { return strings.HasPrefix(strings.ToLower(locale), "zh") }
@@ -16,7 +16,7 @@ func NoticeText(item model.PMNotice) string {
 		case "unsupported":
 			return "Telegram \u65e0\u6cd5\u8f6c\u53d1\u8fd9\u7c7b\u6d88\u606f\uff0c\u8bf7\u6539\u7528\u6587\u5b57\u6216\u5e38\u89c4\u5a92\u4f53\u3002"
 		case "entry":
-			return "\u8bf7\u5148\u6253\u5f00 TX Carpool \u9762\u677f\u5e76\u5b8c\u6210\u9996\u6b21\u8bbf\u95ee\u9a8c\u8bc1\uff0c\u518d\u76f4\u63a5\u53d1\u9001\u6d88\u606f\u3002"
+			return "\u8bf7\u5148\u6253\u5f00 VanSail Carpool \u9762\u677f\u5e76\u5b8c\u6210\u9996\u6b21\u8bbf\u95ee\u9a8c\u8bc1\uff0c\u518d\u76f4\u63a5\u53d1\u9001\u6d88\u606f\u3002"
 		case "blocked":
 			return "\u4f60\u7684\u79c1\u4fe1\u5df2\u88ab\u7ba1\u7406\u5458\u6682\u505c\u3002"
 		default:
@@ -27,7 +27,7 @@ func NoticeText(item model.PMNotice) string {
 	case "unsupported":
 		return "Telegram cannot relay this message type. Please send text or ordinary media instead."
 	case "entry":
-		return "Open the TX Carpool panel and complete entry verification before sending a message directly here."
+		return "Open the VanSail Carpool panel and complete entry verification before sending a message directly here."
 	case "blocked":
 		return "Private messaging for your account has been blocked by an administrator."
 	default:

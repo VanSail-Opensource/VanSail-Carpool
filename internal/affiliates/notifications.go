@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	jobpayload "github.com/txyyddss/Remna-User-Panel/internal/outbox"
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 type NotificationSender interface {
@@ -95,9 +95,9 @@ func FormatReferralWelcome(locale, inviter string) string {
 		}
 	}
 	if locale == LocaleChinese {
-		return "👋 你由 *" + md(inviter) + "* 邀请加入 TX Carpool。"
+		return "👋 你由 *" + md(inviter) + "* 邀请加入 VanSail Carpool。"
 	}
-	return "👋 You were invited to TX Carpool by *" + md(inviter) + "*\\."
+	return "👋 You were invited to VanSail Carpool by *" + md(inviter) + "*\\."
 }
 
 func formatTXB(minor int64) string {

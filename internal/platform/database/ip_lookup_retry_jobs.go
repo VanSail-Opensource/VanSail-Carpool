@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 // scheduleIPLookupReportRetryTx queues the first repair attempt when a freshly

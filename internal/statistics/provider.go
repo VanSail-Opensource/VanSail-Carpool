@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
 // Digest is the remote range growth summary.

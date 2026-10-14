@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Store) AffiliateOverview(ctx context.Context, userID, botUsername string) (affiliates.Overview, error) {

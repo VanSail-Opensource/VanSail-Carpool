@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/squadprofile"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
 )
 
 // Money is a currency amount encoded without JSON floating point.

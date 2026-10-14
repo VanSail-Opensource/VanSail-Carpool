@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/currencydisplay"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/currencydisplay"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 type displayCurrencyRatesResponse struct {

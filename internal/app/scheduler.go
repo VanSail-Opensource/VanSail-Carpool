@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/maintenance"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
 )
 
 func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- struct{}) {

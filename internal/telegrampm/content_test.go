@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 )
 
 func TestAttributionPreservesEntitiesAndUsesMinimalPendingContent(t *testing.T) {

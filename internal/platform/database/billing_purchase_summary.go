@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ActiveAndQueuedPurchases returns the current home-screen entitlement summary.

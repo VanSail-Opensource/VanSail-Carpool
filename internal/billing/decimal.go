@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // ParseTXBMajor delegates to the shared exact TXB parser.

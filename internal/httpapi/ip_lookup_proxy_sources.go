@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 func (s *Server) adminProxySources(w http.ResponseWriter, r *http.Request) {

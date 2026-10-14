@@ -5,12 +5,11 @@ import (
 	"errors"
 	"net/url"
 	"path/filepath"
-	"strings"
 	"testing"
+	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func testService(t *testing.T) (*Service, model.User) {
@@ -25,10 +24,6 @@ func testService(t *testing.T) (*Service, model.User) {
 		}
 	})
 	store := database.NewStore(db)
-	vault, err := secret.NewVault(make([]byte, 32))
-	if err != nil {
-		t.Fatal(err)
-	}
 	public, err := url.Parse("https://panel.example")
 	if err != nil {
 		t.Fatal(err)
@@ -37,36 +32,16 @@ func testService(t *testing.T) (*Service, model.User) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return New(store, vault, nil, public, []int64{user.TelegramID}), user
+	return New(store, public, []int64{user.TelegramID}), user
 }
 
 func TestBrowserMemberCannotCreateLocalAccountOrAdminSession(t *testing.T) {
 	service, _ := testService(t)
-	if _, _, _, err := service.CreateSession(context.Background(), model.TelegramProfile{ID: 999}); !errors.Is(err, ErrUnauthorized) {
+	if _, _, err := service.Link(context.Background(), model.User{TelegramID: 999, Role: "admin"}, "/admin"); !errors.Is(err, ErrUnauthorized) {
 		t.Fatalf("member creates session=%v", err)
 	}
 	if _, err := service.store.UserByTelegramID(context.Background(), 999); !errors.Is(err, database.ErrNotFound) {
-		t.Fatalf("OAuth mirrored nonadmin=%v", err)
-	}
-}
-
-func TestBrowserOAuthSecretIsEncryptedAndPreserved(t *testing.T) {
-	service, user := testService(t)
-	ctx := context.Background()
-	first, err := service.SaveConfig(ctx, user.ID, Config{Enabled: true, ClientID: "12345", ClientSecret: "topsecret"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	saved, err := service.store.GetSetting(ctx, configKey)
-	if err != nil || !saved.Encrypted || strings.Contains(saved.Value, first.ClientSecret) {
-		t.Fatalf("encrypted setting=%+v,err=%v", saved, err)
-	}
-	second, err := service.SaveConfig(ctx, user.ID, Config{Enabled: true, ClientID: "12345"})
-	if err != nil || second.ClientSecret != first.ClientSecret {
-		t.Fatalf("secret preservation=%+v,%v", second, err)
-	}
-	if _, err := service.SaveConfig(ctx, user.ID, Config{Enabled: true, ClientID: "not-a-bot"}); err == nil {
-		t.Fatal("invalid bot ID accepted")
+		t.Fatalf("handoff created nonadmin=%v", err)
 	}
 }
 
@@ -85,7 +60,7 @@ func TestBrowserDestinationRejectsExternalAndTraversal(t *testing.T) {
 
 func TestBrowserSessionRechecksDeploymentAllowlist(t *testing.T) {
 	service, user := testService(t)
-	_, token, _, err := service.CreateSession(context.Background(), model.TelegramProfile{ID: user.TelegramID})
+	_, token, _, err := testBrowserSession(t, service, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,4 +68,22 @@ func TestBrowserSessionRechecksDeploymentAllowlist(t *testing.T) {
 	if _, _, err = service.Session(context.Background(), token); !errors.Is(err, ErrUnauthorized) {
 		t.Fatalf("removed administrator retained browser session: %v", err)
 	}
+}
+
+func testBrowserSession(t *testing.T, service *Service, user model.User) (model.User, string, time.Time, error) {
+	t.Helper()
+	link, _, err := service.Link(context.Background(), user, "/admin/settings")
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
+	}
+	target, err := url.Parse(link)
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
+	}
+	fragment, err := url.ParseQuery(target.Fragment)
+	if err != nil {
+		return model.User{}, "", time.Time{}, err
+	}
+	identity, token, expires, _, err := service.Exchange(context.Background(), fragment.Get("token"))
+	return identity, token, expires, err
 }

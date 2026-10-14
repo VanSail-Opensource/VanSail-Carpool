@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Store) ListPaymentOrders(ctx context.Context, userID string, limit int) ([]model.PaymentOrder, error) {

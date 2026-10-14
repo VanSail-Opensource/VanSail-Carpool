@@ -2,7 +2,7 @@
 
 ## 1. Mission
 
-You are working on **TX Carpool**, a carpool-management panel built around upstream **Remnawave** and **Emby** services.
+You are working on **VanSail Carpool**, a carpool-management panel built around upstream **Remnawave** and **Emby** services.
 
 Complete all assigned tasks **one by one** in a sensible dependency order.
 
@@ -202,8 +202,7 @@ Browser admin views must not use Telegram Web App SDK controls, haptics, host
 buttons, or WebView compatibility initialization. Existing backend Telegram
 services remain available through browser controls.
 
-The Mini App may expose only `/settings/admin-access` for admins: OAuth setup and
-short-lived one-use console links. Other administrator pages and their resource
+The Mini App may expose only `/settings/admin-access` for admins: short-lived one-use console links. Other administrator pages and their resource
 preloads belong exclusively to the browser console. Browser admin sessions must
 remain independent of Mini App sessions and other browser devices.
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 )
 
 func TestMemberInventorySharedExcludedHiddenAndCountries(t *testing.T) {

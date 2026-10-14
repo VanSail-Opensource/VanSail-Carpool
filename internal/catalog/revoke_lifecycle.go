@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func revokeItem(ctx context.Context, repository revokeOperationRepository, operationID string) (providerops.Item, error) {

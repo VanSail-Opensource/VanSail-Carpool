@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 )
 
 type entitlementEditRequest struct {

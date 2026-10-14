@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/coupons"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (s *Server) adminCoupons(w http.ResponseWriter, r *http.Request) {

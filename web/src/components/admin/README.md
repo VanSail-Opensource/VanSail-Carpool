@@ -42,7 +42,7 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminQuestionnairesPanel.vue` manages questionnaire lifecycles.
 - `AdminReasonDialog.vue` collects audited reasons and keeps action failures visible in the dialog.
 - `AdminSectionState.vue` renders loading and error states.
-- `AdminSettingsPanel.vue` composes runtime, payment, activity, and OAuth access tabs while preserving one coordinated Save action for runtime/payment/activity drafts; payment interventions stay scoped to individual user histories.
+- `AdminSettingsPanel.vue` composes runtime, payment, and activity tabs while preserving one coordinated Save action for runtime/payment/activity drafts; payment interventions stay scoped to individual user histories.
 - `AdminSquadEditor.vue` edits sparse squad overrides; node access remains a live Remnawave projection.
 - `admin/squad-profile/` contains the typed Broadband, China Optimized, and International Network profile editor modules.
 - `AdminStatisticsPanel.vue` presents resource statistics with contained table scrolling and exact server-calculated figures.

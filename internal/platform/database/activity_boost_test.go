@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func TestBoostedCheckInSamplesBaseOnceAcrossConcurrentClaims(t *testing.T) {

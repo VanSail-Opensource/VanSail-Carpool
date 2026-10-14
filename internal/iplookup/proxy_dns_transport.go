@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"github.com/miekg/dns"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
 )
 
 type resolverHealth struct {

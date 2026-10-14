@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func TestConnectivitySettingsValidationAndDisableDuringOutage(t *testing.T) {

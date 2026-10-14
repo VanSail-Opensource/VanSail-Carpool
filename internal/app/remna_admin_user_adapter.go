@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 )
 
 func (a remnaAdapter) SetAdminUserDisabled(ctx context.Context, remoteID string, disabled bool) error {

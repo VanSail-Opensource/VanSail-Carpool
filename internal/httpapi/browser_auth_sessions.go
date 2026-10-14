@@ -2,19 +2,14 @@ package httpapi
 
 import (
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 )
-
-type browserMemberState struct {
-	Profile model.TelegramProfile `json:"profile"`
-	Expires time.Time             `json:"expires"`
-}
 
 func (s *Server) setBrowserCookies(w http.ResponseWriter, token string, expires time.Time) error {
 	key, err := s.requests.ClientKey(token)
@@ -88,14 +83,6 @@ func (s *Server) browserSession(w http.ResponseWriter, r *http.Request) {
 		s.clearBrowserCookie(w, browserSessionCookie)
 		s.clearBrowserCookie(w, browserRequestKeyCookie)
 	}
-	if cookie, err := r.Cookie(browserMemberCookie); err == nil {
-		var member browserMemberState
-		if s.deps.BrowserAuth.OpenCookie(browserMemberCookie, cookie.Value, &member) == nil && member.Expires.After(time.Now()) && member.Profile.ID > 0 {
-			s.writeBrowserMember(w, member.Profile)
-			return
-		}
-		s.clearBrowserCookie(w, browserMemberCookie)
-	}
 	if session != nil {
 		writeJSON(w, http.StatusOK, map[string]any{"authenticated": false, "kind": "anonymous", "miniAppUrl": s.miniAppURL()})
 		return
@@ -131,7 +118,6 @@ func (s *Server) browserExchange(w http.ResponseWriter, r *http.Request) {
 		s.browserFailure(w, r, 500, "SESSION_CREATE_FAILED")
 		return
 	}
-	s.clearBrowserCookie(w, browserMemberCookie)
 	writeJSON(w, http.StatusOK, browserAdminState(user, expires, returnTo))
 }
 
@@ -165,6 +151,5 @@ func (s *Server) browserLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	s.clearBrowserCookie(w, browserSessionCookie)
 	s.clearBrowserCookie(w, browserRequestKeyCookie)
-	s.clearBrowserCookie(w, browserMemberCookie)
 	writeJSON(w, http.StatusOK, map[string]any{"authenticated": false, "kind": "anonymous", "miniAppUrl": s.miniAppURL()})
 }

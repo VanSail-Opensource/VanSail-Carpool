@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // CreateBrowserSession adds an independent browser session without replacing Mini App or other device sessions.

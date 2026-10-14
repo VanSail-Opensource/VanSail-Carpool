@@ -9,12 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 	"github.com/go-chi/chi/v5"
-	"github.com/txyyddss/Remna-User-Panel/internal/accounts"
-	"github.com/txyyddss/Remna-User-Panel/internal/browserauth"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
-	"github.com/txyyddss/Remna-User-Panel/internal/requestauth"
 )
 
 func TestBrowserHTTPAdminScopeReplayAndRoleRevocation(t *testing.T) {
@@ -27,7 +25,7 @@ func TestBrowserHTTPAdminScopeReplayAndRoleRevocation(t *testing.T) {
 		w.WriteHeader(204)
 	})
 	server.deps.Accounts = accounts.NewService(server.deps.Store, nil, nil, nil, nil, nil, []int64{user.TelegramID}, 7*24*time.Hour)
-	_, token, _, err := server.deps.BrowserAuth.CreateSession(context.Background(), model.TelegramProfile{ID: user.TelegramID})
+	_, token, _, err := createBrowserTestSession(t, server, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,9 +90,9 @@ func TestBrowserHTTPAdminScopeReplayAndRoleRevocation(t *testing.T) {
 	}
 }
 
-func TestBrowserHTTPExpiredIdentityCookieAndCancellation(t *testing.T) {
+func TestBrowserHTTPExpiredIdentityCookie(t *testing.T) {
 	server, handler, user := testBrowserHTTP(t)
-	_, token, _, err := server.deps.BrowserAuth.CreateSession(context.Background(), model.TelegramProfile{ID: user.TelegramID})
+	_, token, _, err := createBrowserTestSession(t, server, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,23 +118,12 @@ func TestBrowserHTTPExpiredIdentityCookieAndCancellation(t *testing.T) {
 	if !expired[browserSessionCookie] || !expired[browserRequestKeyCookie] {
 		t.Fatal("expired cookie pair was not cleared")
 	}
-	flow := browserauth.OAuthFlow{State: "bound", ReturnTo: "/admin/settings", Expires: time.Now().Add(time.Minute)}
-	encoded, err := server.deps.BrowserAuth.SealCookie(oauthFlowCookie, flow)
-	if err != nil {
-		t.Fatal(err)
-	}
-	request = httptest.NewRequest(http.MethodGet, "/api/v1/auth/browser/telegram/callback?state=bound&error=access_denied", nil)
-	request.AddCookie(&http.Cookie{Name: oauthFlowCookie, Value: encoded})
-	response = httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
-	if response.Code != 303 || response.Header().Get("Location") != "/admin/login?error=OAUTH_CANCELLED" {
-		t.Fatalf("cancelled OAuth=%d,%s", response.Code, response.Header().Get("Location"))
-	}
+
 }
 
 func TestStreamingBackupRequiresBrowserScopeAndSameOrigin(t *testing.T) {
 	server, _, user := testBrowserHTTP(t)
-	_, token, _, err := server.deps.BrowserAuth.CreateSession(context.Background(), model.TelegramProfile{ID: user.TelegramID})
+	_, token, _, err := createBrowserTestSession(t, server, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,5 +148,21 @@ func TestStreamingBackupRequiresBrowserScopeAndSameOrigin(t *testing.T) {
 				t.Fatalf("stream upload=%d,want=%d", response.Code, test.status)
 			}
 		})
+	}
+}
+
+func TestBrowserOAuthRoutesAreRemoved(t *testing.T) {
+	_, handler, _ := testBrowserHTTP(t)
+	for _, test := range []struct{ method, path string }{
+		{http.MethodGet, "/api/v1/auth/browser/telegram/start"},
+		{http.MethodGet, "/api/v1/auth/browser/telegram/callback"},
+		{http.MethodGet, "/api/v1/admin-access/oauth-settings"},
+		{http.MethodPut, "/api/v1/admin-access/oauth-settings"},
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(test.method, test.path, nil))
+		if response.Code != http.StatusNotFound {
+			t.Fatalf("removed route %s %s returned %d", test.method, test.path, response.Code)
+		}
 	}
 }

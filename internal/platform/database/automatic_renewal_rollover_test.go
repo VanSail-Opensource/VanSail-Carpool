@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func recordAutomaticRollover(t *testing.T, store *Store, purchaseID string, now time.Time, used, eligible int64) {

@@ -3,7 +3,7 @@ package admin
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 // SetConnectivityValidation validates the same atomic config for all settings

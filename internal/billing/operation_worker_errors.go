@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/bepusdt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/bepusdt"
 )
 
 const providerMessageLimit = 300

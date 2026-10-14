@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 // PendingIPLookupOperations recovers durable runs after process interruption.

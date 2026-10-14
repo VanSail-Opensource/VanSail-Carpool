@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 )
 
 // registerIPLookupOutboxHandlers wires the two background repair lanes that

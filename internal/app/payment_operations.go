@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func registerPaymentOperationHandlers(dispatcher *providerops.Dispatcher, service *billing.Service) error {

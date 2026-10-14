@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 )
 
 func TestAffiliateConfigRejectsStaleVersion(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 )
 
 func (s *Service) SyncNodes(ctx context.Context, vault *secret.Vault, now time.Time) ([]NodeCredential, error) {

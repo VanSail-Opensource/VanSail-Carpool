@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/integrations/telegram"
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (a paymentAdapter) ProviderRefunded(ctx context.Context, order model.PaymentOrder) (bool, error) {

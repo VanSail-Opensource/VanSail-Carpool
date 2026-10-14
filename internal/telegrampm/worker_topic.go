@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func (w *Worker) topic(ctx context.Context, run execution, item providerops.Item, interrupted bool) (phaseResult, error) {

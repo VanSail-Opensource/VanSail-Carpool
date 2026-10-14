@@ -1,6 +1,6 @@
 # English messages
 
-- `browser.json` owns public entrance, browser preferences, OAuth/access, session renewal and member forwarding copy.
+- `browser.json` owns public entrance, browser preferences, access-link, session renewal and member forwarding copy.
 
 Each JSON file owns the UI copy for the domain named by its filename. Keep keys
 in parity with the matching `zh-CN` file and preserve `{placeholder}` names.

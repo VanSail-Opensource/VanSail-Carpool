@@ -2,7 +2,7 @@ package preferences
 
 import (
 	"fmt"
-	"github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 // Allows maps every supported event to exactly one notification category.

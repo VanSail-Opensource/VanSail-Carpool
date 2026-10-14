@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
-	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 )
 
 const statisticsRefreshTimeout = 5 * time.Minute

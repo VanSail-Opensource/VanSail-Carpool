@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/iplookup"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
 // ipCachedReportTx prefers evidence for the address itself, then a completed IPv4 /24.

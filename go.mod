@@ -1,27 +1,24 @@
-module github.com/txyyddss/Remna-User-Panel
+module github.com/VanSail-Opensource/VanSail-Carpool
 
 go 1.26.0
 
 toolchain go1.26.9
 
 require (
+	filippo.io/edwards25519 v1.2.0
 	github.com/RoaringBitmap/roaring/v2 v2.29.0
-	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
+	github.com/xssnick/tonutils-go v1.19.0
 	github.com/xtls/xray-core v1.260327.1-0.20260710210335-64fada32b5b9
 	golang.org/x/crypto v0.57.0
 	modernc.org/sqlite v1.60.1
 )
 
 require (
-	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
-	github.com/xssnick/tonutils-go v1.19.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
 )
 
 require (
@@ -31,7 +28,7 @@ require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
 	github.com/google/btree v1.1.2 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/gorilla/websocket v1.5.3
 	github.com/juju/ratelimit v1.0.2 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect

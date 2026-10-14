@@ -11,7 +11,7 @@ the Telegram SDK or load member shell/theme assets.
 - `BrowserConsole.vue` composes dashboard navigation and route content.
 - `navigation.ts` groups every admin section, including IP Lookup and USDT.
 - `BrowserPreferences.vue` provides independent locale and appearance controls.
-- `BrowserLanding.vue` explains services, starts OAuth, and forwards members.
+- `BrowserLanding.vue` explains services, directs administrators to Mini App access links, and forwards members.
 - `BrowserAccess.vue` removes the token fragment before one-use exchange.
 - `session.ts` restores identity, hydrates the neutral session projection,
   renews cookies, and revokes only the current browser device.
@@ -26,8 +26,7 @@ Browser cookies/signatures have their own scope. Snapshots include experience
 and identity. No global member/admin preload runs here. Mutations retain audited
 reasons, financial precision, validation, idempotency, and durable receipts.
 
-Register the displayed callback and site origin in BotFather; save client ID and
-write-only secret in the access panel. Blank secrets preserve existing values.
-OAuth stays unavailable until configured. Mini App handoffs work independently
-for initial setup. Add new routes to both router and navigation, document their
-module, and validate every state and both themes using Chrome DevTools MCP.
+Administrators generate a one-use console link in Mini App Settings > Admin
+access. The token is consumed in the browser without sharing Mini App sessions.
+Add new routes to both router and navigation, document their module, and validate
+every state and both themes using Chrome DevTools MCP.

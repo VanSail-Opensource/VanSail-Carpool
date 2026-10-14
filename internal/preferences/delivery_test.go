@@ -1,7 +1,7 @@
 package preferences
 
 import (
-	"github.com/txyyddss/Remna-User-Panel/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 	"testing"
 )
 

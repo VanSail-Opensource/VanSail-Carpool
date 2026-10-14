@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 const pmConversationSelect = `SELECT c.id,c.user_id,c.chat_id,COALESCE(c.topic_id,0),COALESCE(c.profile_message_id,0),

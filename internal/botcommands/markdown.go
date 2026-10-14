@@ -3,7 +3,7 @@ package botcommands
 import (
 	"strconv"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
 )
 
 const markdownV2Ellipsis = `\.\.\.`

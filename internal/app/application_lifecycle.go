@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 // Run starts provider workers before serving HTTP and waits for all internal
@@ -47,7 +47,7 @@ func (a *Application) Run(ctx context.Context) error {
 
 	listenerDone := make(chan error, 1)
 	go func() {
-		a.logger.Info("TX Carpool listening", "address", a.httpServer.Addr)
+		a.logger.Info("VanSail Carpool listening", "address", a.httpServer.Addr)
 		listenerDone <- a.httpServer.ListenAndServe()
 	}()
 	schedulerDone := make(chan struct{})

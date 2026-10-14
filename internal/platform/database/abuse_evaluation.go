@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Store) DetectorStateV2(ctx context.Context, userID, reason string) (abuse.DetectorState, error) {

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
-	"github.com/txyyddss/Remna-User-Panel/internal/billing"
-	domain "github.com/txyyddss/Remna-User-Panel/internal/emby"
-	provider "github.com/txyyddss/Remna-User-Panel/internal/integrations/emby"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
+	domain "github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	provider "github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 type embyClient interface {

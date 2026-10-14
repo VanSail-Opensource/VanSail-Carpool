@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	productstats "github.com/txyyddss/Remna-User-Panel/internal/statistics"
+	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 )
 
 // SaveStatisticsPartition atomically replaces one independent last-good JSON part.

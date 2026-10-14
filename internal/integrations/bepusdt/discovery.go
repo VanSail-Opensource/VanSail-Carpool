@@ -36,7 +36,7 @@ func (c *Client) createDiscoveryOrder(ctx context.Context, input DiscoveryReques
 	}
 	values := map[string]string{
 		"order_id": input.OrderID, "amount": "1", "currencies": "USDT,USDC", "fiat": "USD",
-		"name": "TX Carpool payment method discovery", "notify_url": input.NotifyURL,
+		"name": "VanSail Carpool payment method discovery", "notify_url": input.NotifyURL,
 		"redirect_url": input.RedirectURL, "timeout": "180", "reselect": "false",
 	}
 	payload := map[string]any{

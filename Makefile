@@ -3,10 +3,10 @@ SHELL := /bin/sh
 GO ?= go
 NPM ?= npm
 DOCKER ?= docker
-BINARY := bin/tx-carpool
+BINARY := bin/vansail-carpool
 COVERAGE_MIN ?= 80
 DOMAIN_PACKAGES := ./internal/accounts ./internal/admin ./internal/billing ./internal/catalog ./internal/entitlements
-IMAGE ?= tx-carpool:local
+IMAGE ?= vansail-carpool:local
 
 .DEFAULT_GOAL := build
 

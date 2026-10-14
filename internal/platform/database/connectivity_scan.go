@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 const connectivityAttemptColumns = `id,run_id,host_uuid,config_hash,remnawave_user_id,trigger,

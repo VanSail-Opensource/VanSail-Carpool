@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Store) AbuseIPBanScan(ctx context.Context, recordID string) (string, error) {

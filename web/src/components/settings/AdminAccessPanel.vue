@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router'
 import { browserAccessApi, type AdminAccessLink } from '@/api/browserAccess'
 import { localizedError, useI18n } from '@/i18n'
 import { openExternalLink } from '@/utils/telegram'
-import AdminOAuthSettings from './AdminOAuthSettings.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -44,7 +43,6 @@ onMounted(() => void generate())
       <div class="button-row"><UButton :loading="busy" icon="i-ph-arrow-square-out-bold" :label="t('browser.openConsole')" @click="open" /><UButton color="neutral" variant="outline" icon="i-ph-copy-bold" :disabled="busy || !link" :label="t('browser.copyLink')" @click="copy" /></div>
       <div class="admin-access-meta"><p role="status">{{ copied ? t('browser.linkCopied') : t('browser.linkExpiry') }}</p><UButton variant="link" color="neutral" :disabled="busy" :label="t('browser.regenerateLink')" @click="generate" /></div>
     </section>
-    <AdminOAuthSettings />
   </div>
 </template>
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/activity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 )
 
 const customComboRecoveryMigration = "054_restore_custom_combo_after_core_reward.sql"

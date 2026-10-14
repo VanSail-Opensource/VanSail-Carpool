@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // RemoteNode is the non-sensitive node data needed to preview a purchase.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 )
 
 func (s *Store) NodeByDigest(ctx context.Context, digest string) (abuse.NodeCredential, error) {

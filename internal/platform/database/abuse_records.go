@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/abuse"
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 func ensureAbuseRecordTx(ctx context.Context, tx *sql.Tx, userID string, bucket time.Time, qps, limit int, policy abuse.Policy, now time.Time) (string, bool, error) {

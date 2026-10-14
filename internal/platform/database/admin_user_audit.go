@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 func insertAdminUserAudit(ctx context.Context, tx *sql.Tx, actorID, action, userID, reason string, now time.Time) error {

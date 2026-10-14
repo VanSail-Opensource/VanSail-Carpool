@@ -41,7 +41,7 @@ func TestLiveCreateCancelDiagnostic(t *testing.T) {
 	transaction, err := client.CreateTransaction(ctx, CreateTransactionRequest{
 		OrderID: "txcp-diag-" + hex.EncodeToString(random), Amount: "1", Fiat: "USD", TradeType: tradeType,
 		NotifyURL: "https://example.invalid/tx-carpool/bepusdt-diagnostic", RedirectURL: "https://example.invalid/tx-carpool/bepusdt-return",
-		Name: "TX Carpool non-user diagnostic", TimeoutSeconds: 120,
+		Name: "VanSail Carpool non-user diagnostic", TimeoutSeconds: 120,
 	})
 	if err != nil {
 		var apiError *APIError

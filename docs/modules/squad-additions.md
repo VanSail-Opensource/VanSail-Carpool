@@ -2,7 +2,7 @@
 
 ## Scope
 
-Members can add visible optional squads to their active TX Carpool purchase. The dashboard opens the mobile-safe two-step `UModal`: choose squads, then checkout and in-place confirmation. A queued successor disables the action because its term already owns the next renewal boundary.
+Members can add visible optional squads to their active VanSail Carpool purchase. The dashboard opens the mobile-safe two-step `UModal`: choose squads, then checkout and in-place confirmation. A queued successor disables the action because its term already owns the next renewal boundary.
 
 ## Contract and pricing
 

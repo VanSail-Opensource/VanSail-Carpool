@@ -1,4 +1,4 @@
-module github.com/txyyddss/Remna-User-Panel/web
+module github.com/VanSail-Opensource/VanSail-Carpool/web
 
 go 1.26.0
 

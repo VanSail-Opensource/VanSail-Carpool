@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/squadprofile"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
 )
 
 func TestSquadProfileOverrideRoundTrip(t *testing.T) {

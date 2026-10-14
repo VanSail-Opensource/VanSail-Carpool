@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"errors"
-	"github.com/txyyddss/Remna-User-Panel/internal/admin"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"net/http"
 )
 

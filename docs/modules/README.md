@@ -18,9 +18,9 @@ These documents describe the implemented module boundaries. They are maintenance
 | Telegram, Remnawave, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
 | Admin authorization and domain operations | [admin-operations.md](admin-operations.md) |
 | Vue Mini App and generated API client | [web-ui.md](web-ui.md) |
-| TX Carpool bug-fix adjustment contract | [tx-carpool-adjustments.md](tx-carpool-adjustments.md) |
+| VanSail Carpool bug-fix adjustment contract | [tx-carpool-adjustments.md](tx-carpool-adjustments.md) |
 
-## TX Carpool adjustment specification
+## VanSail Carpool adjustment specification
 
 The current mobile-first adjustment set is covered by the existing module
 contracts: `web-ui.md` owns responsive catalog, renewal, traffic, admin, and

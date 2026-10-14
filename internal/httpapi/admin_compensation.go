@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 )
 
 type compensationConfigRequest struct {

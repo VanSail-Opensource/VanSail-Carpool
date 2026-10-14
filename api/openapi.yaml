@@ -1,5 +1,5 @@
 openapi: 3.1.0
-info: { title: TX Carpool API, version: 1.0.0, description: "HTTP contract for the TX Carpool member Mini App and independent browser administrator console. Member endpoints use Mini App sessions. Administrator endpoints require browser-scoped cookies established by verified Telegram OIDC or a five-minute, single-use Mini App administrator handoff. Browser sessions have rolling 30-day inactivity expiry and independent device sessions. The restricted admin-access endpoints permit either scope; shared me and display-currency browser clients send X-TXC-Session-Scope: browser. Every authenticated browser request also carries a five-minute HMAC timestamp, unique nonce, and signature derived from a same-origin companion key. Provider callbacks use provider-specific signatures and are never authenticated by the browser session. All identifiers and timestamps are strings. TXB values use integer hundredths encoded as decimal strings. Traffic byte counts are decimal strings. The server is authoritative for prices, exchange rates, entitlement dates, and payment state.", license: { name: Proprietary } }
+info: { title: VanSail Carpool API, version: 1.0.0, description: "HTTP contract for the VanSail Carpool member Mini App and independent browser administrator console. Member endpoints use Mini App sessions. Administrator endpoints require browser-scoped cookies established by a five-minute, single-use Mini App administrator handoff. Browser sessions have rolling 30-day inactivity expiry and independent device sessions. The restricted admin-access endpoints permit either scope; shared me and display-currency browser clients send X-TXC-Session-Scope: browser. Every authenticated browser request also carries a five-minute HMAC timestamp, unique nonce, and signature derived from a same-origin companion key. Provider callbacks use provider-specific signatures and are never authenticated by the browser session. All identifiers and timestamps are strings. TXB values use integer hundredths encoded as decimal strings. Traffic byte counts are decimal strings. The server is authoritative for prices, exchange rates, entitlement dates, and payment state.", license: { name: Proprietary } }
 security: [{ cookieSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
 paths:
   /api/v1/browser/config: { $ref: './paths/api-v1-browser-config.yaml' }
@@ -7,9 +7,6 @@ paths:
   /api/v1/auth/browser/exchange: { $ref: './paths/api-v1-browser-exchange.yaml' }
   /api/v1/auth/browser/session/renew: { $ref: './paths/api-v1-browser-renew.yaml' }
   /api/v1/auth/browser/logout: { $ref: './paths/api-v1-browser-logout.yaml' }
-  /api/v1/auth/browser/telegram/start: { $ref: './paths/api-v1-browser-telegram-start.yaml' }
-  /api/v1/auth/browser/telegram/callback: { $ref: './paths/api-v1-browser-telegram-callback.yaml' }
-  /api/v1/admin-access/oauth-settings: { $ref: './paths/api-v1-admin-access-settings.yaml' }
   /api/v1/admin-access/links: { $ref: './paths/api-v1-admin-access-links.yaml' }
   /api/v1/admin/usdt: { $ref: './paths/api-v1-admin-usdt.yaml' }
   /api/v1/admin/usdt/status: { $ref: './paths/api-v1-admin-usdt-status.yaml' }
@@ -192,8 +189,6 @@ components:
   responses: { BadRequest: { $ref: './components/responses.yaml#/BadRequest' }, Unauthorized: { $ref: './components/responses.yaml#/Unauthorized' }, Forbidden: { $ref: './components/responses.yaml#/Forbidden' }, NotFound: { $ref: './components/responses.yaml#/NotFound' }, Conflict: { $ref: './components/responses.yaml#/Conflict' }, Unprocessable: { $ref: './components/responses.yaml#/Unprocessable' }, PayloadTooLarge: { $ref: './components/responses.yaml#/PayloadTooLarge' }, TooManyRequests: { $ref: './components/responses.yaml#/TooManyRequests' }, InternalFailure: { $ref: './components/responses.yaml#/InternalFailure' }, UpstreamFailure: { $ref: './components/responses.yaml#/UpstreamFailure' }, ServiceUnavailable: { $ref: './components/responses.yaml#/ServiceUnavailable' } }
   schemas: {
     BrowserConfig: { $ref: './components/schemas/browser-auth.yaml#/BrowserConfig' },
-    OAuthSettings: { $ref: './components/schemas/browser-auth.yaml#/OAuthSettings' },
-    OAuthSettingsInput: { $ref: './components/schemas/browser-auth.yaml#/OAuthSettingsInput' },
     BrowserLinkInput: { $ref: './components/schemas/browser-auth.yaml#/BrowserLinkInput' },
     BrowserLink: { $ref: './components/schemas/browser-auth.yaml#/BrowserLink' },
     BrowserExchangeInput: { $ref: './components/schemas/browser-auth.yaml#/BrowserExchangeInput' },

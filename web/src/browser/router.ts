@@ -25,7 +25,7 @@ router.beforeEach(async to => {
   const session = useBrowserSession()
   await session.bootstrap()
   if (to.meta.console && !session.isAdmin) return { path: '/', query: { returnTo: to.fullPath } }
-  if (to.name === 'browser-entry' && session.isAdmin && !to.query.error) return '/admin/settings'
+  if (to.name === 'browser-entry' && session.isAdmin) return '/admin/settings'
   return true
 })
 router.onError(() => window.location.reload())

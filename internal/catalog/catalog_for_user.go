@@ -3,7 +3,7 @@ package catalog
 import (
 	"context"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // CatalogForUser returns the displayable catalog for an onboarded member.

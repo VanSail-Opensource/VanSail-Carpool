@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/txyyddss/Remna-User-Panel/internal/platform/upstreamqueue"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 func TestNamedCloudflareTraceSurvivesUnnamedTLSRejection(t *testing.T) {

@@ -1,24 +1,14 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { browserLoginUrl } from '@/api/browserAccess'
 import { useI18n } from '@/i18n'
 import BrowserPreferences from './BrowserPreferences.vue'
 import { useBrowserSession } from './session'
 
 const { t } = useI18n()
-const route = useRoute()
 const session = useBrowserSession()
 const member = computed(() => session.state?.kind === 'member' ? session.state.user : null)
 const memberName = computed(() => member.value?.firstName || member.value?.telegramUsername || t('nav.member'))
 const miniAppUrl = computed(() => session.config?.miniAppUrl || (session.state && 'miniAppUrl' in session.state ? session.state.miniAppUrl : ''))
-const loginUrl = computed(() => browserLoginUrl(typeof route.query.returnTo === 'string' ? route.query.returnTo : undefined))
-const loginError = computed(() => {
-  if (typeof route.query.error !== 'string') return null
-  const key = `browser.oauthErrors.${route.query.error}`
-  const message = t(key)
-  return message === key ? t('browser.oauthErrors.OAUTH_LOGIN_FAILED') : message
-})
 let redirectTimer: ReturnType<typeof globalThis.setTimeout> | undefined
 watch([member, miniAppUrl], ([user, url]) => {
   if (redirectTimer) globalThis.clearTimeout(redirectTimer)
@@ -48,12 +38,12 @@ onScopeDispose(() => { if (redirectTimer) globalThis.clearTimeout(redirectTimer)
             <p class="browser-hero-description">{{ t('browser.landing.description') }}</p>
             <div class="browser-entrances">
               <UButton :to="miniAppUrl || undefined" external :disabled="!miniAppUrl" size="lg" :label="t('browser.memberEntrance')" icon="i-ph-arrow-up-right-bold" />
-              <UButton :to="loginUrl" external :disabled="!session.config?.oauthEnabled" color="neutral" variant="outline" size="lg" :label="t('browser.adminEntrance')" icon="i-ph-sign-in-bold" />
+              <UButton :to="miniAppUrl || undefined" external :disabled="!miniAppUrl" color="neutral" variant="outline" size="lg" :label="t('browser.adminEntrance')" icon="i-ph-sign-in-bold" />
             </div>
-            <UAlert v-if="session.error || loginError" color="warning" variant="soft" :title="session.error || loginError || ''" class="browser-entry-notice">
+            <UAlert v-if="session.error" color="warning" variant="soft" :title="session.error" class="browser-entry-notice">
               <template #actions><UButton v-if="session.error" variant="link" :label="t('common.tryAgain')" @click="session.bootstrap(true)" /></template>
             </UAlert>
-            <p v-else-if="session.config && !session.config.oauthEnabled" class="browser-entry-hint">{{ t('browser.oauthUnavailable') }}</p>
+            <p class="browser-entry-hint">{{ t('browser.accessInstructions') }}</p>
           </div>
           <aside class="browser-service-map" :aria-label="t('browser.landing.services')">
             <div class="browser-service-map-header"><UIcon name="i-ph-circles-three-plus-bold" /><span>{{ t('browser.landing.services') }}</span></div>
