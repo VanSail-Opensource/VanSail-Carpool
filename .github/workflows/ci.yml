@@ -178,7 +178,7 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
       - name: Download shard inventories and diagnostics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: go-race-shard-*
           path: ${{ runner.temp }}/race
