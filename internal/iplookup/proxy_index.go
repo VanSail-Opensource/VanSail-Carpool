@@ -10,6 +10,14 @@ import (
 )
 
 const maxInventoryEntries = 5000000
+const maxAggregateInventoryEntries = 10000000
+
+func proxySourceEntryLimit(sourceCount int) int {
+	if sourceCount < 1 {
+		return maxInventoryEntries
+	}
+	return min(maxInventoryEntries, max(1, maxAggregateInventoryEntries/sourceCount))
+}
 
 // prefixIndex is immutable after publication. Prefix lengths remain separate:
 // overlapping CIDRs retain both their attribution and original entry counts.

@@ -20,13 +20,15 @@ type sourceCache struct {
 	jobID                string
 	done                 chan struct{}
 	cancel               context.CancelFunc
+	automatic            bool
 }
 type sourceRefreshJob struct {
-	cache  *sourceCache
-	source ProxySource
-	id     string
-	done   chan struct{}
-	cancel context.CancelFunc
+	cache      *sourceCache
+	source     ProxySource
+	id         string
+	done       chan struct{}
+	cancel     context.CancelFunc
+	entryLimit int
 }
 type sourceTestRuntime struct {
 	ctx               context.Context
@@ -126,7 +128,7 @@ func (s *EnhancedService) TestSource(ctx context.Context, id string) (ProxySourc
 		b.refreshCount()
 		return ProxySourceTest{}, &CodeError{"IP_PROXY_SOURCE_NOT_FOUND"}
 	}
-	test, err := s.startSourceLocked(b, cache, c)
+	test, err := s.startSourceLocked(b, cache, c, false)
 	b.mu.Unlock()
 	b.refreshCount()
 	return test, err

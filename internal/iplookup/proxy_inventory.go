@@ -26,7 +26,7 @@ func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, 
 		if !source.Enabled {
 			continue
 		}
-		index, result := s.collectSource(ctx, source, c, false, nil)
+		index, result := s.collectSourceWithLimit(ctx, source, c, false, nil, proxySourceEntryLimit(len(c.ProxySources)))
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
@@ -41,6 +41,10 @@ func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, 
 }
 
 func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource, c Config, fresh bool, emit func(ProxySourceResult)) (*prefixIndex, ProxySourceResult) {
+	return s.collectSourceWithLimit(ctx, source, c, fresh, emit, maxInventoryEntries)
+}
+
+func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source ProxySource, c Config, fresh bool, emit func(ProxySourceResult), entryLimit int) (*prefixIndex, ProxySourceResult) {
 	r := ProxySourceResult{ID: source.ID, Name: source.Name, Category: sourceCategory(source.Category), URL: safeSourceURL(source.URL), Status: "processing", Phase: "download"}
 	var last time.Time
 	update := func(force bool) {
@@ -50,7 +54,7 @@ func (s *EnhancedService) collectSource(ctx context.Context, source ProxySource,
 		}
 	}
 	update(true)
-	builder := newPrefixIndexBuilder(maxInventoryEntries)
+	builder := newPrefixIndexBuilder(entryLimit)
 	domains := map[string]bool{}
 	add := func(host string) {
 		if ctx.Err() != nil {

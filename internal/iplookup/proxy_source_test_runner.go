@@ -29,7 +29,7 @@ func (s *EnhancedService) runSourceTest(b *sourceTestRuntime, job sourceRefreshJ
 			cache.result = result
 		}
 	}
-	prefixes, result := s.collectSource(collectCtx, job.source, c, true, update)
+	prefixes, result := s.collectSourceWithLimit(collectCtx, job.source, c, true, update, job.entryLimit)
 	if collectCtx.Err() != nil {
 		result.Status, result.ErrorCode = "partial", "IP_PROXY_INTERRUPTED"
 	}
@@ -51,7 +51,7 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	}
 	b.mu.Unlock()
 	if result.Status != "success" {
-		index = mergePrefixIndexes(previous, index, maxInventoryEntries)
+		index = mergePrefixIndexes(previous, index, job.entryLimit)
 	}
 	b.mu.Lock()
 	result.Name = cache.source.Name
@@ -78,5 +78,5 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	defer b.mu.Unlock()
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}
 	close(job.done)
-	cache.done, cache.cancel = nil, nil
+	cache.done, cache.cancel, cache.automatic = nil, nil, false
 }

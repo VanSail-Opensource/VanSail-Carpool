@@ -49,7 +49,7 @@ func TestCategoryMatchesProduceDistinctIdempotentRefusals(t *testing.T) {
 
 func TestSourceCategoryAndNameEditsReusePublishedIndex(t *testing.T) {
 	s := diagnosticService(t)
-	c := DefaultConfig()
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "source", Name: "Old", URL: "https://example.net/list", Enabled: true}}
 	settings := &sourceSettings{}
 	settings.set(t, c)

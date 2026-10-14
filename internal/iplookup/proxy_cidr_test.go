@@ -30,7 +30,7 @@ func TestCIDRSourceMatchesNetworksWithoutExpansionOrDNS(t *testing.T) {
 	s.inventoryFetch = func(context.Context, string, Config) ([]byte, error) {
 		return []byte(proxyCIDRFixture + "\n102.129.155.17:443\n102.129.155.16/28"), nil
 	}
-	c := DefaultConfig()
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "ranges", Name: "Ranges", URL: "https://example.net/ranges", Enabled: true}}
 	p, err := s.pool(context.Background(), c)
 	if err != nil {
@@ -74,7 +74,7 @@ func TestCIDRSourceMatchesNetworksWithoutExpansionOrDNS(t *testing.T) {
 
 func TestCachedCIDRSourcesRetainDistinctAttributionAfterFailure(t *testing.T) {
 	s := diagnosticService(t)
-	c := DefaultConfig()
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "one", Name: "One", URL: "https://example.net/one", Enabled: true}, {ID: "two", Name: "Two", URL: "https://example.net/two", Enabled: true}}
 	settings := &sourceSettings{}
 	settings.set(t, c)

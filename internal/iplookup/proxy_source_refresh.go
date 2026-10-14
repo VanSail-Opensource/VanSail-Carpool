@@ -11,9 +11,10 @@ import (
 
 func sourceCacheKey(source ProxySource, c Config) [32]byte {
 	raw, _ := json.Marshal(struct {
-		URL string
-		DNS []string
-	}{source.URL, c.DNSResolvers})
+		URL        string
+		DNS        []string
+		EntryLimit int
+	}{source.URL, c.DNSResolvers, proxySourceEntryLimit(len(c.ProxySources))})
 	return sha256.Sum256(raw)
 }
 
@@ -43,6 +44,13 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			cache.source.Name, cache.result.Name = source.Name, source.Name
 			cache.source.Category, cache.result.Category = source.Category, sourceCategory(source.Category)
 		}
+		if !c.Enabled {
+			if cache.automatic && cache.cancel != nil {
+				cache.cancel()
+			}
+			cache.nextRefresh = time.Time{}
+			continue
+		}
 		// Retire expired evidence before admitting its replacement. This also
 		// releases disabled diagnostic indexes, which are never auto-refreshed.
 		if cache.index != nil && !cache.expires.After(now) {
@@ -51,7 +59,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			b.revision++
 		}
 		if source.Enabled && cache.done == nil && !cache.nextRefresh.After(now) {
-			_, _ = s.startSourceLocked(b, cache, c) // Retry admission failures on the next tick.
+			_, _ = s.startSourceLocked(b, cache, c, true) // Retry admission failures on the next tick.
 		}
 	}
 	for id, cache := range b.sources {
@@ -66,7 +74,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 	}
 }
 
-func (s *EnhancedService) startSourceLocked(b *sourceTestRuntime, cache *sourceCache, c Config) (ProxySourceTest, error) {
+func (s *EnhancedService) startSourceLocked(b *sourceTestRuntime, cache *sourceCache, c Config, automatic bool) (ProxySourceTest, error) {
 	if cache.done != nil {
 		return b.entries[cache.jobID].test, nil
 	}
@@ -79,12 +87,16 @@ func (s *EnhancedService) startSourceLocked(b *sourceTestRuntime, cache *sourceC
 	}
 	ctx, cancel := context.WithCancel(b.ctx)
 	cache.jobID, cache.done, cache.cancel = id, make(chan struct{}), cancel
+	cache.automatic = automatic
 	cache.result.Status, cache.result.Phase, cache.result.ErrorCode = "pending", "download", ""
 	cache.result.Category = sourceCategory(cache.source.Category)
 	test := ProxySourceTest{ID: id, Status: "queued", Result: cache.result}
 	b.entries[id] = sourceTestEntry{test: test}
 	b.work.Add(1)
-	job := sourceRefreshJob{cache: cache, source: cache.source, id: id, done: cache.done, cancel: cancel}
+	job := sourceRefreshJob{
+		cache: cache, source: cache.source, id: id, done: cache.done, cancel: cancel,
+		entryLimit: proxySourceEntryLimit(len(c.ProxySources)),
+	}
 	go s.runSourceTest(b, job, c, ctx)
 	return test, nil
 }

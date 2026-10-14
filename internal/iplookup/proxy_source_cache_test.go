@@ -15,6 +15,13 @@ type sourceSettings struct {
 	value string
 }
 
+func enabledSourceConfig() Config {
+	c := DefaultConfig()
+	c.Enabled, c.LookupFeeTXB, c.RefreshFeeTXB = true, "1", "1"
+	c.Providers[2].Enabled = true
+	return c
+}
+
 func (v *sourceSettings) Optional(context.Context, string) (string, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
@@ -49,7 +56,7 @@ func awaitSource(t *testing.T, s *EnhancedService, id string) {
 
 func TestSourceStartupDedupRefreshAndStaleEvidence(t *testing.T) {
 	s := diagnosticService(t)
-	c := DefaultConfig() // Member lookup stays disabled.
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "one", Name: "One", URL: "https://example.net/one", Enabled: true}, {ID: "two", Name: "Two", URL: "https://example.net/two", Enabled: true}}
 	settings := &sourceSettings{}
 	settings.set(t, c)
@@ -107,7 +114,7 @@ func TestSourceStartupDedupRefreshAndStaleEvidence(t *testing.T) {
 
 func TestSourceConfigurationRejectsObsoletePublication(t *testing.T) {
 	s := diagnosticService(t)
-	c := DefaultConfig()
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "one", Name: "One", URL: "https://example.net/old", Enabled: true}}
 	settings := &sourceSettings{}
 	settings.set(t, c)
@@ -148,7 +155,7 @@ func TestSourceConfigurationRejectsObsoletePublication(t *testing.T) {
 
 func TestSourceShutdownCancelsCollection(t *testing.T) {
 	s := diagnosticService(t)
-	c := DefaultConfig()
+	c := enabledSourceConfig()
 	c.ProxySources = []ProxySource{{ID: "one", Name: "One", URL: "https://example.net/one", Enabled: true}}
 	settings := &sourceSettings{}
 	settings.set(t, c)
