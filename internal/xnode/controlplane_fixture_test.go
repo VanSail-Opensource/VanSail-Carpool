@@ -102,7 +102,7 @@ func controlFixture(t *testing.T, paid bool) fixture {
 		t.Fatal(err)
 	}
 	if paid {
-		combo, err := store.SaveCombo(ctx, database.ComboInput{Name: "Paid", ValidityDays: 30, TrafficLimitBytes: 1 << 30, ResetStrategy: "NO_RESET", Active: true, SquadProductIDs: []string{group.ID}})
+		combo, err := store.SaveCombo(ctx, database.ComboInput{Name: "Paid", ValidityDays: 30, TrafficLimitBytes: 1 << 30, ResetStrategy: "MONTH_ROLLING", Active: true, SquadProductIDs: []string{group.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}

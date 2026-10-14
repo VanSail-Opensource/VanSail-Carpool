@@ -44,19 +44,19 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			cache.source.Name, cache.result.Name = source.Name, source.Name
 			cache.source.Category, cache.result.Category = source.Category, sourceCategory(source.Category)
 		}
-		if !c.Enabled {
-			if cache.automatic && cache.cancel != nil {
-				cache.cancel()
-			}
-			cache.nextRefresh = time.Time{}
-			continue
-		}
 		// Retire expired evidence before admitting its replacement. This also
 		// releases disabled diagnostic indexes, which are never auto-refreshed.
 		if cache.index != nil && !cache.expires.After(now) {
 			cache.index, cache.complete = nil, false
 			cache.result.Count = 0
 			b.revision++
+		}
+		if !c.Enabled {
+			if cache.automatic && cache.cancel != nil {
+				cache.cancel()
+			}
+			cache.nextRefresh = time.Time{}
+			continue
 		}
 		if source.Enabled && cache.done == nil && !cache.nextRefresh.After(now) {
 			_, _ = s.startSourceLocked(b, cache, c, true) // Retry admission failures on the next tick.
