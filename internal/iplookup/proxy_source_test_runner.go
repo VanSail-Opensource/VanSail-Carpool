@@ -44,6 +44,11 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	cache := job.cache
 	b.mu.Lock()
 	previous := cache.index
+	if !cache.expires.After(time.Now()) {
+		previous = nil
+		cache.index, cache.complete = nil, false
+		b.revision++
+	}
 	b.mu.Unlock()
 	if result.Status != "success" {
 		index = mergePrefixIndexes(previous, index, maxInventoryEntries)
@@ -59,7 +64,9 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 		cache.index, cache.result, cache.complete = index, result, result.Status == "success"
 		cache.result.Count = index.count()
 		b.revision++
-		if cache.complete {
+		// Partial observations have the same bounded retention window but never
+		// certify coverage. Retaining a fresh fallback does not extend its TTL.
+		if cache.complete || previous == nil {
 			cache.expires = now.Add(proxyInventoryTTL)
 		}
 		cache.nextRefresh = now.Add(proxyInventoryTTL)
@@ -71,5 +78,5 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	defer b.mu.Unlock()
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}
 	close(job.done)
-	cache.done = nil
+	cache.done, cache.cancel = nil, nil
 }

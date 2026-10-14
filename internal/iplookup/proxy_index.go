@@ -34,8 +34,8 @@ func (p *prefixIndex) contains(addr netip.Addr) bool {
 	for bits := addr.BitLen(); bits >= 0; bits-- {
 		if addr.Is4() {
 			if bucket := p.v4[bits]; bucket != nil {
-				masked := netip.PrefixFrom(addr, bits).Masked().Addr().As4()
-				if bucket.Contains(binary.BigEndian.Uint32(masked[:])) {
+				value := addr.As4()
+				if bucket.Contains(binary.BigEndian.Uint32(value[:]) >> uint(32-bits)) {
 					return true
 				}
 			}
@@ -68,7 +68,9 @@ func (b *prefixIndexBuilder) add(prefix netip.Prefix) bool {
 	bits := prefix.Bits()
 	if prefix.Addr().Is4() {
 		value := prefix.Addr().As4()
-		n := binary.BigEndian.Uint32(value[:])
+		// Network ordinals omit the always-zero host bits. Adjacent CIDRs then
+		// become adjacent bitmap values and compress into runs without expansion.
+		n := binary.BigEndian.Uint32(value[:]) >> uint(32-bits)
 		bucket := b.index.v4[bits]
 		if b.limit > 0 && b.index.size >= b.limit {
 			return bucket != nil && bucket.Contains(n)

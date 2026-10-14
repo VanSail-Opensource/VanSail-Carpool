@@ -24,14 +24,14 @@ type aptosCursor struct {
 }
 
 func (c *client) graphql(ctx context.Context, query string, variables any, out any) error {
-	var reply struct {
-		Data   json.RawMessage   `json:"data"`
+	reply := struct {
+		Data   responseValue     `json:"data"`
 		Errors []json.RawMessage `json:"errors"`
-	}
+	}{Data: responseValue{target: out}}
 	if err := c.request(ctx, http.MethodPost, c.endpoint.IndexerURL, map[string]any{"query": query, "variables": variables}, &reply); err != nil {
 		return err
 	}
-	if len(reply.Errors) > 0 || len(reply.Data) == 0 || string(reply.Data) == "null" || json.Unmarshal(reply.Data, out) != nil {
+	if len(reply.Errors) > 0 || !reply.Data.valid {
 		return ErrRPC
 	}
 	return nil
@@ -93,7 +93,9 @@ func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []stri
 		return Batch{}, err
 	}
 	batch := Batch{Transfers: []Transfer{}, CaughtUp: len(page.Items) < 100}
-	transactions := map[string]aptosTransaction{}
+	// Activities are ordered by version/index. Retain only the current version's
+	// transaction instead of every provider-controlled event array in the page.
+	var tx aptosTransaction
 	for _, a := range page.Items {
 		version, err := strconv.ParseUint(string(a.Version), 10, 63)
 		if err != nil || !a.Success || a.Asset != s.client.spec.Token || !containsAddress(addresses, a.Owner) {
@@ -103,12 +105,11 @@ func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []stri
 		if err != nil || version < before || (version == before && a.Index <= cur.Index) {
 			return Batch{}, ErrProof
 		}
-		tx, ok := transactions[string(a.Version)]
-		if !ok {
+		if tx.Version != a.Version {
+			tx = aptosTransaction{}
 			if err := s.client.get(ctx, "/v1/transactions/by_version/"+string(a.Version), nil, &tx); err != nil {
 				return Batch{}, err
 			}
-			transactions[string(a.Version)] = tx
 		}
 		if err := s.verifyAptosStore(ctx, a); err != nil {
 			return Batch{}, err

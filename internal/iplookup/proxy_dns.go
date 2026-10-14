@@ -86,7 +86,10 @@ func (s *EnhancedService) resolveDNS(ctx context.Context, host string, servers [
 			}
 		}
 		if len(s.dns) < 32768 {
-			s.dns[key] = dnsEntry{result: r, expires: time.Now().Add(r.ttl)}
+			// Inventory memoization needs packed addresses/status only. Resolver
+			// observation strings are collected separately for Reality evidence.
+			memo := dnsResolution{ips: r.ips, status: r.status, ttl: r.ttl}
+			s.dns[key] = dnsEntry{result: memo, expires: time.Now().Add(r.ttl)}
 		}
 		s.mu.Unlock()
 	}

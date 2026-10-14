@@ -136,8 +136,8 @@ func TestSourceConfigurationRejectsObsoletePublication(t *testing.T) {
 	if err := s.ReconcileSources(ctx); err != nil {
 		t.Fatal(err)
 	}
-	awaitSource(t, s, "one")
 	unblock()
+	awaitSource(t, s, "one")
 	cancel()
 	s.WaitSourceTests() // Joins obsolete jobs before inspecting their publication.
 	pool, err := s.pool(context.Background(), c)

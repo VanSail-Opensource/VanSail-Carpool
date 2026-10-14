@@ -1,6 +1,6 @@
 package iplookup
 
-// refreshCount performs compressed unions only when published evidence changes.
+// refreshCount counts unique prefixes only when published evidence changes.
 // No expensive work holds the runtime mutex or runs in an admin polling read.
 func (b *sourceTestRuntime) refreshCount() {
 	b.countMu.Lock()
@@ -19,13 +19,10 @@ func (b *sourceTestRuntime) refreshCount() {
 			}
 		}
 		b.mu.Unlock()
-		var combined *prefixIndex
-		for _, index := range indexes {
-			combined = mergePrefixIndexes(combined, index, 0)
-		}
+		count := countPrefixIndexes(indexes)
 		b.mu.Lock()
 		if b.revision == revision {
-			b.uniqueEntries, b.counted = combined.count(), revision
+			b.uniqueEntries, b.counted = count, revision
 			b.mu.Unlock()
 			return
 		}

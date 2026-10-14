@@ -58,6 +58,13 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	}
 	key := proxyPoolKey(c)
 	s.mu.Lock()
+	// Drop expired fallback pools before building the replacement, including
+	// when its download fails. Existing readers keep immutable snapshots.
+	for k, pool := range s.pools {
+		if !pool.expires.After(time.Now()) {
+			delete(s.pools, k)
+		}
+	}
 	cached := s.pools[key]
 	if cached != nil && cached.expires.After(time.Now()) {
 		s.mu.Unlock()
@@ -79,11 +86,6 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	s.mu.Lock()
 	f.pool, f.err = p, err
 	if err == nil {
-		for k, v := range s.pools {
-			if !v.expires.After(time.Now()) {
-				delete(s.pools, k)
-			}
-		}
 		if len(s.pools) >= 4 {
 			clear(s.pools)
 		}

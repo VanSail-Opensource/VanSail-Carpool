@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -26,12 +27,22 @@ func TestAptosIndexerCrossChecksCommittedTransactionAndStore(t *testing.T) {
 	}{Type: a.Type})
 	tx.Events[0].Data.Store = store
 	tx.Events[0].Data.Amount = a.Amount
+	tx.Events = append(tx.Events, tx.Events[0])
+	second, next := a, a
+	second.Index, next.Version = 1, "102"
+	var transactionCalls atomic.Int32
 	c, _ := testClient(t, "aptos", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/v1":
 			sendJSON(w, map[string]any{"chain_id": 1})
 		case strings.Contains(r.URL.Path, "transactions/by_version"):
-			sendJSON(w, tx)
+			transactionCalls.Add(1)
+			proof := tx
+			if strings.HasSuffix(r.URL.Path, "/102") {
+				proof.Version = "102"
+				proof.Hash = "0x" + strings.Repeat("b", 64)
+			}
+			sendJSON(w, proof)
 		case strings.Contains(r.URL.Path, "ObjectCore"):
 			sendJSON(w, map[string]any{"data": map[string]any{"owner": owner}})
 		case strings.Contains(r.URL.Path, "FungibleStore"):
@@ -46,7 +57,7 @@ func TestAptosIndexerCrossChecksCommittedTransactionAndStore(t *testing.T) {
 			} else if strings.Contains(request.Query, "processor_status") {
 				sendJSON(w, map[string]any{"data": map[string]any{"processor_status": []any{map[string]any{"last_success_version": "100"}}}})
 			} else {
-				sendJSON(w, map[string]any{"data": map[string]any{"fungible_asset_activities": []aptosActivity{a}}})
+				sendJSON(w, map[string]any{"data": map[string]any{"fungible_asset_activities": []aptosActivity{a, second, next}}})
 			}
 		}
 	}))
@@ -60,8 +71,11 @@ func TestAptosIndexerCrossChecksCommittedTransactionAndStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	batch, err := reader.scan(ctx, initial.Cursor, []string{owner})
-	if err != nil || len(batch.Transfers) != 1 || batch.Transfers[0].Amount != "1.000000" {
+	if err != nil || len(batch.Transfers) != 3 || batch.Transfers[0].Amount != "1.000000" {
 		t.Fatalf("batch=%+v %v", batch, err)
+	}
+	if transactionCalls.Load() != 2 || batch.Transfers[1].EventID != "1" || batch.Transfers[2].TxHash == batch.Transfers[0].TxHash {
+		t.Fatal("current-version transaction reuse lost deposit evidence")
 	}
 	tx.Success = false
 	if _, err := decodeAptosActivity(spec, a, tx); err == nil {

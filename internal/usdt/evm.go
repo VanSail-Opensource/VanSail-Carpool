@@ -111,14 +111,14 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 		}
 		return Batch{}, ErrRPC
 	}
-	logsByTx := make(map[string][]evmLog, len(logs))
-	for _, log := range logs {
-		logsByTx[log.TxHash] = append(logsByTx[log.TxHash], log)
+	logsByTx := make(map[string][]int, len(logs))
+	for i, log := range logs {
+		logsByTx[log.TxHash] = append(logsByTx[log.TxHash], i)
 	}
 	blocks := map[uint64]evmBlock{}
 	verifiedReceipts := make(map[string]struct{}, len(logsByTx))
 	batch := Batch{Transfers: []Transfer{}}
-	for _, log := range logs {
+	for i, log := range logs {
 		n, err := hexNumber(log.BlockNumber)
 		if err != nil || n <= last || n > end || log.Removed {
 			return Batch{}, ErrProof
@@ -138,14 +138,15 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 			if err := c.rpc(ctx, "eth_getTransactionReceipt", []any{log.TxHash}, &receipt); err != nil {
 				return Batch{}, err
 			}
-			for _, expected := range logsByTx[log.TxHash] {
-				if !receiptContains(receipt, expected) {
+			for _, index := range logsByTx[log.TxHash] {
+				if !receiptContains(receipt, logs[index]) {
 					return Batch{}, ErrProof
 				}
 			}
 			// Keep only the transaction hash for the rest of this batch. Receipt logs
 			// are provider-controlled and can approach the per-response size limit.
 			verifiedReceipts[log.TxHash] = struct{}{}
+			delete(logsByTx, log.TxHash)
 		}
 		t, err := decodeEVMLog(c.spec, log, block)
 		if err != nil {
@@ -155,6 +156,7 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 			return Batch{}, ErrProof
 		}
 		batch.Transfers = append(batch.Transfers, t)
+		logs[i] = evmLog{}
 	}
 	boundary, ok := blocks[end]
 	if !ok {

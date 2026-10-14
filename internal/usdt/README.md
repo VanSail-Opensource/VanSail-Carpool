@@ -28,6 +28,16 @@ single shared concurrent-request limit. Failed requests do not create persisted
 cooldowns or consume a daily or minute budget. The queue retains a bounded backlog;
 provider errors are retried by the normal scanner failover loop.
 
+HTTP responses decode from a bounded reader into typed destinations inside the
+shared queue slot; RPC/GraphQL envelopes borrow their result bytes rather than
+retaining a second raw payload. HTTP documents and WS messages share a 2 MiB
+limit. Reconnects join the retired WS reader before allocating its replacement.
+Aptos retains only the current transaction version while processing ordered
+activities, releasing its event array before fetching the next version. EVM
+receipt groups refer to log positions; verified groups and processed logs are
+discarded during the batch. Durable quote fingerprints, transfer evidence and
+scan cursors keep their existing retention and settlement rules.
+
 EVM uses finalized heads (BSC native finality), filtered USDT receiving logs and
 successful receipts. Receipt responses are verified one transaction at a time
 and discarded immediately; the batch retains only verified transaction hashes.
@@ -64,6 +74,8 @@ run in hosted CI.
 - `pricing.go` ? Local payment availability, TXB rate and immutable quote creation.
 - `probe.go` ? Queued administrative mainnet and token-capability probes.
 - `registry.go` ? Pinned mainnet USDT contracts, chain identities, decimals and disabled defaults.
+- `response.go` ? Bounded document decoding and typed RPC/GraphQL envelope fields.
+- `response_test.go` ? Hosted response bounds, envelope validation and decoding allocation benchmarks.
 - `scanner.go` ? Adapter dispatch, normalized receiving-event evidence and resumable time windows.
 - `service.go` ? Encrypted settings, issued-quote recovery, review and safe error identifiers.
 - `solana.go` ? Finalized token-account history with signature cursors.

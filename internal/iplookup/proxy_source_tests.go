@@ -42,7 +42,7 @@ type sourceTestRuntime struct {
 
 // StartSourceTests starts shared refreshes independently of member traffic.
 func (s *EnhancedService) StartSourceTests(ctx context.Context) {
-	b := &sourceTestRuntime{ctx: ctx, entries: map[string]sourceTestEntry{}, sources: map[string]*sourceCache{}, slots: make(chan struct{}, 2)}
+	b := &sourceTestRuntime{ctx: ctx, entries: map[string]sourceTestEntry{}, sources: map[string]*sourceCache{}, slots: make(chan struct{}, 1)}
 	s.tests = b
 	b.work.Add(1)
 	go func() {
@@ -50,6 +50,7 @@ func (s *EnhancedService) StartSourceTests(ctx context.Context) {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for {
+			s.pruneInventoryMemos()
 			_ = s.ReconcileSources(ctx) // Saved configuration is retried on the next tick.
 			select {
 			case <-ctx.Done():

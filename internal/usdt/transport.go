@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -84,25 +83,15 @@ func (c *client) request(ctx context.Context, method, rawURL string, payload any
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return ErrRPC
 		}
-		data, err := io.ReadAll(io.LimitReader(resp.Body, maxRPCResponseBytes+1))
-		if err != nil || len(data) > maxRPCResponseBytes {
-			return ErrRPC
-		}
-		if json.Unmarshal(data, output) != nil {
-			return ErrRPC
-		}
-		if reply, ok := output.(*rpcReply); ok {
-			return rpcFailure(*reply)
-		}
-		return nil
+		return decodeResponse(resp.Body, output)
 	})
 }
 
 func (c *client) rpc(ctx context.Context, method string, params any, out any) error {
 	id := c.id.Add(1)
 	payload := map[string]any{"jsonrpc": "2.0", "id": id, "method": method, "params": params}
-	var reply rpcReply
 	if strings.HasPrefix(c.endpoint.RPCURL, "ws") {
+		var reply rpcReply
 		sock, err := c.connection(ctx)
 		if err != nil {
 			return err
@@ -111,10 +100,16 @@ func (c *client) rpc(ctx context.Context, method string, params any, out any) er
 		if err != nil {
 			return err
 		}
-	} else if err := c.request(ctx, http.MethodPost, c.endpoint.RPCURL, payload, &reply); err != nil {
+		return decodeReply(reply, id, out)
+	}
+	reply := typedRPCReply{Result: responseValue{target: out}}
+	if err := c.request(ctx, http.MethodPost, c.endpoint.RPCURL, payload, &reply); err != nil {
 		return err
 	}
-	return decodeReply(reply, id, out)
+	if reply.ID != id || reply.Error != nil || !reply.Result.valid {
+		return ErrRPC
+	}
+	return nil
 }
 
 func decodeReply(reply rpcReply, id uint64, out any) error {

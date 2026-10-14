@@ -23,6 +23,8 @@ func TestEVMScannersUsePinnedTokensReceiptsAndFinalizedRanges(t *testing.T) {
 				return evmBlock{Number: toHex(n), Hash: fmt.Sprintf("0x%064x", n+1000), Timestamp: toHex(uint64(time.Now().UTC().Add(-time.Minute).Unix()))}
 			}
 			log := evmLog{Address: spec.Token, Topics: []string{transferTopic, evmTopic(wallet), evmTopic(wallet)}, Data: fmt.Sprintf("0x%064x", atom), BlockNumber: "0x64", BlockHash: block(100).Hash, TxHash: "0x" + strings.Repeat("a", 64), Index: "0x0"}
+			second := log
+			second.Index = "0x1"
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var req struct {
 					ID     uint64            `json:"id"`
@@ -61,9 +63,9 @@ func TestEVMScannersUsePinnedTokensReceiptsAndFinalizedRanges(t *testing.T) {
 					if filter.Address != spec.Token || filter.From != "0x64" || filter.To != "0x64" {
 						t.Errorf("unbounded or unfiltered scan: %+v", filter)
 					}
-					result = []evmLog{log}
+					result = []evmLog{log, second}
 				case "eth_getTransactionReceipt":
-					result = evmReceipt{Status: "0x1", BlockHash: log.BlockHash, TxHash: log.TxHash, Logs: []evmLog{log}}
+					result = evmReceipt{Status: "0x1", BlockHash: log.BlockHash, TxHash: log.TxHash, Logs: []evmLog{log, second}}
 				default:
 					t.Errorf("unexpected RPC %s", req.Method)
 					w.WriteHeader(400)
@@ -82,10 +84,10 @@ func TestEVMScannersUsePinnedTokensReceiptsAndFinalizedRanges(t *testing.T) {
 				t.Fatalf("initial=%+v %v", initial, err)
 			}
 			batch, err := reader.scan(ctx, Cursor{Value: "99", Hash: block(99).Hash}, []string{wallet})
-			if err != nil || len(batch.Transfers) != 1 || batch.Transfers[0].Amount != FormatAtomic(atom, spec.Decimals) || !batch.CaughtUp {
+			if err != nil || len(batch.Transfers) != 2 || batch.Transfers[0].Amount != FormatAtomic(atom, spec.Decimals) || !batch.CaughtUp {
 				t.Fatalf("scan=%+v %v", batch, err)
 			}
-			if batch.Transfers[0].EventID != strconv.Itoa(0) || !batch.Transfers[0].Finalized {
+			if batch.Transfers[0].EventID != strconv.Itoa(0) || batch.Transfers[1].EventID != strconv.Itoa(1) || !batch.Transfers[0].Finalized {
 				t.Fatal("missing event identity or finality")
 			}
 			if _, err := reader.scan(ctx, Cursor{Value: "99", Hash: "reorg"}, []string{wallet}); !errors.Is(err, ErrProof) {

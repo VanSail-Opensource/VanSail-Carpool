@@ -26,6 +26,7 @@ func (c *client) connection(ctx context.Context) (*socket, error) {
 	if c.ws != nil {
 		select {
 		case <-c.ws.done:
+			<-c.ws.readDone
 			c.ws = nil
 		default:
 			return c.ws, nil
@@ -51,7 +52,7 @@ func (c *client) connection(ctx context.Context) (*socket, error) {
 		return nil, err
 	}
 	s := &socket{conn: conn, pending: map[uint64]chan rpcReply{}, done: make(chan struct{}), readDone: make(chan struct{}), wake: c.wake}
-	conn.SetReadLimit(4 * 1024 * 1024)
+	conn.SetReadLimit(maxRPCResponseBytes)
 	c.ws = s
 	go s.read(c.lifecycle)
 	return s, nil

@@ -30,8 +30,11 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 		key := sourceCacheKey(source, c)
 		cache := b.sources[source.ID]
 		if cache == nil || cache.key != key || cache.source.Enabled != source.Enabled {
-			if cache != nil && cache.cancel != nil {
-				cache.cancel()
+			if cache != nil {
+				if cache.cancel != nil {
+					cache.cancel()
+				}
+				cache.index, cache.complete = nil, false
 			}
 			cache = &sourceCache{source: source, key: key, result: ProxySourceResult{ID: source.ID, Name: source.Name, Category: sourceCategory(source.Category), URL: safeSourceURL(source.URL), Status: "pending"}}
 			b.sources[source.ID] = cache
@@ -39,6 +42,13 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 		} else {
 			cache.source.Name, cache.result.Name = source.Name, source.Name
 			cache.source.Category, cache.result.Category = source.Category, sourceCategory(source.Category)
+		}
+		// Retire expired evidence before admitting its replacement. This also
+		// releases disabled diagnostic indexes, which are never auto-refreshed.
+		if cache.index != nil && !cache.expires.After(now) {
+			cache.index, cache.complete = nil, false
+			cache.result.Count = 0
+			b.revision++
 		}
 		if source.Enabled && cache.done == nil && !cache.nextRefresh.After(now) {
 			_, _ = s.startSourceLocked(b, cache, c) // Retry admission failures on the next tick.
@@ -49,6 +59,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			if cache.cancel != nil {
 				cache.cancel()
 			}
+			cache.index, cache.complete = nil, false
 			delete(b.sources, id)
 			b.revision++
 		}
