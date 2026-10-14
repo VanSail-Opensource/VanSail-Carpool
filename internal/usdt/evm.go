@@ -111,8 +111,12 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 		}
 		return Batch{}, ErrRPC
 	}
+	logsByTx := make(map[string][]evmLog, len(logs))
+	for _, log := range logs {
+		logsByTx[log.TxHash] = append(logsByTx[log.TxHash], log)
+	}
 	blocks := map[uint64]evmBlock{}
-	receipts := map[string]evmReceipt{}
+	verifiedReceipts := make(map[string]struct{}, len(logsByTx))
 	batch := Batch{Transfers: []Transfer{}}
 	for _, log := range logs {
 		n, err := hexNumber(log.BlockNumber)
@@ -129,15 +133,19 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 		if block.Hash != log.BlockHash {
 			return Batch{}, ErrProof
 		}
-		r, ok := receipts[log.TxHash]
-		if !ok {
-			if err := c.rpc(ctx, "eth_getTransactionReceipt", []any{log.TxHash}, &r); err != nil {
+		if _, ok := verifiedReceipts[log.TxHash]; !ok {
+			var receipt evmReceipt
+			if err := c.rpc(ctx, "eth_getTransactionReceipt", []any{log.TxHash}, &receipt); err != nil {
 				return Batch{}, err
 			}
-			receipts[log.TxHash] = r
-		}
-		if !receiptContains(r, log) {
-			return Batch{}, ErrProof
+			for _, expected := range logsByTx[log.TxHash] {
+				if !receiptContains(receipt, expected) {
+					return Batch{}, ErrProof
+				}
+			}
+			// Keep only the transaction hash for the rest of this batch. Receipt logs
+			// are provider-controlled and can approach the per-response size limit.
+			verifiedReceipts[log.TxHash] = struct{}{}
 		}
 		t, err := decodeEVMLog(c.spec, log, block)
 		if err != nil {

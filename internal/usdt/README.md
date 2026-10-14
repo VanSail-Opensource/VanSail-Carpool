@@ -29,7 +29,9 @@ cooldowns or consume a daily or minute budget. The queue retains a bounded backl
 provider errors are retried by the normal scanner failover loop.
 
 EVM uses finalized heads (BSC native finality), filtered USDT receiving logs and
-successful receipts. TRON requires a TronGrid-compatible root; Aptos requires a
+successful receipts. Receipt responses are verified one transaction at a time
+and discarded immediately; the batch retains only verified transaction hashes.
+TRON requires a TronGrid-compatible root; Aptos requires a
 node root plus GraphQL indexer; TON requires a Toncenter-compatible `/api/v3` base.
 Solana scans all discovered USDT token accounts and their deterministic ATA, using
 finalized transaction instructions rather than net balance changes. Non-EVM indexed

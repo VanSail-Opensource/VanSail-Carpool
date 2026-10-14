@@ -17,11 +17,23 @@ func receiptContains(r evmReceipt, log evmLog) bool {
 		return false
 	}
 	for _, item := range r.Logs {
-		if item.Index == log.Index && item.Address == log.Address && item.Data == log.Data && item.TxHash == log.TxHash && item.BlockHash == log.BlockHash && !item.Removed && len(item.Topics) == 3 && len(log.Topics) == 3 && strings.Join(item.Topics, ",") == strings.Join(log.Topics, ",") {
+		if item.Index == log.Index && item.Address == log.Address && item.Data == log.Data && item.TxHash == log.TxHash && item.BlockHash == log.BlockHash && !item.Removed && equalEVMTopics(item.Topics, log.Topics) {
 			return true
 		}
 	}
 	return false
+}
+
+func equalEVMTopics(left, right []string) bool {
+	if len(left) != 3 || len(right) != 3 {
+		return false
+	}
+	for i := range left {
+		if left[i] != right[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func hexBigInt(raw string) (*big.Int, error) {
