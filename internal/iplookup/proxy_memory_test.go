@@ -94,7 +94,7 @@ func TestInventoryMaintenanceReleasesOnlyExpiredMemos(t *testing.T) {
 func TestSourceRefreshCollectionsAreSerial(t *testing.T) {
 	s := diagnosticService(t)
 	c := DefaultConfig()
-	c.ProxySources = []ProxySource{{ID: "one", Enabled: true, URL: "https://example.net/one"}, {ID: "two", Enabled: true, URL: "https://example.net/two"}}
+	c.ProxySources = []ProxySource{{ID: "one", Name: "One", Enabled: true, URL: "https://example.net/one"}, {ID: "two", Name: "Two", Enabled: true, URL: "https://example.net/two"}}
 	settings := &sourceSettings{}
 	settings.set(t, c)
 	s.settings = settings
