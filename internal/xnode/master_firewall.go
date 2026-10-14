@@ -1,6 +1,13 @@
 package xnode
 
-import("context";"encoding/json";"time";"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue";wire "github.com/VanSail-Opensource/X-Node/pkg/protocol";"github.com/gorilla/websocket")
+import (
+	"context"
+	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"github.com/gorilla/websocket"
+	"time"
+)
 
 func (m *Master) confirmFirewall(ctx context.Context, peer *agentPeer, message wire.Message) error {
 	var pending struct {
@@ -41,12 +48,19 @@ func (m *Master) confirmFirewall(ctx context.Context, peer *agentPeer, message w
 			select {
 			case pong := <-peer.pong:
 				if pong == id {
-					result,err := m.Command(check,peer.nodeID,"firewall-confirm-"+id,"firewall.confirm",map[string]string{"transaction_id":id})
-					var reply struct { Confirmed bool `json:"confirmed"` }
-					if err != nil || wire.Decode(result,&reply) != nil || !reply.Confirmed { return }
+					result, err := m.Command(check, peer.nodeID, "firewall-confirm-"+id, "firewall.confirm", map[string]string{"transaction_id": id})
+					var reply struct {
+						Confirmed bool `json:"confirmed"`
+					}
+					if err != nil || wire.Decode(result, &reply) != nil || !reply.Confirmed {
+						return
+					}
 					m.mu.Lock()
 					current := m.live[peer.nodeID]
-					if m.peers[peer.nodeID] == peer && current.firewallPending == id { current.firewallPending="";m.live[peer.nodeID]=current }
+					if m.peers[peer.nodeID] == peer && current.firewallPending == id {
+						current.firewallPending = ""
+						m.live[peer.nodeID] = current
+					}
 					m.mu.Unlock()
 					return
 				}

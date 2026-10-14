@@ -50,9 +50,9 @@ type MetricsSummary struct {
 	FetchedAt              time.Time     `json:"fetchedAt"`
 }
 type liveSnapshot struct {
-	hello      wire.AgentHello
-	report     wire.TelemetryReport
-	receivedAt time.Time
-	logs       []json.RawMessage
+	hello           wire.AgentHello
+	report          wire.TelemetryReport
+	receivedAt      time.Time
+	logs            []json.RawMessage
 	firewallPending string
 }

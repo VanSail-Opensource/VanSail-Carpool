@@ -129,4 +129,3 @@ func validMetrics(metrics wire.UserMetrics) bool {
 	}
 	return true
 }
-

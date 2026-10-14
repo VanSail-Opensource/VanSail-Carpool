@@ -112,8 +112,11 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	}
 	if !config.Firewall.Enabled {
 		m.mu.Lock()
-		snapshot:=m.live[peer.nodeID]
-		if m.peers[peer.nodeID]==peer {snapshot.firewallPending="";m.live[peer.nodeID]=snapshot}
+		snapshot := m.live[peer.nodeID]
+		if m.peers[peer.nodeID] == peer {
+			snapshot.firewallPending = ""
+			m.live[peer.nodeID] = snapshot
+		}
 		m.mu.Unlock()
 	}
 	peer.mu.Lock()

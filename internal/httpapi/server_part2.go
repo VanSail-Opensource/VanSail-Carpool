@@ -122,7 +122,9 @@ func spaHandler(content fs.FS) http.Handler {
 		if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/") {
 			entry = "admin.html"
 		}
-		if strings.HasPrefix(r.URL.Path,"/subscription/") { entry = "subscription.html" }
+		if strings.HasPrefix(r.URL.Path, "/subscription/") {
+			entry = "subscription.html"
+		}
 		index, err := fs.ReadFile(content, entry)
 		if err != nil {
 			http.NotFound(w, r)
@@ -138,7 +140,10 @@ func spaHandler(content fs.FS) http.Handler {
 }
 
 func setStaticCacheHeaders(w http.ResponseWriter, path string) {
-	if path == "subscription.html" { w.Header().Set("Cache-Control","no-store");return }
+	if path == "subscription.html" {
+		w.Header().Set("Cache-Control", "no-store")
+		return
+	}
 	if path == "index.html" || path == "admin.html" {
 		w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		return
