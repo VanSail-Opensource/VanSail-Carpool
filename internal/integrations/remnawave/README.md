@@ -31,3 +31,6 @@ This package implements the Remnawave v3.3.0 operations used by VanSail Carpool.
 `subscription_keys.go` implements the documented protected connection-keys endpoint with typed enabled/hidden/disabled collections. Native links are bearer secrets: caller authorization, queued execution and no logging/persistence are required. Only enabled and hidden keys are considered by the member adapter.
 
 - `migration.go` implements documented configuration/host reads and node enable/disable actions for the migration adapter.
+  Profile export uses the documented `computed-config` endpoint, preserving
+  effective snippet expansions instead of passing source placeholders to Xray.
+- `migration_test.go` verifies computed-profile requests and rejects mismatched source profile identities.

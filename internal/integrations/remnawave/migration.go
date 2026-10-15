@@ -40,6 +40,23 @@ func (c *Client) MigrationProfiles(ctx context.Context) ([]MigrationProfile, err
 	if envelope.Response.Total != len(envelope.Response.Profiles) {
 		return nil, errors.New("incomplete configuration profile export")
 	}
+	// The documented computed export expands upstream snippet references. Raw
+	// profiles can contain placeholders that native Xray does not understand.
+	for i, profile := range envelope.Response.Profiles {
+		if _, err := uuid.Parse(profile.UUID); err != nil {
+			return nil, err
+		}
+		var computed struct {
+			Response MigrationProfile `json:"response"`
+		}
+		if err := c.do(ctx, http.MethodGet, "/api/config-profiles/"+url.PathEscape(profile.UUID)+"/computed-config", nil, nil, &computed); err != nil {
+			return nil, err
+		}
+		if computed.Response.UUID != profile.UUID || !json.Valid(computed.Response.Config) {
+			return nil, errors.New("computed configuration identity mismatch")
+		}
+		envelope.Response.Profiles[i] = computed.Response
+	}
 	return envelope.Response.Profiles, nil
 }
 func (c *Client) SetMigrationNodeDisabled(ctx context.Context, id string, disabled bool) error {

@@ -133,7 +133,8 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 		}
 		snapshot.Accounts = append(snapshot.Accounts, account)
 	}
-	return snapshot, nil
+	err = s.captureUnmatched(ctx, adapter, &snapshot, seen)
+	return snapshot, err
 }
 func (s migrationSource) SetNodeDisabled(ctx context.Context, config xnodemigration.SourceConfig, id string, disabled bool) error {
 	return remnaExecute(ctx, s.adapter(config), func(ctx context.Context, client remnaClient) error {

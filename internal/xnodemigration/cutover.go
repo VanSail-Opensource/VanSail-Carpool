@@ -54,13 +54,16 @@ func (s *Service) Cutover(ctx context.Context, id string) (node xnode.MigrationN
 	if _, err = s.master.Command(ctx, id, "", "config.validate", candidate); err != nil {
 		return node, err
 	}
-	backup, err := s.backups.Run(ctx)
-	if err != nil || backup.Status != "complete" {
-		return node, errors.Join(err, xnode.ErrUnavailable)
-	}
 	source, err := s.sourceConfig(state)
 	if err != nil {
 		return node, err
+	}
+	if err = s.verifyNodeAccounts(ctx, source, node.LegacyNodeID, candidate.Users); err != nil {
+		return node, err
+	}
+	backup, err := s.backups.Run(ctx)
+	if err != nil || backup.Status != "complete" {
+		return node, errors.Join(err, xnode.ErrUnavailable)
 	}
 	node.Phase = "preparing"
 	if err = s.repo.SaveXNodeMigrationNode(ctx, node); err != nil {

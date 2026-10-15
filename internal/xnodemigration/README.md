@@ -34,6 +34,8 @@ complete; initial import does not imply financial settlement.
 - `history.go`: Reconciles source node series with daily raw aggregates.
 - `monitoring.go`: Applies explicit monitoring account eligibility.
 - `cutover.go`: Transfers ownership with recovery on every post-disable failure.
+- `account_preflight.go`: Rejects handover while a currently served source account is unmapped or its linked identity/credentials differ from the imported account.
+- `account_preflight_test.go` verifies that unmatched accounts, changed identities/credentials and unfinished native provisioning leave the source node serving.
 - `rollback.go`: Seals native usage before restoring source listener ownership.
 - `operations.go`: Queues and executes migration actions with durable receipts.
 - `cutover_test.go`: Covers preflight, interrupted handovers and resumed rollback.

@@ -65,6 +65,7 @@ type Account struct {
 	LastResetAt   *time.Time          `json:"lastResetAt"`
 	Stats         remnawave.UserStats `json:"stats"`
 	Disabled      bool                `json:"disabled"`
+	TelegramID    *int64              `json:"telegramId,omitempty"`
 }
 type Issue struct {
 	ResourceID string `json:"resourceId"`
@@ -85,6 +86,7 @@ type Source interface {
 	SyncUsage(context.Context, SourceConfig, []model.User) error
 	FinalAccounts(context.Context, SourceConfig) ([]Node, []Account, error)
 	WithProvisioningFence(context.Context, func(context.Context) error) error
+	NodeAccounts(context.Context, SourceConfig, string) ([]Account, error)
 }
 type Repository interface {
 	xnode.Repository

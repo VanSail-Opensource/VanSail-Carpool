@@ -50,6 +50,10 @@ type cutoverSource struct {
 	events     *[]string
 }
 
+func (*cutoverSource) NodeAccounts(context.Context, SourceConfig, string) ([]Account, error) {
+	return nil, nil
+}
+
 func (s *cutoverSource) SetNodeDisabled(_ context.Context, _ SourceConfig, _ string, disabled bool) error {
 	if disabled {
 		*s.events = append(*s.events, "source:disable")

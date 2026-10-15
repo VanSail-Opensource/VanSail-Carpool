@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 	"strconv"
 	"time"
@@ -42,6 +41,7 @@ func finalAccount(remote remnawave.User) xnodemigration.Account {
 	for _, group := range remote.ActiveInternalSquads {
 		item.GroupIDs = append(item.GroupIDs, group.UUID)
 	}
+	item.TelegramID = remote.TelegramID
 	return item
 }
 
@@ -64,26 +64,11 @@ func (s migrationSource) FinalAccounts(ctx context.Context, config xnodemigratio
 	for _, identity := range identities {
 		linked[identity.LegacyUserID] = true
 	}
-	cursor := ""
-	for {
-		page, err := remnaCall(ctx, adapter, func(ctx context.Context, client remnaClient) (notificationUserPage, error) {
-			users, next, more, err := client.ListUsersStream(ctx, cursor, 200)
-			return notificationUserPage{users: users, next: next, more: more}, err
-		})
-		if err != nil {
-			return nil, nil, err
+	err = s.visitAccounts(ctx, adapter, func(user remnawave.User) error {
+		if linked[strconv.FormatInt(user.ID, 10)] {
+			accounts = append(accounts, finalAccount(user))
 		}
-		for _, user := range page.users {
-			if linked[strconv.FormatInt(user.ID, 10)] {
-				accounts = append(accounts, finalAccount(user))
-			}
-		}
-		if !page.more {
-			return projected, accounts, nil
-		}
-		if page.next == nil || *page.next == cursor {
-			return nil, nil, xnode.ErrInvalid
-		}
-		cursor = *page.next
-	}
+		return nil
+	})
+	return projected, accounts, err
 }
