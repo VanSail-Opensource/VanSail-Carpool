@@ -47,6 +47,9 @@ func serve() (err error) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	slog.SetDefault(logger)
+	if err := config.ConfigureMemory(cfg, logger); err != nil {
+		return err
+	}
 
 	application, err := app.New(cfg, logger)
 	if err != nil {

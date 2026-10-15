@@ -22,6 +22,12 @@ type sourceCache struct {
 	cancel               context.CancelFunc
 	automatic            bool
 }
+
+func (c *sourceCache) retireIndex() {
+	c.index.release()
+	c.index, c.complete = nil, false
+}
+
 type sourceRefreshJob struct {
 	cache      *sourceCache
 	source     ProxySource
@@ -36,6 +42,7 @@ type sourceTestRuntime struct {
 	countMu           sync.Mutex
 	revision, counted uint64
 	uniqueEntries     int
+	countError        error
 	work              sync.WaitGroup
 	entries           map[string]sourceTestEntry
 	sources           map[string]*sourceCache

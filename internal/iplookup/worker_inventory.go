@@ -19,7 +19,11 @@ func (w *Worker) runInventory(ctx context.Context, r *Report, c Config, persist 
 	if err != nil {
 		return err
 	}
-	r.Proxy = pool.assessment(r.IP)
+	defer pool.release()
+	r.Proxy, err = pool.assessmentContext(ctx, r.IP)
+	if err != nil && ctx.Err() != nil {
+		return ctx.Err()
+	}
 	applyProxyRefusal(r)
 	e.Phase = "subnet"
 	if err := persist(*r); err != nil {

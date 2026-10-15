@@ -146,3 +146,10 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `xnode_final_source.go` provides queued final source inventory and a bounded provisioning fence for bridge completion. The shared fence serializes finalization with entitlement and account writes.
 - `xnode_source_accounts.go` streams bounded source pages, reports unmatched active identities without archiving their credentials, and resolves the accounts currently eligible for each source node before handover.
 - `xnode_source_accounts_test.go` covers cursor-loop rejection and credential-free unmatched-account previews in hosted CI.
+
+
+Bootstrap applies container-aware memory budgeting and writable SQLite temporary
+storage before application construction. Application wiring opens the disposable
+proxy cache after fallible service construction; cache failure degrades inventory
+coverage independently of USDT. Shutdown joins workers/readers before closing the
+cache and authoritative database.

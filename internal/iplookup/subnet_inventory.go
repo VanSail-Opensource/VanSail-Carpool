@@ -27,7 +27,14 @@ func initializeSubnet(ctx context.Context, r *Report, pool *proxyPool) error {
 		if !pool.complete {
 			row.Proxy = "partial"
 		}
-		if ids := pool.matchingSources(ip); len(ids) > 0 {
+		ids, lookupErr := pool.matchingSourcesContext(ctx, ip)
+		if lookupErr != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			row.Proxy = "partial"
+		}
+		if len(ids) > 0 {
 			row.Status, row.Abuse, row.IPAPI = "flagged", "skipped", "skipped"
 			for _, id := range ids {
 				for _, source := range pool.sources {

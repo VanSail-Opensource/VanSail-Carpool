@@ -46,12 +46,18 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	previous := cache.index
 	if !cache.expires.After(time.Now()) {
 		previous = nil
-		cache.index, cache.complete = nil, false
+		cache.retireIndex()
 		b.revision++
 	}
+	previous.retain()
 	b.mu.Unlock()
+	defer previous.release()
 	if result.Status != "success" {
-		index = mergePrefixIndexes(previous, index, job.entryLimit)
+		incoming := index
+		index = mergePrefixIndexesContext(b.ctx, previous, incoming, job.entryLimit)
+		if incoming != index {
+			incoming.release()
+		}
 	}
 	b.mu.Lock()
 	result.Name = cache.source.Name
@@ -61,6 +67,7 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 		result.ObservedAt = now.UTC().Format(time.RFC3339)
 	}
 	if b.sources[job.source.ID] == cache {
+		cache.index.release()
 		cache.index, cache.result, cache.complete = index, result, result.Status == "success"
 		cache.result.Count = index.count()
 		b.revision++
@@ -71,9 +78,12 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 		}
 		cache.nextRefresh = now.Add(proxyInventoryTTL)
 		result = cache.result
+	} else {
+		index.release()
 	}
 	b.mu.Unlock()
 	b.refreshCount()
+	s.inventoryMemorySummary()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}

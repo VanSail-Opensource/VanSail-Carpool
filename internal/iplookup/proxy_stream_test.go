@@ -84,8 +84,11 @@ func TestInventoryStreamingCancellationAndBounds(t *testing.T) {
 	if err != context.Canceled || seen != 1 {
 		t.Fatalf("cancellation: %v entries=%d", err, seen)
 	}
-	for _, body := range []string{"11.0.0.1" + strings.Repeat(" ", maxInventoryLine), "proxies:\n" + strings.Repeat("x\n", maxProxyBody/2)} {
-		if code := ErrorCode(readInventory(context.Background(), strings.NewReader(body), func(string) {})); code != "IP_PROXY_PARSE" {
+	for _, tc := range []struct{ body, code string }{
+		{"11.0.0.1" + strings.Repeat(" ", maxInventoryLine), "IP_PROXY_PARSE"},
+		{"proxies:\n" + strings.Repeat("x\n", maxProxyBody/2), "IP_PROXY_LIMIT"},
+	} {
+		if code := ErrorCode(readInventory(context.Background(), strings.NewReader(tc.body), func(string) {})); code != tc.code {
 			t.Fatalf("bound not reported: %s", code)
 		}
 	}

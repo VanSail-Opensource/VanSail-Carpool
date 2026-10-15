@@ -1,10 +1,20 @@
 package iplookup
 
-import "github.com/RoaringBitmap/roaring/v2"
+import (
+	"context"
+	"github.com/RoaringBitmap/roaring/v2"
+)
 
 // mergePrefixIndexes retains previous evidence first, without mutating either
 // input. A zero limit permits the aggregate across independently bounded lists.
 func mergePrefixIndexes(previous, incoming *prefixIndex, limit int) *prefixIndex {
+	return mergePrefixIndexesContext(context.Background(), previous, incoming, limit)
+}
+
+func mergePrefixIndexesContext(ctx context.Context, previous, incoming *prefixIndex, limit int) *prefixIndex {
+	if (previous != nil && previous.disk != nil) || (incoming != nil && incoming.disk != nil) {
+		return mergeDiskIndexes(ctx, previous, incoming, limit)
+	}
 	if incoming == nil || incoming.count() == 0 {
 		return previous
 	}

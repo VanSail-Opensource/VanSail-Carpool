@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/jsonlimit"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -114,6 +116,9 @@ func (c *client) rpc(ctx context.Context, method string, params any, out any) er
 
 func decodeReply(reply rpcReply, id uint64, out any) error {
 	if reply.ID != id || reply.Error != nil || len(reply.Result) == 0 || string(reply.Result) == "null" {
+		return ErrRPC
+	}
+	if _, err := io.Copy(io.Discard, jsonlimit.NewReader(bytes.NewReader(reply.Result), rpcJSONLimits())); err != nil {
 		return ErrRPC
 	}
 	if json.Unmarshal(reply.Result, out) != nil {

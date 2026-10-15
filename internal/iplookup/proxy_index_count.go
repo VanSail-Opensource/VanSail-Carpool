@@ -2,10 +2,20 @@ package iplookup
 
 import (
 	"container/heap"
+	"context"
 	"encoding/binary"
 
 	"github.com/RoaringBitmap/roaring/v2"
 )
+
+func countPrefixIndexesContext(ctx context.Context, indexes []*prefixIndex) (int, error) {
+	for _, index := range indexes {
+		if index != nil && index.disk != nil {
+			return countDiskIndexes(ctx, indexes)
+		}
+	}
+	return countPrefixIndexes(indexes), nil
+}
 
 // countPrefixIndexes avoids allocating a full union of every published source.
 // It retains one iterator per source in the current prefix-length bucket.

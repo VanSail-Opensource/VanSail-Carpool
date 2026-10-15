@@ -202,6 +202,49 @@ jobs:
           total="$(go tool cover -func=domain-coverage.out | awk '/^total:/ {gsub(/%/, "", $3); print $3}')"
           awk -v total="$total" 'BEGIN { if ((total + 0) < 70) { printf "coverage %.1f%% is below 70%%\n", total; exit 1 } }'
 
+  memory-soak:
+    name: USDT and proxy 256 MiB memory soak
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Compile non-race memory fixture
+        env:
+          CGO_ENABLED: '0'
+        run: go test -c -o "$RUNNER_TEMP/memory-soak" ./internal/iplookup
+      - name: Exercise scanners, refreshes and reader retirement without swap
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/memory-data/tmp"
+          trap 'docker inspect memory-soak > "$RUNNER_TEMP/memory-data/container.json" || true' EXIT
+          docker run --name memory-soak --memory=256m --memory-swap=256m \
+            --network=none --read-only --tmpfs /tmp:rw,size=16m \
+            -v "$RUNNER_TEMP/memory-soak:/soak:ro" \
+            -v "$RUNNER_TEMP/memory-data:/data:rw" \
+            -e TMPDIR=/data/tmp -e SQLITE_TMPDIR=/data/tmp \
+            -e GOMEMLIMIT=160MiB -e VANSAIL_MEMORY_SOAK=1 \
+            alpine:3.24 /soak -test.run '^TestUSDTProxyMemorySoak$' -test.v \
+            -test.timeout=20m -test.memprofile=/data/heap.pprof \
+            | tee "$RUNNER_TEMP/memory-data/soak.log"
+          test "$(docker inspect -f '{{.State.OOMKilled}}' memory-soak)" = false
+          test "$(docker inspect -f '{{.RestartCount}}' memory-soak)" = 0
+      - name: Upload memory evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: memory-soak
+          path: |
+            ${{ runner.temp }}/memory-data/soak.log
+            ${{ runner.temp }}/memory-data/container.json
+            ${{ runner.temp }}/memory-data/heap.pprof
+          retention-days: 14
+
   image-validation:
     name: Production image validation
     runs-on: ubuntu-latest

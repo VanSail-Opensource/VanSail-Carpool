@@ -43,7 +43,7 @@ func (s *scanner) solanaAccounts(ctx context.Context, owners []string) (map[stri
 		}
 		result[ata] = owner
 		var reply struct {
-			Value []struct {
+			Value accountPage[struct {
 				Pubkey  string `json:"pubkey"`
 				Account struct {
 					Owner string `json:"owner"`
@@ -57,7 +57,7 @@ func (s *scanner) solanaAccounts(ctx context.Context, owners []string) (map[stri
 						} `json:"parsed"`
 					} `json:"data"`
 				} `json:"account"`
-			} `json:"value"`
+			}] `json:"value"`
 		}
 		if err := s.client.rpc(ctx, "getTokenAccountsByOwner", []any{owner, map[string]string{"mint": s.client.spec.Token}, map[string]string{"encoding": "jsonParsed", "commitment": "finalized"}}, &reply); err != nil {
 			return nil, err

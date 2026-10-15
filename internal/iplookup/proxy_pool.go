@@ -39,6 +39,9 @@ type EnhancedService struct {
 	resolvers       map[string]resolverHealth
 	cursor          uint64
 	tests           *sourceTestRuntime
+	disk            *inventoryDisk
+	diskRequired    bool
+	diskError       error
 }
 
 // NewEnhancedService reuses existing queue workers for every outbound operation.
@@ -56,19 +59,23 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	if s.tests != nil {
 		return s.cachedPool(ctx, c)
 	}
+	if s.diskRequired {
+		return nil, &CodeError{"IP_LOOKUP_UNAVAILABLE"}
+	}
 	key := proxyPoolKey(c)
 	s.mu.Lock()
 	// Drop expired fallback pools before building the replacement, including
 	// when its download fails. Existing readers keep immutable snapshots.
 	for k, pool := range s.pools {
 		if !pool.expires.After(time.Now()) {
+			pool.release()
 			delete(s.pools, k)
 		}
 	}
 	cached := s.pools[key]
 	if cached != nil && cached.expires.After(time.Now()) {
 		s.mu.Unlock()
-		return cached, nil
+		return cached.retain(), nil
 	}
 	if f := s.flights[key]; f != nil {
 		s.mu.Unlock()
@@ -76,7 +83,10 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-f.done:
-			return f.pool, f.err
+			if f.pool == nil {
+				return nil, f.err
+			}
+			return f.pool.retain(), f.err
 		}
 	}
 	f := &poolFlight{done: make(chan struct{})}
@@ -87,6 +97,9 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	f.pool, f.err = p, err
 	if err == nil {
 		if len(s.pools) >= 4 {
+			for _, pool := range s.pools {
+				pool.release()
+			}
 			clear(s.pools)
 		}
 		s.pools[key] = p
@@ -94,7 +107,51 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	delete(s.flights, key)
 	close(f.done)
 	s.mu.Unlock()
+	if err == nil {
+		return p.retain(), nil
+	}
 	return p, err
+}
+
+func (p *proxyPool) retain() *proxyPool {
+	copy := *p
+	copy.indexes = make([]*prefixIndex, 0, len(p.indexes))
+	for _, index := range p.indexes {
+		copy.indexes = append(copy.indexes, index.retain())
+	}
+	return &copy
+}
+
+func (p *proxyPool) release() {
+	for _, index := range p.indexes {
+		index.release()
+	}
+}
+
+func (p *proxyPool) assessmentContext(ctx context.Context, ip string) (*ProxyAssessment, error) {
+	addr, _ := netip.ParseAddr(ip)
+	matches, err := p.matchingSourcesContext(ctx, addr)
+	status := "success"
+	if !p.complete || err != nil {
+		status = "partial"
+	}
+	return &ProxyAssessment{Status: status, Sources: append([]ProxySourceResult{}, p.sources...), Matches: matches}, err
+}
+
+func (p *proxyPool) matchingSourcesContext(ctx context.Context, addr netip.Addr) ([]string, error) {
+	matches := []string{}
+	var failure error
+	for i, index := range p.indexes {
+		found, err := index.containsContext(ctx, addr)
+		if err != nil {
+			failure = err
+		}
+		if found {
+			matches = append(matches, p.sources[i].ID)
+		}
+	}
+	sort.Strings(matches)
+	return matches, failure
 }
 func (p *proxyPool) assessment(ip string) *ProxyAssessment {
 	addr, _ := netip.ParseAddr(ip)

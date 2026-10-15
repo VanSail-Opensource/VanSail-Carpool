@@ -3,8 +3,11 @@ package usdt
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
+
+	runtimeconfig "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
 )
 
 // Start attaches every scanner and queue to the application context.
@@ -19,6 +22,7 @@ func (s *Service) run(ctx context.Context) {
 	var cancel context.CancelFunc
 	var workers sync.WaitGroup
 	current := ""
+	lastMemory := time.Time{}
 	stop := func() {
 		if cancel != nil {
 			cancel()
@@ -30,6 +34,10 @@ func (s *Service) run(ctx context.Context) {
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 	for {
+		if time.Since(lastMemory) >= time.Minute {
+			runtimeconfig.LogMemory(slog.Default(), "USDT scanner memory")
+			lastMemory = time.Now()
+		}
 		c, err := s.config(ctx)
 		if err != nil {
 			s.report(err)

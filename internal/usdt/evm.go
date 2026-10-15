@@ -97,7 +97,7 @@ func (s *scanner) scanEVM(ctx context.Context, cursor Cursor, addresses []string
 	for _, a := range addresses {
 		topics = append(topics, evmTopic(a))
 	}
-	var logs []evmLog
+	var logs logPage[evmLog]
 	err = c.rpc(ctx, "eth_getLogs", []any{map[string]any{"fromBlock": toHex(last + 1), "toBlock": toHex(end), "address": c.spec.Token, "topics": []any{transferTopic, nil, topics}}}, &logs)
 	if err != nil {
 		if s.span > 1 {

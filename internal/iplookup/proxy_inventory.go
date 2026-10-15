@@ -22,12 +22,19 @@ func safeSourceURL(raw string) string {
 
 func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, error) {
 	p := &proxyPool{sources: []ProxySourceResult{}, complete: true, expires: time.Now().Add(proxyInventoryTTL)}
+	complete := false
+	defer func() {
+		if !complete {
+			p.release()
+		}
+	}()
 	for _, source := range c.ProxySources {
 		if !source.Enabled {
 			continue
 		}
 		index, result := s.collectSourceWithLimit(ctx, source, c, false, nil, proxySourceEntryLimit(len(c.ProxySources)))
 		if ctx.Err() != nil {
+			index.release()
 			return nil, ctx.Err()
 		}
 		p.indexes = append(p.indexes, index)
@@ -37,6 +44,7 @@ func (s *EnhancedService) buildPool(ctx context.Context, c Config) (*proxyPool, 
 	if len(p.sources) == 0 {
 		p.complete = false
 	}
+	complete = true
 	return p, nil
 }
 
@@ -54,8 +62,7 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 		}
 	}
 	update(true)
-	builder := newPrefixIndexBuilder(entryLimit)
-	domains := map[string]bool{}
+	builder := s.newInventoryBuilder(ctx, entryLimit)
 	add := func(host string) {
 		if ctx.Err() != nil {
 			return
@@ -71,25 +78,27 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 			}
 		}
 		if prefix.IsValid() {
-			before := builder.index.size
+			before := builder.index.count()
 			if !builder.add(prefix) {
 				r.Status, r.ErrorCode = "partial", "IP_PROXY_LIMIT"
 			}
-			r.Hosts += builder.index.size - before
-			r.Processed += builder.index.size - before
-			r.Count = builder.index.size
-		} else if !domains[host] {
-			if len(domains) >= maxProxyHosts {
+			r.Hosts += builder.index.count() - before
+			r.Processed += builder.index.count() - before
+			r.Count = builder.index.count()
+		} else {
+			before := builder.domainCount()
+			if !builder.addDomain(host) {
 				r.Status, r.ErrorCode = "partial", "IP_PROXY_LIMIT"
 				return
 			}
-			domains[host] = true
-			r.Hosts++
+			r.Hosts += builder.domainCount() - before
 		}
 		update(false)
 	}
 	var err error
-	if s.inventoryFetch != nil {
+	if builder.err != nil {
+		err = builder.err
+	} else if s.inventoryFetch != nil {
 		var data []byte
 		data, err = s.inventoryFetch(ctx, source.URL, c)
 		if err == nil {
@@ -102,9 +111,15 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 	} else {
 		err = s.downloadInventory(ctx, source.URL, c, add)
 	}
+	builder.flush()
+	r.Hosts = builder.index.count() + builder.domainCount()
+	r.Processed = builder.index.count()
+	if builder.err != nil {
+		err = &CodeError{inventoryBuildError(builder.err)}
+	}
 	if err != nil {
 		r.Status, r.ErrorCode = "partial", ErrorCode(err)
-		if r.ErrorCode != "IP_PROXY_PARSE" && r.ErrorCode != "IP_PROXY_LIMIT" {
+		if r.ErrorCode != "IP_PROXY_PARSE" && r.ErrorCode != "IP_PROXY_LIMIT" && r.ErrorCode != "IP_LOOKUP_FAILED" && r.ErrorCode != "IP_LOOKUP_UNAVAILABLE" {
 			r.Status, r.ErrorCode = "error", "IP_PROXY_DOWNLOAD"
 		}
 	} else if r.Status == "processing" {
@@ -114,7 +129,7 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 		r.Status, r.ErrorCode = "partial", "IP_PROXY_EMPTY"
 	}
 	// Resolve domains after download/parsing, outside the proxy_lists queue.
-	if len(domains) > 0 && ctx.Err() == nil {
+	if builder.domainCount() > 0 && ctx.Err() == nil && builder.err == nil {
 		r.Phase = "dns"
 		update(true)
 		var mu sync.Mutex
@@ -139,28 +154,33 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 							r.Status, r.ErrorCode = "partial", "IP_PROXY_LIMIT"
 						}
 					}
-					r.Count = builder.index.size
+					r.Count = builder.index.count()
 					update(false)
 					mu.Unlock()
 				}
 			}()
 		}
-		for host := range domains {
-			if ctx.Err() != nil {
-				break
-			}
+		domainErr := builder.eachDomain(ctx, func(host string) bool {
 			select {
 			case jobs <- host:
+				return true
 			case <-ctx.Done():
+				return false
 			}
-		}
+		})
 		close(jobs)
 		work.Wait()
+		if domainErr != nil {
+			builder.err = domainErr
+		}
 	}
 	if ctx.Err() != nil {
 		r.Status, r.ErrorCode = "partial", "IP_PROXY_INTERRUPTED"
 	}
 	index := builder.freeze()
+	if builder.err != nil && ctx.Err() == nil {
+		r.Status, r.ErrorCode = "partial", inventoryBuildError(builder.err)
+	}
 	r.Count = index.count()
 	r.Phase, r.ObservedAt = "complete", time.Now().UTC().Format(time.RFC3339)
 	update(true)

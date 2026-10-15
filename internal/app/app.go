@@ -245,6 +245,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		Addr: ":" + cfg.Port, Handler: api.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
 		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20,
 	}
+	if err := ipLookupWorker.Enhanced.ConfigureInventoryCache(context.Background(), filepath.Join(cfg.DataDir, "cache", "proxy-inventory"), cfg.ProxyCacheMaxBytes); err != nil {
+		logger.Error("proxy inventory cache unavailable", "error", err)
+	}
 	return &Application{
 		xnodeService: xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,

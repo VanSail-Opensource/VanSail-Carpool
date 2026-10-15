@@ -93,3 +93,16 @@ run in hosted CI.
 - `tron_test.go` ? Hosted fixtures for tron behavior and failure paths.
 - `types.go` ? Public configuration, quote, transfer, status, repository and settings contracts.
 - `websocket.go` ? Queued connection and subscription commands with context-owned inbound readers.
+
+## Allocation ownership
+
+`page.go` enforces limits before appending oversized response arrays: 100
+transfer/signature rows, 128 token accounts, 200 Tron history rows and 2,000 EVM
+logs. Shared JSON guards bound depth, array cardinality and graph nodes before
+typed expansion, retaining the 2 MiB HTTP/WS document limit. Cancellation joins
+started executor callbacks before output is released or replacement work starts.
+`solana_cursor.go` compacts only owners outside the complete watched recipient
+set; closed accounts and unpaid late-payment recipients remain monitored.
+`memory_test.go` covers graph/page limits, cursor retention and callback joining.
+The single shared concurrency setting, settlement and durable evidence retention
+are unchanged. Lifecycle logs memory and goroutines once per minute.

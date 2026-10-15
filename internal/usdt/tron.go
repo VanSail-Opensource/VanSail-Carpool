@@ -36,17 +36,19 @@ func (s *scanner) checkTron(ctx context.Context) error {
 	return nil
 }
 
+type tronActivity struct {
+	TxHash string `json:"transaction_id"`
+	Type   string `json:"type"`
+	Token  struct {
+		Address  string `json:"address"`
+		Decimals int    `json:"decimals"`
+	} `json:"token_info"`
+}
+
 type tronPage struct {
-	Success bool `json:"success"`
-	Data    []struct {
-		TxHash string `json:"transaction_id"`
-		Type   string `json:"type"`
-		Token  struct {
-			Address  string `json:"address"`
-			Decimals int    `json:"decimals"`
-		} `json:"token_info"`
-	} `json:"data"`
-	Meta struct {
+	Success bool                      `json:"success"`
+	Data    historyPage[tronActivity] `json:"data"`
+	Meta    struct {
 		Fingerprint string `json:"fingerprint"`
 	} `json:"meta"`
 }

@@ -56,6 +56,7 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 	if cur.Accounts == nil {
 		cur.Accounts = map[string]solHistory{}
 	}
+	pruneSolanaOwners(&cur, owners)
 	if cur.Baseline == 0 {
 		if err := s.client.rpc(ctx, "getSlot", []any{map[string]string{"commitment": "finalized"}}, &cur.Baseline); err != nil {
 			return Batch{}, err
@@ -98,7 +99,7 @@ func (s *scanner) scanSolana(ctx context.Context, cursor Cursor, owners []string
 	if h.Before != "" {
 		options["before"] = h.Before
 	}
-	var signatures []solSignature
+	var signatures transferPage[solSignature]
 	if err := s.client.rpc(ctx, "getSignaturesForAddress", []any{account, options}, &signatures); err != nil {
 		return Batch{}, err
 	}

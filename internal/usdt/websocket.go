@@ -1,11 +1,14 @@
 package usdt
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"sync"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/jsonlimit"
 	"github.com/gorilla/websocket"
 )
 
@@ -97,6 +100,9 @@ func (s *socket) read(ctx context.Context) {
 		}
 		_, raw, err := s.conn.ReadMessage()
 		if err != nil {
+			return
+		}
+		if _, err := io.Copy(io.Discard, jsonlimit.NewReader(bytes.NewReader(raw), rpcJSONLimits())); err != nil {
 			return
 		}
 		var message struct {

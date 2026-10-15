@@ -41,9 +41,12 @@ func (s *EnhancedService) SourcesStatus(ctx context.Context) (ProxySourcesStatus
 	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if b.countError != nil {
+		return result, &CodeError{"IP_LOOKUP_FAILED"}
+	}
 	for _, source := range c.ProxySources {
 		row := ProxySourceCacheStatus{ProxySourceResult: ProxySourceResult{ID: source.ID, Name: source.Name, Status: "pending"}, Enabled: source.Enabled, Stale: true}
-		if cache := b.sources[source.ID]; cache != nil && cache.key == sourceCacheKey(source, c) {
+		if cache := b.sources[source.ID]; cache != nil && cache.key == s.sourceKey(source, c) {
 			row.ProxySourceResult = cache.result
 			row.Count = cache.index.count()
 			row.Refreshing = cache.done != nil
@@ -66,7 +69,7 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 	b.mu.Lock()
 	waits := []<-chan struct{}{}
 	for _, source := range c.ProxySources {
-		if cache := b.sources[source.ID]; source.Enabled && cache != nil && cache.key == sourceCacheKey(source, c) && cache.index == nil && cache.done != nil {
+		if cache := b.sources[source.ID]; source.Enabled && cache != nil && cache.key == s.sourceKey(source, c) && cache.index == nil && cache.done != nil {
 			waits = append(waits, cache.done)
 		}
 	}
@@ -88,7 +91,7 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 		row := ProxySourceResult{ID: source.ID, Name: source.Name, Status: "partial"}
 		var index *prefixIndex
 		cache := b.sources[source.ID]
-		if cache != nil && cache.source.Enabled && cache.key == sourceCacheKey(source, c) {
+		if cache != nil && cache.source.Enabled && cache.key == s.sourceKey(source, c) {
 			row = cache.result
 			fresh := cache.complete && cache.expires.After(time.Now())
 			if fresh {
@@ -96,7 +99,7 @@ func (s *EnhancedService) cachedPool(ctx context.Context, c Config) (*proxyPool,
 			} else {
 				row.Status = "partial"
 			}
-			index = cache.index
+			index = cache.index.retain()
 			if cache.expires.Before(p.expires) {
 				p.expires = cache.expires
 			}

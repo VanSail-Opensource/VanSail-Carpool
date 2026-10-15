@@ -153,5 +153,9 @@ func (a *Application) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	checkpointErr := database.Checkpoint(ctx, a.store.DB(), true)
-	return errors.Join(queueErr, checkpointErr, a.store.DB().Close())
+	var cacheErr error
+	if a.ipLookup != nil && a.ipLookup.Enhanced != nil {
+		cacheErr = a.ipLookup.Enhanced.CloseInventoryCache()
+	}
+	return errors.Join(queueErr, checkpointErr, cacheErr, a.store.DB().Close())
 }

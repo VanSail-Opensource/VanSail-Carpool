@@ -87,7 +87,7 @@ func (s *scanner) scanAptos(ctx context.Context, cursor Cursor, addresses []stri
 	}
 	where := map[string]any{"owner_address": map[string]any{"_in": addresses}, "asset_type": map[string]any{"_eq": s.client.spec.Token}, "is_transaction_success": map[string]any{"_eq": true}, "type": map[string]any{"_in": []string{"0x1::fungible_asset::Deposit", "0x1::fungible_asset::DepositEvent", "0x1::coin::DepositEvent"}}, "_or": []any{map[string]any{"transaction_version": map[string]any{"_gt": cur.Version}}, map[string]any{"transaction_version": map[string]any{"_eq": cur.Version}, "event_index": map[string]any{"_gt": cur.Index}}}}
 	var page struct {
-		Items []aptosActivity `json:"fungible_asset_activities"`
+		Items transferPage[aptosActivity] `json:"fungible_asset_activities"`
 	}
 	if err := s.client.graphql(ctx, `query Transfers($where:fungible_asset_activities_bool_exp!){fungible_asset_activities(where:$where,order_by:[{transaction_version:asc},{event_index:asc}],limit:100){transaction_version event_index owner_address asset_type storage_id amount is_transaction_success type}}`, map[string]any{"where": where}, &page); err != nil {
 		return Batch{}, err

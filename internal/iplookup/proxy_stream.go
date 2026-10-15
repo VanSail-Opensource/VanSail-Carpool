@@ -19,20 +19,48 @@ func readInventory(ctx context.Context, reader io.Reader, emit func(string)) err
 }
 
 func readInventoryBounded(ctx context.Context, reader io.Reader, bodyLimit int64, emit func(string)) error {
+	return readInventoryDepth(ctx, reader, bodyLimit, emit, 0)
+}
+
+func readInventoryDepth(ctx context.Context, reader io.Reader, bodyLimit int64, emit func(string), depth int) error {
+	if depth > 3 {
+		return &CodeError{"IP_PROXY_LIMIT"}
+	}
 	limited := &io.LimitedReader{R: reader, N: bodyLimit + 1}
-	scanner := bufio.NewScanner(limited)
+	bufferedReader := bufio.NewReaderSize(inventoryBodyReader{limited}, 64<<10)
+	prefix, _ := bufferedReader.Peek(64)
+	start := strings.TrimSpace(string(prefix))
+	var streamed func() error
+	switch {
+	case strings.HasPrefix(start, "{"), strings.HasPrefix(start, "[") && endpointHost(strings.Fields(start)[0]) == "":
+		streamed = func() error { return readJSONInventory(ctx, bufferedReader, emit) }
+	case strings.HasPrefix(start, "<"):
+		streamed = func() error { return readHTMLInventory(ctx, bufferedReader, emit) }
+	case strings.HasPrefix(start, "proxies:"):
+		streamed = func() error { return readClashInventory(ctx, bufferedReader, limited, emit) }
+	case isBase64Inventory(start):
+		streamed = func() error {
+			return readInventoryDepth(ctx, decodedInventory(bufferedReader), maxProxyBody, emit, depth+1)
+		}
+	}
+	if streamed != nil {
+		err := streamed()
+		if limited.N <= 0 {
+			return &CodeError{"IP_PROXY_LIMIT"}
+		}
+		return err
+	}
+	scanner := bufio.NewScanner(bufferedReader)
+	scanner.Split(inventoryLineSplit(limited))
 	// Structured JSON and encoded subscriptions may occupy one long line.
 	// Plain-line limits apply after format detection; documents retain 16 MiB.
-	scanner.Buffer(make([]byte, 64<<10), maxProxyBody+1)
+	scanner.Buffer(make([]byte, 64<<10), maxComplexInventoryBody+1)
 	started := false
 	var document bytes.Buffer
 	buffered := false
 	for scanner.Scan() {
 		// Never accept a final token cut mid-CIDR by a size limit or broken
 		// transport: its shortened prefix length could flag unrelated IPs.
-		if limited.N <= 0 {
-			return &CodeError{"IP_PROXY_LIMIT"}
-		}
 		if scanner.Err() != nil {
 			return &CodeError{"IP_PROXY_PARSE"}
 		}
@@ -49,8 +77,8 @@ func readInventoryBounded(ctx context.Context, reader io.Reader, bodyLimit int64
 			buffered = inventoryDocument(line)
 		}
 		if buffered {
-			if document.Len()+len(rawLine)+1 > maxProxyBody {
-				return &CodeError{"IP_PROXY_PARSE"}
+			if document.Len()+len(rawLine)+1 > maxComplexInventoryBody {
+				return &CodeError{"IP_PROXY_LIMIT"}
 			}
 			document.WriteString(rawLine)
 			document.WriteByte('\n')

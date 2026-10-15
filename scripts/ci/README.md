@@ -27,3 +27,14 @@ The workflow files and `scripts/ci` affect both quality gates; extend their path
 filters when adding another shared CI input.
 The aggregate gate follows the actual shard result, including failures, rather
 than reevaluating changed-area output after the matrix has completed.
+
+
+The ci.yml memory-soak gate compiles a non-race fixture and runs it in a 256 MiB
+Docker container with swap disabled and a read-only root for at least three
+minutes. Six EVM scanners, failover, WebSocket notifications and verified
+2,000-log proof batches overlap inventory refreshes. The first source has
+3,000,000 IPv4 and 250,000 IPv6 entries; later cycles check retired readers,
+peak RSS below 224 MiB, settled heap growth at most 8 MiB after warm-up, stable
+goroutines and the 1 GiB cache allowance. Container state, cycle measurements
+and a final heap profile are uploaded as memory-soak artifacts. Failure blocks
+image publication. Local automated suites remain prohibited.

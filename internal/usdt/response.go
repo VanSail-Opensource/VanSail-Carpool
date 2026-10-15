@@ -3,6 +3,7 @@ package usdt
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/jsonlimit"
 	"io"
 )
 
@@ -37,7 +38,7 @@ type typedRPCReply struct {
 // and rejects extra documents just as json.Unmarshal did.
 func decodeResponse(reader io.Reader, output any) error {
 	limited := &io.LimitedReader{R: reader, N: maxRPCResponseBytes + 1}
-	decoder := json.NewDecoder(limited)
+	decoder := json.NewDecoder(jsonlimit.NewReader(limited, rpcJSONLimits()))
 	if err := decoder.Decode(output); err != nil {
 		return ErrRPC
 	}
@@ -46,4 +47,8 @@ func decodeResponse(reader io.Reader, output any) error {
 		return ErrRPC
 	}
 	return nil
+}
+
+func rpcJSONLimits() jsonlimit.Limits {
+	return jsonlimit.Limits{Depth: 64, ArrayItems: 8192, Nodes: 65536, StringBytes: maxRPCResponseBytes}
 }

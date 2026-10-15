@@ -10,11 +10,19 @@ import (
 )
 
 func sourceCacheKey(source ProxySource, c Config) [32]byte {
+	return sourceCacheKeyWithLimit(source, c, proxySourceEntryLimit(len(c.ProxySources)))
+}
+
+func (s *EnhancedService) sourceKey(source ProxySource, c Config) [32]byte {
+	return sourceCacheKeyWithLimit(source, c, s.sourceEntryLimit(c))
+}
+
+func sourceCacheKeyWithLimit(source ProxySource, c Config, limit int) [32]byte {
 	raw, _ := json.Marshal(struct {
 		URL        string
 		DNS        []string
 		EntryLimit int
-	}{source.URL, c.DNSResolvers, proxySourceEntryLimit(len(c.ProxySources))})
+	}{source.URL, c.DNSResolvers, limit})
 	return sha256.Sum256(raw)
 }
 
@@ -28,14 +36,14 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 	seen := map[string]bool{}
 	for _, source := range c.ProxySources {
 		seen[source.ID] = true
-		key := sourceCacheKey(source, c)
+		key := s.sourceKey(source, c)
 		cache := b.sources[source.ID]
 		if cache == nil || cache.key != key || cache.source.Enabled != source.Enabled {
 			if cache != nil {
 				if cache.cancel != nil {
 					cache.cancel()
 				}
-				cache.index, cache.complete = nil, false
+				cache.retireIndex()
 			}
 			cache = &sourceCache{source: source, key: key, result: ProxySourceResult{ID: source.ID, Name: source.Name, Category: sourceCategory(source.Category), URL: safeSourceURL(source.URL), Status: "pending"}}
 			b.sources[source.ID] = cache
@@ -47,7 +55,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 		// Retire expired evidence before admitting its replacement. This also
 		// releases disabled diagnostic indexes, which are never auto-refreshed.
 		if cache.index != nil && !cache.expires.After(now) {
-			cache.index, cache.complete = nil, false
+			cache.retireIndex()
 			cache.result.Count = 0
 			b.revision++
 		}
@@ -67,7 +75,7 @@ func (s *EnhancedService) reconcileSourcesLocked(b *sourceTestRuntime, c Config)
 			if cache.cancel != nil {
 				cache.cancel()
 			}
-			cache.index, cache.complete = nil, false
+			cache.retireIndex()
 			delete(b.sources, id)
 			b.revision++
 		}
@@ -95,7 +103,7 @@ func (s *EnhancedService) startSourceLocked(b *sourceTestRuntime, cache *sourceC
 	b.work.Add(1)
 	job := sourceRefreshJob{
 		cache: cache, source: cache.source, id: id, done: cache.done, cancel: cancel,
-		entryLimit: proxySourceEntryLimit(len(c.ProxySources)),
+		entryLimit: s.sourceEntryLimit(c),
 	}
 	go s.runSourceTest(b, job, c, ctx)
 	return test, nil

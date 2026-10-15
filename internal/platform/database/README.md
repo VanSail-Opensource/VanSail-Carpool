@@ -449,3 +449,10 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 - `xnode_service_bindings.go`: Entry points: `XNodeServiceBindings`, `SaveXNodeServiceBinding`.
 
 - `xnode_operation_recovery_test.go` covers durable lease recovery and stale asynchronous receipt callbacks.
+
+## Memory budget
+
+The authoritative database has at most four connections with a 4 MiB page cache
+per connection, no memory mapping and file-backed temporary work. Bootstrap
+places temporary files under DATA_DIR/tmp for read-only-root deployments. Proxy
+indexes live in a separate disposable cache outside this schema and its backups.

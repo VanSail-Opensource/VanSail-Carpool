@@ -2,6 +2,7 @@ package iplookup
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"net/netip"
 	"slices"
@@ -22,9 +23,11 @@ func proxySourceEntryLimit(sourceCount int) int {
 // prefixIndex is immutable after publication. Prefix lengths remain separate:
 // overlapping CIDRs retain both their attribution and original entry counts.
 type prefixIndex struct {
-	v4   [33]*roaring.Bitmap
-	v6   [129][][16]byte
-	size int
+	diskBits [2][129]bool
+	disk     *diskGeneration
+	v4       [33]*roaring.Bitmap
+	v6       [129][][16]byte
+	size     int
 }
 
 func (p *prefixIndex) count() int {
@@ -35,6 +38,10 @@ func (p *prefixIndex) count() int {
 }
 
 func (p *prefixIndex) contains(addr netip.Addr) bool {
+	if p != nil && p.disk != nil {
+		found, _ := p.containsContext(context.Background(), addr)
+		return found
+	}
 	if p == nil || !addr.IsValid() {
 		return false
 	}

@@ -58,9 +58,28 @@ func (e *Executor) do(ctx context.Context, call func(context.Context) error) err
 	if queue == nil {
 		return ErrUnavailable
 	}
-	return upstreamqueue.Execute(ctx, queue, func(jobCtx context.Context) error {
+	var gate sync.Mutex
+	started, stopped := false, false
+	done := make(chan struct{})
+	err := upstreamqueue.Execute(ctx, queue, func(jobCtx context.Context) error {
+		gate.Lock()
+		if stopped {
+			gate.Unlock()
+			return context.Canceled
+		}
+		started = true
+		gate.Unlock()
+		defer close(done)
 		callCtx, cancel := context.WithTimeout(jobCtx, 15*time.Second)
 		defer cancel()
 		return call(callCtx)
 	})
+	gate.Lock()
+	stopped = true
+	join := started
+	gate.Unlock()
+	if join {
+		<-done
+	}
+	return err
 }
