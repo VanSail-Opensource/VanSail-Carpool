@@ -1,4 +1,5 @@
 # Purchase rollover
+- `period_remote_test.go` verifies purchase-scoped quiescence through the optional `PeriodRemote` provider contract, keeping already provisioned successors active during settlement.
 - `service_part2.go` continues the focused implementation from its original package module.
 
 - `service.go` coordinates queued purchase rollover, remote traffic quiescence, strict per-node weighted usage capture, and calculated-but-uncredited local settlement.

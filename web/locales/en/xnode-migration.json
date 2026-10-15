@@ -36,6 +36,13 @@
       "INCOMPLETE_TRAFFIC_HISTORY": "The source node series does not reconcile with daily traffic totals.",
       "INVALID_HOST": "Source host configuration is invalid.",
       "CLIENT_TEMPLATE_REQUIRES_CONVERSION": "Convert the legacy client template before handing over this host."
-    }
+    },
+    "finalTitle": "Final accounting",
+    "finalHint": "After every source node is disabled, export complete source history and reconcile linked accounts. Finalize only after reviewing the export. A changed source counter requires a new export. Finalization ends the legacy provisioning bridge.",
+    "finalSourceBackup": "Verified final source backup reference",
+    "finalExport": "Export final source accounting",
+    "finalize": "Finalize migration",
+    "finalSnapshot": "Final snapshot: {digest} | Source backup: {reference}",
+    "completed": "Migration finalized. Provisioning uses X-Node; source credentials and traffic history remain archived."
   }
 }

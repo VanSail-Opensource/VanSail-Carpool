@@ -11,6 +11,8 @@ import (
 // Stream once per interval through the existing queue, then sync linked accounts
 // only. Unmapped remote identities are neither persisted nor authorized.
 func (a proxyProvider) syncBridgeAccounts(ctx context.Context) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	bridge, err := a.legacy(ctx)
 	if err != nil || !bridge {
 		return err

@@ -9,15 +9,17 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"strconv"
+	"sync"
 )
 
 // proxyProvider keeps the legacy integration available only during migration.
 // Native identities remain authoritative even while some nodes use the bridge.
 type proxyProvider struct {
 	remnaAdapter
-	native *xnode.Service
-	master *xnode.Master
-	store  *database.Store
+	native     *xnode.Service
+	master     *xnode.Master
+	store      *database.Store
+	bridgeGate *sync.RWMutex
 }
 
 func (a proxyProvider) legacy(ctx context.Context) (bool, error) {
@@ -107,6 +109,8 @@ func (a proxyProvider) FindUserByID(ctx context.Context, id string) (accounts.Re
 	return remoteIdentity(identity, user), true, nil
 }
 func (a proxyProvider) CreateUser(ctx context.Context, input accounts.RemoteCreateUser) (accounts.RemoteUser, error) {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	legacy, err := a.legacy(ctx)
 	if err != nil {
 		return accounts.RemoteUser{}, err

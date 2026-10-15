@@ -43,6 +43,8 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 		router.Get("/xnode/migration", s.xnodeMigrationStatus)
 		router.Post("/xnode/migration/preview", s.xnodeMigrationPreview)
 		router.Post("/xnode/migration/import", s.xnodeMigrationImport)
+		router.Post("/xnode/migration/final-export", s.xnodeMigrationFinalExport)
+		router.Post("/xnode/migration/finalize", s.xnodeMigrationFinalize)
 		router.Post("/xnode/migration/nodes/{id}/cutover", s.xnodeMigrationCutover)
 		router.Post("/xnode/migration/nodes/{id}/rollback", s.xnodeMigrationRollback)
 	}

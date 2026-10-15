@@ -1,0 +1,45 @@
+{
+  "post": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "stageFinalXNodeMigration",
+    "responses": {
+      "202": {
+        "description": "X-Node response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/OperationReceipt"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      }
+    },
+    "parameters": [
+      {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeMigrationFinalExportWrite"
+          }
+        }
+      }
+    }
+  }
+}

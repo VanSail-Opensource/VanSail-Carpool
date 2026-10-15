@@ -83,6 +83,8 @@ type Source interface {
 	Capture(context.Context, SourceConfig, []model.User, []MonitoringMapping) (Snapshot, error)
 	SetNodeDisabled(context.Context, SourceConfig, string, bool) error
 	SyncUsage(context.Context, SourceConfig, []model.User) error
+	FinalAccounts(context.Context, SourceConfig) ([]Node, []Account, error)
+	WithProvisioningFence(context.Context, func(context.Context) error) error
 }
 type Repository interface {
 	xnode.Repository

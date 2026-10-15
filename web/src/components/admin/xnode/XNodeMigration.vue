@@ -7,6 +7,7 @@ import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
 import XNodeJsonEditor from './XNodeJsonEditor.vue'
+import XNodeMigrationFinalization from './XNodeMigrationFinalization.vue'
 import { useXNodeMigration } from './useXNodeMigration'
 
 const props = defineProps<{ nodes: XNode[] }>()
@@ -31,6 +32,8 @@ const columns = computed<TableColumn<Checkpoint>[]>(() => [
 ])
 function importSnapshot(): void { void migration.run(() => xnodeApi.importMigration(digest.value)) }
 function moveNode(id: string, action: 'cutover' | 'rollback'): void { void migration.run(() => xnodeApi.migrateNode(id, action)) }
+function stageFinal(reference: string): void { void migration.run(() => xnodeApi.stageFinalMigration(reference)) }
+function finalize(digest: string): void { void migration.run(() => xnodeApi.finalizeMigration(digest)) }
 </script>
 
 <template>
@@ -62,10 +65,11 @@ function moveNode(id: string, action: 'cutover' | 'rollback'): void { void migra
         <UTable :data="migration.state.value.nodes" :columns="columns" class="w-full">
           <template #nodeId-cell="{ row }"><span>{{ names.get(row.original.nodeId) ?? row.original.nodeId }}</span><p v-if="row.original.errorCode" class="text-xs text-muted">{{ t('xnodeMigration.recoveryPending') }}</p></template>
           <template #phase-cell="{ row }"><UBadge color="neutral" variant="subtle">{{ t(`xnodeMigration.phases.${row.original.phase}`) }}</UBadge></template>
-          <template #actions-cell="{ row }"><div class="flex gap-2"><UButton v-if="['legacy', 'preparing'].includes(row.original.phase)" size="sm" :label="t('xnodeMigration.cutover')" :disabled="migration.busy.value" @click="moveNode(row.original.nodeId, 'cutover')" /><UButton v-if="row.original.phase !== 'legacy'" size="sm" color="neutral" variant="outline" :label="t('xnodeMigration.rollback')" :disabled="migration.busy.value" @click="moveNode(row.original.nodeId, 'rollback')" /></div></template>
+          <template #actions-cell="{ row }"><div v-if="migration.state.value?.phase === 'active'" class="flex gap-2"><UButton v-if="['legacy', 'preparing'].includes(row.original.phase)" size="sm" :label="t('xnodeMigration.cutover')" :disabled="migration.busy.value" @click="moveNode(row.original.nodeId, 'cutover')" /><UButton v-if="row.original.phase !== 'legacy'" size="sm" color="neutral" variant="outline" :label="t('xnodeMigration.rollback')" :disabled="migration.busy.value" @click="moveNode(row.original.nodeId, 'rollback')" /></div></template>
         </UTable>
       </div>
       <p v-if="migration.state.value?.nodes.length" class="text-xs text-muted">{{ t('xnodeMigration.signedAgent') }}</p>
+      <XNodeMigrationFinalization v-if="migration.state.value" :state="migration.state.value" :busy="migration.busy.value" @stage="stageFinal" @finalize="finalize" />
     </AdminSectionState>
   </div>
 </template>

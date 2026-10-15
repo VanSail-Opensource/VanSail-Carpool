@@ -143,3 +143,4 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `xnode_usage.go`: Entry points: `NodeUsage`.
 
 - `xnode_compensation.go` merges provider ownership and qualifies inbound identities for node compensation.
+- `xnode_final_source.go` provides queued final source inventory and a bounded provisioning fence for bridge completion. The shared fence serializes finalization with entitlement and account writes.

@@ -1,5 +1,10 @@
 # Path item shards
 
+`api-v1-admin-xnode-migration-final-export.yaml` queues final source accounting
+reconciliation with an operator backup reference.
+`api-v1-admin-xnode-migration-finalize.yaml` queues digest-checked completion
+after a final source counter and credential check.
+
 `api-v1-browser-config.yaml` serves `/api/v1/browser/config`.
 `api-v1-browser-session.yaml`, `api-v1-browser-exchange.yaml`,
 `api-v1-browser-renew.yaml`, and `api-v1-browser-logout.yaml` serve the scoped

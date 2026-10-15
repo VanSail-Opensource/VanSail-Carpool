@@ -309,6 +309,7 @@ declare module 'vue' {
     XNodeJsonEditor: typeof import('./src/components/admin/xnode/XNodeJsonEditor.vue')['default']
     XNodeMetrics: typeof import('./src/components/admin/xnode/XNodeMetrics.vue')['default']
     XNodeMigration: typeof import('./src/components/admin/xnode/XNodeMigration.vue')['default']
+    XNodeMigrationFinalization: typeof import('./src/components/admin/xnode/XNodeMigrationFinalization.vue')['default']
     XNodeNodes: typeof import('./src/components/admin/xnode/XNodeNodes.vue')['default']
     XNodeOperationalSettings: typeof import('./src/components/admin/xnode/XNodeOperationalSettings.vue')['default']
     XNodeWorkspace: typeof import('./src/components/admin/xnode/XNodeWorkspace.vue')['default']

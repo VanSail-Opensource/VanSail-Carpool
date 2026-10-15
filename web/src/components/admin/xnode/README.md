@@ -21,3 +21,4 @@ Mbps; backend byte accounting retains exact integers.
 
 - `XNodeMigration.vue` provides the source preview/import and per-node handover/rollback workflow.
 - `useXNodeMigration.ts` loads migration state, protects stale requests and tracks durable operation receipts.
+- `XNodeMigrationFinalization.vue` collects the final source backup reference and exposes staged export and verified bridge completion through operation receipts.

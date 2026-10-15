@@ -29,6 +29,12 @@ type Remote interface {
 	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (UsageSnapshot, error)
 }
 
+// PeriodRemote lets providers settle an older purchase while its successor is
+// already serving. Legacy providers keep the original account-wide operation.
+type PeriodRemote interface {
+	QuiesceRolloverPeriod(context.Context, string, time.Time, time.Time) error
+}
+
 type DailyUsage struct {
 	Date  time.Time
 	Bytes int64
@@ -91,7 +97,13 @@ func (s *Service) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "local_identity_missing")
 	}
 	if rollover.Status == "pending" {
-		if err := s.remote.QuiesceForRollover(ctx, *user.RemnaUserID); err != nil {
+		var err error
+		if remote, ok := s.remote.(PeriodRemote); ok {
+			err = remote.QuiesceRolloverPeriod(ctx, *user.RemnaUserID, purchase.ValidFrom, purchase.ValidUntil)
+		} else {
+			err = s.remote.QuiesceForRollover(ctx, *user.RemnaUserID)
+		}
+		if err != nil {
 			if errors.Is(err, ErrRemoteUserMissing) {
 				return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "remnawave_user_missing")
 			}

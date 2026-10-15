@@ -42,6 +42,11 @@ func (a proxyProvider) resetBridge(ctx context.Context, identity xnode.Identity)
 	if err := a.remnaAdapter.ResetTraffic(ctx, identity.LegacyUserID); err != nil {
 		return err
 	}
+	// Open the new native period before importing the source's new reset anchor.
+	// Otherwise subsequent source deltas remain attributed to the old period.
+	if err := a.native.ResetTraffic(ctx, id); err != nil {
+		return err
+	}
 	if err := a.reconcileBridgeUsage(ctx, identity); err != nil {
 		return err
 	}

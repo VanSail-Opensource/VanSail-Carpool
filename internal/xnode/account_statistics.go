@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"math/big"
 	"strconv"
 	"time"
@@ -106,51 +105,6 @@ func (s *Service) Statistics(ctx context.Context, id string) (model.Statistics, 
 	}
 	link, err := s.SubscriptionURL(identity)
 	return result, link, err
-}
-func (s *Service) UsageSnapshotForRollover(ctx context.Context, id string, start, end time.Time) (rollover.UsageSnapshot, error) {
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return rollover.UsageSnapshot{}, err
-	}
-	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)
-	if err != nil {
-		return rollover.UsageSnapshot{}, err
-	}
-	result := rollover.UsageSnapshot{NodeSeriesAvailable: true, Daily: []rollover.DailyUsage{}}
-	eligible := map[string]bool{}
-	for _, period := range periods {
-		if period.StartedAt.Before(start) || !period.StartedAt.Before(end) {
-			continue
-		}
-		if period.Status == "closing" || period.Status == "review" {
-			return result, ErrUnavailable
-		}
-		eligible[period.ID] = true
-		result.LimitBytes = period.LimitBytes
-		result.Strategy = period.Strategy
-		result.LastResetAt = period.LastResetAt
-		used := period.UsedBytes
-		result.CurrentUsedBytes = &used
-	}
-	usage, err := s.repo.XNodeUsage(ctx, identity.ProxyUserID, start, end)
-	if err != nil {
-		return result, err
-	}
-	daily := map[string]int64{}
-	for _, sample := range usage {
-		if eligible[sample.PeriodID] {
-			daily[sample.Date] += sample.WeightedBytes
-			result.WeightedUsedBytes += sample.WeightedBytes
-		}
-	}
-	for key, bytes := range daily {
-		date, err := time.Parse(time.DateOnly, key)
-		if err != nil {
-			return result, err
-		}
-		result.Daily = append(result.Daily, rollover.DailyUsage{Date: date, Bytes: bytes})
-	}
-	return result, nil
 }
 func (s *Service) Usage(ctx context.Context, id string, start, end time.Time) ([]DailyUsage, error) {
 	identity, err := s.Identity(ctx, id)

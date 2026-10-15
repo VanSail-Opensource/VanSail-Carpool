@@ -39,5 +39,7 @@ export const xnodeApi = {
   migration: () => request<XNodeMigration>(`${root}/migration`, { cache: 'no-store' }),
   previewMigration: (body: XNodeMigrationPreviewWrite) => request<XNodeMigrationPreview>(`${root}/migration/preview`, { method: 'POST', body, cache: 'no-store' }),
   importMigration: (digest: string) => request<Schema['OperationReceipt']>(`${root}/migration/import`, { method: 'POST', body: { digest }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
+  stageFinalMigration: (sourceBackupReference: string) => request<Schema['OperationReceipt']>(`${root}/migration/final-export`, { method: 'POST', body: { sourceBackupReference }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
+  finalizeMigration: (digest: string) => request<Schema['OperationReceipt']>(`${root}/migration/finalize`, { method: 'POST', body: { digest }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
   migrateNode: (id: string, action: 'cutover' | 'rollback') => request<Schema['OperationReceipt']>(`${root}/migration/nodes/${encodeURIComponent(id)}/${action}`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
 }

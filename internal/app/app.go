@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
@@ -98,7 +99,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	legacy.sourceConfig = migrationCredentials(store, settings, vault)
 	xnodeService := xnode.NewService(store, settings, vault, cfg.PublicBaseURL, upstreams.xnodeValidation)
 	xnodeMaster := xnode.NewMaster(xnodeService, logger)
-	remna := proxyProvider{remnaAdapter: legacy, native: xnodeService, master: xnodeMaster, store: store}
+	remna := proxyProvider{remnaAdapter: legacy, native: xnodeService, master: xnodeMaster, store: store, bridgeGate: new(sync.RWMutex)}
 	xnodeService.SetLegacyProxies(remna.legacyProxies)
 	xnodeService.SetLegacySync(remna.syncBridgeAccounts)
 	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: remna}, connectivity.NewXrayProbe(), store, upstreams.connectivity)

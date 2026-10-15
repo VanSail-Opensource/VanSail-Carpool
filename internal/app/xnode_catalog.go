@@ -7,6 +7,8 @@ import (
 )
 
 func (a proxyProvider) Dashboard(ctx context.Context, id string) (catalog.RemoteDashboard, error) {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return catalog.RemoteDashboard{}, err

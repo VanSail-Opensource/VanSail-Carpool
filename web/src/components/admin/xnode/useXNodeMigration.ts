@@ -18,24 +18,26 @@ export function useXNodeMigration() {
     const current = ++generation
     loading.value = true
     try { const value = await xnodeApi.migration(); if (active && current === generation) { state.value = value; error.value = null } }
-    catch (caught) { if (active && current === generation) error.value = localizedError(caught, 'xnode.migration.loadFailed') }
+    catch (caught) { if (active && current === generation) error.value = localizedError(caught, 'xnodeMigration.loadFailed') }
     finally { if (active && current === generation) loading.value = false }
   }
   async function capture(input: XNodeMigrationPreviewWrite): Promise<boolean> {
     if (busy.value) return false
+    operation.reset()
     saving.value = true; error.value = null
     try {
       const value = await xnodeApi.previewMigration(input)
       if (!active) return false
       preview.value = value; await load(); return true
-    } catch (caught) { if (active) error.value = localizedError(caught, 'xnode.migration.actionFailed'); return false }
+    } catch (caught) { if (active) error.value = localizedError(caught, 'xnodeMigration.actionFailed'); return false }
     finally { if (active) saving.value = false }
   }
   async function run(action: () => Promise<OperationReceipt>): Promise<void> {
     if (busy.value) return
+    operation.reset()
     saving.value = true; error.value = null
     try { const value = await action(); if (active) operation.track(value) }
-    catch (caught) { if (active) error.value = localizedError(caught, 'xnode.migration.actionFailed') }
+    catch (caught) { if (active) error.value = localizedError(caught, 'xnodeMigration.actionFailed') }
     finally { if (active) saving.value = false }
   }
   watch(operation.terminal, value => { if (value) void load() })

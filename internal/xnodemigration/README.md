@@ -39,3 +39,16 @@ complete; initial import does not imply financial settlement.
 - `cutover_test.go`: Covers preflight, interrupted handovers and resumed rollback.
 
 - `history_test.go` covers complete source series reconciliation and fixed-point multiplier conversion.
+
+`finalization.go` stages a fresh encrypted final export after every source node
+is disabled. `final_accounts.go` reconciles linked identities and complete daily
+history, then rejects missing accounts, changed credentials or changed source
+counters at finalization. The supplied source backup reference is an operator
+attestation; the panel also creates and verifies its own backup. History export
+does not lock provisioning. A final queued source read holds a bounded shared
+provisioning fence before the migration phase changes atomically to `complete`.
+Newly linked accounts or counter changes require another export. Existing native
+listeners and traffic processing continue. Per-node rollback is available while
+the bridge is active; after finalization, restoring source ownership requires a
+new explicitly planned migration. `finalization_test.go` covers these gates and
+interrupted finalization. No source database or proxy credential is deleted.

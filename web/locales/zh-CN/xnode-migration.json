@@ -1,5 +1,12 @@
 {
   "xnodeMigration": {
+    "finalTitle": "最终流量核对",
+    "finalHint": "停用全部源节点后，导出完整源流量历史并核对关联账号。检查导出结果后再完成迁移；源流量变化时需要重新导出。完成迁移将关闭旧系统的开通桥接。",
+    "finalSourceBackup": "已验证的最终源备份记录",
+    "finalExport": "导出最终源流量",
+    "finalize": "完成迁移",
+    "finalSnapshot": "最终快照：{digest} · 源备份：{reference}",
+    "completed": "迁移已完成，新服务由 X-Node 开通，源凭据和流量历史继续归档保留。",
     "title": "迁移",
     "loadFailed": "无法加载迁移状态。",
     "actionFailed": "迁移操作未完成，请检查节点状态后重试。",

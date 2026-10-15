@@ -80,6 +80,9 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 			if err != nil {
 				return xnodemigration.Account{}, err
 			}
+			if remote == nil || remote.ID != id {
+				return xnodemigration.Account{}, xnode.ErrConflict
+			}
 			item := xnodemigration.Account{LegacyID: id, Username: remote.Username, Disabled: remote.Status == remnawave.UserStatusDisabled}
 			if panelUser.Username == nil || *panelUser.Username != remote.Username || remote.TelegramID == nil || *remote.TelegramID != panelUser.TelegramID {
 				return item, nil

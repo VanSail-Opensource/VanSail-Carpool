@@ -98,6 +98,10 @@ type MigrationState struct {
 	SnapshotDigest        string          `json:"snapshotDigest"`
 	SourceBackupReference string          `json:"sourceBackupReference"`
 	BackupName            string          `json:"backupName"`
+	FinalSnapshotCipher   string          `json:"-"`
+	FinalDigest           string          `json:"finalDigest"`
+	FinalBackupReference  string          `json:"finalBackupReference"`
+	FinalizedAt           *time.Time      `json:"finalizedAt"`
 	Nodes                 []MigrationNode `json:"nodes"`
 }
 type MigrationNode struct {

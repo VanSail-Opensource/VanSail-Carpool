@@ -4,6 +4,10 @@
 references plus period accounting, immutable report cursors, rate boundaries and
 resumable migration metadata. Runtime connection observations remain in memory.
 
+`076_xnode_final_accounting.sql` retains the encrypted final source export,
+its digest, operator backup reference and completion timestamp. This evidence
+is required before shutting down the migration provisioning bridge.
+
 `073_browser_admin_sessions.sql` preserves all legacy sessions as Mini App scope,
 replaces the global per-user unique index with a partial Mini App-only index,
 adds renewal timestamps, and creates hashed one-use browser handoff references.

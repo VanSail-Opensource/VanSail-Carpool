@@ -6,6 +6,9 @@ report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
 counter ownership, sequence gaps and fixed-point multiplier carry in hosted CI.
 Live connections, rates, IP observations and logs have no storage interface.
 
+`xnode_final_accounting_test.go` verifies persistence of staged encrypted exports
+and final completion evidence without losing the original migration archive.
+
 `vansail_migration_test.go` covers seeded-brand conversion, preservation of
 custom documents/revisions and live browser devices/handoffs, and removal of
 retired browser-login credentials in hosted CI.

@@ -124,3 +124,4 @@ Hosted cases cover port parsing, report freshness and invalid observations.
 - `tag_ownership_test.go` covers ambiguous hyphen namespaces across active and expired members.
 
 - `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.
+- `rollover_usage.go` selects purchase-owned accounting periods and combines native and imported source history. `rollover_usage_test.go` covers successor isolation, pending journals, exclusive date boundaries and overflow rejection.

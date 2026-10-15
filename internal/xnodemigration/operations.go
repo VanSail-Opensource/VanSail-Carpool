@@ -10,15 +10,17 @@ import (
 	payload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	"strings"
 	"time"
 )
 
 const OperationKind = "xnode_migration"
 
 type OperationRequest struct {
-	Action string `json:"action"`
-	NodeID string `json:"nodeId,omitempty"`
-	Digest string `json:"digest,omitempty"`
+	Action                string `json:"action"`
+	NodeID                string `json:"nodeId,omitempty"`
+	Digest                string `json:"digest,omitempty"`
+	SourceBackupReference string `json:"sourceBackupReference,omitempty"`
 }
 type operationRepository interface {
 	CreateProviderOperation(context.Context, providerops.CreateInput, time.Time) (providerops.Operation, bool, error)
@@ -30,12 +32,20 @@ type operationRepository interface {
 func validRequest(request OperationRequest) bool {
 	switch request.Action {
 	case "import":
-		return request.NodeID == "" && len(request.Digest) == 64
+		return request.NodeID == "" && validDigest(request.Digest) && request.SourceBackupReference == ""
+	case "stage-final":
+		return request.NodeID == "" && request.Digest == "" && strings.TrimSpace(request.SourceBackupReference) != "" && len(request.SourceBackupReference) <= 512
+	case "finalize":
+		return request.NodeID == "" && validDigest(request.Digest) && request.SourceBackupReference == ""
 	case "cutover", "rollback":
-		return request.Digest == "" && request.NodeID != "" && len(request.NodeID) <= 128
+		return request.Digest == "" && request.NodeID != "" && len(request.NodeID) <= 128 && request.SourceBackupReference == ""
 	default:
 		return false
 	}
+}
+func validDigest(value string) bool {
+	decoded, err := hex.DecodeString(value)
+	return err == nil && len(decoded) == sha256.Size && value == strings.ToLower(value)
 }
 func (s *Service) Queue(ctx context.Context, actor, key string, request OperationRequest) (model.OperationReceipt, error) {
 	repo, ok := s.repo.(operationRepository)
@@ -57,6 +67,9 @@ func (s *Service) Queue(ctx context.Context, actor, key string, request Operatio
 	id := request.NodeID
 	if id == "" {
 		id = request.Digest
+	}
+	if id == "" {
+		id = request.Action
 	}
 	op, _, err := repo.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor, Kind: OperationKind, IdempotencyKey: key, RequestFingerprint: hex.EncodeToString(digest[:]), SealedTarget: sealed, Items: []providerops.ItemInput{{Key: id, TargetType: "xnode_migration", TargetID: id}}}, s.panel.Now())
 	return op.Receipt, err
@@ -98,6 +111,10 @@ func (s *Service) runOperation(ctx context.Context, operation providerops.Operat
 		_, err = s.Cutover(ctx, request.NodeID)
 	case "rollback":
 		_, err = s.Rollback(ctx, request.NodeID)
+	case "stage-final":
+		_, err = s.StageFinal(ctx, request.SourceBackupReference)
+	case "finalize":
+		_, err = s.Finalize(ctx, request.Digest)
 	}
 	completion := providerops.Completion{Status: providerops.StatusSucceeded}
 	if err != nil {

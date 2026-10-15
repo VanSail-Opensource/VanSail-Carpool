@@ -11,6 +11,8 @@ import (
 )
 
 func (a proxyProvider) ApplyEntitlement(ctx context.Context, id string, limit int64, strategy string, groups []string, until time.Time) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return err
@@ -27,6 +29,8 @@ func (a proxyProvider) ApplyEntitlement(ctx context.Context, id string, limit in
 	return nil
 }
 func (a proxyProvider) RemoveEntitlement(ctx context.Context, id string) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return err
@@ -44,6 +48,8 @@ func (a proxyProvider) RemoveEntitlement(ctx context.Context, id string) error {
 	return a.remnaAdapter.RemoveEntitlement(ctx, identity.LegacyUserID)
 }
 func (a proxyProvider) ResetTraffic(ctx context.Context, id string) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return err
@@ -73,6 +79,19 @@ func (a proxyProvider) QuiesceForRollover(ctx context.Context, id string) error 
 		return err
 	}
 	return a.native.Quiesce(ctx, id)
+}
+func (a proxyProvider) QuiesceRolloverPeriod(ctx context.Context, id string, start, end time.Time) error {
+	identity, native, err := a.nativeIdentity(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !native {
+		return a.remnaAdapter.QuiesceForRollover(ctx, id)
+	}
+	if err = a.requireBridgeSettlement(ctx, identity); err != nil {
+		return err
+	}
+	return a.native.QuiesceRolloverPeriod(ctx, id, start, end)
 }
 func (a proxyProvider) UsageSnapshotForRollover(ctx context.Context, id string, start, end time.Time) (rollover.UsageSnapshot, error) {
 	identity, native, err := a.nativeIdentity(ctx, id)
@@ -110,6 +129,8 @@ func (a proxyProvider) QuiesceMemberOperation(ctx context.Context, id string) er
 	return a.QuiesceForRollover(ctx, id)
 }
 func (a proxyProvider) RestoreMemberOperation(ctx context.Context, id string, purchase model.Purchase) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return err
@@ -126,6 +147,8 @@ func (a proxyProvider) DefinitiveMutationFailure(err error) bool {
 	return errors.Is(err, xnode.ErrInvalid) || errors.Is(err, xnode.ErrConflict)
 }
 func (a proxyProvider) SetAdminUserDisabled(ctx context.Context, id string, disabled bool) error {
+	unlock := a.lockBridgeRead()
+	defer unlock()
 	identity, native, err := a.nativeIdentity(ctx, id)
 	if err != nil {
 		return err
