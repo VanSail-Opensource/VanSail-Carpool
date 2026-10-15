@@ -4,8 +4,8 @@ UPDATE outbox_jobs SET status='failed',last_error='FEATURE_RETIRED',updated_at=s
 
 -- Only acknowledged temporary bans have proven mutation ownership. One bounded
 -- compatibility job releases each user's retired restriction without resetting quota.
-INSERT INTO outbox_jobs(id,kind,aggregate_id,payload,status,available_at,created_at,updated_at)
-SELECT 'detector-retirement:'||ban.user_id,'proxy_restriction_release',ban.user_id,
+INSERT INTO outbox_jobs(id,kind,payload,status,available_at,created_at,updated_at)
+SELECT 'detector-retirement:'||ban.user_id,'proxy_restriction_release',
  json_object('userId',ban.user_id),'pending',strftime('%Y-%m-%dT%H:%M:%fZ','now'),
  strftime('%Y-%m-%dT%H:%M:%fZ','now'),strftime('%Y-%m-%dT%H:%M:%fZ','now')
 FROM abuse_temp_bans ban JOIN abuse_records record ON record.id=ban.record_id

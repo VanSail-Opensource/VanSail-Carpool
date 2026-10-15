@@ -36,7 +36,7 @@ func TestRetireDetectorUpgradePreservesHistoryAndManualRestrictions(t *testing.T
 		t.Fatal(err)
 	}
 	for _, kind := range []string{"abuse_punishment", "abuse_restore", "abuse_notification"} {
-		if _, err := store.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,aggregate_id,payload,status,available_at,created_at,updated_at) VALUES(?,?,?,'{}','pending',?,?,?)`, kind, kind, user.ID, stamp(now), stamp(now), stamp(now)); err != nil {
+		if _, err := store.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,available_at,created_at,updated_at) VALUES(?,?,'{}','pending',?,?,?)`, kind, kind, stamp(now), stamp(now), stamp(now)); err != nil {
 			t.Fatal(err)
 		}
 	}
