@@ -81,6 +81,7 @@ type Preview struct {
 	Issues    []Issue `json:"issues"`
 }
 type Source interface {
+	EndpointTopology(context.Context, SourceConfig) (Snapshot, error)
 	Capture(context.Context, SourceConfig, []model.User, []MonitoringMapping) (Snapshot, error)
 	SetNodeDisabled(context.Context, SourceConfig, string, bool) error
 	SyncUsage(context.Context, SourceConfig, []model.User) error

@@ -25,6 +25,9 @@ func (s *Service) VerifyClientEndpoints(ctx context.Context, node string) error 
 		if endpoint.NodeID != node || !endpoint.Enabled {
 			continue
 		}
+		if _, err := filterEndpointGroups(nil, endpoint.Overrides); err != nil {
+			return err
+		}
 		proxy, err := s.endpointProxy(ctx, identity, endpoint)
 		if err != nil {
 			return err

@@ -33,11 +33,12 @@ type StatsDigest struct {
 
 // Host is the identity, remark, and linked-node subset used by remark upkeep.
 type Host struct {
-	UUID                   string   `json:"uuid"`
-	Remark                 string   `json:"remark"`
-	Nodes                  []string `json:"nodes"`
-	IsDisabled             bool     `json:"isDisabled"`
-	ExcludedInternalSquads []string `json:"excludedInternalSquads"`
+	UUID                   string      `json:"uuid"`
+	Remark                 string      `json:"remark"`
+	Nodes                  []string    `json:"nodes"`
+	IsDisabled             bool        `json:"isDisabled"`
+	ExcludedInternalSquads []string    `json:"excludedInternalSquads"`
+	InternalSquads         *HostSquads `json:"internalSquads,omitempty"`
 	Inbound                struct {
 		ConfigProfileUUID        *string `json:"configProfileUuid"`
 		ConfigProfileInboundUUID *string `json:"configProfileInboundUuid"`

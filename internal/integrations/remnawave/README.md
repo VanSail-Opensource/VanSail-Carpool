@@ -34,3 +34,5 @@ This package implements the Remnawave v3.3.0 operations used by VanSail Carpool.
   Profile export uses the documented `computed-config` endpoint, preserving
   effective snippet expansions instead of passing source placeholders to Xray.
 - `migration_test.go` verifies computed-profile requests and rejects mismatched source profile identities.
+
+`host_access.go` and `host_access_test.go` support older excluded-squad lists and the newer nested `internalSquads: {mode, squads}` contract, including allow-only restrictions and inbound-derived node relations. Unknown modes deny access. Reference: official remnawave/backend@010b365ab1fabea01192b5e6ade4e98e66ee1dbd `libs/contract/models/hosts.schema.ts` and host repository subscription selection.

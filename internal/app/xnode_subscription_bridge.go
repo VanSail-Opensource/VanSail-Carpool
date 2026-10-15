@@ -99,13 +99,17 @@ func (a proxyProvider) legacyProxies(ctx context.Context, identity xnode.Identit
 			}
 			legacyHost := byHost[host.Metadata.UUID]
 			legacyNode := ""
-			for _, node := range legacyHost.Nodes {
+			if legacyHost.Inbound.ConfigProfileInboundUUID == nil {
+				legacyHost.Inbound.ConfigProfileInboundUUID = &host.Metadata.ConfigProfileInboundUUID
+			}
+			hostNodes := legacyHost.HostNodeIDs(nodes)
+			for _, node := range hostNodes {
 				if ownership[node] != "native" {
 					legacyNode = node
 					break
 				}
 			}
-			if legacyNode == "" && len(legacyHost.Nodes) > 0 {
+			if legacyNode == "" && len(hostNodes) > 0 {
 				continue
 			}
 			if check := raw.ConvertedUserInfo.HWIDCheckup; check != nil && !check.SubscriptionAllowed {

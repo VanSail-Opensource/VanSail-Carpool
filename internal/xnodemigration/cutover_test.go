@@ -50,6 +50,10 @@ type cutoverSource struct {
 	events     *[]string
 }
 
+func (*cutoverSource) EndpointTopology(context.Context, SourceConfig) (Snapshot, error) {
+	return Snapshot{}, nil
+}
+
 func (*cutoverSource) NodeAccounts(context.Context, SourceConfig, string) ([]Account, error) {
 	return nil, nil
 }

@@ -60,3 +60,7 @@ listeners and traffic processing continue. Per-node rollback is available while
 the bridge is active; after finalization, restoring source ownership requires a
 new explicitly planned migration. `finalization_test.go` covers these gates and
 interrupted finalization. No source database or proxy credential is deleted.
+
+`host_bindings.go` resolves hosts with empty node lists through their active inbound bindings. `host_bindings_test.go` verifies resumable import and encrypted ACL preservation. `shared_hosts.go` checks fresh source topology before any disable attempt. Shared SS-2022 addresses require isolated host/DNS bindings while legacy peers remain, because native per-user keys differ. Separate records sharing one address/port and unknown explicit peers receive the same protection. `shared_hosts_test.go` covers these gates, compatible chacha20 hosts, preview warnings and last-peer completion. Operators manage their DNS records explicitly.
+
+For a shared SS-2022 correction, edit both source hosts and imported native endpoints to use matching isolated node DNS addresses. Import resumption preserves those administrator edits. Source topology is read again at handover, so an old preview cannot bypass the check. Shared addresses that rely on undeclared external load balancers still require an operator review of their real routing.

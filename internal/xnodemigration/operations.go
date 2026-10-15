@@ -122,6 +122,9 @@ func (s *Service) runOperation(ctx context.Context, operation providerops.Operat
 		if errors.Is(err, xnode.ErrInvalid) || errors.Is(err, xnode.ErrConflict) {
 			completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_MIGRATION_INPUT_INVALID"
 		}
+		if errors.Is(err, ErrSharedEndpoint) {
+			completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_SHARED_ENDPOINT"
+		}
 	}
 	// Receipts contain ownership only, never live node telemetry.
 	result, err := json.Marshal(map[string]string{"action": request.Action, "nodeId": request.NodeID})

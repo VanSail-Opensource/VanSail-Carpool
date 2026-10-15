@@ -112,7 +112,7 @@ func (s *Service) endpointProxy(ctx context.Context, identity Identity, endpoint
 	}
 	// Endpoint overrides are administrator-owned client transport/security fields.
 	for key, value := range overrides {
-		if key == "legacyHost" || key == "excludedGroups" || key == "securityOptions" || key == "transportOptions" {
+		if key == "legacyHost" || key == "excludedGroups" || key == "allowedGroups" || key == "securityOptions" || key == "transportOptions" {
 			continue
 		}
 		if key != "streamSettings" && key != "account" {

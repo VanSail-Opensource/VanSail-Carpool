@@ -30,6 +30,7 @@
       "review": "Recovery pending"
     },
     "issues": {
+      "SHARED_SS2022_HOST": "Shared SS-2022 hosts cannot mix legacy and new user keys. Give source hosts and imported endpoints matching node-specific DNS addresses before handover.",
       "UNSUPPORTED_UTILITY_INBOUND": "Convert the utility listeners listed in MigrationReview before handover, then remove that review marker from the imported base configuration.",
       "UNMATCHED_IDENTITY": "Account does not match a linked panel identity.",
       "INVALID_CONFIGURATION": "Source Xray configuration is invalid.",

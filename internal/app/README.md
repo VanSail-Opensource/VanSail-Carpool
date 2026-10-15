@@ -152,3 +152,5 @@ cache and authoritative database.
 `retired_detector_legacy.go` performs the final manual-ban/paid-term recheck inside the existing serialized Remnawave queue. `retired_detector_legacy_test.go` covers a manual ban acquired during queue wait, paid-term preservation, disabled squads and registration-only refusal.
 
 The detector compatibility release reuses `xnode_bridge_policy.go` combined quota calculation inside its queued legacy write, so mixed-provider users retain one allowance. Legacy usage is reconciled first; the remaining source limit never restores a second full quota.
+
+`xnode_source_topology.go` reads current source configuration, hosts and inbound/node relationships through the existing Remnawave queue before cutover. Subscription bridging resolves hosts without explicit node metadata through active inbound bindings and stops advertising their legacy variant once all resolved nodes are native.

@@ -40,7 +40,7 @@ func (s *Service) importEndpoints(ctx context.Context, snapshot Snapshot, bindin
 		if json.Unmarshal(raw, &host) != nil || host.ID == "" || host.Inbound.ID == nil {
 			return xnode.ErrInvalid
 		}
-		for _, node := range host.Nodes {
+		for _, node := range hostBindingNodes(host.Nodes, *host.Inbound.ID, bindings) {
 			tag := bindings[node][*host.Inbound.ID]
 			if tag == "" {
 				continue
@@ -94,6 +94,7 @@ func (s *Service) importEndpoints(ctx context.Context, snapshot Snapshot, bindin
 			if err = s.repo.SaveXNodeEndpoint(ctx, xnode.Endpoint{ID: id, NodeID: node, InboundTag: tag, Name: host.Name, Address: host.Address, Port: host.Port, Enabled: !host.Disabled, Hidden: host.Hidden, OverridesCipher: cipher}); err != nil {
 				return err
 			}
+			ids[id] = true
 		}
 	}
 	return nil

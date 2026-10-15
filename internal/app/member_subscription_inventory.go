@@ -61,7 +61,7 @@ func projectMemberInventory(raws []json.RawMessage, active []remnawave.SquadSumm
 		}
 		squadUUIDs := []string{}
 		for _, squad := range result.Squads {
-			if squadInbounds[squad.UUID][resolved.Metadata.ConfigProfileInboundUUID] && !slices.Contains(metadata.ExcludedInternalSquads, squad.UUID) {
+			if squadInbounds[squad.UUID][resolved.Metadata.ConfigProfileInboundUUID] && metadata.AllowsSquad(squad.UUID) {
 				squadUUIDs = append(squadUUIDs, squad.UUID)
 			}
 		}
@@ -91,15 +91,12 @@ func projectMemberInventory(raws []json.RawMessage, active []remnawave.SquadSumm
 
 func memberHostCountries(host remnawave.Host, inbound string, nodes []remnawave.Node) []string {
 	countries := []string{}
+	if host.Inbound.ConfigProfileInboundUUID == nil {
+		host.Inbound.ConfigProfileInboundUUID = &inbound
+	}
+	relatedNodes := host.HostNodeIDs(nodes)
 	for _, node := range nodes {
-		related := slices.Contains(host.Nodes, node.UUID)
-		if len(host.Nodes) == 0 {
-			for _, active := range node.ConfigProfile.ActiveInbounds {
-				if active.UUID == inbound {
-					related = true
-				}
-			}
-		}
+		related := slices.Contains(relatedNodes, node.UUID)
 		country := strings.ToUpper(strings.TrimSpace(node.CountryCode))
 		if related && country != "" && !slices.Contains(countries, country) {
 			countries = append(countries, country)

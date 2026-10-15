@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"slices"
 )
@@ -85,15 +84,13 @@ func (s *Service) memberInventory(ctx context.Context, userID string) ([]subscri
 		if err != nil {
 			return nil, false, err
 		}
-		var options struct {
-			ExcludedGroups []string `json:"excludedGroups"`
-		}
-		if json.Unmarshal(endpoint.Overrides, &options) != nil {
-			return nil, false, ErrInvalid
-		}
 		proxy.GroupIDs = slices.DeleteFunc(proxy.GroupIDs, func(group string) bool {
-			return !slices.Contains(purchase.SquadUUIDs, group) || slices.Contains(disabled, group) || slices.Contains(options.ExcludedGroups, group)
+			return !slices.Contains(purchase.SquadUUIDs, group) || slices.Contains(disabled, group)
 		})
+		proxy.GroupIDs, err = filterEndpointGroups(proxy.GroupIDs, endpoint.Overrides)
+		if err != nil {
+			return nil, false, err
+		}
 		if len(proxy.GroupIDs) == 0 {
 			continue
 		}

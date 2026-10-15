@@ -77,3 +77,5 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 `APITokensAudit.vue`, `api-tokens-audit.ts` and `api-tokens-audit.html` provide constructed API credential creation, copy and revocation flows. Query flags: empty, slow, error, create-error, revoke-error, copy-error and zh. No real token is used.
 
 - `DetectorRetirementAudit.vue`, `detector-retirement-audit.ts`, and `detector-retirement-audit.html` exercise the retained browser navigation and affiliate profile at desktop/mobile sizes. Query flags `empty`, `slow`, `error`, `member`, and `zh` cover empty/loading/retry/localized states without detector resources.
+
+X-Node audit flags `source&shared` and `shared-error` exercise the localized shared SS-2022 preview warning and a refused handover that retains source ownership.

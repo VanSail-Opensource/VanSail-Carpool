@@ -37,6 +37,7 @@
       "review": "等待恢复"
     },
     "issues": {
+      "SHARED_SS2022_HOST": "共享 SS-2022 主机不能混用旧密钥与新用户密钥。切换前，请为源面板主机和已导入端点配置一致的节点独立 DNS 地址。",
       "UNSUPPORTED_UTILITY_INBOUND": "请先转换 MigrationReview 中列出的辅助监听配置，再从导入的基础配置中移除此检查标记，然后迁移节点。",
       "UNMATCHED_IDENTITY": "账号与已关联的面板身份不匹配。",
       "INVALID_CONFIGURATION": "源 Xray 配置无效。",

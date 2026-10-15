@@ -58,6 +58,21 @@ func (s *Service) Cutover(ctx context.Context, id string) (node xnode.MigrationN
 	if err != nil {
 		return node, err
 	}
+	topology, err := s.source.EndpointTopology(ctx, source)
+	if err != nil {
+		return node, err
+	}
+	native := map[string]bool{}
+	for _, peer := range state.Nodes {
+		native[peer.LegacyNodeID] = peer.Phase == "native"
+	}
+	issues, topologyErr := sharedSS2022Hosts(topology, node.LegacyNodeID, native)
+	if topologyErr != nil {
+		return node, topologyErr
+	}
+	if len(issues) > 0 {
+		return node, errors.Join(ErrSharedEndpoint, xnode.ErrConflict)
+	}
 	if err = s.verifyNodeAccounts(ctx, source, node.LegacyNodeID, candidate.Users); err != nil {
 		return node, err
 	}

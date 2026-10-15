@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"strings"
 )
@@ -102,9 +103,17 @@ func inspectSnapshot(snapshot Snapshot) Preview {
 			continue
 		}
 		id, _ := host["uuid"].(string)
+		var metadata remnawave.Host
+		if json.Unmarshal(raw, &metadata) != nil || !metadata.ValidSquadPolicy() {
+			result.Issues = append(result.Issues, Issue{ResourceID: id, Code: "INVALID_HOST", Blocking: true})
+		}
+
 		if host["xrayJsonTemplateUuid"] != nil {
 			result.Issues = append(result.Issues, Issue{ResourceID: id, Code: "CLIENT_TEMPLATE_REQUIRES_CONVERSION", Blocking: true})
 		}
+	}
+	if issues, err := sharedSS2022Hosts(snapshot, "", nil); err == nil {
+		result.Issues = append(result.Issues, issues...)
 	}
 	return result
 }

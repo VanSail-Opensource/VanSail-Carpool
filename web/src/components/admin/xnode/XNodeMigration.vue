@@ -13,6 +13,8 @@ import { useXNodeMigration } from './useXNodeMigration'
 const props = defineProps<{ nodes: XNode[] }>()
 const { t } = useI18n()
 const migration = useXNodeMigration()
+const handoverMessage = computed(() => migration.operation.receipt.value?.errorCode === 'XNODE_SHARED_ENDPOINT'
+  ? t('xnodeMigration.issues.SHARED_SS2022_HOST') : null)
 const draft = reactive({ url: '', token: '', sourceBackupReference: '' })
 const monitoring = shallowRef<unknown>([])
 const jsonValid = shallowRef(true)
@@ -39,7 +41,7 @@ function finalize(digest: string): void { void migration.run(() => xnodeApi.fina
 <template>
   <div class="migration-workspace">
     <header class="flex items-center justify-between gap-3"><h3>{{ t('xnodeMigration.title') }}</h3><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="migration.loading.value" @click="migration.load" /></header>
-    <OperationStatusNotice :receipt="migration.operation.receipt.value" :error="migration.error.value ?? migration.operation.error.value" :checking="migration.operation.checking.value" @refresh="migration.operation.refresh" />
+    <OperationStatusNotice :receipt="migration.operation.receipt.value" :message="handoverMessage" :error="migration.error.value ?? migration.operation.error.value" :checking="migration.operation.checking.value" @refresh="migration.operation.refresh" />
     <AdminSectionState :loading="migration.loading.value" :error="migration.state.value ? null : migration.error.value" @retry="migration.load">
       <p class="text-sm text-muted">{{ t('xnodeMigration.continuity') }}</p>
       <div v-if="canPreview" class="grid gap-4">
@@ -55,7 +57,7 @@ function finalize(digest: string): void { void migration.run(() => xnodeApi.fina
         <p class="text-xs break-all text-muted">{{ t('xnodeMigration.snapshot', { digest }) }}</p>
         <p v-if="migration.preview.value" class="text-sm">{{ t('xnodeMigration.counts', { nodes: migration.preview.value.nodes, groups: migration.preview.value.groups, accounts: migration.preview.value.accounts, endpoints: migration.preview.value.endpoints }) }}</p>
         <ul v-if="migration.preview.value?.issues.length" class="grid gap-2">
-          <li v-for="(issue, index) in migration.preview.value.issues" :key="index" class="flex flex-wrap gap-2 text-sm"><UBadge :color="issue.blocking ? 'warning' : 'neutral'" variant="subtle">{{ t(issue.blocking ? 'xnodeMigration.requiresCorrection' : 'xnodeMigration.review') }}</UBadge><span>{{ t(`xnodeMigration.issues.${issue.code}`) }}</span><code>{{ issue.resourceId }}</code></li>
+          <li v-for="(issue, index) in migration.preview.value.issues" :key="index" class="flex flex-wrap items-start gap-2 text-sm"><UBadge class="shrink-0" :color="issue.blocking ? 'warning' : 'neutral'" variant="subtle">{{ t(issue.blocking ? 'xnodeMigration.requiresCorrection' : 'xnodeMigration.review') }}</UBadge><span class="min-w-0 flex-1 basis-48">{{ t(`xnodeMigration.issues.${issue.code}`) }}</span><code class="max-w-full break-all">{{ issue.resourceId }}</code></li>
         </ul>
         <div v-if="['preview', 'importing'].includes(migration.state.value?.phase ?? '')"><UButton :label="t('xnodeMigration.import')" :disabled="migration.busy.value" :loading="migration.saving.value" @click="importSnapshot" /></div>
       </div>

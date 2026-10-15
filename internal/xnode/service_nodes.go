@@ -151,6 +151,9 @@ func (s *Service) SaveEndpoint(ctx context.Context, item Endpoint) (Endpoint, er
 	if json.Unmarshal(item.Overrides, &overrides) != nil {
 		return item, ErrInvalid
 	}
+	if _, err := filterEndpointGroups(nil, item.Overrides); err != nil {
+		return item, err
+	}
 	var err error
 	item.OverridesCipher, err = s.vault.Encrypt("xnode.endpoint."+item.ID, string(item.Overrides))
 	if err != nil {
