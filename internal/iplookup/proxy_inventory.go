@@ -119,8 +119,11 @@ func (s *EnhancedService) collectSourceWithLimit(ctx context.Context, source Pro
 	}
 	if err != nil {
 		r.Status, r.ErrorCode = "partial", ErrorCode(err)
-		if r.ErrorCode != "IP_PROXY_PARSE" && r.ErrorCode != "IP_PROXY_LIMIT" && r.ErrorCode != "IP_LOOKUP_FAILED" && r.ErrorCode != "IP_LOOKUP_UNAVAILABLE" {
-			r.Status, r.ErrorCode = "error", "IP_PROXY_DOWNLOAD"
+		if r.ErrorCode != "IP_PROXY_PARSE" && r.ErrorCode != "IP_PROXY_LIMIT" {
+			r.Status = "error"
+			if r.ErrorCode == "IP_LOOKUP_FAILED" {
+				r.ErrorCode = "IP_PROXY_DOWNLOAD"
+			}
 		}
 	} else if r.Status == "processing" {
 		r.Status = "success"
