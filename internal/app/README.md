@@ -150,3 +150,5 @@ cache and authoritative database.
 `retired_detector.go` registers one bounded, durable `proxy_restriction_release` compatibility job per acknowledged historical detector ban. It preserves manual restrictions and paid entitlement terms; all legacy mutations use the existing provider queue. `retired_detector_test.go` covers manual precedence, acknowledgement checks, replay and retry failures. `payment_profile_manager_test.go` retains localized payment-profile alert coverage.
 
 `retired_detector_legacy.go` performs the final manual-ban/paid-term recheck inside the existing serialized Remnawave queue. `retired_detector_legacy_test.go` covers a manual ban acquired during queue wait, paid-term preservation, disabled squads and registration-only refusal.
+
+The detector compatibility release reuses `xnode_bridge_policy.go` combined quota calculation inside its queued legacy write, so mixed-provider users retain one allowance. Legacy usage is reconciled first; the remaining source limit never restores a second full quota.

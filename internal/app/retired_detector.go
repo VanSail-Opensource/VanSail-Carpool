@@ -92,5 +92,18 @@ func (p proxyProvider) releaseRetiredDetector(ctx context.Context, user model.Us
 	if err != nil || !bridge || legacyID == "" {
 		return err
 	}
-	return releaseRetiredDetectorLegacy(ctx, p.remnaAdapter, p.store, user.ID, legacyID)
+	var desired func(context.Context) (*model.Purchase, error)
+	if identity.ProxyUserID > 0 {
+		if err = p.reconcileBridgeUsage(ctx, identity); err != nil {
+			return err
+		}
+		desired = func(callCtx context.Context) (*model.Purchase, error) {
+			usage, err := p.store.XNodeLegacyUsage(callCtx, identity.ProxyUserID)
+			if err != nil {
+				return nil, err
+			}
+			return p.bridgePurchase(callCtx, identity, usage.UsedBytes)
+		}
+	}
+	return releaseRetiredDetectorLegacy(ctx, p.remnaAdapter, p.store, user.ID, legacyID, desired)
 }

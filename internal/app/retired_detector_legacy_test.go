@@ -13,7 +13,7 @@ import (
 
 func TestRetiredDetectorLegacyReleaseRechecksQueuedManualBanAndPaidTerm(t *testing.T) {
 	t.Parallel()
-	for _, mode := range []string{"paid", "no paid access", "manual ban while queued"} {
+	for _, mode := range []string{"paid", "mixed provider remaining quota", "no paid access", "manual ban while queued"} {
 		t.Run(mode, func(t *testing.T) {
 			queue, err := upstreamqueue.New(upstreamqueue.Config{Name: "retired-detector", Capacity: 2})
 			if err != nil {
@@ -24,7 +24,7 @@ func TestRetiredDetectorLegacyReleaseRechecksQueuedManualBanAndPaidTerm(t *testi
 			}
 			defer func() { _ = queue.Shutdown(context.Background()) }()
 			repo := &detectorLegacyRepoStub{}
-			if mode == "paid" {
+			if mode == "paid" || mode == "mixed provider remaining quota" {
 				repo.purchase = &model.Purchase{TrafficLimitBytes: 123456, ResetStrategy: "MONTH_ROLLING", ValidUntil: time.Now().Add(time.Hour), SquadUUIDs: []string{"enabled", "disabled"}}
 			}
 			client := &entitlementUpdateClient{}
@@ -33,7 +33,17 @@ func TestRetiredDetectorLegacyReleaseRechecksQueuedManualBanAndPaidTerm(t *testi
 				repo.manual = mode == "manual ban while queued"
 				return client, nil
 			}}
-			if err := releaseRetiredDetectorLegacy(context.Background(), adapter, repo, "member", "7"); err != nil {
+			var desired func(context.Context) (*model.Purchase, error)
+			expectedLimit := int64(123456)
+			if mode == "mixed provider remaining quota" {
+				expectedLimit = 5904
+				desired = func(context.Context) (*model.Purchase, error) {
+					adjusted := *repo.purchase
+					adjusted.TrafficLimitBytes = 5904
+					return &adjusted, nil
+				}
+			}
+			if err := releaseRetiredDetectorLegacy(context.Background(), adapter, repo, "member", "7", desired); err != nil {
 				t.Fatal(err)
 			}
 			if repo.manual {
@@ -53,7 +63,7 @@ func TestRetiredDetectorLegacyReleaseRechecksQueuedManualBanAndPaidTerm(t *testi
 				if *got.Status != remnawave.UserStatusDisabled || *got.TrafficLimitBytes != 0 || len(*got.ActiveInternalSquads) != 0 {
 					t.Fatal("registration granted access")
 				}
-			} else if *got.Status != remnawave.UserStatusActive || *got.TrafficLimitBytes != 123456 || got.ExpireAt == nil || !got.ExpireAt.Equal(repo.purchase.ValidUntil) || got.TrafficLimitStrategy == nil || string(*got.TrafficLimitStrategy) != "MONTH_ROLLING" || len(*got.ActiveInternalSquads) != 1 || (*got.ActiveInternalSquads)[0] != "enabled" {
+			} else if *got.Status != remnawave.UserStatusActive || *got.TrafficLimitBytes != expectedLimit || got.ExpireAt == nil || !got.ExpireAt.Equal(repo.purchase.ValidUntil) || got.TrafficLimitStrategy == nil || string(*got.TrafficLimitStrategy) != "MONTH_ROLLING" || len(*got.ActiveInternalSquads) != 1 || (*got.ActiveInternalSquads)[0] != "enabled" {
 				t.Fatalf("paid term or preferences changed=%+v", got)
 			}
 		})

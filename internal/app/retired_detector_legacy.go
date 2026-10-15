@@ -15,7 +15,7 @@ type detectorLegacyRepository interface {
 	EnabledSquadsForRemote(context.Context, string, []string) ([]string, error)
 }
 
-func releaseRetiredDetectorLegacy(ctx context.Context, adapter remnaAdapter, repo detectorLegacyRepository, userID, legacyID string) error {
+func releaseRetiredDetectorLegacy(ctx context.Context, adapter remnaAdapter, repo detectorLegacyRepository, userID, legacyID string, desired func(context.Context) (*model.Purchase, error)) error {
 	id, err := remnaUserID(legacyID)
 	if err != nil {
 		return err
@@ -27,7 +27,12 @@ func releaseRetiredDetectorLegacy(ctx context.Context, adapter remnaAdapter, rep
 		if e != nil || manual != nil {
 			return e
 		}
-		purchase, e := repo.DesiredEntitlement(callCtx, userID, time.Now().UTC())
+		var purchase *model.Purchase
+		if desired != nil {
+			purchase, e = desired(callCtx)
+		} else {
+			purchase, e = repo.DesiredEntitlement(callCtx, userID, time.Now().UTC())
+		}
 		if e != nil {
 			return e
 		}
