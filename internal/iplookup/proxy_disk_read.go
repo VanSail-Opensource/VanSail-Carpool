@@ -93,7 +93,9 @@ func mergeDiskIndexes(ctx context.Context, previous, incoming *prefixIndex, limi
 	writer := &diskWriter{ctx: ctx, index: out, limit: limit}
 	for _, index := range []*prefixIndex{previous, incoming} {
 		var family, bits int
-		var network []byte
+		// Start before the first stored key with a BLOB sentinel. A nil slice
+		// binds as SQL NULL, and tuple comparisons against NULL never match.
+		network := []byte{}
 		for {
 			d.mu.Lock()
 			rows, e := d.db.QueryContext(ctx, "SELECT family,bits,network FROM prefixes WHERE gen=? AND (family,bits,network)>(?,?,?) ORDER BY family,bits,network LIMIT 256", index.disk.id, family, bits, network)
