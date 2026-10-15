@@ -105,30 +105,11 @@ func (s *Service) SaveGroup(ctx context.Context, group Group) (Group, error) {
 		if !wire.ValidName(binding.InboundTag) {
 			return group, ErrInvalid
 		}
-		node, err := s.repo.XNodeNode(ctx, binding.NodeID)
-		if err != nil {
+		if err := s.validateManagedBinding(ctx, binding.NodeID, binding.InboundTag); err != nil {
 			return group, err
-		}
-		profile, err := s.ResolveConfiguration(ctx, node.ConfigID)
-		if err != nil {
-			return group, err
-		}
-		var native struct {
-			Inbounds []struct {
-				Tag string `json:"tag"`
-			} `json:"inbounds"`
-		}
-		if json.Unmarshal(profile.Document, &native) != nil {
-			return group, ErrInvalid
-		}
-		exists := false
-		for _, inbound := range native.Inbounds {
-			if inbound.Tag == binding.InboundTag {
-				exists = true
-			}
 		}
 		key := binding.NodeID + ":" + binding.InboundTag
-		if !exists || seen[key] {
+		if seen[key] {
 			return group, ErrInvalid
 		}
 		seen[key] = true
@@ -153,7 +134,7 @@ func (s *Service) SaveEndpoint(ctx context.Context, item Endpoint) (Endpoint, er
 	if strings.TrimSpace(item.Name) == "" || item.Address == "" || strings.ContainsAny(item.Address, "\x00\r\n /?#@") || item.Port < 1 || item.Port > 65535 || !wire.ValidName(item.InboundTag) {
 		return item, ErrInvalid
 	}
-	if _, err := s.repo.XNodeNode(ctx, item.NodeID); err != nil {
+	if err := s.validateManagedBinding(ctx, item.NodeID, item.InboundTag); err != nil {
 		return item, err
 	}
 	if item.ID == "" {

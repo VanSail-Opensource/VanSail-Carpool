@@ -30,6 +30,7 @@
       "review": "Recovery pending"
     },
     "issues": {
+      "UNSUPPORTED_UTILITY_INBOUND": "Convert the utility listeners listed in MigrationReview before handover, then remove that review marker from the imported base configuration.",
       "UNMATCHED_IDENTITY": "Account does not match a linked panel identity.",
       "INVALID_CONFIGURATION": "Source Xray configuration is invalid.",
       "UNSUPPORTED_SHADOWSOCKS": "Change this Shadowsocks inbound to an allowed method before handover.",

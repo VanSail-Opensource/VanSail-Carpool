@@ -22,6 +22,28 @@ func TestRegistrationDoesNotAuthorizeProxyAccess(t *testing.T) {
 		t.Fatal("registration granted proxy access")
 	}
 }
+
+func TestUtilityListenersCannotBeAssignedToMembersOrSubscriptions(t *testing.T) {
+	f := controlFixture(t, true)
+	ctx := context.Background()
+	profile, err := f.service.ResolveConfiguration(ctx, f.node.ConfigID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var native map[string]any
+	_ = json.Unmarshal(profile.Document, &native)
+	native["inbounds"] = append(native["inbounds"].([]any), map[string]any{"tag": "utility", "protocol": "tunnel", "listen": "127.0.0.1", "port": 19090, "settings": map[string]any{"address": "127.0.0.1", "port": 8080, "network": "tcp"}})
+	profile.Document, _ = json.Marshal(native)
+	if _, err = f.service.SaveConfiguration(ctx, profile); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.service.SaveGroup(ctx, xnode.Group{Name: "Invalid", Enabled: true, Bindings: []xnode.GroupBinding{{NodeID: f.node.ID, InboundTag: "utility"}}}); !errors.Is(err, xnode.ErrInvalid) {
+		t.Fatalf("utility group accepted: %v", err)
+	}
+	if _, err = f.service.SaveEndpoint(ctx, xnode.Endpoint{Name: "Invalid", NodeID: f.node.ID, InboundTag: "utility", Address: "proxy.example", Port: 19090, Enabled: true}); !errors.Is(err, xnode.ErrInvalid) {
+		t.Fatalf("utility subscription endpoint accepted: %v", err)
+	}
+}
 func TestPaidAccountsOwnRoutingTagsAndMatchers(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()

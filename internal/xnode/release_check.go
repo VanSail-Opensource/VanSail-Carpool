@@ -50,6 +50,17 @@ func (s *Service) VerifyRelease(ctx context.Context, node string) (ReleaseEviden
 			return ReleaseEvidence{}, ErrUnavailable
 		}
 	}
+	item, err := s.repo.XNodeNode(ctx, node)
+	if err != nil {
+		return ReleaseEvidence{}, err
+	}
+	profile, err := s.ResolveConfiguration(ctx, item.ConfigID)
+	if err != nil {
+		return ReleaseEvidence{}, err
+	}
+	if err = configurationCapabilities(wire.Config{Xray: profile.Document}, hello.Capabilities); err != nil {
+		return ReleaseEvidence{}, err
+	}
 	return upstreamqueue.Do(ctx, s.validationQueue, func(ctx context.Context) (ReleaseEvidence, error) {
 		base := "https://github.com/VanSail-Opensource/X-Node/releases/download/" + hello.Version + "/"
 		manifest, err := releaseFile(ctx, base+"SHA256SUMS", 1<<20)

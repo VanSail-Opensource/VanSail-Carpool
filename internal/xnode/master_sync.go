@@ -58,16 +58,8 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if hello.UpgradePending {
 		return nil
 	}
-	if len(config.Users) > 0 || len(config.MemberOutbounds) > 0 {
-		supported := map[string]bool{}
-		for _, capability := range hello.Capabilities {
-			supported[capability] = true
-		}
-		for _, required := range []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"} {
-			if !supported[required] {
-				return ErrUnavailable
-			}
-		}
+	if err = configurationCapabilities(config, hello.Capabilities); err != nil {
+		return err
 	}
 	controls := map[int]bool{}
 	normalized := wire.Clone(config)

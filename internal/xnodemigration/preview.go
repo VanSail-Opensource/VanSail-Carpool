@@ -71,6 +71,10 @@ func inspectSnapshot(snapshot Snapshot) Preview {
 		inbounds, _ := native["inbounds"].([]any)
 		for _, raw := range inbounds {
 			inbound, _ := raw.(map[string]any)
+			protocol, _ := inbound["protocol"].(string)
+			if !sourceManagedProtocol(protocol) && protocol != "dokodemo-door" && protocol != "tunnel" {
+				result.Issues = append(result.Issues, Issue{ResourceID: profile.UUID, Code: "UNSUPPORTED_UTILITY_INBOUND", Blocking: true})
+			}
 			if inbound["protocol"] == "shadowsocks" {
 				settings, _ := inbound["settings"].(map[string]any)
 				method, _ := settings["method"].(string)

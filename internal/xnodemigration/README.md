@@ -29,6 +29,11 @@ complete; initial import does not imply financial settlement.
 - `types.go`: Defines source snapshots, mappings and dependency contracts.
 - `preview.go`: Captures encrypted previews and reports unsupported data.
 - `configuration.go`: Selects active inbounds, strips account lists and maps tags.
+  Native forwarding listeners remain present outside the managed active set.
+  Unsupported utility settings retain their secrets in the encrypted imported
+  base with a `MigrationReview` marker; activation stays blocked until an
+  administrator converts them and removes that marker. Inactive managed proxy
+  inbounds remain omitted, matching the source's listener selection.
 - `import.go`: Resumes configuration, group, account and endpoint import after backup.
 - `endpoints.go`: Preserves host relationships and client transport overrides.
 - `history.go`: Reconciles source node series with daily raw aggregates.
@@ -41,6 +46,7 @@ complete; initial import does not imply financial settlement.
 - `cutover_test.go`: Covers preflight, interrupted handovers and resumed rollback.
 
 - `history_test.go` covers complete source series reconciliation and fixed-point multiplier conversion.
+- `configuration_test.go` covers utility listener preservation, inactive managed inbounds, stable routing references and explicit review of unsupported service settings.
 
 `finalization.go` stages a fresh encrypted final export after every source node
 is disabled. `final_accounts.go` reconciles linked identities and complete daily

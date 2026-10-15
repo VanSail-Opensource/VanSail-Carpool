@@ -26,6 +26,9 @@ func NativeDocument(profileID string, document json.RawMessage, node Node) (json
 		active[tag] = binding.UUID
 	}
 	tags := map[string]string{}
+	renamed := map[string]string{}
+	found := map[string]bool{}
+	review := []string{}
 	selected := []any{}
 	for _, raw := range inbounds {
 		inbound, ok := raw.(map[string]any)
@@ -33,28 +36,54 @@ func NativeDocument(profileID string, document json.RawMessage, node Node) (json
 			return nil, nil, xnode.ErrInvalid
 		}
 		tag, _ := inbound["tag"].(string)
+		protocol, _ := inbound["protocol"].(string)
 		id, enabled := active[tag]
-		if !enabled {
+		managed := sourceManagedProtocol(protocol)
+		if !enabled && managed {
 			continue
+		}
+		if tag == "" {
+			return nil, nil, xnode.ErrInvalid
+		}
+		if _, duplicate := renamed[tag]; duplicate {
+			return nil, nil, xnode.ErrInvalid
 		}
 		stable := tag
 		if !validTag(stable) {
-			hash := sha256.Sum256([]byte(profileID + ":" + id))
+			key := id
+			if !managed || key == "" {
+				key = "aux:" + tag
+			}
+			hash := sha256.Sum256([]byte(profileID + ":" + key))
 			stable = "in-" + hex.EncodeToString(hash[:12])
 		}
-		tags[id] = stable
+		renamed[tag] = stable
+		if enabled {
+			found[tag] = true
+			if managed {
+				tags[id] = stable
+			}
+		}
 		inbound["tag"] = stable
-		if settings, _ := inbound["settings"].(map[string]any); settings != nil {
+		if !managed && protocol != "dokodemo-door" && protocol != "tunnel" {
+			review = append(review, stable)
+		}
+		if settings, _ := inbound["settings"].(map[string]any); settings != nil && managed {
 			for _, key := range []string{"clients", "users", "accounts"} {
 				delete(settings, key)
 			}
 		}
 		selected = append(selected, inbound)
 	}
-	if len(selected) != len(active) {
+	if len(found) != len(active) {
 		return nil, nil, xnode.ErrInvalid
 	}
 	native["inbounds"] = selected
+	if len(review) > 0 {
+		// Retain unsupported utility settings for review. Native validation rejects
+		// this marker until an administrator explicitly converts the listeners.
+		native["MigrationReview"] = map[string]any{"unsupportedUtilityInbounds": review}
+	}
 	if routing, _ := native["routing"].(map[string]any); routing != nil {
 		rules, _ := routing["rules"].([]any)
 		for _, raw := range rules {
@@ -62,8 +91,8 @@ func NativeDocument(profileID string, document json.RawMessage, node Node) (json
 			values, _ := rule["inboundTag"].([]any)
 			for i, value := range values {
 				old, _ := value.(string)
-				if id := active[old]; id != "" {
-					values[i] = tags[id]
+				if stable := renamed[old]; stable != "" {
+					values[i] = stable
 				}
 			}
 		}
@@ -78,6 +107,13 @@ func NativeDocument(profileID string, document json.RawMessage, node Node) (json
 	native["outbounds"] = append(outs, map[string]any{"UserOutbound": map[string]any{}})
 	data, err := json.Marshal(native)
 	return data, tags, err
+}
+
+// Remnawave's managed-client set; other listeners survive its node filtering.
+// Reference: remnawave/backend@010b365ab1fabea01192b5e6ade4e98e66ee1dbd,
+// src/common/helpers/xray-config/xray-config.validator.ts (leaveInbounds).
+func sourceManagedProtocol(protocol string) bool {
+	return protocol == "vless" || protocol == "trojan" || protocol == "shadowsocks" || protocol == "hysteria"
 }
 func validTag(tag string) bool {
 	if len(tag) == 0 || len(tag) > 128 {

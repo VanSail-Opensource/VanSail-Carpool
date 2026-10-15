@@ -37,6 +37,7 @@
       "review": "等待恢复"
     },
     "issues": {
+      "UNSUPPORTED_UTILITY_INBOUND": "请先转换 MigrationReview 中列出的辅助监听配置，再从导入的基础配置中移除此检查标记，然后迁移节点。",
       "UNMATCHED_IDENTITY": "账号与已关联的面板身份不匹配。",
       "INVALID_CONFIGURATION": "源 Xray 配置无效。",
       "UNSUPPORTED_SHADOWSOCKS": "请在迁移前将此 Shadowsocks 入站改为允许的加密方式。",
