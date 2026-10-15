@@ -11,16 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AbuseNodesCard: typeof import('./src/components/admin/abuse/AbuseNodesCard.vue')['default']
-    AbusePolicyCard: typeof import('./src/components/admin/abuse/AbusePolicyCard.vue')['default']
-    AbusePunishmentLadder: typeof import('./src/components/admin/abuse/AbusePunishmentLadder.vue')['default']
-    AbuseRecordsCard: typeof import('./src/components/admin/abuse/AbuseRecordsCard.vue')['default']
-    AbuseRecordsPage: typeof import('./src/components/abuse/AbuseRecordsPage.vue')['default']
-    AbuseRulesCard: typeof import('./src/components/admin/abuse/AbuseRulesCard.vue')['default']
     ActivityPage: typeof import('./src/components/activity/ActivityPage.vue')['default']
     ActivityResultContent: typeof import('./src/components/activity/ActivityResultContent.vue')['default']
     ActivityResultDialog: typeof import('./src/components/activity/ActivityResultDialog.vue')['default']
-    AdminAbusePanel: typeof import('./src/components/admin/AdminAbusePanel.vue')['default']
     AdminAccessPanel: typeof import('./src/components/settings/AdminAccessPanel.vue')['default']
     AdminActivityPanel: typeof import('./src/components/admin/AdminActivityPanel.vue')['default']
     AdminActivitySettings: typeof import('./src/components/admin/activity/AdminActivitySettings.vue')['default']

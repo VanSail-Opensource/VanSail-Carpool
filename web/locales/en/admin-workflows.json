@@ -90,7 +90,7 @@
     "unblockIP": "Unblock IP",
     "noIPBlocks": "This member has no active IP blocks.",
     "accountContext": "Account context",
-    "accountContextHint": "Active coupons, abuse records, and referral outcomes retained for this member.",
+    "accountContextHint": "Coupon access and referral outcomes retained for this member.",
     "trafficResetAutomation": "Traffic reset automation",
     "accountUpdated": "Account updated",
     "enabled": "Enabled",
@@ -98,9 +98,6 @@
     "couponWallet": "Coupon wallet",
     "activeCoupon": "Active",
     "noCoupons": "No active coupons",
-    "abuseHistory": "Abuse history",
-    "noAbuseHistory": "No abuse records",
-    "abuseAction": { "warning": "Warning", "ip_ban": "IP ban", "subscription_revoke": "Revoked", "temporary_ban": "Temporary ban" },
     "affiliateHistory": "Affiliate history",
     "noAffiliateHistory": "No referral history",
     "affiliateStatus": { "successful": "Successful", "pending": "Pending" },
@@ -117,9 +114,7 @@
     "addCoupon": "Add coupon",
     "addCouponHint": "Only active purchase-discount coupons can be granted to this wallet.",
     "removeCoupon": "Remove coupon",
-    "removeCouponHint": "The grant is retained in history and will no longer be usable.",
-    "deleteAbuse": "Delete abuse record",
-    "deleteAbuseHint": "This removes the retained abuse record and its incident facts."
+    "removeCouponHint": "The grant is retained in history and will no longer be usable."
   },
   "adminBulkExtension": {
     "open": "Bulk extension",

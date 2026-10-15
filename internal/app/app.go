@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
@@ -178,7 +177,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	statisticsService := productstats.NewService(store, remna)
 	compensationService := compensation.NewService(store, remna)
-	abuseService := abuse.NewService(store, legacy)
 	if err := registerStatisticsOperationHandler(operationDispatcher, store, remna); err != nil {
 		return cleanup(err)
 	}
@@ -195,7 +193,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerBoostAppreciationHandler(outboxWorker, settings, queuedTelegramClient); err != nil {
 		return cleanup(err)
 	}
-	if err := registerAbuseOutboxHandlers(outboxWorker, store, legacy, queuedTelegramClient); err != nil {
+	if err := registerRetiredDetectorRelease(outboxWorker, store, remna); err != nil {
 		return cleanup(err)
 	}
 	pmService, err := newApplicationPMWorkflows(store, settings, queuedTelegramClient, cfg.AdminTelegramIDs,
@@ -233,8 +231,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		EmbyOperations: embyOperations, EmbyPrice: embyPrice,
 		Admin: adminService, AdminUsers: adminUserWorkflows, Compensation: compensationService, Settings: settings, DatabaseAdmin: databaseAdminHTTP,
 		PaymentProfiles: paymentProfiles,
-		Abuse:           abuseService, AbuseVault: vault,
-		Store: store, Affiliates: affiliateService, Telegram: queuedTelegramClient, Webhooks: paymentBridge, PublicURL: cfg.PublicBaseURL, Static: static,
+		Store:           store, Affiliates: affiliateService, Telegram: queuedTelegramClient, Webhooks: paymentBridge, PublicURL: cfg.PublicBaseURL, Static: static,
 		Logger: logger, SessionTTL: cfg.SessionTTL, SecureCookies: cfg.PublicBaseURL.Scheme == "https",
 		AdminTelegramIDs: cfg.AdminTelegramIDs, RequestSigningKey: cfg.MasterKey,
 	})
@@ -252,7 +249,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		xnodeService: xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
-		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService, abuse: abuseService,
+		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService,
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		connectivity: connectivityService,
 		ipLookup:     ipLookupWorker,

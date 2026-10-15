@@ -20,7 +20,6 @@ const panels: Record<string, Component> = {
   onboarding: defineAsyncComponent(() => import('@/components/admin/AdminOnboardingPanel.vue')),
   users: defineAsyncComponent(() => import('@/components/admin/AdminUsersPanel.vue')),
   compensation: defineAsyncComponent(() => import('@/components/admin/AdminCompensationPanel.vue')),
-  abuse: defineAsyncComponent(() => import('@/components/admin/AdminAbusePanel.vue')),
   backups: defineAsyncComponent(() => import('@/components/admin/AdminBackupsPanel.vue')),
   database: defineAsyncComponent(() => import('@/components/admin/AdminDatabasePanel.vue')),
   audit: defineAsyncComponent(() => import('@/components/admin/AdminAuditPanel.vue')),

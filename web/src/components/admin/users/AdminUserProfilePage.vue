@@ -172,7 +172,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
       <div v-show="activeTab === 'account'" class="admin-workspace-grid">
         <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
         <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
-        <AdminUserAccountContext :user-id="userId" :detail="profile.detail.value" @changed="refresh" />
+        <AdminUserAccountContext :detail="profile.detail.value" />
         <AdminUserPM :conversation="profile.detail.value.pmConversation" @changed="refresh" />
         <AdminUserIPBlocks :items="profile.detail.value.ipBlocks" :busy="busy" @unblock="openIPUnblock" />
       </div>

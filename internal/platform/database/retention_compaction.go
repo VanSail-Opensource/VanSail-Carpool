@@ -45,9 +45,6 @@ func (s *Store) CompactAndPrune(ctx context.Context, cutoff7Days, cutoff24Hours,
 	if err := pruneHousekeepingTx(ctx, tx, cutoff7Days, cutoff24Hours, now, counts); err != nil {
 		return nil, err
 	}
-	if err := s.PruneAbuseRecordsTx(ctx, tx, now, counts); err != nil {
-		return nil, err
-	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit retention compaction: %w", err)
 	}

@@ -20,7 +20,6 @@ handoff; Telegram OAuth endpoints and settings have been removed.
 
 Each YAML file is one complete OpenAPI Path Item Object. `../openapi.yaml` registers these files under their canonical URL paths.
 
-- `api-v1-abuse.yaml` groups member history, node-agent upload, and administrator abuse-detector path items.
 
 Member connection scans, purchase refund resources, operation receipts, statistics, and admin bulk/backup mutations use the same signed-session and idempotency conventions as the existing paths.
 

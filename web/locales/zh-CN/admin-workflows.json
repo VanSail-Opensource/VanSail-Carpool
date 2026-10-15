@@ -90,7 +90,7 @@
     "unblockIP": "解除 IP 封禁",
     "noIPBlocks": "此成员没有活跃 IP 封禁。",
     "accountContext": "账户上下文",
-    "accountContextHint": "该用户的有效优惠券、滥用记录和推广结果。",
+    "accountContextHint": "保留此成员的优惠券权益和推荐结果。",
     "trafficResetAutomation": "流量重置自动化",
     "accountUpdated": "账户更新时间",
     "enabled": "已启用",
@@ -98,9 +98,6 @@
     "couponWallet": "优惠券钱包",
     "activeCoupon": "有效",
     "noCoupons": "没有有效优惠券",
-    "abuseHistory": "滥用历史",
-    "noAbuseHistory": "没有滥用记录",
-    "abuseAction": { "warning": "警告", "ip_ban": "IP 封禁", "subscription_revoke": "已撤销", "temporary_ban": "临时封禁" },
     "affiliateHistory": "推广历史",
     "noAffiliateHistory": "没有推广历史",
     "affiliateStatus": { "successful": "已结算", "pending": "待处理" },
@@ -117,9 +114,7 @@
     "addCoupon": "添加优惠券",
     "addCouponHint": "只能向此钱包发放活跃的购买折扣优惠券。",
     "removeCoupon": "移除优惠券",
-    "removeCouponHint": "发放记录将保留在历史中，但不再可用。",
-    "deleteAbuse": "删除滥用记录",
-    "deleteAbuseHint": "这会删除保留的滥用记录及其事件事实。"
+    "removeCouponHint": "发放记录将保留在历史中，但不再可用。"
   },
   "adminBulkExtension": {
     "open": "批量延长",

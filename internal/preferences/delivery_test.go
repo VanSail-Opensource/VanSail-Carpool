@@ -11,7 +11,7 @@ func TestAllNotificationKindsHaveExactlyOneCategory(t *testing.T) {
 		{outbox.UserEventTrafficThreshold, outbox.UserEventAutomaticReset, outbox.UserEventAutomaticResetInsufficient, outbox.UserEventAutomaticResetFailed, outbox.UserEventManualResetCompleted, outbox.UserEventManualResetRefunded},
 		{outbox.UserEventPaymentCredited, outbox.UserEventPaymentRefunded, outbox.UserEventMemberRefundCompleted, outbox.UserEventMemberRefundFailed},
 		{outbox.UserEventGroupReward, outbox.AffiliateSuccessKind, outbox.AffiliateTierUpgradeKind},
-		{outbox.UserEventAdminExtension, outbox.UserEventAdminUpdate, outbox.UserEventNodeCompensation, outbox.UserEventProvisionConflict, outbox.UserAbuseNotificationKind},
+		{outbox.UserEventAdminExtension, outbox.UserEventAdminUpdate, outbox.UserEventNodeCompensation, outbox.UserEventProvisionConflict},
 	}
 	for category, kinds := range groups {
 		for _, kind := range kinds {

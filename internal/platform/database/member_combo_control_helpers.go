@@ -27,8 +27,7 @@ func comboControlConflictFrom(ctx context.Context, reader controlQueryer, userID
  ((json_extract(job.payload,'$.userId')=? AND job.kind='remna_sync_user') OR
  (job.kind IN ('remna_apply_entitlement','remna_prepare_continuity','rollover_finalize') AND
  json_extract(job.payload,'$.purchaseId') IN (SELECT id FROM purchases WHERE user_id=?))))
- OR EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=? AND restored_at IS NULL)
- OR EXISTS(SELECT 1 FROM abuse_temp_bans WHERE user_id=? AND restored_at IS NULL)`, userID, userID, userID, userID, userID, userID, userID).Scan(&conflict)
+ OR EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=? AND restored_at IS NULL)`, userID, userID, userID, userID, userID, userID).Scan(&conflict)
 	return conflict, err
 }
 

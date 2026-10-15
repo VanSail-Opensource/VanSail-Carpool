@@ -13,8 +13,6 @@ than in Vue templates, composables, or API clients.
 - `admin-community.json` contains questionnaire administration and import copy.
 - `admin-core.json` contains admin navigation, users, and Emby copy.
 - `admin-compensation.json` contains reviewed node-outage compensation copy.
-- `abuse.json` contains member detector record copy.
-- `admin-abuse.json` contains detector administration copy.
 - `admin-onboarding.json` contains visual onboarding-editor copy.
 - `admin-data.json` contains database editor and backup-management copy.
 - `admin-operations.json` contains settings, audit, payment, and entitlement copy.

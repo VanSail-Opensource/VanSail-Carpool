@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
@@ -44,7 +43,6 @@ type Application struct {
 	ipLookup        *iplookup.Worker
 	compensation    *compensation.Service
 	affiliates      *affiliates.Service
-	abuse           *abuse.Service
 	notifications   *notifications.Scanner
 	upstreams       *providerQueues
 	paymentProfiles *PaymentProfileManager

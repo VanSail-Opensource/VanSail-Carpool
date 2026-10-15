@@ -26,7 +26,7 @@ when it completes, without navigation or a document reload.
 
 Member preload covers Home and its default node-usage range, catalog and balance,
 statistics, activity, affiliates and referral page 1, coupons, questionnaires,
-Emby, abuse records, IP blocks, reset automation, community membership, and localized
+Emby, IP blocks, reset automation, community membership, and localized
 onboarding content. The browser console loads each section on demand and never
 runs the member preload. Filters, pagination, details and administrator resources
 are cached on use with their exact resource keys and a browser-scoped identity.

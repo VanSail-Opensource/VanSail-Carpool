@@ -63,12 +63,6 @@ stopped.
   traffic, Geocheck, and host operations for product statistics; documented fractional
   live counts and byte rates are rounded into the integer public contract.
 - `remna_compensation_adapter.go` maps complete queue-backed node and squad snapshots without persisting authoritative assignments.
-- `remna_abuse_adapter.go` supplies queue-backed node identity to detector key provisioning.
-- `remna_abuse_actions.go` keeps every detector-triggered Remnawave call in the provider queue.
-- `abuse_ip_ban.go` persists and resumes asynchronous Remnawave connection scans before applying an IP ban.
-- `abuse_outbox.go` consumes durable detector punishment, restoration, and Telegram delivery jobs. Incident messages retain the approved Chinese field layout and have a matching English version; both use the linked username, actual detection time in UTC, reason and QPS, selected action, optional expiry, and escaped dynamic values.
-- `abuse_scheduler.go` performs startup catch-up and UTC-aligned `:00`/`:30` durable abuse processing.
-- `abuse_outbox_test.go` and `payment_profile_manager_test.go` cover localized private alerts and MarkdownV2 escaping.
 - `maintenance_operation_test.go` covers successful, failed, and active-lease maintenance receipts.
 - `remna_statistics_adapter_test.go` covers bounded rounding of Remnawave live numeric fields.
 - `emby_adapter.go` implements queued Emby client creation, account operations, policy updates, and metadata lookups.
@@ -97,7 +91,6 @@ stopped.
 
 `telegram_member_tag_adapter.go` checks live member role and bot tag permissions inside the existing upstream queue before a tag change.
 `telegram_member_tag_adapter_test.go` verifies queue entry, tag clearing and execution-time membership checks.
-Personal security notices in `abuse_outbox.go` follow account preferences; operator copies retain operational delivery. Skipped personal messages do not acquire a false delivered timestamp.
 
 `telegram_boost_appreciation.go` registers the durable appreciation handler. It rechecks the configured group and sends localized, escaped identities through queuedTelegram; `telegram_boost_appreciation_test.go` covers username, name and anonymous sources.
 
@@ -153,3 +146,7 @@ storage before application construction. Application wiring opens the disposable
 proxy cache after fallible service construction; cache failure degrades inventory
 coverage independently of USDT. Shutdown joins workers/readers before closing the
 cache and authoritative database.
+
+`retired_detector.go` registers one bounded, durable `proxy_restriction_release` compatibility job per acknowledged historical detector ban. It preserves manual restrictions and paid entitlement terms; all legacy mutations use the existing provider queue. `retired_detector_test.go` covers manual precedence, acknowledgement checks, replay and retry failures. `payment_profile_manager_test.go` retains localized payment-profile alert coverage.
+
+`retired_detector_legacy.go` performs the final manual-ban/paid-term recheck inside the existing serialized Remnawave queue. `retired_detector_legacy_test.go` covers a manual ban acquired during queue wait, paid-term preservation, disabled squads and registration-only refusal.

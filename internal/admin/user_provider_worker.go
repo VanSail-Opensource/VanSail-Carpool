@@ -16,7 +16,6 @@ type adminUserProviderRepository interface {
 	UserByID(context.Context, string) (model.User, error)
 	DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error)
 	LinkAdminRemnaUser(context.Context, string, string, string, string, time.Time) error
-	HasActiveAbuseTemporaryBan(context.Context, string, time.Time) (bool, error)
 	CompleteAdminTemporaryUnban(context.Context, string, time.Time) error
 }
 
@@ -68,11 +67,7 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 		if completion != nil {
 			return *completion
 		}
-		var abuseActive bool
-		abuseActive, err = w.repository.HasActiveAbuseTemporaryBan(ctx, user.ID, w.now().UTC())
-		if err == nil && !abuseActive {
-			err = w.remote.SetAdminUserDisabled(ctx, *user.RemnaUserID, false)
-		}
+		err = w.remote.SetAdminUserDisabled(ctx, *user.RemnaUserID, false)
 		if err == nil {
 			err = w.repository.CompleteAdminTemporaryUnban(ctx, user.ID, w.now().UTC())
 		}

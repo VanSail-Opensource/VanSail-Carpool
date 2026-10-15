@@ -37,9 +37,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `server.go` constructs middleware, public routes, authenticated routes, and the SPA fallback.
 - `responses.go` owns compact JSON response serialization and request-correlated API errors.
 - `ip_lookup_details_test.go` covers signed-route-compatible JSON/SSE negotiation, flushed completion and the lookup-specific response deadline in hosted CI.
-- `abuse_agent.go` accepts bounded authenticated node log reports.
-- `abuse_member.go` exposes privacy-safe member incident history.
-- `abuse_admin.go` serves detector rules, records, and node-key controls; `abuse_admin_policy.go` owns the revisioned policy contract and cached-client streak compatibility.
 - The SPA fallback revalidates `index.html` while serving hashed assets with immutable caching to avoid stale WebView bundles.
 - `request_auth.go` requires the per-session HMAC contract on authenticated browser requests.
 - `request_auth_test.go` tests signed-route enforcement and session-cookie visibility rules.

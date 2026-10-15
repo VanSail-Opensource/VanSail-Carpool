@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
@@ -24,7 +23,6 @@ type UserWorkflowRepository interface {
 	ListRefundsForUser(context.Context, string, int) ([]model.Refund, error)
 	ListAdminOperationsForUser(context.Context, string, int) ([]model.OperationReceipt, error)
 	ListCouponGrants(context.Context, string, time.Time) ([]coupons.Grant, error)
-	MemberRecords(context.Context, string, string, int) (abuse.RecordPage, error)
 	SuccessfulAffiliateReferrals(context.Context, string, int) (affiliates.ReferralPage, error)
 	ComboByID(context.Context, string, bool) (model.Combo, error)
 	EditAdminEntitlement(context.Context, database.AdminEntitlementEditInput, time.Time) (model.Purchase, error)
@@ -60,7 +58,6 @@ type UserDetail struct {
 	Refunds          []model.Refund
 	Operations       []model.OperationReceipt
 	CouponWallet     []coupons.Grant
-	AbuseHistory     []abuse.Record
 	AffiliateHistory affiliates.ReferralPage
 	TemporaryBan     *database.AdminTemporaryBan
 }
@@ -88,7 +85,7 @@ func (s *UserWorkflows) UserDetail(ctx context.Context, userID string) (UserDeta
 	if err != nil {
 		return UserDetail{}, err
 	}
-	detail := UserDetail{User: user, Synchronization: synchronizationFor(user), EmbyAccounts: []emby.Account{}, CouponWallet: []coupons.Grant{}, AbuseHistory: []abuse.Record{}, AffiliateHistory: affiliates.ReferralPage{Items: []affiliates.Referral{}}}
+	detail := UserDetail{User: user, Synchronization: synchronizationFor(user), EmbyAccounts: []emby.Account{}, CouponWallet: []coupons.Grant{}, AffiliateHistory: affiliates.ReferralPage{Items: []affiliates.Referral{}}}
 	if detail.Balance, err = s.repository.Balance(ctx, userID); err != nil {
 		return UserDetail{}, err
 	}
@@ -124,11 +121,6 @@ func (s *UserWorkflows) UserDetail(ctx context.Context, userID string) (UserDeta
 	}
 	if detail.CouponWallet, err = s.repository.ListCouponGrants(ctx, userID, now); err != nil {
 		return UserDetail{}, err
-	}
-	if page, recordsErr := s.repository.MemberRecords(ctx, userID, "", 100); recordsErr != nil {
-		return UserDetail{}, recordsErr
-	} else {
-		detail.AbuseHistory = page.Items
 	}
 	if detail.AffiliateHistory, err = s.repository.SuccessfulAffiliateReferrals(ctx, userID, 50); err != nil {
 		return UserDetail{}, err

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
@@ -53,10 +52,6 @@ func (r *userWorkflowRepositoryStub) ListAdminOperationsForUser(context.Context,
 
 func (*userWorkflowRepositoryStub) ListCouponGrants(context.Context, string, time.Time) ([]coupons.Grant, error) {
 	return []coupons.Grant{}, nil
-}
-
-func (*userWorkflowRepositoryStub) MemberRecords(context.Context, string, string, int) (abuse.RecordPage, error) {
-	return abuse.RecordPage{Items: []abuse.Record{}}, nil
 }
 
 func (*userWorkflowRepositoryStub) SuccessfulAffiliateReferrals(context.Context, string, int) (affiliates.ReferralPage, error) {

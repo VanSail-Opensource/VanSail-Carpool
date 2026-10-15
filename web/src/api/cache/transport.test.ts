@@ -68,7 +68,7 @@ describe('response cache transport', () => {
     expect(responseCacheKey('/api/v1/admin/users?page=1')).not.toBe(responseCacheKey('/api/v1/admin/users?page=2'))
     expect(responseCacheKey('/api/v1/community/membership/check')).not.toBe(responseCacheKey('/api/v1/community/membership/check', { method: 'POST' }))
     expect(responseCacheKey('/api/v1/admin/database/tables/users/query', { method: 'POST', body: { filters: [] } })).not.toBeNull()
-    for (const excluded of ['/api/v1/me', '/api/v1/operations/one', '/api/v1/payments/orders/one', '/api/v1/admin/abuse/nodes/one/key']) {
+    for (const excluded of ['/api/v1/me', '/api/v1/operations/one', '/api/v1/payments/orders/one', '/api/v1/admin/backups/one/key']) {
       expect(responseCacheKey(excluded)).toBeNull()
     }
     expect(responseCacheKey('/api/v1/purchases/quote', { method: 'POST' })).toBeNull()

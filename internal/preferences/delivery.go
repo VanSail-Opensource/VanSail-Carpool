@@ -20,7 +20,7 @@ func (p Preferences) Allows(kind string) (bool, error) {
 		return p.Notifications.Money, nil
 	case outbox.UserEventGroupReward, outbox.AffiliateSuccessKind, outbox.AffiliateTierUpgradeKind:
 		return p.Notifications.Activity, nil
-	case outbox.UserEventAdminExtension, outbox.UserEventAdminUpdate, outbox.UserEventNodeCompensation, outbox.UserEventProvisionConflict, outbox.UserAbuseNotificationKind:
+	case outbox.UserEventAdminExtension, outbox.UserEventAdminUpdate, outbox.UserEventNodeCompensation, outbox.UserEventProvisionConflict:
 		return p.Notifications.Account, nil
 	default:
 		return false, fmt.Errorf("notification category is missing for %q", kind)

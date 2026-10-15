@@ -15,7 +15,7 @@ const router = createRouter({
     { path: '/admin/pm', redirect: '/admin/users' },
     { path: '/admin/users/:userId', name: 'admin-user', component: () => import('@/views/AdminUserView.vue'), meta: { console: true, adminSection: 'users' } },
     { path: '/admin/ip-lookup', name: 'admin-ip-lookup', component: () => import('@/views/AdminIPLookupView.vue'), meta: { console: true, adminSection: 'ip-lookup' } },
-    { path: '/admin/:section(settings|api-access|xnode|usdt|host-connectivity|catalog|activity|affiliates|coupons|questionnaires|onboarding|users|compensation|abuse|backups|database|audit)', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { console: true } },
+    { path: '/admin/:section(settings|api-access|xnode|usdt|host-connectivity|catalog|activity|affiliates|coupons|questionnaires|onboarding|users|compensation|backups|database|audit)', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { console: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

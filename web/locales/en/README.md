@@ -11,8 +11,6 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `admin-draw.json` contains the redesigned draw editor, forecast, and reward-result copy.
 - `admin-catalog.json` contains catalog, squad, and coupon administration copy.
 - `admin-compensation.json` contains reviewed node-outage compensation copy.
-- `abuse.json` contains member detector record copy.
-- `admin-abuse.json` contains detector administration copy.
 - `admin-community.json` contains questionnaire administration and import copy.
 - `admin-core.json` contains admin navigation, users, and Emby copy.
 - `admin-onboarding.json` contains visual onboarding-editor copy.

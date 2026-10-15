@@ -14,7 +14,7 @@
 - `AdminUserCouponActions.vue` grants or historically discards active purchase-discount wallet coupons.
 - `AdminUserProviderActions.vue` queues temporary restrictions and relinks, and displays read-only transient active-IP scan results.
 - `AdminUserSearchFilters.vue` supplies browser popover state, combo, and squad facets with AND/OR composition.
-- `AdminUserAccountContext.vue` presents retained abuse records and successful affiliate history without duplicating member facts.
+- `AdminUserAccountContext.vue` presents successful affiliate history without duplicating member facts.
 - `AdminUserProfilePage.vue` composes the aggregate user workflow and its focused dialogs.
 - `AdminUserIPBlocks.test.ts` verifies that administrator profiles expose unblock without a block control.
 - `AdminUserProviderActions.vue` emits the queued provider receipt to the profile shell before its reload.

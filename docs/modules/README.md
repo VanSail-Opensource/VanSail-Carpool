@@ -16,6 +16,7 @@ These documents describe the implemented module boundaries. They are maintenance
 | Questionnaire participation and CSV settlement | [questionnaires.md](questionnaires.md) |
 | Emby account setup and restricted policy management | [emby.md](emby.md) |
 | Telegram, Remnawave, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
+| Retired detector upgrade | [detector-retirement.md](detector-retirement.md) |
 | Admin authorization and domain operations | [admin-operations.md](admin-operations.md) |
 | Vue Mini App and generated API client | [web-ui.md](web-ui.md) |
 | VanSail Carpool bug-fix adjustment contract | [tx-carpool-adjustments.md](tx-carpool-adjustments.md) |

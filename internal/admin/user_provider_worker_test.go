@@ -56,9 +56,6 @@ func (r *adminUserProviderRepositoryStub) LinkAdminRemnaUser(_ context.Context, 
 	r.linkedRemoteID = remoteID
 	return nil
 }
-func (*adminUserProviderRepositoryStub) HasActiveAbuseTemporaryBan(context.Context, string, time.Time) (bool, error) {
-	return false, nil
-}
 func (*adminUserProviderRepositoryStub) CompleteAdminTemporaryUnban(context.Context, string, time.Time) error {
 	return nil
 }

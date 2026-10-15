@@ -4,7 +4,6 @@ package httpapi
 import (
 	"context"
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/abuse"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
@@ -20,7 +19,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
@@ -82,8 +80,6 @@ type Dependencies struct {
 	Admin              *admin.Service
 	AdminUsers         *admin.UserWorkflows
 	Compensation       *compensation.Service
-	Abuse              *abuse.Service
-	AbuseVault         *secret.Vault
 	Settings           *admin.SettingsService
 	PaymentProfiles    paymentProfileLifecycle
 	DatabaseAdmin      *DatabaseAdministrationHTTP
@@ -111,7 +107,7 @@ type Server struct {
 
 // New constructs all public, authenticated, admin, and webhook routes.
 func New(deps Dependencies) (*Server, error) {
-	if deps.Accounts == nil || deps.Catalog == nil || deps.Connections == nil || deps.ConnectionDrops == nil || deps.PurchaseOperations == nil || deps.Statistics == nil || deps.Billing == nil || deps.Activity == nil || deps.Coupons == nil || deps.Questionnaires == nil || deps.Emby == nil || deps.EmbyOperations == nil || deps.EmbyPrice == nil || deps.Admin == nil || deps.AdminUsers == nil || deps.Compensation == nil || deps.Abuse == nil || deps.AbuseVault == nil || deps.Settings == nil || deps.PaymentProfiles == nil || deps.Store == nil || deps.Affiliates == nil || deps.Telegram == nil || deps.Webhooks == nil || deps.PublicURL == nil || deps.Logger == nil || len(deps.AdminTelegramIDs) == 0 {
+	if deps.Accounts == nil || deps.Catalog == nil || deps.Connections == nil || deps.ConnectionDrops == nil || deps.PurchaseOperations == nil || deps.Statistics == nil || deps.Billing == nil || deps.Activity == nil || deps.Coupons == nil || deps.Questionnaires == nil || deps.Emby == nil || deps.EmbyOperations == nil || deps.EmbyPrice == nil || deps.Admin == nil || deps.AdminUsers == nil || deps.Compensation == nil || deps.Settings == nil || deps.PaymentProfiles == nil || deps.Store == nil || deps.Affiliates == nil || deps.Telegram == nil || deps.Webhooks == nil || deps.PublicURL == nil || deps.Logger == nil || len(deps.AdminTelegramIDs) == 0 {
 		return nil, errors.New("HTTP API dependencies are incomplete")
 	}
 	adminTelegramIDs := make(map[int64]struct{}, len(deps.AdminTelegramIDs))
@@ -159,7 +155,6 @@ func New(deps Dependencies) (*Server, error) {
 	router.Post("/api/v1/webhooks/bepusdt", server.bepusdtWebhook)
 	router.Post("/api/v1/webhooks/bepusdt/probe", server.bepusdtProbeWebhook)
 	router.Post("/api/v1/webhooks/bepusdt/{capability}", server.bepusdtWebhook)
-	router.Post("/api/v1/agents/qps-reports", server.agentQPSReport)
 	router.Get("/api/v1/payments/return/{provider}/{orderID}/status", server.paymentReturnStatus)
 	router.Get("/api/v1/payments/return/{provider}", server.paymentReturn)
 	router.Get("/api/v1/payments/return/{provider}/{orderID}", server.paymentReturn)
@@ -172,7 +167,6 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Post("/api/v1/me/captcha", server.verifyCaptcha)
 		authenticated.Get("/api/v1/me/display-currency", server.displayCurrency)
 		authenticated.Put("/api/v1/me/display-currency", server.updateDisplayCurrency)
-		authenticated.Get("/api/v1/me/abuse-records", server.memberAbuseRecords)
 		authenticated.Put("/api/v1/onboarding/username", server.reserveUsername)
 		authenticated.Post("/api/v1/onboarding/agreement", server.acceptAgreement)
 		authenticated.Get("/api/v1/onboarding/content", server.onboardingContent)

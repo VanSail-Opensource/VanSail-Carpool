@@ -14,7 +14,7 @@ const expiredSyncCode = "SYNC_JOB_EXPIRED"
 // settlement jobs, which retain their authoritative settlement/recovery state.
 const synchronizationJobPredicate = `(job.kind LIKE 'remna_%' OR job.kind LIKE 'telegram_%'
 	OR job.kind LIKE 'draw_telegram_%' OR job.kind IN ('emby_provision_account','connection_scan_request',
-	'connection_ip_block_expiry','abuse_punishment','abuse_restore','abuse_notification','admin_temporary_ban_expiry',
+	'connection_ip_block_expiry','admin_temporary_ban_expiry',
 	'draw_raffle_reply','draw_raffle_complete','draw_raffle_private','draw_instant_announcement','draw_raffle_price_notice')
 	OR (job.kind='provider_operation' AND NOT EXISTS(SELECT 1 FROM provider_operations operation
 		WHERE operation.id=json_extract(job.payload,'$.operationId')

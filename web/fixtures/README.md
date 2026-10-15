@@ -45,7 +45,6 @@ These files are for local visual audits. The production Vite build starts from t
 - `activity-boost-audit.ts` mounts the real activity page with controllable constructed boost, loading, error, reward and check-in states for Chrome DevTools MCP validation. Exposes `window.__boostAudit` and a locale switch for manual inspection.
 - `activity-boost-audit.html` opens that fixture directly, including the zero-boost
   card and its spacing against neighboring activity sections.
-- `AbuseAudit.vue`, `abuse-audit.ts`, and `abuse-audit.html` mount the detector admin panel with isolated constructed API responses. Query parameters `slow`, `empty`, and `error` exercise loading, empty and failure states; `window.__abuseAudit` records form saves and rule actions for manual Chrome DevTools MCP inspection.
 - The same fixture's `operation` mode exercises simultaneous operation receipts,
   polling errors and retry controls; `reduced` constructs reduced-motion preference.
 
@@ -76,3 +75,5 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 - `public-subscription-audit.ts` and `public-subscription-audit.html` supply populated, loading, empty, partial and invalid/revoked-link browser cases. Metadata requests record credential omission; copy and QR remain local.
 
 `APITokensAudit.vue`, `api-tokens-audit.ts` and `api-tokens-audit.html` provide constructed API credential creation, copy and revocation flows. Query flags: empty, slow, error, create-error, revoke-error, copy-error and zh. No real token is used.
+
+- `DetectorRetirementAudit.vue`, `detector-retirement-audit.ts`, and `detector-retirement-audit.html` exercise the retained browser navigation and affiliate profile at desktop/mobile sizes. Query flags `empty`, `slow`, `error`, `member`, and `zh` cover empty/loading/retry/localized states without detector resources.

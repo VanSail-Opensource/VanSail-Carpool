@@ -30,8 +30,6 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminCatalogEditor.vue` edits combo terms.
 - `AdminCatalogPanel.vue` manages combos and squads.
 - `AdminCompensationPanel.vue` composes the revisioned outage policy and recipient-safe event review flow, with configuration and event tabs, frozen-recipient event tables, and focused review dialogs.
-- `AdminAbusePanel.vue` composes policy, escalation, rules, node statistics, and record workspaces. Typed script handlers own API mutations so template callbacks do not depend on compiler-specific imported-value unwrapping.
-- `abuse/` contains typed detector tables and focused policy/rule/escalation editors.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
 - `AdminEmbyPanel.vue` monitors Emby provisioning.

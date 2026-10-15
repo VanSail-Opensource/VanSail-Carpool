@@ -74,11 +74,6 @@ func (a *Application) Run(ctx context.Context) error {
 		defer close(statisticsDone)
 		a.runStatisticsScheduler(runCtx)
 	}()
-	abuseDone := make(chan struct{})
-	go func() {
-		defer close(abuseDone)
-		a.runAbuseScheduler(runCtx)
-	}()
 	notificationsDone := make(chan struct{})
 	go func() {
 		defer close(notificationsDone)
@@ -101,7 +96,7 @@ func (a *Application) Run(ctx context.Context) error {
 			runErr = fmt.Errorf("serve HTTP: %w", err)
 		}
 	}
-	shutdownErr := a.shutdownRuntime(cancelRun, schedulerDone, statisticsDone, abuseDone, notificationsDone)
+	shutdownErr := a.shutdownRuntime(cancelRun, schedulerDone, statisticsDone, notificationsDone)
 	connectivityErr := <-connectivityDone
 	if errors.Is(connectivityErr, context.Canceled) {
 		connectivityErr = nil
@@ -109,7 +104,7 @@ func (a *Application) Run(ctx context.Context) error {
 	return errors.Join(runErr, shutdownErr, connectivityErr)
 }
 
-func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDone, statisticsDone, abuseDone, notificationsDone <-chan struct{}) error {
+func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDone, statisticsDone, notificationsDone <-chan struct{}) error {
 	cancelRun()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.config.ShutdownTimeout)
 	var masterErr error
@@ -126,7 +121,6 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 	// Run returns and the owner invokes Close on SQLite.
 	<-schedulerDone
 	<-statisticsDone
-	<-abuseDone
 	<-notificationsDone
 	if a.xnodeMaster != nil {
 		a.xnodeMaster.Wait()

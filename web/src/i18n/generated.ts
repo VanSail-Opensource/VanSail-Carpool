@@ -20,8 +20,6 @@ import enAdminActivity from '../../locales/en/admin-activity.json'
 import enAdminDraw from '../../locales/en/admin-draw.json'
 import enAdminCatalog from '../../locales/en/admin-catalog.json'
 import enAdminCompensation from '../../locales/en/admin-compensation.json'
-import enAdminAbuse from '../../locales/en/admin-abuse.json'
-import enAbuse from '../../locales/en/abuse.json'
 import enAdminCommunity from '../../locales/en/admin-community.json'
 import enAdminCore from '../../locales/en/admin-core.json'
 import enAdminData from '../../locales/en/admin-data.json'
@@ -46,8 +44,6 @@ import zhAdminActivity from '../../locales/zh-CN/admin-activity.json'
 import zhAdminDraw from '../../locales/zh-CN/admin-draw.json'
 import zhAdminCatalog from '../../locales/zh-CN/admin-catalog.json'
 import zhAdminCompensation from '../../locales/zh-CN/admin-compensation.json'
-import zhAdminAbuse from '../../locales/zh-CN/admin-abuse.json'
-import zhAbuse from '../../locales/zh-CN/abuse.json'
 import zhAdminCommunity from '../../locales/zh-CN/admin-community.json'
 import zhAdminCore from '../../locales/zh-CN/admin-core.json'
 import zhAdminData from '../../locales/zh-CN/admin-data.json'
@@ -79,7 +75,7 @@ const en = {
   ...enHostConnectivity,
   ...enSettings,
   ...enCore, ...enRecovery, ...enAffiliates, ...enActivity, ...enCommerce, ...enPaymentCrypto, ...enCommunity, ...enMember, ...enConnections, ...enHome, ...enAdminCore, ...enAdminOnboarding, ...enAdminData,
-  ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enAdminAbuse, ...enAbuse, ...enSquadProfile, ...enStatistics,
+  ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
  ...zhAPITokens,
@@ -91,7 +87,7 @@ const zhCN: typeof en = {
   ...zhHostConnectivity,
   ...zhSettings,
   ...zhCore, ...zhRecovery, ...zhAffiliates, ...zhActivity, ...zhCommerce, ...zhPaymentCrypto, ...zhCommunity, ...zhMember, ...zhConnections, ...zhHome, ...zhAdminCore, ...zhAdminOnboarding, ...zhAdminData,
-  ...zhAdminActivity, ...zhAdminDraw, ...zhAdminCommunity, ...zhAdminCatalog, ...zhAdminOperations, ...zhAdminWorkflows, ...zhAdminCompensation, ...zhAdminAbuse, ...zhAbuse, ...zhSquadProfile, ...zhStatistics,
+  ...zhAdminActivity, ...zhAdminDraw, ...zhAdminCommunity, ...zhAdminCatalog, ...zhAdminOperations, ...zhAdminWorkflows, ...zhAdminCompensation, ...zhSquadProfile, ...zhStatistics,
 }
 
 export const localeMessages = {

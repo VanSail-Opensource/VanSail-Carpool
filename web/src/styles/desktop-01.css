@@ -40,8 +40,7 @@
   .page--statistics,
   .page--activity,
   .page--questionnaire,
-  .page--emby,
-  .page--abuse-records { max-width: 1180px; }
+  .page--emby { max-width: 1180px; }
 
   .affiliate-page { max-width: 1120px; }
   .page--home .home-footer { display: none; }

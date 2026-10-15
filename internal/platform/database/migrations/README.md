@@ -143,3 +143,5 @@ file instead.
 - `074_vansail_brand_and_link_auth.sql` removes retired browser OAuth credentials and renames untouched seeded welcome copy. Existing device sessions, handoffs, customized documents, and agreement revisions are preserved.
 
 `077_admin_api_tokens.sql` stores hashed scoped administrator credentials and their lifecycle timestamps, independently of browser and Mini App sessions.
+
+- `078_retire_abuse_detector.sql` removes executable detector state and credentials, fails pending detector jobs, and queues only proven historical temporary-ban releases. Unacknowledged mutations receive audit review entries. Incident facts, financial records, manual restrictions and audit history remain intact.

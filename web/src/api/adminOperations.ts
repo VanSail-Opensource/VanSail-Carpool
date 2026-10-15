@@ -53,9 +53,6 @@ export const adminOperationsApi = {
 		request<void>(`/api/v1/admin/users/${encodeURIComponent(userId)}/coupon-grants/${encodeURIComponent(grantId)}`, {
 			method: 'DELETE', headers: keyHeader(key),
 		}),
-	deleteAbuseRecord: (recordId: string, key: string) => request<void>(`/api/v1/admin/abuse/records/${encodeURIComponent(recordId)}`, {
-		method: 'DELETE', headers: keyHeader(key),
-	}),
 	temporaryBan: (userId: string, durationMinutes: number, reason: string, key: string) =>
 		request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/temporary-ban`, {
 			method: 'POST', headers: keyHeader(key), body: { durationMinutes, reason },

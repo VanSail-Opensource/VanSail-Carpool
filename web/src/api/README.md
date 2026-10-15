@@ -10,8 +10,6 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 - `adminBilling.ts` owns the atomic administrator update for global Add TXB bounds.
 - `browserAccess.ts` owns browser identity, access-link exchange, renewal/logout, and one-use Mini App handoffs with separate signing cookies and scope.
-- `abuse.ts` owns typed privacy-safe member and administrator detector resources, including configurable streaks, the revisioned abuse record cooldown (using the compatible `warningCooldownMinutes` field), and WebView-safe idempotency keys for mutations.
-- `abuse.test.ts` verifies detector mutations keep route-owned IDs out of strict JSON bodies and submit the complete streak policy.
 - `adminOperations.ts` owns aggregate user profiles, facet filtering, coupon wallet actions, exact entitlement refunds, queued provider-account actions, transient connection scans, bulk extensions, operation resolution, and streamed backup upload.
 - `client.ts` exposes typed member and administrator API operations, including idempotent payment, subscription-revoke, refund, outbox-retry, and manual-maintenance commands, connection scans, renewal batches, payment profiles, dashboard usage, and cached product statistics.
 - `client.test.ts` covers client request behavior.
@@ -24,7 +22,6 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `memberOperations.ts` exposes generated-type connection scans, signed-handle blocks, active block listing/removal, the account-wide reset automation resource, reset/refund quotes, and durable operation receipts.
 - `request-signing.ts` signs every protected request with Web Crypto or the audited pure-JS HMAC/SHA-256 fallback; it never sends an unsigned fallback.
 - `request-signing.test.ts` covers signing, nonce behavior, and missing-Web-Crypto behavior.
-- `openapiContract.test.ts` compile-checks reset automation, required squad-node groups, nullable provider fallback, predicted-rollover ownership, and the required abuse streak contract.
 - `types.ts` exports stable aliases over generated schema types, including payment-operation envelopes, connection scans, durable operation receipts, reset automation, statistics snapshots, member mutation quotes, and typed squad profile read/write unions.
 - `catalog-normalization.ts` normalizes catalog and purchase-quote payloads by coercing missing or null `combos`, `addons`, `nodes`, `includedSquads`, and `accessibleNodes` values into empty arrays so downstream UI code can safely iterate them.
 - `catalog-normalization.test.ts` verifies recursive catalog and quote normalization for nullable or omitted nested collections, ensuring null API fields are converted into safe empty arrays.
@@ -50,3 +47,5 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `xnodeMember.ts` provides typed member metrics, routing and subscription APIs plus cookie-free public bearer metadata reads.
 
 `adminAPITokens.ts` provides typed no-store browser management of administrator API credentials.
+
+- `openapiContract.test.ts` compile-checks reset automation, required squad-node groups, nullable provider fallback and predicted-rollover ownership.

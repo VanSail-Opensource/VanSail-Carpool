@@ -51,7 +51,6 @@ export function desktopNavigationItems(t: Translate, isAdmin: boolean, showAroun
         { label: t('community.title'), to: '/community', icon: 'i-ph-users-three' },
         { label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
         { label: t('statistics.title'), to: '/statistics', icon: 'i-ph-chart-donut' },
-        { label: t('abuse.title'), to: '/abuse-records', icon: 'i-ph-shield-warning' },
         ] : []),
       ],
     })

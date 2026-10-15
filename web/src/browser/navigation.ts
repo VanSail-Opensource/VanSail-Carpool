@@ -18,7 +18,6 @@ export const adminGroups = [
     { value: 'host-connectivity', labelKey: 'hostConnectivity.title', icon: 'i-ph-plugs-connected-bold' },
     { value: 'ip-lookup', labelKey: 'ipLookup.adminTitle', icon: 'i-ph-globe-bold' },
     { value: 'compensation', labelKey: 'adminCompensation.nav', icon: 'i-ph-first-aid-bold' },
-    { value: 'abuse', labelKey: 'adminAbuse.nav', icon: 'i-ph-shield-warning-bold' },
   ] },
   { labelKey: 'adminNav.system', sections: [
     { value: 'settings', labelKey: 'adminNav.settings', icon: 'i-ph-gear-six-bold' },

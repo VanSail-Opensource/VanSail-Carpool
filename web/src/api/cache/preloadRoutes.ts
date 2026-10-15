@@ -12,7 +12,7 @@ export function memberResources(session: Session, locale: string): PreloadResour
   return [
     ...['dashboard', 'catalog', 'balance', 'statistics', 'statistics/nodes', 'activity',
       'affiliates', 'coupons/wallet', 'questionnaires/active', 'emby/account',
-      'me/abuse-records', 'subscription/ip-blocks', 'me/traffic-reset-automation',
+      'subscription/ip-blocks', 'me/traffic-reset-automation',
       'community/membership/check'].map(path => ({ path: `/api/v1/${path}` })),
     { path: '/api/v1/affiliates/referrals', options: { query: { page: 1 } } },
     { path: '/api/v1/dashboard/node-usage', options: { query: { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) } } },

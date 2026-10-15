@@ -22,10 +22,6 @@ without applying Mini App replacement rules. `browser_sessions_test.go` and
 `browser_access_links_test.go` cover scope/device isolation, renewal, retention,
 atomic replay rejection, and expiry in hosted CI.
 
-`abuse_node_retention.go` reconciles key records against a successful complete
-upstream list without deleting historical incidents. `abuse_node_retention_test.go`
-covers deleted-key rejection and preserving credentials during provider outages.
-
 `member_squad_preferences.go` stores disabled references and validates the last
 enabled squad atomically. `member_combo_control_helpers.go` checks ownership,
 queued order, pending mutations and bans. `member_early_activation.go` forfeits
@@ -107,7 +103,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `remna_provisioning_backlog.go` queues unlinked paid members after upgrades.
 
 - `timestamp_cursor.go` signs filter-bound timestamp/ID cursor payloads shared by administrative inventories.
-- `abuse_configuration.go`, `abuse_ingestion.go`, `abuse_event_storage.go`, and `abuse_record_queries.go` validate detector policy, resolve reported identities, persist normalized events, and expose stable incident pages.
 - `admin_users_page.go`, `admin_entitlements_page.go`, `admin_finance_pages.go`, and `admin_jobs_page.go` provide stable filtered pages without fixed-cap truncation.
 - `database.go` — opens SQLite, applies embedded migrations, checkpoints WAL,
   and exposes migration versions.
@@ -226,10 +221,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_bulk_query.go`, `admin_bulk_shift.go`, and `admin_bulk_extension.go` preview inclusive-OR active targets, deduplicate users, shift active and queued terms to the minute, and create one durable bulk job.
 - `compensation_config.go`, `compensation_observation.go`, `compensation_events.go`, `compensation_review.go`, `compensation_notification.go`, and `compensation_dismiss.go` persist revisioned outage policy, node observations, frozen snapshots, cursor-safe projections, atomic reviewed extensions, and provider-gated compensation detail cards.
 - `automatic_renewal_plan.go` and `automatic_renewal_commit.go` preserve explicit administrator entitlement overrides and edited term lengths when creating a successor.
-- `abuse_event_claims.go`, `abuse_legacy_samples.go`, and `abuse_evaluation.go` recover and claim bounded normalized-event batches, drain legacy samples, and atomically commit rollups, boundary state, incident facts, details, and outbox work.
-- `abuse_records.go`, `abuse_incident.go`, and `abuse_record_cooldown.go` provide replay-safe incident facts, per-user cooldowns for every abuse record, and incident queueing. Suppressed facts prevent replay but do not advance escalation, extend the cooldown, or queue punishments/notifications; only emitted records count. Zero disables cooldown, and the exact expiry permits the next record.
-- `abuse_admin.go`, `abuse_record_queries.go`, `abuse_ip_ban_scans.go`, and `abuse_outbox.go` provide encrypted node-key metadata, compact QPS statistics, username-bearing record projections, resumable IP-ban scans, completion evidence, restoration state, and retention.
-- Abuse notification deliveries read the offending account's linked username, notification locale, and `incident_bucket_at` from existing rows, so delayed delivery retains the detection time and uses the recipient's language.
 - `migrations/035_abuse_warning_cooldown.sql` persists the policy-controlled abuse record cooldown under its original column name for compatibility.
 - `migrations/038_durable_abuse_processing.sql` adds the bounded streak policy, normalized pending events, 30-minute rollups, emitted-state compatibility, compact incident facts, and punishment completion evidence.
 - `migrations/039_abuse_record_retention_and_ip_bans.sql` adds configurable record retention support and resumable IP-ban scan state.
@@ -337,8 +328,6 @@ idempotent replay, late-provider-callback blocking, and retention-preserved paym
 batch pricing without coupon-use writes. `renewal_batch.go` projects retained
 renewal batches and their purchase records. Automatic renewal uses its own
 attached-coupon policy and a unique source-successor link.
-
-`abuse_policy_test.go`, `abuse_processing_test.go`, `abuse_record_cooldown_test.go`, and `abuse_records_test.go` cover streak bounds and revisions, cross-task/replay evaluation, compact rollups, all-action cooldown and escalation boundaries, and completion-gated detail pruning.
 
 - `activity_boost_test.go` covers sampled-before-scaled check-in settlement, replay and concurrency, zero-boost refusal, overflow rollback, boosted-only progress and immutable paid amounts.
 - `activity_boost_floor_test.go` checks the 1x minimum through both settlement paths and their combined ledger balance.
@@ -458,3 +447,5 @@ places temporary files under DATA_DIR/tmp for read-only-root deployments. Proxy
 indexes live in a separate disposable cache outside this schema and its backups.
 
 `api_tokens.go` reads hashed credentials and bounded owned metadata. `api_token_writes.go` creates/revokes tokens with transactional audits. `api_tokens_test.go` covers hash-only storage, expiry and owner isolation.
+
+`retired_detector.go` reads only acknowledged pre-upgrade restrictions and atomically records their release once. `retired_detector_test.go` upgrades a real pre-078 schema and verifies removed secrets/raw samples, canceled jobs, manual restrictions, financial history, ambiguous-mutation audits, foreign keys and idempotent release. Historical detector incident rows are archived; they have no member or administrator detector API.

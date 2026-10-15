@@ -143,12 +143,6 @@ func (s *Store) CreateAdminRemnaRelink(ctx context.Context, input AdminRemnaReli
 	return op.Receipt, err
 }
 
-func (s *Store) HasActiveAbuseTemporaryBan(ctx context.Context, userID string, now time.Time) (bool, error) {
-	var count int
-	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM abuse_temp_bans WHERE user_id=? AND restored_at IS NULL AND expires_at>?`, userID, stamp(now)).Scan(&count)
-	return count > 0, err
-}
-
 func (s *Store) LinkAdminRemnaUser(ctx context.Context, actorID, userID, remoteID, reason string, now time.Time) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
