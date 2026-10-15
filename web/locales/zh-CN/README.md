@@ -45,3 +45,5 @@ than in Vue templates, composables, or API clients.
 - `xnode-migration.json` provides localized migration status, source setup and recovery guidance.
 
 - `public-subscription.json` provides public bearer subscription, format and import guidance.
+
+`api-tokens.json` localizes administrator API credential controls and permission presets.

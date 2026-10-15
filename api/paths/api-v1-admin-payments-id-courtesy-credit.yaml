@@ -1,5 +1,5 @@
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Billing]
   operationId: creditAdminTerminalPayment
   summary: Append an audited courtesy credit for one terminal failed or expired payment

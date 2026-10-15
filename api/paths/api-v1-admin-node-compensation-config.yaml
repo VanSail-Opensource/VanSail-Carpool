@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: getNodeCompensationConfig
   summary: Get outage compensation configuration
@@ -8,7 +8,7 @@ get:
       content: { application/json: { schema: { $ref: '../components/schemas/schemas-22.yaml#/NodeCompensationConfig' } } }
     '403': { $ref: '../components/responses.yaml#/Forbidden' }
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: updateNodeCompensationConfig
   summary: Atomically update outage compensation configuration

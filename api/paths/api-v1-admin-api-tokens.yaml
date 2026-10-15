@@ -1,0 +1,89 @@
+{
+  "get": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "listPanelAPITokens",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      }
+    ],
+    "description": "Lists up to 200 active and recent token metadata records owned by the browser administrator. Secret values are never returned.",
+    "responses": {
+      "200": {
+        "description": "API response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../openapi.yaml#/components/schemas/PanelAPIToken"
+                  }
+                }
+              },
+              "required": [
+                "items"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  },
+  "post": {
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "createPanelAPIToken",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/PanelAPITokenWrite"
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "API response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/PanelAPITokenIssued"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      }
+    }
+  }
+}

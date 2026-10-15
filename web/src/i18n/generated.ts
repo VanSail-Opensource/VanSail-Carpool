@@ -1,3 +1,5 @@
+import enAPITokens from '../../locales/en/api-tokens.json'
+import zhAPITokens from '../../locales/zh-CN/api-tokens.json'
 import enIPLookup from '../../locales/en/ip-lookup.json'
 import enPublicSubscription from '../../locales/en/public-subscription.json'
 import zhPublicSubscription from '../../locales/zh-CN/public-subscription.json'
@@ -68,6 +70,7 @@ import zhStatistics from '../../locales/zh-CN/statistics.json'
 import zhSettings from '../../locales/zh-CN/settings.json'
 
 const en = {
+ ...enAPITokens,
  ...enPublicSubscription,
  ...enXNode, ...enXNodeMigration,
  ...enAdminUsdt,
@@ -79,6 +82,7 @@ const en = {
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enAdminAbuse, ...enAbuse, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
+ ...zhAPITokens,
  ...zhPublicSubscription,
  ...zhXNode, ...zhXNodeMigration,
  ...zhAdminUsdt,

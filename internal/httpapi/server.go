@@ -9,6 +9,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/apitoken"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
@@ -55,6 +56,7 @@ type telegramProvider interface {
 }
 
 type Dependencies struct {
+	APITokens          *apitoken.Service
 	XNode              *xnode.Service
 	XNodeMigration     *xnodemigration.Service
 	XNodeMaster        *xnode.Master
@@ -124,6 +126,9 @@ func New(deps Dependencies) (*Server, error) {
 		return nil, err
 	}
 	server := &Server{deps: deps, requests: requestVerifier, authLimiter: newAuthLimiter(), adminTelegramIDs: adminTelegramIDs}
+	if server.deps.APITokens == nil {
+		server.deps.APITokens = apitoken.New(deps.Store, deps.AdminTelegramIDs)
+	}
 	if server.deps.BrowserAuth == nil {
 		server.deps.BrowserAuth = browserauth.New(deps.Store, deps.PublicURL, deps.AdminTelegramIDs)
 	}

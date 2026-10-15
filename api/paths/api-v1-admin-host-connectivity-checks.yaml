@@ -1,5 +1,5 @@
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: startAdminHostConnectivityCheck
   summary: Start a manual connectivity batch or return the active batch

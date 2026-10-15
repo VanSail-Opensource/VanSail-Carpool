@@ -1,7 +1,7 @@
 parameters:
   - { name: id, in: path, required: true, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [USDT]
   operationId: resolveAdminUSDTTransfer
   description: Consumes a verified transfer once; only its original payment window may be overridden.

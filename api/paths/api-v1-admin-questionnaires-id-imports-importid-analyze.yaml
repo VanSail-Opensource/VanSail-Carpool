@@ -1,5 +1,5 @@
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Questionnaires]
   operationId: analyzeQuestionnaireImport
   summary: Analyze one selected validation-code column without crediting

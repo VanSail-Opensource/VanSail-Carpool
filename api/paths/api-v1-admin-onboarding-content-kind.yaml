@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Onboarding]
   operationId: getAdminOnboardingBundle
   summary: Get draft and published localized onboarding bundles

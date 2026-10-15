@@ -1,5 +1,5 @@
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Operations]
   operationId: resolveAdminOperation
   summary: Resolve a genuinely ambiguous provider operation with an audit reason

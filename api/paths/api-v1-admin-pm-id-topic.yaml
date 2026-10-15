@@ -1,7 +1,7 @@
 parameters:
   - { name: id, in: path, required: true, schema: { $ref: '../openapi.yaml#/components/schemas/ID' } }
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Administration]
   operationId: repairAdminPMTopic
   summary: Probe and attach an existing topic or profile after reviewing uncertain creation

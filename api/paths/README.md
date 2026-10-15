@@ -236,3 +236,5 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-xnode-subscription.yaml` defines the typed X-Node contract for this resource.
 
 - `api-v1-subscriptions-token-metadata.yaml` defines owner-scoped bearer subscription metadata.
+
+`api-v1-admin-api-tokens.yaml` and `api-v1-admin-api-tokens-id.yaml` describe browser-only credential management. `api-v1-admin-operations-operationId.yaml` provides scoped asynchronous operation receipts for automation.

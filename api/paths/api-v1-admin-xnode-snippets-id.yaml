@@ -10,6 +10,7 @@
     }
   ],
   "put": {
+    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
     "tags": [
       "Administration"
     ],
@@ -44,6 +45,7 @@
     }
   },
   "delete": {
+    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
     "tags": [
       "Administration"
     ],

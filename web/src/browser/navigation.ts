@@ -22,6 +22,7 @@ export const adminGroups = [
   ] },
   { labelKey: 'adminNav.system', sections: [
     { value: 'settings', labelKey: 'adminNav.settings', icon: 'i-ph-gear-six-bold' },
+    { value: 'api-access', labelKey: 'apiTokens.title', icon: 'i-ph-key-bold' },
     { value: 'backups', labelKey: 'adminNav.backups', icon: 'i-ph-archive-bold' },
     { value: 'database', labelKey: 'adminNav.database', icon: 'i-ph-database-bold' },
     { value: 'audit', labelKey: 'adminNav.audit', icon: 'i-ph-clock-counter-clockwise-bold' },

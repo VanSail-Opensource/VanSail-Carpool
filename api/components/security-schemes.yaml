@@ -1,3 +1,9 @@
+panelApiToken:
+  type: http
+  scheme: bearer
+  bearerFormat: vsc_ followed by 43 base64url characters
+  description: Scoped administrator API token. Use Authorization Bearer without browser cookies or HMAC headers. Token creation/revocation requires a signed browser session. Write scopes include read access; migration and X-Node scopes do not grant commerce or system administration.
+
 cookieSession:
   type: apiKey
   in: cookie

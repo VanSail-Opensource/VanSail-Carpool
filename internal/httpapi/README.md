@@ -194,3 +194,5 @@ cancellable fake probe for hosted execution without external network traffic.
 - `xnode_migration.go`: Entry points: `xnodeMigrationStatus`, `xnodeMigrationPreview`, `xnodeMigrationImport`, `xnodeMigrationCutover`.
 
 - `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.
+
+`api_token_auth.go` authenticates scoped bearer requests without browser cookies. `api_tokens.go` mounts browser-only token management and actor-scoped asynchronous receipt reads. `api_tokens_test.go` covers scopes, role removal, revocation, metadata privacy and session isolation in hosted CI.

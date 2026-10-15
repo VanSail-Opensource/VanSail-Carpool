@@ -57,3 +57,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `usdt.yaml` ? Typed built-in USDT administration, quota, scan and review contracts.
 
 `xnode.yaml` defines authoritative nodes, per-node policy, global configuration, shared snippets, live metrics and enrollment. Live metrics remain nonpersistent.
+
+`api-tokens.yaml` defines token metadata, explicit permissions, expiry input and one-time issuance responses.

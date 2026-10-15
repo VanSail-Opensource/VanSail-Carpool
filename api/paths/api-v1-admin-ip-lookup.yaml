@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags:
     - IP Lookup
   operationId: getAdminIPLookup
@@ -19,7 +19,7 @@ get:
     "502":
       $ref: ../openapi.yaml#/components/responses/UpstreamFailure
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags:
     - IP Lookup
   operationId: putAdminIPLookup

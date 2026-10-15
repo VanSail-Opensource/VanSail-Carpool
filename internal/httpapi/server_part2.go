@@ -17,6 +17,10 @@ const userContextKey contextKey = "user"
 
 func (s *Server) requireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if apiPrincipal(r) != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
 		if browserScopedRequest(r) {
 			s.requireBrowserSession(next).ServeHTTP(w, r)
 			return

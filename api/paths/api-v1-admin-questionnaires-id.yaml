@@ -1,5 +1,5 @@
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Questionnaires]
   operationId: updateAdminQuestionnaire
   summary: Partially replace a questionnaire definition
@@ -26,7 +26,7 @@ put:
     '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }
     '500': { $ref: '../openapi.yaml#/components/responses/InternalFailure' }
 delete:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Questionnaires]
   operationId: deleteAdminQuestionnaire
   summary: Hard-delete a questionnaire and feature-linked records

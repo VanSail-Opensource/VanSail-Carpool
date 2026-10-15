@@ -1,5 +1,6 @@
 {
   "get": {
+    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
     "tags": [
       "Administration"
     ],
@@ -36,6 +37,7 @@
     }
   },
   "post": {
+    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
     "tags": [
       "Administration"
     ],

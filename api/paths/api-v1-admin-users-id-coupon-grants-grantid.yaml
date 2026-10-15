@@ -1,5 +1,5 @@
 delete:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: discardAdminUserCoupon
   summary: Retire one user coupon grant while retaining its history

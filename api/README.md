@@ -31,3 +31,5 @@
 Generate TypeScript types from the root entry point with `npm run generate:api` in `web/`. Authenticated operations inherit all four AND-combined security schemes. Telegram authentication, provider callbacks, payment returns, operational probes, and static delivery retain their explicit unsigned protocols.
 
 Host connectivity is administrator-only under `/api/v1/admin/host-connectivity`. Snapshot, asynchronous manual checks, exact-user resolution and stable 24-hour history return credential-free projections. Scheduling configuration remains one atomic `connectivity.config` JSON value written through the existing validated settings registry.
+
+`API_TOKENS.md` documents scoped bearer authentication, management, expiry and migration operation polling.

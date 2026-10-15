@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Questionnaires]
   operationId: listAdminQuestionnaires
   summary: List questionnaire definitions and settlement state
@@ -14,7 +14,7 @@ get:
     '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
     '500': { $ref: '../openapi.yaml#/components/responses/InternalFailure' }
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Questionnaires]
   operationId: createAdminQuestionnaire
   summary: Create a Google or Microsoft Forms questionnaire

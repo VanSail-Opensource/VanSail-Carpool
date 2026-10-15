@@ -9,6 +9,10 @@ import (
 
 func (s *Server) requireSignedRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(r.Header.Values("Authorization")) > 0 {
+			s.authenticateAPIToken(w, r, next)
+			return
+		}
 		if isStreamingBackupUpload(r) {
 			if !s.authorizeStreamingBackupUpload(w, r) {
 				return

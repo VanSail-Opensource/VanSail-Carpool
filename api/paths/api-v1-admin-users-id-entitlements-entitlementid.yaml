@@ -1,5 +1,5 @@
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: editAdminEntitlement
   summary: Replace exposed entitlement fields with optimistic locking and audit

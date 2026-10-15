@@ -1,0 +1,121 @@
+{
+  "PanelAPIToken": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "admin:read",
+            "admin:write",
+            "xnode:read",
+            "xnode:write",
+            "migration:read",
+            "migration:write"
+          ]
+        }
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expiresAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "lastUsedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "revokedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "prefix",
+      "scopes",
+      "createdAt",
+      "expiresAt",
+      "lastUsedAt",
+      "revokedAt"
+    ]
+  },
+  "PanelAPITokenWrite": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      },
+      "scopes": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "enum": [
+            "admin:read",
+            "admin:write",
+            "xnode:read",
+            "xnode:write",
+            "migration:read",
+            "migration:write"
+          ]
+        }
+      },
+      "expiresInDays": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 365,
+        "default": 30
+      }
+    },
+    "required": [
+      "name",
+      "scopes"
+    ]
+  },
+  "PanelAPITokenIssued": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "item": {
+        "$ref": "../../openapi.yaml#/components/schemas/PanelAPIToken"
+      },
+      "token": {
+        "type": "string",
+        "pattern": "^vsc_[A-Za-z0-9_-]{43}$"
+      }
+    },
+    "required": [
+      "item",
+      "token"
+    ]
+  }
+}

@@ -456,3 +456,5 @@ The authoritative database has at most four connections with a 4 MiB page cache
 per connection, no memory mapping and file-backed temporary work. Bootstrap
 places temporary files under DATA_DIR/tmp for read-only-root deployments. Proxy
 indexes live in a separate disposable cache outside this schema and its backups.
+
+`api_tokens.go` reads hashed credentials and bounded owned metadata. `api_token_writes.go` creates/revokes tokens with transactional audits. `api_tokens_test.go` covers hash-only storage, expiry and owner isolation.

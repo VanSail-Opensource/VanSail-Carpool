@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: getAdminEntitlementRefundQuote
   parameters:
@@ -16,7 +16,7 @@ get:
     '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
     '502': { $ref: '../openapi.yaml#/components/responses/UpstreamFailure' }
 post:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: refundAdminEntitlement
   summary: Refund an entitlement through a durable audited operation

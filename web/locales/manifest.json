@@ -33,6 +33,7 @@
     "admin-abuse",
     "ip-lookup",
     "ip-lookup-live",
-    "ip-lookup-checks"
+    "ip-lookup-checks",
+    "api-tokens"
   ]
 }

@@ -5,6 +5,10 @@ import (
 )
 
 func (s *Server) mountAdmin(router chi.Router) {
+	router.Get("/api-tokens", s.adminAPITokens)
+	router.Post("/api-tokens", s.adminCreateAPIToken)
+	router.Delete("/api-tokens/{id}", s.adminRevokeAPIToken)
+	router.Get("/operations/{operationId}", s.adminOperationReceipt)
 	router.Get("/pm", s.adminPMConversations)
 	router.Put("/pm/{id}", s.adminPMModeration)
 	router.Get("/pm/{id}/deliveries", s.adminPMDeliveries)

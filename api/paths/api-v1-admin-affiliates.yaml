@@ -1,5 +1,5 @@
 get:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Affiliates]
   summary: Get the current affiliate configuration and bot identity status
   operationId: getAdminAffiliates
@@ -9,7 +9,7 @@ get:
       content: { application/json: { schema: { $ref: '../components/schemas/schemas-20.yaml#/AdminAffiliateView' } } }
     '403': { $ref: '../components/responses.yaml#/Forbidden' }
 put:
-  security: [{ browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: [] }]
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Affiliates]
   summary: Atomically replace the affiliate tier configuration
   operationId: updateAdminAffiliates

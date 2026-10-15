@@ -48,3 +48,5 @@ commands. Its mutable state and quotes always bypass response snapshots.
 `xnode.ts` exposes typed node administration and live metrics with nonpersistent secret/realtime reads.
 
 - `xnodeMember.ts` provides typed member metrics, routing and subscription APIs plus cookie-free public bearer metadata reads.
+
+`adminAPITokens.ts` provides typed no-store browser management of administrator API credentials.

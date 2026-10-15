@@ -74,3 +74,5 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
   exercise export review and retry without changing provider ownership.
 
 - `public-subscription-audit.ts` and `public-subscription-audit.html` supply populated, loading, empty, partial and invalid/revoked-link browser cases. Metadata requests record credential omission; copy and QR remain local.
+
+`APITokensAudit.vue`, `api-tokens-audit.ts` and `api-tokens-audit.html` provide constructed API credential creation, copy and revocation flows. Query flags: empty, slow, error, create-error, revoke-error, copy-error and zh. No real token is used.
