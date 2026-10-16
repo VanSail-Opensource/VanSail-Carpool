@@ -162,7 +162,18 @@ func (s *Service) PreviewSubscriptionTemplate(item subscription.Template) ([]byt
 		if json.Unmarshal(raw, &configs) != nil || len(configs) != 1 {
 			return nil, ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}, nil
 		}
-		result = ValidateConfigurationDocument(configs[0])
+		var config map[string]json.RawMessage
+		if json.Unmarshal(configs[0], &config) != nil || config == nil {
+			return nil, ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}, nil
+		}
+		// Xray subscription clients use remarks as a display name. It is not a
+		// server-core configuration field, so omit it only from native validation.
+		delete(config, "remarks")
+		validationDocument, err := json.Marshal(config)
+		if err != nil {
+			return nil, ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}, nil
+		}
+		result = ValidateConfigurationDocument(validationDocument)
 	}
 	return raw, result, nil
 }
