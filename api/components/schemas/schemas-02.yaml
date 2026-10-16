@@ -118,9 +118,6 @@ SquadProduct:
       type: boolean
     activationRequired:
       type: boolean
-    geocheckEnabled:
-      type: boolean
-      description: Whether the Geocheck popup is enabled for this squad. Omitted by older servers; defaults to enabled.
     accessibleNodes:
       type: array
       items:
@@ -307,9 +304,6 @@ SquadProductWrite:
       type: string
       minLength: 1
       writeOnly: true
-    geocheckEnabled:
-      type: boolean
-      description: Enable the Geocheck popup for this squad. Omission preserves the existing setting; new squads default to enabled.
     stockLimit:
       type: [integer, 'null']
       minimum: 0

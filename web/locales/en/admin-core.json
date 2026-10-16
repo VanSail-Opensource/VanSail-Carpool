@@ -96,8 +96,6 @@
     "tooLong": "Use no more than {max} characters."
   },
   "adminSquad": {
-    "geocheckEnabled": "Enable Geocheck",
-    "geocheckHint": "Show Geocheck results when members open a node in this squad.",
     "activationRequired": "Require activation code",
     "activationRequiredHint": "Keep this squad visible, but request a code before a new purchase.",
     "activationCode": "Activation code",

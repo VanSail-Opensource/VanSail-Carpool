@@ -124,7 +124,11 @@ func ceilDivide(numerator, denominator int64) int64 {
 	if numerator <= 0 || denominator <= 0 {
 		return 0
 	}
-	return (numerator + denominator - 1) / denominator
+	result := numerator / denominator
+	if numerator%denominator != 0 {
+		result++
+	}
+	return result
 }
 
 func pointer(value int64) *int64                                     { return &value }

@@ -45,3 +45,9 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `public-subscription.json` provides public bearer subscription, format and import guidance.
 
 `api-tokens.json` contains API permission, expiry, creation, revocation and one-time secret copy.
+
+`member-nodes.json` supplies live-usage and owner routing controls.
+
+`node-admin.json` supplies node commands, certificate bindings and readable metric labels.
+
+`node-templates.json` localizes template validation, previews, format policy and assignments.

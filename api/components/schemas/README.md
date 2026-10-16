@@ -27,11 +27,9 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `schemas-16.yaml`: live `RolloverWindow` and `RolloverProjection` aggregate response schemas
 - `schemas-17.yaml`: durable operation and payment-operation receipts, signed connection projections, active IP blocks, account-wide reset automation, refund quotes, and billing amount limits
 - `schemas-18.yaml`: admin entitlement/combo mutations, exact refund amounts, coupon and provider-account commands, minute-normalized bulk extension requests with a legacy-days compatibility input, and aggregate user detail including active IP blocks and temporary-ban state
-- `schemas-19.yaml`: cached remote/database statistics including live predicted rollover, normalized distributions, and node Geocheck image contracts
 - `schemas-20.yaml`: affiliate member projections, tier rewards, bot identity, and optimistic administrator writes
 - `schemas-21.yaml`: `PaymentMethod` with provider display name and pending-order-aware `BalanceResponse`
 - `schemas-22.yaml`: revisioned node-compensation configuration, outage projections, review writes, recipient-safe event pages
-`schemas-02.yaml` includes the optional per-squad `geocheckEnabled` display setting. Existing squads default on; omitted writes preserve their stored setting.
 
 - `schemas-06.yaml` adds the live group boost status and effective activity reward amounts; counts and links are nullable when verification is unavailable.
 
@@ -59,3 +57,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 `xnode.yaml` defines authoritative nodes, per-node policy, global configuration, shared snippets, live metrics and enrollment. Live metrics remain nonpersistent.
 
 `api-tokens.yaml` defines token metadata, explicit permissions, expiry input and one-time issuance responses.
+
+`schemas-19.yaml` defines product statistics snapshots, distributions and live node metrics.

@@ -31,3 +31,5 @@ accepted and old upload routes return no detector service.
 and retry behavior. `internal/platform/database/retired_detector_test.go` exercises
 the embedded pre-078 schema upgrade, removed secrets, preserved history, canceled
 jobs, ambiguous review and idempotency. These suites run in hosted CI.
+
+The following delivery also removes the node-image checker, account relinking and scheduled host-remark mutations. Migration `079_retire_legacy_controls.sql` fails remaining executable operations with `FEATURE_RETIRED` and preserves historical receipts and audit rows. Native host connectivity checks and administrator backup/retention operations remain separate supported controls.

@@ -58,7 +58,7 @@ func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *d
 		}
 	}
 	providerWorker := admin.NewUserProviderWorker(store, remna)
-	for _, kind := range []string{providerops.KindAdminTemporaryBan, providerops.KindAdminTemporaryUnban, providerops.KindAdminRemnaRelink} {
+	for _, kind := range []string{providerops.KindAdminTemporaryBan, providerops.KindAdminTemporaryUnban} {
 		if err := dispatcher.Register(kind, providerWorker); err != nil {
 			return err
 		}

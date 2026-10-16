@@ -1,16 +1,11 @@
 # Statistics components
 
-Squad-context Geocheck popups show the localized disabled state without restoring an image or starting a request when disabled. Enabled contexts pass the squad UUID for the server to recheck the live setting. General node statistics and shared background image collection retain their existing behavior.
 
 - `StatisticsPage.vue` is the thin page orchestrator for loading, stale, empty, and partial-error states, with separate Overview, Nodes, Seven-day traffic, Distributions, and Squad composition tabs. Overview also contains both source-freshness panels.
-- `StatisticsPage.test.ts` covers tab-panel separation and the node-card selection flow into the on-demand Geocheck modal.
 - `StatisticsFreshness.vue` exposes the Remnawave and database snapshot timestamps as independent Overview panels with separate stale state.
 - `StatisticsFreshness.test.ts` covers independent partition timestamps and stale/current disclosure.
 - `StatisticsOverview.vue` centers the weekly added-user total in the user donut, with its color legend below the chart, and combines live usage and predicted average rollover with spend, activity, squad, and database KPIs.
-- `StatisticsNodes.vue` presents live node health in dense rows with icon-labeled throughput and online-user metrics plus an explicit Geocheck result action; Xray version and traffic multiplier remain contract-only fields.
 - `StatisticsNodes.test.ts` covers the card action, open-intent feedback marker, and removal of version/multiplier rows.
-- `StatisticsGeocheckModal.vue` accepts the shared minimal node target and presents the on-demand cached SVG result for Statistics and Catalog with loading, unavailable, soft dismiss, wheel, centered pinch, pan, and double-tap zoom. Drag, wheel, and polling never trigger continuous feedback.
-- `StatisticsGeocheckModal.test.ts` covers data-URI rendering, loading/unavailable states, and close reset behavior.
 - `StatisticsTrafficChart.vue` renders the seven-day per-node traffic stack with hover, focus, keyboard, tap, and phone drag selection plus exact-value details.
 - `StatisticsShareCharts.vue` composes member and payment proportions.
 - `StatisticsDistribution.vue` switches between squad-first and combo-first normalized SVG stacked bars with interactive segment details.
@@ -29,3 +24,5 @@ Squad-context Geocheck popups show the localized disabled state without restorin
 - `useStatisticsTrafficScrub.ts` maps touch and pointer coordinates to the nearest rendered traffic segment while preserving vertical page scrolling.
 - `useStatisticsTrafficScrub.test.ts` covers nearest-day and nearest-segment touch hit testing.
 - Chart components animate data geometry, rankings, selected detail, and freshness only. `StatisticsPage.vue` stays static so refreshes never replay the whole route.
+
+`StatisticsNodes.vue` and `StatisticsNodes.test.ts` retain readable live node rates and health without retired image actions. `StatisticsPage.test.ts` covers tab-panel separation.

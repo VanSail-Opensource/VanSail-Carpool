@@ -17,7 +17,6 @@ import type {
   SquadProduct,
   SquadProductWrite,
   StatisticsNodesSnapshot,
-  StatisticsNodeGeocheck,
   StatisticsSnapshot,
 } from './types'
 import type { components } from './generated'
@@ -100,7 +99,6 @@ export const api = {
     request<DashboardNodeUsage>('/api/v1/dashboard/node-usage', { query: { start, end } }),
   getStatistics: () => request<StatisticsSnapshot>('/api/v1/statistics'),
   getStatisticsNodes: () => request<StatisticsNodesSnapshot>('/api/v1/statistics/nodes'),
-  getNodeGeocheck: (nodeUuid: string, squadUuid?: string) => request<StatisticsNodeGeocheck>(`/api/v1/statistics/nodes/${encodeURIComponent(nodeUuid)}/geocheck`, { query: squadUuid ? { squadUuid } : undefined }),
   getCatalog: () => request<Catalog>('/api/v1/catalog'),
   createPurchase: (comboId: string, squadProductIds: string[], couponGrantId: string | undefined, idempotencyKey: string, squadActivationCodes: Record<string, string> = {}) => request<Purchase>('/api/v1/purchases', {
     method: 'POST',

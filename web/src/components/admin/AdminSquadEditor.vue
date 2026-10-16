@@ -30,7 +30,6 @@ const draft = reactive({
   visible: false,
   stockLimit: '',
   activationRequired: false,
-  geocheckEnabled: true,
   activationCode: '',
   profile: null as SquadProfileWrite | null,
 })
@@ -45,7 +44,6 @@ watch(() => props.squad, (squad) => {
     visible: squad.visible,
     stockLimit: squad.stockLimit === null ? '' : String(squad.stockLimit ?? ''),
     activationRequired: squad.activationRequired,
-    geocheckEnabled: squad.geocheckEnabled ?? true,
     activationCode: '',
     profile: editableProfile(squad.profile),
   })
@@ -68,7 +66,6 @@ function submit(): void {
     visible: draft.visible,
     stockLimit,
     activationRequired: draft.activationRequired,
-    geocheckEnabled: draft.geocheckEnabled,
     ...(draft.activationCode.trim() ? { activationCode: draft.activationCode.trim() } : {}),
     profile: draft.profile,
   })
@@ -85,7 +82,6 @@ function submit(): void {
         <TxbAmountField id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />
         <UFormField name="squad-stock-limit" :label="t('adminSquad.stockLimit')" :hint="t('adminSquad.stockLimitHint')"><UInput v-model="draft.stockLimit" type="number" min="0" step="1" inputmode="numeric" :placeholder="t('adminSquad.stockUnlimited')" /></UFormField>
         <SwitchField id="squad-visible" v-model="draft.visible" :label="t('adminSquad.visible')" :help="t('adminSquad.visibleHint')" />
-        <SwitchField id="squad-geocheck" v-model="draft.geocheckEnabled" :label="t('adminSquad.geocheckEnabled')" :help="t('adminSquad.geocheckHint')" />
         <SwitchField id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
         <motion.div v-if="draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
         <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />

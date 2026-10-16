@@ -128,5 +128,6 @@ func (s *Service) UsageSnapshotForRollover(ctx context.Context, id string, start
 	}
 	sort.Slice(result.Daily, func(i, j int) bool { return result.Daily[i].Date.Before(result.Daily[j].Date) })
 	result.NodeSeriesAvailable = true
+	result.TermUsageExact = true
 	return result, nil
 }

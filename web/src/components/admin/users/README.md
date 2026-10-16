@@ -12,7 +12,6 @@
 - `AdminUserOverview.vue` presents identity, balance, synchronization, and the active combo.
 - `AdminUserPM.vue` moves PM controls, topic navigation, repair, delivery history, and read status into the selected profile.
 - `AdminUserCouponActions.vue` grants or historically discards active purchase-discount wallet coupons.
-- `AdminUserProviderActions.vue` queues temporary restrictions and relinks, and displays read-only transient active-IP scan results.
 - `AdminUserSearchFilters.vue` supplies browser popover state, combo, and squad facets with AND/OR composition.
 - `AdminUserAccountContext.vue` presents successful affiliate history without duplicating member facts.
 - `AdminUserProfilePage.vue` composes the aggregate user workflow and its focused dialogs.

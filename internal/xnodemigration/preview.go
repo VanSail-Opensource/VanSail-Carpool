@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"strings"
 )
@@ -109,7 +110,10 @@ func inspectSnapshot(snapshot Snapshot) Preview {
 		}
 
 		if host["xrayJsonTemplateUuid"] != nil {
-			result.Issues = append(result.Issues, Issue{ResourceID: id, Code: "CLIENT_TEMPLATE_REQUIRES_CONVERSION", Blocking: true})
+			templateID, _ := host["xrayJsonTemplateUuid"].(string)
+			if _, err := subscription.ConvertXrayTemplate(snapshot.HostTemplates[templateID]); err != nil {
+				result.Issues = append(result.Issues, Issue{ResourceID: id, Code: "CLIENT_TEMPLATE_REQUIRES_CONVERSION", Blocking: true})
+			}
 		}
 	}
 	if issues, err := sharedSS2022Hosts(snapshot, "", nil); err == nil {

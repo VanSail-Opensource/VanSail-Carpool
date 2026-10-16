@@ -79,3 +79,7 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 - `DetectorRetirementAudit.vue`, `detector-retirement-audit.ts`, and `detector-retirement-audit.html` exercise the retained browser navigation and affiliate profile at desktop/mobile sizes. Query flags `empty`, `slow`, `error`, `member`, and `zh` cover empty/loading/retry/localized states without detector resources.
 
 X-Node audit flags `source&shared` and `shared-error` exercise the localized shared SS-2022 preview warning and a refused handover that retains source ownership.
+
+- `RetiredControlsAudit.vue` exercises real catalog-node, statistics, administrator account-action and squad-editor components through the legacy mode of `detector-retirement-audit.ts`, including constructed loading, empty and error states.
+
+`MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture.

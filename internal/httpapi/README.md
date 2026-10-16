@@ -56,7 +56,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `member_routes.go` mounts the member connection, reset automation, reset, refund, and operation resources.
 - `dashboard_usage.go` validates the authenticated member's UTC traffic range and serves the bounded per-node usage projection.
 - `statistics.go` serves the cached aggregate snapshot, on-demand shared
-  ten-second node snapshot, and image-only process-local node Geocheck result; first-load provider failures are logged with the request ID.
 - `rollover.go` serves the authenticated owner's on-demand active-purchase rollover projection, maps ownership, inactive-term, and upstream failures to stable API errors, and correlates unexpected provider failures with the request ID.
 - `billing_orders.go` creates, polls, and cancels member payment orders.
 - `automatic_renewal.go` serves the owner-only automatic-renewal status and toggle resource and logs unexpected provider failures with request, user, and purchase correlation; manual renewal routes are not public.
@@ -98,7 +97,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `admin_user_detail.go` maps the non-duplicated aggregate profile and its active IP blocks to the public response.
 - `admin_user_commands.go` serves optimistic entitlement edits, entitlement refunds, and no-charge combo replacements.
 - `admin_user_account_commands.go` serves idempotent profile-scoped coupon grants and retained-history discards.
-- `admin_user_provider_commands.go` queues temporary ban, unban, and validated Remnawave identity relink commands.
 - `admin_user_connections.go` scopes durable connection scans and transient IP projections to the selected profile.
 - `admin_bulk_extensions.go` normalizes minute durations or deprecated day inputs for inclusive-OR previews and idempotent bulk-extension jobs.
 - `admin_bulk_extensions_test.go` covers minute input, legacy-day normalization, and ambiguous duration rejection.
@@ -136,14 +134,12 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `payment_callbacks_test.go` verifies that navigation returns accept only the documented payment providers.
 - `admin_user_detail_test.go` covers owner-ID restoration in nested aggregate records.
 - `member_ip_blocks_test.go` covers member isolation, administrator actor attribution, and open-operation conflicts.
-- `statistics_geocheck_test.go` covers cached image-only and unavailable node Geocheck responses.
 - `telegram_membership_test.go` covers joins, rejoins, promotions, departures,
   bots, missing configuration, and unrelated chats through a pure transition predicate.
 
 `README.md` is this direct-file ownership index. Unsigned routes remain limited to operational probes, Telegram authentication, provider-authenticated callbacks, the capability-limited payment return/status flow, and static assets.
 - `handlers_part2.go` contains the remaining route handler implementations.
 - `server_part2.go` contains authenticated request-context, static asset, and transport helper implementations.
-`statistics.go` checks the optional squad context before returning a cached Geocheck image; disabled squads return `SQUAD_GEOCHECK_DISABLED`. General node statistics and shared background image collection keep their existing behavior.
 
 - `activity_boost_test.go` covers `GROUP_BOOST_REQUIRED` (403) and `GROUP_BOOST_UNAVAILABLE` (503). Activity overview exposes live `groupBoost` state and effective amounts while preserving unrelated activities during verification failures.
 - `telegram_deduction.go` contains the unchanged administrator deduction command handling split out to keep the affected command module below 200 lines.
@@ -193,3 +189,11 @@ cancellable fake probe for hosted execution without external network traffic.
 - `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.
 
 `api_token_auth.go` authenticates scoped bearer requests without browser cookies. `api_tokens.go` mounts browser-only token management and actor-scoped asynchronous receipt reads. `api_tokens_test.go` covers scopes, role removal, revocation, metadata privacy and session isolation in hosted CI.
+
+`admin_user_provider_commands.go` exposes manual temporary-ban and restoration commands.
+
+`xnode_subscription_templates.go` serves administrator-only template reads/writes and synthetic previews with private response headers.
+
+`subscription_content.go` negotiates the copied public landing URL between HTML and native client content. `subscription_content_test.go` covers explicit formats, supported client agents, Accept quality and private browser responses.
+
+Command results normalize large integer counters for exact browser presentation, including historical numeric speedtest results.

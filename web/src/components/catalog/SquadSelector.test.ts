@@ -65,17 +65,15 @@ describe('SquadSelector', () => {
     expect(tables[0]!.props('squads')).toEqual([broadband])
   })
 
-  it('forwards table selection and Geocheck events', async () => {
+  it('forwards table selection events', async () => {
     const wrapper = shallowMount(SquadSelector, {
       props: { squads: [international], selectedIds: [], includedIds: [], featuredIds: [], orderedIds: [international.id] },
     })
     const table = wrapper.getComponent(SquadPricingTable)
 
     table.vm.$emit('toggle', international.id)
-    table.vm.$emit('openGeocheck', { uuid: 'node', name: 'Node', countryCode: 'SG', consumptionMultiplier: 1, providerName: null })
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('toggle')).toEqual([[international.id]])
-    expect(wrapper.emitted('openGeocheck')?.[0]?.[0]).toMatchObject({ uuid: 'node' })
   })
 })

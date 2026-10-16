@@ -94,9 +94,13 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 		return model.Purchase{}, err
 	}
 	if calculated {
+		version := rolloverpkg.UsageAlgorithmVersion
+		if rollover.AlgorithmVersion == rolloverpkg.NativeUsageAlgorithmVersion {
+			version = rolloverpkg.NativeUsageAlgorithmVersion
+		}
 		result, updateErr := tx.ExecContext(ctx, `UPDATE purchase_rollovers SET status=?,eligible_unused_bytes=?,credited_txb_minor=?,algorithm_version=?,updated_at=?,completed_at=?
 			WHERE purchase_id=? AND status='calculated'`, rolloverStatusForCredit(credit), normalizedRolloverEligible(rollover), credit,
-			rolloverpkg.UsageAlgorithmVersion, stamp(now), stamp(now), purchaseID)
+			version, stamp(now), stamp(now), purchaseID)
 		if updateErr != nil {
 			return model.Purchase{}, fmt.Errorf("complete automatic rollover: %w", updateErr)
 		}

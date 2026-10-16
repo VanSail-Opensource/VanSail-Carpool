@@ -1,4 +1,4 @@
-// Package statistics owns cached product metrics and provider maintenance.
+// Package statistics owns cached product metrics and read-only provider statistics.
 package statistics
 
 import (
@@ -41,40 +41,11 @@ type Node struct {
 	Multiplier       float64
 }
 
-// Host is the remark and linked-node subset used by scheduled upkeep.
-type Host struct {
-	UUID   string
-	Remark string
-	Nodes  []string
-}
-
-// GeocheckImage is the SVG payload from one completed node job.
-type GeocheckImage struct {
-	Format    string
-	MediaType string
-	Encoding  string
-	Data      string
-}
-
-// GeocheckResult is the status and optional payload from one node job poll.
-type GeocheckResult struct {
-	Completed bool
-	Failed    bool
-	Success   bool
-	NodeUUID  string
-	Image     *GeocheckImage
-}
-
-// Provider exposes only documented Remnawave reads and the host remark patch.
 type Provider interface {
 	Digest(context.Context, time.Time, time.Time) (Digest, error)
 	Traffic(context.Context, time.Time, time.Time) (Traffic, error)
 	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (rollover.UsageSnapshot, error)
 	Nodes(context.Context) ([]Node, error)
-	RequestNodeGeocheck(context.Context, string) (string, error)
-	NodeGeocheckResult(context.Context, string) (GeocheckResult, error)
-	Hosts(context.Context) ([]Host, error)
-	UpdateHostRemark(context.Context, string, string) error
 }
 
 // SquadNameProvider exposes the live Remnawave identity labels used only to

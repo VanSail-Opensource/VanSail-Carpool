@@ -28,6 +28,8 @@ func WeightedNodeUsage(categories []time.Time, series []NodeUsageSeries) (daily 
 			weighted.Quo(weighted, big.NewInt(multiplierScale))
 			if weighted.IsInt64() {
 				values[index] = saturatingAdd(values[index], weighted.Int64())
+			} else {
+				values[index] = 1<<63 - 1
 			}
 		}
 	}
@@ -43,7 +45,10 @@ func WeightedNodeUsage(categories []time.Time, series []NodeUsageSeries) (daily 
 }
 
 func saturatingAdd(left, right int64) int64 {
-	if right <= 0 || left >= 1<<63-1-right {
+	if right <= 0 {
+		return left
+	}
+	if left >= 1<<63-1-right {
 		return 1<<63 - 1
 	}
 	return left + right

@@ -10,7 +10,7 @@ const snapshot: StatisticsNodesSnapshot = {
 }
 
 describe('StatisticsNodes', () => {
-  it('emits the selected node from its Geocheck action', async () => {
+  it('renders live node metrics without retired actions', () => {
     const wrapper = mount(StatisticsNodes, {
       props: { snapshot, loading: false },
       global: {
@@ -23,11 +23,7 @@ describe('StatisticsNodes', () => {
         mocks: { $t: (key: string) => key },
       },
     })
-    const action = wrapper.find('[aria-label="statistics.geocheck.open"]')
-    expect(action.attributes('data-haptic')).toBe('open')
-    expect(wrapper.text()).not.toContain('statistics.nodeXrayVersion')
-    expect(wrapper.text()).not.toContain('statistics.nodeMultiplier')
-    await action.trigger('click')
-    expect(wrapper.emitted('openGeocheck')).toEqual([[snapshot.nodes[0]]])
+    expect(wrapper.text()).toContain('Tokyo')
+    expect(wrapper.findAll('button')).toHaveLength(0)
   })
 })

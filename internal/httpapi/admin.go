@@ -49,7 +49,6 @@ func (s *Server) mountAdmin(router chi.Router) {
 	router.Get("/users/{userId}/connections/{scanId}", s.adminPollUserConnections)
 	router.Post("/users/{userId}/temporary-ban", s.adminTemporaryBan)
 	router.Post("/users/{userId}/temporary-ban/unban", s.adminTemporaryUnban)
-	router.Put("/users/{userId}/remnawave-id", s.adminRelinkRemnaUser)
 	router.Post("/users/{userId}/ip-blocks/{blockId}/unblock", s.adminUnblockIP)
 	router.Post("/users/{id}/balance-adjustments", s.adminBalanceAdjustment)
 	router.Put("/users/{userId}/entitlements/{entitlementId}", s.adminEditEntitlement)

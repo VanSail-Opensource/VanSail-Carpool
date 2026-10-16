@@ -91,7 +91,7 @@ func TestHostRemarkOperationsBlockFreshCommandsWhileOutcomeIsUnresolved(t *testi
 	store := newTestStore(t)
 	actor := createTestUser(t, store, 50_002)
 	now := time.Date(2026, 8, 18, 9, 0, 0, 0, time.UTC)
-	input := providerops.CreateInput{ActorUserID: actor.ID, Kind: providerops.KindHostRemarkUpdate,
+	input := providerops.CreateInput{ActorUserID: actor.ID, Kind: "host_remark_update",
 		IdempotencyKey: "host-first", RequestFingerprint: "1111111111111111",
 		Items: []providerops.ItemInput{{Key: "host", TargetType: "remnawave_host", TargetID: "host-1"}}}
 	first, _, err := store.CreateProviderOperation(ctx, input, now)

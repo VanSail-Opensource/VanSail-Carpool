@@ -3,36 +3,11 @@ package xnode
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 	"math/big"
 	"strconv"
 	"time"
 )
 
-func (s *Service) MemberOperationState(ctx context.Context, id string) (purchaseops.RemoteState, error) {
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return purchaseops.RemoteState{}, err
-	}
-	if identity.CurrentPeriodID == "" {
-		return purchaseops.RemoteState{Quiesced: true}, nil
-	}
-	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil {
-		return purchaseops.RemoteState{}, err
-	}
-	// "closing" is not settled: never allow a refund to use an unfinished count.
-	if period.Status == "closing" {
-		if err = s.Quiesce(ctx, id); err != nil {
-			return purchaseops.RemoteState{}, err
-		}
-		period, err = s.repo.XNodePeriod(ctx, period.ID)
-		if err == nil && period.Status != "closed" {
-			return purchaseops.RemoteState{}, ErrUnavailable
-		}
-	}
-	return purchaseops.RemoteState{UsedTrafficBytes: period.UsedBytes, LastTrafficResetAt: period.LastResetAt, Quiesced: period.Status == "closed"}, err
-}
 func (s *Service) Statistics(ctx context.Context, id string) (model.Statistics, string, error) {
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
@@ -82,25 +57,38 @@ func (s *Service) Statistics(ctx context.Context, id string) (model.Statistics, 
 	for _, value := range legacyHistory {
 		usage = append(usage, DailyUsage{ProxyUserID: value.ProxyUserID, NodeID: value.NodeID, Date: value.Date, UploadBytes: value.RawBytes, WeightedBytes: value.WeightedBytes})
 	}
-	daily := map[string]int64{}
-	totals := map[string]int64{}
+	daily := map[string]*big.Int{}
+	totals := map[string]*big.Int{}
 	for _, item := range usage {
-		daily[item.Date] += item.WeightedBytes
-		totals[item.NodeID] += item.WeightedBytes
+		if item.WeightedBytes < 0 {
+			return result, "", ErrInvalid
+		}
+		if daily[item.Date] == nil {
+			daily[item.Date] = new(big.Int)
+		}
+		if totals[item.NodeID] == nil {
+			totals[item.NodeID] = new(big.Int)
+		}
+		daily[item.Date].Add(daily[item.Date], big.NewInt(item.WeightedBytes))
+		totals[item.NodeID].Add(totals[item.NodeID], big.NewInt(item.WeightedBytes))
 	}
 	for day := now.AddDate(0, -1, 0); !day.After(now); day = day.AddDate(0, 0, 1) {
 		key := day.Format(time.DateOnly)
 		result.Categories = append(result.Categories, key)
-		result.SparklineData = append(result.SparklineData, strconv.FormatInt(daily[key], 10))
+		value := "0"
+		if daily[key] != nil {
+			value = daily[key].String()
+		}
+		result.SparklineData = append(result.SparklineData, value)
 	}
 	nodes, err := s.Nodes(ctx)
 	if err != nil {
 		return result, "", err
 	}
 	for _, node := range nodes {
-		if totals[node.ID] > 0 {
+		if total := totals[node.ID]; total != nil && total.Sign() > 0 {
 			multiplier := node.Multiplier
-			result.TopNodes = append(result.TopNodes, model.TopNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, TotalBytes: strconv.FormatInt(totals[node.ID], 10), ConsumptionMultiplier: &multiplier})
+			result.TopNodes = append(result.TopNodes, model.TopNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, TotalBytes: total.String(), ConsumptionMultiplier: &multiplier})
 		}
 	}
 	link, err := s.SubscriptionURL(identity)

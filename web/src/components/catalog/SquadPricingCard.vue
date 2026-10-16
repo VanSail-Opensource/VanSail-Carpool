@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { NodeGeocheckTarget, SquadProduct } from '@/api/types'
+import type { SquadProduct } from '@/api/types'
 import SquadProfileFacts from '@/components/squad-profile/SquadProfileFacts.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
 import { formatMemberMoney } from '@/utils/displayCurrency'
@@ -17,7 +17,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggle: [id: string]
-  openGeocheck: [node: NodeGeocheckTarget]
 }>()
 const isFull = computed(() => !props.included && props.squad.stockRemaining === 0 && !props.squad.stockHeldByCurrentUser)
 const remainingPercentage = computed(() => {
@@ -97,7 +96,7 @@ function toggle(): void {
         <span class="squad-card__nodes-label">{{ $t('catalog.nodes') }}</span>
         <SquadProfileFacts class="squad-card__tags" :profile="squad.profile" presentation="member" />
       </div>
-      <SquadNodeBlocks class="squad-card__node-controls" :nodes="squad.accessibleNodes" @open-geocheck="emit('openGeocheck', { ...$event, squadUuid: squad.remnaSquadUuid, geocheckEnabled: squad.geocheckEnabled ?? true })" />
+      <SquadNodeBlocks :nodes="squad.accessibleNodes" />
     </div>
   </article>
 </template>
@@ -116,7 +115,6 @@ function toggle(): void {
 }
 .squad-card__select { position: absolute; z-index: 1; inset: 0; width: 100%; min-height: 44px; padding: 0; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .squad-card__select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.squad-card__node-controls { position: relative; z-index: 2; }
 .squad-pricing-card--nonselectable { cursor: default; }
 .squad-pricing-card--broadband { --squad-profile-tone: var(--accent); }
 .squad-pricing-card--china_optimized { --squad-profile-tone: var(--warning); }

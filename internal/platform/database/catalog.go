@@ -42,7 +42,6 @@ type SquadProductInput struct {
 	StockLimit         *int
 	ActivationRequired bool
 	ActivationCode     string
-	GeocheckEnabled    *bool
 }
 
 // ImportedSquad is retained as a compatibility DTO. Upstream squads are no

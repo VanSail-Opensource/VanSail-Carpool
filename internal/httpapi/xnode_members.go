@@ -102,10 +102,7 @@ func (s *Server) xnodeBearerMetadata(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) xnodeBearerSubscription(w http.ResponseWriter, r *http.Request) {
 	privateSubscriptionHeaders(w)
-	format := r.URL.Query().Get("format")
-	if format == "" {
-		format = "native"
-	}
+	format := subscriptionContentFormat(r)
 	raw, metadata, err := s.deps.XNode.BearerSubscription(r.Context(), chiURLParam(r, "token"), format)
 	if err != nil {
 		s.xnodeError(w, r, err)

@@ -30,7 +30,6 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 	}
 	result := MetricsSummary{Nodes: []NodeMetrics{}, TotalNodes: len(nodes), FetchedAt: now}
 	m.mu.RLock()
-	defer m.mu.RUnlock()
 	for _, node := range nodes {
 		snapshot := m.live[node.ID]
 		_, connected := m.peers[node.ID]
@@ -65,6 +64,10 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 			result.DownloadBytesPerSecond += item.DownloadBytesPerSecond
 		}
 		result.Nodes = append(result.Nodes, item)
+	}
+	m.mu.RUnlock()
+	for index := range result.Nodes {
+		result.Nodes[index].Machine = BrowserMetricNumbers(result.Nodes[index].Machine)
 	}
 	return result, nil
 }

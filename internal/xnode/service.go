@@ -22,6 +22,7 @@ type Service struct {
 	master          *Master
 	now             func() time.Time
 	mu              sync.Mutex
+	templateMu      sync.Mutex
 	legacyProxies   func(context.Context, Identity) ([]subscription.Proxy, error)
 	legacySync      func(context.Context) error
 }

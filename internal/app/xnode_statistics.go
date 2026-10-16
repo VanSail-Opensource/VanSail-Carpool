@@ -14,7 +14,13 @@ func (a proxyProvider) Digest(ctx context.Context, from, to time.Time) (stats.Di
 		return stats.Digest{}, err
 	}
 	if len(nodes) == 0 {
-		return a.remnaAdapter.Digest(ctx, from, to)
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return stats.Digest{}, err
+		}
+		if bridge {
+			return a.remnaAdapter.Digest(ctx, from, to)
+		}
 	}
 	count, err := a.store.XNodeIdentityGrowth(ctx, from, to)
 	return stats.Digest{CreatedUsers: count}, err
@@ -26,7 +32,13 @@ func (a proxyProvider) Traffic(ctx context.Context, from, to time.Time) (stats.T
 		return result, nodeErr
 	}
 	if len(nativeNodes) == 0 {
-		return a.remnaAdapter.Traffic(ctx, from, to)
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return result, err
+		}
+		if bridge {
+			return a.remnaAdapter.Traffic(ctx, from, to)
+		}
 	}
 	usage, err := a.store.XNodeFleetUsage(ctx, from, to)
 	if err != nil {
@@ -69,7 +81,13 @@ func (a proxyProvider) Nodes(ctx context.Context) ([]stats.Node, error) {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return a.remnaAdapter.Nodes(ctx)
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if bridge {
+			return a.remnaAdapter.Nodes(ctx)
+		}
 	}
 	metrics, err := a.master.Metrics(ctx)
 	if err != nil {

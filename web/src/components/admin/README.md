@@ -52,7 +52,6 @@ The editor also provides dropdowns for coupon-eligible combos and squads, a stoc
 limit field for squad products, a table-name search for database recovery work,
 and mobile-safe backup controls. Balance adjustments use the shared audited
 admin endpoint for both credits and deductions.
-`AdminSquadEditor.vue` edits the default-on per-squad Geocheck switch alongside existing merchandising fields.
 - `AdminSectionState.vue` is the shared loading/error/content presence boundary. Panel roots stay still; focused child workflows own their local Motion state.
 
 `connectivity/` composes exact-account configuration, progress, latest results and 24-hour cursor history. Its exact-account configuration and run/history workflow remain independent; the raw `connectivity.config` registry entry is excluded from generic settings fields and writes.

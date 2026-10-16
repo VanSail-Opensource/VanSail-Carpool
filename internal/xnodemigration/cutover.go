@@ -2,6 +2,7 @@ package xnodemigration
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"time"
@@ -44,6 +45,21 @@ func (s *Service) Cutover(ctx context.Context, id string) (node xnode.MigrationN
 	if _, err = s.panel.VerifyRelease(ctx, id); err != nil {
 		return node, err
 	}
+	source, err := s.sourceConfig(state)
+	if err != nil {
+		return node, err
+	}
+	topology, err := s.source.EndpointTopology(ctx, source)
+	if err != nil {
+		return node, err
+	}
+	if repair, ok := s.panel.(interface {
+		RepairImportedTemplates(context.Context, string, map[string]json.RawMessage) error
+	}); ok {
+		if err = repair.RepairImportedTemplates(ctx, id, topology.HostTemplates); err != nil {
+			return node, err
+		}
+	}
 	if err = s.panel.VerifyClientEndpoints(ctx, id); err != nil {
 		return node, err
 	}
@@ -52,14 +68,6 @@ func (s *Service) Cutover(ctx context.Context, id string) (node xnode.MigrationN
 		return node, err
 	}
 	if _, err = s.master.Command(ctx, id, "", "config.validate", candidate); err != nil {
-		return node, err
-	}
-	source, err := s.sourceConfig(state)
-	if err != nil {
-		return node, err
-	}
-	topology, err := s.source.EndpointTopology(ctx, source)
-	if err != nil {
 		return node, err
 	}
 	native := map[string]bool{}

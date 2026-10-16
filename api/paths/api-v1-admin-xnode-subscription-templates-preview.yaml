@@ -1,0 +1,17 @@
+post:
+  operationId: previewXNodeSubscriptionTemplate
+  tags: [Administration]
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplate'}
+  responses:
+    '200':
+      description: Structural validation, pinned Xray validation and a synthetic credential preview
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplatePreview'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}

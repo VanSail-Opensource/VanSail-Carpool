@@ -54,6 +54,7 @@ func ValidateConfigurationDocument(raw json.RawMessage) ValidationResult {
 	}
 	config := wire.Config{Xray: data, Users: []wire.User{}}
 	if err = config.Validate(); err != nil {
+		invalid.Detail = validationDetail(err)
 		return invalid
 	}
 	if nodeLocalAssets(native) {
@@ -72,10 +73,19 @@ func ValidateConfigurationDocument(raw json.RawMessage) ValidationResult {
 			}
 		}
 	}
-	if xrayconfig.Validate(config) != nil {
+	if err = xrayconfig.Validate(config); err != nil {
+		invalid.Detail = validationDetail(err)
 		return invalid
 	}
 	return ValidationResult{Valid: true}
+}
+
+func validationDetail(err error) string {
+	value := []rune(err.Error())
+	if len(value) > 2048 {
+		value = value[:2048]
+	}
+	return string(value)
 }
 
 func nodeLocalAssets(value any) bool {

@@ -30,8 +30,6 @@ Audited administrative operations for catalog data, settings, balances, refunds,
   shared provider-operation dispatcher and releases user messages only after a
   real successful provider item.
 - `user_account_commands.go` grants and idempotently retires only purchase-discount wallet coupons.
-- `user_provider_commands.go` validates temporary-ban, restoration, and Remnawave relink requests.
-- `user_provider_worker.go` applies queued account restrictions and relinks without mutating the former remote account.
 - `service_test.go` covers settings forwarding and catalog operations.
 - `mutation_operations_test.go` covers idempotent manual-maintenance queueing and its audit event.
 - `finance_test.go` covers balance, refund, cancellation, backup, and retry operations.
@@ -42,9 +40,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 - `catalog_test.go` covers optional setting validators.
 - `user_profiles_test.go` covers aggregate selection, ordering, and synchronization projection.
 - `user_profiles_test_helpers_test.go` contains focused aggregate-profile repository doubles.
-- `user_account_commands_test.go` covers validated coupon, partial-refund, temporary-ban, and Remnawave-relink command forwarding.
 - `user_operation_worker_test.go` covers ambiguous provider outcomes and partial bulk completion.
-- `user_provider_worker_test.go` covers target-only Remnawave relinks without a former-account mutation.
 - `user_operation_worker_test_helpers_test.go` contains reusable provider-operation worker fixtures.
 - `README.md` documents the package layout.
 
@@ -66,3 +62,5 @@ ledger references so repeated reasons remain separate audited operations.
 - `usdt_settings.go` ? Encrypted USDT configuration registration and validation.
 
 `xnode_settings.go` Registers encrypted fleet configuration with typed validation.
+
+`user_provider_commands.go` validates manual temporary restrictions; `user_provider_worker.go` executes queued changes. `user_account_commands_test.go` covers coupon, refund and restriction command validation.

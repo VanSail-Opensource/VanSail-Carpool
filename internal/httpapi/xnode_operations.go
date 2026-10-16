@@ -2,9 +2,26 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"net/http"
 )
+
+// Command results expose only the bounded, credential-free result selected by
+// the node worker. Other provider operations are outside this administrator API.
+func (s *Server) xnodeCommandResult(w http.ResponseWriter, r *http.Request) {
+	operation, err := s.deps.Store.ProviderOperationByID(r.Context(), chiURLParam(r, "id"))
+	if err != nil {
+		s.adminFailure(w, r, err)
+		return
+	}
+	if operation.Receipt.Kind != xnode.OperationKind {
+		s.xnodeError(w, r, xnode.ErrNotFound)
+		return
+	}
+	privateSubscriptionHeaders(w)
+	writeJSON(w, http.StatusOK, map[string]any{"receipt": operation.Receipt, "result": xnode.BrowserMetricNumbers(json.RawMessage(operation.ResultJSON))})
+}
 
 func (s *Server) xnodeQueueCommand(w http.ResponseWriter, r *http.Request) {
 	var input xnode.CommandRequest

@@ -1,10 +1,8 @@
 package subscription
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
-	"github.com/ghodss/yaml"
 )
 
 func (p Proxy) Clash() (map[string]any, error) {
@@ -42,6 +40,9 @@ func (p Proxy) Clash() (map[string]any, error) {
 		out["tls"] = true
 		out["servername"] = source["serverName"]
 		out["client-fingerprint"] = source["fingerprint"]
+		if insecure, ok := source["allowInsecure"].(bool); ok {
+			out["skip-cert-verify"] = insecure
+		}
 		if p.Protocol == "trojan" || p.Protocol == "hysteria" {
 			out["sni"] = source["serverName"]
 		}
@@ -76,19 +77,5 @@ func (p Proxy) Clash() (map[string]any, error) {
 	return connectivity.ApplyClientMapper(out, p.MapperHost, "mihomo")
 }
 func RenderClash(proxies []Proxy) ([]byte, error) {
-	values := []any{}
-	names := []string{}
-	for _, proxy := range proxies {
-		out, err := proxy.Clash()
-		if err != nil {
-			return nil, err
-		}
-		values = append(values, out)
-		names = append(names, proxy.Name)
-	}
-	raw, err := json.Marshal(map[string]any{"proxies": values, "proxy-groups": []any{map[string]any{"name": "proxy", "type": "select", "proxies": names}}, "rules": []string{"MATCH,proxy"}})
-	if err != nil {
-		return nil, err
-	}
-	return yaml.JSONToYAML(raw)
+	return RenderTemplate(DefaultTemplate("clash"), proxies)
 }

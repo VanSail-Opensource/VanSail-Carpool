@@ -56,7 +56,6 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-affiliates-referrals.yaml`: `/api/v1/affiliates/referrals`, fixed five-row registration pages
 - `api-v1-statistics.yaml`: `/api/v1/statistics`, persisted 30-minute aggregate dashboard
 - `api-v1-statistics-nodes.yaml`: `/api/v1/statistics/nodes`, on-demand shared 10-second node snapshot
-- `api-v1-statistics-nodes-nodeuuid-geocheck.yaml`: `/api/v1/statistics/nodes/{nodeUuid}/geocheck`, cached image-only Geocheck result
 - `api-v1-payments-orders.yaml`: `/api/v1/payments/orders`, idempotent durable checkout creation
 - `api-v1-payments-orders-id.yaml`: `/api/v1/payments/orders/{id}`
 - `api-v1-payments-orders-id-cancel.yaml`: `/api/v1/payments/orders/{id}/cancel`, idempotent durable provider cancellation
@@ -115,7 +114,6 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-admin-users-id-entitlements-entitlementid-refund.yaml`: `/api/v1/admin/users/{userId}/entitlements/{entitlementId}/refund`, audited entitlement refund operation
 - `api-v1-admin-users-id-coupon-grants.yaml` and `api-v1-admin-users-id-coupon-grants-grantid.yaml`: profile-scoped idempotent purchase-coupon grants and retained-history discards
 - `api-v1-admin-users-id-temporary-ban.yaml` and `api-v1-admin-users-id-temporary-ban-unban.yaml`: durable temporary-ban and restoration commands
-- `api-v1-admin-users-id-remnawave-id.yaml`: queued verified Remnawave identity relink
 - `api-v1-admin-users-id-connections.yaml` and `api-v1-admin-users-id-connections-scanid.yaml`: profile-scoped durable scan and transient connection projection
 - `api-v1-admin-users-id-combo-replacement.yaml`: `/api/v1/admin/users/{userId}/combo-replacement`, no-charge combo and add-on replacement
 - `api-v1-admin-bulk-extensions-preview.yaml`: `/api/v1/admin/bulk-extensions/preview`, minute-precise deduplicated inclusive-OR target preview
@@ -161,7 +159,6 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-payments-return-provider-orderid-status.yaml`: `/api/v1/payments/return/{provider}/{orderID}/status`; short-lived signed receipt projection for provider-return pages
 - `healthz.yaml`: `/healthz`
 - `readyz.yaml`: `/readyz`
-`api-v1-statistics-nodes-nodeuuid-geocheck.yaml` accepts a squad context and documents disabled (403) and settings-unavailable (503) responses.
 
 - `api-v1-activity-check-ins.yaml` documents personal-boost eligibility, half-up reward scaling, and distinct 403 and 503 refusal codes.
 
@@ -237,3 +234,9 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-subscriptions-token-metadata.yaml` defines owner-scoped bearer subscription metadata.
 
 `api-v1-admin-api-tokens.yaml` and `api-v1-admin-api-tokens-id.yaml` describe browser-only credential management. `api-v1-admin-operations-operationId.yaml` provides scoped asynchronous operation receipts for automation.
+
+`api-v1-admin-xnode-operations-id.yaml` exposes bounded credential-free node command results only to administrators.
+
+`api-v1-admin-xnode-subscription-templates.yaml` defines private template policy reads and revision-checked writes. `api-v1-admin-xnode-subscription-templates-preview.yaml` defines synthetic preview and validation.
+
+`subscription-token.yaml` documents public HTML/client content negotiation on the copied subscription URL.

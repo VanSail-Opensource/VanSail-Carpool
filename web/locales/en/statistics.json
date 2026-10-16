@@ -38,15 +38,6 @@
     "downloadRate": "Download rate",
     "uploadRate": "Upload rate",
     "perSecond": "{value}/s",
-    "geocheck": {
-      "disabled": "Geocheck disabled.",
-      "open": "View Geocheck result",
-      "title": "{node} Geocheck",
-      "checkedAt": "Checked {date}",
-      "loading": "Loading Geocheck result",
-      "unavailable": "No current Geocheck result is available.",
-      "canvasLabel": "Geocheck result for {node}"
-    },
     "loadingNodes": "Loading node metrics",
     "noNodes": "No nodes available",
     "sevenDayTraffic": "Seven-day traffic",

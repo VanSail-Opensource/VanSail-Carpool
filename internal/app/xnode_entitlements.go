@@ -117,9 +117,8 @@ func (a proxyProvider) MemberOperationState(ctx context.Context, id string) (pur
 	if !native {
 		return a.remnaAdapter.MemberOperationState(ctx, id)
 	}
-	if err = a.requireBridgeSettlement(ctx, identity); err != nil {
-		return purchaseops.RemoteState{}, err
-	}
+	// Reset reconciliation needs the current combined counter during migration.
+	// Refunds use MemberRefundState, which retains the final-accounting fence.
 	if err = a.reconcileBridgeUsage(ctx, identity); err != nil {
 		return purchaseops.RemoteState{}, err
 	}
@@ -179,8 +178,4 @@ func (a proxyProvider) SetAdminUserDisabled(ctx context.Context, id string, disa
 		return err
 	}
 	return a.remnaAdapter.SetAdminUserDisabled(ctx, identity.LegacyUserID, disabled)
-}
-func (a proxyProvider) VerifyAdminRemoteUser(ctx context.Context, id string) error {
-	_, _, err := a.FindUserByID(ctx, id)
-	return err
 }

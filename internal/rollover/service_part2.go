@@ -16,7 +16,16 @@ func CalculateUsage(purchase model.Purchase, threshold int, snapshot UsageSnapsh
 	if snapshot.LastResetAt != nil && snapshot.LastResetAt.Before(end) {
 		anchor = snapshot.LastResetAt.UTC()
 	}
-	return calculateUsageRange(threshold, snapshot, anchor, start, end)
+	result := calculateUsageRange(threshold, snapshot, anchor, start, end)
+	if snapshot.TermUsageExact {
+		result.UsedBytes = snapshot.WeightedUsedBytes
+		if result.UsedBytes < 0 || result.UsedBytes > result.AllocatedBytes {
+			result.UsedBytes = result.AllocatedBytes
+		}
+		result.EligibleUnusedBytes = EligibleUnused(result.AllocatedBytes, result.UsedBytes, threshold)
+		result.AlgorithmVersion = NativeUsageAlgorithmVersion
+	}
+	return result
 }
 
 func calculateUsageRange(threshold int, snapshot UsageSnapshot, anchor, start, end time.Time) model.RolloverUsageSummary {
@@ -27,7 +36,8 @@ func calculateUsageRange(threshold int, snapshot UsageSnapshot, anchor, start, e
 	usageByDay := make(map[string]int64, len(snapshot.Daily))
 	for _, item := range snapshot.Daily {
 		if item.Bytes > 0 {
-			usageByDay[item.Date.UTC().Format(time.DateOnly)] += item.Bytes
+			day := item.Date.UTC().Format(time.DateOnly)
+			usageByDay[day] = sumBytes(usageByDay[day], item.Bytes)
 		}
 	}
 	var allocated, used int64
@@ -59,7 +69,7 @@ func calculateUsageRange(threshold int, snapshot UsageSnapshot, anchor, start, e
 			if portion <= 0 {
 				continue
 			}
-			periodUsed += proportionalBytes(usageByDay[day.Format(time.DateOnly)], portion.Nanoseconds(), (24 * time.Hour).Nanoseconds())
+			periodUsed = sumBytes(periodUsed, proportionalBytes(usageByDay[day.Format(time.DateOnly)], portion.Nanoseconds(), (24*time.Hour).Nanoseconds()))
 		}
 		if allowance < 0 {
 			allowance = 0

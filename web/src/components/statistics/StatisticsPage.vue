@@ -3,14 +3,12 @@ import { computed, shallowRef, watch } from 'vue'
 
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
-import { useNodeGeocheck } from '@/composables/useNodeGeocheck'
 import { useStatistics } from '@/composables/useStatistics'
 import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
 import { selectionHaptic } from '@/utils/telegram'
 import StatisticsDistribution from './StatisticsDistribution.vue'
 import StatisticsFreshness from './StatisticsFreshness.vue'
-import StatisticsGeocheckModal from './StatisticsGeocheckModal.vue'
 import StatisticsNodes from './StatisticsNodes.vue'
 import StatisticsOverview from './StatisticsOverview.vue'
 import StatisticsShareCharts from './StatisticsShareCharts.vue'
@@ -19,7 +17,6 @@ import StatisticsTrafficChart from './StatisticsTrafficChart.vue'
 type StatisticsTab = 'overview' | 'nodes' | 'traffic' | 'distributions' | 'composition'
 
 const { snapshot, nodeSnapshot, loading, refreshing, nodesLoading, error, nodesError, load } = useStatistics()
-const geocheck = useNodeGeocheck()
 const { t } = useI18n()
 const activeTab = shallowRef<StatisticsTab>('overview')
 const tabs = computed(() => [
@@ -78,7 +75,7 @@ watch(activeTab, () => selectionHaptic())
           <StatisticsFreshness :snapshot="snapshot" />
         </template>
         <template #nodes>
-          <StatisticsNodes :snapshot="nodeSnapshot" :loading="nodesLoading" @open-geocheck="geocheck.show" />
+          <StatisticsNodes :snapshot="nodeSnapshot" :loading="nodesLoading" />
         </template>
         <template #traffic>
           <StatisticsTrafficChart :remote="snapshot.remote" />
@@ -97,6 +94,5 @@ watch(activeTab, () => selectionHaptic())
       <p>{{ error ?? $t('statistics.loadFailed') }}</p>
       <UButton icon="i-ph-arrows-clockwise" :label="$t('common.tryAgain')" data-haptic="retry" @click="load()" />
     </div>
-    <StatisticsGeocheckModal v-model:open="geocheck.isOpen.value" :node="geocheck.selectedNode.value" :result="geocheck.result.value" :loading="geocheck.loading.value" :error="geocheck.error.value" />
   </div>
 </template>

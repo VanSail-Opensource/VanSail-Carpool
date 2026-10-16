@@ -1,0 +1,27 @@
+{
+  "memberNodes": {
+    "live": "Live usage",
+    "noFormats": "No subscription formats are currently available.",
+    "routing": "Routing & outbounds",
+    "routingHint": "Save outbounds first, then rules that use their tags. Your account scope is enforced by the server.",
+    "template": "Outbound template",
+    "insert": "Insert",
+    "outbounds": "Outbounds (JSON array)",
+    "rules": "Routing rules (JSON array)",
+    "saveOutbounds": "Save outbounds",
+    "saveRules": "Save rules",
+    "saved": "Saved. Changes are queued for the node.",
+    "saveFailed": "Could not save. Reload the latest revision and check the rules and outbound tags.",
+    "arrayRequired": "Enter an array of JSON objects.",
+    "noNodes": "No accessible nodes are available for customization.",
+    "incomplete": "Some node reports are unavailable. Totals may be incomplete.",
+    "reasons": {
+      "account_disabled": "Account access is restricted.",
+      "authorization_expired": "Your subscription has expired.",
+      "quota_exceeded": "Traffic allowance exhausted.",
+      "global_connection_limit": "Connection limit reached. Existing streams remain active.",
+      "block_new": "New connections are temporarily blocked.",
+      "unknown": "Access is limited by node policy."
+    }
+  }
+}

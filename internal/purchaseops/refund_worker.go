@@ -29,7 +29,7 @@ func (w *Worker) handleRefund(ctx context.Context, operation providerops.Operati
 			return err
 		}
 	} else {
-		state, stateErr := w.remote.MemberOperationState(ctx, remoteID)
+		state, stateErr := refundState(ctx, w.remote, remoteID, facts.Purchase.ID)
 		if stateErr != nil {
 			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_RECONCILIATION_FAILED")
 		}
@@ -39,7 +39,7 @@ func (w *Worker) handleRefund(ctx context.Context, operation providerops.Operati
 	}
 	quiesceErr := w.remote.QuiesceMemberOperation(ctx, remoteID)
 	if quiesceErr != nil {
-		state, stateErr := w.remote.MemberOperationState(ctx, remoteID)
+		state, stateErr := refundState(ctx, w.remote, remoteID, facts.Purchase.ID)
 		if stateErr != nil {
 			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_QUIESCE_AMBIGUOUS")
 		}
@@ -50,7 +50,7 @@ func (w *Worker) handleRefund(ctx context.Context, operation providerops.Operati
 			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_QUIESCE_AMBIGUOUS")
 		}
 	}
-	state, err := w.remote.MemberOperationState(ctx, remoteID)
+	state, err := refundState(ctx, w.remote, remoteID, facts.Purchase.ID)
 	if err != nil {
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_USAGE_RECHECK_FAILED")
 	}

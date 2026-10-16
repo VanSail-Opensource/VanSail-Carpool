@@ -1,0 +1,36 @@
+{
+  "nodeAdmin": {
+    "command": "Node command",
+    "endpointOverrides": "Client endpoint overrides (JSON)",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "ss2022": "Add SS-2022 (AES-256)",
+    "peer": "Peer endpoint",
+    "run": "Run command",
+    "noCertificate": "No managed certificate",
+    "autoTls": "Manage TLS automatically",
+    "certificateBinding": "Certificate for {tag}",
+    "validationUnavailable": "Validation is unavailable. Retry before saving.",
+    "commands": {
+      "runtime.reload": "Reload Xray",
+      "geodata.refresh": "Refresh geodata",
+      "ddns.run": "Run DDNS job",
+      "update.check": "Check agent update",
+      "update.install": "Install signed update",
+      "update.rollback": "Roll back agent update",
+      "speedtest": "Test speed through peer"
+    },
+    "fields": {
+      "total": "Total", "used": "Used", "free": "Free", "available": "Available",
+      "cached": "Cached", "buffers": "Buffers", "usedPercent": "Used", "used_percent": "Used",
+      "name": "Name", "hostname": "Hostname", "platform": "Platform", "os": "Operating system",
+      "kernelVersion": "Kernel version", "uptime": "Uptime", "modelName": "Processor", "cores": "Cores",
+      "mount": "Mount", "filesystem": "Filesystem", "addresses": "Addresses",
+      "sent": "Sent", "received": "Received", "upload_bps": "Upload", "download_bps": "Download",
+      "memory_total": "Total memory", "memory_used": "Used memory", "utilization": "Utilization", "temperature": "Temperature",
+      "request_latency_millis": "Request latency", "download_bytes": "Downloaded", "upload_bytes": "Uploaded",
+      "download_mbps": "Download speed", "upload_mbps": "Upload speed", "duration_millis": "Duration",
+      "command": "Command", "nodeId": "Node"
+    }
+  }
+}

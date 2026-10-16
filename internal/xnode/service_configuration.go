@@ -15,6 +15,7 @@ type ValidationResult struct {
 	Valid                bool   `json:"valid"`
 	NeedsAgentValidation bool   `json:"needsAgentValidation"`
 	ErrorCode            string `json:"errorCode"`
+	Detail               string `json:"detail,omitempty"`
 }
 
 func (s *Service) SaveConfiguration(ctx context.Context, config Configuration) (Configuration, error) {

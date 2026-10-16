@@ -90,7 +90,7 @@ func (s *Service) RefundQuote(ctx context.Context, userID, purchaseID string) (M
 		local.Eligible, local.ReasonCode = false, reason(ReasonRemoteUnlinked)
 		return local, nil
 	}
-	state, err := s.remote.MemberOperationState(ctx, *user.RemnaUserID)
+	state, err := refundState(ctx, s.remote, *user.RemnaUserID, purchaseID)
 	if err != nil {
 		return MemberRefundQuote{}, err
 	}

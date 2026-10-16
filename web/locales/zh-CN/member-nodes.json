@@ -1,0 +1,27 @@
+{
+  "memberNodes": {
+    "live": "实时用量",
+    "noFormats": "当前没有可用的订阅格式。",
+    "routing": "路由与出站",
+    "routingHint": "请先保存出站，再保存引用出站标签的规则。服务器会强制限定为当前账户。",
+    "template": "出站模板",
+    "insert": "插入",
+    "outbounds": "出站（JSON 数组）",
+    "rules": "路由规则（JSON 数组）",
+    "saveOutbounds": "保存出站",
+    "saveRules": "保存规则",
+    "saved": "已保存，正在向节点同步。",
+    "saveFailed": "保存失败。请重新加载最新版本，并检查规则和出站标签。",
+    "arrayRequired": "请输入由 JSON 对象组成的数组。",
+    "noNodes": "暂无可自定义的可用节点。",
+    "incomplete": "部分节点报告不可用，汇总数据可能不完整。",
+    "reasons": {
+      "account_disabled": "账户访问受限。",
+      "authorization_expired": "订阅已到期。",
+      "quota_exceeded": "流量额度已用尽。",
+      "global_connection_limit": "已达到连接数上限，现有连接仍可使用。",
+      "block_new": "暂时禁止新连接。",
+      "unknown": "节点策略限制了访问。"
+    }
+  }
+}

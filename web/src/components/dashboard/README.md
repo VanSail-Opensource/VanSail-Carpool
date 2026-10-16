@@ -26,3 +26,5 @@ Dashboard controls distinguish copy, open, navigation, retry, confirmation, and 
 Language, currency and automatic traffic reset controls now appear on Settings. Mobile Around TX additionally requires the persisted entrance preference.
 
 The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members without a combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
+
+`MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.

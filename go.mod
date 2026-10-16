@@ -5,7 +5,7 @@ go 1.27.2
 require (
 	filippo.io/edwards25519 v1.2.0
 	github.com/RoaringBitmap/roaring/v2 v2.29.0
-	github.com/VanSail-Opensource/X-Node v1.0.3-0.20261015102137-2e325e09a70d
+	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261016101609-69bce0795a56
 	github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0

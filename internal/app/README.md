@@ -60,7 +60,6 @@ stopped.
   the narrow traffic-threshold projection.
 - `remna_member_operations_adapter.go` implements queued connection scans, plugin block/unblock execution, disconnect reconciliation, usage, quiesce, and restore calls.
 - `remna_statistics_adapter.go` implements queue-backed Remnawave digest, node,
-  traffic, Geocheck, and host operations for product statistics; documented fractional
   live counts and byte rates are rounded into the integer public contract.
 - `remna_compensation_adapter.go` maps complete queue-backed node and squad snapshots without persisting authoritative assignments.
 - `maintenance_operation_test.go` covers successful, failed, and active-lease maintenance receipts.
@@ -70,8 +69,6 @@ stopped.
 - `notification_scheduler.go` runs the bounded startup and five-minute reminder
   and traffic scan independently from the outbox drain.
 - `statistics_scheduler.go` schedules the 30-minute statistics refresh, startup
-  and six-hour node Geocheck cache work, node-compensation observations, and queued host-multiplier reconciliation.
-- `statistics_setup.go` composes the statistics service and its provider adapter.
 - The scheduler delegates the daily backup-gated cleanup order to
   `internal/maintenance`; the durable local-date lease prevents overlapping
   runs across process instances.
@@ -154,3 +151,9 @@ cache and authoritative database.
 The detector compatibility release reuses `xnode_bridge_policy.go` combined quota calculation inside its queued legacy write, so mixed-provider users retain one allowance. Legacy usage is reconciled first; the remaining source limit never restores a second full quota.
 
 `xnode_source_topology.go` reads current source configuration, hosts and inbound/node relationships through the existing Remnawave queue before cutover. Subscription bridging resolves hosts without explicit node metadata through active inbound bindings and stops advertising their legacy variant once all resolved nodes are native.
+
+`xnode_refund_state.go` routes purchase-scoped refund usage through the migration settlement fence and native accounting.
+
+`xnode_commerce_test.go` verifies that mixed-provider reset prechecks reconcile the combined counter during migration while refunds retain the final-accounting fence. Compensation uses fresh ready native reports and preserves disabled source-node state; empty native fleets do not call retired upstream statistics.
+
+Native compensation readiness matches live node health, including report freshness. During bridging the source administrative disabled flag wins. Extensions update expiry on the existing period and retain combined quota usage.

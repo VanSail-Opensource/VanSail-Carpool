@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/google/uuid"
 )
 
@@ -10,6 +11,13 @@ func (a proxyProvider) CompensationNodes(ctx context.Context) ([]compensation.No
 	if nodes, err := a.native.Nodes(ctx); err != nil {
 		return nil, err
 	} else if len(nodes) == 0 {
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !bridge {
+			return []compensation.Node{}, nil
+		}
 		return a.remnaAdapter.CompensationNodes(ctx)
 	}
 	nodes, err := a.ListCatalogNodes(ctx)
@@ -17,8 +25,17 @@ func (a proxyProvider) CompensationNodes(ctx context.Context) ([]compensation.No
 		return nil, err
 	}
 	out := []compensation.Node{}
+	metrics, err := a.master.Metrics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	live := map[string]xnode.NodeMetrics{}
+	for _, node := range metrics.Nodes {
+		live[node.NodeID] = node
+	}
 	for _, node := range nodes {
-		out = append(out, compensation.Node{UUID: node.UUID, Name: node.Name, Disabled: node.Disabled, Connected: a.master.Connected(node.UUID), ActiveInboundUUIDs: node.ActiveInboundUUIDs})
+		status := live[node.UUID]
+		out = append(out, compensation.Node{UUID: node.UUID, Name: node.Name, Disabled: node.Disabled, Connected: status.Connected && status.Ready && !status.Stale, ActiveInboundUUIDs: node.ActiveInboundUUIDs})
 	}
 	bridge, err := a.legacy(ctx)
 	if err != nil {
@@ -40,6 +57,7 @@ func (a proxyProvider) CompensationNodes(ctx context.Context) ([]compensation.No
 			for i := range out {
 				if out[i].UUID == remote.UUID {
 					out[i].Connected = remote.Connected
+					out[i].Disabled = remote.Disabled
 					break
 				}
 			}
@@ -53,6 +71,13 @@ func (a proxyProvider) CompensationSquads(ctx context.Context) ([]compensation.S
 		return nil, err
 	}
 	if len(groups) == 0 {
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !bridge {
+			return []compensation.Squad{}, nil
+		}
 		return a.remnaAdapter.CompensationSquads(ctx)
 	}
 	out := []compensation.Squad{}

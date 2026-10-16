@@ -16,9 +16,18 @@ import (
 	"time"
 )
 
-type fixtureSettings struct{ raw string }
+type fixtureSettings struct{ raw, templates string }
 
-func (f *fixtureSettings) Optional(context.Context, string) (string, error) { return f.raw, nil }
+func (f *fixtureSettings) Optional(_ context.Context, key string) (string, error) {
+	if key == xnode.SubscriptionTemplatesKey {
+		return f.templates, nil
+	}
+	return f.raw, nil
+}
+func (f *fixtureSettings) PutXNodeSubscriptionTemplates(_ context.Context, _ string, raw string) error {
+	f.templates = raw
+	return nil
+}
 func (f *fixtureSettings) PutXNodeGlobal(_ context.Context, _ string, raw string) error {
 	f.raw = raw
 	return nil

@@ -11,8 +11,8 @@ export function usePublicSubscription(token: string) {
   const copied = shallowRef(false)
   const copyFailed = shallowRef(false)
   const link = computed(() => {
-    if (!metadata.value?.formats[format.value]) return ''
-    const url = new URL(`/api/v1/subscriptions/${encodeURIComponent(token)}`, location.origin)
+    if (!metadata.value?.active || !metadata.value.formats[format.value]) return ''
+    const url = new URL(metadata.value.downloadUrl || `/api/v1/subscriptions/${encodeURIComponent(token)}`, location.origin)
     url.searchParams.set('format', format.value)
     return url.href
   })

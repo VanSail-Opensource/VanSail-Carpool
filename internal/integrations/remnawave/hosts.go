@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 )
 
-// ListHosts returns the fields needed for scheduled multiplier remark upkeep.
+// ListHosts reads the documented host inventory for subscription migration.
 func (c *Client) ListHosts(ctx context.Context) ([]Host, error) {
 	var envelope struct {
 		Response []Host `json:"response"`
@@ -23,24 +22,4 @@ func (c *Client) ListHosts(ctx context.Context) ([]Host, error) {
 		}
 	}
 	return envelope.Response, nil
-}
-
-// UpdateHostRemark patches only the documented UUID and changed remark.
-func (c *Client) UpdateHostRemark(ctx context.Context, hostUUID, remark string) error {
-	if _, err := uuid.Parse(hostUUID); err != nil {
-		return errors.New("invalid Remnawave host UUID")
-	}
-	if strings.TrimSpace(remark) == "" || len([]rune(remark)) > 100 {
-		return errors.New("invalid Remnawave host remark")
-	}
-	var envelope struct {
-		Response Host `json:"response"`
-	}
-	if err := c.do(ctx, http.MethodPatch, "/api/hosts", nil, map[string]string{"uuid": hostUUID, "remark": remark}, &envelope); err != nil {
-		return err
-	}
-	if envelope.Response.UUID != hostUUID {
-		return errors.New("Remnawave host response identity does not match request")
-	}
-	return nil
 }

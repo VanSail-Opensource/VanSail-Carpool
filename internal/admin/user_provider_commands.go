@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -38,20 +37,4 @@ func (s *UserWorkflows) TemporaryUnban(ctx context.Context, actorID, userID, key
 		return model.OperationReceipt{}, err
 	}
 	return s.repository.CreateAdminTemporaryUnban(ctx, actorID, userID, strings.TrimSpace(key), fingerprint, reason, s.now().UTC())
-}
-
-// RelinkRemnaUser queues verification of a new canonical upstream identity.
-func (s *UserWorkflows) RelinkRemnaUser(ctx context.Context, actorID, userID, key, remoteID, reason string) (model.OperationReceipt, error) {
-	reason = strings.TrimSpace(reason)
-	parsed, err := strconv.ParseInt(strings.TrimSpace(remoteID), 10, 64)
-	if !validCommand(actorID, key, reason) || strings.TrimSpace(userID) == "" || err != nil || parsed <= 0 {
-		return model.OperationReceipt{}, errors.New("invalid Remnawave relink")
-	}
-	remoteID = strconv.FormatInt(parsed, 10)
-	fingerprint, err := commandFingerprint(map[string]string{"userId": userID, "remoteId": remoteID, "reason": reason})
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	return s.repository.CreateAdminRemnaRelink(ctx, database.AdminRemnaRelinkInput{ActorUserID: actorID, UserID: userID, RemnaUserID: remoteID,
-		IdempotencyKey: strings.TrimSpace(key), RequestFingerprint: fingerprint, Reason: reason}, s.now().UTC())
 }

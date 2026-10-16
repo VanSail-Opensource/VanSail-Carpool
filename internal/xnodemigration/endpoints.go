@@ -3,6 +3,7 @@ package xnodemigration
 import (
 	"context"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/google/uuid"
 	"strings"
@@ -33,6 +34,7 @@ func (s *Service) importEndpoints(ctx context.Context, snapshot Snapshot, bindin
 			Fingerprint *string  `json:"fingerprint"`
 			Security    string   `json:"securityLayer"`
 			Excluded    []string `json:"excludedInternalSquads"`
+			Template    *string  `json:"xrayJsonTemplateUuid"`
 			Inbound     struct {
 				ID *string `json:"configProfileInboundUuid"`
 			} `json:"inbound"`
@@ -50,6 +52,13 @@ func (s *Service) importEndpoints(ctx context.Context, snapshot Snapshot, bindin
 				continue
 			}
 			overrides := map[string]any{"legacyHost": json.RawMessage(raw), "excludedGroups": host.Excluded}
+			if host.Template != nil {
+				document, err := subscription.ConvertXrayTemplate(snapshot.HostTemplates[*host.Template])
+				if err != nil {
+					return err
+				}
+				overrides["xrayTemplate"] = document
+			}
 			stream := map[string]any{}
 			if host.Security == "NONE" {
 				stream["security"] = "none"

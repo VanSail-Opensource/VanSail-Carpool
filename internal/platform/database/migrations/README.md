@@ -99,7 +99,6 @@ file instead.
 - `041_admin_coupon_discard_commands.sql` records administrator coupon-discard idempotency without deleting historical grants.
 - `042_community_membership.sql` maps legacy membership onboarding users to username when unnamed or agreement when named.
 - `043_maintenance_run_history.sql` removes the one-row-per-date restriction while retaining active lease serialization and run history.
-- `044_squad_geocheck.sql` stores only the default-off disabled bit on existing sparse squad overrides; existing squads remain enabled.
 - `045_abuse_outbound_tag.sql` persists the administrator-selected Xray outbound tag used for abuse-log filtering.
 - `046_abuse_outbound_tags.sql` migrates the abuse filter to a validated comma-separated outbound-tag list.
 - `047_display_currency.sql` adds the TXB-default member display-currency preference constrained to TXB, CNY, or USD.
@@ -145,3 +144,7 @@ file instead.
 `077_admin_api_tokens.sql` stores hashed scoped administrator credentials and their lifecycle timestamps, independently of browser and Mini App sessions.
 
 - `078_retire_abuse_detector.sql` removes executable detector state and credentials, fails pending detector jobs, and queues only proven historical temporary-ban releases. Unacknowledged mutations receive audit review entries. Incident facts, financial records, manual restrictions and audit history remain intact.
+
+- `079_retire_legacy_controls.sql` disables outstanding relinking and legacy host-remark operations while preserving their history; removes the retired squad display flag.
+
+`044_squad_geocheck.sql` is retained as immutable upgrade history; its display flag is removed by migration 079.

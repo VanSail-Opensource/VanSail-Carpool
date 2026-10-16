@@ -28,7 +28,6 @@ type SquadProduct struct {
 	StockRemaining         *int                  `json:"stockRemaining"`
 	StockHeldByCurrentUser bool                  `json:"stockHeldByCurrentUser"`
 	ActivationRequired     bool                  `json:"activationRequired"`
-	GeocheckEnabled        bool                  `json:"geocheckEnabled"`
 	AccessibleNodes        []CatalogNode         `json:"accessibleNodes"`
 	CreatedAt              time.Time             `json:"createdAt"`
 	UpdatedAt              time.Time             `json:"updatedAt"`

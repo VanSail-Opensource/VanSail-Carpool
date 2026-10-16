@@ -13,6 +13,8 @@ import { notifyHaptic } from '@/utils/telegram'
 import HostLinkRow from './HostLinkRow.vue'
 import SquadUptime from './SquadUptime.vue'
 import { useSubscriptionData } from './useSubscriptionData'
+import SubscriptionFormats from './SubscriptionFormats.vue'
+import MemberRoutingEditor from './MemberRoutingEditor.vue'
 
 const { value: subscription, loading, error, refresh } = useSubscriptionData(subscriptionApi.subscription)
 const route = useRoute()
@@ -48,6 +50,8 @@ function consumeRevoke(): void {
     <div v-if="loading" class="subscription-page__loading"><SkeletonBlock height="11rem" /><SkeletonBlock height="10rem" /></div>
     <template v-else-if="subscription?.activeCombo">
       <SubscriptionPanel :subscription-url="subscription.subscriptionUrl" :revoking="busy" :revoke-blocked="blocksMutations" :open-revoke="revokeRequested" show-desktop-actions @revoke="revoke" @revoke-request-consumed="consumeRevoke" />
+      <SubscriptionFormats :key="subscription.subscriptionUrl ?? ''" />
+      <MemberRoutingEditor />
       <section class="section-block">
         <div class="section-heading"><h2>{{ t('subscription.hosts') }}</h2></div>
         <ul v-if="subscription.hosts.length" class="subscription-page__hosts"><HostLinkRow v-for="host in subscription.hosts" :key="host.uuid" :host="host" /></ul>

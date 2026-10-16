@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -26,6 +27,14 @@ func (s migrationSource) EndpointTopology(ctx context.Context, config xnodemigra
 		snapshot.Hosts, err = source.MigrationHosts(ctx)
 		if err != nil {
 			return snapshot, err
+		}
+		if templates, ok := client.(interface {
+			MigrationHostTemplates(context.Context, []json.RawMessage) (map[string]json.RawMessage, error)
+		}); ok {
+			snapshot.HostTemplates, err = templates.MigrationHostTemplates(ctx, snapshot.Hosts)
+			if err != nil {
+				return snapshot, err
+			}
 		}
 		nodes, err := source.ListNodes(ctx)
 		if err != nil {

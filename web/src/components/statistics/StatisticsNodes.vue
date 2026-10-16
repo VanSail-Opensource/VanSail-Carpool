@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { AnimatePresence, motion } from 'motion-v'
 
-import type { StatisticsNode, StatisticsNodesSnapshot } from '@/api/types'
+import type { StatisticsNodesSnapshot } from '@/api/types'
 import CountryFlag from '@/components/common/CountryFlag.vue'
 import { motionSpring } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
@@ -13,7 +13,6 @@ defineProps<{
   loading: boolean
 }>()
 
-const emit = defineEmits<{ openGeocheck: [node: StatisticsNode] }>()
 const { reducedMotion } = useMotionPreferences()
 </script>
 
@@ -48,19 +47,6 @@ const { reducedMotion } = useMotionPreferences()
               >
                 <UIcon :name="node.online ? 'i-ph-wifi-high' : 'i-ph-wifi-slash'" aria-hidden="true" />
               </span>
-            </UTooltip>
-            <UTooltip :text="$t('statistics.geocheck.open')">
-              <UButton
-                type="button"
-                color="neutral"
-                variant="ghost"
-                square
-                class="statistics-node__geocheck"
-                icon="i-ph-globe-hemisphere-west"
-                :aria-label="$t('statistics.geocheck.open')"
-                data-haptic="open"
-                @click="emit('openGeocheck', node)"
-              />
             </UTooltip>
           </header>
           <dl>

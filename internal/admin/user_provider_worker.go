@@ -2,11 +2,9 @@ package admin
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -14,16 +12,11 @@ type adminUserProviderRepository interface {
 	BeginProviderOperationAttempt(context.Context, string, time.Time) (providerops.Operation, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
 	UserByID(context.Context, string) (model.User, error)
-	DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error)
-	LinkAdminRemnaUser(context.Context, string, string, string, string, time.Time) error
 	CompleteAdminTemporaryUnban(context.Context, string, time.Time) error
 }
 
 type adminUserProviderRemote interface {
 	SetAdminUserDisabled(context.Context, string, bool) error
-	VerifyAdminRemoteUser(context.Context, string) error
-	ApplyEntitlement(context.Context, string, int64, string, []string, time.Time) error
-	RemoveEntitlement(context.Context, string) error
 }
 
 // UserProviderWorker executes isolated provider-backed account actions from the durable queue.
@@ -71,8 +64,6 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 		if err == nil {
 			err = w.repository.CompleteAdminTemporaryUnban(ctx, user.ID, w.now().UTC())
 		}
-	case providerops.KindAdminRemnaRelink:
-		err = w.relink(ctx, operation, job)
 	default:
 		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "UNSUPPORTED_ADMIN_OPERATION"}
 	}
@@ -88,34 +79,6 @@ func (w *UserProviderWorker) userWithRemoteID(ctx context.Context, userID string
 		return model.User{}, &providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "REMOTE_IDENTITY_REQUIRED"}
 	}
 	return user, nil
-}
-
-func (w *UserProviderWorker) relink(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
-	payload, err := jobpayload.TargetID(job, "sealedTarget")
-	if err != nil {
-		return err
-	}
-	var target struct {
-		RemoteID string `json:"remoteId"`
-		Reason   string `json:"reason"`
-	}
-	if err = json.Unmarshal([]byte(payload), &target); err != nil {
-		return err
-	}
-	if err = w.remote.VerifyAdminRemoteUser(ctx, target.RemoteID); err != nil {
-		return err
-	}
-	if err = w.repository.LinkAdminRemnaUser(ctx, operation.ActorUserID, operation.OwnerUserID, target.RemoteID, target.Reason, w.now().UTC()); err != nil {
-		return err
-	}
-	desired, err := w.repository.DesiredEntitlement(ctx, operation.OwnerUserID, w.now().UTC())
-	if err != nil {
-		return err
-	}
-	if desired == nil {
-		return w.remote.RemoveEntitlement(ctx, target.RemoteID)
-	}
-	return w.remote.ApplyEntitlement(ctx, target.RemoteID, desired.TrafficLimitBytes, desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil)
 }
 
 var _ providerops.Handler = (*UserProviderWorker)(nil)

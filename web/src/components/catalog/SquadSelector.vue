@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { NodeGeocheckTarget, SquadProduct } from '@/api/types'
+import type { SquadProduct } from '@/api/types'
 import SquadPricingTable from './SquadPricingTable.vue'
 
 type SquadType = NonNullable<SquadProduct['profile']>['type']
@@ -17,7 +17,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggle: [id: string]
-  openGeocheck: [node: NodeGeocheckTarget]
 }>()
 
 const types: readonly SquadType[] = ['international_network', 'broadband', 'china_optimized']
@@ -52,7 +51,6 @@ function squadsFor(type: SquadType): readonly SquadProduct[] {
           :included-ids="includedIds"
           :featured-ids="featuredIds"
           @toggle="emit('toggle', $event)"
-          @open-geocheck="emit('openGeocheck', $event)"
         />
       </template>
     </div>

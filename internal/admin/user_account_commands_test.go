@@ -48,17 +48,8 @@ func TestUserAccountCommandsForwardValidatedInputs(t *testing.T) {
 	if repository.unban.UserID != "member" || repository.unban.Reason != "cleared" || len(repository.unban.Fingerprint) != 64 {
 		t.Fatalf("temporary unban = %+v", repository.unban)
 	}
-	if _, err := workflows.RelinkRemnaUser(ctx, "admin", "member", "relink-key", "000220", "upstream correction"); err != nil {
-		t.Fatal(err)
-	}
-	if repository.relink.RemnaUserID != "220" || len(repository.relink.RequestFingerprint) != 64 {
-		t.Fatalf("relink = %+v", repository.relink)
-	}
 	if _, err := workflows.TemporaryBan(ctx, "admin", "member", "bad-ban", "investigation", 0); err == nil {
 		t.Fatal("TemporaryBan() accepted zero duration")
-	}
-	if _, err := workflows.RelinkRemnaUser(ctx, "admin", "member", "bad-link", "0", "upstream correction"); err == nil {
-		t.Fatal("RelinkRemnaUser() accepted a non-positive remote ID")
 	}
 }
 
@@ -71,7 +62,6 @@ type accountCommandRepository struct {
 	refund         database.AdminEntitlementRefundInput
 	ban            database.AdminTemporaryBanInput
 	unban          struct{ UserID, Reason, Fingerprint string }
-	relink         database.AdminRemnaRelinkInput
 }
 
 func (r *accountCommandRepository) GrantAdminCoupon(_ context.Context, input database.AdminCouponGrantInput, now time.Time) (coupons.Grant, error) {
@@ -97,9 +87,4 @@ func (r *accountCommandRepository) CreateAdminTemporaryBan(_ context.Context, in
 func (r *accountCommandRepository) CreateAdminTemporaryUnban(_ context.Context, _ string, userID, _ string, fingerprint, reason string, _ time.Time) (model.OperationReceipt, error) {
 	r.unban = struct{ UserID, Reason, Fingerprint string }{userID, reason, fingerprint}
 	return model.OperationReceipt{ID: "unban"}, nil
-}
-
-func (r *accountCommandRepository) CreateAdminRemnaRelink(_ context.Context, input database.AdminRemnaRelinkInput, _ time.Time) (model.OperationReceipt, error) {
-	r.relink = input
-	return model.OperationReceipt{ID: "relink"}, nil
 }

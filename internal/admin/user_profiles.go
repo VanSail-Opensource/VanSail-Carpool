@@ -36,7 +36,6 @@ type UserWorkflowRepository interface {
 	ActiveAdminTemporaryBan(context.Context, string) (*database.AdminTemporaryBan, error)
 	CreateAdminTemporaryBan(context.Context, database.AdminTemporaryBanInput, time.Time) (model.OperationReceipt, error)
 	CreateAdminTemporaryUnban(context.Context, string, string, string, string, string, time.Time) (model.OperationReceipt, error)
-	CreateAdminRemnaRelink(context.Context, database.AdminRemnaRelinkInput, time.Time) (model.OperationReceipt, error)
 }
 
 // UserSynchronization summarizes the local-to-provider identity state.

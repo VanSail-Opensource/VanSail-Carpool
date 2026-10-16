@@ -177,9 +177,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	statisticsService := productstats.NewService(store, remna)
 	compensationService := compensation.NewService(store, remna)
-	if err := registerStatisticsOperationHandler(operationDispatcher, store, remna); err != nil {
-		return cleanup(err)
-	}
 	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, rolloverWorker, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {
 		return cleanup(err)

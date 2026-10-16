@@ -78,43 +78,5 @@ func roundedNonNegativeInt64(value float64) int64 {
 	return int64(math.Round(value))
 }
 
-func (a remnaAdapter) RequestNodeGeocheck(ctx context.Context, nodeUUID string) (string, error) {
-	return remnaCall(ctx, a, func(callCtx context.Context, client remnaClient) (string, error) {
-		return client.RequestNodeGeocheck(callCtx, nodeUUID)
-	})
-}
-
-func (a remnaAdapter) NodeGeocheckResult(ctx context.Context, jobID string) (productstats.GeocheckResult, error) {
-	result, err := remnaCall(ctx, a, func(callCtx context.Context, client remnaClient) (remnawave.NodeGeocheck, error) {
-		return client.NodeGeocheckResult(callCtx, jobID)
-	})
-	if err != nil {
-		return productstats.GeocheckResult{}, err
-	}
-	mapped := productstats.GeocheckResult{Completed: result.Completed, Failed: result.Failed, Success: result.Success, NodeUUID: result.NodeUUID}
-	if result.Image != nil {
-		mapped.Image = &productstats.GeocheckImage{Format: result.Image.Format, MediaType: result.Image.MediaType,
-			Encoding: result.Image.Encoding, Data: result.Image.Data}
-	}
-	return mapped, nil
-}
-
-func (a remnaAdapter) Hosts(ctx context.Context) ([]productstats.Host, error) {
-	hosts, err := remnaCall(ctx, a, func(callCtx context.Context, client remnaClient) ([]remnawave.Host, error) {
-		return client.ListHosts(callCtx)
-	})
-	result := make([]productstats.Host, 0, len(hosts))
-	for _, host := range hosts {
-		result = append(result, productstats.Host{UUID: host.UUID, Remark: host.Remark, Nodes: append([]string(nil), host.Nodes...)})
-	}
-	return result, err
-}
-
-func (a remnaAdapter) UpdateHostRemark(ctx context.Context, hostUUID, remark string) error {
-	return remnaExecute(ctx, a, func(callCtx context.Context, client remnaClient) error {
-		return client.UpdateHostRemark(callCtx, hostUUID, remark)
-	})
-}
-
 var _ productstats.Provider = remnaAdapter{}
 var _ productstats.SquadNameProvider = remnaAdapter{}

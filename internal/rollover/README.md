@@ -22,3 +22,7 @@
 - `projection_test.go` covers net-paid savings, latest reset selection, strict thresholds, forecast eligibility, and no-cap rollover credit.
 - `projection_current_counter_test.go` verifies that current counters do not
   replace strict weighted daily usage and covers cadence boundaries.
+
+Weighted byte rounding keeps sub-byte samples at zero and saturates overflow instead of dropping usage. Daily aggregation uses bounded addition. `weighted_usage_test.go` covers these financial boundaries.
+
+`native_term_test.go` covers purchase-owned native totals at intraday boundaries and overflow-safe daily reductions. New native calculations use `native-term-v1`; previously calculated settlements stay immutable. Legacy provider statistics retain their documented daily granularity.

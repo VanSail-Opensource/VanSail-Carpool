@@ -61,10 +61,7 @@ export const adminOperationsApi = {
 		request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/temporary-ban/unban`, {
 			method: 'POST', headers: keyHeader(key), body: { reason },
 		}),
-	relinkRemnaUser: (userId: string, remnaUserId: string, reason: string, key: string) =>
-		request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/remnawave-id`, {
-			method: 'PUT', headers: keyHeader(key), body: { remnaUserId, reason },
-		}),
+
 	requestUserConnections: (userId: string, key: string) =>
 		request<components['schemas']['ConnectionScan']>(`/api/v1/admin/users/${encodeURIComponent(userId)}/connections`, {
 			method: 'POST', headers: keyHeader(key),

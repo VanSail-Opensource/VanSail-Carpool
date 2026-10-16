@@ -6,7 +6,7 @@ import { xnodeApi, type XNode, type XNodeMigration } from '@/api/xnode'
 import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
-import XNodeJsonEditor from './XNodeJsonEditor.vue'
+import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
 import XNodeMigrationFinalization from './XNodeMigrationFinalization.vue'
 import { useXNodeMigration } from './useXNodeMigration'
 

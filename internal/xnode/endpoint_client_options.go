@@ -29,7 +29,14 @@ func applyEndpointClient(proxy *subscription.Proxy, overrides, inbound map[strin
 		return nil
 	}
 	if host["xrayJsonTemplateUuid"] != nil {
-		return ErrInvalid
+		raw, err := json.Marshal(overrides["xrayTemplate"])
+		if err != nil || string(raw) == "null" {
+			return ErrInvalid
+		}
+		if _, err = subscription.PreviewTemplate(subscription.Template{Format: "xray", Document: raw}); err != nil {
+			return ErrInvalid
+		}
+		proxy.XrayTemplate = raw
 	}
 	var err error
 	proxy.Mux, err = optionObject(host["muxParams"])

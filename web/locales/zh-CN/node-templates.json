@@ -1,0 +1,25 @@
+{
+  "nodeTemplates": {
+    "title": "订阅模板",
+    "description": "管理客户端配置、默认格式与订阅分配。模板不保存生成的成员凭据。",
+    "editor": "订阅模板",
+    "template": "模板",
+    "add": "添加模板",
+    "empty": "暂无自定义模板，仍可使用内置生成方式。",
+    "markerHint": "在 outbounds 内放置一个 { SubscriptionProxies: {} }，Clash Meta 则放在 proxies 内。选择器列表可使用 { SubscriptionNames: {} }。标记必须是独立数组项。模板使用 JSON，Clash 预览输出 YAML。",
+    "validate": "验证并预览",
+    "preview": "使用模拟凭据预览",
+    "clientAssets": "本地证书或地理数据文件须在客户端上可用。",
+    "builtin": "内置模板",
+    "useDefault": "使用该格式的默认模板",
+    "assignments": "订阅分配",
+    "userId": "面板用户 ID",
+    "assign": "保存分配",
+    "noAssignments": "所有订阅均使用该格式的默认模板。",
+    "removeHint": "删除模板前，请先移除默认与订阅分配。",
+    "saveFailed": "保存失败。请检查用户 ID、模板引用及验证结果；如遇版本冲突，请重新加载。",
+    "saved": "模板配置已保存。",
+    "previous": "上一页",
+    "next": "下一页"
+  }
+}

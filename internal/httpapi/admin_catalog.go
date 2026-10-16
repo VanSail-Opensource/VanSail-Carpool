@@ -110,7 +110,6 @@ type squadProductRequest struct {
 	StockLimit         *int                  `json:"stockLimit"`
 	ActivationRequired bool                  `json:"activationRequired"`
 	ActivationCode     string                `json:"activationCode"`
-	GeocheckEnabled    *bool                 `json:"geocheckEnabled"`
 }
 
 func (s *Server) adminCreateSquadProduct(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +137,7 @@ func (s *Server) adminSaveSquadProduct(w http.ResponseWriter, r *http.Request, i
 	product, err := s.deps.Admin.SaveSquadProduct(r.Context(), currentUser(r).ID, database.SquadProductInput{ID: id,
 		RemnaSquadUUID: request.RemnaSquadUUID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
 		Profile: request.Profile, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
-		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode, GeocheckEnabled: request.GeocheckEnabled})
+		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode})
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import { xnodeApi, type XNodeGlobal } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
-import XNodeJsonEditor from './XNodeJsonEditor.vue'
+import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
 
 const { t } = useI18n()
-const draft = shallowRef<XNodeGlobal | null>(null)
+const draft = ref<XNodeGlobal | null>(null)
 const loading = shallowRef(true)
 const busy = shallowRef(false)
 const error = shallowRef<string | null>(null)

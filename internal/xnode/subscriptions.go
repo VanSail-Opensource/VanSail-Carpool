@@ -4,20 +4,23 @@ import (
 	"context"
 	"crypto/sha256"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
+	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type SubscriptionMetadata struct {
-	Username   string          `json:"username"`
-	URL        string          `json:"url"`
-	UsedBytes  string          `json:"usedBytes"`
-	LimitBytes string          `json:"limitBytes"`
-	ExpiresAt  *time.Time      `json:"expiresAt"`
-	Active     bool            `json:"active"`
-	Incomplete bool            `json:"incomplete"`
-	Formats    map[string]bool `json:"formats"`
+	Username    string          `json:"username"`
+	URL         string          `json:"url"`
+	DownloadURL string          `json:"downloadUrl"`
+	UsedBytes   string          `json:"usedBytes"`
+	LimitBytes  string          `json:"limitBytes"`
+	ExpiresAt   *time.Time      `json:"expiresAt"`
+	Active      bool            `json:"active"`
+	Incomplete  bool            `json:"incomplete"`
+	Formats     map[string]bool `json:"formats"`
 }
 
 func (s *Service) bearerIdentity(ctx context.Context, token string) (Identity, error) {
@@ -47,7 +50,18 @@ func (s *Service) OwnedSubscription(ctx context.Context, user string) (Subscript
 }
 func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
 	result := SubscriptionMetadata{Username: identity.Username, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
-	result.URL, _ = s.SubscriptionURL(identity)
+	var err error
+	result.URL, err = s.SubscriptionURL(identity)
+	if err != nil {
+		return result, err
+	}
+	download, err := url.Parse(result.URL)
+	if err != nil {
+		return result, ErrInvalid
+	}
+	download.Path = "/api/v1/subscriptions/" + strings.TrimPrefix(download.Path, "/subscription/")
+	download.RawPath = ""
+	result.DownloadURL = download.String()
 	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
 	if err != nil {
 		return result, err
@@ -71,7 +85,7 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete
 	for _, format := range []string{"native", "xray", "sing-box", "clash"} {
-		_, err := renderSubscription(format, proxies)
+		_, err := s.renderOwnedSubscription(ctx, identity.UserID, format, proxies)
 		result.Formats[format] = err == nil && result.Active
 	}
 	return result, nil
@@ -95,7 +109,7 @@ func (s *Service) BearerSubscription(ctx context.Context, token, format string) 
 	if err != nil {
 		return nil, metadata, err
 	}
-	raw, err := renderSubscription(format, proxies)
+	raw, err := s.renderOwnedSubscription(ctx, identity.UserID, format, proxies)
 	return raw, metadata, err
 }
 func renderSubscription(format string, proxies []subscription.Proxy) ([]byte, error) {

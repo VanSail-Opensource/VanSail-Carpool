@@ -11,6 +11,7 @@ export function useXNodeWorkspace() {
   const metrics = shallowRef<XNodeMetrics | null>(null)
   const loading = shallowRef(true)
   const error = shallowRef<string | null>(null)
+  const actionError = shallowRef<string | null>(null)
   const busy = shallowRef(false)
   let active = true
   let timer: ReturnType<typeof setInterval> | undefined
@@ -29,9 +30,9 @@ export function useXNodeWorkspace() {
   }
   async function perform(action: () => Promise<unknown>): Promise<boolean> {
     if (busy.value) return false
-    busy.value = true; error.value = null
+    busy.value = true; actionError.value = null
     try { await action(); await load(); return true }
-    catch (caught) { error.value = localizedError(caught, 'xnode.saveFailed'); return false }
+    catch (caught) { actionError.value = localizedError(caught, 'xnode.saveFailed'); return false }
     finally { busy.value = false }
   }
   onMounted(() => {
@@ -42,5 +43,5 @@ export function useXNodeWorkspace() {
     }, 5000)
   })
   onScopeDispose(() => { active = false; if (timer) clearInterval(timer) })
-  return { nodes, configurations, snippets, groups, endpoints, metrics, loading, error, busy, load, perform }
+  return { nodes, configurations, snippets, groups, endpoints, metrics, loading, error, actionError, busy, load, perform }
 }

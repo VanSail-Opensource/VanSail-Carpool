@@ -41,13 +41,20 @@ func (s *Server) xnodeDeleteConfiguration(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) xnodeValidateConfiguration(w http.ResponseWriter, r *http.Request) {
 	var item struct {
-		Document json.RawMessage `json:"document"`
+		Document   json.RawMessage `json:"document"`
+		SnippetIDs []string        `json:"snippetIds"`
 	}
 	if err := decodeJSON(w, r, &item); err != nil {
 		s.xnodeError(w, r, xnode.ErrInvalid)
 		return
 	}
-	writeJSON(w, http.StatusOK, xnode.ValidateConfigurationDocument(item.Document))
+	result, err := s.deps.XNode.PreviewConfiguration(r.Context(), item.Document, item.SnippetIDs)
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	privateSubscriptionHeaders(w)
+	writeJSON(w, http.StatusOK, result)
 }
 func (s *Server) xnodeSnippets(w http.ResponseWriter, r *http.Request) {
 	items, err := s.deps.XNode.Snippets(r.Context())

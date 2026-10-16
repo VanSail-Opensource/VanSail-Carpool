@@ -1,0 +1,36 @@
+{
+  "nodeAdmin": {
+    "command": "节点命令",
+    "endpointOverrides": "客户端连接点覆盖配置（JSON）",
+    "enabled": "已启用",
+    "disabled": "已停用",
+    "ss2022": "添加 SS-2022（AES-256）",
+    "peer": "对端连接点",
+    "run": "执行命令",
+    "noCertificate": "不绑定托管证书",
+    "autoTls": "自动管理 TLS",
+    "certificateBinding": "{tag} 的证书",
+    "validationUnavailable": "验证服务暂不可用，请重试后再保存。",
+    "commands": {
+      "runtime.reload": "重新加载 Xray",
+      "geodata.refresh": "更新地理数据",
+      "ddns.run": "执行 DDNS 任务",
+      "update.check": "检查客户端更新",
+      "update.install": "安装已签名更新",
+      "update.rollback": "回滚客户端更新",
+      "speedtest": "通过对端测速"
+    },
+    "fields": {
+      "total": "总量", "used": "已用", "free": "空闲", "available": "可用",
+      "cached": "缓存", "buffers": "缓冲", "usedPercent": "使用率", "used_percent": "使用率",
+      "name": "名称", "hostname": "主机名", "platform": "平台", "os": "操作系统",
+      "kernelVersion": "内核版本", "uptime": "运行时间", "modelName": "处理器", "cores": "核心数",
+      "mount": "挂载点", "filesystem": "文件系统", "addresses": "地址",
+      "sent": "已发送", "received": "已接收", "upload_bps": "上传", "download_bps": "下载",
+      "memory_total": "显存总量", "memory_used": "已用显存", "utilization": "使用率", "temperature": "温度",
+      "request_latency_millis": "请求延迟", "download_bytes": "下载量", "upload_bytes": "上传量",
+      "download_mbps": "下载速度", "upload_mbps": "上传速度", "duration_millis": "耗时",
+      "command": "命令", "nodeId": "节点"
+    }
+  }
+}

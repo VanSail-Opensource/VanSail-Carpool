@@ -38,15 +38,6 @@
     "downloadRate": "下载速率",
     "uploadRate": "上传速率",
     "perSecond": "{value}/秒",
-    "geocheck": {
-      "disabled": "Geocheck 已禁用。",
-      "open": "查看 Geocheck 结果",
-      "title": "{node} Geocheck",
-      "checkedAt": "检查时间：{date}",
-      "loading": "正在加载 Geocheck 结果",
-      "unavailable": "暂无可用的 Geocheck 结果。",
-      "canvasLabel": "{node} 的 Geocheck 结果"
-    },
     "loadingNodes": "正在加载节点指标",
     "noNodes": "暂无节点",
     "sevenDayTraffic": "近七日流量",

@@ -96,8 +96,6 @@
     "tooLong": "请勿超过 {max} 个字符。"
   },
   "adminSquad": {
-    "geocheckEnabled": "启用 Geocheck",
-    "geocheckHint": "成员打开此节点组中的节点时，显示 Geocheck 结果。",
     "activationRequired": "需要激活码",
     "activationRequiredHint": "保持此区域可见，但新购买前需要输入激活码。",
     "activationCode": "激活码",

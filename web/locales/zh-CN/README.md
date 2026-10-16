@@ -45,3 +45,9 @@ than in Vue templates, composables, or API clients.
 - `public-subscription.json` provides public bearer subscription, format and import guidance.
 
 `api-tokens.json` localizes administrator API credential controls and permission presets.
+
+`member-nodes.json` supplies live-usage and owner routing controls.
+
+`node-admin.json` supplies localized node commands, certificate bindings and metric labels.
+
+`node-templates.json` localizes template validation, previews, format policy and assignments.

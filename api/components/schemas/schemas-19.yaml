@@ -99,22 +99,3 @@ StatisticsNodesSnapshot:
     generatedAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
     stale: { type: boolean }
     nodes: { type: array, items: { $ref: '../../openapi.yaml#/components/schemas/StatisticsNode' } }
-
-StatisticsNodeGeocheckImage:
-  type: object
-  additionalProperties: false
-  required: [format, mediaType, encoding, data]
-  properties:
-    format: { type: string, enum: [svg] }
-    mediaType: { type: string, enum: [image/svg+xml] }
-    encoding: { type: string, enum: [base64] }
-    data: { type: string, minLength: 1 }
-
-StatisticsNodeGeocheck:
-  type: object
-  additionalProperties: false
-  required: [nodeUuid, checkedAt, image]
-  properties:
-    nodeUuid: { type: string, format: uuid }
-    checkedAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
-    image: { $ref: '../../openapi.yaml#/components/schemas/StatisticsNodeGeocheckImage' }

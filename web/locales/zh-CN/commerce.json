@@ -79,7 +79,6 @@
     "back": "返回",
     "accessibleNodes": "可用节点",
     "nodeMultiplier": "{multiplier}x",
-    "openNodeGeocheck": "{name} · {multiplier} · 查看第 {current}/{total} 个节点的 Geocheck 结果",
     "couponStepHint": "选择一个可用优惠券，或添加兑换码。",
     "addCoupon": "添加优惠券",
     "noCouponHint": "不使用优惠券，按服务器报价结算。",

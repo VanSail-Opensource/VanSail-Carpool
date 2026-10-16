@@ -14,3 +14,5 @@ Invalid/revoked bearer links and inactive access have localized states.
 Public responses, downloads and metadata use no-store and no-referrer headers.
 Tokens and credentials must never enter shared caches, logs, analytics or local
 storage. The existing member and administrator roots remain independent.
+
+Public and authenticated member controls use the canonical `downloadUrl` configuration API. The `url` field remains the browser landing page. Older metadata falls back to the existing token API; inactive or disabled formats have no import/download action.

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
 
-import type { NodeGeocheckTarget, SquadProduct } from '@/api/types'
+import type { SquadProduct } from '@/api/types'
 import SquadPricingCard from './SquadPricingCard.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
@@ -18,7 +18,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggle: [id: string]
-  openGeocheck: [node: NodeGeocheckTarget]
 }>()
 
 const typeKey = computed(() => props.profileType === 'china_optimized'
@@ -39,7 +38,6 @@ const { reducedMotion } = useMotionPreferences()
             :included="props.includedIds.includes(squad.id)"
             :featured="props.featuredIds.includes(squad.id)"
             @toggle="emit('toggle', $event)"
-            @open-geocheck="emit('openGeocheck', $event)"
           />
         </motion.div>
       </AnimatePresence>

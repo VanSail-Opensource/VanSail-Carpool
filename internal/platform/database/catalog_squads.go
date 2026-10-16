@@ -23,14 +23,7 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 		return model.SquadProduct{}, ErrNotFound
 	}
 	now := time.Now().UTC()
-	enabled, err := s.SquadGeocheckEnabled(ctx, uuid)
-	if err != nil {
-		return model.SquadProduct{}, err
-	}
-	if input.GeocheckEnabled != nil {
-		enabled = *input.GeocheckEnabled
-	}
-	if enabled && strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
+	if strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
 		if _, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE remna_squad_uuid=?`, uuid); err != nil {
 			return model.SquadProduct{}, fmt.Errorf("remove default squad override: %w", err)
 		}
@@ -52,9 +45,9 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,geocheck_disabled,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(remna_squad_uuid) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,geocheck_disabled=excluded.geocheck_disabled,updated_at=excluded.updated_at`,
-		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, boolInt(!enabled), stamp(now), stamp(now))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(remna_squad_uuid) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at`,
+		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now))
 	if err != nil {
 		return model.SquadProduct{}, fmt.Errorf("save squad override: %w", err)
 	}
@@ -70,7 +63,7 @@ func virtualSquad(input SquadProductInput, now time.Time) model.SquadProduct {
 	return model.SquadProduct{ID: input.RemnaSquadUUID, RemnaSquadUUID: input.RemnaSquadUUID, Name: input.Name,
 		Description: strings.TrimSpace(input.Description), PriceTXBMinor: input.PriceTXBMinor, Price: model.TXBMoney(input.PriceTXBMinor),
 		Profile: input.Profile, Visible: input.Visible, UpstreamPresent: true, StockLimit: input.StockLimit, ActivationRequired: input.ActivationRequired,
-		GeocheckEnabled: true, AccessibleNodes: []model.CatalogNode{}, CreatedAt: now, UpdatedAt: now}
+		AccessibleNodes: []model.CatalogNode{}, CreatedAt: now, UpdatedAt: now}
 }
 
 // SquadProductByRemnaUUID resolves a persisted local override.
@@ -151,16 +144,15 @@ func (s *Store) attachSquadStock(ctx context.Context, product *model.SquadProduc
 	return nil
 }
 
-const squadSelect = `SELECT remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,geocheck_disabled,created_at,updated_at FROM squad_product_overrides`
+const squadSelect = `SELECT remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at FROM squad_product_overrides`
 
 func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var product model.SquadProduct
 	var visible, activationRequired int
-	var geocheckDisabled bool
 	var created, updated string
 	var stockLimit sql.NullInt64
 	var profileJSON sql.NullString
-	if err := row.Scan(&product.RemnaSquadUUID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &geocheckDisabled, &created, &updated); err != nil {
+	if err := row.Scan(&product.RemnaSquadUUID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.SquadProduct{}, ErrNotFound
 		}
@@ -169,7 +161,6 @@ func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	product.ID = product.RemnaSquadUUID
 	product.Visible = visible == 1
 	product.ActivationRequired = activationRequired == 1
-	product.GeocheckEnabled = !geocheckDisabled
 	product.UpstreamPresent = true
 	product.StockLimit = intPointer(stockLimit)
 	product.Price = model.TXBMoney(product.PriceTXBMinor)

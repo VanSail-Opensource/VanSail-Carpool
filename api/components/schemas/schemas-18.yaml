@@ -43,14 +43,6 @@ AdminTemporaryBanRequest:
     durationMinutes: { type: integer, minimum: 1, maximum: 525600 }
     reason: { type: string, minLength: 3, maxLength: 500 }
 
-AdminRemnaRelinkRequest:
-  type: object
-  additionalProperties: false
-  required: [remnaUserId, reason]
-  properties:
-    remnaUserId: { type: string, pattern: '^[1-9]\d*$' }
-    reason: { type: string, minLength: 3, maxLength: 500 }
-
 AdminTemporaryBan:
   type: object
   additionalProperties: false

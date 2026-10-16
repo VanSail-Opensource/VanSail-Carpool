@@ -33,10 +33,7 @@ type remnaClient interface {
 	ResetTraffic(context.Context, int64) (*remnawave.User, error)
 	ListInternalSquads(context.Context) ([]remnawave.InternalSquad, error)
 	ListNodes(context.Context) ([]remnawave.Node, error)
-	RequestNodeGeocheck(context.Context, string) (string, error)
-	NodeGeocheckResult(context.Context, string) (remnawave.NodeGeocheck, error)
 	ListHosts(context.Context) ([]remnawave.Host, error)
-	UpdateHostRemark(context.Context, string, string) error
 	InternalSquadAccessibleNodes(context.Context, string) ([]remnawave.AccessibleNode, error)
 }
 

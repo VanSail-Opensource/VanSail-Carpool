@@ -10,19 +10,20 @@ import (
 )
 
 type Proxy struct {
-	ID              string         `json:"id"`
-	NodeID          string         `json:"nodeId"`
-	GroupIDs        []string       `json:"-"`
-	Countries       []string       `json:"-"`
-	Name            string         `json:"name"`
-	Protocol        string         `json:"protocol"`
-	Address         string         `json:"address"`
-	Port            int            `json:"port"`
-	Account         map[string]any `json:"-"`
-	Stream          map[string]any `json:"-"`
-	Mux             map[string]any `json:"-"`
-	MapperHost      map[string]any `json:"-"`
-	ExcludedFormats []string       `json:"-"`
+	ID              string          `json:"id"`
+	NodeID          string          `json:"nodeId"`
+	GroupIDs        []string        `json:"-"`
+	Countries       []string        `json:"-"`
+	Name            string          `json:"name"`
+	Protocol        string          `json:"protocol"`
+	Address         string          `json:"address"`
+	Port            int             `json:"port"`
+	Account         map[string]any  `json:"-"`
+	Stream          map[string]any  `json:"-"`
+	Mux             map[string]any  `json:"-"`
+	MapperHost      map[string]any  `json:"-"`
+	ExcludedFormats []string        `json:"-"`
+	XrayTemplate    json.RawMessage `json:"-"`
 }
 
 func (p Proxy) Tag() string {
@@ -59,14 +60,5 @@ func (p Proxy) Outbound() (map[string]any, error) {
 	return result, nil
 }
 func RenderXray(proxies []Proxy) ([]byte, error) {
-	outbounds := []any{}
-	for _, proxy := range proxies {
-		out, err := proxy.Outbound()
-		if err != nil {
-			return nil, err
-		}
-		outbounds = append(outbounds, out)
-	}
-	outbounds = append(outbounds, map[string]any{"tag": "direct", "protocol": "freedom"})
-	return json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": outbounds, "routing": map[string]any{"rules": []any{}}})
+	return RenderTemplate(DefaultTemplate("xray"), proxies)
 }

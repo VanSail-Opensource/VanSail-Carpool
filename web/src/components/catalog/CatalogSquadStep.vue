@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { SquadProduct } from '@/api/types'
-import StatisticsGeocheckModal from '@/components/statistics/StatisticsGeocheckModal.vue'
-import { useNodeGeocheck } from '@/composables/useNodeGeocheck'
 import SquadSelector from './SquadSelector.vue'
 
 defineProps<{
@@ -14,7 +12,6 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ toggle: [id: string] }>()
-const geocheck = useNodeGeocheck()
 </script>
 
 <template>
@@ -26,7 +23,5 @@ const geocheck = useNodeGeocheck()
     :ordered-ids="orderedIds"
     :hidden-ids="hiddenIds"
     @toggle="emit('toggle', $event)"
-    @open-geocheck="geocheck.show"
   />
-  <StatisticsGeocheckModal v-model:open="geocheck.isOpen.value" :node="geocheck.selectedNode.value" :result="geocheck.result.value" :loading="geocheck.loading.value" :error="geocheck.error.value" />
 </template>

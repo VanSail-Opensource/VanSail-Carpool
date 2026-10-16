@@ -1,0 +1,22 @@
+get:
+  operationId: openSubscriptionLanding
+  summary: Public subscription landing page or negotiated client configuration
+  description: Browser HTML navigation opens the public page. Explicit format parameters and native subscription clients receive configuration data. Recognized sing-box and Clash Meta agents select their format; other clients default to native links.
+  security: []
+  parameters:
+    - {name: token, in: path, required: true, schema: {type: string, minLength: 43, maxLength: 43}}
+    - {name: format, in: query, schema: {type: string, enum: [native, xray, sing-box, clash]}}
+  responses:
+    '200':
+      description: Private, non-cacheable subscription page or configuration
+      headers:
+        Cache-Control: {schema: {type: string}}
+        Vary: {schema: {type: string}}
+        Subscription-Userinfo: {schema: {type: string}}
+      content:
+        text/html: {schema: {type: string}}
+        text/plain: {schema: {type: string}}
+        application/json: {schema: {}}
+        text/yaml: {schema: {type: string}}
+    '404': {$ref: '../openapi.yaml#/components/responses/NotFound'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}

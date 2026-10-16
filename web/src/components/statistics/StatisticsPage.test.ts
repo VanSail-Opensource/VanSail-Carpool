@@ -5,9 +5,8 @@ import type { StatisticsNode, StatisticsNodesSnapshot, StatisticsSnapshot } from
 import StatisticsPage from './StatisticsPage.vue'
 
 const apiMocks = vi.hoisted(() => ({
-  getNodeGeocheck: vi.fn(),
   getStatistics: vi.fn(),
-  getStatisticsNodes: vi.fn(),
+        getStatisticsNodes: vi.fn(),
 }))
 const hapticMocks = vi.hoisted(() => ({ selectionHaptic: vi.fn() }))
 
@@ -44,8 +43,7 @@ function mountPage() {
         StatisticsOverview: { template: '<div data-testid="overview" />' }, StatisticsTrafficChart: { template: '<div data-testid="traffic" />' },
         StatisticsShareCharts: { template: '<div data-testid="distributions" />' }, StatisticsDistribution: { template: '<div data-testid="composition" />' },
         Tabs: TabsStub, Tooltip: true, Button: true,
-        StatisticsNodes: { props: ['snapshot'], emits: ['openGeocheck'], template: '<div data-testid="nodes"><div role="button" tabindex="0" data-testid="geocheck-card" @click="$emit(\'openGeocheck\', snapshot.nodes[0])" /></div>' },
-        StatisticsGeocheckModal: { props: ['open', 'node', 'result'], template: '<output data-testid="geocheck-modal" :data-open="String(open)" :data-node="node && node.uuid" :data-image="result && result.image.data" />' },
+        StatisticsNodes: { props: ['snapshot'], template: '<div data-testid="nodes" />' },
       },
       mocks: { $t: (key: string) => key },
     },
@@ -74,23 +72,4 @@ describe('StatisticsPage', () => {
     wrapper.unmount()
   })
 
-  it('passes a selected card image into the Geocheck modal', async () => {
-    apiMocks.getStatistics.mockResolvedValue(statistics)
-    apiMocks.getStatisticsNodes.mockResolvedValue(nodes)
-    apiMocks.getNodeGeocheck.mockResolvedValue({ nodeUuid: node.uuid, checkedAt: nodes.generatedAt, image: { format: 'svg', mediaType: 'image/svg+xml', encoding: 'base64', data: 'PHN2Zy8+' } })
-    const wrapper = mountPage()
-    await flushPromises()
-    expect(apiMocks.getNodeGeocheck).not.toHaveBeenCalled()
-
-    await wrapper.get('[data-testid="tab-nodes"]').trigger('click')
-    await wrapper.get('[data-testid="geocheck-card"]').trigger('click')
-    await flushPromises()
-
-    const modal = wrapper.get('[data-testid="geocheck-modal"]')
-    expect(apiMocks.getNodeGeocheck).toHaveBeenCalledWith(node.uuid)
-    expect(modal.attributes('data-open')).toBe('true')
-    expect(modal.attributes('data-node')).toBe(node.uuid)
-    expect(modal.attributes('data-image')).toBe('PHN2Zy8+')
-    wrapper.unmount()
-  })
 })

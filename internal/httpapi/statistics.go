@@ -23,23 +23,3 @@ func (s *Server) statisticsNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, snapshot)
 }
-
-func (s *Server) statisticsNodeGeocheck(w http.ResponseWriter, r *http.Request) {
-	if squadUUID := r.URL.Query().Get("squadUuid"); squadUUID != "" {
-		enabled, err := s.deps.Store.SquadGeocheckEnabled(r.Context(), squadUUID)
-		if err != nil {
-			s.writeError(w, r, http.StatusServiceUnavailable, "NODE_GEOCHECK_UNAVAILABLE", "Squad geocheck settings are unavailable.")
-			return
-		}
-		if !enabled {
-			s.writeError(w, r, http.StatusForbidden, "SQUAD_GEOCHECK_DISABLED", "Geocheck disabled.")
-			return
-		}
-	}
-	result, ok := s.deps.Statistics.NodeGeocheck(chiURLParam(r, "nodeUuid"))
-	if !ok {
-		s.writeError(w, r, http.StatusNotFound, "NODE_GEOCHECK_UNAVAILABLE", "Node geocheck is not available yet.")
-		return
-	}
-	writeJSON(w, http.StatusOK, result)
-}

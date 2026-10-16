@@ -147,6 +147,7 @@ func New(deps Dependencies) (*Server, error) {
 		router.Get("/v1/agents/connect", deps.XNodeMaster.ServeHTTP)
 	}
 	if deps.XNode != nil {
+		router.Get("/subscription/{token}", server.subscriptionLanding)
 		router.Get("/api/v1/subscriptions/{token}/metadata", server.xnodeBearerMetadata)
 		router.Get("/api/v1/subscriptions/{token}", server.xnodeBearerSubscription)
 	}
@@ -174,7 +175,6 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Get("/api/v1/dashboard/node-usage", server.dashboardNodeUsage)
 		authenticated.Get("/api/v1/statistics", server.statisticsSnapshot)
 		authenticated.Get("/api/v1/statistics/nodes", server.statisticsNodes)
-		authenticated.Get("/api/v1/statistics/nodes/{nodeUuid}/geocheck", server.statisticsNodeGeocheck)
 		authenticated.Get("/api/v1/catalog", server.catalog)
 		authenticated.Post("/api/v1/purchases/quote", server.purchaseQuote)
 		authenticated.Post("/api/v1/purchases", server.purchase)

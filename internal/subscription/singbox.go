@@ -1,7 +1,6 @@
 package subscription
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
@@ -36,6 +35,9 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	if security == "tls" || security == "reality" {
 		source := object(p.Stream, security+"Settings")
 		tls := map[string]any{"enabled": true, "server_name": source["serverName"]}
+		if insecure, ok := source["allowInsecure"].(bool); ok {
+			tls["insecure"] = insecure
+		}
 		if source["alpn"] != nil {
 			tls["alpn"] = source["alpn"]
 		}
@@ -58,6 +60,12 @@ func (p Proxy) SingBox() (map[string]any, error) {
 				transport[key] = source[key]
 			}
 		}
+		if network == "ws" {
+			delete(transport, "host")
+			if transport["headers"] == nil && source["host"] != nil {
+				transport["headers"] = map[string]any{"Host": source["host"]}
+			}
+		}
 		out["transport"] = transport
 	case "grpc":
 		out["transport"] = map[string]any{"type": "grpc", "service_name": source["serviceName"]}
@@ -67,18 +75,5 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	return connectivity.ApplyClientMapper(out, p.MapperHost, "singbox")
 }
 func RenderSingBox(proxies []Proxy) ([]byte, error) {
-	outbounds := []any{}
-	names := []string{}
-	for _, proxy := range proxies {
-		out, err := proxy.SingBox()
-		if err != nil {
-			return nil, err
-		}
-		outbounds = append(outbounds, out)
-		names = append(names, proxy.Name)
-	}
-	selector := map[string]any{"type": "selector", "tag": "proxy", "outbounds": names}
-	outbounds = append([]any{selector}, outbounds...)
-	outbounds = append(outbounds, map[string]any{"type": "direct", "tag": "direct"})
-	return json.Marshal(map[string]any{"outbounds": outbounds, "route": map[string]any{"final": "proxy", "auto_detect_interface": true}})
+	return RenderTemplate(DefaultTemplate("sing-box"), proxies)
 }

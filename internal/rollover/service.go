@@ -48,6 +48,9 @@ type UsageSnapshot struct {
 	Daily               []DailyUsage
 	WeightedUsedBytes   int64
 	NodeSeriesAvailable bool
+	// TermUsageExact identifies purchase-owned accounting rather than a daily
+	// provider series that needs time apportionment at cadence boundaries.
+	TermUsageExact bool
 }
 
 type Service struct {
@@ -142,5 +145,6 @@ func rolloverTerminal(status string) bool {
 }
 
 const UsageAlgorithmVersion = "cadence-v4"
+const NativeUsageAlgorithmVersion = "native-term-v1"
 
 // CalculateUsage derives cadence allowances from weighted per-node daily usage.

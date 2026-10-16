@@ -13,3 +13,5 @@
 - `MarkdownContent.vue` safely renders allowlisted Markdown.
 - `MarkdownEditorField.vue` wraps Nuxt UI `UEditor` and `UEditorToolbar`, retaining Markdown persistence and the sanitized member preview. `markdownToolbar.ts` owns localized formatting actions; `MarkdownStyleControls.vue` applies safe text styling and `markdownStyle.ts` round-trips the existing color/size directives through the editor.
 - `MarkdownContent.test.ts` covers Markdown sanitization and rendering.
+
+`JsonDocumentField.vue` is the shared localized JSON field. External value changes reset invalid drafts; parsed edits emit update/validity events. It owns no node or administrator state.

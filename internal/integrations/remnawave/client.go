@@ -136,7 +136,7 @@ func (c *Client) do(ctx context.Context, method, endpoint string, query url.Valu
 		return fmt.Errorf("remnawave request: %w", err)
 	}
 	defer func() { _ = response.Body.Close() }()
-	responseLimit := responseByteLimit(method, endpoint)
+	responseLimit := maxResponseBytes
 	responseBody, err := io.ReadAll(io.LimitReader(response.Body, int64(responseLimit)+1))
 	if err != nil {
 		return fmt.Errorf("remnawave read response: %w", err)

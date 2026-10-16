@@ -1,0 +1,31 @@
+get:
+  operationId: getXNodeSubscriptionTemplates
+  tags: [Administration]
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  responses:
+    '200':
+      description: Administrator-owned templates, format policy and subscription assignments
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplateConfig'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}
+put:
+  operationId: saveXNodeSubscriptionTemplates
+  tags: [Administration]
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplateConfig'}
+  responses:
+    '200':
+      description: Validated configuration with the next revision
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplateConfig'}
+    '409': {$ref: '../openapi.yaml#/components/responses/Conflict'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}

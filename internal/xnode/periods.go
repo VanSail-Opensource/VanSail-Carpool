@@ -33,6 +33,7 @@ func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, str
 		}
 		if period.PurchaseID == purchase.ID && period.Status == "open" {
 			period.LimitBytes = limit
+			period.Strategy = strategy
 			return s.repo.SaveXNodePeriod(ctx, period)
 		}
 		if err = s.closePeriod(ctx, period, true); err != nil {

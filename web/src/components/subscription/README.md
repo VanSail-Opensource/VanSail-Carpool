@@ -31,3 +31,5 @@ reuse the existing premium-dark layout and do not add dependencies.
 `useSubscriptionData.test.ts` covers revocation clearing, obsolete response rejection, visible-page polling and disposal of private state in hosted CI. `UptimeBar.test.ts` covers keyboard inspection and neutral current status after refresh data expires.
 `HomeUptimePanel.test.ts` covers entry navigation during loading, the absence of
 a document link, and preservation of the Telegram launch URL in hosted CI.
+
+`SubscriptionFormats.vue` exposes server-advertised formats and private copy/open links. `MemberRoutingEditor.vue` composes JSON fields; `useMemberRouting.ts` owns versioned loads, insertion of accessible outbound templates and independent revision-checked saves. Dirty rules survive an outbound save; the backend enforces ownership and validates references.

@@ -42,24 +42,3 @@ func (s *Server) adminTemporaryUnban(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusAccepted, receipt)
 }
-
-func (s *Server) adminRelinkRemnaUser(w http.ResponseWriter, r *http.Request) {
-	key, ok := s.requireIdempotencyKey(w, r)
-	if !ok {
-		return
-	}
-	var request struct {
-		RemnaUserID string `json:"remnaUserId"`
-		Reason      string `json:"reason"`
-	}
-	if err := decodeJSON(w, r, &request); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_REMNA_RELINK", "Remote ID and reason are required.")
-		return
-	}
-	receipt, err := s.deps.AdminUsers.RelinkRemnaUser(r.Context(), currentUser(r).ID, chiURLParam(r, "userId"), key, request.RemnaUserID, request.Reason)
-	if err != nil {
-		s.adminFailure(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusAccepted, receipt)
-}

@@ -18,3 +18,5 @@ preserves the successor duration and shifts later terms and continuity jobs.
 - `eligibility_test.go` covers cadence rounding and the strict refund boundary.
 
 Provider calls are supplied by the application adapter and always traverse the shared Remnawave queue. Tests are added for CI and are not run locally.
+
+`refund_state.go` selects the optional purchase-scoped provider contract for refund quotes and settlement, preserving current-period reset reconciliation. Native counters combine legacy/native usage without applying node multipliers twice.

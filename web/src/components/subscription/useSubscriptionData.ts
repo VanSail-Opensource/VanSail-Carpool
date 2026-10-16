@@ -3,7 +3,7 @@ import { localizedError } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
 // Live member data is never restored from persistent rendering snapshots.
-export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise<T>) {
+export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise<T>, interval = 60_000, errorKey = 'subscription.loadFailed') {
   const value = shallowRef<T | null>(null)
   const loading = shallowRef(true)
   const refreshing = shallowRef(false)
@@ -15,7 +15,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
 
   function schedule(): void {
     if (timer) clearTimeout(timer)
-    if (!disposed && !document.hidden) timer = setTimeout(() => void refresh(), 60_000)
+    if (!disposed && !document.hidden) timer = setTimeout(() => void refresh(), Math.max(1000, interval))
   }
 
   async function refresh(clear = false): Promise<void> {
@@ -33,7 +33,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
       const result = await fetcher(signal)
       if (latest.isCurrent(token) && !disposed) value.value = result
     } catch (caught) {
-      if (latest.isCurrent(token) && !signal.aborted && !disposed) error.value = localizedError(caught, 'subscription.loadFailed')
+      if (latest.isCurrent(token) && !signal.aborted && !disposed) error.value = localizedError(caught, errorKey)
     } finally {
       if (latest.isCurrent(token) && !disposed) {
         loading.value = false

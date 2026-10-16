@@ -12,6 +12,7 @@ import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
 import HomeUptimePanel from '@/components/subscription/HomeUptimePanel.vue'
 import UsagePanel from './UsagePanel.vue'
+import MemberLiveMetrics from './MemberLiveMetrics.vue'
 
 const { dashboard, loading, error, usageRatio, catalogNodes, activeSquadNames, load } = useDashboard()
 const { activeCombo: hasValidCombo, refresh: refreshCommunityAccess } = useCommunityAccess()
@@ -90,6 +91,7 @@ function consumeReissueRequest(): void {
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>
           <HomeUptimePanel v-if="hasValidCombo" />
+          <MemberLiveMetrics v-if="hasValidCombo" />
           <UsagePanel
             v-if="dashboard.statistics"
             class="home-layout__usage"

@@ -1,8 +1,7 @@
 package providerops
 
 const (
-	// KindHostRemarkUpdate synchronizes one scheduled multiplier token update.
-	KindHostRemarkUpdate = "host_remark_update"
+
 	// KindAdminEntitlementEdit synchronizes one audited full-field edit.
 	KindAdminEntitlementEdit = "admin_entitlement_edit"
 	// KindAdminEntitlementRefund synchronizes one credited cancellation.
@@ -17,8 +16,7 @@ const (
 	KindAdminTemporaryBan = "admin_temporary_ban"
 	// KindAdminTemporaryUnban restores a profile after a manual temporary ban.
 	KindAdminTemporaryUnban = "admin_temporary_unban"
-	// KindAdminRemnaRelink verifies and changes only the local remote identity link.
-	KindAdminRemnaRelink = "admin_remna_relink"
+
 	// KindAdminMaintenance runs the backup-gated retention maintenance flow.
 	KindAdminMaintenance = "admin_maintenance"
 )

@@ -49,7 +49,9 @@ func (s *Store) RecordRolloverCalculation(ctx context.Context, purchaseID string
 		return model.PurchaseRollover{}, ErrConflict
 	}
 	summary.EligibleUnusedBytes = rolloverEligibleForSummary(summary, rollover.MinimumRemainingBPS)
-	summary.AlgorithmVersion = rolloverpkg.UsageAlgorithmVersion
+	if summary.AlgorithmVersion != rolloverpkg.NativeUsageAlgorithmVersion {
+		summary.AlgorithmVersion = rolloverpkg.UsageAlgorithmVersion
+	}
 	remaining := summary.AllocatedBytes - summary.UsedBytes
 	result, err := tx.ExecContext(ctx, `UPDATE purchase_rollovers SET status='calculated',allocated_traffic_bytes=?,used_traffic_bytes=?,
 		eligible_unused_bytes=?,remaining_traffic_bytes=?,credited_txb_minor=0,exception_code='',algorithm_version=?,updated_at=?

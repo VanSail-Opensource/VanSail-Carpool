@@ -27,13 +27,14 @@ type PreviewInput struct {
 	Monitoring            []MonitoringMapping `json:"monitoring"`
 }
 type Snapshot struct {
-	TakenAt    time.Time                    `json:"takenAt"`
-	Profiles   []remnawave.MigrationProfile `json:"profiles"`
-	Nodes      []Node                       `json:"nodes"`
-	Groups     []Group                      `json:"groups"`
-	Hosts      []json.RawMessage            `json:"hosts"`
-	Accounts   []Account                    `json:"accounts"`
-	Monitoring []MonitoringMapping          `json:"monitoring"`
+	TakenAt       time.Time                    `json:"takenAt"`
+	Profiles      []remnawave.MigrationProfile `json:"profiles"`
+	Nodes         []Node                       `json:"nodes"`
+	Groups        []Group                      `json:"groups"`
+	Hosts         []json.RawMessage            `json:"hosts"`
+	HostTemplates map[string]json.RawMessage   `json:"hostTemplates,omitempty"`
+	Accounts      []Account                    `json:"accounts"`
+	Monitoring    []MonitoringMapping          `json:"monitoring"`
 }
 type Node struct {
 	ID           string                  `json:"id"`

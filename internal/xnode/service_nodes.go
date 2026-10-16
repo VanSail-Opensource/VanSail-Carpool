@@ -131,6 +131,8 @@ func (s *Service) Endpoints(ctx context.Context) ([]Endpoint, error) {
 	return items, nil
 }
 func (s *Service) SaveEndpoint(ctx context.Context, item Endpoint) (Endpoint, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if strings.TrimSpace(item.Name) == "" || item.Address == "" || strings.ContainsAny(item.Address, "\x00\r\n /?#@") || item.Port < 1 || item.Port > 65535 || !wire.ValidName(item.InboundTag) {
 		return item, ErrInvalid
 	}

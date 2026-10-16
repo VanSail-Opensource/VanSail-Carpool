@@ -63,7 +63,6 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `activity_raffle_eligibility.go` checks cumulative negative-traffic exposure against the smallest entitlement available after configured combo rewards.
 - `activity_raffle_queries.go` supplies routing, progress, outcome, and delivery lookups; `activity_forecast.go` prices draws from current catalog and eligible balances.
 - `activity_forecast_prices.go` derives reward expense bounds from current combo and squad prices plus eligible member balances.
-- `catalog_geocheck.go` reads the per-squad Geocheck display setting, defaulting to enabled without creating rows. `catalog_geocheck_test.go` covers default-on, omission-preserving writes, and sparse override cleanup when re-enabled.
 - `activation_codes.go` validates selected combo/add-on activation-code maps in the purchase transaction while keeping only bcrypt hashes in local overrides.
 - `activation_codes_test.go` covers missing, invalid, extra, and bcrypt-validated purchase codes.
 - `activity_draws_part2.go` continues the focused implementation from its original package module.
@@ -217,7 +216,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   only for a real successful provider-worker item.
 - `admin_entitlement_edit.go`, `admin_entitlement_refund.go`, and `admin_combo_replacement.go` atomically persist audited administrator mutations with their provider operations.
 - `admin_coupon_grants.go` records idempotent, audited purchase-coupon wallet grants and historical discards.
-- `admin_user_provider_commands.go`, `admin_user_ban_state.go`, and `admin_user_audit.go` persist manual temporary restrictions, due restoration, relink claims, and audits.
 - `admin_bulk_query.go`, `admin_bulk_shift.go`, and `admin_bulk_extension.go` preview inclusive-OR active targets, deduplicate users, shift active and queued terms to the minute, and create one durable bulk job.
 - `compensation_config.go`, `compensation_observation.go`, `compensation_events.go`, `compensation_review.go`, `compensation_notification.go`, and `compensation_dismiss.go` persist revisioned outage policy, node observations, frozen snapshots, cursor-safe projections, atomic reviewed extensions, and provider-gated compensation detail cards.
 - `automatic_renewal_plan.go` and `automatic_renewal_commit.go` preserve explicit administrator entitlement overrides and edited term lengths when creating a successor.
@@ -449,3 +447,11 @@ indexes live in a separate disposable cache outside this schema and its backups.
 `api_tokens.go` reads hashed credentials and bounded owned metadata. `api_token_writes.go` creates/revokes tokens with transactional audits. `api_tokens_test.go` covers hash-only storage, expiry and owner isolation.
 
 `retired_detector.go` reads only acknowledged pre-upgrade restrictions and atomically records their release once. `retired_detector_test.go` upgrades a real pre-078 schema and verifies removed secrets/raw samples, canceled jobs, manual restrictions, financial history, ambiguous-mutation audits, foreign keys and idempotent release. Historical detector incident rows are archived; they have no member or administrator detector API.
+
+`xnode_commerce_test.go` covers in-place cadence persistence without replacing the accounting period.
+
+`admin_user_provider_commands.go`, `admin_user_ban_state.go` and `admin_user_audit.go` own manual restrictions, expiry restoration and audit records.
+
+`native_rollover_version_test.go` preserves native accounting provenance through calculation and atomic renewal. `legacy_controls_retirement_test.go` verifies that upgrade retirement disables executable relink/host jobs while retaining receipts.
+
+Native rollover calculations retain `native-term-v1` through the renewal transaction; old calculated records continue through the existing whole-term normalization. No settled financial records are rewritten.

@@ -86,18 +86,3 @@ type StatisticsNodesSnapshot struct {
 	Stale       bool             `json:"stale"`
 	Nodes       []StatisticsNode `json:"nodes"`
 }
-
-// StatisticsNodeGeocheckImage is the validated SVG image from a node geocheck.
-type StatisticsNodeGeocheckImage struct {
-	Format    string `json:"format"`
-	MediaType string `json:"mediaType"`
-	Encoding  string `json:"encoding"`
-	Data      string `json:"data"`
-}
-
-// StatisticsNodeGeocheck is the latest process-local successful node result.
-type StatisticsNodeGeocheck struct {
-	NodeUUID  string                      `json:"nodeUuid"`
-	CheckedAt time.Time                   `json:"checkedAt"`
-	Image     StatisticsNodeGeocheckImage `json:"image"`
-}

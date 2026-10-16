@@ -78,6 +78,14 @@ func (p Proxy) NativeLink() (string, error) {
 		}
 	}
 	settings := object(p.Stream, network+"Settings")
+	if network == "ws" && text(settings, "host") == "" {
+		headers := object(settings, "headers")
+		if host := text(headers, "Host"); host != "" {
+			query.Set("host", host)
+		} else if host = text(headers, "host"); host != "" {
+			query.Set("host", host)
+		}
+	}
 	for _, key := range []string{"path", "host", "mode", "serviceName", "authority"} {
 		if value := text(settings, key); value != "" {
 			query.Set(key, value)
@@ -87,11 +95,19 @@ func (p Proxy) NativeLink() (string, error) {
 	return link.String(), nil
 }
 func RenderNative(proxies []Proxy) ([]byte, error) {
+	if len(proxies) > 4096 {
+		return nil, fmt.Errorf("subscription has too many endpoints")
+	}
 	links := []string{}
+	total := 0
 	for _, proxy := range proxies {
 		link, err := proxy.NativeLink()
 		if err != nil {
 			return nil, err
+		}
+		total += len(link) + 1
+		if total > 8<<20 {
+			return nil, fmt.Errorf("rendered subscription exceeds 8 MiB")
 		}
 		links = append(links, link)
 	}

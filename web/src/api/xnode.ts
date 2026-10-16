@@ -16,9 +16,14 @@ export type XNodeMigration = Schema['XNodeMigration']
 export type XNodeMigrationPreview = Schema['XNodeMigrationPreview']
 export type XNodeMigrationPreviewWrite = Schema['XNodeMigrationPreviewWrite']
 export type XNodeCommand = Schema['XNodeCommandWrite']
+export type SubscriptionTemplate = Schema['XNodeSubscriptionTemplate']
+export type SubscriptionTemplateConfig = Schema['XNodeSubscriptionTemplateConfig']
 
 const root = '/api/v1/admin/xnode'
 export const xnodeApi = {
+  subscriptionTemplates: () => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { cache: 'no-store' }),
+  saveSubscriptionTemplates: (body: SubscriptionTemplateConfig) => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { method: 'PUT', body, cache: 'no-store' }),
+  previewSubscriptionTemplate: (body: SubscriptionTemplate) => request<Schema['XNodeSubscriptionTemplatePreview']>(`${root}/subscription-templates/preview`, { method: 'POST', body, cache: 'no-store' }),
   nodes: () => request<{ items: XNode[] }>(`${root}/nodes`, { cache: 'no-store' }),
   node: (id: string) => request<Schema['XNodeNodeDetail']>(`${root}/nodes/${encodeURIComponent(id)}`, { cache: 'no-store' }),
   saveNode: (node: Partial<XNode>, settings: XNodeSettings) => request<XNode>(`${root}/nodes${node.id ? `/${encodeURIComponent(node.id)}` : ''}`, { method: node.id ? 'PUT' : 'POST', body: { node, settings } }),
@@ -27,7 +32,7 @@ export const xnodeApi = {
   saveGlobal: (body: XNodeGlobal) => request<XNodeGlobal>(`${root}/global`, { method: 'PUT', body }),
   configurations: () => request<{ items: XNodeConfiguration[] }>(`${root}/configurations`, { cache: 'no-store' }),
   saveConfiguration: (body: Partial<XNodeConfiguration>) => request<XNodeConfiguration>(`${root}/configurations${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
-  validate: (document: object) => request<XNodeValidation>(`${root}/configurations/validate`, { method: 'POST', body: { document } }),
+  validate: (document: object, snippetIds: string[] = []) => request<XNodeValidation>(`${root}/configurations/validate`, { method: 'POST', body: { document, snippetIds } }),
   snippets: () => request<{ items: XNodeSnippet[] }>(`${root}/snippets`, { cache: 'no-store' }),
   saveSnippet: (body: Partial<XNodeSnippet>) => request<XNodeSnippet>(`${root}/snippets${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   groups: () => request<{ items: XNodeGroup[] }>(`${root}/groups`, { cache: 'no-store' }),
@@ -35,7 +40,8 @@ export const xnodeApi = {
   endpoints: () => request<{ items: XNodeEndpoint[] }>(`${root}/endpoints`, { cache: 'no-store' }),
   saveEndpoint: (body: Partial<XNodeEndpoint>) => request<XNodeEndpoint>(`${root}/endpoints${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   metrics: () => request<XNodeMetrics>(`${root}/metrics`, { cache: 'no-store' }),
-  command: (id: string, body: XNodeCommand) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
+  command: (id: string, body: XNodeCommand, key: string = crypto.randomUUID()) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
+  commandResult: (id: string) => request<Schema['XNodeCommandResult']>(`${root}/operations/${encodeURIComponent(id)}`, { cache: 'no-store' }),
   migration: () => request<XNodeMigration>(`${root}/migration`, { cache: 'no-store' }),
   previewMigration: (body: XNodeMigrationPreviewWrite) => request<XNodeMigrationPreview>(`${root}/migration/preview`, { method: 'POST', body, cache: 'no-store' }),
   importMigration: (digest: string) => request<Schema['OperationReceipt']>(`${root}/migration/import`, { method: 'POST', body: { digest }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),

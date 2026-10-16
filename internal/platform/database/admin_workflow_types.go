@@ -41,11 +41,6 @@ type AdminTemporaryBanInput struct {
 	DurationMinutes                                                 int
 }
 
-// AdminRemnaRelinkInput replaces one local Remnawave identity after queued validation.
-type AdminRemnaRelinkInput struct {
-	ActorUserID, UserID, RemnaUserID, IdempotencyKey, RequestFingerprint, Reason string
-}
-
 // AdminComboReplacementInput changes configuration without moving TXB.
 type AdminComboReplacementInput struct {
 	ActorUserID, UserID, ComboID               string

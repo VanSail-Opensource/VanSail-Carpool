@@ -10,7 +10,7 @@ with `XNodeDDNSSettings.vue` and `XNodeCertificateSettings.vue`.
 `XNodeGlobalSettings.vue` edits fleet policy and shared DNS providers.
 `XNodeConfigurations.vue` handles one base per node, ordered shared snippets,
 local JSON feedback and debounced pinned-core validation.
-`XNodeJsonEditor.vue` is the shared native textarea wrapper for JSON inputs.
+JSON inputs reuse `JsonDocumentField.vue` in the common component module.
 `XNodeAccessGroups.vue` manages node/inbound access and subscription endpoints.
 `XNodeMetrics.vue` renders fleet and detailed collector snapshots.
 
@@ -24,3 +24,9 @@ Mbps; backend byte accounting retains exact integers.
 - `XNodeMigrationFinalization.vue` collects the final source backup reference and exposes staged export and verified bridge completion through operation receipts.
 
 `XNodeMigration.vue` localizes shared SS-2022 preview issues and failed handover receipts. The source keeps serving when preflight requires isolated host/DNS bindings.
+
+Node editors reuse the common `JsonDocumentField.vue` field.
+
+`XNodeCommands.vue` uses durable receipts and stable idempotency keys; peer tests select an enabled endpoint on another node and read credential-free results. `XNodeMetricDetails.vue` and `metricRows.ts` render collector fields with byte, rate, duration and percentage units. Node forms bind certificate profiles to configured inbound tags and retain deep reactive feature switches. Save errors remain inside the editor instead of replacing it.
+
+`configurationPresets.ts` creates only new SS-2022 AES-256 listeners with random 32-byte keys; imports preserve their methods and credentials. `XNodeSubscriptionTemplates.vue` owns revision-checked administrator template policy. `XNodeSubscriptionTemplateEditor.vue` validates and previews synthetic output; `XNodeSubscriptionAssignments.vue` manages bounded, paginated subscription references. Format, default and assignment changes persist through the dedicated encrypted settings API.

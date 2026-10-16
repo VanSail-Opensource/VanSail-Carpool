@@ -1,0 +1,25 @@
+{
+  "nodeTemplates": {
+    "title": "Subscription templates",
+    "description": "Manage client documents, default formats and subscription assignments. Generated member credentials are never stored in templates.",
+    "editor": "Subscription template",
+    "template": "Template",
+    "add": "Add template",
+    "empty": "No custom templates. Built-in rendering remains available.",
+    "markerHint": "Use { SubscriptionProxies: {} } once inside outbounds, or proxies for Clash Meta. Use { SubscriptionNames: {} } inside selector lists. Markers must be separate array entries. Templates are JSON; Clash previews are YAML.",
+    "validate": "Validate & preview",
+    "preview": "Preview with synthetic credentials",
+    "clientAssets": "Local certificate or geodata files must be available on the client.",
+    "builtin": "Built-in template",
+    "useDefault": "Use format default",
+    "assignments": "Subscription assignments",
+    "userId": "Panel user ID",
+    "assign": "Save assignment",
+    "noAssignments": "Subscriptions use the format defaults.",
+    "removeHint": "Remove default and subscription assignments before deleting a template.",
+    "saveFailed": "Could not save. Check user IDs, template references and validation, or reload after a revision conflict.",
+    "saved": "Template configuration saved.",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

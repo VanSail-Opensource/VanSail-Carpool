@@ -3,6 +3,7 @@
 These documents describe the implemented module boundaries. They are maintenance contracts: each document states ownership, durable invariants, external interfaces, failure behavior, and the verification expected before release.
 
 | Module | Specification |
+| Native commerce, retirement and subscription template delivery | [native-commerce-delivery.md](native-commerce-delivery.md) |
 | --- | --- |
 | Runtime, persistence, scheduler, and backups | [platform-runtime.md](platform-runtime.md) |
 | Telegram identity and onboarding | [accounts-onboarding.md](accounts-onboarding.md) |

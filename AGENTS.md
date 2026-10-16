@@ -2,7 +2,7 @@
 
 ## 1. Mission
 
-You are working on **VanSail Carpool**, a carpool-management panel built around upstream **Remnawave** and **Emby** services.
+You are working on **VanSail Carpool**, a carpool-management panel with an authoritative **X-Node** control plane and **Emby** integration. **Remnawave** remains a temporary, queued migration bridge until verified final source accounting completes.
 
 Complete all assigned tasks **one by one** in a sensible dependency order.
 
@@ -265,6 +265,7 @@ Do not unnecessarily mirror Remnawave or Emby datasets locally.
 
 The primary upstream projects are:
 
+- **X-Node**: authenticated master WebSocket and pinned public protocol/native configuration packages
 - **Remnawave**
 - **Emby**
 
@@ -502,3 +503,12 @@ Throughout the repository:
 - Follow existing conventions unless there is a concrete reason to improve them.
 - Document non-obvious decisions.
 - Make changes only as broad as required to complete the task correctly.
+
+## 14. Native control plane and commerce
+
+- Keep X-Node Xray-only. The panel's pinned protocol and native validator must remain compatible with the signed agent release. Node commands use durable receipts and the existing per-node execution queue; waiting for results must not block traffic acknowledgments.
+- Persist exact accounting, credentials and desired state. Live rates, machine metrics, source IPs and connection-derived admission decisions remain memory-only. Serialize large telemetry integers as decimal strings for browser transport.
+- A reset must not erase purchase-wide refund evidence. Combine native periods with reconciled legacy usage once, retain unfinished accounting for settlement, and never revoke a paid successor while settling its predecessor. Previously settled financial records are immutable.
+- Subscription templates are administrator-owned client documents, separate from server Xray configurations, shared snippets and member routing customizations. Store only encrypted templates and native user references. Generate owner-scoped subscription output on demand; previews use synthetic credentials.
+- Retired detector ingestion, Geocheck, account relinking and scheduled legacy host mutations must not be reintroduced. Immutable migrations, historical audit/financial facts and the bounded detector-restriction release remain upgrade compatibility mechanisms.
+- Release delivery requires successful hosted regressions plus signed amd64/arm64 agent artifacts and manifest verification. Local automated test restrictions in section 9 remain in force.

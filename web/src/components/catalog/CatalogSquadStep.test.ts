@@ -1,13 +1,11 @@
-import { flushPromises, shallowMount } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CatalogNode, SquadProduct } from '@/api/types'
 import CatalogSquadStep from './CatalogSquadStep.vue'
 import SquadSelector from './SquadSelector.vue'
-import StatisticsGeocheckModal from '../statistics/StatisticsGeocheckModal.vue'
 
 const apiMocks = vi.hoisted(() => ({
-  getNodeGeocheck: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({ api: apiMocks }))
@@ -41,16 +39,4 @@ describe('CatalogSquadStep', () => {
     expect(wrapper.getComponent(SquadSelector).props('orderedIds')).toEqual([squad.id])
   })
 
-  it('opens the shared modal for the exact catalog node', async () => {
-    const result = { nodeUuid: node.uuid, checkedAt: '2026-08-21T00:00:00Z', image: { format: 'svg', mediaType: 'image/svg+xml', encoding: 'base64', data: 'PHN2Zy8+' } }
-    apiMocks.getNodeGeocheck.mockResolvedValue(result)
-    const wrapper = mountStep()
-
-    wrapper.getComponent(SquadSelector).vm.$emit('openGeocheck', node)
-    await flushPromises()
-
-    expect(apiMocks.getNodeGeocheck).toHaveBeenCalledWith(node.uuid)
-    expect(wrapper.getComponent(StatisticsGeocheckModal).props('node')).toStrictEqual(node)
-    expect(wrapper.getComponent(StatisticsGeocheckModal).props('result')).toEqual(result)
-  })
 })
