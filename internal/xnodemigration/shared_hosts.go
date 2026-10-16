@@ -73,7 +73,13 @@ func sharedSS2022Hosts(snapshot Snapshot, target string, native map[string]bool)
 				ID *string `json:"configProfileInboundUuid"`
 			} `json:"inbound"`
 		}
-		if json.Unmarshal(raw, &host) != nil || host.Inbound.ID == nil {
+		if json.Unmarshal(raw, &host) != nil {
+			return nil, xnode.ErrInvalid
+		}
+		if host.Inbound.ID == nil {
+			if len(host.Nodes) == 0 {
+				continue
+			}
 			return nil, xnode.ErrInvalid
 		}
 		if host.Disabled || !ss2022[*host.Inbound.ID] {

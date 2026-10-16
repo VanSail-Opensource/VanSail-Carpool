@@ -1,6 +1,11 @@
 # Provider migration
 
 This module owns resumable Remnawave preview, import, node handover and rollback.
+Unbound source placeholders with neither a node nor an inbound stay in the
+encrypted snapshot without producing a managed endpoint or blocking unrelated
+handovers. A declared node without an inbound still fails closed.
+`unbound_hosts_test.go` covers both enabled/disabled placeholders and unresolved
+declared nodes; source inventory is never deleted or assigned a fabricated node.
 `Source` confines legacy reads and mutations to the existing upstream queue.
 `Repository`, `Panel`, `Controller` and `Backups` make ownership changes and
 failure paths explicit and independently auditable.

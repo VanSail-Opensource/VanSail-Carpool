@@ -39,7 +39,15 @@ func (s *Service) importEndpoints(ctx context.Context, snapshot Snapshot, bindin
 				ID *string `json:"configProfileInboundUuid"`
 			} `json:"inbound"`
 		}
-		if json.Unmarshal(raw, &host) != nil || host.ID == "" || host.Inbound.ID == nil {
+		if json.Unmarshal(raw, &host) != nil || host.ID == "" {
+			return xnode.ErrInvalid
+		}
+		if host.Inbound.ID == nil {
+			// A placeholder without a node or inbound cannot produce a managed
+			// proxy. Retain it only in the encrypted source snapshot.
+			if len(host.Nodes) == 0 {
+				continue
+			}
 			return xnode.ErrInvalid
 		}
 		for _, node := range hostBindingNodes(host.Nodes, *host.Inbound.ID, bindings) {
