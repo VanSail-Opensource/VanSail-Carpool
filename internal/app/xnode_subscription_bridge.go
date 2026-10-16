@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"slices"
@@ -18,7 +19,18 @@ func (a proxyProvider) legacyProxies(ctx context.Context, identity xnode.Identit
 	if !bridge {
 		return []subscription.Proxy{}, nil
 	}
-	purchase, err := a.native.EffectivePurchase(ctx, identity.UserID)
+	var purchase *model.Purchase
+	if identity.UserID == "" {
+		access, accessErr := a.native.ServiceAccess(ctx, identity)
+		if accessErr != nil {
+			return nil, accessErr
+		}
+		if access != nil {
+			purchase = &model.Purchase{SquadUUIDs: access.GroupIDs}
+		}
+	} else {
+		purchase, err = a.native.EffectivePurchase(ctx, identity.UserID)
+	}
 	if err != nil {
 		return nil, err
 	}

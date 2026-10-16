@@ -89,11 +89,7 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 			if remote == nil || remote.ID != mapping.LegacyUserID {
 				return xnodemigration.Account{}, xnode.ErrConflict
 			}
-			item := xnodemigration.Account{ServiceName: mapping.ServiceName, LegacyID: remote.ID, Username: remote.Username, UUID: remote.VLESSUUID, Trojan: remote.TrojanPassword, Chacha: remote.ShadowsocksPassword, ExpiresAt: &remote.ExpireAt, Disabled: remote.Status != remnawave.UserStatusActive}
-			for _, group := range remote.ActiveInternalSquads {
-				item.GroupIDs = append(item.GroupIDs, group.UUID)
-			}
-			return item, nil
+			return captureServiceAccount(ctx, client, *remote, mapping.ServiceName)
 		})
 		if err != nil {
 			return snapshot, err

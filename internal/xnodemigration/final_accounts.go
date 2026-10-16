@@ -28,6 +28,12 @@ func (s *Service) reconcileFinalSnapshot(ctx context.Context, snapshot Snapshot)
 			if _, err := s.panel.ImportServiceIdentity(ctx, identity.ServiceName, account.LegacyID, account.UUID, account.Trojan, account.Chacha); err != nil {
 				return err
 			}
+			if err = s.panel.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: account.UsedBytes, LifetimeBytes: account.LifetimeBytes, LastResetAt: account.LastResetAt, SyncedAt: snapshot.TakenAt}); err != nil {
+				return err
+			}
+			if err = s.importHistory(ctx, identity, account, snapshot); err != nil {
+				return err
+			}
 			continue
 		}
 		if account.PanelUserID != identity.UserID {
@@ -104,7 +110,7 @@ func (s *Service) verifyFinalAccounts(ctx context.Context, snapshot Snapshot, cu
 			return xnode.ErrConflict
 		}
 		if identity.UserID == "" {
-			if before.ServiceName != identity.ServiceName {
+			if before.ServiceName != identity.ServiceName || before.UsedBytes != after.UsedBytes || before.LifetimeBytes != after.LifetimeBytes || !sameReset(before, after) || !sameServiceAccess(before, after) {
 				return xnode.ErrConflict
 			}
 			continue
@@ -114,6 +120,12 @@ func (s *Service) verifyFinalAccounts(ctx context.Context, snapshot Snapshot, cu
 		}
 	}
 	return nil
+}
+func sameServiceAccess(left, right Account) bool {
+	if left.ServiceAccess == nil || right.ServiceAccess == nil {
+		return left.ServiceAccess == nil && right.ServiceAccess == nil
+	}
+	return left.ServiceAccess.Equal(*right.ServiceAccess)
 }
 func sameReset(left, right Account) bool {
 	if left.LastResetAt == nil || right.LastResetAt == nil {

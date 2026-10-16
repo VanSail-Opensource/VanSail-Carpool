@@ -91,7 +91,7 @@ func inspectSnapshot(snapshot Snapshot) Preview {
 		multipliers[node.ID] = node.MultiplierFP
 	}
 	for _, account := range snapshot.Accounts {
-		if account.PanelUserID != "" {
+		if account.PanelUserID != "" || account.ServiceName != "" {
 			if _, err := History(account.LegacyID, account.Stats, multipliers); err != nil {
 				result.Issues = append(result.Issues, Issue{ResourceID: account.Username, Code: "INCOMPLETE_TRAFFIC_HISTORY", Blocking: true})
 			}

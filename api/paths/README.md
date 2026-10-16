@@ -240,3 +240,6 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 `api-v1-admin-xnode-subscription-templates.yaml` defines private template policy reads and revision-checked writes. `api-v1-admin-xnode-subscription-templates-preview.yaml` defines synthetic preview and validation.
 
 `subscription-token.yaml` documents public HTML/client content negotiation on the copied subscription URL.
+
+`api-v1-admin-xnode-service-identities-id-subscription.yaml` exposes private
+standalone-account subscription metadata and bearer URLs to administrators.

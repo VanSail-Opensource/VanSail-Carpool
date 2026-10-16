@@ -154,7 +154,23 @@ func (s *Service) ServiceProxy(ctx context.Context, identity Identity, endpoint 
 	if identity.ServiceName == "" {
 		return subscription.Proxy{}, ErrNotFound
 	}
-	bindings, err := s.repo.XNodeServiceBindings(ctx, identity.ProxyUserID)
+	access, err := s.ServiceAccess(ctx, identity)
+	if err != nil {
+		return subscription.Proxy{}, err
+	}
+	if identity.AccessDisabled {
+		return subscription.Proxy{}, ErrNotFound
+	}
+	if access != nil {
+		period, err := s.servicePeriod(ctx, identity, access)
+		if err != nil {
+			return subscription.Proxy{}, err
+		}
+		if period == nil {
+			return subscription.Proxy{}, ErrNotFound
+		}
+	}
+	bindings, err := s.serviceBindings(ctx, identity, access)
 	if err != nil {
 		return subscription.Proxy{}, err
 	}

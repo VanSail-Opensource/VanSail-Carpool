@@ -158,3 +158,11 @@ The detector compatibility release reuses `xnode_bridge_policy.go` combined quot
 `xnode_commerce_test.go` verifies that mixed-provider reset prechecks reconcile the combined counter during migration while refunds retain the final-accounting fence. Compensation uses fresh ready native reports and preserves disabled source-node state; empty native fleets do not call retired upstream statistics.
 
 Native compensation readiness matches live node health, including report freshness. During bridging the source administrative disabled flag wins. Extensions update expiry on the existing period and retain combined quota usage.
+
+`xnode_service_source.go` captures explicitly mapped standalone credentials,
+source terms, aggregate traffic and complete per-node history inside the existing
+Remnawave queue. `xnode_service_bridge.go` reuses that queued entitlement adapter
+with the remaining combined allowance and current legacy group bindings; its
+policy-shaped purchase value is never persisted as a purchase. The temporary
+subscription bridge supports these same explicit standalone groups.
+`xnode_service_bridge_test.go` covers finite, exhausted and unlimited policies.

@@ -1,0 +1,19 @@
+get:
+  operationId: getXNodeServiceSubscription
+  tags: [Administration]
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[1-9][0-9]*$'}
+  responses:
+    '200':
+      description: Private standalone subscription metadata and bearer URL; probe identities are excluded
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeSubscription'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}
+    '404':
+      description: Standalone service identity not found

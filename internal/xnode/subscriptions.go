@@ -29,8 +29,14 @@ func (s *Service) bearerIdentity(ctx context.Context, token string) (Identity, e
 	}
 	hash := sha256.Sum256([]byte(token))
 	identity, err := s.repo.XNodeIdentityBySubscription(ctx, hash[:])
-	if err != nil || identity.UserID == "" {
+	if err != nil {
 		return Identity{}, ErrNotFound
+	}
+	if identity.UserID == "" {
+		access, err := s.ServiceAccess(ctx, identity)
+		if err != nil || access == nil {
+			return Identity{}, ErrNotFound
+		}
 	}
 	return identity, nil
 }
@@ -49,6 +55,9 @@ func (s *Service) OwnedSubscription(ctx context.Context, user string) (Subscript
 	return s.subscriptionMetadata(ctx, identity)
 }
 func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
+	if identity.UserID == "" {
+		return s.serviceSubscriptionMetadata(ctx, identity)
+	}
 	result := SubscriptionMetadata{Username: identity.Username, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
 	var err error
 	result.URL, err = s.SubscriptionURL(identity)
@@ -105,11 +114,15 @@ func (s *Service) BearerSubscription(ctx context.Context, token, format string) 
 	if !metadata.Formats[format] {
 		return nil, metadata, ErrInvalid
 	}
-	proxies, err := s.MemberProxies(ctx, identity.UserID)
+	proxies, _, err := s.identityInventory(ctx, identity)
 	if err != nil {
 		return nil, metadata, err
 	}
-	raw, err := s.renderOwnedSubscription(ctx, identity.UserID, format, proxies)
+	owner := identity.UserID
+	if owner == "" {
+		owner = identityScope(identity)
+	}
+	raw, err := s.renderOwnedSubscription(ctx, owner, format, proxies)
 	return raw, metadata, err
 }
 func renderSubscription(format string, proxies []subscription.Proxy) ([]byte, error) {

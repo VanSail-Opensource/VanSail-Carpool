@@ -6,12 +6,13 @@ import (
 )
 
 type Credentials struct {
-	UUID        string                     `json:"uuid"`
-	Trojan      string                     `json:"trojan"`
-	Shadowsocks string                     `json:"shadowsocks"`
-	SS2022_128  string                     `json:"ss2022_128"`
-	SS2022_256  string                     `json:"ss2022_256"`
-	Inbound     map[string]json.RawMessage `json:"inbound,omitempty"`
+	UUID          string                     `json:"uuid"`
+	Trojan        string                     `json:"trojan"`
+	Shadowsocks   string                     `json:"shadowsocks"`
+	SS2022_128    string                     `json:"ss2022_128"`
+	SS2022_256    string                     `json:"ss2022_256"`
+	Inbound       map[string]json.RawMessage `json:"inbound,omitempty"`
+	ServiceAccess *ServiceAccess             `json:"serviceAccess,omitempty"`
 }
 
 type Identity struct {

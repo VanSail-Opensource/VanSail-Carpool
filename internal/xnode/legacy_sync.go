@@ -15,6 +15,9 @@ func (s *Service) SyncLegacyUsage(ctx context.Context, identity Identity, next L
 	if err != nil {
 		return err
 	}
+	if current.UserID == "" {
+		return s.syncServiceUsage(ctx, current, next)
+	}
 	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
 	if err != nil {
 		return err

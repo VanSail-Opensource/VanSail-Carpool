@@ -33,3 +33,8 @@ Generate TypeScript types from the root entry point with `npm run generate:api` 
 Host connectivity is administrator-only under `/api/v1/admin/host-connectivity`. Snapshot, asynchronous manual checks, exact-user resolution and stable 24-hour history return credential-free projections. Scheduling configuration remains one atomic `connectivity.config` JSON value written through the existing validated settings registry.
 
 `API_TOKENS.md` documents scoped bearer authentication, management, expiry and migration operation polling.
+
+`GET /api/v1/admin/xnode/service-identities/{id}/subscription` returns private
+metadata and the existing bearer URL for explicitly imported standalone access.
+Probe identities are excluded. Quota, expiry, enabled groups and host ACLs remain
+authoritative for both standalone client output and server admission.

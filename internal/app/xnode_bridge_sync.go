@@ -50,7 +50,7 @@ func (a proxyProvider) syncBridgeAccounts(ctx context.Context) error {
 				continue
 			}
 			err := a.native.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: user.UserTraffic.UsedTrafficBytes, LifetimeBytes: user.UserTraffic.LifetimeUsedTrafficBytes, LastResetAt: user.LastTrafficResetAt, SyncedAt: time.Now().UTC()})
-			if err == nil && identity.UserID != "" {
+			if err == nil {
 				err = a.applyBridgePolicy(ctx, identity, user.UserTraffic.UsedTrafficBytes, &user)
 			}
 			if err != nil && firstError == nil {

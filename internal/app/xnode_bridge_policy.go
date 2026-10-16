@@ -33,6 +33,9 @@ func (a proxyProvider) bridgePurchase(ctx context.Context, identity xnode.Identi
 	if err != nil {
 		return nil, err
 	}
+	if current.UserID == "" {
+		return a.bridgeServicePolicy(ctx, current, legacyUsed)
+	}
 	purchase, err := a.native.EffectivePurchase(ctx, identity.UserID)
 	if err != nil {
 		return nil, err

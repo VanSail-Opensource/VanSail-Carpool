@@ -107,7 +107,7 @@ func (s *Service) Import(ctx context.Context, digest string) (xnode.MigrationSta
 	}
 	for _, account := range snapshot.Accounts {
 		if account.ServiceName != "" {
-			if err = s.importMonitoring(ctx, account); err != nil {
+			if err = s.importMonitoring(ctx, account, snapshot); err != nil {
 				return state, err
 			}
 			continue

@@ -25,6 +25,17 @@ connection-derived block decision enters persistence. `ports.go` keeps compact
 intervals. `public_transport.go` prevents private destinations and DNS rebinding
 when validating external asset links through the existing request queue.
 
+`service_access.go` stores explicitly imported standalone terms inside encrypted
+credentials, without creating Telegram principals or purchases. Existing quota
+periods retain source and native usage exactly once, including reset tails.
+`service_cadence.go` takes over resets only after final source accounting.
+`service_eligibility.go` derives access from current enabled groups and quota;
+probe bindings retain their separate bounded behavior. `service_subscriptions.go`
+uses the existing templates and host ACLs for standalone bearer subscriptions;
+probe identities cannot use this path. Hosted `service_access_test.go` and
+`service_access_policy_test.go` cover resume, shared exhaustion, late resets,
+cadence handoff, host ACLs, native credentials and probe isolation.
+
 `validation_assets.go` substitutes node-local files only in an analysis copy,
 then runs native validation; actual activation still verifies node-local assets.
 Hosted cases cover port parsing, report freshness and invalid observations.

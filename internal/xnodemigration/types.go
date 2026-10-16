@@ -52,21 +52,22 @@ type Group struct {
 	Inbounds []remnawave.NodeInbound `json:"inbounds"`
 }
 type Account struct {
-	ServiceName   string              `json:"serviceName,omitempty"`
-	GroupIDs      []string            `json:"groupIds"`
-	ExpiresAt     *time.Time          `json:"expiresAt"`
-	PanelUserID   string              `json:"panelUserId"`
-	LegacyID      int64               `json:"legacyId"`
-	Username      string              `json:"username"`
-	UUID          string              `json:"uuid"`
-	Trojan        string              `json:"trojan"`
-	Chacha        string              `json:"chacha"`
-	UsedBytes     int64               `json:"usedBytes"`
-	LifetimeBytes int64               `json:"lifetimeBytes"`
-	LastResetAt   *time.Time          `json:"lastResetAt"`
-	Stats         remnawave.UserStats `json:"stats"`
-	Disabled      bool                `json:"disabled"`
-	TelegramID    *int64              `json:"telegramId,omitempty"`
+	ServiceAccess *xnode.ServiceAccess `json:"serviceAccess,omitempty"`
+	ServiceName   string               `json:"serviceName,omitempty"`
+	GroupIDs      []string             `json:"groupIds"`
+	ExpiresAt     *time.Time           `json:"expiresAt"`
+	PanelUserID   string               `json:"panelUserId"`
+	LegacyID      int64                `json:"legacyId"`
+	Username      string               `json:"username"`
+	UUID          string               `json:"uuid"`
+	Trojan        string               `json:"trojan"`
+	Chacha        string               `json:"chacha"`
+	UsedBytes     int64                `json:"usedBytes"`
+	LifetimeBytes int64                `json:"lifetimeBytes"`
+	LastResetAt   *time.Time           `json:"lastResetAt"`
+	Stats         remnawave.UserStats  `json:"stats"`
+	Disabled      bool                 `json:"disabled"`
+	TelegramID    *int64               `json:"telegramId,omitempty"`
 }
 type Issue struct {
 	ResourceID string `json:"resourceId"`
@@ -104,7 +105,7 @@ type Panel interface {
 	Candidate(context.Context, string) (wire.Config, error)
 	VerifyClientEndpoints(context.Context, string) error
 	ImportIdentity(context.Context, model.User, int64, string, string, string, ...bool) (xnode.Identity, error)
-	ImportServiceIdentity(context.Context, string, int64, string, string, string) (xnode.Identity, error)
+	ImportServiceIdentity(context.Context, string, int64, string, string, string, ...xnode.ServiceAccess) (xnode.Identity, error)
 	SyncLegacyUsage(context.Context, xnode.Identity, xnode.LegacyUsage) error
 }
 type Controller interface {

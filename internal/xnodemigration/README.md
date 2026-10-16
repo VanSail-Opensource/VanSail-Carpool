@@ -10,7 +10,13 @@ panel backup, preserves UUIDs and compatible passwords, imports daily history
 separately from weighted quota counters, and publishes each node together with
 its legacy ownership checkpoint. Replaying import preserves operator edits and
 completed handovers. Monitoring accounts require explicit mappings and receive
-only their imported group bindings.
+only their imported group bindings. Explicit mappings also capture standalone
+quota terms, exact usage and complete history. Imports reject old snapshots that
+lack standalone terms rather than silently granting unlimited probe access.
+Standalone periods have no purchase reference. Final export and its counter
+fence include these identities and reject changed standalone source terms.
+`service_finalization_test.go` covers their traffic, reset, expiry, group and
+quota fence, including removal of the saved policy from a later source read.
 
 Cutover verifies the running agent against its signed release manifest, validates
 complete future server configuration and client endpoints, and obtains a backup

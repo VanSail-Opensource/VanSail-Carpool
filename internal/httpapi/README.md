@@ -197,3 +197,7 @@ cancellable fake probe for hosted execution without external network traffic.
 `subscription_content.go` negotiates the copied public landing URL between HTML and native client content. `subscription_content_test.go` covers explicit formats, supported client agents, Accept quality and private browser responses.
 
 Command results normalize large integer counters for exact browser presentation, including historical numeric speedtest results.
+
+`xnode_service_subscription.go` exposes existing standalone subscription metadata
+and bearer URLs only under the administrator router, with private no-store
+headers. It excludes probe identities and does not create or rotate credentials.

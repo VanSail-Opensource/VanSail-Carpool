@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 	"strconv"
 	"time"
@@ -41,6 +42,9 @@ func finalAccount(remote remnawave.User) xnodemigration.Account {
 	for _, group := range remote.ActiveInternalSquads {
 		item.GroupIDs = append(item.GroupIDs, group.UUID)
 	}
+	item.ServiceAccess = &xnode.ServiceAccess{LimitBytes: remote.TrafficLimitBytes, Strategy: string(remote.TrafficLimitStrategy), StartedAt: remote.CreatedAt, ExpiresAt: remote.ExpireAt, GroupIDs: item.GroupIDs, Disabled: remote.Status != remnawave.UserStatusActive && remote.Status != remnawave.UserStatusLimited}
+	// LIMITED follows the captured counter. A reset may restore its access.
+	item.Disabled = item.ServiceAccess.Disabled
 	item.TelegramID = remote.TelegramID
 	return item
 }

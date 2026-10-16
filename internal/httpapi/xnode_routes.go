@@ -43,6 +43,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Put("/xnode/endpoints/{id}", s.xnodeSaveEndpoint)
 	router.Delete("/xnode/endpoints/{id}", s.xnodeDeleteEndpoint)
 	router.Get("/xnode/metrics", s.xnodeMetrics)
+	router.Get("/xnode/service-identities/{id}/subscription", s.xnodeServiceSubscription)
 	if s.deps.XNodeMigration != nil {
 		router.Get("/xnode/migration", s.xnodeMigrationStatus)
 		router.Post("/xnode/migration/preview", s.xnodeMigrationPreview)

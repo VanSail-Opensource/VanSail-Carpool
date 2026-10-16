@@ -8,20 +8,39 @@ import (
 )
 
 func (s *Service) serviceUser(ctx context.Context, identity Identity, node Node, inbounds map[string]map[string]any) (wire.User, error) {
-	bindings, err := s.repo.XNodeServiceBindings(ctx, identity.ProxyUserID)
-	if err != nil {
-		return wire.User{}, err
-	}
 	credentials, err := loadCredentials(s.vault, identity)
 	if err != nil {
 		return wire.User{}, err
 	}
 	user := wire.User{ID: int(identity.ProxyUserID), UUID: credentials.UUID, InboundTags: []string{}, Credentials: map[string]json.RawMessage{}, ConnectionLimit: 10, SpeedLimitMbps: 1000}
+	if identity.AccessDisabled {
+		return user, nil
+	}
+	if access := credentials.ServiceAccess; access != nil {
+		period, err := s.servicePeriod(ctx, identity, access)
+		if err != nil {
+			return user, err
+		}
+		if period == nil {
+			return user, nil
+		}
+		user.AccountingPeriod = period.ID
+		user.ConnectionLimit, user.SpeedLimitMbps = 0, 0
+		if s.master != nil {
+			user.BlockNew = s.master.Blocked(user.ID)
+		}
+	}
+	bindings, err := s.serviceBindings(ctx, identity, credentials.ServiceAccess)
+	if err != nil {
+		return user, err
+	}
 	var until time.Time
+	seen := map[string]bool{}
 	for _, binding := range bindings {
-		if binding.NodeID != node.ID || !binding.ValidUntil.After(s.now()) {
+		if binding.NodeID != node.ID || !binding.ValidUntil.After(s.now()) || seen[binding.InboundTag] {
 			continue
 		}
+		seen[binding.InboundTag] = true
 		inbound := inbounds[binding.InboundTag]
 		if inbound == nil {
 			return user, ErrInvalid

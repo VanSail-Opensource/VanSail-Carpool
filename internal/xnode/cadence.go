@@ -23,7 +23,7 @@ func (s *Service) ResetCadences(ctx context.Context) error {
 	return failures
 }
 func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
-	if identity.UserID == "" || identity.CurrentPeriodID == "" {
+	if identity.CurrentPeriodID == "" {
 		return nil
 	}
 	if identity.LegacyUserID != "" {
@@ -45,6 +45,9 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	next := rollover.CadenceAdvance(period.StartedAt, period.Strategy)
 	if next.After(s.now()) {
 		return nil
+	}
+	if identity.UserID == "" {
+		return s.resetServiceCadence(ctx, identity, period, next)
 	}
 	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
 	if err != nil {
