@@ -59,6 +59,21 @@ func (s *Service) ServiceAccess(ctx context.Context, identity Identity) (*Servic
 	return credentials.ServiceAccess, credentials.ServiceAccess.validate()
 }
 
+// ServiceIdentityByName resolves explicitly provisioned service identities;
+// this never creates or links a member principal.
+func (s *Service) ServiceIdentityByName(ctx context.Context, name string) (Identity, error) {
+	identities, err := s.repo.XNodeIdentities(ctx)
+	if err != nil {
+		return Identity{}, err
+	}
+	for _, identity := range identities {
+		if identity.ServiceName == name && name != "" && identity.UserID == "" {
+			return identity, nil
+		}
+	}
+	return Identity{}, ErrNotFound
+}
+
 func (s *Service) startServicePeriod(ctx context.Context, identity Identity, access ServiceAccess, at time.Time) error {
 	id, err := ids.New()
 	if err != nil {

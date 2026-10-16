@@ -166,3 +166,7 @@ with the remaining combined allowance and current legacy group bindings; its
 policy-shaped purchase value is never persisted as a purchase. The temporary
 subscription bridge supports these same explicit standalone groups.
 `xnode_service_bridge_test.go` covers finite, exhausted and unlimited policies.
+`xnode_service_connectivity.go` reuses that mixed-provider inventory for imported
+monitoring accounts, retaining legacy credentials only on source-owned hosts.
+Provider name/ID resolution accepts explicit service identities without creating
+a Telegram association; internal bounded probes retain their separate path.

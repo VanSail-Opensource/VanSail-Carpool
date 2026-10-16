@@ -35,6 +35,8 @@ uses the existing templates and host ACLs for standalone bearer subscriptions;
 probe identities cannot use this path. Hosted `service_access_test.go` and
 `service_access_policy_test.go` cover resume, shared exhaustion, late resets,
 cadence handoff, host ACLs, native credentials and probe isolation.
+`ServiceIdentityByName` resolves saved service names independently of Telegram;
+`ServiceProxies` shares the same mixed-provider inventory with monitoring.
 
 `validation_assets.go` substitutes node-local files only in an analysis copy,
 then runs native validation; actual activation still verifies node-local assets.

@@ -21,6 +21,16 @@ func (s *Service) ServiceSubscription(ctx context.Context, id string) (Subscript
 	return s.serviceSubscriptionMetadata(ctx, identity)
 }
 
+// ServiceProxies uses the same quota, host ACL and mixed-provider inventory as
+// standalone subscriptions. Bounded internal probes retain their explicit path.
+func (s *Service) ServiceProxies(ctx context.Context, identity Identity) ([]subscription.Proxy, error) {
+	if identity.UserID != "" || identity.ServiceName == "" {
+		return nil, ErrInvalid
+	}
+	proxies, _, err := s.identityInventory(ctx, identity)
+	return proxies, err
+}
+
 func (s *Service) identityInventory(ctx context.Context, identity Identity) ([]subscription.Proxy, bool, error) {
 	if identity.UserID != "" {
 		return s.memberInventory(ctx, identity.UserID)

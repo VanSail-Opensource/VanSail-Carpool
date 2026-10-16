@@ -32,6 +32,20 @@ func (s proxyConnectivitySource) Validate(ctx context.Context, id int64) error {
 		return (connectivitySource{adapter: s.provider.remnaAdapter}).Validate(ctx, id)
 	}
 	if identity.ServiceName != "" {
+		access, err := s.provider.native.ServiceAccess(ctx, identity)
+		if err != nil {
+			return err
+		}
+		if access != nil {
+			proxies, err := s.provider.native.ServiceProxies(ctx, identity)
+			if err != nil {
+				return err
+			}
+			if len(proxies) == 0 {
+				return connectivityFailure("ACCOUNT_UNAVAILABLE")
+			}
+			return nil
+		}
 		bindings, err := s.provider.store.XNodeServiceBindings(ctx, id)
 		if err != nil {
 			return err
@@ -63,6 +77,13 @@ func (s proxyConnectivitySource) Load(ctx context.Context, id int64) (connectivi
 	user := connectivity.User{ID: id, Username: identity.Username, Status: "ACTIVE"}
 	targets := []connectivity.Target{}
 	if identity.ServiceName != "" {
+		access, err := s.provider.native.ServiceAccess(ctx, identity)
+		if err != nil {
+			return user, nil, err
+		}
+		if access != nil {
+			return s.loadStandaloneTargets(ctx, identity)
+		}
 		endpoints, err := s.provider.native.Endpoints(ctx)
 		if err != nil {
 			return user, nil, err

@@ -75,6 +75,13 @@ func (a proxyProvider) FindUserByUsername(ctx context.Context, name string) (acc
 			return accounts.RemoteUser{}, false, e
 		}
 	}
+	service, serviceErr := a.native.ServiceIdentityByName(ctx, name)
+	if serviceErr == nil {
+		return accounts.RemoteUser{ID: strconv.FormatInt(service.ProxyUserID, 10), Username: service.ServiceName}, true, nil
+	}
+	if !errors.Is(serviceErr, xnode.ErrNotFound) {
+		return accounts.RemoteUser{}, false, serviceErr
+	}
 	legacy, e := a.legacy(ctx)
 	if e != nil {
 		return accounts.RemoteUser{}, false, e
@@ -101,6 +108,9 @@ func (a proxyProvider) FindUserByID(ctx context.Context, id string) (accounts.Re
 	}
 	if !native {
 		return a.remnaAdapter.FindUserByID(ctx, id)
+	}
+	if identity.UserID == "" && identity.ServiceName != "" {
+		return accounts.RemoteUser{ID: strconv.FormatInt(identity.ProxyUserID, 10), Username: identity.ServiceName}, true, nil
 	}
 	user, err := a.native.IdentityUser(ctx, identity)
 	if err != nil {

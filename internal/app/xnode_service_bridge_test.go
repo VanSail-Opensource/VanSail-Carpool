@@ -50,7 +50,28 @@ func TestStandaloneBridgeSharesOneCombinedAllowance(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			policy, err := (proxyProvider{store: store, native: native}).bridgeServicePolicy(ctx, identity, tc.source)
+			provider := proxyProvider{store: store, native: native}
+			for _, lookup := range []func() error{
+				func() error {
+					user, exists, err := provider.FindUserByUsername(ctx, "standalone")
+					if err == nil && (!exists || user.ID != "929" || user.TelegramID != nil) {
+						t.Fatal("standalone name lookup required a fabricated Telegram principal")
+					}
+					return err
+				},
+				func() error {
+					user, exists, err := provider.FindUserByID(ctx, "929")
+					if err == nil && (!exists || user.Username != "standalone" || user.TelegramID != nil) {
+						t.Fatal("standalone ID lookup lost its service identity")
+					}
+					return err
+				},
+			} {
+				if err := lookup(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			policy, err := provider.bridgeServicePolicy(ctx, identity, tc.source)
 			if err != nil {
 				t.Fatal(err)
 			}
