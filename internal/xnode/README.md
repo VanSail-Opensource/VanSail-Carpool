@@ -33,6 +33,11 @@ their matcher structure with synthetic analysis values. `validation_assets_test.
 checks both configuration previews and compiled candidates, preservation of the
 administrator document and rejection of unrelated native-core errors.
 
+`ownership.go` stages configured shared geodata in the legacy-owned blank runtime
+before candidate validation, with no listeners, users, firewall, DNS, torrent or
+update policy. Existing agent asset handling verifies downloads before native
+handover. `ownership_assets_test.go` guards this preparation/access boundary.
+
 `types.go` Defines authoritative node, config, group, endpoint and shared policy types.
 `accounting_types.go` Defines private identities, credentials, periods and migration state.
 `metrics_types.go` Defines transient collector, node and member metric projections.

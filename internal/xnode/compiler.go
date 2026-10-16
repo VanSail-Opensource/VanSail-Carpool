@@ -21,11 +21,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		return wire.Config{}, err
 	}
 	if !owned {
-		global, err := s.Global(ctx)
-		if err != nil {
-			return wire.Config{}, err
-		}
-		return wire.Config{Xray: json.RawMessage(`{"inbounds":[],"outbounds":[{"tag":"direct","protocol":"freedom"}]}`), Users: []wire.User{}, Telemetry: global.Telemetry}, nil
+		return s.legacyConfiguration(ctx)
 	}
 	profile, err := s.repo.XNodeConfiguration(ctx, node.ConfigID)
 	if err != nil {
