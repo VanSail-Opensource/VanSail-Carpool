@@ -8,9 +8,10 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 )
 
-// rolloverStatsTopNodesLimit prevents Remnawave's default top-20 response from
-// silently omitting traffic that affects a financial rollover calculation.
-const rolloverStatsTopNodesLimit = 2_147_483_647
+// Remnawave currently rejects values above 10, despite its API schema not
+// declaring an upper bound. Reconciliation below rejects any truncated series
+// so rollover and migration never settle from incomplete per-node usage.
+const rolloverStatsTopNodesLimit = 10
 
 func validateRolloverStatistics(user *remnawave.User, stats *remnawave.UserStats, start, end time.Time) ([]time.Time, error) {
 	if user == nil || !validRolloverTrafficStrategy(user.TrafficLimitStrategy) || stats == nil ||
