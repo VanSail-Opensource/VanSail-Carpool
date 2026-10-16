@@ -68,7 +68,11 @@ func TestStandaloneInventoryKeepsSourceAndNativeCredentialsSeparate(t *testing.T
 	if _, err = f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: legacy.ID, InboundTag: "paid", Name: "Legacy host", Address: "legacy.example", Port: 443, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err = f.store.SaveXNodeMigration(ctx, xnode.MigrationState{Phase: "active", Nodes: []xnode.MigrationNode{{NodeID: legacy.ID, LegacyNodeID: legacy.ID, Phase: "legacy"}}}); err != nil {
+	f.group.Bindings = append(f.group.Bindings, xnode.GroupBinding{NodeID: legacy.ID, InboundTag: "paid"})
+	if _, err = f.service.SaveGroup(ctx, f.group); err != nil {
+		t.Fatal(err)
+	}
+	if err = f.store.SaveXNodeMigrationNode(ctx, xnode.MigrationNode{NodeID: legacy.ID, LegacyNodeID: legacy.ID, Phase: "legacy"}); err != nil {
 		t.Fatal(err)
 	}
 	f.service.SetLegacyProxies(func(context.Context, xnode.Identity) ([]subscription.Proxy, error) {
