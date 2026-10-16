@@ -23,3 +23,12 @@ func (s *Store) MigrationPanelAccounts(ctx context.Context) ([]model.User, error
 	}
 	return users, rows.Err()
 }
+
+// XNodeMigrationAccountRequired keeps missing source accounts blocking whenever
+// a purchase or an already imported native identity needs their accounting.
+// It changes neither the legacy link nor any financial record.
+func (s *Store) XNodeMigrationAccountRequired(ctx context.Context, userID string) (bool, error) {
+	var required bool
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=?) OR EXISTS(SELECT 1 FROM xnode_identities WHERE user_id=?)`, userID, userID).Scan(&required)
+	return required, err
+}

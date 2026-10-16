@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -9,6 +10,26 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 )
+
+type migrationAccountRequirements interface {
+	XNodeMigrationAccountRequired(context.Context, string) (bool, error)
+}
+
+// Only confirmed source absence without purchases or native accounting can be
+// omitted. Authentication, network, database and paid-account failures stay fatal.
+func missingMigrationAccountError(ctx context.Context, repo migrationAccountRequirements, userID string, sourceErr error) error {
+	if !remnawave.IsNotFound(sourceErr) {
+		return sourceErr
+	}
+	required, err := repo.XNodeMigrationAccountRequired(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("check missing source account accounting: %w", err)
+	}
+	if required {
+		return fmt.Errorf("%w: missing source account has purchases or native accounting", xnode.ErrConflict)
+	}
+	return nil
+}
 
 // visitAccounts bounds each upstream page and rejects cursor loops. The visitor
 // selects required metadata; unrelated credentials never enter stored previews.

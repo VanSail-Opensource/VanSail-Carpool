@@ -28,6 +28,10 @@ when validating external asset links through the existing request queue.
 `validation_assets.go` substitutes node-local files only in an analysis copy,
 then runs native validation; actual activation still verifies node-local assets.
 Hosted cases cover port parsing, report freshness and invalid observations.
+DNS GeoSite domains, DNS GeoIP expectations and source-IP GeoIP matchers retain
+their matcher structure with synthetic analysis values. `validation_assets_test.go`
+checks both configuration previews and compiled candidates, preservation of the
+administrator document and rejection of unrelated native-core errors.
 
 `types.go` Defines authoritative node, config, group, endpoint and shared policy types.
 `accounting_types.go` Defines private identities, credentials, periods and migration state.

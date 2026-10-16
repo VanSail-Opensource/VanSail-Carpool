@@ -42,7 +42,7 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 		account, err := remnaCall(ctx, adapter, func(ctx context.Context, client remnaClient) (xnodemigration.Account, error) {
 			remote, err := client.GetUserByID(ctx, id)
 			if err != nil {
-				return xnodemigration.Account{}, err
+				return xnodemigration.Account{}, missingMigrationAccountError(ctx, s.provider.store, panelUser.ID, err)
 			}
 			if remote == nil || remote.ID != id {
 				return xnodemigration.Account{}, xnode.ErrConflict
@@ -66,6 +66,9 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 		})
 		if err != nil {
 			return snapshot, err
+		}
+		if account.LegacyID == 0 {
+			continue
 		}
 		snapshot.Accounts = append(snapshot.Accounts, account)
 	}

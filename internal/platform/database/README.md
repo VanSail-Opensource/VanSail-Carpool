@@ -5,6 +5,9 @@ encrypted identity references, periods, migration checkpoints and immutable
 report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
 counter ownership, sequence gaps and fixed-point multiplier carry in hosted CI.
 Live connections, rates, IP observations and logs have no storage interface.
+`xnode_migration_accounts.go` inventories linked accounts and checks existing
+purchase/native-identity references before a confirmed missing source account
+may be omitted from a preview. It introduces no persistence or account relinking.
 
 `xnode_final_accounting_test.go` verifies persistence of staged encrypted exports
 and final completion evidence without losing the original migration archive.

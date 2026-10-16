@@ -28,23 +28,18 @@ func validationAssets(native map[string]any) (map[string]any, error) {
 	rules, _ := routing["rules"].([]any)
 	for _, value := range rules {
 		rule, _ := value.(map[string]any)
-		for _, field := range []string{"domain", "ip"} {
-			items, _ := rule[field].([]any)
-			if items == nil {
-				continue
-			}
-			safe := []any{}
-			for _, item := range items {
-				value, _ := item.(string)
-				if !strings.HasPrefix(value, "geoip:") && !strings.HasPrefix(value, "geosite:") {
-					safe = append(safe, item)
-				}
-			}
-			if len(safe) == 0 {
-				delete(rule, field)
-			} else {
-				rule[field] = safe
-			}
+		validationGeodataMatchers(rule, "domain", "geosite:", "domain:configuration-validation.invalid")
+		for _, field := range []string{"ip", "sourceIP", "source"} {
+			validationGeodataMatchers(rule, field, "geoip:", "192.0.2.1/32")
+		}
+	}
+	dns, _ := copy["dns"].(map[string]any)
+	servers, _ := dns["servers"].([]any)
+	for _, value := range servers {
+		server, _ := value.(map[string]any)
+		validationGeodataMatchers(server, "domains", "geosite:", "domain:configuration-validation.invalid")
+		for _, field := range []string{"expectedIPs", "unexpectedIPs"} {
+			validationGeodataMatchers(server, field, "geoip:", "192.0.2.1/32")
 		}
 	}
 	var certificate, key []string
@@ -81,6 +76,18 @@ func validationAssets(native map[string]any) (map[string]any, error) {
 		return nil, err
 	}
 	return copy, nil
+}
+
+// Preserve matcher structure in the analysis copy while deferring data-file
+// contents to real agent validation. An empty matcher must not hide core errors.
+func validationGeodataMatchers(object map[string]any, field, prefix, replacement string) {
+	items, _ := object[field].([]any)
+	for i, item := range items {
+		value, _ := item.(string)
+		if strings.HasPrefix(value, prefix) {
+			items[i] = replacement
+		}
+	}
 }
 
 func validationCertificate() ([]string, []string, error) {
