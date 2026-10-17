@@ -3,6 +3,9 @@ package xnode_test
 import (
 	"bytes"
 	"context"
+	"crypto/ecdh"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -100,6 +103,29 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 	defer cancel()
+	// The pinned core prohibits public plaintext VLESS peers. Use the same
+	// encrypted server/client transport that a real managed route requires.
+	key, keyErr := ecdh.X25519().GenerateKey(rand.Reader)
+	if keyErr != nil {
+		t.Fatal(keyErr)
+	}
+	profile, err := f.service.ResolveConfiguration(ctx, f.node.ConfigID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var native map[string]any
+	if err = json.Unmarshal(profile.Document, &native); err != nil {
+		t.Fatal(err)
+	}
+	inbound := native["inbounds"].([]any)[0].(map[string]any)
+	inbound["streamSettings"] = map[string]any{"network": "tcp", "security": "reality", "realitySettings": map[string]any{"dest": "www.example.com:443", "serverNames": []string{"www.example.com"}, "privateKey": base64.RawURLEncoding.EncodeToString(key.Bytes()), "shortIds": []string{"0123456789abcdef"}}}
+	profile.Document, err = json.Marshal(native)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.service.SaveConfiguration(ctx, profile); err != nil {
+		t.Fatal(err)
+	}
 	other, err := f.service.SaveNode(ctx, xnode.Node{Name: "Peer", Enabled: true, Multiplier: 1, ConfigID: f.node.ConfigID}, xnode.NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
