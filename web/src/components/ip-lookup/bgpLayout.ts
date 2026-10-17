@@ -7,10 +7,10 @@ export type PlacedNode = Node & { layer: number; x: number; y: number }
 export const nodeWidth = 168
 export const nodeHeight = 56
 
-export function placeNodes(nodes: Node[], _edges: Edge[], distance: Map<number, number>, frequency: Map<number, number>) {
+export function placeNodes<T extends { asn: number }>(nodes: T[], _edges: Edge[], distance: Map<number, number>, frequency: Map<number, number>) {
   const furthest = Math.max(0, ...distance.values())
-  const placed: PlacedNode[] = nodes.map(node => ({ ...node, layer: distance.get(node.asn) ?? furthest + 1, x: 0, y: 0 }))
-  const columns = new Map<number, PlacedNode[]>()
+  const placed = nodes.map(node => ({ ...node, layer: distance.get(node.asn) ?? furthest + 1, x: 0, y: 0 }))
+  const columns = new Map<number, typeof placed>()
   for (const node of placed) { const column = columns.get(node.layer) ?? []; column.push(node); columns.set(node.layer, column) }
   const layers = [...columns.keys()].sort((a, b) => a - b)
   for (const column of columns.values()) column.sort((a, b) => (frequency.get(b.asn) ?? 0) - (frequency.get(a.asn) ?? 0) || a.asn - b.asn)
@@ -23,7 +23,7 @@ export function placeNodes(nodes: Node[], _edges: Edge[], distance: Map<number, 
   return { nodes: placed, width: Math.max(264, (layers.at(-1) ?? 0) * 220 + 264), height }
 }
 
-export function routeEdges(nodes: PlacedNode[], edges: Edge[]) {
+export function routeEdges(nodes: { asn: number; layer: number; x: number; y: number }[], edges: Edge[]) {
   const byASN = new Map(nodes.map(node => [node.asn, node]))
   const ports = new Map<string, Edge[]>()
   for (const edge of edges) for (const asn of [edge.from, edge.to]) {
@@ -35,7 +35,7 @@ export function routeEdges(nodes: PlacedNode[], edges: Edge[]) {
   })
   const portPositions = new Map<string, number>()
   for (const [asn, group] of ports) group.forEach((edge, i) => portPositions.set(`${asn}:${edge.id}`, byASN.get(Number(asn))!.y + 6 + (i + 1) * (nodeHeight - 12) / (group.length + 1)))
-  const portY = (node: PlacedNode, edge: Edge) => portPositions.get(`${node.asn}:${edge.id}`)!
+  const portY = (node: { asn: number }, edge: Edge) => portPositions.get(`${node.asn}:${edge.id}`)!
   return edges.map((edge, i) => {
     const from = byASN.get(edge.from)!, to = byASN.get(edge.to)!
     const sy = portY(from, edge), ty = portY(to, edge)

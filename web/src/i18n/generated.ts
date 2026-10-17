@@ -1,4 +1,6 @@
 import enNodeForms from '../../locales/en/node-forms.json'
+import enManagedRouting from '../../locales/en/managed-routing.json'
+import zhManagedRouting from '../../locales/zh-CN/managed-routing.json'
 import zhNodeForms from '../../locales/zh-CN/node-forms.json'
 import enNodeTemplates from '../../locales/en/node-templates.json'
 import enFirewall from '../../locales/en/firewall.json'
@@ -101,8 +103,8 @@ const zhCN: typeof en = {
 }
 
 export const localeMessages = {
-  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms },
-  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms },
+  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting },
+  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting },
 } as const
 
 export type Locale = keyof typeof localeMessages

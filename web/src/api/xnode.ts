@@ -24,6 +24,8 @@ export type SubscriptionTemplateConfig = Schema['XNodeSubscriptionTemplateConfig
 
 const root = '/api/v1/admin/xnode'
 export const xnodeApi = {
+  routingTemplates: (signal?: AbortSignal) => request<Schema['XNodeRoutingTemplateConfig']>(`${root}/routing-templates`, { cache: 'no-store', signal }),
+  saveRoutingTemplates: (body: Schema['XNodeRoutingTemplateConfig']) => request<Schema['XNodeRoutingTemplateConfig']>(`${root}/routing-templates`, { method: 'PUT', body, cache: 'no-store' }),
   namedServices: () => request<{ items: NamedService[] }>(`${root}/service-identities`, { cache: 'no-store' }),
   saveNamedService: (id: string | undefined, body: NamedServiceWrite) => request<NamedService>(`${root}/service-identities${id ? `/${encodeURIComponent(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body, cache: 'no-store' }),
   serviceSubscription: (id: string) => request<Schema['XNodeSubscription']>(`${root}/service-identities/${encodeURIComponent(id)}/subscription`, { cache: 'no-store' }),

@@ -1,0 +1,39 @@
+{
+  "post": {
+    "operationId": "previewXNodeRoutingPlan",
+    "tags": [
+      "Members"
+    ],
+    "responses": {
+      "200": {
+        "description": "Managed routing response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeRoutingPreview"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeRoutingPreviewWrite"
+          }
+        }
+      }
+    }
+  }
+}

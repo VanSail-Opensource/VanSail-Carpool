@@ -85,3 +85,10 @@ X-Node audit flags `source&shared` and `shared-error` exercise the localized sha
 `MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture.
 
 The X-Node fixture also supplies named service users, access edits, isolated routing and subscription rotation. Flags `services-empty`, `service-error` and `service-save-error` exercise its browser states without contacting agents.
+
+
+`RoutingAudit.vue`, `routing-audit.ts` and `routing-audit.html` mount actual member
+routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
+`slow`, `empty`, `no-routes`, `no-templates`, `load-error`, `save-error`,
+`preview-error`, `stale-preview`, `poll-error` and `disabled` cover UI states.
+`window.__routingAudit` records writes, previews and member operation polling.

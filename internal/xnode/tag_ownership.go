@@ -79,7 +79,26 @@ func (s *Service) checkTagOwnership(ctx context.Context, nodeID string, config *
 			items = append(items, *replacement)
 		}
 	}
+	// Managed plans supersede archived raw customizations for this owner.
+	managed, err := s.managedReservedTags(ctx, nodeID)
+	if err != nil {
+		return err
+	}
+	for _, tags := range managed {
+		if len(tags) > 0 && !hasMarker {
+			return ErrConflict
+		}
+		for _, tag := range tags {
+			if reserved[tag] {
+				return ErrConflict
+			}
+			reserved[tag] = true
+		}
+	}
 	for _, item := range items {
+		if _, owned := managed[item.ProxyUserID]; owned {
+			continue
+		}
 		var outs []map[string]any
 		if err = s.open("xnode.outbounds."+customizationOwner(item)+"."+nodeID, item.OutboundsCipher, &outs); err != nil {
 			return err

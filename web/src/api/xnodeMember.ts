@@ -5,13 +5,16 @@ type Schema = components['schemas']
 export type XNodeSubscription = Schema['XNodeSubscription']
 export type XNodeUserMetrics = Schema['XNodeUserMetrics']
 export type XNodeCustomization = Schema['XNodeCustomization']
+export type RoutingChoice = Schema['XNodeRoutingChoice']
+export type RoutingView = Schema['XNodeRoutingView']
+export type RoutingPath = Schema['XNodeRoutingPath']
 const root = '/api/v1/xnode'
 export const xnodeMemberApi = {
   metrics: (signal?: AbortSignal) => request<XNodeUserMetrics>(`${root}/metrics`, { cache: 'no-store', signal }),
   subscription: (signal?: AbortSignal) => request<XNodeSubscription>(`${root}/subscription`, { cache: 'no-store', signal }),
-  routing: (id: string) => request<XNodeCustomization>(`${root}/routing/${encodeURIComponent(id)}`, { cache: 'no-store' }),
-  templates: () => request<Schema['XNodeRoutingTemplates']>(`${root}/routing/templates`, { cache: 'no-store' }),
-  saveRouting: (id: string, kind: 'outbounds' | 'rules', body: Schema['XNodeCustomizationWrite']) => request<XNodeCustomization>(`${root}/routing/${encodeURIComponent(id)}/${kind}`, { method: 'PUT', body, cache: 'no-store' }),
+  routing: (signal?: AbortSignal) => request<RoutingView>(`${root}/routing`, { cache: 'no-store', signal }),
+  previewRouting: (body: Schema['XNodeRoutingPreviewWrite'], signal?: AbortSignal) => request<Schema['XNodeRoutingPreview']>(`${root}/routing/preview`, { method: 'POST', body, cache: 'no-store', signal }),
+  saveRouting: (body: Schema['XNodeRoutingWrite'], key: string) => request<Schema['OperationReceipt']>(`${root}/routing`, { method: 'PUT', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
 }
 
 // Public bearer pages do not send a browser/Mini App session or request signature.

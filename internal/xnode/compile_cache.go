@@ -48,6 +48,12 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, force
 			next = refresh
 		}
 	}
+	if refresh := m.service.routingRefreshAt(); !refresh.IsZero() && (next.IsZero() || refresh.Before(next)) {
+		next = refresh
+	}
+	if refresh := m.service.routingPeerRefreshAt(); !refresh.IsZero() && (next.IsZero() || refresh.Before(next)) {
+		next = refresh
+	}
 	// Never publish a candidate compiled across a concurrently committed change.
 	after, _, err := repo.XNodeCompileVersion(ctx, now)
 	if err != nil {

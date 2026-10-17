@@ -29,6 +29,9 @@ func (s *Service) withCompileReads() *Service {
 	next := NewService(repo, s.settings, s.vault, s.publicURL, s.validationQueue)
 	next.master, next.now, next.legacyProxies = s.master, s.now, s.legacyProxies
 	next.policyAssets = s.policyAssets
+	next.routingAssets = s.routingAssets
+	next.routingOverrides = s.routingOverrides
+	next.routingRuntime = s.routingRuntime
 	return next
 }
 

@@ -45,3 +45,8 @@ Named-service browser validation uses the constructed X-Node fixture at 390px/da
 Typed operational editing: `useXNodeGlobalSettings.ts` owns abortable, generation-checked reads and preserves drafts after mutation failures. `XNodeGlobalPolicies.vue` edits opt-in master GeoIP countries, explicit legacy-schedule conversion, and the requested shared-domain JSON list. `XNodeDNSSettings.vue`, `XNodeDNSProviders.vue` and `providerCatalog.ts` provide native resolver controls and write-only provider credential forms verified against the pinned agent registry. Blank credentials retain saved values.
 
 `XNodeBandwidthSettings.vue` applies optional existing per-user speed policies per node. `XNodeFirewallFields.vue` edits typed port/prefix lists and forwarding while `XNodeFirewallRules.vue` retains native detection thresholds. `XNodeAccessBindings.vue` and `nodeFormOptions.ts` derive node/inbound selections from loaded configuration documents. `XNodeEndpointOptions.vue` edits supported client security/transport fields while preserving additional imported settings. Document editors remain for Xray, snippets and administrator subscription documents.
+
+
+`XNodeRoutingTemplates.vue` edits typed destination matcher presets with guarded
+loads, retained failed-save drafts and Go-validated expressions. These presets
+control member server routing; subscription client documents stay independent.

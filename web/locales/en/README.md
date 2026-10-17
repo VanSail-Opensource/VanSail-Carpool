@@ -55,3 +55,6 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `firewall.json` localizes firewall reports, detection controls and paid exemptions.
 
 - `node-forms.json` localizes typed native operational settings, source filters and bandwidth controls.
+
+
+`managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.

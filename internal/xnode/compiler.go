@@ -107,9 +107,19 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		}
 		active[identityCustomizationOwner(identity)] = true
 	}
-	memberOutbounds, memberRules := []any{}, []any{}
+	memberOutbounds, memberRules, managedOwners, err := s.managedRouting(ctx, nodeID, users)
+	if err != nil {
+		return wire.Config{}, err
+	}
 	memberTags := []string{}
+	for _, raw := range memberOutbounds {
+		out := raw.(map[string]any)
+		memberTags = append(memberTags, out["tag"].(string))
+	}
 	for _, custom := range customizations {
+		if managedOwners[custom.ProxyUserID] {
+			continue
+		}
 		if !active[customizationOwner(custom)] {
 			continue
 		}

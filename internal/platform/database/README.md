@@ -472,3 +472,10 @@ Firewall operational storage: `xnode_firewall_tx.go` owns atomic writes, bounded
 `xnode_zero_rate_test.go` covers raw usage on free nodes, immutable priced ranges and rejection of negative rates. Rate changes start after the latest committed cursor so late flush results cannot rewrite settled pricing.
 
 `xnode_zero_migration_test.go` covers upgrade backups, foreign-key restoration, dependent views/indexes, retained group references and compile invalidation triggers.
+
+
+`xnode_routing_plans.go` commits encrypted managed graphs and provider operations
+atomically, preserves prior generations through deployment, and audits phase
+changes. It keeps optimistic revisions and operation replay fingerprints distinct.
+`xnode_routing_plans_test.go` covers owner receipt isolation, concurrent graph
+rejection, replay, generation barriers, retained evidence and recovered attempts.

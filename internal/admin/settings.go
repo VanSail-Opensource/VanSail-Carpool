@@ -112,7 +112,7 @@ func (s *SettingsService) Optional(ctx context.Context, key string) (string, err
 // Put stores one known setting. An empty secret keeps its existing value.
 
 func (s *SettingsService) Put(ctx context.Context, actorID, key, value string) error {
-	if key == "xnode.global" || key == "xnode.subscription_templates" {
+	if key == "xnode.global" || key == "xnode.subscription_templates" || key == "xnode.routing_templates" {
 		return errors.New("X-Node settings require the validated fleet interface")
 	}
 	return s.put(ctx, actorID, key, value)

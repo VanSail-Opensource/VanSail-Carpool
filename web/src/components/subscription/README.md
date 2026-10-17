@@ -33,3 +33,11 @@ reuse the existing premium-dark layout and do not add dependencies.
 a document link, and preservation of the Telegram launch URL in hosted CI.
 
 `SubscriptionFormats.vue` exposes server-advertised formats and private copy/open links. `MemberRoutingEditor.vue` composes JSON fields; `useMemberRouting.ts` owns versioned loads, insertion of accessible outbound templates and independent revision-checked saves. Dirty rules survive an outbound save; the backend enforces ownership and validates references.
+
+
+`MemberRoutingGraph.vue` reuses BGP placement/edge routing and `useGraphViewport`
+for interactive nodes, zoom, keyboard movement and server-traced highlighting.
+`MemberRoutingEditor.vue` now edits ordered purchased-node/preset/node choices.
+`useMemberRouting.ts` aborts superseded reads/previews, guards generations and saves
+through durable member receipts; failed loads cannot save defaults. Graph predicate
+analysis and traces come from the same backend matcher as native compilation.

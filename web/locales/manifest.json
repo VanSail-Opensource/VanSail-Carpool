@@ -33,6 +33,7 @@
     "ip-lookup-live",
     "ip-lookup-checks",
     "api-tokens",
-    "node-forms"
+    "node-forms",
+    "managed-routing"
   ]
 }

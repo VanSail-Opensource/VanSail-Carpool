@@ -12,24 +12,43 @@ import (
 	"log/slog"
 	"net/url"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 )
 
-type fixtureSettings struct{ raw, templates string }
+type fixtureSettings struct {
+	mu                      sync.RWMutex
+	raw, templates, routing string
+}
 
 func (f *fixtureSettings) Optional(_ context.Context, key string) (string, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	if key == xnode.RoutingTemplatesKey {
+		return f.routing, nil
+	}
 	if key == xnode.SubscriptionTemplatesKey {
 		return f.templates, nil
 	}
 	return f.raw, nil
 }
 func (f *fixtureSettings) PutXNodeSubscriptionTemplates(_ context.Context, _ string, raw string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.templates = raw
 	return nil
 }
 func (f *fixtureSettings) PutXNodeGlobal(_ context.Context, _ string, raw string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.raw = raw
+	return nil
+}
+func (f *fixtureSettings) PutXNodeRoutingTemplates(_ context.Context, _ string, raw string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.routing = raw
 	return nil
 }
 

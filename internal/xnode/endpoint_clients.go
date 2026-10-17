@@ -9,6 +9,14 @@ import (
 )
 
 func (s *Service) endpointProxy(ctx context.Context, identity Identity, endpoint Endpoint) (subscription.Proxy, error) {
+	credentials, err := loadCredentials(s.vault, identity)
+	if err != nil {
+		return subscription.Proxy{}, err
+	}
+	return s.endpointProxyCredentials(ctx, endpoint, credentials)
+}
+
+func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoint, credentials Credentials) (subscription.Proxy, error) {
 	suffix := endpoint.ID
 	if len(suffix) > 8 {
 		suffix = suffix[:8]
@@ -52,10 +60,6 @@ func (s *Service) endpointProxy(ctx context.Context, identity Identity, endpoint
 	}
 	if inbound == nil {
 		return result, ErrInvalid
-	}
-	credentials, err := loadCredentials(s.vault, identity)
-	if err != nil {
-		return result, err
 	}
 	raw, err := inboundCredential(inbound, credentials)
 	if err != nil {

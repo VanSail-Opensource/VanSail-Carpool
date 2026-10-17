@@ -55,3 +55,6 @@ than in Vue templates, composables, or API clients.
 `firewall.json` translates firewall reports, detection controls and paid exemptions with matching placeholders.
 
 - `node-forms.json` localizes typed native operational settings, source filters and bandwidth controls.
+
+
+`managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.

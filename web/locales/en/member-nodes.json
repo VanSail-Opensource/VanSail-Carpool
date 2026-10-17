@@ -2,9 +2,9 @@
   "memberNodes": {
     "live": "Live usage",
     "noFormats": "No subscription formats are currently available.",
-    "routing": "Routing & outbounds",
+    "routing": "Routing",
     "routingHint": "Save outbounds first, then rules that use their tags. Your account scope is enforced by the server.",
-    "template": "Outbound template",
+    "template": "Routing template",
     "insert": "Insert",
     "outbounds": "Outbounds (JSON array)",
     "rules": "Routing rules (JSON array)",

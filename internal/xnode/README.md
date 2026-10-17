@@ -184,3 +184,43 @@ Master policy extensions: `native_policy_types.go` owns country, completion-sche
 State requests coalesce into the existing reconciler. The socket reader never waits on native compilation or GeoIP refreshes, so queued utility results and traffic acknowledgments keep progressing during external asset work.
 
 `zero_multiplier_test.go` exercises explicit zero and six-decimal settings through the real hosted store fixture.
+
+
+## Managed member routing
+
+`routing_types.go`, `routing_templates.go` and `routing_service.go` define encrypted
+owner plans, admin matcher presets, revision checks, scoped projections and replay.
+`routing_graph.go` validates purchased native endpoint access and shares
+`internal/routingmatch` for ordered compilation, tracing and conditional paths.
+`routing_context.go` rejects untracked server hops and inconsistent destination
+detection. `routing_projection.go` keeps expanded selector sets out of browser
+responses; graph labels resolve returned rule IDs to preset names.
+
+`routing_geosite.go` streams the pinned protobuf format with bounded records and
+AND attribute filtering. `routing_geosite_download.go` fetches only through
+`upstreamqueue`; `routing_assets.go` retains the last valid memory-only generation
+with completion scheduling and bounded failure retries. `routing_peers.go` bounds
+public endpoint DNS caching and gates maintenance by the existing compile epoch.
+`routing_reconcile.go` revalidates dependency changes outside the socket reader.
+
+`routing_transit.go` derives private owner/source/destination/inbound/period-scoped
+credentials from encrypted unpredictable seeds. `routing_compile.go` adds those
+accounts only in enabling/active phases and generates private native outbounds.
+Member subscription and graph APIs never return peer secrets. Client entry counts
+remain chargeable activity; authenticated transit retains accounting and bandwidth.
+
+`routing_preflight.go` uses capability negotiation and queued native validation.
+`routing_operations.go` resumes durable revoke/drain, apply and enable barriers;
+all affected nodes must acknowledge each phase before advancing. Interrupted work
+uses existing operation leases and per-node execution queues. Reconnect can wake
+exhausted routing jobs in that same queue. Financial periods are never reset.
+`routing_legacy.go` converts only exact endpoint/preset matches from pre-start saved
+routes; incompatible documents are disabled with encrypted evidence and audit.
+
+`routing_transit_test.go` covers private generation scope and template validation;
+`routing_geosite_test.go` covers streamed selector kinds, attributes, truncation and
+unknown server contexts. These regressions run in hosted CI.
+
+`routing_tags.go` reserves fixed-width owner tags across inactive plans and native/shared configuration edits, without retaining private peer documents in public APIs.
+
+`routing_deployment_test.go` exercises real authenticated master sockets and a deliberately held node acknowledgement, proving transit accounts stay disabled until every node applies and accounting periods remain intact.

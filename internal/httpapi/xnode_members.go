@@ -1,8 +1,6 @@
 package httpapi
 
 import (
-	"encoding/json"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
@@ -17,10 +15,9 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		router.Post("/firewall/exemption", s.xnodeFirewallPurchase)
 		router.Get("/metrics", s.xnodeMemberMetrics)
 		router.Get("/subscription", s.xnodeOwnedSubscription)
-		router.Get("/routing/templates", s.xnodeRoutingTemplates)
-		router.Get("/routing/{id}", s.xnodeMemberCustomization)
-		router.Put("/routing/{id}/outbounds", s.xnodeMemberOutbounds)
-		router.Put("/routing/{id}/rules", s.xnodeMemberRouting)
+		router.Get("/routing", s.xnodeRoutingPlan)
+		router.Put("/routing", s.xnodeSaveRoutingPlan)
+		router.Post("/routing/preview", s.xnodePreviewRoutingPlan)
 	})
 }
 func (s *Server) xnodeMemberMetrics(w http.ResponseWriter, r *http.Request) {
@@ -34,53 +31,6 @@ func (s *Server) xnodeMemberMetrics(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) xnodeOwnedSubscription(w http.ResponseWriter, r *http.Request) {
 	value, err := s.deps.XNode.OwnedSubscription(r.Context(), currentUser(r).ID)
-	if err != nil {
-		s.xnodeError(w, r, err)
-		return
-	}
-	privateSubscriptionHeaders(w)
-	writeJSON(w, http.StatusOK, value)
-}
-func (s *Server) xnodeRoutingTemplates(w http.ResponseWriter, r *http.Request) {
-	value, err := s.deps.XNode.RoutingTemplates(r.Context(), currentUser(r).ID)
-	if err != nil {
-		s.xnodeError(w, r, err)
-		return
-	}
-	privateSubscriptionHeaders(w)
-	writeJSON(w, http.StatusOK, map[string]any{"items": value})
-}
-func (s *Server) xnodeMemberCustomization(w http.ResponseWriter, r *http.Request) {
-	value, err := s.deps.XNode.OwnedCustomization(r.Context(), currentUser(r).ID, chiURLParam(r, "id"))
-	if err != nil {
-		s.xnodeError(w, r, err)
-		return
-	}
-	privateSubscriptionHeaders(w)
-	writeJSON(w, http.StatusOK, value)
-}
-func (s *Server) xnodeMemberOutbounds(w http.ResponseWriter, r *http.Request) {
-	s.saveXNodeCustomization(w, r, false)
-}
-func (s *Server) xnodeMemberRouting(w http.ResponseWriter, r *http.Request) {
-	s.saveXNodeCustomization(w, r, true)
-}
-func (s *Server) saveXNodeCustomization(w http.ResponseWriter, r *http.Request, rules bool) {
-	var input struct {
-		Revision int64           `json:"revision"`
-		Objects  json.RawMessage `json:"objects"`
-	}
-	if err := decodeJSON(w, r, &input); err != nil {
-		s.xnodeError(w, r, xnode.ErrInvalid)
-		return
-	}
-	var value xnode.Customization
-	var err error
-	if rules {
-		value, err = s.deps.XNode.SaveOwnedRouting(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), input.Revision, input.Objects)
-	} else {
-		value, err = s.deps.XNode.SaveOwnedOutbounds(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), input.Revision, input.Objects)
-	}
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

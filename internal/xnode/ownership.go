@@ -52,6 +52,7 @@ func (s *Service) Candidate(ctx context.Context, nodeID string) (wire.Config, er
 	service.master = s.master
 	service.now = s.now
 	service.policyAssets = s.policyAssets
+	service.routingAssets, service.routingRuntime = s.routingAssets, s.routingRuntime
 	return service.Compile(ctx, nodeID)
 }
 

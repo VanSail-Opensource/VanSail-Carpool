@@ -10,6 +10,9 @@ import (
 )
 
 func (m *Master) reconcile(ctx context.Context) error {
+	if err := m.service.reconcileRoutingPlans(ctx); err != nil {
+		m.logger.Warn("routing reconciliation deferred", "error_code", "XNODE_ROUTING_RECONCILE_PENDING")
+	}
 	global, err := m.service.Global(ctx)
 	if err != nil {
 		return err
@@ -58,6 +61,7 @@ func (m *Master) reconcile(ctx context.Context) error {
 		force := peer.forceSync
 		peer.forceSync = false
 		peer.mu.Unlock()
+		if force{if repo,ok:=m.service.routingRepository();ok{if err=repo.WakeXNodeRouting(ctx,now);err!=nil{return err}}}
 		if err = m.syncNode(ctx, peer, force); err != nil {
 			if force {
 				peer.mu.Lock()

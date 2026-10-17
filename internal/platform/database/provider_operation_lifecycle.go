@@ -20,7 +20,7 @@ func (s *Store) BeginProviderOperationAttempt(ctx context.Context, operationID s
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='processing',attempts=attempts+1,
-		attempt_started_at=?,updated_at=? WHERE id=? AND (status='queued' OR (status='processing' AND kind IN('xnode_command','xnode_migration')))`, stamp(now), stamp(now), operationID)
+		attempt_started_at=?,updated_at=? WHERE id=? AND (status='queued' OR (status='processing' AND kind IN('xnode_command','xnode_migration','xnode_routing')))`, stamp(now), stamp(now), operationID)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("mark provider attempt: %w", err)
 	}

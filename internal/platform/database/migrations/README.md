@@ -155,3 +155,5 @@ file instead.
 `082_xnode_firewall.sql` persists active enforcement generations, compressed participants and expiry acknowledgments, per-namespace report cursors, immutable exemption grants and delivered versions. It does not persist connection telemetry or mirror external proxy inventories.
 
 `083_xnode_zero_multiplier.sql` allows explicit zero node/rate multipliers while preserving all rows and historical rate boundaries. Startup verifies a boundary backup and applies the rebuild with FK checks and schema-object restoration.
+
+`084_xnode_routing_plans.sql` stores encrypted owner route plans, preserved conversion evidence and durable deployment barriers, with compile revision invalidation.

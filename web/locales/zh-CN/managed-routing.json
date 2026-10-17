@@ -1,0 +1,41 @@
+{
+  "managedRouting": {
+    "description": "规则在每个节点按顺序匹配。入站和出站节点均须包含在当前套餐内。",
+    "templatesTitle": "路由模板",
+    "templateDescription": "为成员路由配置目标匹配条件。不同类别之间为且，同类条目之间为或。空类别匹配全部流量。域名支持 full:、domain:、keyword:、regexp: 和 geosite: 选择器。",
+    "addTemplate": "添加模板",
+    "add": "添加路由",
+    "inbound": "入站节点",
+    "outbound": "出站节点",
+    "previewFrom": "起始节点",
+    "destination": "目标地址",
+    "destinationHint": "域名或 IP 地址",
+    "fit": "适应画布",
+    "except": "排除 {conditions}",
+    "graph": "条件路由图",
+    "graphHint": "点击节点编辑相关路由。拖动平移，滚动缩放；聚焦后可用方向键和加减键操作。",
+    "editNode": "编辑 {name} 的路由",
+    "showAll": "显示全部路由",
+    "ruleNumber": "规则 {number}",
+    "moveUp": "上移规则",
+    "moveDown": "下移规则",
+    "empty": "暂无自定义路由，流量遵循节点默认路由。",
+    "noTemplates": "暂无可用的路由模板。",
+    "deploying": "正在各节点应用路由…",
+    "disabled": "访问权限、模板或端点已变更，请检查路由并重新保存以应用。",
+    "saveFailed": "路由保存失败，请检查节点权限及模板后重试。",
+    "ports": "目标端口",
+    "portsHint": "80,443,8000-8100",
+    "domains": "域名选择器 · 每行一项",
+    "ips": "目标 CIDR · 每行一项",
+    "protocols": "识别协议 · 每行一项",
+    "networks": "网络 · 留空表示两者",
+    "errors": {
+      "routing_context_unproven": "节点使用了不同的目标识别设置或无法追踪的代理回退，请联系管理员统一路由上下文。",
+      "routing_loop": "这些条件会形成路由环路，请修改目标节点或匹配条件。",
+      "routing_overlap_unproven": "无法证明匹配条件互斥，请使用更明确的域名、IP 或端口条件。",
+      "routing_analysis_limit": "路由图超出安全分析上限，请简化规则或选择器。",
+      "routing_invalid_rule": "每条规则须使用唯一 ID，并选择两个不同且有访问权限的节点。"
+    }
+  }
+}

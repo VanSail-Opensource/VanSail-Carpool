@@ -2,9 +2,9 @@
   "memberNodes": {
     "live": "实时用量",
     "noFormats": "当前没有可用的订阅格式。",
-    "routing": "路由与出站",
+    "routing": "路由",
     "routingHint": "请先保存出站，再保存引用出站标签的规则。服务器会强制限定为当前账户。",
-    "template": "出站模板",
+    "template": "路由模板",
     "insert": "插入",
     "outbounds": "出站（JSON 数组）",
     "rules": "路由规则（JSON 数组）",

@@ -69,6 +69,9 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if s.master == nil {
 		return ErrUnavailable
 	}
+	if operation.Receipt.Kind == RoutingOperationKind {
+		return s.handleRoutingOperation(operation, job)
+	}
 	return s.master.DeferOperation(job, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })
 }
 

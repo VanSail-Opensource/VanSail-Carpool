@@ -67,7 +67,7 @@ func (p Principal) AllowsOperation(kind string) bool {
 	switch kind {
 	case "xnode_migration":
 		return p.Allows("migration", false)
-	case "xnode_command":
+	case "xnode_command", "xnode_routing":
 		return p.Allows("xnode", false)
 	default:
 		return p.Allows("admin", false)

@@ -205,3 +205,9 @@ headers. It excludes probe identities and does not create or rotate credentials.
 - `xnode_named_services.go`: Admin-only service identity CRUD, subscription rotation and native routing endpoints.
 
 `xnode_firewall.go` exposes authenticated browser-admin evidence reads and onboarded member quote/purchase endpoints. All delivery uses the existing durable outbox; the HTTP request commits a grant and never waits on a node.
+
+
+`xnode_routing_plans.go` exposes owner-scoped typed plans/previews and browser admin
+matcher templates. Unsafe cycles and uncertain contexts return bounded diagnostic
+codes. Raw member routing/outbound HTTP writes have been retired; service identity
+administrator customization remains separate.

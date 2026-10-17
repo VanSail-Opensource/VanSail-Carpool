@@ -1,0 +1,41 @@
+{
+  "managedRouting": {
+    "description": "Rules run in order at each node. Both nodes must be included in your current purchase.",
+    "templatesTitle": "Routing templates",
+    "templateDescription": "Choose destination matchers for member routes. Categories combine with AND; entries within each category combine with OR. Empty categories match all traffic. Domain rules support full:, domain:, keyword:, regexp: and geosite: selectors.",
+    "addTemplate": "Add template",
+    "add": "Add route",
+    "inbound": "Inbound node",
+    "outbound": "Outbound node",
+    "previewFrom": "Trace from",
+    "destination": "Destination",
+    "destinationHint": "Domain or IP address",
+    "fit": "Fit graph",
+    "except": "except {conditions}",
+    "graph": "Conditional routing graph",
+    "graphHint": "Select a node to edit its routes. Drag to pan, scroll to zoom; use arrow keys and + or − with keyboard focus.",
+    "editNode": "Edit routes for {name}",
+    "showAll": "Show all routes",
+    "ruleNumber": "Rule {number}",
+    "moveUp": "Move rule up",
+    "moveDown": "Move rule down",
+    "empty": "No custom routes. Traffic follows the node's default routing.",
+    "noTemplates": "No routing templates are available.",
+    "deploying": "Applying routes across nodes…",
+    "disabled": "These routes need review after an access, template or endpoint change. Review and save to apply them again.",
+    "saveFailed": "The routes could not be saved. Check your node access and templates, then retry.",
+    "ports": "Destination ports",
+    "portsHint": "80,443,8000-8100",
+    "domains": "Domain selectors · one per line",
+    "ips": "Destination CIDRs · one per line",
+    "protocols": "Detected protocols · one per line",
+    "networks": "Networks · empty means both",
+    "errors": {
+      "routing_context_unproven": "These nodes use different destination detection or untracked proxy fallbacks. Ask an administrator to align their routing context.",
+      "routing_loop": "These conditions create a routing loop. Change the destination or matchers.",
+      "routing_overlap_unproven": "The matcher overlap could not be proven safe. Use more specific domain, IP or port conditions.",
+      "routing_analysis_limit": "This graph exceeds the safety analysis limit. Simplify its rules or selectors.",
+      "routing_invalid_rule": "Each rule needs a unique ID and two different accessible nodes."
+    }
+  }
+}
