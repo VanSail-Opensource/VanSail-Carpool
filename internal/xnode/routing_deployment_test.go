@@ -3,6 +3,7 @@ package xnode_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -145,6 +146,10 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	}
 	receipt, err := f.service.QueueOwnedRouting(ctx, f.user.ID, "managed-graph", 0, []xnode.RoutingChoice{{ID: "first", InboundNodeID: f.node.ID, TemplateID: "google", OutboundNodeID: other.ID}})
 	if err != nil {
+		var diagnostic *xnode.CompilationError
+		if errors.As(err, &diagnostic) {
+			t.Fatalf("%v: %s", err, diagnostic.ValidationDetail())
+		}
 		t.Fatal(err)
 	}
 	var claimed bool

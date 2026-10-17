@@ -99,3 +99,18 @@ func TestRejectUnresolvedAndUnboundedMatchers(t *testing.T) {
 		t.Fatal("self target accepted")
 	}
 }
+
+func TestCountedRegexExpansionFailsBeforeProgramAllocation(t *testing.T) {
+	_, err := Build([]Rule{rule("expanded", "a", "b", `regexp:(a{1000}){1000}`)}, nil)
+	if err == nil {
+		t.Fatal("expanding expression accepted")
+	}
+	g, err := Build([]Rule{rule("normal", "a", "b", `regexp:^a[0-9]{1,4}\.example$`)}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := g.Trace("a", Destination{Domain: "a123.example"})
+	if err != nil || len(p.Nodes) != 2 {
+		t.Fatal("bounded Go expression lost its behavior", err)
+	}
+}

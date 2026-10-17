@@ -35,7 +35,7 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	}
 	proxies, err := s.MemberProxies(ctx, identity.UserID)
 	if err != nil {
-		return in, err
+		return in, fmt.Errorf("routing endpoint inventory: %w", err)
 	}
 	allowed := map[string]bool{}
 	for _, p := range proxies {

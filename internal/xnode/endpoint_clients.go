@@ -147,8 +147,8 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 	if err != nil {
 		return result, err
 	}
-	if !ValidateCompiled(wire.Config{Xray: data, Users: []wire.User{}}).Valid {
-		return result, ErrInvalid
+	if validation := ValidateCompiled(wire.Config{Xray: data, Users: []wire.User{}}); !validation.Valid {
+		return result, rejectedCompilation("client endpoint", validation.Detail)
 	}
 	return result, nil
 }

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
+	"strings"
 )
 
 func (s *Server) xnodeRoutingPlan(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +83,7 @@ func (s *Server) xnodeSaveRoutingTemplateConfig(w http.ResponseWriter, r *http.R
 func (s *Server) xnodeRoutingError(w http.ResponseWriter, r *http.Request, err error) {
 	var d *routingmatch.Diagnostic
 	if errors.As(err, &d) {
-		s.writeError(w, r, http.StatusUnprocessableEntity, d.Code, "The routing conditions could not be accepted.")
+		writeJSON(w, http.StatusUnprocessableEntity, apiError{Code: d.Code, Message: "The routing conditions could not be accepted.", Details: map[string]string{"rules": strings.Join(d.Rules, ",")}, RequestID: middleware.GetReqID(r.Context())})
 		return
 	}
 	s.xnodeError(w, r, err)

@@ -17,3 +17,5 @@ state, entitlement validation and authenticated peer deployment.
 `graph_test.go` contains hosted regressions for separate Google/AI paths, ordered
 shadowing, disjoint cycles, overlapping cycles, uncertain regexes, CIDRs, ports,
 network conjunction and invalid selectors. No external calls occur in this module.
+
+`regex.go` bounds Go syntax-tree repetition expansion before compiling expressions, with a shared per-graph instruction budget. Hosted regressions preserve ordinary Go expression behavior while refusing excessive expansion.

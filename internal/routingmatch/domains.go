@@ -2,7 +2,6 @@ package routingmatch
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -28,7 +27,7 @@ func parseAtom(raw string) (atom, error) {
 	}
 	if a.kind == "regexp" {
 		var err error
-		a.re, err = regexp.Compile(a.value)
+		a.re, a.cost, err = boundedRegex(a.value)
 		if err != nil {
 			return a, fmt.Errorf("invalid Go expression: %w", err)
 		}

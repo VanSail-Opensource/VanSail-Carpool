@@ -37,7 +37,7 @@ func DecodeRoutingTemplates(raw string) (RoutingTemplateConfig, error) {
 			return []string{"domain:validation.invalid"}, nil
 		})
 		if err != nil {
-			return config, fmt.Errorf("%w: %v", ErrInvalid, err)
+			return config, fmt.Errorf("%w: %w", ErrInvalid, err)
 		}
 	}
 	return config, nil

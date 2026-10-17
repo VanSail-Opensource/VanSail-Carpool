@@ -1,5 +1,10 @@
 # Hosted Go race checks
 
+The quality job also runs the managed two-node deployment barrier regression
+early, so a preflight or acknowledgement regression produces focused diagnostics
+before the complete race shards finish. The race/coverage inventories still
+include that check and remain mandatory.
+
 `race_shards.py` is called only by GitHub Actions. Eight independent runners split
 the database package's top-level tests, executable examples and fuzz seed tests,
 and partition every other Go package. New packages and checks are discovered

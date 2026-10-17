@@ -224,3 +224,5 @@ unknown server contexts. These regressions run in hosted CI.
 `routing_tags.go` reserves fixed-width owner tags across inactive plans and native/shared configuration edits, without retaining private peer documents in public APIs.
 
 `routing_deployment_test.go` exercises real authenticated master sockets and a deliberately held node acknowledgement, proving transit accounts stay disabled until every node applies and accounting periods remain intact.
+
+`compilation_errors.go` keeps private native validation details out of default errors/logs while allowing explicit validation diagnostics, including synthetic hosted fixtures.

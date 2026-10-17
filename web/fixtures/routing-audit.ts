@@ -31,7 +31,7 @@ function graph(choices: RoutingChoice[]) {
     for (let step = 0; step < 10; step++) {
       const rule = choices.find(rule => rule.inboundNodeId === ids.at(-1) && (catalog.templates.find(t => t.id === rule.templateId)?.match.domain ?? []).includes(`domain:${domain}`))
       if (!rule) break
-      if (ids.includes(rule.outboundNodeId)) throw new ApiError(422, { code: 'routing_loop', message: '' })
+      if (ids.includes(rule.outboundNodeId)) throw new ApiError(422, { code: 'routing_loop', message: '', details: { rules: [...rules, rule.id].join(',') } })
       ids.push(rule.outboundNodeId); rules.push(rule.id)
     }
     if (rules.length && !result.some(p => p.nodes.join() === ids.join())) result.push(path(ids, rules))

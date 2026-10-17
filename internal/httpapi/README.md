@@ -211,3 +211,5 @@ headers. It excludes probe identities and does not create or rotate credentials.
 matcher templates. Unsafe cycles and uncertain contexts return bounded diagnostic
 codes. Raw member routing/outbound HTTP writes have been retired; service identity
 administrator customization remains separate.
+
+`xnode_routing_plans_test.go` guards bounded owner rule references in actionable routing diagnostics.

@@ -12,6 +12,7 @@
     "destinationHint": "Domain or IP address",
     "fit": "Fit graph",
     "except": "except {conditions}",
+    "involvedRules": "Rules: {rules}",
     "graph": "Conditional routing graph",
     "graphHint": "Select a node to edit its routes. Drag to pan, scroll to zoom; use arrow keys and + or − with keyboard focus.",
     "editNode": "Edit routes for {name}",

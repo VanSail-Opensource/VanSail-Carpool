@@ -1,6 +1,7 @@
 package routingmatch
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 )
@@ -31,13 +32,17 @@ func Build(rules []Rule, resolve Resolver) (*Graph, error) {
 	}
 	g := &Graph{rules: slices.Clone(rules), byNode: map[string][]int{}}
 	ids := map[string]bool{}
+	compileBudget := 100000
 	for i, r := range rules {
 		if r.ID == "" || r.From == "" || r.To == "" || r.From == r.To || ids[r.ID] {
 			return nil, &Diagnostic{Code: "routing_invalid_rule", Rules: []string{r.ID}}
 		}
 		ids[r.ID] = true
-		c, err := compile(r.Match, resolve)
+		c, err := compile(r.Match, resolve, &compileBudget)
 		if err != nil {
+			if errors.Is(err, errAnalysisBudget) {
+				return nil, &Diagnostic{Code: "routing_analysis_limit", Rules: []string{r.ID}}
+			}
 			return nil, fmt.Errorf("%s: %w", r.ID, err)
 		}
 		c.id = r.ID

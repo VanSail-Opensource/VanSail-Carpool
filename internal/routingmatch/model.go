@@ -35,6 +35,7 @@ type Destination struct {
 type Resolver func(string) ([]string, error)
 type interval struct{ lo, hi uint16 }
 type atom struct {
+	cost        int
 	kind, value string
 	re          *regexp.Regexp
 }
@@ -46,7 +47,7 @@ type compiled struct {
 	ports   []interval
 }
 
-func compile(m Match, resolve Resolver) (compiled, error) {
+func compile(m Match, resolve Resolver, budget *int) (compiled, error) {
 	c := compiled{match: m}
 	if len(m.Domains) > 4096 || len(m.IPs) > 4096 || len(m.Networks) > 2 || len(m.Protocols) > 16 {
 		return c, fmt.Errorf("matcher exceeds bounded analysis limits")
@@ -70,6 +71,10 @@ func compile(m Match, resolve Resolver) (compiled, error) {
 			a, err := parseAtom(value)
 			if err != nil {
 				return c, err
+			}
+			*budget -= a.cost + 1
+			if *budget < 0 {
+				return c, errAnalysisBudget
 			}
 			c.domains = append(c.domains, a)
 		}

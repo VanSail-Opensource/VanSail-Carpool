@@ -6,9 +6,12 @@ import { useDurableCommand } from '@/composables/useDurableCommand'
 import { localizedError, t } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
 
-export function routingError(caught: unknown) {
+export function routingError(caught: unknown, choices: RoutingChoice[] = []) {
   const codes = ['routing_loop', 'routing_overlap_unproven', 'routing_analysis_limit', 'routing_invalid_rule', 'routing_context_unproven']
-  return caught instanceof ApiError && codes.includes(caught.code) ? t(`managedRouting.errors.${caught.code}`) : localizedError(caught, 'managedRouting.saveFailed')
+  if (!(caught instanceof ApiError) || !codes.includes(caught.code)) return localizedError(caught, 'managedRouting.saveFailed')
+  const indices = (caught.details?.rules?.split(',') ?? []).map(id => choices.findIndex(c => c.id === id) + 1).filter(index => index > 0)
+  const message = t(`managedRouting.errors.${caught.code}`)
+  return indices.length ? `${message} ${t('managedRouting.involvedRules', { rules: indices.join(' → ') })}` : message
 }
 export function useMemberRouting() {
   const current = shallowRef<RoutingView | null>(null)
@@ -49,7 +52,7 @@ export function useMemberRouting() {
       const text = destination.value.trim()
       const value = await xnodeMemberApi.previewRouting({ choices: choices.value, start: text ? start.value : '', destination: { domain: text, ip: text, port: 443, network: 'tcp' } }, previewReader.signal)
       if (!disposed && ticket === previewGeneration) { paths.value = value.paths; trace.value = value.trace }
-    } catch (caught) { if (!disposed && ticket === previewGeneration) { paths.value = []; previewError.value = routingError(caught) } }
+    } catch (caught) { if (!disposed && ticket === previewGeneration) { paths.value = []; previewError.value = routingError(caught, choices.value) } }
     finally { if (!disposed && ticket === previewGeneration) previewing.value = false }
   }
   function schedulePreview() {

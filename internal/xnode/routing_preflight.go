@@ -25,7 +25,7 @@ func (s *Service) preflightRouting(ctx context.Context, candidate, old RoutingPl
 		}
 		config, err := service.Compile(ctx, node)
 		if err != nil {
-			return err
+			return fmt.Errorf("node %s route preflight: %w", node, err)
 		}
 		if err = configurationCapabilities(config, hello.Capabilities); err != nil {
 			return err

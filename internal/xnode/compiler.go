@@ -181,10 +181,10 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		return config, err
 	}
 	if err = config.Validate(); err != nil {
-		return config, ErrInvalid
+		return config, rejectedCompilation("native contract", err.Error())
 	}
-	if !ValidateCompiled(config).Valid {
-		return config, ErrInvalid
+	if result := ValidateCompiled(config); !result.Valid {
+		return config, rejectedCompilation("native configuration", result.Detail)
 	}
 	return config, nil
 }

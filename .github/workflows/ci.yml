@@ -123,6 +123,8 @@ jobs:
         run: test -z "$(gofmt -l .)"
       - name: Vet packages
         run: go vet ./...
+      - name: Verify managed routing deployment barrier
+        run: go test ./internal/xnode -run '^TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies$' -count=1 -timeout 90s
       - name: Install pinned vulnerability scanner
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
       - name: Scan Go dependencies

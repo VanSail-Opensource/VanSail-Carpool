@@ -12,6 +12,7 @@
     "destinationHint": "域名或 IP 地址",
     "fit": "适应画布",
     "except": "排除 {conditions}",
+    "involvedRules": "相关规则：{rules}",
     "graph": "条件路由图",
     "graphHint": "点击节点编辑相关路由。拖动平移，滚动缩放；聚焦后可用方向键和加减键操作。",
     "editNode": "编辑 {name} 的路由",
