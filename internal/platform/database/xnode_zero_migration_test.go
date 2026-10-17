@@ -75,6 +75,9 @@ CREATE INDEX retained_node_country ON xnode_nodes(country_code);`); err != nil {
 		t.Fatal(err)
 	}
 	node.MultiplierFP = 0
+	// Pricing changes have their own accounting rate boundary. Exercise a field
+	// that intentionally invalidates compiled configuration to check its trigger.
+	node.SettingsCipher = "updated encrypted settings"
 	if err = store.SaveXNodeNode(ctx, node); err != nil {
 		t.Fatal(err)
 	}
