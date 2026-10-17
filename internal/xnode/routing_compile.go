@@ -88,7 +88,7 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			out, err := proxy.Outbound()
+			out, err := guardedRoutingOutbound(proxy)
 			if err != nil {
 				return nil, nil, nil, err
 			}

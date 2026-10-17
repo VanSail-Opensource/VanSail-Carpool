@@ -114,3 +114,29 @@ func TestCountedRegexExpansionFailsBeforeProgramAllocation(t *testing.T) {
 		t.Fatal("bounded Go expression lost its behavior", err)
 	}
 }
+
+func TestDomainCaseMatchesPinnedXraySemantics(t *testing.T) {
+	g, err := Build([]Rule{rule("ab", "a", "b", "domain:GOOGLE.COM"), rule("ba", "b", "a", "full:www.google.com")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = g.Paths(); err == nil {
+		t.Fatal("case folding hid a matching loop")
+	}
+	g, err = Build([]Rule{rule("ab", "a", "b", "domain:GOOGLE.COM")}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path, err := g.Trace("a", Destination{Domain: "WWW.Google.Com"})
+	if err != nil || len(path.Nodes) != 2 {
+		t.Fatal("native lowercase domain matching differs", err)
+	}
+	g, err = Build([]Rule{rule("ab", "a", "b", `regexp:^GOOGLE\.COM$`)}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path, err = g.Trace("a", Destination{Domain: "GOOGLE.COM"})
+	if err != nil || len(path.Nodes) != 1 {
+		t.Fatal("regex pattern was incorrectly case folded", err)
+	}
+}

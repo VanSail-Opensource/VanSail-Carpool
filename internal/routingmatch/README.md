@@ -19,3 +19,5 @@ shadowing, disjoint cycles, overlapping cycles, uncertain regexes, CIDRs, ports,
 network conjunction and invalid selectors. No external calls occur in this module.
 
 `regex.go` bounds Go syntax-tree repetition expansion before compiling expressions, with a shared per-graph instruction budget. Hosted regressions preserve ordinary Go expression behavior while refusing excessive expansion.
+
+Domain inputs and non-regex patterns use the pinned Xray lowercase rules; regular-expression text retains Go case sensitivity against that lowered input. IPv4-mapped CIDR selectors are refused instead of assuming ambiguous address-family semantics.

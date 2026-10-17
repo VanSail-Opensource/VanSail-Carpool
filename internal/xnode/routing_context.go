@@ -9,7 +9,7 @@ import (
 
 // Untracked proxy fallbacks and different sniffing policies can change the
 // destination between hops. Those contexts cannot support a disjointness proof.
-func routingServerContext(root map[string]any, tags []string) (string, error) {
+func routingServerContext(root map[string]any, tags []string, forceSniff, usesProtocol bool) (string, error) {
 	unknown := func() error {
 		return fmt.Errorf("%w: %w", ErrInvalid, &routingmatch.Diagnostic{Code: "routing_context_unproven"})
 	}
@@ -49,6 +49,11 @@ func routingServerContext(root map[string]any, tags []string) (string, error) {
 		value, ok := inbound["sniffing"]
 		if !ok {
 			value = map[string]any{}
+		}
+		sniff, _ := value.(map[string]any)
+		overrides, _ := sniff["destOverride"].([]any)
+		if (forceSniff || sniff["enabled"] == true) && (len(overrides) > 0 || usesProtocol) {
+			return "", unknown()
 		}
 		encoded, err := json.Marshal(value)
 		if err != nil {

@@ -36,14 +36,14 @@ func TestRoutingGeoSiteStreamingUsesPinnedDomainKindsAndAllAttributes(t *testing
 }
 func TestRoutingContextRejectsUntrackedHopsAndDifferentDetection(t *testing.T) {
 	root := map[string]any{"outbounds": []any{map[string]any{"tag": "direct", "protocol": "freedom"}}, "routing": map[string]any{"rules": []any{map[string]any{"UserRouting": map[string]any{}}}}, "inbounds": []any{map[string]any{"tag": "one"}, map[string]any{"tag": "two", "sniffing": map[string]any{"enabled": true}}}}
-	if _, err := routingServerContext(root, []string{"one"}); err != nil {
+	if _, err := routingServerContext(root, []string{"one"}, false, false); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := routingServerContext(root, []string{"one", "two"}); err == nil {
+	if _, err := routingServerContext(root, []string{"one", "two"}, false, false); err == nil {
 		t.Fatal("different destination detection accepted")
 	}
 	root["outbounds"] = []any{map[string]any{"tag": "untracked", "protocol": "vless"}}
-	if _, err := routingServerContext(root, []string{"one"}); err == nil {
+	if _, err := routingServerContext(root, []string{"one"}, false, false); err == nil {
 		t.Fatal("untracked proxy fallback accepted")
 	}
 }

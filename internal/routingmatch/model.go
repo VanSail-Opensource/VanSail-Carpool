@@ -81,7 +81,7 @@ func compile(m Match, resolve Resolver, budget *int) (compiled, error) {
 	}
 	for _, value := range m.IPs {
 		p, err := netip.ParsePrefix(value)
-		if err != nil {
+		if err != nil || p.Addr().Is4In6() {
 			return c, fmt.Errorf("IP matcher requires a literal CIDR: %s", value)
 		}
 		c.ips = append(c.ips, p.Masked())
@@ -150,6 +150,7 @@ func (c compiled) matches(d Destination) bool {
 		if e != nil {
 			return false
 		}
+		ip = ip.Unmap()
 		found := false
 		for _, p := range c.ips {
 			found = found || p.Contains(ip)

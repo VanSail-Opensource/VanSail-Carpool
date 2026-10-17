@@ -32,7 +32,7 @@
     "protocols": "识别协议 · 每行一项",
     "networks": "网络 · 留空表示两者",
     "errors": {
-      "routing_context_unproven": "节点使用了不同的目标识别设置或无法追踪的代理回退，请联系管理员统一路由上下文。",
+      "routing_context_unproven": "这些路由需要固定的目标元数据和直连回退，请联系管理员检查嗅探、客户端映射和代理链设置。",
       "routing_loop": "这些条件会形成路由环路，请修改目标节点或匹配条件。",
       "routing_overlap_unproven": "无法证明匹配条件互斥，请使用更明确的域名、IP 或端口条件。",
       "routing_analysis_limit": "路由图超出安全分析上限，请简化规则或选择器。",

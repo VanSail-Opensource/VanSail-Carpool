@@ -29,6 +29,10 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	if err != nil {
 		return in, err
 	}
+	global, err := s.Global(ctx)
+	if err != nil {
+		return in, err
+	}
 	templates := map[string]RoutingTemplate{}
 	for _, t := range catalog.Templates {
 		templates[t.ID] = t
@@ -88,10 +92,12 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	if err != nil {
 		return in, err
 	}
-	dependencies := []any{assetHash}
+	dependencies := []any{assetHash, global.Torrent.Enabled}
 	usedNodes := []string{}
+	usesProtocol := false
 	for _, choice := range choices {
 		m := templates[choice.TemplateID].Match
+		usesProtocol = usesProtocol || len(m.Protocols) > 0
 		m.Domains = slices.Clone(m.Domains)
 		resolved := []string{}
 		for _, d := range m.Domains {
@@ -136,7 +142,7 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 		if err != nil {
 			return in, err
 		}
-		context, err := routingServerContext(root, tags)
+		context, err := routingServerContext(root, tags, global.Torrent.Enabled, usesProtocol)
 		if err != nil {
 			return in, err
 		}

@@ -32,7 +32,7 @@
     "protocols": "Detected protocols · one per line",
     "networks": "Networks · empty means both",
     "errors": {
-      "routing_context_unproven": "These nodes use different destination detection or untracked proxy fallbacks. Ask an administrator to align their routing context.",
+      "routing_context_unproven": "These routes require fixed destination metadata and direct fallbacks. Ask an administrator to review sniffing, client mappings and proxy chains.",
       "routing_loop": "These conditions create a routing loop. Change the destination or matchers.",
       "routing_overlap_unproven": "The matcher overlap could not be proven safe. Use more specific domain, IP or port conditions.",
       "routing_analysis_limit": "This graph exceeds the safety analysis limit. Simplify its rules or selectors.",

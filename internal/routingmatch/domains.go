@@ -31,10 +31,13 @@ func parseAtom(raw string) (atom, error) {
 		if err != nil {
 			return a, fmt.Errorf("invalid Go expression: %w", err)
 		}
+	} else {
+		a.value = strings.ToLower(a.value)
 	}
 	return a, nil
 }
 func (a atom) matches(d string) bool {
+	d = strings.ToLower(d)
 	if a.kind == "all" {
 		return true
 	}

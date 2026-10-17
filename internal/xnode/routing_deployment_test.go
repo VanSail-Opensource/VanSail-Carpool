@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	jobqueue "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -213,8 +214,8 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = f.service.HandleProviderOperation(ctx, operation, *job); err == nil {
-				t.Fatal("routing wait occupied claim loop")
+			if err = f.service.HandleProviderOperation(ctx, operation, *job); !errors.Is(err, jobqueue.ErrDeferred) {
+				t.Fatalf("routing wait was not deferred: %v", err)
 			}
 			claimed = true
 			break
@@ -231,7 +232,15 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	case err := <-errs:
 		t.Fatal(err)
 	case <-ctx.Done():
-		t.Fatal("apply phase did not reach held node")
+		diagnosticCtx, stop := context.WithTimeout(context.Background(), 3*time.Second)
+		defer stop()
+		plan, planErr := f.store.XNodeRoutingPlan(diagnosticCtx, f.identity.ProxyUserID)
+		operation, opErr := f.store.ProviderOperationByID(diagnosticCtx, receipt.ID)
+		jobs, _ := f.store.ListOutboxJobs(diagnosticCtx, 20)
+		for _, job := range jobs {
+			t.Logf("fixture job %s status %s error %s", job.Kind, job.Status, job.LastError)
+		}
+		t.Fatalf("apply phase did not reach held node: phase=%s plan=%v receipt=%s status=%s op=%v", plan.Phase, planErr, operation.Receipt.ID, operation.Receipt.Status, opErr)
 	}
 	plan, err := f.store.XNodeRoutingPlan(ctx, f.identity.ProxyUserID)
 	if err != nil || plan.Phase != "applying" {

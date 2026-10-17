@@ -226,3 +226,5 @@ unknown server contexts. These regressions run in hosted CI.
 `routing_deployment_test.go` exercises real authenticated master sockets and a deliberately held node acknowledgement, proving transit accounts stay disabled until every node applies and accounting periods remain intact.
 
 `compilation_errors.go` keeps private native validation details out of default errors/logs while allowing explicit validation diagnostics, including synthetic hosted fixtures.
+
+`routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Managed matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
