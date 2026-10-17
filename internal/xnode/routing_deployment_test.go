@@ -1,6 +1,7 @@
 package xnode_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/gorilla/websocket"
+	confserial "github.com/xtls/xray-core/infra/conf/serial"
 	"net/http/httptest"
 	"slices"
 	"testing"
@@ -148,6 +150,21 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	if err != nil {
 		var diagnostic *xnode.CompilationError
 		if errors.As(err, &diagnostic) {
+			// A temporary, fixture-only probe lets the pinned parser explain a
+			// rejected client projection without exposing production documents.
+			endpoints, _ := f.service.Endpoints(ctx)
+			if len(endpoints) > 0 {
+				probe, probeErr := f.service.AuthorizeService(ctx, "route-diagnostic", endpoints[0], time.Now().Add(time.Minute))
+				if probeErr == nil {
+					client, clientErr := f.service.ServiceProxy(ctx, probe, endpoints[0])
+					out, renderErr := client.Outbound()
+					if renderErr == nil {
+						raw, _ := json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": []any{out}})
+						_, coreErr := confserial.LoadJSONConfig(bytes.NewReader(raw))
+						t.Logf("fixture native client parser: %v; projection: %v", coreErr, clientErr)
+					}
+				}
+			}
 			t.Fatalf("%v: %s", err, diagnostic.ValidationDetail())
 		}
 		t.Fatal(err)
