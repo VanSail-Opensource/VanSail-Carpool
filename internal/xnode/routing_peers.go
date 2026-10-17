@@ -61,7 +61,7 @@ func (s *Service) routingReconcileNeeded(ctx context.Context) (func(bool), error
 	if !ok {
 		return func(bool) {}, nil
 	}
-	version, _, err := repo.XNodeCompileVersion(ctx, s.now())
+	version, inputDeadline, err := repo.XNodeCompileVersion(ctx, s.now())
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +81,9 @@ func (s *Service) routingReconcileNeeded(ctx context.Context) (func(bool), error
 		peer := s.routingPeerRefreshAt()
 		if !peer.IsZero() && (next.IsZero() || peer.Before(next)) {
 			next = peer
+		}
+		if !inputDeadline.IsZero() && (next.IsZero() || inputDeadline.Before(next)) {
+			next = inputDeadline
 		}
 		r.mu.Lock()
 		r.checked, r.revision, r.local, r.next = true, version, local, next
