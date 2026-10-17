@@ -7,7 +7,8 @@
       "global": "Global settings",
       "configurations": "Xray & snippets",
       "groups": "Access & endpoints",
-      "metrics": "Metrics"
+      "metrics": "Metrics",
+      "services": "Service users"
     },
     "loadFailed": "Could not load node data. Please retry.",
     "saveFailed": "Could not save node settings. Check the input and retry.",
@@ -139,6 +140,27 @@
       "gc_count": "GC count",
       "gc_pause_nanos": "GC pause (nanoseconds)",
       "errors": "Unavailable collectors"
+    },
+    "scopedDnsHint": "Intercept user DNS inside Xray. Set DNS servers in the Xray configuration; local and public resolvers are supported and remain externally managed."
+  },
+  "namedServices": {
+    "description": "Native identities without Telegram accounts.",
+    "add": "Add service user",
+    "edit": "Edit service user",
+    "quota": "Traffic quota (bytes; 0 is unlimited)",
+    "reset": "Traffic reset",
+    "expiry": "Expires",
+    "groups": "Access groups",
+    "disabled": "Disabled",
+    "empty": "No service users.",
+    "subscription": "Subscription link",
+    "rotate": "Rotate subscription link",
+    "strategies": {
+      "NO_RESET": "No reset",
+      "DAY": "Daily",
+      "WEEK": "Weekly",
+      "MONTH": "Monthly",
+      "MONTH_ROLLING": "Rolling month"
     }
   }
 }

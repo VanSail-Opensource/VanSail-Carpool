@@ -3,6 +3,7 @@ import { computed, shallowRef } from 'vue'
 import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import XNodeGlobalSettings from './XNodeGlobalSettings.vue'
+import XNodeServiceUsers from './XNodeServiceUsers.vue'
 import XNodeNodes from './XNodeNodes.vue'
 import XNodeConfigurations from './XNodeConfigurations.vue'
 import XNodeAccessGroups from './XNodeAccessGroups.vue'
@@ -14,7 +15,7 @@ import { useXNodeWorkspace } from './useXNodeWorkspace'
 const { t } = useI18n()
 const workspace = useXNodeWorkspace()
 const tab = shallowRef('nodes')
-const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'groups', 'metrics', 'migration'].map(value => ({ value, label: t(value === 'templates' ? 'nodeTemplates.title' : value === 'migration' ? 'xnodeMigration.title' : `xnode.tabs.${value}`) })))
+const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'services', 'groups', 'metrics', 'migration'].map(value => ({ value, label: t(value === 'templates' ? 'nodeTemplates.title' : value === 'migration' ? 'xnodeMigration.title' : `xnode.tabs.${value}`) })))
 </script>
 
 <template>
@@ -24,6 +25,7 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
     <UAlert v-if="workspace.actionError.value" color="warning" :title="workspace.actionError.value" />
     <AdminSectionState :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
       <XNodeNodes v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
+      <XNodeServiceUsers v-else-if="tab === 'services'" :nodes="workspace.nodes.value" :groups="workspace.groups.value" />
       <XNodeGlobalSettings v-else-if="tab === 'global'" />
       <XNodeSubscriptionTemplates v-else-if="tab === 'templates'" />
       <XNodeConfigurations v-else-if="tab === 'configurations'" :configurations="workspace.configurations.value" :snippets="workspace.snippets.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />

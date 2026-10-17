@@ -48,7 +48,11 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err != nil {
 		return err
 	}
-	return s.settings.PutXNodeGlobal(ctx, actor, string(raw))
+	if err = s.settings.PutXNodeGlobal(ctx, actor, string(raw)); err != nil {
+		return err
+	}
+	s.localCompileRevision.Add(1)
+	return nil
 }
 func (s *Service) validateAssetLink(ctx context.Context, target string) error {
 	return upstreamqueue.Execute(ctx, s.validationQueue, func(ctx context.Context) error {

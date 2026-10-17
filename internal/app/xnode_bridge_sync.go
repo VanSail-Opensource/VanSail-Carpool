@@ -17,6 +17,22 @@ func (a proxyProvider) syncBridgeAccounts(ctx context.Context) error {
 	if err != nil || !bridge {
 		return err
 	}
+	state, err := a.store.XNodeMigration(ctx)
+	if err != nil {
+		return err
+	}
+	if len(state.Nodes) > 0 {
+		legacyOwner := false
+		for _, node := range state.Nodes {
+			if node.Phase != "native" {
+				legacyOwner = true
+				break
+			}
+		}
+		if !legacyOwner {
+			return nil
+		}
+	}
 	identities, err := a.store.XNodeIdentities(ctx)
 	if err != nil {
 		return err

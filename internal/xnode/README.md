@@ -161,3 +161,10 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 `subscription_templates_test.go` covers preview validation, native subscription assignments, stale revisions and dangling default rejection.
 
 `BrowserMetricNumbers` also protects historical command result counters. Machine JSON normalization runs after releasing the master snapshot lock, and client-template writes use their own revision mutex so previews do not hold the accounting lock.
+
+- `compile_cache.go`: Caches validated per-peer state against transactional desired-state revisions and access deadlines; controls remain memory-only.
+- `compile_reads.go`: Reuses groups, identities, users, periods and purchase reads within one compilation.
+- `compile_cache_test.go`: Hosted regression and before/after CPU profile with 1, 10 and 100 nodes and 1000 synthetic users.
+- `customization_owner.go`: Resolves member and admin-only native-identity routing ownership without introducing Telegram principals.
+- `named_services.go`: Admin-managed standalone access terms; quota edits preserve exact usage and probe identities remain separate.
+- `named_services_test.go`: Hosted standalone quota, routing scope and disable regressions.

@@ -243,3 +243,8 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 
 `api-v1-admin-xnode-service-identities-id-subscription.yaml` exposes private
 standalone-account subscription metadata and bearer URLs to administrators.
+
+- `api-v1-admin-xnode-service-identities.yaml`: Administrator-only native service identity management.
+- `api-v1-admin-xnode-service-identities-id.yaml`: Administrator-only native service identity management.
+- `api-v1-admin-xnode-service-identities-id-rotate.yaml`: Administrator-only native service identity management.
+- `api-v1-admin-xnode-service-identities-id-routing.yaml`: Administrator-only native service identity management.

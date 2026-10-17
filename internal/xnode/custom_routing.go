@@ -10,11 +10,7 @@ import (
 func (s *Service) SaveOwnedOutbounds(ctx context.Context, user, node string, revision int64, raw json.RawMessage) (Customization, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
-	if err != nil {
-		return Customization{}, err
-	}
-	tags, _, err := s.eligibleTags(ctx, user, node)
+	identity, tags, err := s.customizationIdentity(ctx, user, node)
 	if err != nil {
 		return Customization{}, err
 	}
@@ -76,11 +72,7 @@ func (s *Service) SaveOwnedOutbounds(ctx context.Context, user, node string, rev
 func (s *Service) SaveOwnedRouting(ctx context.Context, user, node string, revision int64, raw json.RawMessage) (Customization, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
-	if err != nil {
-		return Customization{}, err
-	}
-	tags, _, err := s.eligibleTags(ctx, user, node)
+	identity, tags, err := s.customizationIdentity(ctx, user, node)
 	if err != nil {
 		return Customization{}, err
 	}
@@ -139,11 +131,11 @@ func (s *Service) storeCustomization(ctx context.Context, item Customization, ou
 	if !ValidateCompiled(wire.Config{Xray: raw, Users: []wire.User{}, MemberOutbounds: tags}).Valid {
 		return item, ErrInvalid
 	}
-	item.OutboundsCipher, err = s.seal("xnode.outbounds."+item.UserID+"."+item.NodeID, outs)
+	item.OutboundsCipher, err = s.seal("xnode.outbounds."+customizationOwner(item)+"."+item.NodeID, outs)
 	if err != nil {
 		return item, err
 	}
-	item.RoutingCipher, err = s.seal("xnode.routing."+item.UserID+"."+item.NodeID, rules)
+	item.RoutingCipher, err = s.seal("xnode.routing."+customizationOwner(item)+"."+item.NodeID, rules)
 	if err != nil {
 		return item, err
 	}
@@ -156,7 +148,7 @@ func (s *Service) storeCustomization(ctx context.Context, item Customization, ou
 	if err = s.repo.SaveXNodeCustomization(ctx, item); err != nil {
 		return item, err
 	}
-	return s.OwnedCustomization(ctx, item.UserID, item.NodeID)
+	return s.OwnedCustomization(ctx, customizationOwner(item), item.NodeID)
 }
 func rewriteDependencies(out map[string]any, rewrite func(string) string) {
 	if proxy, _ := out["proxySettings"].(map[string]any); proxy != nil {

@@ -148,3 +148,6 @@ file instead.
 - `079_retire_legacy_controls.sql` disables outstanding relinking and legacy host-remark operations while preserving their history; removes the retired squad display flag.
 
 `044_squad_geocheck.sql` is retained as immutable upgrade history; its display flag is removed by migration 079.
+
+- `080_xnode_compile_revision.sql`: Adds desired-state invalidation metadata; routine traffic and acknowledgment writes do not invalidate compiled state.
+- `081_xnode_identity_routing.sql`: Migrates routing ownership to native identity references while preserving existing ciphertext scopes.

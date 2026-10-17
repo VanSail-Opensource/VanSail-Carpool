@@ -69,7 +69,7 @@ func (s *Service) checkTagOwnership(ctx context.Context, nodeID string, config *
 	if replacement != nil {
 		found := false
 		for i, item := range items {
-			if item.UserID == replacement.UserID {
+			if customizationOwner(item) == customizationOwner(*replacement) {
 				items[i] = *replacement
 				found = true
 				break
@@ -81,7 +81,7 @@ func (s *Service) checkTagOwnership(ctx context.Context, nodeID string, config *
 	}
 	for _, item := range items {
 		var outs []map[string]any
-		if err = s.open("xnode.outbounds."+item.UserID+"."+nodeID, item.OutboundsCipher, &outs); err != nil {
+		if err = s.open("xnode.outbounds."+customizationOwner(item)+"."+nodeID, item.OutboundsCipher, &outs); err != nil {
 			return err
 		}
 		if len(outs) > 0 && !hasMarker {

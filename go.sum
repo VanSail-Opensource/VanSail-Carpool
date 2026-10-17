@@ -6,6 +6,8 @@ github.com/RoaringBitmap/roaring/v2 v2.29.0 h1:jSjxqZEqiF9W5dHUFsemupb9bnLaQJwZV
 github.com/RoaringBitmap/roaring/v2 v2.29.0/go.mod h1:BZufmFbox589n3j5eOmyTaLSGXbRLc2LmQvjKjzSEGU=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261016101609-69bce0795a56 h1:/x70bfgL+VCOkHZFXsDAKJO8SDAz30C7kbvXNvgTycw=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261016101609-69bce0795a56/go.mod h1:RiyWphQeiVjtqL5Ufg83/h2zotlOM0CqVlZqx8I+nwQ=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261017100441-05c69e912cd7 h1:hDqWbvDWNyz/Z4pN96U3WvMSmO31xZKFyOT1ZybBo88=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261017100441-05c69e912cd7/go.mod h1:RiyWphQeiVjtqL5Ufg83/h2zotlOM0CqVlZqx8I+nwQ=
 github.com/VanSail-Opensource/X-Node v1.0.3-0.20261015102137-2e325e09a70d h1:7JNUwfci99jH0ODk3z4Mhe3XEMbip5mRjiZ1RcDo280=
 github.com/VanSail-Opensource/X-Node v1.0.3-0.20261015102137-2e325e09a70d/go.mod h1:QQqeKJY2u+hifEBTBA+ZCDe71QzCBKO9Azyg1xsEcGA=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=

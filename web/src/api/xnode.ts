@@ -2,6 +2,9 @@ import type { components } from './generated'
 import { request } from './http'
 
 type Schema = components['schemas']
+export type NamedService = Schema['XNodeNamedService']
+export type NamedServiceWrite = Schema['XNodeNamedServiceWrite']
+export type XNodeCustomization = Schema['XNodeCustomization']
 export type XNode = Schema['XNodeNode']
 export type XNodeSettings = Schema['XNodeSettings']
 export type XNodeGlobal = Schema['XNodeGlobal']
@@ -21,6 +24,12 @@ export type SubscriptionTemplateConfig = Schema['XNodeSubscriptionTemplateConfig
 
 const root = '/api/v1/admin/xnode'
 export const xnodeApi = {
+  namedServices: () => request<{ items: NamedService[] }>(`${root}/service-identities`, { cache: 'no-store' }),
+  saveNamedService: (id: string | undefined, body: NamedServiceWrite) => request<NamedService>(`${root}/service-identities${id ? `/${encodeURIComponent(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body, cache: 'no-store' }),
+  serviceSubscription: (id: string) => request<Schema['XNodeSubscription']>(`${root}/service-identities/${encodeURIComponent(id)}/subscription`, { cache: 'no-store' }),
+  rotateServiceSubscription: (id: string) => request<{ url: string }>(`${root}/service-identities/${encodeURIComponent(id)}/subscription/rotate`, { method: 'POST', cache: 'no-store' }),
+  serviceRouting: (id: string, node: string) => request<XNodeCustomization>(`${root}/service-identities/${encodeURIComponent(id)}/routing/${encodeURIComponent(node)}`, { cache: 'no-store' }),
+  saveServiceRouting: (id: string, node: string, part: 'outbounds' | 'rules', body: XNodeCustomization) => request<XNodeCustomization>(`${root}/service-identities/${encodeURIComponent(id)}/routing/${encodeURIComponent(node)}`, { method: 'PUT', body, query: { part }, cache: 'no-store' }),
   subscriptionTemplates: () => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { cache: 'no-store' }),
   saveSubscriptionTemplates: (body: SubscriptionTemplateConfig) => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { method: 'PUT', body, cache: 'no-store' }),
   previewSubscriptionTemplate: (body: SubscriptionTemplate) => request<Schema['XNodeSubscriptionTemplatePreview']>(`${root}/subscription-templates/preview`, { method: 'POST', body, cache: 'no-store' }),

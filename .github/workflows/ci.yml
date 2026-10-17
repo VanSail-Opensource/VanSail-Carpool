@@ -262,3 +262,24 @@ jobs:
           push: false
           cache-from: type=gha,scope=tx-carpool
           cache-to: type=gha,mode=max,scope=tx-carpool
+
+  xnode-performance:
+    name: X-Node steady-state CPU profile
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Profile old and cached reconciliation work
+        run: go test ./internal/xnode -run '^$' -bench BenchmarkXNodeSteadyState -benchtime=2s -benchmem -cpuprofile=xnode-cpu.pprof -o /tmp/xnode-profile.test > xnode-benchmark.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: xnode-cpu-profile
+          path: |
+            xnode-cpu.pprof
+            xnode-benchmark.txt

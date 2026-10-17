@@ -63,6 +63,20 @@ xnodeApi.finalizeMigration = async digest => { await check('finalize:' + digest)
 memberOperationsApi.getOperation = async () => ({ ...latest!, status: params.has('shared-error') ? 'failed' : params.has('pending') ? 'pending_review' : 'succeeded', errorCode: params.has('shared-error') ? 'XNODE_SHARED_ENDPOINT' : null, updatedAt: new Date().toISOString() })
 Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value: string) => { trace.copies.push(value) } } })
 Object.assign(window, { __xnodeAudit: trace })
+
+let serviceUsers = params.has('services-empty') ? [] : [{ identity: { proxyUserId: '1099511627776', userId: '', username: 'routing-service', serviceName: 'routing-service', currentPeriodId: 'service-period', accessDisabled: false, createdAt: stamp }, access: { limitBytes: '0', strategy: 'NO_RESET' as const, startedAt: stamp, expiresAt: '2027-10-17T00:00:00Z', groupIds: ['group-one'], disabled: false } }]
+xnodeApi.namedServices = async () => { await check('services'); if (params.has('service-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: structuredClone(serviceUsers) } }
+xnodeApi.saveNamedService = async (id, body) => {
+  await check('save-service')
+  if (params.has('service-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
+  const item = { identity: { ...serviceUsers[0]?.identity, proxyUserId: id || '1099511627777', userId: '', username: body.name, serviceName: body.name, currentPeriodId: 'service-period', accessDisabled: body.access.disabled, createdAt: stamp }, access: JSON.parse(JSON.stringify(body.access)) }
+  serviceUsers = [...serviceUsers.filter(value => value.identity.proxyUserId !== id), item]
+  return item
+}
+xnodeApi.serviceSubscription = async () => ({ username: 'routing-service', url: 'https://panel.example/subscription/fixture-only', downloadUrl: 'https://panel.example/api/v1/subscriptions/fixture-only', usedBytes: '400', limitBytes: '1000', active: true, incomplete: false, formats: { native: true }, expiresAt: '2027-10-17T00:00:00Z' })
+xnodeApi.rotateServiceSubscription = async () => { trace.calls.push('rotate-service'); return { url: 'https://panel.example/subscription/rotated-fixture-only' } }
+xnodeApi.serviceRouting = async () => { await check('service-routing'); return { userId: '', nodeId: nodes[0]!.id, proxyUserId: '1099511627776', revision: 0, outbounds: [], routing: [] } }
+xnodeApi.saveServiceRouting = async (_id, _node, part, body) => { trace.calls.push('save-service-' + part); return { ...body, revision: body.revision + 1 } }
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.use(createPinia()).use(createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: XNodeAudit }] })).use(ui).mount('#app')

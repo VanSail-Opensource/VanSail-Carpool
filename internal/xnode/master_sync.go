@@ -48,7 +48,8 @@ func (m *Master) reconcile(ctx context.Context) error {
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {
 	peer.syncMu.Lock()
 	defer peer.syncMu.Unlock()
-	config, err := m.service.Compile(ctx, peer.nodeID)
+	previousCompiled := peer.compiled
+	config, err := m.cachedConfiguration(ctx, peer, force)
 	if err != nil {
 		return err
 	}
@@ -61,10 +62,16 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if err = configurationCapabilities(config, hello.Capabilities); err != nil {
 		return err
 	}
-	controls := map[int]bool{}
+	controls := m.connectionControls(config)
+	peer.mu.Lock()
+	unchanged := peer.digest != "" && previousCompiled != nil && previousCompiled == peer.compiled
+	oldControls := peer.lastControls
+	peer.mu.Unlock()
+	if unchanged && !force {
+		return m.syncControls(ctx, peer, controls, oldControls)
+	}
 	normalized := wire.Clone(config)
-	for i, user := range config.Users {
-		controls[user.ID] = user.BlockNew
+	for i := range config.Users {
 		normalized.Users[i].BlockNew = false
 	}
 	raw, err := json.Marshal(normalized)
@@ -76,7 +83,7 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	peer.mu.Lock()
 	same := peer.digest == digest
 	previous := peer.revision
-	oldControls := peer.lastControls
+	oldControls = peer.lastControls
 	peer.mu.Unlock()
 	if same && !force {
 		return m.syncControls(ctx, peer, controls, oldControls)
@@ -85,7 +92,10 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if err != nil {
 		return err
 	}
-	message := wire.New("state.sync", "", revision, config)
+	for i := range normalized.Users {
+		normalized.Users[i].BlockNew = controls[normalized.Users[i].ID]
+	}
+	message := wire.New("state.sync", "", revision, normalized)
 	for _, user := range config.Users {
 		if user.AccountingPeriod != "" {
 			if err = m.service.repo.TrackXNodePeriodNode(ctx, user.AccountingPeriod, peer.nodeID); err != nil {

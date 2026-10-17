@@ -26,18 +26,18 @@ func (s *Service) customization(ctx context.Context, user, node string) (Customi
 		return Customization{}, err
 	}
 	for _, item := range items {
-		if item.UserID == user {
+		if customizationOwner(item) == user {
 			return item, nil
 		}
 	}
-	return Customization{UserID: user, NodeID: node, Outbounds: json.RawMessage(`[]`), Routing: json.RawMessage(`[]`)}, nil
-}
-func (s *Service) OwnedCustomization(ctx context.Context, user, node string) (Customization, error) {
-	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
+	identity, _, err := s.customizationIdentity(ctx, user, node)
 	if err != nil {
 		return Customization{}, err
 	}
-	tags, _, err := s.eligibleTags(ctx, user, node)
+	return Customization{UserID: identity.UserID, ProxyUserID: identity.ProxyUserID, NodeID: node, Outbounds: json.RawMessage(`[]`), Routing: json.RawMessage(`[]`)}, nil
+}
+func (s *Service) OwnedCustomization(ctx context.Context, user, node string) (Customization, error) {
+	identity, tags, err := s.customizationIdentity(ctx, user, node)
 	if err != nil {
 		return Customization{}, err
 	}

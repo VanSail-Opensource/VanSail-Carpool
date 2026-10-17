@@ -59,3 +59,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 `api-tokens.yaml` defines token metadata, explicit permissions, expiry input and one-time issuance responses.
 
 `schemas-19.yaml` defines product statistics snapshots, distributions and live node metrics.
+
+- `xnode-services.yaml` defines native standalone identities and explicit access terms.

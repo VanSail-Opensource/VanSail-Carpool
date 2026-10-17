@@ -201,3 +201,5 @@ Command results normalize large integer counters for exact browser presentation,
 `xnode_service_subscription.go` exposes existing standalone subscription metadata
 and bearer URLs only under the administrator router, with private no-store
 headers. It excludes probe identities and does not create or rotate credentials.
+
+- `xnode_named_services.go`: Admin-only service identity CRUD, subscription rotation and native routing endpoints.

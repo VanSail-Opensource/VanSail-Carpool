@@ -20,7 +20,8 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 		return node, ErrInvalid
 	}
 	node.CountryCode = strings.ToUpper(node.CountryCode)
-	if _, err := s.repo.XNodeConfiguration(ctx, node.ConfigID); err != nil {
+	base, err := s.repo.XNodeConfiguration(ctx, node.ConfigID)
+	if err != nil {
 		return node, err
 	}
 	if node.ID == "" {
@@ -36,6 +37,13 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 		return node, err
 	}
 	validation := wire.Config{Xray: json.RawMessage(`{"inbounds":[]}`), Users: []wire.User{}, Providers: global.Providers, Certificates: settings.Certificates, InboundCertificates: settings.InboundCertificates, DDNS: settings.DDNS, DNS: settings.DNS, Firewall: settings.Firewall}
+	if settings.DNS.Redirect {
+		raw, e := s.vault.Decrypt("xnode.config."+base.ID, base.DocumentCipher)
+		if e != nil {
+			return node, e
+		}
+		validation.Xray = json.RawMessage(raw)
+	}
 	if err = validation.Validate(); err != nil {
 		return node, ErrInvalid
 	}

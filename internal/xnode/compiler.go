@@ -12,6 +12,7 @@ func (s *Service) Compile(ctx context.Context, nodeID string) (wire.Config, erro
 	return s.compile(ctx, nodeID, nil, nil, nil, nil)
 }
 func (s *Service) compile(ctx context.Context, nodeID string, replacement *Configuration, shared *Snippet, fleet *GlobalConfig, member *Customization) (wire.Config, error) {
+	s = s.withCompileReads()
 	node, settings, err := s.Node(ctx, nodeID)
 	if err != nil {
 		return wire.Config{}, err
@@ -86,7 +87,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if member != nil {
 		replaced := false
 		for i := range customizations {
-			if customizations[i].UserID == member.UserID {
+			if customizationOwner(customizations[i]) == customizationOwner(*member) {
 				customizations[i] = *member
 				replaced = true
 			}
@@ -101,19 +102,19 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		if err != nil {
 			return wire.Config{}, err
 		}
-		active[identity.UserID] = true
+		active[identityCustomizationOwner(identity)] = true
 	}
 	memberOutbounds, memberRules := []any{}, []any{}
 	memberTags := []string{}
 	for _, custom := range customizations {
-		if !active[custom.UserID] {
+		if !active[customizationOwner(custom)] {
 			continue
 		}
 		var outs, rules []any
-		if err = s.open("xnode.outbounds."+custom.UserID+"."+nodeID, custom.OutboundsCipher, &outs); err != nil {
+		if err = s.open("xnode.outbounds."+customizationOwner(custom)+"."+nodeID, custom.OutboundsCipher, &outs); err != nil {
 			return wire.Config{}, err
 		}
-		if err = s.open("xnode.routing."+custom.UserID+"."+nodeID, custom.RoutingCipher, &rules); err != nil {
+		if err = s.open("xnode.routing."+customizationOwner(custom)+"."+nodeID, custom.RoutingCipher, &rules); err != nil {
 			return wire.Config{}, err
 		}
 		for _, raw := range outs {

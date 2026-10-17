@@ -83,3 +83,5 @@ X-Node audit flags `source&shared` and `shared-error` exercise the localized sha
 - `RetiredControlsAudit.vue` exercises real catalog-node, statistics, administrator account-action and squad-editor components through the legacy mode of `detector-retirement-audit.ts`, including constructed loading, empty and error states.
 
 `MemberNodesAudit.vue` exercises member metrics, formats and revision-aware routing in native mode of the retirement fixture.
+
+The X-Node fixture also supplies named service users, access edits, isolated routing and subscription rotation. Flags `services-empty`, `service-error` and `service-save-error` exercise its browser states without contacting agents.

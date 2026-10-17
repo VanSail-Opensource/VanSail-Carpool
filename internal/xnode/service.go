@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
@@ -14,17 +15,18 @@ import (
 )
 
 type Service struct {
-	repo            Repository
-	settings        Settings
-	vault           *secret.Vault
-	publicURL       *url.URL
-	validationQueue *upstreamqueue.Queue
-	master          *Master
-	now             func() time.Time
-	mu              sync.Mutex
-	templateMu      sync.Mutex
-	legacyProxies   func(context.Context, Identity) ([]subscription.Proxy, error)
-	legacySync      func(context.Context) error
+	localCompileRevision atomic.Int64
+	repo                 Repository
+	settings             Settings
+	vault                *secret.Vault
+	publicURL            *url.URL
+	validationQueue      *upstreamqueue.Queue
+	master               *Master
+	now                  func() time.Time
+	mu                   sync.Mutex
+	templateMu           sync.Mutex
+	legacyProxies        func(context.Context, Identity) ([]subscription.Proxy, error)
+	legacySync           func(context.Context) error
 }
 
 func NewService(repo Repository, settings Settings, vault *secret.Vault, publicURL *url.URL, validationQueue *upstreamqueue.Queue) *Service {

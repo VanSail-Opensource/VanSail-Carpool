@@ -4,6 +4,9 @@ import wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 
 func configurationCapabilities(config wire.Config, advertised []string) error {
 	required := []string{}
+	if config.DNS.Redirect {
+		required = append(required, "xray_scoped_dns_v1")
+	}
 	if len(config.Users) > 0 || len(config.MemberOutbounds) > 0 {
 		required = append(required, "traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards")
 	}

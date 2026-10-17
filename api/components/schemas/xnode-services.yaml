@@ -1,0 +1,114 @@
+{
+  "XNodeServiceAccess": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "limitBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "strategy": {
+        "type": "string",
+        "enum": [
+          "NO_RESET",
+          "DAY",
+          "WEEK",
+          "MONTH",
+          "MONTH_ROLLING"
+        ]
+      },
+      "startedAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "groupIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      },
+      "disabled": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "limitBytes",
+      "strategy",
+      "startedAt",
+      "expiresAt",
+      "groupIds",
+      "disabled"
+    ]
+  },
+  "XNodeNamedService": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "proxyUserId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "serviceName": {
+            "type": "string"
+          },
+          "currentPeriodId": {
+            "type": "string"
+          },
+          "accessDisabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "proxyUserId",
+          "userId",
+          "username",
+          "serviceName",
+          "currentPeriodId",
+          "accessDisabled",
+          "createdAt"
+        ]
+      },
+      "access": {
+        "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess"
+      }
+    },
+    "required": [
+      "identity",
+      "access"
+    ]
+  },
+  "XNodeNamedServiceWrite": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "access": {
+        "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess"
+      }
+    },
+    "required": [
+      "name",
+      "access"
+    ]
+  }
+}

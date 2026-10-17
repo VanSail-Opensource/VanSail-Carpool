@@ -38,6 +38,7 @@ type agentPeer struct {
 	digest       string
 	pending      map[string]chan wire.Message
 	lastControls map[int]bool
+	compiled     *compiledState // protected by syncMu
 	pong         chan string
 }
 

@@ -83,6 +83,7 @@ type ServiceBinding struct {
 }
 
 type Customization struct {
+	ProxyUserID     int64           `json:"proxyUserId,string"`
 	UserID          string          `json:"-"`
 	NodeID          string          `json:"nodeId"`
 	OutboundsCipher string          `json:"-"`

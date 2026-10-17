@@ -7,7 +7,8 @@
       "global": "全局设置",
       "configurations": "Xray 与片段",
       "groups": "访问与端点",
-      "metrics": "指标"
+      "metrics": "指标",
+      "services": "服务用户"
     },
     "loadFailed": "无法加载节点数据，请重试。",
     "saveFailed": "无法保存节点设置，请检查输入后重试。",
@@ -139,6 +140,27 @@
       "gc_count": "GC 次数",
       "gc_pause_nanos": "GC 暂停（纳秒）",
       "errors": "不可用采集器"
+    },
+    "scopedDnsHint": "仅重定向 Xray 用户的 DNS。请在 Xray 配置中设置 DNS 服务器，可使用本地或公共解析器；解析器服务由外部管理。"
+  },
+  "namedServices": {
+    "description": "独立原生身份，无需 Telegram 账号。",
+    "add": "添加服务用户",
+    "edit": "编辑服务用户",
+    "quota": "流量额度（字节，0 为不限）",
+    "reset": "流量重置",
+    "expiry": "到期时间",
+    "groups": "访问组",
+    "disabled": "已禁用",
+    "empty": "暂无服务用户。",
+    "subscription": "订阅链接",
+    "rotate": "更换订阅链接",
+    "strategies": {
+      "NO_RESET": "不重置",
+      "DAY": "每日",
+      "WEEK": "每周",
+      "MONTH": "每月",
+      "MONTH_ROLLING": "滚动月"
     }
   }
 }

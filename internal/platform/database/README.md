@@ -458,3 +458,7 @@ indexes live in a separate disposable cache outside this schema and its backups.
 `native_rollover_version_test.go` preserves native accounting provenance through calculation and atomic renewal. `legacy_controls_retirement_test.go` verifies that upgrade retirement disables executable relink/host jobs while retaining receipts.
 
 Native rollover calculations retain `native-term-v1` through the renewal transaction; old calculated records continue through the existing whole-term normalization. No settled financial records are rewritten.
+
+- `xnode_compile_version.go`: Reads a small transactional compile revision and the next purchase access boundary.
+
+- `xnode_named_services.go`: Atomically saves standalone encrypted terms, authorization and quota without rewriting usage or settled periods.
