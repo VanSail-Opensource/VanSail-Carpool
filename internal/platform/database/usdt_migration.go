@@ -14,48 +14,8 @@ const usdtMigration = "072_builtin_usdt.sql"
 
 // migrateUSDT rebuilds the referenced payment table with FK enforcement restored
 // before the dedicated connection is returned to the pool. No writable_schema edits.
-func migrateUSDT(ctx context.Context, db *sql.DB, script []byte) (result error) {
-	conn, err := db.Conn(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := conn.Close(); err != nil && result == nil {
-			result = err
-		}
-	}()
-	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
-		return err
-	}
-	defer func() {
-		restoreCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if _, err := conn.ExecContext(restoreCtx, "PRAGMA foreign_keys=ON"); err != nil {
-			result = fmt.Errorf("restore foreign keys: %w", err)
-		}
-	}()
-	tx, err := conn.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, string(script)); err != nil {
-		return err
-	}
-	rows, err := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
-	if err != nil {
-		return err
-	}
-	invalid := rows.Next()
-	rowErr := rows.Err()
-	closeErr := rows.Close()
-	if invalid || rowErr != nil || closeErr != nil {
-		return fmt.Errorf("USDT migration foreign key validation failed")
-	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO schema_migrations(version,applied_at) VALUES(?,?)", usdtMigration, stamp(time.Now().UTC())); err != nil {
-		return err
-	}
-	return tx.Commit()
+func migrateUSDT(ctx context.Context, db *sql.DB, script []byte) error {
+	return migrateReferencedTables(ctx, db, script, usdtMigration)
 }
 
 func backupBeforeUSDTMigration(ctx context.Context, db *sql.DB, path string) error {

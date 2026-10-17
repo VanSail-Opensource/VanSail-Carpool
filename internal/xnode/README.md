@@ -15,8 +15,8 @@ around member insertions: outbound snippets precede the member marker and shared
 `master*.go` handles revisions, memory-only reports, durable traffic ACKs,
 bidirectional firewall confirmation, command results and snapshot replacement.
 Command waiting never occupies the frame-send queue. Connection limits use fresh
-available node counts and block only new admission after the global threshold
-is exceeded. Missing nodes mark totals incomplete and do not force blocking.
+available node counts and block only new admission when the global threshold
+is reached. Missing nodes mark totals incomplete and do not force blocking.
 
 `credentials.go` preserves imported secrets and creates independent random
 SS-2022 128/256-bit user keys. SQLite stores encrypted desired configuration and
@@ -172,3 +172,15 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 Firewall control: `firewall_types.go` defines typed operational interfaces and public-IP validation. `firewall_service.go` gates capabilities, handles durable reports and quote-bound paid grants. `firewall_reconcile.go` preserves migration ownership, publishes successful source generations and rebuilds learned evidence only when its version changes. `firewall_delivery.go` defers existing outbox leases and sends dynamic deltas or bounded snapshots through the per-node queue. `firewall_source_delivery.go` streams independent source snapshots, retains warm-up positives and explicitly removes disabled feeds. Agent capability firewall_control_v1 is required; older agents receive protection disabled rather than autonomous banning. Source transfer slots are bounded separately, preserving capacity for immediate exemptions and traffic acknowledgments.
 
 Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5352b67e882b`. Hosted Quality `39029889093` and signed release `39030494260` succeeded. The version-bound manifest and all amd64/arm64 agent/CLI hashes were independently verified with the production trust root.
+
+Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` shares last-good generations, completion deadlines and bounded retries across compiler views. `geoip_decode_test.go` and `native_policy_test.go` provide hosted precision, schedule, prefix-bound and activity-capability regressions.
+
+`live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
+
+`client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight.
+
+`geoip_wire.go` walks the pinned protobuf fields with bounded CIDR records, avoiding repeated-message allocation amplification and retaining cancellation checks during country resolution.
+
+State requests coalesce into the existing reconciler. The socket reader never waits on native compilation or GeoIP refreshes, so queued utility results and traffic acknowledgments keep progressing during external asset work.
+
+`zero_multiplier_test.go` exercises explicit zero and six-decimal settings through the real hosted store fixture.

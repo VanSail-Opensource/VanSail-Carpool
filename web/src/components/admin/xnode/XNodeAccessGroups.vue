@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { computed, reactive, shallowRef } from 'vue'
-import { xnodeApi, type XNodeGroup, type XNodeEndpoint, type XNode } from '@/api/xnode'
+import { xnodeApi, type XNodeGroup, type XNodeEndpoint, type XNode, type XNodeConfiguration } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
+import XNodeAccessBindings from './XNodeAccessBindings.vue'
+import XNodeEndpointOptions from './XNodeEndpointOptions.vue'
+import { nodeInboundItems } from './nodeFormOptions'
 
-const props = defineProps<{ groups: XNodeGroup[]; endpoints: XNodeEndpoint[]; nodes: XNode[]; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
+const props = defineProps<{ groups: XNodeGroup[]; endpoints: XNodeEndpoint[]; nodes: XNode[]; configurations: XNodeConfiguration[]; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const { t } = useI18n()
 const groupOpen = shallowRef(false)
 const endpointOpen = shallowRef(false)
 const group = reactive<Partial<XNodeGroup>>({})
 const endpoint = reactive<Partial<XNodeEndpoint>>({})
-const bindings = shallowRef<unknown>([])
+const bindings = shallowRef<XNodeGroup['bindings']>([])
 const bindingValid = shallowRef(true)
-const endpointValid = shallowRef(true)
 const nodes = computed(() => props.nodes.map(item => ({ label: item.name, value: item.id })))
-function editGroup(item?: XNodeGroup): void { Object.assign(group, { id: '', name: '', enabled: true }, item ?? {}); bindings.value = item?.bindings ?? []; bindingValid.value = true; groupOpen.value = true }
-function editEndpoint(item?: XNodeEndpoint): void { Object.assign(endpoint, { id: '', nodeId: props.nodes[0]?.id ?? '', inboundTag: '', name: '', address: '', port: 443, enabled: true, hidden: false, overrides: {} }, item ?? {}); endpointValid.value = true; endpointOpen.value = true }
-async function saveGroup(): Promise<void> { if (bindingValid.value && await props.perform(() => xnodeApi.saveGroup({ ...group, bindings: bindings.value as XNodeGroup['bindings'] }))) groupOpen.value = false }
-async function saveEndpoint(): Promise<void> { if (endpointValid.value && await props.perform(() => xnodeApi.saveEndpoint(endpoint))) endpointOpen.value = false }
+const inboundOptions = computed(() => nodeInboundItems(endpoint.nodeId, props.nodes, props.configurations))
+function editGroup(item?: XNodeGroup): void { Object.assign(group, { id: '', name: '', enabled: true }, item ?? {}); bindings.value = globalThis.structuredClone(item?.bindings ?? []); bindingValid.value = true; groupOpen.value = true }
+function editEndpoint(item?: XNodeEndpoint): void { Object.assign(endpoint, { id: '', nodeId: props.nodes[0]?.id ?? '', inboundTag: '', name: '', address: '', port: 443, enabled: true, hidden: false, overrides: {} }, item ?? {}); endpoint.overrides = globalThis.structuredClone(item?.overrides ?? {}); endpointOpen.value = true }
+async function saveGroup(): Promise<void> { if (bindingValid.value && await props.perform(() => xnodeApi.saveGroup({ ...group, bindings: bindings.value }))) groupOpen.value = false }
+async function saveEndpoint(): Promise<void> { if (await props.perform(() => xnodeApi.saveEndpoint(endpoint))) endpointOpen.value = false }
 </script>
 
 <template>
@@ -27,8 +29,8 @@ async function saveEndpoint(): Promise<void> { if (endpointValid.value && await 
     <div v-for="item in groups" :key="item.id" class="resource-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ item.bindings.length }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editGroup(item)" /></div>
     <h3>{{ t('xnode.endpoints') }}</h3>
     <div v-for="item in endpoints" :key="item.id" class="resource-row"><div><strong>{{ item.name }}</strong><div class="text-xs text-muted">{{ item.address }}:{{ item.port }} · {{ item.inboundTag }}</div></div><span /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editEndpoint(item)" /></div>
-    <UModal v-model:open="groupOpen" :title="t('xnode.group')"><template #body><form class="grid gap-4" @submit.prevent="saveGroup"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="group.name" required class="w-full" /></UFormField><USwitch v-model="group.enabled" :label="t('common.enabled')" /><XNodeJsonEditor v-model="bindings" :label="t('xnode.groupBindings')" :rows="8" @valid="bindingValid = $event" /><UButton type="submit" :loading="busy" :disabled="!bindingValid" :label="t('common.save')" class="justify-self-end" /></form></template></UModal>
-    <UModal v-model:open="endpointOpen" :title="t('xnode.endpoint')"><template #body><form class="grid gap-4" @submit.prevent="saveEndpoint"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="endpoint.name" required class="w-full" /></UFormField><UFormField :label="t('xnode.node')"><USelect v-model="endpoint.nodeId" :items="nodes" class="w-full" /></UFormField><UFormField :label="t('xnode.inboundTag')"><UInput v-model="endpoint.inboundTag" required class="w-full" /></UFormField><UFormField :label="t('xnode.address')"><UInput v-model="endpoint.address" required class="w-full" /></UFormField><UFormField :label="t('xnode.port')"><UInput v-model.number="endpoint.port" type="number" min="1" max="65535" class="w-full" /></UFormField><USwitch v-model="endpoint.enabled" :label="t('common.enabled')" /><USwitch v-model="endpoint.hidden" :label="t('xnode.hiddenEndpoint')" /><XNodeJsonEditor v-model="endpoint.overrides" :label="t('nodeAdmin.endpointOverrides')" :rows="10" @valid="endpointValid = $event" /><UButton type="submit" :loading="busy" :disabled="!endpointValid" :label="t('common.save')" class="justify-self-end" /></form></template></UModal>
+    <UModal v-model:open="groupOpen" :title="t('xnode.group')"><template #body><form class="grid gap-4" @submit.prevent="saveGroup"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="group.name" required class="w-full" /></UFormField><USwitch v-model="group.enabled" :label="t('common.enabled')" /><XNodeAccessBindings v-model="bindings" :nodes="props.nodes" :configurations="configurations" @valid="bindingValid = $event" /><UButton type="submit" :loading="busy" :disabled="!bindingValid" :label="t('common.save')" class="justify-self-end" /></form></template></UModal>
+    <UModal v-model:open="endpointOpen" :title="t('xnode.endpoint')"><template #body><form class="grid gap-4" @submit.prevent="saveEndpoint"><UAlert v-if="saveError" color="warning" :title="saveError" /><UFormField :label="t('common.name')"><UInput v-model="endpoint.name" required class="w-full" /></UFormField><UFormField :label="t('xnode.node')"><USelect v-model="endpoint.nodeId" :items="nodes" class="w-full" /></UFormField><UFormField :label="t('xnode.inboundTag')"><USelect v-model="endpoint.inboundTag" :items="inboundOptions" class="w-full" /></UFormField><UFormField :label="t('xnode.address')"><UInput v-model="endpoint.address" required class="w-full" /></UFormField><UFormField :label="t('xnode.port')"><UInput v-model.number="endpoint.port" type="number" min="1" max="65535" class="w-full" /></UFormField><USwitch v-model="endpoint.enabled" :label="t('common.enabled')" /><USwitch v-model="endpoint.hidden" :label="t('xnode.hiddenEndpoint')" /><XNodeEndpointOptions v-model="endpoint.overrides" /><UButton type="submit" :loading="busy" :disabled="!endpoint.nodeId || !endpoint.inboundTag" :label="t('common.save')" class="justify-self-end" /></form></template></UModal>
   </div>
 </template>
 

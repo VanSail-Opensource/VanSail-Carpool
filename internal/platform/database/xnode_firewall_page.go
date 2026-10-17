@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"go4.org/netipx"
+	"net/netip"
 	"time"
 )
 
@@ -87,34 +89,72 @@ func (s *Store) FirewallBans(ctx context.Context, limit int) ([]xnode.FirewallBa
 	}
 	return result, rows.Err()
 }
+
+// FirewallPrefixes projects effective bans while retaining durable audit evidence.
 func (s *Store) FirewallPrefixes(ctx context.Context, visit func([]string) error) error {
-	cursor := ""
-	for {
-		rows, err := s.db.QueryContext(ctx, `SELECT prefix FROM xnode_firewall_bans WHERE released_version=0 AND prefix>? ORDER BY prefix LIMIT 512`, cursor)
-		if err != nil {
-			return err
-		}
-		var page []string
-		for rows.Next() {
-			var p string
-			if err = rows.Scan(&p); err != nil {
-				break
-			}
-			page = append(page, p)
-		}
-		if err == nil {
-			err = rows.Err()
-		}
-		rows.Close()
-		if err != nil {
-			return err
-		}
-		if len(page) == 0 {
-			return nil
-		}
-		if err = visit(page); err != nil {
-			return err
-		}
-		cursor = page[len(page)-1]
+	var builder netipx.IPSetBuilder
+	rows, err := s.db.QueryContext(ctx, `SELECT prefix FROM xnode_firewall_bans WHERE released_version=0`)
+	if err != nil {
+		return err
 	}
+	for rows.Next() {
+		var raw string
+		if err = rows.Scan(&raw); err != nil {
+			break
+		}
+		prefix, parseErr := netip.ParsePrefix(raw)
+		if parseErr != nil {
+			err = parseErr
+			break
+		}
+		builder.AddPrefix(prefix)
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	rows, err = s.db.QueryContext(ctx, `SELECT ip FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at>?`, stamp(time.Now().UTC()))
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var raw string
+		if err = rows.Scan(&raw); err != nil {
+			break
+		}
+		ip, parseErr := netip.ParseAddr(raw)
+		if parseErr != nil {
+			err = parseErr
+			break
+		}
+		builder.Remove(ip)
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	effective, err := builder.IPSet()
+	if err != nil {
+		return err
+	}
+	page := make([]string, 0, 512)
+	for _, prefix := range effective.Prefixes() {
+		page = append(page, prefix.String())
+		if len(page) == 512 {
+			if err = visit(page); err != nil {
+				return err
+			}
+			page = make([]string, 0, 512)
+		}
+	}
+	if len(page) > 0 {
+		return visit(page)
+	}
+	return nil
 }

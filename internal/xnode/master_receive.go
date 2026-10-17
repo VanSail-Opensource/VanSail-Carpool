@@ -15,7 +15,8 @@ import (
 func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Message) error {
 	switch message.Type {
 	case "state.request":
-		return m.syncNode(ctx, peer, true)
+		m.requestSync(peer)
+		return nil
 	case "state.accepted", "state.applied":
 		peer.mu.Lock()
 		if message.Revision > peer.revision {

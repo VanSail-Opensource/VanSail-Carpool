@@ -15,6 +15,7 @@ import (
 )
 
 type Service struct {
+	policyAssets         *policyAssets
 	localCompileRevision atomic.Int64
 	repo                 Repository
 	settings             Settings
@@ -30,7 +31,9 @@ type Service struct {
 }
 
 func NewService(repo Repository, settings Settings, vault *secret.Vault, publicURL *url.URL, validationQueue *upstreamqueue.Queue) *Service {
-	return &Service{repo: repo, settings: settings, vault: vault, publicURL: publicURL, validationQueue: validationQueue, now: time.Now}
+	service := &Service{repo: repo, settings: settings, vault: vault, publicURL: publicURL, validationQueue: validationQueue, now: time.Now}
+	service.policyAssets = &policyAssets{publish: func() { service.localCompileRevision.Add(1) }}
+	return service
 }
 
 // SetLegacyProxies attaches the temporary, queued subscription bridge at bootstrap.

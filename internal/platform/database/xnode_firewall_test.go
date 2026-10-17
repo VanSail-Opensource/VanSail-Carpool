@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"net/netip"
 	"sync"
 	"testing"
 	"time"
@@ -108,11 +109,33 @@ func TestFirewallPaidExemptionDebitsOnceAndPreservesEvidence(t *testing.T) {
 	if err != nil || len(page.Bans) != 1 || len(page.Exemptions) != 1 || page.Bans[0].Prefix != "2001:4860:1234:5678::/64" {
 		t.Fatalf("exemption erased evidence: %+v %v", page, err)
 	}
+	containsEffective := func(raw string) bool {
+		t.Helper()
+		address := netip.MustParseAddr(raw)
+		found := false
+		if err := store.FirewallPrefixes(ctx, func(prefixes []string) error {
+			for _, prefix := range prefixes {
+				if netip.MustParsePrefix(prefix).Contains(address) {
+					found = true
+				}
+			}
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return found
+	}
+	if containsEffective(event.IP) || !containsEffective("2001:4860:1234:5678::9") {
+		t.Fatal("paid exact exemption did not update effective Abuse membership")
+	}
 	if err = store.SweepFirewall(ctx, now.Add(25*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	page, _, err = store.FirewallPage(ctx, 0, member.Version+1, true, "", 256)
 	if err != nil || len(page.Exemptions) != 0 || len(page.Bans) != 1 {
 		t.Fatalf("expiry did not restore blacklist: %+v %v", page, err)
+	}
+	if !containsEffective(event.IP) {
+		t.Fatal("exemption expiry did not restore effective Abuse membership")
 	}
 }

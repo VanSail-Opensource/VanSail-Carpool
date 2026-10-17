@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, provide } from 'vue'
 import { en, zh_cn } from '@nuxt/ui/locale'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/i18n'
+import { adminOperationsApi } from '@/api/adminOperations'
+import { operationReceiptLoaderKey } from '@/composables/operationReceiptLoader'
 import BrowserConsole from './BrowserConsole.vue'
 import { useBrowserSession } from './session'
 
 const route = useRoute()
+provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)
 const session = useBrowserSession()
 const { t, locale } = useI18n()
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)

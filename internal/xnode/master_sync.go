@@ -14,6 +14,20 @@ func (m *Master) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	identities, err := m.service.repo.XNodeIdentities(ctx)
+	if err != nil {
+		return err
+	}
+	paid := map[int]bool{}
+	for _, identity := range identities {
+		if identity.UserID != "" {
+			paid[int(identity.ProxyUserID)] = true
+		}
+	}
+	native, err := m.service.nativeAvailability(ctx)
+	if err != nil {
+		return err
+	}
 	now := m.service.now()
 	m.mu.Lock()
 	totals := map[int]int64{}
@@ -21,16 +35,18 @@ func (m *Master) reconcile(ctx context.Context) error {
 	for id, peer := range m.peers {
 		peers = append(peers, peer)
 		snapshot := m.live[id]
-		if freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds) {
+		if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
 			for user, count := range snapshot.report.Users.Connections {
-				totals[user] += int64(count)
+				if paid[user] {
+					totals[user] += int64(count)
+				}
 			}
 		}
 	}
 	blocks := map[int]bool{}
 	if global.ConnectionLimit > 0 {
 		for user, count := range totals {
-			if count > int64(global.ConnectionLimit) {
+			if count >= int64(global.ConnectionLimit) {
 				blocks[user] = true
 			}
 		}
@@ -38,8 +54,19 @@ func (m *Master) reconcile(ctx context.Context) error {
 	m.globalBlocks = blocks
 	m.mu.Unlock()
 	for _, peer := range peers {
-		if err = m.syncNode(ctx, peer, false); err != nil && ctx.Err() != nil {
-			return err
+		peer.mu.Lock()
+		force := peer.forceSync
+		peer.forceSync = false
+		peer.mu.Unlock()
+		if err = m.syncNode(ctx, peer, force); err != nil {
+			if force {
+				peer.mu.Lock()
+				peer.forceSync = true
+				peer.mu.Unlock()
+			}
+			if ctx.Err() != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -80,6 +80,9 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if err != nil {
 		return wire.Config{}, err
 	}
+	for i := range users {
+		applyBandwidth(&users[i], settings.Bandwidth)
+	}
 	customizations, err := s.repo.XNodeCustomizations(ctx, nodeID)
 	if err != nil {
 		return wire.Config{}, err
@@ -162,6 +165,11 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 		return wire.Config{}, err
 	}
 	config := wire.Config{Xray: nativeJSON, Users: users, Providers: global.Providers, Certificates: settings.Certificates, InboundCertificates: settings.InboundCertificates, DDNS: settings.DDNS, DNS: settings.DNS, Firewall: settings.Firewall, BlockedPorts: ports, AssetHashes: hashes, Updates: global.Updates, Telemetry: global.Telemetry, Torrent: global.Torrent, MemberOutbounds: memberTags}
+	config.BlockedDomains = global.BlockedDomains
+	config.Firewall.SourceGeoIP, err = s.sourceGeoIP(ctx, global, settings.Firewall, nativeJSON)
+	if err != nil {
+		return config, err
+	}
 	if err = config.Validate(); err != nil {
 		return config, ErrInvalid
 	}

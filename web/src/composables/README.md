@@ -72,3 +72,7 @@ separate. Action quotes and permission decisions still await the backend.
 
 `useTelegramSettingsButton.ts` owns the native Settings button with SDK discovery and lifecycle cleanup. Reset automation now belongs to the Settings page instead of `usePurchaseOperations.ts`.
 - `useIPLookupAvailability.ts` shares account-scoped feature availability across shell and Around TX entrances.
+
+`operationReceiptLoader.ts` defines the experience-owned receipt loader injection contract. `useOperationReceipt.ts` and `useDurableCommand.ts` accept injected/explicit loaders while retaining interval compatibility, disposal and retry limits. BrowserApp provides the signed admin operation reader; Mini App callers retain member-scoped reads. No session or signing state is shared between experiences.
+
+`operationReceiptLoader.test.ts` verifies experience-injected polling and disposal without falling back to the member operation reader. It runs in hosted frontend regressions.

@@ -153,3 +153,5 @@ file instead.
 - `081_xnode_identity_routing.sql`: Migrates routing ownership to native identity references while preserving existing ciphertext scopes.
 
 `082_xnode_firewall.sql` persists active enforcement generations, compressed participants and expiry acknowledgments, per-namespace report cursors, immutable exemption grants and delivered versions. It does not persist connection telemetry or mirror external proxy inventories.
+
+`083_xnode_zero_multiplier.sql` allows explicit zero node/rate multipliers while preserving all rows and historical rate boundaries. Startup verifies a boundary backup and applies the rebuild with FK checks and schema-object restoration.

@@ -5,8 +5,10 @@ import { localizedError } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { operationIsActive, useOperationReceipt } from './useOperationReceipt'
+import type { OperationReceiptLoader } from './operationReceiptLoader'
 
 interface DurableCommandOptions {
+  loadReceipt?: OperationReceiptLoader
   errorKey: string
   onTerminal?: (receipt: OperationReceipt, commandId: string) => void | Promise<void>
 }
@@ -20,7 +22,7 @@ export function useDurableCommand(options: DurableCommandOptions) {
   const attempts = new Map<string, string>()
   const commandByOperation = new Map<string, string>()
   const notifiedOperations = new Set<string>()
-  const tracker = useOperationReceipt()
+  const tracker = useOperationReceipt(1500, options.loadReceipt)
   const latestExecution = createLatestRequest()
 
   const busy = computed(() => submitting.value || operationIsActive(tracker.receipt.value?.status))

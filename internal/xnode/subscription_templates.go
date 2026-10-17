@@ -173,7 +173,7 @@ func (s *Service) PreviewSubscriptionTemplate(item subscription.Template) ([]byt
 		if err != nil {
 			return nil, ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}, nil
 		}
-		result = ValidateConfigurationDocument(validationDocument)
+		result = ValidateClientConfigurationDocument(validationDocument)
 	}
 	return raw, result, nil
 }

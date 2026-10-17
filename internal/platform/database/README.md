@@ -464,3 +464,11 @@ Native rollover calculations retain `native-term-v1` through the renewal transac
 - `xnode_named_services.go`: Atomically saves standalone encrypted terms, authorization and quota without rewriting usage or settled periods.
 
 Firewall operational storage: `xnode_firewall_tx.go` owns atomic writes, bounded compressed participant bitmaps and the existing coalesced outbox. `xnode_firewall_members.go` tracks fleet versions; `xnode_firewall_participants.go` joins delivered pages; `xnode_firewall_events.go` commits monotonic replay cursors and master authorization. `xnode_firewall_page.go` reads version-bound snapshots without holding transactions over RPC. `xnode_firewall_sources.go` stores generation metadata only and prunes operational history. `xnode_firewall_retirement.go` retires disabled/deleted participants in bounded pages while offline active members remain pending. `xnode_firewall_purchase.go` atomically debits, appends the ledger, grants an exact-IP exemption and queues delivery. `xnode_firewall_test.go` covers replay, all-node expiry, concurrent purchase deduplication and retained proxy evidence.
+
+`xnode_firewall_page.go` projects effective compact restriction prefixes after subtracting active exact-IP exemptions. It retains the underlying immutable detection/audit evidence and restores classification eligibility when the exemption ends; IP ranges are never enumerated.
+
+`table_migration.go` reuses one guarded referenced-table rebuild path for USDT and native rate upgrades, preserving named indexes/triggers and restoring verified FK enforcement before pool reuse. `xnode_zero_migration.go` creates and verifies the pre-upgrade backup for native zero multipliers.
+
+`xnode_zero_rate_test.go` covers raw usage on free nodes, immutable priced ranges and rejection of negative rates. Rate changes start after the latest committed cursor so late flush results cannot rewrite settled pricing.
+
+`xnode_zero_migration_test.go` covers upgrade backups, foreign-key restoration, dependent views/indexes, retained group references and compile invalidation triggers.

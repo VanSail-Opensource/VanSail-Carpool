@@ -81,7 +81,7 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	cached := s.pools[key]
 	if cached != nil && cached.expires.After(time.Now()) {
 		s.mu.Unlock()
-		return cached.retain(), nil
+		return s.detectedPool(cached.retain()), nil
 	}
 	if f := s.flights[key]; f != nil {
 		s.mu.Unlock()
@@ -92,7 +92,7 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 			if f.pool == nil {
 				return nil, f.err
 			}
-			return f.pool.retain(), f.err
+			return s.detectedPool(f.pool.retain()), f.err
 		}
 	}
 	f := &poolFlight{done: make(chan struct{})}
@@ -114,7 +114,7 @@ func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error
 	close(f.done)
 	s.mu.Unlock()
 	if err == nil {
-		return p.retain(), nil
+		return s.detectedPool(p.retain()), nil
 	}
 	return p, err
 }

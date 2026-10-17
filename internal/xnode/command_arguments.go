@@ -8,6 +8,11 @@ import (
 func (s *Service) commandArguments(ctx context.Context, node string, request CommandRequest) (map[string]any, error) {
 	args := map[string]any{}
 	switch request.Name {
+	case "geodata.refresh":
+		s.invalidatePolicyAssets()
+		if err := s.master.Sync(ctx, node); err != nil {
+			return nil, err
+		}
 	case "ddns.run":
 		args["job_id"] = request.JobID
 	case "update.install":

@@ -28,6 +28,7 @@ func (s *Service) withCompileReads() *Service {
 	repo := &compileReads{Repository: s.repo, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}}
 	next := NewService(repo, s.settings, s.vault, s.publicURL, s.validationQueue)
 	next.master, next.now, next.legacyProxies = s.master, s.now, s.legacyProxies
+	next.policyAssets = s.policyAssets
 	return next
 }
 

@@ -26,9 +26,6 @@ func (s *Service) serviceUser(ctx context.Context, identity Identity, node Node,
 		}
 		user.AccountingPeriod = period.ID
 		user.ConnectionLimit, user.SpeedLimitMbps = 0, 0
-		if s.master != nil {
-			user.BlockNew = s.master.Blocked(user.ID)
-		}
 	}
 	bindings, err := s.serviceBindings(ctx, identity, credentials.ServiceAccess)
 	if err != nil {

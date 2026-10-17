@@ -10,6 +10,13 @@ import (
 
 func TestNodeLocalGeodataValidationCoversDNSAndSourceMatchers(t *testing.T) {
 	raw := json.RawMessage(`{"inbounds":[],"outbounds":[{"tag":"direct","protocol":"freedom"}],"dns":{"servers":[{"address":"1.1.1.1","domains":["geosite:youtube"],"expectedIPs":["geoip:cn"]}]},"routing":{"rules":[{"type":"field","sourceIP":["geoip:cn"],"outboundTag":"direct"},{"type":"field","domain":["geosite:youtube"],"outboundTag":"direct"}]}}`)
+	if result := xnode.ValidateConfigurationDocument(raw); result.Valid {
+		t.Fatal("agent document accepted GeoIP selectors")
+	}
+	if result := xnode.ValidateClientConfigurationDocument(raw); !result.Valid {
+		t.Fatalf("client routing was subjected to agent GeoIP policy: %+v", result)
+	}
+	raw = json.RawMessage(`{"inbounds":[],"outbounds":[{"tag":"direct","protocol":"freedom"}],"dns":{"servers":[{"address":"1.1.1.1","domains":["geosite:youtube"],"expectedIPs":["1.1.1.0/24"]}]},"routing":{"rules":[{"type":"field","sourceIP":["1.1.1.0/24"],"outboundTag":"direct"},{"type":"field","domain":["geosite:youtube"],"outboundTag":"direct"}]}}`)
 	before := string(raw)
 	for _, result := range []xnode.ValidationResult{
 		xnode.ValidateConfigurationDocument(raw),

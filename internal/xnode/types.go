@@ -59,6 +59,9 @@ type Snippet struct {
 }
 
 type GlobalConfig struct {
+	GeodataIntervalHours   *int                     `json:"geodataIntervalHours,omitempty"`
+	SourceGeoIP            SourceGeoIPConfig        `json:"sourceGeoIp"`
+	BlockedDomains         []string                 `json:"blockedDomains"`
 	FirewallUnbanPrice     string                   `json:"firewallUnbanPrice"`
 	FirewallExemptionHours int                      `json:"firewallExemptionHours"`
 	ConnectionLimit        int                      `json:"connectionLimit"`
@@ -77,6 +80,7 @@ type GlobalConfig struct {
 }
 
 type NodeSettings struct {
+	Bandwidth           *BandwidthPolicy            `json:"bandwidth,omitempty"`
 	DDNS                []wire.DDNSJob              `json:"ddns"`
 	Certificates        map[string]wire.Certificate `json:"certificates"`
 	InboundCertificates map[string]string           `json:"inboundCertificates"`

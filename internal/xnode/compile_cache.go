@@ -43,6 +43,11 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, force
 			next = *user.ValidUntil
 		}
 	}
+	if config.Firewall.SourceGeoIP != nil {
+		if refresh := m.service.policyRefreshAt(); !refresh.IsZero() && (next.IsZero() || refresh.Before(next)) {
+			next = refresh
+		}
+	}
 	// Never publish a candidate compiled across a concurrently committed change.
 	after, _, err := repo.XNodeCompileVersion(ctx, now)
 	if err != nil {

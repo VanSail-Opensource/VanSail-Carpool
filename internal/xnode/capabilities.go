@@ -1,9 +1,32 @@
 package xnode
 
-import wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+import (
+	"encoding/json"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+)
 
 func configurationCapabilities(config wire.Config, advertised []string) error {
 	required := []string{}
+	if config.Firewall.SourceGeoIP != nil {
+		required = append(required, "source_geoip_firewall_v1")
+	}
+	if len(config.BlockedDomains) > 0 {
+		required = append(required, "shared_domain_blocks_v1")
+	}
+	for _, user := range config.Users {
+		if len(user.TransitCredentials) > 0 {
+			required = append(required, "transit_credentials_v1")
+			break
+		}
+	}
+	var native struct {
+		Geodata struct {
+			IntervalHours *int `json:"interval_hours"`
+		} `json:"geodata"`
+	}
+	if json.Unmarshal(config.Xray, &native) == nil && native.Geodata.IntervalHours != nil {
+		required = append(required, "geodata_interval_v1")
+	}
 	if config.DNS.Redirect {
 		required = append(required, "xray_scoped_dns_v1")
 	}

@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { computed, reactive, ref, shallowRef } from 'vue'
+import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
 import { xnodeApi, type XNode, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
 import XNodeCommands from './XNodeCommands.vue'
+import { createLatestRequest } from '@/utils/latestRequest'
 
 const props = defineProps<{ nodes: XNode[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const { t } = useI18n()
 const editing = shallowRef(false)
 const loading = shallowRef(false)
+const loaded = shallowRef(false)
+const latest = createLatestRequest()
+let controller: InstanceType<typeof globalThis.AbortController> | undefined
+watch(editing, open => { if (!open) { controller?.abort(); latest.invalidate(); loaded.value = false } })
+onScopeDispose(() => { controller?.abort(); latest.dispose() })
 const settingsValid = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const enrollment = shallowRef<XNodeEnrollment | null>(null)
@@ -24,6 +30,11 @@ const inbounds = computed(() => {
 })
 function closeEnrollment(value: boolean): void { if (!value) enrollment.value = null }
 async function edit(node?: XNode): Promise<void> {
+  if (props.busy) return
+  controller?.abort()
+  controller = new globalThis.AbortController()
+  const ticket = latest.begin()
+  loading.value = false; loaded.value = !node
   for (const key of Object.keys(draft)) delete draft[key as keyof XNode]
   settingsValid.value = true
   Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', multiplier: 1, configId: props.configurations[0]?.id ?? '' }, node ?? {})
@@ -31,14 +42,15 @@ async function edit(node?: XNode): Promise<void> {
   enrollment.value = null; error.value = null; editing.value = true
   if (!node) return
   loading.value = true
-  try { settings.value = (await xnodeApi.node(node.id)).settings }
-  catch (caught) { error.value = localizedError(caught, 'xnode.loadFailed') }
-  finally { loading.value = false }
+  try { const value = await xnodeApi.node(node.id, controller.signal); if (latest.isCurrent(ticket)) { settings.value = value.settings; loaded.value = true } }
+  catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'xnode.loadFailed') }
+  finally { if (latest.isCurrent(ticket)) loading.value = false }
 }
 async function save(): Promise<void> {
-  if (loading.value || error.value || !settingsValid.value) return
+  if (loading.value || !loaded.value || props.busy || !settingsValid.value) return
   if (await props.perform(() => xnodeApi.saveNode(draft, settings.value))) editing.value = false
 }
+function retryLoad(): void { const node = props.nodes.find(item => item.id === draft.id); if (node) void edit(node) }
 async function enroll(node: XNode): Promise<void> {
   error.value = null
   try { enrollment.value = await xnodeApi.enroll(node.id) }
@@ -60,6 +72,7 @@ async function enroll(node: XNode): Promise<void> {
     <UModal v-model:open="editing" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }">
       <template #body>
         <UProgress v-if="loading" />
+        <div v-else-if="!loaded" class="grid gap-3"><UAlert color="warning" :title="error ?? t('xnode.loadFailed')" /><UButton class="justify-self-start" variant="outline" color="neutral" :label="t('common.tryAgain')" @click="retryLoad" /></div>
         <form v-else class="xnode-form" @submit.prevent="save">
           <UAlert v-if="saveError" color="warning" :title="saveError" />
           <div class="xnode-fields">
@@ -67,11 +80,11 @@ async function enroll(node: XNode): Promise<void> {
             <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>
             <UFormField :label="t('xnode.country')"><UInput v-model="draft.countryCode" maxlength="2" class="w-full" /></UFormField>
             <UFormField :label="t('xnode.provider')"><UInput v-model="draft.providerName" class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.multiplier')"><UInput v-model.number="draft.multiplier" type="number" min="0.000001" max="1000" step="0.01" class="w-full" /></UFormField>
+            <UFormField :label="t('xnode.multiplier')"><UInput v-model.number="draft.multiplier" type="number" min="0" max="1000" step="0.000001" required class="w-full" /></UFormField>
             <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
           </div>
           <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" @valid="settingsValid = $event" />
-          <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!settingsValid" :label="t('common.save')" /></div>
+          <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || busy" :label="t('common.save')" /></div>
         </form>
       </template>
     </UModal>

@@ -5,7 +5,9 @@ import { useI18n } from '@/i18n'
 import XNodeDDNSSettings from './XNodeDDNSSettings.vue'
 import XNodeCertificateSettings from './XNodeCertificateSettings.vue'
 import XNodeFirewallRules from './XNodeFirewallRules.vue'
-import XNodeJsonEditor from '@/components/common/JsonDocumentField.vue'
+import XNodeFirewallFields from './XNodeFirewallFields.vue'
+import XNodeDNSSettings from './XNodeDNSSettings.vue'
+import XNodeBandwidthSettings from './XNodeBandwidthSettings.vue'
 
 const model = defineModel<XNodeSettings>({ required: true })
 defineProps<{ inbounds?: string[] }>()
@@ -21,8 +23,9 @@ const firewall = computed({ get: () => model.value.firewall ?? { enabled: false,
   <div class="xnode-operational">
     <details><summary>{{ t('xnode.ddns') }}</summary><XNodeDDNSSettings v-model="model" /></details>
     <details><summary>{{ t('xnode.certificates') }}</summary><XNodeCertificateSettings v-model="model" :inbounds="inbounds" /></details>
-    <details><summary>{{ t('xnode.dns') }}</summary><div class="grid gap-4 py-4"><p class="text-sm text-muted">{{ t('xnode.scopedDnsHint') }}</p><USwitch v-model="dns.redirect" :label="t('xnode.dnsRedirect')" /></div></details>
-    <details><summary>{{ t('xnode.firewall') }}</summary><div class="grid gap-4 py-4"><XNodeFirewallRules v-model="firewall" /><XNodeJsonEditor v-model="firewall" :label="t('xnode.firewallPolicy')" :rows="12" @valid="firewallValid = $event" /></div></details>
+    <details><summary>{{ t('xnode.dns') }}</summary><XNodeDNSSettings v-model="dns" /></details>
+    <details><summary>{{ t('nodeForms.bandwidth') }}</summary><XNodeBandwidthSettings v-model="model" /></details>
+    <details><summary>{{ t('xnode.firewall') }}</summary><div class="grid gap-4 py-4"><XNodeFirewallRules v-model="firewall" /><XNodeFirewallFields v-model="firewall" @valid="firewallValid = $event" /></div></details>
   </div>
 </template>
 

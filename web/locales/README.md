@@ -10,3 +10,5 @@ placeholder parity on every build.
 `ip-lookup-checks.json` owns proxy inventories, background reminders, subnet coverage, full port probes and refresh quota copy.
 
 `en/member-nodes.json` and `zh-CN/member-nodes.json` localize live usage, limitations and member routing controls.
+
+`node-forms.json` owns matching English/Chinese operational form, source-filter, interval, provider and bandwidth labels.

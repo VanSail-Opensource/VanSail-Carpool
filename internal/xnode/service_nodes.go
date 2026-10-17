@@ -14,7 +14,11 @@ import (
 func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings) (Node, error) {
 	normalizeNodeSettings(&settings)
 	settings.Firewall.MasterControlled = false // negotiated per authenticated peer
-	if strings.TrimSpace(node.Name) == "" || len(node.Name) > 128 || node.ConfigID == "" || math.IsNaN(node.Multiplier) || math.IsInf(node.Multiplier, 0) || node.Multiplier <= 0 || node.Multiplier > 1000 {
+	settings.Firewall.SourceGeoIP = nil        // only the master may resolve this projection
+	if err := validateBandwidth(settings.Bandwidth); err != nil {
+		return node, err
+	}
+	if strings.TrimSpace(node.Name) == "" || len(node.Name) > 128 || node.ConfigID == "" || math.IsNaN(node.Multiplier) || math.IsInf(node.Multiplier, 0) || node.Multiplier < 0 || node.Multiplier > 1000 || float64(int64(math.Round(node.Multiplier*float64(MultiplierScale))))/float64(MultiplierScale) != node.Multiplier {
 		return node, ErrInvalid
 	}
 	if len(node.CountryCode) != 0 && len(node.CountryCode) != 2 {

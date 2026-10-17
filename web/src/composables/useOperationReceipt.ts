@@ -1,8 +1,9 @@
-import { computed, onScopeDispose, readonly, shallowRef } from 'vue'
+import { computed, getCurrentInstance, inject, onScopeDispose, readonly, shallowRef } from 'vue'
 
 import { memberOperationsApi } from '@/api/memberOperations'
 import type { OperationReceipt, OperationStatus } from '@/api/types'
 import { localizedError } from '@/i18n'
+import { operationReceiptLoaderKey, type OperationReceiptLoader } from './operationReceiptLoader'
 
 const activeStatuses = new Set<OperationStatus>(['queued', 'processing'])
 
@@ -10,7 +11,8 @@ export function operationIsActive(status: OperationStatus | undefined): boolean 
   return status !== undefined && activeStatuses.has(status)
 }
 
-export function useOperationReceipt(intervalMilliseconds = 1500) {
+export function useOperationReceipt(intervalMilliseconds = 1500, loader?: OperationReceiptLoader) {
+  const loadReceipt = loader ?? (getCurrentInstance() ? inject(operationReceiptLoaderKey, memberOperationsApi.getOperation) : memberOperationsApi.getOperation)
   const receipt = shallowRef<OperationReceipt | null>(null)
   const polling = shallowRef(false)
   const checking = shallowRef(false)
@@ -37,7 +39,7 @@ export function useOperationReceipt(intervalMilliseconds = 1500) {
     if (!operationId || checking.value || expectedVersion !== version) return
     checking.value = true
     try {
-      const next = await memberOperationsApi.getOperation(operationId)
+      const next = await loadReceipt(operationId)
       if (expectedVersion !== version) return
       receipt.value = next
       failures = 0

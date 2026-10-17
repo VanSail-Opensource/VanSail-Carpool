@@ -50,6 +50,10 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		_ = db.Close()
 		return nil, err
 	}
+	if err := backupBeforeZeroMultiplierMigration(ctx, db, path); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
 	if err := migrate(ctx, db); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -94,9 +98,9 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
 		}
-		if entry.Name() == usdtMigration {
-			if err := migrateUSDT(ctx, db, script); err != nil {
-				return fmt.Errorf("apply USDT migration: %w", err)
+		if entry.Name() == usdtMigration || entry.Name() == zeroMultiplierMigration {
+			if err := migrateReferencedTables(ctx, db, script, entry.Name()); err != nil {
+				return fmt.Errorf("apply table migration %s: %w", entry.Name(), err)
 			}
 			continue
 		}

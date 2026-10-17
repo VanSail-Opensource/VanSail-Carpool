@@ -24,6 +24,7 @@ export interface AdminCatalogOptions {
 const keyHeader = (key: string) => ({ 'Idempotency-Key': key })
 
 export const adminOperationsApi = {
+  getOperation: (operationId: string) => request<OperationReceipt>(`/api/v1/admin/operations/${encodeURIComponent(operationId)}`, { cache: 'no-store' }),
   getUser: (userId: string) => request<AdminUserDetail>(`/api/v1/admin/users/${encodeURIComponent(userId)}`),
   getEntitlementRefundQuote: (userId: string, entitlementId: string) => request<AdminEntitlementRefundQuote>(`/api/v1/admin/users/${encodeURIComponent(userId)}/entitlements/${encodeURIComponent(entitlementId)}/refund`, { cache: 'no-store' }),
   unblockIP: (userId: string, blockId: string, key: string) =>

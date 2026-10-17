@@ -7,6 +7,7 @@ import "encoding/json"
 // background repair; terminal reports drop it.
 func EncodeReport(r Report) ([]byte, error) {
 	foldLegacy(&r, DefaultConfig())
+	r = withoutDetectedReport(r)
 	if r.Status != "processing" && r.Status != "partial" {
 		r.Checkpoint = nil
 	}

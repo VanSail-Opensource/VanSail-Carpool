@@ -11,7 +11,8 @@ import (
 )
 
 func DefaultGlobal() GlobalConfig {
-	return GlobalConfig{Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 5}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
+	hours := 24
+	return GlobalConfig{GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 5}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
 }
 
 func DecodeGlobal(raw string) (GlobalConfig, error) {
@@ -19,6 +20,7 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	if strings.TrimSpace(raw) == "" {
 		return config, nil
 	}
+	config.GeodataIntervalHours = nil // Saved legacy cron/disabled schedules require explicit conversion.
 	if err := wire.Decode([]byte(raw), &config); err != nil {
 		return config, ErrInvalid
 	}
@@ -28,6 +30,9 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	return config, nil
 }
 func ValidateGlobal(config GlobalConfig) error {
+	if err := validateNativeGlobal(config); err != nil {
+		return err
+	}
 	if config.FirewallExemptionHours < 0 || config.FirewallExemptionHours > 8760 {
 		return ErrInvalid
 	}
@@ -74,7 +79,7 @@ func GlobalWire(config GlobalConfig, native map[string]any) ([]wire.PortRange, m
 	}
 	assets := []map[string]string{}
 	hashes := map[string]string{}
-	for _, asset := range []struct{ file, url, hash string }{{"geoip.dat", config.GeoIPURL, config.GeoIPHash}, {"geosite.dat", config.GeoSiteURL, config.GeoSiteHash}} {
+	for _, asset := range []struct{ file, url, hash string }{{"geosite.dat", config.GeoSiteURL, config.GeoSiteHash}} {
 		if asset.url != "" {
 			assets = append(assets, map[string]string{"file": asset.file, "url": asset.url})
 			if asset.hash != "" {
@@ -83,7 +88,13 @@ func GlobalWire(config GlobalConfig, native map[string]any) ([]wire.PortRange, m
 		}
 	}
 	if len(assets) > 0 {
-		native["geodata"] = map[string]any{"assets": assets, "cron": config.GeodataCron}
+		policy := map[string]any{"assets": assets}
+		if config.GeodataIntervalHours != nil {
+			policy["interval_hours"] = *config.GeodataIntervalHours
+		} else if config.GeodataCron != "" {
+			policy["cron"] = config.GeodataCron
+		}
+		native["geodata"] = policy
 	} else {
 		delete(native, "geodata")
 	}

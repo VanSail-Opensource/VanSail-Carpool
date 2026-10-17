@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/VanSail-Opensource/X-Node/pkg/xrayconfig"
+	"strings"
 )
 
 // ValidateCompiled validates expanded users, shared snippets and member rules
 // using the agent's exact core, without starting a listener or reading node files.
 func ValidateCompiled(config wire.Config) ValidationResult {
 	invalid := ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}
-	if config.Validate() != nil {
+	if err := config.Validate(); err != nil {
+		invalid.Detail = validationDetail(err)
 		return invalid
 	}
 	var native map[string]any
@@ -19,6 +21,9 @@ func ValidateCompiled(config wire.Config) ValidationResult {
 		return invalid
 	}
 	needsAgent := nodeLocalAssets(native) || len(config.InboundCertificates) > 0
+	for _, domain := range config.BlockedDomains {
+		needsAgent = needsAgent || strings.HasPrefix(domain, "geosite:")
+	}
 	if len(config.InboundCertificates) > 0 {
 		inbounds, _ := native["inbounds"].([]any)
 		for _, item := range inbounds {
@@ -58,7 +63,13 @@ func ValidateCompiled(config wire.Config) ValidationResult {
 	copy := wire.Clone(config)
 	copy.Xray = data
 	copy.InboundCertificates = nil
-	if xrayconfig.Validate(copy) != nil {
+	for i, domain := range copy.BlockedDomains {
+		if strings.HasPrefix(domain, "geosite:") {
+			copy.BlockedDomains[i] = "full:configuration-validation.invalid"
+		}
+	}
+	if err := xrayconfig.Validate(copy); err != nil {
+		invalid.Detail = validationDetail(err)
 		return invalid
 	}
 	return ValidationResult{Valid: true, NeedsAgentValidation: needsAgent}

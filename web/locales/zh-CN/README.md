@@ -53,3 +53,5 @@ than in Vue templates, composables, or API clients.
 `node-templates.json` localizes template validation, previews, format policy and assignments.
 
 `firewall.json` translates firewall reports, detection controls and paid exemptions with matching placeholders.
+
+- `node-forms.json` localizes typed native operational settings, source filters and bandwidth controls.

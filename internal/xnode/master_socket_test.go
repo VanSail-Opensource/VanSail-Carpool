@@ -24,7 +24,7 @@ func agentSocket(t *testing.T, server *httptest.Server, token, agent string, rev
 	}
 	t.Cleanup(func() { _ = socket.Close() })
 	_ = socket.SetReadDeadline(time.Now().Add(10 * time.Second))
-	if err = socket.WriteJSON(wire.New("agent.hello", "", revision, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Version: "fixture", XrayVersion: "26.10.10", ConfigRevision: revision, Capabilities: []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "config_validation_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"}})); err != nil {
+	if err = socket.WriteJSON(wire.New("agent.hello", "", revision, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Version: "fixture", XrayVersion: "26.10.10", ConfigRevision: revision, Capabilities: []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "config_validation_v1", "measured_user_rates", "sampled_activity_v1", "authorization_expiry", "member_outbound_guards"}})); err != nil {
 		t.Fatal(err)
 	}
 	return socket

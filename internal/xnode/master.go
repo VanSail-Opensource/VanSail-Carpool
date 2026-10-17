@@ -21,6 +21,7 @@ type Master struct {
 	peers                    map[string]*agentPeer
 	live                     map[string]liveSnapshot
 	globalBlocks             map[int]bool
+	stateWake                chan struct{}
 	wg                       sync.WaitGroup
 	operations               int
 	firewallInventory        FirewallInventory
@@ -43,6 +44,7 @@ type agentPeer struct {
 	pending        map[string]chan wire.Message
 	lastControls   map[int]bool
 	compiled       *compiledState // protected by syncMu
+	forceSync      bool           // protected by mu; coalesced by the existing reconciler
 	pong           chan string
 	firewallSyncMu sync.Mutex
 	firewallJoined bool
@@ -51,6 +53,7 @@ type agentPeer struct {
 func NewMaster(service *Service, logger *slog.Logger) *Master {
 	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}}
 	service.master = m
+	m.stateWake = make(chan struct{}, 1)
 	m.firewallWake = make(chan struct{}, 1)
 	return m
 }
@@ -142,12 +145,25 @@ func (m *Master) run() {
 		case <-m.ctx.Done():
 			return
 		case <-tick.C:
-			ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
-			if err := m.reconcile(ctx); err != nil && !errors.Is(err, context.Canceled) {
-				m.logger.Warn("reconcile X-Node state", "error", err)
-			}
-			cancel()
+		case <-m.stateWake:
 		}
+		ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
+		if err := m.reconcile(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			m.logger.Warn("reconcile X-Node state", "error", err)
+		}
+		cancel()
+	}
+}
+
+// requestSync never compiles or waits on external work in the socket reader.
+// It wakes the existing reconciler rather than adding another execution queue.
+func (m *Master) requestSync(peer *agentPeer) {
+	peer.mu.Lock()
+	peer.forceSync = true
+	peer.mu.Unlock()
+	select {
+	case m.stateWake <- struct{}{}:
+	default:
 	}
 }
 

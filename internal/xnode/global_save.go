@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"time"
 
@@ -19,14 +20,17 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	}
 	for name, provider := range next.Providers {
 		old := previous.Providers[name]
-		if provider.Credentials == nil {
-			provider.Credentials = old.Credentials
-		} else {
+		if old.Type == provider.Type {
+			merged := maps.Clone(old.Credentials)
+			if merged == nil {
+				merged = map[string]string{}
+			}
 			for key, value := range provider.Credentials {
-				if value == "" {
-					provider.Credentials[key] = old.Credentials[key]
+				if value != "" {
+					merged[key] = value
 				}
 			}
+			provider.Credentials = merged
 		}
 		next.Providers[name] = provider
 	}

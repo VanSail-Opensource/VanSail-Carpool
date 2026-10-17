@@ -51,6 +51,7 @@ func (s *Service) Candidate(ctx context.Context, nodeID string) (wire.Config, er
 	service := NewService(repository, s.settings, s.vault, s.publicURL, s.validationQueue)
 	service.master = s.master
 	service.now = s.now
+	service.policyAssets = s.policyAssets
 	return service.Compile(ctx, nodeID)
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Store) SetXNodeRate(ctx context.Context, nodeID, agent string, cutoff uint64, multiplier int64) error {
-	if multiplier <= 0 || cutoff >= math.MaxInt64 {
+	if multiplier < 0 || cutoff >= math.MaxInt64 {
 		return xnode.ErrInvalid
 	}
 	s.writeMu.Lock()
@@ -30,10 +30,12 @@ func (s *Store) SetXNodeRate(ctx context.Context, nodeID, agent string, cutoff u
 	if err != nil {
 		return err
 	}
-	if committed < cutoff {
+	if committed < cutoff || committed >= math.MaxInt64 {
 		return xnode.ErrConflict
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES(?,?,?) ON CONFLICT(agent_id,from_sequence) DO UPDATE SET multiplier_fp=excluded.multiplier_fp`, agent, cutoff+1, multiplier)
+	// Reports committed after the flush retain their already-settled price.
+	// Only the next uncommitted sequence may adopt the new multiplier.
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES(?,?,?) ON CONFLICT(agent_id,from_sequence) DO UPDATE SET multiplier_fp=excluded.multiplier_fp`, agent, committed+1, multiplier)
 	if err != nil {
 		return err
 	}

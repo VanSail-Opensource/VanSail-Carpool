@@ -32,6 +32,7 @@
     "ip-lookup",
     "ip-lookup-live",
     "ip-lookup-checks",
-    "api-tokens"
+    "api-tokens",
+    "node-forms"
   ]
 }
