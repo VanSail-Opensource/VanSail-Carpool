@@ -1,0 +1,48 @@
+{
+  "get": {
+    "operationId": "listXNodeFirewallBans",
+    "tags": [
+      "Administration"
+    ],
+    "responses": {
+      "200": {
+        "description": "Firewall state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../openapi.yaml#/components/schemas/XNodeFirewallBan"
+                  }
+                }
+              },
+              "required": [
+                "items"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ]
+  }
+}

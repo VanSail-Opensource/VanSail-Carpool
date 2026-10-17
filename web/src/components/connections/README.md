@@ -1,5 +1,10 @@
 # Connection components
 
+`FirewallExemption.vue` purchases a fleet-wide exact-public-IP exemption through
+`api/firewall.ts`. It shows the quoted TXB price and duration, preserves retry
+idempotency, and reports durable queued delivery separately from actual host state.
+This is independent of existing per-user session IP unblock controls.
+
 - `ConnectionsPage.vue` composes scans, focused dialogs, and cross-refresh after terminal mutations; active blocks remain hidden until the connection scan completes.
 - `ConnectionScanStatus.vue` presents the stable starting and polling surface with localized progress, a reduced-motion-safe radar, and no scan mutations.
 - `ConnectionNodeList.vue` presents provider nodes, recent IP addresses, and one explicit block command per signed handle.

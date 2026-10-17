@@ -59,19 +59,21 @@ type Snippet struct {
 }
 
 type GlobalConfig struct {
-	ConnectionLimit      int                      `json:"connectionLimit"`
-	BlockedPorts         string                   `json:"blockedPorts"`
-	GeoIPURL             string                   `json:"geoIpUrl"`
-	GeoSiteURL           string                   `json:"geoSiteUrl"`
-	GeoIPHash            string                   `json:"geoIpHash"`
-	GeoSiteHash          string                   `json:"geoSiteHash"`
-	GeodataCron          string                   `json:"geodataCron"`
-	Torrent              wire.TorrentPolicy       `json:"torrent"`
-	Telemetry            wire.TelemetryPolicy     `json:"telemetry"`
-	Updates              wire.UpdatePolicy        `json:"updates"`
-	Providers            map[string]wire.Provider `json:"providers"`
-	SpeedtestDownloadURL string                   `json:"speedtestDownloadUrl"`
-	SpeedtestUploadURL   string                   `json:"speedtestUploadUrl"`
+	FirewallUnbanPrice     string                   `json:"firewallUnbanPrice"`
+	FirewallExemptionHours int                      `json:"firewallExemptionHours"`
+	ConnectionLimit        int                      `json:"connectionLimit"`
+	BlockedPorts           string                   `json:"blockedPorts"`
+	GeoIPURL               string                   `json:"geoIpUrl"`
+	GeoSiteURL             string                   `json:"geoSiteUrl"`
+	GeoIPHash              string                   `json:"geoIpHash"`
+	GeoSiteHash            string                   `json:"geoSiteHash"`
+	GeodataCron            string                   `json:"geodataCron"`
+	Torrent                wire.TorrentPolicy       `json:"torrent"`
+	Telemetry              wire.TelemetryPolicy     `json:"telemetry"`
+	Updates                wire.UpdatePolicy        `json:"updates"`
+	Providers              map[string]wire.Provider `json:"providers"`
+	SpeedtestDownloadURL   string                   `json:"speedtestDownloadUrl"`
+	SpeedtestUploadURL     string                   `json:"speedtestUploadUrl"`
 }
 
 type NodeSettings struct {

@@ -3,6 +3,7 @@ package xnode
 import (
 	"encoding/hex"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"net/url"
 	"strings"
 
@@ -27,6 +28,15 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	return config, nil
 }
 func ValidateGlobal(config GlobalConfig) error {
+	if config.FirewallExemptionHours < 0 || config.FirewallExemptionHours > 8760 {
+		return ErrInvalid
+	}
+	if config.FirewallUnbanPrice != "" {
+		price, err := model.ParseTXBMajor(config.FirewallUnbanPrice)
+		if err != nil || price < 0 {
+			return ErrInvalid
+		}
+	}
 	if config.ConnectionLimit < 0 || config.ConnectionLimit > 1000000 {
 		return ErrInvalid
 	}

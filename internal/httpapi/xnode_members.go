@@ -13,6 +13,8 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		return
 	}
 	router.Route("/api/v1/xnode", func(router chi.Router) {
+		router.Get("/firewall/exemption", s.xnodeFirewallQuote)
+		router.Post("/firewall/exemption", s.xnodeFirewallPurchase)
 		router.Get("/metrics", s.xnodeMemberMetrics)
 		router.Get("/subscription", s.xnodeOwnedSubscription)
 		router.Get("/routing/templates", s.xnodeRoutingTemplates)

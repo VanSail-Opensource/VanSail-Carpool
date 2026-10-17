@@ -13,6 +13,7 @@ import (
 
 func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings) (Node, error) {
 	normalizeNodeSettings(&settings)
+	settings.Firewall.MasterControlled = false // negotiated per authenticated peer
 	if strings.TrimSpace(node.Name) == "" || len(node.Name) > 128 || node.ConfigID == "" || math.IsNaN(node.Multiplier) || math.IsInf(node.Multiplier, 0) || node.Multiplier <= 0 || node.Multiplier > 1000 {
 		return node, ErrInvalid
 	}

@@ -1,5 +1,10 @@
 # X-Node administration
 
+`XNodeFirewall.vue` shows shared detection evidence, authoritative deadlines and
+remaining node expiry confirmations. `XNodeFirewallRules.vue` edits report-only
+rule toggles, thresholds, windows and ban duration. Global policy also sets the
+paid exact-IP exemption price and hours; both must be positive to enable purchase.
+
 `XNodeWorkspace.vue` composes the independent browser console's nodes, global
 policy, configurations/snippets, access groups/endpoints and live metrics.
 `useXNodeWorkspace.ts` owns parallel initial reads, saves and visible-page metric

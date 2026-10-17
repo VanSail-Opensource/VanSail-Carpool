@@ -1,0 +1,157 @@
+package xnode
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"time"
+)
+
+// HandleOutbox uses the existing durable dispatcher and per-node send queues.
+// Command waits are deferred, so traffic acknowledgments never await a ban job.
+func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
+	var input struct {
+		NodeID string `json:"nodeId"`
+		Bank   string `json:"bank"`
+	}
+	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.NodeID == "" || (input.Bank != "dynamic" && input.Bank != "sources") {
+		return ErrInvalid
+	}
+	if !hasFirewallCapability(m.Capabilities(input.NodeID)) {
+		return ErrUnavailable
+	}
+	if input.Bank == "sources" {
+		m.mu.Lock()
+		if m.firewallSourcesRunning >= 2 {
+			m.mu.Unlock()
+			return ErrUnavailable
+		}
+		m.firewallSourcesRunning++
+		m.mu.Unlock()
+	}
+	timeout := 5 * time.Minute
+	if input.Bank == "sources" {
+		timeout = 30 * time.Minute
+	}
+	err := m.deferOperation(job, timeout, func(call context.Context) error {
+		if input.Bank == "sources" {
+			defer func() { m.mu.Lock(); m.firewallSourcesRunning--; m.mu.Unlock() }()
+		}
+		return m.deliverFirewall(call, input.NodeID, input.Bank == "sources", job.ID, job.Attempts)
+	})
+	if err != nil && input.Bank == "sources" { // ErrDeferred owns the slot until completion.
+		if !isDeferredFirewall(err) {
+			m.mu.Lock()
+			m.firewallSourcesRunning--
+			m.mu.Unlock()
+		}
+	}
+	return err
+}
+func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool, job string, attempt int) error {
+	repo := m.service.repo.(firewallRepository)
+	m.mu.RLock()
+	peer := m.peers[node]
+	live := m.live[node]
+	m.mu.RUnlock()
+	if peer == nil || !live.report.Synchronized {
+		return ErrUnavailable
+	}
+	desired, settings, err := m.service.Node(ctx, node)
+	if err != nil {
+		return err
+	}
+	owned, err := m.service.NativeOwner(ctx, node)
+	if err != nil {
+		return err
+	}
+	if !owned || !desired.Enabled || !settings.Firewall.Enabled {
+		return nil
+	}
+	member, err := repo.FirewallMember(ctx, node)
+	if err != nil {
+		return err
+	}
+	full := member.Force || member.Applied == 0
+	if !sources && !full && member.Applied >= member.Version {
+		return nil
+	}
+	if sources && !member.Force && member.SourceApplied >= member.SourceVersion {
+		return nil
+	}
+	locked := full || sources
+	if locked {
+		peer.firewallSyncMu.Lock()
+		defer peer.firewallSyncMu.Unlock()
+	}
+	raw, err := m.Command(ctx, node, "", "firewall.bans.get", map[string]any{})
+	if err != nil {
+		return err
+	}
+	var current wire.FirewallState
+	if wire.Decode(raw, &current) != nil || !current.Enabled {
+		return ErrUnavailable
+	}
+	observed := max(current.MasterVersion, current.SourceVersion)
+	if observed > member.Version {
+		if err = repo.ReconcileFirewallMember(ctx, node, true, true, observed); err != nil {
+			return err
+		}
+		member, err = repo.FirewallMember(ctx, node)
+		if err != nil {
+			return err
+		}
+		full = true
+		if !locked {
+			peer.firewallSyncMu.Lock()
+			defer peer.firewallSyncMu.Unlock()
+			locked = true
+		}
+	}
+	identity := fmt.Sprintf("fw-%s-%d", job, attempt)
+	if sources {
+		return m.deliverFirewallSources(ctx, peer, member, current, identity)
+	}
+	cursor := ""
+	index := 0
+	for {
+		page, next, e := repo.FirewallPage(ctx, member.Applied, member.Version, full, cursor, 256)
+		if e != nil {
+			return e
+		}
+		page.SnapshotID = identity
+		page.Index = index
+		page.Final = next == ""
+		command := "firewall.bans.update"
+		if full {
+			command = "firewall.bans.sync"
+		} else if next != "" { // A delta must be atomic at one version: bounded pages use a full staged snapshot.
+			if index == 0 && len(page.Bans)+len(page.Exemptions)+len(page.Remove)+len(page.RemoveExemptions) >= 256 {
+				full = true
+				cursor = ""
+				if !locked {
+					peer.firewallSyncMu.Lock()
+					defer peer.firewallSyncMu.Unlock()
+					locked = true
+				}
+				continue
+			}
+		}
+		if len(page.Bans) > 0 {
+			if e = repo.JoinFirewallParticipants(ctx, node, page.Bans, nil); e != nil {
+				return e
+			}
+		}
+		if _, e = m.Command(ctx, node, "", command, page); e != nil {
+			return e
+		}
+		if next == "" {
+			break
+		}
+		cursor = next
+		index++
+	}
+	return repo.MarkFirewallDelivered(ctx, node, member.Version, false, full, member.Epoch)
+}

@@ -17,6 +17,9 @@ type operationLeaseRepository interface {
 // the agent. Frames still use the existing send queue. Leases remain in SQLite,
 // heartbeat during the wait, and recover normally after a process restart.
 func (m *Master) DeferOperation(job model.OutboxJob, execute func(context.Context) error) error {
+	return m.deferOperation(job, 5*time.Minute, execute)
+}
+func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, execute func(context.Context) error) error {
 	repo, ok := m.service.repo.(operationLeaseRepository)
 	if !ok {
 		return ErrUnavailable
@@ -26,7 +29,7 @@ func (m *Master) DeferOperation(job model.OutboxJob, execute func(context.Contex
 		m.mu.Unlock()
 		return ErrUnavailable
 	}
-	ctx, cancel := context.WithTimeout(m.ctx, 5*time.Minute)
+	ctx, cancel := context.WithTimeout(m.ctx, timeout)
 	m.operations++
 	m.wg.Add(1)
 	m.mu.Unlock()

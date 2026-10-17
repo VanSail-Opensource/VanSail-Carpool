@@ -8,22 +8,23 @@ import (
 )
 
 type NodeMetrics struct {
-	NodeID                 string            `json:"nodeId"`
-	Connected              bool              `json:"connected"`
-	Ready                  bool              `json:"ready"`
-	Synchronized           bool              `json:"synchronized"`
-	Stale                  bool              `json:"stale"`
-	Version                string            `json:"version"`
-	XrayVersion            string            `json:"xrayVersion"`
-	Capabilities           []string          `json:"capabilities"`
-	ReportedAt             *time.Time        `json:"reportedAt"`
-	Machine                json.RawMessage   `json:"machine"`
-	Certificates           json.RawMessage   `json:"certificates"`
-	ActiveConnections      int64             `json:"activeConnections"`
-	UsersOnline            int64             `json:"usersOnline"`
-	UploadBytesPerSecond   float64           `json:"uploadBytesPerSecond"`
-	DownloadBytesPerSecond float64           `json:"downloadBytesPerSecond"`
-	Logs                   []json.RawMessage `json:"logs"`
+	Firewall               *wire.FirewallState `json:"firewall,omitempty"`
+	NodeID                 string              `json:"nodeId"`
+	Connected              bool                `json:"connected"`
+	Ready                  bool                `json:"ready"`
+	Synchronized           bool                `json:"synchronized"`
+	Stale                  bool                `json:"stale"`
+	Version                string              `json:"version"`
+	XrayVersion            string              `json:"xrayVersion"`
+	Capabilities           []string            `json:"capabilities"`
+	ReportedAt             *time.Time          `json:"reportedAt"`
+	Machine                json.RawMessage     `json:"machine"`
+	Certificates           json.RawMessage     `json:"certificates"`
+	ActiveConnections      int64               `json:"activeConnections"`
+	UsersOnline            int64               `json:"usersOnline"`
+	UploadBytesPerSecond   float64             `json:"uploadBytesPerSecond"`
+	DownloadBytesPerSecond float64             `json:"downloadBytesPerSecond"`
+	Logs                   []json.RawMessage   `json:"logs"`
 }
 
 type UserMetrics struct {
@@ -50,6 +51,7 @@ type MetricsSummary struct {
 	FetchedAt              time.Time     `json:"fetchedAt"`
 }
 type liveSnapshot struct {
+	firewall        *wire.FirewallState
 	hello           wire.AgentHello
 	report          wire.TelemetryReport
 	receivedAt      time.Time

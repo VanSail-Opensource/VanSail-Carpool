@@ -59,6 +59,7 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if hello.UpgradePending {
 		return nil
 	}
+	config = firewallForCapabilities(config, hello.Capabilities)
 	if err = configurationCapabilities(config, hello.Capabilities); err != nil {
 		return err
 	}

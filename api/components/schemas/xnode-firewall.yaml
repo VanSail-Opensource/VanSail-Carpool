@@ -1,0 +1,118 @@
+{
+  "XNodeFirewallBan": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "prefix": {
+        "type": "string"
+      },
+      "generation": {
+        "type": "string"
+      },
+      "ip": {
+        "type": "string"
+      },
+      "rule": {
+        "type": "string"
+      },
+      "count": {
+        "type": "string"
+      },
+      "detectedAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "until": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "pendingNodes": {
+        "type": "integer"
+      },
+      "refresh_seconds": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "prefix",
+      "generation",
+      "ip",
+      "rule",
+      "count",
+      "detectedAt",
+      "until",
+      "pendingNodes",
+      "refresh_seconds"
+    ]
+  },
+  "XNodeFirewallQuote": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "price": {
+        "type": "string"
+      },
+      "hours": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "enabled",
+      "price",
+      "hours"
+    ]
+  },
+  "XNodeFirewallPurchase": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "ip": {
+        "type": "string"
+      },
+      "price": {
+        "type": "string"
+      },
+      "hours": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "required": [
+      "ip",
+      "price",
+      "hours"
+    ]
+  },
+  "XNodeFirewallGrant": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "ip": {
+        "type": "string"
+      },
+      "until": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "priceMinor": {
+        "type": "string"
+      },
+      "hours": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "ip",
+      "until",
+      "priceMinor",
+      "hours"
+    ]
+  }
+}

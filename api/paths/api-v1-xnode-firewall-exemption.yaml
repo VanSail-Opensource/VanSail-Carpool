@@ -1,0 +1,70 @@
+{
+  "get": {
+    "operationId": "getXNodeFirewallExemptionQuote",
+    "tags": [
+      "Member operations"
+    ],
+    "responses": {
+      "200": {
+        "description": "Firewall state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeFirewallQuote"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      }
+    }
+  },
+  "post": {
+    "operationId": "purchaseXNodeFirewallExemption",
+    "tags": [
+      "Member operations"
+    ],
+    "responses": {
+      "202": {
+        "description": "Firewall state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeFirewallGrant"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      }
+    },
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/XNodeFirewallPurchase"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "in": "header",
+        "name": "Idempotency-Key",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ]
+  }
+}

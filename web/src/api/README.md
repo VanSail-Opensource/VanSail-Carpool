@@ -49,3 +49,5 @@ commands. Its mutable state and quotes always bypass response snapshots.
 `adminAPITokens.ts` provides typed no-store browser management of administrator API credentials.
 
 - `openapiContract.test.ts` compile-checks reset automation, required squad-node groups, nullable provider fallback and predicted-rollover ownership.
+
+`firewall.ts` owns typed shared-ban reads and idempotent paid exact-IP exemptions. It preserves browser/member session separation through the existing request client.

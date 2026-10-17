@@ -248,3 +248,5 @@ standalone-account subscription metadata and bearer URLs to administrators.
 - `api-v1-admin-xnode-service-identities-id.yaml`: Administrator-only native service identity management.
 - `api-v1-admin-xnode-service-identities-id-rotate.yaml`: Administrator-only native service identity management.
 - `api-v1-admin-xnode-service-identities-id-routing.yaml`: Administrator-only native service identity management.
+
+`api-v1-admin-xnode-firewall-bans.yaml` exposes browser-admin shared detection evidence. `api-v1-xnode-firewall-exemption.yaml` exposes member quotes and idempotent TXB purchases; success means committed queued delivery.

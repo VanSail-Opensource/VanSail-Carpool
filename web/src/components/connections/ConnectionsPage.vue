@@ -7,6 +7,7 @@ import { useConnectionBlocks } from '@/composables/useConnectionBlocks'
 import { useConnectionScan } from '@/composables/useConnectionScan'
 import { t } from '@/i18n'
 import ConnectionBlockDialog from './ConnectionBlockDialog.vue'
+import FirewallExemption from './FirewallExemption.vue'
 import ConnectionBlockList from './ConnectionBlockList.vue'
 import ConnectionNodeList from './ConnectionNodeList.vue'
 import ConnectionScanStatus from './ConnectionScanStatus.vue'
@@ -66,6 +67,7 @@ watch(() => blocks.receipt.value, (receipt) => {
     </header>
 
     <InlineNotice v-if="blocks.receipt.value && !blockDialogOpen && !unblockDialogOpen" :tone="operationTone" :title="$t(`operations.status.${blocks.receipt.value.status}`)">{{ operationMessage }}</InlineNotice>
+    <FirewallExemption />
     <ConnectionBlockList v-if="scan.completed.value" :items="blocks.items.value" :loading="blocks.loading.value" :error="blocks.loadError.value" :disabled="blocks.mutationActive.value" @refresh="blocks.load" @unblock="selectBlock" />
 
     <ConnectionScanStatus v-if="scan.loading.value || scan.polling.value" :starting="scan.loading.value" :progress-percent="scan.progressPercent.value" />

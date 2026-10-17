@@ -51,3 +51,5 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `node-admin.json` supplies node commands, certificate bindings and readable metric labels.
 
 `node-templates.json` localizes template validation, previews, format policy and assignments.
+
+`firewall.json` localizes firewall reports, detection controls and paid exemptions.

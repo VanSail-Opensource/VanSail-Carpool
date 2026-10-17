@@ -51,3 +51,5 @@ than in Vue templates, composables, or API clients.
 `node-admin.json` supplies localized node commands, certificate bindings and metric labels.
 
 `node-templates.json` localizes template validation, previews, format policy and assignments.
+
+`firewall.json` translates firewall reports, detection controls and paid exemptions with matching placeholders.

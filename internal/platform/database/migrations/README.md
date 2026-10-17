@@ -151,3 +151,5 @@ file instead.
 
 - `080_xnode_compile_revision.sql`: Adds desired-state invalidation metadata; routine traffic and acknowledgment writes do not invalidate compiled state.
 - `081_xnode_identity_routing.sql`: Migrates routing ownership to native identity references while preserving existing ciphertext scopes.
+
+`082_xnode_firewall.sql` persists active enforcement generations, compressed participants and expiry acknowledgments, per-namespace report cursors, immutable exemption grants and delivered versions. It does not persist connection telemetry or mirror external proxy inventories.

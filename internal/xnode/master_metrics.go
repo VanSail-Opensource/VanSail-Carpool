@@ -35,6 +35,7 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 		_, connected := m.peers[node.ID]
 		fresh := connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
 		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: append([]json.RawMessage{}, snapshot.logs...)}
+		item.Firewall = snapshot.firewall
 		if !snapshot.receivedAt.IsZero() {
 			at := snapshot.report.Time
 			item.ReportedAt = &at

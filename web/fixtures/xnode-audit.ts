@@ -1,3 +1,4 @@
+import { firewallApi } from '@/api/firewall'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -14,7 +15,7 @@ import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
 setExperience('browser'); initializeBrowserTheme(); setLocale(params.has('zh') ? 'zh-CN' : 'en')
-const trace = { calls: [] as string[], copies: [] as string[], reloads: 0 }
+const trace = { calls: [] as string[], copies: [] as string[], writes: [] as unknown[], reloads: 0 }
 const stamp = '2026-10-15T00:00:00Z'
 const nodes: XNode[] = params.has('empty') ? [] : [
   { id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', multiplier: 1.25, enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
@@ -32,6 +33,12 @@ async function check(name: string): Promise<void> {
 function receipt(kind: string): OperationReceipt { latest = { id: crypto.randomUUID(), kind, status: 'queued', createdAt: stamp, updatedAt: stamp }; return latest }
 xnodeApi.nodes = async () => { await check('nodes'); return { items: structuredClone(nodes) } }
 xnodeApi.node = async id => ({ node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: { primary: { provider: '', config: { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {} } })
+xnodeApi.saveNode = async (node, settings) => {
+  await check('save-node')
+  if (params.has('node-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
+  trace.writes.push(JSON.parse(JSON.stringify({ node, settings })))
+  return { ...nodes[0]!, ...node, id: node.id || 'fixture-created-node' }
+}
 xnodeApi.configurations = async () => ({ items: structuredClone(configurations) })
 xnodeApi.snippets = async () => ({ items: [] })
 xnodeApi.groups = async () => ({ items: params.has('empty') ? [] : [{ id: 'group-one', name: 'Global group', enabled: true, bindings: nodes.map(node => ({ nodeId: node.id, inboundTag: 'paid' })) }] })
@@ -77,6 +84,9 @@ xnodeApi.serviceSubscription = async () => ({ username: 'routing-service', url: 
 xnodeApi.rotateServiceSubscription = async () => { trace.calls.push('rotate-service'); return { url: 'https://panel.example/subscription/rotated-fixture-only' } }
 xnodeApi.serviceRouting = async () => { await check('service-routing'); return { userId: '', nodeId: nodes[0]!.id, proxyUserId: '1099511627776', revision: 0, outbounds: [], routing: [] } }
 xnodeApi.saveServiceRouting = async (_id, _node, part, body) => { trace.calls.push('save-service-' + part); return { ...body, revision: body.revision + 1 } }
+firewallApi.bans = async () => { await check('firewall-bans'); if (params.has('firewall-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: params.has('firewall-empty') ? [] : [{ prefix: '2001:4860:1234:5678::/64', generation: 'fixture-ban', ip: '2001:4860:1234:5678::8', rule: 'xray_tcp_probe', count: '7', detectedAt: stamp, until: '2026-10-20T00:00:00Z', pendingNodes: 2, refresh_seconds: 259200 }] } }
+firewallApi.quote = async () => { await check('firewall-quote'); if (params.has('quote-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { enabled: !params.has('unban-disabled'), price: '1.25', hours: 24 } }
+firewallApi.purchase = async (ip, quote, key) => { await check('firewall-purchase:' + ip + ':' + key); if (params.has('unban-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); return { id: key, ip, priceMinor: '125', hours: quote.hours, until: '2026-10-20T00:00:00Z' } }
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.use(createPinia()).use(createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: XNodeAudit }] })).use(ui).mount('#app')

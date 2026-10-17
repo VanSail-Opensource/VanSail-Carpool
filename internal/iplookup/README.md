@@ -410,3 +410,5 @@ unreferenced generations. Failed refreshes retain unexpired positives without
 extending TTL. Partial/unreadable coverage never certifies a clean miss. Status
 reads remain local and do not traverse inventories or start downloads. Refresh
 settlement logs Go memory, goroutines and cache bytes/allowance.
+
+`firewall_inventory.go` exports borrowed complete immutable source snapshots as bounded CIDR pages; `firewall_disk.go` closes disk rows and releases locks before callbacks. `firewall_detected.go` adds a compressed memory-only detection overlay; paid exemptions retain this evidence. `firewall_inventory_test.go` checks that CIDRs are never expanded. Successful publication wakes the native controller without starting parallel source refreshes.

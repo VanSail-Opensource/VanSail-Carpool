@@ -1,0 +1,39 @@
+{
+  "firewall": {
+    "title": "Firewall",
+    "reportHint": "Shared detections and authorized bans. Expiry waits for every participating node; repeat hits may extend a node's deadline.",
+    "empty": "No active detected bans.",
+    "ip": "Public IP address",
+    "rule": "Detection rule",
+    "hits": "Hits",
+    "detectedAt": "Detected",
+    "deadline": "Requested deadline",
+    "pendingNodes": "Pending nodes",
+    "unbanTitle": "Firewall IP unban",
+    "exemptionHint": "Temporarily exempt any public IP from fleet blacklists. Normal firewall checks still apply. Proxy evidence is retained.",
+    "purchase": "Unban for {hours} hours · {price} TXB",
+    "granted": "{ip} is exempt until {until}",
+    "deliveryPending": "Saved. Delivery to connected nodes is queued; offline nodes reconcile when they reconnect.",
+    "unavailable": "IP unban is not configured.",
+    "price": "IP unban price (TXB)",
+    "priceHint": "Purchasing is enabled only when both price and exemption hours are greater than zero.",
+    "hours": "Exemption hours",
+    "banSeconds": "Ban duration (seconds)",
+    "threshold": "Hit threshold",
+    "windowSeconds": "Window (seconds)",
+    "detectionHint": "Detections report to the master. Only master commands authorize new blacklist entries.",
+    "rules": {
+      "closed_port": "Closed port",
+      "invalid_packet": "Invalid packet",
+      "syn_flood": "SYN flood",
+      "icmp_probe": "ICMP probe",
+      "xray_tcp_probe": "Xray TCP probe",
+      "xray_invalid": "Xray malformed request",
+      "xray_auth_failure": "Xray authentication failure"
+    },
+    "loadFailed": "Could not load the unban price. Please retry.",
+    "saveFailed": "Could not save the exemption. Retry with the same request.",
+    "invalidIP": "Enter an individual public IPv4 or IPv6 address.",
+    "conflict": "This IP is already exempt, or the price has changed. Refresh before retrying."
+  }
+}

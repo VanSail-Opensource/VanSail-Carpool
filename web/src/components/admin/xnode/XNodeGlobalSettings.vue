@@ -31,6 +31,8 @@ onMounted(() => void load())
   <UAlert v-if="error" color="warning" variant="soft" :title="error" />
   <form v-if="draft" class="global-settings" @submit.prevent="save">
     <div class="global-fields">
+      <UFormField :label="t('firewall.price')" :description="t('firewall.priceHint')"><UInput v-model="draft.firewallUnbanPrice" inputmode="decimal" class="w-full" /></UFormField>
+      <UFormField :label="t('firewall.hours')"><UInput v-model.number="draft.firewallExemptionHours" type="number" min="0" max="8760" class="w-full" /></UFormField>
       <UFormField :label="t('xnode.connectionLimit')" :description="t('xnode.connectionLimitHint')"><UInput v-model.number="draft.connectionLimit" type="number" min="0" max="1000000" class="w-full" /></UFormField>
       <UFormField :label="t('xnode.blockedPorts')" :description="t('xnode.blockedPortsHint')"><UInput v-model="draft.blockedPorts" class="w-full" /></UFormField>
       <UFormField :label="t('xnode.geoIpUrl')"><UInput v-model="draft.geoIpUrl" type="url" class="w-full" /></UFormField>

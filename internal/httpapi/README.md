@@ -203,3 +203,5 @@ and bearer URLs only under the administrator router, with private no-store
 headers. It excludes probe identities and does not create or rotate credentials.
 
 - `xnode_named_services.go`: Admin-only service identity CRUD, subscription rotation and native routing endpoints.
+
+`xnode_firewall.go` exposes authenticated browser-admin evidence reads and onboarded member quote/purchase endpoints. All delivery uses the existing durable outbox; the HTTP request commits a grant and never waits on a node.

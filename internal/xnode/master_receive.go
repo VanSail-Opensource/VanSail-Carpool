@@ -27,6 +27,14 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 	case "state.failed", "error":
 		peer.mu.Lock()
 		peer.digest = ""
+		if message.Type == "error" {
+			if pending := peer.pending[message.ID]; pending != nil {
+				select {
+				case pending <- message:
+				default:
+				}
+			}
+		}
 		peer.mu.Unlock()
 		return nil
 	case "telemetry.report":
@@ -102,6 +110,8 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		return nil
 	case "firewall.pending":
 		return m.confirmFirewall(ctx, peer, message)
+	case "firewall.events":
+		return m.receiveFirewallEvents(ctx, peer, message)
 	case "command.accepted", "command.progress", "admission.rejected", "torrent.detected", "torrent.expired", "agent.error":
 		return nil
 	default:

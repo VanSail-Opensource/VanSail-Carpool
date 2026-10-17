@@ -13,6 +13,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 		return
 	}
 	router.Get("/xnode/global", s.xnodeGlobal)
+	router.Get("/xnode/firewall/bans", s.xnodeFirewallBans)
 	router.Get("/xnode/subscription-templates", s.xnodeSubscriptionTemplates)
 	router.Put("/xnode/subscription-templates", s.xnodeSaveSubscriptionTemplates)
 	router.Post("/xnode/subscription-templates/preview", s.xnodePreviewSubscriptionTemplate)

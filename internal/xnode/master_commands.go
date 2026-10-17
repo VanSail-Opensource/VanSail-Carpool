@@ -51,6 +51,9 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	case <-peer.ctx.Done():
 		return nil, ErrUnavailable
 	case message := <-pending:
+		if message.Type == "error" {
+			return nil, ErrUnavailable
+		}
 		var result struct {
 			ID       string          `json:"id"`
 			Command  string          `json:"command"`

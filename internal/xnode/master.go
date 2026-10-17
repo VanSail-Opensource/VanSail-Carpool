@@ -13,38 +13,45 @@ import (
 )
 
 type Master struct {
-	service      *Service
-	logger       *slog.Logger
-	ctx          context.Context
-	cancel       context.CancelFunc
-	mu           sync.RWMutex
-	peers        map[string]*agentPeer
-	live         map[string]liveSnapshot
-	globalBlocks map[int]bool
-	wg           sync.WaitGroup
-	operations   int
+	service                  *Service
+	logger                   *slog.Logger
+	ctx                      context.Context
+	cancel                   context.CancelFunc
+	mu                       sync.RWMutex
+	peers                    map[string]*agentPeer
+	live                     map[string]liveSnapshot
+	globalBlocks             map[int]bool
+	wg                       sync.WaitGroup
+	operations               int
+	firewallInventory        FirewallInventory
+	firewallWake             chan struct{}
+	firewallSourcesRunning   int
+	firewallInventoryVersion uint64
 }
 type agentPeer struct {
-	nodeID       string
-	agentID      string
-	bootID       string
-	socket       *websocket.Conn
-	queue        *upstreamqueue.Queue
-	ctx          context.Context
-	cancel       context.CancelFunc
-	mu           sync.Mutex
-	syncMu       sync.Mutex
-	revision     uint64
-	digest       string
-	pending      map[string]chan wire.Message
-	lastControls map[int]bool
-	compiled     *compiledState // protected by syncMu
-	pong         chan string
+	nodeID         string
+	agentID        string
+	bootID         string
+	socket         *websocket.Conn
+	queue          *upstreamqueue.Queue
+	ctx            context.Context
+	cancel         context.CancelFunc
+	mu             sync.Mutex
+	syncMu         sync.Mutex
+	revision       uint64
+	digest         string
+	pending        map[string]chan wire.Message
+	lastControls   map[int]bool
+	compiled       *compiledState // protected by syncMu
+	pong           chan string
+	firewallSyncMu sync.Mutex
+	firewallJoined bool
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {
 	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}}
 	service.master = m
+	m.firewallWake = make(chan struct{}, 1)
 	return m
 }
 func (m *Master) Start(ctx context.Context) error {
@@ -56,6 +63,10 @@ func (m *Master) Start(ctx context.Context) error {
 	m.ctx, m.cancel = context.WithCancel(ctx)
 	m.wg.Add(1)
 	go m.run()
+	if _, ok := m.service.repo.(firewallRepository); ok {
+		m.wg.Add(1)
+		go m.runFirewall()
+	}
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()

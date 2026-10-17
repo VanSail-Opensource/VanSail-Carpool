@@ -26,22 +26,24 @@ type poolFlight struct {
 
 // EnhancedService owns shared inventories, DNS memoization and queued probes.
 type EnhancedService struct {
-	settings        Settings
-	queues          map[string]*upstreamqueue.Queue
-	live            *LiveService
-	mu              sync.Mutex
-	pools           map[[32]byte]*proxyPool
-	flights         map[[32]byte]*poolFlight
-	dns             map[string]dnsEntry
-	ipapi           Provider
-	inventoryFetch  func(context.Context, string, Config) ([]byte, error)
-	inventoryStream func(context.Context, string, Config, func(string)) error
-	resolvers       map[string]resolverHealth
-	cursor          uint64
-	tests           *sourceTestRuntime
-	disk            *inventoryDisk
-	diskRequired    bool
-	diskError       error
+	detected              *prefixIndex
+	OnFirewallPublication func()
+	settings              Settings
+	queues                map[string]*upstreamqueue.Queue
+	live                  *LiveService
+	mu                    sync.Mutex
+	pools                 map[[32]byte]*proxyPool
+	flights               map[[32]byte]*poolFlight
+	dns                   map[string]dnsEntry
+	ipapi                 Provider
+	inventoryFetch        func(context.Context, string, Config) ([]byte, error)
+	inventoryStream       func(context.Context, string, Config, func(string)) error
+	resolvers             map[string]resolverHealth
+	cursor                uint64
+	tests                 *sourceTestRuntime
+	disk                  *inventoryDisk
+	diskRequired          bool
+	diskError             error
 }
 
 // NewEnhancedService reuses existing queue workers for every outbound operation.
@@ -57,7 +59,11 @@ func proxyPoolKey(c Config) [32]byte {
 }
 func (s *EnhancedService) pool(ctx context.Context, c Config) (*proxyPool, error) {
 	if s.tests != nil {
-		return s.cachedPool(ctx, c)
+		pool, err := s.cachedPool(ctx, c)
+		if err == nil {
+			s.appendDetected(pool)
+		}
+		return pool, err
 	}
 	if s.diskRequired {
 		return nil, &CodeError{"IP_LOOKUP_UNAVAILABLE"}

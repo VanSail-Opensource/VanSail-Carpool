@@ -76,6 +76,13 @@ func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts in
 		status = "failed"
 	}
 	delay := time.Minute << min(attempts-1, 8)
+	var kind string
+	if err = tx.QueryRowContext(ctx, `SELECT kind FROM outbox_jobs WHERE id=?`, jobID).Scan(&kind); err != nil {
+		return err
+	}
+	if kind == "xnode_firewall" {
+		delay = 5 * time.Second << min(attempts-1, 4)
+	}
 	message := sanitizeError(jobErr)
 	if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status=?,last_error=?,available_at=?,updated_at=? WHERE id=?`, status, message, stamp(now.Add(delay)), stamp(now), jobID); err != nil {
 		return err

@@ -1,0 +1,39 @@
+{
+  "firewall": {
+    "title": "防火墙",
+    "reportHint": "共享检测记录与已授权封禁。所有参与节点确认到期后才会移除；再次命中可能延长节点上的封禁时间。",
+    "empty": "暂无有效的检测封禁。",
+    "ip": "公网 IP 地址",
+    "rule": "检测规则",
+    "hits": "命中次数",
+    "detectedAt": "检测时间",
+    "deadline": "要求到期时间",
+    "pendingNodes": "待确认节点",
+    "unbanTitle": "防火墙 IP 解封",
+    "exemptionHint": "临时将任意公网 IP 加入全节点黑名单豁免。其他防火墙检查继续生效，代理证据仍会保留。",
+    "purchase": "解封 {hours} 小时 · {price} TXB",
+    "granted": "{ip} 已获豁免，有效至 {until}",
+    "deliveryPending": "已保存，正在排队下发。离线节点会在重新连接后同步。",
+    "unavailable": "尚未配置 IP 解封服务。",
+    "price": "IP 解封价格（TXB）",
+    "priceHint": "价格与豁免小时数均大于零时才开放购买。",
+    "hours": "豁免小时数",
+    "banSeconds": "封禁时长（秒）",
+    "threshold": "命中阈值",
+    "windowSeconds": "统计窗口（秒）",
+    "detectionHint": "检测结果上报主控，只有主控指令可以添加新的黑名单条目。",
+    "rules": {
+      "closed_port": "关闭端口",
+      "invalid_packet": "无效数据包",
+      "syn_flood": "SYN 洪泛",
+      "icmp_probe": "ICMP 探测",
+      "xray_tcp_probe": "Xray TCP 探测",
+      "xray_invalid": "Xray 请求格式错误",
+      "xray_auth_failure": "Xray 认证失败"
+    },
+    "loadFailed": "无法获取解封价格，请重试。",
+    "saveFailed": "保存豁免失败，请重试原请求。",
+    "invalidIP": "请输入单个公网 IPv4 或 IPv6 地址。",
+    "conflict": "该 IP 已获豁免，或价格已变更。请刷新后重试。"
+  }
+}

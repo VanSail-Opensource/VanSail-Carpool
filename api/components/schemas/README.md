@@ -61,3 +61,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 `schemas-19.yaml` defines product statistics snapshots, distributions and live node metrics.
 
 - `xnode-services.yaml` defines native standalone identities and explicit access terms.
+
+`xnode-firewall.yaml` defines shared ban evidence, quote-bound paid exemption requests and durable grant responses.
