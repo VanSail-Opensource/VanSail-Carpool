@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FirewallExemption from '@/components/connections/FirewallExemption.vue'
-const member = new URLSearchParams(location.search).has('firewall-member')
+const member = new globalThis.URLSearchParams(globalThis.location.search).has('firewall-member')
 import XNodeWorkspace from '@/components/admin/xnode/XNodeWorkspace.vue'
 </script>
 
