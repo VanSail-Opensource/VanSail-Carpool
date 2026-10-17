@@ -61,7 +61,13 @@ func (m *Master) reconcile(ctx context.Context) error {
 		force := peer.forceSync
 		peer.forceSync = false
 		peer.mu.Unlock()
-		if force{if repo,ok:=m.service.routingRepository();ok{if err=repo.WakeXNodeRouting(ctx,now);err!=nil{return err}}}
+		if force {
+			if repo, ok := m.service.routingRepository(); ok {
+				if err = repo.WakeXNodeRouting(ctx, now); err != nil {
+					return err
+				}
+			}
+		}
 		if err = m.syncNode(ctx, peer, force); err != nil {
 			if force {
 				peer.mu.Lock()
