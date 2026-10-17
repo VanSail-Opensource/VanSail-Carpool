@@ -31,11 +31,12 @@ flushes the journal and refreshes combined quota policy before reopening the
 source. Failed recovery remains in `review` and may be resumed by an operator.
 
 Commands use provider-operation receipts and bounded controller tasks, retaining
-durable leases without occupying purchase dispatch. Receipts contain action and
-ownership metadata only. Live connections and telemetry never enter snapshots,
-receipts or audits. Production handovers require compatible signed agents. The
-bridge remains enabled until verified final source accounting marks migration
-complete; initial import does not imply financial settlement.
+durable leases without occupying purchase dispatch. Cutover receipts identify the
+failed preflight or handover stage with a stable error code; raw upstream errors
+and account data are not stored. Live connections and telemetry never enter
+snapshots, receipts or audits. Production handovers require compatible signed
+agents. The bridge remains enabled until verified final source accounting marks
+migration complete; initial import does not imply financial settlement.
 
 - `types.go`: Defines source snapshots, mappings and dependency contracts.
 - `preview.go`: Captures encrypted previews and reports unsupported data.

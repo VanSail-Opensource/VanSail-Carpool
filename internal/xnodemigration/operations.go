@@ -125,6 +125,10 @@ func (s *Service) runOperation(ctx context.Context, operation providerops.Operat
 		if errors.Is(err, ErrSharedEndpoint) {
 			completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_SHARED_ENDPOINT"
 		}
+		var failure *cutoverFailure
+		if errors.As(err, &failure) && !errors.Is(err, ErrSharedEndpoint) {
+			completion.ErrorCode = failure.code
+		}
 	}
 	// Receipts contain ownership only, never live node telemetry.
 	result, err := json.Marshal(map[string]string{"action": request.Action, "nodeId": request.NodeID})
