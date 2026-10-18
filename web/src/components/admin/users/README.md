@@ -36,3 +36,5 @@ uses the courtesy ledger. Failed evidence loads disable confirmation until retry
 `AdminUserMetrics.vue` presents native availability, rates, exact accounting and seven-day charts/tables. `useAdminUserMetrics.ts` aborts superseded loads, guards identity generations, polls only while mounted and clears snapshots/buffers at logout. `AdminUserScan.vue` owns native-only durable scans with scoped responses and unavailable-node rows. `AdminUserBalanceAdjustment.vue` moves audited TXB adjustments into the selected profile.
 
 `useAdminUserMetrics.test.ts` verifies abort/generation isolation between profiles and retirement of pending responses/samples on logout.
+
+Scan failures use localized durable error codes. The table distinguishes an unavailable node from an available node with no active connections.

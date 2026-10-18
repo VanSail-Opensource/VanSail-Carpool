@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,5 +44,27 @@ func TestAdminPollRefusesALegacyScanBeforeCallingAnyReader(t *testing.T) {
 	service := NewService(repo, nil, nil)
 	if _, err := service.PollAdmin(context.Background(), "member", "legacy"); !errors.Is(err, ErrScanNotFound) {
 		t.Fatal("administrator polled a legacy job", err)
+	}
+}
+
+func TestScanFailureProjectionRetainsSafeCode(t *testing.T) {
+	scan := projectMetadata(providerops.ConnectionScan{Status: providerops.StatusFailed, ErrorCode: "XNODE_UNAVAILABLE"})
+	if !scan.Failed || scan.ErrorCode != "XNODE_UNAVAILABLE" {
+		t.Fatal("scan lost its failure diagnostic", scan)
+	}
+}
+
+func TestNativeNodeHandleAcceptsOpaqueNodeIdentity(t *testing.T) {
+	signer, err := NewSigner([]byte(strings.Repeat("s", 32)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	claims := HandleClaims{UserID: "member", ScanID: "scan", NodeUUID: "native-tokyo", IP: "203.0.113.10", Expires: time.Now().Add(time.Minute)}
+	handle, err := signer.Sign(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if actual, err := signer.Verify(handle, "member", time.Now()); err != nil || actual.NodeUUID != claims.NodeUUID {
+		t.Fatal(actual, err)
 	}
 }

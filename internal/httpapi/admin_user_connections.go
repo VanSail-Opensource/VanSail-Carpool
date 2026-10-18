@@ -15,7 +15,7 @@ func (s *Server) adminRequestUserConnections(w http.ResponseWriter, r *http.Requ
 	}
 	scan, err := s.deps.Connections.RequestAdmin(r.Context(), user, key)
 	if err != nil {
-		s.adminFailure(w, r, err)
+		s.writeConnectionError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusAccepted, scan)
@@ -25,7 +25,7 @@ func (s *Server) adminRequestUserConnections(w http.ResponseWriter, r *http.Requ
 func (s *Server) adminPollUserConnections(w http.ResponseWriter, r *http.Request) {
 	scan, err := s.deps.Connections.PollAdmin(r.Context(), chiURLParam(r, "userId"), chiURLParam(r, "scanId"))
 	if err != nil {
-		s.adminFailure(w, r, err)
+		s.writeConnectionError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, scan)

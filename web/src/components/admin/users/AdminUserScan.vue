@@ -46,7 +46,7 @@ onScopeDispose(() => { active = false; reset(); globalThis.removeEventListener('
 <template>
   <section class="grid gap-3 min-w-0">
     <div><UButton icon="i-ph-radar" :label="t('adminUserProfile.scanActiveIp')" :loading="busy" :disabled="busy" @click="start" /></div>
-    <InlineNotice v-if="error || scan?.isFailed" tone="warning">{{ error ?? t('adminUserProfile.actionFailed') }}</InlineNotice>
+    <InlineNotice v-if="error || scan?.isFailed" tone="warning">{{ error ?? localizedError({ code: scan?.errorCode }, 'adminUserProfile.actionFailed') }}</InlineNotice>
     <UProgress v-if="busy" :model-value="scan?.progressPercent ?? 0" />
     <UTable v-if="scan" :data="rows" :columns="columns" class="admin-table"><template #date-cell="{ row }">{{ row.original.lastSeen ? formatDateTime(row.original.lastSeen) : t('common.notAvailable') }}</template><template #empty>{{ busy ? t('common.loading') : t('adminUserProfile.noActiveIp') }}</template></UTable>
   </section>

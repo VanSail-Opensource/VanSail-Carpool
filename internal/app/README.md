@@ -1,5 +1,7 @@
 # Application composition
 
+`xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.
+
 `pm_workflows.go` injects `PUBLIC_BASE_URL` into the existing queued Telegram PM
 worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
 the independent browser access-link/session flow authorizes the administrator.

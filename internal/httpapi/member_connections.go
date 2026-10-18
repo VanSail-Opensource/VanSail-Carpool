@@ -6,6 +6,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func (s *Server) requestConnections(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +65,8 @@ func (s *Server) dropConnection(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) writeConnectionError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, xnode.ErrUnavailable), errors.Is(err, xnode.ErrNotFound), errors.Is(err, xnode.ErrInvalid):
+		s.xnodeError(w, r, err)
 	case errors.Is(err, connections.ErrInvalidHandle):
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_CONNECTION_HANDLE", "The connection handle is invalid or expired.")
 	case errors.Is(err, connections.ErrScanNotFound), errors.Is(err, database.ErrNotFound):

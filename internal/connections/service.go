@@ -46,6 +46,9 @@ func NewService(repository Repository, remote Remote, signer *Signer) *Service {
 
 // Request creates or replays one durable scan command.
 func (s *Service) Request(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
+	if _, ok := s.remote.(NativeRemote); ok {
+		return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
+	}
 	if user.RemnaUserID == nil || strings.TrimSpace(*user.RemnaUserID) == "" {
 		return Scan{}, ErrIdentityRequired
 	}
@@ -156,6 +159,7 @@ func countryCode(value string) string {
 
 func projectMetadata(record providerops.ConnectionScan) Scan {
 	return Scan{ID: record.ID, Completed: record.Status == providerops.StatusSucceeded,
+		ErrorCode:       record.ErrorCode,
 		Failed:          record.Status == providerops.StatusFailed || record.Status == providerops.StatusPendingReview,
 		ProgressPercent: record.ProgressPercent, Nodes: []Node{}, CreatedAt: record.CreatedAt, ExpiresAt: record.ExpiresAt}
 }

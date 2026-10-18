@@ -9,8 +9,7 @@ import (
 	"net"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
+	"unicode"
 )
 
 // ErrInvalidHandle hides whether a capability was malformed, expired, or forged.
@@ -88,7 +87,7 @@ func validClaims(claims HandleClaims) bool {
 	if strings.TrimSpace(claims.UserID) == "" || strings.TrimSpace(claims.ScanID) == "" || claims.Expires.IsZero() {
 		return false
 	}
-	if _, err := uuid.Parse(claims.NodeUUID); err != nil {
+	if claims.NodeUUID == "" || len(claims.NodeUUID) > 256 || strings.ContainsFunc(claims.NodeUUID, func(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) }) {
 		return false
 	}
 	return net.ParseIP(claims.IP) != nil

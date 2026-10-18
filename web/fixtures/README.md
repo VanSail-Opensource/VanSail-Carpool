@@ -107,3 +107,5 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 `NativeAdminAudit.vue`, `native-admin-audit.ts` and `native-admin-audit.html` mount actual profile metrics/scans/TXB controls, machine tables/charts and browser statistics with constructed signed-request data. Flags `view=machine`, `view=statistics`, `empty`, `slow`, `error`, `save-error`, `dark` and `zh` exercise states; `window.__nativeAdminTarget` steers profile races and `window.__nativeAdminAudit` records scoped calls.
 
 The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-empty`, `slow` and `zh` exercise retained drafts, empty/loading states and Chinese labels.
+
+Native admin `view=scan` isolates connection scanning; `scan-failed` projects a durable safe error code, while `error` rejects the request and `empty` returns a successful empty scan.

@@ -43,7 +43,7 @@ ConnectionNode:
   required: [uuid, name, countryCode, ips]
   properties:
     unavailable: { type: boolean, description: 'Native node is rolled back, disconnected, stale, or failed its queued scan.' }
-    uuid: { type: string, format: uuid }
+    uuid: { type: string, minLength: 1, maxLength: 256 }
     name: { type: string }
     countryCode: { type: string, pattern: '^[A-Z]{2}$' }
     ips:
@@ -55,6 +55,7 @@ ConnectionScan:
   additionalProperties: false
   required: [id, isCompleted, isFailed, progressPercent, nodes, createdAt, expiresAt]
   properties:
+    errorCode: { type: string, description: Safe localized scan failure code. }
     id: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     isCompleted: { type: boolean }
     isFailed: { type: boolean }

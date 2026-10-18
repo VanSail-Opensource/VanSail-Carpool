@@ -69,6 +69,7 @@ type Node struct {
 
 // Scan is the transient browser projection; only metadata is durable.
 type Scan struct {
+	ErrorCode       string    `json:"errorCode,omitempty"`
 	ID              string    `json:"id"`
 	Completed       bool      `json:"isCompleted"`
 	Failed          bool      `json:"isFailed"`

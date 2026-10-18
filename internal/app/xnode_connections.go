@@ -31,7 +31,7 @@ func (a proxyProvider) RequestConnectionScan(ctx context.Context, id string) (st
 			return "", err
 		}
 	}
-	nonce, err := ids.Token(12)
+	nonce, err := ids.Token(16)
 	if err != nil {
 		return "", err
 	}

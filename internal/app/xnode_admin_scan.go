@@ -18,7 +18,7 @@ func (a proxyProvider) RequestNativeConnectionScan(ctx context.Context, userID s
 	if err != nil {
 		return "", err
 	}
-	nonce, err := ids.Token(12)
+	nonce, err := ids.Token(16)
 	if err != nil {
 		return "", err
 	}
