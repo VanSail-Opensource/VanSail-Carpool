@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import UsagePanel from './UsagePanel.vue'
 
 describe('UsagePanel', () => {
-  it('labels cached Remnawave statistics with an inline warning', () => {
+  it('labels cached statistics with an inline warning', () => {
     const wrapper = mount(UsagePanel, {
       props: {
         ratio: 0.25,
@@ -24,8 +24,8 @@ describe('UsagePanel', () => {
       },
     })
     expect(wrapper.text()).toContain('Last known data')
-    expect(wrapper.text()).toContain('Remnawave is temporarily unavailable.')
-    expect(wrapper.text()).toContain('OFFLINE')
+    expect(wrapper.text()).toContain('Live usage is temporarily unavailable.')
+    expect(wrapper.text()).toContain('UNAVAILABLE')
     expect(wrapper.text()).toContain('No reset recorded')
     expect(wrapper.text()).toContain('25%')
     expect(wrapper.text()).toContain('25 GiB')
@@ -34,9 +34,10 @@ describe('UsagePanel', () => {
     wrapper.unmount()
   })
 
-  it('marks a recent UTC online timestamp as online', () => {
+  it('uses fresh native activity instead of the legacy online timestamp', () => {
     const wrapper = mount(UsagePanel, {
       props: {
+        activity: 'online',
         ratio: 0,
         stale: false,
         fetchedAt: '2026-08-07T00:00:00Z',
@@ -44,7 +45,7 @@ describe('UsagePanel', () => {
           usedTrafficBytes: '0',
           lifetimeTrafficBytes: '0',
           trafficLimitBytes: '107374182400',
-          onlineAt: new Date(Date.now() - 30_000).toISOString(),
+          onlineAt: null,
           lastTrafficResetAt: '2026-08-06T12:34:00Z',
           categories: [],
           sparklineData: [],

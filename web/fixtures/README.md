@@ -111,3 +111,5 @@ The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-
 Native admin `view=scan` isolates connection scanning; `scan-failed` projects a durable safe error code, while `error` rejects the request and `empty` returns a successful empty scan.
 
 The X-Node `commands` view isolates native utilities. `command-outcome=UNDELIVERED`, `REJECTED`, `FAILED` or `OUTCOME_UNKNOWN` projects each durable outcome; `slow` shows submission and polling.
+
+Subscription home flags `offline`, `unknown`, `metrics-error`, `slow` and `expire` exercise native activity independent of legacy statistics timestamps. The IP Lookup entrance is disabled inside this isolated fixture.

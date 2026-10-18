@@ -7,6 +7,10 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
+type memberDashboardReader interface {
+	DashboardForMember(context.Context, model.User) (RemoteDashboard, error)
+}
+
 // Dashboard prefers fresh upstream data and falls back to a clearly marked cached snapshot.
 func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboard, error) {
 	now := s.now().UTC()
@@ -26,7 +30,8 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 		}
 		dashboard.AutoRenewalFailure = failure
 	}
-	if user.RemnaUserID == nil {
+	memberRemote, native := s.remnawave.(memberDashboardReader)
+	if !native && user.RemnaUserID == nil {
 		return dashboard, nil
 	}
 	s.cacheMu.RLock()
@@ -38,7 +43,13 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 		dashboard.FetchedAt = cached.fetchedAt
 		return dashboard, nil
 	}
-	remote, remoteErr := s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+	var remote RemoteDashboard
+	var remoteErr error
+	if native {
+		remote, remoteErr = memberRemote.DashboardForMember(ctx, user)
+	} else {
+		remote, remoteErr = s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+	}
 	if remoteErr == nil {
 		dashboard.Statistics = &remote.Statistics
 		dashboard.SubscriptionURL = &remote.SubscriptionURL

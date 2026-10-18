@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { computed } from 'vue'
 
 import type { CatalogNode, RFC3339, UsageStatistics } from '@/api/types'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { formatBytes, formatDateTime } from '@/utils/format'
 import TrafficUsageBar from './TrafficUsageBar.vue'
+import type { ActivityStatus } from './memberActivity'
 
 const props = defineProps<{
+  activity?: ActivityStatus
   statistics: UsageStatistics
   ratio: number
   stale: boolean
@@ -26,46 +28,17 @@ const remainingTraffic = computed(() => {
     return formatBytes('0')
   }
 })
-const onlineWindowMilliseconds = 60_000
-const currentTime = shallowRef(Date.now())
-let onlineStatusTimer: ReturnType<typeof globalThis.setTimeout> | undefined
-
-const onlineAtMilliseconds = computed(() => props.statistics.onlineAt ? Date.parse(props.statistics.onlineAt) : Number.NaN)
-const isOnline = computed(() => {
-  const elapsed = currentTime.value - onlineAtMilliseconds.value
-  return Number.isFinite(elapsed) && elapsed >= 0 && elapsed < onlineWindowMilliseconds
-})
-
-function scheduleOnlineStatusRefresh(): void {
-  if (onlineStatusTimer !== undefined) globalThis.clearTimeout(onlineStatusTimer)
-  const elapsed = Date.now() - onlineAtMilliseconds.value
-  const delay = onlineWindowMilliseconds - elapsed
-  if (!Number.isFinite(delay) || delay <= 0) return
-  onlineStatusTimer = globalThis.setTimeout(() => {
-    currentTime.value = Date.now()
-    onlineStatusTimer = undefined
-  }, delay)
-}
-
-onMounted(scheduleOnlineStatusRefresh)
-watch(onlineAtMilliseconds, () => {
-  currentTime.value = Date.now()
-  scheduleOnlineStatusRefresh()
-})
-onUnmounted(() => {
-  if (onlineStatusTimer !== undefined) globalThis.clearTimeout(onlineStatusTimer)
-})
 </script>
 
 <template>
   <section class="section-block home-usage" :class="`home-usage--${tone}`">
     <div class="section-heading">
       <h2>{{ $t('dashboard.usage') }}</h2>
-      <StatusBadge :tone="isOnline ? 'success' : 'danger'" :label="$t(isOnline ? 'dashboard.online' : 'dashboard.offline')" />
+      <StatusBadge :tone="activity === 'online' ? 'success' : activity === 'offline' ? 'danger' : 'neutral'" :label="$t(activity === 'online' ? 'dashboard.online' : activity === 'offline' ? 'dashboard.offline' : 'dashboard.activityUnavailable')" />
     </div>
 
     <InlineNotice v-if="stale" tone="warning">
-      {{ $t('dashboard.lastKnownData') }} · {{ $t('dashboard.remnawaveUnavailable') }} {{ $t('dashboard.showingDataFrom', { date: formatDateTime(fetchedAt) }) }}
+      {{ $t('dashboard.lastKnownData') }} · {{ $t('dashboard.usageUnavailable') }} {{ $t('dashboard.showingDataFrom', { date: formatDateTime(fetchedAt) }) }}
     </InlineNotice>
 
     <div class="home-usage__summary">

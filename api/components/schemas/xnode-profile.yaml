@@ -29,6 +29,8 @@ XNodeProfileMetrics:
   additionalProperties: false
   required: [connections, uploadBytesPerSecond, downloadBytesPerSecond, incomplete, limited, reasons, fetchedAt, nodes, usage, usedTrafficBytes, lifetimeTrafficBytes]
   properties:
+    activityStatus: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityStatus' }
+    activityExpiresAt: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityExpiresAt' }
     connections: { type: integer, minimum: 0 }
     uploadBytesPerSecond: { type: number, minimum: 0 }
     downloadBytesPerSecond: { type: number, minimum: 0 }

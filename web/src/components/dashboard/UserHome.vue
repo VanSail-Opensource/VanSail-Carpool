@@ -13,10 +13,12 @@ import EntitlementSummary from './EntitlementSummary.vue'
 import HomeUptimePanel from '@/components/subscription/HomeUptimePanel.vue'
 import UsagePanel from './UsagePanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
+import type { ActivityStatus } from './memberActivity'
 
 const { dashboard, loading, error, usageRatio, catalogNodes, activeSquadNames, load } = useDashboard()
 const { activeCombo: hasValidCombo, refresh: refreshCommunityAccess } = useCommunityAccess()
 const queuedCancellationNotice = shallowRef(false)
+const activity = shallowRef<ActivityStatus>('unavailable')
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
@@ -91,11 +93,12 @@ function consumeReissueRequest(): void {
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>
           <HomeUptimePanel v-if="hasValidCombo" />
-          <MemberLiveMetrics v-if="hasValidCombo" />
+          <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
           <UsagePanel
             v-if="dashboard.statistics"
             class="home-layout__usage"
             :statistics="dashboard.statistics"
+            :activity="activity"
             :ratio="usageRatio"
             :stale="dashboard.statisticsStale"
             :fetched-at="dashboard.fetchedAt"

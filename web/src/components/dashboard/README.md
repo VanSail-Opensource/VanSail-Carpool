@@ -28,3 +28,5 @@ Language, currency and automatic traffic reset controls now appear on Settings. 
 The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members without a combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
+
+`memberActivity.ts` and `memberActivity.test.ts` project native observation status and expiry. `MemberLiveMetrics.vue` emits fresh activity from its existing poll, retires stale rates and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge.

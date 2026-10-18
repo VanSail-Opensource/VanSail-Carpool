@@ -7,6 +7,8 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/http'
 import { subscriptionApi, type MemberSubscription, type UptimeTimeline } from '@/api/subscription'
 import { connectivityApi } from '@/api/connectivity'
+import { xnodeMemberApi } from '@/api/xnodeMember'
+import { ipLookupApi } from '@/api/ipLookup'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { preferencesApi } from '@/api/preferences'
 import { displayCurrencyApi } from '@/api/displayCurrency'
@@ -15,6 +17,12 @@ import { setLocale, t } from '@/i18n'
 import SubscriptionAudit from './SubscriptionAudit.vue'
 
 const params = new URLSearchParams(location.search)
+ipLookupApi.state = async () => ({ enabled: false }) as never
+xnodeMemberApi.metrics = async () => {
+  if (params.has('metrics-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
+  if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 1200))
+  return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: false, incomplete: params.has('unknown'), reasons: [], fetchedAt: new Date().toISOString() }
+}
 if (params.has('telegram')) Object.assign(window, { Telegram: { WebApp: { platform: 'ios', version: '9.0', initData: '', initDataUnsafe: {}, BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} } } } })
 const state = { reads: 0, summaryReads: 0, revocations: 0, saves: 0, checks: 0, failure: params.has('error') }
 const now = Date.now()

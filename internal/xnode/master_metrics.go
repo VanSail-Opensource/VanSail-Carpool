@@ -85,6 +85,9 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 }
 
 func freshSnapshot(snapshot liveSnapshot, now time.Time, reportSeconds int) bool {
+	return !snapshot.receivedAt.IsZero() && now.Sub(snapshot.receivedAt) <= reportWindow(reportSeconds)
+}
+func reportWindow(reportSeconds int) time.Duration {
 	if reportSeconds <= 0 {
 		reportSeconds = 5
 	}
@@ -92,7 +95,7 @@ func freshSnapshot(snapshot liveSnapshot, now time.Time, reportSeconds int) bool
 	if maximum < 15*time.Second {
 		maximum = 15 * time.Second
 	}
-	return !snapshot.receivedAt.IsZero() && now.Sub(snapshot.receivedAt) <= maximum
+	return maximum
 }
 
 func (m *Master) Blocked(id int) bool { m.mu.RLock(); defer m.mu.RUnlock(); return m.globalBlocks[id] }

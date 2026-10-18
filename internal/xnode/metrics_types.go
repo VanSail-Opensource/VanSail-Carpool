@@ -29,6 +29,8 @@ type NodeMetrics struct {
 }
 
 type UserMetrics struct {
+	ActivityStatus         string      `json:"activityStatus"`
+	ActivityExpiresAt      *time.Time  `json:"activityExpiresAt"`
 	Connections            int64       `json:"connections"`
 	UploadBytesPerSecond   float64     `json:"uploadBytesPerSecond"`
 	DownloadBytesPerSecond float64     `json:"downloadBytesPerSecond"`

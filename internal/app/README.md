@@ -185,3 +185,5 @@ a Telegram association; internal bounded probes retain their separate path.
 `xnode_admin_scan.go` starts native-only scans in the existing durable scan workflow and reads fresh eligible nodes through the per-node command executor. Ownership/freshness is checked again before projecting observations; raw source IPs stay memory-only.
 
 `native_statistics_test.go` guards statistics against any source-provider fallback, including an empty native fleet and legacy-only accounting references.
+
+`xnode_dashboard.go` resolves native dashboard statistics from panel ownership without requiring the legacy link field. Only an active migration bridge can fall back to a queued source dashboard.
