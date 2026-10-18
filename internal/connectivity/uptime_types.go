@@ -19,7 +19,8 @@ type UptimeTimeline struct {
 
 // UptimeSummary is the credential-free home projection.
 type UptimeSummary struct {
-	ActiveCombo bool `json:"activeCombo"`
+	MonitoringEnabled bool `json:"monitoringEnabled"`
+	ActiveCombo       bool `json:"activeCombo"`
 	UptimeTimeline
 	ErrorCode string `json:"errorCode"`
 }

@@ -38,3 +38,5 @@ This package builds the live catalog, validates purchase selections against curr
 `subscription_test.go` covers current-term authorization, enabled squad preferences, credential-free summaries, and ownership expiry during queued reads in hosted CI.
 
 `dashboard_native_test.go` covers native-only dashboard access and owner-scoped cache isolation through the optional member dashboard contract.
+
+`subscription_native_test.go` verifies native-only subscription reads retain disabled-squad preferences and the post-read purchase ownership fence. Existing legacy provider contracts remain compatible.

@@ -17,11 +17,21 @@ func (s *Service) ProjectMember(ctx context.Context, subscription *MemberSubscri
 	subscription.Summary = UptimeSummary{ActiveCombo: subscription.ActiveCombo, UptimeTimeline: UnknownTimeline(now)}
 	if s == nil {
 		subscription.Summary.ErrorCode = "CONNECTIVITY_NOT_CONFIGURED"
-	} else if err := s.projectHostTimelines(ctx, subscription.Hosts, now); err != nil {
-		for index := range subscription.Hosts {
-			subscription.Hosts[index].Timeline = UnknownTimeline(now)
+	} else {
+		cfg, err := s.readConfig(ctx)
+		if err == nil && cfg.ScheduledEnabled {
+			subscription.Summary.MonitoringEnabled = true
+			err = s.projectHostTimelines(ctx, subscription.Hosts, now, cfg)
 		}
-		subscription.Summary.ErrorCode = ErrorCode(err)
+		if err != nil {
+			if ErrorCode(err) == "CONNECTIVITY_INTERRUPTED" {
+				subscription.Summary.MonitoringEnabled = false
+			}
+			for index := range subscription.Hosts {
+				subscription.Hosts[index].Timeline = UnknownTimeline(now)
+			}
+			subscription.Summary.ErrorCode = ErrorCode(err)
+		}
 	}
 	byHost := make(map[string]UptimeTimeline, len(subscription.Hosts))
 	for _, host := range subscription.Hosts {
@@ -44,11 +54,7 @@ func (s *Service) ProjectMember(ctx context.Context, subscription *MemberSubscri
 	subscription.Summary.UptimeTimeline = AggregateTimelines(squadTimelines, now)
 }
 
-func (s *Service) projectHostTimelines(ctx context.Context, hosts []SubscriptionHost, now time.Time) error {
-	cfg, err := s.readConfig(ctx)
-	if err != nil {
-		return err
-	}
+func (s *Service) projectHostTimelines(ctx context.Context, hosts []SubscriptionHost, now time.Time, cfg Config) error {
 	if cfg.RemnawaveUserID == 0 {
 		return &CodeError{Code: "CONNECTIVITY_NOT_CONFIGURED"}
 	}

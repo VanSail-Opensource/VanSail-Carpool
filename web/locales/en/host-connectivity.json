@@ -2,7 +2,7 @@
   "hostConnectivity": {
     "title": "Host connectivity",
     "copy": "Check each accessible host through the selected account’s proxy connection.",
-    "username": "Remnawave test username",
+    "username": "Monitoring account username",
     "usernameHint": "Enter an exact existing username, then resolve it before saving.",
     "resolve": "Resolve",
     "selectedUser": "{name} · Account {id}",
@@ -80,7 +80,7 @@
       "CONNECTIVITY_INVALID_RESOLVED_CONFIG": "The resolved proxy configuration is invalid.",
       "CONNECTIVITY_INVALID_SUBSCRIPTION": "The protected subscription could not be interpreted.",
       "CONNECTIVITY_INVALID_TRIGGER": "The check trigger is invalid.",
-      "CONNECTIVITY_INVALID_USERNAME": "Enter an exact Remnawave username.",
+      "CONNECTIVITY_INVALID_USERNAME": "Enter the exact monitoring account username.",
       "CONNECTIVITY_NOT_CONFIGURED": "Select and save a test account first.",
       "CONNECTIVITY_NOT_READY": "The connectivity checker is not ready yet.",
       "CONNECTIVITY_NO_ACCESSIBLE_HOSTS": "The test account has no accessible enabled hosts.",

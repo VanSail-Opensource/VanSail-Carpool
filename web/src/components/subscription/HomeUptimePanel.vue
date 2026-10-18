@@ -20,10 +20,10 @@ function openSubscription(): void {
 <template>
   <section v-if="!summary || summary.activeCombo" class="section-block home-uptime">
     <SkeletonBlock v-if="loading" height="6rem" />
-    <UptimeBar v-else-if="summary" :timeline="summary" :label="t('uptime.summary')" />
+    <UptimeBar v-else-if="summary?.monitoringEnabled && !error" :timeline="summary" :label="t('uptime.summary')" />
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <p v-else-if="summary?.errorCode" class="home-uptime__hint">{{ t('uptime.notAvailable') }}</p>
-    <div class="home-uptime__entrance">
+    <p v-else-if="summary?.monitoringEnabled && summary.errorCode" class="home-uptime__hint">{{ t('uptime.notAvailable') }}</p>
+    <div class="home-uptime__entrance" :class="{ 'home-uptime__entrance--only': summary && !summary.monitoringEnabled }">
       <UButton type="button" color="neutral" variant="link" icon="i-ph-link-bold" :label="t('subscription.title')" data-haptic="navigate" @click="openSubscription" />
       <UButton v-if="error" color="neutral" variant="ghost" :label="t('common.tryAgain')" @click="refresh()" />
     </div>
@@ -33,6 +33,7 @@ function openSubscription(): void {
 <style scoped>
 .home-uptime { display: grid; gap: 0.5rem; }
 .home-uptime__entrance { display: grid; justify-items: center; gap: 0.5rem; border-top: 1px solid var(--line); padding-top: 0.45rem; }
+.home-uptime__entrance--only { border-top: 0; padding-top: 0; }
 .home-uptime__entrance :deep(button) { min-height: 44px; }
 .home-uptime__hint { margin: 0; color: var(--text-muted); font-size: 0.75rem; }
 </style>

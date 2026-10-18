@@ -2,9 +2,31 @@ package app
 
 import (
 	"context"
+	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"slices"
+	"strconv"
 )
+
+func (a proxyProvider) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (connectivity.MemberSubscription, error) {
+	identity, err := a.native.IdentityForUser(ctx, user.ID)
+	if err == nil {
+		return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), enabled, links)
+	}
+	if !errors.Is(err, xnode.ErrNotFound) {
+		return connectivity.MemberSubscription{}, err
+	}
+	bridge, err := a.legacy(ctx)
+	if err != nil {
+		return connectivity.MemberSubscription{}, err
+	}
+	if bridge && user.RemnaUserID != nil {
+		return a.remnaAdapter.LoadMemberSubscription(ctx, *user.RemnaUserID, enabled, links)
+	}
+	return connectivity.MemberSubscription{}, connectivityFailure("ACCOUNT_UNAVAILABLE")
+}
 
 func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, enabled []string, links bool) (connectivity.MemberSubscription, error) {
 	identity, native, err := a.nativeIdentity(ctx, id)

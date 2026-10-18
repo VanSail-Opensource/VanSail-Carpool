@@ -43,3 +43,5 @@ through durable member receipts; failed loads cannot save defaults. Graph predic
 analysis and traces come from the same backend matcher as native compilation.
 
 `SubscriptionFormats.vue` displays Base64 first and exposes distinct Stash and sing-box outputs using canonical bearer configuration links.
+
+Member network timelines require summary.monitoringEnabled. The home subscription entrance and published host links remain available while monitoring is disabled. `HomeUptimePanel.vue` also hides retained timelines after a failed refresh.

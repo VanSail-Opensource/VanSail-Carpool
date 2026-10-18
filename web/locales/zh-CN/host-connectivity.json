@@ -2,7 +2,7 @@
   "hostConnectivity": {
     "title": "主机连通性",
     "copy": "通过所选账户的代理连接检查每个可访问主机。",
-    "username": "Remnawave 测试用户名",
+    "username": "监控账户用户名",
     "usernameHint": "输入现有账户的准确用户名，解析后再保存。",
     "resolve": "解析",
     "selectedUser": "{name} · 账户 {id}",
@@ -80,7 +80,7 @@
       "CONNECTIVITY_INVALID_RESOLVED_CONFIG": "解析后的代理配置无效。",
       "CONNECTIVITY_INVALID_SUBSCRIPTION": "无法解析受保护的订阅。",
       "CONNECTIVITY_INVALID_TRIGGER": "检查触发方式无效。",
-      "CONNECTIVITY_INVALID_USERNAME": "请输入准确的 Remnawave 用户名。",
+      "CONNECTIVITY_INVALID_USERNAME": "请输入准确的监控账户用户名。",
       "CONNECTIVITY_NOT_CONFIGURED": "请先选择并保存测试账户。",
       "CONNECTIVITY_NOT_READY": "连通性检查器尚未就绪。",
       "CONNECTIVITY_NO_ACCESSIBLE_HOSTS": "测试账户没有可访问的已启用主机。",

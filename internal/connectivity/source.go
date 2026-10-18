@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 )
@@ -86,7 +87,9 @@ func validateSourceResult(userID int64, user User, targets []Target) error {
 	}
 	known := make(map[string]bool, len(targets))
 	for _, target := range targets {
-		if _, err := uuid.Parse(target.HostUUID); err != nil || known[target.HostUUID] {
+		_, legacyIDError := uuid.Parse(target.HostUUID)
+		invalidNativeID := target.HostUUID == "" || len(target.HostUUID) > 256 || strings.ContainsFunc(target.HostUUID, func(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) })
+		if invalidNativeID || (len(target.NativeOutbound) == 0 && legacyIDError != nil) || known[target.HostUUID] {
 			return &CodeError{Code: "CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE"}
 		}
 		known[target.HostUUID] = true
@@ -98,6 +101,7 @@ func cloneTargets(targets []Target) []Target {
 	result := append([]Target{}, targets...)
 	for index := range result {
 		result[index].Resolved = append([]byte(nil), result[index].Resolved...)
+		result[index].NativeOutbound = append([]byte(nil), result[index].NativeOutbound...)
 	}
 	return result
 }
@@ -106,6 +110,7 @@ func metadataTargets(targets []Target) []Target {
 	result := append([]Target{}, targets...)
 	for index := range result {
 		result[index].Resolved = nil
+		result[index].NativeOutbound = nil
 	}
 	return result
 }
