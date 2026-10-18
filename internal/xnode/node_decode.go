@@ -22,7 +22,7 @@ func (node *Node) UnmarshalJSON(raw []byte) error {
 	if err := decoder.Decode(&input); err != nil {
 		return err
 	}
-	if !multiplierJSON.Match(bytes.TrimSpace(input.Multiplier)) || json.Unmarshal(input.Multiplier, &node.Multiplier) != nil {
+	if !multiplierJSON.Match(bytes.TrimSpace(input.Multiplier)) || json.Unmarshal(input.Multiplier, &node.Multiplier) != nil || node.Multiplier > 1000 {
 		return ErrInvalid
 	}
 	return nil

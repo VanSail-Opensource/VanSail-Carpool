@@ -216,6 +216,6 @@ administrator customization remains separate.
 
 `usdt_review.go` owns payment-scoped native-token evidence listing, audited settlement and permanent review dismissal over existing browser-signed administrative routes.
 
-`admin_user_metrics.go` serves browser-scoped native per-profile metrics. `xnode_node_write.go` requires explicit non-null multipliers from 0 through 1000, with at most six fractional digits. Statistics reads moved into the existing administrator router.
+`admin_user_metrics.go` serves browser-scoped native per-profile metrics. The existing `xnode.Node` decoder requires explicit non-null multipliers from 0 through 1000, with at most six fractional digits. Statistics reads moved into the existing administrator router.
 
 `xnode_node_write_test.go` guards omitted/null multiplier rejection, numeric bounds and lexical fractional precision.

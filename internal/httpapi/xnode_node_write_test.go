@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"testing"
 )
 
@@ -18,11 +19,8 @@ func TestNodeWriteRequiresAnExplicitBoundedSixDecimalMultiplier(t *testing.T) {
 		{`{"multiplier":1e-7}`, false},
 	} {
 		t.Run(test.input, func(t *testing.T) {
-			var input nodeWrite
-			if err := json.Unmarshal([]byte(test.input), &input); err != nil {
-				t.Fatal(err)
-			}
-			_, err := explicitNodeMultiplier(input.Multiplier)
+			var input xnode.Node
+			err := json.Unmarshal([]byte(test.input), &input)
 			if (err == nil) != test.valid {
 				t.Fatal("multiplier presence/precision boundary", test.input, err)
 			}

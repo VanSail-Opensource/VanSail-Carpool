@@ -40,8 +40,8 @@ async function start(): Promise<void> {
   } catch (caught) { if (active && ticket === generation) { error.value = localizedError(caught, 'errors.adminAction'); busy.value = false } }
 }
 watch(() => props.userId, reset)
-window.addEventListener('txc:session-cleared', reset)
-onScopeDispose(() => { active = false; reset(); window.removeEventListener('txc:session-cleared', reset) })
+globalThis.addEventListener('txc:session-cleared', reset)
+onScopeDispose(() => { active = false; reset(); globalThis.removeEventListener('txc:session-cleared', reset) })
 </script>
 <template>
   <section class="grid gap-3 min-w-0">
