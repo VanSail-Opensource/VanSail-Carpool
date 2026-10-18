@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"net/netip"
 	"time"
 )
 
@@ -16,32 +18,38 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		NodeID string `json:"nodeId"`
 		Bank   string `json:"bank"`
 	}
-	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.NodeID == "" || (input.Bank != "dynamic" && input.Bank != "sources") {
+	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.NodeID == "" || (input.Bank != "dynamic" && input.Bank != "sources" && input.Bank != "geoip") {
 		return ErrInvalid
 	}
 	if !hasFirewallCapability(m.Capabilities(input.NodeID)) {
 		return ErrUnavailable
 	}
-	if input.Bank == "sources" {
+	if input.Bank != "dynamic" {
+		if input.Bank == "geoip" && !containsCapability(m.Capabilities(input.NodeID), "source_geoip_stream_v1") {
+			return &CapabilityError{Capability: "source_geoip_stream_v1"}
+		}
 		m.mu.Lock()
 		if m.firewallSourcesRunning >= 2 {
 			m.mu.Unlock()
-			return ErrUnavailable
+			return outbox.ErrBusy
 		}
 		m.firewallSourcesRunning++
 		m.mu.Unlock()
 	}
 	timeout := 5 * time.Minute
-	if input.Bank == "sources" {
+	if input.Bank != "dynamic" {
 		timeout = 30 * time.Minute
 	}
 	err := m.deferOperation(job, timeout, func(call context.Context) error {
-		if input.Bank == "sources" {
+		if input.Bank != "dynamic" {
 			defer func() { m.mu.Lock(); m.firewallSourcesRunning--; m.mu.Unlock() }()
+		}
+		if input.Bank == "geoip" {
+			return m.deliverCountry(call, input.NodeID)
 		}
 		return m.deliverFirewall(call, input.NodeID, input.Bank == "sources", job.ID, job.Attempts)
 	})
-	if err != nil && input.Bank == "sources" { // ErrDeferred owns the slot until completion.
+	if err != nil && input.Bank != "dynamic" { // ErrDeferred owns the slot until completion.
 		if !isDeferredFirewall(err) {
 			m.mu.Lock()
 			m.firewallSourcesRunning--
@@ -81,7 +89,11 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 	if sources && !member.Force && member.SourceApplied >= member.SourceVersion {
 		return nil
 	}
-	locked := full || sources
+	if sources {
+		peer.firewallSourceMu.Lock()
+		defer peer.firewallSourceMu.Unlock()
+	}
+	locked := full && !sources
 	if locked {
 		peer.firewallSyncMu.Lock()
 		defer peer.firewallSyncMu.Unlock()
@@ -104,7 +116,7 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 			return err
 		}
 		full = true
-		if !locked {
+		if !locked && !sources {
 			peer.firewallSyncMu.Lock()
 			defer peer.firewallSyncMu.Unlock()
 			locked = true
@@ -120,6 +132,11 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 		page, next, e := repo.FirewallPage(ctx, member.Applied, member.Version, full, cursor, 256)
 		if e != nil {
 			return e
+		}
+		for _, grant := range page.Exemptions {
+			if _, err := netip.ParseAddr(grant.IP); err != nil && !containsCapability(m.Capabilities(node), "firewall_cidr_exemptions_v1") {
+				return &CapabilityError{Capability: "firewall_cidr_exemptions_v1"}
+			}
 		}
 		page.SnapshotID = identity
 		page.Index = index

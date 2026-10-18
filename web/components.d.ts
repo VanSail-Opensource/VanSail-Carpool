@@ -319,6 +319,7 @@ declare module 'vue' {
     XNodeEndpointOptions: typeof import('./src/components/admin/xnode/XNodeEndpointOptions.vue')['default']
     XNodeFirewall: typeof import('./src/components/admin/xnode/XNodeFirewall.vue')['default']
     XNodeFirewallFields: typeof import('./src/components/admin/xnode/XNodeFirewallFields.vue')['default']
+    XNodeFirewallGrant: typeof import('./src/components/admin/xnode/XNodeFirewallGrant.vue')['default']
     XNodeFirewallRules: typeof import('./src/components/admin/xnode/XNodeFirewallRules.vue')['default']
     XNodeGlobalPolicies: typeof import('./src/components/admin/xnode/XNodeGlobalPolicies.vue')['default']
     XNodeGlobalSettings: typeof import('./src/components/admin/xnode/XNodeGlobalSettings.vue')['default']

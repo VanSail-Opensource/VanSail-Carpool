@@ -94,6 +94,7 @@ xnodeApi.migrateNode = async (id, action) => { trace.calls.push(`${action}:${id}
 xnodeApi.stageFinalMigration = async reference => { await check('final-export'); migration = { ...migration, finalDigest: 'c'.repeat(64), finalBackupReference: reference }; return receipt('xnode_migration') }
 xnodeApi.finalizeMigration = async digest => { await check('finalize:' + digest); if (params.has('final-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); migration = { ...migration, phase: 'complete', finalizedAt: stamp }; return receipt('xnode_migration') }
 adminOperationsApi.getOperation = async () => { trace.calls.push('admin-operation'); return ({ ...latest!, status: params.has('shared-error') ? 'failed' : params.has('pending') ? 'pending_review' : 'succeeded', errorCode: params.has('shared-error') ? 'XNODE_SHARED_ENDPOINT' : null, updatedAt: new Date().toISOString() }) }
+firewallApi.grant = async (body, key) => { await check('grant-firewall'); if (params.has('grant-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' }); trace.writes.push({ body, key }); return receipt('xnode_firewall_exemption') }
 Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value: string) => { trace.copies.push(value) } } })
 Object.assign(window, { __xnodeAudit: trace })
 

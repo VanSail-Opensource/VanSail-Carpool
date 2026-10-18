@@ -34,6 +34,15 @@
     "loadFailed": "Could not load the unban price. Please retry.",
     "saveFailed": "Could not save the exemption. Retry with the same request.",
     "invalidIP": "Enter an individual public IPv4 or IPv6 address.",
-    "conflict": "This IP is already exempt, or the price has changed. Refresh before retrying."
+    "conflict": "This IP is already exempt, or the price has changed. Refresh before retrying.",
+    "adminTitle": "Administrator unban",
+    "adminHint": "Exempt an IP or CIDR from fleet blacklists for the selected hours. Offline nodes apply it when they reconnect.",
+    "adminPrefix": "IP or CIDR",
+    "adminPrefixPlaceholder": "8.8.8.0/24",
+    "adminSend": "Send unban",
+    "adminReason": "Reason (optional)",
+    "adminInvalidPrefix": "Enter an IPv4/IPv6 address or CIDR.",
+    "adminInvalidHours": "Enter a whole number from 1 to 8760 hours.",
+    "adminInvalidReason": "Use at most 1000 characters."
   }
 }

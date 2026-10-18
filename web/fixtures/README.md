@@ -105,3 +105,5 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 `stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, review dismissal and selected-payment credit dialogs with constructed data. Flags `credit`, `zh`, `dark`, `slow`, `empty`, `error`, `save-error` and `action-error` cover both outcomes, failed loads/saves and retry. `window.__stablecoinAudit` records requests; it never contacts a chain.
 
 `NativeAdminAudit.vue`, `native-admin-audit.ts` and `native-admin-audit.html` mount actual profile metrics/scans/TXB controls, machine tables/charts and browser statistics with constructed signed-request data. Flags `view=machine`, `view=statistics`, `empty`, `slow`, `error`, `save-error`, `dark` and `zh` exercise states; `window.__nativeAdminTarget` steers profile races and `window.__nativeAdminAudit` records scoped calls.
+
+The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-empty`, `slow` and `zh` exercise retained drafts, empty/loading states and Chinese labels.

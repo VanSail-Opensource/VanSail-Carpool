@@ -44,6 +44,9 @@ func (m *Master) deliverFirewallSources(ctx context.Context, peer *agentPeer, me
 		if !exists || desired.Generation != source.Generation {
 			return nil
 		}
+		if !containsCapability(m.Capabilities(peer.nodeID), "disk_firewall_sources_v1") {
+			return &CapabilityError{Capability: "disk_firewall_sources_v1"}
+		}
 		if current.SourceGenerations[source.ID] == source.Generation {
 			source.Reference = true
 			sent[source.ID] = true

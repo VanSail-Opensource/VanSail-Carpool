@@ -19,6 +19,9 @@ var ErrUnknownKind = errors.New("outbox job kind is not registered")
 // complete the job itself; a process crash leaves it recoverable at startup.
 var ErrDeferred = errors.New("outbox completion is deferred")
 
+// ErrBusy did not attempt external work and must not exhaust delivery retries.
+var ErrBusy = errors.New("outbox executor capacity is occupied")
+
 // Repository leases and completes durable jobs.
 type Repository interface {
 	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)

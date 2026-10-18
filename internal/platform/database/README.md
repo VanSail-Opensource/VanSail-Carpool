@@ -488,3 +488,5 @@ evidence IDs, and makes credited/dismissed transfers immutable in SQLite.
 `stablecoin_migration_test.go` verifies legacy cursor progress, permanent quote fingerprints, transfer IDs and token-specific outstanding quote watchers across migration 085.
 
 `stablecoin_matching_test.go` covers exact-first matching, tolerance boundaries, overpayments and manual ambiguity rejection for both native tokens.
+
+`xnode_firewall_admin.go` atomically writes an administrator grant, audit and provider receipt, then observes the existing fleet delivery clock. `xnode_firewall_admin_test.go` covers free idempotent grants and delivery completion. `xnode_geoip_queue.go` coalesces country preparation through the existing outbox. `outbox_admission_test.go` covers urgent firewall priority and capacity deferral without exhausting retries.

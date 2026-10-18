@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
@@ -25,9 +26,21 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 		return ErrUnavailable
 	}
 	m.mu.Lock()
-	if m.ctx == nil || m.ctx.Err() != nil || m.operations >= 4 {
+	if m.ctx == nil || m.ctx.Err() != nil {
 		m.mu.Unlock()
 		return ErrUnavailable
+	}
+	var payload struct {
+		Bank string `json:"bank"`
+	}
+	urgent := job.Kind == FirewallJob && json.Unmarshal([]byte(job.Payload), &payload) == nil && payload.Bank == "dynamic"
+	limit := 3
+	if urgent {
+		limit = 4
+	}
+	if m.operations >= limit {
+		m.mu.Unlock()
+		return outbox.ErrBusy
 	}
 	ctx, cancel := context.WithTimeout(m.ctx, timeout)
 	m.operations++

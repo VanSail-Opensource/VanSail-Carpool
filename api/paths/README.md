@@ -259,3 +259,5 @@ provides browser-only admin preset inventory and optimistic writes.
 `api-v1-admin-users-userid-metrics.yaml` projects native per-profile activity and exact accounting. Statistics snapshots and node reads now belong only to `/api/v1/admin/statistics` and `/api/v1/admin/statistics/nodes`, using the existing statistics path shards.
 
 `api-v1-admin-xnode-subscription-templates-selection-preview.yaml` describes bounded Go regex validation and selection preview. `api-v1-subscriptions-token.yaml` documents the canonical configuration download with actual Base64 fallback and explicit native compatibility.
+
+`api-v1-admin-xnode-firewall-exemptions.yaml` defines idempotent administrator IP/CIDR exemptions with custom 1-8760 hour lifetimes and durable delivery receipts.

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func (s *Store) ClaimOutboxJob(ctx context.Context, now time.Time) (*model.Outbo
 		AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
 			NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
 			AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
-		ORDER BY available_at,created_at LIMIT 1`, stamp(now)))
+		ORDER BY CASE WHEN kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic' THEN 0 ELSE 1 END,available_at,created_at LIMIT 1`, stamp(now)))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}
@@ -68,6 +69,13 @@ func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts in
 	if jobErr == nil {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=?`, jobID); err != nil {
 			return fmt.Errorf("remove completed outbox job: %w", err)
+		}
+		return tx.Commit()
+	}
+	if errors.Is(jobErr, outbox.ErrBusy) {
+		_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=MAX(0,attempts-1),available_at=?,updated_at=? WHERE id=?`, stamp(now.Add(time.Second)), stamp(now), jobID)
+		if err != nil {
+			return err
 		}
 		return tx.Commit()
 	}

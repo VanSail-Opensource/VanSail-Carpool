@@ -23,6 +23,9 @@ func preparePeerWire(peer *agentPeer, config wire.Config, capabilities []string)
 		return saved, saved.err
 	}
 	p := &preparedWire{source: peer.compiled, config: firewallForCapabilities(config, capabilities)}
+	if containsCapability(capabilities, "source_geoip_stream_v1") {
+		p.config = referenceCountry(p.config)
+	}
 	peer.wireState = p
 	if p.err = configurationCapabilities(p.config, capabilities); p.err != nil {
 		return p, p.err

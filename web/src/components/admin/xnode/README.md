@@ -60,3 +60,5 @@ control member server routing; subscription client documents stay independent.
 `XNodeSubscriptionRules.test.ts` covers aborting and discarding superseded Go previews without changing retained assignments.
 
 Certificate forms show only mode-relevant identity fields; node-file profiles require their two paths. Global policy errors use safe localized asset/selector codes and preserve the draft on failure.
+
+`XNodeFirewallGrant.vue` provides localized, validated IP/CIDR exemptions with custom whole-hour deadlines. It reuses operation receipt polling, retains uncertain request keys, permits a different grant while another is pending, and cancels UI tracking on disposal.

@@ -16,6 +16,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Get("/xnode/routing-templates", s.xnodeRoutingTemplateConfig)
 	router.Put("/xnode/routing-templates", s.xnodeSaveRoutingTemplateConfig)
 	router.Get("/xnode/firewall/bans", s.xnodeFirewallBans)
+	router.Post("/xnode/firewall/exemptions", s.xnodeGrantFirewallExemption)
 	router.Get("/xnode/subscription-templates", s.xnodeSubscriptionTemplates)
 	router.Put("/xnode/subscription-templates", s.xnodeSaveSubscriptionTemplates)
 	router.Post("/xnode/subscription-templates/preview", s.xnodePreviewSubscriptionTemplate)

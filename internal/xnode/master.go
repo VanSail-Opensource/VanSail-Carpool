@@ -30,29 +30,32 @@ type Master struct {
 	firewallInventoryVersion uint64
 }
 type agentPeer struct {
-	nodeID         string
-	agentID        string
-	bootID         string
-	socket         *websocket.Conn
-	queue          *upstreamqueue.Queue
-	ctx            context.Context
-	cancel         context.CancelFunc
-	mu             sync.Mutex
-	syncMu         sync.Mutex
-	revision       uint64
-	digest         string
-	pending        map[string]chan wire.Message
-	lastControls   map[int]bool
-	compiled       *compiledState  // protected by syncMu
-	compileFailure *compileFailure // protected by syncMu
-	wireState      *preparedWire   // protected by syncMu
-	forceSync      bool            // protected by mu; coalesced by the existing reconciler
-	failedDigest   string          // protected by mu
-	retryAt        time.Time       // protected by mu
-	retryDelay     time.Duration   // protected by mu
-	pong           chan string
-	firewallSyncMu sync.Mutex
-	firewallJoined bool
+	nodeID           string
+	agentID          string
+	bootID           string
+	socket           *websocket.Conn
+	queue            *upstreamqueue.Queue
+	ctx              context.Context
+	cancel           context.CancelFunc
+	mu               sync.Mutex
+	syncMu           sync.Mutex
+	revision         uint64
+	digest           string
+	pending          map[string]chan wire.Message
+	lastControls     map[int]bool
+	compiled         *compiledState  // protected by syncMu
+	compileFailure   *compileFailure // protected by syncMu
+	wireState        *preparedWire   // protected by syncMu
+	forceSync        bool            // protected by mu; coalesced by the existing reconciler
+	failedDigest     string          // protected by mu
+	retryAt          time.Time       // protected by mu
+	retryDelay       time.Duration   // protected by mu
+	pong             chan string
+	firewallSyncMu   sync.Mutex
+	firewallSourceMu sync.Mutex
+	countryMu        sync.Mutex
+	geoIPGeneration  string
+	firewallJoined   bool
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {

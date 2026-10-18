@@ -3,6 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { computed, onMounted, shallowRef } from 'vue'
 import { firewallApi, type FirewallBan } from '@/api/firewall'
 import { localizedError, useI18n } from '@/i18n'
+import XNodeFirewallGrant from './XNodeFirewallGrant.vue'
 const { t } = useI18n()
 const items = shallowRef<FirewallBan[]>([])
 const loading = shallowRef(true)
@@ -23,6 +24,7 @@ onMounted(() => void load())
 
 <template>
   <section class="grid min-w-0 gap-4">
+    <XNodeFirewallGrant />
     <div class="flex items-center justify-between gap-4"><p class="text-sm text-muted">{{ t('firewall.reportHint') }}</p><UButton icon="i-ph-arrow-clockwise" variant="ghost" color="neutral" :loading="loading" :aria-label="t('common.refresh')" @click="load" /></div>
     <UProgress v-if="loading" />
     <UAlert v-if="error" color="warning" :title="error" />

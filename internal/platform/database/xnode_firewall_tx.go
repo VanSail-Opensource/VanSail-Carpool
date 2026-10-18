@@ -49,7 +49,7 @@ func queueFirewallTx(ctx context.Context, tx *sql.Tx, node string, now time.Time
 	for _, bank := range []string{"dynamic", "sources"} {
 		raw, _ := json.Marshal(map[string]string{"nodeId": node, "bank": bank})
 		// One intent per node and bank; desired state is read at execution time.
-		if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind=? AND payload=? AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind=? AND payload=? AND status IN ('failed','pending')`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
 			return err
 		}
 		if err := insertOutboxTx(ctx, tx, xnode.FirewallJob, string(raw), now, now); err != nil {

@@ -217,6 +217,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = operationDispatcher.Register(xnode.RoutingOperationKind, xnodeService); err != nil {
 		return cleanup(err)
 	}
+	if err = operationDispatcher.Register(xnode.FirewallExemptionOperation, xnodeService); err != nil {
+		return cleanup(err)
+	}
 	if err = operationDispatcher.Register(xnodemigration.OperationKind, migrationService); err != nil {
 		return cleanup(err)
 	}

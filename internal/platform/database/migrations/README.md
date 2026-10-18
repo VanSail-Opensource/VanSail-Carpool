@@ -159,3 +159,5 @@ file instead.
 `084_xnode_routing_plans.sql` stores encrypted owner route plans, preserved conversion evidence and durable deployment barriers, with compile revision invalidation.
 
 `085_stablecoin_tokens.sql` adds token cursor keys without resetting USDT progress, preserves quote fingerprints and transfer IDs, and records immutable audited dismissals.
+
+`086_admin_firewall_exemptions.sql` distinguishes uncharged administrator grants from immutable member payments and invalidates effective inventory projections when an exemption is issued or released.

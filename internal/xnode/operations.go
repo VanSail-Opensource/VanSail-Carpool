@@ -66,6 +66,9 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	return operation.Receipt, err
 }
 func (s *Service) HandleProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
+	if operation.Receipt.Kind == FirewallExemptionOperation {
+		return s.handleFirewallExemption(ctx, operation)
+	}
 	if s.master == nil {
 		return ErrUnavailable
 	}

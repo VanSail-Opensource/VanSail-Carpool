@@ -20,6 +20,9 @@ func configurationCapabilities(config wire.Config, advertised []string) error {
 	}
 	if config.Firewall.SourceGeoIP != nil {
 		required = append(required, "source_geoip_firewall_v1")
+		if config.Firewall.SourceGeoIP.Reference {
+			required = append(required, "source_geoip_stream_v1")
+		}
 	}
 	if len(config.BlockedDomains) > 0 {
 		required = append(required, "shared_domain_blocks_v1")

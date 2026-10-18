@@ -125,12 +125,12 @@ func (s *Store) FirewallPrefixes(ctx context.Context, visit func([]string) error
 		if err = rows.Scan(&raw); err != nil {
 			break
 		}
-		ip, parseErr := netip.ParseAddr(raw)
+		prefix, parseErr := wire.ExemptionPrefix(raw)
 		if parseErr != nil {
 			err = parseErr
 			break
 		}
-		builder.Remove(ip)
+		builder.RemovePrefix(prefix)
 	}
 	if err == nil {
 		err = rows.Err()
