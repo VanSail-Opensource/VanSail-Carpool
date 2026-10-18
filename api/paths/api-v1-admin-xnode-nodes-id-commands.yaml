@@ -1,5 +1,6 @@
 {
   "post": {
+    "description": "Queues a durable node command. Delivery acceptance is bounded to 30 seconds, with command-specific execution deadlines. Receipts distinguish undelivered, rejected, failed and uncertain outcomes using safe error codes. Upgrade completion requires durable transaction reconciliation and fresh synchronized readiness after reconnect.",
     "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
     "tags": [
       "Administration"

@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	payload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"slices"
 	"time"
 )
 
@@ -53,6 +55,9 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if _, err := s.repo.XNodeNode(ctx, node); err != nil {
 		return model.OperationReceipt{}, err
 	}
+	if (request.Name == "runtime.reload" || request.Name == "geodata.refresh") && s.master != nil && s.master.Connected(node) && !slices.Contains(s.master.Capabilities(node), "activation_commands_v1") {
+		return model.OperationReceipt{}, &CapabilityError{Capability: "activation_commands_v1"}
+	}
 	raw, err := json.Marshal(request)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -75,7 +80,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if operation.Receipt.Kind == RoutingOperationKind {
 		return s.handleRoutingOperation(operation, job)
 	}
-	return s.master.DeferOperation(job, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })
+	return s.master.deferOperation(job, 12*time.Minute, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })
 }
 
 func (s *Service) runProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
@@ -105,24 +110,45 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 	if json.Unmarshal([]byte(raw), &request) != nil || !validNodeCommand(request) {
 		return ErrInvalid
 	}
-	args, err := s.commandArguments(ctx, items[0].TargetID, request)
+	preflight, stopPreflight := context.WithTimeout(ctx, 30*time.Second)
+	args, err := s.commandArguments(preflight, items[0].TargetID, request)
+	stopPreflight()
 	if err != nil {
+		var capability *CapabilityError
+		if errors.Is(err, ErrInvalid) || errors.Is(err, ErrConflict) || errors.As(err, &capability) {
+			code := "XNODE_COMMAND_INPUT_INVALID"
+			if capability != nil {
+				code = "XNODE_UPGRADE_REQUIRED"
+			}
+			finish, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer cancel()
+			_, finishErr := repository.CompleteXNodeProviderOperation(finish, operation.Receipt.ID, operation.Attempts, providerops.Completion{Status: providerops.StatusFailed, ErrorCode: code, ResultJSON: "{}"}, s.now().UTC())
+			return finishErr
+		}
 		return err
-	}
-	if !s.master.Connected(items[0].TargetID) {
-		return ErrUnavailable
 	}
 	operation, err = repository.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, s.now().UTC())
 	if err != nil {
 		return err
 	}
-	child, cancel := context.WithTimeout(ctx, 150*time.Second)
+	child, cancel := context.WithTimeout(ctx, commandDeadline(request.Name)+30*time.Second)
 	defer cancel()
-	result, commandErr := s.master.Command(child, items[0].TargetID, operation.Receipt.ID, request.Name, args)
+	result, commandErr := s.executeNodeCommand(child, items[0].TargetID, operation, request, args)
 	completion := providerops.Completion{Status: providerops.StatusSucceeded, ProviderReference: operation.Receipt.ID, ResultJSON: `{}`}
 	if commandErr != nil {
 		completion.Status = providerops.StatusPendingReview
 		completion.ErrorCode = "XNODE_COMMAND_OUTCOME_UNKNOWN"
+		var outcome *CommandError
+		if errors.As(commandErr, &outcome) {
+			switch outcome.Outcome {
+			case CommandUndelivered:
+				completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_COMMAND_UNDELIVERED"
+			case CommandRejected:
+				completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_COMMAND_REJECTED"
+			case CommandFailed:
+				completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_COMMAND_FAILED"
+			}
+		}
 	} else {
 		value := map[string]any{"command": request.Name, "nodeId": items[0].TargetID}
 		if request.Name == "speedtest" {

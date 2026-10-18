@@ -7,6 +7,9 @@ import (
 
 func (s *Service) commandArguments(ctx context.Context, node string, request CommandRequest) (map[string]any, error) {
 	args := map[string]any{}
+	if (request.Name == "runtime.reload" || request.Name == "geodata.refresh") && !containsCapability(s.master.Capabilities(node), "activation_commands_v1") {
+		return nil, &CapabilityError{Capability: "activation_commands_v1"}
+	}
 	switch request.Name {
 	case "geodata.refresh":
 		s.invalidatePolicyAssets()

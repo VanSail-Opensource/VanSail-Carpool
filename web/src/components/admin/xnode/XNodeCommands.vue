@@ -18,6 +18,7 @@ const options = computed(() => ['runtime.reload', 'geodata.refresh', 'ddns.run',
 const peers = computed(() => props.endpoints.filter(item => item.enabled && item.nodeId !== props.nodeId).map(item => ({ value: item.id, label: item.name })))
 const command = useDurableCommand({ errorKey: 'xnode.saveFailed', onTerminal: async receipt => { if (receipt.status === 'succeeded') await loadResult(receipt.id) } })
 const { receipt, error, checking, busy, blocksMutations, refresh } = command
+const message = computed(() => receipt.value?.errorCode ? localizedError({ code: receipt.value.errorCode }, 'xnode.saveFailed') : null)
 const invalid = computed(() => name.value === 'ddns.run' && !jobId.value.trim() || name.value === 'speedtest' && !peerEndpointId.value)
 async function loadResult(id: string) {
   resultError.value = null
@@ -38,7 +39,7 @@ async function run() {
     <UFormField v-if="name === 'update.install'" :label="t('xnode.updateVersion')"><UInput v-model="version" class="w-full" :disabled="busy || blocksMutations" /></UFormField>
     <UFormField v-if="name === 'speedtest'" :label="t('nodeAdmin.peer')"><USelect v-model="peerEndpointId" :items="peers" :disabled="busy || blocksMutations" class="w-full" /></UFormField>
     <UButton type="submit" :loading="busy" :disabled="!!invalid || blocksMutations" :label="t('nodeAdmin.run')" class="justify-self-end" />
-    <OperationStatusNotice :receipt="receipt" :error="error" :checking="checking" @refresh="refresh" />
+    <OperationStatusNotice :receipt="receipt" :message="message" :error="error" :checking="checking" @refresh="refresh" />
     <div v-if="resultError" class="flex gap-2"><span>{{ resultError }}</span><UButton v-if="receipt" variant="ghost" :label="t('common.tryAgain')" @click="loadResult(receipt.id)" /></div>
     <XNodeMetricDetails v-if="result" :value="result" />
   </form>

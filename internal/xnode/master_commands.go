@@ -15,7 +15,7 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	peer := m.peers[nodeID]
 	m.mu.RUnlock()
 	if peer == nil {
-		return nil, ErrUnavailable
+		return nil, &CommandError{CommandUndelivered, ErrUnavailable}
 	}
 	if id == "" {
 		var err error
@@ -33,7 +33,7 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	if !known {
 		return nil, ErrInvalid
 	}
-	pending := make(chan wire.Message, 1)
+	pending := make(chan wire.Message, 4)
 	peer.mu.Lock()
 	if peer.pending[id] != nil {
 		peer.mu.Unlock()
@@ -42,34 +42,19 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	peer.pending[id] = pending
 	peer.mu.Unlock()
 	defer func() { peer.mu.Lock(); delete(peer.pending, id); peer.mu.Unlock() }()
-	if err := peer.send(ctx, wire.New("command", id, 0, map[string]any{"name": name, "args": args})); err != nil {
-		return nil, err
+	delivery, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	timer := time.NewTimer(30 * time.Second)
+	defer timer.Stop()
+	started, err := peer.sendTracked(delivery, wire.New("command", id, 0, map[string]any{"name": name, "args": args}))
+	if err != nil {
+		outcome := CommandUndelivered
+		if started {
+			outcome = CommandUncertain
+		}
+		return nil, &CommandError{outcome, err}
 	}
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-peer.ctx.Done():
-		return nil, ErrUnavailable
-	case message := <-pending:
-		if message.Type == "error" {
-			return nil, ErrUnavailable
-		}
-		var result struct {
-			ID       string          `json:"id"`
-			Command  string          `json:"command"`
-			Status   string          `json:"status"`
-			Data     json.RawMessage `json:"data"`
-			Error    string          `json:"error"`
-			Finished time.Time       `json:"finished"`
-		}
-		if err := wire.Decode(message.Data, &result); err != nil || result.ID != id || result.Command != name {
-			return nil, ErrInvalid
-		}
-		if result.Status != "completed" {
-			return nil, ErrUnavailable
-		}
-		return result.Data, nil
-	}
+	return waitCommand(ctx, peer, pending, id, name, timer.C)
 }
 
 func (m *Master) Flush(ctx context.Context, nodeID string, user int64, quiesce bool) (wire.TrafficBarrier, error) {

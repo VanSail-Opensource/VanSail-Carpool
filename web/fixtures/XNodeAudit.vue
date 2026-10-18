@@ -2,9 +2,11 @@
 import FirewallExemption from '@/components/connections/FirewallExemption.vue'
 const member = new globalThis.URLSearchParams(globalThis.location.search).has('firewall-member')
 import XNodeWorkspace from '@/components/admin/xnode/XNodeWorkspace.vue'
+import XNodeCommands from '@/components/admin/xnode/XNodeCommands.vue'
+const commands = new globalThis.URLSearchParams(globalThis.location.search).has('commands')
 </script>
 
-<template><UApp><main class="audit-shell"><FirewallExemption v-if="member" /><XNodeWorkspace v-else /></main></UApp></template>
+<template><UApp><main class="audit-shell"><XNodeCommands v-if="commands" node-id="node-one" :endpoints="[]" /><FirewallExemption v-else-if="member" /><XNodeWorkspace v-else /></main></UApp></template>
 
 <style scoped>
 .audit-shell { max-width: 1180px; padding: 24px; margin: 0 auto; }

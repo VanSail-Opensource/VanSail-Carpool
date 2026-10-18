@@ -103,7 +103,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return err
 		}
 		return peer.send(ctx, wire.New("traffic.ack", "", 0, map[string]string{"id": report.ID}))
-	case "command.result", "command.cancelled":
+	case "command.accepted", "command.result":
 		peer.mu.Lock()
 		pending := peer.pending[message.ID]
 		peer.mu.Unlock()
@@ -138,7 +138,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		return m.confirmFirewall(ctx, peer, message)
 	case "firewall.events":
 		return m.receiveFirewallEvents(ctx, peer, message)
-	case "command.accepted", "command.progress", "admission.rejected", "torrent.detected", "torrent.expired", "agent.error":
+	case "command.cancelled", "command.progress", "admission.rejected", "torrent.detected", "torrent.expired", "agent.error":
 		return nil
 	default:
 		return ErrInvalid
