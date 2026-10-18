@@ -35,9 +35,29 @@ filtering, keyboard selection, ordering/deletion, same-node exclusion, matching
 loop refusal and disjoint cycles, member receipt polling, failed-load retry,
 failed-save draft retention and typed admin preset saves. Mobile uses a vertical
 graph with readable node targets. Successful affected flows had no console or
-XHR/fetch errors. Static vet, frontend typecheck, targeted ESLint, structure/i18n checks and regenerated contracts passed. Hosted routing regressions remain pending until delivery.
+XHR/fetch errors. Static vet, frontend typecheck, targeted ESLint, structure/i18n
+checks and regenerated contracts passed. Hosted Container
+[39088610536](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/39088610536)
+passed at `4591c598`, including all race shards and image publication.
 
 ## Work still required
+
+Runtime repair priority: X-Node `f2238bc` fixes installer/self-restart locking and
+includes the two existing firewall import-format edits; `38d52a2` stages valid
+listener targets before binding and joins activation shutdown. Hosted Quality
+[39088271127](https://github.com/VanSail-Opensource/X-Node/actions/runs/39088271127)
+passed, including race, binaries, vulnerability and disposable Debian checks.
+`337c0ec` adds durable nftables/UFW ownership with Debian-on/off and Ubuntu-UFW
+VM coverage; its replacement Quality and signed release are still pending.
+Panel `4591c598` separates ready-agent liveness from sampled activity eligibility,
+bounds failed compile/maintenance retries, and corrects the hosted deployment
+hold to target the actual source configuration change. The continuing CPU audit
+removes repeated capability/document work from unchanged syncs, separates command
+errors from configuration rejection, ignores obsolete failures, and paces retry
+of rejected state. Immediate negative ACKs cannot be overwritten by the send
+return path. The hosted CPU profile now also exercises actual cached sync calls.
+Container logs
+showed no error according to the user; no production CPU profile was available.
 
 - USDC mode/scanners/cursors/proofs/settlement, courtesy matching and immutable review dismissal.
 - Native admin scans/profile metrics and seven-day graph, TX Statistics browser migration, remaining metric tables/charts and API Access/control refinements.

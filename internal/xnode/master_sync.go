@@ -2,9 +2,8 @@ package xnode
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
+	"slices"
+	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
@@ -85,44 +84,31 @@ func (m *Master) reconcile(ctx context.Context) error {
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {
 	peer.syncMu.Lock()
 	defer peer.syncMu.Unlock()
-	previousCompiled := peer.compiled
-	config, err := m.cachedConfiguration(ctx, peer, force)
-	if err != nil {
-		return err
-	}
 	m.mu.RLock()
 	hello := m.live[peer.nodeID].hello
 	m.mu.RUnlock()
 	if hello.UpgradePending {
 		return nil
 	}
-	config = firewallForCapabilities(config, hello.Capabilities)
-	if err = configurationCapabilities(config, hello.Capabilities); err != nil {
+	config, err := m.cachedConfiguration(ctx, peer, force)
+	if err != nil {
 		return err
 	}
-	controls := m.connectionControls(config)
-	peer.mu.Lock()
-	unchanged := peer.digest != "" && previousCompiled != nil && previousCompiled == peer.compiled
-	oldControls := peer.lastControls
-	peer.mu.Unlock()
-	if unchanged && !force {
-		return m.syncControls(ctx, peer, controls, oldControls)
+	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
+	if err != nil {
+		return err
 	}
-	normalized := wire.Clone(config)
-	for i := range config.Users {
-		normalized.Users[i].BlockNew = false
-	}
-	raw, err := json.Marshal(normalized)
-	if err != nil || len(raw) > wire.MaxFrameBytes-1024 {
-		return ErrInvalid
-	}
-	hash := sha256.Sum256(raw)
-	digest := hex.EncodeToString(hash[:])
+	controls := m.connectionControls(prepared.config)
+	digest := prepared.digest
 	peer.mu.Lock()
 	same := peer.digest == digest
 	previous := peer.revision
-	oldControls = peer.lastControls
+	oldControls := peer.lastControls
+	retry := peer.failedDigest == digest && m.service.now().Before(peer.retryAt)
 	peer.mu.Unlock()
+	if retry {
+		return nil
+	}
 	if same && !force {
 		return m.syncControls(ctx, peer, controls, oldControls)
 	}
@@ -130,6 +116,8 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if err != nil {
 		return err
 	}
+	normalized := prepared.config
+	normalized.Users = slices.Clone(prepared.config.Users)
 	for i := range normalized.Users {
 		normalized.Users[i].BlockNew = controls[normalized.Users[i].ID]
 	}
@@ -143,6 +131,10 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	}
 	peer.mu.Lock()
 	peer.revision = revision
+	peer.digest, peer.lastControls = digest, controls
+	if peer.failedDigest != digest {
+		peer.failedDigest, peer.retryDelay, peer.retryAt = "", 0, time.Time{}
+	}
 	peer.mu.Unlock()
 	if err = peer.send(ctx, message); err != nil {
 		peer.mu.Lock()
@@ -159,9 +151,6 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 		}
 		m.mu.Unlock()
 	}
-	peer.mu.Lock()
-	peer.revision, peer.digest, peer.lastControls = revision, digest, controls
-	peer.mu.Unlock()
 	return nil
 }
 
@@ -186,6 +175,7 @@ func (m *Master) syncControls(ctx context.Context, peer *agentPeer, current, pre
 	message.BaseRevision = base
 	peer.mu.Lock()
 	peer.revision = revision
+	peer.lastControls = current
 	peer.mu.Unlock()
 	if err = peer.send(ctx, message); err != nil {
 		peer.mu.Lock()
@@ -193,8 +183,5 @@ func (m *Master) syncControls(ctx context.Context, peer *agentPeer, current, pre
 		peer.mu.Unlock()
 		return err
 	}
-	peer.mu.Lock()
-	peer.revision, peer.lastControls = revision, current
-	peer.mu.Unlock()
 	return nil
 }

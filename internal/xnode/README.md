@@ -23,6 +23,15 @@ admission decisions. `master_metrics_test.go` covers that rolling-upgrade bounda
 `compile_cache.go` reuses unchanged candidates for baseline resends and backs off
 failed compilation in memory, capped at one minute. Authoritative revisions,
 asset generations and access deadlines bypass obsolete failures immediately.
+`master_wire.go` prepares capability projection and the normalized digest once
+per immutable compiled candidate/peer. Only scalar admission controls are copied
+for a resend. It shares read-only documents/CIDRs/credential maps, and caches
+capability rejections without reusing an older successful state. Hosted
+`master_wire_test.go` covers the immutable and unsupported-policy boundaries.
+`master_retry_test.go` covers command errors and obsolete failures without full
+resync, paced activation retries, and recovery through the original applied ACK.
+The send digest is published before writing the frame so an immediate failure
+cannot be overwritten by the sender's return path.
 
 `credentials.go` preserves imported secrets and creates independent random
 SS-2022 128/256-bit user keys. SQLite stores encrypted desired configuration and

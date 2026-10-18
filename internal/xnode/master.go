@@ -45,7 +45,11 @@ type agentPeer struct {
 	lastControls   map[int]bool
 	compiled       *compiledState  // protected by syncMu
 	compileFailure *compileFailure // protected by syncMu
+	wireState      *preparedWire   // protected by syncMu
 	forceSync      bool            // protected by mu; coalesced by the existing reconciler
+	failedDigest   string          // protected by mu
+	retryAt        time.Time       // protected by mu
+	retryDelay     time.Duration   // protected by mu
 	pong           chan string
 	firewallSyncMu sync.Mutex
 	firewallJoined bool

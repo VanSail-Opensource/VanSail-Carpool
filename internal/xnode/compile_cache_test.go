@@ -166,5 +166,29 @@ func BenchmarkXNodeSteadyState(b *testing.B) {
 				}
 			}
 		})
+		b.Run(fmt.Sprintf("nodes-%d/cached-sync", nodes), func(b *testing.B) {
+			repo := &cacheTestRepository{revision: 1}
+			service := NewService(repo, cacheTestSettings{}, nil, nil, nil)
+			master := NewMaster(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
+			capabilities := []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"}
+			peers := make([]*agentPeer, nodes)
+			for i := range peers {
+				peer := &agentPeer{nodeID: fmt.Sprint(i), compiled: &compiledState{version: 1, config: config}}
+				master.live[peer.nodeID] = liveSnapshot{hello: wire.AgentHello{Capabilities: capabilities}}
+				prepared, err := preparePeerWire(peer, config, capabilities)
+				if err != nil {
+					b.Fatal(err)
+				}
+				peer.digest, peer.lastControls = prepared.digest, master.connectionControls(config)
+				peers[i] = peer
+			}
+			for b.Loop() {
+				for _, peer := range peers {
+					if err := master.syncNode(context.Background(), peer, false); err != nil {
+						b.Fatal(err)
+					}
+				}
+			}
+		})
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
@@ -24,17 +25,41 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return ErrInvalid
 		}
 		peer.mu.Unlock()
-		return m.service.repo.AcknowledgeXNodeState(ctx, peer.nodeID, message.Revision, message.Type == "state.applied")
+		if err := m.service.repo.AcknowledgeXNodeState(ctx, peer.nodeID, message.Revision, message.Type == "state.applied"); err != nil {
+			return err
+		}
+		if message.Type == "state.applied" {
+			peer.mu.Lock()
+			if message.Revision == peer.revision {
+				if peer.digest == "" {
+					peer.digest = peer.failedDigest
+				}
+				peer.failedDigest, peer.retryDelay, peer.retryAt = "", 0, time.Time{}
+			}
+			peer.mu.Unlock()
+		}
+		return nil
 	case "state.failed", "error":
 		peer.mu.Lock()
-		peer.digest = ""
+		commandError := false
 		if message.Type == "error" {
 			if pending := peer.pending[message.ID]; pending != nil {
+				commandError = true
 				select {
 				case pending <- message:
 				default:
 				}
 			}
+		}
+		// Command failures and superseded activation results do not invalidate
+		// the current configuration. Retry an actual rejection with bounded pace.
+		if !commandError && message.Revision > 0 && message.Revision == peer.revision {
+			if peer.digest != "" {
+				peer.failedDigest = peer.digest
+			}
+			peer.digest = ""
+			peer.retryDelay = min(time.Minute, max(time.Second, peer.retryDelay*2))
+			peer.retryAt = m.service.now().Add(peer.retryDelay)
 		}
 		peer.mu.Unlock()
 		return nil
