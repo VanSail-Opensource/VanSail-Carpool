@@ -149,9 +149,15 @@ a.Runtime.Apply(lifetime, resolved)
 `geosite:`/`geoip:` matchers Xray opens `geosite.dat`/`geoip.dat` from
 `XRAY_LOCATION_ASSET` (falling back to the executable directory). The
 document-level `env` is honored, but it is not present in the first
-validation call. On a host without a process-level asset path this makes
-**every** activation fail, before the runtime is touched. `v2.0.7` has the
-same ordering, so this is not specific to the rollback target.
+validation call. The installed unit provides no process-level
+`XRAY_LOCATION_ASSET`, so this makes **every** activation fail, before the
+runtime is touched. `v2.0.7` has the same ordering, so this is not specific
+to the rollback target.
+
+> Open question: systemd does not record the environment of the earlier
+> serving process, so the exact reason the pre-upgrade process validated
+> successfully could not be reconstructed from retained logs. The durable
+> fix therefore removes the dependency on ambient environment entirely.
 
 ## Mitigation applied
 
