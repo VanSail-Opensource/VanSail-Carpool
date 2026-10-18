@@ -12,6 +12,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 	t.Parallel()
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "upgrade.db")
+	var boundaryMigrationCount int
 	db, err := Open(ctx, path)
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +45,9 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 		}
 	}
 	if _, err := conn.ExecContext(ctx, "DELETE FROM schema_migrations WHERE version IN (?,?,?)", usdtMigration, "073_remove_usdt_rpc_quotas.sql", "085_stablecoin_tokens.sql"); err != nil {
+		t.Fatal(err)
+	}
+	if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&boundaryMigrationCount); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys=ON"); err != nil {
@@ -87,8 +91,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 	if err != nil || len(backups) != 1 {
 		t.Fatalf("backups=%v %v", backups, err)
 	}
-	versions, _ := MigrationVersions()
-	if err := verifyMigrationBoundaryBackup(ctx, backups[0], len(versions)-2, usdtMigration); err != nil {
+	if err := verifyMigrationBoundaryBackup(ctx, backups[0], boundaryMigrationCount, usdtMigration); err != nil {
 		t.Fatal("unverified upgrade backup", err)
 	}
 	createUSDTTestOrder(t, current, user.ID, "1.000")
