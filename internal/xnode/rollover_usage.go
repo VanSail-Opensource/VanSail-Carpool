@@ -11,7 +11,7 @@ import (
 
 // termPeriods selects the purchase, not the currently provisioned identity
 // period. A queued settlement must never revoke a paid successor's streams.
-func (s *Service) termPeriods(ctx context.Context, identity Identity, start, end time.Time) ([]Period, error) {
+func (s *Service) termPeriods(ctx context.Context, identity Identity, start, end time.Time, purchaseID ...string) ([]Period, error) {
 	if end.Before(start) || identity.UserID == "" {
 		return nil, ErrInvalid
 	}
@@ -21,7 +21,7 @@ func (s *Service) termPeriods(ctx context.Context, identity Identity, start, end
 	}
 	ids := map[string]bool{}
 	for _, purchase := range purchases {
-		if purchase.ValidFrom.Equal(start) && !purchase.ValidUntil.Before(end) {
+		if (len(purchaseID) == 0 || purchase.ID == purchaseID[0]) && purchase.ValidFrom.Equal(start) && !purchase.ValidUntil.Before(end) {
 			ids[purchase.ID] = true
 		}
 	}
@@ -65,12 +65,16 @@ func (s *Service) QuiesceRolloverPeriod(ctx context.Context, id string, start, e
 }
 
 func (s *Service) UsageSnapshotForRollover(ctx context.Context, id string, start, end time.Time) (rollover.UsageSnapshot, error) {
-	result := rollover.UsageSnapshot{Daily: []rollover.DailyUsage{}}
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
-		return result, err
+		return rollover.UsageSnapshot{}, err
 	}
-	periods, err := s.termPeriods(ctx, identity, start, end)
+	return s.rolloverSnapshot(ctx, identity, start, end)
+}
+
+func (s *Service) rolloverSnapshot(ctx context.Context, identity Identity, start, end time.Time, purchaseID ...string) (rollover.UsageSnapshot, error) {
+	result := rollover.UsageSnapshot{Daily: []rollover.DailyUsage{}}
+	periods, err := s.termPeriods(ctx, identity, start, end, purchaseID...)
 	if err != nil {
 		return result, err
 	}

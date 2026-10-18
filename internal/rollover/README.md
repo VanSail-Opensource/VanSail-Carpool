@@ -1,4 +1,5 @@
 # Purchase rollover
+- `purchase_remote.go` dispatches projection and settlement through the same owner/purchase reference contract, retaining legacy provider compatibility. Native accounting failures remain retryable; a missing legacy ID cannot finalize native usage at zero. `purchase_remote_test.go` covers native-only settlement and incomplete accounting.
 - `period_remote_test.go` verifies purchase-scoped quiescence through the optional `PeriodRemote` provider contract, keeping already provisioned successors active during settlement.
 - `service_part2.go` continues the focused implementation from its original package module.
 

@@ -1,5 +1,7 @@
 # Catalog domain
 
+`rollover_native_test.go` verifies that projections use purchase-owned native accounting without a legacy account. Projection and settlement share `rollover.PurchaseSnapshot` and retain existing eligibility and financial calculations.
+
 This package builds the live catalog, validates purchase selections against current Remnawave squads, and serves member purchase and dashboard workflows.
 
 - `service.go` defines repository/provider contracts and coordinates quotes, purchases, process-local dashboard caching, and subscription revocation without durable bearer storage.

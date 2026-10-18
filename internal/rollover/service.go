@@ -96,16 +96,12 @@ func (s *Service) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	if err != nil {
 		return err
 	}
-	if user.RemnaUserID == nil {
+	_, purchaseRemote := s.remote.(PurchaseRemote)
+	if !purchaseRemote && user.RemnaUserID == nil {
 		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "local_identity_missing")
 	}
 	if rollover.Status == "pending" {
-		var err error
-		if remote, ok := s.remote.(PeriodRemote); ok {
-			err = remote.QuiesceRolloverPeriod(ctx, *user.RemnaUserID, purchase.ValidFrom, purchase.ValidUntil)
-		} else {
-			err = s.remote.QuiesceForRollover(ctx, *user.RemnaUserID)
-		}
+		err := quiescePurchase(ctx, s.remote, user, purchase)
 		if err != nil {
 			if errors.Is(err, ErrRemoteUserMissing) {
 				return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "remnawave_user_missing")
@@ -116,7 +112,7 @@ func (s *Service) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 			return err
 		}
 	}
-	snapshot, err := s.remote.UsageSnapshotForRollover(ctx, *user.RemnaUserID, purchase.ValidFrom, purchase.ValidUntil)
+	snapshot, err := PurchaseSnapshot(ctx, s.remote, user, purchase, purchase.ValidUntil)
 	if errors.Is(err, ErrRemoteUserMissing) {
 		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "remnawave_user_missing")
 	}

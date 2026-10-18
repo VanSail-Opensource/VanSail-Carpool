@@ -1,5 +1,7 @@
 # X-Node control plane
 
+`rollover_purchase.go` resolves panel ownership and selects periods by explicit purchase ID for projection and settlement. All resets remain in that purchase; quiescence does not implicitly select the current identity period. Existing dated APIs remain compatible; `rollover_usage.go` supplies their common calculation.
+
 `Service` owns authoritative configurations, ordered snippets, node settings,
 access groups, endpoints, identities and accounting periods. `Master` accepts
 `/v1/agents/connect`, binds enrolled agents, owns per-socket queues, and joins

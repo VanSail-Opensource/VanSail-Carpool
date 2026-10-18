@@ -1,5 +1,7 @@
 # Application composition
 
+`xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references. It retains the migration final-accounting fence and queued legacy fallback only while the source bridge is active.
+
 `xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.
 
 `pm_workflows.go` injects `PUBLIC_BASE_URL` into the existing queued Telegram PM

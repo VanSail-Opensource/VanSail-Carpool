@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -21,10 +20,6 @@ var (
 
 type rolloverPurchaseReader interface {
 	PurchaseByID(context.Context, string) (model.Purchase, error)
-}
-
-type rolloverSnapshotReader interface {
-	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (rollover.UsageSnapshot, error)
 }
 
 // RolloverProjection returns a fresh aggregate-only projection for the active
@@ -53,18 +48,11 @@ func (s *Service) RolloverProjection(ctx context.Context, user model.User, purch
 		return model.RolloverProjection{PurchaseID: purchase.ID, Paid: purchase.Price, AutoRenewalEnabled: false,
 			WarningCode: &warning, MinimumRemainingBPS: purchase.RolloverMinRemainingBPS, FetchedAt: now}, nil
 	}
-	if user.RemnaUserID == nil {
-		return model.RolloverProjection{}, ErrRolloverUnavailable
-	}
-	remote, ok := s.remnawave.(rolloverSnapshotReader)
-	if !ok {
-		return model.RolloverProjection{}, ErrRolloverUnavailable
-	}
 	end := now
 	if end.After(purchase.ValidUntil) {
 		end = purchase.ValidUntil
 	}
-	snapshot, err := remote.UsageSnapshotForRollover(ctx, *user.RemnaUserID, purchase.ValidFrom, end)
+	snapshot, err := rollover.PurchaseSnapshot(ctx, s.remnawave, user, purchase, end)
 	if errors.Is(err, rollover.ErrRemoteUserMissing) || errors.Is(err, rollover.ErrPerNodeUsageUnavailable) {
 		return model.RolloverProjection{}, ErrRolloverUnavailable
 	}
