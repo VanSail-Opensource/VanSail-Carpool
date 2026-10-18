@@ -36,16 +36,16 @@ function purchase(id: string, from: string, until: string): Purchase {
 }
 const active = purchase('current', at(-5 * day), at(25 * day))
 const queued = { ...purchase('queued', at(25 * day), at(32 * day)), status: 'queued' as const }
-let controls: ComboControls = { activePurchase: params.has('inactive') ? null : active, queuedPurchase: params.has('inactive') || params.has('noqueued') ? null : queued, squads: params.has('inactive') ? [] : squads, mutable: !params.has('inactive'), operation: null }
+let controls: ComboControls = { activePurchase: params.has('inactive') ? null : active, queuedPurchase: params.has('inactive') || params.has('noqueued') ? null : queued, squads: params.has('inactive') ? [] : squads, mutable: !params.has('inactive') && !params.has('blocked'), operation: null }
 const receipts = new Map<string, OperationReceipt>()
-const state = { switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null, automation: true }
+const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null, automation: true }
 let preferences: UserPreferences = { activeCombo: !params.has('inactive'), notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showAroundTx: true, showActivity: true, includeNodePrices: true, showReferralUsername: true }
 let tag: GroupMemberTag = { groupJoined: true, editable: true, tag: 'Traveler', reasonCode: null }
 async function pause(): Promise<void> {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, Number(params.get('slow')) || 2500))
   if (params.has('error')) throw new Error('Constructed settings load failure')
 }
-comboControlsApi.get = async () => { await pause(); return controls }
+comboControlsApi.get = async () => { state.loads++; await pause(); if (params.has('blocked') && state.loads > 1) controls = { ...controls, mutable: true }; return controls }
 comboControlsApi.quoteActivation = async (): Promise<EarlyActivationQuote> => ({ currentPurchaseId: active.id, queuedPurchaseId: queued.id, eligible: controls.mutable, currentValidUntil: active.validUntil, newValidFrom: at(0), newValidUntil: at(7 * day) })
 function receipt(kind: string): OperationReceipt {
   state.polls = 0
@@ -99,9 +99,17 @@ api.getCatalog = async () => {
 }
 api.getStatistics = async () => ({ database: { squadByCombo: [{ id: 'current', label: 'Standard', segments: optionalSquads.map((squad, index) => ({ id: squad.id, label: squad.name, value: index ? 20 : 70 })) }] } }) as never
 api.quotePurchaseAddons = async (purchaseId, ids) => ({ purchaseId, addonSquadUuids: ids, price: { currency: 'TXB', minor: '250', display: '2.50 TXB' }, effectiveAt: at(0), expiresAt: active.validUntil }) as never
-api.addPurchaseAddons = async (_purchaseId, ids) => {
+const addedByKey = new Map<string, Purchase>()
+let lostAdditionReply = false
+api.addPurchaseAddons = async (_purchaseId, ids, key) => {
+  state.additionKeys.push(key)
+  const replay = addedByKey.get(key)
+  if (replay) return replay
+  state.additions++
   const updated = { ...active, squadUuids: [...active.squadUuids, ...ids] }
   controls = { ...controls, activePurchase: updated }
+  addedByKey.set(key, updated)
+  if (params.has('addonlost') && !lostAdditionReply) { lostAdditionReply = true; throw new Error('Constructed lost addition reply') }
   return updated
 }
 Object.assign(window, { __controlsAudit: state, __controlsAuditLocale: setLocale, __controlsSnapshot: () => controls })

@@ -65,7 +65,7 @@ func (a proxyProvider) bridgePurchase(ctx context.Context, identity xnode.Identi
 			if err != nil {
 				return nil, err
 			}
-			groups, err = a.store.EnabledSquadsForRemote(ctx, identity.LegacyUserID, groups)
+			groups, err = a.store.EnabledSquadsForUser(ctx, identity.UserID, groups)
 			if err != nil {
 				return nil, err
 			}

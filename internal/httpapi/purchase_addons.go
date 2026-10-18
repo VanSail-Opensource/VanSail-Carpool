@@ -55,6 +55,8 @@ func (s *Server) purchaseAddons(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) writePurchaseAddonError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, database.ErrConflict):
+		s.writeError(w, r, http.StatusConflict, "OPERATION_CONFLICT", "Another entitlement change is pending or this request key was already used.")
 	case errors.Is(err, database.ErrNotFound):
 		s.writeError(w, r, http.StatusNotFound, "PURCHASE_OR_SQUAD_NOT_FOUND", "The active ride or selected squad is unavailable.")
 	case errors.Is(err, database.ErrPurchaseNotActive):

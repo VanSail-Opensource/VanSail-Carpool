@@ -5,6 +5,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"slices"
@@ -37,7 +38,14 @@ func (a proxyProvider) legacyProxies(ctx context.Context, identity xnode.Identit
 	if purchase == nil {
 		return []subscription.Proxy{}, nil
 	}
-	enabled, err := a.store.EnabledSquadsForRemote(ctx, strconv.FormatInt(identity.ProxyUserID, 10), purchase.SquadUUIDs)
+	enabled := append([]string(nil), purchase.SquadUUIDs...)
+	if identity.UserID != "" {
+		var disabled []string
+		disabled, err = a.store.UserDisabledSquads(ctx, identity.UserID)
+		if err == nil {
+			enabled = purchaseops.EnabledSquads(purchase.SquadUUIDs, disabled)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

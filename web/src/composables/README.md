@@ -80,3 +80,5 @@ separate. Action quotes and permission decisions still await the backend.
 `useMetricSamples.ts` owns memory-only displayed-series buffers, capped at 300 samples and retired on disposal/session clearing/expiry.
 
 `useMetricSamples.test.ts` guards 300-point bounds, obsolete timestamp rejection, disposal and logout retirement.
+
+`useSquadAddition.test.ts` covers retained request keys after a lost purchase reply. `useSquadAddition.ts` keeps the same key for an unchanged purchase/selection/activation attempt until a confirmed response, using memory only.

@@ -56,15 +56,9 @@ func (s *Store) EnabledSquadsForRemote(ctx context.Context, remoteID string, own
 	if err != nil {
 		return nil, err
 	}
-	disabled, err := disabledSquadsFrom(ctx, tx, userID)
+	enabled, err := enabledSquadsTx(ctx, tx, userID, owned)
 	if err != nil {
 		return nil, err
-	}
-	enabled := purchaseops.EnabledSquads(uniqueSorted(owned), disabled)
-	if len(enabled) == 1 && slices.Contains(disabled, enabled[0]) {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM user_disabled_squads WHERE user_id=? AND squad_uuid=?`, userID, enabled[0]); err != nil {
-			return nil, err
-		}
 	}
 	return enabled, tx.Commit()
 }

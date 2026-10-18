@@ -260,3 +260,5 @@ Global saves validate shared selectors against native parsing and the configured
 `command_outcomes.go` bounds acceptance separately from protocol execution and reports undelivered, rejected, failed and uncertain results. `command_updates.go` reconciles durable upgrades after reconnect, requiring fresh readiness at the current configuration revision. `command_outcomes_test.go`, `command_socket_test.go` and `command_update_reconnect_test.go` cover typed results, concurrent accounting acknowledgments and lost upgrade replies.
 
 `member_metrics.go` derives online, offline or unavailable from fresh native activity within the authorized node scope. `member_activity_test.go` covers stale/unsupported/rolled-back observations, idle nodes and transfer-only activity. The expiry is based on master receive time, stays memory-only and is transported in both member and profile projections.
+
+`squad_normalization_test.go` covers normalization of the final enabled squad during native entitlement activation without creating a legacy link. `periods.go` normalizes only mutation paths, preserving current counters and paid-successor accounting.

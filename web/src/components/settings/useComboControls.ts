@@ -10,6 +10,8 @@ export function useComboControls() {
   const value = shallowRef<ComboControls | null>(null)
   const quote = shallowRef<EarlyActivationQuote | null>(null)
   const loading = shallowRef(true)
+  const refreshing = shallowRef(false)
+  let blockedTimer: ReturnType<typeof globalThis.setTimeout> | undefined
   const loadError = shallowRef<string | null>(null)
   const latest = createLatestRequest()
   const command = useDurableCommand({ errorKey: 'settings.combo.operationFailed', onTerminal: async () => { clearResponseCache(); await load() } })
@@ -17,8 +19,10 @@ export function useComboControls() {
   const blocked = computed(() => command.blocksMutations.value || loading.value || !value.value?.mutable)
 
   async function load(): Promise<void> {
+    if (blockedTimer) globalThis.clearTimeout(blockedTimer)
     const token = latest.begin()
     loading.value = value.value === null
+    refreshing.value = true
     loadError.value = null
     try {
       const controls = await comboControlsApi.get()
@@ -33,7 +37,10 @@ export function useComboControls() {
     } catch (caught) {
       if (latest.isCurrent(token)) loadError.value = localizedError(caught, 'settings.combo.loadFailed')
     } finally {
-      if (latest.isCurrent(token)) loading.value = false
+      if (latest.isCurrent(token)) {
+        loading.value = false; refreshing.value = false
+        if (value.value?.activePurchase && !value.value.mutable && !command.blocksMutations.value && !loadError.value && !document.hidden) blockedTimer = globalThis.setTimeout(() => void load(), 5000)
+      }
     }
   }
 
@@ -53,6 +60,8 @@ export function useComboControls() {
   }
 
   onMounted(() => void load())
-  onScopeDispose(latest.dispose)
-  return { value: readonly(value), quote: readonly(quote), loading: readonly(loading), error, blocked, command, load, switchSquad, activate }
+  function visibilityChanged(): void { if (blockedTimer) globalThis.clearTimeout(blockedTimer); if (!document.hidden && value.value?.activePurchase && !value.value.mutable) void load() }
+  onMounted(() => document.addEventListener('visibilitychange', visibilityChanged))
+  onScopeDispose(() => { latest.dispose(); if (blockedTimer) globalThis.clearTimeout(blockedTimer); document.removeEventListener('visibilitychange', visibilityChanged) })
+  return { value: readonly(value), quote: readonly(quote), loading: readonly(loading), refreshing: readonly(refreshing), error, blocked, command, load, switchSquad, activate }
 }

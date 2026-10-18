@@ -53,13 +53,24 @@ func (a proxyProvider) ListInternalSquads(ctx context.Context) ([]admin.Upstream
 	return out, nil
 }
 func (a proxyProvider) ListCatalogSquads(ctx context.Context) ([]catalog.RemoteSquad, error) {
-	groups, err := a.ListInternalSquads(ctx)
+	groups, err := a.native.Groups(ctx)
 	if err != nil {
 		return nil, err
 	}
+	if len(groups) == 0 {
+		bridge, err := a.legacy(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if bridge {
+			return a.remnaAdapter.ListCatalogSquads(ctx)
+		}
+	}
 	out := []catalog.RemoteSquad{}
 	for _, group := range groups {
-		out = append(out, catalog.RemoteSquad{UUID: group.UUID, Name: group.Name})
+		if group.Enabled {
+			out = append(out, catalog.RemoteSquad{UUID: group.ID, Name: group.Name})
+		}
 	}
 	return out, nil
 }

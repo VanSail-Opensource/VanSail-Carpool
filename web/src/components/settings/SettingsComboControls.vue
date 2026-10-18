@@ -34,7 +34,8 @@ async function activate(confirmation: string): Promise<void> { if (await control
     <USkeleton v-if="controls.loading.value" class="h-24" />
     <template v-else-if="controls.value.value?.activePurchase">
       <UButton type="button" color="neutral" variant="ghost" class="combo-controls__add" :aria-label="$t('home.squadAddition.open')" :disabled="controls.blocked.value || Boolean(controls.value.value.queuedPurchase)" data-haptic="open" @click="additionOpen = true"><span><strong>{{ $t('home.squadAddition.open') }}</strong><small>{{ $t('home.squadAddition.description') }}</small></span><UIcon name="i-ph-caret-right" aria-hidden="true" /></UButton>
-      <h3>{{ $t('settings.combo.squads') }}</h3>
+      <div class="combo-controls__heading"><h3>{{ $t('settings.combo.squads') }}</h3><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="$t('common.refresh')" :loading="controls.refreshing.value" @click="controls.load" /></div>
+      <InlineNotice v-if="!controls.value.value.mutable && !controls.command.blocksMutations.value" tone="info">{{ $t('settings.combo.accessPending') }}</InlineNotice>
       <SettingsSwitchRow v-for="squad in controls.value.value.squads" :key="squad.uuid" :label="squad.name" :enabled="squad.enabled" :description="squad.enabled && !squad.canDisable && !controls.blocked.value ? $t('settings.combo.keepOne') : undefined" :disabled="controls.blocked.value || (squad.enabled && !squad.canDisable)" @update="controls.switchSquad(squad.uuid, $event)" />
       <div v-if="controls.quote.value?.eligible" class="combo-controls__action">
         <div><strong>{{ $t('settings.combo.activateTitle') }}</strong><p>{{ $t('settings.combo.activateHint') }}</p></div>
@@ -51,6 +52,7 @@ async function activate(confirmation: string): Promise<void> { if (await control
 <style scoped>
 .combo-controls { min-width: 0; padding-top: 0.75rem; }
 .combo-controls h3 { margin: 0; padding-top: 0.75rem; color: var(--text-muted); font-size: 0.875rem; font-weight: 600; }
+.combo-controls__heading { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .combo-controls__action { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 60px; padding-block: 0.75rem; }
 .combo-controls__action > div { min-width: 0; flex: 1; }
 .combo-controls__action strong { font-size: 0.875rem; }

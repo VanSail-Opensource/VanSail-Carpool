@@ -1,6 +1,7 @@
 {
   "settings": {
     "combo": {
+      "accessPending": "其他权限变更尚未完成，这些控件会自动刷新。",
       "squads": "内部节点组",
       "keepOne": "请至少保留一个启用的节点组。",
       "activateTitle": "提前启用排队套餐",

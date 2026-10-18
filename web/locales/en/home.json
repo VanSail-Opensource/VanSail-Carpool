@@ -76,6 +76,7 @@
       "RENEWAL_UNAVAILABLE": "Automatic renewal is temporarily unavailable."
     },
     "squadAddition": {
+      "progress": "Step {current} of {total}: {title}",
       "title": "Add squads",
       "description": "Add optional squads to the current ride for its remaining time.",
       "open": "Add squad",

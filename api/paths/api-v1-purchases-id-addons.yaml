@@ -2,7 +2,7 @@ post:
   tags: [Catalog]
   operationId: addPurchaseAddons
   summary: Add optional squads to an active purchase
-  description: Debits the authoritative prorated price, records the selected paid squads, and queues an entitlement reconciliation. Repeating the same caller-owned idempotency key returns the updated purchase without another debit.
+  description: Debits the authoritative prorated price, records live enabled squads, and queues an entitlement reconciliation. Conflicting entitlement mutations block a new charge. Repeating the same caller-owned idempotency key replays an already charged selection before catalog validation, even if catalog visibility subsequently changes, without another debit.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'

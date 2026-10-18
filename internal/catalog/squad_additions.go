@@ -14,6 +14,9 @@ type purchaseAddonRepository interface {
 	QuotePurchaseAddons(context.Context, database.PurchaseAddonInput, time.Time) (model.PurchaseAddonQuote, error)
 	AddPurchaseAddons(context.Context, database.PurchaseAddonInput, time.Time) (model.Purchase, error)
 }
+type purchaseAddonReplayRepository interface {
+	PurchaseAddonReplay(context.Context, database.PurchaseAddonInput) (model.Purchase, bool, error)
+}
 
 // QuoteAddons returns an owned active purchase's authoritative addition price.
 func (s *Service) QuoteAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string) (model.PurchaseAddonQuote, error) {
@@ -35,6 +38,12 @@ func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID str
 	if user.OnboardingState != "complete" {
 		return model.Purchase{}, errors.New("onboarding is incomplete")
 	}
+	if replay, ok := s.repository.(purchaseAddonReplayRepository); ok {
+		purchase, found, err := replay.PurchaseAddonReplay(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, AddonSquadIDs: addonIDs, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey})
+		if found || err != nil {
+			return purchase, err
+		}
+	}
 	if err := s.validateLiveAddons(ctx, addonIDs); err != nil {
 		return model.Purchase{}, err
 	}
@@ -53,6 +62,13 @@ func (s *Service) validateLiveAddons(ctx context.Context, addonIDs []string) err
 	addons, err := s.repository.ListSquadProducts(ctx, true)
 	if err != nil {
 		return err
+	}
+	if _, live := s.remnawave.(remoteSquadLister); live {
+		catalog, err := s.hydrateLiveCatalog(ctx, nil, addons)
+		if err != nil {
+			return err
+		}
+		addons = catalog.Addons
 	}
 	visible := make(map[string]struct{}, len(addons))
 	for _, addon := range addons {

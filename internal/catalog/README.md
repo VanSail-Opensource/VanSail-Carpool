@@ -40,3 +40,5 @@ This package builds the live catalog, validates purchase selections against curr
 `dashboard_native_test.go` covers native-only dashboard access and owner-scoped cache isolation through the optional member dashboard contract.
 
 `subscription_native_test.go` verifies native-only subscription reads retain disabled-squad preferences and the post-read purchase ownership fence. Existing legacy provider contracts remain compatible.
+
+`squad_additions_native_test.go` covers current native group validation and replay before live catalog reads. Add-ons use live group hydration; charged request keys retain their existing selection fingerprint and do not repeat activation-code checks or debits.

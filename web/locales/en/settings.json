@@ -1,6 +1,7 @@
 {
   "settings": {
     "combo": {
+      "accessPending": "Another entitlement change is pending. These controls refresh automatically.",
       "squads": "Internal squads",
       "keepOne": "Keep at least one squad enabled.",
       "activateTitle": "Activate queued combo early",

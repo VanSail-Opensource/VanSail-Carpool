@@ -15,7 +15,6 @@ const emit = defineEmits<{ changed: [] }>()
 const router = useRouter()
 const { reducedMotion } = useMotionPreferences()
 const step = shallowRef(1)
-const stepperIndex = computed(() => step.value - 1)
 const activationOpen = shallowRef(false)
 const activationTarget = shallowRef<SquadProduct | null>(null)
 const activationPrompting = shallowRef(false)
@@ -88,7 +87,8 @@ function goHome(): void {
   <UModal v-model:open="open" :title="$t('home.squadAddition.title')" :description="$t('home.squadAddition.description')" :close="false" :ui="{ content: 'tg-glass-modal tg-glass-surface squad-addition-dialog__modal' + (reducedMotion ? ' squad-addition-dialog__modal--reduced' : ''), header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered', footer: 'justify-end flex-wrap' }" scrollable>
     <template #body>
       <div class="squad-addition-dialog">
-        <UStepper :model-value="stepperIndex" :items="[{ title: $t('home.squadAddition.steps.choose') }, { title: $t('home.squadAddition.steps.checkout') }]" :linear="true" disabled size="sm" />
+        <UStepper :model-value="step - 1" :items="[{ title: $t('home.squadAddition.steps.choose') }, { title: $t('home.squadAddition.steps.checkout') }]" :linear="true" disabled size="sm" aria-hidden="true" />
+        <p role="status" class="sr-only">{{ $t('home.squadAddition.progress', { current: step, total: 2, title: $t(step === 1 ? 'home.squadAddition.steps.choose' : 'home.squadAddition.steps.checkout') }) }}</p>
         <Transition name="squad-addition-step" :mode="reducedMotion ? undefined : 'out-in'" :css="!reducedMotion">
           <div :key="loading ? 'loading' : step">
             <USkeleton v-if="loading" class="h-48" />

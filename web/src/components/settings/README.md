@@ -20,3 +20,5 @@ The page uses the account-scoped preferences store, typed HTTP clients and queue
 Telegram APIs. Optional entrances require current server-confirmed eligibility.
 
 `useSettings.test.ts` covers immediate reset persistence and failed-save state retention.
+
+`useComboControls.ts` refreshes temporarily blocked eligibility every five seconds while visible, stops after errors/disposal and retains receipt-driven reconciliation. The settings header also offers refresh; purchase/activation constraints and the last-enabled-squad guard remain authoritative.

@@ -23,6 +23,7 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   const purchasing = shallowRef(false)
   const needsBalance = shallowRef(false)
   const error = shallowRef<string | null>(null)
+  let pendingAttempt: { fingerprint: string; key: string } | undefined
   const activeSquadSet = computed(() => new Set(options.activeSquadUuids()))
   const visibleSquads = computed(() => (catalog.value?.addons ?? []).filter((squad) =>
     squad.visible && squad.upstreamPresent && !activeSquadSet.value.has(squad.remnaSquadUuid),
@@ -103,7 +104,10 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     error.value = null
     needsBalance.value = false
     try {
-      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, createUuid(), squadActivationCodes)
+      const attemptFingerprint = JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), Object.entries(squadActivationCodes).sort(([a], [b]) => a.localeCompare(b))])
+      if (pendingAttempt?.fingerprint !== attemptFingerprint) pendingAttempt = { fingerprint: attemptFingerprint, key: createUuid() }
+      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes)
+      pendingAttempt = undefined
       notifyHaptic('success')
       return true
     } catch (caught) {

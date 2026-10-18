@@ -115,3 +115,5 @@ The X-Node `commands` view isolates native utilities. `command-outcome=UNDELIVER
 Subscription home flags `offline`, `unknown`, `metrics-error`, `slow` and `expire` exercise native activity independent of legacy statistics timestamps. The IP Lookup entrance is disabled inside this isolated fixture.
 
 Subscription `monitor-off` hides home network charts and squad timelines while retaining subscription navigation and host copy/QR controls. Native routing and subscription metadata are mocked in this fixture to isolate monitoring checks.
+
+Settings flags `blocked&noqueued` simulate eligibility becoming available after a background mutation; `addonlost&noqueued` simulates a charged add-on whose first reply is lost. `__controlsAudit` records eligibility reads, request keys and actual additions.

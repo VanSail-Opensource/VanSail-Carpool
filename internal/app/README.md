@@ -189,3 +189,5 @@ a Telegram association; internal bounded probes retain their separate path.
 `xnode_dashboard.go` resolves native dashboard statistics from panel ownership without requiring the legacy link field. Only an active migration bridge can fall back to a queued source dashboard.
 
 `xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Native source loading uses published enabled endpoints, standalone service names and ephemeral native outbounds; it preserves the existing queued migration fallback. `xnode_member_subscription.go` resolves panel ownership before native subscription reads without requiring a legacy link.
+
+`xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Native bridge policy reads member preferences by panel ownership, and subscription GETs derive enabled groups without changing preferences.

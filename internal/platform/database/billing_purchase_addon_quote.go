@@ -32,6 +32,12 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 	if (purchase.Status != "active" && purchase.Status != "activating") || !purchase.ValidUntil.After(now) {
 		return model.PurchaseAddonQuote{}, nil, ErrPurchaseNotActive
 	}
+	if conflict, err := comboControlConflictFrom(ctx, tx, input.UserID); err != nil || conflict {
+		if err == nil {
+			err = ErrConflict
+		}
+		return model.PurchaseAddonQuote{}, nil, err
+	}
 	var queued, rollover int
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status='queued')`, input.UserID).Scan(&queued); err != nil {
 		return model.PurchaseAddonQuote{}, nil, fmt.Errorf("check queued purchase: %w", err)

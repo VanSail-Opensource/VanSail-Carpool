@@ -76,6 +76,7 @@
       "RENEWAL_UNAVAILABLE": "自动续费暂时不可用。"
     },
     "squadAddition": {
+      "progress": "第 {current}/{total} 步：{title}",
       "title": "添加分组",
       "description": "按当前周期的剩余时间，为当前套餐添加可选分组。",
       "open": "添加分组",
