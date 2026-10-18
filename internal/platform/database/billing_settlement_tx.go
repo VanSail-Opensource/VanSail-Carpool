@@ -60,7 +60,7 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 	if order.Status == "paid" || order.Status == "refunded" {
 		return order, false, nil
 	}
-	if order.Status != "pending" && order.Status != "creating" && order.Status != "expired" && order.Status != "cancelled" {
+	if order.Status != "pending" && order.Status != "creating" && order.Status != "expired" && order.Status != "cancelled" && !(provider == "builtin_usdt" && order.Status == "failed") {
 		return model.PaymentOrder{}, false, ErrConflict
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='paid',provider_trade_id=COALESCE(NULLIF(?,''),provider_trade_id),provider_charge_id=NULLIF(?,''),

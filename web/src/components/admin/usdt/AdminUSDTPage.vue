@@ -1,29 +1,34 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { USDTNetworkConfig, USDTNetworkID } from '@/api/usdt'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import { paymentChannelLabel } from '@/components/billing/paymentOptions'
 import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
-import { configSchema, networkRails } from './configForm'
+import { configSchema, networkRails, nativeUSDCNetworks, tokenRail } from './configForm'
 import { useUSDTAdmin } from './useUSDTAdmin'
 import USDTGeneralSettings from './USDTGeneralSettings.vue'
 import USDTNetworkSettings from './USDTNetworkSettings.vue'
 import USDTReview from './USDTReview.vue'
 const { t } = useI18n()
-const { draft, status, review, loading, busy, checking, resolving, error, saved, probe, load, refresh, save, check, loadReview, resolve } = useUSDTAdmin()
+const { draft, status, review, loading, loaded, busy, checking, resolving, error, saved, probe, load, refresh, save, check, loadReview, dismiss } = useUSDTAdmin()
 const selected = shallowRef<USDTNetworkID>('tron')
+const currency = shallowRef('usdt')
+const currencies = computed(() => (draft.value?.mode === 'both' ? ['usdt', 'usdc'] : [draft.value?.mode ?? 'usdt']).filter(value => value !== 'usdc' || nativeUSDCNetworks.has(selected.value)).map(value => ({ value, label: value.toUpperCase() })))
+watch(currencies, items => { if (!items.some(item => item.value === currency.value)) currency.value = items[0]?.value ?? 'usdt' })
+const rail = computed(() => tokenRail(selected.value, currency.value))
 const workspace = shallowRef('general')
 const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'networks', label: t('adminUsdt.network') }, { value: 'review', label: t('adminUsdt.review') }])
 const schema = computed(() => configSchema())
-const networkItems = computed(() => draft.value?.networks.map(network => ({ value: network.network, label: paymentChannelLabel(networkRails[network.network], network.network) })) ?? [])
+const networkItems = computed(() => draft.value?.networks.filter(network => draft.value?.mode !== 'usdc' || nativeUSDCNetworks.has(network.network)).map(network => ({ value: network.network, label: paymentChannelLabel(networkRails[network.network], network.network).replace(/^USDT\s*·\s*/, '') })) ?? [])
+watch(networkItems, items => { if (!items.some(item => item.value === selected.value) && items[0]) selected.value = items[0].value })
 const index = computed(() => draft.value?.networks.findIndex(network => network.network === selected.value) ?? -1)
 const network = computed<USDTNetworkConfig | null>({
   get: () => draft.value?.networks[index.value] ?? null,
   set: value => { if (draft.value && value) draft.value = { ...draft.value, networks: draft.value.networks.map((item, position) => position === index.value ? value : item) } },
 })
-const currentStatus = computed(() => status.value?.networks.find(item => item.network === selected.value))
+const currentStatus = computed(() => status.value?.networks.find(item => item.rail === rail.value))
 const state = computed(() => currentStatus.value?.state ?? 'disabled')
 const progress = computed(() => {
   const value = currentStatus.value?.cursor
@@ -35,19 +40,20 @@ const progress = computed(() => {
 
 <template>
   <section class="admin-panel usdt-admin">
-    <div class="admin-panel__heading"><div><h2>{{ t('adminUsdt.title') }}</h2><p>{{ t('adminUsdt.copy') }}</p></div><UButton icon="i-ph-floppy-disk" type="submit" form="usdt-settings" :label="t('common.save')" :loading="busy" :disabled="busy || loading || !draft" /></div>
+    <div class="admin-panel__heading"><div><h2>{{ t('adminUsdt.title') }}</h2><p>{{ t('adminUsdt.copy') }}</p></div><UButton icon="i-ph-floppy-disk" type="submit" form="usdt-settings" :label="t('common.save')" :loading="busy" :disabled="busy || loading || !loaded || !draft" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <InlineNotice v-if="saved" tone="success">{{ t('adminUsdt.saved') }}</InlineNotice>
     <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
-    <AdminSectionState :loading="loading" :error="draft ? null : error" @retry="load">
+    <AdminSectionState :loading="loading" :error="loaded ? null : error" @retry="load">
       <UForm v-if="draft" v-show="workspace !== 'review'" id="usdt-settings" :schema="schema" :state="draft" @submit="save">
-        <fieldset :disabled="busy" class="usdt-form">
+        <fieldset :disabled="busy || !loaded" class="usdt-form">
           <USDTGeneralSettings v-show="workspace === 'general'" v-model="draft" />
           <section v-show="workspace === 'networks'" class="usdt-network-section">
             <div class="usdt-toolbar">
               <UFormField :label="t('adminUsdt.network')"><USelect v-model="selected" :items="networkItems" /></UFormField>
+              <UFormField :label="t('adminUsdt.token')"><USelect v-model="currency" :items="currencies" /></UFormField>
               <UBadge :color="state === 'ready' ? 'success' : state === 'error' ? 'error' : 'neutral'" variant="soft" :label="t(`adminUsdt.states.${state}`)" />
-              <UButton color="neutral" variant="ghost" icon="i-ph-plugs-connected" :label="t('adminUsdt.check')" :loading="checking === selected" :disabled="!!checking || !network?.endpoints.length" @click="check(selected)" />
+              <UButton color="neutral" variant="ghost" icon="i-ph-plugs-connected" :label="t('adminUsdt.check')" :loading="checking === rail" :disabled="!!checking || !network?.endpoints.length" @click="check(selected, rail)" />
             </div>
             <div class="usdt-status" aria-live="polite"><span>{{ t(`adminUsdt.connections.${currentStatus?.connection || 'none'}`) }}</span><span>{{ t('adminUsdt.progress') }} <code>{{ progress }}</code></span><time v-if="currentStatus?.updatedAt">{{ formatDateTime(currentStatus.updatedAt) }}</time><UButton color="neutral" variant="ghost" icon="i-ph-arrows-clockwise" :aria-label="t('common.refresh')" @click="refresh" /></div>
             <InlineNotice v-if="currentStatus?.errorCode" tone="warning">{{ t(`errors.api.${currentStatus.errorCode}`) }}</InlineNotice>
@@ -56,7 +62,7 @@ const progress = computed(() => {
           </section>
         </fieldset>
       </UForm>
-      <USDTReview v-show="workspace === 'review'" :page="review" :resolving="resolving" :error="error" @refresh="loadReview()" @more="loadReview(true)" @resolve="resolve" />
+      <USDTReview v-show="workspace === 'review'" :page="review" :resolving="resolving" :error="error" @refresh="loadReview()" @more="loadReview(true)" @dismiss="dismiss" />
     </AdminSectionState>
   </section>
 </template>

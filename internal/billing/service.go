@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 )
 
 // ErrProviderDisabled means the administrator has not enabled a payment method.
@@ -135,9 +136,17 @@ func (s *Service) prepareOrder(ctx context.Context, user model.User, methodID st
 		}
 		canonicalMethodID += ":" + rail
 	}
+	currency := strings.ToUpper(currencyCode(provider))
+	if provider == "builtin_usdt" {
+		spec, ok := usdt.Network(rail)
+		if !ok {
+			return model.PaymentOrder{}, ErrInvalidOrder
+		}
+		currency = spec.Currency()
+	}
 	return model.PaymentOrder{
 		UserID: user.ID, Provider: provider, MethodID: canonicalMethodID, ProviderRail: rail, Status: "creating", TXBMinor: txbMinor,
-		PayableAmount: payable, PayableCurrency: strings.ToUpper(currencyCode(provider)), RateSnapshot: rate.Canonical(),
+		PayableAmount: payable, PayableCurrency: currency, RateSnapshot: rate.Canonical(),
 		RateDirection: "txb_per_currency", ExpiresAt: now.Add(expiry),
 	}, nil
 }

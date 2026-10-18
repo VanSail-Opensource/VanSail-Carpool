@@ -48,7 +48,11 @@ listener targets before binding and joins activation shutdown. Hosted Quality
 [39088271127](https://github.com/VanSail-Opensource/X-Node/actions/runs/39088271127)
 passed, including race, binaries, vulnerability and disposable Debian checks.
 `337c0ec` adds durable nftables/UFW ownership with Debian-on/off and Ubuntu-UFW
-VM coverage; its replacement Quality and signed release are still pending.
+VM coverage. Latest audited code includes `1214722`. Quality 39090449636 passed
+race/schema, binaries, vulnerability and both Debian VM jobs; Ubuntu hit UFW and
+rollback deadlines. `893190b` adds bounded aggregate fixture time and safe command
+timing diagnostics. `b2bf392` separates machine-readable subprocess stdout from
+stderr diagnostics. Replacement Quality and signed v2.0.7 delivery remain pending.
 Panel `4591c598` separates ready-agent liveness from sampled activity eligibility,
 bounds failed compile/maintenance retries, and corrects the hosted deployment
 hold to target the actual source configuration change. The continuing CPU audit
@@ -59,7 +63,8 @@ return path. The hosted CPU profile now also exercises actual cached sync calls.
 Container logs
 showed no error according to the user; no production CPU profile was available.
 
-- USDC mode/scanners/cursors/proofs/settlement, courtesy matching and immutable review dismissal.
+- Stablecoin package implemented: USDT/USDC/both mode; pinned Circle native identities and queued precision probes; token-specific readiness/cursors/watchers; migration 085 preserving USDT progress and existing evidence IDs; exact-first integer matching for both tokens; selected-payment evidence settlement versus courtesy credit; permanent audited dismissal. Hosted results pending.
+  Static evidence: generated contracts, frontend typecheck, targeted ESLint, structure/i18n, production Vite build and targeted Go vet passed. Chrome DevTools MCP exercised 1440px/light/English and an emulated 390px/dark/Chinese viewport: initial/loading/populated/empty/error/retry, signed mode/probe/save/dismiss requests, keyboard evidence selection, distinct courtesy/settlement choices, failed-load Save blocking, failed-save draft retention and contained layouts. Fixtures use constructed data and do not contact chains. Hosted regressions cover migration, token/precision isolation, exact/tolerance/ambiguity boundaries and courtesy/settlement/dismissal races. No local automated suites ran.
 - Native admin scans/profile metrics and seven-day graph, TX Statistics browser migration, remaining metric tables/charts and API Access/control refinements.
 - Subscription regex precedence/preview, preserved references, base64 compatibility, Stash/sing-box selection and REALITY hybrid-key output.
 - Final hosted panel regressions and sequential enabled-node preflight/upgrade verification. Remnawave ownership remains unchanged.

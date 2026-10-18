@@ -479,3 +479,12 @@ atomically, preserves prior generations through deployment, and audits phase
 changes. It keeps optimistic revisions and operation replay fingerprints distinct.
 `xnode_routing_plans_test.go` covers owner receipt isolation, concurrent graph
 rejection, replay, generation barriers, retained evidence and recovered attempts.
+
+`usdt_review.go` provides payment-scoped matching evidence and transactional permanent
+review dismissal. `stablecoin_test.go` covers token isolation and concurrent courtesy,
+settlement, dismissal and scanner replay. Migration 085 keeps old USDT cursors and
+evidence IDs, and makes credited/dismissed transfers immutable in SQLite.
+
+`stablecoin_migration_test.go` verifies legacy cursor progress, permanent quote fingerprints, transfer IDs and token-specific outstanding quote watchers across migration 085.
+
+`stablecoin_matching_test.go` covers exact-first matching, tolerance boundaries, overpayments and manual ambiguity rejection for both native tokens.

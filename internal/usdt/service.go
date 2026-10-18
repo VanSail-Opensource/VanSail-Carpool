@@ -70,7 +70,7 @@ func (s *Service) SaveConfig(ctx context.Context, actor string, next Config) (Co
 		return Config{}, err
 	}
 	for _, spec := range Registry {
-		addresses, err := s.repository.USDTWatchAddresses(ctx, spec.Network)
+		addresses, err := s.repository.USDTWatchAddresses(ctx, spec.Rail)
 		if err != nil {
 			return Config{}, err
 		}
@@ -110,6 +110,16 @@ func (s *Service) Review(ctx context.Context, cursor string, limit int) (ReviewP
 }
 func (s *Service) Resolve(ctx context.Context, id, orderID, actor, reason string) (model.PaymentOrder, bool, error) {
 	return s.repository.SettleUSDTTransfer(ctx, id, orderID, actor, reason)
+}
+
+// Dismiss permanently closes review evidence without changing any financial record.
+func (s *Service) Dismiss(ctx context.Context, id, actor, reason string) (bool, error) {
+	return s.repository.DismissUSDTTransfer(ctx, id, actor, reason)
+}
+
+// MatchingEvidence projects verified candidates for one immutable payment quote.
+func (s *Service) MatchingEvidence(ctx context.Context, orderID string) (ReviewPage, error) {
+	return s.repository.USDTMatchingEvidence(ctx, orderID)
 }
 
 // ErrorCode returns safe identifiers without upstream URLs or response text.

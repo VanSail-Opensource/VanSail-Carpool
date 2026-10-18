@@ -4,7 +4,7 @@ put:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [USDT]
   operationId: resolveAdminUSDTTransfer
-  description: Consumes a verified transfer once; only its original payment window may be overridden.
+  description: Settles verified same-token/network/address evidence once, or permanently dismisses review evidence with actor/reason/time audit. Only the original payment window may be overridden; dismissed and credited evidence is immutable.
   requestBody:
     required: true
     content:
@@ -12,7 +12,7 @@ put:
         schema: { $ref: '../openapi.yaml#/components/schemas/USDTResolutionRequest' }
   responses:
     '200':
-      description: Audited credit or the existing identical resolution
+      description: Audited settlement, permanent dismissal, or an idempotent replay
       content:
         application/json:
           schema: { $ref: '../openapi.yaml#/components/schemas/USDTResolution' }

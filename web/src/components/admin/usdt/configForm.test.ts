@@ -3,7 +3,7 @@ import type { USDTConfig } from '@/api/usdt'
 import { configSchema, newEndpoint } from './configForm'
 
 function config(): USDTConfig {
-  return { enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
+  return { mode: 'usdt', enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
 }
 
 describe('USDT configuration contracts', () => {

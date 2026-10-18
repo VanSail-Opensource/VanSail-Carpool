@@ -33,16 +33,19 @@ USDTConfig:
   properties:
     enabled: { type: boolean }
     name: { type: string, minLength: 1, maxLength: 64 }
-    rate: { type: string, description: 'Exact TXB per USDT; required while enabled.' }
+    mode: { type: string, enum: [usdt, usdc, both], default: usdt, description: 'Missing legacy values retain USDT. Network endpoints, addresses and concurrency are shared.' }
+    rate: { type: string, description: 'Exact TXB per token; required while enabled.' }
     expiryMinutes: { type: integer, minimum: 5, maximum: 120, default: 30 }
     concurrency: { type: integer, minimum: 1, maximum: 8, description: 'One shared cap across all RPC, indexer, probe, reconnect and WebSocket requests.' }
     networks: { type: array, maxItems: 10, items: { $ref: '#/USDTNetworkConfig' } }
 USDTNetworkStatus:
   type: object
   additionalProperties: false
-  required: [network, state, cursor, updatedAt, errorCode, connection]
+  required: [network, token, rail, state, cursor, updatedAt, errorCode, connection]
   properties:
     network: { $ref: '#/USDTNetworkID' }
+    token: { type: string, description: Pinned native token identity. }
+    rail: { type: string }
     state: { type: string, enum: [disabled, ready, catching_up, error] }
     cursor: { type: string, description: 'Durable adapter-specific processed progress.' }
     updatedAt: { type: [string, 'null'], format: date-time }
@@ -60,20 +63,24 @@ USDTCheckRequest:
   required: [network]
   properties:
     network: { $ref: '#/USDTNetworkID' }
+    rail: { type: string, description: 'Token-specific rail; omitted means USDT for compatibility.' }
 USDTCheckResult:
   type: object
   additionalProperties: false
-  required: [network, success, errorCode]
+  required: [network, token, rail, success, errorCode]
   properties:
     network: { $ref: '#/USDTNetworkID' }
+    token: { type: string }
+    rail: { type: string }
     success: { type: boolean }
     errorCode: { type: string }
 USDTTransfer:
   type: object
   additionalProperties: false
-  required: [id, network, token, recipient, atomicAmount, amount, txHash, eventId, occurredAt, orderId, status, reason]
+  required: [id, currency, network, token, recipient, atomicAmount, amount, txHash, eventId, occurredAt, orderId, status, reason]
   properties:
     id: { type: string }
+    currency: { type: string, enum: [USDT, USDC] }
     network: { $ref: '#/USDTNetworkID' }
     token: { type: string }
     recipient: { type: string }
@@ -83,7 +90,7 @@ USDTTransfer:
     eventId: { type: string }
     occurredAt: { type: string, format: date-time }
     orderId: { type: string }
-    status: { type: string, enum: [ready, review, credited] }
+    status: { type: string, enum: [ready, review, credited, dismissed] }
     reason: { type: string }
 USDTReviewPage:
   type: object
@@ -95,8 +102,9 @@ USDTReviewPage:
 USDTResolutionRequest:
   type: object
   additionalProperties: false
-  required: [orderId, reason]
+  required: [reason]
   properties:
+    action: { type: string, enum: [settle, dismiss], default: settle }
     orderId: { type: string, minLength: 1, maxLength: 128 }
     reason: { type: string, minLength: 1, maxLength: 500 }
 USDTResolution:

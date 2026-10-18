@@ -70,6 +70,9 @@ func (s *Service) storeCheckout(ctx context.Context, order model.PaymentOrder, c
 	if err := validateCryptoCheckout(order.Provider, checkout); err != nil {
 		return model.PaymentOrder{}, err
 	}
+	if order.Provider == "builtin_usdt" && checkout.ActualCryptoCurrency != nil && !strings.EqualFold(*checkout.ActualCryptoCurrency, order.PayableCurrency) {
+		return model.PaymentOrder{}, fmt.Errorf("create provider checkout: %w: token conflicts with immutable order", ErrInvalidOrder)
+	}
 	if checkout.ExpiresAt.IsZero() {
 		checkout.ExpiresAt = order.ExpiresAt
 	}
@@ -91,7 +94,7 @@ func validateCryptoCheckout(provider string, checkout ProviderCheckout) error {
 	}
 	actual, err := ParseDecimal(*checkout.ActualCryptoAmount)
 	currency := strings.ToUpper(*checkout.ActualCryptoCurrency)
-	if (provider != "bepusdt" && provider != "builtin_usdt") || err != nil || !actual.Positive() || (currency != "USDT" && currency != "USDC") || (provider == "builtin_usdt" && (currency != "USDT" || checkout.ReceivingAddress == nil || *checkout.ReceivingAddress == "")) {
+	if (provider != "bepusdt" && provider != "builtin_usdt") || err != nil || !actual.Positive() || (currency != "USDT" && currency != "USDC") || (provider == "builtin_usdt" && (checkout.ReceivingAddress == nil || *checkout.ReceivingAddress == "")) {
 		return fmt.Errorf("create provider checkout: %w: invalid crypto pricing", ErrInvalidOrder)
 	}
 	return nil

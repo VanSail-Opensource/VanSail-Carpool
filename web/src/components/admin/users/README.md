@@ -28,3 +28,7 @@ it does not rely on Mini App styles. Native browser navigation opens PM topics.
 Provider, refund, audited resolution, coupon, and PM repair failures stay visible
 inside their focused overlays; exact amounts and operation receipts remain owned
 by the existing typed APIs and composables.
+
+`AdminPaymentCreditDialog.vue` loads verified matching evidence for one payment with
+abort/generation guards. Selecting evidence invokes settlement; the no-evidence option
+uses the courtesy ledger. Failed evidence loads disable confirmation until retry.

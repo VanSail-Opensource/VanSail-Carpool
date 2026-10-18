@@ -38,6 +38,10 @@ func (s *Store) USDTQuote(ctx context.Context, orderID string) (usdt.Quote, erro
 
 // ReserveUSDTQuote commits the fingerprint and checkout together before displaying it.
 func (s *Store) ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.NetworkSpec, addresses []string, base string) (usdt.Quote, error) {
+	pinned, ok := usdt.Network(spec.Rail)
+	if !ok || pinned != spec {
+		return usdt.Quote{}, usdt.ErrProof
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -54,7 +58,7 @@ func (s *Store) ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.
 	if err != nil {
 		return usdt.Quote{}, err
 	}
-	if order.Provider != usdt.Provider || order.ProviderRail != spec.Rail || order.Status != "creating" || order.CancelledAt != nil || order.PayableAmount != base {
+	if order.Provider != usdt.Provider || order.ProviderRail != spec.Rail || order.PayableCurrency != spec.Currency() || order.Status != "creating" || order.CancelledAt != nil || order.PayableAmount != base {
 		return usdt.Quote{}, usdt.ErrConflict
 	}
 	millis, err := usdt.Atomic(base, 3)
@@ -107,7 +111,7 @@ func (s *Store) ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.
 			if inserted == 0 {
 				continue
 			}
-			if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='pending',provider_trade_id=?,receiving_address=?,actual_crypto_amount=?,actual_crypto_currency='USDT',expires_at=?,updated_at=? WHERE id=? AND status='creating'`, "builtin:"+orderID, q.Recipient, q.Amount, stamp(q.ExpiresAt), stamp(time.Now().UTC()), orderID); err != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='pending',provider_trade_id=?,receiving_address=?,actual_crypto_amount=?,actual_crypto_currency=?,expires_at=?,updated_at=? WHERE id=? AND status='creating'`, "builtin:"+orderID, q.Recipient, q.Amount, spec.Currency(), stamp(q.ExpiresAt), stamp(time.Now().UTC()), orderID); err != nil {
 				return usdt.Quote{}, err
 			}
 			if err := tx.Commit(); err != nil {
@@ -121,7 +125,11 @@ func (s *Store) ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.
 
 // USDTWatchAddresses retains unpaid quote recipients across setting changes.
 func (s *Store) USDTWatchAddresses(ctx context.Context, network string) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT quote.recipient FROM usdt_quotes quote JOIN payment_orders payment ON payment.id=quote.order_id WHERE quote.network=? AND payment.paid_at IS NULL AND payment.status<>'failed' ORDER BY quote.recipient`, network)
+	spec, ok := usdt.Network(network)
+	if !ok {
+		return nil, usdt.ErrConfiguration
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT quote.recipient FROM usdt_quotes quote JOIN payment_orders payment ON payment.id=quote.order_id WHERE quote.network=? AND quote.token=? AND payment.paid_at IS NULL AND payment.status<>'failed' ORDER BY quote.recipient`, spec.Network, spec.Token)
 	if err != nil {
 		return nil, err
 	}

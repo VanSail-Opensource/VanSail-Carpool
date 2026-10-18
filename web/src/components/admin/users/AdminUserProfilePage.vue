@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, toRef, watch } from 'vue'
 
+import { usdtApi } from '@/api/usdt'
+import AdminPaymentCreditDialog from './AdminPaymentCreditDialog.vue'
 import { adminOperationsApi, type AdminEntitlement, type AdminEntitlementRefundRequest, type AdminUserDetail, type CourtesyCredit, type EntitlementEditRequest, type OperationReceipt, type OperationResolution } from '@/api/adminOperations'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import ConnectionUnblockDialog from '@/components/connections/ConnectionUnblockDialog.vue'
@@ -99,12 +101,17 @@ async function refundPayment(): Promise<void> {
   if (ok) refundingPayment.value = null
 }
 
-async function creditPayment(): Promise<void> {
+async function creditPayment(transferId: string, reason: string): Promise<void> {
   const payment = creditingPayment.value
   if (!payment) return
+  if (transferId) {
+    const ok = await profile.perform(`settle-payment:${payment.id}`, () => usdtApi.resolve(transferId, payment.id, reason))
+    if (ok) { creditingPayment.value = null; courtesyMessage.value = t('adminUsdt.settled') }
+    return
+  }
   const credit = shallowRef<CourtesyCredit | null>(null)
   const ok = await profile.perform(`credit-payment:${payment.id}`, async () => {
-    credit.value = await adminOperationsApi.creditPayment(payment.id, paymentReason.value)
+    credit.value = await adminOperationsApi.creditPayment(payment.id, reason)
     return credit.value
   })
   const completedCredit = credit.value
@@ -182,7 +189,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <AdminEntitlementEditor :open="editing !== null" :item="editing" :combos="profile.options.value.combos" :squads="profile.options.value.squads" :busy="busy" :options-loading="profile.optionsLoading.value" :error="dialogError" @update:open="!$event && (editing = null)" @save="saveEntitlement" />
     <AdminEntitlementRefundDialog :open="refunding !== null" :item="refunding" :busy="busy" :error="profile.error.value" @update:open="!$event && (refunding = null)" @refund="refundEntitlement" />
     <AdminReasonDialog :open="refundingPayment !== null" v-model:reason="paymentReason" :title="t('adminUserProfile.refundPaymentTitle')" :description="t('adminUserProfile.refundPaymentHint')" :confirm-label="t('adminUserProfile.issueRefundPayment')" :busy="busy" :error="profile.error.value" danger @update:open="!$event && (refundingPayment = null)" @confirm="refundPayment" />
-    <AdminReasonDialog :open="creditingPayment !== null" v-model:reason="paymentReason" :title="t('adminUserProfile.courtesyCreditTitle')" :description="t('adminUserProfile.courtesyCreditHint')" :confirm-label="t('adminUserProfile.issueCourtesyCredit')" :busy="busy" :error="profile.error.value" @update:open="!$event && (creditingPayment = null)" @confirm="creditPayment" />
+    <AdminPaymentCreditDialog :payment="creditingPayment" :busy="busy" :error="profile.error.value" @close="creditingPayment = null" @confirm="creditPayment" />
     <AdminOperationResolutionDialog :open="resolving !== null" :operation="resolving" :busy="busy" :error="profile.error.value" @update:open="!$event && (resolving = null)" @resolve="resolveOperation" />
     <ConnectionUnblockDialog :open="unblockingIP !== null" :block="unblockingIP" :receipt="unblockOperation.receipt.value" :busy="profile.busyAction.value?.startsWith('unblock-ip:')" :checking="unblockOperation.checking.value" :error="profile.error.value ?? unblockOperation.error.value" @update:open="!$event && (unblockingIP = null)" @confirm="unblockIP" @refresh="unblockOperation.refresh" />
   </section>

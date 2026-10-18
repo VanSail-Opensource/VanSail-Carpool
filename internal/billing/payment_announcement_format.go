@@ -7,6 +7,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegramformat"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 )
 
 var paymentAnnouncementChannelsZH = map[string]string{
@@ -59,6 +60,13 @@ func validatePaymentSuccessAnnouncement(payload jobpayload.PaymentSuccessAnnounc
 		return errors.New("payment announcement payable amount is invalid")
 	}
 	expectedCurrency := strings.ToUpper(currencyCode(payload.Provider))
+	if payload.Provider == usdt.Provider {
+		spec, ok := usdt.Network(payload.Channel)
+		if !ok {
+			return errors.New("payment announcement token rail is invalid")
+		}
+		expectedCurrency = spec.Currency()
+	}
 	if expectedCurrency == "" || payload.PayableCurrency != expectedCurrency {
 		return errors.New("payment announcement provider currency is invalid")
 	}

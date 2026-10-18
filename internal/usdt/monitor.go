@@ -49,9 +49,9 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 		}
 		delay = 15 * time.Second
 		lastScan = time.Now()
-		addresses, err := s.repository.USDTWatchAddresses(ctx, spec.Network)
+		addresses, err := s.repository.USDTWatchAddresses(ctx, spec.Rail)
 		if err != nil {
-			s.state(spec.Network, "error", "", ErrorCode(err))
+			s.state(spec.Rail, "error", "", ErrorCode(err))
 			continue
 		}
 		if enabled && n.Enabled {
@@ -63,12 +63,12 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 		}
 		sort.Strings(addresses)
 		if len(addresses) == 0 || len(readers) == 0 {
-			s.state(spec.Network, "disabled", "", "")
+			s.state(spec.Rail, "disabled", "", "")
 			continue
 		}
-		cursor, err := s.repository.USDTCursor(ctx, spec.Network)
+		cursor, err := s.repository.USDTCursor(ctx, spec.Rail)
 		if err != nil {
-			s.state(spec.Network, "error", "", ErrorCode(err))
+			s.state(spec.Rail, "error", "", ErrorCode(err))
 			continue
 		}
 		completed := false
@@ -76,18 +76,18 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 			batch, err := reader.scan(ctx, cursor, addresses)
 			if err != nil {
 				code := ErrorCode(err)
-				s.state(spec.Network, "error", cursor.Value, code)
+				s.state(spec.Rail, "error", cursor.Value, code)
 				continue
 			}
-			if err := s.repository.SaveUSDTBatch(ctx, spec.Network, batch); err != nil {
-				s.state(spec.Network, "error", cursor.Value, ErrorCode(err))
+			if err := s.repository.SaveUSDTBatch(ctx, spec.Rail, batch); err != nil {
+				s.state(spec.Rail, "error", cursor.Value, ErrorCode(err))
 				break
 			}
 			state := "catching_up"
 			if batch.CaughtUp {
 				state = "ready"
 			}
-			s.state(spec.Network, state, batch.Cursor.Value, "")
+			s.state(spec.Rail, state, batch.Cursor.Value, "")
 			completed = true
 			if err := s.drain(ctx); err != nil {
 				s.report(err)
@@ -112,9 +112,9 @@ func (s *Service) monitor(ctx context.Context, spec NetworkSpec, n NetworkConfig
 				reader.refreshSubscription(ctx, keys)
 				if reader.subscription != "" {
 					s.mu.Lock()
-					status := s.states[spec.Network]
+					status := s.states[spec.Rail]
 					status.Connection = "websocket"
-					s.states[spec.Network] = status
+					s.states[spec.Rail] = status
 					s.mu.Unlock()
 				}
 			}

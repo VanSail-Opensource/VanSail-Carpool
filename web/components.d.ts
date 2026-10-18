@@ -41,6 +41,7 @@ declare module 'vue' {
     AdminLuckyDrawEditor: typeof import('./src/components/admin/activity/AdminLuckyDrawEditor.vue')['default']
     AdminOnboardingPanel: typeof import('./src/components/admin/AdminOnboardingPanel.vue')['default']
     AdminOperationResolutionDialog: typeof import('./src/components/admin/users/AdminOperationResolutionDialog.vue')['default']
+    AdminPaymentCreditDialog: typeof import('./src/components/admin/users/AdminPaymentCreditDialog.vue')['default']
     AdminPaymentProfiles: typeof import('./src/components/admin/AdminPaymentProfiles.vue')['default']
     AdminQuestionnairesPanel: typeof import('./src/components/admin/AdminQuestionnairesPanel.vue')['default']
     AdminReasonDialog: typeof import('./src/components/admin/AdminReasonDialog.vue')['default']

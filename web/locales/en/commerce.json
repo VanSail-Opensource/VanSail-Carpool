@@ -140,7 +140,9 @@
       "usdt.xlayer": "USDT · X Layer",
       "usdt.arbitrum": "USDT · Arbitrum",
       "usdt.plasma": "USDT · Plasma",
-      "usdt.ton": "USDT · TON"
+      "usdt.ton": "USDT · TON",
+      "usdc.erc20": "USDC · ERC20", "usdc.polygon": "USDC · Polygon", "usdc.arbitrum": "USDC · Arbitrum",
+      "usdc.xlayer": "USDC · X Layer", "usdc.plasma": "USDC · Plasma", "usdc.solana": "USDC · Solana", "usdc.aptos": "USDC · Aptos"
     },
     "noChannel": "No payment channel is available.",
     "channel": "Channel",

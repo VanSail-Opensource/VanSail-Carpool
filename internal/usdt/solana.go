@@ -42,7 +42,7 @@ func (s *scanner) checkSolana(ctx context.Context) error {
 	if err := s.client.rpc(ctx, "getTokenSupply", []any{s.client.spec.Token, map[string]string{"commitment": "finalized"}}, &mint); err != nil {
 		return err
 	}
-	if mint.Value.Decimals != 6 {
+	if mint.Value.Decimals != s.client.spec.Decimals {
 		return ErrProof
 	}
 	return nil

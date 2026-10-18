@@ -19,6 +19,11 @@ func scanUSDTTransfer(row rowScanner) (usdt.Transfer, error) {
 	if err != nil {
 		return t, err
 	}
+	spec, ok := usdt.TokenNetwork(t.Network, t.Token)
+	if !ok {
+		return t, usdt.ErrProof
+	}
+	t.Currency = spec.Currency()
 	t.OccurredAt, err = parseStamp(occurred)
 	t.Verified, t.Finalized = true, true
 	return t, err
@@ -27,7 +32,11 @@ func scanUSDTTransfer(row rowScanner) (usdt.Transfer, error) {
 // USDTCursor returns only fully processed progress, including canonical EVM hash.
 func (s *Store) USDTCursor(ctx context.Context, network string) (usdt.Cursor, error) {
 	var c usdt.Cursor
-	err := s.db.QueryRowContext(ctx, "SELECT value,hash FROM usdt_scan_cursors WHERE network=?", network).Scan(&c.Value, &c.Hash)
+	spec, ok := usdt.Network(network)
+	if !ok {
+		return c, usdt.ErrConfiguration
+	}
+	err := s.db.QueryRowContext(ctx, "SELECT value,hash FROM usdt_scan_cursors WHERE network=? AND token=?", spec.Network, spec.Token).Scan(&c.Value, &c.Hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, nil
 	}

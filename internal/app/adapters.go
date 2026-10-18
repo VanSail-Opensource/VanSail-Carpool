@@ -78,8 +78,12 @@ func (a paymentAdapter) Create(ctx context.Context, request billing.ProviderCrea
 		if err != nil {
 			return billing.ProviderCheckout{}, err
 		}
-		tradeID, currency := "builtin:"+q.OrderID, "USDT"
-		return billing.ProviderCheckout{TradeID: &tradeID, ReceivingAddress: &q.Recipient, ActualCryptoAmount: &q.Amount, ActualCryptoCurrency: &currency, PayableAmount: request.PayableAmount, PayableCurrency: "USDT", ExpiresAt: q.ExpiresAt}, nil
+		spec, ok := usdt.TokenNetwork(q.Network, q.Token)
+		if !ok {
+			return billing.ProviderCheckout{}, usdt.ErrProof
+		}
+		tradeID, currency := "builtin:"+q.OrderID, spec.Currency()
+		return billing.ProviderCheckout{TradeID: &tradeID, ReceivingAddress: &q.Recipient, ActualCryptoAmount: &q.Amount, ActualCryptoCurrency: &currency, PayableAmount: request.PayableAmount, PayableCurrency: currency, ExpiresAt: q.ExpiresAt}, nil
 	case "ezpay":
 		return a.createEZPay(ctx, request)
 	case "bepusdt":

@@ -83,7 +83,7 @@ func verifiedTransfer(spec NetworkSpec, recipient, atomic, hash, event string, o
 	if occurred.IsZero() || occurred.After(time.Now().UTC().Add(2*time.Minute)) {
 		return Transfer{}, ErrProof
 	}
-	return Transfer{Network: spec.Network, Token: spec.Token, Recipient: address, AtomicAmount: atomic, Amount: amount, TxHash: hash, EventID: event, OccurredAt: occurred, Finalized: true, Verified: true}, nil
+	return Transfer{Currency: spec.Currency(), Network: spec.Network, Token: spec.Token, Recipient: address, AtomicAmount: atomic, Amount: amount, TxHash: hash, EventID: event, OccurredAt: occurred, Finalized: true, Verified: true}, nil
 }
 
 func cursorJSON(value any) string {

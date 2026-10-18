@@ -20,7 +20,7 @@ export function configSchema() {
   const invalid = t('adminUsdt.invalid')
   const id = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/, invalid)
   const endpoint = z.object({ id, rpcUrl: z.string(), wsUrl: z.string(), indexerUrl: z.string(), apiKey: z.string().max(4096), useWs: z.boolean(), rpcConfigured: z.boolean(), wsConfigured: z.boolean(), indexerConfigured: z.boolean(), keyConfigured: z.boolean(), host: z.string() })
-  return z.object({ enabled: z.boolean(), name: z.string().trim().min(1, invalid).max(64),
+  return z.object({ mode: z.enum(['usdt', 'usdc', 'both']).default('usdt'), enabled: z.boolean(), name: z.string().trim().min(1, invalid).max(64),
     rate: z.string().refine(value => value === '' || (/^\d{1,18}(\.\d{1,12})?$/.test(value) && Number(value) > 0), invalid),
     expiryMinutes: z.number().int().min(5).max(120), concurrency: z.number().int().min(1).max(8),
     networks: z.array(z.object({ network: z.enum(Object.keys(networkRails) as [USDTNetworkID, ...USDTNetworkID[]]), enabled: z.boolean(), addresses: z.array(z.string()).max(128), endpoints: z.array(endpoint).max(8) })).max(10),
@@ -45,3 +45,6 @@ export function configSchema() {
     })
   }) satisfies z.ZodType<USDTConfig>
 }
+
+export const nativeUSDCNetworks = new Set<USDTNetworkID>(['ethereum', 'polygon', 'arbitrum', 'xlayer', 'plasma', 'solana', 'aptos'])
+export function tokenRail(network: USDTNetworkID, currency: string): string { return networkRails[network]!.replace('usdt.', `${currency.toLowerCase()}.`) }

@@ -157,3 +157,5 @@ file instead.
 `083_xnode_zero_multiplier.sql` allows explicit zero node/rate multipliers while preserving all rows and historical rate boundaries. Startup verifies a boundary backup and applies the rebuild with FK checks and schema-object restoration.
 
 `084_xnode_routing_plans.sql` stores encrypted owner route plans, preserved conversion evidence and durable deployment barriers, with compile revision invalidation.
+
+`085_stablecoin_tokens.sql` adds token cursor keys without resetting USDT progress, preserves quote fingerprints and transfer IDs, and records immutable audited dismissals.

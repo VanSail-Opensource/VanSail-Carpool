@@ -27,6 +27,7 @@ var (
 type Config struct {
 	Enabled       bool                     `json:"enabled"`
 	Name          string                   `json:"name"`
+	Mode          string                   `json:"mode"`
 	Rate          string                   `json:"rate"`
 	ExpiryMinutes int                      `json:"expiryMinutes"`
 	Concurrency   int                      `json:"concurrency"`
@@ -71,6 +72,7 @@ type Quote struct {
 
 // Transfer records one receiving event, never a transaction-wide balance delta.
 type Transfer struct {
+	Currency     string    `json:"currency"`
 	ID           string    `json:"id"`
 	Network      string    `json:"network"`
 	Token        string    `json:"token"`
@@ -99,6 +101,8 @@ type Batch struct {
 
 type NetworkStatus struct {
 	Network    string     `json:"network"`
+	Token      string     `json:"token"`
+	Rail       string     `json:"rail"`
 	State      string     `json:"state"`
 	Cursor     string     `json:"cursor"`
 	UpdatedAt  *time.Time `json:"updatedAt"`
@@ -123,6 +127,8 @@ type Repository interface {
 	SettleUSDTTransfer(context.Context, string, string, string, string) (model.PaymentOrder, bool, error)
 	USDTReview(context.Context, string, int) (ReviewPage, error)
 	USDTReady(context.Context, int) ([]Transfer, error)
+	DismissUSDTTransfer(context.Context, string, string, string) (bool, error)
+	USDTMatchingEvidence(context.Context, string) (ReviewPage, error)
 }
 
 type Settings interface {

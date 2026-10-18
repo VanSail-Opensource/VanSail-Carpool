@@ -6,18 +6,17 @@ import { formatDateTime } from '@/utils/format'
 import { paymentChannelLabel } from '@/components/billing/paymentOptions'
 import { networkRails } from './configForm'
 const props = defineProps<{ transfer: USDTTransfer; busy: boolean }>()
-const emit = defineEmits<{ resolve: [id: string, orderId: string, reason: string] }>()
+const emit = defineEmits<{ dismiss: [id: string, reason: string] }>()
 const { t } = useI18n()
-const orderId = shallowRef(props.transfer.orderId)
 const reason = shallowRef('')
-function resolve(): void { if (orderId.value.trim() && reason.value.trim()) emit('resolve', props.transfer.id, orderId.value.trim(), reason.value.trim()) }
+function dismiss(): void { if (reason.value.trim().length >= 3) emit('dismiss', props.transfer.id, reason.value.trim()) }
 </script>
 
 <template>
   <article class="usdt-review-item">
     <div class="usdt-toolbar">
-      <strong>{{ transfer.amount }} {{ t('adminUsdt.currency') }}</strong>
-      <span>{{ paymentChannelLabel(networkRails[transfer.network], transfer.network) }}</span>
+      <strong>{{ transfer.amount }} {{ transfer.currency }}</strong>
+      <span>{{ paymentChannelLabel(networkRails[transfer.network].replace('usdt.', `${transfer.currency.toLowerCase()}.`), transfer.network) }}</span>
       <small>{{ formatDateTime(transfer.occurredAt) }}</small>
     </div>
     <dl class="usdt-evidence">
@@ -25,10 +24,9 @@ function resolve(): void { if (orderId.value.trim() && reason.value.trim()) emit
       <div><dt>{{ t('adminUsdt.transaction') }}</dt><dd><code>{{ transfer.txHash }}</code></dd></div>
       <div><dt>{{ t('adminUsdt.reason') }}</dt><dd>{{ t(`adminUsdt.reviewReasons.${transfer.reason}`) }}</dd></div>
     </dl>
-    <div v-if="transfer.reason !== 'USDT_ALREADY_CREDITED'" class="usdt-form-grid">
-      <UFormField :label="t('adminUsdt.orderId')"><UInput v-model="orderId" :disabled="busy" /></UFormField>
-      <UFormField :label="t('adminUsdt.auditReason')"><UInput v-model="reason" :maxlength="500" :disabled="busy" /></UFormField>
-      <UButton icon="i-ph-check" :label="t('adminUsdt.credit')" :loading="busy" :disabled="!orderId.trim() || !reason.trim() || busy" @click="resolve" />
+    <div class="usdt-form-grid">
+      <UFormField :label="t('adminUsdt.dismissReason')"><UInput v-model="reason" :maxlength="500" :disabled="busy" /></UFormField>
+      <UButton icon="i-ph-check" :label="t('adminUsdt.dismiss')" :loading="busy" :disabled="reason.trim().length < 3 || busy" @click="dismiss" />
     </div>
   </article>
 </template>

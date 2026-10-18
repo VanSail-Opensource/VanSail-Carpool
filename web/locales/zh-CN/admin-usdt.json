@@ -1,12 +1,12 @@
 {
   "adminUsdt": {
-    "title": "USDT 收款",
-    "copy": "将 USDT 直接收款至您的钱包。",
+    "title": "稳定币收款",
+    "copy": "使用钱包直接接收原生 USDT 和 USDC。",
     "name": "显示名称",
-    "rate": "每 USDT 可兑换的 TXB",
+    "rate": "每枚代币兑换 TXB",
     "rateHint": "每笔订单沿用创建时的汇率。",
     "expiry": "支付时限（分钟）",
-    "quoteHint": "金额保留三位小数，每笔订单最多增加 0.099 USDT 的尾数，TXB 到账数量不变。",
+    "quoteHint": "保留三位小数。唯一金额最多增加 0.099 枚代币，TXB 入账金额不变。",
     "saved": "配置已保存，正在检查网络状态。",
     "network": "网络",
     "enableNetwork": "允许通过此网络创建新订单",
@@ -27,12 +27,11 @@
     "wsHint": "EVM 可使用对应的 WS RPC 地址。Solana 还需要配置 HTTP RPC。",
     "concurrency": "并发请求数",
     "concurrencyHint": "所有 RPC、索引器、探测、重连和 WS 请求共用此并发上限。",
-    "concurrency": "并发请求数",
     "check": "检查服务器",
-    "checkOK": "已验证主网和 USDT 代币。",
+    "checkOK": "已验证主网、原生代币与精度。",
     "progress": "已处理",
     "review": "转账审核",
-    "reviewHint": "仅当网络和收款地址一致，且转账金额与订单金额相同或最多少 0.001 USDT 时，才会自动入账。存在歧义的匹配需由管理员审核。",
+    "reviewHint": "请在选定订单的补偿入账窗口匹配转账。忽略操作不可撤销。",
     "noTransfers": "没有待审核的转账。",
     "recipient": "收款地址",
     "transaction": "交易",
@@ -70,6 +69,19 @@
       "solana": "Solana 主网 HTTP RPC；可选配置独立的 WS 地址。",
       "aptos": "Aptos 主网节点根地址（不要添加 /v1）；另需配置索引器地址。",
       "ton": "兼容 Toncenter 的 API 地址，末尾为 /api/v3；使用 X-API-Key 进行身份验证。"
-    }
+    },
+    "mode": "接受代币",
+    "modes": {
+      "usdt": "USDT",
+      "usdc": "USDC",
+      "both": "USDT 和 USDC"
+    },
+    "token": "代币",
+    "dismiss": "永久忽略",
+    "dismissReason": "忽略原因",
+    "noEvidence": "无转账凭证 · 补偿入账",
+    "evidence": "已验证的匹配转账",
+    "creditChoiceHint": "选择已验证的转账以结算订单，或在无转账凭证时补偿入账。两种方式不能重复入账。",
+    "settled": "已使用验证的转账结算订单。"
   }
 }

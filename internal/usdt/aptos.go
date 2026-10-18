@@ -58,7 +58,7 @@ func (s *scanner) checkAptos(ctx context.Context) error {
 	if err := s.client.graphql(ctx, `query Token($asset:String!){ledger_infos{chain_id} fungible_asset_metadata(where:{asset_type:{_eq:$asset}}){decimals}}`, map[string]string{"asset": s.client.spec.Token}, &indexed); err != nil {
 		return err
 	}
-	if len(indexed.Ledgers) != 1 || indexed.Ledgers[0].ChainID != 1 || len(indexed.Assets) != 1 || indexed.Assets[0].Decimals != 6 {
+	if len(indexed.Ledgers) != 1 || indexed.Ledgers[0].ChainID != 1 || len(indexed.Assets) != 1 || indexed.Assets[0].Decimals != s.client.spec.Decimals {
 		return ErrProof
 	}
 	return nil

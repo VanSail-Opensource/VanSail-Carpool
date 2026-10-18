@@ -26,7 +26,7 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 		return usdt.ErrProof
 	}
 	for _, t := range b.Transfers {
-		if !t.Finalized || !t.Verified || t.Network != network || t.Token != spec.Token || len(t.TxHash) == 0 || len(t.TxHash) > 128 || len(t.EventID) == 0 || len(t.EventID) > 128 || t.OccurredAt.IsZero() {
+		if !t.Finalized || !t.Verified || t.Network != spec.Network || t.Token != spec.Token || len(t.TxHash) == 0 || len(t.TxHash) > 128 || len(t.EventID) == 0 || len(t.EventID) > 128 || t.OccurredAt.IsZero() {
 			return usdt.ErrProof
 		}
 		address, err := usdt.NormalizeAddress(spec, t.Recipient)
@@ -37,7 +37,7 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 		if err != nil || amount != t.Amount {
 			return usdt.ErrProof
 		}
-		digest := sha256.Sum256([]byte(network + "\x00" + t.TxHash + "\x00" + t.EventID))
+		digest := sha256.Sum256([]byte(spec.Network + "\x00" + t.TxHash + "\x00" + t.EventID))
 		t.ID = hex.EncodeToString(digest[:])
 		old, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=?", t.ID))
 		if err == nil {
@@ -72,7 +72,7 @@ func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch)
 			return err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_scan_cursors(network,value,hash,updated_at) VALUES(?,?,?,?) ON CONFLICT(network) DO UPDATE SET value=excluded.value,hash=excluded.hash,updated_at=excluded.updated_at`, network, b.Cursor.Value, b.Cursor.Hash, stamp(time.Now().UTC())); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_scan_cursors(network,token,value,hash,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(network,token) DO UPDATE SET value=excluded.value,hash=excluded.hash,updated_at=excluded.updated_at`, spec.Network, spec.Token, b.Cursor.Value, b.Cursor.Hash, stamp(time.Now().UTC())); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -86,7 +86,7 @@ func matchUSDTQuote(ctx context.Context, tx *sql.Tx, transfer usdt.Transfer) (us
 	if !errors.Is(err, ErrNotFound) {
 		return usdt.Quote{}, false, err
 	}
-	spec, ok := usdt.Network(transfer.Network)
+	spec, ok := usdt.TokenNetwork(transfer.Network, transfer.Token)
 	if !ok || usdt.AmountShortfallTolerance(spec.Decimals).Sign() == 0 {
 		return usdt.Quote{}, false, nil
 	}

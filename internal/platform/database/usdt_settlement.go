@@ -48,6 +48,9 @@ func (s *Store) SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, re
 		}
 		return order, false, err
 	}
+	if t.Status == "dismissed" {
+		return model.PaymentOrder{}, false, usdt.ErrConflict
+	}
 	q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=?", orderID))
 	if err != nil {
 		return model.PaymentOrder{}, false, err
@@ -60,25 +63,23 @@ func (s *Store) SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, re
 		return model.PaymentOrder{}, false, usdt.ErrConflict
 	}
 	if t.AtomicAmount != q.AtomicAmount {
-		spec, ok := usdt.Network(t.Network)
+		spec, ok := usdt.TokenNetwork(t.Network, t.Token)
 		if !ok || !usdt.IsAmountShortfallWithinTolerance(t.AtomicAmount, q.AtomicAmount, spec.Decimals) {
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
-		if actorID == "" {
-			matched, found, err := matchUSDTQuote(ctx, tx, t)
-			if err != nil {
-				return model.PaymentOrder{}, false, err
-			}
-			if !found || matched.OrderID != orderID {
-				return model.PaymentOrder{}, false, usdt.ErrConflict
-			}
+		matched, found, err := matchUSDTQuote(ctx, tx, t)
+		if err != nil {
+			return model.PaymentOrder{}, false, err
+		}
+		if !found || matched.OrderID != orderID {
+			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
 	}
 	credited, err := courtesyCreditExistsTx(ctx, tx, order.ID)
 	if err != nil {
 		return model.PaymentOrder{}, false, err
 	}
-	if order.PaidAt != nil || credited || order.Status == "failed" || order.Status == "refunded" {
+	if order.PaidAt != nil || credited || (order.Status == "failed" && actorID == "") || order.Status == "refunded" {
 		if actorID != "" {
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
@@ -95,7 +96,7 @@ func (s *Store) SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, re
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
 	} else {
-		if t.Status != "review" {
+		if (t.Status != "review" && t.Status != "ready") || t.OccurredAt.Before(order.CreatedAt) {
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
 	}

@@ -1,4 +1,4 @@
-# Built-in USDT collection
+# Built-in USDT and USDC collection
 
 `Service.Start` runs inside the existing application lifecycle. `Methods`, `Rate`
 and `Expiry` supply billing with local configuration/readiness; `Create` reserves
@@ -6,16 +6,27 @@ an address/amount fingerprint through SQLite. Every external call enters
 `upstreamqueue` through `Executor`, including probes, reconnects and WS commands.
 Inbound WS notifications only wake/coalesce scans; they never settle an order.
 
-Only the pinned mainnet USDT identities are accepted. Token amounts use integer
+Only pinned native mainnet identities are accepted. `registry.go` pins USDC from
+[Circle](https://developers.circle.com/stablecoins/usdc-contract-addresses), read 2026-10-18,
+on Ethereum, Polygon, Arbitrum, X Layer, Plasma, Solana and Aptos, all with six decimals.
+Queued readiness probes verify mainnet and expected precision. Bridged identities and
+USDC on TRON/BSC/TON are excluded. Token amounts use integer
 atomic units; quotes use three decimal places and at most 99 increments of 0.001.
 Fingerprints survive paid-order cleanup and are never reused. Capacity exhaustion
 requires another configured address. Expired/cancelled unpaid snapshots and review
 evidence remain available for late-transfer resolution. Transfers are consumed in
 the existing ledger transaction, including notifications and operation recovery.
 Exact amount matches take priority. Auto-credit accepts only an underpayment of at
-most 0.001 USDT when it identifies one quote for the same network and address;
-ambiguous matches stay in review. An administrator may select a matching quote in
-the review flow, and overpayments are never matched by this tolerance.
+most 0.001 tokens when it identifies one quote for the same token, network and address;
+ambiguous matches stay in review. Administrators select verified matching evidence inside the selected payment credit
+dialog. Overpayments and ambiguous shortfalls cannot settle. Review dismissal records
+actor, reason, time and audit evidence; dismissed and credited evidence is immutable.
+
+Mode `usdt | usdc | both` defaults old configurations to USDT. Endpoints, addresses,
+rate, expiry and the shared FIFO concurrency cap remain unchanged. Scanners and
+readiness use token rails; cursors persist network plus native contract identity.
+Issued quotes keep their token watchers through mode changes. Transfer IDs remain
+network/transaction/event hashes, and permanent quote fingerprints are untouched.
 
 The whole configuration uses the existing secret vault under `billing.usdt.config`.
 Administrative projections return only URL hostnames and configured flags. Blank
@@ -106,3 +117,7 @@ set; closed accounts and unpaid late-payment recipients remain monitored.
 `memory_test.go` covers graph/page limits, cursor retention and callback joining.
 The single shared concurrency setting, settlement and durable evidence retention
 are unchanged. Lifecycle logs memory and goroutines once per minute.
+
+`tokens_test.go` supplies hosted pinned-registry, legacy-default and token-readiness isolation regressions.
+
+`token_probe_test.go` verifies that queued native USDC probes use each pinned EVM contract and reject unexpected precision.

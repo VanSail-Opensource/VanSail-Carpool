@@ -44,6 +44,12 @@ func DecodeConfig(raw string) (Config, error) {
 
 // ValidateConfig normalizes addresses and rejects unsupported endpoint protocols.
 func ValidateConfig(c *Config) error {
+	if c.Mode == "" {
+		c.Mode = "usdt"
+	}
+	if c.Mode != "usdt" && c.Mode != "usdc" && c.Mode != "both" {
+		return ErrConfiguration
+	}
 	if c.Networks == nil {
 		c.Networks = []NetworkConfig{}
 	}

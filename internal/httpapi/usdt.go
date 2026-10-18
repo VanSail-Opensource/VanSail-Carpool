@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -72,6 +71,7 @@ func (s *Server) adminUSDTCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	var input struct {
 		Network string `json:"network"`
+		Rail    string `json:"rail"`
 	}
 	if err := decodeJSON(w, r, &input); err != nil {
 		s.usdtError(w, r, usdt.ErrConfiguration)
@@ -79,58 +79,21 @@ func (s *Server) adminUSDTCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
 	defer cancel()
-	result, err := s.deps.USDT.Check(ctx, input.Network)
+	key := input.Network
+	if input.Rail != "" {
+		spec, ok := usdt.Network(input.Rail)
+		if !ok || spec.Network != input.Network {
+			s.usdtError(w, r, usdt.ErrConfiguration)
+			return
+		}
+		key = spec.Rail
+	}
+	result, err := s.deps.USDT.Check(ctx, key)
 	if err != nil {
 		s.usdtError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
-}
-func (s *Server) adminUSDTReview(w http.ResponseWriter, r *http.Request) {
-	if !s.usdtAvailable(w, r) {
-		return
-	}
-	cursor := r.URL.Query().Get("cursor")
-	if len(cursor) > 64 {
-		s.usdtError(w, r, usdt.ErrConfiguration)
-		return
-	}
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	result, err := s.deps.USDT.Review(r.Context(), cursor, limit)
-	if err != nil {
-		s.usdtError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, result)
-}
-func (s *Server) adminUSDTResolve(w http.ResponseWriter, r *http.Request) {
-	if !s.usdtAvailable(w, r) {
-		return
-	}
-	var input struct {
-		OrderID string `json:"orderId"`
-		Reason  string `json:"reason"`
-	}
-	if err := decodeJSON(w, r, &input); err != nil || len(input.OrderID) == 0 || len(input.OrderID) > 128 || len(input.Reason) == 0 || len(input.Reason) > 500 {
-		s.usdtError(w, r, usdt.ErrConfiguration)
-		return
-	}
-	id := chi.URLParam(r, "id")
-	if len(id) != 64 {
-		s.usdtError(w, r, usdt.ErrConfiguration)
-		return
-	}
-	order, changed, err := s.deps.USDT.Resolve(r.Context(), id, input.OrderID, currentUser(r).ID, input.Reason)
-	if err != nil {
-		s.usdtError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, struct {
-		OrderID    string `json:"orderId"`
-		TransferID string `json:"transferId"`
-		Credited   bool   `json:"credited"`
-		Replayed   bool   `json:"replayed"`
-	}{order.ID, id, true, !changed})
 }
 func (s *Server) usdtError(w http.ResponseWriter, r *http.Request, err error) {
 	code, status := usdt.ErrorCode(err), http.StatusBadGateway

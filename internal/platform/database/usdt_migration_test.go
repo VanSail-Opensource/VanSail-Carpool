@@ -43,7 +43,7 @@ func TestUSDTUpgradePreservesPaymentsForeignKeysAndVerifiedBackup(t *testing.T) 
 			t.Fatal(err)
 		}
 	}
-	if _, err := conn.ExecContext(ctx, "DELETE FROM schema_migrations WHERE version IN (?,?)", usdtMigration, "073_remove_usdt_rpc_quotas.sql"); err != nil {
+	if _, err := conn.ExecContext(ctx, "DELETE FROM schema_migrations WHERE version IN (?,?,?)", usdtMigration, "073_remove_usdt_rpc_quotas.sql", "085_stablecoin_tokens.sql"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys=ON"); err != nil {

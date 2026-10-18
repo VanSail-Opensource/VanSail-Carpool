@@ -1,12 +1,12 @@
 {
   "adminUsdt": {
-    "title": "USDT payments",
-    "copy": "Receive USDT directly into your wallets.",
+    "title": "Stablecoin payments",
+    "copy": "Receive native USDT and USDC into your wallets.",
     "name": "Display name",
-    "rate": "TXB per USDT",
+    "rate": "TXB per token",
     "rateHint": "Each order keeps its original rate.",
     "expiry": "Payment window (minutes)",
-    "quoteHint": "Three decimal places. Unique amounts can add up to 0.099 USDT; TXB credit stays fixed.",
+    "quoteHint": "Three decimal places. Unique amounts can add up to 0.099 tokens; TXB credit stays fixed.",
     "saved": "Settings saved. Network readiness is being checked.",
     "network": "Network",
     "enableNetwork": "Accept new payments on this network",
@@ -28,10 +28,10 @@
     "concurrency": "Concurrent requests",
     "concurrencyHint": "One shared limit across RPC, indexer, probe, reconnect, and WS requests.",
     "check": "Check server",
-    "checkOK": "Mainnet and USDT token verified.",
+    "checkOK": "Mainnet and native token precision verified.",
     "progress": "Processed",
     "review": "Transfer review",
-    "reviewHint": "Auto-credit an unpaid order only when the network and address match and the amount is exact or up to 0.001 USDT short. Review ambiguous matches manually.",
+    "reviewHint": "Resolve matching evidence from the selected payment's credit dialog. Dismissals are permanent.",
     "noTransfers": "No transfers need review.",
     "recipient": "Receiving address",
     "transaction": "Transaction",
@@ -69,6 +69,19 @@
       "solana": "Solana mainnet HTTP RPC; optional separate WS URL.",
       "aptos": "Aptos mainnet node root, without /v1; add its indexer URL.",
       "ton": "Toncenter-compatible API base ending in /api/v3; X-API-Key authentication."
-    }
+    },
+    "mode": "Accepted tokens",
+    "modes": {
+      "usdt": "USDT",
+      "usdc": "USDC",
+      "both": "USDT and USDC"
+    },
+    "token": "Token",
+    "dismiss": "Dismiss permanently",
+    "dismissReason": "Dismissal reason",
+    "noEvidence": "No evidence · courtesy credit",
+    "evidence": "Verified matching transfer",
+    "creditChoiceHint": "Choose a verified transfer to settle payment, or grant courtesy credit without transfer evidence. These actions cannot both credit an order.",
+    "settled": "Verified transfer settled."
   }
 }

@@ -44,7 +44,7 @@ func (s *Store) CourtesyCreditPayment(ctx context.Context, actorID, orderID, rea
 	if err != nil {
 		return model.CourtesyCredit{}, err
 	}
-	if order.Status != "failed" && order.Status != "expired" {
+	if order.PaidAt != nil || (order.Status != "failed" && order.Status != "expired") {
 		return model.CourtesyCredit{}, ErrConflict
 	}
 	now = now.UTC()

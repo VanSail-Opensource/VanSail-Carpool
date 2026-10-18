@@ -43,7 +43,7 @@ func TestBuiltinUSDTPricingAndMethodsCoexistWithProfiles(t *testing.T) {
 			t.Fatal("missing canonical rail", spec.Rail)
 		}
 	}
-	for _, method := range []string{"builtin_usdt:tron", "builtin_usdt:profile:usdt.trc20", "builtin_usdt:usdc.erc20"} {
+	for _, method := range []string{"builtin_usdt:tron", "builtin_usdt:profile:usdt.trc20", "builtin_usdt:usdc.trc20"} {
 		if CanonicalMethodID(method) {
 			t.Fatal("invalid built-in rail", method)
 		}

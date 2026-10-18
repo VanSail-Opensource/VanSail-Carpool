@@ -3,6 +3,10 @@ get:
   tags: [USDT]
   operationId: getAdminUSDTReview
   parameters:
+    - in: query
+      name: orderId
+      schema: { type: string, maxLength: 128 }
+      description: Only verified matching evidence for the selected payment; excludes dismissed and credited transfers.
     - { name: cursor, in: query, schema: { type: string, maxLength: 64 } }
     - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
   responses:

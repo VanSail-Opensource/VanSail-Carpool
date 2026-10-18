@@ -29,14 +29,23 @@ func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	for _, n := range c.Networks {
+	for _, spec := range Registry {
+		if !modeAllows(c.Mode, spec) {
+			continue
+		}
+		var n NetworkConfig
+		for _, configured := range c.Networks {
+			if configured.Network == spec.Network {
+				n = configured
+				break
+			}
+		}
 		if !n.Enabled {
 			continue
 		}
-		spec, _ := Network(n.Network)
-		status := s.states[n.Network]
+		status := s.states[spec.Rail]
 		ready := s.fingerprint == fingerprint(c) && status.State == "ready" && status.UpdatedAt != nil && time.Since(*status.UpdatedAt) < 2*time.Minute
-		result = append(result, model.PaymentMethod{ID: Provider + ":" + spec.Rail, Provider: Provider, ProviderName: c.Name, Rail: spec.Rail, Name: "USDT " + spec.Name, Currency: "USDT", CryptoCurrency: "USDT", Network: spec.Network, NetworkName: spec.Name, Available: ready, Mode: "order"})
+		result = append(result, model.PaymentMethod{ID: Provider + ":" + spec.Rail, Provider: Provider, ProviderName: c.Name, Rail: spec.Rail, Name: spec.Currency() + " " + spec.Name, Currency: spec.Currency(), CryptoCurrency: spec.Currency(), Network: spec.Network, NetworkName: spec.Name, Available: ready, Mode: "order"})
 	}
 	return result, nil
 }

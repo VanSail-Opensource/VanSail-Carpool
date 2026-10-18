@@ -54,10 +54,17 @@ func (s *Service) run(ctx context.Context) {
 				s.states = map[string]NetworkStatus{}
 				s.mu.Unlock()
 				for _, n := range c.Networks {
-					spec, _ := Network(n.Network)
-					networkConfig := n
-					workers.Add(1)
-					go func() { defer workers.Done(); s.monitor(networkCtx, spec, networkConfig, c.Enabled) }()
+					for _, spec := range Registry {
+						if spec.Network != n.Network {
+							continue
+						}
+						networkConfig := n
+						workers.Add(1)
+						go func() {
+							defer workers.Done()
+							s.monitor(networkCtx, spec, networkConfig, c.Enabled && modeAllows(c.Mode, spec))
+						}()
+					}
 				}
 			}
 		}
@@ -101,9 +108,9 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 	result := Status{Networks: []NetworkStatus{}}
 	s.mu.RLock()
 	for _, spec := range Registry {
-		n, ok := s.states[spec.Network]
+		n, ok := s.states[spec.Rail]
 		if !ok {
-			n = NetworkStatus{Network: spec.Network, State: "disabled"}
+			n = NetworkStatus{Network: spec.Network, Token: spec.Token, Rail: spec.Rail, State: "disabled"}
 		}
 		result.Networks = append(result.Networks, n)
 	}
@@ -112,12 +119,16 @@ func (s *Service) Status(ctx context.Context) (Status, error) {
 }
 
 func (s *Service) state(network, value, cursor, code string) {
+	spec, ok := Network(network)
+	if !ok {
+		return
+	}
 	connection := "polling"
 	if value == "disabled" {
 		connection = "none"
 	}
 	now := time.Now().UTC()
 	s.mu.Lock()
-	s.states[network] = NetworkStatus{Network: network, State: value, Cursor: cursor, ErrorCode: code, UpdatedAt: &now, Connection: connection}
+	s.states[spec.Rail] = NetworkStatus{Network: spec.Network, Token: spec.Token, Rail: spec.Rail, State: value, Cursor: cursor, ErrorCode: code, UpdatedAt: &now, Connection: connection}
 	s.mu.Unlock()
 }
