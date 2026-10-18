@@ -21,3 +21,5 @@ broken imports. Host exclusions are applied before rendering.
 Public interfaces: `Template`, `DefaultTemplate`, `PreviewTemplate`, `RenderTemplate` and `ConvertXrayTemplate`. Extend format-specific `Proxy` renderers alongside reference validation. YAML conversion uses the existing ghodss/yaml dependency; Xray previews additionally use the panel pinned native validator. These functions perform no outbound requests.
 
 `template_markers.go` bounds structural insertion depth and checks the single proxy marker. `template_references.go` rejects dangling rules and cyclic selectors. Generated output is bounded to 4,096 endpoints and 8 MiB; the renderer never drops unsupported endpoints silently. Explicit source exclusions are retained.
+
+Clash and the distinct Stash template share structural YAML validation. Generated REALITY hosts always include `reality-opts.support-x25519mlkem768: true`, following https://stash.wiki/en/proxy-protocols/proxy-types. Stash uses its own mapper and SNI field. Member credentials are rendered on demand; previews use synthetic credentials.

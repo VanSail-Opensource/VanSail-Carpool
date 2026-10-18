@@ -13,7 +13,7 @@ func PreviewTemplate(template Template) ([]byte, error) {
 
 func validateRenderedTemplate(format string, root map[string]any) error {
 	key, tag := "outbounds", "tag"
-	if format == "clash" {
+	if yamlFormat(format) {
 		key, tag = "proxies", "name"
 	}
 	items, ok := root[key].([]any)
@@ -21,7 +21,7 @@ func validateRenderedTemplate(format string, root map[string]any) error {
 		return errors.New("missing proxy array")
 	}
 	known := map[string]bool{}
-	if format == "clash" {
+	if yamlFormat(format) {
 		known["DIRECT"], known["REJECT"], known["REJECT-DROP"] = true, true, true
 		known["PASS"], known["GLOBAL"] = true, true
 	}
@@ -58,7 +58,7 @@ func validateRenderedTemplate(format string, root map[string]any) error {
 		return nil
 	}
 	groups := items
-	if format == "clash" {
+	if yamlFormat(format) {
 		groups, _ = root["proxy-groups"].([]any)
 		for _, raw := range groups {
 			group, ok := raw.(map[string]any)
@@ -78,7 +78,7 @@ func validateRenderedTemplate(format string, root map[string]any) error {
 			return errors.New("invalid outbound")
 		}
 		refsKey := "outbounds"
-		if format == "clash" {
+		if yamlFormat(format) {
 			refsKey = "proxies"
 		}
 		if refs, exists := group[refsKey]; exists {
@@ -101,7 +101,7 @@ func validateRenderedTemplate(format string, root map[string]any) error {
 			}
 		}
 	}
-	if format == "clash" {
+	if yamlFormat(format) {
 		if err := validateSelectorCycles(groups, "name", "proxies"); err != nil {
 			return err
 		}

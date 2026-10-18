@@ -5,7 +5,10 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
-func (p Proxy) Clash() (map[string]any, error) {
+func yamlFormat(format string) bool { return format == "clash" || format == "stash" }
+
+func (p Proxy) Clash() (map[string]any, error) { return p.yamlProxy("clash") }
+func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 	protocol := p.Protocol
 	if protocol == "shadowsocks" {
 		protocol = "ss"
@@ -50,7 +53,7 @@ func (p Proxy) Clash() (map[string]any, error) {
 			out["alpn"] = source["alpn"]
 		}
 		if security == "reality" {
-			out["reality-opts"] = map[string]any{"public-key": source["publicKey"], "short-id": source["shortId"]}
+			out["reality-opts"] = map[string]any{"public-key": source["publicKey"], "short-id": source["shortId"], "support-x25519mlkem768": true}
 		}
 	}
 	network := text(p.Stream, "network")
@@ -74,7 +77,27 @@ func (p Proxy) Clash() (map[string]any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported Clash transport")
 	}
-	return connectivity.ApplyClientMapper(out, p.MapperHost, "mihomo")
+	mapper := "mihomo"
+	if format == "stash" {
+		mapper = "stash"
+		if out["servername"] != nil {
+			out["sni"] = out["servername"]
+			delete(out, "servername")
+		}
+	}
+	mapped, err := connectivity.ApplyClientMapper(out, p.MapperHost, mapper)
+	if err != nil {
+		return nil, err
+	}
+	if security == "reality" {
+		opts, _ := mapped["reality-opts"].(map[string]any)
+		if opts == nil {
+			opts = map[string]any{}
+			mapped["reality-opts"] = opts
+		}
+		opts["support-x25519mlkem768"] = true
+	}
+	return mapped, nil
 }
 func RenderClash(proxies []Proxy) ([]byte, error) {
 	return RenderTemplate(DefaultTemplate("clash"), proxies)

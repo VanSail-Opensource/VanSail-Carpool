@@ -257,3 +257,5 @@ managed plans and shared-matcher traces. `api-v1-admin-xnode-routing-templates.y
 provides browser-only admin preset inventory and optimistic writes.
 
 `api-v1-admin-users-userid-metrics.yaml` projects native per-profile activity and exact accounting. Statistics snapshots and node reads now belong only to `/api/v1/admin/statistics` and `/api/v1/admin/statistics/nodes`, using the existing statistics path shards.
+
+`api-v1-admin-xnode-subscription-templates-selection-preview.yaml` describes bounded Go regex validation and selection preview. `api-v1-subscriptions-token.yaml` documents the canonical configuration download with actual Base64 fallback and explicit native compatibility.

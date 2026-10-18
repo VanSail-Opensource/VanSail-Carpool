@@ -2,12 +2,12 @@ import { computed, onMounted, onScopeDispose, shallowRef } from 'vue'
 import { publicSubscriptionMetadata, type XNodeSubscription } from '@/api/xnodeMember'
 import { copyText } from '@/utils/browserClipboard'
 
-export type SubscriptionFormat = 'native' | 'xray' | 'sing-box' | 'clash'
+export type SubscriptionFormat = 'base64' | 'native' | 'xray' | 'sing-box' | 'clash' | 'stash'
 export function usePublicSubscription(token: string) {
   const metadata = shallowRef<XNodeSubscription | null>(null)
   const loading = shallowRef(true)
   const failed = shallowRef(false)
-  const format = shallowRef<SubscriptionFormat>('native')
+  const format = shallowRef<SubscriptionFormat>('base64')
   const copied = shallowRef(false)
   const copyFailed = shallowRef(false)
   const link = computed(() => {
@@ -33,7 +33,7 @@ export function usePublicSubscription(token: string) {
       const value = await publicSubscriptionMetadata(token, current.signal)
       if (!active || current !== controller) return
       metadata.value = value
-      if (!value.formats[format.value]) format.value = (Object.keys(value.formats).find(key => value.formats[key]) as SubscriptionFormat | undefined) ?? 'native'
+      if (!value.formats[format.value]) format.value = (['base64', 'native', 'xray', 'sing-box', 'clash', 'stash'].find(key => value.formats[key]) as SubscriptionFormat | undefined) ?? 'base64'
     } catch { if (active && current === controller) { failed.value = true; metadata.value = null } }
     finally { if (active && current === controller) loading.value = false }
   }

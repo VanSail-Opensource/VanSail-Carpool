@@ -1,5 +1,12 @@
 # Constructed browser fixtures
 
+`subscription-preview.go` is a manual loopback Go preview bridge for
+`xnode-audit.ts`. Run `go run ./web/fixtures/subscription-preview.go` from the
+repository root alongside Vite on 127.0.0.1:5173. It invokes production regex
+selection and synthetic document previews, accepts only that browser origin,
+and bounds HTTP bodies/timeouts. It has no database or upstream calls and is
+excluded from production builds.
+
 `BrowserAuthAudit.vue`, `browser-auth-audit.ts`, and `browser-auth-audit.html`
 mount the real browser entrance, Mini App link panel, and browser exchange view.
 `link`, `exchange`, `slow`, `empty`, `error`, `expired`, `invalid`, and `zh`

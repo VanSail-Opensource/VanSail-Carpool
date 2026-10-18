@@ -3,24 +3,25 @@ package xnode
 import (
 	"context"
 	"crypto/sha256"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"net/url"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type SubscriptionMetadata struct {
-	Username    string          `json:"username"`
-	URL         string          `json:"url"`
-	DownloadURL string          `json:"downloadUrl"`
-	UsedBytes   string          `json:"usedBytes"`
-	LimitBytes  string          `json:"limitBytes"`
-	ExpiresAt   *time.Time      `json:"expiresAt"`
-	Active      bool            `json:"active"`
-	Incomplete  bool            `json:"incomplete"`
-	Formats     map[string]bool `json:"formats"`
+	SelectedFormat     string          `json:"selectedFormat,omitempty"`
+	SelectedTemplateID string          `json:"selectedTemplateId,omitempty"`
+	SelectionSource    string          `json:"selectionSource,omitempty"`
+	Username           string          `json:"username"`
+	URL                string          `json:"url"`
+	DownloadURL        string          `json:"downloadUrl"`
+	UsedBytes          string          `json:"usedBytes"`
+	LimitBytes         string          `json:"limitBytes"`
+	ExpiresAt          *time.Time      `json:"expiresAt"`
+	Active             bool            `json:"active"`
+	Incomplete         bool            `json:"incomplete"`
+	Formats            map[string]bool `json:"formats"`
 }
 
 func (s *Service) bearerIdentity(ctx context.Context, token string) (Identity, error) {
@@ -93,13 +94,16 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	}
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete
-	for _, format := range []string{"native", "xray", "sing-box", "clash"} {
+	for _, format := range []string{"base64", "native", "xray", "sing-box", "clash", "stash"} {
 		_, err := s.renderOwnedSubscription(ctx, identity.UserID, format, proxies)
 		result.Formats[format] = err == nil && result.Active
 	}
 	return result, nil
 }
 func (s *Service) BearerSubscription(ctx context.Context, token, format string) ([]byte, SubscriptionMetadata, error) {
+	return s.BearerSubscriptionForAgent(ctx, token, format, "")
+}
+func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explicit, agent string) ([]byte, SubscriptionMetadata, error) {
 	identity, err := s.bearerIdentity(ctx, token)
 	if err != nil {
 		return nil, SubscriptionMetadata{}, err
@@ -111,7 +115,15 @@ func (s *Service) BearerSubscription(ctx context.Context, token, format string) 
 	if !metadata.Active {
 		return nil, metadata, ErrNotFound
 	}
-	if !metadata.Formats[format] {
+	config, err := s.SubscriptionTemplates(ctx)
+	if err != nil {
+		return nil, metadata, err
+	}
+	selection, err := SelectSubscription(config, explicit, agent)
+	if err != nil {
+		return nil, metadata, err
+	}
+	if !config.Formats[selection.Format] {
 		return nil, metadata, ErrInvalid
 	}
 	proxies, _, err := s.identityInventory(ctx, identity)
@@ -122,36 +134,9 @@ func (s *Service) BearerSubscription(ctx context.Context, token, format string) 
 	if owner == "" {
 		owner = identityScope(identity)
 	}
-	raw, err := s.renderOwnedSubscription(ctx, owner, format, proxies)
+	metadata.SelectedFormat, metadata.SelectedTemplateID, metadata.SelectionSource = selection.Format, selection.TemplateID, selection.Source
+	raw, err := s.renderSelectedSubscription(ctx, owner, selection, proxies)
 	return raw, metadata, err
-}
-func renderSubscription(format string, proxies []subscription.Proxy) ([]byte, error) {
-	sourceFormat := map[string]string{"native": "XRAY_BASE64", "xray": "XRAY_JSON", "sing-box": "SINGBOX", "clash": "MIHOMO"}[format]
-	if sourceFormat == "" {
-		return nil, ErrInvalid
-	}
-	selected := make([]subscription.Proxy, 0, len(proxies))
-	for _, proxy := range proxies {
-		if !slices.Contains(proxy.ExcludedFormats, sourceFormat) {
-			selected = append(selected, proxy)
-		}
-	}
-	if len(selected) == 0 {
-		return nil, ErrNotFound
-	}
-	proxies = selected
-	switch format {
-	case "native":
-		return subscription.RenderNative(proxies)
-	case "xray":
-		return subscription.RenderXray(proxies)
-	case "sing-box":
-		return subscription.RenderSingBox(proxies)
-	case "clash":
-		return subscription.RenderClash(proxies)
-	default:
-		return nil, ErrInvalid
-	}
 }
 func (s *Service) RoutingTemplates(ctx context.Context, user string) ([]map[string]any, error) {
 	proxies, err := s.MemberProxies(ctx, user)

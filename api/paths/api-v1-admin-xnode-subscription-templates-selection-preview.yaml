@@ -1,0 +1,36 @@
+post:
+  operationId: previewXNodeSubscriptionSelection
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  summary: Validate ordered Go User-Agent regex selection without generated credentials
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          additionalProperties: false
+          required: [config, format, userAgent]
+          properties:
+            config: { $ref: '../openapi.yaml#/components/schemas/XNodeSubscriptionTemplateConfig' }
+            format: { type: string, enum: ['', base64, native, xray, sing-box, clash, stash] }
+            userAgent: { type: string, maxLength: 8192 }
+  responses:
+    '200':
+      description: Go validation and resolved selection
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [selection, validation]
+            properties:
+              validation: { $ref: '../openapi.yaml#/components/schemas/XNodeValidation' }
+              selection:
+                type: object
+                additionalProperties: false
+                required: [format, templateId, source]
+                properties:
+                  format: { type: string }
+                  templateId: { type: string }
+                  source: { type: string, enum: ['', explicit, regex, builtin, fallback] }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

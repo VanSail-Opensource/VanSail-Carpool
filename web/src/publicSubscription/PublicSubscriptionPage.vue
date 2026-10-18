@@ -12,7 +12,7 @@ const token = props.token ?? globalThis.location.pathname.split('/')[2] ?? ''
 const subscription = usePublicSubscription(token)
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 const languages = computed(() => locales.value.map(value => ({ value, label: t(value === 'en' ? 'app.english' : 'app.simplifiedChinese') })))
-const formats = computed(() => (['native', 'xray', 'sing-box', 'clash'] as SubscriptionFormat[]).map(value => ({ value, label: t(`publicSubscription.formats.${value}`), disabled: !subscription.metadata.value?.formats[value] })))
+const formats = computed(() => (['base64', 'native', 'xray', 'sing-box', 'clash', 'stash'] as SubscriptionFormat[]).map(value => ({ value, label: t(`publicSubscription.formats.${value}`), disabled: !subscription.metadata.value?.formats[value] })))
 const qrOpen = shallowRef(false)
 const qr = shallowRef<string | null>(null)
 const qrFailed = shallowRef(false)

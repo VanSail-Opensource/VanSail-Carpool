@@ -19,6 +19,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Get("/xnode/subscription-templates", s.xnodeSubscriptionTemplates)
 	router.Put("/xnode/subscription-templates", s.xnodeSaveSubscriptionTemplates)
 	router.Post("/xnode/subscription-templates/preview", s.xnodePreviewSubscriptionTemplate)
+	router.Post("/xnode/subscription-templates/selection-preview", s.xnodePreviewSubscriptionSelection)
 	router.Put("/xnode/global", s.xnodeSaveGlobal)
 	router.Get("/xnode/nodes", s.xnodeNodes)
 	router.Post("/xnode/nodes", s.xnodeSaveNode)

@@ -1,0 +1,21 @@
+get:
+  operationId: downloadSubscriptionConfiguration
+  summary: Public owner-scoped subscription configuration
+  description: Explicit format parameters and native subscription clients receive configuration data. Selection uses explicit format, first matching ordered administrator Go regex (its exact template), built-in Stash/sing-box/Clash detection, then actual Base64. Explicit native preserves plain links. Retained assignments apply only within the selected format when no regex selected a template.
+  security: []
+  parameters:
+    - {name: token, in: path, required: true, schema: {type: string, minLength: 43, maxLength: 43}}
+    - {name: format, in: query, schema: {type: string, enum: [base64, native, xray, sing-box, clash, stash]}}
+  responses:
+    '200':
+      description: Private, non-cacheable subscription page or configuration
+      headers:
+        Cache-Control: {schema: {type: string}}
+        Vary: {schema: {type: string}}
+        Subscription-Userinfo: {schema: {type: string}}
+      content:
+        text/plain: {schema: {type: string}}
+        application/json: {schema: {}}
+        text/yaml: {schema: {type: string}}
+    '404': {$ref: '../openapi.yaml#/components/responses/NotFound'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}

@@ -15,16 +15,17 @@ const SubscriptionTemplatesKey = "xnode.subscription_templates"
 // SubscriptionTemplateConfig persists administrator documents and references,
 // never generated member configurations or copies of upstream user datasets.
 type SubscriptionTemplateConfig struct {
-	Revision    int64                        `json:"revision"`
-	Templates   []subscription.Template      `json:"templates"`
-	Defaults    map[string]string            `json:"defaults"`
-	Assignments map[string]map[string]string `json:"assignments"`
-	Formats     map[string]bool              `json:"formats"`
+	UserAgentRules []SubscriptionUserAgentRule  `json:"userAgentRules"`
+	Revision       int64                        `json:"revision"`
+	Templates      []subscription.Template      `json:"templates"`
+	Defaults       map[string]string            `json:"defaults"`
+	Assignments    map[string]map[string]string `json:"assignments"`
+	Formats        map[string]bool              `json:"formats"`
 }
 
 func DefaultSubscriptionTemplates() SubscriptionTemplateConfig {
-	result := SubscriptionTemplateConfig{Templates: []subscription.Template{}, Defaults: map[string]string{}, Assignments: map[string]map[string]string{}, Formats: map[string]bool{"native": true, "xray": true, "sing-box": true, "clash": true}}
-	for _, format := range []string{"xray", "sing-box", "clash"} {
+	result := SubscriptionTemplateConfig{UserAgentRules: []SubscriptionUserAgentRule{}, Templates: []subscription.Template{}, Defaults: map[string]string{}, Assignments: map[string]map[string]string{}, Formats: map[string]bool{"base64": true, "native": true, "xray": true, "sing-box": true, "clash": true, "stash": true}}
+	for _, format := range []string{"xray", "sing-box", "clash", "stash"} {
 		item := subscription.DefaultTemplate(format)
 		result.Templates = append(result.Templates, item)
 		result.Defaults[format] = item.ID
@@ -51,6 +52,15 @@ func DecodeSubscriptionTemplates(raw string) (SubscriptionTemplateConfig, error)
 	}
 	if result.Formats == nil {
 		result.Formats = DefaultSubscriptionTemplates().Formats
+	}
+	if _, exists := result.Formats["base64"]; !exists {
+		result.Formats["base64"] = result.Formats["native"]
+	}
+	if _, exists := result.Formats["stash"]; !exists {
+		result.Formats["stash"] = true
+	}
+	if result.UserAgentRules == nil {
+		result.UserAgentRules = []SubscriptionUserAgentRule{}
 	}
 	return result, nil
 }
@@ -129,7 +139,7 @@ func validateTemplateReferences(config SubscriptionTemplateConfig) error {
 	}
 	validate := func(refs map[string]string) error {
 		for format, id := range refs {
-			if format != "xray" && format != "sing-box" && format != "clash" || id != "" && items[id] != format {
+			if !templateFormat(format) || id != "" && items[id] != format {
 				return ErrInvalid
 			}
 		}
@@ -144,11 +154,11 @@ func validateTemplateReferences(config SubscriptionTemplateConfig) error {
 		}
 	}
 	for format := range config.Formats {
-		if format != "native" && format != "xray" && format != "sing-box" && format != "clash" {
+		if format != "native" && format != "base64" && !templateFormat(format) {
 			return ErrInvalid
 		}
 	}
-	return nil
+	return validateUserAgentRules(config)
 }
 
 func (s *Service) PreviewSubscriptionTemplate(item subscription.Template) ([]byte, ValidationResult, error) {

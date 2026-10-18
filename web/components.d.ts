@@ -332,7 +332,7 @@ declare module 'vue' {
     XNodeServiceEditor: typeof import('./src/components/admin/xnode/XNodeServiceEditor.vue')['default']
     XNodeServiceRouting: typeof import('./src/components/admin/xnode/XNodeServiceRouting.vue')['default']
     XNodeServiceUsers: typeof import('./src/components/admin/xnode/XNodeServiceUsers.vue')['default']
-    XNodeSubscriptionAssignments: typeof import('./src/components/admin/xnode/XNodeSubscriptionAssignments.vue')['default']
+    XNodeSubscriptionRules: typeof import('./src/components/admin/xnode/XNodeSubscriptionRules.vue')['default']
     XNodeSubscriptionTemplateEditor: typeof import('./src/components/admin/xnode/XNodeSubscriptionTemplateEditor.vue')['default']
     XNodeSubscriptionTemplates: typeof import('./src/components/admin/xnode/XNodeSubscriptionTemplates.vue')['default']
     XNodeWorkspace: typeof import('./src/components/admin/xnode/XNodeWorkspace.vue')['default']

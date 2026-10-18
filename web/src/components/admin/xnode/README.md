@@ -34,7 +34,7 @@ Node editors reuse the common `JsonDocumentField.vue` field.
 
 `XNodeCommands.vue` uses durable receipts and stable idempotency keys; peer tests select an enabled endpoint on another node and read credential-free results. `XNodeMetricDetails.vue` and `metricRows.ts` render collector fields with byte, rate, duration and percentage units. Node forms bind certificate profiles to configured inbound tags and retain deep reactive feature switches. Save errors remain inside the editor instead of replacing it.
 
-`configurationPresets.ts` creates only new SS-2022 AES-256 listeners with random 32-byte keys; imports preserve their methods and credentials. `XNodeSubscriptionTemplates.vue` owns revision-checked administrator template policy. `XNodeSubscriptionTemplateEditor.vue` validates and previews synthetic output; `XNodeSubscriptionAssignments.vue` manages bounded, paginated subscription references. Format, default and assignment changes persist through the dedicated encrypted settings API.
+`configurationPresets.ts` creates only new SS-2022 AES-256 listeners with random 32-byte keys; imports preserve their methods and credentials. `XNodeSubscriptionTemplates.vue` owns revision-checked administrator template policy. `XNodeSubscriptionTemplateEditor.vue` validates and previews synthetic output; Retained subscription assignments remain references without editor controls. Format, default and assignment changes persist through the dedicated encrypted settings API.
 
 - `XNodeServiceUsers.vue`: Lists and manages named native identities without Telegram accounts.
 - `XNodeServiceEditor.vue`: Edits explicit access groups, expiry, quota and disabled state.
@@ -54,3 +54,7 @@ control member server routing; subscription client documents stay independent.
 `nodeFormOptions.test.ts` verifies explicit zero/max multipliers, six-decimal precision, and rejected omitted/null or over-precise input. `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables.
 
 `useXNodeWorkspace.test.ts` verifies cancellation and late-response rejection, plus write blocking after failed reads. Workspace refreshes cancel earlier reads and metric polls; disposed observations are cleared.
+
+`XNodeSubscriptionRules.vue` edits ordered exact-template rules and previews selection through the Go endpoint. `subscriptionTemplatePresets.ts` supplies independent Xray, sing-box, Clash and Stash presets and shared format ordering. Assignment controls are removed; retained assignment references remain in policy writes and deletion guards. Reads/previews abort stale requests and disable mutation after failed loads.
+
+`XNodeSubscriptionRules.test.ts` covers aborting and discarding superseded Go previews without changing retained assignments.

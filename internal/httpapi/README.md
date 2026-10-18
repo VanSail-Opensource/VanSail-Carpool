@@ -219,3 +219,5 @@ administrator customization remains separate.
 `admin_user_metrics.go` serves browser-scoped native per-profile metrics. The existing `xnode.Node` decoder requires explicit non-null multipliers from 0 through 1000, with at most six fractional digits. Statistics reads moved into the existing administrator router.
 
 `xnode_node_write_test.go` guards omitted/null multiplier rejection, numeric bounds and lexical fractional precision.
+
+`xnode_subscription_selection.go` previews the draft template policy using the same bounded Go matcher as bearer requests. Both public subscription paths negotiate explicit format, admin regex, built-in detection, then Base64; a regex overrides HTML negotiation. Generated output and synthetic previews remain no-store.

@@ -11,13 +11,13 @@ func TestSubscriptionLandingNegotiatesBrowserAndClientContent(t *testing.T) {
 		name, accept, agent, query, format string
 		html                               bool
 	}{
-		{"browser", "text/html,application/xhtml+xml,*/*;q=0.8", "Mozilla/5.0", "", "native", true},
-		{"native", "*/*", "v2rayN", "", "native", false},
+		{"browser", "text/html,application/xhtml+xml,*/*;q=0.8", "Mozilla/5.0", "", "base64", true},
+		{"native", "*/*", "v2rayN", "", "base64", false},
 		{"singbox", "*/*", "sing-box/1.14", "", "sing-box", false},
 		{"mihomo", "*/*", "mihomo/1.19", "", "clash", false},
 		{"explicit", "text/html", "Mozilla/5.0", "?format=xray", "xray", false},
-		{"html disabled", "application/json,text/html;q=0.0", "", "", "native", false},
-		{"json preferred", "application/json,text/html;q=0.5", "", "", "native", false},
+		{"html disabled", "application/json,text/html;q=0.0", "", "", "base64", false},
+		{"json preferred", "application/json,text/html;q=0.5", "", "", "base64", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := httptest.NewRequest("GET", "/subscription/token"+tc.query, nil)

@@ -54,13 +54,14 @@ func (s *Server) xnodeBearerMetadata(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) xnodeBearerSubscription(w http.ResponseWriter, r *http.Request) {
 	privateSubscriptionHeaders(w)
-	format := subscriptionContentFormat(r)
-	raw, metadata, err := s.deps.XNode.BearerSubscription(r.Context(), chiURLParam(r, "token"), format)
+	raw, metadata, err := s.deps.XNode.BearerSubscriptionForAgent(r.Context(), chiURLParam(r, "token"), r.URL.Query().Get("format"), r.UserAgent())
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}
-	w.Header().Set("Content-Type", map[string]string{"native": "text/plain; charset=utf-8", "xray": "application/json", "sing-box": "application/json", "clash": "text/yaml; charset=utf-8"}[format])
+	w.Header().Set("X-Subscription-Format", metadata.SelectedFormat)
+	w.Header().Add("Vary", "User-Agent")
+	w.Header().Set("Content-Type", map[string]string{"base64": "text/plain; charset=utf-8", "stash": "text/yaml; charset=utf-8", "native": "text/plain; charset=utf-8", "xray": "application/json", "sing-box": "application/json", "clash": "text/yaml; charset=utf-8"}[metadata.SelectedFormat])
 	expire := int64(0)
 	if metadata.ExpiresAt != nil {
 		expire = metadata.ExpiresAt.Unix()

@@ -133,7 +133,7 @@ func (s *Service) serviceSubscriptionMetadata(ctx context.Context, identity Iden
 		return result, err
 	}
 	result.Active, result.Incomplete = len(proxies) > 0, incomplete
-	for _, format := range []string{"native", "xray", "sing-box", "clash"} {
+	for _, format := range []string{"base64", "native", "xray", "sing-box", "clash", "stash"} {
 		_, err := s.renderOwnedSubscription(ctx, identityScope(identity), format, proxies)
 		result.Formats[format] = err == nil && result.Active
 	}

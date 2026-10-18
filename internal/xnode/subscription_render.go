@@ -7,6 +7,11 @@ import (
 )
 
 func (s *Service) renderOwnedSubscription(ctx context.Context, user, format string, proxies []subscription.Proxy) ([]byte, error) {
+	return s.renderSelectedSubscription(ctx, user, SubscriptionSelection{Format: format}, proxies)
+}
+
+func (s *Service) renderSelectedSubscription(ctx context.Context, user string, selection SubscriptionSelection, proxies []subscription.Proxy) ([]byte, error) {
+	format := selection.Format
 	config, err := s.SubscriptionTemplates(ctx)
 	if err != nil {
 		return nil, err
@@ -14,11 +19,11 @@ func (s *Service) renderOwnedSubscription(ctx context.Context, user, format stri
 	if !config.Formats[format] {
 		return nil, ErrInvalid
 	}
-	if format == "native" {
+	if format == "native" || format == "base64" {
 		return renderSubscription(format, proxies)
 	}
 	selected := []subscription.Proxy{}
-	sourceFormat := map[string]string{"xray": "XRAY_JSON", "sing-box": "SINGBOX", "clash": "MIHOMO"}[format]
+	sourceFormat := map[string]string{"xray": "XRAY_JSON", "sing-box": "SINGBOX", "clash": "MIHOMO", "stash": "STASH"}[format]
 	if sourceFormat == "" {
 		return nil, ErrInvalid
 	}
@@ -33,6 +38,9 @@ func (s *Service) renderOwnedSubscription(ctx context.Context, user, format stri
 	id := config.Defaults[format]
 	if override, exists := config.Assignments[user][format]; exists {
 		id = override
+	}
+	if selection.TemplateID != "" {
+		id = selection.TemplateID
 	}
 	item := subscription.DefaultTemplate(format)
 	if id != "" {

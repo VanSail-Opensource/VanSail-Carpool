@@ -20,6 +20,7 @@ func DefaultTemplate(format string) Template {
 	doc := map[string]string{
 		"xray":     `{"inbounds":[],"outbounds":[{"SubscriptionProxies":{}},{"tag":"direct","protocol":"freedom"}],"routing":{"rules":[]}}`,
 		"sing-box": `{"outbounds":[{"type":"selector","tag":"proxy","outbounds":[{"SubscriptionNames":{}}]},{"SubscriptionProxies":{}},{"type":"direct","tag":"direct"}],"route":{"final":"proxy","auto_detect_interface":true}}`,
+		"stash":    `{"proxies":[{"SubscriptionProxies":{}}],"proxy-groups":[{"name":"proxy","type":"select","proxies":[{"SubscriptionNames":{}}]}],"rules":["MATCH,proxy"]}`,
 		"clash":    `{"proxies":[{"SubscriptionProxies":{}}],"proxy-groups":[{"name":"proxy","type":"select","proxies":[{"SubscriptionNames":{}}]}],"rules":["MATCH,proxy"]}`,
 	}[format]
 	return Template{ID: "default-" + format, Name: format, Format: format, Document: json.RawMessage(doc)}
@@ -85,8 +86,8 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	values, names := []any{}, []any{}
 	for _, proxy := range proxies {
 		var out map[string]any
-		if template.Format == "clash" {
-			out, err = proxy.Clash()
+		if yamlFormat(template.Format) {
+			out, err = proxy.yamlProxy(template.Format)
 		} else {
 			out, err = proxy.SingBox()
 		}
@@ -103,7 +104,7 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 		}
 		values = append(values, out)
 		nameKey := "tag"
-		if template.Format == "clash" {
+		if yamlFormat(template.Format) {
 			nameKey = "name"
 		}
 		name, ok := out[nameKey].(string)
@@ -123,7 +124,7 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if template.Format == "clash" {
+	if yamlFormat(template.Format) {
 		raw, err = yaml.JSONToYAML(raw)
 	}
 	if err == nil && len(raw) > 8<<20 {

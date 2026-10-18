@@ -19,6 +19,8 @@
     "open": "打开配置",
     "copyFailed": "无法复制地址，请选中后手动复制。",
     "formats": {
+      "base64": "Base64",
+      "stash": "Stash YAML",
       "native": "原生链接",
       "xray": "Xray JSON",
       "sing-box": "sing-box JSON",

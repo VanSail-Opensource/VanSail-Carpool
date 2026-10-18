@@ -19,6 +19,8 @@
     "open": "Open configuration",
     "copyFailed": "Could not copy the URL. Select it and copy manually.",
     "formats": {
+      "base64": "Base64",
+      "stash": "Stash YAML",
       "native": "Native links",
       "xray": "Xray JSON",
       "sing-box": "sing-box JSON",

@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"mime"
 	"net/http"
 	"strconv"
@@ -11,18 +12,11 @@ func subscriptionContentFormat(r *http.Request) string {
 	if format := r.URL.Query().Get("format"); format != "" {
 		return format
 	}
-	agent := strings.ToLower(r.UserAgent())
-	if strings.Contains(agent, "sing-box") || strings.Contains(agent, "singbox") {
-		return "sing-box"
-	}
-	if strings.Contains(agent, "clash") || strings.Contains(agent, "mihomo") {
-		return "clash"
-	}
-	return "native"
+	return xnode.DetectSubscriptionFormat(r.UserAgent())
 }
 
 func subscriptionWantsHTML(r *http.Request) bool {
-	if r.URL.Query().Get("format") != "" || subscriptionContentFormat(r) != "native" {
+	if r.URL.Query().Get("format") != "" || subscriptionContentFormat(r) != "base64" {
 		return false
 	}
 	html, other := 0.0, 0.0
@@ -54,7 +48,24 @@ func subscriptionWantsHTML(r *http.Request) bool {
 func (s *Server) subscriptionLanding(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "Accept, User-Agent")
 	privateSubscriptionHeaders(w)
-	if subscriptionWantsHTML(r) {
+	wantsHTML := subscriptionWantsHTML(r)
+	if wantsHTML && s.deps.XNode != nil {
+		config, err := s.deps.XNode.SubscriptionTemplates(r.Context())
+		if err != nil {
+			s.xnodeError(w, r, err)
+			return
+		}
+		selection, err := xnode.SelectSubscription(config, "", r.UserAgent())
+		// A configured regex selects its exact template even for HTML-capable clients.
+		if selection.Source == "regex" {
+			if err != nil {
+				s.xnodeError(w, r, err)
+				return
+			}
+			wantsHTML = false
+		}
+	}
+	if wantsHTML {
 		if s.deps.Static == nil {
 			http.NotFound(w, r)
 			return

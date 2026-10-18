@@ -1,11 +1,11 @@
 get:
   operationId: openSubscriptionLanding
   summary: Public subscription landing page or negotiated client configuration
-  description: Browser HTML navigation opens the public page. Explicit format parameters and native subscription clients receive configuration data. Recognized sing-box and Clash Meta agents select their format; other clients default to native links.
+  description: Browser HTML navigation opens the public page. Explicit format parameters and native subscription clients receive configuration data. Selection uses explicit format, first matching ordered administrator Go regex (its exact template), built-in Stash/sing-box/Clash detection, then actual Base64. Explicit native preserves plain links. Retained assignments apply only within the selected format when no regex selected a template.
   security: []
   parameters:
     - {name: token, in: path, required: true, schema: {type: string, minLength: 43, maxLength: 43}}
-    - {name: format, in: query, schema: {type: string, enum: [native, xray, sing-box, clash]}}
+    - {name: format, in: query, schema: {type: string, enum: [base64, native, xray, sing-box, clash, stash]}}
   responses:
     '200':
       description: Private, non-cacheable subscription page or configuration

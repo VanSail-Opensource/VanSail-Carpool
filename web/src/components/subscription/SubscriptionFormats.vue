@@ -7,10 +7,10 @@ import { useSubscriptionData } from './useSubscriptionData'
 
 const { t } = useI18n()
 const { value, loading, error, refresh } = useSubscriptionData(xnodeMemberApi.subscription)
-const format = shallowRef('native')
+const format = shallowRef('base64')
 const { copied, copy } = useClipboard()
 const copyFailed = shallowRef(false)
-const items = computed(() => ['native', 'xray', 'sing-box', 'clash'].map(value => ({ value, label: t(`publicSubscription.formats.${value}`), disabled: !subscription.value?.formats[value] })))
+const items = computed(() => ['base64', 'native', 'xray', 'sing-box', 'clash', 'stash'].map(value => ({ value, label: t(`publicSubscription.formats.${value}`), disabled: !subscription.value?.formats[value] })))
 const subscription = value
 const link = computed(() => {
   if (!value.value?.active || !value.value.formats[format.value]) return ''
@@ -24,7 +24,7 @@ const link = computed(() => {
   return url.href
 })
 watch(value, next => {
-  if (!next?.formats[format.value]) format.value = items.value.find(item => !item.disabled)?.value ?? 'native'
+  if (!next?.formats[format.value]) format.value = items.value.find(item => !item.disabled)?.value ?? 'base64'
 })
 watch(format, () => { copied.value = false; copyFailed.value = false })
 async function copyLink() { copyFailed.value = !await copy(link.value) }

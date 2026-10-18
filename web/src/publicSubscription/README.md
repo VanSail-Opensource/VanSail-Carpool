@@ -16,3 +16,5 @@ Tokens and credentials must never enter shared caches, logs, analytics or local
 storage. The existing member and administrator roots remain independent.
 
 Public and authenticated member controls use the canonical `downloadUrl` configuration API. The `url` field remains the browser landing page. Older metadata falls back to the existing token API; inactive or disabled formats have no import/download action.
+
+Base64 is the primary format. Stash, sing-box, Clash, Xray and explicit plain native links retain separate selections; enabled metadata controls availability.

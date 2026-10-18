@@ -41,3 +41,5 @@ for interactive nodes, zoom, keyboard movement and server-traced highlighting.
 `useMemberRouting.ts` aborts superseded reads/previews, guards generations and saves
 through durable member receipts; failed loads cannot save defaults. Graph predicate
 analysis and traces come from the same backend matcher as native compilation.
+
+`SubscriptionFormats.vue` displays Base64 first and exposes distinct Stash and sing-box outputs using canonical bearer configuration links.

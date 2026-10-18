@@ -18,7 +18,7 @@ func templateRoot(template Template) (map[string]any, error) {
 		return nil, errors.New("template must be a JSON object")
 	}
 	key := "outbounds"
-	if template.Format == "clash" {
+	if yamlFormat(template.Format) {
 		key = "proxies"
 	} else if template.Format != "xray" && template.Format != "sing-box" {
 		return nil, errors.New("unsupported template format")

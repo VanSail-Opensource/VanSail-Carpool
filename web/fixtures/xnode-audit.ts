@@ -11,6 +11,7 @@ import { ApiError } from '@/api/http'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
+import { subscriptionPreset } from '@/components/admin/xnode/subscriptionTemplatePresets'
 import XNodeAudit from './XNodeAudit.vue'
 import '@/browser/styles.css'
 
@@ -57,12 +58,26 @@ xnodeApi.metrics = async () => ({ nodes: params.has('empty') ? [] : nodes.map((n
 let templateConfig: SubscriptionTemplateConfig = { revision: 1, templates: params.has('empty') ? [] : [
   { id: 'xray-default', name: 'Xray default', format: 'xray', document: { inbounds: [], outbounds: [{ SubscriptionProxies: {} }, { tag: 'direct', protocol: 'freedom' }], routing: { rules: [] } } },
   { id: 'singbox-default', name: 'sing-box default', format: 'sing-box', document: { outbounds: [{ SubscriptionProxies: {} }] } },
+  { id: 'stash-default', name: 'Stash default', format: 'stash', document: subscriptionPreset('stash') },
   { id: 'clash-default', name: 'Clash Meta default', format: 'clash', document: { proxies: [{ SubscriptionProxies: {} }], 'proxy-groups': [], rules: [] } },
-], defaults: params.has('empty') ? {} : { xray: 'xray-default', 'sing-box': 'singbox-default', clash: 'clash-default' }, assignments: {}, formats: { native: true, xray: true, 'sing-box': true, clash: true } }
+], defaults: params.has('empty') ? {} : { xray: 'xray-default', 'sing-box': 'singbox-default', clash: 'clash-default', stash: 'stash-default' }, userAgentRules: params.has('empty') ? [] : [{ pattern: '(?i)stash', templateId: 'stash-default' }], assignments: { 'retained-member': { xray: 'xray-default' } }, formats: { base64: true, stash: true, native: true, xray: true, 'sing-box': true, clash: true } }
 let templateLoadFailed = false
 xnodeApi.subscriptionTemplates = async () => { await check('templates'); if (params.has('template-load-error') && !templateLoadFailed) { templateLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return JSON.parse(JSON.stringify(templateConfig)) as SubscriptionTemplateConfig }
-xnodeApi.saveSubscriptionTemplates = async value => { await check('save-templates'); if (params.has('template-conflict')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); templateConfig = JSON.parse(JSON.stringify({ ...value, revision: value.revision + 1 })) as SubscriptionTemplateConfig; return templateConfig }
-xnodeApi.previewSubscriptionTemplate = async value => { await check('preview-template'); return { validation: { valid: !params.has('template-invalid'), needsAgentValidation: false, errorCode: '', detail: params.has('template-invalid') ? 'selector references an unknown proxy' : '' }, preview: value.format === 'clash' ? 'proxies:\n  - name: Preview\n    type: vless' : JSON.stringify(value.format === 'xray' ? [{ remarks: 'Preview', outbounds: [{ protocol: 'vless', tag: 'proxy-preview' }] }] : { outbounds: [{ type: 'vless', tag: 'Preview' }] }) } }
+xnodeApi.saveSubscriptionTemplates = async value => { await check('save-templates'); if (params.has('template-conflict')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); trace.writes.push(JSON.parse(JSON.stringify(value))); templateConfig = JSON.parse(JSON.stringify({ ...value, revision: value.revision + 1 })) as SubscriptionTemplateConfig; return templateConfig }
+xnodeApi.previewSubscriptionTemplate = async (value, signal) => {
+  await check('preview-template')
+  if (params.has('template-invalid')) return { validation: { valid: false, needsAgentValidation: false, errorCode: 'XNODE_CONFIG_INVALID', detail: 'selector references an unknown proxy' }, preview: '' }
+  const response = await fetch('http://127.0.0.1:5175/template', { method: 'POST', body: JSON.stringify(value), headers: { 'Content-Type': 'application/json' }, signal })
+  if (!response.ok) throw new ApiError(response.status, { code: 'XNODE_INPUT_INVALID', message: '' })
+  return response.json()
+}
+
+xnodeApi.previewSubscriptionSelection = async (body, signal) => {
+  await check('preview-selection')
+  const response = await fetch('http://127.0.0.1:5175/selection', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }, signal })
+  if (!response.ok) throw new ApiError(response.status, { code: 'XNODE_INPUT_INVALID', message: '' })
+  return response.json()
+}
 
 let globalLoadFailed = false
 function globalProjection() { const value = JSON.parse(JSON.stringify(global)) as XNodeGlobal; for (const provider of Object.values(value.providers)) for (const key of Object.keys(provider.credentials)) provider.credentials[key] = ''; return value }
