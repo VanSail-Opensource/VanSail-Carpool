@@ -19,7 +19,11 @@ type soakRepository struct {
 	verified map[string]bool
 }
 
-func (r *soakRepository) USDTWatchAddresses(context.Context, string) ([]string, error) {
+func (r *soakRepository) USDTWatchAddresses(_ context.Context, rail string) ([]string, error) {
+	spec, ok := usdt.Network(rail)
+	if !ok || spec.Currency() != "USDT" {
+		return nil, nil
+	}
 	return []string{soakRecipient}, nil
 }
 func (r *soakRepository) USDTCursor(_ context.Context, network string) (usdt.Cursor, error) {
@@ -60,13 +64,16 @@ func startSoakScanners(t *testing.T, server *httptest.Server) (*soakRepository, 
 	cfg.Concurrency = 8
 	cfg.Networks = nil
 	for _, spec := range usdt.Registry {
-		if spec.Family != "evm" {
+		if spec.Family != "evm" || spec.Currency() != "USDT" {
 			continue
 		}
 		cfg.Networks = append(cfg.Networks, usdt.NetworkConfig{Network: spec.Network, Enabled: true, Addresses: []string{soakRecipient}, Endpoints: []usdt.Endpoint{
 			{ID: "fail-" + spec.Network, RPCURL: server.URL + "/fail/" + spec.Network},
 			{ID: spec.Network, RPCURL: server.URL + "/" + spec.Network, UseWS: true, WSURL: "ws" + strings.TrimPrefix(server.URL, "http") + "/ws/" + spec.Network},
 		}})
+	}
+	if err := usdt.ValidateConfig(&cfg); err != nil {
+		t.Fatal("invalid soak scanner configuration", err)
 	}
 	raw, err := json.Marshal(cfg)
 	if err != nil {
