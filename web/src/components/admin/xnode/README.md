@@ -58,3 +58,5 @@ control member server routing; subscription client documents stay independent.
 `XNodeSubscriptionRules.vue` edits ordered exact-template rules and previews selection through the Go endpoint. `subscriptionTemplatePresets.ts` supplies independent Xray, sing-box, Clash and Stash presets and shared format ordering. Assignment controls are removed; retained assignment references remain in policy writes and deletion guards. Reads/previews abort stale requests and disable mutation after failed loads.
 
 `XNodeSubscriptionRules.test.ts` covers aborting and discarding superseded Go previews without changing retained assignments.
+
+Certificate forms show only mode-relevant identity fields; node-file profiles require their two paths. Global policy errors use safe localized asset/selector codes and preserve the draft on failure.

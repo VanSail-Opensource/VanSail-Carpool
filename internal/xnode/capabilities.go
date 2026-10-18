@@ -5,8 +5,19 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
+// CapabilityError keeps incompatible policy distinct from transport outages.
+type CapabilityError struct{ Capability string }
+
+func (e *CapabilityError) Error() string { return "XNODE_UPGRADE_REQUIRED: " + e.Capability }
+func (e *CapabilityError) Unwrap() error { return ErrUnavailable }
+
 func configurationCapabilities(config wire.Config, advertised []string) error {
 	required := []string{}
+	for _, certificate := range config.Certificates {
+		if certificate.Config.CertMode == "file" && certificate.Config.Domain == "" {
+			required = append(required, "node_file_certificates_v1")
+		}
+	}
 	if config.Firewall.SourceGeoIP != nil {
 		required = append(required, "source_geoip_firewall_v1")
 	}
@@ -46,7 +57,7 @@ func configurationCapabilities(config wire.Config, advertised []string) error {
 	}
 	for _, name := range required {
 		if !supported[name] {
-			return ErrUnavailable
+			return &CapabilityError{Capability: name}
 		}
 	}
 	return nil

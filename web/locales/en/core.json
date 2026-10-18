@@ -73,7 +73,9 @@
     "reserveUsername": "Reserve username"
   },
   "common": {
-    "edit": "Edit", "name": "Name", "refresh": "Refresh",
+    "edit": "Edit",
+    "name": "Name",
+    "refresh": "Refresh",
     "tryAgain": "Try again",
     "cancel": "Cancel",
     "clear": "Clear",
@@ -130,7 +132,17 @@
     "settlementFailed": "Settlement failed. The import is kept for review.",
     "questionnaireUnavailable": "Questionnaire is unavailable.",
     "questionnaireOpen": "Questionnaire could not be opened.",
-    "api": { "USDT_CONFIGURATION_INVALID": "Check the USDT settings.", "USDT_NETWORK_UNAVAILABLE": "This USDT network is unavailable.", "USDT_QUOTE_CAPACITY": "No unique payment amount is available. Ask an administrator to add a receiving address.", "USDT_TRANSFER_CONFLICT": "This transfer cannot credit the selected order.", "USDT_RPC_UNAVAILABLE": "The blockchain server is unavailable.", "USDT_TRANSFER_UNVERIFIED": "The server did not provide valid mainnet payment evidence.", "USDT_STORAGE_UNAVAILABLE": "USDT records are temporarily unavailable.", "USDT_NOT_FOUND": "The payment order or transfer was not found.", "USDT_QUOTE_NOT_FOUND": "The payment quote was not found.", "USDT_INTERRUPTED": "The USDT check was interrupted.",
+    "api": {
+      "USDT_CONFIGURATION_INVALID": "Check the USDT settings.",
+      "USDT_NETWORK_UNAVAILABLE": "This USDT network is unavailable.",
+      "USDT_QUOTE_CAPACITY": "No unique payment amount is available. Ask an administrator to add a receiving address.",
+      "USDT_TRANSFER_CONFLICT": "This transfer cannot credit the selected order.",
+      "USDT_RPC_UNAVAILABLE": "The blockchain server is unavailable.",
+      "USDT_TRANSFER_UNVERIFIED": "The server did not provide valid mainnet payment evidence.",
+      "USDT_STORAGE_UNAVAILABLE": "USDT records are temporarily unavailable.",
+      "USDT_NOT_FOUND": "The payment order or transfer was not found.",
+      "USDT_QUOTE_NOT_FOUND": "The payment quote was not found.",
+      "USDT_INTERRUPTED": "The USDT check was interrupted.",
       "API_RESPONSE_INCOMPATIBLE": "This data could not be refreshed. Please try again.",
       "ACTIVE_COMBO_REQUIRED": "A current active combo is required to join this community.",
       "COMMUNITY_ALREADY_JOINED": "Telegram already confirms that you are a member.",
@@ -182,7 +194,13 @@
       "CAPTCHA_UNAVAILABLE": "Verification is temporarily unavailable. Please retry.",
       "INVALID_PM_UPDATE": "Choose a valid block or mute preference.",
       "INVALID_PM_TOPIC": "Enter valid topic and profile message IDs.",
-      "PM_QUEUE_UNAVAILABLE": "Private messaging is temporarily unavailable. Please retry."
+      "PM_QUEUE_UNAVAILABLE": "Private messaging is temporarily unavailable. Please retry.",
+      "XNODE_DOMAIN_SELECTOR_INVALID": "The shared domain list contains an invalid selector or unavailable geosite category/attribute.",
+      "XNODE_GEOSITE_REQUIRED": "Configure a geosite asset URL before using geosite selectors.",
+      "XNODE_GEOSITE_UNAVAILABLE": "The geosite asset could not be retrieved or verified.",
+      "XNODE_GEOIP_UNAVAILABLE": "The country IP asset could not be retrieved. Check its URL and try again.",
+      "XNODE_GEOIP_INVALID": "The country IP asset, checksum, or selected country is invalid.",
+      "XNODE_UPGRADE_REQUIRED": "Upgrade this node agent before applying the selected configuration."
     }
   },
   "captcha": {

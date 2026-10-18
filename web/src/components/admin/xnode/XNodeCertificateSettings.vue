@@ -35,12 +35,12 @@ function remove(id: string): void {
       <div class="certificate-fields">
         <UFormField :label="t('xnode.profileId')"><UInput :model-value="id" readonly class="w-full" /></UFormField>
         <UFormField :label="t('xnode.certificateMode')"><USelect v-model="profile.config.cert_mode" :items="modes" class="w-full" /></UFormField>
-        <UFormField :label="t('xnode.domain')"><UInput v-model="profile.config.domain" class="w-full" /></UFormField>
-        <UFormField :label="t('xnode.email')"><UInput v-model="profile.config.email" type="email" class="w-full" /></UFormField>
-        <UFormField><USwitch v-model="profile.config.auto_tls" :label="t('nodeAdmin.autoTls')" /></UFormField>
+        <UFormField v-if="profile.config.cert_mode !== 'file'" :label="t('xnode.domain')"><UInput v-model="profile.config.domain" class="w-full" /></UFormField>
+        <UFormField v-if="['http', 'dns'].includes(profile.config.cert_mode)" :label="t('xnode.email')"><UInput v-model="profile.config.email" type="email" class="w-full" /></UFormField>
+        <UFormField v-if="profile.config.cert_mode !== 'file'"><USwitch v-model="profile.config.auto_tls" :label="t('nodeAdmin.autoTls')" /></UFormField>
         <UFormField v-if="profile.config.cert_mode === 'dns'" :label="t('xnode.dnsProvider')"><UInput v-model="profile.provider" class="w-full" /></UFormField>
-        <UFormField v-if="profile.config.cert_mode === 'file'" :label="t('xnode.certificateFile')"><UInput v-model="profile.config.cert_file" class="w-full" /></UFormField>
-        <UFormField v-if="profile.config.cert_mode === 'file'" :label="t('xnode.keyFile')"><UInput v-model="profile.config.key_file" class="w-full" /></UFormField>
+        <UFormField v-if="profile.config.cert_mode === 'file'" :label="t('xnode.certificateFile')" required><UInput v-model="profile.config.cert_file" required class="w-full" /></UFormField>
+        <UFormField v-if="profile.config.cert_mode === 'file'" :label="t('xnode.keyFile')" required><UInput v-model="profile.config.key_file" required class="w-full" /></UFormField>
         <UFormField v-if="profile.config.cert_mode === 'content'" :label="t('xnode.certificateContent')"><UTextarea v-model="profile.config.cert_content" :rows="5" class="w-full font-mono" /></UFormField>
         <UFormField v-if="profile.config.cert_mode === 'content'" :label="t('xnode.keyContent')"><UTextarea v-model="profile.config.key_content" :rows="5" class="w-full font-mono" /></UFormField>
       </div>

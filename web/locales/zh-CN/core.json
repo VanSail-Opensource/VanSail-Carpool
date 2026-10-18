@@ -72,7 +72,9 @@
     "checkingAvailability": "正在检查可用性",
     "reserveUsername": "保留用户名"
   },
-  "common": { "edit": "编辑", "name": "名称",
+  "common": {
+    "edit": "编辑",
+    "name": "名称",
     "notScheduled": "尚未安排",
     "notAvailable": "暂不可用",
     "active": "已激活",
@@ -129,7 +131,17 @@
     "settlementFailed": "结算失败，导入记录已保留以供检查。",
     "questionnaireUnavailable": "问卷暂不可用。",
     "questionnaireOpen": "无法打开问卷。",
-    "api": { "USDT_CONFIGURATION_INVALID": "请检查 USDT 配置。", "USDT_NETWORK_UNAVAILABLE": "此 USDT 网络暂不可用。", "USDT_QUOTE_CAPACITY": "没有可用的唯一支付金额，请管理员添加收款地址。", "USDT_TRANSFER_CONFLICT": "此转账无法用于给所选订单入账。", "USDT_RPC_UNAVAILABLE": "区块链服务器暂时不可用。", "USDT_TRANSFER_UNVERIFIED": "服务器未能提供有效的主网付款证明。", "USDT_STORAGE_UNAVAILABLE": "USDT 记录暂时不可用。", "USDT_NOT_FOUND": "未找到支付订单或转账。", "USDT_QUOTE_NOT_FOUND": "未找到支付报价。", "USDT_INTERRUPTED": "USDT 检查已中断。",
+    "api": {
+      "USDT_CONFIGURATION_INVALID": "请检查 USDT 配置。",
+      "USDT_NETWORK_UNAVAILABLE": "此 USDT 网络暂不可用。",
+      "USDT_QUOTE_CAPACITY": "没有可用的唯一支付金额，请管理员添加收款地址。",
+      "USDT_TRANSFER_CONFLICT": "此转账无法用于给所选订单入账。",
+      "USDT_RPC_UNAVAILABLE": "区块链服务器暂时不可用。",
+      "USDT_TRANSFER_UNVERIFIED": "服务器未能提供有效的主网付款证明。",
+      "USDT_STORAGE_UNAVAILABLE": "USDT 记录暂时不可用。",
+      "USDT_NOT_FOUND": "未找到支付订单或转账。",
+      "USDT_QUOTE_NOT_FOUND": "未找到支付报价。",
+      "USDT_INTERRUPTED": "USDT 检查已中断。",
       "API_RESPONSE_INCOMPATIBLE": "暂时无法刷新此数据，请重试。",
       "ACTIVE_COMBO_REQUIRED": "加入社区需要当前正在生效的套餐。",
       "COMMUNITY_ALREADY_JOINED": "Telegram 已确认你是成员。",
@@ -181,7 +193,13 @@
       "CAPTCHA_UNAVAILABLE": "暂时无法验证，请重试。",
       "INVALID_PM_UPDATE": "请选择有效的屏蔽或静音设置。",
       "INVALID_PM_TOPIC": "请输入有效的话题或资料卡消息 ID。",
-      "PM_QUEUE_UNAVAILABLE": "私信队列暂时不可用，请稍后重试。"
+      "PM_QUEUE_UNAVAILABLE": "私信队列暂时不可用，请稍后重试。",
+      "XNODE_DOMAIN_SELECTOR_INVALID": "???????????????? geosite ?????????",
+      "XNODE_GEOSITE_REQUIRED": "?? geosite ????????? geosite ???????",
+      "XNODE_GEOSITE_UNAVAILABLE": "??????? geosite ?????",
+      "XNODE_GEOIP_UNAVAILABLE": "?????? IP ??????????????",
+      "XNODE_GEOIP_INVALID": "?? IP ????????????????",
+      "XNODE_UPGRADE_REQUIRED": "???????????????????"
     },
     "autoRenewalFailed": "无法更新自动续费。"
   },

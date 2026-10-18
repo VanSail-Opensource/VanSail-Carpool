@@ -66,7 +66,16 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 }
 func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 	status, code := http.StatusServiceUnavailable, "XNODE_UNAVAILABLE"
+	var policy *xnode.PolicyError
+	var capability *xnode.CapabilityError
 	switch {
+	case errors.As(err, &capability):
+		status, code = http.StatusConflict, "XNODE_UPGRADE_REQUIRED"
+	case errors.As(err, &policy):
+		code = policy.Code
+		if errors.Is(err, xnode.ErrInvalid) {
+			status = http.StatusUnprocessableEntity
+		}
 	case errors.Is(err, xnode.ErrNotFound):
 		status, code = http.StatusNotFound, "XNODE_NOT_FOUND"
 	case errors.Is(err, xnode.ErrInvalid):

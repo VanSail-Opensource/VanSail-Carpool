@@ -250,3 +250,5 @@ unknown server contexts. These regressions run in hosted CI.
 `profile_metrics_test.go` covers rolled-back/disconnected/stale activity, independent agent liveness and exact seven-day native/legacy accounting above browser integer precision.
 
 `subscription_selection.go` validates and previews ordered Go regex rules against exact template references. `subscription_formats.go` preserves explicit native links and encodes Base64 output; Stash is a separate client format. `subscription_selection_test.go` covers precedence, Go syntax, retained assignments, legacy policy, exact template selection and REALITY hybrid output. Existing encrypted policy storage and optimistic revisions are retained. Missing legacy Base64 policy inherits native enablement.
+
+Global saves validate shared selectors against native parsing and the configured geosite categories/attributes before publishing. Country decoding uses bounded field reads over the staged asset, including large unselected records. Policy failures expose safe localized codes rather than asset URLs.

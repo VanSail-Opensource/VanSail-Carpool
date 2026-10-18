@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/xtls/xray-core/common/geodata"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"net/netip"
 	"testing"
@@ -29,5 +30,23 @@ func TestCountryPrefixesRemainCompactAndValidateCoverage(t *testing.T) {
 	raw, _ = proto.Marshal(data)
 	if _, err = readGeoIPPrefixes(context.Background(), bytes.NewReader(raw), []string{"geoip:cn"}); err == nil {
 		t.Fatal("inverse country policy was silently widened")
+	}
+}
+
+func TestLargeUnselectedCountryDoesNotPreventSavingCountryFilter(t *testing.T) {
+	entry := protowire.AppendTag(nil, 1, protowire.BytesType)
+	entry = protowire.AppendString(entry, "US")
+	entry = protowire.AppendTag(entry, 99, protowire.BytesType)
+	entry = protowire.AppendBytes(entry, make([]byte, 17<<20))
+	raw := protowire.AppendTag(nil, 1, protowire.BytesType)
+	raw = protowire.AppendBytes(raw, entry)
+	data, err := proto.Marshal(&geodata.GeoIPList{Entry: []*geodata.GeoIP{{Code: "CN", Cidr: []*geodata.CIDR{{Ip: []byte{1, 1, 1, 0}, Prefix: 24}}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw = append(raw, data...)
+	got, err := readGeoIPPrefixes(context.Background(), bytes.NewReader(raw), []string{"geoip:cn"})
+	if err != nil || len(got) != 1 || got[0] != "1.1.1.0/24" {
+		t.Fatalf("country projection = %v, %v", got, err)
 	}
 }

@@ -1,10 +1,7 @@
 package xnode
 
 import (
-	"bufio"
 	"context"
-	"encoding/binary"
-	"errors"
 	"go4.org/netipx"
 	"google.golang.org/protobuf/encoding/protowire"
 	"io"
@@ -16,41 +13,37 @@ func readGeoIPPrefixes(ctx context.Context, input io.Reader, selectors []string)
 	for _, selector := range selectors {
 		selected[strings.TrimPrefix(selector, "geoip:")] = false
 	}
-	reader := bufio.NewReader(input)
 	var builder netipx.IPSetBuilder
 	count := 0
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		tag, err := binary.ReadUvarint(reader)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil || tag != 10 {
-			return nil, ErrInvalid
-		}
-		size, err := binary.ReadUvarint(reader)
-		if err != nil || size == 0 || size > 16<<20 {
-			return nil, ErrInvalid
-		}
-		raw := make([]byte, int(size))
-		if _, err = io.ReadFull(reader, raw); err != nil {
-			return nil, ErrInvalid
-		}
-		code, reverse, err := geoCountryHeader(raw)
+	err := geoRecords(ctx, input, func(at io.ReaderAt, offset, size int64) error {
+		code, reverse := "", false
+		err := walkGeoCountry(ctx, io.NewSectionReader(at, offset, size), 1, func(number protowire.Number, kind protowire.Type, value []byte) error {
+			switch number {
+			case 1:
+				if kind != protowire.BytesType {
+					return ErrInvalid
+				}
+				code = strings.ToLower(string(value))
+			case 3:
+				if kind != protowire.VarintType {
+					return ErrInvalid
+				}
+				n, _ := protowire.ConsumeVarint(value)
+				reverse = n != 0
+			}
+			return nil
+		})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		code = strings.ToLower(code)
 		if _, wanted := selected[code]; !wanted {
-			continue
+			return nil
 		}
 		if reverse {
-			return nil, ErrInvalid
+			return ErrInvalid
 		}
 		selected[code] = true
-		err = geoFields(raw, func(number protowire.Number, kind protowire.Type, value []byte) error {
+		return walkGeoCountry(ctx, io.NewSectionReader(at, offset, size), 2, func(number protowire.Number, kind protowire.Type, value []byte) error {
 			if number != 2 {
 				return nil
 			}
@@ -61,11 +54,6 @@ func readGeoIPPrefixes(ctx context.Context, input io.Reader, selectors []string)
 			if count > 500000 {
 				return ErrInvalid
 			}
-			if count%256 == 0 {
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-			}
 			prefix, err := geoCIDR(value)
 			if err != nil {
 				return err
@@ -73,9 +61,9 @@ func readGeoIPPrefixes(ctx context.Context, input io.Reader, selectors []string)
 			builder.AddPrefix(prefix)
 			return nil
 		})
-		if err != nil {
-			return nil, err
-		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	for _, found := range selected {
 		if !found {

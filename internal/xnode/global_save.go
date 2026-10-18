@@ -37,6 +37,9 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err = ValidateGlobal(next); err != nil {
 		return err
 	}
+	if err = s.validateGlobalPolicies(ctx, next); err != nil {
+		return err
+	}
 	if err = s.validateAffected(ctx, nil, nil, &next); err != nil {
 		return err
 	}
