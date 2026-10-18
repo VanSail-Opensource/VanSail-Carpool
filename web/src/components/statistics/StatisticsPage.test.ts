@@ -65,7 +65,7 @@ describe('StatisticsPage', () => {
 
     await wrapper.get('[data-testid="tab-traffic"]').trigger('click')
 
-    expect(hapticMocks.selectionHaptic).toHaveBeenCalledOnce()
+    expect(hapticMocks.selectionHaptic).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="overview"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="freshness"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="traffic"]').exists()).toBe(true)

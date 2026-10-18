@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef } from 'vue'
 
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useStatistics } from '@/composables/useStatistics'
 import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
-import { selectionHaptic } from '@/utils/telegram'
 import StatisticsDistribution from './StatisticsDistribution.vue'
 import StatisticsFreshness from './StatisticsFreshness.vue'
 import StatisticsNodes from './StatisticsNodes.vue'
@@ -27,14 +26,12 @@ const tabs = computed(() => [
   { label: t('statistics.squadComposition'), value: 'composition', slot: 'composition' as const, icon: 'i-ph-stack' },
 ])
 
-watch(activeTab, () => selectionHaptic())
 </script>
 
 <template>
-  <div class="page page--statistics">
+  <div class="admin-panel page--statistics">
     <header class="statistics-heading">
       <div>
-        <p class="eyebrow">{{ $t('dashboard.aroundTx') }}</p>
         <h1>{{ $t('statistics.title') }}</h1>
         <p v-if="snapshot">{{ $t('statistics.updatedAt', { date: formatDateTime(snapshot.generatedAt) }) }}</p>
       </div>
@@ -48,7 +45,6 @@ watch(activeTab, () => selectionHaptic())
           icon="i-ph-arrows-clockwise"
           :loading="refreshing"
           :aria-label="$t('statistics.refresh')"
-          data-haptic="refresh"
           @click="load({ quiet: true })"
         />
       </UTooltip>
@@ -92,7 +88,12 @@ watch(activeTab, () => selectionHaptic())
     <div v-else class="error-state">
       <h1>{{ $t('statistics.unavailable') }}</h1>
       <p>{{ error ?? $t('statistics.loadFailed') }}</p>
-      <UButton icon="i-ph-arrows-clockwise" :label="$t('common.tryAgain')" data-haptic="retry" @click="load()" />
+      <UButton icon="i-ph-arrows-clockwise" :label="$t('common.tryAgain')" @click="load()" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.page--statistics { max-width: none; gap: 1rem; }
+.statistics-heading h1 { font-size: 1.25rem; }
+</style>

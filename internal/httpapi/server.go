@@ -173,8 +173,6 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Get("/api/v1/onboarding/content", server.onboardingContent)
 		authenticated.Get("/api/v1/dashboard", server.dashboard)
 		authenticated.Get("/api/v1/dashboard/node-usage", server.dashboardNodeUsage)
-		authenticated.Get("/api/v1/statistics", server.statisticsSnapshot)
-		authenticated.Get("/api/v1/statistics/nodes", server.statisticsNodes)
 		authenticated.Get("/api/v1/catalog", server.catalog)
 		authenticated.Post("/api/v1/purchases/quote", server.purchaseQuote)
 		authenticated.Post("/api/v1/purchases", server.purchase)

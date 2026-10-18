@@ -26,3 +26,5 @@
 - Chart components animate data geometry, rankings, selected detail, and freshness only. `StatisticsPage.vue` stays static so refreshes never replay the whole route.
 
 `StatisticsNodes.vue` and `StatisticsNodes.test.ts` retain readable live node rates and health without retired image actions. `StatisticsPage.test.ts` covers tab-panel separation.
+
+TX Statistics is browser-administrator-only, under `/admin/statistics`. Its API routes use `/api/v1/admin/statistics`; Mini App routes, navigation, preloads, Telegram controls and haptic imports are removed. Live node reads use only native telemetry; historical aggregates use existing exact native/reconciled source accounting.

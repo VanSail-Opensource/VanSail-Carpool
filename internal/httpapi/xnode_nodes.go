@@ -23,17 +23,23 @@ func (s *Server) xnodeNode(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Node     xnode.Node         `json:"node"`
+		Node     nodeWrite          `json:"node"`
 		Settings xnode.NodeSettings `json:"settings"`
 	}
 	if err := decodeJSON(w, r, &input); err != nil {
 		s.xnodeError(w, r, xnode.ErrInvalid)
 		return
 	}
+	multiplier, err := explicitNodeMultiplier(input.Node.Multiplier)
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	input.Node.Node.Multiplier = multiplier
 	if id := chiURLParam(r, "id"); id != "" {
 		input.Node.ID = id
 	}
-	node, err := s.deps.XNode.SaveNode(r.Context(), input.Node, input.Settings)
+	node, err := s.deps.XNode.SaveNode(r.Context(), input.Node.Node, input.Settings)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

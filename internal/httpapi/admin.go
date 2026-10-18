@@ -5,6 +5,8 @@ import (
 )
 
 func (s *Server) mountAdmin(router chi.Router) {
+	router.Get("/statistics", s.statisticsSnapshot)
+	router.Get("/statistics/nodes", s.statisticsNodes)
 	router.Get("/api-tokens", s.adminAPITokens)
 	router.Post("/api-tokens", s.adminCreateAPIToken)
 	router.Delete("/api-tokens/{id}", s.adminRevokeAPIToken)
@@ -43,6 +45,7 @@ func (s *Server) mountAdmin(router chi.Router) {
 	router.Post("/squad-products/import", s.adminImportSquads)
 	router.Get("/users", s.adminUsers)
 	router.Get("/users/{id}", s.adminUser)
+	router.Get("/users/{userId}/metrics", s.adminUserMetrics)
 	router.Post("/users/{userId}/coupon-grants", s.adminGrantUserCoupon)
 	router.Delete("/users/{userId}/coupon-grants/{grantId}", s.adminDiscardUserCoupon)
 	router.Post("/users/{userId}/connections", s.adminRequestUserConnections)

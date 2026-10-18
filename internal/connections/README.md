@@ -19,3 +19,7 @@
 Provider scans, plugin execution, and drops are invoked through the shared Remnawave queue. Browser payloads never choose a node or IP directly.
 
 - `scoped_control.go` dispatches IP mutations with authenticated user ownership.
+
+Administrator scans use `RequestAdmin`/`PollAdmin` with a native-only durable request fingerprint. The existing outbox worker calls `NativeRemote` with a panel identity and never falls back to legacy scans; old bridge receipts are unavailable in this browser flow. Raw observations remain ephemeral and unavailable nodes carry an explicit flag.
+
+`native_scan_test.go` guards panel-identity native outbox dispatch, retry isolation and refusal of bridge scan polling from browser admin.

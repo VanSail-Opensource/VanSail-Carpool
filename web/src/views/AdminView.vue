@@ -8,6 +8,7 @@ import AdminSettingsPanel from '@/components/admin/AdminSettingsPanel.vue'
 const route = useRoute()
 const panels: Record<string, Component> = {
   settings: AdminSettingsPanel,
+  statistics: defineAsyncComponent(() => import('@/components/statistics/StatisticsPage.vue')),
   'api-access': defineAsyncComponent(() => import('@/components/admin/api-access/AdminAPITokens.vue')),
   xnode: defineAsyncComponent(() => import('@/components/admin/xnode/XNodeWorkspace.vue')),
   usdt: defineAsyncComponent(() => import('@/components/admin/usdt/AdminUSDTPage.vue')),

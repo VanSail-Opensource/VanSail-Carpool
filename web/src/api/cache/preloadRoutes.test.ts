@@ -16,11 +16,11 @@ describe('initial page preload inventory', () => {
     const resources = memberResources(session('member', 'complete'), 'en')
     const paths = resources.map(resource => resource.path)
     expect(paths).toEqual(expect.arrayContaining([
-      '/api/v1/dashboard', '/api/v1/catalog', '/api/v1/statistics', '/api/v1/activity',
+      '/api/v1/dashboard', '/api/v1/catalog', '/api/v1/activity',
       '/api/v1/affiliates', '/api/v1/emby/account', '/api/v1/questionnaires/active',
       '/api/v1/subscription/ip-blocks',
     ]))
-    expect(paths.some(path => path.includes('/admin/'))).toBe(false)
+    expect(paths.some(path => path.includes('/admin/') || path.includes('/statistics'))).toBe(false)
     expect(resources.find(resource => resource.path.endsWith('/referrals'))?.options?.query).toEqual({ page: 1 })
     expect(resources.every(resource => isReadRequest(resource.path, resource.options?.method ?? 'GET'))).toBe(true)
   })

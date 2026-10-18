@@ -128,6 +128,13 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_statistics.go`: Entry points: `Digest`, `Traffic`, `Nodes`.
 
+- `native_statistics.go`: Entry points: `nativeStatisticsProvider.Digest`,
+  `Traffic`, `Nodes`, `SquadNames`, `UsageSnapshotForRollover`. Native accounting
+  drives aggregate partitions. Statistics read only X-Node activity, and nodes
+  without native ownership or fresh connected telemetry show unavailable. Agent
+  transport liveness remains independent of migration ownership in Master.Metrics.
+  Commerce and compensation retain their queued migration bridge provider.
+
 - `xnode_subscription_bridge.go`: Entry points: `legacyProxies`, `proxyFromOutbound`, `objectValue`.
 
 - `xnode_usage.go`: Entry points: `NodeUsage`.
@@ -170,3 +177,7 @@ subscription bridge supports these same explicit standalone groups.
 monitoring accounts, retaining legacy credentials only on source-owned hosts.
 Provider name/ID resolution accepts explicit service identities without creating
 a Telegram association; internal bounded probes retain their separate path.
+
+`xnode_admin_scan.go` starts native-only scans in the existing durable scan workflow and reads fresh eligible nodes through the per-node command executor. Ownership/freshness is checked again before projecting observations; raw source IPs stay memory-only.
+
+`native_statistics_test.go` guards statistics against any source-provider fallback, including an empty native fleet and legacy-only accounting references.

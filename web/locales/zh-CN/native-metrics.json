@@ -1,0 +1,22 @@
+{
+  "adminNative": {
+    "title": "节点活动",
+    "currentUse": "当前使用",
+    "active": "使用中",
+    "idle": "空闲",
+    "unavailable": "不可用",
+    "incomplete": "部分分配的节点不可用，实时统计不完整。",
+    "usedTraffic": "当前周期用量",
+    "lifetime": "累计流量",
+    "sevenDayUsage": "七日流量",
+    "weighted": "计费流量",
+    "noNodes": "尚未分配原生节点。",
+    "metric": "指标",
+    "value": "数值",
+    "cpu": "CPU 使用率",
+    "memory": "内存使用率",
+    "legacyTraffic": "已对账的来源流量",
+    "nativeUpload": "原生上传",
+    "nativeDownload": "原生下载"
+  }
+}

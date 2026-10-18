@@ -9,7 +9,7 @@ export const apiTokenScopes = ['admin:read', 'admin:write', 'xnode:read', 'xnode
 
 const root = '/api/v1/admin/api-tokens'
 export const adminAPITokensApi = {
-  list: () => request<{ items: PanelAPIToken[] }>(root, { cache: 'no-store' }),
+  list: (signal?: AbortSignal) => request<{ items: PanelAPIToken[] }>(root, { cache: 'no-store', signal }),
   create: (body: PanelAPITokenWrite) => request<PanelAPITokenIssued>(root, { method: 'POST', body, cache: 'no-store' }),
   revoke: (id: string) => request<void>(`${root}/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' }),
 }

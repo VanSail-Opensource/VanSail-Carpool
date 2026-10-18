@@ -26,6 +26,11 @@ type Remote interface {
 	PollConnectionScan(context.Context, string) (ProviderScan, error)
 }
 
+// NativeRemote starts an X-Node-only scan using a panel identity reference.
+type NativeRemote interface {
+	RequestNativeConnectionScan(context.Context, string) (string, error)
+}
+
 // Service owns connection scan creation, polling, and signed projections.
 type Service struct {
 	repository Repository
@@ -44,9 +49,18 @@ func (s *Service) Request(ctx context.Context, user model.User, idempotencyKey s
 	if user.RemnaUserID == nil || strings.TrimSpace(*user.RemnaUserID) == "" {
 		return Scan{}, ErrIdentityRequired
 	}
+	return s.request(ctx, user, idempotencyKey, scanFingerprint())
+}
+
+// RequestAdmin uses the existing durable scan/outbox with a native-only fingerprint.
+func (s *Service) RequestAdmin(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
+	return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
+}
+
+func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, fingerprint string) (Scan, error) {
 	now := s.now().UTC()
 	record, _, err := s.repository.CreateConnectionScan(ctx, providerops.ConnectionScanInput{
-		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: scanFingerprint(), ExpiresAt: now.Add(ScanTTL),
+		UserID: user.ID, IdempotencyKey: idempotencyKey, RequestFingerprint: fingerprint, ExpiresAt: now.Add(ScanTTL),
 	}, now)
 	if err != nil {
 		return Scan{}, err
@@ -56,9 +70,21 @@ func (s *Service) Request(ctx context.Context, user model.User, idempotencyKey s
 
 // Poll refreshes provider progress and returns ephemeral signed IP handles.
 func (s *Service) Poll(ctx context.Context, userID, scanID string) (Scan, error) {
+	return s.poll(ctx, userID, scanID, false)
+}
+
+// PollAdmin refuses old bridge scans rather than initiating a legacy provider read.
+func (s *Service) PollAdmin(ctx context.Context, userID, scanID string) (Scan, error) {
+	return s.poll(ctx, userID, scanID, true)
+}
+
+func (s *Service) poll(ctx context.Context, userID, scanID string, nativeOnly bool) (Scan, error) {
 	now := s.now().UTC()
 	record, err := s.repository.ConnectionScanForUser(ctx, scanID, userID)
 	if err != nil || !now.Before(record.ExpiresAt) {
+		return Scan{}, ErrScanNotFound
+	}
+	if nativeOnly && record.RequestFingerprint != nativeScanFingerprint() {
 		return Scan{}, ErrScanNotFound
 	}
 	if record.Status == providerops.StatusFailed || record.Status == providerops.StatusPendingReview || record.ProviderJobID == "" {
@@ -97,7 +123,7 @@ func (s *Service) signNodes(userID string, scan providerops.ConnectionScan, node
 	}
 	result := make([]Node, 0, len(nodes))
 	for _, providerNode := range nodes {
-		node := Node{UUID: providerNode.UUID, Name: providerNode.Name, CountryCode: countryCode(providerNode.CountryCode), IPs: make([]IP, 0, len(providerNode.IPs))}
+		node := Node{UUID: providerNode.UUID, Name: providerNode.Name, CountryCode: countryCode(providerNode.CountryCode), Unavailable: providerNode.Unavailable, IPs: make([]IP, 0, len(providerNode.IPs))}
 		for _, observation := range providerNode.IPs {
 			handle, err := s.signer.Sign(HandleClaims{UserID: userID, ScanID: scan.ID, NodeUUID: providerNode.UUID, IP: observation.Address, Expires: expires})
 			if err != nil {
@@ -112,6 +138,11 @@ func (s *Service) signNodes(userID string, scan providerops.ConnectionScan, node
 
 func scanFingerprint() string {
 	digest := sha256.Sum256([]byte("connection-scan:v1"))
+	return hex.EncodeToString(digest[:])
+}
+
+func nativeScanFingerprint() string {
+	digest := sha256.Sum256([]byte("connection-scan:xnode-v1"))
 	return hex.EncodeToString(digest[:])
 }
 

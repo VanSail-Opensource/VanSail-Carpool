@@ -35,7 +35,7 @@ describe('statistics SVG charts', () => {
 
     await segments[1]?.trigger('click')
     expect(segments[1]?.attributes('aria-pressed')).toBe('true')
-    expect(hapticMocks.selectionHaptic).toHaveBeenCalledOnce()
+    expect(hapticMocks.selectionHaptic).not.toHaveBeenCalled()
     expect(wrapper.find('[data-haptic]').exists()).toBe(false)
     expect(wrapper.html()).not.toContain('conic-gradient')
   })

@@ -16,6 +16,8 @@ import AdminOperationResolutionDialog from './AdminOperationResolutionDialog.vue
 import AdminUserEntitlements from './AdminUserEntitlements.vue'
 import AdminUserAccountContext from './AdminUserAccountContext.vue'
 import AdminUserCouponActions from './AdminUserCouponActions.vue'
+import AdminUserMetrics from './AdminUserMetrics.vue'
+import AdminUserBalanceAdjustment from './AdminUserBalanceAdjustment.vue'
 import AdminUserHistory from './AdminUserHistory.vue'
 import AdminUserIPBlocks from './AdminUserIPBlocks.vue'
 import AdminUserOverview from './AdminUserOverview.vue'
@@ -30,6 +32,7 @@ const profile = useAdminUserProfile(toRef(props, 'userId'))
 const activeTab = shallowRef('entitlements')
 const tabs = computed(() => [
   { value: 'entitlements', label: t('adminUserProfile.entitlements') },
+  { value: 'metrics', label: t('adminNative.title') },
   { value: 'history', label: t('adminUserProfile.records') },
   { value: 'account', label: t('adminUserProfile.actionsAndContext') },
 ])
@@ -173,8 +176,10 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     </div>
     <template v-else-if="profile.detail.value">
       <AdminUserOverview :detail="profile.detail.value" />
+      <AdminUserBalanceAdjustment :user-id="userId" @changed="refresh" />
       <UTabs v-model="activeTab" class="admin-workspace-tabs" :items="tabs" variant="link" :content="false" />
       <AdminUserEntitlements v-show="activeTab === 'entitlements'" :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
+      <AdminUserMetrics v-if="activeTab === 'metrics'" :user-id="userId" />
       <AdminUserHistory v-show="activeTab === 'history'" :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
       <div v-show="activeTab === 'account'" class="admin-workspace-grid">
         <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />

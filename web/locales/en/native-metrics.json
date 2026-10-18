@@ -1,0 +1,22 @@
+{
+  "adminNative": {
+    "title": "Node activity",
+    "currentUse": "Current use",
+    "active": "In use",
+    "idle": "Idle",
+    "unavailable": "Unavailable",
+    "incomplete": "Some assigned nodes are unavailable. Live totals are incomplete.",
+    "usedTraffic": "Current period usage",
+    "lifetime": "Lifetime traffic",
+    "sevenDayUsage": "Seven-day traffic",
+    "weighted": "Accounted traffic",
+    "noNodes": "No assigned native nodes.",
+    "metric": "Metric",
+    "value": "Value",
+    "cpu": "CPU usage",
+    "memory": "Memory usage",
+    "legacyTraffic": "Reconciled source traffic",
+    "nativeUpload": "Native upload",
+    "nativeDownload": "Native download"
+  }
+}

@@ -58,3 +58,5 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 
 
 `managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.
+
+`native-metrics.json` labels browser-only profile, accounting and machine metric tables/charts.

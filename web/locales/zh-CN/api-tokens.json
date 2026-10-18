@@ -34,6 +34,7 @@
     "createFailed": "无法创建令牌，请检查设置和有效令牌数量限制。",
     "revokeFailed": "无法撤销令牌，请重试。",
     "states": { "active": "有效", "expired": "已过期", "revoked": "已撤销" },
+    "groups": { "admin": "管理", "xnode": "节点", "migration": "迁移" },
     "scopes": {
       "admin:read": "读取全部管理数据",
       "admin:write": "控制全部管理功能",

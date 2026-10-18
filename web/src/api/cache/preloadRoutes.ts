@@ -10,7 +10,7 @@ export function memberResources(session: Session, locale: string): PreloadResour
   const start = new Date(end)
   start.setUTCDate(start.getUTCDate() - 6)
   return [
-    ...['dashboard', 'catalog', 'balance', 'statistics', 'statistics/nodes', 'activity',
+    ...['dashboard', 'catalog', 'balance', 'activity',
       'affiliates', 'coupons/wallet', 'questionnaires/active', 'emby/account',
       'subscription/ip-blocks', 'me/traffic-reset-automation',
       'community/membership/check'].map(path => ({ path: `/api/v1/${path}` })),

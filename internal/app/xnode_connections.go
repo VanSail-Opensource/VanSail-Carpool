@@ -38,6 +38,9 @@ func (a proxyProvider) RequestConnectionScan(ctx context.Context, id string) (st
 	return "xn:" + id + ":" + base64.RawURLEncoding.EncodeToString([]byte(legacyJob)) + ":" + nonce, nil
 }
 func (a proxyProvider) PollConnectionScan(ctx context.Context, id string) (connections.ProviderScan, error) {
+	if strings.HasPrefix(id, "xna:") {
+		return a.pollNativeConnectionScan(ctx, id)
+	}
 	if !strings.HasPrefix(id, "xn:") {
 		return a.remnaAdapter.PollConnectionScan(ctx, id)
 	}

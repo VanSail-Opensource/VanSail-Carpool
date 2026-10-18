@@ -12,7 +12,6 @@
 - `OnboardingView.vue` hosts the resumable intro, username, and agreement flow.
 - `PaymentResultView.vue` verifies a provider-returned payment order in Telegram or polls the capability-limited status in a regular browser, returns confirmed Telegram payments to Home, and offers failed/expired Telegram orders a localized reissue handoff.
 - `QuestionnaireView.vue` delegates to active questionnaire participation.
-- `StatisticsView.vue` delegates to the cached product and live-node statistics dashboard.
 - `AffiliatesView.vue` mounts the member Affiliate Centre page.
 
 `SettingsView.vue` is the thin route entry for user notification, display, subscription and community preferences.

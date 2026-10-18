@@ -58,6 +58,7 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function clear(): void {
+	globalThis.dispatchEvent(new Event('txc:session-cleared'))
     stopSessionPreload()
     setCacheSession(null)
     session.value = null

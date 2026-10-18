@@ -1,6 +1,7 @@
 import type { components } from './generated'
 import { request, streamAdminBackupUpload } from './http'
 
+export type XNodeProfileMetrics = components['schemas']['XNodeProfileMetrics']
 export type AdminUserDetail = components['schemas']['AdminUserDetail']
 export type AdminEntitlement = components['schemas']['AdminEntitlement']
 export type OperationReceipt = components['schemas']['OperationReceipt']
@@ -25,7 +26,8 @@ const keyHeader = (key: string) => ({ 'Idempotency-Key': key })
 
 export const adminOperationsApi = {
   getOperation: (operationId: string) => request<OperationReceipt>(`/api/v1/admin/operations/${encodeURIComponent(operationId)}`, { cache: 'no-store' }),
-  getUser: (userId: string) => request<AdminUserDetail>(`/api/v1/admin/users/${encodeURIComponent(userId)}`),
+  getUser: (userId: string, signal?: AbortSignal) => request<AdminUserDetail>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, { signal }),
+  getUserMetrics: (userId: string, signal?: AbortSignal) => request<XNodeProfileMetrics>(`/api/v1/admin/users/${encodeURIComponent(userId)}/metrics`, { cache: 'no-store', signal }),
   getEntitlementRefundQuote: (userId: string, entitlementId: string) => request<AdminEntitlementRefundQuote>(`/api/v1/admin/users/${encodeURIComponent(userId)}/entitlements/${encodeURIComponent(entitlementId)}/refund`, { cache: 'no-store' }),
   unblockIP: (userId: string, blockId: string, key: string) =>
     request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/ip-blocks/${encodeURIComponent(blockId)}/unblock`, {

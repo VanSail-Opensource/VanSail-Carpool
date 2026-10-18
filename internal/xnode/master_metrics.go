@@ -17,11 +17,11 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 	if err != nil {
 		return MetricsSummary{}, err
 	}
-	now := m.service.now()
 	native, err := m.service.nativeAvailability(ctx)
 	if err != nil {
 		return MetricsSummary{}, err
 	}
+	now := m.service.now()
 	identities, err := m.service.repo.XNodeIdentities(ctx)
 	if err != nil {
 		return MetricsSummary{}, err
@@ -37,8 +37,13 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 	for _, node := range nodes {
 		snapshot := m.live[node.ID]
 		_, connected := m.peers[node.ID]
-		fresh := native[node.ID] && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
+		// Liveness comes from the authenticated agent stream. Migration phase
+		// controls configuration ownership and admission, not whether an agent
+		// is online, so imported or preparing agents stay visible while a
+		// rolling cutover is in progress.
+		fresh := node.Enabled && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
 		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: append([]json.RawMessage{}, snapshot.logs...)}
+		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
 		item.Firewall = snapshot.firewall
 		if fresh {
 			at := snapshot.report.Time
@@ -55,7 +60,7 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 		if fresh && snapshot.report.Ready {
 			result.OnlineNodes++
 		}
-		if fresh && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
+		if item.Available {
 			for id, count := range snapshot.report.Users.Connections {
 				item.ActiveConnections += int64(count)
 				if count > 0 && paid[int64(id)] {

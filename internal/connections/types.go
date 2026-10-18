@@ -60,6 +60,7 @@ type IP struct {
 
 // Node groups current member connections by provider node.
 type Node struct {
+	Unavailable bool   `json:"unavailable"`
 	UUID        string `json:"uuid"`
 	Name        string `json:"name"`
 	CountryCode string `json:"countryCode"`
@@ -85,6 +86,7 @@ type Observation struct {
 
 // ProviderNode is a provider scan node before browser projection.
 type ProviderNode struct {
+	Unavailable bool
 	UUID        string
 	Name        string
 	CountryCode string

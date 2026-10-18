@@ -76,3 +76,7 @@ separate. Action quotes and permission decisions still await the backend.
 `operationReceiptLoader.ts` defines the experience-owned receipt loader injection contract. `useOperationReceipt.ts` and `useDurableCommand.ts` accept injected/explicit loaders while retaining interval compatibility, disposal and retry limits. BrowserApp provides the signed admin operation reader; Mini App callers retain member-scoped reads. No session or signing state is shared between experiences.
 
 `operationReceiptLoader.test.ts` verifies experience-injected polling and disposal without falling back to the member operation reader. It runs in hosted frontend regressions.
+
+`useMetricSamples.ts` owns memory-only displayed-series buffers, capped at 300 samples and retired on disposal/session clearing/expiry.
+
+`useMetricSamples.test.ts` guards 300-point bounds, obsolete timestamp rejection, disposal and logout retirement.

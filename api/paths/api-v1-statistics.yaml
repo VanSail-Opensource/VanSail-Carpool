@@ -1,4 +1,5 @@
 get:
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
   tags: [Dashboard]
   operationId: getStatistics
   summary: Get the latest 30-minute aggregate statistics snapshot

@@ -97,8 +97,8 @@ export const api = {
   getDashboard: () => request<Dashboard>('/api/v1/dashboard'),
   getDashboardNodeUsage: (start: string, end: string) =>
     request<DashboardNodeUsage>('/api/v1/dashboard/node-usage', { query: { start, end } }),
-  getStatistics: () => request<StatisticsSnapshot>('/api/v1/statistics'),
-  getStatisticsNodes: () => request<StatisticsNodesSnapshot>('/api/v1/statistics/nodes'),
+  getStatistics: (signal?: AbortSignal) => request<StatisticsSnapshot>('/api/v1/admin/statistics', { cache: 'no-store', signal }),
+  getStatisticsNodes: (signal?: AbortSignal) => request<StatisticsNodesSnapshot>('/api/v1/admin/statistics/nodes', { cache: 'no-store', signal }),
   getCatalog: () => request<Catalog>('/api/v1/catalog'),
   createPurchase: (comboId: string, squadProductIds: string[], couponGrantId: string | undefined, idempotencyKey: string, squadActivationCodes: Record<string, string> = {}) => request<Purchase>('/api/v1/purchases', {
     method: 'POST',

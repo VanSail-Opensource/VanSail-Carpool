@@ -16,14 +16,19 @@ export function useXNodeWorkspace() {
   const busy = shallowRef(false)
   let active = true
   const latest = createLatestRequest()
+  const metricLatest = createLatestRequest()
+  let controller: InstanceType<typeof globalThis.AbortController> | undefined
+  let metricController: InstanceType<typeof globalThis.AbortController> | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   async function load(): Promise<void> {
+    controller?.abort(); metricController?.abort(); metricLatest.invalidate()
+    controller = new globalThis.AbortController()
     const ticket = latest.begin()
     loading.value = true
     error.value = null
     try {
       const [nodeList, configList, snippetList, groupList, endpointList, current] = await Promise.all([
-        xnodeApi.nodes(), xnodeApi.configurations(), xnodeApi.snippets(), xnodeApi.groups(), xnodeApi.endpoints(), xnodeApi.metrics(),
+        xnodeApi.nodes(controller.signal), xnodeApi.configurations(controller.signal), xnodeApi.snippets(controller.signal), xnodeApi.groups(controller.signal), xnodeApi.endpoints(controller.signal), xnodeApi.metrics(controller.signal),
       ])
       if (!active || !latest.isCurrent(ticket)) return
       nodes.value = nodeList.items; configurations.value = configList.items; snippets.value = snippetList.items
@@ -32,7 +37,7 @@ export function useXNodeWorkspace() {
     finally { if (active && latest.isCurrent(ticket)) loading.value = false }
   }
   async function perform(action: () => Promise<unknown>): Promise<boolean> {
-    if (busy.value) return false
+    if (busy.value || loading.value || error.value || !active) return false
     busy.value = true; actionError.value = null
     try { await action(); await load(); return true }
     catch (caught) { actionError.value = localizedError(caught, 'xnode.saveFailed'); return false }
@@ -42,9 +47,11 @@ export function useXNodeWorkspace() {
     void load()
     timer = setInterval(() => {
       if (document.visibilityState !== 'visible' || loading.value || busy.value) return
-      void xnodeApi.metrics().then(value => { if (active) metrics.value = value }).catch(() => { if (metrics.value) metrics.value = { ...metrics.value, nodes: metrics.value.nodes.map(node => ({ ...node, stale: true })) } })
+      metricController?.abort(); metricController = new globalThis.AbortController()
+      const ticket = metricLatest.begin()
+      void xnodeApi.metrics(metricController.signal).then(value => { if (active && metricLatest.isCurrent(ticket)) metrics.value = value }).catch(() => { if (active && metricLatest.isCurrent(ticket) && metrics.value) metrics.value = { ...metrics.value, nodes: metrics.value.nodes.map(node => ({ ...node, stale: true })) } })
     }, 5000)
   })
-  onScopeDispose(() => { active = false; latest.dispose(); if (timer) clearInterval(timer) })
+  onScopeDispose(() => { active = false; controller?.abort(); metricController?.abort(); latest.dispose(); metricLatest.dispose(); metrics.value = null; if (timer) clearInterval(timer) })
   return { nodes, configurations, snippets, groups, endpoints, metrics, loading, error, actionError, busy, load, perform }
 }

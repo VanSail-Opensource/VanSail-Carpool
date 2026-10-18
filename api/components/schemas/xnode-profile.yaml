@@ -1,0 +1,42 @@
+XNodeProfileNode:
+  type: object
+  additionalProperties: false
+  required: [nodeId, name, countryCode, available, currentUse, connections, uploadBytesPerSecond, downloadBytesPerSecond, uploadBytes, downloadBytes, weightedBytes]
+  properties:
+    nodeId: { type: string }
+    name: { type: string }
+    countryCode: { type: string }
+    available: { type: boolean }
+    currentUse: { type: boolean }
+    connections: { type: string, pattern: '^[0-9]+$' }
+    uploadBytesPerSecond: { type: number, minimum: 0 }
+    downloadBytesPerSecond: { type: number, minimum: 0 }
+    uploadBytes: { type: string, pattern: '^[0-9]+$', description: Seven-day exact native upload bytes. }
+    downloadBytes: { type: string, pattern: '^[0-9]+$' }
+    weightedBytes: { type: string, pattern: '^[0-9]+$' }
+XNodeProfileUsage:
+  type: object
+  additionalProperties: false
+  required: [date, uploadBytes, downloadBytes, weightedBytes, legacyBytes]
+  properties:
+    date: { type: string, format: date }
+    uploadBytes: { type: string, pattern: '^[0-9]+$' }
+    downloadBytes: { type: string, pattern: '^[0-9]+$' }
+    weightedBytes: { type: string, pattern: '^[0-9]+$' }
+    legacyBytes: { type: string, pattern: '^[0-9]+$', description: Reconciled legacy total; its original directional split is unavailable. }
+XNodeProfileMetrics:
+  type: object
+  additionalProperties: false
+  required: [connections, uploadBytesPerSecond, downloadBytesPerSecond, incomplete, limited, reasons, fetchedAt, nodes, usage, usedTrafficBytes, lifetimeTrafficBytes]
+  properties:
+    connections: { type: integer, minimum: 0 }
+    uploadBytesPerSecond: { type: number, minimum: 0 }
+    downloadBytesPerSecond: { type: number, minimum: 0 }
+    incomplete: { type: boolean }
+    limited: { type: boolean }
+    reasons: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/reasons' }
+    fetchedAt: { type: string, format: date-time }
+    nodes: { type: array, items: { $ref: '#/XNodeProfileNode' } }
+    usage: { type: array, maxItems: 7, items: { $ref: '#/XNodeProfileUsage' } }
+    usedTrafficBytes: { type: string, pattern: '^[0-9]+$' }
+    lifetimeTrafficBytes: { type: string, pattern: '^[0-9]+$' }

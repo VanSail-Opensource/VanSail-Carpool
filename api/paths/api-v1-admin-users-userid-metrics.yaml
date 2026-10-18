@@ -1,0 +1,16 @@
+parameters:
+  - { name: userId, in: path, required: true, schema: { type: string } }
+get:
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  tags: [Admin]
+  operationId: getAdminUserNativeMetrics
+  summary: Read native per-node activity and seven-day exact accounting for one profile
+  responses:
+    '200':
+      description: Memory-only native activity plus existing native/reconciled legacy accounting
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/XNodeProfileMetrics' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }

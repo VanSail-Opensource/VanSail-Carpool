@@ -47,10 +47,25 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return err
 	}
 	user, err := w.repository.UserByID(ctx, record.UserID)
-	if err != nil || user.RemnaUserID == nil {
-		return w.fail(ctx, record.ID, "REMNAWAVE_IDENTITY_REQUIRED", now, err)
+	if err != nil {
+		return w.fail(ctx, record.ID, "CONNECTION_SCAN_FAILED", now, err)
 	}
-	providerJobID, requestErr := w.remote.RequestConnectionScan(ctx, *user.RemnaUserID)
+	var providerJobID string
+	var requestErr error
+	if record.RequestFingerprint == nativeScanFingerprint() {
+		native, ok := w.remote.(NativeRemote)
+		if !ok {
+			return w.fail(ctx, record.ID, "XNODE_UNAVAILABLE", now, nil)
+		}
+		providerJobID, requestErr = native.RequestNativeConnectionScan(ctx, user.ID)
+		if requestErr != nil {
+			return w.fail(ctx, record.ID, "XNODE_UNAVAILABLE", now, requestErr)
+		}
+	} else if user.RemnaUserID == nil {
+		return w.fail(ctx, record.ID, "REMNAWAVE_IDENTITY_REQUIRED", now, err)
+	} else {
+		providerJobID, requestErr = w.remote.RequestConnectionScan(ctx, *user.RemnaUserID)
+	}
 	if requestErr != nil {
 		return w.pendingReview(ctx, record, now)
 	}

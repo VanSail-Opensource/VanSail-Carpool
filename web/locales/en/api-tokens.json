@@ -34,6 +34,7 @@
     "createFailed": "Could not create the token. Check the settings and active token limit.",
     "revokeFailed": "Could not revoke the token. Please retry.",
     "states": { "active": "Active", "expired": "Expired", "revoked": "Revoked" },
+    "groups": { "admin": "Administration", "xnode": "Nodes", "migration": "Migration" },
     "scopes": {
       "admin:read": "Read all administration data",
       "admin:write": "Control all administration",

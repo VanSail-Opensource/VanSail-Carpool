@@ -50,7 +50,6 @@ export function desktopNavigationItems(t: Translate, isAdmin: boolean, showAroun
         { label: t('nav.questionnaire'), to: '/questionnaire', icon: 'i-ph-list-checks' },
         { label: t('community.title'), to: '/community', icon: 'i-ph-users-three' },
         { label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
-        { label: t('statistics.title'), to: '/statistics', icon: 'i-ph-chart-donut' },
         ] : []),
       ],
     })

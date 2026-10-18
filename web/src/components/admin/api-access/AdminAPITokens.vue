@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { PanelAPIToken } from '@/api/adminAPITokens'
+import type { PanelAPITokenWrite } from '@/api/adminAPITokens'
 import { getLocale, useI18n } from '@/i18n'
 import AdminSectionState from '../AdminSectionState.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
@@ -11,6 +12,11 @@ import { useAdminAPITokens } from './useAdminAPITokens'
 
 const { t } = useI18n()
 const state = useAdminAPITokens()
+const creating = shallowRef(false)
+async function create(value: PanelAPITokenWrite): Promise<void> {
+  await state.create(value)
+  if (state.issued.value) creating.value = false
+}
 const dates = computed(() => new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' }))
 const columns = computed<TableColumn<PanelAPIToken>[]>(() => [
   { accessorKey: 'name', header: t('apiTokens.name') }, { id: 'scopes', header: t('apiTokens.permissions') },
@@ -25,7 +31,8 @@ const example = 'curl -H "Authorization: Bearer $API_TOKEN" "$PANEL_URL/api/v1/a
     <header class="admin-section-header flex items-start justify-between gap-3"><div><h2>{{ t('apiTokens.title') }}</h2><p class="text-muted">{{ t('apiTokens.description') }}</p></div><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="state.loading.value" :disabled="state.busy.value" @click="state.load" /></header>
     <InlineNotice v-if="state.error.value || state.loadError.value && state.items.value.length" tone="warning">{{ state.error.value ?? state.loadError.value }}</InlineNotice>
     <APITokenSecret v-if="state.issued.value" :key="state.issued.value.item.id" :issued="state.issued.value" @dismiss="state.dismiss" />
-    <APITokenForm :busy="state.busy.value" @create="state.create" />
+    <div><UButton icon="i-ph-plus" :label="t('apiTokens.create')" :disabled="state.busy.value" @click="state.error.value = null; creating = true" /></div>
+    <UModal v-model:open="creating" :title="t('apiTokens.create')" :description="t('apiTokens.permissionsHint')" :dismissible="!state.busy.value"><template #body><InlineNotice v-if="state.error.value" tone="warning">{{ state.error.value }}</InlineNotice><APITokenForm v-if="creating" :busy="state.busy.value" @create="create" /></template></UModal>
     <AdminSectionState :loading="state.loading.value" :error="state.items.value.length ? null : state.loadError.value" @retry="state.load">
       <div class="overflow-x-auto min-w-0">
         <UTable :data="state.items.value" :columns="columns">

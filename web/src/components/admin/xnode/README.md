@@ -50,3 +50,7 @@ Typed operational editing: `useXNodeGlobalSettings.ts` owns abortable, generatio
 `XNodeRoutingTemplates.vue` edits typed destination matcher presets with guarded
 loads, retained failed-save drafts and Go-validated expressions. These presets
 control member server routing; subscription client documents stay independent.
+
+`nodeFormOptions.test.ts` verifies explicit zero/max multipliers, six-decimal precision, and rejected omitted/null or over-precise input. `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables.
+
+`useXNodeWorkspace.test.ts` verifies cancellation and late-response rejection, plus write blocking after failed reads. Workspace refreshes cancel earlier reads and metric polls; disposed observations are cleared.

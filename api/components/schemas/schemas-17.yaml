@@ -42,6 +42,7 @@ ConnectionNode:
   additionalProperties: false
   required: [uuid, name, countryCode, ips]
   properties:
+    unavailable: { type: boolean, description: 'Native node is rolled back, disconnected, stale, or failed its queued scan.' }
     uuid: { type: string, format: uuid }
     name: { type: string }
     countryCode: { type: string, pattern: '^[A-Z]{2}$' }

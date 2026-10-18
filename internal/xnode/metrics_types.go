@@ -8,6 +8,7 @@ import (
 )
 
 type NodeMetrics struct {
+	Available              bool                `json:"available"`
 	Firewall               *wire.FirewallState `json:"firewall,omitempty"`
 	NodeID                 string              `json:"nodeId"`
 	Connected              bool                `json:"connected"`

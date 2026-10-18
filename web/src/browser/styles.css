@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @import "./landing.css";
+@import "../styles/statistics-01.css";
+@import "../styles/statistics-02.css";
 @import "../components/admin/workspace.css";
 
 @theme {

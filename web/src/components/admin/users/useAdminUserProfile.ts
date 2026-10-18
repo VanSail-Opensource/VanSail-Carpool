@@ -1,6 +1,6 @@
 import { restoreCatalogOptions } from '@/api/cache/catalogOptions'
 import { restoreRef } from '@/api/cache/restore'
-import { computed, shallowReadonly, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { computed, onScopeDispose, shallowReadonly, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
 import { adminOperationsApi, type AdminCatalogOptions, type AdminUserDetail } from '@/api/adminOperations'
 import { ApiError } from '@/api/http'
@@ -18,21 +18,27 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   const optionsError = shallowRef<string | null>(null)
   const conflict = shallowRef(false)
   const keys = new Map<string, string>()
+  let active = true
+  let generation = 0
+  let identityVersion = 0
+  let controller: AbortController | undefined
 
   const error = computed(() => loadError.value ?? actionError.value)
 
   async function load(): Promise<void> {
+    controller?.abort(); controller = new AbortController()
+    const ticket = ++generation
     const expectedId = toValue(userId)
     detail.value = null
     loading.value = !restoreRef(`/api/v1/admin/users/${encodeURIComponent(expectedId)}`, detail)
     loadError.value = null
     try {
-      const result = await adminOperationsApi.getUser(expectedId)
-      if (toValue(userId) === expectedId) detail.value = result
+      const result = await adminOperationsApi.getUser(expectedId, controller.signal)
+      if (active && ticket === generation && toValue(userId) === expectedId) detail.value = result
     } catch (caught) {
-      loadError.value = localizedError(caught, 'adminUserProfile.loadFailed')
+      if (active && ticket === generation) { detail.value = null; loadError.value = localizedError(caught, 'adminUserProfile.loadFailed') }
     } finally {
-      if (toValue(userId) === expectedId) loading.value = false
+      if (active && ticket === generation && toValue(userId) === expectedId) loading.value = false
     }
   }
 
@@ -50,24 +56,29 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   }
 
   async function perform(action: string, task: (key: string) => Promise<unknown>): Promise<boolean> {
-    if (busyAction.value) return false
+    if (busyAction.value || loading.value || !detail.value || loadError.value) return false
+    const version = identityVersion
+    const target = toValue(userId)
+    const actionKey = `${target}:${action}`
     busyAction.value = action
     actionError.value = null
     conflict.value = false
-    const key = keys.get(action) ?? createUuid()
-    keys.set(action, key)
+    const key = keys.get(actionKey) ?? createUuid()
+    keys.set(actionKey, key)
     try {
       await task(key)
-      keys.delete(action)
+      if (!active || version !== identityVersion || target !== toValue(userId)) return false
+      keys.delete(actionKey)
       await load()
       return true
     } catch (caught) {
-      if (caught instanceof ApiError) keys.delete(action)
+      if (!active || version !== identityVersion) return false
+      if (caught instanceof ApiError) keys.delete(actionKey)
       conflict.value = caught instanceof ApiError && caught.status === 409
       actionError.value = localizedError(caught, conflict.value ? 'adminUserProfile.conflict' : 'adminUserProfile.actionFailed')
       return false
     } finally {
-      busyAction.value = null
+      if (active && version === identityVersion) busyAction.value = null
     }
   }
 
@@ -76,7 +87,8 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
     conflict.value = false
   }
 
-  watch(() => toValue(userId), () => void load(), { immediate: true })
+  watch(() => toValue(userId), () => { identityVersion++; busyAction.value = null; actionError.value = null; void load() }, { immediate: true })
+  onScopeDispose(() => { active = false; generation++; identityVersion++; controller?.abort(); detail.value = null })
 
   return {
     detail: shallowReadonly(detail), options: shallowReadonly(options), loading: shallowReadonly(loading),

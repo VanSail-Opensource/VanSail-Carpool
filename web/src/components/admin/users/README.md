@@ -32,3 +32,7 @@ by the existing typed APIs and composables.
 `AdminPaymentCreditDialog.vue` loads verified matching evidence for one payment with
 abort/generation guards. Selecting evidence invokes settlement; the no-evidence option
 uses the courtesy ledger. Failed evidence loads disable confirmation until retry.
+
+`AdminUserMetrics.vue` presents native availability, rates, exact accounting and seven-day charts/tables. `useAdminUserMetrics.ts` aborts superseded loads, guards identity generations, polls only while mounted and clears snapshots/buffers at logout. `AdminUserScan.vue` owns native-only durable scans with scoped responses and unavailable-node rows. `AdminUserBalanceAdjustment.vue` moves audited TXB adjustments into the selected profile.
+
+`useAdminUserMetrics.test.ts` verifies abort/generation isolation between profiles and retirement of pending responses/samples on logout.

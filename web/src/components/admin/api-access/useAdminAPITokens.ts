@@ -11,20 +11,22 @@ export function useAdminAPITokens() {
   const loadError = shallowRef<string | null>(null)
   let active = true
   let generation = 0
+  let controller: InstanceType<typeof globalThis.AbortController> | undefined
   let secretGeneration = 0
   const dismiss = () => { issued.value = null; secretGeneration++ }
   async function load(): Promise<void> {
+    controller?.abort(); controller = new globalThis.AbortController()
     const current = ++generation
     loading.value = true
     try {
-      const result = await adminAPITokensApi.list()
+      const result = await adminAPITokensApi.list(controller.signal)
       if (active && current === generation) { items.value = result.items; loadError.value = null }
     } catch (caught) { if (active && current === generation) loadError.value = localizedError(caught, 'apiTokens.loadFailed') }
     finally { if (active && current === generation) loading.value = false }
   }
   async function create(value: PanelAPITokenWrite): Promise<void> {
     if (busy.value) return
-    generation++; loading.value = false
+    controller?.abort(); generation++; loading.value = false
     busy.value = true; error.value = null; dismiss()
     const secretVersion = secretGeneration
     try {
@@ -49,7 +51,7 @@ export function useAdminAPITokens() {
     } catch (caught) { if (active) error.value = localizedError(caught, 'apiTokens.revokeFailed') }
     finally { if (active) busy.value = false }
   }
-  onMounted(() => { window.addEventListener('pagehide', dismiss); void load() })
-  onScopeDispose(() => { active = false; generation++; dismiss(); window.removeEventListener('pagehide', dismiss) })
+  onMounted(() => { window.addEventListener('pagehide', dismiss); window.addEventListener('txc:session-cleared', dismiss); void load() })
+  onScopeDispose(() => { active = false; controller?.abort(); generation++; dismiss(); window.removeEventListener('pagehide', dismiss); window.removeEventListener('txc:session-cleared', dismiss) })
   return { items, issued, loading, busy, error, loadError, load, create, revoke, dismiss }
 }

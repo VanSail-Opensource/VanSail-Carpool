@@ -20,12 +20,12 @@ describe('authenticated preload scheduling', () => {
 
   it('contains partial failures while Mini App admins preload only member data', async () => {
     request.mockImplementation(async (path: string) => {
-      if (path === '/api/v1/statistics') throw { status: 503 }
+      if (path === '/api/v1/activity') throw { status: 503 }
       return { items: [] }
     })
     preloadSession(session('admin'))
     await vi.runAllTimersAsync()
-    expect(request.mock.calls.some(([path]) => path === '/api/v1/statistics')).toBe(true)
+    expect(request.mock.calls.some(([path]) => path.includes('/statistics'))).toBe(false)
     expect(request.mock.calls.some(([path]) => path === '/api/v1/emby/account')).toBe(true)
     expect(request.mock.calls.some(([path]) => path === '/api/v1/onboarding/content')).toBe(true)
     expect(request.mock.calls.some(([path]) => path.includes('/admin/') || path.includes('/database/'))).toBe(false)

@@ -40,6 +40,11 @@ func (a proxyProvider) Traffic(ctx context.Context, from, to time.Time) (stats.T
 			return a.remnaAdapter.Traffic(ctx, from, to)
 		}
 	}
+	return a.nativeTraffic(ctx, from, to)
+}
+
+func (a proxyProvider) nativeTraffic(ctx context.Context, from, to time.Time) (stats.Traffic, error) {
+	result := stats.Traffic{Categories: []string{}, Series: []stats.TrafficSeries{}}
 	usage, err := a.store.XNodeFleetUsage(ctx, from, to)
 	if err != nil {
 		return result, err
@@ -100,6 +105,18 @@ func (a proxyProvider) Nodes(ctx context.Context) ([]stats.Node, error) {
 	out := []stats.Node{}
 	for _, node := range nodes {
 		current := live[node.ID]
+		owned, err := a.native.NativeOwner(ctx, node.ID)
+		if err != nil {
+			return nil, err
+		}
+		// Transport liveness is independent of ownership; source-owned nodes
+		// retain the original bridge availability and accounting boundary here.
+		if !owned {
+			current.Ready = false
+			current.UsersOnline = 0
+			current.UploadBytesPerSecond = 0
+			current.DownloadBytesPerSecond = 0
+		}
 		out = append(out, stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: node.Multiplier, Online: !current.Stale && current.Ready && node.Enabled, UsersOnline: current.UsersOnline, RXBytesPerSecond: roundedNonNegativeInt64(current.DownloadBytesPerSecond), TXBytesPerSecond: roundedNonNegativeInt64(current.UploadBytesPerSecond), XrayVersion: current.XrayVersion})
 	}
 	bridge, err := a.legacy(ctx)

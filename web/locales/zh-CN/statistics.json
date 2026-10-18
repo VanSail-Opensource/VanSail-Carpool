@@ -65,7 +65,7 @@
       "auto_renew": "自动续费",
       "neither": "仅活跃套餐"
     },
-    "remoteUpdatedAt": "Remnawave 数据更新时间",
+    "remoteUpdatedAt": "X-Node 数据更新时间",
     "databaseUpdatedAt": "数据库数据更新时间",
     "provider": {
       "builtin_usdt": "USDT ??",

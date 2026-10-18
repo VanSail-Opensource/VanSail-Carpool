@@ -1,6 +1,5 @@
 import { computed, shallowRef, type ComputedRef } from 'vue'
 
-import { selectionHaptic } from '@/utils/telegram'
 
 export interface StatisticsChartSelectable {
   interactionId: string
@@ -26,7 +25,6 @@ export function useStatisticsChartSelection<T extends StatisticsChartSelectable>
 
   function select(interactionId: string): void {
     selectedId.value = selectedId.value === interactionId ? undefined : interactionId
-    selectionHaptic()
   }
 
   function isActive(interactionId: string): boolean {

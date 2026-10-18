@@ -1,5 +1,6 @@
 {
   "nodeForms": {
+    "multiplierInvalid": "请输入 0 至 1000 的数值，最多保留六位小数。",
     "legacySchedule": "现有计划：{value}",
     "convertSchedule": "改用小时间隔",
     "refreshHours": "刷新间隔（小时）",

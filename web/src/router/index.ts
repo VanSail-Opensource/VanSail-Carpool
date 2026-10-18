@@ -28,7 +28,6 @@ const router = createRouter({
     { path: '/balance', redirect: { name: 'home', query: { topUp: '1' } } },
     { path: '/activity', name: 'activity', component: () => import('@/views/ActivityView.vue') },
     { path: '/games', redirect: '/activity' },
-    { path: '/statistics', name: 'statistics', component: () => import('@/views/StatisticsView.vue') },
     { path: '/affiliates', name: 'affiliates', component: () => import('@/views/AffiliatesView.vue') },
     { path: '/questionnaire', name: 'questionnaire', component: () => import('@/views/QuestionnaireView.vue') },
     { path: '/community', name: 'community', component: () => import('@/views/CommunityView.vue') },

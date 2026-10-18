@@ -65,7 +65,7 @@
       "auto_renew": "Auto renewal",
       "neither": "Active only"
     },
-    "remoteUpdatedAt": "Remnawave data update time",
+    "remoteUpdatedAt": "X-Node data update time",
     "databaseUpdatedAt": "Database data update time",
     "provider": {
       "builtin_usdt": "USDT",

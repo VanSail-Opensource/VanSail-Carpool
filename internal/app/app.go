@@ -180,7 +180,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerAdminOperationHandlers(operationDispatcher, store, remna); err != nil {
 		return cleanup(err)
 	}
-	statisticsService := productstats.NewService(store, remna)
+	statisticsService := productstats.NewService(store, nativeStatisticsProvider{proxyProvider: remna})
 	compensationService := compensation.NewService(store, remna)
 	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, rolloverWorker, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {

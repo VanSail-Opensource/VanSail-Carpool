@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { motion } from 'motion-v'
 
 import type { NormalizedDistribution, StatisticsSnapshot } from '@/api/types'
 import { motionDurations } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
-import { selectionHaptic } from '@/utils/telegram'
 import StatisticsChartDetail from './StatisticsChartDetail.vue'
 import { statisticsColors, formatStatisticNumber, formatStatisticPercent } from './statisticsFormat'
 import { useStatisticsChartSelection } from './useStatisticsChartSelection'
@@ -49,7 +48,6 @@ const allSegments = computed(() => barRows.value.flatMap((row) => row.segments))
 const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(allSegments)
 const { reducedMotion } = useMotionPreferences()
 
-watch(mode, () => selectionHaptic())
 </script>
 
 <template>

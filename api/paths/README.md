@@ -255,3 +255,5 @@ standalone-account subscription metadata and bearer URLs to administrators.
 `api-v1-xnode-routing.yaml` and `api-v1-xnode-routing-preview.yaml` expose scoped
 managed plans and shared-matcher traces. `api-v1-admin-xnode-routing-templates.yaml`
 provides browser-only admin preset inventory and optimistic writes.
+
+`api-v1-admin-users-userid-metrics.yaml` projects native per-profile activity and exact accounting. Statistics snapshots and node reads now belong only to `/api/v1/admin/statistics` and `/api/v1/admin/statistics/nodes`, using the existing statistics path shards.

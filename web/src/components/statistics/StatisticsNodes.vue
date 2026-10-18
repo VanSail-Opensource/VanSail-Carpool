@@ -7,13 +7,17 @@ import { motionSpring } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { formatBytes, formatDateTime } from '@/utils/format'
 import { formatStatisticNumber } from './statisticsFormat'
+import { useI18n } from '@/i18n'
 
-defineProps<{
+const props = defineProps<{
   snapshot: StatisticsNodesSnapshot | null
   loading: boolean
 }>()
 
 const { reducedMotion } = useMotionPreferences()
+const { t } = useI18n()
+const available = (node: StatisticsNodesSnapshot['nodes'][number]) => node.online && !props.snapshot?.stale
+const rate = (node: StatisticsNodesSnapshot['nodes'][number], value: string) => available(node) ? t('statistics.perSecond', { value: formatBytes(value) }) : t('common.notAvailable')
 </script>
 
 <template>
@@ -38,29 +42,29 @@ const { reducedMotion } = useMotionPreferences()
           <header>
             <CountryFlag :code="node.countryCode" />
             <UTooltip :text="node.name"><h3>{{ node.name }}</h3></UTooltip>
-            <UTooltip :text="$t(node.online ? 'statistics.online' : 'statistics.offline')">
+            <UTooltip :text="$t(available(node) ? 'statistics.online' : 'adminNative.unavailable')">
               <span
                 class="statistics-node__state"
-                :class="{ 'statistics-node__state--online': node.online }"
+                :class="{ 'statistics-node__state--online': available(node) }"
                 role="img"
-                :aria-label="$t(node.online ? 'statistics.online' : 'statistics.offline')"
+                :aria-label="$t(available(node) ? 'statistics.online' : 'adminNative.unavailable')"
               >
-                <UIcon :name="node.online ? 'i-ph-wifi-high' : 'i-ph-wifi-slash'" aria-hidden="true" />
+                <UIcon :name="available(node) ? 'i-ph-wifi-high' : 'i-ph-wifi-slash'" aria-hidden="true" />
               </span>
             </UTooltip>
           </header>
           <dl>
             <div>
               <dt><UTooltip :text="$t('statistics.usersOnline')"><span class="statistics-node__metric-icon" role="img" :aria-label="$t('statistics.usersOnline')"><UIcon name="i-ph-users" aria-hidden="true" /></span></UTooltip></dt>
-              <dd>{{ formatStatisticNumber(node.usersOnline) }}</dd>
+              <dd>{{ available(node) ? formatStatisticNumber(node.usersOnline) : $t('common.notAvailable') }}</dd>
             </div>
             <div>
               <dt><UTooltip :text="$t('statistics.downloadRate')"><span class="statistics-node__metric-icon" role="img" :aria-label="$t('statistics.downloadRate')"><UIcon name="i-ph-arrow-down" aria-hidden="true" /></span></UTooltip></dt>
-              <dd :title="$t('statistics.perSecond', { value: formatBytes(node.rxBytesPerSec) })">{{ $t('statistics.perSecond', { value: formatBytes(node.rxBytesPerSec) }) }}</dd>
+              <dd :title="rate(node, node.rxBytesPerSec)">{{ rate(node, node.rxBytesPerSec) }}</dd>
             </div>
             <div>
               <dt><UTooltip :text="$t('statistics.uploadRate')"><span class="statistics-node__metric-icon" role="img" :aria-label="$t('statistics.uploadRate')"><UIcon name="i-ph-arrow-up" aria-hidden="true" /></span></UTooltip></dt>
-              <dd :title="$t('statistics.perSecond', { value: formatBytes(node.txBytesPerSec) })">{{ $t('statistics.perSecond', { value: formatBytes(node.txBytesPerSec) }) }}</dd>
+              <dd :title="rate(node, node.txBytesPerSec)">{{ rate(node, node.txBytesPerSec) }}</dd>
             </div>
           </dl>
         </motion.article>

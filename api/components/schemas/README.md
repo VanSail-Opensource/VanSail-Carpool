@@ -67,3 +67,5 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 `xnode-routing.yaml` describes typed managed choices, matcher presets, scoped graph
 paths, destination previews and durable deployment phases without private secrets.
+
+`xnode-profile.yaml` defines native per-node availability, decimal-string counters and exact seven-day accounting with separately identified non-directional legacy bytes.

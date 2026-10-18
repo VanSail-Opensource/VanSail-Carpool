@@ -1,4 +1,5 @@
 get:
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
   tags: [Dashboard]
   operationId: getNodeStatistics
   summary: Get the shared on-demand ten-second node metrics cache

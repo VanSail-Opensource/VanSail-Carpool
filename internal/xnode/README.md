@@ -17,9 +17,10 @@ bidirectional firewall confirmation, command results and snapshot replacement.
 Command waiting never occupies the frame-send queue. Connection limits use fresh
 available node counts and block only new admission when the global threshold
 is reached. Missing nodes mark totals incomplete and do not force blocking.
-Node liveness uses fresh native telemetry independently of activity capabilities;
-older ready agents remain online while their unsampled counts stay excluded from
-admission decisions. `master_metrics_test.go` covers that rolling-upgrade boundary.
+Node liveness uses fresh native telemetry independently of activity capabilities
+and migration ownership; older ready agents and agents awaiting cutover remain
+online while their unsampled counts stay excluded from admission decisions.
+`master_metrics_test.go` covers that rolling-upgrade boundary.
 `compile_cache.go` reuses unchanged candidates for baseline resends and backs off
 failed compilation in memory, capped at one minute. Authoritative revisions,
 asset generations and access deadlines bypass obsolete failures immediately.
@@ -243,3 +244,7 @@ unknown server contexts. These regressions run in hosted CI.
 `compilation_errors.go` keeps private native validation details out of default errors/logs while allowing explicit validation diagnostics, including synthetic hosted fixtures.
 
 `routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Managed matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
+
+`profile_metrics.go` projects owner-scoped native node names, sampled activity, rates and availability without changing authenticated agent transport liveness. `profile_accounting.go` builds exactly seven UTC days from native counters plus reconciled source history, using arbitrary-precision aggregation and decimal strings. Historical source bytes retain their unavailable directional split.
+
+`profile_metrics_test.go` covers rolled-back/disconnected/stale activity, independent agent liveness and exact seven-day native/legacy accounting above browser integer precision.

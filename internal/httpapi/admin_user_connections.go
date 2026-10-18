@@ -13,7 +13,7 @@ func (s *Server) adminRequestUserConnections(w http.ResponseWriter, r *http.Requ
 		s.adminFailure(w, r, err)
 		return
 	}
-	scan, err := s.deps.Connections.Request(r.Context(), user, key)
+	scan, err := s.deps.Connections.RequestAdmin(r.Context(), user, key)
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return
@@ -23,7 +23,7 @@ func (s *Server) adminRequestUserConnections(w http.ResponseWriter, r *http.Requ
 
 // adminPollUserConnections scopes an ephemeral scan projection to its profile target.
 func (s *Server) adminPollUserConnections(w http.ResponseWriter, r *http.Request) {
-	scan, err := s.deps.Connections.Poll(r.Context(), chiURLParam(r, "userId"), chiURLParam(r, "scanId"))
+	scan, err := s.deps.Connections.PollAdmin(r.Context(), chiURLParam(r, "userId"), chiURLParam(r, "scanId"))
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return

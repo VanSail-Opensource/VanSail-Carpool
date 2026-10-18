@@ -5,6 +5,7 @@ import { localizedError, useI18n } from '@/i18n'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
 import XNodeCommands from './XNodeCommands.vue'
 import { createLatestRequest } from '@/utils/latestRequest'
+import { nodeMultiplierSchema } from './nodeFormOptions'
 
 const props = defineProps<{ nodes: XNode[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const { t } = useI18n()
@@ -20,6 +21,8 @@ const error = shallowRef<string | null>(null)
 const enrollment = shallowRef<XNodeEnrollment | null>(null)
 const commanding = shallowRef<XNode | null>(null)
 const draft = reactive<Partial<XNode>>({})
+const multiplierText = shallowRef('1')
+const multiplier = computed(() => nodeMultiplierSchema().safeParse(multiplierText.value))
 const settings = ref<XNodeSettings>({ ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } })
 const configurations = computed(() => props.configurations.map(value => ({ label: value.name, value: value.id })))
 const status = (id: string) => props.metrics?.nodes.find(value => value.nodeId === id)
@@ -38,6 +41,7 @@ async function edit(node?: XNode): Promise<void> {
   for (const key of Object.keys(draft)) delete draft[key as keyof XNode]
   settingsValid.value = true
   Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', multiplier: 1, configId: props.configurations[0]?.id ?? '' }, node ?? {})
+  multiplierText.value = String(draft.multiplier)
   settings.value = { ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } }
   enrollment.value = null; error.value = null; editing.value = true
   if (!node) return
@@ -47,7 +51,8 @@ async function edit(node?: XNode): Promise<void> {
   finally { if (latest.isCurrent(ticket)) loading.value = false }
 }
 async function save(): Promise<void> {
-  if (loading.value || !loaded.value || props.busy || !settingsValid.value) return
+  if (loading.value || !loaded.value || props.busy || !settingsValid.value || !multiplier.value.success) return
+  draft.multiplier = multiplier.value.data
   if (await props.perform(() => xnodeApi.saveNode(draft, settings.value))) editing.value = false
 }
 function retryLoad(): void { const node = props.nodes.find(item => item.id === draft.id); if (node) void edit(node) }
@@ -80,11 +85,11 @@ async function enroll(node: XNode): Promise<void> {
             <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>
             <UFormField :label="t('xnode.country')"><UInput v-model="draft.countryCode" maxlength="2" class="w-full" /></UFormField>
             <UFormField :label="t('xnode.provider')"><UInput v-model="draft.providerName" class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.multiplier')"><UInput v-model.number="draft.multiplier" type="number" min="0" max="1000" step="0.000001" required class="w-full" /></UFormField>
+            <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
             <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
           </div>
           <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" @valid="settingsValid = $event" />
-          <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || busy" :label="t('common.save')" /></div>
+          <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
         </form>
       </template>
     </UModal>

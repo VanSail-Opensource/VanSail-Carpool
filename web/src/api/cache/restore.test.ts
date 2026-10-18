@@ -9,10 +9,10 @@ afterEach(() => setCacheSession(null))
 
 describe('compatible rendering snapshots', () => {
   it('discards outdated nested statistics without invoking the loader callback', () => {
-    const key = responseCacheKey('/api/v1/statistics')!
+    const key = responseCacheKey('/api/v1/admin/statistics')!
     writeResponseCache(key, { database: null }, cacheGeneration())
     const apply = vi.fn()
-    expect(restoreCached('/api/v1/statistics', apply)).toBe(false)
+    expect(restoreCached('/api/v1/admin/statistics', apply)).toBe(false)
     expect(apply).not.toHaveBeenCalled()
     expect(readResponseCache(key)).toBeUndefined()
   })
