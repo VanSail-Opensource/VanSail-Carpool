@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,6 +19,7 @@ type cacheTestRepository struct {
 	revision int64
 	reads    int
 	node     Node
+	failure  error
 }
 
 func (r *cacheTestRepository) XNodeCompileVersion(context.Context, time.Time) (int64, time.Time, error) {
@@ -25,7 +27,7 @@ func (r *cacheTestRepository) XNodeCompileVersion(context.Context, time.Time) (i
 }
 func (r *cacheTestRepository) XNodeNode(context.Context, string) (Node, error) {
 	r.reads++
-	return r.node, nil
+	return r.node, r.failure
 }
 func (r *cacheTestRepository) XNodeMigration(context.Context) (MigrationState, error) {
 	return MigrationState{Nodes: []MigrationNode{{NodeID: "node", Phase: "legacy"}}}, nil
@@ -58,6 +60,9 @@ func TestCompileCacheInvalidatesEpochAndAccessBoundary(t *testing.T) {
 	if repo.reads != 1 {
 		t.Fatal("unchanged state recompiled", repo.reads)
 	}
+	if _, err = master.cachedConfiguration(ctx, peer, true); err != nil || repo.reads != 1 {
+		t.Fatal("baseline resend recompiled unchanged configuration", err, repo.reads)
+	}
 	repo.revision++
 	if _, err = master.cachedConfiguration(ctx, peer, false); err != nil {
 		t.Fatal(err)
@@ -71,6 +76,66 @@ func TestCompileCacheInvalidatesEpochAndAccessBoundary(t *testing.T) {
 	}
 	if repo.reads != 3 {
 		t.Fatal("expired access boundary reused")
+	}
+}
+
+func TestFailedCompileIsBoundedAndAuthoritativeChangesRetryImmediately(t *testing.T) {
+	repo := &cacheTestRepository{revision: 1, failure: errors.New("configuration unavailable")}
+	service := NewService(repo, cacheTestSettings{}, nil, nil, nil)
+	now := time.Now()
+	service.now = func() time.Time { return now }
+	master := NewMaster(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	peer := &agentPeer{nodeID: "node"}
+	for range 1000 {
+		if _, err := master.cachedConfiguration(context.Background(), peer, true); !errors.Is(err, repo.failure) {
+			t.Fatal("failed desired state was silently reused", err)
+		}
+	}
+	if repo.reads != 1 {
+		t.Fatal("invalid configuration was recompiled on every wake", repo.reads)
+	}
+	now = now.Add(time.Second)
+	_, _ = master.cachedConfiguration(context.Background(), peer, false)
+	if repo.reads != 2 {
+		t.Fatal("transient failure was never retried")
+	}
+	repo.revision++
+	_, _ = master.cachedConfiguration(context.Background(), peer, false)
+	if repo.reads != 3 {
+		t.Fatal("changed desired state was held behind old backoff")
+	}
+	service.localCompileRevision.Add(1)
+	_, _ = master.cachedConfiguration(context.Background(), peer, false)
+	if repo.reads != 4 {
+		t.Fatal("refreshed assets were held behind old backoff")
+	}
+}
+
+func TestRoutingMaintenanceFailureDoesNotSpinOnEveryWake(t *testing.T) {
+	repo := &cacheTestRepository{revision: 1}
+	service := NewService(repo, cacheTestSettings{}, nil, nil, nil)
+	now := time.Now()
+	service.now = func() time.Time { return now }
+	finish, err := service.routingReconcileNeeded(context.Background())
+	if err != nil || finish == nil {
+		t.Fatal("initial reconciliation was skipped", err)
+	}
+	finish(false)
+	for range 1000 {
+		next, err := service.routingReconcileNeeded(context.Background())
+		if err != nil || next != nil {
+			t.Fatal("failed reconciliation repeated without backoff", err)
+		}
+	}
+	now = now.Add(time.Second)
+	if next, err := service.routingReconcileNeeded(context.Background()); err != nil || next == nil {
+		t.Fatal("maintenance retry was lost", err)
+	} else {
+		next(false)
+	}
+	repo.revision++
+	if next, err := service.routingReconcileNeeded(context.Background()); err != nil || next == nil {
+		t.Fatal("authoritative edit did not bypass maintenance backoff", err)
 	}
 }
 

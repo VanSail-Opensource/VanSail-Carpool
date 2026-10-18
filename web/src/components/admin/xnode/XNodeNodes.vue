@@ -66,7 +66,7 @@ async function enroll(node: XNode): Promise<void> {
     <p v-if="!nodes.length" class="text-muted">{{ t('xnode.noNodes') }}</p>
     <div v-for="node in nodes" :key="node.id" class="xnode-row">
       <div><strong>{{ node.name }}</strong><div class="text-xs text-muted">{{ node.countryCode }} · {{ node.multiplier }}×</div></div>
-      <UBadge :color="status(node.id)?.connected && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(status(node.id)?.connected && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
+      <UBadge :color="status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
       <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :aria-label="t('xnode.enroll')" @click="enroll(node)" /></div>
     </div>
     <UModal v-model:open="editing" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }">

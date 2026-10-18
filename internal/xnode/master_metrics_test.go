@@ -1,11 +1,48 @@
 package xnode
 
 import (
+	"context"
+	"encoding/json"
+	"io"
+	"log/slog"
 	"testing"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
+
+type availabilityRepository struct{ Repository }
+
+func (availabilityRepository) XNodeNodes(context.Context) ([]Node, error) {
+	return []Node{{ID: "node", Enabled: true}}, nil
+}
+func (availabilityRepository) XNodeMigration(context.Context) (MigrationState, error) {
+	return MigrationState{}, nil
+}
+func (availabilityRepository) XNodeIdentities(context.Context) ([]Identity, error) {
+	return []Identity{}, nil
+}
+
+func TestReadyLegacyAgentRemainsOnlineWithoutActivityCapability(t *testing.T) {
+	service := NewService(availabilityRepository{}, cacheTestSettings{}, nil, nil, nil)
+	master := NewMaster(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	master.peers["node"] = &agentPeer{}
+	master.live["node"] = liveSnapshot{receivedAt: time.Now(), report: wire.TelemetryReport{
+		Ready: true, Synchronized: true, Machine: json.RawMessage(`{"cpu":{"usage":2}}`),
+		Users: wire.UserMetrics{Connections: map[int]int{1: 99}},
+	}}
+	metrics, err := master.Metrics(context.Background())
+	if err != nil || metrics.OnlineNodes != 1 || metrics.Nodes[0].Stale || metrics.ActiveConnections != 0 || len(metrics.Nodes[0].Machine) <= 2 {
+		t.Fatal("ready legacy agent was hidden or unsampled counts admitted", err, metrics)
+	}
+	live := master.live["node"]
+	live.receivedAt = time.Now().Add(-time.Minute)
+	master.live["node"] = live
+	metrics, err = master.Metrics(context.Background())
+	if err != nil || metrics.OnlineNodes != 0 || !metrics.Nodes[0].Stale {
+		t.Fatal("stale agent remained available", err)
+	}
+}
 
 func TestFreshSnapshotsExpireAndMissingCountsAreNotMerged(t *testing.T) {
 	now := time.Now()

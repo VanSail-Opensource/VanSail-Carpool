@@ -37,7 +37,7 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 	for _, node := range nodes {
 		snapshot := m.live[node.ID]
 		_, connected := m.peers[node.ID]
-		fresh := native[node.ID] && connected && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
+		fresh := native[node.ID] && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
 		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: append([]json.RawMessage{}, snapshot.logs...)}
 		item.Firewall = snapshot.firewall
 		if fresh {
@@ -52,8 +52,10 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 				item.Certificates = json.RawMessage(`{}`)
 			}
 		}
-		if fresh {
+		if fresh && snapshot.report.Ready {
 			result.OnlineNodes++
+		}
+		if fresh && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
 			for id, count := range snapshot.report.Users.Connections {
 				item.ActiveConnections += int64(count)
 				if count > 0 && paid[int64(id)] {

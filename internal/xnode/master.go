@@ -43,8 +43,9 @@ type agentPeer struct {
 	digest         string
 	pending        map[string]chan wire.Message
 	lastControls   map[int]bool
-	compiled       *compiledState // protected by syncMu
-	forceSync      bool           // protected by mu; coalesced by the existing reconciler
+	compiled       *compiledState  // protected by syncMu
+	compileFailure *compileFailure // protected by syncMu
+	forceSync      bool            // protected by mu; coalesced by the existing reconciler
 	pong           chan string
 	firewallSyncMu sync.Mutex
 	firewallJoined bool

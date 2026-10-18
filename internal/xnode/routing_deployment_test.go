@@ -147,7 +147,9 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	defer server.Close()
 	ids := []string{f.node.ID, other.ID}
 	slices.Sort(ids)
-	hold := ids[1]
+	// Only the source gains an outbound during applying. The destination is
+	// deliberately unchanged until enabling, so it needs no redundant frame.
+	hold := f.node.ID
 	release := make(chan struct{})
 	defer func() {
 		select {

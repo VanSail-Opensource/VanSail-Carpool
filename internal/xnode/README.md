@@ -17,6 +17,12 @@ bidirectional firewall confirmation, command results and snapshot replacement.
 Command waiting never occupies the frame-send queue. Connection limits use fresh
 available node counts and block only new admission when the global threshold
 is reached. Missing nodes mark totals incomplete and do not force blocking.
+Node liveness uses fresh native telemetry independently of activity capabilities;
+older ready agents remain online while their unsampled counts stay excluded from
+admission decisions. `master_metrics_test.go` covers that rolling-upgrade boundary.
+`compile_cache.go` reuses unchanged candidates for baseline resends and backs off
+failed compilation in memory, capped at one minute. Authoritative revisions,
+asset generations and access deadlines bypass obsolete failures immediately.
 
 `credentials.go` preserves imported secrets and creates independent random
 SS-2022 128/256-bit user keys. SQLite stores encrypted desired configuration and

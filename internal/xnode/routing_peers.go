@@ -18,6 +18,7 @@ type routingRuntime struct {
 	local        int64
 	checked      bool
 	next         time.Time
+	retryDelay   time.Duration
 }
 
 func (s *Service) resolveRoutingPeer(ctx context.Context, address string) (string, error) {
@@ -74,9 +75,6 @@ func (s *Service) routingReconcileNeeded(ctx context.Context) (func(bool), error
 		return nil, nil
 	}
 	return func(success bool) {
-		if !success {
-			return
-		}
 		next := s.routingRefreshAt()
 		peer := s.routingPeerRefreshAt()
 		if !peer.IsZero() && (next.IsZero() || peer.Before(next)) {
@@ -86,6 +84,18 @@ func (s *Service) routingReconcileNeeded(ctx context.Context) (func(bool), error
 			next = inputDeadline
 		}
 		r.mu.Lock()
+		if !success {
+			if r.revision != version || r.local != local {
+				r.retryDelay = 0
+			}
+			r.retryDelay = min(time.Minute, max(time.Second, r.retryDelay*2))
+			retry := s.now().Add(r.retryDelay)
+			if next.IsZero() || !next.After(s.now()) || retry.Before(next) {
+				next = retry
+			}
+		} else {
+			r.retryDelay = 0
+		}
 		r.checked, r.revision, r.local, r.next = true, version, local, next
 		r.mu.Unlock()
 	}, nil
