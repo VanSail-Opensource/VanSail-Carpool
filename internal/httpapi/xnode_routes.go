@@ -86,6 +86,9 @@ func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 	if errors.Is(err, xnode.ErrUnavailable) && !errors.As(err, &capability) {
 		cause := errors.Unwrap(err)
+		if errors.As(err, &policy) {
+			cause = errors.Unwrap(policy)
+		}
 		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", r.URL.Path, "error", err, "cause", cause)
 	}
 	s.writeError(w, r, status, code, "The node action could not be completed.")

@@ -105,6 +105,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `admin_payments.go` lists administrator payment and refund projections, applies refunds, and grants terminal-payment courtesy credits.
 - `admin_operations.go` manages backups, durable jobs, and audit-event listings.
 - `admin_errors.go` maps administrator domain and upstream failures to transport errors.
+- `xnode_routes.go` preserves safe GeoIP/network failure causes in request-correlated logs without exposing asset URLs.
 
 ## Operational and provider protocols
 
