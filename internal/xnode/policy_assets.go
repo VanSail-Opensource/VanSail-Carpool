@@ -27,6 +27,14 @@ func (s *Service) sourceGeoIP(ctx context.Context, config GlobalConfig, firewall
 	if err != nil {
 		return nil, err
 	}
+	assets, err := s.resolveGeoIPCached(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return &wire.SourceGeoIPPolicy{Generation: assets.generation, Prefixes: assets.prefixes, Listeners: listeners}, nil
+}
+
+func (s *Service) resolveGeoIPCached(ctx context.Context, config GlobalConfig) (geoIPAssets, error) {
 	assets := s.policyAssets
 	assets.mu.Lock()
 	defer assets.mu.Unlock()
@@ -57,7 +65,7 @@ func (s *Service) sourceGeoIP(ctx context.Context, config GlobalConfig, firewall
 		next := nextMasterGeodata(config, completed)
 		if err != nil {
 			if assets.key != key || assets.generation == "" {
-				return nil, err
+				return geoIPAssets{}, err
 			}
 			if !next.IsZero() {
 				retries := []time.Duration{time.Minute, 5 * time.Minute, 15 * time.Minute}
@@ -77,7 +85,12 @@ func (s *Service) sourceGeoIP(ctx context.Context, config GlobalConfig, firewall
 		}
 		assets.next, assets.completedAt = next, completed
 	}
-	return &wire.SourceGeoIPPolicy{Generation: assets.generation, Prefixes: assets.prefixes, Listeners: listeners}, nil
+	return geoIPAssets{generation: assets.generation, prefixes: assets.prefixes}, nil
+}
+
+type geoIPAssets struct {
+	generation string
+	prefixes   []string
 }
 
 func (s *Service) policyRefreshAt() time.Time {

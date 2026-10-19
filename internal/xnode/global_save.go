@@ -47,6 +47,13 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 		if target == "" {
 			continue
 		}
+		// Enabled GeoIP countries were just fetched, hashed, and parsed in
+		// validateGlobalPolicies. Repeating a separate Range probe here both
+		// wastes a request and can reject hosts that serve full downloads but
+		// do not support byte ranges.
+		if target == next.GeoIPURL && next.SourceGeoIP.Enabled {
+			continue
+		}
 		if err = s.validateAssetLink(ctx, target); err != nil {
 			return err
 		}
