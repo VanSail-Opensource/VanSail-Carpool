@@ -61,30 +61,42 @@ func (s *Service) executeNodeCommand(ctx context.Context, node string, operation
 func (s *Service) waitUpdate(ctx context.Context, node string, request CommandRequest, previous string) error {
 	tick := time.NewTicker(time.Second)
 	defer tick.Stop()
+	var release struct {
+		Current   string `json:"current"`
+		Available bool   `json:"available"`
+	}
+	checked := time.Time{}
 	for {
 		if s.master.Connected(node) {
-			// update.check consults the release endpoint, so allow the same
-			// network budget as the agent's documented update commands.
-			child, cancel := context.WithTimeout(ctx, commandDeadline("update.check")+5*time.Second)
-			raw, err := s.master.Command(child, node, "", "update.check", map[string]any{})
-			cancel()
-			if err == nil {
-				var release struct {
-					Current   string `json:"current"`
-					Available bool   `json:"available"`
+			// update.check consults the release endpoint. Cache the answer so a
+			// long restart does not exhaust the endpoint's rate limit, while the
+			// connected hello and telemetry stay the completion authority.
+			if release.Current == "" || time.Since(checked) >= 30*time.Second {
+				child, cancel := context.WithTimeout(ctx, commandDeadline("update.check")+5*time.Second)
+				raw, err := s.master.Command(child, node, "", "update.check", map[string]any{})
+				cancel()
+				checked = time.Now()
+				if err == nil {
+					var next struct {
+						Current   string `json:"current"`
+						Available bool   `json:"available"`
+					}
+					if json.Unmarshal(raw, &next) == nil {
+						release = next
+					}
 				}
-				if json.Unmarshal(raw, &release) == nil && release.Current != "" && s.master.updateReady(node, release.Current) {
-					if request.Name == "update.rollback" {
-						if previous != "" && release.Current != previous {
-							return nil
-						}
-					} else if request.Version != "" {
-						if release.Current == request.Version {
-							return nil
-						}
-					} else if !release.Available {
+			}
+			if release.Current != "" && s.master.updateReady(node, release.Current) {
+				if request.Name == "update.rollback" {
+					if previous != "" && release.Current != previous {
 						return nil
 					}
+				} else if request.Version != "" {
+					if release.Current == request.Version {
+						return nil
+					}
+				} else if !release.Available {
+					return nil
 				}
 			}
 		}
