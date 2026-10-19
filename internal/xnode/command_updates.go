@@ -63,7 +63,9 @@ func (s *Service) waitUpdate(ctx context.Context, node string, request CommandRe
 	defer tick.Stop()
 	for {
 		if s.master.Connected(node) {
-			child, cancel := context.WithTimeout(ctx, 5*time.Second)
+			// update.check consults the release endpoint, so allow the same
+			// network budget as the agent's documented update commands.
+			child, cancel := context.WithTimeout(ctx, commandDeadline("update.check")+5*time.Second)
 			raw, err := s.master.Command(child, node, "", "update.check", map[string]any{})
 			cancel()
 			if err == nil {
