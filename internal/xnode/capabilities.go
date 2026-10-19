@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"encoding/json"
+
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 

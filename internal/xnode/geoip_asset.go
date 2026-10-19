@@ -26,19 +26,13 @@ func (s *Service) resolveGeoIP(ctx context.Context, config GlobalConfig) ([]stri
 		if err != nil {
 			return result{}, ErrInvalid
 		}
-		client := http.Client{Transport: publicTransport(), Timeout: time.Minute, CheckRedirect: func(r *http.Request, via []*http.Request) error {
-			if len(via) > 3 || !validHTTPS(r.URL.String()) {
-				return ErrInvalid
-			}
-			return nil
-		}}
-		response, err := client.Do(request)
+		response, err := publicAssetClient(time.Minute).Do(request)
 		if err != nil {
-			return result{}, ErrUnavailable
+			return result{}, assetRequestFailure("GeoIP asset", err)
 		}
 		defer response.Body.Close()
 		if response.StatusCode != http.StatusOK {
-			return result{}, ErrUnavailable
+			return result{}, assetResponseFailure("GeoIP asset", response.StatusCode)
 		}
 		file, err := os.CreateTemp("", "xnode-master-geoip-*.dat")
 		if err != nil {

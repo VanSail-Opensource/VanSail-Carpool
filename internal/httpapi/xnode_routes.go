@@ -84,6 +84,10 @@ func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, xnode.ErrConflict):
 		status, code = http.StatusConflict, "XNODE_CONFLICT"
 	}
+	if errors.Is(err, xnode.ErrUnavailable) && !errors.As(err, &capability) {
+		cause := errors.Unwrap(err)
+		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", r.URL.Path, "error", err, "cause", cause)
+	}
 	s.writeError(w, r, status, code, "The node action could not be completed.")
 }
 func (s *Server) xnodeGlobal(w http.ResponseWriter, r *http.Request) {

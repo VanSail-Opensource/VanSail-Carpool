@@ -21,7 +21,7 @@ func (s *Service) preflightRouting(ctx context.Context, candidate, old RoutingPl
 			return err
 		}
 		if !containsCapability(hello.Capabilities, "transit_credentials_v1") {
-			return fmt.Errorf("%w: node %s requires transit_credentials_v1", ErrUnavailable, node)
+			return fmt.Errorf("node %s: %w", node, &CapabilityError{Capability: "transit_credentials_v1"})
 		}
 		config, err := service.Compile(ctx, node)
 		if err != nil {

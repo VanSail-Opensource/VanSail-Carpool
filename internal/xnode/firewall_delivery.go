@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/netip"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
-	"net/netip"
-	"time"
 )
 
 // HandleOutbox uses the existing durable dispatcher and per-node send queues.

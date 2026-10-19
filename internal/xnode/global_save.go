@@ -44,7 +44,7 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 		return err
 	}
 	for _, target := range []string{next.GeoIPURL, next.GeoSiteURL} {
-		if target == "" {
+		if !requiresAssetLinkProbe(target, next) {
 			continue
 		}
 		// Enabled GeoIP countries were just fetched, hashed, and parsed in
@@ -68,6 +68,11 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	s.localCompileRevision.Add(1)
 	return nil
 }
+
+func requiresAssetLinkProbe(target string, config GlobalConfig) bool {
+	return target != "" && !(config.SourceGeoIP.Enabled && target == config.GeoIPURL)
+}
+
 func (s *Service) validateAssetLink(ctx context.Context, target string) error {
 	return upstreamqueue.Execute(ctx, s.validationQueue, func(ctx context.Context) error {
 		request, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
@@ -75,19 +80,13 @@ func (s *Service) validateAssetLink(ctx context.Context, target string) error {
 			return ErrInvalid
 		}
 		request.Header.Set("Range", "bytes=0-4095")
-		client := &http.Client{Transport: publicTransport(), Timeout: 15 * time.Second, CheckRedirect: func(request *http.Request, via []*http.Request) error {
-			if len(via) > 3 || !validHTTPS(request.URL.String()) {
-				return ErrInvalid
-			}
-			return nil
-		}}
-		response, err := client.Do(request)
+		response, err := publicAssetClient(15 * time.Second).Do(request)
 		if err != nil {
-			return ErrUnavailable
+			return assetRequestFailure("asset link", err)
 		}
 		defer response.Body.Close()
 		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusPartialContent {
-			return ErrUnavailable
+			return assetResponseFailure("asset link", response.StatusCode)
 		}
 		data, err := io.ReadAll(io.LimitReader(response.Body, 4096))
 		if err != nil || len(data) == 0 {

@@ -76,6 +76,7 @@ func (s *Server) writePurchaseAddonError(w http.ResponseWriter, r *http.Request,
 	case errors.Is(err, database.ErrActivationCodeExtra):
 		s.writeError(w, r, http.StatusUnprocessableEntity, "SQUAD_ACTIVATION_EXTRA", "Activation codes may only be sent for selected squads.")
 	default:
+		s.deps.Logger.Error("add purchase squads", "request_id", middlewareRequestID(r), "user_id", currentUser(r).ID, "purchase_id", chi.URLParam(r, "id"), "error", err)
 		s.writeError(w, r, http.StatusConflict, "SQUAD_ADDITION_FAILED", "The squad addition could not be completed.")
 	}
 }

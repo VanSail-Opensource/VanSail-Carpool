@@ -2,11 +2,12 @@ package database
 
 import (
 	"context"
+	"net/netip"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"go4.org/netipx"
-	"net/netip"
-	"time"
 )
 
 // Pages read a version-bound immutable projection and close rows before any

@@ -50,6 +50,22 @@ func TestRolloverProjectionRejectsInactiveAndMissingIdentity(t *testing.T) {
 	}
 }
 
+func TestRolloverProjectionPreservesIncompleteUsageCause(t *testing.T) {
+	now := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	remoteID := "remote-1"
+	purchase := model.Purchase{ID: "purchase-1", UserID: "user-1", Status: "active", AutoRenewEnabled: true,
+		ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour)}
+	repository := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
+	remote := &rolloverRemote{catalogRemnawave: &catalogRemnawave{}, err: rollover.ErrPerNodeUsageUnavailable}
+	service := NewService(repository, remote, time.Minute)
+	service.now = func() time.Time { return now }
+
+	_, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", RemnaUserID: &remoteID}, purchase.ID)
+	if !errors.Is(err, ErrRolloverUnavailable) || !errors.Is(err, rollover.ErrPerNodeUsageUnavailable) {
+		t.Fatalf("incomplete usage error = %v", err)
+	}
+}
+
 func TestRolloverProjectionWarnsWithoutProviderUsageWhenAutoRenewalIsDisabled(t *testing.T) {
 	now := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
 	remoteID := "remote-1"

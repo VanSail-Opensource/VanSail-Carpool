@@ -23,19 +23,13 @@ func (s *Service) downloadRoutingGeoSite(ctx context.Context, config GlobalConfi
 		if err != nil {
 			return routingAssetResult{}, ErrInvalid
 		}
-		client := http.Client{Transport: publicTransport(), Timeout: time.Minute, CheckRedirect: func(r *http.Request, via []*http.Request) error {
-			if len(via) > 3 || !validHTTPS(r.URL.String()) {
-				return ErrInvalid
-			}
-			return nil
-		}}
-		response, err := client.Do(req)
+		response, err := publicAssetClient(time.Minute).Do(req)
 		if err != nil {
-			return routingAssetResult{}, ErrUnavailable
+			return routingAssetResult{}, assetRequestFailure("GeoSite asset", err)
 		}
 		defer response.Body.Close()
-		if response.StatusCode != 200 {
-			return routingAssetResult{}, ErrUnavailable
+		if response.StatusCode != http.StatusOK {
+			return routingAssetResult{}, assetResponseFailure("GeoSite asset", response.StatusCode)
 		}
 		file, err := os.CreateTemp("", "xnode-master-geosite-*.dat")
 		if err != nil {

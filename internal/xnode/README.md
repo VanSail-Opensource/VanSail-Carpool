@@ -42,6 +42,8 @@ credentials plus exact accounting; no live count, source-IP set, rate, log or
 connection-derived block decision enters persistence. `ports.go` keeps compact
 intervals. `public_transport.go` prevents private destinations and DNS rebinding
 when validating external asset links through the existing request queue.
+`asset_http.go` applies the same bounded HTTPS redirect policy to GeoIP and
+GeoSite downloads and keeps rejected redirects distinct from network failures.
 
 `service_access.go` stores explicitly imported standalone terms inside encrypted
 credentials, without creating Telegram principals or purchases. Existing quota
