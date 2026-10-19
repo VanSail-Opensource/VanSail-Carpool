@@ -110,6 +110,9 @@ The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-
 
 X-Node `policy-error=XNODE_DOMAIN_SELECTOR_INVALID|XNODE_GEOSITE_REQUIRED|XNODE_GEOSITE_UNAVAILABLE|XNODE_GEOIP_INVALID|XNODE_GEOIP_UNAVAILABLE`
 returns safe policy-save errors for localized diagnostics and draft retention.
+The metrics view uses `slow`, `empty`, `error`, `not-ready`, `unsynchronized`,
+`stale-metrics`, and `metrics-unavailable` to exercise loading, empty, failed,
+offline, degraded, stale, and limited-report badges with constructed node data.
 `node-file` starts certificate editing with paths and no Domain/email fields;
 `no-certificates` starts with no profiles. Both combine with node load/save errors.
 

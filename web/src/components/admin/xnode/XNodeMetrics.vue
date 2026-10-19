@@ -10,7 +10,15 @@ import { metricLabel } from './metricRows'
 
 const props = defineProps<{ metrics: XNodeMetrics | null; nodes?: XNode[] }>()
 const { t } = useI18n()
+type NodeMetric = XNodeMetrics['nodes'][number]
 const liveNodes = computed(() => props.metrics?.nodes ?? [])
+const nodeStatus = (node: NodeMetric) => {
+  if (node.stale) return { label: 'xnode.stale', color: 'neutral' as const }
+  if (!node.connected || !node.ready) return { label: 'xnode.offline', color: 'error' as const }
+  if (!node.synchronized) return { label: 'xnode.degraded', color: 'warning' as const }
+  if (!node.available) return { label: 'xnode.metricsUnavailable', color: 'neutral' as const }
+  return { label: 'xnode.online', color: 'success' as const }
+}
 const rate = (value?: number) => t('statistics.perSecond', { value: formatBytes(value ?? 0) })
 const fields = (value: unknown): [string, unknown][] => value && typeof value === 'object' ? Object.entries(value) : []
 const { series, append } = useMetricSamples()
@@ -34,7 +42,7 @@ watch(() => props.metrics, value => {
     <div v-if="metrics" class="metrics-summary"><div><small>{{ t('xnode.onlineNodes') }}</small><strong>{{ metrics.onlineNodes }} / {{ metrics.totalNodes }}</strong></div><div><small>{{ t('xnode.connections') }}</small><strong>{{ metrics.activeConnections }}</strong></div><div><small>{{ t('xnode.upload') }}</small><strong>{{ rate(metrics.uploadBytesPerSecond) }}</strong></div><div><small>{{ t('xnode.download') }}</small><strong>{{ rate(metrics.downloadBytesPerSecond) }}</strong></div></div>
     <p v-if="!liveNodes.length" class="text-muted">{{ t('xnode.noMetrics') }}</p>
     <details v-for="node in liveNodes" :key="node.nodeId" class="node-metrics">
-      <summary><span>{{ props.nodes?.find(item => item.id === node.nodeId)?.name ?? node.nodeId }}</span><UBadge :color="!node.available ? 'neutral' : 'success'" variant="subtle">{{ t(node.stale ? 'xnode.stale' : !node.connected || !node.ready ? 'xnode.offline' : 'xnode.online') }}</UBadge></summary>
+      <summary><span>{{ props.nodes?.find(item => item.id === node.nodeId)?.name ?? node.nodeId }}</span><UBadge :color="nodeStatus(node).color" variant="subtle">{{ t(nodeStatus(node).label) }}</UBadge></summary>
       <div class="metrics-meta"><span>{{ node.version }} · Xray {{ node.xrayVersion }}</span><span>{{ formatDate(node.reportedAt ?? undefined) }}</span><span v-if="node.available">{{ rate(node.uploadBytesPerSecond) }} ↑ · {{ rate(node.downloadBytesPerSecond) }} ↓</span></div>
       <div v-if="node.available" class="metrics-sections"><MetricLineChart :samples="series[`${node.nodeId}:cpu`] ?? []" :label="t('adminNative.cpu')" unit="percent" /><MetricLineChart :samples="series[`${node.nodeId}:memory`] ?? []" :label="t('adminNative.memory')" unit="percent" /></div>
       <div v-if="node.available" class="metrics-sections"><details v-for="[key, value] in fields(node.machine)" :key="key"><summary>{{ metricLabel(key) }}</summary><XNodeMetricDetails :value="value" :prefix="key" /></details><details><summary>{{ t('xnode.certificates') }}</summary><XNodeMetricDetails :value="node.certificates" /></details></div>

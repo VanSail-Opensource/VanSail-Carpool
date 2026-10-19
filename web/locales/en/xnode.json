@@ -25,6 +25,8 @@
     "online": "Online",
     "offline": "Offline",
     "stale": "Not current",
+    "degraded": "Degraded",
+    "metricsUnavailable": "Metrics unavailable",
     "enroll": "Agent enrollment",
     "enrollmentHint": "Use this master URL and token in the agent bootstrap. The token is shown once; generating another replaces it.",
     "masterUrl": "Master URL",

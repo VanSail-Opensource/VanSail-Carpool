@@ -3,6 +3,7 @@ package xnode
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -38,5 +39,18 @@ func TestWireProjectionIsImmutableAndCapabilityFailureCannotReuseSentState(t *te
 	capabilities = append(capabilities, "shared_domain_blocks_v1")
 	if next, err := preparePeerWire(peer, config, capabilities); err != nil || next.digest == first.digest {
 		t.Fatal("new capable peer failed to adopt changed state", err)
+	}
+}
+
+func TestLegacyCountryConfigurationBeyondFrameRequiresStreamingCapability(t *testing.T) {
+	large := `{"inbounds":[],"comment":"` + strings.Repeat("x", wire.MaxFrameBytes) + `"}`
+	config := wire.Config{
+		Xray:     json.RawMessage(large),
+		Firewall: wire.FirewallPolicy{Enabled: true, SourceGeoIP: &wire.SourceGeoIPPolicy{Generation: "country-v1", Prefixes: []string{"8.8.8.0/24"}}},
+	}
+	_, err := preparePeerWire(&agentPeer{compiled: &compiledState{}}, config, []string{"source_geoip_firewall_v1"})
+	var capability *CapabilityError
+	if !errors.As(err, &capability) || capability.Capability != "source_geoip_stream_v1" {
+		t.Fatalf("oversized inline country state error = %v", err)
 	}
 }

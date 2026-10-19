@@ -94,6 +94,13 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if err != nil {
 		return err
 	}
+	config, ready, err := m.prepareCountryForPeer(ctx, peer, config, hello.Capabilities)
+	if err != nil {
+		return err
+	}
+	if !ready {
+		return nil
+	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
 		return err

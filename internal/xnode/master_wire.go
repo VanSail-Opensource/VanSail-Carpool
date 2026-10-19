@@ -34,8 +34,16 @@ func preparePeerWire(peer *agentPeer, config wire.Config, capabilities []string)
 		p.config.Users[i].BlockNew = false
 	}
 	raw, err := json.Marshal(p.config)
-	if err != nil || len(raw) > wire.MaxFrameBytes-1024 {
+	if err != nil {
 		p.err = ErrInvalid
+		return p, p.err
+	}
+	if len(raw) > wire.MaxFrameBytes-1024 {
+		if policy := p.config.Firewall.SourceGeoIP; policy != nil && !policy.Reference {
+			p.err = &CapabilityError{Capability: "source_geoip_stream_v1"}
+		} else {
+			p.err = ErrInvalid
+		}
 		return p, p.err
 	}
 	hash := sha256.Sum256(raw)

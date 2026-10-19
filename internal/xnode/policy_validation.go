@@ -49,12 +49,16 @@ func (s *Service) validateGlobalPolicies(ctx context.Context, config GlobalConfi
 	}
 	if config.SourceGeoIP.Enabled {
 		if _, err := s.resolveGeoIPCached(ctx, config); err != nil {
-			code := "XNODE_GEOIP_UNAVAILABLE"
-			if errors.Is(err, ErrInvalid) {
-				code = "XNODE_GEOIP_INVALID"
-			}
-			return &PolicyError{code, err}
+			return geoIPPolicyFailure(err)
 		}
 	}
 	return nil
+}
+
+func geoIPPolicyFailure(err error) error {
+	code := "XNODE_GEOIP_UNAVAILABLE"
+	if errors.Is(err, ErrInvalid) {
+		code = "XNODE_GEOIP_INVALID"
+	}
+	return &PolicyError{code, err}
 }

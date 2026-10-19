@@ -30,7 +30,8 @@ asset generations and access deadlines bypass obsolete failures immediately.
 per immutable compiled candidate/peer. Only scalar admission controls are copied
 for a resend. It shares read-only documents/CIDRs/credential maps, and caches
 capability rejections without reusing an older successful state. Hosted
-`master_wire_test.go` covers the immutable and unsupported-policy boundaries.
+`master_wire_test.go` covers the immutable and unsupported-policy boundaries,
+including oversized inline GeoIP compatibility errors.
 `master_retry_test.go` covers command errors and obsolete failures without full
 resync, paced activation retries, and recovery through the original applied ACK.
 The send digest is published before writing the frame so an immediate failure
@@ -44,6 +45,7 @@ intervals. `public_transport.go` prevents private destinations and DNS rebinding
 when validating external asset links through the existing request queue.
 `asset_http.go` applies the same bounded HTTPS redirect policy to GeoIP and
 GeoSite downloads and keeps rejected redirects distinct from network failures.
+`asset_http_test.go` covers destination filtering and safe failure classes.
 
 `service_access.go` stores explicitly imported standalone terms inside encrypted
 credentials, without creating Telegram principals or purchases. Existing quota
@@ -166,7 +168,7 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 - `tag_ownership_test.go` covers ambiguous hyphen namespaces across active and expired members.
 
 - `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.
-- `capabilities.go` checks the exact capabilities required by compiled state, including native utility listeners with no paid users. `capabilities_test.go` covers that negotiation boundary.
+- `capabilities.go` checks the exact capabilities required by compiled state, including native utility listeners with no paid users. `capabilities_test.go` covers utility and streamed-country negotiation boundaries.
 - `binding_config.go` accepts group and subscription bindings only for managed proxy inbounds. Native utility listeners cannot become member endpoints.
 - `rollover_usage.go` selects purchase-owned accounting periods and combines native and imported source history. `rollover_usage_test.go` covers successor isolation, pending journals, exclusive date boundaries and overflow rejection.
 
@@ -189,11 +191,11 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 - `named_services.go`: Admin-managed standalone access terms; quota edits preserve exact usage and probe identities remain separate.
 - `named_services_test.go`: Hosted standalone quota, routing scope and disable regressions.
 
-Firewall control: `firewall_types.go` defines typed operational interfaces and public-IP validation. `firewall_service.go` gates capabilities, handles durable reports and quote-bound paid grants. `firewall_reconcile.go` preserves migration ownership, publishes successful source generations and rebuilds learned evidence only when its version changes. `firewall_delivery.go` defers existing outbox leases and sends dynamic deltas or bounded snapshots through the per-node queue. `firewall_source_delivery.go` streams independent source snapshots, retains warm-up positives and explicitly removes disabled feeds. Agent capability firewall_control_v1 is required; older agents receive protection disabled rather than autonomous banning. Source transfer slots are bounded separately, preserving capacity for immediate exemptions and traffic acknowledgments.
+Firewall control: `firewall_types.go` defines typed operational interfaces and public-IP validation. `firewall_service.go` gates capabilities, handles durable reports and quote-bound paid grants. Firewall event batches share the 256-event protocol limit; safe rejection codes distinguish malformed batches, storage failures and ACK failures. `firewall_events_test.go` covers the oversized-frame boundary and secret-safe codes. `firewall_reconcile.go` preserves migration ownership, publishes successful source generations and rebuilds learned evidence only when its version changes. `firewall_delivery.go` defers existing outbox leases and sends dynamic deltas or bounded snapshots through the per-node queue. `firewall_source_delivery.go` streams independent source snapshots, retains warm-up positives and explicitly removes disabled feeds. Agent capability firewall_control_v1 is required; older agents receive protection disabled rather than autonomous banning. Source transfer slots are bounded separately, preserving capacity for immediate exemptions and traffic acknowledgments.
 
 Task 2 pins protocol/native validation at signed X-Node v2.0.5, source commit `5352b67e882b`. Hosted Quality `39029889093` and signed release `39030494260` succeeded. The version-bound manifest and all amd64/arm64 agent/CLI hashes were independently verified with the production trust root.
 
-Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` caches parsed generations across global-save validation and compiler views, with completion deadlines and bounded retries, so one save does not download the same full asset repeatedly. `geoip_decode_test.go` and `native_policy_test.go` provide hosted precision, schedule, prefix-bound and activity-capability regressions.
+Master policy extensions: `native_policy_types.go` owns country, completion-schedule and per-user node-speed contracts. `geoip_asset.go` streams verified public GeoIP data through the existing validation queue and temporary files; `geoip_decode.go` decodes bounded country messages with the pinned Xray protobuf and compacts selected prefixes without expanding addresses. `policy_assets.go` caches parsed generations across global-save validation and compiler views, with completion deadlines and bounded retries, so one save does not download the same full asset repeatedly. `geoip_delivery.go` queues country preparation durably, streams 256-prefix chunks through the per-node command queue for `source_geoip_stream_v1`, then activates a generation reference; older agents keep inline data when it fits the frame limit. `routing_preflight.go` uses that same reference when validating member route changes. `geoip_delivery_test.go`, `geoip_decode_test.go` and `native_policy_test.go` cover chunk bounds, compatibility, asset precision and selector validation.
 
 `live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
 
@@ -284,7 +286,7 @@ unknown server contexts. These regressions run in hosted CI.
 
 Global saves validate shared selectors against native parsing and the configured geosite categories/attributes before publishing. Country decoding uses bounded field reads over the staged asset, including large unselected records. Policy failures expose safe localized codes rather than asset URLs.
 
-`firewall_admin.go` validates canonical IP/CIDR grants and dispatches local delivery observation. `geoip_delivery.go` queues country preparation through the existing durable outbox and wakes the state reconciler; resolved prefixes travel inline in the ordinary snapshot because the pinned signed agent contract has no separate streaming command. `geoip_stream.go` bounds protobuf country decoding without loading full records. `policy_validation.go` and `policy_validation_test.go` validate native shared selectors and geosite asset dependencies even without enrolled nodes. Bulk delivery and CIDR exemptions are capability-gated; dynamic enforcement has independent staging and reserved admission capacity.
+`firewall_admin.go` validates canonical IP/CIDR grants and dispatches local delivery observation. `geoip_delivery.go` queues country preparation through the existing durable outbox, uploads bounded chunks, and wakes the state reconciler to publish a generation reference for capable agents. Older agents retain inline data when it fits the frame limit. `geoip_stream.go` bounds protobuf country decoding without loading full records. `policy_validation.go` and `policy_validation_test.go` validate native shared selectors and preserve safe GeoIP failure codes through route preflight. Bulk delivery and CIDR exemptions are capability-gated; dynamic enforcement has independent staging and reserved admission capacity.
 
 `command_outcomes.go` bounds acceptance separately from protocol execution and reports undelivered, rejected, failed and uncertain results. `command_updates.go` reconciles durable upgrades after reconnect, requiring fresh readiness at the current configuration revision. `command_outcomes_test.go`, `command_socket_test.go` and `command_update_reconnect_test.go` cover typed results, concurrent accounting acknowledgments and lost upgrade replies.
 

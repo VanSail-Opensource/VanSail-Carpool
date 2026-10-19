@@ -25,6 +25,8 @@
     "online": "在线",
     "offline": "离线",
     "stale": "数据未更新",
+    "degraded": "状态异常",
+    "metricsUnavailable": "指标不可用",
     "enroll": "注册代理",
     "enrollmentHint": "在代理启动配置中使用此主控地址和令牌。令牌仅显示一次；重新生成会替换原令牌。",
     "masterUrl": "主控地址",

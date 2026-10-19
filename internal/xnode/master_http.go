@@ -141,7 +141,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err = m.receive(ctx, peer, message); err != nil {
-			m.logger.Warn("agent frame rejected", "node_id", node.ID, "type", message.Type, "error_code", "XNODE_FRAME_REJECTED")
+			m.logger.Warn("agent frame rejected", "node_id", node.ID, "type", message.Type, "error_code", safeFrameErrorCode(err))
 		}
 	}
 }

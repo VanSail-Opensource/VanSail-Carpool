@@ -17,7 +17,7 @@ with `XNodeDDNSSettings.vue` and `XNodeCertificateSettings.vue`.
 local JSON feedback and debounced pinned-core validation.
 JSON inputs reuse `JsonDocumentField.vue` in the common component module.
 `XNodeAccessGroups.vue` manages node/inbound access and subscription endpoints.
-`XNodeMetrics.vue` renders fleet and detailed collector snapshots.
+`XNodeMetrics.vue` renders fleet and detailed collector snapshots. Its badge distinguishes offline, stale, unsynchronized, metrics-unavailable and fully available states using the existing connection, readiness, synchronization and availability fields.
 
 Typed clients are in `api/xnode.ts`; all copy comes from `xnode.json` locales.
 Configuration and enrollment reads bypass response persistence. No component
@@ -51,7 +51,7 @@ Typed operational editing: `useXNodeGlobalSettings.ts` owns abortable, generatio
 loads, retained failed-save drafts and Go-validated expressions. These presets
 control member server routing; subscription client documents stay independent.
 
-`nodeFormOptions.test.ts` verifies explicit zero/max multipliers, six-decimal precision, and rejected omitted/null or over-precise input. `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables.
+`nodeFormOptions.test.ts` verifies explicit zero/max multipliers, six-decimal precision, and rejected omitted/null or over-precise input. `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables. Status labels are localized in `locales/en/xnode.json` and `locales/zh-CN/xnode.json`.
 
 `useXNodeWorkspace.test.ts` verifies cancellation and late-response rejection, plus write blocking after failed reads. Workspace refreshes cancel earlier reads and metric polls; disposed observations are cleared.
 

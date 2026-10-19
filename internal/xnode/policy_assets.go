@@ -29,7 +29,7 @@ func (s *Service) sourceGeoIP(ctx context.Context, config GlobalConfig, firewall
 	}
 	assets, err := s.resolveGeoIPCached(ctx, config)
 	if err != nil {
-		return nil, err
+		return nil, geoIPPolicyFailure(err)
 	}
 	return &wire.SourceGeoIPPolicy{Generation: assets.generation, Prefixes: assets.prefixes, Listeners: listeners}, nil
 }

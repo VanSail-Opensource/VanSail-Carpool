@@ -23,3 +23,22 @@ func TestSharedDomainValidationWithoutEnrolledNodes(t *testing.T) {
 		})
 	}
 }
+
+func TestGeoIPFailuresRetainSafePolicyCodesThroughRoutePreflight(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		err  error
+		code string
+	}{
+		{name: "download", err: ErrUnavailable, code: "XNODE_GEOIP_UNAVAILABLE"},
+		{name: "invalid asset", err: ErrInvalid, code: "XNODE_GEOIP_INVALID"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			err := geoIPPolicyFailure(test.err)
+			var policy *PolicyError
+			if !errors.As(err, &policy) || policy.Code != test.code {
+				t.Fatalf("GeoIP failure = %v", err)
+			}
+		})
+	}
+}

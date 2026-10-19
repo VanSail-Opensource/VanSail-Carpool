@@ -109,6 +109,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 ## Operational and provider protocols
 
 - `purchase_addons.go` serves owner-scoped active-term squad quote and idempotent commit routes with stable selection, stock, queued-term, balance, and activation errors.
+- `purchase_addons_test.go` covers accepted, rejected and replayed purchase-addon submissions.
 
 - `operations.go` serves liveness and readiness probes.
 - `operations_shared.go` contains bounded-context and request-ID helpers.

@@ -2,10 +2,33 @@ package xnode
 
 import (
 	"context"
+	"errors"
+	"strings"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
-	"strings"
 )
+
+type firewallEventFrameError struct {
+	code  string
+	cause error
+}
+
+func (e firewallEventFrameError) Error() string          { return e.code }
+func (e firewallEventFrameError) Unwrap() error          { return e.cause }
+func (e firewallEventFrameError) frameErrorCode() string { return e.code }
+
+func firewallEventFailure(code string, cause error) error {
+	return firewallEventFrameError{code: code, cause: cause}
+}
+
+func safeFrameErrorCode(err error) string {
+	var coded interface{ frameErrorCode() string }
+	if errors.As(err, &coded) {
+		return coded.frameErrorCode()
+	}
+	return "XNODE_FRAME_REJECTED"
+}
 
 func hasFirewallCapability(capabilities []string) bool {
 	for _, c := range capabilities {
@@ -78,11 +101,14 @@ func (m *Master) NotifyFirewallSources() {
 }
 func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, message wire.Message) error {
 	if !hasFirewallCapability(m.Capabilities(peer.nodeID)) {
-		return ErrInvalid
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_CAPABILITY_INVALID", ErrInvalid)
 	}
 	var report wire.FirewallEvents
-	if err := wire.Decode(message.Data, &report); err != nil || len(report.Events) > 256 {
-		return ErrInvalid
+	if err := wire.Decode(message.Data, &report); err != nil {
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_FRAME_INVALID", err)
+	}
+	if len(report.Events) > wire.MaxFirewallEventsPerFrame {
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_FRAME_OVERSIZED", ErrInvalid)
 	}
 	if report.State != nil {
 		copy := *report.State
@@ -97,19 +123,22 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	}
 	_, settings, err := m.service.Node(ctx, peer.nodeID)
 	if err != nil {
-		return err
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_SETTINGS_FAILED", err)
 	}
 	repo, ok := m.service.repo.(firewallRepository)
 	if !ok {
-		return ErrUnavailable
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", ErrUnavailable)
 	}
 	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now()); err != nil {
-		return err
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", err)
 	}
 	ids := make([]string, len(report.Events))
 	for i, e := range report.Events {
 		ids[i] = e.ID
 	}
 	m.NotifyFirewallSources()
-	return peer.send(ctx, wire.New("firewall.events.ack", "", 0, wire.FirewallEventAck{IDs: ids}))
+	if err = peer.send(ctx, wire.New("firewall.events.ack", "", 0, wire.FirewallEventAck{IDs: ids})); err != nil {
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_ACK_FAILED", err)
+	}
+	return nil
 }

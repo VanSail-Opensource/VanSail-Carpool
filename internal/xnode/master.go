@@ -31,30 +31,35 @@ type Master struct {
 	firewallInventoryVersion uint64
 }
 type agentPeer struct {
-	nodeID           string
-	agentID          string
-	bootID           string
-	socket           *websocket.Conn
-	queue            *upstreamqueue.Queue
-	ctx              context.Context
-	cancel           context.CancelFunc
-	mu               sync.Mutex
-	syncMu           sync.Mutex
-	revision         uint64
-	digest           string
-	pending          map[string]chan wire.Message
-	lastControls     map[int]bool
-	compiled         *compiledState  // protected by syncMu
-	compileFailure   *compileFailure // protected by syncMu
-	wireState        *preparedWire   // protected by syncMu
-	forceSync        bool            // protected by mu; coalesced by the existing reconciler
-	failedDigest     string          // protected by mu
-	retryAt          time.Time       // protected by mu
-	retryDelay       time.Duration   // protected by mu
-	pong             chan string
-	firewallSyncMu   sync.Mutex
-	firewallSourceMu sync.Mutex
-	firewallJoined   bool
+	nodeID                string
+	agentID               string
+	bootID                string
+	socket                *websocket.Conn
+	queue                 *upstreamqueue.Queue
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	mu                    sync.Mutex
+	syncMu                sync.Mutex
+	revision              uint64
+	digest                string
+	pending               map[string]chan wire.Message
+	lastControls          map[int]bool
+	compiled              *compiledState  // protected by syncMu
+	compileFailure        *compileFailure // protected by syncMu
+	wireState             *preparedWire   // protected by syncMu
+	forceSync             bool            // protected by mu; coalesced by the existing reconciler
+	failedDigest          string          // protected by mu
+	retryAt               time.Time       // protected by mu
+	retryDelay            time.Duration   // protected by mu
+	pong                  chan string
+	firewallSyncMu        sync.Mutex
+	firewallSourceMu      sync.Mutex
+	firewallJoined        bool
+	geoIPTransferMu       sync.Mutex
+	geoIPStateMu          sync.Mutex
+	geoIPGeneration       string    // protected by geoIPStateMu; staged country generation on this peer
+	geoIPQueuedGeneration string    // protected by geoIPStateMu
+	geoIPQueuedAt         time.Time // protected by geoIPStateMu; throttles duplicate outbox intents
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {
