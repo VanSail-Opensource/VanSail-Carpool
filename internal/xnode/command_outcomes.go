@@ -33,9 +33,9 @@ func commandDeadline(name string) time.Duration {
 	switch name {
 	case "update.install", "update.rollback":
 		return 15 * time.Minute
-	case "runtime.reload", "geodata.refresh", "config.validate", "firewall.bans.sync", "firewall.apply":
+	case "runtime.reload", "geodata.refresh", "config.validate", "firewall.bans.sync", "firewall.apply", "update.check":
 		return 2 * time.Minute
-	case "firewall.bans.get", "firewall.bans.update", "firewall.confirm", "update.status":
+	case "firewall.bans.get", "firewall.bans.update", "firewall.confirm":
 		return time.Minute
 	default:
 		return 30 * time.Second

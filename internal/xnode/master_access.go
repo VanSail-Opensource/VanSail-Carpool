@@ -20,6 +20,13 @@ func (m *Master) Connected(id string) bool {
 	defer m.mu.RUnlock()
 	return m.peers[id] != nil
 }
+
+// Version returns the release reported by the connected agent handshake.
+func (m *Master) Version(id string) string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.live[id].hello.Version
+}
 func (m *Master) Sync(ctx context.Context, id string) error {
 	m.mu.RLock()
 	peer := m.peers[id]

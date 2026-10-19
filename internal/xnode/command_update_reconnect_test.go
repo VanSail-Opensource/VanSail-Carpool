@@ -23,7 +23,7 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	socket := agentSocket(t, server, token, fixtureAgent, 0, "update_transaction_v1")
+	socket := agentSocket(t, server, token, fixtureAgent, 0)
 	if err := socket.WriteJSON(wire.New("state.request", "", 0, map[string]any{})); err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = socket.Close()
-	reconnected := agentSocket(t, server, token, fixtureAgent, baseline.Revision, "update_transaction_v1")
+	reconnected := agentSocket(t, server, token, fixtureAgent, baseline.Revision)
 	_ = reconnected.SetReadDeadline(time.Now().Add(30 * time.Second))
 	if err := reconnected.WriteJSON(wire.New("state.request", "", 0, map[string]any{})); err != nil {
 		t.Fatal(err)
@@ -99,10 +99,10 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	var request struct {
 		Name string `json:"name"`
 	}
-	if json.Unmarshal(status.Data, &request) != nil || request.Name != "update.status" {
+	if json.Unmarshal(status.Data, &request) != nil || request.Name != "update.check" {
 		t.Fatal("update was repeated instead of reconciled", status)
 	}
-	if err := reconnected.WriteJSON(wire.New("command.result", status.ID, 0, map[string]any{"id": status.ID, "command": "update.status", "status": "completed", "finished": time.Now().UTC(), "data": map[string]string{"id": receipt.ID, "status": "confirmed", "version": "fixture", "previous": "old"}})); err != nil {
+	if err := reconnected.WriteJSON(wire.New("command.result", status.ID, 0, map[string]any{"id": status.ID, "command": "update.check", "status": "completed", "finished": time.Now().UTC(), "data": map[string]any{"version": "fixture", "current": "fixture", "available": false}})); err != nil {
 		t.Fatal(err)
 	}
 	for {
