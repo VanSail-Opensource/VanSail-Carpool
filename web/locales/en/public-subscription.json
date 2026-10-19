@@ -1,5 +1,10 @@
 {
   "publicSubscription": {
+    "diagnostics": {
+      "renderFailed": "{format}: rendering failed. Ask an administrator to check the template and endpoint settings.",
+      "noEndpoints": "{format}: no compatible endpoints are available.",
+      "excluded": "{format}: {count} incompatible or excluded endpoints were omitted."
+    },
     "title": "Subscription",
     "unavailable": "This subscription link is unavailable.",
     "unavailableHint": "The link may have expired or been replaced. Get your current link from the Mini App.",

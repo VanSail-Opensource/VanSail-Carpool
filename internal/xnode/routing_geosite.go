@@ -14,7 +14,11 @@ func readRoutingGeoSite(ctx context.Context, input io.Reader, selectors []string
 	result := map[string][]string{}
 	wanted := map[string]string{}
 	for _, s := range selectors {
-		code, _, _ := strings.Cut(strings.TrimPrefix(s, "geosite:"), "@")
+		body, ok := strings.CutPrefix(s, "geosite:")
+		code, _, _ := strings.Cut(body, "@")
+		if !ok || code == "" || strings.HasSuffix(body, "@") || strings.Contains(body, "@@") {
+			return nil, ErrInvalid
+		}
 		wanted[s] = strings.ToUpper(code)
 	}
 	r := bufio.NewReader(input)
@@ -45,7 +49,7 @@ func readRoutingGeoSite(ctx context.Context, input io.Reader, selectors []string
 		}
 		selected := []string{}
 		for s, c := range wanted {
-			if strings.EqualFold(c, code) {
+			if c == code {
 				selected = append(selected, s)
 				if result[s] == nil {
 					result[s] = []string{}
@@ -106,6 +110,9 @@ func readRoutingGeoSite(ctx context.Context, input io.Reader, selectors []string
 		if len(result[s]) == 0 {
 			return nil, ErrInvalid
 		}
+		if err := validateExpandedDomains(result[s]); err != nil {
+			return nil, err
+		}
 	}
 	return result, nil
 }
@@ -136,7 +143,7 @@ func routingGeoDomain(raw []byte) (kind uint64, domain string, attrs map[string]
 					if k != protowire.BytesType || len(v) > 128 {
 						return ErrInvalid
 					}
-					attrs[strings.ToLower(string(v))] = true
+					attrs[string(v)] = true
 				}
 				return nil
 			})

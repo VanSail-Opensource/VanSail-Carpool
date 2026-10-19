@@ -44,6 +44,12 @@ func TestPinnedNativeUSDCAndModeIsolation(t *testing.T) {
 	ctx := context.Background()
 	for _, mode := range []string{"usdt", "both", "usdc"} {
 		c.Mode = mode
+		for i := range c.Networks {
+			c.Networks[i].Currencies = nil
+		}
+		if err := ValidateConfig(&c); err != nil {
+			t.Fatal(err)
+		}
 		if _, err := svc.SaveConfig(ctx, "admin", PublicConfig(c)); err != nil {
 			t.Fatal(err)
 		}

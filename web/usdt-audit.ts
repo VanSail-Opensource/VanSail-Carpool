@@ -7,6 +7,7 @@ import CryptoPaymentInstructions from './src/components/billing/CryptoPaymentIns
 import StatisticsPaymentDonut from './src/components/statistics/StatisticsPaymentDonut.vue'
 import { t } from './src/i18n'
 import './src/styles/main.css'
+import './src/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
 const mode = params.get('state') ?? 'populated'

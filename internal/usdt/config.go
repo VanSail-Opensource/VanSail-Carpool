@@ -78,6 +78,9 @@ func ValidateConfig(c *Config) error {
 			return ErrConfiguration
 		}
 		seen[n.Network] = true
+		if err := normalizeCurrencies(n, c.Mode); err != nil {
+			return err
+		}
 		addresses := map[string]bool{}
 		for j, raw := range n.Addresses {
 			address, err := NormalizeAddress(spec, raw)

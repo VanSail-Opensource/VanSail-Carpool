@@ -34,17 +34,17 @@ func validateNativeGlobal(config GlobalConfig) error {
 		}
 	}
 	if len(config.SourceGeoIP.Selectors) > 249 || config.SourceGeoIP.Enabled && (config.GeoIPURL == "" || len(config.SourceGeoIP.Selectors) == 0) {
-		return ErrInvalid
+		return &PolicyError{"XNODE_GEOIP_INVALID", ErrInvalid}
 	}
 	seen := map[string]bool{}
 	for _, selector := range config.SourceGeoIP.Selectors {
 		if !countrySelector.MatchString(selector) || seen[selector] {
-			return ErrInvalid
+			return &PolicyError{"XNODE_GEOIP_INVALID", ErrInvalid}
 		}
 		seen[selector] = true
 	}
 	if (wire.Config{Xray: json.RawMessage(`{"inbounds":[]}`), Users: []wire.User{}, BlockedDomains: config.BlockedDomains}).Validate() != nil {
-		return ErrInvalid
+		return &PolicyError{"XNODE_DOMAIN_SELECTOR_INVALID", ErrInvalid}
 	}
 	return nil
 }

@@ -36,8 +36,10 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	if _, err := templateRoot(template); err != nil {
 		return nil, err
 	}
-	if len(proxies) == 0 {
-		return nil, errors.New("no compatible proxies")
+	var err error
+	proxies, _, err = CompatibleProxies(template.Format, proxies)
+	if err != nil {
+		return nil, err
 	}
 	if template.Format == "xray" {
 		configs := []any{}

@@ -2,6 +2,7 @@ package purchaseops
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
@@ -19,7 +20,11 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 	if err != nil {
 		return err
 	}
-	if user.RemnaUserID == nil {
+	remote, remoteID, err := purchaseRemote(ctx, w.remote, user, facts.Purchase)
+	if errors.Is(err, ErrRemoteIdentityMissing) {
+		if item.Status == providerops.StatusProcessing {
+			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "RESET_RECONCILIATION_FAILED")
+		}
 		if item.Status == providerops.StatusQueued {
 			item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 		}
@@ -28,8 +33,24 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 		}
 		return w.repository.CompensateTrafficReset(ctx, operation.Receipt.ID, ReasonRemoteUnlinked, w.now().UTC())
 	}
+	if err != nil {
+		return err
+	}
+	scoped := *w
+	scoped.remote = remote
+	w = &scoped
+	proof, hasProof := w.remote.(ResetOperationRemote)
+	if hasProof {
+		applied, err := proof.ResetOperationCompleted(ctx, remoteID, facts.Purchase.ID, operation.Receipt.ID)
+		if err != nil {
+			return err
+		}
+		if applied {
+			return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
+		}
+	}
 	if item.Status == providerops.StatusProcessing {
-		return w.reconcileReset(ctx, operation, item, *user.RemnaUserID)
+		return w.reconcileReset(ctx, operation, item, remoteID)
 	}
 	quote, quoteErr := QuoteTrafficReset(facts, operation.OwnerUserID, w.now().UTC())
 	if quoteErr != nil || !quote.Eligible {
@@ -39,7 +60,7 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 		}
 		return w.repository.CompensateTrafficReset(ctx, operation.Receipt.ID, ReasonNotActive, w.now().UTC())
 	}
-	before, err := w.remote.MemberOperationState(ctx, *user.RemnaUserID)
+	before, err := w.remote.MemberOperationState(ctx, remoteID)
 	if err != nil {
 		item, beginErr := w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 		if beginErr != nil {
@@ -52,13 +73,25 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 	if err != nil {
 		return err
 	}
-	callErr := w.remote.ResetTraffic(ctx, *user.RemnaUserID)
+	var callErr error
+	if hasProof {
+		callErr = proof.ResetTrafficForOperation(ctx, remoteID, operation.Receipt.ID)
+	} else {
+		callErr = w.remote.ResetTraffic(ctx, remoteID)
+	}
 	if callErr == nil {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
 	}
-	after, reconcileErr := w.remote.MemberOperationState(ctx, *user.RemnaUserID)
-	if reconcileErr == nil && resetChanged(before.LastTrafficResetAt, after.LastTrafficResetAt) {
-		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
+	if hasProof {
+		applied, proofErr := proof.ResetOperationCompleted(ctx, remoteID, facts.Purchase.ID, operation.Receipt.ID)
+		if proofErr == nil && applied {
+			return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
+		}
+	} else {
+		after, reconcileErr := w.remote.MemberOperationState(ctx, remoteID)
+		if reconcileErr == nil && resetChanged(before.LastTrafficResetAt, after.LastTrafficResetAt) {
+			return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
+		}
 	}
 	if w.remote.DefinitiveMutationFailure(callErr) {
 		return w.repository.CompensateTrafficReset(ctx, operation.Receipt.ID, "RESET_REJECTED", w.now().UTC())
@@ -67,11 +100,21 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 }
 
 func (w *Worker) reconcileReset(ctx context.Context, operation providerops.Operation, item providerops.Item, remoteID string) error {
+	if proof, ok := w.remote.(ResetOperationRemote); ok {
+		applied, err := proof.ResetOperationCompleted(ctx, remoteID, item.TargetID, operation.Receipt.ID)
+		if err != nil {
+			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "RESET_RECONCILIATION_FAILED")
+		}
+		if applied {
+			return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
+		}
+		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "RESET_OUTCOME_AMBIGUOUS")
+	}
 	state, err := w.remote.MemberOperationState(ctx, remoteID)
 	if err != nil {
 		return w.complete(ctx, operation, item, providerops.StatusPendingReview, "RESET_RECONCILIATION_FAILED")
 	}
-	if item.AttemptStartedAt != nil && resetAtOrAfter(state.LastTrafficResetAt, *item.AttemptStartedAt) {
+	if item.AttemptStartedAt != nil && resetAfterAttempt(state.LastTrafficResetAt, *item.AttemptStartedAt) {
 		return w.complete(ctx, operation, item, providerops.StatusSucceeded, "")
 	}
 	return w.complete(ctx, operation, item, providerops.StatusPendingReview, "RESET_OUTCOME_AMBIGUOUS")
@@ -81,6 +124,6 @@ func resetChanged(before, after *time.Time) bool {
 	return after != nil && (before == nil || after.After(*before))
 }
 
-func resetAtOrAfter(resetAt *time.Time, started time.Time) bool {
-	return resetAt != nil && !resetAt.Before(started.Add(-time.Second))
+func resetAfterAttempt(resetAt *time.Time, started time.Time) bool {
+	return resetAt != nil && resetAt.After(started)
 }

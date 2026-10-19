@@ -11,8 +11,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
-	"net/netip"
-	"strings"
 )
 
 func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingView, error) {
@@ -50,51 +48,19 @@ func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingVie
 		return view, err
 	}
 	view.Nodes = in.nodes
+	view.Endpoints = in.available
 	if len(view.Plan.Choices) > 0 {
 		in, err = s.routingInput(ctx, identity, view.Plan.Choices)
 		if err == nil {
+			view.Plan.Choices = in.choices
 			view.Paths, err = in.graph.Paths()
-			view.Paths = routingPublicPaths(view.Paths)
+			view.Paths = in.publicPaths(view.Paths)
 		}
 		if err != nil {
 			view.Plan.Reason = "routing_dependencies_changed"
 		}
 	}
 	return view, nil
-}
-func (s *Service) PreviewOwnedRouting(ctx context.Context, user string, choices []RoutingChoice, start string, d routingmatch.Destination) ([]routingmatch.Path, *routingmatch.Path, error) {
-	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
-	if err != nil {
-		return nil, nil, err
-	}
-	in, err := s.routingInput(ctx, identity, choices)
-	if err != nil {
-		return nil, nil, err
-	}
-	paths, err := in.graph.Paths()
-	if err != nil {
-		return nil, nil, err
-	}
-	if start == "" {
-		return routingPublicPaths(paths), nil, nil
-	}
-	accessible := false
-	for _, node := range in.nodes {
-		accessible = accessible || node.ID == start
-	}
-	if !accessible {
-		return nil, nil, ErrInvalid
-	}
-	if len(d.Domain) > 253 || len(d.IP) > 64 {
-		return nil, nil, ErrInvalid
-	}
-	d.Domain = strings.TrimSpace(d.Domain)
-	if _, err := netip.ParseAddr(d.IP); err == nil && d.Domain == d.IP {
-		d.Domain = ""
-	}
-	trace, err := in.graph.Trace(start, d)
-	publicTrace := routingPublicPaths([]routingmatch.Path{trace})[0]
-	return routingPublicPaths(paths), &publicTrace, err
 }
 func (s *Service) QueueOwnedRouting(ctx context.Context, user, key string, revision int64, choices []RoutingChoice) (model.OperationReceipt, error) {
 	if choices == nil {
@@ -129,6 +95,13 @@ func (s *Service) QueueOwnedRouting(ctx context.Context, user, key string, revis
 	// The database rechecks revisions after operation replay detection, so an
 	// identical request remains replayable after successful deployment.
 	in, err := s.routingInput(ctx, identity, choices)
+	if err != nil {
+		return model.OperationReceipt{}, err
+	}
+	choices = in.choices
+	// Persist endpoint IDs only on a member save. Existing node-only documents
+	// retain their dependency digest and runtime behavior until that save.
+	in, err = s.routingInput(ctx, identity, choices)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}

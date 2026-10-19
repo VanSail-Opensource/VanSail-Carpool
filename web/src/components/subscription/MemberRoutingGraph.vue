@@ -5,7 +5,7 @@ import { nodeHeight, nodeWidth, placeNodes, routeEdges, type GraphEdge } from '@
 import { useGraphViewport } from '@/components/ip-lookup/useGraphViewport'
 import { useI18n } from '@/i18n'
 
-const props = defineProps<{ nodes: RoutingView['nodes']; paths: RoutingPath[]; trace: RoutingPath | null; selected: string; labels: Record<string, string> }>()
+const props = defineProps<{ nodes: RoutingView['nodes']; paths: RoutingPath[]; trace: RoutingPath | null; selected: string }>()
 const emit = defineEmits<{ select: [id: string] }>()
 const { t } = useI18n()
 const viewport = shallowRef<InstanceType<typeof globalThis.HTMLDivElement> | null>(null)
@@ -66,7 +66,6 @@ onScopeDispose(() => observer?.disconnect())
       </svg>
     </div>
     <p class="text-xs text-muted">{{ t('managedRouting.graphHint') }}</p>
-    <ol class="grid gap-1 text-xs text-muted"><li v-for="(path, i) in paths" :key="i">{{ path.nodes.map(id => nodes.find(n => n.id === id)?.name ?? id).join(' → ') }} <span class="break-words">{{ [...new Set(path.rules.map(id => labels[id]).filter(Boolean))].join(' ∩ ') }} <template v-if="path.excludedRules.some(id => labels[id])">{{ t('managedRouting.except', { conditions: [...new Set(path.excludedRules.map(id => labels[id]).filter(Boolean))].join(' ∪ ') }) }}</template></span></li></ol>
   </div>
 </template>
 

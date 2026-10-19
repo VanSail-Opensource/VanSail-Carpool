@@ -7,8 +7,12 @@ import (
 
 // PreviewTemplate uses synthetic credentials and performs no network requests.
 func PreviewTemplate(template Template) ([]byte, error) {
-	proxy := Proxy{ID: "preview", Name: "Preview", Protocol: "vless", Address: "proxy.example", Port: 443, Account: map[string]any{"id": "550e8400-e29b-41d4-a716-446655440000", "encryption": "none"}, Stream: map[string]any{"network": "tcp", "security": "none"}}
-	return RenderTemplate(template, []Proxy{proxy})
+	return RenderTemplate(template, PreviewProxies())
+}
+
+// PreviewProxies supplies synthetic credentials for selection/template previews.
+func PreviewProxies() []Proxy {
+	return []Proxy{{ID: "preview", Name: "Preview", Protocol: "vless", Address: "proxy.example", Port: 443, Account: map[string]any{"id": "550e8400-e29b-41d4-a716-446655440000", "encryption": "none"}, Stream: map[string]any{"network": "tcp", "security": "none"}}}
 }
 
 func validateRenderedTemplate(format string, root map[string]any) error {

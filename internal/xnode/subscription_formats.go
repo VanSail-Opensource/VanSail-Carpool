@@ -3,22 +3,12 @@ package xnode
 import (
 	"encoding/base64"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
-	"slices"
 )
 
 func renderSubscription(format string, proxies []subscription.Proxy) ([]byte, error) {
-	sourceFormat := map[string]string{"native": "XRAY_BASE64", "base64": "XRAY_BASE64", "xray": "XRAY_JSON", "sing-box": "SINGBOX", "clash": "MIHOMO", "stash": "STASH"}[format]
-	if sourceFormat == "" {
-		return nil, ErrInvalid
-	}
-	selected := make([]subscription.Proxy, 0, len(proxies))
-	for _, proxy := range proxies {
-		if !slices.Contains(proxy.ExcludedFormats, sourceFormat) {
-			selected = append(selected, proxy)
-		}
-	}
-	if len(selected) == 0 {
-		return nil, ErrNotFound
+	selected, _, err := subscription.CompatibleProxies(format, proxies)
+	if err != nil {
+		return nil, err
 	}
 	proxies = selected
 	switch format {

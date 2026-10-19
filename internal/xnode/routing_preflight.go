@@ -30,12 +30,6 @@ func (s *Service) preflightRouting(ctx context.Context, candidate, old RoutingPl
 		if err = configurationCapabilities(config, hello.Capabilities); err != nil {
 			return err
 		}
-		if containsCapability(hello.Capabilities, "source_geoip_stream_v1") {
-			if err = s.master.ensureCountry(ctx, node, config.Firewall.SourceGeoIP); err != nil {
-				return err
-			}
-			config = referenceCountry(config)
-		}
 		if _, err = s.master.Command(ctx, node, "", "config.validate", config); err != nil {
 			return err
 		}

@@ -36,10 +36,11 @@ type Config struct {
 }
 
 type NetworkConfig struct {
-	Network   string     `json:"network"`
-	Enabled   bool       `json:"enabled"`
-	Addresses []string   `json:"addresses"`
-	Endpoints []Endpoint `json:"endpoints"`
+	Network    string     `json:"network"`
+	Enabled    bool       `json:"enabled"`
+	Currencies []string   `json:"currencies"`
+	Addresses  []string   `json:"addresses"`
+	Endpoints  []Endpoint `json:"endpoints"`
 }
 
 // Endpoint credentials and URLs are write-only in the administrative projection.

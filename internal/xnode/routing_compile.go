@@ -56,10 +56,10 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 			continue
 		}
 		for _, r := range input.rules {
-			e := input.endpoints[r.To]
+			e := input.targets[r.ID]
 			credentials, binding := routingCredentials(doc, identity, routingmatchRule{r.ID, r.From, r.To}, e)
 			if r.To == node && (plan.Phase == "active" || plan.Phase == "enabling") {
-				raw, err := inboundCredential(input.inbounds[r.To], credentials)
+				raw, err := inboundCredential(input.endpointInbounds[e.ID], credentials)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -99,7 +99,11 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 			}
 			out["tag"] = tag
 			outs = append(outs, out)
-			rules = append(rules, managedNativeRule(r, identity.ProxyUserID, tag))
+			rule := managedNativeRule(r, identity.ProxyUserID, tag)
+			if !input.legacy {
+				rule["inboundTag"] = []string{input.sources[r.ID].InboundTag}
+			}
+			rules = append(rules, rule)
 		}
 	}
 	return outs, rules, owners, nil

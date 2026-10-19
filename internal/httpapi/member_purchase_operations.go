@@ -6,6 +6,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func (s *Server) memberRefundQuote(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +56,7 @@ func (s *Server) writeMemberOperationError(w http.ResponseWriter, r *http.Reques
 		s.writeError(w, r, http.StatusUnprocessableEntity, "PURCHASE_OPERATION_INELIGIBLE", "The purchase is no longer eligible for this operation.")
 	case errors.Is(err, database.ErrInsufficientBalance):
 		s.writeError(w, r, http.StatusConflict, "INSUFFICIENT_BALANCE", "Your TXB balance is too low for this operation.")
-	case errors.Is(err, database.ErrConflict), errors.Is(err, purchaseops.ErrIdempotencyConflict):
+	case errors.Is(err, database.ErrConflict), errors.Is(err, xnode.ErrConflict), errors.Is(err, purchaseops.ErrIdempotencyConflict):
 		s.writeError(w, r, http.StatusConflict, "OPERATION_CONFLICT", "The operation conflicts with current state or an existing idempotency key.")
 	default:
 		if mutation {

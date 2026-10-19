@@ -2,6 +2,7 @@ get:
   tags: [Billing]
   operationId: quotePurchaseRefund
   summary: Quote an eligible first-term member refund
+  description: Native identities resolve from panel ownership without a legacy link. Usage includes every accounting period owned by the purchase; a current-period reset never erases purchase-wide refund evidence.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:
@@ -15,6 +16,7 @@ post:
   tags: [Billing]
   operationId: refundPurchase
   summary: Quiesce, recheck, and refund an eligible first-term purchase
+  description: Quiescence and reconciliation are bound to this purchase. A successor already serving is preserved. Uncertain upstream outcomes remain reviewable, and no settled financial record is rewritten.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'

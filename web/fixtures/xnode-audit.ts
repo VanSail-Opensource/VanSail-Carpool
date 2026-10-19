@@ -39,7 +39,7 @@ xnodeApi.node = async id => {
   await check('node:' + id)
   if (params.has('node-load-error') && !nodeLoadFailed) { nodeLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }
   if (params.has('stale-node')) await new Promise(resolve => setTimeout(resolve, id === nodes[0]?.id ? 1500 : 30))
-  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: { primary: { provider: '', config: { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { mode: 'xray', redirect: false, upstreams: [id === nodes[0]?.id ? '1.1.1.1' : '8.8.8.8'] }, firewall: { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
+  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: params.has('no-certificates') ? {} : { primary: { provider: '', config: params.has('node-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' } : { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { mode: 'xray', redirect: false, upstreams: [id === nodes[0]?.id ? '1.1.1.1' : '8.8.8.8'] }, firewall: { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
 }
 xnodeApi.saveNode = async (node, settings) => {
   await check('save-node')
@@ -82,7 +82,13 @@ xnodeApi.previewSubscriptionSelection = async (body, signal) => {
 let globalLoadFailed = false
 function globalProjection() { const value = JSON.parse(JSON.stringify(global)) as XNodeGlobal; for (const provider of Object.values(value.providers)) for (const key of Object.keys(provider.credentials)) provider.credentials[key] = ''; return value }
 xnodeApi.global = async () => { await check('global'); if (params.has('global-load-error') && !globalLoadFailed) { globalLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return globalProjection() }
-xnodeApi.saveGlobal = async value => { await check('save-global'); if (params.has('global-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' }); trace.writes.push(JSON.parse(JSON.stringify(value))); global = JSON.parse(JSON.stringify(value)) as XNodeGlobal; return globalProjection() }
+xnodeApi.saveGlobal = async value => {
+  await check('save-global')
+  const policyCode = params.get('policy-error')
+  if (policyCode && ['XNODE_DOMAIN_SELECTOR_INVALID', 'XNODE_GEOSITE_REQUIRED', 'XNODE_GEOSITE_UNAVAILABLE', 'XNODE_GEOIP_INVALID', 'XNODE_GEOIP_UNAVAILABLE'].includes(policyCode)) throw new ApiError(422, { code: policyCode, message: '' })
+  if (params.has('global-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
+  trace.writes.push(JSON.parse(JSON.stringify(value))); global = JSON.parse(JSON.stringify(value)) as XNodeGlobal; return globalProjection()
+}
 xnodeApi.enroll = async id => { trace.calls.push(`enroll:${id}`); return { masterUrl: 'wss://panel.example/v1/agents/connect', token: 'fixture-token', protocol: 'x-node.v1' } }
 xnodeApi.validate = async () => params.has('invalid') ? { valid: false, needsAgentValidation: false, errorCode: 'XNODE_CONFIG_INVALID', detail: 'outbound[1]: unsupported protocol' } : { valid: true, needsAgentValidation: false, errorCode: '' }
 xnodeApi.command = async (_id, body) => { trace.calls.push('command:' + body.name); await check('command'); return receipt('xnode_command') }

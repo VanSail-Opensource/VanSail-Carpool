@@ -26,8 +26,20 @@ type CommandError struct {
 func (e *CommandError) Error() string { return "native command " + string(e.Outcome) }
 func (e *CommandError) Unwrap() error { return e.Cause }
 
+// commandDeadline bounds agent execution per command class. The pinned agent
+// contract does not publish per-command timeouts, so the master keeps explicit
+// local values that match the longest documented native operation.
 func commandDeadline(name string) time.Duration {
-	return wire.CommandTimeout(name)
+	switch name {
+	case "update.install", "update.rollback":
+		return 15 * time.Minute
+	case "runtime.reload", "geodata.refresh", "config.validate", "firewall.bans.sync", "firewall.apply":
+		return 2 * time.Minute
+	case "firewall.bans.get", "firewall.bans.update", "firewall.confirm", "update.status":
+		return time.Minute
+	default:
+		return 30 * time.Second
+	}
 }
 
 func waitCommand(ctx context.Context, peer *agentPeer, pending <-chan wire.Message, id, name string, delivery <-chan time.Time) (json.RawMessage, error) {

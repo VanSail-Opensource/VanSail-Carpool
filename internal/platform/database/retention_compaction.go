@@ -20,6 +20,9 @@ func (s *Store) CompactAndPrune(ctx context.Context, cutoff7Days, cutoff24Hours,
 	}
 	defer func() { _ = tx.Rollback() }()
 	counts := make(map[string]int64)
+	if err := pruneNativeMaintenanceTx(ctx, tx, cutoff7Days, counts); err != nil {
+		return nil, err
+	}
 	if err := pruneNodeCompensationEventsTx(ctx, tx, now, counts); err != nil {
 		return nil, err
 	}

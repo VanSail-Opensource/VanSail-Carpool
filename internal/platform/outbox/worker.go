@@ -86,6 +86,10 @@ func (w *Worker) Kinds() []string {
 // existing SQLite write ordering while every handler remains independently
 // retryable and context-cancellable.
 func (w *Worker) Drain(ctx context.Context, limit int) error {
+	return w.drain(ctx, limit, w.repository.ClaimOutboxJob)
+}
+
+func (w *Worker) drain(ctx context.Context, limit int, claim func(context.Context, time.Time) (*model.OutboxJob, error)) error {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -93,7 +97,7 @@ func (w *Worker) Drain(ctx context.Context, limit int) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		job, err := w.repository.ClaimOutboxJob(ctx, w.now().UTC())
+		job, err := claim(ctx, w.now().UTC())
 		if err != nil {
 			return fmt.Errorf("claim outbox job: %w", err)
 		}

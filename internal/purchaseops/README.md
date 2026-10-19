@@ -20,3 +20,5 @@ preserves the successor duration and shifts later terms and continuity jobs.
 Provider calls are supplied by the application adapter and always traverse the shared Remnawave queue. Tests are added for CI and are not run locally.
 
 `refund_state.go` selects the optional purchase-scoped provider contract for refund quotes and settlement, preserving current-period reset reconciliation. Native counters combine legacy/native usage without applying node multipliers twice.
+
+`purchase_remote.go` selects an optional owner/purchase-scoped provider without requiring the legacy identity field. Native reset reconciliation uses ResetOperationRemote proof; legacy timestamp-only recovery requires a reset strictly after the attempt and preserves ambiguous outcomes. `worker_recovery.go` closes exhausted admission retries: never-attempted resets are compensated once, while attempted mutations remain pending_review. Refund workers recheck local eligibility before quiescence and keep unsettled usage conservative.

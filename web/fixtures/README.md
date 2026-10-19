@@ -108,6 +108,14 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 
 The X-Node fixture includes administrator CIDR grants; `grant-error`, `firewall-empty`, `slow` and `zh` exercise retained drafts, empty/loading states and Chinese labels.
 
+X-Node `policy-error=XNODE_DOMAIN_SELECTOR_INVALID|XNODE_GEOSITE_REQUIRED|XNODE_GEOSITE_UNAVAILABLE|XNODE_GEOIP_INVALID|XNODE_GEOIP_UNAVAILABLE`
+returns safe policy-save errors for localized diagnostics and draft retention.
+`node-file` starts certificate editing with paths and no Domain/email fields;
+`no-certificates` starts with no profiles. Both combine with node load/save errors.
+
+Public subscription `diagnostics` shows compatible formats alongside explicit
+endpoint omissions and a failed Stash template; it uses synthetic credentials.
+
 Native admin `view=scan` isolates connection scanning; `scan-failed` projects a durable safe error code, while `error` rejects the request and `empty` returns a successful empty scan.
 
 The X-Node `commands` view isolates native utilities. `command-outcome=UNDELIVERED`, `REJECTED`, `FAILED` or `OUTCOME_UNKNOWN` projects each durable outcome; `slow` shows submission and polling.

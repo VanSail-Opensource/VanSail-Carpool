@@ -10,18 +10,19 @@ import (
 )
 
 type SubscriptionMetadata struct {
-	SelectedFormat     string          `json:"selectedFormat,omitempty"`
-	SelectedTemplateID string          `json:"selectedTemplateId,omitempty"`
-	SelectionSource    string          `json:"selectionSource,omitempty"`
-	Username           string          `json:"username"`
-	URL                string          `json:"url"`
-	DownloadURL        string          `json:"downloadUrl"`
-	UsedBytes          string          `json:"usedBytes"`
-	LimitBytes         string          `json:"limitBytes"`
-	ExpiresAt          *time.Time      `json:"expiresAt"`
-	Active             bool            `json:"active"`
-	Incomplete         bool            `json:"incomplete"`
-	Formats            map[string]bool `json:"formats"`
+	SelectedFormat     string                                  `json:"selectedFormat,omitempty"`
+	SelectedTemplateID string                                  `json:"selectedTemplateId,omitempty"`
+	SelectionSource    string                                  `json:"selectionSource,omitempty"`
+	Username           string                                  `json:"username"`
+	URL                string                                  `json:"url"`
+	DownloadURL        string                                  `json:"downloadUrl"`
+	UsedBytes          string                                  `json:"usedBytes"`
+	LimitBytes         string                                  `json:"limitBytes"`
+	ExpiresAt          *time.Time                              `json:"expiresAt"`
+	Active             bool                                    `json:"active"`
+	Incomplete         bool                                    `json:"incomplete"`
+	Formats            map[string]bool                         `json:"formats"`
+	FormatDiagnostics  map[string]SubscriptionFormatDiagnostic `json:"formatDiagnostics,omitempty"`
 }
 
 func (s *Service) bearerIdentity(ctx context.Context, token string) (Identity, error) {
@@ -94,9 +95,8 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	}
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete
-	for _, format := range []string{"base64", "native", "xray", "sing-box", "clash", "stash"} {
-		_, err := s.renderOwnedSubscription(ctx, identity.UserID, format, proxies)
-		result.Formats[format] = err == nil && result.Active
+	if err := s.projectSubscriptionFormats(ctx, identity.UserID, proxies, &result); err != nil {
+		return result, err
 	}
 	return result, nil
 }
@@ -135,7 +135,7 @@ func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explici
 		owner = identityScope(identity)
 	}
 	metadata.SelectedFormat, metadata.SelectedTemplateID, metadata.SelectionSource = selection.Format, selection.TemplateID, selection.Source
-	raw, err := s.renderSelectedSubscription(ctx, owner, selection, proxies)
+	raw, err := renderSubscriptionSelection(config, owner, selection, proxies)
 	return raw, metadata, err
 }
 func (s *Service) RoutingTemplates(ctx context.Context, user string) ([]map[string]any, error) {

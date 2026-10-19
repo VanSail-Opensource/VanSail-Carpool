@@ -62,7 +62,7 @@ func (s *Service) run(ctx context.Context) {
 						workers.Add(1)
 						go func() {
 							defer workers.Done()
-							s.monitor(networkCtx, spec, networkConfig, c.Enabled && modeAllows(c.Mode, spec))
+							s.monitor(networkCtx, spec, networkConfig, c.Enabled && currencyEnabled(networkConfig, spec))
 						}()
 					}
 				}

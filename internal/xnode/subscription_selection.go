@@ -1,8 +1,11 @@
 package xnode
 
 import (
+	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 type SubscriptionUserAgentRule struct {
@@ -93,7 +96,7 @@ func SelectSubscription(config SubscriptionTemplateConfig, explicit, agent strin
 		}
 	}
 	if !config.Formats[selection.Format] {
-		return selection, ErrInvalid
+		return selection, &PolicyError{"SUBSCRIPTION_FORMAT_DISABLED", ErrInvalid}
 	}
 	return selection, nil
 }
@@ -114,7 +117,14 @@ func PreviewSubscriptionSelection(config SubscriptionTemplateConfig, explicit, a
 		return SubscriptionSelection{}, ValidationResult{ErrorCode: "XNODE_INPUT_INVALID"}
 	}
 	selection, err := SelectSubscription(config, explicit, agent)
+	if err == nil {
+		_, err = renderSubscriptionSelection(config, "", selection, subscription.PreviewProxies())
+	}
 	if err != nil {
+		var policy *PolicyError
+		if errors.As(err, &policy) {
+			return selection, ValidationResult{ErrorCode: policy.Code}
+		}
 		return selection, ValidationResult{ErrorCode: "XNODE_INPUT_INVALID"}
 	}
 	return selection, ValidationResult{Valid: true}

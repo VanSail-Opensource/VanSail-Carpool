@@ -2,25 +2,38 @@ package xnode
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 	"math"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
 func (s *Service) MemberOperationState(ctx context.Context, id string) (purchaseops.RemoteState, error) {
+	return s.operationState(ctx, id, "")
+}
+
+func (s *Service) operationState(ctx context.Context, id, expectedPurchase string) (purchaseops.RemoteState, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
 		return purchaseops.RemoteState{}, err
 	}
 	if identity.CurrentPeriodID == "" {
+		if expectedPurchase != "" {
+			return purchaseops.RemoteState{}, ErrConflict
+		}
 		return purchaseops.RemoteState{Quiesced: true}, nil
 	}
 	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
 	if err != nil {
 		return purchaseops.RemoteState{}, err
 	}
+	if err := s.checkPurchaseOperation(ctx, identity, period, expectedPurchase); err != nil {
+		return purchaseops.RemoteState{}, err
+	}
 	// "closing" is not settled: never allow a refund to use an unfinished count.
 	if period.Status == "closing" {
-		if err = s.Quiesce(ctx, id); err != nil {
+		if err = s.closePeriod(ctx, period); err != nil {
 			return purchaseops.RemoteState{}, err
 		}
 		period, err = s.repo.XNodePeriod(ctx, period.ID)
@@ -37,7 +50,7 @@ func (s *Service) MemberOperationState(ctx context.Context, id string) (purchase
 // MemberRefundState includes every reset owned by this purchase. Reset
 // reconciliation uses MemberOperationState and is independent of older journals.
 func (s *Service) MemberRefundState(ctx context.Context, id, purchase string) (purchaseops.RemoteState, error) {
-	state, err := s.MemberOperationState(ctx, id)
+	state, err := s.PurchaseOperationState(ctx, id, purchase)
 	if err != nil {
 		return state, err
 	}

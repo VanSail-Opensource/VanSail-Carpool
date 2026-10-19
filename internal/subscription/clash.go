@@ -20,6 +20,9 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 	switch p.Protocol {
 	case "vless", "vmess":
 		out["uuid"] = p.Account["id"]
+		if p.Protocol == "vless" && text(p.Account, "encryption") != "" && text(p.Account, "encryption") != "none" {
+			out["encryption"] = p.Account["encryption"]
+		}
 		if p.Account["flow"] != nil {
 			out["flow"] = p.Account["flow"]
 		}
@@ -35,7 +38,7 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 	case "hysteria":
 		out["password"] = object(p.Stream, "hysteriaSettings")["auth"]
 	default:
-		return nil, fmt.Errorf("unsupported Clash protocol")
+		return nil, fmt.Errorf("%w: Clash protocol", ErrUnsupported)
 	}
 	security := text(p.Stream, "security")
 	if security == "tls" || security == "reality" {
@@ -74,8 +77,14 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 	case "grpc":
 		out["network"] = "grpc"
 		out["grpc-opts"] = map[string]any{"grpc-service-name": source["serviceName"]}
+	case "xhttp":
+		if p.Protocol != "vless" {
+			return nil, fmt.Errorf("%w: XHTTP protocol", ErrUnsupported)
+		}
+		out["network"] = "xhttp"
+		out["xhttp-opts"] = yamlXHTTPOptions(source)
 	default:
-		return nil, fmt.Errorf("unsupported Clash transport")
+		return nil, fmt.Errorf("%w: Clash transport", ErrUnsupported)
 	}
 	mapper := "mihomo"
 	if format == "stash" {

@@ -2,6 +2,7 @@ import { onMounted, onScopeDispose, shallowRef } from 'vue'
 import { usdtApi, type USDTConfig, type USDTNetworkID, type USDTReviewPage, type USDTStatus } from '@/api/usdt'
 import { localizedError, t } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
+import { normalizeCurrencies } from './configForm'
 
 export function useUSDTAdmin() {
   const draft = shallowRef<USDTConfig | null>(null)
@@ -35,7 +36,7 @@ export function useUSDTAdmin() {
     const results = await Promise.allSettled([usdtApi.config(loadController.signal), usdtApi.status(loadController.signal), usdtApi.review(undefined, loadController.signal)])
     if (!active || !latest.isCurrent(token)) return
     const [configuration, currentStatus, transfers] = results
-    if (configuration.status === 'fulfilled') draft.value = configuration.value
+    if (configuration.status === 'fulfilled') draft.value = normalizeCurrencies(configuration.value)
     if (currentStatus.status === 'fulfilled') status.value = currentStatus.value
     if (transfers.status === 'fulfilled') review.value = transfers.value
     for (const result of results) if (result.status === 'rejected') error.value = localizedError(result.reason, 'errors.adminLoad')
@@ -60,7 +61,7 @@ export function useUSDTAdmin() {
     busy.value = true; error.value = null; saved.value = false
     try {
       const value = await usdtApi.save(draft.value)
-      if (active && latest.isCurrent(generation)) { draft.value = value; saved.value = true; await refresh(); }
+      if (active && latest.isCurrent(generation)) { draft.value = normalizeCurrencies(value); saved.value = true; await refresh(); }
     } catch (caught) { if (active) error.value = localizedError(caught, 'errors.adminAction') }
     finally { if (active) busy.value = false }
   }

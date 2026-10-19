@@ -11,7 +11,6 @@ function set<K extends keyof USDTConfig>(key: K, value: USDTConfig[K]): void { m
   <div class="usdt-general">
     <SwitchField id="usdt-enabled" :model-value="model.enabled" :label="t('common.enabled')" :help="t('adminUsdt.quoteHint')" @update:model-value="set('enabled', $event)" />
     <div class="usdt-form-grid">
-      <UFormField name="mode" :label="t('adminUsdt.mode')"><USelect :model-value="model.mode ?? 'usdt'" :items="(['usdt', 'usdc', 'both'] as const).map(value => ({ value, label: t(`adminUsdt.modes.${value}`) }))" @update:model-value="set('mode', $event)" /></UFormField>
       <UFormField name="name" :label="t('adminUsdt.name')"><UInput :model-value="model.name" @update:model-value="set('name', String($event))" /></UFormField>
       <UFormField name="rate" :label="t('adminUsdt.rate')" :description="t('adminUsdt.rateHint')"><UInput :model-value="model.rate" inputmode="decimal" @update:model-value="set('rate', String($event))" /></UFormField>
       <UFormField name="expiryMinutes" :label="t('adminUsdt.expiry')"><UInputNumber :model-value="model.expiryMinutes" :min="5" :max="120" @update:model-value="set('expiryMinutes', Number($event))" /></UFormField>

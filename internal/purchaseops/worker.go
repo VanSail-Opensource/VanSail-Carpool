@@ -40,15 +40,23 @@ func NewWorker(repository WorkerRepository, remote Remote) *Worker {
 }
 
 // HandleProviderOperation dispatches supported member operation kinds.
-func (w *Worker) HandleProviderOperation(ctx context.Context, operation providerops.Operation, _ model.OutboxJob) error {
+func (w *Worker) HandleProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {
+	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
+		return nil
+	}
+	var err error
 	switch operation.Receipt.Kind {
 	case OperationResetKind:
-		return w.handleReset(ctx, operation)
+		err = w.handleReset(ctx, operation)
 	case OperationRefundKind:
-		return w.handleRefund(ctx, operation)
+		err = w.handleRefund(ctx, operation)
 	default:
 		return fmt.Errorf("unsupported member operation kind %q", operation.Receipt.Kind)
 	}
+	if err != nil && job.Attempts >= 10 {
+		return w.finishExhausted(ctx, operation, err)
+	}
+	return err
 }
 
 func (w *Worker) begin(ctx context.Context, operation providerops.Operation) (providerops.Operation, providerops.Item, error) {

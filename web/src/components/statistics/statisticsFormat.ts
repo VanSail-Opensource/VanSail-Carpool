@@ -16,15 +16,16 @@ function finite(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 0
 }
 
-export function chartSegments(items: readonly NamedShare[]): StatisticSegment[] {
+export function chartSegments(items: readonly NamedShare[], share = 100): StatisticSegment[] {
   const total = items.reduce((sum, item) => sum + finite(item.value), 0)
   if (total <= 0) return []
+  const scale = Number.isFinite(share) && share > 0 ? share : 100
   return items
     .filter((item) => finite(item.value) > 0)
     .map((item, index) => ({
       ...item,
       color: statisticsColors[index % statisticsColors.length],
-      percentage: finite(item.value) * 100 / total,
+      percentage: finite(item.value) * scale / total,
     }))
 }
 

@@ -1,5 +1,20 @@
 # Subscription rendering
 
+`compatibility.go` is the shared endpoint-selection boundary for metadata,
+synthetic previews and live rendering. Explicit endpoint exclusions and typed
+unsupported client protocols/transports are reported separately from invalid
+templates. A failed host projection/mapping omits only that endpoint. Compatible
+endpoints continue rendering; template failures remain visible. Format references: [sing-box VLESS](https://sing-box.sagernet.org/configuration/outbound/vless/)
+and [Stash protocols](https://stash.wiki/en/proxy-protocols/proxy-types).
+
+Clash means current Mihomo-compatible clients, including FlClash/Clash Meta.
+`xhttp.go` exports VLESS XHTTP with TLS/Reality, padding/upload options, XMUX and
+separate downloads using the [Mihomo transport contract](https://wiki.metacubex.one/en/config/proxies/transport/).
+Stash's documented XHTTP representation is supported too. Unsupported hosts are
+omitted per client format rather than rejecting a mixed subscription.
+`xhttp_test.go` covers Mihomo/Stash XHTTP fields, TLS/Reality combinations and
+per-host omission when a projection fails.
+
 `Proxy` is an owner-scoped, process-local client projection. Renderers produce
 native links, Xray JSON, sing-box JSON and Clash Meta YAML. Credential maps,
 mapper sources and transport settings are excluded from ordinary JSON encoding.

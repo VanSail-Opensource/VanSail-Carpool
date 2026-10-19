@@ -13,8 +13,8 @@ import (
 func TestRoutingGeoSiteStreamingUsesPinnedDomainKindsAndAllAttributes(t *testing.T) {
 	list := &geodata.GeoSiteList{Entry: []*geodata.GeoSite{{Code: "GOOGLE", Domain: []*geodata.Domain{
 		{Type: geodata.Domain_Domain, Value: "google.com"},
-		{Type: geodata.Domain_Full, Value: "ai.google.com", Attribute: []*geodata.Domain_Attribute{{Key: "AI"}, {Key: "US"}}},
-		{Type: geodata.Domain_Regex, Value: `^google[0-9]+\.example$`, Attribute: []*geodata.Domain_Attribute{{Key: "US"}}},
+		{Type: geodata.Domain_Full, Value: "ai.google.com", Attribute: []*geodata.Domain_Attribute{{Key: "ai"}, {Key: "us"}}},
+		{Type: geodata.Domain_Regex, Value: `^google[0-9]+\.example$`, Attribute: []*geodata.Domain_Attribute{{Key: "us"}}},
 	}}}}
 	raw, err := proto.Marshal(list)
 	if err != nil {

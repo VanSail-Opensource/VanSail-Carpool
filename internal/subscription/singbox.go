@@ -29,7 +29,7 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	case "hysteria":
 		out["password"] = object(p.Stream, "hysteriaSettings")["auth"]
 	default:
-		return nil, fmt.Errorf("unsupported sing-box protocol")
+		return nil, fmt.Errorf("%w: sing-box protocol", ErrUnsupported)
 	}
 	security := text(p.Stream, "security")
 	if security == "tls" || security == "reality" {
@@ -70,7 +70,7 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	case "grpc":
 		out["transport"] = map[string]any{"type": "grpc", "service_name": source["serviceName"]}
 	default:
-		return nil, fmt.Errorf("unsupported sing-box transport")
+		return nil, fmt.Errorf("%w: sing-box transport", ErrUnsupported)
 	}
 	return connectivity.ApplyClientMapper(out, p.MapperHost, "singbox")
 }

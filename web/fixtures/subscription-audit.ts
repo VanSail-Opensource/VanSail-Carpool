@@ -18,8 +18,9 @@ import SubscriptionAudit from './SubscriptionAudit.vue'
 
 const params = new URLSearchParams(location.search)
 ipLookupApi.state = async () => ({ enabled: false }) as never
-xnodeMemberApi.subscription = async () => ({ username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, formats: { native: true, base64: true, xray: true } })
+xnodeMemberApi.subscription = async () => ({ username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, formats: { native: true, base64: true, xray: true, 'sing-box': true, clash: true, stash: !params.has('diagnostics') }, formatDiagnostics: params.has('diagnostics') ? { 'sing-box': { code: 'SUBSCRIPTION_ENDPOINTS_EXCLUDED', excludedEndpoints: 2 }, stash: { code: 'SUBSCRIPTION_FORMAT_RENDER_FAILED', excludedEndpoints: 0 } } : undefined })
 xnodeMemberApi.routing = async () => ({ plan: { revision: 0, choices: [], phase: 'active', reason: '', operationId: '' }, nodes: [], templates: [], paths: [] })
+xnodeMemberApi.previewRouting = async () => ({ paths: [], trace: null })
 xnodeMemberApi.metrics = async () => {
   if (params.has('metrics-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 1200))

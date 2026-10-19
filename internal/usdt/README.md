@@ -22,10 +22,12 @@ ambiguous matches stay in review. Administrators select verified matching eviden
 dialog. Overpayments and ambiguous shortfalls cannot settle. Review dismissal records
 actor, reason, time and audit evidence; dismissed and credited evidence is immutable.
 
-Mode `usdt | usdc | both` defaults old configurations to USDT. Endpoints, addresses,
+Each network has an authoritative `currencies` list containing `USDT`, `USDC`,
+both where registered, or an explicit empty list. Missing/null lists inherit legacy
+`mode: usdt | usdc | both` (missing mode defaults to USDT) and become explicit on save. Endpoints, addresses,
 rate, expiry and the shared FIFO concurrency cap remain unchanged. Scanners and
 readiness use token rails; cursors persist network plus native contract identity.
-Issued quotes keep their token watchers through mode changes. Transfer IDs remain
+Issued quotes keep their token watchers through network/token switch changes. Transfer IDs remain
 network/transaction/event hashes, and permanent quote fingerprints are untouched.
 
 The whole configuration uses the existing secret vault under `billing.usdt.config`.
@@ -76,6 +78,8 @@ run in hosted CI.
 - `aptos_test.go` ? Hosted fixtures for aptos behavior and failure paths.
 - `config.go` ? Configuration validation and secret-preserving masked projections.
 - `config_test.go` ? Hosted fixtures for config behavior and failure paths.
+- `currencies.go` ? Authoritative per-network USDT/USDC switches with legacy inheritance.
+- `currencies_test.go` ? Hosted fixtures for switch authority and issued-quote watcher continuity.
 - `evm.go` ? Finalized filtered EVM log ranges and canonical cursor checks.
 - `evm_proof.go` ? Successful receipt/log consistency and exact hexadecimal quantities.
 - `evm_test.go` ? Hosted fixtures for evm behavior and failure paths.

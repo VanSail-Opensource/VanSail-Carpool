@@ -1,5 +1,9 @@
 # Application composition
 
+`scheduler_priority.go` keeps dynamic firewall admission active once per second
+while ordinary outbox or maintenance work waits. It shares the existing outbox
+and handlers and is cancelled/joined with the scheduler before storage closes.
+
 `xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references. It retains the migration final-accounting fence and queued legacy fallback only while the source bridge is active.
 
 `xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.
@@ -191,3 +195,5 @@ a Telegram association; internal bounded probes retain their separate path.
 `xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Native source loading uses published enabled endpoints, standalone service names and ephemeral native outbounds; it preserves the existing queued migration fallback. `xnode_member_subscription.go` resolves panel ownership before native subscription reads without requiring a legacy link.
 
 `xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Native bridge policy reads member preferences by panel ownership, and subscription GETs derive enabled groups without changing preferences.
+
+`xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. Queued legacy behavior remains available only through the migration bridge; partial bridge resets remain uncertain. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.

@@ -47,7 +47,7 @@ func DefaultConfig() Config {
 		if spec.Currency() != "USDT" {
 			continue
 		}
-		c.Networks = append(c.Networks, NetworkConfig{Network: spec.Network, Addresses: []string{}, Endpoints: []Endpoint{}})
+		c.Networks = append(c.Networks, NetworkConfig{Network: spec.Network, Currencies: []string{"USDT"}, Addresses: []string{}, Endpoints: []Endpoint{}})
 	}
 	return c
 }

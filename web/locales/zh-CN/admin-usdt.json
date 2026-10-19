@@ -82,6 +82,8 @@
     "noEvidence": "无转账凭证 · 补偿入账",
     "evidence": "已验证的匹配转账",
     "creditChoiceHint": "选择已验证的转账以结算订单，或在无转账凭证时补偿入账。两种方式不能重复入账。",
-    "settled": "已使用验证的转账结算订单。"
+    "settled": "已使用验证的转账结算订单。",
+    "acceptCurrency": "接受 {currency}",
+    "currenciesHint": "代币开关仅影响此网络的新报价，已有报价将继续监测。"
   }
 }

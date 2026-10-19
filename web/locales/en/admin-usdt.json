@@ -82,6 +82,8 @@
     "noEvidence": "No evidence · courtesy credit",
     "evidence": "Verified matching transfer",
     "creditChoiceHint": "Choose a verified transfer to settle payment, or grant courtesy credit without transfer evidence. These actions cannot both credit an order.",
-    "settled": "Verified transfer settled."
+    "settled": "Verified transfer settled.",
+    "acceptCurrency": "Accept {currency}",
+    "currenciesHint": "Token switches apply to new quotes on this network. Existing quotes remain monitored."
   }
 }

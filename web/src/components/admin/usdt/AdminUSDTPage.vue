@@ -6,7 +6,7 @@ import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import { paymentChannelLabel } from '@/components/billing/paymentOptions'
 import { useI18n } from '@/i18n'
 import { formatDateTime } from '@/utils/format'
-import { configSchema, networkRails, nativeUSDCNetworks, tokenRail } from './configForm'
+import { configSchema, networkRails, networkCurrencies, tokenRail } from './configForm'
 import { useUSDTAdmin } from './useUSDTAdmin'
 import USDTGeneralSettings from './USDTGeneralSettings.vue'
 import USDTNetworkSettings from './USDTNetworkSettings.vue'
@@ -15,13 +15,13 @@ const { t } = useI18n()
 const { draft, status, review, loading, loaded, busy, checking, resolving, error, saved, probe, load, refresh, save, check, loadReview, dismiss } = useUSDTAdmin()
 const selected = shallowRef<USDTNetworkID>('tron')
 const currency = shallowRef('usdt')
-const currencies = computed(() => (draft.value?.mode === 'both' ? ['usdt', 'usdc'] : [draft.value?.mode ?? 'usdt']).filter(value => value !== 'usdc' || nativeUSDCNetworks.has(selected.value)).map(value => ({ value, label: value.toUpperCase() })))
+const currencies = computed(() => networkCurrencies(selected.value).map(label => ({ value: label.toLowerCase(), label })))
 watch(currencies, items => { if (!items.some(item => item.value === currency.value)) currency.value = items[0]?.value ?? 'usdt' })
 const rail = computed(() => tokenRail(selected.value, currency.value))
 const workspace = shallowRef('general')
 const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'networks', label: t('adminUsdt.network') }, { value: 'review', label: t('adminUsdt.review') }])
 const schema = computed(() => configSchema())
-const networkItems = computed(() => draft.value?.networks.filter(network => draft.value?.mode !== 'usdc' || nativeUSDCNetworks.has(network.network)).map(network => ({ value: network.network, label: paymentChannelLabel(networkRails[network.network], network.network).replace(/^USDT\s*·\s*/, '') })) ?? [])
+const networkItems = computed(() => draft.value?.networks.map(network => ({ value: network.network, label: paymentChannelLabel(networkRails[network.network], network.network).replace(/^USDT\s*·\s*/, '') })) ?? [])
 watch(networkItems, items => { if (!items.some(item => item.value === selected.value) && items[0]) selected.value = items[0].value })
 const index = computed(() => draft.value?.networks.findIndex(network => network.network === selected.value) ?? -1)
 const network = computed<USDTNetworkConfig | null>({

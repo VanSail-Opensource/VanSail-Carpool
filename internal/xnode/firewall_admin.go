@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"net/netip"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -26,12 +27,11 @@ type adminFirewallRepository interface {
 }
 
 func (s *Service) GrantFirewallExemption(ctx context.Context, actor string, input AdminFirewallExemption) (model.OperationReceipt, error) {
-	prefix, err := wire.ExemptionPrefix(strings.TrimSpace(input.Prefix))
+	prefix, err := wire.FirewallPrefix(strings.TrimSpace(input.Prefix))
 	if err != nil || input.Hours < 1 || input.Hours > 8760 || utf8.RuneCountInString(input.Reason) > 1000 || input.Key == "" || len(input.Key) > 128 {
 		return model.OperationReceipt{}, ErrInvalid
 	}
-	check := wire.FirewallExemption{IP: prefix.String(), Generation: "admin", Until: s.Now().Add(time.Hour)}
-	if check.Validate() != nil {
+	if !validAdminExemption(prefix, s.Now()) {
 		return model.OperationReceipt{}, ErrInvalid
 	}
 	if prefix.Bits() != prefix.Addr().BitLen() && s.master != nil {
@@ -59,10 +59,7 @@ func (s *Service) GrantFirewallExemption(ctx context.Context, actor string, inpu
 			}
 		}
 	}
-	input.Prefix, err = wire.ExemptionKey(prefix.String())
-	if err != nil {
-		return model.OperationReceipt{}, ErrInvalid
-	}
+	input.Prefix = prefix.String()
 	input.Reason = strings.TrimSpace(input.Reason)
 	repo, ok := s.repo.(adminFirewallRepository)
 	if !ok {
@@ -83,4 +80,17 @@ func (s *Service) handleFirewallExemption(ctx context.Context, operation provide
 		return outbox.ErrBusy
 	}
 	return nil
+}
+
+// validAdminExemption mirrors the pinned agent's public-address restriction for
+// exact addresses and applies the same restriction to administrator prefixes.
+func validAdminExemption(prefix netip.Prefix, now time.Time) bool {
+	ip := prefix.Addr()
+	if !prefix.IsValid() || ip.Zone() != "" || ip.IsUnspecified() || ip.IsLoopback() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsPrivate() {
+		return false
+	}
+	if prefix.Bits() == ip.BitLen() {
+		return wire.FirewallExemption{IP: ip.String(), Generation: "admin", Until: now.Add(time.Hour)}.Validate() == nil
+	}
+	return true
 }

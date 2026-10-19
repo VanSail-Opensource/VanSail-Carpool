@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import type { USDTConfig } from '@/api/usdt'
-import { configSchema, newEndpoint } from './configForm'
+import { configSchema, newEndpoint, normalizeCurrencies } from './configForm'
 
 function config(): USDTConfig {
   return { mode: 'usdt', enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
 }
 
 describe('USDT configuration contracts', () => {
+  it('inherits legacy modes but keeps explicit network switches authoritative', () => {
+    const value = config()
+    value.mode = 'both'
+    expect(normalizeCurrencies(value).networks[0]!.currencies).toEqual(['USDT', 'USDC'])
+    value.networks[0]!.currencies = []
+    expect(normalizeCurrencies(value).networks[0]!.currencies).toEqual([])
+    value.networks[0]!.currencies = ['USDC']
+    value.networks[0]!.network = 'tron'
+    expect(configSchema().safeParse(value).success).toBe(false)
+  })
   it('accepts EVM WS-only and preserves masked URLs and credentials', () => {
     const value = config()
     expect(configSchema().safeParse(value).success).toBe(true)

@@ -54,8 +54,6 @@ type agentPeer struct {
 	pong             chan string
 	firewallSyncMu   sync.Mutex
 	firewallSourceMu sync.Mutex
-	countryMu        sync.Mutex
-	geoIPGeneration  string
 	firewallJoined   bool
 }
 

@@ -197,6 +197,33 @@ Master policy extensions: `native_policy_types.go` owns country, completion-sche
 
 `client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight.
 
+Shared policy saves additionally resolve actual geosite categories/attributes
+through the validation queue. The bounded lookup preserves native asset key
+case rules; `routing_domain_validation.go` compiles expanded values with the
+pinned native parser/matcher, rejecting invalid expressions inside an asset.
+`routing_domain_validation_test.go` covers accepted native semantics and typed
+country diagnostics.
+
+Subscription metadata, template previews and downloads share client capability
+filtering. `subscription_diagnostics.go` reports omitted endpoint counts and
+template failures explicitly; compatible endpoints still render when another
+endpoint uses an unsupported client transport. No generated credentials persist.
+`subscription_diagnostics_test.go` covers shared diagnostics and per-endpoint
+omission behavior.
+Selection previews also invoke the selected live renderer with synthetic proxies,
+so valid regex matching cannot conceal an invalid selected client document.
+
+Managed routing choices carry published inbound/outbound endpoint IDs.
+`routing_endpoints.go` projects only owner-authorized native endpoints and resolves
+legacy node-only defaults in their original ID order. IDs persist on the next
+member save; unchanged legacy documents retain their digest and runtime behavior.
+`routing_endpoint_context.go` binds native credentials and source rules to selected
+listeners. Endpoint graphs prove paths across matching listeners, while public
+paths expose node IDs and safe host details rather than internal vertex keys.
+`routing_member_preview.go` assembles owner-scoped previews through the same
+selection and compilation boundaries. `routing_endpoint_selection_test.go`
+covers authorized endpoint IDs, legacy order and listener-aware proofs.
+
 `geoip_wire.go` walks the pinned protobuf fields with bounded CIDR records, avoiding repeated-message allocation amplification and retaining cancellation checks during country resolution.
 
 State requests coalesce into the existing reconciler. The socket reader never waits on native compilation or GeoIP refreshes, so queued utility results and traffic acknowledgments keep progressing during external asset work.
@@ -255,10 +282,12 @@ unknown server contexts. These regressions run in hosted CI.
 
 Global saves validate shared selectors against native parsing and the configured geosite categories/attributes before publishing. Country decoding uses bounded field reads over the staged asset, including large unselected records. Policy failures expose safe localized codes rather than asset URLs.
 
-`firewall_admin.go` validates canonical IP/CIDR grants and dispatches local delivery observation. `geoip_delivery.go` prepares country generations via the existing durable outbox, probes reuse after reconnect, then sends metadata-only configurations. `geoip_stream.go` bounds protobuf country decoding without loading full records. `policy_validation.go` and `policy_validation_test.go` validate native shared selectors and geosite asset dependencies even without enrolled nodes. Bulk delivery and CIDR exemptions are capability-gated; dynamic enforcement has independent staging and reserved admission capacity.
+`firewall_admin.go` validates canonical IP/CIDR grants and dispatches local delivery observation. `geoip_delivery.go` queues country preparation through the existing durable outbox and wakes the state reconciler; resolved prefixes travel inline in the ordinary snapshot because the pinned signed agent contract has no separate streaming command. `geoip_stream.go` bounds protobuf country decoding without loading full records. `policy_validation.go` and `policy_validation_test.go` validate native shared selectors and geosite asset dependencies even without enrolled nodes. Bulk delivery and CIDR exemptions are capability-gated; dynamic enforcement has independent staging and reserved admission capacity.
 
 `command_outcomes.go` bounds acceptance separately from protocol execution and reports undelivered, rejected, failed and uncertain results. `command_updates.go` reconciles durable upgrades after reconnect, requiring fresh readiness at the current configuration revision. `command_outcomes_test.go`, `command_socket_test.go` and `command_update_reconnect_test.go` cover typed results, concurrent accounting acknowledgments and lost upgrade replies.
 
 `member_metrics.go` derives online, offline or unavailable from fresh native activity within the authorized node scope. `member_activity_test.go` covers stale/unsupported/rolled-back observations, idle nodes and transfer-only activity. The expiry is based on master receive time, stays memory-only and is transported in both member and profile projections.
 
 `squad_normalization_test.go` covers normalization of the final enabled squad during native entitlement activation without creating a legacy link. `periods.go` normalizes only mutation paths, preserving current counters and paid-successor accounting.
+
+`purchase_operations.go` guards reset/refund actions against the selected owner and effective purchase before touching the current period. `reset_operations.go` uses the durable reset operation UUID as the new accounting-period ID, proving that specific reset independently of timestamps or natural cadence. `purchase_operations_test.go` covers successor protection, boundary rechecks and proof replay. Keep periods referenced by unresolved reset operations until reconciliation; settled financial facts are never rewritten.

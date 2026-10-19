@@ -21,10 +21,12 @@ type RoutingTemplateConfig struct {
 	Templates []RoutingTemplate `json:"templates"`
 }
 type RoutingChoice struct {
-	ID             string `json:"id"`
-	InboundNodeID  string `json:"inboundNodeId"`
-	TemplateID     string `json:"templateId"`
-	OutboundNodeID string `json:"outboundNodeId"`
+	ID                 string `json:"id"`
+	InboundNodeID      string `json:"inboundNodeId"`
+	TemplateID         string `json:"templateId"`
+	OutboundNodeID     string `json:"outboundNodeId"`
+	InboundEndpointID  string `json:"inboundEndpointId,omitempty"`
+	OutboundEndpointID string `json:"outboundEndpointId,omitempty"`
 }
 type RoutingDocument struct {
 	LegacyNodes  []string        `json:"legacyNodes,omitempty"`
@@ -48,10 +50,19 @@ type RoutingView struct {
 	Templates []RoutingTemplate   `json:"templates"`
 	Nodes     []RoutingNode       `json:"nodes"`
 	Paths     []routingmatch.Path `json:"paths"`
+	Endpoints []RoutingEndpoint   `json:"endpoints"`
 }
 type RoutingNode struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type RoutingEndpoint struct {
+	ID      string `json:"id"`
+	NodeID  string `json:"nodeId"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Port    int    `json:"port"`
 }
 type routingRepository interface {
 	XNodeUnmanagedRoutes(context.Context, time.Time) ([]Customization, error)

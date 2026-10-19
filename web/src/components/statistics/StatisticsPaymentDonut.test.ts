@@ -19,6 +19,8 @@ describe('StatisticsPaymentDonut', () => {
     expect(wrapper.findAll('.statistics-concentric-ring--inner.statistics-ring-segment')).toHaveLength(1)
     expect(wrapper.find('.statistics-concentric__center').text()).toContain('4')
     expect(wrapper.find('.statistics-concentric__center').text()).toContain('Payment states')
+    expect(wrapper.text()).toContain('Paid75%')
+    expect(wrapper.text()).toContain('Expired25%')
   })
 
   it('renders a specific empty state when no terminal payments exist', () => {

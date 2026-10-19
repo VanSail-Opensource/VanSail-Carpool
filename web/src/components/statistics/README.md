@@ -11,7 +11,7 @@
 - `StatisticsDistribution.vue` switches between squad-first and combo-first normalized SVG stacked bars with interactive segment details.
 - `StatisticsDonut.vue` is the interactive reusable SVG donut-with-text and legend primitive.
 - `StatisticsPie.vue` renders interactive accessible SVG pies with either outside labels or a compact label list.
-- `StatisticsConcentricDonut.vue` owns the interactive reusable outer/inner ring geometry and grouped legends.
+- `StatisticsConcentricDonut.vue` owns the interactive reusable outer/inner ring geometry and grouped legends. Series weights let payment rings share one denominator, so arc lengths compare volume; reduced motion keeps final geometry and only fades opacity.
 - `StatisticsMembershipDonut.vue` combines subscription states and active combo choices with the active-member count at its center.
 - `StatisticsPaymentDonut.vue` renders EZPay outside BEPusdt, excludes failed or refunded payment facts, and centers the included payment count.
 - `StatisticsCharts.test.ts` covers donut, labeled-pie, and normalized stacked-bar semantics.

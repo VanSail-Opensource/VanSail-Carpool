@@ -30,9 +30,6 @@ func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, spec := range Registry {
-		if !modeAllows(c.Mode, spec) {
-			continue
-		}
 		var n NetworkConfig
 		for _, configured := range c.Networks {
 			if configured.Network == spec.Network {
@@ -40,7 +37,7 @@ func (s *Service) Methods(ctx context.Context) ([]model.PaymentMethod, error) {
 				break
 			}
 		}
-		if !n.Enabled {
+		if !n.Enabled || !currencyEnabled(n, spec) {
 			continue
 		}
 		status := s.states[spec.Rail]

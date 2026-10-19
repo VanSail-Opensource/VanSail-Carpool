@@ -86,11 +86,15 @@ func (s *Service) RefundQuote(ctx context.Context, userID, purchaseID string) (M
 	if err != nil {
 		return MemberRefundQuote{}, err
 	}
-	if user.RemnaUserID == nil {
+	remote, remoteID, err := purchaseRemote(ctx, s.remote, user, facts.Purchase)
+	if errors.Is(err, ErrRemoteIdentityMissing) {
 		local.Eligible, local.ReasonCode = false, reason(ReasonRemoteUnlinked)
 		return local, nil
 	}
-	state, err := refundState(ctx, s.remote, *user.RemnaUserID, purchaseID)
+	if err != nil {
+		return MemberRefundQuote{}, err
+	}
+	state, err := refundState(ctx, remote, remoteID, purchaseID)
 	if err != nil {
 		return MemberRefundQuote{}, err
 	}

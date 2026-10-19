@@ -4,6 +4,7 @@ import { xnodeMemberApi } from '@/api/xnodeMember'
 import { useClipboard } from '@/composables/useClipboard'
 import { useI18n } from '@/i18n'
 import { useSubscriptionData } from './useSubscriptionData'
+import SubscriptionFormatDiagnostics from './SubscriptionFormatDiagnostics.vue'
 
 const { t } = useI18n()
 const { value, loading, error, refresh } = useSubscriptionData(xnodeMemberApi.subscription)
@@ -37,6 +38,7 @@ async function copyLink() { copyFailed.value = !await copy(link.value) }
     <div class="flex flex-wrap gap-2"><UButton icon="i-ph-copy" :label="t(copied ? 'common.copied' : 'publicSubscription.copy')" :disabled="!link" @click="copyLink" /><UButton :to="link || undefined" external target="_blank" rel="noopener noreferrer" color="neutral" variant="outline" :disabled="!link" :label="t('publicSubscription.open')" /></div>
     <p v-if="copyFailed" role="alert" class="text-sm text-muted">{{ t('publicSubscription.copyFailed') }}</p>
     <p v-if="value?.incomplete" class="text-xs text-muted">{{ t('memberNodes.incomplete') }}</p>
+    <SubscriptionFormatDiagnostics :diagnostics="value?.formatDiagnostics" />
     <div v-if="error" class="flex items-center gap-2"><span class="text-sm text-muted">{{ error }}</span><UButton variant="ghost" color="neutral" :label="t('common.tryAgain')" @click="refresh()" /></div>
   </section>
 </template>

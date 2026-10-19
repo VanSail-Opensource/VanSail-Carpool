@@ -1,5 +1,19 @@
 # Subscription and uptime
 
+`SubscriptionFormatDiagnostics.vue` shares localized format omission/failure
+messages between the member center and public page. It renders only bounded safe
+codes and endpoint counts from metadata; disabled format actions remain gated.
+
+Member routing selects published endpoints with node/host/address labels. Node
+correspondence and ownership are rechecked on preview, save and compilation;
+the editor retains invalid drafts and resolves old node-only selections on save.
+Graph selection supplies Add Route's inbound node and remembered entry host.
+Only configured route nodes appear in the graph; all authorized endpoints remain
+available in selectors, including hosts on nodes not yet used by a route.
+`MemberRoutingPaths.vue` renders You, ordered node/host hops and original readable
+destination selectors. `routingPresentation.ts` simplifies only proven literal
+selector inclusion and preserves other intersections/exclusions without guessing.
+
 `HomeUptimePanel.vue` replaces the home subscription block only for active combos.
 Its subscription entrance stays centered on mobile and desktop; a failed read
 places Retry on a separate row so it does not shift the entrance.

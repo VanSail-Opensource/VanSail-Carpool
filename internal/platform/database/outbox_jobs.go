@@ -11,6 +11,18 @@ import (
 )
 
 func (s *Store) ClaimOutboxJob(ctx context.Context, now time.Time) (*model.OutboxJob, error) {
+	return s.claimOutboxJob(ctx, now, false)
+}
+
+// ClaimPriorityOutboxJob reserves dispatch capacity for dynamic firewall intent
+// while sharing the same transaction, lease and retry records as ordinary work.
+func (s *Store) ClaimPriorityOutboxJob(ctx context.Context, now time.Time) (*model.OutboxJob, error) {
+	return s.claimOutboxJob(ctx, now, true)
+}
+
+const priorityOutboxFilter = `kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic'`
+
+func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool) (*model.OutboxJob, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -18,11 +30,11 @@ func (s *Store) ClaimOutboxJob(ctx context.Context, now time.Time) (*model.Outbo
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	job, err := scanOutbox(tx.QueryRowContext(ctx, outboxSelect+` WHERE status='pending' AND available_at<=?
+	job, err := scanOutbox(tx.QueryRowContext(ctx, outboxSelect+` WHERE status='pending' AND available_at<=? AND (?=0 OR (`+priorityOutboxFilter+`))
 		AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
 			NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
 			AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
-		ORDER BY CASE WHEN kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic' THEN 0 ELSE 1 END,available_at,created_at LIMIT 1`, stamp(now)))
+		ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 0 ELSE 1 END,available_at,created_at LIMIT 1`, stamp(now), boolInt(priorityOnly)))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}

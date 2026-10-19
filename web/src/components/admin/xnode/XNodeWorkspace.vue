@@ -23,7 +23,7 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
 <template>
   <section class="xnode-workspace">
     <header class="admin-section-header"><div><h2>{{ t('xnode.title') }}</h2><p class="text-muted">{{ t('xnode.description') }}</p></div><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="workspace.loading.value" @click="workspace.load" /></header>
-    <div class="min-w-0 overflow-x-auto"><UTabs v-model="tab" :items="tabs" :content="false" variant="link" :ui="{ list: 'w-max min-w-full' }" /></div>
+    <div class="min-w-0 overflow-x-auto"><UTabs v-model="tab" :items="tabs" :content="false" variant="link" :ui="{ root: 'items-start', list: 'w-max min-w-full' }" /></div>
     <UAlert v-if="workspace.actionError.value" color="warning" :title="workspace.actionError.value" />
     <AdminSectionState :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
       <XNodeNodes v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />

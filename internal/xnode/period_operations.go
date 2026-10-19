@@ -34,32 +34,55 @@ func (s *Service) CloseForReplacement(ctx context.Context, id string) error {
 	return s.closePeriod(ctx, period, true)
 }
 func (s *Service) ResetTraffic(ctx context.Context, id string) error {
+	return s.resetTraffic(ctx, id, "")
+}
+
+func (s *Service) resetTraffic(ctx context.Context, id, expectedPurchase string, operation ...string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
 		return err
 	}
-	if identity.CurrentPeriodID != "" {
-		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+	if len(operation) > 0 {
+		applied, err := s.resetOperationCompleted(ctx, identity, expectedPurchase, operation[0])
 		if err != nil {
 			return err
 		}
-		if err = s.closePeriod(ctx, period, true); err != nil {
-			return err
+		if applied {
+			return nil
 		}
-	}
-	if err != nil {
-		return err
 	}
 	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
 	if err != nil {
 		return err
 	}
+	if expectedPurchase != "" && (purchase == nil || purchase.ID != expectedPurchase || identity.CurrentPeriodID == "") {
+		return ErrConflict
+	}
+	if identity.CurrentPeriodID != "" {
+		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+		if err != nil {
+			return err
+		}
+		if expectedPurchase != "" && (period.PurchaseID != expectedPurchase || period.ProxyUserID != identity.ProxyUserID) {
+			return ErrConflict
+		}
+		if err = s.closePeriod(ctx, period, true); err != nil {
+			return err
+		}
+	}
+	purchase, err = s.EffectivePurchase(ctx, identity.UserID)
+	if err != nil {
+		return err
+	}
+	if expectedPurchase != "" && (purchase == nil || purchase.ID != expectedPurchase) {
+		return ErrConflict
+	}
 	if purchase == nil {
 		return nil
 	}
-	return s.startPeriod(ctx, identity, *purchase, s.now().UTC())
+	return s.startPeriod(ctx, identity, *purchase, s.now().UTC(), operation...)
 }
 
 // RestorePurchase resumes the same accounting period after a refused refund.

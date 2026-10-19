@@ -26,6 +26,8 @@
 .statistics-concentric-legends { display: grid; gap: 1rem; }
 .statistics-concentric-ring--outer { stroke-width: 13; }
 .statistics-concentric-ring--inner { stroke-width: 12; }
+.statistics-concentric-rings--many .statistics-ring-track,
+.statistics-concentric-rings--many .statistics-ring-segment { stroke-width: 6; }
 .statistics-concentric__center { width: 46%; aspect-ratio: 1; display: grid; grid-area: 1 / 1; place-content: center; padding: 0.25rem; border-radius: 50%; background: var(--surface); text-align: center; }
 .statistics-concentric__center strong,
 .statistics-concentric__center span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

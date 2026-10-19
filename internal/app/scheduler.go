@@ -26,6 +26,10 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	if err := a.store.RecoverOutbox(ctx, startupNow, startupNow); err != nil {
 		a.logger.Error("startup outbox recovery failed", "error", err)
 	}
+	priorityCtx, stopPriority := context.WithCancel(ctx)
+	priorityDone := make(chan struct{})
+	go func() { defer close(priorityDone); a.runPriorityOutbox(priorityCtx) }()
+	defer func() { stopPriority(); <-priorityDone }()
 	if err := a.store.EnqueueUnlinkedPaidUsers(ctx, startupNow); err != nil {
 		a.logger.Error("startup unlinked paid user scan failed", "error", err)
 	}

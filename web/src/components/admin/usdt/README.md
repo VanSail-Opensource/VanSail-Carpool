@@ -30,7 +30,9 @@ remain shared billing components. Composables guard stale responses after unmoun
 Command failures remain visible beside transfer-credit inputs in the evidence
 side panel. Browser administration does not load Telegram controls or haptics.
 
-The single token-mode selector defaults to USDT. USDC is hidden on TRON/BSC/TON.
+Each network has independent USDT/USDC switches; USDC is hidden on TRON/BSC/TON.
+Legacy global modes populate missing network switches once. Explicit empty lists
+disable new quotes while outstanding quote watchers continue.
 Readiness and probes show one token rail at a time. Evidence settlement lives only
 in the profile payment-credit popup; the review workspace exposes permanent dismissal.
 Loads abort on replacement/disposal, generations guard responses, and failed loads

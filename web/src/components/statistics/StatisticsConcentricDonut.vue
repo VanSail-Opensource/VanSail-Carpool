@@ -14,6 +14,8 @@ interface ConcentricRing {
   id: string
   label: string
   items: readonly NamedShare[]
+  /** Share of the full ring reserved for this series. Defaults to a full circle. */
+  weight?: number
 }
 
 const props = defineProps<{
@@ -26,7 +28,7 @@ const props = defineProps<{
 
 const chartRings = computed(() => props.rings.map((ring) => ({
   ...ring,
-  segments: chartSegments(ring.items).map((segment) => ({
+  segments: chartSegments(ring.items, ring.weight ?? 100).map((segment) => ({
     ...segment,
     interactionId: `${ring.id}:${segment.id}`,
     ringLabel: ring.label,
@@ -37,12 +39,12 @@ const allSegments = computed(() => chartRings.value.flatMap((ring) => ring.segme
 const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(allSegments)
 const { reducedMotion } = useMotionPreferences()
 const ringRadius = (index: number) => 50 - index * (18 / Math.max(1, chartRings.value.length - 1))
-const ringStyle = computed(() => chartRings.value.length > 2 ? { strokeWidth: 6 } : undefined)
+const manyRings = computed(() => chartRings.value.length > 2)
 </script>
 
 <template>
   <div v-if="hasSegments" class="statistics-concentric-layout">
-    <div class="statistics-concentric-rings">
+    <div class="statistics-concentric-rings" :class="{ 'statistics-concentric-rings--many': manyRings }">
       <svg viewBox="0 0 120 120" role="group" :aria-label="chartLabel">
         <title>{{ chartLabel }}</title>
         <template v-for="(ring, index) in chartRings" :key="ring.id">
@@ -52,10 +54,9 @@ const ringStyle = computed(() => chartRings.value.length > 2 ? { strokeWidth: 6 
             cx="60"
             cy="60"
             :r="ringRadius(index)"
-            :style="ringStyle"
             pathLength="100"
           />
-          <circle
+          <motion.circle
             v-for="segment in ringSegments(ring.segments)"
             :key="segment.interactionId"
             class="statistics-ring-segment"
@@ -67,10 +68,9 @@ const ringStyle = computed(() => chartRings.value.length > 2 ? { strokeWidth: 6 
             cx="60"
             cy="60"
             :r="ringRadius(index)"
-            :style="ringStyle"
             pathLength="100"
             :stroke="segment.color"
-            :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, strokeDasharray: '0 100' }"
+            :initial="reducedMotion ? { opacity: 0, strokeDasharray: segment.dasharray, strokeDashoffset: segment.dashoffset } : { opacity: 0, strokeDasharray: '0 100' }"
             :animate="{ opacity: 1, strokeDasharray: segment.dasharray, strokeDashoffset: segment.dashoffset }"
             :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, delay: reducedMotion ? 0 : index * 0.03, ease: 'easeOut' }"
             role="button"

@@ -8,20 +8,26 @@ import (
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	"slices"
-	"sort"
 )
 
 type routingInput struct {
-	graph        *routingmatch.Graph
-	rules        []routingmatch.Rule
-	endpoints    map[string]Endpoint
-	inbounds     map[string]map[string]any
-	dependencies string
-	nodes        []RoutingNode
+	graph            *routingmatch.Graph
+	rules            []routingmatch.Rule
+	endpoints        map[string]Endpoint
+	dependencies     string
+	nodes            []RoutingNode
+	available        []RoutingEndpoint
+	byEndpoint       map[string]Endpoint
+	sources          map[string]Endpoint
+	targets          map[string]Endpoint
+	endpointInbounds map[string]map[string]any
+	vertices         map[string]string
+	choices          []RoutingChoice
+	legacy           bool
 }
 
 func (s *Service) routingInput(ctx context.Context, identity Identity, choices []RoutingChoice) (routingInput, error) {
-	in := routingInput{endpoints: map[string]Endpoint{}, inbounds: map[string]map[string]any{}, nodes: []RoutingNode{}}
+	in := routingInput{endpoints: map[string]Endpoint{}, nodes: []RoutingNode{}}
 	if identity.UserID == "" || len(choices) > 64 {
 		return in, ErrInvalid
 	}
@@ -37,48 +43,13 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	for _, t := range catalog.Templates {
 		templates[t.ID] = t
 	}
-	proxies, err := s.MemberProxies(ctx, identity.UserID)
-	if err != nil {
-		return in, fmt.Errorf("routing endpoint inventory: %w", err)
-	}
-	allowed := map[string]bool{}
-	for _, p := range proxies {
-		allowed[p.ID] = true
-	}
-	endpoints, err := s.Endpoints(ctx)
-	if err != nil {
+	if err := s.loadRoutingEndpoints(ctx, identity, &in); err != nil {
 		return in, err
 	}
-	sort.Slice(endpoints, func(i, j int) bool { return endpoints[i].ID < endpoints[j].ID })
-	for _, e := range endpoints {
-		if !e.Enabled || !allowed[e.ID] {
-			continue
-		}
-		owned, err := s.NativeOwner(ctx, e.NodeID)
-		if err != nil {
-			return in, err
-		}
-		if owned {
-			if _, exists := in.endpoints[e.NodeID]; !exists {
-				in.endpoints[e.NodeID] = e
-			}
-		}
+	if err := in.resolveChoices(choices); err != nil {
+		return in, err
 	}
-	for id := range in.endpoints {
-		node, err := s.repo.XNodeNode(ctx, id)
-		if err != nil {
-			return in, err
-		}
-		in.nodes = append(in.nodes, RoutingNode{ID: id, Name: node.Name})
-	}
-	sort.Slice(in.nodes, func(i, j int) bool { return in.nodes[i].Name < in.nodes[j].Name })
 	for _, choice := range choices {
-		if !memberTagPattern.MatchString(choice.ID) || choice.InboundNodeID == choice.OutboundNodeID {
-			return in, ErrInvalid
-		}
-		if in.endpoints[choice.InboundNodeID].ID == "" || in.endpoints[choice.OutboundNodeID].ID == "" {
-			return in, fmt.Errorf("%w: routing nodes require current purchased endpoint access", ErrInvalid)
-		}
 		_, ok := templates[choice.TemplateID]
 		if !ok {
 			return in, fmt.Errorf("%w: routing template is unavailable", ErrInvalid)
@@ -117,53 +88,19 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 		}
 	}
 	slices.Sort(usedNodes)
-	matcherContext := ""
-	for _, id := range usedNodes {
-		e := in.endpoints[id]
-		node, settings, err := s.Node(ctx, id)
-		if err != nil {
-			return in, err
-		}
-		config, err := s.ResolveConfiguration(ctx, node.ConfigID)
-		if err != nil {
-			return in, err
-		}
-		var root map[string]any
-		if json.Unmarshal(config.Document, &root) != nil {
-			return in, ErrInvalid
-		}
-		// DNS resolution can change a target between hops. Only AsIs preserves the
-		// destination model used to prove conditional graph safety.
-		routing, _ := root["routing"].(map[string]any)
-		if strategy, _ := routing["domainStrategy"].(string); strategy != "" && strategy != "AsIs" {
-			return in, fmt.Errorf("%w: managed routing requires domainStrategy AsIs on %s", ErrInvalid, node.Name)
-		}
-		tags, _, err := s.eligibleTags(ctx, identity.UserID, id)
-		if err != nil {
-			return in, err
-		}
-		context, err := routingServerContext(root, tags, global.Torrent.Enabled, usesProtocol)
-		if err != nil {
-			return in, err
-		}
-		if matcherContext != "" && matcherContext != context {
-			return in, fmt.Errorf("%w: %w", ErrInvalid, &routingmatch.Diagnostic{Code: "routing_context_unproven"})
-		}
-		matcherContext = context
-		items, _ := root["inbounds"].([]any)
-		for _, v := range items {
-			b, _ := v.(map[string]any)
-			if b["tag"] == e.InboundTag {
-				in.inbounds[id] = b
-				break
-			}
-		}
-		if in.inbounds[id] == nil {
-			return in, ErrInvalid
-		}
-		dependencies = append(dependencies, e, config.Document, config.SnippetIDs, settings.InboundCertificates, settings.Certificates)
+	dependencies, err = s.prepareRoutingContexts(ctx, identity, &in, usedNodes, global.Torrent.Enabled, usesProtocol, dependencies)
+	if err != nil {
+		return in, err
 	}
-	in.graph, err = routingmatch.Build(in.rules, nil)
+	proofRules := slices.Clone(in.rules)
+	if !in.legacy {
+		dependencies = append(dependencies, "endpoint-routing-v1", in.choices)
+		for index := range proofRules {
+			proofRules[index].From = routingVertex(in.sources[proofRules[index].ID])
+			proofRules[index].To = routingVertex(in.targets[proofRules[index].ID])
+		}
+	}
+	in.graph, err = routingmatch.Build(proofRules, nil)
 	if err != nil {
 		return in, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}

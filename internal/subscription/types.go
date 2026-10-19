@@ -46,7 +46,7 @@ func (p Proxy) Outbound() (map[string]any, error) {
 		server["version"] = 2
 		settings = server
 	default:
-		return nil, fmt.Errorf("unsupported subscription protocol")
+		return nil, fmt.Errorf("%w: native protocol", ErrUnsupported)
 	}
 	result := map[string]any{"tag": p.Tag(), "protocol": p.Protocol, "settings": settings, "streamSettings": p.Stream}
 	if len(p.Mux) > 0 {

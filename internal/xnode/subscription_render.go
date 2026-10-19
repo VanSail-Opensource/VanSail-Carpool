@@ -2,8 +2,8 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
-	"slices"
 )
 
 func (s *Service) renderOwnedSubscription(ctx context.Context, user, format string, proxies []subscription.Proxy) ([]byte, error) {
@@ -11,29 +11,28 @@ func (s *Service) renderOwnedSubscription(ctx context.Context, user, format stri
 }
 
 func (s *Service) renderSelectedSubscription(ctx context.Context, user string, selection SubscriptionSelection, proxies []subscription.Proxy) ([]byte, error) {
-	format := selection.Format
 	config, err := s.SubscriptionTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
+	return renderSubscriptionSelection(config, user, selection, proxies)
+}
+
+func renderSubscriptionSelection(config SubscriptionTemplateConfig, user string, selection SubscriptionSelection, proxies []subscription.Proxy) ([]byte, error) {
+	format := selection.Format
 	if !config.Formats[format] {
-		return nil, ErrInvalid
+		return nil, &PolicyError{"SUBSCRIPTION_FORMAT_DISABLED", ErrInvalid}
 	}
 	if format == "native" || format == "base64" {
-		return renderSubscription(format, proxies)
-	}
-	selected := []subscription.Proxy{}
-	sourceFormat := map[string]string{"xray": "XRAY_JSON", "sing-box": "SINGBOX", "clash": "MIHOMO", "stash": "STASH"}[format]
-	if sourceFormat == "" {
-		return nil, ErrInvalid
-	}
-	for _, proxy := range proxies {
-		if !slices.Contains(proxy.ExcludedFormats, sourceFormat) {
-			selected = append(selected, proxy)
+		raw, err := renderSubscription(format, proxies)
+		if err != nil {
+			return nil, subscriptionRenderError(err)
 		}
+		return raw, nil
 	}
-	if len(selected) == 0 {
-		return nil, ErrNotFound
+	selected, _, err := subscription.CompatibleProxies(format, proxies)
+	if err != nil {
+		return nil, subscriptionRenderError(err)
 	}
 	id := config.Defaults[format]
 	if override, exists := config.Assignments[user][format]; exists {
@@ -53,8 +52,20 @@ func (s *Service) renderSelectedSubscription(ctx context.Context, user string, s
 			}
 		}
 		if !found {
-			return nil, ErrInvalid
+			return nil, &PolicyError{"SUBSCRIPTION_FORMAT_RENDER_FAILED", ErrInvalid}
 		}
 	}
-	return subscription.RenderTemplate(item, selected)
+	raw, err := subscription.RenderTemplate(item, selected)
+	if err != nil {
+		return nil, subscriptionRenderError(err)
+	}
+	return raw, nil
+}
+
+func subscriptionRenderError(err error) error {
+	code := "SUBSCRIPTION_FORMAT_RENDER_FAILED"
+	if errors.Is(err, subscription.ErrNoCompatibleProxies) {
+		code = "SUBSCRIPTION_FORMAT_NO_ENDPOINTS"
+	}
+	return &PolicyError{code, errors.Join(ErrInvalid, err)}
 }

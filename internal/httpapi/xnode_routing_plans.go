@@ -41,15 +41,16 @@ func (s *Server) xnodeSaveRoutingPlan(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) xnodePreviewRoutingPlan(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Choices     []xnode.RoutingChoice    `json:"choices"`
-		Start       string                   `json:"start"`
-		Destination routingmatch.Destination `json:"destination"`
+		Choices       []xnode.RoutingChoice    `json:"choices"`
+		Start         string                   `json:"start"`
+		StartEndpoint string                   `json:"startEndpointId,omitempty"`
+		Destination   routingmatch.Destination `json:"destination"`
 	}
 	if decodeJSON(w, r, &input) != nil || input.Choices == nil {
 		s.xnodeError(w, r, xnode.ErrInvalid)
 		return
 	}
-	paths, trace, err := s.deps.XNode.PreviewOwnedRouting(r.Context(), currentUser(r).ID, input.Choices, input.Start, input.Destination)
+	paths, trace, err := s.deps.XNode.PreviewOwnedRouting(r.Context(), currentUser(r).ID, input.Choices, input.Start, input.Destination, input.StartEndpoint)
 	if err != nil {
 		s.xnodeRoutingError(w, r, err)
 		return

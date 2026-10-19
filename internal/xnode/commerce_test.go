@@ -27,9 +27,9 @@ func (r *commerceRepository) XNodeLegacyHistory(context.Context, int64, time.Tim
 }
 
 func TestRefundRejectsSourceTrafficBeforeTheImportedResetPeriod(t *testing.T) {
-	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", LegacyUserID: "7", CurrentPeriodID: "current"}, period: Period{ID: "current", PurchaseID: "purchase", Status: "open"}, purchase: model.Purchase{ID: "purchase"}, legacy: []LegacyHistory{{Date: "2026-10-01", WeightedBytes: 70}}}
+	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", LegacyUserID: "7", CurrentPeriodID: "current"}, period: Period{ID: "current", ProxyUserID: 42, PurchaseID: "purchase", Status: "open"}, purchase: model.Purchase{ID: "purchase"}, legacy: []LegacyHistory{{Date: "2026-10-01", WeightedBytes: 70}}}
 	r.periods = []Period{r.period}
-	s := &Service{repo: r}
+	s := &Service{repo: r, now: time.Now}
 	state, err := s.MemberRefundState(context.Background(), "42", "purchase")
 	if err != nil || state.UsedTrafficBytes != 70 {
 		t.Fatalf("source refund evidence was erased by reset: %+v,%v", state, err)
@@ -65,9 +65,9 @@ func TestMemberRefundIncludesEarlierResetsButExcludesAnotherPurchase(t *testing.
 		{"overflow", "closed", math.MaxInt64, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := &commerceRepository{identity: Identity{ProxyUserID: 42, CurrentPeriodID: "current"}, period: Period{ID: "current", PurchaseID: "purchase", Status: "open"}}
+			r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", CurrentPeriodID: "current"}, period: Period{ID: "current", ProxyUserID: 42, PurchaseID: "purchase", Status: "open"}, purchase: model.Purchase{ID: "purchase", UserID: "member"}}
 			r.periods = []Period{{ID: "old-reset", PurchaseID: "purchase", Status: tc.status, UsedBytes: tc.used}, {ID: "current", PurchaseID: "purchase", Status: "open", UsedBytes: 1}, {ID: "other", PurchaseID: "another", Status: "closed", UsedBytes: 900}}
-			s := &Service{repo: r}
+			s := &Service{repo: r, now: time.Now}
 			state, err := s.MemberRefundState(context.Background(), "42", "purchase")
 			if tc.unavailable {
 				if !errors.Is(err, ErrUnavailable) {
@@ -84,7 +84,7 @@ func TestMemberRefundIncludesEarlierResetsButExcludesAnotherPurchase(t *testing.
 
 func TestApplyPurchaseUpdatesCadenceWithoutReplacingAccounting(t *testing.T) {
 	until := time.Now().UTC().Add(24 * time.Hour)
-	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", CurrentPeriodID: "current"}, period: Period{ID: "current", PurchaseID: "purchase", Status: "open", Strategy: "DAY", UsedBytes: 17}, purchase: model.Purchase{ID: "purchase", TrafficLimitBytes: 1000, ResetStrategy: "WEEK", ValidUntil: until}}
+	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", CurrentPeriodID: "current"}, period: Period{ID: "current", ProxyUserID: 42, PurchaseID: "purchase", Status: "open", Strategy: "DAY", UsedBytes: 17}, purchase: model.Purchase{ID: "purchase", TrafficLimitBytes: 1000, ResetStrategy: "WEEK", ValidUntil: until}}
 	s := &Service{repo: r, now: time.Now}
 	if err := s.ApplyPurchase(context.Background(), "42", 1000, "WEEK", until); err != nil {
 		t.Fatal(err)

@@ -14,6 +14,8 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_purchase_candidates(id)
 		SELECT purchase.id FROM purchases purchase
 		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<?
+		AND NOT EXISTS (SELECT 1 FROM xnode_periods period WHERE period.purchase_id=purchase.id)
+		AND NOT EXISTS (SELECT 1 FROM purchase_rollovers rollover WHERE rollover.purchase_id=purchase.id AND rollover.status NOT IN ('credited','zero'))
 		AND NOT EXISTS (SELECT 1 FROM outbox_jobs job WHERE job.status IN ('pending','processing')
 			AND json_extract(job.payload,'$.purchaseId')=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM provider_operation_items item

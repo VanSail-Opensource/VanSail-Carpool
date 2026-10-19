@@ -41,7 +41,7 @@ func (p Proxy) NativeLink() (string, error) {
 		raw, err := json.Marshal(value)
 		return "vmess://" + base64.StdEncoding.EncodeToString(raw), err
 	default:
-		return "", fmt.Errorf("unsupported native link protocol")
+		return "", fmt.Errorf("%w: native link protocol", ErrUnsupported)
 	}
 	if credential == "" {
 		return "", fmt.Errorf("missing proxy credential")

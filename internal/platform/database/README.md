@@ -1,5 +1,10 @@
 # SQLite store
 
+Native traffic aggregation streams indexed node/day groups with checked integer
+sums. Backup-gated native retention prunes only expired access and superseded
+acknowledged rate boundaries; native purchase/refund evidence and unsettled
+rollovers remain protected. See [accounting retention](../../../docs/modules/native-accounting-retention.md).
+
 `xnode_*.go` implements authoritative node/profile/group/endpoint configuration,
 encrypted identity references, periods, migration checkpoints and immutable
 report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
@@ -247,6 +252,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   `retention_purchase_rollups.go` preserve compact activity, payment, purchase,
   and per-member rollover facts before pruning.
 - `retention_compaction.go` coordinates all backup-gated cleanup writes in one transaction.
+- `retention_native.go` prunes aged native accounting maintenance rows without removing purchase-wide financial evidence or rollback dependencies.
 - `retention_operations.go` fails stale open provider operations after 24 hours, resolves linked local state, and removes processed receipts plus their queue records.
 - `retention_operation_compensation.go` refunds stale traffic-reset and Emby-setup debits before their operations are removed.
 - `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
@@ -289,6 +295,8 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `rollover_test.go` — rollover transitions and calculations.
 - `release1_commerce_migration_test.go` covers rolling-month conversion, immutable pricing backfill, and new release-one persistence tables.
 - `retention_test.go` — retained operational-record cleanup behavior.
+- `retention_native_test.go` covers bounded native accounting maintenance retention and preservation of settlement evidence.
+- `outbox_priority_dispatch_test.go` covers reserved priority dispatch, one-second coalescing and ordinary-job ordering.
 - `maintenance_runs_test.go` covers local-day locking, forced same-day history, and backup-gated maintenance state.
 - `retention_provider_operations_test.go` covers retaining provider operations referenced by durable administrative and compensation records.
 - `continuity_test.go` covers three-minute provider-expiry preparation without an access gap.

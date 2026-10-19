@@ -23,10 +23,11 @@ export function configSchema() {
   return z.object({ mode: z.enum(['usdt', 'usdc', 'both']).default('usdt'), enabled: z.boolean(), name: z.string().trim().min(1, invalid).max(64),
     rate: z.string().refine(value => value === '' || (/^\d{1,18}(\.\d{1,12})?$/.test(value) && Number(value) > 0), invalid),
     expiryMinutes: z.number().int().min(5).max(120), concurrency: z.number().int().min(1).max(8),
-    networks: z.array(z.object({ network: z.enum(Object.keys(networkRails) as [USDTNetworkID, ...USDTNetworkID[]]), enabled: z.boolean(), addresses: z.array(z.string()).max(128), endpoints: z.array(endpoint).max(8) })).max(10),
+    networks: z.array(z.object({ network: z.enum(Object.keys(networkRails) as [USDTNetworkID, ...USDTNetworkID[]]), enabled: z.boolean(), currencies: z.array(z.enum(['USDT', 'USDC'])).max(2).nullable().optional(), addresses: z.array(z.string()).max(128), endpoints: z.array(endpoint).max(8) })).max(10),
   }).superRefine((value, ctx) => {
     if (value.enabled && !value.rate) ctx.addIssue({ code: 'custom', path: ['rate'], message: invalid })
     value.networks.forEach((network, index) => {
+      if (network.currencies && (new Set(network.currencies).size !== network.currencies.length || network.currencies.some(currency => !networkCurrencies(network.network).includes(currency)))) ctx.addIssue({ code: 'custom', path: ['networks', index, 'currencies'], message: invalid })
       if (network.enabled && (!network.addresses.length || !network.endpoints.length)) ctx.addIssue({ code: 'custom', path: ['networks', index], message: invalid })
       network.endpoints.forEach((item, endpointIndex) => {
         const path = ['networks', index, 'endpoints', endpointIndex]
@@ -47,4 +48,8 @@ export function configSchema() {
 }
 
 export const nativeUSDCNetworks = new Set<USDTNetworkID>(['ethereum', 'polygon', 'arbitrum', 'xlayer', 'plasma', 'solana', 'aptos'])
+export const networkCurrencies = (network: USDTNetworkID): ('USDT' | 'USDC')[] => nativeUSDCNetworks.has(network) ? ['USDT', 'USDC'] : ['USDT']
+export function normalizeCurrencies(config: USDTConfig): USDTConfig {
+  return { ...config, networks: config.networks.map(network => ({ ...network, currencies: network.currencies ?? networkCurrencies(network.network).filter(currency => config.mode === 'both' || currency.toLowerCase() === (config.mode ?? 'usdt')) })) }
+}
 export function tokenRail(network: USDTNetworkID, currency: string): string { return networkRails[network]!.replace('usdt.', `${currency.toLowerCase()}.`) }

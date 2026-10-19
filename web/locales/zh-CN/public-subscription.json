@@ -1,5 +1,10 @@
 {
   "publicSubscription": {
+    "diagnostics": {
+      "renderFailed": "{format}：生成失败，请联系管理员检查模板和端点设置。",
+      "noEndpoints": "{format}：没有可用的兼容端点。",
+      "excluded": "{format}：已省略 {count} 个不兼容或被排除的端点。"
+    },
     "title": "订阅",
     "unavailable": "此订阅链接不可用。",
     "unavailableHint": "链接可能已过期或被替换，请从小程序获取当前链接。",

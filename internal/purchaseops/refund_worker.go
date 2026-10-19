@@ -19,11 +19,31 @@ func (w *Worker) handleRefund(ctx context.Context, operation providerops.Operati
 	if err != nil {
 		return err
 	}
-	if user.RemnaUserID == nil {
+	remote, remoteID, err := purchaseRemote(ctx, w.remote, user, facts.Purchase)
+	if errors.Is(err, ErrRemoteIdentityMissing) {
+		if item.Status == providerops.StatusProcessing {
+			return w.complete(ctx, operation, item, providerops.StatusPendingReview, "REFUND_RECONCILIATION_FAILED")
+		}
 		return w.complete(ctx, operation, item, providerops.StatusFailed, ReasonRemoteUnlinked)
 	}
-	remoteID := *user.RemnaUserID
+	if err != nil {
+		return err
+	}
+	scoped := *w
+	scoped.remote = remote
+	w = &scoped
 	if item.Status == providerops.StatusQueued {
+		quote, err := QuoteMemberRefund(facts, operation.OwnerUserID, 0, w.now().UTC())
+		if err != nil {
+			return err
+		}
+		if !quote.Eligible {
+			code := ReasonNotActive
+			if quote.ReasonCode != nil {
+				code = *quote.ReasonCode
+			}
+			return w.complete(ctx, operation, item, providerops.StatusFailed, code)
+		}
 		item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 		if err != nil {
 			return err

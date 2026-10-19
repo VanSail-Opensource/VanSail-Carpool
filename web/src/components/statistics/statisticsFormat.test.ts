@@ -28,4 +28,11 @@ describe('statistics formatting', () => {
     expect(segments[0]?.percentage).toBe(100)
     expect(safeStatisticBytes('-1')).toBe(0n)
   })
+
+  it('scales a series against a shared concentric-ring total', () => {
+    const segments = chartSegments([{ id: 'ezpay', label: 'EZPay', value: 2 }], 20)
+
+    expect(segments[0]?.percentage).toBe(20)
+    expect(chartSegments([{ id: 'paid', label: 'Paid', value: 1 }], 0)[0]?.percentage).toBe(100)
+  })
 })

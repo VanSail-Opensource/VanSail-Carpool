@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SubscriptionFormatDiagnostics from '@/components/subscription/SubscriptionFormatDiagnostics.vue'
 import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import { en, zh_cn } from '@nuxt/ui/locale'
 import { useI18n } from '@/i18n'
@@ -44,6 +45,7 @@ onScopeDispose(() => latest.dispose())
           <UAlert v-if="!subscription.metadata.value.active" color="neutral" variant="soft" :title="t('publicSubscription.noAccess')" />
           <UAlert v-else-if="!Object.values(subscription.metadata.value.formats).some(Boolean)" color="neutral" variant="soft" :title="t('memberNodes.noFormats')" />
           <UFormField :label="t('publicSubscription.format')"><USelect v-model="subscription.format.value" :items="formats" :disabled="!subscription.metadata.value.active || !formats.some(item => !item.disabled)" class="w-full" /></UFormField>
+          <SubscriptionFormatDiagnostics :diagnostics="subscription.metadata.value.formatDiagnostics" />
           <UInput :model-value="subscription.link.value" readonly :aria-label="t('publicSubscription.url')" class="w-full font-mono" />
           <div class="subscription-actions"><UButton icon="i-ph-copy" :label="t(subscription.copied.value ? 'common.copied' : 'publicSubscription.copy')" :disabled="!subscription.link.value" @click="subscription.copy" /><UButton color="neutral" variant="outline" icon="i-ph-qr-code" :label="t('publicSubscription.qr')" :disabled="!subscription.link.value" @click="qrOpen = true" /><UButton v-if="subscription.importLink.value" :to="subscription.importLink.value" external color="neutral" variant="outline" :label="t('publicSubscription.import')" /><UButton :to="subscription.link.value || undefined" external target="_blank" rel="noopener noreferrer" color="neutral" variant="ghost" :disabled="!subscription.link.value" :label="t('publicSubscription.open')" /></div>
           <p v-if="subscription.copyFailed.value" role="alert" class="text-sm text-muted">{{ t('publicSubscription.copyFailed') }}</p>

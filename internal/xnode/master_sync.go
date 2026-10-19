@@ -98,11 +98,6 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if err != nil {
 		return err
 	}
-	if prepared.config.Firewall.SourceGeoIP != nil && prepared.config.Firewall.SourceGeoIP.Reference {
-		if err = m.queueCountry(ctx, peer, config.Firewall.SourceGeoIP); err != nil {
-			return err
-		}
-	}
 	controls := m.connectionControls(prepared.config)
 	digest := prepared.digest
 	peer.mu.Lock()

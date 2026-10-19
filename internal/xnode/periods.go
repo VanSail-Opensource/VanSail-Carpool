@@ -45,13 +45,19 @@ func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, str
 	}
 	return s.startPeriod(ctx, identity, *purchase, s.now().UTC())
 }
-func (s *Service) startPeriod(ctx context.Context, identity Identity, purchase model.Purchase, at time.Time) error {
+func (s *Service) startPeriod(ctx context.Context, identity Identity, purchase model.Purchase, at time.Time, reference ...string) error {
 	if err := s.normalizePurchaseSquads(ctx, identity, purchase); err != nil {
 		return err
 	}
-	id, err := ids.New()
-	if err != nil {
-		return err
+	var id string
+	if len(reference) > 0 {
+		id = reference[0]
+	} else {
+		var err error
+		id, err = ids.New()
+		if err != nil {
+			return err
+		}
 	}
 	return s.repo.SaveXNodePeriod(ctx, Period{ID: id, ProxyUserID: identity.ProxyUserID, PurchaseID: purchase.ID, StartedAt: at, LimitBytes: purchase.TrafficLimitBytes, Strategy: purchase.ResetStrategy, LastResetAt: &at, Status: "open"})
 }

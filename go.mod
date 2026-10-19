@@ -11,10 +11,13 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/miekg/dns v1.1.73
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/xssnick/tonutils-go v1.19.0
 	github.com/xtls/xray-core v1.260327.1-0.20261010092107-701af60772cd
+	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/crypto v0.58.0
 	golang.org/x/net v0.61.0
+	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.60.1
 )
 
@@ -49,13 +52,11 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/xtls/reality v0.0.0-20260908062103-8cdf7bf9c7f0 // indirect
 	github.com/yuin/gopher-lua v1.1.2 // indirect
-	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20261005185213-c3db4df58582 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.42.0 // indirect
@@ -68,7 +69,6 @@ require (
 	golang.zx2c4.com/wireguard/windows v1.1.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941 // indirect
 	google.golang.org/grpc v1.84.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gvisor.dev/gvisor v0.0.0-20260122175437-89a5d21be8f0 // indirect
 	layeh.com/gopher-luar v1.0.11 // indirect

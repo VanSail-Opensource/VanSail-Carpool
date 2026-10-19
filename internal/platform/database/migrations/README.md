@@ -1,5 +1,8 @@
 # Database migrations
 
+`087_native_accounting_maintenance.sql` adds native date/user/purchase and expiry
+indexes without copying or rewriting accounting and financial records.
+
 `075_xnode_control_plane.sql` adds authoritative X-Node configuration and access
 references plus period accounting, immutable report cursors, rate boundaries and
 resumable migration metadata. Runtime connection observations remain in memory.

@@ -1,5 +1,10 @@
 {
   "managedRouting": {
+    "you": "你",
+    "allTraffic": "所有目标",
+    "inboundHost": "入站主机",
+    "outboundHost": "出站主机",
+    "traceHost": "入口主机",
     "description": "规则在每个节点按顺序匹配。入站和出站节点均须包含在当前套餐内。",
     "templatesTitle": "路由模板",
     "templateDescription": "为成员路由配置目标匹配条件。不同类别之间为且，同类条目之间为或。空类别匹配全部流量。域名支持 full:、domain:、keyword:、regexp: 和 geosite: 选择器。",
@@ -32,6 +37,7 @@
     "protocols": "识别协议 · 每行一项",
     "networks": "网络 · 留空表示两者",
     "errors": {
+      "routing_endpoint_unavailable": "所选主机不可用，或不属于对应节点及您当前的访问权限，请选择已授权主机。",
       "routing_context_unproven": "这些路由需要固定的目标元数据和直连回退，请联系管理员检查嗅探、客户端映射和代理链设置。",
       "routing_loop": "这些条件会形成路由环路，请修改目标节点或匹配条件。",
       "routing_overlap_unproven": "无法证明匹配条件互斥，请使用更明确的域名、IP 或端口条件。",

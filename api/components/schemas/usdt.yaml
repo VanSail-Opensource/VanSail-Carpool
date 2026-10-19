@@ -24,6 +24,7 @@ USDTNetworkConfig:
   properties:
     network: { $ref: '#/USDTNetworkID' }
     enabled: { type: boolean }
+    currencies: { type: array, nullable: true, maxItems: 2, uniqueItems: true, items: { type: string, enum: [USDT, USDC] }, description: 'Authoritative per-network new-quote switches. Only registered native tokens are allowed. Missing or null inherits legacy mode; an empty list disables both. Issued quotes remain monitored.' }
     addresses: { type: array, maxItems: 128, items: { type: string } }
     endpoints: { type: array, maxItems: 8, items: { $ref: '#/USDTEndpoint' } }
 USDTConfig:
@@ -33,7 +34,7 @@ USDTConfig:
   properties:
     enabled: { type: boolean }
     name: { type: string, minLength: 1, maxLength: 64 }
-    mode: { type: string, enum: [usdt, usdc, both], default: usdt, description: 'Missing legacy values retain USDT. Network endpoints, addresses and concurrency are shared.' }
+    mode: { type: string, enum: [usdt, usdc, both], default: usdt, deprecated: true, description: 'Legacy default for networks missing currencies. Explicit network currencies are authoritative. Endpoints, addresses and concurrency are shared.' }
     rate: { type: string, description: 'Exact TXB per token; required while enabled.' }
     expiryMinutes: { type: integer, minimum: 5, maximum: 120, default: 30 }
     concurrency: { type: integer, minimum: 1, maximum: 8, description: 'One shared cap across all RPC, indexer, probe, reconnect and WebSocket requests.' }

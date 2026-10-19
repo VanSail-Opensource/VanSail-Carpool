@@ -1,5 +1,10 @@
 {
   "managedRouting": {
+    "you": "You",
+    "allTraffic": "All destinations",
+    "inboundHost": "Inbound host",
+    "outboundHost": "Outbound host",
+    "traceHost": "Entry host",
     "description": "Rules run in order at each node. Both nodes must be included in your current purchase.",
     "templatesTitle": "Routing templates",
     "templateDescription": "Choose destination matchers for member routes. Categories combine with AND; entries within each category combine with OR. Empty categories match all traffic. Domain rules support full:, domain:, keyword:, regexp: and geosite: selectors.",
@@ -32,6 +37,7 @@
     "protocols": "Detected protocols · one per line",
     "networks": "Networks · empty means both",
     "errors": {
+      "routing_endpoint_unavailable": "A selected host is unavailable or does not belong to the selected node and your current access. Choose an authorized host.",
       "routing_context_unproven": "These routes require fixed destination metadata and direct fallbacks. Ask an administrator to review sniffing, client mappings and proxy chains.",
       "routing_loop": "These conditions create a routing loop. Change the destination or matchers.",
       "routing_overlap_unproven": "The matcher overlap could not be proven safe. Use more specific domain, IP or port conditions.",

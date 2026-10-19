@@ -25,12 +25,16 @@ function providerItems(provider: 'ezpay' | 'bepusdt' | 'builtin_usdt'): NamedSha
 const ezpayItems = computed(() => providerItems('ezpay'))
 const bepusdtItems = computed(() => providerItems('bepusdt'))
 const builtinItems = computed(() => providerItems('builtin_usdt'))
-const rings = computed(() => [
-  { id: 'ezpay', label: t('statistics.provider.ezpay'), items: ezpayItems.value },
-  { id: 'bepusdt', label: t('statistics.provider.bepusdt'), items: bepusdtItems.value },
-  ...(builtinItems.value.length ? [{ id: 'builtin_usdt', label: t('statistics.provider.builtin_usdt'), items: builtinItems.value }] : []),
-] as const)
 const total = computed(() => shareTotal([...ezpayItems.value, ...bepusdtItems.value, ...builtinItems.value]))
+const rings = computed(() => {
+  const rings = [
+    { id: 'ezpay', label: t('statistics.provider.ezpay'), items: ezpayItems.value },
+    { id: 'bepusdt', label: t('statistics.provider.bepusdt'), items: bepusdtItems.value },
+    ...(builtinItems.value.length ? [{ id: 'builtin_usdt', label: t('statistics.provider.builtin_usdt'), items: builtinItems.value }] : []),
+  ]
+  // Every provider shares one denominator so ring arc lengths compare volume.
+  return rings.map((ring) => ({ ...ring, weight: total.value > 0 ? shareTotal(ring.items) * 100 / total.value : 0 }))
+})
 const hasPayments = computed(() => total.value > 0)
 </script>
 

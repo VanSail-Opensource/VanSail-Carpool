@@ -11,8 +11,11 @@ import (
 )
 
 func (a proxyProvider) bridgeEntitlement(ctx context.Context, identity xnode.Identity, limit int64, strategy string, groups []string, until time.Time) error {
+	if identity.LegacyUserID == "" {
+		return nil
+	}
 	bridge, err := a.legacy(ctx)
-	if err != nil || !bridge || identity.LegacyUserID == "" {
+	if err != nil || !bridge {
 		return err
 	}
 	if err = a.reconcileBridgeUsage(ctx, identity); err != nil {

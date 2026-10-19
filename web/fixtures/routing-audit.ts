@@ -19,7 +19,13 @@ const params = new URLSearchParams(location.search)
 setExperience('browser'); initializeBrowserTheme(); setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const trace = { calls: [] as string[], writes: [] as unknown[], keys: [] as string[], previews: [] as unknown[], polls: 0 }
 const nodes = params.has('empty') ? [] : [{ id: 'a', name: 'Amsterdam' }, { id: 'b', name: 'Singapore' }, { id: 'c', name: 'Tokyo' }]
+if (params.has('unused') && nodes.length) nodes.push({ id: 'd', name: 'New York' })
+const endpoints: NonNullable<RoutingView['endpoints']> = nodes.flatMap(node => [
+  { id: `${node.id}-primary`, nodeId: node.id, name: `${node.name} primary`, address: `${node.id}.proxy.example`, port: 443 },
+  { id: `${node.id}-secondary`, nodeId: node.id, name: `${node.name} alternate`, address: `${node.id}-alt.proxy.example`, port: 8443 },
+])
 let catalog: components['schemas']['XNodeRoutingTemplateConfig'] = { revision: 1, templates: params.has('no-templates') ? [] : [{ id: 'google-ai', name: 'Google + AI', match: { domain: ['domain:google.com', 'domain:openai.com'] } }, { id: 'google', name: 'Google', match: { domain: ['domain:google.com'] } }, { id: 'ai', name: 'AI', match: { domain: ['domain:openai.com'] } }] }
+if (params.has('geosite')) for (const template of catalog.templates) if (template.id !== 'ai') template.match.domain = ['geosite:google']
 let plan: RoutingView['plan'] = { revision: 1, phase: params.has('disabled') ? 'disabled' : 'active', reason: params.has('disabled') ? 'routing_legacy_incompatible' : '', choices: params.has('empty') || params.has('no-routes') ? [] : [{ id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google-ai' }, { id: 'bc', inboundNodeId: 'b', outboundNodeId: 'c', templateId: 'google' }] }
 let failed = false, receipt: OperationReceipt | null = null
 function pause(delay = params.has('slow') ? 2000 : 30) { return new Promise(resolve => setTimeout(resolve, delay)) }
@@ -29,7 +35,7 @@ function graph(choices: RoutingChoice[]) {
   for (const start of nodes) for (const domain of ['google.com', 'openai.com']) {
     const ids = [start.id], rules: string[] = []
     for (let step = 0; step < 10; step++) {
-      const rule = choices.find(rule => rule.inboundNodeId === ids.at(-1) && (catalog.templates.find(t => t.id === rule.templateId)?.match.domain ?? []).includes(`domain:${domain}`))
+      const rule = choices.find(rule => { const domains = catalog.templates.find(template => template.id === rule.templateId)?.match.domain ?? []; return rule.inboundNodeId === ids.at(-1) && (domains.includes(`domain:${domain}`) || domain === 'google.com' && domains.includes('geosite:google')) })
       if (!rule) break
       if (ids.includes(rule.outboundNodeId)) throw new ApiError(422, { code: 'routing_loop', message: '', details: { rules: [...rules, rule.id].join(',') } })
       ids.push(rule.outboundNodeId); rules.push(rule.id)
@@ -38,7 +44,7 @@ function graph(choices: RoutingChoice[]) {
   }
   return result
 }
-xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, templates: catalog.templates, paths: graph(plan.choices) }) }
+xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
 xnodeMemberApi.previewRouting = async body => {
   trace.calls.push('member-preview'); trace.previews.push(JSON.parse(JSON.stringify(body))); await pause(params.has('stale-preview') && body.destination.domain === 'google.com' ? 1700 : 50)
   if (params.has('preview-error')) throw new ApiError(422, { code: 'routing_overlap_unproven', message: '' })

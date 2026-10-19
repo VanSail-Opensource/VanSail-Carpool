@@ -25,9 +25,6 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return ErrUnavailable
 	}
 	if input.Bank != "dynamic" {
-		if input.Bank == "geoip" && !containsCapability(m.Capabilities(input.NodeID), "source_geoip_stream_v1") {
-			return &CapabilityError{Capability: "source_geoip_stream_v1"}
-		}
 		m.mu.Lock()
 		if m.firewallSourcesRunning >= 2 {
 			m.mu.Unlock()
