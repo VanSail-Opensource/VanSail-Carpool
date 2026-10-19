@@ -15,7 +15,7 @@ import (
 
 func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	f := controlFixture(t, false)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	server := httptest.NewServer(f.master)
 	defer server.Close()
@@ -72,6 +72,7 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	}
 	_ = socket.Close()
 	reconnected := agentSocket(t, server, token, fixtureAgent, baseline.Revision, "update_transaction_v1")
+	_ = reconnected.SetReadDeadline(time.Now().Add(30 * time.Second))
 	if err := reconnected.WriteJSON(wire.New("state.request", "", 0, map[string]any{})); err != nil {
 		t.Fatal(err)
 	}

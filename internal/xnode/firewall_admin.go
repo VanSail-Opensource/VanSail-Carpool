@@ -27,7 +27,7 @@ type adminFirewallRepository interface {
 }
 
 func (s *Service) GrantFirewallExemption(ctx context.Context, actor string, input AdminFirewallExemption) (model.OperationReceipt, error) {
-	prefix, err := wire.FirewallPrefix(strings.TrimSpace(input.Prefix))
+	prefix, err := ExemptionPrefix(input.Prefix)
 	if err != nil || input.Hours < 1 || input.Hours > 8760 || utf8.RuneCountInString(input.Reason) > 1000 || input.Key == "" || len(input.Key) > 128 {
 		return model.OperationReceipt{}, ErrInvalid
 	}
@@ -80,6 +80,24 @@ func (s *Service) handleFirewallExemption(ctx context.Context, operation provide
 		return outbox.ErrBusy
 	}
 	return nil
+}
+
+// ExemptionPrefix parses exact addresses as host prefixes and preserves CIDR
+// intent. Ban prefixes use /64 for bare IPv6 addresses; exemptions must not.
+func ExemptionPrefix(raw string) (netip.Prefix, error) {
+	trimmed := strings.TrimSpace(raw)
+	if ip, err := netip.ParseAddr(trimmed); err == nil {
+		ip = ip.Unmap()
+		if ip.Zone() != "" {
+			return netip.Prefix{}, ErrInvalid
+		}
+		return netip.PrefixFrom(ip, ip.BitLen()).Masked(), nil
+	}
+	prefix, err := wire.FirewallPrefix(trimmed)
+	if err != nil {
+		return netip.Prefix{}, ErrInvalid
+	}
+	return prefix, nil
 }
 
 // validAdminExemption mirrors the pinned agent's public-address restriction for

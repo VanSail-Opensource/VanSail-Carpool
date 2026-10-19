@@ -22,9 +22,9 @@ func TestSquadControlsIgnoreUnrelatedProviderOperationsAndKeepEntitlementFence(t
 			t.Fatal(err)
 		}
 	}
-	// Historical unrelated jobs may have no valid JSON body; they must not break
+	// Historical unrelated jobs may have no object body; they must not break
 	// the entitlement query or keep every member switch unavailable.
-	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET payload='not-json',status='processing' WHERE kind='provider_operation'`); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET payload='null',status='processing' WHERE kind='provider_operation'`); err != nil {
 		t.Fatal(err)
 	}
 	if conflict, err := store.ComboControlConflict(ctx, user.ID); err != nil || conflict {

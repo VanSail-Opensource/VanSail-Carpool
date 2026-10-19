@@ -125,7 +125,7 @@ func (s *Store) FirewallPrefixes(ctx context.Context, visit func([]string) error
 		if err = rows.Scan(&raw); err != nil {
 			break
 		}
-		prefix, parseErr := wire.FirewallPrefix(raw)
+		prefix, parseErr := xnode.ExemptionPrefix(raw)
 		if parseErr != nil {
 			err = parseErr
 			break
