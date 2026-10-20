@@ -15,7 +15,7 @@ func TestRoutingAccessPruneErasesOperationalHistoryAndFencesStaleWrites(t *testi
 	store, identity, _ := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	input := providerops.CreateInput{ActorUserID: identity.UserID, OwnerUserID: identity.UserID, Kind: xnode.RoutingOperationKind, IdempotencyKey: "access-prune", RequestFingerprint: "access-prune", Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}
+	input := providerops.CreateInput{ActorUserID: identity.UserID, OwnerUserID: identity.UserID, Kind: xnode.RoutingOperationKind, IdempotencyKey: "access-prune", RequestFingerprint: "routing-access-prune-fingerprint", Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}
 	if _, err := store.QueueXNodeRouting(ctx, xnode.RoutingPlan{ProxyUserID: identity.ProxyUserID, Cipher: "old-choices", LegacyCipher: "immutable-evidence"}, input, now); err != nil {
 		t.Fatal(err)
 	}

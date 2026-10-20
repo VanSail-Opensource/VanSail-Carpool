@@ -1,5 +1,9 @@
 # SQLite store
 
+`database.go` escapes literal database paths before adding SQLite URI pragmas.
+`database_path_test.go` covers hash/percent/space filenames and isolation between
+paths that would otherwise share a truncated URI filename, including subtest paths.
+
 Native traffic aggregation streams indexed node/day groups with checked integer
 sums. Backup-gated native retention prunes only expired access and superseded
 acknowledged rate boundaries; native purchase/refund evidence and unsettled

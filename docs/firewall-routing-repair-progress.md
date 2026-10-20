@@ -24,3 +24,19 @@ Production settings, balances, routes and node versions have not been mutated.
 The 256 MiB source-processing target excludes kernel-set memory and independent
 Xray/session/dynamic-master-state workloads; signed delivery remains gated on
 all hosted checks. Existing hidden paid add-ons are not retroactively reconciled.
+
+
+## Hosted failure repair
+
+Panel Container 39408501412 stopped on generated API ordering drift, a short
+operation fingerprint in the new routing fixture, and SQLite filename collisions
+from URI fragments in repeated subtest names. The repair regenerates the final
+contract, validates the fixture fingerprint, gives cases descriptive names, and
+escapes literal SQLite paths with a regression for hash/percent/space filenames.
+All financial assertions and override cases remain enabled. No local suites ran.
+
+X-Node Quality 39408307643 passed tests, schema, binaries, vulnerability and the
+large-firewall host; nftables-off passed its main assertions but lost its final
+SSH channel after reboot. `55df0a4` waits for the new boot identity plus active
+firewall/agent units before that session. Full host assertions and deadlines
+remain. Replacement Quality is pending before signed v2.0.11 and final pinning.

@@ -8,8 +8,11 @@ import (
 )
 
 func TestPurchaseAddonOverrideRejectsWithoutFinancialWrites(t *testing.T) {
-	for _, override := range []struct{ core, addon any }{{"[]", nil}, {nil, "[]"}, {`["manual"]`, nil}, {nil, `["manual"]`}, {"[]", "[]"}} {
-		t.Run("override", func(t *testing.T) {
+	for _, override := range []struct {
+		name        string
+		core, addon any
+	}{{"core_empty", "[]", nil}, {"addon_empty", nil, "[]"}, {"core_selection", `["manual"]`, nil}, {"addon_selection", nil, `["manual"]`}, {"both_empty", "[]", "[]"}} {
+		t.Run(override.name, func(t *testing.T) {
 			ctx, store := context.Background(), newTestStore(t)
 			user := createTestUser(t, store, 69010)
 			now := time.Now().UTC()
