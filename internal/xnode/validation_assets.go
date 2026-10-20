@@ -49,7 +49,7 @@ func validationAssets(native map[string]any) (map[string]any, error) {
 		case map[string]any:
 			if value["certificateFile"] != nil || value["keyFile"] != nil {
 				if certificate == nil {
-					certificate, key, err = validationCertificate()
+					certificate, key, err = cachedValidationCertificate()
 					if err != nil {
 						return err
 					}

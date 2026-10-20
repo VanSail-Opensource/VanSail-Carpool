@@ -11,6 +11,10 @@ import (
 // ValidateCompiled validates expanded users, shared snippets and member rules
 // using the agent's exact core, without starting a listener or reading node files.
 func ValidateCompiled(config wire.Config) ValidationResult {
+	return validateCompiled(config, nil)
+}
+
+func validateCompiled(config wire.Config, validator *xrayconfig.Validator) ValidationResult {
 	invalid := ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}
 	if err := config.Validate(); err != nil {
 		invalid.Detail = validationDetail(err)
@@ -68,7 +72,7 @@ func ValidateCompiled(config wire.Config) ValidationResult {
 			copy.BlockedDomains[i] = "full:configuration-validation.invalid"
 		}
 	}
-	if err := xrayconfig.Validate(copy); err != nil {
+	if err := nativeValidate(copy, validator); err != nil {
 		invalid.Detail = validationDetail(err)
 		return invalid
 	}

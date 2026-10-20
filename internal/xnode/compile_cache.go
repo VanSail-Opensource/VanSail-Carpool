@@ -17,6 +17,7 @@ type compiledState struct {
 	localVersion int64
 	until        time.Time
 	config       wire.Config
+	fingerprint  [32]byte
 }
 
 type compileFailure struct {
@@ -84,7 +85,15 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	if after != version || m.service.localCompileRevision.Load() != localVersion {
 		return wire.Config{}, ErrConflict
 	}
-	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config}
+	fingerprint := compiledFingerprint(config)
+	if saved := peer.compiled; saved != nil && saved.fingerprint == fingerprint {
+		// A coarse database epoch changed, but this node's effective dependencies
+		// did not. Preserve the prepared wire candidate and native proof.
+		saved.version, saved.localVersion, saved.until = version, localVersion, next
+		peer.compileFailure = nil
+		return saved.config, nil
+	}
+	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint}
 	peer.compileFailure = nil
 	return config, nil
 }

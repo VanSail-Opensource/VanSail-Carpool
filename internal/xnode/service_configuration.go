@@ -24,7 +24,10 @@ func (s *Service) SaveConfiguration(ctx context.Context, config Configuration) (
 	if strings.TrimSpace(config.Name) == "" || len(config.Name) > 128 || len(config.Document) > 1<<20 || validation.JSONDocument(config.Document) != nil {
 		return config, ErrInvalid
 	}
-	result := ValidateConfigurationDocument(config.Document)
+	if saved, handled, err := s.saveConfigurationMetadata(ctx, config); handled {
+		return saved, err
+	}
+	result := s.validateDocumentCached("configuration:"+config.ID, config.Document)
 	if !result.Valid {
 		return config, ErrInvalid
 	}
@@ -66,6 +69,9 @@ func (s *Service) SaveSnippet(ctx context.Context, item Snippet) (Snippet, error
 	var objects []map[string]any
 	if json.Unmarshal(item.Document, &objects) != nil || len(objects) > 256 {
 		return item, ErrInvalid
+	}
+	if saved, handled, err := s.saveSnippetMetadata(ctx, item); handled {
+		return saved, err
 	}
 	if item.ID == "" {
 		var err error

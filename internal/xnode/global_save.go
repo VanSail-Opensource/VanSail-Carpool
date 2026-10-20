@@ -37,21 +37,36 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err = ValidateGlobal(next); err != nil {
 		return err
 	}
-	if err = s.validateGlobalPolicies(ctx, next); err != nil {
-		return err
+	if globalPoliciesKey(previous) != globalPoliciesKey(next) {
+		if err = s.validateGlobalPolicies(ctx, next); err != nil {
+			return err
+		}
 	}
-	if err = s.validateAffected(ctx, nil, nil, &next); err != nil {
-		return err
+	runtimeChanged := globalRuntimeKey(previous) != globalRuntimeKey(next)
+	if runtimeChanged {
+		if err = s.validateAffected(ctx, nil, nil, &next); err != nil {
+			return err
+		}
 	}
-	for _, target := range []string{next.GeoIPURL, next.GeoSiteURL} {
-		if !requiresAssetLinkProbe(target, next) {
+	for _, asset := range []struct {
+		target, previous, hash, previousHash string
+		geoIP                                bool
+	}{
+		{next.GeoIPURL, previous.GeoIPURL, next.GeoIPHash, previous.GeoIPHash, true},
+		{next.GeoSiteURL, previous.GeoSiteURL, next.GeoSiteHash, previous.GeoSiteHash, false},
+	} {
+		target := asset.target
+		if target == asset.previous && asset.hash == asset.previousHash {
+			continue
+		}
+		if target == "" || asset.geoIP && !requiresAssetLinkProbe(target, next) {
 			continue
 		}
 		// Enabled GeoIP countries were just fetched, hashed, and parsed in
 		// validateGlobalPolicies. Repeating a separate Range probe here both
 		// wastes a request and can reject hosts that serve full downloads but
 		// do not support byte ranges.
-		if target == next.GeoIPURL && next.SourceGeoIP.Enabled {
+		if asset.geoIP && next.SourceGeoIP.Enabled {
 			continue
 		}
 		if err = s.validateAssetLink(ctx, target); err != nil {
@@ -65,7 +80,9 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err = s.settings.PutXNodeGlobal(ctx, actor, string(raw)); err != nil {
 		return err
 	}
-	s.localCompileRevision.Add(1)
+	if runtimeChanged {
+		s.localCompileRevision.Add(1)
+	}
 	return nil
 }
 

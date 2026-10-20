@@ -1,5 +1,30 @@
 # X-Node control plane
 
+## Incremental native configuration
+
+`validation_cache.go` keeps up to 128 owner/node/document contexts, each with one
+successful proof and the pinned agent's immutable section validator. Config
+contract checks always run; identical effective inputs skip native compilation.
+The key retains original local-asset declarations, so synthetic analysis cannot
+hide `NeedsAgentValidation`. Real node-file/asset validation remains queued on
+the agent. `validation_certificate_cache.go` stabilizes analysis-only certificates
+for 30 minutes; their private keys never become serving credentials.
+
+`compile_cache.go` retains transactional revision and time-boundary fences. After
+an unrelated coarse epoch, effective per-node fingerprints preserve the existing
+prepared wire object. Authorization, routing/peer resolution and dependency
+reads still execute when invalidated; expensive core validation reuses native
+sections. Control overlays are excluded from those fingerprints and synchronized
+separately. No new database records or generated credentials are persisted.
+
+`configuration_metadata.go` preserves encrypted documents during label-only
+edits and retains revision checks and ordered snippets. `global_changes.go`
+separates admission/commerce/probe settings from serving native inputs, preventing
+unrelated saves from recompiling every node or probing unchanged asset links.
+Hosted cache/metadata regressions complement agent TCP/UDP/mux continuity and
+work-count regressions. See the agent's `docs/hot-reload.md` for action consumers,
+forced-reload semantics and conservative fallback boundaries.
+
 `rollover_purchase.go` resolves panel ownership and selects periods by explicit purchase ID for projection and settlement. All resets remain in that purchase; quiescence does not implicitly select the current identity period. Existing dated APIs remain compatible; `rollover_usage.go` supplies their common calculation.
 
 `Service` owns authoritative configurations, ordered snippets, node settings,

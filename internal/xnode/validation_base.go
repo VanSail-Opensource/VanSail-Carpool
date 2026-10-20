@@ -8,6 +8,10 @@ import (
 )
 
 func ValidateConfigurationDocument(raw json.RawMessage) ValidationResult {
+	return validateConfigurationDocument(raw, nil)
+}
+
+func validateConfigurationDocument(raw json.RawMessage, validator *xrayconfig.Validator) ValidationResult {
 	invalid := ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}
 	var native map[string]any
 	if json.Unmarshal(raw, &native) != nil || native == nil {
@@ -57,27 +61,23 @@ func ValidateConfigurationDocument(raw json.RawMessage) ValidationResult {
 		invalid.Detail = validationDetail(err)
 		return invalid
 	}
-	if nodeLocalAssets(native) {
-		if nodeLocalAssets(native) {
-			copy, assetErr := validationAssets(native)
-			if assetErr != nil {
-				return invalid
-			}
-			clean, assetErr := json.Marshal(copy)
-			if assetErr != nil {
-				return invalid
-			}
-			config.Xray = clean
-			if xrayconfig.Validate(config) == nil {
-				return ValidationResult{Valid: true, NeedsAgentValidation: true}
-			}
+	needsAgent := nodeLocalAssets(native)
+	if needsAgent {
+		copy, assetErr := validationAssets(native)
+		if assetErr != nil {
+			return invalid
 		}
+		clean, assetErr := json.Marshal(copy)
+		if assetErr != nil {
+			return invalid
+		}
+		config.Xray = clean
 	}
-	if err = xrayconfig.Validate(config); err != nil {
+	if err = nativeValidate(config, validator); err != nil {
 		invalid.Detail = validationDetail(err)
 		return invalid
 	}
-	return ValidationResult{Valid: true}
+	return ValidationResult{Valid: true, NeedsAgentValidation: needsAgent}
 }
 
 func validationDetail(err error) string {

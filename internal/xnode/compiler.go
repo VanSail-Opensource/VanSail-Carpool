@@ -183,7 +183,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if err = config.Validate(); err != nil {
 		return config, rejectedCompilation("native contract", err.Error())
 	}
-	if result := ValidateCompiled(config); !result.Valid {
+	if result := s.validateCompiledCached(nodeID, config); !result.Valid {
 		return config, rejectedCompilation("native configuration", result.Detail)
 	}
 	return config, nil

@@ -32,6 +32,7 @@ func (s *Service) withCompileReads() *Service {
 	next.routingAssets = s.routingAssets
 	next.routingOverrides = s.routingOverrides
 	next.routingRuntime = s.routingRuntime
+	next.compilation = s.compilation
 	return next
 }
 
