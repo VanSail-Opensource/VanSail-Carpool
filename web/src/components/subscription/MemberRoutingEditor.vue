@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from '@/i18n'
 import MemberRoutingGraph from './MemberRoutingGraph.vue'
-import MemberRoutingPaths from './MemberRoutingPaths.vue'
 import { useMemberRouting } from './useMemberRouting'
 
 const { t } = useI18n()
@@ -24,8 +23,7 @@ const graphNodes = computed(() => { const participating = new Set(state.choices.
       <p v-if="!state.nodes.value.length" class="text-muted">{{ t('memberNodes.noNodes') }}</p>
       <template v-else>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3"><UFormField :label="t('managedRouting.previewFrom')"><USelect v-model="state.start.value" :items="state.nodes.value" class="w-full min-w-0" /></UFormField><UFormField :label="t('managedRouting.traceHost')"><USelect v-model="state.startEndpoint.value" :items="state.endpointItems.value.filter(endpoint => endpoint.nodeId === state.start.value)" class="w-full min-w-0" /></UFormField><UFormField :label="t('managedRouting.destination')"><UInput v-model="state.destination.value" :placeholder="t('managedRouting.destinationHint')" class="w-full" /></UFormField></div>
-        <MemberRoutingGraph v-if="graphNodes.length" :nodes="graphNodes" :paths="state.paths.value" :trace="state.trace.value" :selected="state.filterNode.value" @select="state.selectNode" />
-        <MemberRoutingPaths :paths="state.paths.value" :choices="state.choices.value" :nodes="state.current.value.nodes" :endpoints="state.endpoints.value" :templates="state.current.value.templates" />
+        <MemberRoutingGraph v-if="graphNodes.length" :nodes="graphNodes" :paths="state.paths.value" :trace="state.trace.value" :selected="state.filterNode.value" :choices="state.choices.value" :endpoints="state.endpoints.value" :templates="state.current.value.templates" :status="state.routeStatus.value" @select="state.selectNode" />
         <UButton v-if="state.filterNode.value" class="justify-self-start" color="neutral" variant="ghost" :label="t('managedRouting.showAll')" @click="state.filterNode.value = ''" />
         <form class="grid gap-4" @submit.prevent="state.save">
           <fieldset v-for="{ rule, index } in filtered" :key="rule.id" :disabled="state.locked.value" class="grid gap-3 min-w-0 border-b border-default pb-4">

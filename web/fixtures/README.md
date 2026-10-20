@@ -128,3 +128,18 @@ Subscription home flags `offline`, `unknown`, `metrics-error`, `slow` and `expir
 Subscription `monitor-off` hides home network charts and squad timelines while retaining subscription navigation and host copy/QR controls. Native routing and subscription metadata are mocked in this fixture to isolate monitoring checks.
 
 Settings flags `blocked&noqueued` simulate eligibility becoming available after a background mutation; `addonlost&noqueued` simulates a charged add-on whose first reply is lost. `__controlsAudit` records eligibility reads, request keys and actual additions.
+
+Settings `addonoverride&noqueued` rejects quotes with the localized override 409;
+`addoncommitoverride&noqueued` rejects commits after a successful quote. The
+constructed addition counter stays unchanged in both cases.
+
+Routing `geosite&geosite-missing` and `geosite&geosite-unavailable` return specific
+selected-template preview errors. The tree combines user/node/host/template paths,
+shows administrator names and status, and opens original selectors in a modal.
+
+X-Node `large-metrics` supplies a large CPU tree to inspect lazy mounting.
+`log-error`, `log-empty`, `log-dropped`, `stale-logs` exercise selected-node log
+errors/retry, empty data, exact large counters and late responses. Log updates
+are synthetic and traced as logs:<node ID>; close/pause must stop polling.
+`delete-error` retains endpoint rows and reports a localized action failure.
+Native admin `view=connections` displays only nodes with observed active user IPs.

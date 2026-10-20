@@ -59,5 +59,6 @@ type liveSnapshot struct {
 	report          wire.TelemetryReport
 	receivedAt      time.Time
 	logs            []json.RawMessage
+	logsDropped     uint64
 	firewallPending string
 }

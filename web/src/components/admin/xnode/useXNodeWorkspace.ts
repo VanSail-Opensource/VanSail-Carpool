@@ -15,13 +15,14 @@ export function useXNodeWorkspace() {
   const actionError = shallowRef<string | null>(null)
   const busy = shallowRef(false)
   let active = true
+  let metricInFlight = false
   const latest = createLatestRequest()
   const metricLatest = createLatestRequest()
   let controller: InstanceType<typeof globalThis.AbortController> | undefined
   let metricController: InstanceType<typeof globalThis.AbortController> | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   async function load(): Promise<void> {
-    controller?.abort(); metricController?.abort(); metricLatest.invalidate()
+    controller?.abort(); metricController?.abort(); metricLatest.invalidate(); metricInFlight = false
     controller = new globalThis.AbortController()
     const ticket = latest.begin()
     loading.value = true
@@ -46,10 +47,10 @@ export function useXNodeWorkspace() {
   onMounted(() => {
     void load()
     timer = setInterval(() => {
-      if (document.visibilityState !== 'visible' || loading.value || busy.value) return
+      if (document.visibilityState !== 'visible' || loading.value || busy.value || metricInFlight) return
       metricController?.abort(); metricController = new globalThis.AbortController()
-      const ticket = metricLatest.begin()
-      void xnodeApi.metrics(metricController.signal).then(value => { if (active && metricLatest.isCurrent(ticket)) metrics.value = value }).catch(() => { if (active && metricLatest.isCurrent(ticket) && metrics.value) metrics.value = { ...metrics.value, nodes: metrics.value.nodes.map(node => ({ ...node, stale: true })) } })
+      const ticket = metricLatest.begin(); metricInFlight = true
+      void xnodeApi.metrics(metricController.signal).then(value => { if (active && metricLatest.isCurrent(ticket)) metrics.value = value }).catch(() => { if (active && metricLatest.isCurrent(ticket) && metrics.value) metrics.value = { ...metrics.value, nodes: metrics.value.nodes.map(node => ({ ...node, stale: true })) } }).finally(() => { if (metricLatest.isCurrent(ticket)) metricInFlight = false })
     }, 5000)
   })
   onScopeDispose(() => { active = false; controller?.abort(); metricController?.abort(); latest.dispose(); metricLatest.dispose(); metrics.value = null; if (timer) clearInterval(timer) })

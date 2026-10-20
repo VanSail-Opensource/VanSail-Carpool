@@ -98,10 +98,14 @@ api.getCatalog = async () => {
   return { combos: [], addons: params.has('addonempty') ? [] : optionalSquads, nodes: [] } as never
 }
 api.getStatistics = async () => ({ database: { squadByCombo: [{ id: 'current', label: 'Standard', segments: optionalSquads.map((squad, index) => ({ id: squad.id, label: squad.name, value: index ? 20 : 70 })) }] } }) as never
-api.quotePurchaseAddons = async (purchaseId, ids) => ({ purchaseId, addonSquadUuids: ids, price: { currency: 'TXB', minor: '250', display: '2.50 TXB' }, effectiveAt: at(0), expiresAt: active.validUntil }) as never
+api.quotePurchaseAddons = async (purchaseId, ids) => {
+ if (params.has('addonoverride')) throw new ApiError(409, { code: 'SQUAD_ADDITION_OVERRIDDEN', message: '' })
+ return ({ purchaseId, addonSquadUuids: ids, price: { currency: 'TXB', minor: '250', display: '2.50 TXB' }, effectiveAt: at(0), expiresAt: active.validUntil }) as never
+}
 const addedByKey = new Map<string, Purchase>()
 let lostAdditionReply = false
 api.addPurchaseAddons = async (_purchaseId, ids, key) => {
+  if (params.has('addoncommitoverride')) throw new ApiError(409, { code: 'SQUAD_ADDITION_OVERRIDDEN', message: '' })
   state.additionKeys.push(key)
   const replay = addedByKey.get(key)
   if (replay) return replay

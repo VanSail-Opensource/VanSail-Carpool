@@ -31,11 +31,14 @@ func geoRecords(ctx context.Context, input io.Reader, visit func(io.ReaderAt, in
 	if !ok {
 		file, err := os.CreateTemp("", "xnode-geoip-decode-*")
 		if err != nil {
-			return err
+			return assetStorageFailure()
 		}
 		defer func() { _ = file.Close(); _ = os.Remove(file.Name()) }()
 		n, err := io.Copy(file, io.LimitReader(input, maxGeoIPAsset+1))
-		if err != nil || n > maxGeoIPAsset {
+		if err != nil {
+			return assetTransferFailure("GeoIP asset", err)
+		}
+		if n > maxGeoIPAsset {
 			return ErrInvalid
 		}
 		at = file

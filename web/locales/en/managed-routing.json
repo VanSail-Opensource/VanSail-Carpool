@@ -43,6 +43,17 @@
       "routing_overlap_unproven": "The matcher overlap could not be proven safe. Use more specific domain, IP or port conditions.",
       "routing_analysis_limit": "This graph exceeds the safety analysis limit. Simplify its rules or selectors.",
       "routing_invalid_rule": "Each rule needs a unique ID and two different accessible nodes."
+    },
+    "templateDetails": "Template details",
+    "templateDetailsHint": "Match categories combine with AND; entries in each category combine with OR.",
+    "viewTemplate": "View template: {name}",
+    "treeHint": "Select a node to edit routes, or a template to view its match settings.",
+    "routeState": {
+      "active": "Applied",
+      "draft": "Unsaved changes",
+      "checking": "Checking route",
+      "error": "Route unavailable",
+      "disabled": "Needs review"
     }
   }
 }

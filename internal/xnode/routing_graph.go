@@ -49,15 +49,17 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	if err := in.resolveChoices(choices); err != nil {
 		return in, err
 	}
+	var assetTemplates []RoutingTemplate
+	usedTemplates := map[string]bool{}
 	for _, choice := range choices {
-		_, ok := templates[choice.TemplateID]
+		template, ok := templates[choice.TemplateID]
 		if !ok {
 			return in, fmt.Errorf("%w: routing template is unavailable", ErrInvalid)
 		}
-	}
-	assetTemplates := catalog.Templates
-	if len(choices) == 0 {
-		assetTemplates = nil
+		if !usedTemplates[template.ID] {
+			assetTemplates = append(assetTemplates, template)
+			usedTemplates[template.ID] = true
+		}
 	}
 	domains, assetHash, err := s.routingExpansion(ctx, assetTemplates)
 	if err != nil {

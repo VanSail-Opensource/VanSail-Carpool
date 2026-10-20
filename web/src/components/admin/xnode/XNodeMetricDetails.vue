@@ -10,7 +10,7 @@ const columns = computed(() => [{ accessorKey: 'label', header: t('adminNative.m
 </script>
 
 <template>
-  <UTable class="metric-details admin-table" :data="rows" :columns="columns"><template #value-cell="{ row }"><span :title="row.original.raw">{{ row.original.value }}</span></template></UTable>
+  <UTable class="metric-details admin-table" :class="rows.length > 100 ? 'metric-details--large h-[360px] max-h-[55dvh]' : ''" :data="rows" :columns="columns" :virtualize="rows.length > 100 ? { estimateSize: 36, overscan: 6 } : false"><template #value-cell="{ row }"><span :title="row.original.raw">{{ row.original.value }}</span></template></UTable>
 </template>
 
 <style scoped>

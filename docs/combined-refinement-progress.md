@@ -68,3 +68,14 @@ showed no error according to the user; no production CPU profile was available.
 - Native admin package implemented: native-only durable admin scans, per-profile node activity and seven-day exact/reconciled accounting, selected-profile TXB adjustment, browser-only TX Statistics, memory-only bounded machine/user charts, grouped API token creation, and strict multiplier validation. Master transport liveness remains independent of migration ownership while activity requires native ownership, fresh ready snapshots and capabilities. Hosted regressions cover token receipt scope, unavailable nodes, precision, stale loads, chart retirement and exact counters. Static vet/typecheck/ESLint/structure checks passed. Chrome DevTools MCP used constructed 1440px/light/English and 390px/dark/Chinese fixtures for loading/populated/empty/error/retry, stale profiles, logout cleanup, scans, adjustment requests, permissions, one-time secrets, keyboard controls and multiplier boundaries; successful flows had no console errors or layout overflow. Hosted final results pending.
 - Subscription package implemented: ordered bounded Go regex rules target exact template IDs; explicit format precedes regex, built-in client detection and real Base64 fallback. Existing native links and retained assignment references remain compatible. Stash has a distinct preset/format, sing-box remains exposed, and generated Clash/Stash REALITY hosts include hybrid-key support. Existing encrypted policy/revisions and generated API contracts are extended. Hosted regressions cover precedence, syntax, exact template versus assignment, compatibility and rendering; UI regression covers aborted stale previews. Chrome DevTools MCP checked desktop light/English and 390px dark/Chinese: loading, populated, empty, failed load/retry, revision-error draft retention, ordered rules, invalid Go lookahead, explicit Base64, real Go Stash YAML preview, retained assignment writes, keyboard selection, public/member format links, credential omission and console/layout state. Successful flows had no console errors; constructed fixtures establish no production rollout.
 - Final hosted panel regressions and signed release verification/pinning remain required. The user explicitly skipped live node preflight and upgrades. Remnawave ownership remains unchanged.
+
+
+## 2026-10-20 firewall and panel repair
+
+Detailed checklist: [firewall-routing-repair-progress.md](firewall-routing-repair-progress.md).
+Signed X-Node v2.0.10 at `d7b719423668bd2e423cffb58a37961636376596` passed
+Quality 39403623381 and signed release 39405357352. Manifest/version and all
+amd64/arm64 agent/CLI hashes verified with the pinned production trust key.
+Panel pin is `v1.0.2-0.20261020094941-d7b719423668`; full hashes are recorded in
+internal/xnode/README.md. Local automated test suites remain prohibited and were
+not run. Panel delivery/browser/static evidence is tracked in the checklist.

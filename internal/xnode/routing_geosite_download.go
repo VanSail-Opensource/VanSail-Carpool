@@ -33,12 +33,15 @@ func (s *Service) downloadRoutingGeoSite(ctx context.Context, config GlobalConfi
 		}
 		file, err := os.CreateTemp("", "xnode-master-geosite-*.dat")
 		if err != nil {
-			return routingAssetResult{}, err
+			return routingAssetResult{}, assetStorageFailure()
 		}
 		defer func() { _ = file.Close(); _ = os.Remove(file.Name()) }()
 		hasher := sha256.New()
 		size, err := io.Copy(io.MultiWriter(file, hasher), io.LimitReader(response.Body, maxGeoIPAsset+1))
-		if err != nil || size == 0 || size > maxGeoIPAsset {
+		if err != nil {
+			return routingAssetResult{}, assetTransferFailure("GeoSite asset", err)
+		}
+		if size == 0 || size > maxGeoIPAsset {
 			return routingAssetResult{}, ErrInvalid
 		}
 		hash := hex.EncodeToString(hasher.Sum(nil))
@@ -46,9 +49,12 @@ func (s *Service) downloadRoutingGeoSite(ctx context.Context, config GlobalConfi
 			return routingAssetResult{}, ErrInvalid
 		}
 		if _, err = file.Seek(0, io.SeekStart); err != nil {
-			return routingAssetResult{}, err
+			return routingAssetResult{}, assetStorageFailure()
 		}
 		domains, err := readRoutingGeoSite(ctx, file, selectors)
+		if err != nil {
+			return routingAssetResult{}, assetDecodeFailure(err)
+		}
 		return routingAssetResult{domains, hash}, err
 	})
 }

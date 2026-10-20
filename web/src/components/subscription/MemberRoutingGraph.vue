@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onScopeDispose, shallowRef, useId, watch } from 'vue'
-import type { RoutingPath, RoutingView } from '@/api/xnodeMember'
-import { nodeHeight, nodeWidth, placeNodes, routeEdges, type GraphEdge } from '@/components/ip-lookup/bgpLayout'
+import type { RoutingChoice, RoutingPath, RoutingView } from '@/api/xnodeMember'
+import { nodeHeight, nodeWidth, placeNodes, routeEdges } from '@/components/ip-lookup/bgpLayout'
 import { useGraphViewport } from '@/components/ip-lookup/useGraphViewport'
 import { useI18n } from '@/i18n'
+import { routingTree, type RoutingTreeNode } from './routingTree'
+import { selectorLabel } from './routingPresentation'
+import MemberRoutingTemplateDetails from './MemberRoutingTemplateDetails.vue'
 
-const props = defineProps<{ nodes: RoutingView['nodes']; paths: RoutingPath[]; trace: RoutingPath | null; selected: string }>()
+const props = defineProps<{ nodes: RoutingView['nodes']; paths: RoutingPath[]; trace: RoutingPath | null; selected: string; choices: RoutingChoice[]; endpoints: NonNullable<RoutingView['endpoints']>; templates: RoutingView['templates']; status: string }>()
 const emit = defineEmits<{ select: [id: string] }>()
 const { t } = useI18n()
 const viewport = shallowRef<InstanceType<typeof globalThis.HTMLDivElement> | null>(null)
@@ -13,16 +16,9 @@ const narrow = shallowRef(globalThis.innerWidth < 600)
 const view = useGraphViewport()
 const markerId = useId()
 const layout = computed(() => {
-  const nodes = props.nodes.map((node, index) => ({ ...node, asn: index + 1 }))
-  const ids = new Map(nodes.map(node => [node.id, node.asn]))
-  const distance = new Map<number, number>(), frequency = new Map<number, number>(), links = new Map<string, GraphEdge>()
-  for (const path of props.paths) path.nodes.forEach((id, index) => {
-    const asn = ids.get(id); if (!asn) return
-    distance.set(asn, Math.max(distance.get(asn) ?? 0, index)); frequency.set(asn, (frequency.get(asn) ?? 0) + 1)
-    const to = ids.get(path.nodes[index + 1] ?? '')
-    if (to) { const key = `${asn}-${to}`; links.set(key, { id: key, from: asn, to, relationship: 'path' }) }
-  })
-  const placed = placeNodes(nodes, [...links.values()], distance, frequency)
+  const tree = routingTree(props.nodes, props.paths, props.choices, props.endpoints, props.templates, t('managedRouting.you'), props.trace)
+  const distance = new Map(tree.nodes.map(node => [node.asn, node.layer]))
+  const placed = placeNodes(tree.nodes, tree.edges, distance, new Map())
   if (narrow.value) {
     const columns = new Map<number, typeof placed.nodes>()
     for (const node of placed.nodes) { const column = columns.get(node.layer) ?? []; column.push(node); columns.set(node.layer, column) }
@@ -30,7 +26,7 @@ const layout = computed(() => {
     placed.width = Math.max(232, ...[...columns.values()].map(column => column.length * (nodeWidth + 24) + 40))
     placed.height = Math.max(240, ...placed.nodes.map(node => node.y + nodeHeight + 32))
   }
-  const edges = routeEdges(placed.nodes, [...links.values()]).map(edge => {
+  const edges = routeEdges(placed.nodes, tree.edges).map(edge => {
     if (!narrow.value) return edge
     const from = placed.nodes.find(n => n.asn === edge.from)!, to = placed.nodes.find(n => n.asn === edge.to)!
     if (from.layer === to.layer) return edge
@@ -38,12 +34,17 @@ const layout = computed(() => {
     const sy = from.y + (down ? nodeHeight : 0), ty = to.y + (down ? 0 : nodeHeight), mid = (sy + ty) / 2
     return { ...edge, d: `M ${sx} ${sy} C ${sx} ${mid}, ${tx} ${mid}, ${tx} ${ty}` }
   })
-  return { ...placed, edges, ids }
+  return { ...placed, edges, highlighted: new Set(tree.edges.filter(edge => edge.highlighted).map(edge => edge.id)) }
 })
-const highlighted = computed(() => new Set(props.trace?.nodes.slice(0, -1).map((id, i) => `${layout.value.ids.get(id)}-${layout.value.ids.get(props.trace!.nodes[i + 1]!)}`) ?? []))
+const detail = shallowRef<RoutingTreeNode | null>(null)
+const detailOpen = computed({ get: () => detail.value !== null, set: value => { if (!value) detail.value = null } })
+const detailTemplates = computed(() => props.templates.filter(template => detail.value?.templateIds?.includes(template.id)))
+const excluded = computed(() => selectorLabel((detail.value?.excludedRules ?? []).flatMap(id => { const choice = props.choices.find(choice => choice.id === id); const template = props.templates.find(template => template.id === choice?.templateId); return template ? [template.match] : [] }), ''))
+const statusColor = computed(() => ({ active: 'var(--ui-success)', draft: 'var(--ui-warning)', checking: 'var(--ui-warning)', error: 'var(--ui-error)', disabled: 'var(--ui-text-dimmed)' })[props.status] ?? 'var(--ui-text-dimmed)')
+function label(node: RoutingTreeNode) { return node.templateIds ? t('managedRouting.viewTemplate', { name: node.name }) : node.nodeId ? t('managedRouting.editNode', { name: node.name }) : node.name }
 const transform = computed(() => `translate(${view.offset.value.x} ${view.offset.value.y}) scale(${view.scale.value})`)
 function fit() { if (viewport.value) view.fit(layout.value.width + 32, layout.value.height, viewport.value.clientWidth, viewport.value.clientHeight) }
-function select(id: string) { if (!view.wasDragged()) emit('select', id) }
+function select(node: RoutingTreeNode, keyboard = false) { if (!keyboard && view.wasDragged()) return; if (node.templateIds) detail.value = node; else if (node.nodeId) emit('select', node.nodeId) }
 let observer: InstanceType<typeof globalThis.ResizeObserver> | undefined
 onMounted(() => { if (viewport.value) { observer = new globalThis.ResizeObserver(() => { narrow.value = (viewport.value?.clientWidth ?? 600) < 600; fit() }); observer.observe(viewport.value); fit() } })
 watch(layout, () => void nextTick(fit))
@@ -57,15 +58,19 @@ onScopeDispose(() => observer?.disconnect())
       <svg class="w-full h-full" :aria-label="t('managedRouting.graph')" role="group">
         <defs><marker :id="markerId" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 8 4 L 0 8 Z" fill="var(--ui-text-dimmed)" /></marker></defs>
         <g :transform="transform">
-          <path v-for="edge in layout.edges" :key="edge.id" :d="edge.d" fill="none" :marker-end="`url(#${markerId})`" :class="highlighted.has(edge.id) ? 'route-highlight' : 'route-edge'" />
-          <g v-for="node in layout.nodes" :key="node.id" :transform="`translate(${node.x} ${node.y})`" :data-asn="node.asn" role="button" tabindex="0" :aria-label="t('managedRouting.editNode', { name: node.name })" :aria-pressed="selected === node.id" class="routing-node" @click="select(node.id)" @keydown.enter.prevent="emit('select', node.id)" @keydown.space.prevent="emit('select', node.id)">
-            <rect :width="nodeWidth" :height="nodeHeight" rx="8" :class="selected === node.id || trace?.nodes.includes(node.id) ? 'node-selected' : 'node-rest'" />
-            <text :x="nodeWidth / 2" :y="nodeHeight / 2 + 5" text-anchor="middle">{{ node.name.length > 22 ? `${node.name.slice(0, 20)}…` : node.name }}</text>
+          <path v-for="edge in layout.edges" :key="edge.id" :d="edge.d" fill="none" :marker-end="`url(#${markerId})`" :class="layout.highlighted.has(edge.id) ? 'route-highlight' : 'route-edge'" />
+          <g v-for="node in layout.nodes" :key="node.id" :transform="`translate(${node.x} ${node.y})`" :data-asn="node.asn" :role="node.nodeId || node.templateIds ? 'button' : 'group'" :tabindex="node.nodeId || node.templateIds ? 0 : undefined" :aria-label="label(node)" :aria-pressed="node.nodeId ? selected === node.nodeId : undefined" class="routing-node" @click="select(node)" @keydown.enter.prevent="select(node, true)" @keydown.space.prevent="select(node, true)">
+            <rect :width="nodeWidth" :height="nodeHeight" rx="8" :class="selected === node.nodeId || trace?.nodes.includes(node.nodeId ?? '') ? 'node-selected' : 'node-rest'" />
+            <title>{{ node.name }}{{ node.templateIds ? ` · ${t(`managedRouting.routeState.${status}`)}` : '' }}</title>
+            <circle v-if="node.templateIds" :cx="12" :cy="12" r="4" :fill="statusColor" :aria-label="t(`managedRouting.routeState.${status}`)" />
+            <text :x="nodeWidth / 2" :y="node.subtitle ? 23 : nodeHeight / 2 + 5" text-anchor="middle">{{ node.name.length > 18 ? `${node.name.slice(0, 16)}…` : node.name }}</text>
+            <text v-if="node.subtitle" :x="nodeWidth / 2" y="43" text-anchor="middle" class="node-host">{{ node.subtitle.length > 24 ? `${node.subtitle.slice(0, 22)}…` : node.subtitle }}</text>
           </g>
         </g>
       </svg>
     </div>
-    <p class="text-xs text-muted">{{ t('managedRouting.graphHint') }}</p>
+    <p class="text-xs text-muted">{{ t('managedRouting.treeHint') }}</p>
+    <MemberRoutingTemplateDetails v-model:open="detailOpen" :templates="detailTemplates" :excluded="excluded" :status="status" />
   </div>
 </template>
 
@@ -74,8 +79,13 @@ onScopeDispose(() => observer?.disconnect())
 .routing-viewport:focus-visible, .routing-node:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
 .routing-node { cursor: pointer; }
 .routing-node text { fill: var(--ui-text); font-size: 13px; pointer-events: none; }
+.routing-node .node-host { fill: var(--ui-text-muted); font-size: 10px; }
 .node-rest { fill: var(--ui-bg); stroke: var(--ui-border); }
 .node-selected { fill: var(--ui-bg); stroke: var(--ui-primary); stroke-width: 2; }
 .route-edge { stroke: var(--ui-text-dimmed); stroke-width: 1.5; }
 .route-highlight { stroke: var(--ui-primary); stroke-width: 3; }
+</style>
+
+<style scoped>
+@media (max-width: 599px) { .routing-viewport { height: 520px; } .routing-node text { font-size: 18px; } .routing-node .node-host { font-size: 14px; } }
 </style>

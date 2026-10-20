@@ -24,3 +24,14 @@ The commit transaction debits TXB, inserts one immutable ledger entry and an ide
 ## Verification
 
 CI covers rounding and caps, extension behavior, replay/no-double-debit, outbox enqueue, rollover and automatic-renewal totals, queued-term blocking, picker filtering, and owner-held full-squad selection. Local tests are intentionally not part of this release procedure.
+
+## Administrator overrides and paid facts
+
+Quotes and new purchases reject either non-NULL entitlement override, including
+an explicit empty array, as HTTP 409 `SQUAD_ADDITION_OVERRIDDEN`. This check runs
+before catalog pricing, stock, activation checks or financial writes. Charged
+idempotent requests still replay their original result without a second charge.
+Duplicate checks also read immutable `purchase_addons` facts independently of
+the effective entitlement projection; insert uniqueness conflicts roll back as
+`SQUAD_ALREADY_ADDED`. Existing hidden paid add-ons are not rewritten or refunded.
+Administrators can use the existing override and refund tools to resolve them.

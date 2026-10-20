@@ -55,6 +55,8 @@ func (s *Server) purchaseAddons(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) writePurchaseAddonError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, database.ErrAddonEntitlementOverride):
+		s.writeError(w, r, http.StatusConflict, "SQUAD_ADDITION_OVERRIDDEN", "An administrator has overridden this ride's squads. Contact an administrator before adding squads.")
 	case errors.Is(err, database.ErrConflict):
 		s.writeError(w, r, http.StatusConflict, "OPERATION_CONFLICT", "Another entitlement change is pending or this request key was already used.")
 	case errors.Is(err, database.ErrNotFound):

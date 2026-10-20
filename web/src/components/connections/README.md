@@ -13,3 +13,9 @@ This is independent of existing per-user session IP unblock controls.
 - `ConnectionBlockDialog.test.ts` and `ConnectionUnblockDialog.test.ts` cover native Back ownership, warnings, expiry, and confirmation.
 - `types.ts` defines the UI-only selected connection target passed from the list to the confirmation surface.
 - `ConnectionScanStatus.vue`, `ConnectionNodeList.vue`, `ConnectionBlockList.vue`, `ConnectionBlockDialog.vue`, and `ConnectionUnblockDialog.vue` own reduced-motion-safe scan, list, and workflow transitions. The continuous radar stays CSS-owned.
+
+The member node list displays only scan nodes with at least one observed active
+user IP. Unavailable or empty nodes stay in scan progress metadata but never
+produce empty connection cards. A scan with no observed IPs uses the existing
+empty state. Native-admin browser fixture `view=connections` includes mixed
+active/empty/unavailable nodes; `empty`, `slow`, and `error` cover other states.

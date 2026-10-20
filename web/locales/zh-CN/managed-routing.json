@@ -43,6 +43,17 @@
       "routing_overlap_unproven": "无法证明匹配条件互斥，请使用更明确的域名、IP 或端口条件。",
       "routing_analysis_limit": "路由图超出安全分析上限，请简化规则或选择器。",
       "routing_invalid_rule": "每条规则须使用唯一 ID，并选择两个不同且有访问权限的节点。"
+    },
+    "templateDetails": "模板详情",
+    "templateDetailsHint": "不同匹配类别之间为且，同一类别中的条目之间为或。",
+    "viewTemplate": "查看模板：{name}",
+    "treeHint": "选择节点编辑路由，选择模板查看匹配设置。",
+    "routeState": {
+      "active": "已应用",
+      "draft": "尚未保存",
+      "checking": "正在检查路由",
+      "error": "路由不可用",
+      "disabled": "需要检查"
     }
   }
 }

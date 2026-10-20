@@ -3,6 +3,7 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/go-chi/chi/v5"
@@ -26,6 +27,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Post("/xnode/nodes", s.xnodeSaveNode)
 	router.Put("/xnode/nodes/{id}", s.xnodeSaveNode)
 	router.Get("/xnode/nodes/{id}", s.xnodeNode)
+	router.Get("/xnode/nodes/{id}/logs", s.xnodeNodeLogs)
 	router.Delete("/xnode/nodes/{id}", s.xnodeDeleteNode)
 	router.Post("/xnode/nodes/{id}/commands", s.xnodeQueueCommand)
 	router.Get("/xnode/operations/{id}", s.xnodeCommandResult)
@@ -84,12 +86,8 @@ func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, xnode.ErrConflict):
 		status, code = http.StatusConflict, "XNODE_CONFLICT"
 	}
-	if errors.Is(err, xnode.ErrUnavailable) && !errors.As(err, &capability) {
-		cause := errors.Unwrap(err)
-		if errors.As(err, &policy) {
-			cause = errors.Unwrap(policy)
-		}
-		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", r.URL.Path, "error", err, "cause", cause)
+	if (errors.As(err, &policy) || errors.Is(err, xnode.ErrUnavailable)) && !errors.As(err, &capability) {
+		s.deps.Logger.Warn("X-Node operation unavailable", "request_id", middlewareRequestID(r), "path", r.URL.Path, "error_code", code, "cause", xnode.SafeOperationCause(err))
 	}
 	s.writeError(w, r, status, code, "The node action could not be completed.")
 }
@@ -120,7 +118,15 @@ func (s *Server) xnodeSaveGlobal(w http.ResponseWriter, r *http.Request) {
 	s.xnodeGlobal(w, r)
 }
 func (s *Server) xnodeMetrics(w http.ResponseWriter, r *http.Request) {
-	metrics, err := s.deps.XNodeMaster.Metrics(r.Context())
+	summary := false
+	if raw := r.URL.Query().Get("summary"); raw != "" {
+		var err error
+		if summary, err = strconv.ParseBool(raw); err != nil {
+			s.xnodeError(w, r, xnode.ErrInvalid)
+			return
+		}
+	}
+	metrics, err := s.deps.XNodeMaster.Metrics(r.Context(), summary)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

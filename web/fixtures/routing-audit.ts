@@ -26,6 +26,7 @@ const endpoints: NonNullable<RoutingView['endpoints']> = nodes.flatMap(node => [
 ])
 let catalog: components['schemas']['XNodeRoutingTemplateConfig'] = { revision: 1, templates: params.has('no-templates') ? [] : [{ id: 'google-ai', name: 'Google + AI', match: { domain: ['domain:google.com', 'domain:openai.com'] } }, { id: 'google', name: 'Google', match: { domain: ['domain:google.com'] } }, { id: 'ai', name: 'AI', match: { domain: ['domain:openai.com'] } }] }
 if (params.has('geosite')) for (const template of catalog.templates) if (template.id !== 'ai') template.match.domain = ['geosite:google']
+if (params.has('unrelated-geosite')) catalog.templates.push({ id: 'unrelated', name: 'Unused streaming', match: { domain: ['geosite:youtube'] } })
 let plan: RoutingView['plan'] = { revision: 1, phase: params.has('disabled') ? 'disabled' : 'active', reason: params.has('disabled') ? 'routing_legacy_incompatible' : '', choices: params.has('empty') || params.has('no-routes') ? [] : [{ id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google-ai' }, { id: 'bc', inboundNodeId: 'b', outboundNodeId: 'c', templateId: 'google' }] }
 let failed = false, receipt: OperationReceipt | null = null
 function pause(delay = params.has('slow') ? 2000 : 30) { return new Promise(resolve => setTimeout(resolve, delay)) }
@@ -47,6 +48,9 @@ function graph(choices: RoutingChoice[]) {
 xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
 xnodeMemberApi.previewRouting = async body => {
   trace.calls.push('member-preview'); trace.previews.push(JSON.parse(JSON.stringify(body))); await pause(params.has('stale-preview') && body.destination.domain === 'google.com' ? 1700 : 50)
+  const selectedGeoSite = body.choices.some(choice => catalog.templates.find(template => template.id === choice.templateId)?.match.domain?.some(domain => domain.startsWith('geosite:')))
+  if (selectedGeoSite && params.has('geosite-missing')) throw new ApiError(422, { code: 'XNODE_GEOSITE_REQUIRED', message: '' })
+  if (selectedGeoSite && params.has('geosite-unavailable')) throw new ApiError(503, { code: 'XNODE_GEOSITE_UNAVAILABLE', message: '' })
   if (params.has('preview-error')) throw new ApiError(422, { code: 'routing_overlap_unproven', message: '' })
   const paths = graph(body.choices), domain = body.destination.domain ?? '', exact = domain.endsWith('google.com') ? ['a', 'b', 'c'] : domain.endsWith('openai.com') ? ['a', 'b'] : [body.start]
   return { paths, trace: body.start ? path(exact.slice(Math.max(0, exact.indexOf(body.start))), exact.length === 3 ? ['ab', 'bc'] : ['ab']) : null }

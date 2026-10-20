@@ -64,3 +64,21 @@ Certificate forms show only mode-relevant identity fields; node-file profiles re
 `XNodeFirewallGrant.vue` provides localized, validated IP/CIDR exemptions with custom whole-hour deadlines. It reuses operation receipt polling, retains uncertain request keys, permits a different grant while another is pending, and cancels UI tracking on disposal.
 
 Node command receipts display localized delivery and execution diagnostics without raw agent errors. Recovery controls remain available while the connected runtime is not ready.
+
+Subscription endpoint rows expose owner-named Delete actions through the existing
+DELETE endpoint and workspace mutation guard. Successful deletion reloads the
+authoritative list; failures retain rows and use the shared localized action
+error. Buttons are disabled while a mutation runs; empty inventories are explicit.
+
+`XNodeMetricRow.vue` mounts charts and detail sections only while expanded.
+`XNodeMetricSection.vue` defers expensive table flattening/mounting until that
+individual section opens. The parent maps node names once and keeps bounded
+sample histories. Workspace polling requests `summary=true`, avoids overlapping
+slow requests, and omits the fleet log payload without changing legacy API reads.
+`XNodeLogs.vue` opens selected-node live logs with pause, refresh, stale and empty
+states. `useXNodeLogs.ts` polls only while open/visible, fences stale replies,
+aborts on close/node changes, clears on session expiry, and holds at most the
+server's 500 entries. `useXNodeLogs.test.ts` covers isolation and lifecycle cleanup.
+
+Metric detail tables with more than 100 rows use Nuxt UI native virtualization
+in a bounded scroll viewport, keeping expanded CPU inventory tables responsive.

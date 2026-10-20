@@ -16,6 +16,7 @@ export function routingError(caught: unknown, choices: RoutingChoice[] = []) {
 }
 export function useMemberRouting() {
   const current = shallowRef<RoutingView | null>(null)
+  let savedChoices = ''
   const choices = ref<RoutingChoice[]>([])
   const paths = shallowRef<RoutingPath[]>([])
   const trace = shallowRef<RoutingPath | null>(null)
@@ -33,6 +34,7 @@ export function useMemberRouting() {
   const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, label: `${current.value?.nodes.find(node => node.id === endpoint.nodeId)?.name ?? endpoint.nodeId} · ${endpoint.name} · ${endpointAddress(endpoint)}` })))
   const templates = computed(() => current.value?.templates.map(item => ({ value: item.id, label: item.name })) ?? [])
   const locked = computed(() => busy.value || !!current.value && !['active', 'disabled'].includes(current.value.plan.phase))
+  const routeStatus = computed(() => previewError.value ? 'error' : previewing.value ? 'checking' : locked.value || JSON.stringify(choices.value) !== savedChoices ? 'draft' : current.value?.plan.phase === 'disabled' ? 'disabled' : 'active')
   const canSave = computed(() => !!current.value && !loading.value && !locked.value && !previewing.value && !previewError.value && !error.value && choices.value.every(c => c.inboundEndpointId && c.outboundEndpointId && c.inboundNodeId && c.outboundNodeId && c.templateId && c.inboundNodeId !== c.outboundNodeId))
   async function load() {
     const ticket = ++generation; reader?.abort(); reader = new AbortController()
@@ -43,6 +45,7 @@ export function useMemberRouting() {
       current.value = value
       const available = [...(value.endpoints ?? [])].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
       choices.value = globalThis.structuredClone(value.plan.choices).map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.inboundNodeId)?.id, outboundEndpointId: choice.outboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.outboundNodeId)?.id }))
+      savedChoices = JSON.stringify(choices.value)
       for (const choice of choices.value) if (choice.inboundEndpointId && !entryHosts.has(choice.inboundNodeId)) entryHosts.set(choice.inboundNodeId, choice.inboundEndpointId)
       paths.value = value.paths
       if (!start.value || !value.nodes.some(n => n.id === start.value)) start.value = value.nodes[0]?.id ?? ''
@@ -95,5 +98,5 @@ export function useMemberRouting() {
   watch([choices, destination, start, startEndpoint], schedulePreview, { deep: true })
   onMounted(load)
   onScopeDispose(() => { disposed = true; generation++; previewGeneration++; reader?.abort(); previewReader?.abort(); if (timer) clearTimeout(timer); paths.value = []; trace.value = null })
-  return { current, choices, paths, trace, nodes, endpoints, endpointItems, templates, loading, previewing, error, previewError, destination, start, startEndpoint, filterNode, command, locked, canSave, load, add, move, save, setEndpoint, selectNode }
+  return { current, choices, routeStatus, paths, trace, nodes, endpoints, endpointItems, templates, loading, previewing, error, previewError, destination, start, startEndpoint, filterNode, command, locked, canSave, load, add, move, save, setEndpoint, selectNode }
 }

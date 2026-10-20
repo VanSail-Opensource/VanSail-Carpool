@@ -13,13 +13,18 @@ import (
 // ConfigureMemory leaves room for SQLite, sockets and operating-system pages.
 // An explicitly supplied GOMEMLIMIT remains authoritative, including "off".
 func ConfigureMemory(cfg Config, logger *slog.Logger) error {
-	temporary := filepath.Join(cfg.DataDir, "tmp")
-	if err := os.MkdirAll(temporary, 0o700); err != nil {
-		return fmt.Errorf("create SQLite temporary directory: %w", err)
+	temporary, err := filepath.Abs(filepath.Join(cfg.DataDir, "tmp"))
+	if err != nil {
+		return fmt.Errorf("resolve process temporary directory: %w", err)
 	}
-	if os.Getenv("SQLITE_TMPDIR") == "" {
-		if err := os.Setenv("SQLITE_TMPDIR", temporary); err != nil {
-			return fmt.Errorf("set SQLite temporary directory: %w", err)
+	if err := os.MkdirAll(temporary, 0o700); err != nil {
+		return fmt.Errorf("create process temporary directory: %w", err)
+	}
+	for _, name := range []string{"TMPDIR", "TMP", "TEMP", "SQLITE_TMPDIR"} {
+		if name == "TMPDIR" || os.Getenv(name) == "" {
+			if err := os.Setenv(name, temporary); err != nil {
+				return fmt.Errorf("set %s temporary directory: %w", name, err)
+			}
 		}
 	}
 	if _, explicit := os.LookupEnv("GOMEMLIMIT"); !explicit {
@@ -27,7 +32,7 @@ func ConfigureMemory(cfg Config, logger *slog.Logger) error {
 			debug.SetMemoryLimit(limit / 8 * 5)
 		}
 	}
-	logger.Info("process memory budget", "go_limit_bytes", debug.SetMemoryLimit(-1), "proxy_cache_bytes", cfg.ProxyCacheMaxBytes)
+	logger.Info("process memory budget", "go_limit_bytes", debug.SetMemoryLimit(-1), "proxy_cache_bytes", cfg.ProxyCacheMaxBytes, "temporary_directory", temporary, "sqlite_temporary_directory", os.Getenv("SQLITE_TMPDIR"))
 	return nil
 }
 

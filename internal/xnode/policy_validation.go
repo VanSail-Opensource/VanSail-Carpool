@@ -40,11 +40,7 @@ func (s *Service) validateGlobalPolicies(ctx context.Context, config GlobalConfi
 			return &PolicyError{"XNODE_GEOSITE_REQUIRED", ErrInvalid}
 		}
 		if _, err := s.downloadRoutingGeoSite(ctx, config, selectors); err != nil {
-			code := "XNODE_GEOSITE_UNAVAILABLE"
-			if errors.Is(err, ErrInvalid) {
-				code = "XNODE_DOMAIN_SELECTOR_INVALID"
-			}
-			return &PolicyError{code, err}
+			return geoSitePolicyFailure(err)
 		}
 	}
 	if config.SourceGeoIP.Enabled {
@@ -53,6 +49,14 @@ func (s *Service) validateGlobalPolicies(ctx context.Context, config GlobalConfi
 		}
 	}
 	return nil
+}
+
+func geoSitePolicyFailure(err error) error {
+	code := "XNODE_GEOSITE_UNAVAILABLE"
+	if errors.Is(err, ErrInvalid) {
+		code = "XNODE_DOMAIN_SELECTOR_INVALID"
+	}
+	return &PolicyError{code, err}
 }
 
 func geoIPPolicyFailure(err error) error {

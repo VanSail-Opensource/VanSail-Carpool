@@ -500,3 +500,20 @@ evidence IDs, and makes credited/dismissed transfers immutable in SQLite.
 `xnode_firewall_admin.go` atomically writes an administrator grant, audit and provider receipt, then observes the existing fleet delivery clock. `xnode_firewall_admin_test.go` covers free idempotent grants and delivery completion. `xnode_geoip_queue.go` coalesces country preparation through the existing outbox; `xnode_geoip_queue_test.go` covers active-job coalescing and failed-job recovery. `outbox_admission_test.go` covers urgent firewall priority and capacity deferral without exhausting retries.
 
 `member_squad_access.go` normalizes last-enabled preferences by panel owner during entitlement mutations, independent of a legacy link. `member_squad_native_test.go` covers unrelated provider jobs, malformed historical payloads, reset fencing and native preferences. `billing_purchase_addon_replay.go` and `billing_purchase_addon_replay_test.go` replay charged selections before catalog changes and preserve one debit. Add-on quotes/commits share the entitlement conflict fence; new entitlement mutation kinds must be included in member_combo_control_helpers.go, while IP lookup, media and wallet-provider jobs remain independent.
+
+`billing_purchase_addon_quote.go` rejects non-NULL squad/add-on entitlement
+overrides, including `[]`, before pricing or writes, and checks paid add-on facts
+independently of effective entitlements. `billing_purchase_addon_override_test.go`
+covers no-debit/no-ledger/no-adjustment rejection and normal duplicate handling.
+Charged idempotent replay remains before the quote fence; previously settled
+financial facts are never changed by this guard.
+
+`xnode_routing_access.go` atomically prunes owner-scoped operational route state,
+clears previous choices/superseded customizations, disables remaining choices,
+increments the compile revision and appends an audit. It preserves immutable
+legacy evidence and accounting. `xnode_routing_access_test.go` covers owner and
+revision fences, stale apply rejection, evidence retention and node invalidation.
+
+Access pruning also fences the authoritative compile revision and defers across
+a purchase boundary. A concurrent entitlement/endpoint change rejects stale
+cleanup instead of removing routes under newly granted access.

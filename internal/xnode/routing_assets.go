@@ -35,6 +35,9 @@ func (s *Service) routingExpansion(ctx context.Context, templates []RoutingTempl
 	if err != nil {
 		return nil, "", err
 	}
+	if config.GeoSiteURL == "" {
+		return nil, "", &PolicyError{"XNODE_GEOSITE_REQUIRED", ErrInvalid}
+	}
 	key, _ := json.Marshal([]any{config.GeoSiteURL, config.GeoSiteHash, selectors, config.GeodataIntervalHours, config.GeodataCron})
 	a := s.routingAssets
 	a.mu.Lock()
@@ -45,7 +48,7 @@ func (s *Service) routingExpansion(ctx context.Context, templates []RoutingTempl
 		next := nextMasterGeodata(config, completed)
 		if err != nil {
 			if a.key != string(key) || a.data.hash == "" {
-				return nil, "", err
+				return nil, "", geoSitePolicyFailure(err)
 			}
 			retries := []time.Duration{time.Minute, 5 * time.Minute, 15 * time.Minute}
 			if !next.IsZero() && a.failures < len(retries) {

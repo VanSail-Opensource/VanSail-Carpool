@@ -225,3 +225,5 @@ administrator customization remains separate.
 `xnode_subscription_selection.go` previews the draft template policy using the same bounded Go matcher as bearer requests. Both public subscription paths negotiate explicit format, admin regex, built-in detection, then Base64; a regex overrides HTML negotiation. Generated output and synthetic previews remain no-store.
 
 `xnode_firewall_admin.go` handles administrator-only queued IP/CIDR grants under the existing signed browser/API-token middleware; it returns the shared durable operation receipt and never charges a wallet.
+
+`xnode_logs.go` serves admin-only, no-store selected-node volatile log snapshots. The metrics route accepts summary=true to omit buffered logs while preserving default response compatibility.

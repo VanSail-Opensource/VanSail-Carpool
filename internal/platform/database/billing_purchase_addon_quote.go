@@ -17,6 +17,8 @@ var (
 	ErrQueuedPurchase = errors.New("queued purchase prevents squad addition")
 	// ErrSquadAlreadyAdded means the active term already contains a selected squad.
 	ErrSquadAlreadyAdded = errors.New("squad is already added to purchase")
+	// ErrAddonEntitlementOverride prevents charging for masked add-on facts.
+	ErrAddonEntitlementOverride = errors.New("purchase entitlement override prevents squad addition")
 )
 
 type pricedPurchaseAddon struct {
@@ -28,6 +30,13 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, input.PurchaseID, input.UserID))
 	if err != nil {
 		return model.PurchaseAddonQuote{}, nil, err
+	}
+	var overridden bool
+	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids IS NOT NULL OR entitlement_addon_squad_uuids IS NOT NULL FROM purchases WHERE id=?`, purchase.ID).Scan(&overridden); err != nil {
+		return model.PurchaseAddonQuote{}, nil, fmt.Errorf("check add-on entitlement override: %w", err)
+	}
+	if overridden {
+		return model.PurchaseAddonQuote{}, nil, ErrAddonEntitlementOverride
 	}
 	if (purchase.Status != "active" && purchase.Status != "activating") || !purchase.ValidUntil.After(now) {
 		return model.PurchaseAddonQuote{}, nil, ErrPurchaseNotActive
@@ -62,6 +71,9 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 	existing := make(map[string]struct{}, len(existingSquads))
 	for _, squadUUID := range existingSquads {
 		existing[squadUUID] = struct{}{}
+	}
+	if err := purchaseAddonFactsTx(ctx, tx, purchase.ID, existing); err != nil {
+		return model.PurchaseAddonQuote{}, nil, err
 	}
 	selected := make([]string, 0, len(input.AddonSquadIDs))
 	products := make([]model.SquadProduct, 0, len(input.AddonSquadIDs))
@@ -100,4 +112,20 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		uuids = append(uuids, addon.product.RemnaSquadUUID)
 	}
 	return model.PurchaseAddonQuote{PurchaseID: purchase.ID, PriceTXBMinor: total, Price: model.TXBMoney(total), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}, priced, nil
+}
+
+func purchaseAddonFactsTx(ctx context.Context, tx *sql.Tx, purchaseID string, existing map[string]struct{}) error {
+	rows, err := tx.QueryContext(ctx, `SELECT remna_squad_uuid FROM purchase_addons WHERE purchase_id=?`, purchaseID)
+	if err != nil {
+		return fmt.Errorf("load purchase add-on facts: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return fmt.Errorf("scan purchase add-on fact: %w", err)
+		}
+		existing[uuid] = struct{}{}
+	}
+	return rows.Err()
 }

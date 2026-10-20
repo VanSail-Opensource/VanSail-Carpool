@@ -28,9 +28,9 @@ func assetRequestFailure(name string, err error) error {
 	if errors.Is(err, ErrInvalid) {
 		return fmt.Errorf("%s redirect or destination is invalid: %w", name, ErrInvalid)
 	}
-	return fmt.Errorf("%w: %s request failed", ErrUnavailable, name)
+	return &assetFailure{fmt.Sprintf("%s request failed", name)}
 }
 
 func assetResponseFailure(name string, status int) error {
-	return fmt.Errorf("%w: %s returned HTTP %d", ErrUnavailable, name, status)
+	return &assetFailure{fmt.Sprintf("%s returned HTTP %d", name, status)}
 }

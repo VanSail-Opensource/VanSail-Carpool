@@ -10,8 +10,13 @@ the editor retains invalid drafts and resolves old node-only selections on save.
 Graph selection supplies Add Route's inbound node and remembered entry host.
 Only configured route nodes appear in the graph; all authorized endpoints remain
 available in selectors, including hosts on nodes not yet used by a route.
-`MemberRoutingPaths.vue` renders You, ordered node/host hops and original readable
-destination selectors. `routingPresentation.ts` simplifies only proven literal
+`routingTree.ts` combines You, shared ordered node/host hops and administrator-
+named template leaves into the interactive graph. `routingTree.test.ts` covers
+endpoint isolation and readable template attribution.
+`MemberRoutingTemplateDetails.vue` shows read-only original match settings and
+exclusions when a template leaf is selected. Leaf status represents applied,
+draft, checking, unavailable or disabled routing; it never implies measured
+destination reachability. `routingPresentation.ts` simplifies only proven literal
 selector inclusion and preserves other intersections/exclusions without guessing.
 
 `HomeUptimePanel.vue` replaces the home subscription block only for active combos.
@@ -59,3 +64,6 @@ analysis and traces come from the same backend matcher as native compilation.
 `SubscriptionFormats.vue` displays Base64 first and exposes distinct Stash and sing-box outputs using canonical bearer configuration links.
 
 Member network timelines require summary.monitoringEnabled. The home subscription entrance and published host links remain available while monitoring is disabled. `HomeUptimePanel.vue` also hides retained timelines after a failed refresh.
+
+If preview is unavailable, the tree keeps individual configured edges and template
+leaves inspectable with error/draft status; it never infers a validated full path.

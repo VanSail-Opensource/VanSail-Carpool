@@ -94,6 +94,9 @@ func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput,
 	}
 	for _, addon := range addons {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor) VALUES(?,?,?)`, input.PurchaseID, addon.product.RemnaSquadUUID, addon.price); err != nil {
+			if isUniqueConstraint(err) {
+				return model.Purchase{}, ErrSquadAlreadyAdded
+			}
 			return model.Purchase{}, fmt.Errorf("record purchase add-on squad: %w", err)
 		}
 	}

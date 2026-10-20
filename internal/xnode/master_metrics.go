@@ -8,7 +8,7 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
+func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, error) {
 	nodes, err := m.service.repo.XNodeNodes(ctx)
 	if err != nil {
 		return MetricsSummary{}, err
@@ -42,7 +42,10 @@ func (m *Master) Metrics(ctx context.Context) (MetricsSummary, error) {
 		// is online, so imported or preparing agents stay visible while a
 		// rolling cutover is in progress.
 		fresh := node.Enabled && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
-		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: append([]json.RawMessage{}, snapshot.logs...)}
+		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: []json.RawMessage{}}
+		if len(summary) == 0 || !summary[0] {
+			item.Logs = append(item.Logs, snapshot.logs...)
+		}
 		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
 		item.Firewall = snapshot.firewall
 		if fresh {

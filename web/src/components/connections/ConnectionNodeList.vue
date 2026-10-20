@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AnimatePresence, motion } from 'motion-v'
+import { computed } from 'vue'
 
 import type { ConnectionNode } from '@/api/types'
 import CountryFlag from '@/components/common/CountryFlag.vue'
@@ -15,6 +16,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ block: [target: ConnectionTarget] }>()
 const { reducedMotion } = useMotionPreferences()
+const activeNodes = computed(() => props.nodes.filter(node => node.ips.length > 0))
 
 function select(node: ConnectionNode, index: number): void {
   const connection = node.ips[index]
@@ -27,7 +29,7 @@ function select(node: ConnectionNode, index: number): void {
   <div class="connection-nodes">
     <AnimatePresence :initial="false" mode="popLayout">
       <motion.article
-        v-for="node in props.nodes"
+        v-for="node in activeNodes"
         :key="node.uuid"
         class="connection-node"
         layout

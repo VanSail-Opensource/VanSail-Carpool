@@ -140,7 +140,7 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err = f.service.SaveRoutingTemplates(ctx, f.user.ID, xnode.RoutingTemplateConfig{Templates: []xnode.RoutingTemplate{{ID: "google", Name: "Google", Match: routingmatch.Match{Domains: []string{"domain:google.com"}}}}}); err != nil {
+	if _, err = f.service.SaveRoutingTemplates(ctx, f.user.ID, xnode.RoutingTemplateConfig{Templates: []xnode.RoutingTemplate{{ID: "google", Name: "Google", Match: routingmatch.Match{Domains: []string{"domain:google.com"}}}, {ID: "unrelated", Name: "Unused GeoSite", Match: routingmatch.Match{Domains: []string{"geosite:youtube"}}}}}); err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(f.master)
@@ -282,4 +282,41 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	if err != nil || period.Status != "open" || period.UsedBytes != 0 {
 		t.Fatal("deployment changed accounting period", err)
 	}
+	// Revoking the purchased group removes route choices from durable operational
+	// state and authenticated peers from the compiled node configuration.
+	f.group.Enabled = false
+	if _, err := f.service.SaveGroup(ctx, f.group); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		plan, err := f.store.XNodeRoutingPlan(ctx, f.identity.ProxyUserID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if plan.Reason == "routing_access_removed" {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal("lost access retained routes")
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	view, err := f.service.OwnedRoutingPlan(ctx, f.user.ID)
+	if err != nil || len(view.Plan.Choices) != 0 {
+		t.Fatal("database retained inaccessible choices", err)
+	}
+	revoked, err := f.service.Compile(ctx, other.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(revoked.Xray, []byte("route-")) {
+		t.Fatal("revoked route retained managed native rules or outbounds")
+	}
+	for _, user := range revoked.Users {
+		if len(user.TransitCredentials) != 0 {
+			t.Fatal("revoked route retained native peer credentials")
+		}
+	}
+
 }

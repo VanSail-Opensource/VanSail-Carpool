@@ -30,9 +30,6 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		return err
 	}
 	for _, plan := range plans {
-		if plan.Phase != "active" {
-			continue
-		}
 		identity, err := s.repo.XNodeIdentity(ctx, plan.ProxyUserID)
 		if err != nil {
 			return err
@@ -40,6 +37,14 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		doc, err := s.routingDocument(plan)
 		if err != nil {
 			return err
+		}
+		if pruned, err := s.pruneRoutingAccess(ctx, plan, identity, doc); err != nil {
+			return err
+		} else if pruned {
+			continue
+		}
+		if plan.Phase != "active" {
+			continue
 		}
 		input, validationErr := s.routingInput(ctx, identity, doc.Choices)
 		if validationErr != nil {

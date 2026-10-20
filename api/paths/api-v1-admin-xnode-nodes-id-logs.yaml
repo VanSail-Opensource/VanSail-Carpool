@@ -1,0 +1,15 @@
+{
+  "parameters": [{"in":"path","name":"id","required":true,"schema":{"type":"string"}}],
+  "get": {
+    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "tags": ["Administration"],
+    "operationId": "getXNodeNodeLogs",
+    "description": "Read the selected node's latest 500 memory-only log entries received over the authenticated agent stream. No agent command is issued.",
+    "responses": {
+      "200": {"description":"Selected node log snapshot","content":{"application/json":{"schema":{"$ref":"../openapi.yaml#/components/schemas/XNodeLogs"}}}},
+      "401": {"$ref":"../openapi.yaml#/components/responses/Unauthorized"},
+      "403": {"$ref":"../openapi.yaml#/components/responses/Forbidden"},
+      "404": {"$ref":"../openapi.yaml#/components/responses/NotFound"}
+    }
+  }
+}

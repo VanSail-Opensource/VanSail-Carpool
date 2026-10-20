@@ -1,6 +1,16 @@
 {
   "get": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -22,6 +32,18 @@
       "403": {
         "$ref": "../openapi.yaml#/components/responses/Forbidden"
       }
-    }
+    },
+    "parameters": [
+      {
+        "name": "summary",
+        "in": "query",
+        "required": false,
+        "description": "Omit buffered log entries for lightweight metric polling. Existing clients keep the full response by default.",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    ]
   }
 }

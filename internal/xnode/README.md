@@ -295,3 +295,59 @@ Global saves validate shared selectors against native parsing and the configured
 `squad_normalization_test.go` covers normalization of the final enabled squad during native entitlement activation without creating a legacy link. `periods.go` normalizes only mutation paths, preserving current counters and paid-successor accounting.
 
 `purchase_operations.go` guards reset/refund actions against the selected owner and effective purchase before touching the current period. `reset_operations.go` uses the durable reset operation UUID as the new accounting-period ID, proving that specific reset independently of timestamps or natural cadence. `purchase_operations_test.go` covers successor protection, boundary rechecks and proof replay. Keep periods referenced by unresolved reset operations until reconciliation; settled financial facts are never rewritten.
+
+Asset scratch files use process DATA_DIR/tmp. `asset_storage.go` classifies local
+create/write/seek failures as unavailable and exposes only fixed safe causes.
+`asset_storage_test.go` covers unwritable spool storage without leaking paths.
+Policy warnings include safe diagnostics for invalid input and unavailable assets.
+
+Routing asset expansion resolves only template IDs used by current choices.
+An unrelated GeoSite template cannot trigger a download or prevent preview.
+Missing selected GeoSite URL returns `XNODE_GEOSITE_REQUIRED` (422); unavailable
+request/HTTP/storage returns `XNODE_GEOSITE_UNAVAILABLE` (503); invalid asset,
+hash or selector returns `XNODE_DOMAIN_SELECTOR_INVALID` (422). Refresh failures
+keep verified stale data for the same dependency key. `routing_assets_test.go`
+covers policy codes/stale data; the managed deployment regression includes an
+unused GeoSite template with no URL. Existing plans whose digest included unused
+templates can encounter one `routing_dependencies_changed` transition when the
+new selected-only digest is first reconciled, followed by normal revalidation.
+
+`routing_access.go` uses authoritative endpoint/entitlement inventory to prune
+inaccessible choices during the existing master reconciliation, including pending
+or disabled plans. Read failures and transient node telemetry cannot cause
+pruning. Remaining choices are disabled for review because removing a rule can
+expose a formerly shadowed cycle. Previous operational choices and superseded
+legacy customization rows are erased; immutable encrypted conversion evidence
+and financial records remain intact. Existing compile-version triggers and
+serialized master synchronization remove routes and private peer credentials
+from connected nodes and on reconnect, without a second queue or ACK blocking.
+`routing_access_test.go` and managed deployment coverage verify selection and
+native revocation; database tests verify ownership/revision fencing and invalidation.
+
+## Signed firewall release and panel pin (2026-10-20)
+
+Pinned public protocol/native packages to
+`v1.0.2-0.20261020094941-d7b719423668`, signed agent `v2.0.10`, source
+`d7b719423668bd2e423cffb58a37961636376596`.
+Hosted [Quality 39403623381](https://github.com/VanSail-Opensource/X-Node/actions/runs/39403623381)
+and [signed release 39405357352](https://github.com/VanSail-Opensource/X-Node/actions/runs/39405357352)
+passed. The production-trusted Minisign manifest/version and downloaded agent/CLI
+hashes were independently checked through the agent's release verifier.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| x-node-linux-amd64 | d74246be42472546d452ad0eba302106a145d6e0eb6e5ba03a0cf056c5081265 |
+| x-node-linux-arm64 | f684ec57fc0b7c8e3e0a26b55fc0b0365f91d3c555018dc31ea851033dedc323 |
+| xnodectl-linux-amd64 | 50de6ef877a90184bef4c29b52cd465162b5be31a9045b946cb9aaa0353ddab4 |
+| xnodectl-linux-arm64 | 3be651ebbee6287699acaf6141c5f66b5e5b1e06552c15d374cf41dd42bb1a46 |
+
+`master_logs.go` exposes only one selected node's 500-entry volatile log buffer;
+agent `logs.report` remains the delivery source, and dropped counters are decimal
+strings. `Metrics(ctx,true)` omits log copies while default metrics remain
+compatible. No log/source-IP database persistence or extra agent command is added.
+`master_logs_test.go` covers bounded buffers, safe large counters, stale/offline
+snapshots, unknown nodes and the lightweight metrics projection.
+
+Access pruning also fences the authoritative compile revision and defers across
+a purchase boundary. A concurrent entitlement/endpoint change rejects stale
+cleanup instead of removing routes under newly granted access.

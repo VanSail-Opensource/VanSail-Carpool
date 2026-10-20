@@ -1,26 +1,21 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { XNodeMetrics, XNode } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import { formatDate, formatBytes } from '@/utils/format'
-import XNodeMetricDetails from './XNodeMetricDetails.vue'
-import MetricLineChart from '@/components/common/MetricLineChart.vue'
+import { formatBytes } from '@/utils/format'
+import XNodeMetricRow from './XNodeMetricRow.vue'
+import XNodeLogs from './XNodeLogs.vue'
 import { useMetricSamples } from '@/composables/useMetricSamples'
-import { metricLabel } from './metricRows'
 
 const props = defineProps<{ metrics: XNodeMetrics | null; nodes?: XNode[] }>()
 const { t } = useI18n()
 type NodeMetric = XNodeMetrics['nodes'][number]
 const liveNodes = computed(() => props.metrics?.nodes ?? [])
-const nodeStatus = (node: NodeMetric) => {
-  if (node.stale) return { label: 'xnode.stale', color: 'neutral' as const }
-  if (!node.connected || !node.ready) return { label: 'xnode.offline', color: 'error' as const }
-  if (!node.synchronized) return { label: 'xnode.degraded', color: 'warning' as const }
-  if (!node.available) return { label: 'xnode.metricsUnavailable', color: 'neutral' as const }
-  return { label: 'xnode.online', color: 'success' as const }
-}
+const names = computed(() => new Map(props.nodes?.map(node => [node.id, node.name]) ?? []))
+const logging = shallowRef<{ id: string; name: string } | null>(null)
+const logsOpen = computed({ get: () => logging.value !== null, set: open => { if (!open) logging.value = null } })
+function viewLogs(node: NodeMetric) { logging.value = { id: node.nodeId, name: names.value.get(node.nodeId) ?? node.nodeId } }
 const rate = (value?: number) => t('statistics.perSecond', { value: formatBytes(value ?? 0) })
-const fields = (value: unknown): [string, unknown][] => value && typeof value === 'object' ? Object.entries(value) : []
 const { series, append } = useMetricSamples()
 watch(() => props.metrics, value => {
   if (!value) return
@@ -41,12 +36,8 @@ watch(() => props.metrics, value => {
   <div class="grid gap-5">
     <div v-if="metrics" class="metrics-summary"><div><small>{{ t('xnode.onlineNodes') }}</small><strong>{{ metrics.onlineNodes }} / {{ metrics.totalNodes }}</strong></div><div><small>{{ t('xnode.connections') }}</small><strong>{{ metrics.activeConnections }}</strong></div><div><small>{{ t('xnode.upload') }}</small><strong>{{ rate(metrics.uploadBytesPerSecond) }}</strong></div><div><small>{{ t('xnode.download') }}</small><strong>{{ rate(metrics.downloadBytesPerSecond) }}</strong></div></div>
     <p v-if="!liveNodes.length" class="text-muted">{{ t('xnode.noMetrics') }}</p>
-    <details v-for="node in liveNodes" :key="node.nodeId" class="node-metrics">
-      <summary><span>{{ props.nodes?.find(item => item.id === node.nodeId)?.name ?? node.nodeId }}</span><UBadge :color="nodeStatus(node).color" variant="subtle">{{ t(nodeStatus(node).label) }}</UBadge></summary>
-      <div class="metrics-meta"><span>{{ node.version }} · Xray {{ node.xrayVersion }}</span><span>{{ formatDate(node.reportedAt ?? undefined) }}</span><span v-if="node.available">{{ rate(node.uploadBytesPerSecond) }} ↑ · {{ rate(node.downloadBytesPerSecond) }} ↓</span></div>
-      <div v-if="node.available" class="metrics-sections"><MetricLineChart :samples="series[`${node.nodeId}:cpu`] ?? []" :label="t('adminNative.cpu')" unit="percent" /><MetricLineChart :samples="series[`${node.nodeId}:memory`] ?? []" :label="t('adminNative.memory')" unit="percent" /></div>
-      <div v-if="node.available" class="metrics-sections"><details v-for="[key, value] in fields(node.machine)" :key="key"><summary>{{ metricLabel(key) }}</summary><XNodeMetricDetails :value="value" :prefix="key" /></details><details><summary>{{ t('xnode.certificates') }}</summary><XNodeMetricDetails :value="node.certificates" /></details></div>
-    </details>
+    <XNodeMetricRow v-for="node in liveNodes" :key="node.nodeId" :node="node" :name="names.get(node.nodeId) ?? node.nodeId" :cpu="series[`${node.nodeId}:cpu`] ?? []" :memory="series[`${node.nodeId}:memory`] ?? []" @logs="viewLogs(node)" />
+    <XNodeLogs v-if="logging" v-model:open="logsOpen" :node-id="logging.id" :name="logging.name" />
   </div>
 </template>
 
@@ -55,10 +46,5 @@ watch(() => props.metrics, value => {
 .metrics-summary div { display: grid; gap: 4px; }
 small, .metrics-meta { color: var(--text-muted); font-size: 12px; }
 strong { font-size: 20px; }
-.node-metrics { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding-block: 8px; }
-.metrics-meta { display: flex; gap: 12px; flex-wrap: wrap; }
-pre { font-size: 12px; overflow: auto; max-height: 340px; }
-.metrics-sections { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 24px; padding-top: 12px; }
-@media(max-width:600px) { .metrics-summary,.metrics-sections { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:600px) { .metrics-summary { grid-template-columns: minmax(0,1fr); } }
 </style>

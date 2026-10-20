@@ -36,12 +36,15 @@ func (s *Service) resolveGeoIP(ctx context.Context, config GlobalConfig) ([]stri
 		}
 		file, err := os.CreateTemp("", "xnode-master-geoip-*.dat")
 		if err != nil {
-			return result{}, err
+			return result{}, assetStorageFailure()
 		}
 		defer func() { _ = file.Close(); _ = os.Remove(file.Name()) }()
 		digest := sha256.New()
 		size, err := io.Copy(io.MultiWriter(file, digest), io.LimitReader(response.Body, maxGeoIPAsset+1))
-		if err != nil || size == 0 || size > maxGeoIPAsset {
+		if err != nil {
+			return result{}, assetTransferFailure("GeoIP asset", err)
+		}
+		if size == 0 || size > maxGeoIPAsset {
 			return result{}, ErrInvalid
 		}
 		hash := hex.EncodeToString(digest.Sum(nil))
@@ -49,7 +52,7 @@ func (s *Service) resolveGeoIP(ctx context.Context, config GlobalConfig) ([]stri
 			return result{}, ErrInvalid
 		}
 		if _, err = file.Seek(0, io.SeekStart); err != nil {
-			return result{}, err
+			return result{}, assetStorageFailure()
 		}
 		prefixes, err := readGeoIPPrefixes(ctx, file, config.SourceGeoIP.Selectors)
 		if err != nil {

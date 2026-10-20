@@ -128,6 +128,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		m.mu.Lock()
 		snapshot := m.live[peer.nodeID]
 		snapshot.logs = append(snapshot.logs, report.Entries...)
+		snapshot.logsDropped += min(report.Dropped, ^uint64(0)-snapshot.logsDropped)
 		if len(snapshot.logs) > 500 {
 			snapshot.logs = snapshot.logs[len(snapshot.logs)-500:]
 		}
