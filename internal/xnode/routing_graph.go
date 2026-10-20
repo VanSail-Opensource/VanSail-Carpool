@@ -90,13 +90,8 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 		}
 	}
 	slices.Sort(usedNodes)
-	dependencies, err = s.prepareRoutingContexts(ctx, identity, &in, usedNodes, global.Torrent.Enabled, usesProtocol, dependencies)
-	if err != nil {
-		return in, err
-	}
 	proofRules := slices.Clone(in.rules)
 	if !in.legacy {
-		dependencies = append(dependencies, "endpoint-routing-v1", in.choices)
 		for index := range proofRules {
 			proofRules[index].From = routingVertex(in.sources[proofRules[index].ID])
 			proofRules[index].To = routingVertex(in.targets[proofRules[index].ID])
@@ -108,6 +103,13 @@ func (s *Service) routingInput(ctx context.Context, identity Identity, choices [
 	}
 	if _, err = in.graph.Paths(); err != nil {
 		return in, fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	dependencies, err = s.prepareRoutingContexts(ctx, identity, &in, usedNodes, global.Torrent.Enabled, usesProtocol, dependencies)
+	if err != nil {
+		return in, err
+	}
+	if !in.legacy {
+		dependencies = append(dependencies, "endpoint-routing-v1", in.choices)
 	}
 	raw, err := json.Marshal(dependencies)
 	if err != nil {

@@ -242,7 +242,9 @@ owner plans, admin matcher presets, revision checks, scoped projections and repl
 `routing_graph.go` validates purchased native endpoint access and shares
 `internal/routingmatch` for ordered compilation, tracing and conditional paths.
 `routing_context.go` rejects untracked server hops and inconsistent destination
-detection. `routing_projection.go` keeps expanded selector sets out of browser
+detection when loop safety depends on a conditional-cycle proof. One-way graphs
+use the matcher structural proof and support existing sniffing, DNS strategies and
+administrator fallback policies. `routing_projection.go` keeps expanded selector sets out of browser
 responses; graph labels resolve returned rule IDs to preset names.
 
 `routing_geosite.go` streams the pinned protobuf format with bounded records and
@@ -276,7 +278,14 @@ unknown server contexts. These regressions run in hosted CI.
 
 `compilation_errors.go` keeps private native validation details out of default errors/logs while allowing explicit validation diagnostics, including synthetic hosted fixtures.
 
-`routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Managed matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
+`routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Conditional-cycle matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused for those graphs. Structurally acyclic managed graphs cannot revisit a listener, so normal server sniffing, DNS resolution and administrator proxy fallbacks remain usable. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
+
+`routing_context_integration_test.go` exercises owner-scoped previews using
+production-style sniffing, IPOnDemand, proxy defaults and administrator routing.
+It preserves fixed-metadata disjoint cycles and refuses uncertain or overlapping
+cycles. `routing_deployment_test.go` carries these production policies through
+queued native validation and every acknowledged deployment barrier. Neither
+change adds persistence, alters financial periods nor bypasses peer guards.
 
 `profile_metrics.go` projects owner-scoped native node names, sampled activity, rates and availability without changing authenticated agent transport liveness. `profile_accounting.go` builds exactly seven UTC days from native counters plus reconciled source history, using arbitrary-precision aggregation and decimal strings. Historical source bytes retain their unavailable directional split.
 

@@ -14,6 +14,13 @@ remain exclusions at later hops. Limits bound rules, paths, selectors and analys
 work. No telemetry or graph state is persisted here. The caller supplies desired
 state, entitlement validation and authenticated peer deployment.
 
+`graph_topology.go` proves listener-level structural acyclicity independently of
+destination predicates. Callers may permit ordinary sniffing/DNS/fallback policies
+when no sequence of managed edges can return to a listener. Conditional cycles
+still require fixed metadata in addition to the existing `Paths` proof.
+`graph_topology_test.go` covers chains, diamonds, disconnected conditional cycles
+and distinct listeners; these regressions execute in hosted CI.
+
 `graph_test.go` contains hosted regressions for separate Google/AI paths, ordered
 shadowing, disjoint cycles, overlapping cycles, uncertain regexes, CIDRs, ports,
 network conjunction and invalid selectors. No external calls occur in this module.

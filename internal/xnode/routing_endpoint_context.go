@@ -12,6 +12,9 @@ import (
 
 func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity, in *routingInput, usedNodes []string, torrent, usesProtocol bool, dependencies []any) ([]any, error) {
 	matcherContext := ""
+	// A DAG cannot loop when metadata changes between listeners. Only graphs
+	// with structural cycles need identical, immutable matching inputs.
+	stableMetadata := !in.graph.StructurallyAcyclic()
 	for _, id := range usedNodes {
 		selected := []Endpoint{in.endpoints[id]}
 		if !in.legacy {
@@ -40,7 +43,7 @@ func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity,
 			return nil, ErrInvalid
 		}
 		routing, _ := root["routing"].(map[string]any)
-		if strategy, _ := routing["domainStrategy"].(string); strategy != "" && strategy != "AsIs" {
+		if strategy, _ := routing["domainStrategy"].(string); stableMetadata && strategy != "" && strategy != "AsIs" {
 			return nil, fmt.Errorf("%w: managed routing requires domainStrategy AsIs on %s", ErrInvalid, node.Name)
 		}
 		tags, _, err := s.eligibleTags(ctx, identity.UserID, id)
@@ -55,14 +58,16 @@ func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity,
 				}
 			}
 		}
-		context, err := routingServerContext(root, tags, torrent, usesProtocol)
-		if err != nil {
-			return nil, err
+		if stableMetadata {
+			context, err := routingServerContext(root, tags, torrent, usesProtocol)
+			if err != nil {
+				return nil, err
+			}
+			if matcherContext != "" && matcherContext != context {
+				return nil, fmt.Errorf("%w: %w", ErrInvalid, &routingmatch.Diagnostic{Code: "routing_context_unproven"})
+			}
+			matcherContext = context
 		}
-		if matcherContext != "" && matcherContext != context {
-			return nil, fmt.Errorf("%w: %w", ErrInvalid, &routingmatch.Diagnostic{Code: "routing_context_unproven"})
-		}
-		matcherContext = context
 		items, _ := root["inbounds"].([]any)
 		for _, endpoint := range selected {
 			for _, item := range items {

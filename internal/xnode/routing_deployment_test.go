@@ -120,6 +120,13 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	}
 	inbound := native["inbounds"].([]any)[0].(map[string]any)
 	inbound["streamSettings"] = map[string]any{"network": "tcp", "security": "reality", "realitySettings": map[string]any{"dest": "www.example.com:443", "serverNames": []string{"www.example.com"}, "privateKey": base64.RawURLEncoding.EncodeToString(key.Bytes()), "shortIds": []string{"0123456789abcdef"}}}
+	// Production listeners sniff destinations and retain administrator routing.
+	// A one-way graph must deploy without rewriting either server policy.
+	inbound["sniffing"] = map[string]any{"enabled": true, "destOverride": []string{"http", "tls", "quic"}}
+	routing := native["routing"].(map[string]any)
+	routing["domainStrategy"] = "IPOnDemand"
+	native["outbounds"] = append(native["outbounds"].([]any), map[string]any{"tag": "admin-exit", "protocol": "socks", "settings": map[string]any{"servers": []any{map[string]any{"address": "127.0.0.1", "port": 1080}}}})
+	routing["rules"] = append(routing["rules"].([]any), map[string]any{"type": "field", "network": "tcp,udp", "outboundTag": "admin-exit"})
 	profile.Document, err = json.Marshal(native)
 	if err != nil {
 		t.Fatal(err)
@@ -277,6 +284,16 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	}
 	if len(config.Users) != 1 || len(config.Users[0].TransitCredentials) != 1 {
 		t.Fatal("authenticated peer account not enabled")
+	}
+	var applied map[string]any
+	if err = json.Unmarshal(config.Xray, &applied); err != nil {
+		t.Fatal(err)
+	}
+	if applied["routing"].(map[string]any)["domainStrategy"] != "IPOnDemand" || applied["inbounds"].([]any)[0].(map[string]any)["sniffing"].(map[string]any)["enabled"] != true {
+		t.Fatal("managed deployment replaced administrator DNS or sniffing policy")
+	}
+	if !bytes.Contains(config.Xray, []byte(`"outboundTag":"admin-exit"`)) {
+		t.Fatal("managed deployment removed administrator fallback routing")
 	}
 	period, err := f.store.XNodePeriod(ctx, config.Users[0].AccountingPeriod)
 	if err != nil || period.Status != "open" || period.UsedBytes != 0 {
