@@ -73,9 +73,9 @@ showed no error according to the user; no production CPU profile was available.
 ## 2026-10-20 firewall and panel repair
 
 Detailed checklist: [firewall-routing-repair-progress.md](firewall-routing-repair-progress.md).
-Signed X-Node v2.0.10 at `d7b719423668bd2e423cffb58a37961636376596` passed
-Quality 39403623381 and signed release 39405357352. Manifest/version and all
+Signed X-Node v2.0.11 at `153cf0d10bbc895f8a05cf4aa7b2fb8b02be2007` passed
+Quality 39441871106 and signed release 39444134348. Manifest/version and all
 amd64/arm64 agent/CLI hashes verified with the pinned production trust key.
-Panel pin is `v1.0.2-0.20261020094941-d7b719423668`; full hashes are recorded in
+Panel pin is `v1.0.2-0.20261020144243-153cf0d10bbc`; full hashes are recorded in
 internal/xnode/README.md. Local automated test suites remain prohibited and were
 not run. Panel delivery/browser/static evidence is tracked in the checklist.

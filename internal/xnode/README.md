@@ -327,19 +327,19 @@ native revocation; database tests verify ownership/revision fencing and invalida
 ## Signed firewall release and panel pin (2026-10-20)
 
 Pinned public protocol/native packages to
-`v1.0.2-0.20261020094941-d7b719423668`, signed agent `v2.0.10`, source
-`d7b719423668bd2e423cffb58a37961636376596`.
-Hosted [Quality 39403623381](https://github.com/VanSail-Opensource/X-Node/actions/runs/39403623381)
-and [signed release 39405357352](https://github.com/VanSail-Opensource/X-Node/actions/runs/39405357352)
+`v1.0.2-0.20261020144243-153cf0d10bbc`, signed agent `v2.0.11`, source
+`153cf0d10bbc895f8a05cf4aa7b2fb8b02be2007`.
+Hosted [Quality 39441871106](https://github.com/VanSail-Opensource/X-Node/actions/runs/39441871106)
+and [signed release 39444134348](https://github.com/VanSail-Opensource/X-Node/actions/runs/39444134348)
 passed. The production-trusted Minisign manifest/version and downloaded agent/CLI
 hashes were independently checked through the agent's release verifier.
 
 | Artifact | SHA-256 |
 | --- | --- |
-| x-node-linux-amd64 | d74246be42472546d452ad0eba302106a145d6e0eb6e5ba03a0cf056c5081265 |
-| x-node-linux-arm64 | f684ec57fc0b7c8e3e0a26b55fc0b0365f91d3c555018dc31ea851033dedc323 |
-| xnodectl-linux-amd64 | 50de6ef877a90184bef4c29b52cd465162b5be31a9045b946cb9aaa0353ddab4 |
-| xnodectl-linux-arm64 | 3be651ebbee6287699acaf6141c5f66b5e5b1e06552c15d374cf41dd42bb1a46 |
+| x-node-linux-amd64 | 6f61ef51d350c722a3fb37aac7472af675b60f9035f043cbe015b154e71ded62 |
+| x-node-linux-arm64 | 0835c52811ee0d2a7bca36dda3596beab06f02ba327f48b8ce4023354f6838dd |
+| xnodectl-linux-amd64 | aa51791ffb33f700c30b76014e9d0c9b5e8cdf7cc3e2d96f8f15f348cab5a413 |
+| xnodectl-linux-arm64 | 342c30d2a6f05ac095cd7d8bbfc5cadc5ba9fac29d0b56236cd6efce9b3b9e49 |
 
 `master_logs.go` exposes only one selected node's 500-entry volatile log buffer;
 agent `logs.report` remains the delivery source, and dropped counters are decimal
