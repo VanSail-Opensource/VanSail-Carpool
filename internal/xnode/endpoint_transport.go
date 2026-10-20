@@ -16,7 +16,10 @@ func clientStream(inbound map[string]any) (map[string]any, error) {
 	if network == "" || network == "raw" {
 		stream["network"] = "tcp"
 	}
-	// Xray represents an unsecured stream by omitting security; "none" is invalid.
+	security, _ := stream["security"].(string)
+	if security == "" {
+		stream["security"] = "none"
+	}
 	delete(stream, "sockopt")
 	if tls, _ := stream["tlsSettings"].(map[string]any); tls != nil {
 		delete(tls, "certificates")

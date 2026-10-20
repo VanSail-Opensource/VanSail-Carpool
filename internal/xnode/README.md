@@ -281,7 +281,10 @@ unknown server contexts. These regressions run in hosted CI.
 `routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Conditional-cycle matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused for those graphs. Structurally acyclic managed graphs cannot revisit a listener, so normal server sniffing, DNS resolution and administrator proxy fallbacks remain usable. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
 
 `routing_context_integration_test.go` exercises owner-scoped previews using
-production-style sniffing, IPOnDemand, proxy defaults and administrator routing.
+valid REALITY endpoints, production-style sniffing, IPOnDemand, proxy defaults and
+administrator routing. It verifies eligible endpoint inventory before the routing
+proof and checks the specific rejection cause, so a fixture transport failure
+cannot satisfy a cycle-rejection case.
 It preserves fixed-metadata disjoint cycles and refuses uncertain or overlapping
 cycles. `routing_deployment_test.go` carries these production policies through
 queued native validation and every acknowledged deployment barrier. Neither
