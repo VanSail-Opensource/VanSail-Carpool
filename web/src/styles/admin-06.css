@@ -76,13 +76,13 @@
 
 .tg-modal .form-stack [data-slot="root"],
 .tg-drawer .form-stack [data-slot="root"],
-.tg-slideover .form-stack [data-slot="root"] { width: 100%; }
+.tg-slideover .form-stack [data-slot="root"] { max-width: 100%; }
 
-.tg-modal .form-stack input,
+.tg-modal .form-stack input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]),
 .tg-modal .form-stack textarea,
-.tg-drawer .form-stack input,
+.tg-drawer .form-stack input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]),
 .tg-drawer .form-stack textarea,
-.tg-slideover .form-stack input,
+.tg-slideover .form-stack input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]),
 .tg-slideover .form-stack textarea { width: 100%; }
 
 @media (min-width: 900px) {

@@ -99,22 +99,7 @@ func (s *Store) QueueXNodeRouting(ctx context.Context, p xnode.RoutingPlan, inpu
 	if replayed {
 		return op.Receipt, tx.Commit()
 	}
-	old, err := scanRoutingPlan(tx.QueryRowContext(ctx, routingPlanSelect+` WHERE proxy_user_id=?`, p.ProxyUserID))
-	if err != nil && !errors.Is(err, xnode.ErrNotFound) {
-		return op.Receipt, err
-	}
-	if old.Revision != p.Revision || old.Phase != "" && old.Phase != "active" && old.Phase != "disabled" {
-		return op.Receipt, xnode.ErrConflict
-	}
-	phase, reason := "revoking", ""
-	if p.Phase == "disabled" {
-		phase, reason = "disabled", p.Reason
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_routing_plans(proxy_user_id,cipher,previous_cipher,legacy_cipher,revision,phase,operation_id,reason,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id) DO UPDATE SET cipher=excluded.cipher,previous_cipher=excluded.previous_cipher,legacy_cipher=excluded.legacy_cipher,revision=excluded.revision,phase=excluded.phase,operation_id=excluded.operation_id,reason=excluded.reason,updated_at=excluded.updated_at`, p.ProxyUserID, p.Cipher, old.Cipher, p.LegacyCipher, p.Revision+1, phase, op.Receipt.ID, reason, stamp(now))
-	if err != nil {
-		return op.Receipt, err
-	}
-	if err = routingAuditTx(ctx, tx, input.ActorUserID, op.Receipt.ID, phase, reason, p.LegacyCipher != "", now); err != nil {
+	if err = queueXNodeRoutingTx(ctx, tx, p, input, op.Receipt.ID, now); err != nil {
 		return op.Receipt, err
 	}
 	return op.Receipt, tx.Commit()

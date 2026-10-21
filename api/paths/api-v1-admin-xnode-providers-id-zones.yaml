@@ -1,0 +1,25 @@
+get:
+  tags: [Administration]
+  operationId: getXNodeProviderZones
+  security:
+    - {browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}
+    - {panelApiToken: []}
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128}
+  responses:
+    '200':
+      description: Request-local zone discovery using saved credentials
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeProviderZones'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}
+    '404':
+      description: Saved provider not found
+    '422':
+      description: Saved provider credentials are unavailable
+    '503':
+      description: Zone discovery failed; provider error details are never returned

@@ -1,5 +1,22 @@
 # X-Node control plane
 
+`provider_zones.go` discovers Cloudflare zones from saved provider credentials
+through the existing external validation queue, one page at a time. The admin
+transport returns only ID/name pairs and a supported flag, never credentials or
+provider error bodies. Deadlines, pagination/body bounds and cancellation apply
+before returning a complete, request-local inventory. `provider_zones_test.go`
+covers pagination, malformed/oversized/error responses and cancellation in CI.
+The agent still receives the DNS zone name; its protocol and release are unchanged.
+Reference: https://developers.cloudflare.com/api/resources/zones/methods/list/.
+
+`configuration_metadata_test.go` covers pinned parser extraction and endpoint
+metadata. `validation_cache_test.go` covers incremental validation-cache reuse.
+
+`routing_member_preview.go` accepts trace entries only for configured inbound
+rules and their exact source endpoints. Accessible outbound-only/unused nodes or
+another host on the same node cannot start a trace. Existing preview/save APIs
+remain compatible, including deterministic entry selection when omitted.
+
 ## Incremental native configuration
 
 `validation_cache.go` keeps up to 128 owner/node/document contexts, each with one
@@ -388,3 +405,56 @@ snapshots, unknown nodes and the lightweight metrics projection.
 Access pruning also fences the authoritative compile revision and defers across
 a purchase boundary. A concurrent entitlement/endpoint change rejects stale
 cleanup instead of removing routes under newly granted access.
+
+## Metered route speedtests
+
+`route_speedtest_types.go` defines owner-scoped start/result contracts.
+`route_speedtest.go` authorizes a saved active revision and successful trace,
+checks synchronized native nodes/capabilities, and reuses durable receipts.
+`route_speedtest_worker.go` visits adjacent pairs in order; intent/results live
+in existing operation items. `route_speedtest_pair.go` uses the per-node command
+queue with administrator URLs, 32 MiB download, 8 MiB upload and 60 seconds per
+pair. Waiting stays outside the send queue, leaving traffic ACKs independent.
+`route_speedtest_results.go` exposes public IDs/measurements and estimates
+latency by summing medians, with each bandwidth direction taking its minimum.
+Command-result byte counts never bill. `route_speedtest_test.go` covers estimates,
+sanitization, owner isolation, partial recovery and uncertain-command non-replay.
+
+`metered_probe_types.go` defines the minimal durable probe-to-origin reference.
+`metered_probes.go` grants one unique short-lived identity per operation pair,
+revokes it, and records acknowledged barriers. `metered_probe_access.go` limits
+admission to the exact target inbound, current origin period, entitlement and
+quota; expiry is bounded by both probe and paid access. Probes have isolated
+credentials and no member routes/customizations. Normal period-tagged journal
+samples retain deduplication and multiplier rounding while charging the origin.
+Late tails after expiry/revoke still count. Reset/renewal/refund revoke probes
+and flush their journals before sealing the period; offline journals hold
+settlement without touching a successor. References and completed pair results
+survive restarts. Recovered processing intent becomes uncertain, completed pairs
+never repeat, and later pairs stop after uncertainty.
+
+Subscription response precedence: explicit client format bypasses ordered UA
+rules; otherwise the first rule chooses its exact template or Browser page.
+Legacy rules omit action and retain template selection. Unmatched clients retain
+built-in detection/Base64 and browser Accept negotiation. Empty HTTP templates
+are UA-only (no member/client defaults), document-free, and default to 403.
+`subscription_responses_test.go` covers shared preview/live selection, explicit
+precedence, legacy rules, empty status validation and access-before-selection.
+
+`firewall_search.go` parses address/CIDR queries with normalized network boundaries
+and returns bounded pages. Zero-hour administrator requests require the exact
+active generation and release only that ban; positive-hour grants keep existing
+exemption behavior. Release receipts use the same firewall version/delivery lane.
+
+`diy_types.go` defines typed owner DIY contracts and minimal persistence interfaces.
+`diy_read.go` decrypts one document and annotates exports only; members without
+hosts keep options for future hosts. `diy_preview.go` combines existing routing
+proofs with shared tuning compatibility and pinned client-parser validation.
+`diy_save.go` validates both sections, fences settings/routing revisions and
+atomically commits a receipt, encrypted settings and changed routing desired
+state. `routing_prepare.go` shares the existing deployment preparation with
+legacy routing APIs. `diy_test.go` covers concurrent same-key retries, encryption,
+inheritance, export isolation and pinned-parser output. Saved settings are local;
+combined receipts continue through the existing routing deployment guarantees.
+
+`metered_probe_lifecycle_test.go` exercises compiled admission, quota exhaustion, expired grants, real traffic reset and refund quiescing with duplicate late probe samples. Unfinished barriers retain origin evidence and leave successor periods uncharged.

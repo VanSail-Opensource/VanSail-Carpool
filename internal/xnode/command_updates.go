@@ -9,6 +9,9 @@ import (
 )
 
 func (s *Service) executeNodeCommand(ctx context.Context, node string, operation providerops.Operation, request CommandRequest, args map[string]any) (json.RawMessage, error) {
+	if request.Name == "speedtest" && operation.Attempts > 1 {
+		return nil, &CommandError{CommandUncertain, ErrUnavailable}
+	}
 	update := request.Name == "update.install" || request.Name == "update.rollback"
 	// A rollback is confirmed by the running release changing away from the
 	// version observed before this attempt. A retried attempt that cannot observe

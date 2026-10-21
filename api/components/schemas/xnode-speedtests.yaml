@@ -1,0 +1,52 @@
+XNodeRouteSpeedtestWrite:
+  type: object
+  additionalProperties: false
+  required: [revision, start, startEndpointId, destination]
+  properties:
+    revision: {type: integer, minimum: 1}
+    start: {type: string, minLength: 1, maxLength: 128}
+    startEndpointId: {type: string, minLength: 1, maxLength: 128}
+    destination:
+      type: object
+      additionalProperties: false
+      properties:
+        domain: {type: string, maxLength: 253}
+        ip: {type: string, maxLength: 64}
+        port: {type: integer, minimum: 1, maximum: 65535}
+        network: {type: string, enum: [tcp, udp]}
+        protocol: {type: string}
+XNodeSpeedtestMeasurement:
+  type: object
+  additionalProperties: false
+  required: [request_latency_millis, download_mbps, upload_mbps]
+  properties:
+    request_latency_millis: {type: array, minItems: 3, maxItems: 3, items: {type: number, minimum: 0}}
+    download_mbps: {type: number, minimum: 0}
+    upload_mbps: {type: number, minimum: 0}
+XNodeRouteSpeedtestResult:
+  type: object
+  additionalProperties: false
+  required: [receipt, pairs]
+  properties:
+    receipt: {$ref: '../../openapi.yaml#/components/schemas/OperationReceipt'}
+    pairs:
+      type: array
+      maxItems: 64
+      items:
+        type: object
+        additionalProperties: false
+        required: [sourceNodeId, targetEndpointId, status]
+        properties:
+          sourceNodeId: {type: string}
+          targetEndpointId: {type: string}
+          status: {type: string, enum: [queued, processing, succeeded, failed, pending_review, compensated]}
+          errorCode: {type: string}
+          measurement: {$ref: '#/XNodeSpeedtestMeasurement'}
+    estimate:
+      type: object
+      additionalProperties: false
+      required: [latencyMillis, downloadMbps, uploadMbps]
+      properties:
+        latencyMillis: {type: number, minimum: 0}
+        downloadMbps: {type: number, minimum: 0}
+        uploadMbps: {type: number, minimum: 0}

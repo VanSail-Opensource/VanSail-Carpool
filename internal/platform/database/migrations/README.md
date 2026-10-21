@@ -164,3 +164,9 @@ file instead.
 `085_stablecoin_tokens.sql` adds token cursor keys without resetting USDT progress, preserves quote fingerprints and transfer IDs, and records immutable audited dismissals.
 
 `086_admin_firewall_exemptions.sql` distinguishes uncharged administrator grants from immutable member payments and invalidates effective inventory projections when an exemption is issued or released.
+
+`088_xnode_metered_probes.sql` stores minimal immutable attribution references for
+isolated route-test identities, access revocation and traffic barrier evidence.
+Measurements reuse existing operation items; generated configurations are absent.
+
+`089_xnode_member_diy.sql` stores only member ID, settings revision and encrypted client overrides. Generated subscriptions and credentials are never duplicated; subscription-only writes do not invalidate server compilation.

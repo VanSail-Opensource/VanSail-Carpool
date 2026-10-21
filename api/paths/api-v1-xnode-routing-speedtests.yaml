@@ -1,0 +1,24 @@
+post:
+  operationId: startXNodeRouteSpeedtest
+  tags: [Members]
+  description: Owner-scoped saved active route only. Pairs run in order with durable non-replayable traffic intent and isolated identities billed through normal traffic journals. Each pair uses administrator URLs, 32 MiB download, 8 MiB upload and 60 seconds.
+  parameters:
+    - in: header
+      name: Idempotency-Key
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128}
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeRouteSpeedtestWrite'}
+  responses:
+    '202':
+      description: Durable owner receipt
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/OperationReceipt'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '409': {$ref: '../openapi.yaml#/components/responses/Conflict'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

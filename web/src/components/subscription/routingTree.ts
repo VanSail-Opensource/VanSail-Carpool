@@ -10,6 +10,7 @@ export interface RoutingTreeNode {
   nodeId?: string
   templateIds?: string[]
   excludedRules?: string[]
+  highlighted?: boolean
 }
 
 /** Prefix sharing preserves endpoint identity and never joins separate paths. */
@@ -24,6 +25,7 @@ export function routingTree(nodes: RoutingView['nodes'], paths: RoutingPath[], c
   const append = (parent: RoutingTreeNode, key: string, value: Omit<RoutingTreeNode, 'id' | 'asn' | 'layer'>, highlighted: boolean) => {
     let node = byKey.get(key)
     if (!node) { node = { ...value, id: key, asn: result.length + 1, layer: parent.layer + 1 }; byKey.set(key, node); result.push(node) }
+    node.highlighted = highlighted || node.highlighted
     const id = `${parent.asn}-${node.asn}`, previous = edges.get(id)
     edges.set(id, { id, from: parent.asn, to: node.asn, relationship: 'path', highlighted: highlighted || !!previous?.highlighted })
     return node
@@ -37,7 +39,7 @@ export function routingTree(nodes: RoutingView['nodes'], paths: RoutingPath[], c
     for (const [index, id] of path.nodes.entries()) {
       const rule = rules.get(path.rules[Math.max(0, index - 1)] ?? '')
       const endpointId = index === 0 ? rule?.inboundEndpointId : rule?.outboundEndpointId
-      parent = append(parent, JSON.stringify([parent.asn, id, endpointId]), { name: names.get(id) ?? id, subtitle: endpointAddress(hosts.get(endpointId ?? '')), nodeId: id }, highlighted)
+      parent = append(parent, JSON.stringify([parent.asn, id, endpointId, rule?.id]), { name: names.get(id) ?? id, subtitle: endpointAddress(hosts.get(endpointId ?? '')), nodeId: id }, highlighted)
     }
     const templateIds = [...new Set(path.rules.map(id => rules.get(id)?.templateId).filter((id): id is string => !!id))]
     if (templateIds.length) append(parent, JSON.stringify([parent.asn, path.rules, path.excludedRules]), { name: templateIds.map(id => catalog.get(id)?.name ?? id).join(' ∩ '), subtitle: '', templateIds, excludedRules: path.excludedRules }, highlighted)

@@ -19,7 +19,7 @@
     "except": "except {conditions}",
     "involvedRules": "Rules: {rules}",
     "graph": "Conditional routing graph",
-    "graphHint": "Select a node to edit its routes. Drag to pan, scroll to zoom; use arrow keys and + or − with keyboard focus.",
+    "graphHint": "The graph fits automatically. Select a node or template with Enter or Space; scroll the page normally.",
     "editNode": "Edit routes for {name}",
     "showAll": "Show all routes",
     "ruleNumber": "Rule {number}",
@@ -54,6 +54,24 @@
       "checking": "Checking route",
       "error": "Route unavailable",
       "disabled": "Needs review"
+    }
+  },
+  "routeSpeedtest": {
+    "start": "Test route",
+    "metered": "Uses your traffic quota. Each pair: up to 32 MiB down, 8 MiB up, 60 seconds.",
+    "requirements": "Save and trace an active route before testing. Nodes must be synchronized.",
+    "progress": "Pairs complete: {completed}/{total}",
+    "failed": "The route test could not start. Your route draft is retained.",
+    "uncertain": "Completed pairs are retained. Traffic-consuming commands will not repeat automatically.",
+    "measurement": "{latency} ms · ↓ {download} Mbps · ↑ {upload} Mbps",
+    "estimate": "Route estimate: {latency} ms · ↓ {download} Mbps · ↑ {upload} Mbps",
+    "status": {
+      "queued": "Waiting",
+      "processing": "Testing",
+      "succeeded": "Complete",
+      "failed": "Failed",
+      "pending_review": "Outcome uncertain",
+      "compensated": "Stopped"
     }
   }
 }

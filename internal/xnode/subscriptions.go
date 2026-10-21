@@ -7,9 +7,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 type SubscriptionMetadata struct {
+	ResponseKind       string                                  `json:"responseKind,omitempty"`
+	StatusCode         int                                     `json:"statusCode,omitempty"`
+	ConnectionOptions  []subscription.TuningApplicability      `json:"connectionOptions,omitempty"`
 	SelectedFormat     string                                  `json:"selectedFormat,omitempty"`
 	SelectedTemplateID string                                  `json:"selectedTemplateId,omitempty"`
 	SelectionSource    string                                  `json:"selectionSource,omitempty"`
@@ -95,6 +100,13 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	}
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete
+	proxies, err = s.ExportProxiesForUser(ctx, identity.UserID, proxies)
+	if err != nil {
+		return result, err
+	}
+	if len(proxies) > 0 && proxies[0].Tuning != nil {
+		result.ConnectionOptions = subscription.TuningCompatibility(*proxies[0].Tuning, proxies)
+	}
 	if err := s.projectSubscriptionFormats(ctx, identity.UserID, proxies, &result); err != nil {
 		return result, err
 	}
@@ -123,10 +135,16 @@ func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explici
 	if err != nil {
 		return nil, metadata, err
 	}
-	if !config.Formats[selection.Format] {
-		return nil, metadata, ErrInvalid
+	metadata.SelectedFormat, metadata.SelectedTemplateID, metadata.SelectionSource = selection.Format, selection.TemplateID, selection.Source
+	metadata.ResponseKind, metadata.StatusCode = selection.ResponseKind, selection.StatusCode
+	if selection.ResponseKind == "browser" || selection.ResponseKind == "empty-http" {
+		return []byte{}, metadata, nil
 	}
 	proxies, _, err := s.identityInventory(ctx, identity)
+	if err != nil {
+		return nil, metadata, err
+	}
+	proxies, err = s.ExportProxiesForUser(ctx, identity.UserID, proxies)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -134,7 +152,6 @@ func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explici
 	if owner == "" {
 		owner = identityScope(identity)
 	}
-	metadata.SelectedFormat, metadata.SelectedTemplateID, metadata.SelectionSource = selection.Format, selection.TemplateID, selection.Source
 	raw, err := renderSubscriptionSelection(config, owner, selection, proxies)
 	return raw, metadata, err
 }

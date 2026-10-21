@@ -41,5 +41,12 @@ func (s *Server) xnodePreviewSubscriptionTemplate(w http.ResponseWriter, r *http
 		return
 	}
 	privateSubscriptionHeaders(w)
-	writeJSON(w, http.StatusOK, map[string]any{"validation": validation, "preview": string(raw)})
+	kind, status := "document", 200
+	if input.Format == "empty-http" {
+		kind = "empty-http"
+		if value, err := subscription.EmptyHTTPStatus(input); err == nil {
+			status = value
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"validation": validation, "preview": string(raw), "responseKind": kind, "statusCode": status})
 }

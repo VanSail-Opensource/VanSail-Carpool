@@ -19,3 +19,5 @@
 `SubscriptionView.vue` is the thin route composition for Subscription & uptime, delegating fetching and display to the subscription components.
 - `IPLookupView.vue` composes the member IP Lookup feature.
 - `AdminIPLookupView.vue` composes the standalone administrator IP Lookup settings feature.
+
+`DIYView.vue` is the thin authenticated `/settings/diy` member entry point.

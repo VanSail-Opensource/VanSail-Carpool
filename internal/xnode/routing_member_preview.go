@@ -23,18 +23,13 @@ func (s *Service) PreviewOwnedRouting(ctx context.Context, user string, choices 
 	if start == "" {
 		return in.publicPaths(paths), nil, nil
 	}
-	accessible := false
-	for _, node := range in.nodes {
-		accessible = accessible || node.ID == start
+	entry := ""
+	if len(startEndpoint) > 0 {
+		entry = startEndpoint[0]
 	}
-	if !accessible {
-		return nil, nil, ErrInvalid
-	}
-	if len(startEndpoint) > 0 && startEndpoint[0] != "" {
-		endpoint := in.byEndpoint[startEndpoint[0]]
-		if endpoint.ID == "" || endpoint.NodeID != start {
-			return nil, nil, ErrInvalid
-		}
+	endpoint, err := in.traceEntry(start, entry)
+	if err != nil {
+		return nil, nil, err
 	}
 	if len(d.Domain) > 253 || len(d.IP) > 64 {
 		return nil, nil, ErrInvalid
@@ -45,22 +40,21 @@ func (s *Service) PreviewOwnedRouting(ctx context.Context, user string, choices 
 	}
 	vertex := start
 	if !in.legacy {
-		endpoint := in.endpoints[start]
-		for _, choice := range in.choices {
-			if choice.InboundNodeID == start {
-				endpoint = in.sources[choice.ID]
-				break
-			}
-		}
-		if len(startEndpoint) > 0 && startEndpoint[0] != "" {
-			endpoint = in.byEndpoint[startEndpoint[0]]
-			if endpoint.ID == "" || endpoint.NodeID != start {
-				return nil, nil, ErrInvalid
-			}
-		}
 		vertex = routingVertex(endpoint)
 	}
 	trace, err := in.graph.Trace(vertex, d)
 	publicTrace := in.publicPaths([]routingmatch.Path{trace})[0]
 	return in.publicPaths(paths), &publicTrace, err
+}
+
+// A reachable endpoint alone is insufficient: a trace must enter an inbound
+// that has configured member rules, with the same explicit endpoint identity.
+func (in routingInput) traceEntry(start, id string) (Endpoint, error) {
+	for _, choice := range in.choices {
+		endpoint := in.sources[choice.ID]
+		if choice.InboundNodeID == start && endpoint.ID != "" && (id == "" || endpoint.ID == id) {
+			return endpoint, nil
+		}
+	}
+	return Endpoint{}, ErrInvalid
 }

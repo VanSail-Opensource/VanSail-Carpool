@@ -5,7 +5,6 @@ import { ApiError } from '@/api/http'
 import { useDurableCommand } from '@/composables/useDurableCommand'
 import { localizedError, t } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
-import { endpointAddress } from './routingPresentation'
 
 export function routingError(caught: unknown, choices: RoutingChoice[] = []) {
   const codes = ['routing_loop', 'routing_overlap_unproven', 'routing_analysis_limit', 'routing_invalid_rule', 'routing_context_unproven', 'routing_endpoint_unavailable']
@@ -14,7 +13,7 @@ export function routingError(caught: unknown, choices: RoutingChoice[] = []) {
   const message = t(`managedRouting.errors.${caught.code}`)
   return indices.length ? `${message} ${t('managedRouting.involvedRules', { rules: indices.join(' → ') })}` : message
 }
-export function useMemberRouting() {
+export function useMemberRouting(options?: { initial: () => RoutingView | undefined; onDraft: (choices: RoutingChoice[]) => void; onRefresh: () => void }) {
   const current = shallowRef<RoutingView | null>(null)
   let savedChoices = ''
   const choices = ref<RoutingChoice[]>([])
@@ -27,28 +26,35 @@ export function useMemberRouting() {
   const entryHosts = new Map<string, string>()
   let generation = 0, previewGeneration = 0, disposed = false, timer: ReturnType<typeof setTimeout> | undefined
   let reader: AbortController | undefined, previewReader: AbortController | undefined
-  const command = useDurableCommand({ errorKey: 'managedRouting.saveFailed', onTerminal: () => load() })
+  const command = useDurableCommand({ errorKey: 'managedRouting.saveFailed', onTerminal: () => { if (options) options.onRefresh(); return load() } })
   const busy = computed(() => command.blocksMutations.value || command.submitting.value)
   const nodes = computed(() => current.value?.nodes.map(node => ({ value: node.id, label: node.name })) ?? [])
   const endpoints = computed(() => current.value?.endpoints ?? [])
-  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, label: `${current.value?.nodes.find(node => node.id === endpoint.nodeId)?.name ?? endpoint.nodeId} · ${endpoint.name} · ${endpointAddress(endpoint)}` })))
+  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, label: endpoint.name })))
+  const traceNodes = computed(() => nodes.value.filter(node => choices.value.some(choice => choice.inboundNodeId === node.value)))
+  const traceEndpoints = computed(() => endpointItems.value.filter(endpoint => choices.value.some(choice => choice.inboundNodeId === start.value && choice.inboundEndpointId === endpoint.value)))
   const templates = computed(() => current.value?.templates.map(item => ({ value: item.id, label: item.name })) ?? [])
   const locked = computed(() => busy.value || !!current.value && !['active', 'disabled'].includes(current.value.plan.phase))
   const routeStatus = computed(() => previewError.value ? 'error' : previewing.value ? 'checking' : locked.value || JSON.stringify(choices.value) !== savedChoices ? 'draft' : current.value?.plan.phase === 'disabled' ? 'disabled' : 'active')
   const canSave = computed(() => !!current.value && !loading.value && !locked.value && !previewing.value && !previewError.value && !error.value && choices.value.every(c => c.inboundEndpointId && c.outboundEndpointId && c.inboundNodeId && c.outboundNodeId && c.templateId && c.inboundNodeId !== c.outboundNodeId))
+  const canSpeedtest = computed(() => routeStatus.value === 'active' && !current.value?.plan.reason && !!trace.value?.rules.length && !!startEndpoint.value && !loading.value && !error.value)
   async function load() {
     const ticket = ++generation; reader?.abort(); reader = new AbortController()
     loading.value = true; error.value = null
     try {
-      const value = await xnodeMemberApi.routing(reader.signal)
+      const value = options ? options.initial() : await xnodeMemberApi.routing(reader.signal)
+      if (!value) return
       if (disposed || ticket !== generation) return
+      const keepDraft = !!options && !!current.value && JSON.stringify(choices.value) !== savedChoices
       current.value = value
+      if (['active', 'disabled'].includes(value.plan.phase) && value.plan.operationId === command.receipt.value?.id && !command.submitting.value) command.reset()
       const available = [...(value.endpoints ?? [])].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
-      choices.value = globalThis.structuredClone(value.plan.choices).map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.inboundNodeId)?.id, outboundEndpointId: choice.outboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.outboundNodeId)?.id }))
-      savedChoices = JSON.stringify(choices.value)
+      const incoming = globalThis.structuredClone(value.plan.choices).map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.inboundNodeId)?.id, outboundEndpointId: choice.outboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.outboundNodeId)?.id }))
+      if (!keepDraft) choices.value = incoming
+      savedChoices = JSON.stringify(incoming)
       for (const choice of choices.value) if (choice.inboundEndpointId && !entryHosts.has(choice.inboundNodeId)) entryHosts.set(choice.inboundNodeId, choice.inboundEndpointId)
       paths.value = value.paths
-      if (!start.value || !value.nodes.some(n => n.id === start.value)) start.value = value.nodes[0]?.id ?? ''
+      if (!traceNodes.value.some(node => node.value === start.value)) start.value = traceNodes.value[0]?.value ?? ''
       if (value.plan.operationId && !['active', 'disabled'].includes(value.plan.phase)) {
         const receipt = await memberOperationsApi.getOperation(value.plan.operationId)
         if (!disposed && ticket === generation) command.resume(receipt, 'routing')
@@ -61,7 +67,7 @@ export function useMemberRouting() {
     if (!current.value) { previewing.value = false; return }
     previewing.value = true; previewError.value = null; trace.value = null
     try {
-      const text = destination.value.trim()
+      const text = traceNodes.value.length ? destination.value.trim() : ''
       const value = await xnodeMemberApi.previewRouting({ choices: choices.value, start: text ? start.value : '', startEndpointId: text ? startEndpoint.value : '', destination: { domain: text, ip: text, port: 443, network: 'tcp' } }, previewReader.signal)
       if (!disposed && ticket === previewGeneration) { paths.value = value.paths; trace.value = value.trace }
     } catch (caught) { if (!disposed && ticket === previewGeneration) { paths.value = []; previewError.value = routingError(caught, choices.value) } }
@@ -86,17 +92,22 @@ export function useMemberRouting() {
     if (side === 'inbound') { choice.inboundNodeId = endpoint.nodeId; choice.inboundEndpointId = id; entryHosts.set(endpoint.nodeId, id) }
     else { choice.outboundNodeId = endpoint.nodeId; choice.outboundEndpointId = id }
   }
-  function selectNode(id: string) { filterNode.value = filterNode.value === id ? '' : id; if (filterNode.value) start.value = id }
+  function selectNode(id: string) { filterNode.value = filterNode.value === id ? '' : id; if (filterNode.value && traceNodes.value.some(node => node.value === id)) start.value = id }
   function move(index: number, delta: number) { const next = [...choices.value], target = index + delta; if (target < 0 || target >= next.length) return; [next[index], next[target]] = [next[target]!, next[index]!]; choices.value = next }
   async function save() {
     if (!canSave.value || !current.value) return
     const body = { revision: current.value.plan.revision, choices: choices.value.map(choice => ({ ...choice })) }
     await command.execute('routing', JSON.stringify(body), key => xnodeMemberApi.saveRouting(body, key))
   }
-  watch([start, endpoints], () => { if (!endpoints.value.some(endpoint => endpoint.id === startEndpoint.value && endpoint.nodeId === start.value)) startEndpoint.value = endpoints.value.find(endpoint => endpoint.id === entryHosts.get(start.value) && endpoint.nodeId === start.value)?.id ?? choices.value.find(choice => choice.inboundNodeId === start.value)?.inboundEndpointId ?? endpoints.value.find(endpoint => endpoint.nodeId === start.value)?.id ?? '' })
+  watch(traceNodes, value => { if (!value.some(node => node.value === start.value)) start.value = value[0]?.value ?? '' })
+  watch([start, traceEndpoints], () => { if (!traceEndpoints.value.some(endpoint => endpoint.value === startEndpoint.value)) startEndpoint.value = traceEndpoints.value.find(endpoint => endpoint.value === entryHosts.get(start.value))?.value ?? traceEndpoints.value[0]?.value ?? '' })
   watch(startEndpoint, id => { if (endpoints.value.some(endpoint => endpoint.id === id && endpoint.nodeId === start.value)) entryHosts.set(start.value, id) })
   watch([choices, destination, start, startEndpoint], schedulePreview, { deep: true })
+  if (options) {
+    watch(options.initial, () => void load())
+    watch(choices, value => options.onDraft(globalThis.structuredClone(value.map(choice => ({ ...choice })))), { deep: true })
+  }
   onMounted(load)
   onScopeDispose(() => { disposed = true; generation++; previewGeneration++; reader?.abort(); previewReader?.abort(); if (timer) clearTimeout(timer); paths.value = []; trace.value = null })
-  return { current, choices, routeStatus, paths, trace, nodes, endpoints, endpointItems, templates, loading, previewing, error, previewError, destination, start, startEndpoint, filterNode, command, locked, canSave, load, add, move, save, setEndpoint, selectNode }
+  return { current, choices, routeStatus, paths, trace, nodes, traceNodes, traceEndpoints, endpoints, endpointItems, templates, loading, previewing, error, previewError, destination, start, startEndpoint, filterNode, command, locked, canSave, canSpeedtest, load, add, move, save, setEndpoint, selectNode }
 }

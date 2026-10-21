@@ -22,6 +22,7 @@ onMounted(() => void preferences.refresh())
   <div class="settings-page">
     <header class="page-header"><h1>{{ $t('settings.title') }}</h1></header>
     <UButton v-if="session.isAdmin" to="/settings/admin-access" color="neutral" variant="outline" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" />
+    <UButton to="/settings/diy" color="neutral" variant="outline" icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" />
     <InlineNotice v-if="preferences.error" tone="warning">{{ preferences.error }}<UButton variant="link" :label="$t('common.tryAgain')" @click="preferences.refresh()" /></InlineNotice>
     <USkeleton v-if="preferences.loading && !preferences.value" class="h-48" />
     <NotificationSettings />

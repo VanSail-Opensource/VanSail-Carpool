@@ -18,3 +18,5 @@ storage. The existing member and administrator roots remain independent.
 Public and authenticated member controls use the canonical `downloadUrl` configuration API. The `url` field remains the browser landing page. Older metadata falls back to the existing token API; inactive or disabled formats have no import/download action.
 
 Base64 is the primary format. Stash, sing-box, Clash, Xray and explicit plain native links retain separate selections; enabled metadata controls availability.
+
+`PublicSubscriptionPage.vue` retains explicit-format selection and shows server-provided tuning omissions for the selected client.

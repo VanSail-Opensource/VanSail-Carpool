@@ -1,9 +1,15 @@
 {
   "nodeTemplates": {
+    "action": "Response action",
+    "browserPage": "Browser page",
+    "emptyHTTP": "Empty HTTP response",
+    "statusCode": "Final HTTP status (200–599)",
+    "responseSelection": "{kind} · HTTP {status}",
+    "responseKinds": { "document": "Client document", "browser": "Browser page", "empty-http": "Empty HTTP response" },
     "title": "Subscription templates",
     "description": "Manage client documents, format defaults and ordered User-Agent rules. Templates contain no generated member credentials.",
     "rules": "User-Agent rules",
-    "rulesHint": "First match selects that exact template. Explicit format takes precedence; otherwise built-in detection and Base64 follow. Patterns use Go regex syntax.",
+    "rulesHint": "The first match selects its template or browser page. Explicit format takes precedence; unmatched requests use client detection and Base64. Patterns use Go regex syntax.",
     "noRules": "No administrator regex rules.",
     "addRule": "Add rule",
     "pattern": "Go regex",

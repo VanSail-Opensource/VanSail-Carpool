@@ -21,6 +21,7 @@ const router = createRouter({
     { path: '/home', name: 'home', component: () => import('@/views/HomeView.vue') },
     { path: '/subscription', name: 'subscription', component: () => import('@/views/SubscriptionView.vue') },
     { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
+    { path: '/settings/diy', name: 'diy', component: () => import('@/views/DIYView.vue') },
     { path: '/settings/admin-access', name: 'admin-access', component: () => import('@/components/settings/AdminAccessPanel.vue') },
     { path: '/connections', name: 'connections', component: () => import('@/views/ConnectionsView.vue') },
     { path: '/catalog', name: 'catalog', component: () => import('@/views/CatalogView.vue') },

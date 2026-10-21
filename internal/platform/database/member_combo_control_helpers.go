@@ -21,7 +21,7 @@ func comboControlConflictFrom(ctx context.Context, reader controlQueryer, userID
 	err := reader.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM provider_operations operation
  LEFT JOIN provider_operation_items item ON item.operation_id=operation.id
  WHERE operation.kind IN ('purchase_traffic_reset','purchase_refund','member_squad_switch','member_early_activation',
- 'subscription_revoke','xnode_routing','admin_entitlement_edit','admin_entitlement_refund','admin_combo_replacement',
+ 'subscription_revoke','xnode_routing','xnode_diy','admin_entitlement_edit','admin_entitlement_refund','admin_combo_replacement',
  'admin_bulk_extension','node_compensation','admin_temporary_ban','admin_temporary_unban')
  AND operation.status IN ('queued','processing','pending_review','partial') AND
  (operation.owner_user_id=? OR (item.target_type='user' AND item.target_id=?) OR

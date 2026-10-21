@@ -521,3 +521,26 @@ revision fences, stale apply rejection, evidence retention and node invalidation
 Access pruning also fences the authoritative compile revision and defers across
 a purchase boundary. A concurrent entitlement/endpoint change rejects stale
 cleanup instead of removing routes under newly granted access.
+
+`xnode_metered_probes.go` atomically binds probe access and immutable origin
+references, with revocation/barrier evidence. `xnode_probe_accounting.go` maps
+exact probe/period/target samples to the owner inside normal journal transactions.
+`xnode_probe_accounting_test.go` covers duplicates, multiplier carry, missing
+periods, late tails and successor isolation across reset/renewal/refund boundaries.
+`xnode_speedtest_operations.go` replays owner-scoped operation keys before renewed
+route/access validation. No command result bytes update financial usage.
+
+`xnode_firewall_search.go` streams active records and applies prefix overlap before
+page limits, without range expansion or a persisted duplicate search index.
+`xnode_firewall_release.go` releases an exact generation, retains audit/paid grant
+records, and stores version evidence in existing operation items. Receipts finish
+only when active firewall members acknowledge that version. Hosted regressions
+in `xnode_firewall_search_test.go` and `xnode_firewall_release_test.go` cover matches
+beyond the first 200 rows, IPv6 overlap, cursor paging, stale generations, replay
+and delivery acknowledgment.
+
+`xnode_diy.go` persists one encrypted override document per member under both
+settings/routing revision fences, sharing the durable receipt transaction with
+`xnode_routing_queue.go`. Local saves complete without routing deployment.
+`xnode_diy_test.go` covers atomic rollback, owner isolation, stale revisions,
+idempotency and subscription-only writes during pending routing deployment.

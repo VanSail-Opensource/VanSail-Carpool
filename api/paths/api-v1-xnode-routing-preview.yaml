@@ -1,5 +1,6 @@
 {
   "post": {
+    "description": "Trace starts must be configured inbound nodes. An explicit startEndpointId must be a configured source host on that node; omission selects its first configured source. Empty start validates the graph without tracing.",
     "operationId": "previewXNodeRoutingPlan",
     "tags": [
       "Members"

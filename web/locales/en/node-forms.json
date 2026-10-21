@@ -55,6 +55,15 @@
     "sniFromAddress": "Use endpoint address as SNI",
     "blankSni": "Keep SNI blank",
     "allowInsecure": "Allow insecure TLS",
-    "endpointOptions": "Client endpoint options"
+    "endpointOptions": "Client endpoint options",
+    "ipv4Url": "IPv4 lookup URL (HTTPS, optional)",
+    "ipv6Url": "IPv6 lookup URL (HTTPS, optional)",
+    "ttlSeconds": "TTL (seconds)",
+    "zoneNameHint": "Select the zone name used by the agent. Saved values remain available.",
+    "zonesFailed": "Zone discovery failed. Check the saved token and Zone Read permission, then retry.",
+    "zonesEmpty": "No zones found.",
+    "zonesUnsupported": "Discovery is unavailable for this provider. The saved zone is retained.",
+    "providersFailed": "Saved providers could not be loaded.",
+    "discoverySearch": "Search saved values"
   }
 }

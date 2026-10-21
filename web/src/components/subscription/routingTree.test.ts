@@ -33,4 +33,22 @@ describe('routing tree', () => {
     expect(tree.nodes.filter(node => node.templateIds)).toHaveLength(2)
     expect(tree.nodes.filter(node => node.id === 'root')).toHaveLength(1)
   })
+  it('highlights only the complete traced branch, not a separate B to C entry', () => {
+    const allNodes = [...nodes, { id: 'c', name: 'Tokyo' }]
+    const rules = [...choices, { id: 'bc', inboundNodeId: 'b', outboundNodeId: 'c', templateId: 'site', inboundEndpointId: 'b-primary', outboundEndpointId: 'c-primary' }]
+    const full = path(['a', 'b', 'c'], ['ab', 'bc'])
+    const tree = routingTree(allNodes, [full, path(['b', 'c'], ['bc'])], rules, [], templates, 'You', full)
+    expect(tree.nodes.filter(node => node.nodeId === 'b')).toHaveLength(2)
+    expect(tree.nodes.filter(node => node.nodeId === 'b' && node.highlighted)).toHaveLength(1)
+    expect(tree.nodes.filter(node => node.nodeId === 'c' && node.highlighted)).toHaveLength(1)
+    expect(tree.edges.filter(edge => edge.highlighted)).toHaveLength(4)
+    expect(tree.edges.filter(edge => !edge.highlighted)).toHaveLength(3)
+  })
+  it('separates rule sequences even when all hosts and nodes match', () => {
+    const other = { ...choices[0]!, id: 'other-rule' }
+    const full = path(['a', 'b'], ['ab'])
+    const tree = routingTree(nodes, [full, path(['a', 'b'], ['other-rule'])], [...choices, other], [], templates, 'You', full)
+    expect(tree.nodes.filter(node => node.nodeId === 'a')).toHaveLength(2)
+    expect(tree.nodes.filter(node => node.nodeId === 'b' && node.highlighted)).toHaveLength(1)
+  })
 })

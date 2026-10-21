@@ -4,7 +4,8 @@
 messages between the member center and public page. It renders only bounded safe
 codes and endpoint counts from metadata; disabled format actions remain gated.
 
-Member routing selects published endpoints with node/host/address labels. Node
+Member routing selects published endpoints using host names alone. Long names
+wrap in selected values and dropdown items. Node
 correspondence and ownership are rechecked on preview, save and compilation;
 the editor retains invalid drafts and resolves old node-only selections on save.
 Graph selection supplies Add Route's inbound node and remembered entry host.
@@ -12,7 +13,11 @@ Only configured route nodes appear in the graph; all authorized endpoints remain
 available in selectors, including hosts on nodes not yet used by a route.
 `routingTree.ts` combines You, shared ordered node/host hops and administrator-
 named template leaves into the interactive graph. `routingTree.test.ts` covers
-endpoint isolation and readable template attribution.
+endpoint/rule-sequence isolation, complete-prefix trace highlighting and readable
+template attribution. Graph fitting runs on layout/data/viewport changes without
+capturing wheel/touch scrolling or exposing pan/zoom controls. Only configured
+inbound nodes/hosts can start a trace; nodes without rules retain graph selection
+and filtering without becoming trace entries.
 `MemberRoutingTemplateDetails.vue` shows read-only original match settings and
 exclusions when a template leaf is selected. Leaf status represents applied,
 draft, checking, unavailable or disabled routing; it never implies measured
@@ -51,19 +56,31 @@ reuse the existing premium-dark layout and do not add dependencies.
 `HomeUptimePanel.test.ts` covers entry navigation during loading, the absence of
 a document link, and preservation of the Telegram launch URL in hosted CI.
 
-`SubscriptionFormats.vue` exposes server-advertised formats and private copy/open links. `MemberRoutingEditor.vue` composes JSON fields; `useMemberRouting.ts` owns versioned loads, insertion of accessible outbound templates and independent revision-checked saves. Dirty rules survive an outbound save; the backend enforces ownership and validates references.
+`MemberRoutingEditor.vue` edits ordered endpoint/template choices; `useMemberRouting.ts` owns versioned loads and previews, with revision-checked saves or the DIY page draft owner. The backend enforces ownership and validates references.
 
 
-`MemberRoutingGraph.vue` reuses BGP placement/edge routing and `useGraphViewport`
-for interactive nodes, zoom, keyboard movement and server-traced highlighting.
+`MemberRoutingGraph.vue` reuses BGP placement/edge routing and automatic SVG fitting
+for selectable nodes, keyboard activation and exact route-instance highlighting.
 `MemberRoutingEditor.vue` now edits ordered purchased-node/preset/node choices.
 `useMemberRouting.ts` aborts superseded reads/previews, guards generations and saves
 through durable member receipts; failed loads cannot save defaults. Graph predicate
 analysis and traces come from the same backend matcher as native compilation.
 
-`SubscriptionFormats.vue` displays Base64 first and exposes distinct Stash and sing-box outputs using canonical bearer configuration links.
+`SubscriptionFormats.vue` retains availability diagnostics alongside the automatic subscription link.
 
 Member network timelines require summary.monitoringEnabled. The home subscription entrance and published host links remain available while monitoring is disabled. `HomeUptimePanel.vue` also hides retained timelines after a failed refresh.
 
 If preview is unavailable, the tree keeps individual configured edges and template
 leaves inspectable with error/draft status; it never infers a validated full path.
+
+`RouteSpeedtestPanel.vue` presents metered pair progress, retained results and a
+clearly labeled estimate. `useRouteSpeedtest.ts` reuses durable command keys and
+receipt polling with the owner result endpoint. Retry after a status-read error
+only refreshes the result; uncertain/partial operations never auto-repeat traffic.
+Draft changes and untraced/inactive routes cannot start a test.
+
+`SubscriptionFormats.vue` now retains availability/incomplete/error diagnostics
+only. Mini App subscription actions use the existing automatic link; public-page
+format selection and explicit-format URLs remain available.
+
+`SubscriptionTuningDiagnostics.vue` shows omitted client options in Mini App availability and the public page. Custom routing is composed by DIY Center; `useMemberRouting.ts` accepts an external draft/save owner while preserving the existing routing API.

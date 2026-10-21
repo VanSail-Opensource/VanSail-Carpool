@@ -55,6 +55,15 @@
     "allowInsecure": "允许不安全的 TLS",
     "endpointOptions": "客户端端点选项",
     "sniFromAddress": "使用端点地址作为 SNI",
-    "blankSni": "保持 SNI 为空"
+    "blankSni": "保持 SNI 为空",
+    "ipv4Url": "IPv4 查询地址（HTTPS，可选）",
+    "ipv6Url": "IPv6 查询地址（HTTPS，可选）",
+    "ttlSeconds": "TTL（秒）",
+    "zoneNameHint": "选择节点使用的区域域名。保留现有已保存值。",
+    "zonesFailed": "区域发现失败。请检查已保存令牌及 Zone Read 权限后重试。",
+    "zonesEmpty": "未找到区域。",
+    "zonesUnsupported": "此提供商不支持区域发现，已保留原区域。",
+    "providersFailed": "无法加载已保存的提供商。",
+    "discoverySearch": "搜索已保存的值"
   }
 }

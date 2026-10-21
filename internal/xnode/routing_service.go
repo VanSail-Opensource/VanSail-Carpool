@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 )
@@ -88,49 +87,8 @@ func (s *Service) QueueOwnedRouting(ctx context.Context, user, key string, revis
 	if receipt, replayed, err := repo.ReplayXNodeRouting(ctx, user, key, fingerprint); err != nil || replayed {
 		return receipt, err
 	}
-	old, err := repo.XNodeRoutingPlan(ctx, identity.ProxyUserID)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return model.OperationReceipt{}, err
-	}
-	// The database rechecks revisions after operation replay detection, so an
-	// identical request remains replayable after successful deployment.
-	in, err := s.routingInput(ctx, identity, choices)
+	plan, err := s.prepareOwnedRouting(ctx, identity, revision, choices)
 	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	choices = in.choices
-	// Persist endpoint IDs only on a member save. Existing node-only documents
-	// retain their dependency digest and runtime behavior until that save.
-	in, err = s.routingInput(ctx, identity, choices)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	seed, err := ids.Token(32)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	doc := RoutingDocument{Choices: choices, Seed: seed, Dependencies: in.dependencies}
-	plan := RoutingPlan{ProxyUserID: identity.ProxyUserID, Revision: revision, Phase: "active", LegacyCipher: old.LegacyCipher}
-	if plan.LegacyCipher == "" {
-		plan.LegacyCipher, err = s.archiveLegacyRouting(ctx, identity)
-		if err != nil {
-			return model.OperationReceipt{}, err
-		}
-	}
-	var archived []struct {
-		NodeID string `json:"nodeId"`
-	}
-	if err = s.open(fmt.Sprintf("xnode.routes.legacy.%d", identity.ProxyUserID), plan.LegacyCipher, &archived); err != nil {
-		return model.OperationReceipt{}, err
-	}
-	for _, a := range archived {
-		doc.LegacyNodes = append(doc.LegacyNodes, a.NodeID)
-	}
-	plan.Cipher, err = s.seal(fmt.Sprintf("xnode.routes.%d", identity.ProxyUserID), doc)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	if err = s.preflightRouting(ctx, plan, old); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	input := providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: RoutingOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}

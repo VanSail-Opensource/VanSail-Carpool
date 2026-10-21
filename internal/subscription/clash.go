@@ -106,7 +106,7 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 		}
 		opts["support-x25519mlkem768"] = true
 	}
-	return mapped, nil
+	return p.applyTuning(format, mapped)
 }
 func RenderClash(proxies []Proxy) ([]byte, error) {
 	return RenderTemplate(DefaultTemplate("clash"), proxies)

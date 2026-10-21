@@ -14,6 +14,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 		return
 	}
 	router.Get("/xnode/global", s.xnodeGlobal)
+	router.Get("/xnode/providers/{id}/zones", s.xnodeProviderZones)
 	router.Get("/xnode/routing-templates", s.xnodeRoutingTemplateConfig)
 	router.Put("/xnode/routing-templates", s.xnodeSaveRoutingTemplateConfig)
 	router.Get("/xnode/firewall/bans", s.xnodeFirewallBans)

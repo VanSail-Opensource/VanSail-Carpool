@@ -14,6 +14,36 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/diy", func(w http.ResponseWriter, r *http.Request) {
+		var input subscription.ConnectionOverrides
+		if !decode(w, r, &input) {
+			return
+		}
+		proxies := []subscription.Proxy{
+			{ID: "tls", Name: "TLS host", Protocol: "vless", Address: "tls.example", Port: 443, Account: map[string]any{"id": "c1d50c69-2f17-41ec-a23c-b30eb375639f", "encryption": "none"}, Stream: map[string]any{"network": "tcp", "security": "tls", "tlsSettings": map[string]any{"serverName": "admin.example", "fingerprint": "chrome"}}},
+			{ID: "xhttp", Name: "XHTTP host", Protocol: "vless", Address: "xhttp.example", Port: 443, Account: map[string]any{"id": "c1d50c69-2f17-41ec-a23c-b30eb375639f", "encryption": "none"}, Stream: map[string]any{"network": "xhttp", "security": "tls", "tlsSettings": map[string]any{"serverName": "admin.example", "fingerprint": "chrome"}, "xhttpSettings": map[string]any{"path": "/admin", "mode": "auto"}}},
+			{ID: "ss", Name: "SS host", Protocol: "shadowsocks", Address: "ss.example", Port: 443, Account: map[string]any{"method": "aes-128-gcm", "password": "synthetic"}, Stream: map[string]any{"network": "tcp"}},
+		}
+		errors := subscription.ValidateTuning(input)
+		if len(errors) == 0 {
+			for _, proxy := range proxies {
+				proxy.Tuning = &input
+				out, err := proxy.Outbound()
+				if err != nil {
+					errors["overrides"] = "xrayValidation"
+					break
+				}
+				raw, err := json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": []any{out}})
+				validation := xnode.ValidateClientConfigurationDocument(raw)
+				if err != nil || !validation.Valid {
+					log.Printf("synthetic DIY parser: %s: %+v", proxy.ID, validation)
+					errors["overrides"] = "xrayValidation"
+					break
+				}
+			}
+		}
+		respond(w, map[string]any{"fields": subscription.TuningFields(), "valid": len(errors) == 0, "fieldErrors": errors, "paths": []any{}, "compatibility": subscription.TuningCompatibility(input, proxies)})
+	})
 	mux.HandleFunc("/selection", func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Config    xnode.SubscriptionTemplateConfig `json:"config"`
@@ -37,7 +67,14 @@ func main() {
 			http.Error(w, "fixture preview unavailable", 422)
 			return
 		}
-		respond(w, map[string]any{"preview": string(raw), "validation": validation})
+		kind, status := "document", 200
+		if input.Format == "empty-http" {
+			kind = "empty-http"
+			if value, err := subscription.EmptyHTTPStatus(input); err == nil {
+				status = value
+			}
+		}
+		respond(w, map[string]any{"preview": string(raw), "validation": validation, "responseKind": kind, "statusCode": status})
 	})
 	server := http.Server{Addr: "127.0.0.1:5175", Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Origin") != "http://127.0.0.1:5173" {

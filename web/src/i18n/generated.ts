@@ -1,4 +1,8 @@
 import enNativeMetrics from '../../locales/en/native-metrics.json'
+import enDIY from '../../locales/en/diy.json'
+import enDIYFields from '../../locales/en/diy-fields.json'
+import zhDIY from '../../locales/zh-CN/diy.json'
+import zhDIYFields from '../../locales/zh-CN/diy-fields.json'
 import zhNativeMetrics from '../../locales/zh-CN/native-metrics.json'
 import enNodeForms from '../../locales/en/node-forms.json'
 import enManagedRouting from '../../locales/en/managed-routing.json'
@@ -105,8 +109,8 @@ const zhCN: typeof en = {
 }
 
 export const localeMessages = {
-  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics },
-  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics },
+  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics, ...enDIY, ...enDIYFields },
+  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics, ...zhDIY, ...zhDIYFields },
 } as const
 
 export type Locale = keyof typeof localeMessages

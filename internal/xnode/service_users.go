@@ -8,6 +8,10 @@ import (
 )
 
 func (s *Service) serviceUser(ctx context.Context, identity Identity, node Node, inbounds map[string]map[string]any) (wire.User, error) {
+	if isMeteredProbe(identity) {
+		user := wire.User{ID: int(identity.ProxyUserID), InboundTags: []string{}, Credentials: map[string]json.RawMessage{}}
+		return s.meteredProbeUser(ctx, identity, node, user, inbounds)
+	}
 	credentials, err := loadCredentials(s.vault, identity)
 	if err != nil {
 		return wire.User{}, err

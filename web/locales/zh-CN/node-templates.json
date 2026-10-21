@@ -1,5 +1,11 @@
 {
   "nodeTemplates": {
+    "action": "响应动作",
+    "browserPage": "浏览器页面",
+    "emptyHTTP": "空 HTTP 响应",
+    "statusCode": "最终 HTTP 状态码（200–599）",
+    "responseSelection": "{kind} · HTTP {status}",
+    "responseKinds": { "document": "客户端文档", "browser": "浏览器页面", "empty-http": "空 HTTP 响应" },
     "title": "订阅模板",
     "description": "管理客户端配置、格式默认值及有序 User-Agent 规则。模板不保存生成的成员凭据。",
     "rules": "User-Agent 规则",

@@ -1,5 +1,10 @@
 {
   "firewall": {
+    "search": "Search active bans",
+    "searchHint": "IPv4, IPv6 or CIDR",
+    "searchFailed": "Could not search bans. Enter a valid IP address or CIDR and retry.",
+    "unban": "Unban",
+    "releasePending": "Release saved. Waiting for node acknowledgments.",
     "title": "Firewall",
     "reportHint": "Shared detections and authorized bans. Expiry waits for every participating node; repeat hits may extend a node's deadline.",
     "empty": "No active detected bans.",

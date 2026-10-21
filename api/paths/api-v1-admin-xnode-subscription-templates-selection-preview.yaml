@@ -30,6 +30,8 @@ post:
                 additionalProperties: false
                 required: [format, templateId, source]
                 properties:
+                  responseKind: {type: string, enum: [document, browser, empty-http]}
+                  statusCode: {type: integer, minimum: 200, maximum: 599}
                   format: { type: string }
                   templateId: { type: string }
                   source: { type: string, enum: ['', explicit, regex, builtin, fallback] }

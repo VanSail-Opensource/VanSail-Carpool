@@ -1,5 +1,12 @@
 # Constructed browser fixtures
 
+X-Node `controls` mounts Nuxt UI switches, checkboxes, text inputs and a portalled
+form under the shared admin sizing classes. Inspect both themes and widths;
+hidden successful form controls must retain their native 1x1 geometry.
+`AdminControlsAudit.vue` owns that isolated form. X-Node `ddns` supplies saved
+providers/zones; `zones-slow`, `zones-empty` and `zones-error` exercise discovery
+loading, empty and first-failure retry without external API requests.
+
 `subscription-preview.go` is a manual loopback Go preview bridge for
 `xnode-audit.ts`. Run `go run ./web/fixtures/subscription-preview.go` from the
 repository root alongside Vite on 127.0.0.1:5173. It invokes production regex
@@ -143,3 +150,13 @@ errors/retry, empty data, exact large counters and late responses. Log updates
 are synthetic and traced as logs:<node ID>; close/pause must stop polling.
 `delete-error` retains endpoint rows and reports a localized action failure.
 Native admin `view=connections` displays only nodes with observed active user IPs.
+
+Routing flags `speedtest-start-error`, `speedtest-poll-error` and
+`speedtest-uncertain` exercise same-key lost replies, status-only retry, progressive
+pairs and retained partial results. The fixture never sends agent commands.
+
+`diy-audit.ts` extends the routing fixture with DIY revision/receipt scenarios.
+`RoutingAudit.vue` mounts DIY Center with `?diy`; add `populated`, `slow`,
+`load-error`, `save-error`, `lost-reply` or `deployment-error`. Run the manual
+`subscription-preview.go` bridge for actual Go allowlist, compatibility and
+pinned-parser validation. It uses synthetic identities and no upstream traffic.

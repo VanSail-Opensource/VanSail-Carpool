@@ -67,10 +67,11 @@ func (s *Store) RecordXNodeTraffic(ctx context.Context, nodeID, agent string, se
 			continue
 		}
 		var service sql.NullString
-		if err = tx.QueryRowContext(ctx, `SELECT service_name FROM xnode_identities WHERE proxy_user_id=?`, user).Scan(&service); err != nil {
+		var metered bool
+		if err = tx.QueryRowContext(ctx, `SELECT service_name,EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id) FROM xnode_identities i WHERE proxy_user_id=?`, user).Scan(&service, &metered); err != nil {
 			return err
 		}
-		if !service.Valid {
+		if !service.Valid || metered {
 			return xnode.ErrConflict
 		}
 	}
@@ -90,8 +91,13 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	if err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status FROM xnode_periods WHERE id=?`, sample.AccountingPeriod).Scan(&owner, &status); err != nil {
 		return err
 	}
-	if owner != int64(sample.UserID) || status == "closed" || status == "review" {
+	if status == "closed" || status == "review" {
 		return xnode.ErrConflict
+	}
+	if owner != int64(sample.UserID) {
+		if err := attributeProbeSample(ctx, tx, node, owner, &sample); err != nil {
+			return err
+		}
 	}
 	date := sample.Through.UTC().Format(time.DateOnly)
 	var oldUpload, oldDownload, oldWeighted, remainder int64

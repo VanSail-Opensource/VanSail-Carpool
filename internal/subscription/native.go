@@ -17,6 +17,9 @@ func object(root map[string]any, key string) map[string]any {
 }
 func array(root map[string]any, key string) []any { value, _ := root[key].([]any); return value }
 func (p Proxy) NativeLink() (string, error) {
+	if p.Tuning != nil {
+		return p.tunedNativeLink()
+	}
 	host := net.JoinHostPort(p.Address, strconv.Itoa(p.Port))
 	scheme := p.Protocol
 	credential := ""

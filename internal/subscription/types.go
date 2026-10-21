@@ -10,20 +10,21 @@ import (
 )
 
 type Proxy struct {
-	ID              string          `json:"id"`
-	NodeID          string          `json:"nodeId"`
-	GroupIDs        []string        `json:"-"`
-	Countries       []string        `json:"-"`
-	Name            string          `json:"name"`
-	Protocol        string          `json:"protocol"`
-	Address         string          `json:"address"`
-	Port            int             `json:"port"`
-	Account         map[string]any  `json:"-"`
-	Stream          map[string]any  `json:"-"`
-	Mux             map[string]any  `json:"-"`
-	MapperHost      map[string]any  `json:"-"`
-	ExcludedFormats []string        `json:"-"`
-	XrayTemplate    json.RawMessage `json:"-"`
+	ID              string               `json:"id"`
+	NodeID          string               `json:"nodeId"`
+	GroupIDs        []string             `json:"-"`
+	Countries       []string             `json:"-"`
+	Name            string               `json:"name"`
+	Protocol        string               `json:"protocol"`
+	Address         string               `json:"address"`
+	Port            int                  `json:"port"`
+	Account         map[string]any       `json:"-"`
+	Stream          map[string]any       `json:"-"`
+	Mux             map[string]any       `json:"-"`
+	MapperHost      map[string]any       `json:"-"`
+	ExcludedFormats []string             `json:"-"`
+	XrayTemplate    json.RawMessage      `json:"-"`
+	Tuning          *ConnectionOverrides `json:"-"`
 }
 
 func (p Proxy) Tag() string {
@@ -57,7 +58,7 @@ func (p Proxy) Outbound() (map[string]any, error) {
 		return nil, err
 	}
 	result["tag"] = p.Tag()
-	return result, nil
+	return p.applyTuning("xray", result)
 }
 func RenderXray(proxies []Proxy) ([]byte, error) {
 	return RenderTemplate(DefaultTemplate("xray"), proxies)

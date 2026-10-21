@@ -1,5 +1,10 @@
 {
   "firewall": {
+    "search": "搜索当前封禁",
+    "searchHint": "IPv4、IPv6 或 CIDR",
+    "searchFailed": "无法搜索封禁。请输入有效的 IP 地址或 CIDR 后重试。",
+    "unban": "解除封禁",
+    "releasePending": "已保存解除操作，正在等待节点确认。",
     "title": "防火墙",
     "reportHint": "共享检测记录与已授权封禁。所有参与节点确认到期后才会移除；再次命中可能延长节点上的封禁时间。",
     "empty": "暂无有效的检测封禁。",

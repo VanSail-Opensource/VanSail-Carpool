@@ -15,8 +15,8 @@
 .admin-pagination { justify-content: flex-end; }
 .admin-row-actions { display: flex; justify-content: flex-end; align-items: center; gap: .25rem; }
 .admin-editor-form { display: grid; gap: 1rem; }
-.admin-editor-form [data-slot="root"], .admin-editor-form input, .admin-editor-form textarea { max-width: 100%; }
-.admin-editor-form [data-slot="root"]:has(input), .admin-editor-form [data-slot="root"]:has(textarea) { width: 100%; }
+.admin-editor-form [data-slot="root"], .admin-editor-form textarea { max-width: 100%; }
+.admin-editor-form [data-slot="root"]:has(input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"])), .admin-editor-form [data-slot="root"]:has(textarea) { width: 100%; }
 .admin-workspace-tabs { margin-bottom: 1.25rem; }
 .admin-section { padding: 1.25rem 0; border-top: 1px solid var(--line); min-width: 0; }
 .admin-section h3, .admin-section h4 { margin: 0 0 .75rem; font-size: .95rem; }
@@ -26,7 +26,7 @@
 .admin-overlay-copy { text-align: left; }
 .admin-workspace-grid { display: grid; gap: 1.25rem; }
 @media (min-width: 1024px) { .admin-workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-@media (max-width: 639px) { .admin-panel__heading { align-items: flex-start; } .admin-panel__heading > .row-actions { width: 100%; flex-wrap: wrap; } .admin-row-actions { flex-wrap: wrap; } .admin-row-actions button { min-height: 44px; min-width: 44px; } }
+@media (max-width: 639px) { .admin-panel__heading { align-items: flex-start; } .admin-panel__heading > .row-actions { width: 100%; flex-wrap: wrap; } .admin-row-actions { flex-wrap: wrap; } .admin-row-actions :is(button:not([role]), button[role="button"]) { min-height: 44px; min-width: 44px; } }
 .admin-profile-section { min-width: 0; padding: 1rem 0; border-top: 1px solid var(--line); }
 .admin-profile-section__heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
 .admin-profile-section__heading h3, .admin-profile-section__heading p { margin: 0; }
@@ -39,7 +39,7 @@
 .admin-profile-row { display: grid; gap: .35rem; border-bottom: 1px solid var(--line); padding: .75rem 0; }
 .admin-profile-row small { display: block; color: var(--text-muted); font-size: .75rem; }
 .form-stack { display: grid; gap: 1rem; }
-.form-stack [data-slot='root']:has(input), .form-stack [data-slot='root']:has(textarea), .form-stack [role='combobox'] { width: 100%; }
+.form-stack [data-slot='root']:has(input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"])), .form-stack [data-slot='root']:has(textarea), .form-stack [role='combobox'] { width: 100%; }
 .field-hint { margin: 0; color: var(--text-muted); font-size: .8rem; }
-.admin-row-actions button, .admin-toolbar button, .admin-panel__heading button { white-space: nowrap; }
+.admin-row-actions :is(button:not([role]), button[role="button"]), .admin-toolbar :is(button:not([role]), button[role="button"]), .admin-panel__heading :is(button:not([role]), button[role="button"]) { white-space: nowrap; }
 .eyebrow { margin: 0 0 .3rem; font-size: .7rem; color: var(--text-muted); }

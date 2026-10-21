@@ -1,6 +1,7 @@
 import type { SubscriptionTemplate } from '@/api/xnode'
 
 export const templateFormats = ['xray', 'sing-box', 'clash', 'stash'] as const
+export const templateKinds = [...templateFormats, 'empty-http'] as const
 export const subscriptionFormats = ['base64', 'native', ...templateFormats] as const
 export function subscriptionPreset(format: SubscriptionTemplate['format']): Record<string, unknown> {
   if (format === 'xray') return { inbounds: [], outbounds: [{ SubscriptionProxies: {} }, { tag: 'direct', protocol: 'freedom' }], routing: { rules: [] } }

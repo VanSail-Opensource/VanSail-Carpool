@@ -19,7 +19,7 @@
     "except": "排除 {conditions}",
     "involvedRules": "相关规则：{rules}",
     "graph": "条件路由图",
-    "graphHint": "点击节点编辑相关路由。拖动平移，滚动缩放；聚焦后可用方向键和加减键操作。",
+    "graphHint": "图形自动适配。可用回车或空格选择节点或模板，页面可正常滚动。",
     "editNode": "编辑 {name} 的路由",
     "showAll": "显示全部路由",
     "ruleNumber": "规则 {number}",
@@ -54,6 +54,24 @@
       "checking": "正在检查路由",
       "error": "路由不可用",
       "disabled": "需要检查"
+    }
+  },
+  "routeSpeedtest": {
+    "start": "测试路由",
+    "metered": "计入流量额度。每对节点最多下载 32 MiB、上传 8 MiB，限时 60 秒。",
+    "requirements": "请先保存并追踪已生效的路由，节点须已同步。",
+    "progress": "已完成：{completed}/{total} 对节点",
+    "failed": "无法启动路由测速，路由草稿已保留。",
+    "uncertain": "已保留完成的结果。消耗流量的命令不会自动重复。",
+    "measurement": "{latency} 毫秒 · ↓ {download} Mbps · ↑ {upload} Mbps",
+    "estimate": "路由估算：{latency} 毫秒 · ↓ {download} Mbps · ↑ {upload} Mbps",
+    "status": {
+      "queued": "等待中",
+      "processing": "测速中",
+      "succeeded": "完成",
+      "failed": "失败",
+      "pending_review": "结果不确定",
+      "compensated": "已停止"
     }
   }
 }

@@ -1,5 +1,8 @@
 # Path item shards
 
+`api-v1-admin-xnode-providers-id-zones.yaml` defines administrator-only discovery
+using saved provider credentials. No credentials are accepted in the request.
+
 `api-v1-admin-xnode-migration-final-export.yaml` queues final source accounting
 reconciliation with an operator backup reference.
 `api-v1-admin-xnode-migration-finalize.yaml` queues digest-checked completion
@@ -263,3 +266,8 @@ provides browser-only admin preset inventory and optimistic writes.
 `api-v1-admin-xnode-firewall-exemptions.yaml` defines idempotent administrator IP/CIDR exemptions with custom 1-8760 hour lifetimes and durable delivery receipts.
 
 `api-v1-admin-xnode-nodes-id-logs.yaml` documents the admin-only selected-node live log buffer. `api-v1-admin-xnode-metrics.yaml` documents summary=true polling without fleet log payloads.
+
+`api-v1-xnode-routing-speedtests.yaml` defines idempotent owner-scoped starts.
+`api-v1-xnode-routing-speedtests-id.yaml` returns durable pair results/estimates.
+
+`api-v1-xnode-diy.yaml` provides owner reads and atomic saves; `api-v1-xnode-diy-preview.yaml` validates both draft sections without persistence.

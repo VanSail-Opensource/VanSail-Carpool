@@ -49,20 +49,22 @@ func (s *Server) subscriptionLanding(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "Accept, User-Agent")
 	privateSubscriptionHeaders(w)
 	wantsHTML := subscriptionWantsHTML(r)
-	if wantsHTML && s.deps.XNode != nil {
+	if s.deps.XNode != nil && r.URL.Query().Get("format") == "" {
 		config, err := s.deps.XNode.SubscriptionTemplates(r.Context())
 		if err != nil {
 			s.xnodeError(w, r, err)
 			return
 		}
 		selection, err := xnode.SelectSubscription(config, "", r.UserAgent())
-		// A configured regex selects its exact template even for HTML-capable clients.
+		// All configured responses pass through bearer access validation. The
+		// common matcher remains authoritative even for HTML-capable clients.
 		if selection.Source == "regex" {
 			if err != nil {
 				s.xnodeError(w, r, err)
 				return
 			}
-			wantsHTML = false
+			s.xnodeBearerSubscription(w, r)
+			return
 		}
 	}
 	if wantsHTML {

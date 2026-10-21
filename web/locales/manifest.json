@@ -35,6 +35,8 @@
     "api-tokens",
     "node-forms",
     "managed-routing",
-    "native-metrics"
+    "native-metrics",
+    "diy",
+    "diy-fields"
   ]
 }

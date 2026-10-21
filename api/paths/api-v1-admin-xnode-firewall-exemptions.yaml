@@ -64,12 +64,17 @@
               },
               "hours": {
                 "type": "integer",
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 8760
               },
               "reason": {
                 "type": "string",
                 "maxLength": 1000
+              },
+              "generation": {
+                "type": "string",
+                "maxLength": 128,
+                "description": "Required for hours=0: exact current ban generation. Zero releases the ban without creating an exemption. Positive hours retain existing behavior."
               }
             }
           }

@@ -11,6 +11,9 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		return
 	}
 	router.Route("/api/v1/xnode", func(router chi.Router) {
+		router.Get("/diy", s.xnodeDIY)
+		router.Post("/diy/preview", s.xnodePreviewDIY)
+		router.Put("/diy", s.xnodeSaveDIY)
 		router.Get("/firewall/exemption", s.xnodeFirewallQuote)
 		router.Post("/firewall/exemption", s.xnodeFirewallPurchase)
 		router.Get("/metrics", s.xnodeMemberMetrics)
@@ -18,6 +21,8 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		router.Get("/routing", s.xnodeRoutingPlan)
 		router.Put("/routing", s.xnodeSaveRoutingPlan)
 		router.Post("/routing/preview", s.xnodePreviewRoutingPlan)
+		router.Post("/routing/speedtests", s.xnodeStartRouteSpeedtest)
+		router.Get("/routing/speedtests/{id}", s.xnodeRouteSpeedtestResult)
 	})
 }
 func (s *Server) xnodeMemberMetrics(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +66,9 @@ func (s *Server) xnodeBearerSubscription(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("X-Subscription-Format", metadata.SelectedFormat)
 	w.Header().Add("Vary", "User-Agent")
+	if s.subscriptionSpecialResponse(w, r, metadata) {
+		return
+	}
 	w.Header().Set("Content-Type", map[string]string{"base64": "text/plain; charset=utf-8", "stash": "text/yaml; charset=utf-8", "native": "text/plain; charset=utf-8", "xray": "application/json", "sing-box": "application/json", "clash": "text/yaml; charset=utf-8"}[metadata.SelectedFormat])
 	expire := int64(0)
 	if metadata.ExpiresAt != nil {

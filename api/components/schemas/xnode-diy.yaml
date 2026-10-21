@@ -1,0 +1,65 @@
+XNodeDIYField:
+  type: object
+  additionalProperties: false
+  required: [key, group, kind, minimum, maximum, unit, advanced]
+  properties:
+    key: {type: string}
+    group: {type: string}
+    kind: {type: string, enum: [boolean, integer, enum-number, enum, string, strings, range, headers, sockets, fast-open]}
+    minimum: {type: integer}
+    maximum: {type: integer}
+    enum: {type: array, items: {type: string}}
+    unit: {type: string}
+    advanced: {type: boolean}
+    restrictions: {type: array, items: {type: string}}
+XNodeTuningApplicability:
+  type: object
+  additionalProperties: false
+  required: [key, format, state, appliedHosts, incompatibleHosts, reasons]
+  properties:
+    key: {type: string}
+    format: {type: string}
+    state: {type: string, enum: [inherited, applied, unsupported, endpoint-incompatible]}
+    appliedHosts: {type: integer, minimum: 0}
+    incompatibleHosts: {type: integer, minimum: 0}
+    reasons: {type: array, items: {type: string}}
+    restrictions: {type: array, items: {type: string}}
+XNodeDIYWrite:
+  type: object
+  additionalProperties: false
+  required: [settingsRevision, routingRevision, overrides, choices]
+  properties:
+    settingsRevision: {type: integer, minimum: 0, maximum: 9007199254740990}
+    routingRevision: {type: integer, minimum: 0, maximum: 9007199254740991}
+    overrides: {$ref: '../../openapi.yaml#/components/schemas/XNodeDIYOverrides'}
+    choices:
+      type: array
+      maxItems: 64
+      items: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingChoice'}
+XNodeDIYView:
+  type: object
+  additionalProperties: false
+  required: [settingsRevision, overrides, routing, fields, compatibility]
+  properties:
+    settingsRevision: {type: integer, minimum: 0}
+    overrides: {$ref: '../../openapi.yaml#/components/schemas/XNodeDIYOverrides'}
+    routing: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingView'}
+    fields: {type: array, items: {$ref: '#/XNodeDIYField'}}
+    compatibility: {type: array, items: {$ref: '#/XNodeTuningApplicability'}}
+XNodeDIYPreview:
+  type: object
+  additionalProperties: false
+  required: [valid, fieldErrors, paths, compatibility]
+  properties:
+    valid: {type: boolean}
+    fieldErrors: {type: object, additionalProperties: {type: string}}
+    paths: {type: array, items: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingPath'}}
+    compatibility: {type: array, items: {$ref: '#/XNodeTuningApplicability'}}
+XNodeDIYSaveResult:
+  type: object
+  additionalProperties: false
+  required: [settingsRevision, routingChanged, receipt]
+  properties:
+    settingsRevision: {type: integer, minimum: 1}
+    routingChanged: {type: boolean}
+    receipt: {$ref: '../../openapi.yaml#/components/schemas/OperationReceipt'}

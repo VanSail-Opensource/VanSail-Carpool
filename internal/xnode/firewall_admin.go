@@ -16,10 +16,11 @@ import (
 const FirewallExemptionOperation = "xnode_firewall_exemption"
 
 type AdminFirewallExemption struct {
-	Prefix string `json:"prefix"`
-	Hours  int    `json:"hours"`
-	Reason string `json:"reason,omitempty"`
-	Key    string `json:"-"`
+	Generation string `json:"generation,omitempty"`
+	Prefix     string `json:"prefix"`
+	Hours      int    `json:"hours"`
+	Reason     string `json:"reason,omitempty"`
+	Key        string `json:"-"`
 }
 type adminFirewallRepository interface {
 	GrantAdminFirewallExemption(context.Context, string, AdminFirewallExemption, time.Time) (model.OperationReceipt, error)
@@ -28,13 +29,13 @@ type adminFirewallRepository interface {
 
 func (s *Service) GrantFirewallExemption(ctx context.Context, actor string, input AdminFirewallExemption) (model.OperationReceipt, error) {
 	prefix, err := ExemptionPrefix(input.Prefix)
-	if err != nil || input.Hours < 1 || input.Hours > 8760 || utf8.RuneCountInString(input.Reason) > 1000 || input.Key == "" || len(input.Key) > 128 {
+	if err != nil || input.Hours < 0 || input.Hours > 8760 || input.Hours == 0 && (input.Generation == "" || len(input.Generation) > 128) || utf8.RuneCountInString(input.Reason) > 1000 || input.Key == "" || len(input.Key) > 128 {
 		return model.OperationReceipt{}, ErrInvalid
 	}
 	if !validAdminExemption(prefix, s.Now()) {
 		return model.OperationReceipt{}, ErrInvalid
 	}
-	if prefix.Bits() != prefix.Addr().BitLen() && s.master != nil {
+	if input.Hours > 0 && prefix.Bits() != prefix.Addr().BitLen() && s.master != nil {
 		nodes, err := s.Nodes(ctx)
 		if err != nil {
 			return model.OperationReceipt{}, err

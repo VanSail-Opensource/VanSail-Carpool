@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onScopeDispose, shallowRef, useId, watch } from 'vue'
 import type { RoutingChoice, RoutingPath, RoutingView } from '@/api/xnodeMember'
 import { nodeHeight, nodeWidth, placeNodes, routeEdges } from '@/components/ip-lookup/bgpLayout'
-import { useGraphViewport } from '@/components/ip-lookup/useGraphViewport'
+import { fitGraph } from '@/components/ip-lookup/useGraphViewport'
 import { useI18n } from '@/i18n'
 import { routingTree, type RoutingTreeNode } from './routingTree'
 import { selectorLabel } from './routingPresentation'
@@ -13,7 +13,7 @@ const emit = defineEmits<{ select: [id: string] }>()
 const { t } = useI18n()
 const viewport = shallowRef<InstanceType<typeof globalThis.HTMLDivElement> | null>(null)
 const narrow = shallowRef(globalThis.innerWidth < 600)
-const view = useGraphViewport()
+const view = shallowRef({ scale: 1, offset: { x: 0, y: 0 } })
 const markerId = useId()
 const layout = computed(() => {
   const tree = routingTree(props.nodes, props.paths, props.choices, props.endpoints, props.templates, t('managedRouting.you'), props.trace)
@@ -42,9 +42,9 @@ const detailTemplates = computed(() => props.templates.filter(template => detail
 const excluded = computed(() => selectorLabel((detail.value?.excludedRules ?? []).flatMap(id => { const choice = props.choices.find(choice => choice.id === id); const template = props.templates.find(template => template.id === choice?.templateId); return template ? [template.match] : [] }), ''))
 const statusColor = computed(() => ({ active: 'var(--ui-success)', draft: 'var(--ui-warning)', checking: 'var(--ui-warning)', error: 'var(--ui-error)', disabled: 'var(--ui-text-dimmed)' })[props.status] ?? 'var(--ui-text-dimmed)')
 function label(node: RoutingTreeNode) { return node.templateIds ? t('managedRouting.viewTemplate', { name: node.name }) : node.nodeId ? t('managedRouting.editNode', { name: node.name }) : node.name }
-const transform = computed(() => `translate(${view.offset.value.x} ${view.offset.value.y}) scale(${view.scale.value})`)
-function fit() { if (viewport.value) view.fit(layout.value.width + 32, layout.value.height, viewport.value.clientWidth, viewport.value.clientHeight) }
-function select(node: RoutingTreeNode, keyboard = false) { if (!keyboard && view.wasDragged()) return; if (node.templateIds) detail.value = node; else if (node.nodeId) emit('select', node.nodeId) }
+const transform = computed(() => `translate(${view.value.offset.x} ${view.value.offset.y}) scale(${view.value.scale})`)
+function fit() { if (viewport.value) view.value = fitGraph(layout.value.width + 32, layout.value.height, viewport.value.clientWidth, viewport.value.clientHeight) }
+function select(node: RoutingTreeNode) { if (node.templateIds) detail.value = node; else if (node.nodeId) emit('select', node.nodeId) }
 let observer: InstanceType<typeof globalThis.ResizeObserver> | undefined
 onMounted(() => { if (viewport.value) { observer = new globalThis.ResizeObserver(() => { narrow.value = (viewport.value?.clientWidth ?? 600) < 600; fit() }); observer.observe(viewport.value); fit() } })
 watch(layout, () => void nextTick(fit))
@@ -53,14 +53,13 @@ onScopeDispose(() => observer?.disconnect())
 
 <template>
   <div class="grid gap-2 min-w-0">
-    <div class="flex justify-end"><UButton variant="ghost" color="neutral" icon="i-ph-arrows-out" :label="t('managedRouting.fit')" @click="fit" /></div>
-    <div ref="viewport" class="routing-viewport" tabindex="0" role="group" :aria-label="t('managedRouting.graphHint')" @wheel="view.wheel" @pointerdown="view.pointerDown" @pointermove="view.pointerMove" @pointerup="view.pointerUp" @pointercancel="view.pointerUp" @keydown="view.keyboard">
+    <div ref="viewport" class="routing-viewport" role="group" :aria-label="t('managedRouting.graphHint')">
       <svg class="w-full h-full" :aria-label="t('managedRouting.graph')" role="group">
         <defs><marker :id="markerId" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 8 4 L 0 8 Z" fill="var(--ui-text-dimmed)" /></marker></defs>
         <g :transform="transform">
           <path v-for="edge in layout.edges" :key="edge.id" :d="edge.d" fill="none" :marker-end="`url(#${markerId})`" :class="layout.highlighted.has(edge.id) ? 'route-highlight' : 'route-edge'" />
-          <g v-for="node in layout.nodes" :key="node.id" :transform="`translate(${node.x} ${node.y})`" :data-asn="node.asn" :role="node.nodeId || node.templateIds ? 'button' : 'group'" :tabindex="node.nodeId || node.templateIds ? 0 : undefined" :aria-label="label(node)" :aria-pressed="node.nodeId ? selected === node.nodeId : undefined" class="routing-node" @click="select(node)" @keydown.enter.prevent="select(node, true)" @keydown.space.prevent="select(node, true)">
-            <rect :width="nodeWidth" :height="nodeHeight" rx="8" :class="selected === node.nodeId || trace?.nodes.includes(node.nodeId ?? '') ? 'node-selected' : 'node-rest'" />
+          <g v-for="node in layout.nodes" :key="node.id" :transform="`translate(${node.x} ${node.y})`" :data-asn="node.asn" :role="node.nodeId || node.templateIds ? 'button' : 'group'" :tabindex="node.nodeId || node.templateIds ? 0 : undefined" :aria-label="label(node)" :aria-pressed="node.nodeId ? selected === node.nodeId : undefined" class="routing-node" @click="select(node)" @keydown.enter.prevent="select(node)" @keydown.space.prevent="select(node)">
+            <rect :width="nodeWidth" :height="nodeHeight" rx="8" :class="selected === node.nodeId || node.highlighted ? 'node-selected' : 'node-rest'" />
             <title>{{ node.name }}{{ node.templateIds ? ` · ${t(`managedRouting.routeState.${status}`)}` : '' }}</title>
             <circle v-if="node.templateIds" :cx="12" :cy="12" r="4" :fill="statusColor" :aria-label="t(`managedRouting.routeState.${status}`)" />
             <text :x="nodeWidth / 2" :y="node.subtitle ? 23 : nodeHeight / 2 + 5" text-anchor="middle">{{ node.name.length > 18 ? `${node.name.slice(0, 16)}…` : node.name }}</text>
@@ -75,7 +74,7 @@ onScopeDispose(() => observer?.disconnect())
 </template>
 
 <style scoped>
-.routing-viewport { height: 320px; overflow: hidden; touch-action: none; background: var(--ui-bg-elevated); border-radius: 10px; }
+.routing-viewport { height: 300px; overflow: hidden; touch-action: auto; background: transparent; }
 .routing-viewport:focus-visible, .routing-node:focus-visible { outline: 2px solid var(--ui-primary); outline-offset: 2px; }
 .routing-node { cursor: pointer; }
 .routing-node text { fill: var(--ui-text); font-size: 13px; pointer-events: none; }
@@ -87,5 +86,5 @@ onScopeDispose(() => observer?.disconnect())
 </style>
 
 <style scoped>
-@media (max-width: 599px) { .routing-viewport { height: 520px; } .routing-node text { font-size: 18px; } .routing-node .node-host { font-size: 14px; } }
+@media (max-width: 599px) { .routing-viewport { height: 300px; } .routing-node text { font-size: 18px; } .routing-node .node-host { font-size: 14px; } }
 </style>

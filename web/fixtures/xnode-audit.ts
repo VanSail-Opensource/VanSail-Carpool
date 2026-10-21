@@ -34,6 +34,14 @@ async function check(name: string): Promise<void> {
 }
 function receipt(kind: string): OperationReceipt { latest = { id: crypto.randomUUID(), kind, status: 'queued', createdAt: stamp, updatedAt: stamp }; return latest }
 xnodeApi.nodes = async () => { await check('nodes'); return { items: structuredClone(nodes) } }
+let zoneReads = 0
+xnodeApi.providerZones = async (id, signal) => {
+  trace.calls.push('zones:' + id); zoneReads++
+  if (params.has('zones-slow')) await new Promise(resolve => setTimeout(resolve, 3000))
+  if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+  if (params.has('zones-error') && zoneReads === 1) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
+  return { supported: id !== 'other', items: params.has('zones-empty') || id === 'other' ? [] : [{ id: 'zone-one', name: 'proxy.example' }, { id: 'zone-two', name: 'vansail.example' }] }
+}
 let nodeLoadFailed = false
 xnodeApi.node = async id => {
   await check('node:' + id)
@@ -116,6 +124,19 @@ adminOperationsApi.getOperation = async () => { trace.calls.push('admin-operatio
 firewallApi.grant = async (body, key) => { await check('grant-firewall'); if (params.has('grant-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' }); trace.writes.push({ body, key }); return receipt('xnode_firewall_exemption') }
 Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value: string) => { trace.copies.push(value) } } })
 Object.assign(window, { __xnodeAudit: trace })
+if (params.has('responses')) {
+  templateConfig.templates.push({ id: 'empty-response', name: 'Limited client response', format: 'empty-http', statusCode: 451 })
+  templateConfig.userAgentRules = [{ pattern: 'Browser', action: 'browser', templateId: '' }, { pattern: 'Blocked', templateId: 'empty-response' }]
+}
+if (params.has('ddns')) {
+  global.providers = { cloudflare: { type: 'cloudflare', credentials: {} }, other: { type: 'duckdns', credentials: {} } }
+  const originalNode = xnodeApi.node
+  xnodeApi.node = async (id, signal) => {
+    const value = await originalNode(id, signal)
+    value.settings.ddns = [{ id: 'primary', provider: 'cloudflare', zone: 'saved.example', name: 'node', ttl_seconds: 300 }]
+    return value
+  }
+}
 
 let serviceUsers = params.has('services-empty') ? [] : [{ identity: { proxyUserId: '1099511627776', userId: '', username: 'routing-service', serviceName: 'routing-service', currentPeriodId: 'service-period', accessDisabled: false, createdAt: stamp }, access: { limitBytes: '0', strategy: 'NO_RESET' as const, startedAt: stamp, expiresAt: '2027-10-17T00:00:00Z', groupIds: ['group-one'], disabled: false } }]
 xnodeApi.namedServices = async () => { await check('services'); if (params.has('service-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: structuredClone(serviceUsers) } }
@@ -130,7 +151,28 @@ xnodeApi.serviceSubscription = async () => ({ username: 'routing-service', url: 
 xnodeApi.rotateServiceSubscription = async () => { trace.calls.push('rotate-service'); return { url: 'https://panel.example/subscription/rotated-fixture-only' } }
 xnodeApi.serviceRouting = async () => { await check('service-routing'); return { userId: '', nodeId: nodes[0]!.id, proxyUserId: '1099511627776', revision: 0, outbounds: [], routing: [] } }
 xnodeApi.saveServiceRouting = async (_id, _node, part, body) => { trace.calls.push('save-service-' + part); return { ...body, revision: body.revision + 1 } }
-firewallApi.bans = async () => { await check('firewall-bans'); if (params.has('firewall-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: params.has('firewall-empty') ? [] : [{ prefix: '2001:4860:1234:5678::/64', generation: 'fixture-ban', ip: '2001:4860:1234:5678::8', rule: 'xray_tcp_probe', count: '7', detectedAt: stamp, until: '2026-10-20T00:00:00Z', pendingNodes: 2, refresh_seconds: 259200 }] } }
+const releasedBans = new Set<string>()
+let pendingRelease = '', releasePolls = 0
+const originalGrant = firewallApi.grant, originalOperation = adminOperationsApi.getOperation
+firewallApi.grant = async (body, key) => { const result = await originalGrant(body, key); if (body.hours === 0) { pendingRelease = body.prefix; releasePolls = 0 }; return result }
+adminOperationsApi.getOperation = async id => {
+  const result = await originalOperation(id)
+  if (pendingRelease && result.kind === 'xnode_firewall_exemption') {
+    if (params.has('firewall-release-pending') && releasePolls++ < 2) return { ...result, status: 'processing' }
+    releasedBans.add(pendingRelease); pendingRelease = ''
+  }
+  return result
+}
+firewallApi.bans = async (query = '', cursor = '') => {
+  await check('firewall-bans:' + query + ':' + cursor)
+  if (params.has('firewall-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
+  if (query === 'invalid') throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
+  const base = { generation: 'fixture-ban', rule: 'xray_tcp_probe', count: '7', detectedAt: stamp, until: '2027-10-20T00:00:00Z', pendingNodes: 2, refresh_seconds: 259200 }
+  const first = { ...base, prefix: '2001:4860:1234:5678::/64', ip: '2001:4860:1234:5678::8' }
+  const second = { ...base, prefix: '8.8.8.8/32', ip: '8.8.8.8', generation: 'second-ban' }
+  const selected = query.startsWith('8.8') || cursor ? second : first
+  return { items: params.has('firewall-empty') || releasedBans.has(selected.prefix) || query.startsWith('9.9') ? [] : [selected], ...(params.has('firewall-pages') && !cursor && !query ? { nextCursor: 'second' } : {}) }
+}
 firewallApi.quote = async () => { await check('firewall-quote'); if (params.has('quote-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { enabled: !params.has('unban-disabled'), price: '1.25', hours: 24 } }
 firewallApi.purchase = async (ip, quote, key) => { await check('firewall-purchase:' + ip + ':' + key); if (params.has('unban-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); return { id: key, ip, priceMinor: '125', hours: quote.hours, until: '2026-10-20T00:00:00Z' } }
 const app = createApp(XNodeAudit)

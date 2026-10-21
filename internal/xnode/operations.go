@@ -77,7 +77,10 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if s.master == nil {
 		return ErrUnavailable
 	}
-	if operation.Receipt.Kind == RoutingOperationKind {
+	if operation.Receipt.Kind == RouteSpeedtestOperation {
+		return s.handleRouteSpeedtest(ctx, operation, job)
+	}
+	if operation.Receipt.Kind == RoutingOperationKind || operation.Receipt.Kind == DIYOperationKind {
 		return s.handleRoutingOperation(operation, job)
 	}
 	return s.master.deferOperation(job, 12*time.Minute, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })

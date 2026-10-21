@@ -1,5 +1,12 @@
 # X-Node administration
 
+`XNodeDDNSSettings.vue` edits the pinned agent's DDNS fields, including optional
+HTTPS IP lookup URLs and nonnegative TTL (new jobs default to 300 seconds).
+`XNodeDDNSJob.vue` owns one job's localized fields and removal action.
+`useDDNSDiscovery.ts` loads saved provider IDs without secrets. `XNodeDDNSZone.vue`
+owns cancellable zone loading/retry and searchable name selection; saved values
+survive unsupported providers and failed discovery. Results remain memory-only.
+
 `XNodeFirewall.vue` shows shared detection evidence, authoritative deadlines and
 remaining node expiry confirmations. `XNodeFirewallRules.vue` edits report-only
 rule toggles, thresholds, windows and ban duration. Global policy also sets the
@@ -82,3 +89,14 @@ server's 500 entries. `useXNodeLogs.test.ts` covers isolation and lifecycle clea
 
 Metric detail tables with more than 100 rows use Nuxt UI native virtualization
 in a bounded scroll viewport, keeping expanded CPU inventory tables responsive.
+
+Subscription rules select either a template (including Empty HTTP response) or
+Browser page. Previews use the production Go matcher through the existing API
+and show response kind/status. Empty templates hide the document editor and only
+accept final status 200-599 (403 initially); client-format defaults exclude them.
+
+`useFirewallSearch.ts` owns debounced server search, cancellation/stale-reply
+fencing, cursor history and exact-generation unban receipts. `XNodeFirewall.vue`
+keeps pending delivery visible and reloads the current search after acknowledged
+success; retrying a read does not create another release. Existing positive-hour
+administrator grants remain a separate form with unchanged behavior.

@@ -1,5 +1,8 @@
 # Schema shards
 
+`xnode-providers.yaml` defines the supported flag and public zone ID/name pairs
+for request-local administrator discovery. DDNS saves names, not Cloudflare IDs.
+
 `browser-auth.yaml` defines public entrance configuration,
 one-use handoff inputs/results, and the discriminated browser
 administrator/member/anonymous session state.
@@ -69,3 +72,8 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 paths, destination previews and durable deployment phases without private secrets.
 
 `xnode-profile.yaml` defines native per-node availability, decimal-string counters and exact seven-day accounting with separately identified non-directional legacy bytes.
+
+`xnode-speedtests.yaml` defines saved-route start input, durable pair outcomes and
+measurements/estimates. Traffic counters and probe credentials are never exposed.
+
+`xnode-diy.yaml` defines owner DIY views, previews, both-revision writes and save receipts. `xnode-diy-overrides.yaml` is generated from the typed client-only tuning catalog.

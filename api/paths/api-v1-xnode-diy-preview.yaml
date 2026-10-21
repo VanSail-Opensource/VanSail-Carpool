@@ -1,0 +1,18 @@
+post:
+  tags: [Members]
+  operationId: previewXNodeDIY
+  description: Validates client-only types, bounds, dependencies and compatible endpoints plus the routing draft. Does not store configurations, credentials or drafts.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeDIYWrite'}
+  responses:
+    '200':
+      description: Field errors and per-format applicability
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeDIYPreview'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

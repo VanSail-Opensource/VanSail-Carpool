@@ -20,6 +20,9 @@ the Telegram SDK or load member shell/theme assets.
   isolation, logout revocation, and one-use exchange in hosted CI.
 - `theme.ts` persists system/light/dark choice and observes system changes.
 - `styles.css` owns semantic tokens and workspace rules.
+  Text-control sizing excludes hidden fields; button sizing applies to actions
+  and comboboxes, leaving switch/checkbox roles and Nuxt UI internals untouched.
+  Rules use the experience root so portalled dialogs follow the same policy.
 - `landing.css` owns public entrance presentation.
 
 Browser cookies/signatures have their own scope. Snapshots include experience

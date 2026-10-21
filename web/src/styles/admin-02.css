@@ -28,10 +28,10 @@
   gap: 0.4rem;
 }
 
-.catalog-editor input,
+.catalog-editor input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]),
 .catalog-editor textarea,
 .catalog-editor select,
-.admin-drawer input,
+.admin-drawer input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]),
 .form-stack textarea,
 .compact-select {
   width: 100%;
@@ -50,10 +50,10 @@
   line-height: 1.45;
 }
 
-.catalog-editor input:focus,
+.catalog-editor input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]):focus,
 .catalog-editor textarea:focus,
 .catalog-editor select:focus,
-.admin-drawer input:focus,
+.admin-drawer input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]):not([hidden], [aria-hidden="true"]):focus,
 .form-stack textarea:focus,
 .compact-select:focus {
   border-color: var(--accent);
@@ -64,7 +64,7 @@
   align-items: center;
 }
 
-.switch-row input {
+.switch-row input:not([hidden], [aria-hidden="true"]):is([type="checkbox"], [type="radio"]) {
   width: 18px;
   min-height: 18px;
   accent-color: var(--accent);

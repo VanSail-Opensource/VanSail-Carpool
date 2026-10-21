@@ -24,6 +24,7 @@ export type SubscriptionTemplateConfig = Schema['XNodeSubscriptionTemplateConfig
 
 const root = '/api/v1/admin/xnode'
 export const xnodeApi = {
+  providerZones: (id: string, signal?: AbortSignal) => request<Schema['XNodeProviderZones']>(`${root}/providers/${encodeURIComponent(id)}/zones`, { cache: 'no-store', signal }),
   routingTemplates: (signal?: AbortSignal) => request<Schema['XNodeRoutingTemplateConfig']>(`${root}/routing-templates`, { cache: 'no-store', signal }),
   saveRoutingTemplates: (body: Schema['XNodeRoutingTemplateConfig']) => request<Schema['XNodeRoutingTemplateConfig']>(`${root}/routing-templates`, { method: 'PUT', body, cache: 'no-store' }),
   namedServices: () => request<{ items: NamedService[] }>(`${root}/service-identities`, { cache: 'no-store' }),
@@ -35,7 +36,7 @@ export const xnodeApi = {
   subscriptionTemplates: (signal?: AbortSignal) => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { cache: 'no-store', signal }),
   saveSubscriptionTemplates: (body: SubscriptionTemplateConfig) => request<SubscriptionTemplateConfig>(`${root}/subscription-templates`, { method: 'PUT', body, cache: 'no-store' }),
   previewSubscriptionTemplate: (body: SubscriptionTemplate, signal?: AbortSignal) => request<Schema['XNodeSubscriptionTemplatePreview']>(`${root}/subscription-templates/preview`, { method: 'POST', body, cache: 'no-store', signal }),
-  previewSubscriptionSelection: (body: { config: SubscriptionTemplateConfig; format: string; userAgent: string }, signal?: AbortSignal) => request<{ validation: XNodeValidation; selection: { format: string; templateId: string; source: string } }>(`${root}/subscription-templates/selection-preview`, { method: 'POST', body, cache: 'no-store', signal }),
+  previewSubscriptionSelection: (body: { config: SubscriptionTemplateConfig; format: string; userAgent: string }, signal?: AbortSignal) => request<{ validation: XNodeValidation; selection: { format: string; templateId: string; source: string; responseKind?: string; statusCode?: number } }>(`${root}/subscription-templates/selection-preview`, { method: 'POST', body, cache: 'no-store', signal }),
   nodes: (signal?: AbortSignal) => request<{ items: XNode[] }>(`${root}/nodes`, { cache: 'no-store', signal }),
   node: (id: string, signal?: AbortSignal) => request<Schema['XNodeNodeDetail']>(`${root}/nodes/${encodeURIComponent(id)}`, { cache: 'no-store', signal }),
   saveNode: (node: Partial<XNode>, settings: XNodeSettings) => request<XNode>(`${root}/nodes${node.id ? `/${encodeURIComponent(node.id)}` : ''}`, { method: node.id ? 'PUT' : 'POST', body: { node, settings } }),

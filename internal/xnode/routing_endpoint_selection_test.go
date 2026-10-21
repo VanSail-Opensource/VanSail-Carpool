@@ -63,3 +63,21 @@ func TestRoutingProofDoesNotInventAnEdgeBetweenDifferentInbounds(t *testing.T) {
 		}
 	}
 }
+
+func TestRoutingTraceRequiresConfiguredEntryHost(t *testing.T) {
+	in := routingInput{choices: []RoutingChoice{{ID: "ab", InboundNodeID: "a", OutboundNodeID: "b"}}, sources: map[string]Endpoint{"ab": {ID: "a-primary", NodeID: "a"}}}
+	for _, test := range []struct {
+		node, endpoint string
+		valid          bool
+	}{
+		{"a", "", true}, {"a", "a-primary", true}, {"a", "a-secondary", false},
+		{"b", "", false}, {"b", "b-primary", false}, {"unused", "", false},
+	} {
+		t.Run(test.node+"/"+test.endpoint, func(t *testing.T) {
+			endpoint, err := in.traceEntry(test.node, test.endpoint)
+			if (err == nil) != test.valid || test.valid && endpoint.ID != "a-primary" {
+				t.Fatalf("entry: %#v, %v", endpoint, err)
+			}
+		})
+	}
+}

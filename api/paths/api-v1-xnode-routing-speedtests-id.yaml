@@ -1,0 +1,17 @@
+get:
+  operationId: getXNodeRouteSpeedtest
+  tags: [Members]
+  parameters:
+    - in: path
+      name: id
+      required: true
+      schema: {type: string}
+  responses:
+    '200':
+      description: Durable pair progress and results; aggregate is an estimate
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeRouteSpeedtestResult'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '404': {$ref: '../openapi.yaml#/components/responses/NotFound'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

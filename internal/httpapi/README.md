@@ -1,5 +1,10 @@
 # HTTP API transport
 
+`xnode_provider_zones.go` serves administrator-only saved-provider discovery at
+`GET /api/v1/admin/xnode/providers/{id}/zones`, using request cancellation and
+no-store responses. It delegates all credential access and queued network work
+to the X-Node service and uses existing sanitized error projections.
+
 `member_combo_controls.go` serves owner-scoped squad state and switch commands,
 plus earliest-queued eligibility and typed-confirmation activation. It uses
 onboarding, signed requests and the existing idempotent operation protections.
@@ -227,3 +232,16 @@ administrator customization remains separate.
 `xnode_firewall_admin.go` handles administrator-only queued IP/CIDR grants under the existing signed browser/API-token middleware; it returns the shared durable operation receipt and never charges a wallet.
 
 `xnode_logs.go` serves admin-only, no-store selected-node volatile log snapshots. The metrics route accepts summary=true to omit buffered logs while preserving default response compatibility.
+
+`xnode_route_speedtests.go` serves authenticated owner-only starts/results at
+`/api/v1/xnode/routing/speedtests` and `/{id}`. Start returns a durable receipt;
+results retain pair progress and distinguish the aggregate estimate. Credentials,
+raw agent errors and command byte counters are excluded from result projections.
+
+`subscription_response.go` applies browser/empty response selections only after
+bearer identity and active access validation. Browser matches serve the public
+page at the landing URL and redirect raw downloads to it; empty templates send
+the selected final status with zero body bytes. `subscription_response_test.go`
+covers both delivery paths and status boundaries in hosted CI.
+
+`xnode_diy.go` exposes authenticated owner-scoped DIY reads, draft previews and atomic saves with existing idempotency headers; request owners always come from the authenticated session.

@@ -7,3 +7,5 @@
 - `check-structure.mjs` audits source line limits, folder documentation,
   locale parity, script/template copy, local icon-asset policy, and coverage
   of production-source icons by the Vite client bundle scan or explicit list.
+
+`generate-diy-contracts.mjs` derives Go pointer types, field metadata, API override schemas and bilingual labels from the canonical subscription allowlist. Regenerate these before `generate:api` when changing the allowlist.

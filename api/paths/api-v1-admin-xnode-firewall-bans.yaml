@@ -17,6 +17,9 @@
                   "items": {
                     "$ref": "../openapi.yaml#/components/schemas/XNodeFirewallBan"
                   }
+                },
+                "nextCursor": {
+                  "type": "string"
                 }
               },
               "required": [
@@ -42,6 +45,34 @@
       },
       {
         "panelApiToken": []
+      }
+    ],
+    "parameters": [
+      {
+        "name": "query",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "description": "IPv4, IPv6 or CIDR; matches overlapping normalized prefixes."
+      },
+      {
+        "name": "cursor",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
       }
     ]
   }

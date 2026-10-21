@@ -102,6 +102,9 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 	}
 	// Synchronize before reading participants: earlier in-flight grants must finish
 	// and record their participation before revocation overtakes them.
+	if err := s.revokePeriodProbes(ctx, period.ID); err != nil {
+		return err
+	}
 	nodes, err := s.repo.XNodeNodes(ctx)
 	if err != nil {
 		return err
@@ -132,6 +135,13 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 			}
 			pending = true
 			continue
+		}
+		if err = s.flushPeriodProbes(ctx, period.ID, node.NodeID); err != nil {
+			if canContinue {
+				pending = true
+				continue
+			}
+			return err
 		}
 		barrier, err := s.master.FlushPeriod(ctx, node.NodeID, period.ProxyUserID, period.ID)
 		if err != nil {

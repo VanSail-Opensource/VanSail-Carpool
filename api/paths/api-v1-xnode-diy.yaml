@@ -1,0 +1,36 @@
+get:
+  tags: [Members]
+  operationId: getXNodeDIY
+  description: Owner-only encrypted client overrides, settings revision, existing routing state and per-format applicability. Clients refresh subscriptions to receive saved options.
+  responses:
+    '200':
+      description: Member DIY configuration
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeDIYView'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}
+put:
+  tags: [Members]
+  operationId: saveXNodeDIY
+  description: Validates both sections before atomically saving one encrypted override document and any changed routing desired state. Settings-only saves complete locally; routing uses the existing durable fleet deployment operation.
+  parameters:
+    - in: header
+      name: Idempotency-Key
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128}
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeDIYWrite'}
+  responses:
+    '200':
+      description: Saved settings revision and durable deployment receipt
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeDIYSaveResult'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '409': {$ref: '../openapi.yaml#/components/responses/Conflict'}
+    '422': {$ref: '../openapi.yaml#/components/responses/Unprocessable'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

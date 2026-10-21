@@ -72,7 +72,11 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	default:
 		return nil, fmt.Errorf("%w: sing-box transport", ErrUnsupported)
 	}
-	return connectivity.ApplyClientMapper(out, p.MapperHost, "singbox")
+	mapped, err := connectivity.ApplyClientMapper(out, p.MapperHost, "singbox")
+	if err != nil {
+		return nil, err
+	}
+	return p.applyTuning("sing-box", mapped)
 }
 func RenderSingBox(proxies []Proxy) ([]byte, error) {
 	return RenderTemplate(DefaultTemplate("sing-box"), proxies)

@@ -38,3 +38,13 @@ Host connectivity is administrator-only under `/api/v1/admin/host-connectivity`.
 metadata and the existing bearer URL for explicitly imported standalone access.
 Probe identities are excluded. Quota, expiry, enabled groups and host ACLs remain
 authoritative for both standalone client output and server admission.
+
+Subscription UA rules add optional action (omission retains template selection).
+Browser/empty response selection is available only without an explicit client
+format. Empty templates omit document, accept final status 200-599/default 403,
+and are excluded from format defaults/metadata. Preview includes kind/status.
+
+Active firewall bans accept query/cursor/limit; CIDRs match overlap after network
+normalization. Administrator grants accept hours=0 only with an exact active
+generation, releasing that ban without creating or altering exemptions. The
+idempotent receipt remains pending until existing delivery versions acknowledge.

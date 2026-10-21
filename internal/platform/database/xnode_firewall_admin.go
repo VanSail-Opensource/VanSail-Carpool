@@ -15,6 +15,9 @@ import (
 )
 
 func (s *Store) GrantAdminFirewallExemption(ctx context.Context, actor string, input xnode.AdminFirewallExemption, now time.Time) (model.OperationReceipt, error) {
+	if input.Hours == 0 {
+		return s.releaseAdminFirewallBan(ctx, actor, input, now)
+	}
 	var receipt model.OperationReceipt
 	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		grant, err := ids.New()
@@ -61,6 +64,10 @@ func (s *Store) FinalizeAdminFirewallExemption(ctx context.Context, operation st
 	done := false
 	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var until, status, grant string
+		if handled, complete, err := finalizeFirewallReleaseTx(ctx, tx, operation, now); handled || err != nil {
+			done = complete
+			return err
+		}
 		var version uint64
 		err := tx.QueryRowContext(ctx, `SELECT grant.id,grant.until_at,grant.issued_version,operation.status FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='grant' JOIN xnode_firewall_exemptions grant ON grant.id=item.target_id AND grant.grant_kind='admin' WHERE operation.id=? AND operation.kind=?`, operation, xnode.FirewallExemptionOperation).Scan(&grant, &until, &version, &status)
 		if err != nil {

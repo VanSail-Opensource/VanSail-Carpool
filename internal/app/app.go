@@ -217,6 +217,12 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = operationDispatcher.Register(xnode.RoutingOperationKind, xnodeService); err != nil {
 		return cleanup(err)
 	}
+	if err = operationDispatcher.Register(xnode.RouteSpeedtestOperation, xnodeService); err != nil {
+		return cleanup(err)
+	}
+	if err = operationDispatcher.Register(xnode.DIYOperationKind, xnodeService); err != nil {
+		return cleanup(err)
+	}
 	if err = operationDispatcher.Register(xnode.FirewallExemptionOperation, xnodeService); err != nil {
 		return cleanup(err)
 	}

@@ -31,6 +31,8 @@ func (e *CommandError) Unwrap() error { return e.Cause }
 // local values that match the longest documented native operation.
 func commandDeadline(name string) time.Duration {
 	switch name {
+	case "speedtest":
+		return 90 * time.Second
 	case "update.install", "update.rollback":
 		return 15 * time.Minute
 	case "runtime.reload", "geodata.refresh", "config.validate", "firewall.bans.sync", "firewall.apply", "update.check":

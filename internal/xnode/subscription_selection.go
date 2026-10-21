@@ -11,12 +11,15 @@ import (
 type SubscriptionUserAgentRule struct {
 	Pattern    string `json:"pattern"`
 	TemplateID string `json:"templateId"`
+	Action     string `json:"action,omitempty"`
 }
 
 type SubscriptionSelection struct {
-	Format     string `json:"format"`
-	TemplateID string `json:"templateId"`
-	Source     string `json:"source"`
+	Format       string `json:"format"`
+	TemplateID   string `json:"templateId"`
+	Source       string `json:"source"`
+	ResponseKind string `json:"responseKind"`
+	StatusCode   int    `json:"statusCode"`
 }
 
 func templateFormat(format string) bool {
@@ -44,15 +47,24 @@ func validateUserAgentRules(config SubscriptionTemplateConfig) error {
 		return ErrInvalid
 	}
 	for _, rule := range config.UserAgentRules {
+		if rule.Action != "" && rule.Action != "template" && rule.Action != "browser" {
+			return ErrInvalid
+		}
 		if rule.Pattern == "" || len(rule.Pattern) > 2048 {
 			return ErrInvalid
 		}
 		if _, err := regexp.Compile(rule.Pattern); err != nil {
 			return ErrInvalid
 		}
+		if rule.Action == "browser" {
+			if rule.TemplateID != "" {
+				return ErrInvalid
+			}
+			continue
+		}
 		found := false
 		for _, item := range config.Templates {
-			if item.ID == rule.TemplateID && templateFormat(item.Format) {
+			if item.ID == rule.TemplateID && (templateFormat(item.Format) || item.Format == "empty-http") {
 				found = true
 				break
 			}
@@ -70,7 +82,7 @@ func SelectSubscription(config SubscriptionTemplateConfig, explicit, agent strin
 	if len(agent) > 8192 || validateUserAgentRules(config) != nil {
 		return SubscriptionSelection{}, ErrInvalid
 	}
-	selection := SubscriptionSelection{Format: explicit, Source: "explicit"}
+	selection := SubscriptionSelection{Format: explicit, Source: "explicit", ResponseKind: "document", StatusCode: 200}
 	if explicit == "" {
 		for _, rule := range config.UserAgentRules {
 			matched, err := regexp.MatchString(rule.Pattern, agent)
@@ -78,9 +90,21 @@ func SelectSubscription(config SubscriptionTemplateConfig, explicit, agent strin
 				return selection, ErrInvalid
 			}
 			if matched {
+				if rule.Action == "browser" {
+					return SubscriptionSelection{Source: "regex", ResponseKind: "browser", StatusCode: 200}, nil
+				}
 				for _, item := range config.Templates {
 					if item.ID == rule.TemplateID {
-						selection = SubscriptionSelection{Format: item.Format, TemplateID: item.ID, Source: "regex"}
+						selection = SubscriptionSelection{Format: item.Format, TemplateID: item.ID, Source: "regex", ResponseKind: "document", StatusCode: 200}
+						if item.Format == "empty-http" {
+							status, err := subscription.EmptyHTTPStatus(item)
+							if err != nil {
+								return selection, ErrInvalid
+							}
+							selection.ResponseKind = "empty-http"
+							selection.StatusCode = status
+							return selection, nil
+						}
 						break
 					}
 				}
@@ -117,7 +141,7 @@ func PreviewSubscriptionSelection(config SubscriptionTemplateConfig, explicit, a
 		return SubscriptionSelection{}, ValidationResult{ErrorCode: "XNODE_INPUT_INVALID"}
 	}
 	selection, err := SelectSubscription(config, explicit, agent)
-	if err == nil {
+	if err == nil && selection.ResponseKind == "document" {
 		_, err = renderSubscriptionSelection(config, "", selection, subscription.PreviewProxies())
 	}
 	if err != nil {

@@ -60,3 +60,5 @@ than in Vue templates, composables, or API clients.
 `managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.
 
 `native-metrics.json` labels browser-only profile, accounting and machine metric tables/charts.
+
+`diy.json` contains DIY controls, errors and compatibility messages; `diy-fields.json` contains generated typed option labels.

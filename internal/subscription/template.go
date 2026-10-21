@@ -10,10 +10,11 @@ import (
 // Template is an administrator-owned client document with structural insertion
 // markers. It never evaluates expressions or interpolates credential strings.
 type Template struct {
-	ID       string          `json:"id"`
-	Name     string          `json:"name"`
-	Format   string          `json:"format"`
-	Document json.RawMessage `json:"document"`
+	ID         string          `json:"id"`
+	Name       string          `json:"name"`
+	Format     string          `json:"format"`
+	Document   json.RawMessage `json:"document,omitempty"`
+	StatusCode int             `json:"statusCode,omitempty"`
 }
 
 func DefaultTemplate(format string) Template {
@@ -29,6 +30,13 @@ func DefaultTemplate(format string) Template {
 // RenderTemplate expands only the caller's eligible proxies. Xray uses one
 // independently selectable configuration per endpoint; other clients use a fleet.
 func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
+	if template.Format == "empty-http" {
+		_, err := EmptyHTTPStatus(template)
+		return []byte{}, err
+	}
+	if template.StatusCode != 0 {
+		return nil, errors.New("HTTP status is only valid for an empty response")
+	}
 	if len(proxies) > 4096 {
 		return nil, errors.New("subscription has too many endpoints")
 	}

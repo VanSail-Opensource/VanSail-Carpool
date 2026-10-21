@@ -1,0 +1,15 @@
+XNodeProviderZones:
+  type: object
+  additionalProperties: false
+  required: [supported, items]
+  properties:
+    supported: {type: boolean}
+    items:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [id, name]
+        properties:
+          id: {type: string}
+          name: {type: string, maxLength: 253}

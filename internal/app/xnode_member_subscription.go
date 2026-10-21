@@ -40,6 +40,12 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	if err != nil {
 		return connectivity.MemberSubscription{}, err
 	}
+	if links {
+		proxies, err = a.native.ExportProxiesForUser(ctx, identity.UserID, proxies)
+		if err != nil {
+			return connectivity.MemberSubscription{}, err
+		}
+	}
 	result := connectivity.MemberSubscription{Hosts: []connectivity.SubscriptionHost{}, Squads: []connectivity.SubscriptionSquad{}}
 	names, err := a.SquadNames(ctx)
 	if err != nil {
