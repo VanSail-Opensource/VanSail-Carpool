@@ -93,13 +93,13 @@ func TestStandaloneInventoryKeepsSourceAndNativeCredentialsSeparate(t *testing.T
 }
 
 func TestStandaloneSubscriptionHonorsHostACLAndExcludesProbeBearers(t *testing.T) {
-	f, _, _ := standaloneFixture(t, 1000, 100, "NO_RESET")
+	f, identity, _ := standaloneFixture(t, 1000, 100, "NO_RESET")
 	ctx := context.Background()
 	endpoint, err := f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Restricted host", Address: "proxy.example", Port: 443, Enabled: true, Overrides: json.RawMessage(`{"legacyHost":{"internalSquads":{"mode":"ALLOW_ONLY","squads":["foreign"]}}}`)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	metadata, err := f.service.ServiceSubscription(ctx, "376")
+	metadata, err := f.service.ServiceSubscription(ctx, stringID(identity))
 	if err != nil || metadata.Active {
 		t.Fatalf("standalone subscription bypassed host ACL: %v", err)
 	}

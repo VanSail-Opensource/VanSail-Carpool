@@ -23,6 +23,10 @@ those identifiers. Display names use Telegram username, then full nickname.
 The startup database migration reseals ID-bound ciphertext before publishing any
 new identity; agent `replaces_id` preserves credential-bound leases and period
 counters. Masters require `telegram_identity_rekey_v1` before sending a rekey.
+Hosted access regressions use returned native IDs for standalone subscriptions,
+traffic and resets, retaining source IDs only for import/resume checks. Saved
+member tags stay reserved while inactive; decimal owner suffixes isolate members
+even when their historical display names contain overlapping hyphens.
 
 `provider_zones.go` discovers Cloudflare zones from saved provider credentials
 through the existing external validation queue, one page at a time. The admin
@@ -265,7 +269,7 @@ Master policy extensions: `native_policy_types.go` owns country, completion-sche
 
 `live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
 
-`client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight.
+`client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight.
 
 Shared policy saves additionally resolve actual geosite categories/attributes
 through the validation queue. The bounded lookup preserves native asset key

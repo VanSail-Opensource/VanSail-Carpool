@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -51,16 +52,17 @@ func TestStandaloneBridgeSharesOneCombinedAllowance(t *testing.T) {
 				t.Fatal(err)
 			}
 			provider := proxyProvider{store: store, native: native}
+			nativeID := strconv.FormatInt(identity.ProxyUserID, 10)
 			for _, lookup := range []func() error{
 				func() error {
 					user, exists, err := provider.FindUserByUsername(ctx, "standalone")
-					if err == nil && (!exists || user.ID != "929" || user.TelegramID != nil) {
+					if err == nil && (!exists || user.ID != nativeID || user.TelegramID != nil) {
 						t.Fatal("standalone name lookup required a fabricated Telegram principal")
 					}
 					return err
 				},
 				func() error {
-					user, exists, err := provider.FindUserByID(ctx, "929")
+					user, exists, err := provider.FindUserByID(ctx, nativeID)
 					if err == nil && (!exists || user.Username != "standalone" || user.TelegramID != nil) {
 						t.Fatal("standalone ID lookup lost its service identity")
 					}

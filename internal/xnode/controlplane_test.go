@@ -66,7 +66,7 @@ func TestPaidAccountsOwnRoutingTagsAndMatchers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(config.Users) != 1 || len(config.MemberOutbounds) != 1 || config.MemberOutbounds[0] != "peer-alice" {
+	if len(config.Users) != 1 || len(config.MemberOutbounds) != 1 || config.MemberOutbounds[0] != "peer-"+stringID(f.identity) {
 		t.Fatalf("owner expansion=%+v", config.MemberOutbounds)
 	}
 	var root struct {

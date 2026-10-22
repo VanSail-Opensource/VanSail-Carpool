@@ -8,6 +8,8 @@ steps to agreements. Existing financial amounts, credentials, subscription token
 and period IDs remain unchanged. A failed decryption or FK audit rolls everything
 back; startup does not accept traffic until migration succeeds. Late native
 samples are translated only against their period and participating node.
+The users-table rebuild replaces the legacy username-aware compilation trigger
+with onboarding-state invalidation, preserving cache updates after column removal.
 
 `087_native_accounting_maintenance.sql` adds native date/user/purchase and expiry
 indexes without copying or rewriting accounting and financial records.

@@ -6,6 +6,17 @@ import "encoding/json"
 // separate from the agent's stricter IP-geodata policy. Analysis substitutes
 // client-local assets without mutating or downloading the actual client document.
 func ValidateClientConfigurationDocument(raw json.RawMessage) ValidationResult {
+	var document map[string]json.RawMessage
+	if json.Unmarshal(raw, &document) != nil || document == nil {
+		return ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}
+	}
+	// Subscription clients use remarks as a label, outside the native core
+	// schema. Strip only this metadata from the analysis copy.
+	delete(document, "remarks")
+	raw, err := json.Marshal(document)
+	if err != nil {
+		return ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}
+	}
 	var native map[string]any
 	if json.Unmarshal(raw, &native) != nil {
 		return ValidationResult{ErrorCode: "XNODE_CONFIG_INVALID"}

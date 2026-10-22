@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestHyphenNamespacesCannotTakeAnInactiveMembersSavedTag(t *testing.T) {
+func TestInactiveMemberTagsStayReservedAcrossNumericNamespaces(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
 	first := json.RawMessage(`[{"tag":"peer-bob","protocol":"socks","settings":{"servers":[{"address":"1.1.1.1","port":1080}]}}]`)
@@ -48,7 +48,23 @@ func TestHyphenNamespacesCannotTakeAnInactiveMembersSavedTag(t *testing.T) {
 		t.Fatal(err)
 	}
 	second := json.RawMessage(`[{"tag":"peer","protocol":"socks","settings":{"servers":[{"address":"1.1.1.1","port":1080}]}}]`)
-	if _, err = f.service.SaveOwnedOutbounds(ctx, user.ID, f.node.ID, 0, second); !errors.Is(err, xnode.ErrConflict) {
-		t.Fatalf("ambiguous peer-bob-alice namespace accepted: %v", err)
+	if _, err = f.service.SaveOwnedOutbounds(ctx, user.ID, f.node.ID, 0, second); err != nil {
+		t.Fatalf("independent numeric namespace rejected: %v", err)
+	}
+	config, err := f.service.ResolveConfiguration(ctx, f.node.ConfigID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var native map[string]any
+	if err = json.Unmarshal(config.Document, &native); err != nil {
+		t.Fatal(err)
+	}
+	native["outbounds"] = append(native["outbounds"].([]any), map[string]any{"tag": "peer-bob-" + stringID(f.identity), "protocol": "freedom"})
+	config.Document, err = json.Marshal(native)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.service.SaveConfiguration(ctx, config); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatalf("administrator took an inactive member's numeric tag: %v", err)
 	}
 }

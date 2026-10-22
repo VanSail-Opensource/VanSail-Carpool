@@ -88,6 +88,16 @@ func TestTelegramIdentityMigrationPreservesSecretsReferencesAndLateTraffic(t *te
 	if err = db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='username'`).Scan(&usernameColumns); err != nil || usernameColumns != 0 {
 		t.Fatal("assigned username retained", err)
 	}
+	var before, after int64
+	if err = db.QueryRow(`SELECT revision FROM xnode_compile_revision WHERE singleton=1`).Scan(&before); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(`UPDATE users SET onboarding_state='agreement' WHERE id='99101'`); err != nil {
+		t.Fatal("migrated onboarding update", err)
+	}
+	if err = db.QueryRow(`SELECT revision FROM xnode_compile_revision WHERE singleton=1`).Scan(&after); err != nil || after != before+1 {
+		t.Fatalf("onboarding did not invalidate compilation: before=%d after=%d error=%v", before, after, err)
+	}
 	if err = db.QueryRow(`SELECT txb_minor FROM balances WHERE user_id='99101'`).Scan(&balance); err != nil || balance != 12345 {
 		t.Fatal("balance changed", err)
 	}

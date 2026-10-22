@@ -20,6 +20,9 @@ func standaloneFixture(t *testing.T, limit, used int64, strategy string) (fixtur
 	if err != nil {
 		t.Fatal(err)
 	}
+	if identity.ProxyUserID < 1<<52 || identity.ProxyUserID >= 1<<53 || identity.LegacyUserID != "376" {
+		t.Fatal("standalone identity lost its separate native namespace", identity.ProxyUserID)
+	}
 	if err = f.store.SaveXNodeMigration(ctx, xnode.MigrationState{Phase: "active"}); err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +42,7 @@ func TestStandaloneImportPreservesQuotaCredentialsAndPrivateSubscription(t *test
 	if _, err := f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Standalone host", Address: "proxy.example", Port: 443, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	metadata, err := f.service.ServiceSubscription(ctx, "376")
+	metadata, err := f.service.ServiceSubscription(ctx, stringID(identity))
 	if err != nil || !metadata.Active || metadata.LimitBytes != "1000" || metadata.UsedBytes != "100" || metadata.ExpiresAt == nil || !metadata.ExpiresAt.Equal(access.ExpiresAt) {
 		t.Fatalf("standalone metadata: active=%v, used=%s, limit=%s, error=%v", metadata.Active, metadata.UsedBytes, metadata.LimitBytes, err)
 	}
@@ -69,7 +72,7 @@ func TestStandaloneNativeTrafficExhaustsTheSharedAllowance(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := time.Now().UTC()
-	report := wire.TrafficReport{ID: "standalone-agent:1", Samples: []wire.TrafficSample{{UserID: 376, AccountingPeriod: identity.CurrentPeriodID, From: at, Through: at, UploadBytes: 900}}}
+	report := wire.TrafficReport{ID: "standalone-agent:1", Samples: []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: identity.CurrentPeriodID, From: at, Through: at, UploadBytes: 900}}}
 	if err := f.store.RecordXNodeTraffic(ctx, f.node.ID, "standalone-agent", 1, "standalone-digest", report); err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +92,7 @@ func TestStandaloneCadenceWaitsForFinalSourceAccounting(t *testing.T) {
 	if err := f.service.ResetCadences(ctx); err != nil {
 		t.Fatal(err)
 	}
-	current, err := f.store.XNodeIdentity(ctx, 376)
+	current, err := f.store.XNodeIdentity(ctx, identity.ProxyUserID)
 	if err != nil || current.CurrentPeriodID != identity.CurrentPeriodID {
 		t.Fatal("native reset advanced ahead of the active source")
 	}
@@ -99,7 +102,7 @@ func TestStandaloneCadenceWaitsForFinalSourceAccounting(t *testing.T) {
 	if err = f.service.ResetCadences(ctx); err != nil {
 		t.Fatal(err)
 	}
-	current, err = f.store.XNodeIdentity(ctx, 376)
+	current, err = f.store.XNodeIdentity(ctx, identity.ProxyUserID)
 	if err != nil || current.CurrentPeriodID == identity.CurrentPeriodID {
 		t.Fatal("rolling standalone allowance did not reset after final accounting")
 	}
@@ -123,7 +126,7 @@ func TestStandaloneSourceResetRetainsLateTailAndRejectsStaleImports(t *testing.T
 	if err := f.service.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: 99, LifetimeBytes: 9999, SyncedAt: at.Add(-time.Hour)}); err != nil {
 		t.Fatal(err)
 	}
-	current, err := f.store.XNodeIdentity(ctx, 376)
+	current, err := f.store.XNodeIdentity(ctx, identity.ProxyUserID)
 	if err != nil || current.CurrentPeriodID == identity.CurrentPeriodID {
 		t.Fatal("source reset failed to open a standalone period")
 	}

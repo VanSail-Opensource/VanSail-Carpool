@@ -32,6 +32,11 @@ func removeAssignedUsername(ctx context.Context, tx *sql.Tx) error {
 			rows.Close()
 			return err
 		}
+		if name == "compile_users_update" {
+			// Assigned usernames no longer exist after the rebuild. Keep
+			// onboarding changes invalidating the native compilation cache.
+			script = `CREATE TRIGGER compile_users_update AFTER UPDATE OF onboarding_state ON users WHEN OLD.onboarding_state IS NOT NEW.onboarding_state BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END`
+		}
 		objects = append(objects, script)
 	}
 	err = rows.Err()

@@ -2,6 +2,7 @@ package xnode_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"testing"
@@ -35,7 +36,8 @@ func TestMeteredProbeCompiledAccessQuotaExpiryAndRealReset(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			op, _, err := f.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: f.user.ID, OwnerUserID: f.user.ID, Kind: xnode.RouteSpeedtestOperation, IdempotencyKey: action, RequestFingerprint: action, Items: []providerops.ItemInput{{Key: "00", TargetType: "xnode_speedtest", TargetID: "synthetic"}}}, time.Now())
+			fingerprint := fmt.Sprintf("%x", sha256.Sum256([]byte(action)))
+			op, _, err := f.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: f.user.ID, OwnerUserID: f.user.ID, Kind: xnode.RouteSpeedtestOperation, IdempotencyKey: action, RequestFingerprint: fingerprint, Items: []providerops.ItemInput{{Key: "00", TargetType: "xnode_speedtest", TargetID: "synthetic"}}}, time.Now())
 			if err != nil {
 				t.Fatal(err)
 			}
