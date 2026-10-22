@@ -29,12 +29,12 @@ var errIdentityUnverified = errors.New("Remnawave identity cannot be verified")
 
 func matchesIdentity(remote accounts.RemoteUser, user model.User) bool {
 	id, err := strconv.ParseInt(remote.ID, 10, 64)
-	return err == nil && id > 0 && user.Username != nil && remote.Username == *user.Username &&
+	return err == nil && id > 0 &&
 		remote.TelegramID != nil && *remote.TelegramID == user.TelegramID
 }
 
 func identityMismatch(remote accounts.RemoteUser, user model.User) error {
-	if user.Username != nil && remote.Username == *user.Username && remote.TelegramID != nil && *remote.TelegramID != user.TelegramID {
+	if remote.TelegramID != nil && *remote.TelegramID != user.TelegramID {
 		return accounts.ErrRemnawaveIdentityConflict
 	}
 	return errIdentityUnverified
@@ -44,14 +44,15 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	if w.identity == nil {
 		return user, nil
 	}
-	if user.OnboardingState != "complete" || user.Username == nil || *user.Username == "" {
-		return user, errors.New("completed user has no reserved Remnawave username")
+	if user.OnboardingState != "complete" || user.TelegramID <= 0 {
+		return user, errors.New("completed user has no verified Telegram identity")
 	}
 	repository, ok := w.repository.(provisioningRepository)
 	if !ok {
 		return user, errors.New("Remnawave provisioning repository is unavailable")
 	}
 	previousID := ""
+	name := user.AccountName()
 	if user.RemnaUserID != nil {
 		previousID = *user.RemnaUserID
 		remote, exists, err := w.identity.FindUserByID(ctx, previousID)
@@ -65,7 +66,7 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 			return user, nil
 		}
 	}
-	remote, exists, err := w.identity.FindUserByUsername(ctx, *user.Username)
+	remote, exists, err := w.identity.FindUserByUsername(ctx, name)
 	if err != nil {
 		return user, fmt.Errorf("find Remnawave username: %w", err)
 	}
@@ -86,12 +87,12 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	}
 	if !exists {
 		remote, err = w.identity.CreateUser(ctx, accounts.RemoteCreateUser{
-			Username: *user.Username, TelegramID: user.TelegramID, Status: "DISABLED",
+			Username: name, TelegramID: user.TelegramID, Status: "DISABLED",
 			ExpireAt:          time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC),
 			TrafficLimitBytes: 0, TrafficLimitStrategy: "NO_RESET", ActiveInternalSquads: []string{},
 		})
 		if err != nil && w.identity.IsDuplicateError(err) {
-			remote, exists, err = w.identity.FindUserByUsername(ctx, *user.Username)
+			remote, exists, err = w.identity.FindUserByUsername(ctx, name)
 			if err == nil && !exists {
 				return user, errors.New("Remnawave duplicate could not be reconciled")
 			}
@@ -106,7 +107,7 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	if !matchesIdentity(remote, user) {
 		return user, identityMismatch(remote, user)
 	}
-	if err := repository.LinkProvisionedRemnaUser(ctx, user.ID, *user.Username, previousID, remote.ID, w.now().UTC()); err != nil {
+	if err := repository.LinkProvisionedRemnaUser(ctx, user.ID, name, previousID, remote.ID, w.now().UTC()); err != nil {
 		return user, err
 	}
 	user.RemnaUserID = &remote.ID
@@ -114,14 +115,11 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 }
 
 func (w *Worker) resolveIdentityConflict(ctx context.Context, user model.User) error {
-	if user.Username == nil {
-		return errors.New("conflicted Remnawave user has no username")
-	}
 	repository, ok := w.repository.(provisioningRepository)
 	if !ok {
 		return errors.New("Remnawave conflict repository is unavailable")
 	}
-	return repository.ResolveProvisioningConflict(ctx, user.ID, *user.Username, w.now().UTC())
+	return repository.ResolveProvisioningConflict(ctx, user.ID, user.AccountName(), w.now().UTC())
 }
 
 func (w *Worker) repairMissingIdentity(ctx context.Context, user model.User, failure error) error {

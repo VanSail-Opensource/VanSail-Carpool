@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Store) UserByUsername(ctx context.Context, name string) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.username=?`, name))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE CAST(users.telegram_id AS TEXT)=?`, name))
 }
 func (s *Store) XNodePeriods(ctx context.Context, user int64) ([]xnode.Period, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE proxy_user_id=? ORDER BY started_at,id`, user)

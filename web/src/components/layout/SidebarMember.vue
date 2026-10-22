@@ -10,7 +10,7 @@ const telegramUser = computed(() => {
   const user = getTelegramWebApp()?.initDataUnsafe.user
   return user && String(user.id) === session.user?.telegramId ? user : undefined
 })
-const displayName = computed(() => session.user?.firstName?.trim() || session.user?.username?.trim() || t('nav.memberFallback'))
+const displayName = computed(() => session.user?.telegramUsername?.trim() || [session.user?.firstName, session.user?.lastName].filter(Boolean).join(' ').trim() || t('nav.memberFallback'))
 const username = computed(() => telegramUser.value?.username?.trim() || session.user?.telegramUsername?.trim() || '')
 const avatar = computed(() => {
   const photo = telegramUser.value?.photo_url

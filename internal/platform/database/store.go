@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 var (
@@ -50,12 +50,16 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	if isAdmin {
 		role = "admin"
 	}
-	userID, err := ids.New()
-	if err != nil {
+	if profile.ID <= 0 || profile.ID >= 1<<52 {
+		return model.User{}, false, ErrConflict
+	}
+	userID := strconv.FormatInt(profile.ID, 10)
+	var existed bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE telegram_id=?)`, profile.ID).Scan(&existed); err != nil {
 		return model.User{}, false, err
 	}
 	locale := affiliates.NormalizeLocale(profile.LanguageCode)
-	_, err = s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
 		VALUES(?,?,?,?,?,?,0,?,1,?,?) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
 		telegram_last_name=excluded.telegram_last_name,telegram_username=excluded.telegram_username,
 		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at`,
@@ -70,12 +74,12 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING`, user.ID, 0, stamp(now)); err != nil {
 		return model.User{}, false, fmt.Errorf("initialize balance: %w", err)
 	}
-	return user, user.ID == userID, nil
+	return user, !existed, nil
 }
 
 // UserByID returns a user by internal ID.
 func (s *Store) UserByID(ctx context.Context, userID string) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=?`, userID))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=COALESCE((SELECT user_id FROM member_identity_aliases WHERE old_user_id=? AND old_user_id GLOB '*[^0-9]*'),?)`, userID, userID))
 }
 
 // UserByTelegramID returns a user by trusted Telegram ID.
@@ -84,7 +88,7 @@ func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.U
 }
 
 const userColumns = `users.id,users.telegram_id,users.telegram_first_name,users.telegram_last_name,users.telegram_username,
-	users.username,users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
+	CAST(users.telegram_id AS TEXT),users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
 	users.accepted_agreement_revision,users.remna_user_id,users.recovery_reason,users.new_user,users.inviter_id,
 	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at`
 

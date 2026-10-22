@@ -2,6 +2,9 @@
 
 ## Paid access recovery
 
+`member_access_test.go` covers username-independent admission, pending exports,
+idempotent pointer repair and preservation of closed/exhausted purchase evidence.
+
 `member_access.go` provides the common export/admission eligibility fence. Paid
 members do not require an assigned username. Missing or mismatched native periods
 produce pending provisioning, distinct from inactive access and configured empty
@@ -10,6 +13,16 @@ HTTP responses. `access_repair.go` runs through the shared durable outbox;
 Recovery reuses an existing open period without resetting its usage. Closed or
 settling periods for the same purchase require review; they are never replaced
 with a fresh allowance. Legacy-owned identities remain the queued bridge's job.
+
+## Telegram identity
+
+Member database keys are decimal Telegram IDs and native member IDs use that
+same number. Non-member services allocate IDs from `2^52` up to `2^53-1`.
+Private protocol credentials and bearer subscription tokens are independent of
+those identifiers. Display names use Telegram username, then full nickname.
+The startup database migration reseals ID-bound ciphertext before publishing any
+new identity; agent `replaces_id` preserves credential-bound leases and period
+counters. Masters require `telegram_identity_rekey_v1` before sending a rekey.
 
 `provider_zones.go` discovers Cloudflare zones from saved provider credentials
 through the existing external validation queue, one page at a time. The admin

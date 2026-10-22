@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const api = vi.hoisted(() => ({ setUsername: vi.fn(), getMe: vi.fn(), acceptAgreement: vi.fn() }))
+const api = vi.hoisted(() => ({ continueOnboarding: vi.fn(), getMe: vi.fn(), acceptAgreement: vi.fn() }))
 const features = vi.hoisted(() => ({ getPublishedOnboarding: vi.fn() }))
 const session = vi.hoisted(() => ({ user: { onboardingState: 'intro' }, updateSession: vi.fn() }))
 
@@ -32,18 +32,14 @@ describe('useOnboarding', () => {
     features.getPublishedOnboarding.mockResolvedValue({ welcome: [], agreements: [], revision: 1 })
   })
 
-  it('moves directly from intro through username to agreement', async () => {
-    api.setUsername.mockResolvedValue(response('agreement'))
+  it('advances from intro to agreements without requesting a username', async () => {
+    api.continueOnboarding.mockResolvedValue(response('agreement'))
     let onboarding!: ReturnType<typeof useOnboarding>
     const wrapper = mount(defineComponent({ setup() { onboarding = useOnboarding(); return () => h('div') } }))
     await flushPromises()
 
-    onboarding.finishIntro()
-    expect(onboarding.step.value).toBe('username')
-    onboarding.form.username = 'mira'
-    await onboarding.submitUsername()
-
-    expect(api.setUsername).toHaveBeenCalledWith('mira')
+    await onboarding.finishIntro()
+    expect(api.continueOnboarding).toHaveBeenCalledWith()
     expect(onboarding.step.value).toBe('agreement')
     wrapper.unmount()
   })

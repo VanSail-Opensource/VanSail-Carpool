@@ -24,6 +24,12 @@ func preparePeerWire(peer *agentPeer, config wire.Config, capabilities []string)
 	}
 	p := &preparedWire{source: peer.compiled, config: firewallForCapabilities(config, capabilities)}
 	peer.wireState = p
+	for _, user := range config.Users {
+		if user.ReplacesID != 0 && !containsCapability(capabilities, "telegram_identity_rekey_v1") {
+			p.err = &CapabilityError{Capability: "telegram_identity_rekey_v1"}
+			return p, p.err
+		}
+	}
 	if p.err = configurationCapabilities(p.config, capabilities); p.err != nil {
 		return p, p.err
 	}

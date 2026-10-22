@@ -47,29 +47,23 @@ func (s *Store) QueueRemnawaveRepair(ctx context.Context, userID, missingID stri
 	return s.UserByID(ctx, userID)
 }
 
-// ReserveUsername atomically assigns a locally unique username.
-
-func (s *Store) ReserveUsername(ctx context.Context, userID, username string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-
-	result, err := s.db.ExecContext(ctx, `UPDATE users SET username=?,onboarding_state='agreement',recovery_reason='',updated_at=?
-		WHERE id=? AND (onboarding_state IN ('intro','username') OR (onboarding_state='agreement' AND username=?))`,
-		username, stamp(time.Now().UTC()), userID, username)
+// BeginAgreement advances the authenticated member to the published agreements.
+func (s *Store) BeginAgreement(ctx context.Context, userID string) error {
+	result, err := s.db.ExecContext(ctx, `UPDATE users SET onboarding_state='agreement',updated_at=? WHERE id=? AND onboarding_state IN ('intro','membership','username','agreement')`, stamp(time.Now().UTC()), userID)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unique") {
-			return ErrConflict
-		}
-		return fmt.Errorf("reserve username: %w", err)
+		return err
 	}
 	affected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("inspect username reservation: %w", err)
-	}
-	if affected == 0 {
+	if err == nil && affected != 1 {
 		return ErrConflict
 	}
-	return nil
+	return err
+}
+
+// ReserveUsername is retained only for old repository callers; names are never
+// reserved or stored. The public username endpoint has been removed.
+func (s *Store) ReserveUsername(ctx context.Context, userID, _ string) error {
+	return s.BeginAgreement(ctx, userID)
 }
 
 func stamp(value time.Time) string { return value.UTC().Format(time.RFC3339Nano) }

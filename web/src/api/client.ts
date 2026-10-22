@@ -86,10 +86,7 @@ export const api = {
   verifyCaptcha: (token: string) => request<Session>('/api/v1/me/captcha', {
     method: 'POST', body: { token } satisfies components['schemas']['CaptchaVerifyRequest'],
   }),
-  setUsername: (username: string) => request<Session>('/api/v1/onboarding/username', {
-    method: 'PUT',
-    body: { username },
-  }),
+  continueOnboarding: () => request<Session>('/api/v1/onboarding/continue', { method: 'POST' }),
   acceptAgreement: (revision: number, agreementIds: string[]) => request<Session>('/api/v1/onboarding/agreement', {
     method: 'POST',
     body: { revision, agreementIds },

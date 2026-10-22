@@ -38,7 +38,7 @@ const isFullscreen = telegramFullscreenState()
 const greetingName = computed(() => t('nav.fullscreenGreeting', {
   name: sessionStore.user?.firstName?.trim() || t('nav.memberFallback'),
 }))
-const greetingUsername = computed(() => sessionStore.user?.username?.trim() || sessionStore.user?.telegramUsername?.trim() || '')
+const greetingUsername = computed(() => sessionStore.user?.telegramUsername?.trim() || '')
 const pageMotion = computed(() => {
   const distance = offset(14)
   const axis = transition.wide.value ? 'y' : 'x'

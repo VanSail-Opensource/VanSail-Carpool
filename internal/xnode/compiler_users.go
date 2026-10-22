@@ -97,6 +97,7 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 	for _, identity := range identities {
 		if identity.UserID == "" {
 			user, err := s.serviceUser(ctx, identity, node, byTag)
+			user.ReplacesID = int(identity.ReplacesID)
 			if err != nil {
 				return nil, err
 			}
@@ -125,6 +126,7 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 			return nil, err
 		}
 		user := wire.User{ID: int(identity.ProxyUserID), UUID: credentials.UUID, InboundTags: tags, AccountingPeriod: period.ID, ValidUntil: &until, Credentials: map[string]json.RawMessage{}}
+		user.ReplacesID = int(identity.ReplacesID)
 		if s.master != nil {
 			user.BlockNew = s.master.Blocked(user.ID)
 		}

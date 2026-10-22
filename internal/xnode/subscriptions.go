@@ -66,7 +66,11 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 		return s.serviceSubscriptionMetadata(ctx, identity)
 	}
 	result := SubscriptionMetadata{Username: identity.Username, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
-	var err error
+	owner, err := s.repo.UserByID(ctx, identity.UserID)
+	if err != nil {
+		return result, err
+	}
+	result.Username = owner.DisplayName()
 	result.URL, err = s.SubscriptionURL(identity)
 	if err != nil {
 		return result, err

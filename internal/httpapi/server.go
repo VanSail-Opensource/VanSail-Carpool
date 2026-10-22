@@ -168,7 +168,7 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Post("/api/v1/me/captcha", server.verifyCaptcha)
 		authenticated.Get("/api/v1/me/display-currency", server.displayCurrency)
 		authenticated.Put("/api/v1/me/display-currency", server.updateDisplayCurrency)
-		authenticated.Put("/api/v1/onboarding/username", server.reserveUsername)
+		authenticated.Post("/api/v1/onboarding/continue", server.continueOnboarding)
 		authenticated.Post("/api/v1/onboarding/agreement", server.acceptAgreement)
 		authenticated.Get("/api/v1/onboarding/content", server.onboardingContent)
 		authenticated.Get("/api/v1/dashboard", server.dashboard)

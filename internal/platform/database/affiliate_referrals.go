@@ -25,7 +25,7 @@ func (s *Store) AcceptAffiliateReferral(ctx context.Context, inviteeTelegramID, 
 	defer func() { _ = tx.Rollback() }()
 	var display string
 	var showUsername bool
-	err = tx.QueryRowContext(ctx, `SELECT COALESCE(NULLIF(username,''),NULLIF(telegram_username,''),NULLIF(telegram_first_name,''),'')
+	err = tx.QueryRowContext(ctx, `SELECT COALESCE(NULLIF(telegram_username,''),NULLIF(telegram_first_name,''),'')
 		,COALESCE(p.show_referral_username,1) FROM users LEFT JOIN user_preferences p ON p.user_id=users.id
 		WHERE telegram_id=? AND new_user=0`, inviterTelegramID).Scan(&display, &showUsername)
 	if errors.Is(err, sql.ErrNoRows) {

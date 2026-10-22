@@ -55,10 +55,7 @@ func (a proxyProvider) nativeIdentity(ctx context.Context, id string) (xnode.Ide
 }
 func remoteIdentity(identity xnode.Identity, user model.User) accounts.RemoteUser {
 	telegramID := user.TelegramID
-	name := ""
-	if user.Username != nil {
-		name = *user.Username
-	}
+	name := user.AccountName()
 	return accounts.RemoteUser{ID: strconv.FormatInt(identity.ProxyUserID, 10), Username: name, TelegramID: &telegramID}
 }
 func (a proxyProvider) FindUserByUsername(ctx context.Context, name string) (accounts.RemoteUser, bool, error) {
@@ -96,10 +93,18 @@ func (a proxyProvider) FindUserByTelegramID(ctx context.Context, id int64) (acco
 	if err != nil {
 		return accounts.RemoteUser{}, false, err
 	}
-	if user.Username != nil {
-		return a.FindUserByUsername(ctx, *user.Username)
+	identity, err := a.native.IdentityForUser(ctx, user.ID)
+	if err == nil {
+		return remoteIdentity(identity, user), true, nil
 	}
-	return accounts.RemoteUser{}, false, nil
+	if !errors.Is(err, xnode.ErrNotFound) {
+		return accounts.RemoteUser{}, false, err
+	}
+	bridge, err := a.legacy(ctx)
+	if err != nil || !bridge {
+		return accounts.RemoteUser{}, false, err
+	}
+	return a.remnaAdapter.FindUserByTelegramID(ctx, id)
 }
 func (a proxyProvider) FindUserByID(ctx context.Context, id string) (accounts.RemoteUser, bool, error) {
 	identity, native, err := a.nativeIdentity(ctx, id)
@@ -130,13 +135,13 @@ func (a proxyProvider) CreateUser(ctx context.Context, input accounts.RemoteCrea
 		if err != nil {
 			return remote, err
 		}
-		user, err := a.store.UserByUsername(ctx, input.Username)
+		user, err := a.store.UserByTelegramID(ctx, input.TelegramID)
 		if err != nil {
 			return remote, err
 		}
 		return a.importBridgeIdentity(ctx, user, remote)
 	}
-	user, err := a.store.UserByUsername(ctx, input.Username)
+	user, err := a.store.UserByTelegramID(ctx, input.TelegramID)
 	if err != nil {
 		return accounts.RemoteUser{}, err
 	}
@@ -160,14 +165,14 @@ func (a proxyProvider) importBridgeIdentity(ctx context.Context, user model.User
 	if err != nil {
 		return remote, err
 	}
-	if legacy == nil || legacy.ID != id || legacy.TelegramID == nil || *legacy.TelegramID != user.TelegramID || user.Username == nil || legacy.Username != *user.Username {
+	if legacy == nil || legacy.ID != id || legacy.TelegramID == nil || *legacy.TelegramID != user.TelegramID {
 		return remote, xnode.ErrConflict
 	}
 	identity, err := a.native.ImportIdentity(ctx, user, id, legacy.VLESSUUID, legacy.TrojanPassword, legacy.ShadowsocksPassword)
 	return remoteIdentity(identity, user), err
 }
 func matchesPanelIdentity(user model.User, remote accounts.RemoteUser) bool {
-	return user.Username != nil && *user.Username == remote.Username && remote.TelegramID != nil && *remote.TelegramID == user.TelegramID
+	return remote.TelegramID != nil && *remote.TelegramID == user.TelegramID
 }
 func (a proxyProvider) IsDuplicateError(err error) bool {
 	return errors.Is(err, xnode.ErrConflict) || a.remnaAdapter.IsDuplicateError(err)

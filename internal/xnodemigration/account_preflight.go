@@ -41,7 +41,7 @@ func (s *Service) verifyNodeAccounts(ctx context.Context, source SourceConfig, n
 			if userErr != nil {
 				return userErr
 			}
-			if user.Username == nil || *user.Username != account.Username || account.TelegramID == nil || *account.TelegramID != user.TelegramID {
+			if account.TelegramID == nil || *account.TelegramID != user.TelegramID {
 				return xnode.ErrConflict
 			}
 			_, err = s.panel.ImportIdentity(ctx, user, account.LegacyID, account.UUID, account.Trojan, account.Chacha)

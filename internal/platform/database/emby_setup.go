@@ -39,7 +39,7 @@ func queueEmbySetupTx(ctx context.Context, tx *sql.Tx, input domain.QueueSetupIn
 		return domain.Account{}, false, domain.ErrInvalidSetup
 	}
 	var canonicalUsername string
-	if err := tx.QueryRowContext(ctx, `SELECT username FROM users WHERE id=? AND username IS NOT NULL`,
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT base_username FROM emby_accounts WHERE user_id=users.id),CAST(telegram_id AS TEXT)) FROM users WHERE id=?`,
 		input.UserID).Scan(&canonicalUsername); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Account{}, false, ErrNotFound

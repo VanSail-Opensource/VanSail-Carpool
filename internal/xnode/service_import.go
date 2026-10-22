@@ -27,14 +27,14 @@ func (s *Service) ImportServiceIdentity(ctx context.Context, name string, legacy
 		return Identity{}, err
 	}
 	for _, item := range identities {
-		if item.ServiceName != name && item.ProxyUserID != legacyID {
+		if item.ServiceName != name && item.LegacyUserID != strconv.FormatInt(legacyID, 10) {
 			continue
 		}
 		credentials, err := loadCredentials(s.vault, item)
 		if err != nil {
 			return item, err
 		}
-		if item.ServiceName != name || item.ProxyUserID != legacyID || credentials.UUID != uuidValue || credentials.Trojan != trojan || credentials.Shadowsocks != chacha {
+		if item.ServiceName != name || item.LegacyUserID != strconv.FormatInt(legacyID, 10) || credentials.UUID != uuidValue || credentials.Trojan != trojan || credentials.Shadowsocks != chacha {
 			return item, ErrConflict
 		}
 		if len(access) == 1 && (credentials.ServiceAccess == nil || !credentials.ServiceAccess.Equal(access[0])) {
@@ -50,7 +50,7 @@ func (s *Service) ImportServiceIdentity(ctx context.Context, name string, legacy
 	if len(access) == 1 {
 		credentials.ServiceAccess = &access[0]
 	}
-	identity := Identity{ProxyUserID: legacyID, ServiceName: name, LegacyUserID: strconv.FormatInt(legacyID, 10)}
+	identity := Identity{ServiceName: name, LegacyUserID: strconv.FormatInt(legacyID, 10)}
 	if len(access) == 1 {
 		if err = s.newSubscription(&identity); err != nil {
 			return identity, err

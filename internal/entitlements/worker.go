@@ -167,7 +167,7 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		if err != nil {
 			return err
 		}
-		if user.OnboardingState != "complete" || user.Username == nil {
+		if user.OnboardingState != "complete" {
 			return nil
 		}
 		if repository, ok := w.repository.(provisioningRepository); ok {

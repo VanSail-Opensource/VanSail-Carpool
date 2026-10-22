@@ -36,12 +36,12 @@ func (s *Service) reconcileFinalSnapshot(ctx context.Context, snapshot Snapshot)
 			}
 			continue
 		}
-		if account.PanelUserID != identity.UserID {
-			return xnode.ErrConflict
-		}
-		user, err := s.repo.UserByID(ctx, identity.UserID)
+		user, err := s.repo.UserByID(ctx, account.PanelUserID)
 		if err != nil {
 			return err
+		}
+		if user.ID != identity.UserID {
+			return xnode.ErrConflict
 		}
 		// Resume verifies compatible secrets without rotating the native keys.
 		if _, err = s.panel.ImportIdentity(ctx, user, account.LegacyID, account.UUID, account.Trojan, account.Chacha); err != nil {

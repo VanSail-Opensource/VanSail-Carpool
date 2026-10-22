@@ -16,7 +16,7 @@ func (s *Store) EnqueueUnlinkedPaidUsers(ctx context.Context, now time.Time) err
 	}
 	defer func() { _ = tx.Rollback() }()
 	rows, err := tx.QueryContext(ctx, `SELECT users.id FROM users WHERE users.onboarding_state='complete'
-		AND users.username IS NOT NULL AND users.remna_user_id IS NULL
+		AND users.remna_user_id IS NULL
 		AND EXISTS(SELECT 1 FROM purchases WHERE purchases.user_id=users.id
 			AND purchases.status IN ('active','activating','queued') AND purchases.valid_until>?)`, stamp(now))
 	if err != nil {

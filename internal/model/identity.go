@@ -1,6 +1,23 @@
 package model
 
-import "time"
+import (
+	"strconv"
+	"strings"
+	"time"
+)
+
+// AccountName is a stable technical account reference, independent of display.
+func (u User) AccountName() string { return strconv.FormatInt(u.TelegramID, 10) }
+
+func (u User) DisplayName() string {
+	if name := strings.TrimSpace(u.TelegramUsername); name != "" {
+		return "@" + strings.TrimLeft(name, "@")
+	}
+	if name := strings.TrimSpace(u.TelegramFirstName + " " + u.TelegramLastName); name != "" {
+		return name
+	}
+	return u.AccountName()
+}
 
 // TelegramProfile is the trusted subset of a validated Mini App user.
 type TelegramProfile struct {

@@ -1,5 +1,10 @@
 # Constructed browser fixtures
 
+`onboarding-audit.html` mounts the real agreement flow with Telegram identity.
+`intro`, `legacy`, `slow`, `empty`, `error`, `save-error`, `nickname` and `zh`
+exercise username-free onboarding and recovery. `window.__onboardingAudit` records
+only constructed transitions; no production authentication or messages run.
+
 X-Node `controls` mounts Nuxt UI switches, checkboxes, text inputs and a portalled
 form under the shared admin sizing classes. Inspect both themes and widths;
 hidden successful form controls must retain their native 1x1 geometry.

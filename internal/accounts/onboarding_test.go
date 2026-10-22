@@ -6,39 +6,7 @@ import (
 	"testing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
-
-func TestReserveUsername(t *testing.T) {
-	t.Parallel()
-	onboardingUser := model.User{ID: "user-1", OnboardingState: "intro"}
-	testError := errors.New("failure")
-	tests := []struct {
-		name, username string
-		repository     *accountsRepository
-		remote         *accountsRemnawave
-		want           error
-	}{
-		{name: "available", username: " alice ", repository: &accountsRepository{user: onboardingUser}, remote: &accountsRemnawave{}},
-		{name: "invalid", username: "ab", repository: &accountsRepository{}, remote: &accountsRemnawave{}},
-		{name: "provider lookup failed", username: "alice", repository: &accountsRepository{}, remote: &accountsRemnawave{findResponses: []accountsFindResponse{{err: testError}}}, want: testError},
-		{name: "upstream duplicate", username: "alice", repository: &accountsRepository{}, remote: &accountsRemnawave{findResponses: []accountsFindResponse{{exists: true}}}, want: ErrUsernameUnavailable},
-		{name: "local duplicate", username: "alice", repository: &accountsRepository{reserveErr: database.ErrConflict}, remote: &accountsRemnawave{}, want: ErrUsernameUnavailable},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			_, err := newAccountsServiceForTest(test.repository, &accountsValidator{}, &accountsTelegram{}, test.remote, &accountsSettings{}, 1).
-				ReserveUsername(context.Background(), onboardingUser, test.username)
-			if test.want != nil && !errors.Is(err, test.want) {
-				t.Fatalf("ReserveUsername() error = %v, want %v", err, test.want)
-			}
-			if test.name == "available" && (err != nil || test.repository.reservedUsername != "alice") {
-				t.Fatalf("ReserveUsername() = %v, reserved %q", err, test.repository.reservedUsername)
-			}
-		})
-	}
-}
 
 func TestAcceptAgreementCompletesLocallyWithoutProvider(t *testing.T) {
 	t.Parallel()
@@ -81,7 +49,6 @@ func TestAcceptAgreementRejectsInvalidLocalState(t *testing.T) {
 		wanted     error
 		completion error
 	}{
-		{name: "missing username", user: model.User{ID: "user-1", OnboardingState: "agreement"}, revision: 1, wanted: ErrAgreementStateConflict},
 		{name: "wrong step", user: model.User{ID: "user-1", Username: &username, OnboardingState: "username"}, revision: 1, wanted: ErrAgreementStateConflict},
 		{name: "stale revision", user: valid, revision: 2, wanted: ErrAgreementRevisionConflict},
 		{name: "storage failure", user: valid, revision: 1, completion: testError, wanted: testError},

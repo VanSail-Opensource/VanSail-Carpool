@@ -9,8 +9,8 @@ import (
 )
 
 func (s *Service) Identity(ctx context.Context, id string) (Identity, error) {
-	number, err := strconv.ParseInt(id, 10, 53)
-	if err != nil || number <= 0 {
+	number, err := strconv.ParseInt(id, 10, 64)
+	if err != nil || number <= 0 || number >= 1<<53 {
 		return Identity{}, ErrInvalid
 	}
 	return s.repo.XNodeIdentity(ctx, number)

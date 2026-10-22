@@ -74,6 +74,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(err)
 	}
+	if err = store.MigrateTelegramIdentities(ctx, vault, cfg.DatabasePath); err != nil {
+		return cleanup(fmt.Errorf("migrate Telegram member identity: %w", err))
+	}
 	settings := admin.NewSettingsService(store, vault)
 	settings.SetPaymentProfileRepository(store)
 	paymentChannels := billing.NewPaymentChannelCache()

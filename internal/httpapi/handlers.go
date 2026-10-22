@@ -10,22 +10,10 @@ import (
 	"time"
 )
 
-func (s *Server) reserveUsername(w http.ResponseWriter, r *http.Request) {
-	var request struct {
-		Username string `json:"username"`
-	}
-	if err := decodeJSON(w, r, &request); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "A username is required.")
-		return
-	}
-	user, err := s.deps.Accounts.ReserveUsername(r.Context(), currentUser(r), request.Username)
+func (s *Server) continueOnboarding(w http.ResponseWriter, r *http.Request) {
+	user, err := s.deps.Accounts.BeginAgreement(r.Context(), currentUser(r))
 	if err != nil {
-		switch {
-		case errors.Is(err, accounts.ErrUsernameUnavailable):
-			s.writeError(w, r, http.StatusConflict, "USERNAME_UNAVAILABLE", "That username is unavailable.")
-		default:
-			s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_USERNAME", err.Error())
-		}
+		s.writeError(w, r, http.StatusConflict, "ONBOARDING_STATE_CONFLICT", "Onboarding could not be advanced.")
 		return
 	}
 	writeJSON(w, http.StatusOK, authState{Authenticated: true, User: mapUser(user)})

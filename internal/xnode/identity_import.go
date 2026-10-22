@@ -38,7 +38,7 @@ func (s *Service) ImportIdentity(ctx context.Context, user model.User, legacyID 
 		return Identity{}, err
 	}
 	credentials.UUID, credentials.Trojan, credentials.Shadowsocks = uuidValue, trojan, chacha
-	identity := Identity{ProxyUserID: legacyID, UserID: user.ID, LegacyUserID: strconv.FormatInt(legacyID, 10), CreatedAt: user.CreatedAt}
+	identity := Identity{ProxyUserID: user.TelegramID, UserID: user.ID, LegacyUserID: strconv.FormatInt(legacyID, 10), CreatedAt: user.CreatedAt}
 	if len(disabled) > 0 {
 		identity.AccessDisabled = disabled[0]
 	}

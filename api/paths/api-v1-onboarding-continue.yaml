@@ -1,0 +1,15 @@
+post:
+  tags: [Onboarding]
+  operationId: continueOnboarding
+  summary: Continue to the current agreements
+  responses:
+    '200':
+      description: Onboarding advanced without reserving a username.
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/AuthState'
+    '401':
+      $ref: '../openapi.yaml#/components/responses/Unauthorized'
+    '409':
+      $ref: '../openapi.yaml#/components/responses/Conflict'

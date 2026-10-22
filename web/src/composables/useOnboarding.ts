@@ -8,13 +8,12 @@ import type { OnboardingStep } from '@/api/types'
 import { useI18n } from '@/i18n'
 import { useSessionStore } from '@/stores/session'
 import { notifyHaptic } from '@/utils/telegram'
-import { isValid, usernameSchema } from '@/utils/validation'
 
 type RuntimeOnboardingStep = OnboardingStep | 'membership'
 
 function normalizeStep(step?: RuntimeOnboardingStep): OnboardingStep {
   if (!step || step === 'complete') return 'intro'
-  return step === 'membership' ? 'username' : step
+  return step === 'membership' || step === 'username' ? 'agreement' : step
 }
 
 type ErrorRecovery = (caught: unknown) => Promise<boolean>
@@ -26,19 +25,13 @@ export function useOnboarding() {
   const loading = shallowRef(false)
   const error = shallowRef<string | null>(null)
   const content = shallowRef<PublishedOnboarding | null>(null)
-  const form = reactive({ username: '', agreementIds: [] as string[] })
-  const recoveryReason = computed(() => sessionStore.user?.recoveryReason ?? '')
-  const progress = computed(() => {
-    const order: OnboardingStep[] = ['intro', 'username', 'agreement', 'complete']
+  const form = reactive({ agreementIds: [] as string[] })
+    const progress = computed(() => {
+    const order: OnboardingStep[] = ['intro', 'agreement', 'complete']
     return Math.max(0, order.indexOf(step.value)) / (order.length - 1)
   })
-  const usernameValid = computed(() => isValid(usernameSchema, form.username))
   const allAgreementsAccepted = computed(() => Boolean(content.value?.agreements.length)
     && content.value!.agreements.every((agreement) => form.agreementIds.includes(agreement.id)))
-  const usernameHint = computed(() => {
-    if (!form.username) return t('onboarding.useLowercase')
-    return usernameValid.value ? t('onboarding.formatGood') : t('onboarding.formatInvalid')
-  })
   async function run<T>(task: () => Promise<T>, recover?: ErrorRecovery): Promise<T | undefined> {
     loading.value = true
     error.value = null
@@ -74,16 +67,10 @@ export function useOnboarding() {
     content.value = response
     form.agreementIds = form.agreementIds.filter((id) => response.agreements.some((agreement) => agreement.id === id))
   }
-  function finishIntro(): void {
-    step.value = 'username'
-  }
-  async function submitUsername(): Promise<void> {
-    if (!usernameValid.value) return
-    const response = await run(() => api.setUsername(form.username))
-    if (!response) return
-    sessionStore.updateSession(response)
-    notifyHaptic('success')
+  async function finishIntro(): Promise<void> {
     step.value = 'agreement'
+    const response = await run(() => api.continueOnboarding())
+    if (response) sessionStore.updateSession(response)
   }
 
   async function refreshAgreementState(): Promise<boolean> {
@@ -113,6 +100,11 @@ export function useOnboarding() {
 
   async function acceptAgreement(): Promise<void> {
     if (!content.value || !allAgreementsAccepted.value) return
+    if (sessionStore.user?.onboardingState !== 'agreement') {
+      const advanced = await run(() => api.continueOnboarding())
+      if (!advanced) return
+      sessionStore.updateSession(advanced)
+    }
     const response = await run(
       () => api.acceptAgreement(content.value!.agreementRevision, [...form.agreementIds]),
       recoverAgreementConflict,
@@ -144,13 +136,10 @@ export function useOnboarding() {
     error: readonly(error),
     content: readonly(content),
     form,
-		recoveryReason,
-    usernameValid,
-    usernameHint,
     allAgreementsAccepted,
     finishIntro,
-    submitUsername,
     acceptAgreement,
     toggleAgreement,
+		loadContent,
   }
 }

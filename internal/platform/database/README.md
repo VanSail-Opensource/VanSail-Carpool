@@ -1,5 +1,15 @@
 # SQLite store
 
+`telegram_identity_migration.go` owns the atomic vault-aware startup rekey and
+private backup. `telegram_identity_references.go` converts FK and explicit owner
+references through disjoint temporary keys. `telegram_identity_cipher.go` reseals
+X-Node and pending Emby secrets; `telegram_identity_payloads.go` updates typed
+active queue references; `telegram_identity_username.go` removes the assigned
+name column. `telegram_identity_migration_test.go` covers rollback, credentials,
+financial references and colliding late traffic in hosted CI.
+`xnode_access_repair.go` coalesces bounded paid provisioning recovery into the
+existing outbox without resetting exhausted or settled purchase periods.
+
 `database.go` escapes literal database paths before adding SQLite URI pragmas.
 `database_path_test.go` covers hash/percent/space filenames and isolation between
 paths that would otherwise share a truncated URI filename, including subtest paths.

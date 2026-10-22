@@ -19,10 +19,10 @@ func (s *Store) SaveXNodeNamedService(ctx context.Context, item xnode.Identity, 
 	defer tx.Rollback()
 	created := item.ProxyUserID == 0
 	if created {
-		if err = tx.QueryRowContext(ctx, `SELECT MAX(COALESCE(MAX(proxy_user_id),0),1099511627775)+1 FROM xnode_identities`).Scan(&item.ProxyUserID); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`).Scan(&item.ProxyUserID); err != nil {
 			return item, err
 		}
-		if item.ProxyUserID >= 1<<52 {
+		if item.ProxyUserID >= 1<<53 {
 			return item, xnode.ErrConflict
 		}
 	}

@@ -6,24 +6,17 @@ import (
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"strings"
 )
 
-// ReserveUsername applies local syntax and uniqueness plus an upstream preflight.
-func (s *Service) ReserveUsername(ctx context.Context, user model.User, username string) (model.User, error) {
-	username = strings.TrimSpace(username)
-	if !usernamePattern.MatchString(username) {
-		return model.User{}, fmt.Errorf("username must match %s", usernamePattern.String())
+// BeginAgreement advances onboarding without reserving a service username.
+func (s *Service) BeginAgreement(ctx context.Context, user model.User) (model.User, error) {
+	repo, ok := s.repository.(interface {
+		BeginAgreement(context.Context, string) error
+	})
+	if !ok {
+		return model.User{}, errors.New("onboarding repository unavailable")
 	}
-	if _, exists, err := s.remnawave.FindUserByUsername(ctx, username); err != nil {
-		return model.User{}, fmt.Errorf("preflight Remnawave username: %w", err)
-	} else if exists {
-		return model.User{}, ErrUsernameUnavailable
-	}
-	if err := s.repository.ReserveUsername(ctx, user.ID, username); err != nil {
-		if errors.Is(err, database.ErrConflict) {
-			return model.User{}, ErrUsernameUnavailable
-		}
+	if err := repo.BeginAgreement(ctx, user.ID); err != nil {
 		return model.User{}, err
 	}
 	return s.repository.UserByID(ctx, user.ID)
@@ -32,7 +25,7 @@ func (s *Service) ReserveUsername(ctx context.Context, user model.User, username
 // AcceptAgreementRevision validates the published agreements and completes the
 // local account. Remnawave provisioning begins only after a combo purchase.
 func (s *Service) AcceptAgreementRevision(ctx context.Context, user model.User, revision int, agreementIDs []string) (model.User, error) {
-	if user.Username == nil || user.OnboardingState != "agreement" || revision <= 0 {
+	if user.OnboardingState != "agreement" || revision <= 0 {
 		return model.User{}, fmt.Errorf("%w: %w", ErrAgreementStateConflict, database.ErrConflict)
 	}
 	currentRevision, requiredIDs, err := s.repository.CurrentAgreementContract(ctx)

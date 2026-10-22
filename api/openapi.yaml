@@ -52,7 +52,7 @@ paths:
   /api/v1/me/internal-squads/{uuid}: { $ref: './paths/api-v1-me-internal-squads-uuid.yaml' }
   /api/v1/community/membership/check: { $ref: './paths/api-v1-community-membership-check.yaml' }
   /api/v1/community/invites/{kind}: { $ref: './paths/api-v1-community-invites-kind.yaml' }
-  /api/v1/onboarding/username: { $ref: './paths/api-v1-onboarding-username.yaml' }
+  /api/v1/onboarding/continue: { $ref: './paths/api-v1-onboarding-continue.yaml' }
   /api/v1/onboarding/agreement: { $ref: './paths/api-v1-onboarding-agreement.yaml' }
   /api/v1/onboarding/content: { $ref: './paths/api-v1-onboarding-content.yaml' }
   /api/v1/dashboard: { $ref: './paths/api-v1-dashboard.yaml' }

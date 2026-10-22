@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -35,7 +36,16 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 		if panelUser.RemnaUserID == nil {
 			continue
 		}
-		id, err := strconv.ParseInt(*panelUser.RemnaUserID, 10, 64)
+		sourceID := *panelUser.RemnaUserID
+		if identity, lookupErr := s.provider.native.IdentityForUser(ctx, panelUser.ID); lookupErr == nil {
+			if identity.LegacyUserID == "" {
+				continue
+			}
+			sourceID = identity.LegacyUserID
+		} else if !errors.Is(lookupErr, xnode.ErrNotFound) {
+			return snapshot, lookupErr
+		}
+		id, err := strconv.ParseInt(sourceID, 10, 64)
 		if err != nil {
 			return snapshot, err
 		}
@@ -48,7 +58,7 @@ func (s migrationSource) Capture(ctx context.Context, config xnodemigration.Sour
 				return xnodemigration.Account{}, xnode.ErrConflict
 			}
 			item := xnodemigration.Account{LegacyID: id, Username: remote.Username, Disabled: remote.Status == remnawave.UserStatusDisabled}
-			if panelUser.Username == nil || *panelUser.Username != remote.Username || remote.TelegramID == nil || *remote.TelegramID != panelUser.TelegramID {
+			if remote.TelegramID == nil || *remote.TelegramID != panelUser.TelegramID {
 				return item, nil
 			}
 			item.PanelUserID = panelUser.ID

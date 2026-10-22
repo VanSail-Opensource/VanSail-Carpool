@@ -9,12 +9,12 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const xnodeIdentitySelect = `SELECT p.proxy_user_id,COALESCE(p.user_id,''),COALESCE(u.username,p.service_name,''),COALESCE(p.service_name,''),p.credentials_cipher,p.subscription_hash,p.subscription_cipher,COALESCE(p.current_period_id,''),COALESCE(p.legacy_user_id,''),p.lifetime_base,p.access_disabled,p.created_at FROM xnode_identities p LEFT JOIN users u ON u.id=p.user_id`
+const xnodeIdentitySelect = `SELECT p.proxy_user_id,COALESCE(p.user_id,''),COALESCE(CAST(u.telegram_id AS TEXT),p.service_name,''),COALESCE(p.service_name,''),p.credentials_cipher,p.subscription_hash,p.subscription_cipher,COALESCE(p.current_period_id,''),COALESCE(p.legacy_user_id,''),p.lifetime_base,p.access_disabled,p.created_at,COALESCE((SELECT old_proxy_id FROM member_identity_aliases WHERE proxy_id=p.proxy_user_id AND old_proxy_id<>proxy_id),0) FROM xnode_identities p LEFT JOIN users u ON u.id=p.user_id`
 
 func scanXNodeIdentity(row rowScanner) (xnode.Identity, error) {
 	var item xnode.Identity
 	var created string
-	err := row.Scan(&item.ProxyUserID, &item.UserID, &item.Username, &item.ServiceName, &item.CredentialsCipher, &item.SubscriptionHash, &item.SubscriptionCipher, &item.CurrentPeriodID, &item.LegacyUserID, &item.LifetimeBase, &item.AccessDisabled, &created)
+	err := row.Scan(&item.ProxyUserID, &item.UserID, &item.Username, &item.ServiceName, &item.CredentialsCipher, &item.SubscriptionHash, &item.SubscriptionCipher, &item.CurrentPeriodID, &item.LegacyUserID, &item.LifetimeBase, &item.AccessDisabled, &created, &item.ReplacesID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return item, xnode.ErrNotFound
 	}
@@ -53,13 +53,20 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	if item.ProxyUserID == 0 {
-		// Reserve the lower ID space for linked legacy identities. Native/service
-		// allocations cannot collide with new users still created by the bridge.
+		// Member IDs are Telegram IDs. Non-member services use a disjoint range.
 		var next int64
-		if err := s.db.QueryRowContext(ctx, `SELECT MAX(COALESCE(MAX(proxy_user_id),0),1099511627775)+1 FROM xnode_identities`).Scan(&next); err != nil {
+		query := `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities WHERE user_id IS NULL`
+		if item.UserID != "" {
+			query = `SELECT telegram_id FROM users WHERE id=?`
+		}
+		var args []any
+		if item.UserID != "" {
+			args = append(args, item.UserID)
+		}
+		if err := s.db.QueryRowContext(ctx, query, args...).Scan(&next); err != nil {
 			return item, err
 		}
-		if next >= 1<<52 {
+		if next >= 1<<53 {
 			return item, xnode.ErrConflict
 		}
 		result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))

@@ -6,14 +6,11 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
-
-var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{3,36}$`)
 
 // ErrInvalidAuthentication denotes untrusted or expired Telegram launch data.
 var ErrInvalidAuthentication = errors.New("invalid Telegram authentication")
@@ -106,7 +103,6 @@ type Repository interface {
 	UserByID(context.Context, string) (model.User, error)
 	UserByTelegramID(context.Context, int64) (model.User, error)
 	UpdateMembership(context.Context, string, bool, bool) (model.User, error)
-	ReserveUsername(context.Context, string, string) error
 	CurrentAgreementContract(context.Context) (int, []string, error)
 	CompleteOnboardingRevision(context.Context, string, int, []string, time.Time) (model.User, error)
 }

@@ -51,7 +51,7 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 		query += ` AND (users.telegram_first_name LIKE ? ESCAPE '\' COLLATE NOCASE
 			OR users.telegram_last_name LIKE ? ESCAPE '\' COLLATE NOCASE
 			OR users.telegram_username LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(users.username,'') LIKE ? ESCAPE '\' COLLATE NOCASE
+			OR CAST(users.telegram_id AS TEXT) LIKE ? ESCAPE '\' COLLATE NOCASE
 			OR CAST(users.telegram_id AS TEXT) LIKE ? ESCAPE '\'
 			OR users.id LIKE ? ESCAPE '\' COLLATE NOCASE
 			OR COALESCE(users.remna_user_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE)`

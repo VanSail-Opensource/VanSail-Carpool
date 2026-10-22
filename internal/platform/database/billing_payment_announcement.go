@@ -40,7 +40,7 @@ func paymentAnnouncementUsernameTx(ctx context.Context, tx *sql.Tx, userID strin
 	var telegramUsername string
 	var localUsername sql.NullString
 	var telegramID int64
-	if err := tx.QueryRowContext(ctx, `SELECT telegram_username,username,telegram_id FROM users WHERE id=?`, userID).
+	if err := tx.QueryRowContext(ctx, `SELECT telegram_username,TRIM(telegram_first_name||' '||telegram_last_name),telegram_id FROM users WHERE id=?`, userID).
 		Scan(&telegramUsername, &localUsername, &telegramID); err != nil {
 		return "", fmt.Errorf("load payment announcement username: %w", err)
 	}

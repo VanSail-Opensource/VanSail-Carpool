@@ -1,5 +1,8 @@
 # Path item shards
 
+`api-v1-onboarding-continue.yaml` advances authenticated members directly to
+published agreements without accepting or reserving an assigned username.
+
 `api-v1-admin-xnode-providers-id-zones.yaml` defines administrator-only discovery
 using saved provider credentials. No credentials are accepted in the request.
 

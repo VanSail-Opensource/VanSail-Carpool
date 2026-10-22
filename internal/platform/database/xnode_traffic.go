@@ -68,7 +68,7 @@ func (s *Store) RecordXNodeTraffic(ctx context.Context, nodeID, agent string, se
 		}
 		var service sql.NullString
 		var metered bool
-		if err = tx.QueryRowContext(ctx, `SELECT service_name,EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id) FROM xnode_identities i WHERE proxy_user_id=?`, user).Scan(&service, &metered); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT service_name,EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id) FROM xnode_identities i WHERE proxy_user_id=COALESCE((SELECT proxy_id FROM member_identity_aliases WHERE old_proxy_id=? AND user_id=''),?)`, user, user).Scan(&service, &metered); err != nil {
 			return err
 		}
 		if !service.Valid || metered {
@@ -95,7 +95,13 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 		return xnode.ErrConflict
 	}
 	if owner != int64(sample.UserID) {
-		if err := attributeProbeSample(ctx, tx, node, owner, &sample); err != nil {
+		var migrated bool
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM member_identity_aliases a JOIN xnode_period_nodes p ON p.period_id=? AND p.node_id=? WHERE a.old_proxy_id=? AND a.proxy_id=?)`, sample.AccountingPeriod, node, sample.UserID, owner).Scan(&migrated); err != nil {
+			return err
+		}
+		if migrated {
+			sample.UserID = int(owner)
+		} else if err := attributeProbeSample(ctx, tx, node, owner, &sample); err != nil {
 			return err
 		}
 	}

@@ -17,6 +17,7 @@ type Credentials struct {
 
 type Identity struct {
 	ProxyUserID        int64     `json:"proxyUserId,string"`
+	ReplacesID         int64     `json:"-"`
 	UserID             string    `json:"userId"`
 	Username           string    `json:"username"`
 	ServiceName        string    `json:"serviceName"`

@@ -1,5 +1,14 @@
 # Database migrations
 
+`090_telegram_member_identity.sql` introduces only upgrade compatibility aliases.
+After the vault is available, `MigrateTelegramIdentities` takes a private SQLite
+backup and atomically rekeys member references and encrypted X-Node/Emby desired
+state, removes the assigned username column, and advances unfinished username
+steps to agreements. Existing financial amounts, credentials, subscription tokens
+and period IDs remain unchanged. A failed decryption or FK audit rolls everything
+back; startup does not accept traffic until migration succeeds. Late native
+samples are translated only against their period and participating node.
+
 `087_native_accounting_maintenance.sql` adds native date/user/purchase and expiry
 indexes without copying or rewriting accounting and financial records.
 

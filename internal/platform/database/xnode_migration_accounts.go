@@ -8,7 +8,7 @@ import (
 // MigrationPanelAccounts returns linked panel accounts only, including records
 // beyond the administrative page limit. Credential import checks both identities.
 func (s *Store) MigrationPanelAccounts(ctx context.Context) ([]model.User, error) {
-	rows, err := s.db.QueryContext(ctx, userSelect+` WHERE users.remna_user_id IS NOT NULL AND users.username IS NOT NULL ORDER BY users.id`)
+	rows, err := s.db.QueryContext(ctx, userSelect+` WHERE users.remna_user_id IS NOT NULL ORDER BY users.id`)
 	if err != nil {
 		return nil, err
 	}

@@ -38,13 +38,14 @@ type authState struct {
 }
 
 func mapUser(user model.User) userResponse {
+	displayName := user.DisplayName()
 	displayCurrency, ok := currencydisplay.ParseCurrency(user.DisplayCurrency)
 	if !ok {
 		displayCurrency = currencydisplay.TXB
 	}
 	return userResponse{
 		ID: user.ID, TelegramID: strconv.FormatInt(user.TelegramID, 10), FirstName: user.TelegramFirstName,
-		LastName: user.TelegramLastName, TelegramUsername: user.TelegramUsername, Username: user.Username, Role: user.Role,
+		LastName: user.TelegramLastName, TelegramUsername: user.TelegramUsername, Username: &displayName, Role: user.Role,
 		OnboardingState: user.OnboardingState, GroupJoined: user.GroupJoined, ChannelJoined: user.ChannelJoined,
 		PolicyAcceptedAt: user.PolicyAcceptedAt, AgreementRevision: user.AgreementRevision, RecoveryReason: user.RecoveryReason,
 		DisplayCurrency: string(displayCurrency),

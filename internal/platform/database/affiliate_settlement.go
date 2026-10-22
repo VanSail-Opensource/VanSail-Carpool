@@ -16,7 +16,7 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 	var inviterID, inviteeName, locale string
 	var telegramID int64
 	err := tx.QueryRowContext(ctx, `SELECT inviter.id,inviter.telegram_id,
-		COALESCE(NULLIF(invitee.username,''),NULLIF(invitee.telegram_username,''),NULLIF(invitee.telegram_first_name,''),''),inviter.notification_locale
+		COALESCE(NULLIF(invitee.telegram_username,''),NULLIF(invitee.telegram_first_name,''),''),inviter.notification_locale
 		FROM users invitee JOIN users inviter ON inviter.telegram_id=invitee.inviter_id WHERE invitee.id=?`, invitedUserID).
 		Scan(&inviterID, &telegramID, &inviteeName, &locale)
 	if errors.Is(err, sql.ErrNoRows) {
