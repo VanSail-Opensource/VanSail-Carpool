@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import LanguageControl from '@/components/layout/LanguageControl.vue'
 import CurrencyControl from '@/components/layout/CurrencyControl.vue'
@@ -15,14 +16,19 @@ import { useSettings } from './useSettings'
 const preferences = usePreferencesStore()
 const session = useSessionStore()
 const settings = useSettings()
+const router = useRouter()
 onMounted(() => void preferences.refresh())
+
+function navigate(path: string): void {
+  void router.push(path).catch(() => undefined)
+}
 </script>
 
 <template>
   <div class="settings-page">
     <header class="page-header"><h1>{{ $t('settings.title') }}</h1></header>
-    <UButton v-if="session.isAdmin" to="/settings/admin-access" color="neutral" variant="outline" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" />
-    <UButton to="/settings/diy" color="neutral" variant="outline" icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" />
+    <UButton v-if="session.isAdmin" color="neutral" variant="outline" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" @click="navigate('/settings/admin-access')" />
+    <UButton color="neutral" variant="outline" icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" @click="navigate('/settings/diy')" />
     <InlineNotice v-if="preferences.error" tone="warning">{{ preferences.error }}<UButton variant="link" :label="$t('common.tryAgain')" @click="preferences.refresh()" /></InlineNotice>
     <USkeleton v-if="preferences.loading && !preferences.value" class="h-48" />
     <NotificationSettings />
