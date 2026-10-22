@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ func TestDIYAtomicRevisionsReplayAndUnchangedRouting(t *testing.T) {
 	store, identity, _ := xnodeTrafficFixture(t)
 	ctx, now := context.Background(), time.Now().UTC()
 	doc := xnode.DIYDocument{UserID: identity.UserID, Cipher: "encrypted-client-only"}
-	input := providerops.CreateInput{ActorUserID: identity.UserID, OwnerUserID: identity.UserID, Kind: xnode.DIYOperationKind, IdempotencyKey: "settings-one", RequestFingerprint: "same-body", Items: []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: identity.UserID}}}
+	input := providerops.CreateInput{ActorUserID: identity.UserID, OwnerUserID: identity.UserID, Kind: xnode.DIYOperationKind, IdempotencyKey: "settings-one", RequestFingerprint: strings.Repeat("f", 64), Items: []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: identity.UserID}}}
 	receipt, err := store.SaveXNodeDIY(ctx, doc, 0, nil, input, now)
 	if err != nil || receipt.Status != string(providerops.StatusSucceeded) {
 		t.Fatal("local save", receipt, err)

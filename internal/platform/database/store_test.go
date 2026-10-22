@@ -112,7 +112,7 @@ func TestQueueRemnawaveRepairPreservesCompletedSignup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if recovered.Username == nil || *recovered.Username != "river" || recovered.OnboardingState != "complete" ||
+	if recovered.TelegramID != int64(20005) || recovered.OnboardingState != "complete" ||
 		recovered.RecoveryReason != "" || recovered.RemnaUserID != nil || recovered.PolicyAcceptedAt == nil ||
 		!recovered.GroupJoined || !recovered.ChannelJoined {
 		t.Fatalf("recovered user = %+v", recovered)

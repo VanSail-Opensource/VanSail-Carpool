@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -14,6 +15,8 @@ type timestampCursor struct {
 	ID        string `json:"i"`
 	Filter    string `json:"f"`
 }
+
+var timestampUserIDPattern = regexp.MustCompile(`^[1-9][0-9]{0,15}$`)
 
 func encodeTimestampCursor(createdAt time.Time, id, filter string) (string, error) {
 	payload, err := json.Marshal(timestampCursor{Timestamp: stamp(createdAt), ID: id, Filter: filter})
@@ -32,7 +35,11 @@ func decodeTimestampCursor(value, filter string) (timestampCursor, error) {
 		return timestampCursor{}, ErrInvalidCursor
 	}
 	var cursor timestampCursor
-	if json.Unmarshal(payload, &cursor) != nil || !cursorIDPattern.MatchString(cursor.ID) || cursor.Filter != filter {
+	if json.Unmarshal(payload, &cursor) != nil {
+		return timestampCursor{}, ErrInvalidCursor
+	}
+	validID := cursorIDPattern.MatchString(cursor.ID) || timestampUserIDPattern.MatchString(cursor.ID)
+	if !validID || cursor.Filter != filter {
 		return timestampCursor{}, ErrInvalidCursor
 	}
 	parsed, err := time.Parse(time.RFC3339Nano, cursor.Timestamp)

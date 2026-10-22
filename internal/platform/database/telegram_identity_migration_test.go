@@ -30,7 +30,8 @@ func TestTelegramIdentityMigrationPreservesSecretsReferencesAndLateTraffic(t *te
 		old             string
 		telegram, proxy int64
 	}{{"old-member-a", 99101, 42}, {"old-member-b", 42, 84}} {
-		if _, err = db.Exec(`INSERT INTO users(id,telegram_id,telegram_first_name,username,onboarding_state,created_at,updated_at) VALUES(?,?,?,'reserved','complete',?,?)`, item.old, item.telegram, fmt.Sprint("Member ", index), at, at); err != nil {
+		username := fmt.Sprintf("reserved-%d", index)
+		if _, err = db.Exec(`INSERT INTO users(id,telegram_id,telegram_first_name,username,onboarding_state,created_at,updated_at) VALUES(?,?,?,?,'complete',?,?)`, item.old, item.telegram, fmt.Sprint("Member ", index), username, at, at); err != nil {
 			t.Fatal(err)
 		}
 		credentials, e := vault.Encrypt("xnode.identity.user."+item.old, fmt.Sprintf(`{"uuid":"secret-%d"}`, index))
