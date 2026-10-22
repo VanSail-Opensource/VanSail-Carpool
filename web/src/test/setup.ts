@@ -5,6 +5,12 @@ import { t } from '@/i18n'
 
 config.global.mocks = { $t: t }
 
+const noNetworkFetch = vi.fn(async () => new Response('{}', {
+  headers: { 'Content-Type': 'application/json' },
+}))
+Object.defineProperty(globalThis, 'fetch', { configurable: true, value: noNetworkFetch })
+Object.defineProperty(window, 'fetch', { configurable: true, value: noNetworkFetch })
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
