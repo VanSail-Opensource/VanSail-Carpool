@@ -54,7 +54,7 @@ func TestMigrationRestoresCompletedMissingRemnawaveAccount(t *testing.T) {
 	}
 }
 
-func TestReserveUsernameIsImmutableAndRetryable(t *testing.T) {
+func TestLegacyReserveUsernameDoesNotStoreUsername(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -66,16 +66,16 @@ func TestReserveUsernameIsImmutableAndRetryable(t *testing.T) {
 	if err := store.ReserveUsername(ctx, user.ID, "river"); err != nil {
 		t.Fatalf("ReserveUsername(retry): %v", err)
 	}
-	if err := store.ReserveUsername(ctx, user.ID, "meadow"); !errors.Is(err, ErrConflict) {
-		t.Fatalf("ReserveUsername(rename) error = %v, want ErrConflict", err)
+	if err := store.ReserveUsername(ctx, user.ID, "meadow"); err != nil {
+		t.Fatalf("ReserveUsername(legacy caller): %v", err)
 	}
 
 	updated, err := store.UserByID(ctx, user.ID)
 	if err != nil {
 		t.Fatalf("UserByID(): %v", err)
 	}
-	if updated.Username == nil || *updated.Username != "river" {
-		t.Fatalf("username = %v, want river", updated.Username)
+	if updated.Username != nil {
+		t.Fatalf("legacy reservation stored a username: %v", updated.Username)
 	}
 }
 

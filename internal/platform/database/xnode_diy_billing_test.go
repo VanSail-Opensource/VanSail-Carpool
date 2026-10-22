@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ import (
 )
 
 func diyBillingInput(user, key string) providerops.CreateInput {
-	return providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: xnode.DIYOperationKind, IdempotencyKey: key, RequestFingerprint: key, Items: []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: user}}}
+	return providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: xnode.DIYOperationKind, IdempotencyKey: key, RequestFingerprint: strings.Repeat("f", 64), Items: []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: user}}}
 }
 
 func diyBillingQuote(t *testing.T, s *Store, user string, now time.Time) xnode.DIYBillingQuote {
