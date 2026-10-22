@@ -67,11 +67,14 @@ func (s *Store) RecordXNodeTraffic(ctx context.Context, nodeID, agent string, se
 			continue
 		}
 		var service sql.NullString
-		var metered bool
-		if err = tx.QueryRowContext(ctx, `SELECT service_name,EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id) FROM xnode_identities i WHERE proxy_user_id=COALESCE((SELECT proxy_id FROM member_identity_aliases WHERE old_proxy_id=?),?)`, user, user).Scan(&service, &metered); err != nil {
+		var metered, migrated bool
+		if err = tx.QueryRowContext(ctx, `SELECT service_name,
+			EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id),
+			EXISTS(SELECT 1 FROM member_identity_aliases a WHERE a.old_proxy_id=? AND a.proxy_id=i.proxy_user_id AND a.user_id=i.user_id)
+			FROM xnode_identities i WHERE proxy_user_id=COALESCE((SELECT proxy_id FROM member_identity_aliases WHERE old_proxy_id=?),?)`, user, user, user).Scan(&service, &metered, &migrated); err != nil {
 			return err
 		}
-		if !service.Valid || metered {
+		if (!service.Valid && !migrated) || metered {
 			return xnode.ErrConflict
 		}
 	}

@@ -41,7 +41,14 @@ func rekeyQueuedSealedTargets(ctx context.Context, tx *sql.Tx, vault *secret.Vau
 		if !ok {
 			continue
 		}
-		after, ok := queuedSealedTargetContext(item.kind, item.actor, item.owner, item.retry, item.digest, key.user)
+		actor, owner := item.actor, item.owner
+		if actor == key.oldUser {
+			actor = key.user
+		}
+		if owner == key.oldUser {
+			owner = key.user
+		}
+		after, ok := queuedSealedTargetContext(item.kind, actor, owner, item.retry, item.digest, key.user)
 		if !ok {
 			return errors.New("queued sealed target owner is invalid")
 		}
