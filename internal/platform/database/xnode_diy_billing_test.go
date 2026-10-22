@@ -100,7 +100,7 @@ func TestDIYBillingRollbackReplayAndFreeUnchangedSave(t *testing.T) {
 				if readErr != nil || saved.Revision != 0 || saved.Cipher != "" {
 					t.Fatal("failed save persisted", saved, readErr)
 				}
-				if _, found, _, readErr := s.ReplayXNodeDIY(ctx, user, "save", "save"); readErr != nil || found {
+				if _, found, _, readErr := s.ReplayXNodeDIY(ctx, user, input.IdempotencyKey, input.RequestFingerprint); readErr != nil || found {
 					t.Fatal("failed save leaked receipt", readErr)
 				}
 				return
@@ -127,7 +127,7 @@ func TestDIYBillingRollbackReplayAndFreeUnchangedSave(t *testing.T) {
 			if err != nil || replayed.ID != receipt.ID {
 				t.Fatal("duplicate charge/receipt", replayed, err)
 			}
-			got, found, err := s.ReplayXNodeDIYResult(ctx, user, "save", "save")
+			got, found, err := s.ReplayXNodeDIYResult(ctx, user, input.IdempotencyKey, input.RequestFingerprint)
 			if err != nil || !found || got.SettingsRevision != result.SettingsRevision || got.Changed != result.Changed {
 				t.Fatal("lost committed outcome", got, err)
 			}
