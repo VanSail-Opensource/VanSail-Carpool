@@ -16,15 +16,13 @@ func TestEmbySetupDebitRefundAndRetryAreAtomic(t *testing.T) {
 	ctx := context.Background()
 	store := newEmbyTestStore(t)
 	user := createEmbyTestUser(t, store, 31001)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='ada',onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
-		t.Fatalf("set test username: %v", err)
-	}
+	baseUsername := user.AccountName()
 	now := time.Date(2026, 8, 8, 10, 0, 0, 0, time.UTC)
 	if _, err := store.AdjustBalance(ctx, user.ID, 1000, "emby-seed", "test", now); err != nil {
 		t.Fatalf("AdjustBalance() error = %v", err)
 	}
 	rating := int32(13)
-	input := domain.QueueSetupInput{ID: "emby-account", UserID: user.ID, BaseUsername: "ada", PasswordCiphertext: "sealed-1",
+	input := domain.QueueSetupInput{ID: "emby-account", UserID: user.ID, BaseUsername: baseUsername, PasswordCiphertext: "sealed-1",
 		PasswordContext: "emby.provisioning.password:" + user.ID, SetupPriceTXBMinor: 275,
 		Preferences: domain.Preferences{MaxParentalRating: &rating, DisabledLibraryIDs: []string{"movies", "shows"}}}
 	account, created, err := store.QueueEmbySetup(ctx, input, now.Add(time.Second))
@@ -74,11 +72,9 @@ func TestEmbyProvisioningTransitionsEraseSecretOnlyAfterSuccess(t *testing.T) {
 	ctx := context.Background()
 	store := newEmbyTestStore(t)
 	user := createEmbyTestUser(t, store, 31002)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='river',onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
-		t.Fatal(err)
-	}
+	baseUsername := user.AccountName()
 	now := time.Date(2026, 8, 8, 11, 0, 0, 0, time.UTC)
-	input := domain.QueueSetupInput{ID: "emby-transition", UserID: user.ID, BaseUsername: "river", PasswordCiphertext: "sealed",
+	input := domain.QueueSetupInput{ID: "emby-transition", UserID: user.ID, BaseUsername: baseUsername, PasswordCiphertext: "sealed",
 		PasswordContext: "emby.provisioning.password:" + user.ID, Preferences: domain.Preferences{DisabledLibraryIDs: []string{"movies"}}}
 	account, _, err := store.QueueEmbySetup(ctx, input, now)
 	if err != nil {
@@ -87,13 +83,13 @@ func TestEmbyProvisioningTransitionsEraseSecretOnlyAfterSuccess(t *testing.T) {
 	if _, err := store.BeginEmbyProvisioning(ctx, account.ID, now.Add(time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if username, err := store.EmbyBaseUsername(ctx, user.ID); err != nil || username != "river" {
+	if username, err := store.EmbyBaseUsername(ctx, user.ID); err != nil || username != baseUsername {
 		t.Fatalf("EmbyBaseUsername() = (%q, %v)", username, err)
 	}
-	if err := store.SetEmbyCandidate(ctx, account.ID, "river", now.Add(2*time.Second)); err != nil {
+	if err := store.SetEmbyCandidate(ctx, account.ID, baseUsername, now.Add(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.SetEmbyCandidate(ctx, account.ID, "river", now.Add(2*time.Second)); err != nil {
+	if err := store.SetEmbyCandidate(ctx, account.ID, baseUsername, now.Add(2*time.Second)); err != nil {
 		t.Fatalf("SetEmbyCandidate(replay) error = %v", err)
 	}
 	if err := store.MarkEmbyCreateAttempted(ctx, account.ID, now.Add(3*time.Second)); err != nil {
@@ -115,10 +111,10 @@ func TestEmbyProvisioningTransitionsEraseSecretOnlyAfterSuccess(t *testing.T) {
 	if _, err := store.BeginEmbyProvisioning(ctx, account.ID, now.Add(4*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.SetEmbyRemoteIdentity(ctx, account.ID, "remote-id", "river", now.Add(4*time.Second)); err != nil {
+	if err := store.SetEmbyRemoteIdentity(ctx, account.ID, "remote-id", baseUsername, now.Add(4*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.SetEmbyRemoteIdentity(ctx, account.ID, "remote-id", "river", now.Add(4*time.Second)); err != nil {
+	if err := store.SetEmbyRemoteIdentity(ctx, account.ID, "remote-id", baseUsername, now.Add(4*time.Second)); err != nil {
 		t.Fatalf("SetEmbyRemoteIdentity(replay) error = %v", err)
 	}
 	before, err := store.EmbyProvisioningByID(ctx, account.ID)

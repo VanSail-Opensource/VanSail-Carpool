@@ -2,17 +2,18 @@ package database
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
 
-func TestProvisioningConflictRefundsCurrentAndQueuedPurchasesOnce(t *testing.T) {
+func TestProvisioningConflictResolutionRemainsClosedAndPreservesPaidAccess(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 55_100)
 	combo := saveTestCombo(t, store, "conflicted", 100, 30)
 	now := time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='reserved',onboarding_state='complete',
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',
 		policy_accepted_at=?,accepted_agreement_revision=1,group_joined=1,channel_joined=1 WHERE id=?`, stamp(now), user.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -37,35 +38,41 @@ func TestProvisioningConflictRefundsCurrentAndQueuedPurchasesOnce(t *testing.T) 
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET charged_txb_minor=charged_txb_minor+25 WHERE id=?`, current.ID); err != nil {
 		t.Fatal(err)
 	}
-	for range 2 {
-		if err := store.ResolveProvisioningConflict(ctx, user.ID, "reserved", now.Add(2*time.Minute)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	recovered, err := store.UserByID(ctx, user.ID)
-	if err != nil || recovered.Username != nil || recovered.RemnaUserID != nil || recovered.OnboardingState != "username" ||
-		recovered.RecoveryReason != "remnawave_username_conflict" || recovered.PolicyAcceptedAt != nil ||
-		!recovered.GroupJoined || !recovered.ChannelJoined {
-		t.Fatalf("recovered user = %+v, err %v", recovered, err)
-	}
-	if balance, err := store.Balance(ctx, user.ID); err != nil || balance.MinorInt64() != 500 {
-		t.Fatalf("refunded balance = %+v, err %v", balance, err)
-	}
-	var cancelled, refunds, notices int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE user_id=? AND status='cancelled'`, user.ID).Scan(&cancelled); err != nil {
+	beforeBalance, err := store.Balance(ctx, user.ID)
+	if err != nil {
 		t.Fatal(err)
 	}
+	if err := store.ResolveProvisioningConflict(ctx, user.ID, user.AccountName(), now.Add(2*time.Minute)); !errors.Is(err, ErrConflict) {
+		t.Fatalf("retired provisioning conflict resolution error = %v, want ErrConflict", err)
+	}
+	currentAfter, err := store.PurchaseByID(ctx, current.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queuedAfter, err := store.PurchaseByID(ctx, queued.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := store.UserByID(ctx, user.ID)
+	if err != nil || recovered.TelegramID != user.TelegramID || recovered.OnboardingState != "complete" ||
+		recovered.RemnaUserID != nil || recovered.PolicyAcceptedAt == nil || !recovered.GroupJoined || !recovered.ChannelJoined {
+		t.Fatalf("member access changed = %+v, err %v", recovered, err)
+	}
+	if balance, err := store.Balance(ctx, user.ID); err != nil || balance != beforeBalance {
+		t.Fatalf("balance changed = (%+v, %v), before %+v", balance, err, beforeBalance)
+	}
+	if currentAfter.Status != "active" || queuedAfter.Status != "queued" {
+		t.Fatalf("paid access changed: current=%s queued=%s", currentAfter.Status, queuedAfter.Status)
+	}
+	var refunds, notices int
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='remna_identity_conflict_refund'`, user.ID).Scan(&refunds); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE user_id=? AND kind='remnawave_username_conflict_refund'`, user.ID).Scan(&notices); err != nil {
 		t.Fatal(err)
 	}
-	if cancelled != 2 || refunds != 2 || notices != 1 {
-		t.Fatalf("cancelled/refunds/notices = %d/%d/%d", cancelled, refunds, notices)
-	}
-	if qualified, err := store.PanelEntryQualified(ctx, user.TelegramID); err != nil || !qualified {
-		t.Fatalf("recovered entry trust = %v, %v", qualified, err)
+	if refunds != 0 || notices != 0 {
+		t.Fatalf("retired conflict path wrote refunds/notices = %d/%d", refunds, notices)
 	}
 }
 
@@ -75,7 +82,7 @@ func TestUnlinkedPaidBacklogQueuesOneRepair(t *testing.T) {
 	user := createTestUser(t, store, 55_101)
 	combo := saveTestCombo(t, store, "repair", 100, 30)
 	now := time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='repair_name',onboarding_state='complete',
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',
 		policy_accepted_at=? WHERE id=?`, stamp(now), user.ID); err != nil {
 		t.Fatal(err)
 	}
