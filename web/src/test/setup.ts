@@ -5,11 +5,9 @@ import { t } from '@/i18n'
 
 config.global.mocks = { $t: t }
 
-const noNetworkFetch = vi.fn(async () => new Response('{}', {
-  headers: { 'Content-Type': 'application/json' },
-}))
-Object.defineProperty(globalThis, 'fetch', { configurable: true, value: noNetworkFetch })
-Object.defineProperty(window, 'fetch', { configurable: true, value: noNetworkFetch })
+// motion-dom selects WAAPI when Element.prototype owns `animate`; Happy DOM
+// rejects its `finished` promise when tests unmount animated components.
+Reflect.deleteProperty(window.Element.prototype, 'animate')
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
