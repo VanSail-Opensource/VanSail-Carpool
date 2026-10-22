@@ -129,6 +129,10 @@ func TestTelegramIdentityMigrationPreservesSecretsReferencesAndLateTraffic(t *te
 			t.Fatal("late traffic", err)
 		}
 	}
+	aggregate := wire.TrafficReport{ID: "agent-a:2", Traffic: map[int][2]uint64{42: {13, 17}}}
+	if err = store.RecordXNodeTraffic(ctx, "node-a", "agent-a", 2, "aggregate-digest", aggregate); err != nil {
+		t.Fatal("late aggregate traffic", err)
+	}
 	period, err := store.XNodePeriod(ctx, "original-period")
 	if err != nil || period.ProxyUserID != 99101 || period.UsedBytes != 53 {
 		t.Fatalf("late bytes attributed through colliding numeric ID: %+v %v", period, err)

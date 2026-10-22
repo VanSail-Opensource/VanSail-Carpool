@@ -14,7 +14,7 @@ import OnboardingAudit from './OnboardingAudit.vue'
 const params = new URLSearchParams(location.search)
 if (params.has('zh')) setLocale('zh-CN')
 const now = new Date().toISOString()
-const initial: Session = { authenticated: true, user: { id: '99101', telegramId: '99101', firstName: 'Mira', lastName: 'Chen', telegramUsername: params.has('nickname') ? '' : 'mirachen', username: params.has('nickname') ? 'Mira Chen' : '@mirachen', role: 'user', onboardingState: params.has('intro') ? 'intro' : params.has('legacy') ? 'username' : 'agreement', groupJoined: false, channelJoined: false, policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', displayCurrency: 'TXB', createdAt: now, updatedAt: now } }
+const initial: Session = { authenticated: true, user: { id: '99101', telegramId: '99101', firstName: 'Mira', lastName: 'Chen', telegramUsername: params.has('nickname') ? '' : 'mirachen', displayName: params.has('nickname') ? 'Mira Chen' : '@mirachen', username: params.has('nickname') ? 'Mira Chen' : '@mirachen', role: 'user', onboardingState: params.has('intro') ? 'intro' : params.has('legacy') ? 'agreement' : 'agreement', groupJoined: false, channelJoined: false, policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', displayCurrency: 'TXB', createdAt: now, updatedAt: now } }
 const trace = { calls: [] as string[], fail: params.has('error'), writes: [] as unknown[] }
 Object.assign(window, { __onboardingAudit: trace })
 const pause = () => new Promise(resolve => setTimeout(resolve, params.has('slow') ? 1800 : 30))

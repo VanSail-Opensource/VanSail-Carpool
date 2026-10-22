@@ -126,6 +126,15 @@ XNodeDIYSplitHost:
     inboundTag: {type: string}
     downloadIds: {type: array, items: {type: string}}
     modes: {type: array, items: {type: string, enum: [auto, packet-up, stream-up]}}
+    downloadOptions:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [downloadEndpointId, modes]
+        properties:
+          downloadEndpointId: {type: string}
+          modes: {type: array, items: {type: string, enum: [auto, packet-up, stream-up]}}
 XNodeDIYBillingQuote:
   type: object
   additionalProperties: false

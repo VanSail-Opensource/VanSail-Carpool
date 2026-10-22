@@ -14,7 +14,7 @@ import CaptchaAudit from './CaptchaAudit.vue'
 
 const params = new URLSearchParams(location.search)
 const state = { calls: 0, resets: 0, verified: false, failure: params.has('rejected') || params.has('unavailable') }
-const user: Session['user'] = { id: 'captcha-member', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: 'mira', username: null, role: 'user', onboardingState: 'intro', groupJoined: false, channelJoined: false, policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+const user: Session['user'] = { id: 'captcha-member', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: 'mira', displayName: '@mira', username: null, role: 'user', onboardingState: 'intro', groupJoined: false, channelJoined: false, policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
 api.getMe = async () => ({ authenticated: true, user })
 api.verifyCaptcha = async () => {
   state.calls++

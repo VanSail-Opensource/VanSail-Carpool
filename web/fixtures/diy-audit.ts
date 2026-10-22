@@ -9,7 +9,11 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
   let splitProfiles: DIYSplitProfile[] = params.has('split') ? [{ id: 'split-one', uploadEndpointId: 'a-primary', downloadEndpointId: 'a-secondary', mode: 'auto' }] : []
   let remaining = params.has('paid') ? 0 : 5, chargeCount = 0
   function billing(changed = true): DIYBillingQuote { return { available: true, changed, useQuota: changed && remaining > 0, remaining, charge: { currency: 'TXB', minor: changed && !remaining ? '250' : '0', display: changed && !remaining ? '2.50 TXB' : '0.00 TXB' }, token: `quote-${remaining}`, expiresAt: 9999999999 } }
-  const splitHosts: DIYView['splitHosts'] = params.has('empty') ? [] : ['a-primary', 'a-secondary'].map((id, index) => ({ id, name: `Amsterdam ${index ? 'alternate' : 'primary'}`, nodeId: 'a', inboundTag: 'xhttp', downloadIds: [index ? 'a-primary' : 'a-secondary'], modes: ['auto', 'packet-up', 'stream-up'] }))
+  const splitHosts: DIYView['splitHosts'] = params.has('empty') ? [] : [
+    { id: 'a-primary', name: 'Amsterdam primary', nodeId: 'a', inboundTag: 'xhttp', downloadIds: ['a-secondary', 'a-tertiary'], modes: ['auto', 'packet-up'], downloadOptions: [{ downloadEndpointId: 'a-secondary', modes: ['auto'] }, { downloadEndpointId: 'a-tertiary', modes: ['packet-up'] }] },
+    { id: 'a-secondary', name: 'Amsterdam alternate', nodeId: 'a', inboundTag: 'xhttp', downloadIds: ['a-primary'], modes: ['stream-up'], downloadOptions: [{ downloadEndpointId: 'a-primary', modes: ['stream-up'] }] },
+    { id: 'a-tertiary', name: 'Amsterdam reserve', nodeId: 'a', inboundTag: 'xhttp', downloadIds: ['a-primary'], modes: ['stream-up'], downloadOptions: [{ downloadEndpointId: 'a-primary', modes: ['stream-up'] }] },
+  ]
   let current: RoutingView, failed = false, committed = false, polls = 0
   const operations = new Map<string, { receipt: OperationReceipt; routingChanged: boolean; deploymentChanged: boolean }>()
   const pause = () => new Promise(resolve => setTimeout(resolve, params.has('slow') ? 1800 : 30))

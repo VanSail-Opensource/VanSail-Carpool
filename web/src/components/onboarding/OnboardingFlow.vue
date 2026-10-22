@@ -23,7 +23,7 @@ const {
   finishIntro,
   acceptAgreement,
   toggleAgreement,
-	loadContent,
+  loadContent,
 } = useOnboarding()
 
 const { t } = useI18n()

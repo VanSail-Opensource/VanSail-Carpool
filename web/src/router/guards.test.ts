@@ -15,6 +15,7 @@ function user(overrides: Partial<User> = {}): User {
     firstName: 'Mira',
     lastName: 'Lin',
     telegramUsername: 'miralin',
+    displayName: '@miralin',
     username: 'mira',
     role: 'user',
     onboardingState: 'complete',
@@ -31,7 +32,7 @@ function user(overrides: Partial<User> = {}): User {
 
 describe('protected route decisions', () => {
   it('resumes incomplete onboarding', () => {
-    expect(resolveProtectedRoute(route('/catalog'), user({ onboardingState: 'username' }))).toBe('/onboarding')
+    expect(resolveProtectedRoute(route('/catalog'), user({ onboardingState: 'agreement' }))).toBe('/onboarding')
   })
 
   it('keeps completed users out of onboarding', () => {
@@ -47,7 +48,7 @@ describe('protected route decisions', () => {
   })
 
   it('lets an un-onboarded admin start optional signup from the dashboard', () => {
-    expect(resolveProtectedRoute(route('/onboarding'), user({ role: 'admin', onboardingState: 'username' }))).toBeNull()
+    expect(resolveProtectedRoute(route('/onboarding'), user({ role: 'admin', onboardingState: 'agreement' }))).toBeNull()
   })
 
   it('keeps an un-onboarded admin out of product routes', () => {
@@ -55,7 +56,7 @@ describe('protected route decisions', () => {
   })
 
   it.each(['/admin/settings', '/admin/users', '/admin/users/user-1', '/admin/database'])('bridges legacy Mini App admin route %s to browser access', (path) => {
-    expect(resolveProtectedRoute(route(path), user({ role: 'admin', onboardingState: 'username' }))).toBe('/settings/admin-access')
+    expect(resolveProtectedRoute(route(path), user({ role: 'admin', onboardingState: 'agreement' }))).toBe('/settings/admin-access')
     expect(resolveProtectedRoute(route(path), user({ role: 'admin', onboardingState: 'complete' }))).toBe('/settings/admin-access')
   })
 

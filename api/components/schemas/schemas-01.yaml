@@ -44,7 +44,7 @@ TelegramAuthRequest:
 
 OnboardingStep:
   type: string
-  enum: [intro, username, agreement, complete]
+  enum: [intro, agreement, complete]
 
 User:
   type: object
@@ -55,6 +55,7 @@ User:
     - firstName
     - lastName
     - telegramUsername
+    - displayName
     - username
     - role
     - onboardingState
@@ -77,9 +78,14 @@ User:
       type: string
     telegramUsername:
       type: string
+    displayName:
+      type: string
+      minLength: 1
+      description: Safe member-facing label derived from Telegram profile data.
     username:
       type: [string, 'null']
-      pattern: '^[a-zA-Z0-9_-]{3,36}$'
+      deprecated: true
+      description: Legacy account-label field retained for older clients. Use displayName.
     role:
       type: string
       enum: [user, admin]
@@ -151,15 +157,6 @@ CommunityAccess:
   properties:
     activeCombo:
       type: boolean
-
-UsernameRequest:
-  type: object
-  additionalProperties: false
-  required: [username]
-  properties:
-    username:
-      type: string
-      pattern: '^[a-zA-Z0-9_-]{3,36}$'
 
 AgreementRequest:
   type: object

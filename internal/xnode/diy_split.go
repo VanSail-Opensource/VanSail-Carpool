@@ -8,12 +8,18 @@ import (
 )
 
 type DIYSplitHost struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	NodeID      string   `json:"nodeId"`
-	InboundTag  string   `json:"inboundTag"`
-	DownloadIDs []string `json:"downloadIds"`
-	Modes       []string `json:"modes"`
+	ID              string                   `json:"id"`
+	Name            string                   `json:"name"`
+	NodeID          string                   `json:"nodeId"`
+	InboundTag      string                   `json:"inboundTag"`
+	DownloadIDs     []string                 `json:"downloadIds"`
+	Modes           []string                 `json:"modes"`
+	DownloadOptions []DIYSplitDownloadOption `json:"downloadOptions,omitempty"`
+}
+
+type DIYSplitDownloadOption struct {
+	DownloadEndpointID string   `json:"downloadEndpointId"`
+	Modes              []string `json:"modes"`
 }
 
 func splitHostCatalog(proxies []subscription.Proxy) []DIYSplitHost {
@@ -34,14 +40,19 @@ func splitHostCatalog(proxies []subscription.Proxy) []DIYSplitHost {
 	proxies = mapped
 	result := []DIYSplitHost{}
 	for _, up := range proxies {
-		host := DIYSplitHost{ID: up.ID, Name: up.Name, NodeID: up.NodeID, InboundTag: up.InboundTag, DownloadIDs: []string{}, Modes: []string{}}
+		host := DIYSplitHost{ID: up.ID, Name: up.Name, NodeID: up.NodeID, InboundTag: up.InboundTag, DownloadIDs: []string{}, Modes: []string{}, DownloadOptions: []DIYSplitDownloadOption{}}
 		for _, down := range proxies {
 			modes := subscription.SplitModes(up, down)
 			rawModes := subscription.SplitModes(original[up.ID], original[down.ID])
 			modes = slices.DeleteFunc(modes, func(mode string) bool { return !slices.Contains(rawModes, mode) })
 			if len(modes) > 0 {
 				host.DownloadIDs = append(host.DownloadIDs, down.ID)
-				host.Modes = modes
+				host.DownloadOptions = append(host.DownloadOptions, DIYSplitDownloadOption{DownloadEndpointID: down.ID, Modes: modes})
+				for _, mode := range modes {
+					if !slices.Contains(host.Modes, mode) {
+						host.Modes = append(host.Modes, mode)
+					}
+				}
 			}
 		}
 		if len(host.DownloadIDs) > 0 {

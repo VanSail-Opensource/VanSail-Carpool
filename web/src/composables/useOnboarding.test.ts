@@ -18,7 +18,7 @@ function response(state: 'agreement' | 'complete') {
   return {
     authenticated: true,
     user: {
-      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: '', username: 'mira', role: 'user',
+      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: '', displayName: 'Mira', username: 'mira', role: 'user',
       onboardingState: state, groupJoined: false, channelJoined: false, policyAcceptedAt: null,
       agreementRevision: 1, recoveryReason: '', createdAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-31T00:00:00Z',
     },

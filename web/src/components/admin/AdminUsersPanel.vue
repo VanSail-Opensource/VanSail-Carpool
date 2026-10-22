@@ -99,7 +99,7 @@ function bulkQueued(receipt: OperationReceipt): void {
     <AdminSectionState :loading="loading" :error="error" @retry="reloadUsers">
       <UTable class="admin-table" :data="items" :columns="columns" :loading="loading">
         <template #member-cell="{ row }"><UButton color="neutral" variant="link" :label="displayName(row.original)" @click="openProfile(row.original)" /></template>
-        <template #identity-cell="{ row }"><div class="admin-cell"><span>{{ row.original.user.username ? `@${row.original.user.username}` : row.original.user.telegramId }}</span><code>{{ row.original.user.id }}</code></div></template>
+        <template #identity-cell="{ row }"><div class="admin-cell"><span>{{ row.original.user.displayName || row.original.user.telegramId }}</span><code>{{ row.original.user.id }}</code></div></template>
         <template #balance-cell="{ row }">{{ formatMoney(row.original.balance) }}</template>
         <template #status-cell="{ row }"><StatusBadge :tone="row.original.synchronization.status === 'synchronized' ? 'success' : 'warning'" :label="t(row.original.synchronization.status === 'synchronized' ? 'adminUsers.synchronized' : 'adminUsers.notProvisioned')" /></template>
         <template #created-cell="{ row }">{{ formatDate(row.original.createdAt) }}</template>

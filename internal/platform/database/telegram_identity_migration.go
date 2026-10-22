@@ -13,6 +13,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 )
 
+const (
+	serviceProxyIDFloor = int64(1 << 52)
+	proxyIDCeiling      = int64(1 << 53)
+)
+
 type identityRekey struct {
 	oldUser, user   string
 	oldProxy, proxy sql.NullInt64
@@ -132,19 +137,30 @@ func identityMigrationKeys(ctx context.Context, tx *sql.Tx) ([]identityRekey, er
 	if err != nil {
 		return nil, err
 	}
+	var maxProxy int64
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(proxy_user_id),0) FROM xnode_identities`).Scan(&maxProxy); err != nil {
+		return nil, err
+	}
+	if maxProxy < 0 || maxProxy >= proxyIDCeiling-1 {
+		return nil, errors.New("X-Node proxy identity range exhausted")
+	}
+	nextServiceProxy := max(serviceProxyIDFloor, maxProxy+1)
 	rows, err = tx.QueryContext(ctx, `SELECT proxy_user_id FROM xnode_identities WHERE user_id IS NULL ORDER BY proxy_user_id`)
 	if err != nil {
 		return nil, err
 	}
-	var ordinal int64
 	for rows.Next() {
 		var old int64
 		if err = rows.Scan(&old); err != nil {
 			rows.Close()
 			return nil, err
 		}
-		keys = append(keys, identityRekey{oldUser: "service:" + strconv.FormatInt(old, 10), oldProxy: sql.NullInt64{Int64: old, Valid: true}, proxy: sql.NullInt64{Int64: (1 << 52) + ordinal, Valid: true}})
-		ordinal++
+		if old <= 0 || old >= proxyIDCeiling || nextServiceProxy >= proxyIDCeiling {
+			rows.Close()
+			return nil, errors.New("invalid service proxy identity")
+		}
+		keys = append(keys, identityRekey{oldUser: "service:" + strconv.FormatInt(old, 10), oldProxy: sql.NullInt64{Int64: old, Valid: true}, proxy: sql.NullInt64{Int64: nextServiceProxy, Valid: true}})
+		nextServiceProxy++
 	}
 	err = rows.Err()
 	rows.Close()

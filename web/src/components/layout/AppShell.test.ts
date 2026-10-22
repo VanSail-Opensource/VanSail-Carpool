@@ -16,7 +16,7 @@ function session(role: Session['user']['role'] = 'user'): Session {
   return {
     authenticated: true,
     user: {
-      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: 'Lin', telegramUsername: 'mira', username: 'mira',
+      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: 'Lin', telegramUsername: 'mira', displayName: '@mira', username: 'mira',
       role, onboardingState: 'complete', groupJoined: true, channelJoined: true,
       policyAcceptedAt: '2026-08-08T00:00:00Z', agreementRevision: 1, recoveryReason: '', createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z',
     },

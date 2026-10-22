@@ -13,6 +13,9 @@ func rekeyIdentityCiphertexts(ctx context.Context, tx *sql.Tx, vault *secret.Vau
 		if err := rekeyQueuedSealedTargets(ctx, tx, vault, key); err != nil {
 			return err
 		}
+		if err := rekeyConnectionIPBlocks(ctx, tx, vault, key); err != nil {
+			return err
+		}
 		for _, item := range []struct{ table, column, context string }{
 			{"xnode_identities", "credentials_cipher", "xnode.identity.user."},
 			{"xnode_identities", "subscription_cipher", "xnode.subscription.user."},
@@ -92,6 +95,47 @@ func rekeyIdentityCiphertexts(ctx context.Context, tx *sql.Tx, vault *secret.Vau
 			if err := resealColumn(ctx, tx, vault, "xnode_routing_plans", item.column, "proxy_user_id", key.oldProxy.Int64, fmt.Sprint(item.prefix, key.oldProxy.Int64), fmt.Sprint(item.prefix, key.proxy.Int64)); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+func rekeyConnectionIPBlocks(ctx context.Context, tx *sql.Tx, vault *secret.Vault, key identityRekey) error {
+	rows, err := tx.QueryContext(ctx, `SELECT rowid,node_uuid,ip_digest,sealed_ip FROM connection_ip_blocks WHERE user_id=?`, key.oldUser)
+	if err != nil {
+		return err
+	}
+	type block struct {
+		id                   int64
+		node, digest, cipher string
+	}
+	var blocks []block
+	for rows.Next() {
+		var item block
+		if err = rows.Scan(&item.id, &item.node, &item.digest, &item.cipher); err != nil {
+			rows.Close()
+			return err
+		}
+		blocks = append(blocks, item)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	for _, item := range blocks {
+		before := "connection-ip-block:" + key.oldUser + ":" + item.node + ":" + item.digest
+		after := "connection-ip-block:" + key.user + ":" + item.node + ":" + item.digest
+		plain, err := vault.Decrypt(before, item.cipher)
+		if err != nil {
+			return err
+		}
+		sealed, err := vault.Encrypt(after, plain)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET sealed_ip=? WHERE rowid=?`, sealed, item.id); err != nil {
+			return err
 		}
 	}
 	return nil

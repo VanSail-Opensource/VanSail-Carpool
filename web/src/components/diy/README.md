@@ -32,7 +32,9 @@ activation status. Browser admin combo capacity uses the existing catalog editor
 uses the server's shared dependency rules for visibility and Save validation;
 hidden values stay in the draft but leave the submitted overrides. The Nuxt tabs
 retain mounted routing and input state. `DIYSplitProfiles.vue` edits only host
-references and a split-compatible mode from the server catalog.
+references and a split-compatible mode from the server catalog. Pair-specific
+download modes are authoritative; the legacy per-upload union is only a fallback
+for rolling compatibility.
 
 Quotes beside Save use the existing IP-check allowance, then the fresh-check TXB
 price. `useDIY.ts` retains the exact request, quote and key after uncertain replies;

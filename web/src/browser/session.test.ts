@@ -22,7 +22,7 @@ const anonymous: BrowserSession = { authenticated: false, kind: 'anonymous', min
 const admin: BrowserSession = {
   authenticated: true, kind: 'admin', expiresAt: '2026-11-12T00:00:00Z',
   user: {
-    id: 'admin-1', telegramId: '42', firstName: 'Admin', lastName: '', telegramUsername: 'admin',
+    id: 'admin-1', telegramId: '42', firstName: 'Admin', lastName: '', telegramUsername: 'admin', displayName: '@admin',
     username: null, role: 'admin', onboardingState: 'intro', groupJoined: false, channelJoined: false,
     policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '',
     createdAt: '2026-10-13T00:00:00Z', updatedAt: '2026-10-13T00:00:00Z',

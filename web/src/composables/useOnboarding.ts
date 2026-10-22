@@ -9,7 +9,7 @@ import { useI18n } from '@/i18n'
 import { useSessionStore } from '@/stores/session'
 import { notifyHaptic } from '@/utils/telegram'
 
-type RuntimeOnboardingStep = OnboardingStep | 'membership'
+type RuntimeOnboardingStep = OnboardingStep | 'membership' | 'username'
 
 function normalizeStep(step?: RuntimeOnboardingStep): OnboardingStep {
   if (!step || step === 'complete') return 'intro'
@@ -26,7 +26,7 @@ export function useOnboarding() {
   const error = shallowRef<string | null>(null)
   const content = shallowRef<PublishedOnboarding | null>(null)
   const form = reactive({ agreementIds: [] as string[] })
-    const progress = computed(() => {
+  const progress = computed(() => {
     const order: OnboardingStep[] = ['intro', 'agreement', 'complete']
     return Math.max(0, order.indexOf(step.value)) / (order.length - 1)
   })
@@ -47,12 +47,12 @@ export function useOnboarding() {
         }
       }
       if (recovered) return undefined
-      if (caught instanceof ApiError && caught.code === 'USERNAME_UNAVAILABLE') {
-        error.value = t('onboarding.usernameUnavailable')
+      const key = caught instanceof ApiError ? `errors.api.${caught.code}` : ''
+      const translated = key ? t(key) : ''
+      if (translated && translated !== key) {
+        error.value = translated
       } else {
-        const key = caught instanceof ApiError ? `errors.api.${caught.code}` : ''
-        const translated = key ? t(key) : ''
-        error.value = translated && translated !== key ? translated : t('onboarding.somethingWrong')
+        error.value = t('onboarding.somethingWrong')
       }
       notifyHaptic('error')
       return undefined
@@ -68,9 +68,10 @@ export function useOnboarding() {
     form.agreementIds = form.agreementIds.filter((id) => response.agreements.some((agreement) => agreement.id === id))
   }
   async function finishIntro(): Promise<void> {
-    step.value = 'agreement'
     const response = await run(() => api.continueOnboarding())
-    if (response) sessionStore.updateSession(response)
+    if (!response) return
+    sessionStore.updateSession(response)
+    step.value = 'agreement'
   }
 
   async function refreshAgreementState(): Promise<boolean> {
@@ -140,6 +141,6 @@ export function useOnboarding() {
     finishIntro,
     acceptAgreement,
     toggleAgreement,
-		loadContent,
+    loadContent,
   }
 }

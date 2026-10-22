@@ -58,7 +58,6 @@
     "useLowercase": "Use 3-36 letters, numbers, underscores and dashes.",
     "formatGood": "This format looks good.",
     "formatInvalid": "Only 3-36 letters, numbers, underscores and dashes are allowed.",
-    "usernameUnavailable": "That username is already in use. Try another one.",
     "somethingWrong": "Something went wrong. Please try again.",
     "joinBoth": "Join both spaces, then check again.",
     "finishing": "Saving your setup",

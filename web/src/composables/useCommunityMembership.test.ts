@@ -28,7 +28,7 @@ function member(activeCombo = true): CommunityMembership {
   return {
     activeCombo, groupJoined: false, channelJoined: false,
     user: {
-      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: '', username: 'mira', role: 'user',
+      id: 'user-1', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: '', displayName: 'Mira', username: 'mira', role: 'user',
       onboardingState: 'complete', groupJoined: false, channelJoined: false, policyAcceptedAt: '2026-08-31T00:00:00Z',
       agreementRevision: 1, recoveryReason: '', createdAt: '2026-08-31T00:00:00Z', updatedAt: '2026-08-31T00:00:00Z',
     },

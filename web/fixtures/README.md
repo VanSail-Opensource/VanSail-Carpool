@@ -173,7 +173,9 @@ with `whitelist` verifies paid-unban controls stay hidden. DIY `whitelist` and
 
 DIY flags `split`, `inherited-stream-one`, `paid`, `insufficient` and `stale-quote`
 exercise current-reference profiles, inherited field dependencies and billing
-errors. Command fixture writes record normal versus explicit forced reload payloads.
+errors. The split fixture changes the download endpoint and verifies that the
+mode resets from that exact pair. Command fixture writes record normal versus
+explicit forced reload payloads.
 
 `SettingsAudit.vue` and `settings-audit.ts` reuse the DIY fixture when the real
 Settings entrance is opened. This checks the actual DIY route at mobile/desktop

@@ -525,7 +525,9 @@ only; revoking routing credentials still closes transit sessions.
 
 `diy_split.go` projects accessible XHTTP host pairs and appends current-reference
 split exports. Both legs require the same native node, inbound and session path;
-o generated credentials enter the encrypted settings document. Exports omit an
+returned host metadata carries the exact mode list for each download pair while
+the compatibility union remains available to older clients. No generated
+credentials enter the encrypted settings document. Exports omit an
 ineligible pair immediately; `diy_reconcile.go` later removes its references for
 free. Authoritative inventory errors and pending provisioning defer cleanup;
 node connectivity never decides ownership. `diy_changes.go` compares normalized
@@ -535,6 +537,8 @@ allowance, balance and revisions before any committed change.
 
 `diy_split_test.go` covers current-reference exports, disconnected nodes, immediate
 host-access exclusion, pinned-parser validation and free reference reconciliation.
+`diy_split_catalog_test.go` covers per-pair mode metadata and deduplicated legacy
+compatibility modes in hosted CI.
 
 `command_arguments.go` requires `incremental_reload_v1` for runtime reload,
 rechecks capability at execution and forwards typed optional forced recovery.

@@ -58,7 +58,6 @@
     "useLowercase": "请使用3至36个字母、数字、下划线和连字符。",
     "formatGood": "格式正确。",
     "formatInvalid": "只能使用 3-36 个字母、数字、下划线和连字符。",
-    "usernameUnavailable": "该用户名已被使用，请换一个。",
     "somethingWrong": "出现问题，请重试。",
     "joinBoth": "加入两个空间后再检查。",
     "finishing": "正在保存设置",

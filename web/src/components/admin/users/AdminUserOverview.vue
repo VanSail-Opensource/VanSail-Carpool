@@ -12,7 +12,7 @@ const { t } = useI18n()
 
 const identity = computed(() => props.detail.user.telegramUsername
   ? `@${props.detail.user.telegramUsername}`
-  : props.detail.user.username || props.detail.user.telegramId)
+  : props.detail.user.displayName || props.detail.user.telegramId)
 const synchronizationTone = computed(() => props.detail.synchronization.status === 'synchronized'
   ? 'success' : props.detail.synchronization.status === 'failed' ? 'danger' : 'warning')
 </script>

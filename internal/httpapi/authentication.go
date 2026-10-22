@@ -18,6 +18,7 @@ type userResponse struct {
 	FirstName         string     `json:"firstName"`
 	LastName          string     `json:"lastName"`
 	TelegramUsername  string     `json:"telegramUsername"`
+	DisplayName       string     `json:"displayName"`
 	Username          *string    `json:"username"`
 	Role              string     `json:"role"`
 	OnboardingState   string     `json:"onboardingState"`
@@ -45,7 +46,8 @@ func mapUser(user model.User) userResponse {
 	}
 	return userResponse{
 		ID: user.ID, TelegramID: strconv.FormatInt(user.TelegramID, 10), FirstName: user.TelegramFirstName,
-		LastName: user.TelegramLastName, TelegramUsername: user.TelegramUsername, Username: &displayName, Role: user.Role,
+		LastName: user.TelegramLastName, TelegramUsername: user.TelegramUsername, DisplayName: displayName,
+		Username: &displayName, Role: user.Role,
 		OnboardingState: user.OnboardingState, GroupJoined: user.GroupJoined, ChannelJoined: user.ChannelJoined,
 		PolicyAcceptedAt: user.PolicyAcceptedAt, AgreementRevision: user.AgreementRevision, RecoveryReason: user.RecoveryReason,
 		DisplayCurrency: string(displayCurrency),

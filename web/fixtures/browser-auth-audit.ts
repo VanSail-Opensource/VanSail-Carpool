@@ -19,7 +19,7 @@ const state = { configReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: 
 const config = { miniAppUrl: params.has('empty') ? '' : 'https://t.me/vansail_carpool_bot?startapp' }
 const admin: BrowserSession = {
   authenticated: true, kind: 'admin', expiresAt: new Date(Date.now() + 86400000).toISOString(),
-  user: { id: 'audit-admin', telegramId: '42', firstName: 'Ming', lastName: '', telegramUsername: 'vansail',
+  user: { id: 'audit-admin', telegramId: '42', firstName: 'Ming', lastName: '', telegramUsername: 'vansail', displayName: '@vansail',
     username: null, role: 'admin', onboardingState: 'intro', groupJoined: false, channelJoined: false,
     policyAcceptedAt: null, agreementRevision: 0, recoveryReason: '',
     createdAt: '2026-10-14T00:00:00Z', updatedAt: '2026-10-14T00:00:00Z' },

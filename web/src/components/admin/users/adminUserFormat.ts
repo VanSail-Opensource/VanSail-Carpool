@@ -1,8 +1,7 @@
 import type { AdminEntitlement, AdminUserDetail } from '@/api/adminOperations'
 
 export function adminUserName(detail: AdminUserDetail): string {
-  const name = [detail.user.firstName, detail.user.lastName].filter(Boolean).join(' ').trim()
-  return name || detail.user.username || detail.user.telegramUsername || detail.user.telegramId
+  return detail.user.displayName || detail.user.telegramId
 }
 
 export function toLocalDateTime(value: string): string {

@@ -12,7 +12,7 @@ const now = new Date().toISOString()
 api.checkCommunityMembership = async () => {
   if (parameters.has('slow')) await new Promise(resolve => setTimeout(resolve, 10000))
   if (parameters.has('error')) throw new Error('Constructed community failure')
-  return { activeCombo: !parameters.has('locked'), groupJoined: parameters.has('joined'), channelJoined: parameters.has('joined'), user: { id: 'audit-user', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: 'mira', username: 'mira', role: 'user', onboardingState: 'complete', policyAcceptedAt: now, agreementRevision: 1, groupJoined: false, channelJoined: false, displayCurrency: 'TXB', recoveryReason: '', createdAt: now, updatedAt: now } } as never
+  return { activeCombo: !parameters.has('locked'), groupJoined: parameters.has('joined'), channelJoined: parameters.has('joined'), user: { id: 'audit-user', telegramId: '42', firstName: 'Mira', lastName: '', telegramUsername: 'mira', displayName: '@mira', username: 'mira', role: 'user', onboardingState: 'complete', policyAcceptedAt: now, agreementRevision: 1, groupJoined: false, channelJoined: false, displayCurrency: 'TXB', recoveryReason: '', createdAt: now, updatedAt: now } } as never
 }
 api.createCommunityInvite = async () => ({ url: 'https://t.me/example', expiresAt: now }) as never
 Object.assign(window, { __communityAuditLocale: setLocale })
