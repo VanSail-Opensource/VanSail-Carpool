@@ -5,14 +5,14 @@ go 1.27.2
 require (
 	filippo.io/edwards25519 v1.2.0
 	github.com/RoaringBitmap/roaring/v2 v2.29.0
-	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261020202813-e938bae9fc29
+	github.com/VanSail-Opensource/X-Node v1.0.2
 	github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/miekg/dns v1.1.73
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/xssnick/tonutils-go v1.19.0
+	github.com/xssnick/tonutils-go v1.19.1
 	github.com/xtls/xray-core v1.260327.1-0.20261017152356-92ccc939aaf4
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/crypto v0.58.0
