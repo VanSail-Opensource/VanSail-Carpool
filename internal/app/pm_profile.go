@@ -27,10 +27,7 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 	if err != nil {
 		return telegrampm.ProfileFacts{}, err
 	}
-	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance}
-	if user.Username != nil {
-		facts.RemnaUsername = *user.Username
-	}
+	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance, RemnaUsername: user.AccountName()}
 	if user.OnboardingState != "complete" {
 		return facts, nil
 	}

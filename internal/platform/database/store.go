@@ -90,8 +90,10 @@ func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.U
 	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.telegram_id=?`, telegramID))
 }
 
+// Assigned usernames were removed with the Telegram identity migration. Member
+// account references come from AccountName, so the legacy field stays empty.
 const userColumns = `users.id,users.telegram_id,users.telegram_first_name,users.telegram_last_name,users.telegram_username,
-	CAST(users.telegram_id AS TEXT),users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
+	users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
 	users.accepted_agreement_revision,users.remna_user_id,users.recovery_reason,users.new_user,users.inviter_id,
 	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at`
 
@@ -105,13 +107,13 @@ func scanUser(row rowScanner) (model.User, error) {
 
 func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 	var user model.User
-	var username, policy, recoveryReason sql.NullString
+	var policy, recoveryReason sql.NullString
 	var remnaID sql.NullString
 	var groupJoined, channelJoined, newUser, autoTrafficReset int
 	var inviterID sql.NullInt64
 	var createdAt, updatedAt string
 	destinations := []any{&user.ID, &user.TelegramID, &user.TelegramFirstName, &user.TelegramLastName, &user.TelegramUsername,
-		&username, &user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &remnaID, &recoveryReason,
+		&user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &remnaID, &recoveryReason,
 		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &autoTrafficReset, &createdAt, &updatedAt}
 	destinations = append(destinations, extra...)
 	if err := row.Scan(destinations...); err != nil {
@@ -120,7 +122,6 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 		}
 		return model.User{}, fmt.Errorf("scan user: %w", err)
 	}
-	user.Username = nullableString(username)
 	user.GroupJoined = groupJoined == 1
 	user.ChannelJoined = channelJoined == 1
 	user.NewUser = newUser == 1

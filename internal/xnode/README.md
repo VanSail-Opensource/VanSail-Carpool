@@ -235,7 +235,7 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 - `metric_scope.go` retains node scope when quota, expiry or restrictions deny admission.
 
 - `tag_ownership.go` reserves stored member tags, including inactive users, against administrator/shared outbounds and other owners.
-- `tag_ownership_test.go` covers ambiguous hyphen namespaces across active and expired members.
+- `tag_ownership_test.go` covers decimal owner namespaces, including inactive and expired members whose historical display names overlap.
 
 - `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.
 - `capabilities.go` checks the exact capabilities required by compiled state, including native utility listeners with no paid users. `capabilities_test.go` covers utility and streamed-country negotiation boundaries.
@@ -269,7 +269,7 @@ Master policy extensions: `native_policy_types.go` owns country, completion-sche
 
 `live_availability.go` excludes rolled-back, stale and non-sampled agents from live activity decisions. Service identities are excluded from global connection controls; open-handler limits and exact accounting remain agent-owned. `node_decode.go` requires explicit nonnegative multipliers with at most six fractional digits. Global/node/compiler changes negotiate typed native capabilities against signed X-Node v2.0.6; byte counters remain decimal strings for browser transport.
 
-`client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight.
+`client_document_validation.go` validates administrator client subscription documents independently of the agent IP-geodata prohibition. It removes only the client display label `remarks` from the analysis copy for both DIY exports and template previews; server configurations retain their strict root schema. Client-local assets remain in the actual output; analysis-only replacements perform no downloads. Shared geosite block selectors also defer file contents to agent preflight. `client_document_validation_test.go` covers the label-only relaxation, client-local asset preflight and strict server-root rejection.
 
 Shared policy saves additionally resolve actual geosite categories/attributes
 through the validation queue. The bounded lookup preserves native asset key
