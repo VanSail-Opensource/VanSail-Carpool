@@ -23,9 +23,15 @@ def run_check(arguments, output, environment):
             raise RuntimeError("race check failed")
 
 
+def run_tests(flags, package, tests, output, environment):
+    pattern = "^(" + "|".join(re.escape(test) for test in tests) + ")$"
+    run_check(flags + ["-run", pattern, package], output, environment)
+
+
 def run_shard(index, directory):
     inventory = discover()
     manifest = {**inventory["partitions"][index], "allTests": inventory["allTests"],
+                "allXNodeTests": inventory["allXNodeTests"],
                 "allPackages": inventory["allPackages"], "completed": False}
     directory.mkdir(parents=True, exist_ok=True)
     manifest_path = directory / f"race-inventory-{index}.json"
@@ -37,12 +43,14 @@ def run_shard(index, directory):
     with (directory / f"race-results-{index}.json").open("w", encoding="utf-8") as output:
         if manifest["packages"]:
             run_check(flags + manifest["packages"], output, environment)
+        if manifest["xnodeTests"]:
+            run_tests(flags, inventory["xnode"], manifest["xnodeTests"], output, environment)
         if manifest["tests"]:
-            pattern = "^(" + "|".join(re.escape(test) for test in manifest["tests"]) + ")$"
-            run_check(flags + ["-run", pattern, inventory["database"]], output, environment)
+            run_tests(flags, inventory["database"], manifest["tests"], output, environment)
     manifest["completed"] = True
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     print(f"Shard {index + 1}/{SHARD_COUNT}: {len(manifest['tests'])} database checks, "
+          f"{len(manifest['xnodeTests'])} X-Node checks, "
           f"{len(manifest['packages'])} other packages", flush=True)
 
 
@@ -56,7 +64,7 @@ def main():
         manifests = [json.loads(path.read_text(encoding="utf-8"))
                      for path in arguments.directory.glob("race-inventory-*.json")]
         verify(manifests)
-        print(f"All Go packages and database checks completed exactly once across {SHARD_COUNT} shards.")
+        print(f"All Go packages, X-Node checks and database checks completed exactly once across {SHARD_COUNT} shards.")
     elif arguments.shard is not None:
         run_shard(arguments.shard, arguments.directory)
     else:

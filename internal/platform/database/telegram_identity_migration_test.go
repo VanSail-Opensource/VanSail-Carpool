@@ -49,6 +49,8 @@ func TestTelegramIdentityMigrationPreservesSecretsReferencesAndLateTraffic(t *te
 	for _, query := range []string{
 		`INSERT INTO balances(user_id,txb_minor,updated_at) VALUES('old-member-a',12345,'` + at + `')`,
 		`INSERT INTO ledger_entries(id,user_id,delta_txb_minor,balance_after,kind,reference_id,created_at) VALUES('original-ledger','old-member-a',12345,12345,'original','original','` + at + `')`,
+		`INSERT INTO affiliate_config_versions(id,version,created_by,created_at) VALUES('legacy-affiliate',99,'old-member-a','` + at + `')`,
+		`INSERT INTO user_notification_events(event_key,user_id,source_kind,source_id,kind,payload_json,gate_key,created_at) VALUES('legacy-notice','old-member-a','legacy','legacy','legacy','{}','legacy','` + at + `')`,
 		`INSERT INTO xnode_configs(id,name,document_cipher,created_at,updated_at) VALUES('config-a','Configuration','unused','` + at + `','` + at + `')`,
 		`INSERT INTO xnode_nodes(id,name,config_id,settings_cipher,agent_id,created_at,updated_at) VALUES('node-a','Node','config-a','unused','agent-a','` + at + `','` + at + `')`,
 		`INSERT INTO xnode_periods(id,proxy_user_id,started_at,limit_bytes,strategy,used_bytes,status) VALUES('original-period',42,'` + at + `',100000,'MONTH',23,'open')`,
@@ -103,6 +105,19 @@ func TestTelegramIdentityMigrationPreservesSecretsReferencesAndLateTraffic(t *te
 	}
 	if err = db.QueryRow(`SELECT delta_txb_minor FROM ledger_entries WHERE user_id='99101'`).Scan(&delta); err != nil || delta != 12345 {
 		t.Fatal("financial evidence changed", err)
+	}
+	var createdBy, notificationUser string
+	if err = db.QueryRow(`SELECT created_by FROM affiliate_config_versions WHERE id='legacy-affiliate'`).Scan(&createdBy); err != nil || createdBy != "99101" {
+		t.Fatalf("affiliate audit owner = %q, %v", createdBy, err)
+	}
+	if err = db.QueryRow(`SELECT user_id FROM user_notification_events WHERE event_key='legacy-notice'`).Scan(&notificationUser); err != nil || notificationUser != "99101" {
+		t.Fatalf("notification owner = %q, %v", notificationUser, err)
+	}
+	if _, err = db.Exec(`UPDATE affiliate_config_versions SET created_by=NULL WHERE id='legacy-affiliate'`); err == nil {
+		t.Fatal("affiliate history is mutable after identity migration")
+	}
+	if _, err = db.Exec(`UPDATE user_notification_events SET kind='changed' WHERE event_key='legacy-notice'`); err == nil {
+		t.Fatal("notification payload is mutable after identity migration")
 	}
 	var payload string
 	if err = db.QueryRow(`SELECT payload FROM outbox_jobs WHERE kind='xnode_access_repair'`).Scan(&payload); err != nil || !strings.Contains(payload, `"userId":"99101"`) {

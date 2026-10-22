@@ -6,9 +6,11 @@ before the complete race shards finish. The race/coverage inventories still
 include that check and remain mandatory.
 
 `race_shards.py` is called only by GitHub Actions. Eight independent runners split
-the database package's top-level tests, executable examples and fuzz seed tests,
-and partition every other Go package. New packages and checks are discovered
-from Go itself; no handwritten allowlist can silently omit them.
+the database and X-Node packages' top-level tests, executable examples and fuzz
+seed tests, and partition every other Go package. Splitting X-Node is required
+because its large serial test suite otherwise made one shard dominate runtime.
+New packages and checks are discovered from Go itself; no handwritten allowlist
+can silently omit them.
 
 `race_inventory.py` owns discovery and exact-once partition validation. Each
 runner uploads its complete inventory, assigned checks, completion marker and
@@ -18,8 +20,11 @@ manifests before running the unchanged domain coverage packages and 70% gate.
 Per-runner Go parallelism follows available CPUs. Database tests retain their
 existing two-open migration semaphore and isolated temporary databases. Shards
 have independent processes and CPU allocations, so migration concurrency does
-not multiply on one machine. Do not invoke these scripts locally: repository
-instructions permit automated suites only in hosted CI.
+not multiply on one machine. The X-Node test binary remains serial because its
+fixtures bind sockets and publish master state; its test inventory is distributed
+across runners instead of weakening those isolation boundaries. Do not invoke
+these scripts locally: repository instructions permit automated suites only in
+hosted CI.
 
 `change_base.py` selects the latest successful `Container` run on `main` whose
 commit is an ancestor of the checked-out tree. Push filters compare against that

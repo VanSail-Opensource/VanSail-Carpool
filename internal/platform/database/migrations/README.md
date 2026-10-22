@@ -11,6 +11,11 @@ samples are translated only against their period and participating node.
 The users-table rebuild replaces the legacy username-aware compilation trigger
 with onboarding-state invalidation, preserving cache updates after column removal.
 
+`092_identity_rekey_immutable_references.sql` preserves the affiliate-version and
+notification-payload immutability rules while allowing their owner columns to be
+rekeyed exclusively through a completed `member_identity_aliases` mapping. All
+other updates, and every update after the identity migration, still abort.
+
 `087_native_accounting_maintenance.sql` adds native date/user/purchase and expiry
 indexes without copying or rewriting accounting and financial records.
 

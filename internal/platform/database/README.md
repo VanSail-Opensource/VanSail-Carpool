@@ -6,7 +6,7 @@ references through disjoint temporary keys. `telegram_identity_cipher.go` reseal
 X-Node and pending Emby secrets; `telegram_identity_payloads.go` updates typed
 active queue references; `telegram_identity_username.go` removes the assigned
 name column. `telegram_identity_migration_test.go` covers rollback, credentials,
-financial references and colliding late traffic in hosted CI.
+financial references, immutable audit owners and colliding late traffic in hosted CI.
 `xnode_access_repair.go` coalesces bounded paid provisioning recovery into the
 existing outbox without resetting exhausted or settled purchase periods.
 `telegram_identity_commands.go` reseals queued administrator command and source
