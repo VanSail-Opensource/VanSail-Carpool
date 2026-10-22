@@ -108,7 +108,7 @@ func TestPurchaseProvisioningAndRecovery(t *testing.T) {
 				t.Fatalf("create/apply/conflict = %d/%d/%d, want %d/%d/%d", identity.createCalls, remote.applyCalls, repo.conflictCalls,
 					test.wantCreate, test.wantApply, test.wantConflict)
 			}
-			if test.wantCreate > 0 && (identity.createInput.Status != "DISABLED" || identity.createInput.Username != username || repo.linkedID != "101") {
+			if test.wantCreate > 0 && (identity.createInput.Status != "DISABLED" || identity.createInput.Username != repo.user.AccountName() || repo.linkedID != "101") {
 				t.Fatalf("provisioned input/link = %+v/%q", identity.createInput, repo.linkedID)
 			}
 		})

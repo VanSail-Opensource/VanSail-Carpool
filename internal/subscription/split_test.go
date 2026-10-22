@@ -29,12 +29,21 @@ func TestSplitSessionIdentityModesAndClientFormats(t *testing.T) {
 			if text(object(stream, "xhttpSettings"), "mode") != mode || text(object(up.Stream, "xhttpSettings"), "mode") != "auto" {
 				t.Fatal("split modified ordinary mode")
 			}
-			for _, format := range []string{"xray", "clash", "stash", "native", "base64"} {
+			for _, format := range []string{"xray", "clash", "stash"} {
 				eligible, _, err := CompatibleProxies(format, []Proxy{up, down, p})
 				if err != nil || len(eligible) != 3 {
 					t.Fatal(format, len(eligible), err)
 				}
 				if _, err = RenderTemplate(DefaultTemplate(format), eligible); err != nil {
+					t.Fatal(format, err)
+				}
+			}
+			for _, format := range []string{"native", "base64"} {
+				eligible, _, err := CompatibleProxies(format, []Proxy{up, down, p})
+				if err != nil || len(eligible) != 3 {
+					t.Fatal(format, len(eligible), err)
+				}
+				if _, err = RenderNative(eligible); err != nil {
 					t.Fatal(format, err)
 				}
 			}

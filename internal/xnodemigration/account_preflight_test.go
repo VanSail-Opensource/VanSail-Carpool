@@ -53,7 +53,7 @@ func (p *preflightPanel) ImportIdentity(context.Context, model.User, int64, stri
 	return xnode.Identity{}, p.credentialErr
 }
 
-func TestCutoverChecksEveryServedSourceIdentityBeforeDisablingNode(t *testing.T) {
+func TestCutoverChecksServedSourceIdentityByTelegramAndCredentialsBeforeDisablingNode(t *testing.T) {
 	for _, scenario := range []string{"matched", "unmapped", "changed-name", "changed-telegram", "changed-credentials", "provisioning-pending"} {
 		t.Run(scenario, func(t *testing.T) {
 			s, base, source, _, events := migrationCutoverFixture(t)
@@ -76,7 +76,7 @@ func TestCutoverChecksEveryServedSourceIdentityBeforeDisablingNode(t *testing.T)
 			}
 			s.repo, s.source, s.panel = repo, preflightSource{cutoverSource: source, accounts: []Account{account}}, panel
 			_, err := s.Cutover(context.Background(), "node")
-			if scenario == "matched" {
+			if scenario == "matched" || scenario == "changed-name" {
 				if err != nil || panel.verified != 1 || base.state.Nodes[0].Phase != "native" {
 					t.Fatalf("matched handover=%+v,%v", base.state, err)
 				}

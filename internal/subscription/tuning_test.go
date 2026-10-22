@@ -56,8 +56,13 @@ func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 	if err != nil || u.Query().Get("fp") != "firefox" || u.Query().Get("tcpFastOpen") != "" || !strings.Contains(link, p.Address) {
 		t.Fatal("native allowlist", link, err)
 	}
-	for _, format := range []string{"xray", "sing-box", "clash", "stash", "native", "base64"} {
+	for _, format := range []string{"xray", "sing-box", "clash", "stash"} {
 		if raw, err := RenderTemplate(DefaultTemplate(format), []Proxy{p}); err != nil || len(raw) == 0 {
+			t.Fatal(format, err)
+		}
+	}
+	for _, format := range []string{"native", "base64"} {
+		if raw, err := RenderNative([]Proxy{p}); err != nil || len(raw) == 0 {
 			t.Fatal(format, err)
 		}
 	}
