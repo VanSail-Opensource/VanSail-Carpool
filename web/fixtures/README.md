@@ -165,3 +165,16 @@ pairs and retained partial results. The fixture never sends agent commands.
 `load-error`, `save-error`, `lost-reply` or `deployment-error`. Run the manual
 `subscription-preview.go` bridge for actual Go allowlist, compatibility and
 pinned-parser validation. It uses synthetic identities and no upstream traffic.
+
+X-Node `combo-quota` mounts the real combo editor and records its capacity payload.
+`migration-notice` exercises shared policy migration warnings; `firewall-member`
+with `whitelist` verifies paid-unban controls stay hidden. DIY `whitelist` and
+`small-quota` exercise saved lists, quota bounds and queued deployment.
+
+DIY flags `split`, `inherited-stream-one`, `paid`, `insufficient` and `stale-quote`
+exercise current-reference profiles, inherited field dependencies and billing
+errors. Command fixture writes record normal versus explicit forced reload payloads.
+
+`SettingsAudit.vue` and `settings-audit.ts` reuse the DIY fixture when the real
+Settings entrance is opened. This checks the actual DIY route at mobile/desktop
+widths without production traffic; returning restores the settings receipt loader.

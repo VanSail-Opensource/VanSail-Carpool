@@ -482,3 +482,56 @@ inheritance, export isolation and pinned-parser output. Saved settings are local
 combined receipts continue through the existing routing deployment guarantees.
 
 `metered_probe_lifecycle_test.go` exercises compiled admission, quota exhaustion, expired grants, real traffic reset and refund quiescing with duplicate late probe samples. Unfinished barriers retain origin evidence and leave successor periods uncharged.
+
+## Firewall and member whitelist
+
+`firewall_policy.go` owns global rules and preserves common legacy fields during
+migration; `firewall_policy_test.go` checks conflict defaults.
+`firewall_protected.go` derives managed addresses from authenticated telemetry and
+unproxied authenticated peers, synchronizing them through existing per-node jobs.
+Those observations remain memory-only; shared CDN ranges are never inferred as
+node addresses. Existing false-positive detections are released, not erased.
+
+`firewall_hosts.go` refreshes hostname A/AAAA through the existing validation
+queue. Its bounded volatile cache accepts only exact answers corroborated by the
+associated authenticated node or explicit DDNS addresses, so shared CDN edges
+cannot become exemptions through endpoint DNS. `firewall_hosts_test.go` checks
+mixed-family answers, mapped addresses, CDN answers and removal of origin proof.
+
+`diy_document.go` reads versioned encrypted desired state and legacy bare client
+overrides. `whitelist_policy.go` validates exact public IPs, preserves insertion
+order and derives capacity. `whitelist_deployment.go` requires applied, fresh node
+state before reporting protection active. `diy_deployment.go` shares the existing
+operation dispatcher with routing and waits outside the socket reader.
+`diy_reconcile.go` trims excess newest IPs for free; disconnected nodes do not
+change saved eligibility. Empty enabled lists deny all member credentials.
+
+Detection-enabled nodes report deltas below the threshold and enforce only
+master-authorized bans. Counters are per IP/rule across nodes, bounded to 65536
+active keys and cleared on master restart or policy changes. Durable event cursors
+prevent replay charges/counts; no new raw observation table is introduced.
+Non-Reality country filtering precedes whitelist/node exemptions. Paid unban is
+hidden and new purchases rejected in whitelist mode; existing retries replay.
+
+Member source-IP checks apply to ordinary subscription credentials on ingress.
+Routing uses independently derived transit credentials on later hops; those
+remain authorized and metered without comparing the first node's address with
+the member whitelist. Changing a whitelist revokes matching ingress sessions
+only; revoking routing credentials still closes transit sessions.
+
+`diy_split.go` projects accessible XHTTP host pairs and appends current-reference
+split exports. Both legs require the same native node, inbound and session path;
+o generated credentials enter the encrypted settings document. Exports omit an
+ineligible pair immediately; `diy_reconcile.go` later removes its references for
+free. Authoritative inventory errors and pending provisioning defer cleanup;
+node connectivity never decides ownership. `diy_changes.go` compares normalized
+settings, whitelist and routing for free unchanged saves. `diy_billing.go` seals
+owner-bound five-minute quotes; the existing database transaction rechecks price,
+allowance, balance and revisions before any committed change.
+
+`diy_split_test.go` covers current-reference exports, disconnected nodes, immediate
+host-access exclusion, pinned-parser validation and free reference reconciliation.
+
+`command_arguments.go` requires `incremental_reload_v1` for runtime reload,
+rechecks capability at execution and forwards typed optional forced recovery.
+`operations.go` retains durable command replay and per-node execution ordering.

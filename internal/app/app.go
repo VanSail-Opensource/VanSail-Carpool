@@ -77,6 +77,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = store.MigrateTelegramIdentities(ctx, vault, cfg.DatabasePath); err != nil {
 		return cleanup(fmt.Errorf("migrate Telegram member identity: %w", err))
 	}
+	if err = store.MigrateGlobalFirewallDetection(ctx, vault); err != nil {
+		return cleanup(fmt.Errorf("migrate global firewall detection: %w", err))
+	}
 	settings := admin.NewSettingsService(store, vault)
 	settings.SetPaymentProfileRepository(store)
 	paymentChannels := billing.NewPaymentChannelCache()
@@ -169,6 +172,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	if err = outboxWorker.Register(xnode.AccessRepairJob, xnodeMaster); err != nil {
+		return cleanup(err)
+	}
+	if err = outboxWorker.Register(xnode.DIYReconcileJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}
 	if err := registerPaymentOperationHandlers(operationDispatcher, billingService); err != nil {

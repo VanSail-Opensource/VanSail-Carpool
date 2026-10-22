@@ -18,6 +18,7 @@ import '@/browser/styles.css'
 const params = new URLSearchParams(location.search)
 setExperience('browser'); initializeBrowserTheme(); setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const trace = { calls: [] as string[], copies: [] as string[], writes: [] as unknown[], reloads: 0 }
+globalThis.addEventListener('catalog-quota-save', event => trace.writes.push((event as CustomEvent).detail))
 const stamp = '2026-10-15T00:00:00Z'
 const nodes: XNode[] = params.has('empty') ? [] : [
   { id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', multiplier: 1.25, enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
@@ -100,6 +101,7 @@ xnodeApi.previewSubscriptionSelection = async (body, signal) => {
   return response.json()
 }
 
+global.firewallDetection = { rules: Object.fromEntries(['closed_port', 'invalid_packet', 'syn_flood', 'icmp_probe', 'xray_tcp_probe', 'xray_invalid', 'xray_auth_failure', 'source_match'].map(name => [name, { enabled: true, threshold: 3, window_seconds: 86400 }])), banSeconds: 259200, migrationNotice: params.has('migration-notice') }
 let globalLoadFailed = false
 function globalProjection() { const value = JSON.parse(JSON.stringify(global)) as XNodeGlobal; for (const provider of Object.values(value.providers)) for (const key of Object.keys(provider.credentials)) provider.credentials[key] = ''; return value }
 xnodeApi.global = async () => { await check('global'); if (params.has('global-load-error') && !globalLoadFailed) { globalLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return globalProjection() }
@@ -112,7 +114,7 @@ xnodeApi.saveGlobal = async value => {
 }
 xnodeApi.enroll = async id => { trace.calls.push(`enroll:${id}`); return { masterUrl: 'wss://panel.example/v1/agents/connect', token: 'fixture-token', protocol: 'x-node.v1' } }
 xnodeApi.validate = async () => params.has('invalid') ? { valid: false, needsAgentValidation: false, errorCode: 'XNODE_CONFIG_INVALID', detail: 'outbound[1]: unsupported protocol' } : { valid: true, needsAgentValidation: false, errorCode: '' }
-xnodeApi.command = async (_id, body) => { trace.calls.push('command:' + body.name); await check('command'); return receipt('xnode_command') }
+xnodeApi.command = async (_id, body) => { trace.calls.push('command:' + body.name); trace.writes.push({ command: structuredClone(body) }); await check('command'); return receipt('xnode_command') }
 xnodeApi.commandResult = async () => ({ receipt: { ...latest!, status: 'succeeded' }, result: { command: 'speedtest', request_latency_millis: 31, download_mbps: 842.5, upload_mbps: 522.7, download_bytes: '67108864', upload_bytes: '33554432' } })
 xnodeApi.migration = async () => { await check('migration'); return structuredClone(migration) }
 xnodeApi.previewMigration = async () => { trace.calls.push('preview'); migration = { ...migration, phase: 'preview', snapshotDigest: 'b'.repeat(64), sourceBackupReference: 'verified-source-backup' }; return { digest: migration.snapshotDigest, nodes: nodes.length, groups: 1, accounts: 12, endpoints: nodes.length, issues: params.has('shared') ? [{ resourceId: '33333333-3333-4333-8333-333333333333', code: 'SHARED_SS2022_HOST', blocking: true }] : params.has('utility') ? [{ resourceId: 'service-profile', code: 'UNSUPPORTED_UTILITY_INBOUND', blocking: true }] : params.has('issue') ? [{ resourceId: 'legacy-ss', code: 'UNSUPPORTED_SHADOWSOCKS', blocking: true }] : [] } }
@@ -173,7 +175,7 @@ firewallApi.bans = async (query = '', cursor = '') => {
   const selected = query.startsWith('8.8') || cursor ? second : first
   return { items: params.has('firewall-empty') || releasedBans.has(selected.prefix) || query.startsWith('9.9') ? [] : [selected], ...(params.has('firewall-pages') && !cursor && !query ? { nextCursor: 'second' } : {}) }
 }
-firewallApi.quote = async () => { await check('firewall-quote'); if (params.has('quote-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { enabled: !params.has('unban-disabled'), price: '1.25', hours: 24 } }
+firewallApi.quote = async () => { await check('firewall-quote'); if (params.has('quote-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { enabled: !params.has('unban-disabled') && !params.has('whitelist'), whitelistMode: params.has('whitelist'), price: '1.25', hours: 24 } }
 firewallApi.purchase = async (ip, quote, key) => { await check('firewall-purchase:' + ip + ':' + key); if (params.has('unban-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); return { id: key, ip, priceMinor: '125', hours: quote.hours, until: '2026-10-20T00:00:00Z' } }
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t

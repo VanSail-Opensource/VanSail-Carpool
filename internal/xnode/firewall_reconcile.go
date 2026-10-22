@@ -25,7 +25,25 @@ func (m *Master) runFirewall() {
 	}
 }
 func (m *Master) reconcileFirewall(ctx context.Context) error {
+	if err := m.pruneManagedNodes(ctx); err != nil {
+		return err
+	}
+	if err := m.refreshHostOrigins(ctx); err != nil {
+		return err
+	}
 	repo := m.service.repo.(firewallRepository)
+	ips := m.protectedIPs(false)
+	digest := protectedDigest(ips)
+	if digest != m.protectedReleaseDigest {
+		if repo, ok := m.service.repo.(interface {
+			ExcludeManagedFirewallIPs(context.Context, []string, time.Time) error
+		}); ok {
+			if err := repo.ExcludeManagedFirewallIPs(ctx, ips, m.service.now()); err != nil {
+				return err
+			}
+		}
+		m.protectedReleaseDigest = digest
+	}
 	if err := repo.SweepFirewall(ctx, m.service.Now()); err != nil {
 		return err
 	}
@@ -36,6 +54,9 @@ func (m *Master) reconcileFirewall(ctx context.Context) error {
 	}
 	m.mu.RUnlock()
 	for _, peer := range peers {
+		if err := m.queueProtected(ctx, peer); err != nil {
+			return err
+		}
 		m.mu.RLock()
 		live := m.live[peer.nodeID]
 		m.mu.RUnlock()

@@ -57,6 +57,9 @@
       },
       "hours": {
         "type": "integer"
+      },
+      "whitelistMode": {
+        "type": "boolean"
       }
     },
     "required": [

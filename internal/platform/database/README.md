@@ -9,6 +9,8 @@ name column. `telegram_identity_migration_test.go` covers rollback, credentials,
 financial references and colliding late traffic in hosted CI.
 `xnode_access_repair.go` coalesces bounded paid provisioning recovery into the
 existing outbox without resetting exhausted or settled purchase periods.
+`telegram_identity_commands.go` reseals queued administrator command and source
+migration targets using the new actor ID while retaining their retry keys.
 
 `database.go` escapes literal database paths before adding SQLite URI pragmas.
 `database_path_test.go` covers hash/percent/space filenames and isolation between
@@ -554,3 +556,25 @@ settings/routing revision fences, sharing the durable receipt transaction with
 `xnode_routing_queue.go`. Local saves complete without routing deployment.
 `xnode_diy_test.go` covers atomic rollback, owner isolation, stale revisions,
 idempotency and subscription-only writes during pending routing deployment.
+
+`xnode_firewall_detection.go` stages bounded memory-only fleet counters, committing
+only after durable cursor/ban writes; `xnode_firewall_detection_test.go` covers
+cross-node totals, replay, exclusion, rollback and expiry. `xnode_firewall_policy.go`
+migrates encrypted node rules to one encrypted global policy.
+`xnode_firewall_protected.go` releases existing managed-node false positives.
+`xnode_whitelist.go` derives capacity from the effective purchase's combo;
+`xnode_whitelist_test.go` checks paid-unban refusal and charged retry replay.
+`xnode_diy_reconcile.go` batches free reference cleanup through the existing outbox
+and uses revision fences; it never debits a wallet or allowance.
+
+`xnode_diy_billing.go` shares `ip_lookup_allowances` and `changeBalanceTx` with IP
+checks under the same write lock and transaction. Successful changed saves consume
+one allowance or the configured fresh lookup fee. Unconfigured fees reject paid
+changes; zero is an explicitly configured free price. Quote drift, stale revisions
+and insufficient funds roll back desired settings, routing, charge and receipt.
+Financial metadata and the committed revision remain under `diySave` in the
+existing operation result. Deployment completion merges its result so retries
+retain the exact initial outcome. No additional billing table or cache is added.
+
+`xnode_diy_billing_test.go` covers shared allowance races, paid and free saves,
+transaction rollback, stale/expired quotes and exact lost-response replay in hosted CI.

@@ -80,6 +80,13 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err = s.settings.PutXNodeGlobal(ctx, actor, string(raw)); err != nil {
 		return err
 	}
+	if repo, ok := s.repo.(interface{ ResetFirewallDetection() }); ok {
+		before, _ := json.Marshal(previous.FirewallDetection)
+		after, _ := json.Marshal(next.FirewallDetection)
+		if string(before) != string(after) {
+			repo.ResetFirewallDetection()
+		}
+	}
 	if runtimeChanged {
 		s.localCompileRevision.Add(1)
 	}

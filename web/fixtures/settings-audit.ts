@@ -12,6 +12,8 @@ import type { ComboControls, EarlyActivationQuote, OperationReceipt, Purchase } 
 import { usePreferencesStore } from '@/stores/preferences'
 import { setLocale, t } from '@/i18n'
 import SettingsAudit from './SettingsAudit.vue'
+import { xnodeMemberApi } from '@/api/xnodeMember'
+import { installDIYAudit } from './diy-audit'
 
 const params = new URLSearchParams(location.search)
 if (params.has('reduced')) {
@@ -121,6 +123,18 @@ const app = createApp(SettingsAudit, { purchase: active })
 app.config.globalProperties.$t = t
 app.use(createPinia())
 usePreferencesStore().bind('audit-user')
-app.use(createRouter({ history: createWebHistory(), routes: [{ path: '/fixtures/settings-audit.html', component: SettingsAudit }] }))
+const operationLoader = memberOperationsApi.getOperation
+const routePreview = xnodeMemberApi.previewRouting
+const router = createRouter({ history: createWebHistory(), routes: [
+  { path: '/fixtures/settings-audit.html', component: SettingsAudit },
+  { path: '/settings/diy', component: () => import('@/views/DIYView.vue'), beforeEnter: () => {
+    const trace = { calls: [] as string[], keys: [] as string[], writes: [] as unknown[] }
+    installDIYAudit(params, trace, async () => ({ plan: { revision: 0, phase: 'active', choices: [] }, nodes: [], endpoints: [], templates: [], paths: [] }))
+    xnodeMemberApi.previewRouting = async () => ({ paths: [] })
+    Object.assign(window, { __diyNavigationAudit: trace })
+  } },
+] })
+router.afterEach(to => { if (to.path !== '/settings/diy') { memberOperationsApi.getOperation = operationLoader; xnodeMemberApi.previewRouting = routePreview } })
+app.use(router)
 app.use(ui)
 app.mount('#app')

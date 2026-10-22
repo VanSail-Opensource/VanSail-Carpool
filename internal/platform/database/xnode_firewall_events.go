@@ -14,11 +14,23 @@ import (
 	"time"
 )
 
-func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string, events []wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time) error {
+func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string, events []wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time, excluded ...[]string) error {
 	if !wire.ValidName(namespace) || len(events) > 256 {
 		return xnode.ErrInvalid
 	}
-	return s.firewallWrite(ctx, func(tx *sql.Tx) error {
+	s.firewallDetectionMu.Lock()
+	defer s.firewallDetectionMu.Unlock()
+	if s.firewallWindows == nil {
+		s.firewallWindows = map[string]firewallDetectionWindow{}
+	}
+	staged := map[string]firewallDetectionWindow{}
+	ignored := map[string]bool{}
+	for _, list := range excluded {
+		for _, ip := range list {
+			ignored[ip] = true
+		}
+	}
+	result := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var ordinal uint32
 		if err := tx.QueryRowContext(ctx, `SELECT ordinal FROM xnode_firewall_members WHERE node_id=? AND active=1`, node).Scan(&ordinal); err != nil {
 			return err
@@ -39,21 +51,26 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 			switch event.Kind {
 			case "detected":
 				rule, enabled := policy.Rule(event.Rule)
-				// Configuration may have changed while this durable report was offline.
-				if enabled && event.Count >= uint64(rule.Threshold) {
+				if enabled && policy.Protect {
 					ip, e := xnode.FirewallPublicIP(event.IP)
 					if e != nil {
 						return e
 					}
-					prefix, e := wire.FirewallPrefix(ip)
-					if e != nil {
-						return e
-					}
-					if event.Time.IsZero() || event.Time.After(now.Add(5*time.Minute)) || event.FirstSeen.After(event.Time) {
-						return xnode.ErrInvalid
-					}
-					if err = authorizeDetectionTx(ctx, tx, prefix.String(), ip, event, policy, now); err != nil {
-						return err
+					if !ignored[ip] {
+						event.IP = ip
+						aggregated, ban, e := s.stageDetection(event, rule, policy, now, staged)
+						if e != nil {
+							return e
+						}
+						if ban {
+							prefix, e := wire.FirewallPrefix(ip)
+							if e != nil {
+								return e
+							}
+							if err = authorizeDetectionTx(ctx, tx, prefix.String(), ip, aggregated, policy, now); err != nil {
+								return err
+							}
+						}
 					}
 				}
 			case "expired":
@@ -75,6 +92,17 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		}
 		return queueFirewallFleetTx(ctx, tx, now)
 	})
+	if result == nil {
+		for key, window := range s.firewallWindows {
+			if !window.start.Add(time.Duration(window.rule.WindowSeconds) * time.Second).After(now) {
+				delete(s.firewallWindows, key)
+			}
+		}
+		for key, window := range staged {
+			s.firewallWindows[key] = window
+		}
+	}
+	return result
 }
 func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, event wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time) error {
 	var active int

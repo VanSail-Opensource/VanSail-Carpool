@@ -6,7 +6,7 @@
     "unban": "Unban",
     "releasePending": "Release saved. Waiting for node acknowledgments.",
     "title": "Firewall",
-    "reportHint": "Shared detections and authorized bans. Expiry waits for every participating node; repeat hits may extend a node's deadline.",
+    "reportHint": "Fleet-wide detections and master-authorized bans. Ban deadlines are set by the master.",
     "empty": "No active detected bans.",
     "ip": "Public IP address",
     "rule": "Detection rule",
@@ -26,7 +26,7 @@
     "banSeconds": "Ban duration (seconds)",
     "threshold": "Hit threshold",
     "windowSeconds": "Window (seconds)",
-    "detectionHint": "Detections report to the master. Only master commands authorize new blacklist entries.",
+    "detectionHint": "On: report matches and enforce master bans. Off: silently drop rule matches. Geolocation limits remain enforced.",
     "rules": {
       "closed_port": "Closed port",
       "invalid_packet": "Invalid packet",
@@ -34,7 +34,8 @@
       "icmp_probe": "ICMP probe",
       "xray_tcp_probe": "Xray TCP probe",
       "xray_invalid": "Xray malformed request",
-      "xray_auth_failure": "Xray authentication failure"
+      "xray_auth_failure": "Xray authentication failure",
+      "source_match": "Blocklist source match"
     },
     "loadFailed": "Could not load the unban price. Please retry.",
     "saveFailed": "Could not save the exemption. Retry with the same request.",
@@ -48,6 +49,9 @@
     "adminReason": "Reason (optional)",
     "adminInvalidPrefix": "Enter an IPv4/IPv6 address or CIDR.",
     "adminInvalidHours": "Enter a whole number from 1 to 8760 hours.",
-    "adminInvalidReason": "Use at most 1000 characters."
+    "adminInvalidReason": "Use at most 1000 characters.",
+    "globalRules": "Global detection policy",
+    "globalRulesHint": "Thresholds total reports from every node.",
+    "migrationNotice": "Different node policies used shared defaults. Review these rules."
   }
 }

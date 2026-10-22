@@ -10,19 +10,27 @@ import (
 )
 
 type TuningField struct {
-	Key          string   `json:"key"`
-	Group        string   `json:"group"`
-	Kind         string   `json:"kind"`
-	Minimum      int64    `json:"minimum"`
-	Maximum      int64    `json:"maximum"`
-	Enum         []string `json:"enum,omitempty"`
-	Unit         string   `json:"unit"`
-	Advanced     bool     `json:"advanced"`
-	Restrictions []string `json:"restrictions,omitempty"`
+	Key          string             `json:"key"`
+	Group        string             `json:"group"`
+	Kind         string             `json:"kind"`
+	Minimum      int64              `json:"minimum"`
+	Maximum      int64              `json:"maximum"`
+	Enum         []string           `json:"enum,omitempty"`
+	Unit         string             `json:"unit"`
+	Advanced     bool               `json:"advanced"`
+	Restrictions []string           `json:"restrictions,omitempty"`
+	Context      string             `json:"context"`
+	Dependencies []TuningDependency `json:"dependencies,omitempty"`
+	Available    *bool              `json:"available,omitempty"`
+}
+type TuningDependency struct {
+	Key             string   `json:"key"`
+	Values          []string `json:"values,omitempty"`
+	NotValues       []string `json:"notValues,omitempty"`
+	InheritedValues []string `json:"inheritedValues,omitempty"`
 }
 type tuningSpec struct {
 	TuningField
-	Context  string
 	Mappings map[string]string
 }
 

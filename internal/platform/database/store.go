@@ -26,6 +26,9 @@ var (
 
 // Store implements persistent repositories on top of SQLite.
 type Store struct {
+	diyCleanupCursor    string
+	firewallDetectionMu sync.Mutex
+	firewallWindows     map[string]firewallDetectionWindow
 	firewallSweepCursor string // protected by writeMu; bounded operational pruning
 	pmContentCipher     pmContentCipher
 	db                  *sql.DB

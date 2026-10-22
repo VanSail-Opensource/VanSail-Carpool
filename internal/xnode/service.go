@@ -64,6 +64,8 @@ func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, erro
 	var settings NodeSettings
 	err = s.open("xnode.node."+id, node.SettingsCipher, &settings)
 	normalizeNodeSettings(&settings)
+	settings.Firewall.Rules = nil
+	settings.Firewall.BanSeconds = 0
 	return node, settings, err
 }
 

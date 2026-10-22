@@ -94,6 +94,15 @@ func (p Proxy) NativeLink() (string, error) {
 			query.Set(key, value)
 		}
 	}
+	if network == "xhttp" {
+		if extra := object(settings, "extra"); len(extra) > 0 {
+			raw, err := json.Marshal(extra)
+			if err != nil {
+				return "", err
+			}
+			query.Set("extra", string(raw))
+		}
+	}
 	link.RawQuery = query.Encode()
 	return link.String(), nil
 }

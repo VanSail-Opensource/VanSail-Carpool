@@ -21,7 +21,7 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 	if len(suffix) > 8 {
 		suffix = suffix[:8]
 	}
-	result := subscription.Proxy{ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name + "-" + suffix, Address: endpoint.Address, Port: endpoint.Port}
+	result := subscription.Proxy{ID: endpoint.ID, NodeID: endpoint.NodeID, InboundTag: endpoint.InboundTag, Name: endpoint.Name + "-" + suffix, Address: endpoint.Address, Port: endpoint.Port}
 	groups, err := s.Groups(ctx)
 	if err != nil {
 		return result, err

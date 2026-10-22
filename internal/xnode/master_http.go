@@ -3,6 +3,8 @@ package xnode
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -75,6 +77,9 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer queue.Shutdown(context.Background())
 	peer := &agentPeer{nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && r.Header.Get("X-Forwarded-For") == "" {
+		peer.publicIP, _ = FirewallPublicIP(host)
+	}
 	m.mu.Lock()
 	if lifetime.Err() != nil {
 		m.mu.Unlock()
@@ -99,6 +104,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.live[node.ID] = liveSnapshot{hello: hello}
 	m.wg.Add(1)
 	m.mu.Unlock()
+	m.rememberNodeIPs(peer, json.RawMessage(`{}`))
 	defer func() {
 		m.mu.Lock()
 		if m.peers[node.ID] == peer {

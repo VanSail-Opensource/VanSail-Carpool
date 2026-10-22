@@ -12,6 +12,7 @@ import (
 type Proxy struct {
 	ID              string               `json:"id"`
 	NodeID          string               `json:"nodeId"`
+	InboundTag      string               `json:"-"`
 	GroupIDs        []string             `json:"-"`
 	Countries       []string             `json:"-"`
 	Name            string               `json:"name"`

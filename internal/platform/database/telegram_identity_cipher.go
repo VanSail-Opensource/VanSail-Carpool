@@ -10,6 +10,9 @@ import (
 
 func rekeyIdentityCiphertexts(ctx context.Context, tx *sql.Tx, vault *secret.Vault, key identityRekey) error {
 	if key.user != "" && key.oldUser != key.user {
+		if err := rekeyQueuedSealedTargets(ctx, tx, vault, key); err != nil {
+			return err
+		}
 		for _, item := range []struct{ table, column, context string }{
 			{"xnode_identities", "credentials_cipher", "xnode.identity.user."},
 			{"xnode_identities", "subscription_cipher", "xnode.subscription.user."},

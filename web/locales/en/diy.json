@@ -76,7 +76,8 @@
       "serverMode": "The mode conflicts with the endpoint.",
       "trust": "Requires administrator-provided certificate trust.",
       "mode": "A separate download connection is unavailable in stream-one mode.",
-      "serverLimit": "Exceeds the endpoint's configured limit."
+      "serverLimit": "Exceeds the endpoint's configured limit.",
+      "dependency": "This option is inactive in the current mode."
     },
     "restrictions": {
       "linux": "Routing marks require Linux.",
@@ -95,13 +96,60 @@
       "dependency": "Configure the required parent option first.",
       "serverCapability": "This server protocol is unavailable for your endpoints.",
       "xrayValidation": "The resulting client options failed pinned Xray validation. Review dependent options.",
-      "routing": "Review the custom routing draft."
+      "routing": "Review the custom routing draft.",
+      "whitelistInvalid": "Enter unique public IPs within your quota.",
+      "splitInvalid": "A host or mode is unavailable. Select compatible hosts or remove the profile."
     },
     "units": {
       "seconds": "seconds",
       "milliseconds": "milliseconds",
       "bytes": "bytes",
       "count": "count"
-    }
+    },
+    "whitelist": {
+      "unsaved": "Unsaved changes",
+      "title": "IP whitelist",
+      "enabled": "Require whitelisted IPs on all nodes",
+      "hint": "Only these IPs may use your credentials. They bypass firewall bans; non-Reality geolocation limits remain.",
+      "quota": "{used} / {quota} IPs",
+      "comboQuota": "Whitelist IP slots",
+      "add": "Add IP",
+      "empty": "Add exact public IP addresses.",
+      "blocksAll": "No IPs added. Enabling this blocks all connections with your credentials.",
+      "phase": {
+        "disabled": "Whitelist is off.",
+        "inactive": "No eligible node access. Your list is retained.",
+        "pending": "Waiting for node confirmation ({count}).",
+        "active": "Applied to your nodes."
+      },
+      "savedPending": "Saved. Whitelist deployment is pending."
+    },
+    "tabs": {
+      "connection": "Connection",
+      "xhttp": "XHTTP",
+      "network": "Network",
+      "routing": "Routing",
+      "whitelist": "Whitelist"
+    },
+    "split": {
+      "title": "Split profiles",
+      "hint": "Use two XHTTP hosts sharing one node and inbound. Ordinary hosts stay available.",
+      "upload": "Upload host",
+      "download": "Download host",
+      "mode": "Mode",
+      "add": "Add split profile",
+      "empty": "No split profiles yet.",
+      "unavailable": "Two accessible hosts sharing the same XHTTP session are required.",
+      "number": "Split profile {number}",
+      "remove": "Remove split profile {number}"
+    },
+    "cost": {
+      "allowance": "Save uses 1 IP-check allowance ({remaining} remaining)",
+      "txb": "Save costs {amount}",
+      "unchanged": "Unchanged Save is free",
+      "unavailable": "Save price is not configured."
+    },
+    "noApplicableFields": "No applicable options for your current hosts.",
+    "quoteChanged": "Allowance or price changed. The quote has refreshed and your draft is retained. Review it before saving again."
   }
 }

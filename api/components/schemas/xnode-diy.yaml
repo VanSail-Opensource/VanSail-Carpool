@@ -12,6 +12,19 @@ XNodeDIYField:
     unit: {type: string}
     advanced: {type: boolean}
     restrictions: {type: array, items: {type: string}}
+    context: {type: string}
+    available: {type: boolean}
+    dependencies:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [key]
+        properties:
+          key: {type: string}
+          values: {type: array, items: {type: string}}
+          notValues: {type: array, items: {type: string}}
+          inheritedValues: {type: array, items: {type: string}}
 XNodeTuningApplicability:
   type: object
   additionalProperties: false
@@ -29,6 +42,9 @@ XNodeDIYWrite:
   additionalProperties: false
   required: [settingsRevision, routingRevision, overrides, choices]
   properties:
+    quote: {type: string, maxLength: 16384}
+    whitelist: {$ref: '#/XNodeWhitelistPolicy'}
+    splitProfiles: {type: array, maxItems: 64, items: {$ref: '#/XNodeSplitProfile'}}
     settingsRevision: {type: integer, minimum: 0, maximum: 9007199254740990}
     routingRevision: {type: integer, minimum: 0, maximum: 9007199254740991}
     overrides: {$ref: '../../openapi.yaml#/components/schemas/XNodeDIYOverrides'}
@@ -39,8 +55,12 @@ XNodeDIYWrite:
 XNodeDIYView:
   type: object
   additionalProperties: false
-  required: [settingsRevision, overrides, routing, fields, compatibility]
+  required: [settingsRevision, overrides, routing, fields, compatibility, splitProfiles, splitHosts, billing]
   properties:
+    billing: {$ref: '#/XNodeDIYBillingQuote'}
+    splitHosts: {type: array, items: {$ref: '#/XNodeDIYSplitHost'}}
+    whitelist: {$ref: '#/XNodeWhitelistView'}
+    splitProfiles: {type: array, items: {$ref: '#/XNodeSplitProfile'}}
     settingsRevision: {type: integer, minimum: 0}
     overrides: {$ref: '../../openapi.yaml#/components/schemas/XNodeDIYOverrides'}
     routing: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingView'}
@@ -49,8 +69,9 @@ XNodeDIYView:
 XNodeDIYPreview:
   type: object
   additionalProperties: false
-  required: [valid, fieldErrors, paths, compatibility]
+  required: [valid, fieldErrors, paths, compatibility, billing]
   properties:
+    billing: {$ref: '#/XNodeDIYBillingQuote'}
     valid: {type: boolean}
     fieldErrors: {type: object, additionalProperties: {type: string}}
     paths: {type: array, items: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingPath'}}
@@ -58,8 +79,64 @@ XNodeDIYPreview:
 XNodeDIYSaveResult:
   type: object
   additionalProperties: false
-  required: [settingsRevision, routingChanged, receipt]
+  required: [settingsRevision, routingChanged, receipt, changed]
   properties:
-    settingsRevision: {type: integer, minimum: 1}
+    changed: {type: boolean}
+    billing: {$ref: '#/XNodeDIYBillingQuote'}
+    deploymentChanged: {type: boolean}
+    settingsRevision: {type: integer, minimum: 0}
     routingChanged: {type: boolean}
     receipt: {$ref: '../../openapi.yaml#/components/schemas/OperationReceipt'}
+
+XNodeWhitelistPolicy:
+  type: object
+  additionalProperties: false
+  required: [enabled, ips]
+  properties:
+    enabled: {type: boolean}
+    ips: {type: array, maxItems: 1000, uniqueItems: true, items: {type: string}}
+XNodeWhitelistView:
+  type: object
+  additionalProperties: false
+  required: [enabled, ips, quota, phase, pendingNodes]
+  properties:
+    enabled: {type: boolean}
+    ips: {type: array, items: {type: string}}
+    quota: {type: integer, minimum: 0, maximum: 1000}
+    phase: {type: string, enum: [disabled, inactive, pending, active]}
+    pendingNodes: {type: array, items: {type: string}}
+XNodeSplitProfile:
+  type: object
+  additionalProperties: false
+  required: [id, uploadEndpointId, downloadEndpointId, mode]
+  properties:
+    id: {type: string}
+    uploadEndpointId: {type: string}
+    downloadEndpointId: {type: string}
+    mode: {type: string, enum: [auto, packet-up, stream-up]}
+
+XNodeDIYSplitHost:
+  type: object
+  additionalProperties: false
+  required: [id, name, nodeId, inboundTag, downloadIds, modes]
+  properties:
+    id: {type: string}
+    name: {type: string}
+    nodeId: {type: string}
+    inboundTag: {type: string}
+    downloadIds: {type: array, items: {type: string}}
+    modes: {type: array, items: {type: string, enum: [auto, packet-up, stream-up]}}
+XNodeDIYBillingQuote:
+  type: object
+  additionalProperties: false
+  required: [available, changed, useQuota, remaining, charge, token, expiresAt]
+  properties:
+    available: {type: boolean}
+    changed: {type: boolean}
+    useQuota: {type: boolean}
+    remaining: {type: integer, minimum: 0}
+    charge: {$ref: '../../openapi.yaml#/components/schemas/Money'}
+    token: {type: string}
+    expiresAt: {type: integer}
+    purchaseId: {type: string}
+    configHash: {type: string}

@@ -25,14 +25,22 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	}
 	digest := sha256.Sum256(raw)
 	fingerprint := hex.EncodeToString(digest[:])
-	if receipt, replayed, routed, err := repo.ReplayXNodeDIY(ctx, user, key, fingerprint); err != nil || replayed {
-		return DIYSaveResult{SettingsRevision: input.SettingsRevision + 1, RoutingChanged: routed, Receipt: receipt}, err
+	if replay, found, err := repo.ReplayXNodeDIYResult(ctx, user, key, fingerprint); err != nil || found {
+		if found && replay.Legacy {
+			replay.SettingsRevision = input.SettingsRevision + 1
+			replay.Changed = true
+		}
+		return replay, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// Another caller can commit this key while this request waits for the lock.
-	if receipt, replayed, routed, err := repo.ReplayXNodeDIY(ctx, user, key, fingerprint); err != nil || replayed {
-		return DIYSaveResult{SettingsRevision: input.SettingsRevision + 1, RoutingChanged: routed, Receipt: receipt}, err
+	if replay, found, err := repo.ReplayXNodeDIYResult(ctx, user, key, fingerprint); err != nil || found {
+		if found && replay.Legacy {
+			replay.SettingsRevision = input.SettingsRevision + 1
+			replay.Changed = true
+		}
+		return replay, err
 	}
 	preview, err := s.PreviewOwnedDIY(ctx, user, input)
 	if err != nil {
@@ -41,6 +49,15 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	if !preview.Valid {
 		return result, ErrInvalid
 	}
+	proxies, err := s.diyProxies(ctx, user)
+	if err != nil {
+		return result, err
+	}
+	previousSettings, settings, err := s.diySettingsForWrite(ctx, user, input, proxies)
+	if err != nil {
+		return result, err
+	}
+	whitelistChanged := previousSettings.Whitelist.Enabled != settings.Whitelist.Enabled || settings.Whitelist.Enabled && !sameDIYValue(previousSettings.Whitelist, settings.Whitelist)
 	routing, err := s.diyRouting(ctx, user)
 	if err != nil {
 		return result, err
@@ -58,6 +75,9 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	}
 	var plan *RoutingPlan
 	items := []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: user}}
+	if whitelistChanged {
+		items = []providerops.ItemInput{{Key: "whitelist", TargetType: "member_whitelist", TargetID: user}}
+	}
 	if string(previous) != string(next) {
 		identity, err := s.repo.XNodeIdentityByUser(ctx, user)
 		if err != nil {
@@ -70,10 +90,27 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 		plan = &prepared
 		items = []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}
 	}
-	cipher, err := s.seal("xnode.diy."+user, input.Overrides)
+	cipher, err := s.seal("xnode.diy."+user, settings)
 	if err != nil {
 		return result, err
 	}
-	receipt, err := repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
-	return DIYSaveResult{SettingsRevision: input.SettingsRevision + 1, RoutingChanged: plan != nil, Receipt: receipt}, err
+	changed := !sameDIYValue(previousSettings, settings) || plan != nil
+	result = DIYSaveResult{Changed: changed, SettingsRevision: input.SettingsRevision, RoutingChanged: plan != nil, DeploymentChanged: plan != nil || whitelistChanged}
+	var quote *DIYBillingQuote
+	if changed {
+		result.SettingsRevision++
+		if _, ok := s.repo.(diyBillingRepository); ok {
+			quote, err = s.openDIYQuote(user, input.Quote)
+			if err != nil {
+				return result, err
+			}
+			paid := *quote
+			paid.Token = ""
+			paid.ConfigHash = ""
+			paid.Changed = true
+			result.Billing = &paid
+		}
+	}
+	result.Receipt, err = repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher, NativeChanged: whitelistChanged, Unchanged: !changed, Billing: quote, Result: &result}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
+	return result, err
 }

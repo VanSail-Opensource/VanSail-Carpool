@@ -156,6 +156,7 @@ Combo:
     - updatedAt
   properties:
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
+    whitelistIpQuota: {type: integer, minimum: 0, maximum: 1000}
     id:
       $ref: '../../openapi.yaml#/components/schemas/ID'
     name:
@@ -240,6 +241,7 @@ ComboWrite:
     - rolloverMinRemainingBps
   properties:
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
+    whitelistIpQuota: {type: integer, minimum: 0, maximum: 1000}
     name:
       type: string
       minLength: 1

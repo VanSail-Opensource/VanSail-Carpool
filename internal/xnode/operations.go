@@ -17,6 +17,7 @@ import (
 const OperationKind = "xnode_command"
 
 type CommandRequest struct {
+	Force          bool   `json:"force,omitempty"`
 	Name           string `json:"name"`
 	JobID          string `json:"jobId,omitempty"`
 	Version        string `json:"version,omitempty"`
@@ -31,6 +32,9 @@ type operationRepository interface {
 }
 
 func validNodeCommand(request CommandRequest) bool {
+	if request.Force && request.Name != "runtime.reload" {
+		return false
+	}
 	switch request.Name {
 	case "update.check", "update.rollback", "runtime.reload", "geodata.refresh":
 		return request.JobID == "" && request.Version == "" && request.PeerEndpointID == ""
@@ -54,6 +58,9 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	}
 	if _, err := s.repo.XNodeNode(ctx, node); err != nil {
 		return model.OperationReceipt{}, err
+	}
+	if request.Name == "runtime.reload" && s.master != nil && s.master.Connected(node) && !containsCapability(s.master.Capabilities(node), "incremental_reload_v1") {
+		return model.OperationReceipt{}, &CapabilityError{Capability: "incremental_reload_v1"}
 	}
 	if (request.Name == "runtime.reload" || request.Name == "geodata.refresh") && s.master != nil && s.master.Connected(node) && !slices.Contains(s.master.Capabilities(node), "activation_commands_v1") {
 		return model.OperationReceipt{}, &CapabilityError{Capability: "activation_commands_v1"}
@@ -80,7 +87,10 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	if operation.Receipt.Kind == RouteSpeedtestOperation {
 		return s.handleRouteSpeedtest(ctx, operation, job)
 	}
-	if operation.Receipt.Kind == RoutingOperationKind || operation.Receipt.Kind == DIYOperationKind {
+	if operation.Receipt.Kind == DIYOperationKind {
+		return s.master.deferOperation(job, 15*time.Minute, func(ctx context.Context) error { return s.runDIYOperation(ctx, operation) })
+	}
+	if operation.Receipt.Kind == RoutingOperationKind {
 		return s.handleRoutingOperation(operation, job)
 	}
 	return s.master.deferOperation(job, 12*time.Minute, func(ctx context.Context) error { return s.runProviderOperation(ctx, operation, job) })

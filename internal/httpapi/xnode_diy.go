@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"errors"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"net/http"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -42,6 +44,10 @@ func (s *Server) xnodeSaveDIY(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := s.deps.XNode.SaveOwnedDIY(r.Context(), currentUser(r).ID, key, input)
+	if errors.Is(err, database.ErrInsufficientBalance) {
+		s.writeError(w, r, http.StatusConflict, "INSUFFICIENT_BALANCE", "Insufficient balance.")
+		return
+	}
 	if err != nil {
 		s.xnodeRoutingError(w, r, err)
 		return

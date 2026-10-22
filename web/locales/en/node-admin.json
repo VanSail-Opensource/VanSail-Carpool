@@ -7,6 +7,8 @@
     "ss2022": "Add SS-2022 (AES-256)",
     "peer": "Peer endpoint",
     "run": "Run command",
+    "forceReload": "Force runtime recovery",
+    "reloadHint": "Normal reload rechecks material and keeps unchanged listeners. Forced recovery restarts the runtime.",
     "noCertificate": "No managed certificate",
     "autoTls": "Manage TLS automatically",
     "certificateBinding": "Certificate for {tag}",

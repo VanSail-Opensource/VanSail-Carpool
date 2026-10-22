@@ -127,6 +127,9 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 		}
 		user := wire.User{ID: int(identity.ProxyUserID), UUID: credentials.UUID, InboundTags: tags, AccountingPeriod: period.ID, ValidUntil: &until, Credentials: map[string]json.RawMessage{}}
 		user.ReplacesID = int(identity.ReplacesID)
+		if err = s.applyMemberWhitelist(ctx, identity.UserID, &user); err != nil {
+			return nil, err
+		}
 		if s.master != nil {
 			user.BlockNew = s.master.Blocked(user.ID)
 		}

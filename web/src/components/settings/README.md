@@ -11,6 +11,8 @@ Language, currency and automatic reset share the same flat settings-row rhythm;
 the group tag save action sits beside its input.
 
 `SettingsPage.vue` composes existing language, currency and traffic-reset controls.
+It is the sole member navigation entrance to `/settings/diy`; the existing DIY
+route and in-memory drafts remain owned by the DIY module.
 `NotificationSettings.vue` renders the five delivery categories.
 `SettingsSwitchRow.vue` is a controlled, accessible row: changes are confirmed by
 the preferences store before the displayed value changes.

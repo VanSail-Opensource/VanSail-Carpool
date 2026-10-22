@@ -35,6 +35,7 @@ type SquadProduct struct {
 
 // Combo is a time-limited traffic entitlement and its included squads.
 type Combo struct {
+	WhitelistIPQuota        int            `json:"whitelistIpQuota"`
 	IPLookupQuota           *int           `json:"ipLookupQuota"`
 	ID                      string         `json:"id"`
 	Name                    string         `json:"name"`

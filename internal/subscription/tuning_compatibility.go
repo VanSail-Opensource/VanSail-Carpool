@@ -16,6 +16,7 @@ type TuningApplicability struct {
 }
 
 func TuningCompatibility(overrides ConnectionOverrides, proxies []Proxy) []TuningApplicability {
+	overrides = ActiveTuning(overrides)
 	values, err := overrides.values()
 	if err != nil {
 		return nil
@@ -58,6 +59,9 @@ func TuningCompatibility(overrides ConnectionOverrides, proxies []Proxy) []Tunin
 }
 
 func tuningReason(p Proxy, spec tuningSpec, format string, value any, values map[string]any) string {
+	if !tuningDependenciesForProxy(spec.TuningField, values, p) {
+		return "dependency"
+	}
 	if (format == "native" || format == "base64") && p.Protocol != "vless" && p.Protocol != "trojan" {
 		return "protocol"
 	}

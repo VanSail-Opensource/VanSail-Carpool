@@ -49,7 +49,7 @@ function graph(choices: RoutingChoice[]) {
   }
   return result
 }
-xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
+xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed && !params.has('diy')) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
 xnodeMemberApi.previewRouting = async body => {
   trace.calls.push('member-preview'); trace.previews.push(JSON.parse(JSON.stringify(body))); await pause(params.has('stale-preview') && body.destination.domain === 'google.com' ? 1700 : 50)
   const selectedGeoSite = body.choices.some(choice => catalog.templates.find(template => template.id === choice.templateId)?.match.domain?.some(domain => domain.startsWith('geosite:')))
@@ -66,7 +66,7 @@ xnodeMemberApi.saveRouting = async (body, key) => {
   receipt = { id: 'routing-operation', kind: 'xnode_routing', status: 'queued', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; return receipt
 }
 memberOperationsApi.getOperation = async () => { trace.polls++; trace.calls.push('member-operation'); await pause(30); if (params.has('poll-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); plan = { ...plan, phase: 'active' }; return { ...receipt!, status: 'succeeded' } }
-xnodeApi.routingTemplates = async () => { trace.calls.push('admin-load'); await pause(); if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone(catalog) }
+xnodeApi.routingTemplates = async () => { trace.calls.push('admin-load'); await pause(); if (params.has('load-error') && !failed && !params.has('diy')) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone(catalog) }
 xnodeApi.saveRoutingTemplates = async value => { trace.calls.push('admin-save'); await pause(); if (params.has('save-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); trace.writes.push(JSON.parse(JSON.stringify(value))); catalog = JSON.parse(JSON.stringify({ ...value, revision: value.revision + 1 })); return structuredClone(catalog) }
 Object.assign(window, { __routingAudit: trace })
 let speedtestPolls = 0

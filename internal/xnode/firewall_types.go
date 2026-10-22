@@ -31,9 +31,10 @@ type FirewallGrant struct {
 	Hours      int       `json:"hours"`
 }
 type FirewallQuote struct {
-	Enabled bool   `json:"enabled"`
-	Price   string `json:"price"`
-	Hours   int    `json:"hours"`
+	WhitelistMode bool   `json:"whitelistMode"`
+	Enabled       bool   `json:"enabled"`
+	Price         string `json:"price"`
+	Hours         int    `json:"hours"`
 }
 type FirewallPurchase struct {
 	IP    string `json:"ip"`
@@ -51,7 +52,7 @@ type firewallRepository interface {
 	ReconcileFirewallSources(context.Context, []string, time.Time) error
 	ReconcileFirewallMember(context.Context, string, bool, bool, uint64) error
 	FirewallMember(context.Context, string) (FirewallMember, error)
-	RecordFirewallEvents(context.Context, string, string, []wire.FirewallEvent, wire.FirewallPolicy, time.Time) error
+	RecordFirewallEvents(context.Context, string, string, []wire.FirewallEvent, wire.FirewallPolicy, time.Time, ...[]string) error
 	FirewallPage(context.Context, uint64, uint64, bool, string, int) (wire.FirewallUpdate, string, error)
 	MarkFirewallDelivered(context.Context, string, uint64, bool, bool, uint64) error
 	PublishFirewallSource(context.Context, wire.FirewallSource, time.Time) (bool, error)
@@ -59,7 +60,7 @@ type firewallRepository interface {
 	SweepFirewall(context.Context, time.Time) error
 	FirewallBans(context.Context, int) ([]FirewallBanView, error)
 	FirewallPrefixes(context.Context, func([]string) error) error
-	PurchaseFirewallExemption(context.Context, string, FirewallPurchase, int64, time.Time) (FirewallGrant, error)
+	PurchaseFirewallExemption(context.Context, string, FirewallPurchase, int64, time.Time, ...bool) (FirewallGrant, error)
 }
 
 func FirewallPublicIP(raw string) (string, error) {

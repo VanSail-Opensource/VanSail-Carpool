@@ -57,6 +57,20 @@ func (s *Service) FirewallQuote(ctx context.Context) (FirewallQuote, error) {
 	price, e := model.ParseTXBMajor(config.FirewallUnbanPrice)
 	return FirewallQuote{Enabled: e == nil && price > 0 && config.FirewallExemptionHours > 0, Price: config.FirewallUnbanPrice, Hours: config.FirewallExemptionHours}, nil
 }
+
+func (s *Service) OwnedFirewallQuote(ctx context.Context, user string) (FirewallQuote, error) {
+	quote, err := s.FirewallQuote(ctx)
+	if err != nil {
+		return quote, err
+	}
+	_, settings, err := s.readDIYSettings(ctx, user)
+	if err != nil {
+		return quote, err
+	}
+	quote.WhitelistMode = settings.Whitelist.Enabled
+	quote.Enabled = quote.Enabled && !quote.WhitelistMode
+	return quote, nil
+}
 func (s *Service) PurchaseFirewallExemption(ctx context.Context, user string, input FirewallPurchase) (FirewallGrant, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -83,7 +97,11 @@ func (s *Service) PurchaseFirewallExemption(ctx context.Context, user string, in
 	if !ok {
 		return FirewallGrant{}, ErrUnavailable
 	}
-	return repo.PurchaseFirewallExemption(ctx, user, input, price, s.Now())
+	_, settings, err := s.readDIYSettings(ctx, user)
+	if err != nil {
+		return FirewallGrant{}, err
+	}
+	return repo.PurchaseFirewallExemption(ctx, user, input, price, s.Now(), !settings.Whitelist.Enabled)
 }
 func (s *Service) FirewallBans(ctx context.Context) ([]FirewallBanView, error) {
 	repo, ok := s.repo.(firewallRepository)
@@ -125,11 +143,16 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	if err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_SETTINGS_FAILED", err)
 	}
+	global, err := m.service.Global(ctx)
+	if err != nil {
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_SETTINGS_FAILED", err)
+	}
+	settings.Firewall = global.FirewallDetection.Apply(settings.Firewall)
 	repo, ok := m.service.repo.(firewallRepository)
 	if !ok {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", ErrUnavailable)
 	}
-	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now()); err != nil {
+	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now(), m.protectedIPs(true)); err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", err)
 	}
 	ids := make([]string, len(report.Events))

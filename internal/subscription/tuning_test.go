@@ -30,7 +30,7 @@ func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 	if err != nil || string(a) != string(b) {
 		t.Fatal("inheritance changed behavior", err)
 	}
-	o := tuningFixture(t, `{"fingerprint":"firefox","tcpFastOpen":false,"tcpKeepAliveIdle":0,"muxEnabled":false,"muxConcurrency":-1}`)
+	o := tuningFixture(t, `{"fingerprint":"firefox","tcpFastOpen":false,"tcpKeepAliveIdle":0,"muxConcurrency":-1}`)
 	if errors := ValidateTuning(o); len(errors) != 0 {
 		t.Fatal(errors)
 	}
@@ -70,7 +70,7 @@ func TestTuningStrictTypesRangesDependenciesAndMixedHosts(t *testing.T) {
 			t.Fatal("protected/invalid accepted", raw)
 		}
 	}
-	for _, raw := range []string{`{"muxXudpConcurrency":1025}`, `{"minVersion":"1.3","maxVersion":"1.2"}`, `{"xhttpHeaders":[{"name":"Host","value":"evil"}]}`, `{"xmuxMaxConcurrency":{"min":1,"max":2},"xmuxMaxConnections":{"min":1,"max":2}}`, `{"xhttpMode":"stream-one","downloadTcpFastOpen":false}`, `{"ssUDPOverTCPVersion":2}`, `{"singboxMuxEnabled":true}`} {
+	for _, raw := range []string{`{"muxXudpConcurrency":1025}`, `{"minVersion":"1.3","maxVersion":"1.2"}`, `{"xhttpHeaders":[{"name":"Host","value":"evil"}]}`, `{"xmuxMaxConcurrency":{"min":1,"max":2},"xmuxMaxConnections":{"min":1,"max":2}}`, `{"singboxMuxEnabled":true}`} {
 		if errors := ValidateTuning(tuningFixture(t, raw)); len(errors) == 0 {
 			t.Fatal("invalid values accepted", raw)
 		}

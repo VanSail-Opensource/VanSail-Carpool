@@ -72,6 +72,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if fleet != nil {
 		global = *fleet
 	}
+	settings.Firewall = global.FirewallDetection.Apply(settings.Firewall)
 	ports, hashes, err := GlobalWire(global, native)
 	if err != nil {
 		return wire.Config{}, err

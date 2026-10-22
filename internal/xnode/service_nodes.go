@@ -13,6 +13,8 @@ import (
 
 func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings) (Node, error) {
 	normalizeNodeSettings(&settings)
+	settings.Firewall.Rules = nil
+	settings.Firewall.BanSeconds = 0
 	settings.Firewall.MasterControlled = false // negotiated per authenticated peer
 	settings.Firewall.SourceGeoIP = nil        // only the master may resolve this projection
 	if err := validateBandwidth(settings.Bandwidth); err != nil {

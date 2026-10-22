@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -14,6 +15,11 @@ import (
 func TestDIYSettingsRoundTripConcurrentRetriesAndExportIsolation(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx := context.Background()
+	c := iplookup.DefaultConfig()
+	c.LookupFeeTXB = "0"
+	if err := f.store.SaveIPLookupSettings(ctx, f.user.ID, c, nil, nil); err != nil {
+		t.Fatal(err)
+	}
 	view, err := f.service.OwnedDIY(ctx, f.user.ID)
 	if err != nil || view.SettingsRevision != 0 || len(view.Fields) < 80 {
 		t.Fatal("initial inheritance", view, err)
@@ -22,7 +28,7 @@ func TestDIYSettingsRoundTripConcurrentRetriesAndExportIsolation(t *testing.T) {
 	if err = json.Unmarshal([]byte(`{"tcpFastOpen":false,"tcpKeepAliveIdle":0,"muxConcurrency":-1}`), &overrides); err != nil {
 		t.Fatal(err)
 	}
-	input := xnode.DIYWrite{SettingsRevision: 0, RoutingRevision: view.Routing.Plan.Revision, Overrides: overrides, Choices: []xnode.RoutingChoice{}}
+	input := xnode.DIYWrite{Quote: view.Billing.Token, SettingsRevision: 0, RoutingRevision: view.Routing.Plan.Revision, Overrides: overrides, Choices: []xnode.RoutingChoice{}}
 	preview, err := f.service.PreviewOwnedDIY(ctx, f.user.ID, input)
 	if err != nil || !preview.Valid {
 		t.Fatal("draft preview", preview, err)
@@ -60,6 +66,7 @@ func TestDIYSettingsRoundTripConcurrentRetriesAndExportIsolation(t *testing.T) {
 		t.Fatal("owner document leaked", other, err)
 	}
 	input.SettingsRevision = 1
+	input.Quote = view.Billing.Token
 	input.Overrides = subscription.ConnectionOverrides{}
 	if _, err = f.service.SaveOwnedDIY(ctx, f.user.ID, "inherit", input); err != nil {
 		t.Fatal(err)

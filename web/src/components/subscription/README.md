@@ -84,3 +84,6 @@ only. Mini App subscription actions use the existing automatic link; public-page
 format selection and explicit-format URLs remain available.
 
 `SubscriptionTuningDiagnostics.vue` shows omitted client options in Mini App availability and the public page. Custom routing is composed by DIY Center; `useMemberRouting.ts` accepts an external draft/save owner while preserving the existing routing API.
+
+The DIY Center entrance lives on Settings. This page retains subscription links,
+host inventory and availability diagnostics.

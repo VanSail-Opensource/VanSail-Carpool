@@ -16,11 +16,18 @@ import (
 const DIYOperationKind = "xnode_diy"
 
 type DIYDocument struct {
-	UserID   string
-	Revision int64
-	Cipher   string
+	Unchanged     bool
+	Billing       *DIYBillingQuote
+	Result        *DIYSaveResult
+	NativeChanged bool
+	UserID        string
+	Revision      int64
+	Cipher        string
 }
 type DIYWrite struct {
+	Quote            string                           `json:"quote,omitempty"`
+	Whitelist        *WhitelistPolicy                 `json:"whitelist,omitempty"`
+	SplitProfiles    *[]SplitProfile                  `json:"splitProfiles,omitempty"`
 	SettingsRevision int64                            `json:"settingsRevision"`
 	RoutingRevision  int64                            `json:"routingRevision"`
 	Overrides        subscription.ConnectionOverrides `json:"overrides"`
@@ -44,6 +51,10 @@ func (input *DIYWrite) UnmarshalJSON(raw []byte) error {
 }
 
 type DIYView struct {
+	SplitHosts       []DIYSplitHost                     `json:"splitHosts"`
+	Billing          DIYBillingQuote                    `json:"billing"`
+	Whitelist        WhitelistView                      `json:"whitelist"`
+	SplitProfiles    []SplitProfile                     `json:"splitProfiles"`
 	SettingsRevision int64                              `json:"settingsRevision"`
 	Overrides        subscription.ConnectionOverrides   `json:"overrides"`
 	Routing          RoutingView                        `json:"routing"`
@@ -51,18 +62,24 @@ type DIYView struct {
 	Compatibility    []subscription.TuningApplicability `json:"compatibility"`
 }
 type DIYPreview struct {
+	Billing       DIYBillingQuote                    `json:"billing"`
 	Valid         bool                               `json:"valid"`
 	FieldErrors   map[string]string                  `json:"fieldErrors"`
 	Paths         []routingmatch.Path                `json:"paths"`
 	Compatibility []subscription.TuningApplicability `json:"compatibility"`
 }
 type DIYSaveResult struct {
-	SettingsRevision int64                  `json:"settingsRevision"`
-	RoutingChanged   bool                   `json:"routingChanged"`
-	Receipt          model.OperationReceipt `json:"receipt"`
+	Legacy            bool                   `json:"-"`
+	Changed           bool                   `json:"changed"`
+	Billing           *DIYBillingQuote       `json:"billing,omitempty"`
+	DeploymentChanged bool                   `json:"deploymentChanged"`
+	SettingsRevision  int64                  `json:"settingsRevision"`
+	RoutingChanged    bool                   `json:"routingChanged"`
+	Receipt           model.OperationReceipt `json:"receipt"`
 }
 type diyRepository interface {
 	XNodeDIY(context.Context, string) (DIYDocument, error)
 	ReplayXNodeDIY(context.Context, string, string, string) (model.OperationReceipt, bool, bool, error)
+	ReplayXNodeDIYResult(context.Context, string, string, string) (DIYSaveResult, bool, error)
 	SaveXNodeDIY(context.Context, DIYDocument, int64, *RoutingPlan, providerops.CreateInput, time.Time) (model.OperationReceipt, error)
 }

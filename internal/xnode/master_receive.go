@@ -80,6 +80,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		}
 		m.live[peer.nodeID] = snapshot
 		m.mu.Unlock()
+		m.rememberNodeIPs(peer, report.Machine)
 		return nil
 	case "traffic.report":
 		var report wire.TrafficReport

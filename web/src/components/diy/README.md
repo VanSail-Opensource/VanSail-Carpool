@@ -22,3 +22,20 @@ the backend repeats validation and checks generated Xray with the pinned parser.
 applicability, host counts and documented client/platform restrictions.
 
 `useDIY.test.ts` covers both draft sections through validation, same-key lost replies, revision conflicts and inheritance reset in hosted CI.
+
+`DIYWhitelist.vue` edits exact IPs in the shared draft and displays the active
+combo's capacity and deployment phase. Empty enabled lists explicitly deny all
+connections. The single Save persists desired policy; node acknowledgment controls
+activation status. Browser admin combo capacity uses the existing catalog editor.
+
+`DIYTuningPanel.vue` renders one tab's active catalog groups. `diyApplicability.ts`
+uses the server's shared dependency rules for visibility and Save validation;
+hidden values stay in the draft but leave the submitted overrides. The Nuxt tabs
+retain mounted routing and input state. `DIYSplitProfiles.vue` edits only host
+references and a split-compatible mode from the server catalog.
+
+Quotes beside Save use the existing IP-check allowance, then the fresh-check TXB
+price. `useDIY.ts` retains the exact request, quote and key after uncertain replies;
+a retry reads the committed receipt before validating current access or prices.
+A changed quote requires another Save with the updated displayed price. No extra
+confirmation is introduced. Backend transactions own fees and revision fencing.

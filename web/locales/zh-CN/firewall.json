@@ -6,7 +6,7 @@
     "unban": "解除封禁",
     "releasePending": "已保存解除操作，正在等待节点确认。",
     "title": "防火墙",
-    "reportHint": "共享检测记录与已授权封禁。所有参与节点确认到期后才会移除；再次命中可能延长节点上的封禁时间。",
+    "reportHint": "汇总全节点检测和主控授权的封禁，到期时间由主控设置。",
     "empty": "暂无有效的检测封禁。",
     "ip": "公网 IP 地址",
     "rule": "检测规则",
@@ -26,7 +26,7 @@
     "banSeconds": "封禁时长（秒）",
     "threshold": "命中阈值",
     "windowSeconds": "统计窗口（秒）",
-    "detectionHint": "检测结果上报主控，只有主控指令可以添加新的黑名单条目。",
+    "detectionHint": "开启：上报命中并执行主控封禁。关闭：静默丢弃规则命中的流量。地理限制仍然生效。",
     "rules": {
       "closed_port": "关闭端口",
       "invalid_packet": "无效数据包",
@@ -34,7 +34,8 @@
       "icmp_probe": "ICMP 探测",
       "xray_tcp_probe": "Xray TCP 探测",
       "xray_invalid": "Xray 请求格式错误",
-      "xray_auth_failure": "Xray 认证失败"
+      "xray_auth_failure": "Xray 认证失败",
+      "source_match": "命中黑名单来源"
     },
     "loadFailed": "无法获取解封价格，请重试。",
     "saveFailed": "保存豁免失败，请重试原请求。",
@@ -48,6 +49,9 @@
     "adminReason": "原因（可选）",
     "adminInvalidPrefix": "请输入 IPv4、IPv6 地址或 CIDR。",
     "adminInvalidHours": "请输入 1 至 8760 之间的整数小时数。",
-    "adminInvalidReason": "原因最多 1000 个字符。"
+    "adminInvalidReason": "原因最多 1000 个字符。",
+    "globalRules": "全局检测策略",
+    "globalRulesHint": "阈值累计所有节点的上报。",
+    "migrationNotice": "原节点策略不同，已采用共享默认值，请检查这些规则。"
   }
 }

@@ -100,3 +100,11 @@ fencing, cursor history and exact-generation unban receipts. `XNodeFirewall.vue`
 keeps pending delivery visible and reloads the current search after acknowledged
 success; retrying a read does not create another release. Existing positive-hour
 administrator grants remain a separate form with unchanged behavior.
+
+`XNodeGlobalDetection.vue` adapts fleet rules to the existing rules table.
+`XNodeFirewallRules.vue` keeps node enable/probe switches separate from the global
+threshold/window/ban controls; the global form displays migration conflicts.
+
+`XNodeCommands.vue` defaults to normal material-rechecking reload and exposes
+an explicit forced recovery checkbox. Both use the existing durable command
+receipt and capability validation; no additional confirmation flow is added.

@@ -40,7 +40,7 @@ func (s *Service) routingPlanNodes(plans ...RoutingPlan) ([]string, error) {
 	slices.Sort(nodes)
 	return nodes, nil
 }
-func (s *Service) runRoutingOperation(ctx context.Context, operation providerops.Operation) error {
+func (s *Service) runRoutingOperation(ctx context.Context, operation providerops.Operation, after ...func(context.Context) error) error {
 	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
 		return nil
 	}
@@ -121,6 +121,11 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 	}
 	if plan.Phase != "active" {
 		return ErrConflict
+	}
+	for _, next := range after {
+		if err = next(ctx); err != nil {
+			return err
+		}
 	}
 	return s.completeRoutingOperation(ctx, operation, providerops.StatusSucceeded, "")
 }

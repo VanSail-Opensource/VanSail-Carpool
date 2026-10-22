@@ -14,6 +14,11 @@ import (
 )
 
 type Master struct {
+	protectedReleaseDigest   string
+	managedNodeIPs           map[string][]string
+	managedHostIPs           []string
+	hostOrigins              map[string]hostOrigin
+	whitelistStates          map[string]whitelistNodeState
 	service                  *Service
 	logger                   *slog.Logger
 	ctx                      context.Context
@@ -31,6 +36,10 @@ type Master struct {
 	firewallInventoryVersion uint64
 }
 type agentPeer struct {
+	publicIP              string
+	protectedMu           sync.Mutex
+	protectedDigest       string
+	protectedAt           time.Time
 	nodeID                string
 	agentID               string
 	bootID                string

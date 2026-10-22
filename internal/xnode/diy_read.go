@@ -3,27 +3,13 @@ package xnode
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 func (s *Service) readDIY(ctx context.Context, user string) (DIYDocument, subscription.ConnectionOverrides, error) {
-	repo, ok := s.repo.(diyRepository)
-	if !ok {
-		return DIYDocument{}, subscription.ConnectionOverrides{}, ErrUnavailable
-	}
-	doc, err := repo.XNodeDIY(ctx, user)
-	if err != nil {
-		return doc, subscription.ConnectionOverrides{}, err
-	}
-	var overrides subscription.ConnectionOverrides
-	if doc.Cipher != "" {
-		if err = s.open("xnode.diy."+user, doc.Cipher, &overrides); err != nil {
-			return doc, overrides, err
-		}
-	}
-	return doc, overrides, nil
+	doc, settings, err := s.readDIYSettings(ctx, user)
+	return doc, settings.Overrides, err
 }
 
 func (s *Service) diyRouting(ctx context.Context, user string) (RoutingView, error) {
@@ -46,12 +32,16 @@ func (s *Service) diyProxies(ctx context.Context, user string) ([]subscription.P
 }
 
 func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
-	view := DIYView{Fields: subscription.TuningFields()}
-	doc, overrides, err := s.readDIY(ctx, user)
+	view := DIYView{}
+	doc, settings, err := s.readDIYSettings(ctx, user)
 	if err != nil {
 		return view, err
 	}
-	view.SettingsRevision, view.Overrides = doc.Revision, overrides
+	view.SettingsRevision, view.Overrides = doc.Revision, settings.Overrides
+	view.Whitelist, err = s.ownedWhitelist(ctx, user, settings.Whitelist)
+	if err != nil {
+		return view, err
+	}
 	view.Routing, err = s.diyRouting(ctx, user)
 	if err != nil {
 		return view, err
@@ -60,7 +50,14 @@ func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
 	if err != nil {
 		return view, err
 	}
-	view.Compatibility = subscription.TuningCompatibility(overrides, proxies)
+	view.Fields = subscription.TuningFieldsFor(proxies)
+	view.SplitProfiles = validSplitProfiles(settings.SplitProfiles, proxies)
+	view.SplitHosts = splitHostCatalog(proxies)
+	view.Billing, err = s.diyBillingQuote(ctx, user)
+	if err != nil {
+		return view, err
+	}
+	view.Compatibility = subscription.TuningCompatibility(settings.Overrides, proxies)
 	return view, nil
 }
 
@@ -73,23 +70,23 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 	if _, ok := s.repo.(diyRepository); !ok {
 		return proxies, nil
 	}
-	_, overrides, err := s.readDIY(ctx, user)
+	_, settings, err := s.readDIYSettings(ctx, user)
 	if err != nil {
 		return nil, err
 	}
+	overrides := subscription.ActiveTuningFor(settings.Overrides, proxies)
 	raw, err := json.Marshal(overrides)
 	if err != nil {
 		return nil, err
 	}
-	if string(raw) == "{}" {
-		return proxies, nil
-	}
 	if len(subscription.ValidateTuning(overrides)) > 0 {
-		return nil, fmt.Errorf("%w: stored client options", ErrInvalid)
+		return nil, ErrInvalid
 	}
 	result := append([]subscription.Proxy(nil), proxies...)
 	for index := range result {
-		result[index].Tuning = &overrides
+		if string(raw) != "{}" {
+			result[index].Tuning = &overrides
+		}
 	}
-	return result, nil
+	return appendSplitProxies(settings.SplitProfiles, result), nil
 }

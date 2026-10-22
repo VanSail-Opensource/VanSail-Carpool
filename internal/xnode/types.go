@@ -59,6 +59,7 @@ type Snippet struct {
 }
 
 type GlobalConfig struct {
+	FirewallDetection      *FirewallDetectionConfig `json:"firewallDetection"`
 	GeodataIntervalHours   *int                     `json:"geodataIntervalHours,omitempty"`
 	SourceGeoIP            SourceGeoIPConfig        `json:"sourceGeoIp"`
 	BlockedDomains         []string                 `json:"blockedDomains"`

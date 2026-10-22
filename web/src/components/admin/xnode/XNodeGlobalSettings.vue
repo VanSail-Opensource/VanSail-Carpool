@@ -2,6 +2,7 @@
 import { shallowRef } from 'vue'
 import { useI18n } from '@/i18n'
 import XNodeGlobalPolicies from './XNodeGlobalPolicies.vue'
+import XNodeGlobalDetection from './XNodeGlobalDetection.vue'
 import XNodeDNSProviders from './XNodeDNSProviders.vue'
 import { useXNodeGlobalSettings } from './useXNodeGlobalSettings'
 const { t } = useI18n()
@@ -35,6 +36,7 @@ const validPolicies = shallowRef(true)
         <UFormField :label="t('xnode.speedtestUploadUrl')"><UInput v-model="draft.speedtestUploadUrl" type="url" class="w-full" /></UFormField>
       </div>
       <XNodeGlobalPolicies v-model="draft" @valid="validPolicies = $event" />
+      <XNodeGlobalDetection v-model="draft" />
       <details><summary>{{ t('xnode.dnsProviders') }}</summary><XNodeDNSProviders v-model="draft.providers" /></details>
       <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!validPolicies || !canSave" :label="t('common.save')" /></div>
     </fieldset>

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, input xnode.FirewallPurchase, price int64, now time.Time) (xnode.FirewallGrant, error) {
+func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, input xnode.FirewallPurchase, price int64, now time.Time, allowNew ...bool) (xnode.FirewallGrant, error) {
 	var grant xnode.FirewallGrant
 	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var until string
@@ -23,6 +23,9 @@ func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, inpu
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
 			return err
+		}
+		if len(allowNew) > 0 && !allowNew[0] {
+			return xnode.ErrConflict
 		}
 		var existing int
 		if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE ip=? AND until_at>? AND released_version=0`, input.IP, stamp(now)).Scan(&existing); err != nil {

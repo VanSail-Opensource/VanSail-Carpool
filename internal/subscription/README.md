@@ -75,3 +75,25 @@ https://wiki.metacubex.one/en/config/proxies/ ;
 https://stash.wiki/en/proxy-protocols/proxy-types .
 
 `tuning_rows.go` rejects missing/null structured row fields. `tuning_native.go` limits share-link parameters to documented client fields.
+
+`split.go` derives a combined XHTTP stream from two current hosts reaching the
+same native inbound and session path/placement. The upload mode is independent
+of ordinary-host tuning. Selected download host security/address/port remain
+administrator-owned; member download tuning applies to that leg. Native/base64
+links carry the documented XHTTP `extra`; Xray and Mihomo/Stash render their
+supported download settings. Unsupported formats omit only the combined entry.
+The ordinary entries remain in all inventories.
+
+`tuning_dependencies.go` shares the catalog's mode/parent requirements with Go
+validation, exports and frontend metadata. Inactive dependent values are ignored
+before validation and excluded from settings persistence; the browser alone keeps
+the hidden draft. Context availability comes from current owner-scoped hosts.
+Upstream session/mode reference: https://github.com/XTLS/Xray-core/discussions/4113.
+
+`split_test.go` covers session identity, profile modes, format exports and inactive
+field exclusion in hosted CI.
+
+Inherited endpoint modes are included in dependency metadata. The frontend and
+owner validation use these alongside explicit draft values, hiding packet-upload
+and download controls when all applicable inherited hosts use stream-one. With
+no authoritative host inventory, generic future-host preferences are retained.

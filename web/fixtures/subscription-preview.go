@@ -24,6 +24,10 @@ func main() {
 			{ID: "xhttp", Name: "XHTTP host", Protocol: "vless", Address: "xhttp.example", Port: 443, Account: map[string]any{"id": "c1d50c69-2f17-41ec-a23c-b30eb375639f", "encryption": "none"}, Stream: map[string]any{"network": "xhttp", "security": "tls", "tlsSettings": map[string]any{"serverName": "admin.example", "fingerprint": "chrome"}, "xhttpSettings": map[string]any{"path": "/admin", "mode": "auto"}}},
 			{ID: "ss", Name: "SS host", Protocol: "shadowsocks", Address: "ss.example", Port: 443, Account: map[string]any{"method": "aes-128-gcm", "password": "synthetic"}, Stream: map[string]any{"network": "tcp"}},
 		}
+		if r.URL.Query().Get("mode") == "stream-one" {
+			proxies[1].Stream["xhttpSettings"].(map[string]any)["mode"] = "stream-one"
+		}
+		input = subscription.ActiveTuningFor(input, proxies)
 		errors := subscription.ValidateTuning(input)
 		if len(errors) == 0 {
 			for _, proxy := range proxies {
@@ -42,7 +46,7 @@ func main() {
 				}
 			}
 		}
-		respond(w, map[string]any{"fields": subscription.TuningFields(), "valid": len(errors) == 0, "fieldErrors": errors, "paths": []any{}, "compatibility": subscription.TuningCompatibility(input, proxies)})
+		respond(w, map[string]any{"fields": subscription.TuningFieldsFor(proxies), "valid": len(errors) == 0, "fieldErrors": errors, "paths": []any{}, "compatibility": subscription.TuningCompatibility(input, proxies)})
 	})
 	mux.HandleFunc("/selection", func(w http.ResponseWriter, r *http.Request) {
 		var input struct {

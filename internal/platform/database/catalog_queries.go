@@ -43,7 +43,7 @@ func (s *Store) ListCombos(ctx context.Context, activeOnly bool) ([]model.Combo,
 	return combos, rows.Err()
 }
 
-const comboSelect = `SELECT id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,rollover_min_remaining_bps,included_squad_uuids,created_at,updated_at,ip_lookup_quota FROM combos`
+const comboSelect = `SELECT id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,rollover_min_remaining_bps,included_squad_uuids,created_at,updated_at,ip_lookup_quota,whitelist_ip_quota FROM combos`
 
 func scanCombo(row rowScanner) (model.Combo, error) {
 	var combo model.Combo
@@ -52,7 +52,7 @@ func scanCombo(row rowScanner) (model.Combo, error) {
 	var encodedSquads, created, updated string
 	if err := row.Scan(&combo.ID, &combo.Name, &combo.Description, &combo.PriceTXBMinor, &combo.ValidityDays,
 		&combo.TrafficLimitBytes, &combo.ResetStrategy, &active, &combo.RolloverMinRemainingBPS,
-		&encodedSquads, &created, &updated, &quota); err != nil {
+		&encodedSquads, &created, &updated, &quota, &combo.WhitelistIPQuota); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.Combo{}, ErrNotFound
 		}

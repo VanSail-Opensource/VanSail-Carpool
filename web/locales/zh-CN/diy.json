@@ -76,7 +76,8 @@
       "serverMode": "该模式与端点配置冲突。",
       "trust": "需要管理员提供证书信任配置。",
       "mode": "stream-one 模式不支持独立下行连接。",
-      "serverLimit": "超过端点配置的限制。"
+      "serverLimit": "超过端点配置的限制。",
+      "dependency": "此选项在当前模式下不适用。"
     },
     "restrictions": {
       "linux": "路由标记需要 Linux。",
@@ -95,13 +96,60 @@
       "dependency": "请先配置所需的上级选项。",
       "serverCapability": "当前端点不支持此服务器协议。",
       "xrayValidation": "客户端选项未通过固定版本的 Xray 校验，请检查相互依赖的选项。",
-      "routing": "请检查自定义路由草稿。"
+      "routing": "请检查自定义路由草稿。",
+      "whitelistInvalid": "请输入不超过额度的唯一公网 IP。",
+      "splitInvalid": "主机或模式已不可用，请选择兼容主机或移除此配置。"
     },
     "units": {
       "seconds": "秒",
       "milliseconds": "毫秒",
       "bytes": "字节",
       "count": "数量"
-    }
+    },
+    "whitelist": {
+      "unsaved": "有未保存的更改",
+      "title": "IP 白名单",
+      "enabled": "所有节点仅允许白名单 IP",
+      "hint": "仅这些 IP 可使用你的凭据。它们绕过防火墙封禁，非 Reality 地理限制仍然生效。",
+      "quota": "{used} / {quota} 个 IP",
+      "comboQuota": "白名单 IP 额度",
+      "add": "添加 IP",
+      "empty": "请添加精确的公网 IP 地址。",
+      "blocksAll": "尚未添加 IP，启用后将阻止所有使用你凭据的连接。",
+      "phase": {
+        "disabled": "白名单已关闭。",
+        "inactive": "暂无可用节点权限，列表已保留。",
+        "pending": "等待节点确认（{count}）。",
+        "active": "已应用到你的节点。"
+      },
+      "savedPending": "已保存，正在部署白名单。"
+    },
+    "tabs": {
+      "connection": "连接",
+      "xhttp": "XHTTP",
+      "network": "网络",
+      "routing": "路由",
+      "whitelist": "白名单"
+    },
+    "split": {
+      "title": "上下行分离",
+      "hint": "选择连接同一节点和入站的两个 XHTTP 主机，原有主机配置保留。",
+      "upload": "上传主机",
+      "download": "下载主机",
+      "mode": "模式",
+      "add": "添加分离配置",
+      "empty": "还没有分离配置。",
+      "unavailable": "需要两个可访问且共享同一 XHTTP 会话的主机。",
+      "number": "分离配置 {number}",
+      "remove": "移除分离配置 {number}"
+    },
+    "cost": {
+      "allowance": "本次保存消耗 1 次 IP 检测额度（剩余 {remaining} 次）",
+      "txb": "本次保存 {amount}",
+      "unchanged": "未更改：免费保存",
+      "unavailable": "保存价格尚未配置。"
+    },
+    "noApplicableFields": "当前主机没有适用的选项。",
+    "quoteChanged": "额度或价格已变更。已刷新报价并保留草稿，请查看后再次保存。"
   }
 }

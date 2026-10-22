@@ -10,6 +10,7 @@ import (
 )
 
 func ValidateTuning(overrides ConnectionOverrides) map[string]string {
+	overrides = ActiveTuning(overrides)
 	errors := map[string]string{}
 	values, err := overrides.values()
 	if err != nil {

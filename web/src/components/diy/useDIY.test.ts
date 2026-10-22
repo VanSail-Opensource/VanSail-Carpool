@@ -10,9 +10,10 @@ afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
 it('retains both drafts through validation, a lost reply and a revision conflict; reset touches options only', async () => {
   vi.useFakeTimers()
   const route = { id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', inboundEndpointId: 'a-host', outboundEndpointId: 'b-host', templateId: 'one' }
-  const view: DIYView = { settingsRevision: 0, overrides: {}, routing: { plan: { revision: 0, phase: 'active', choices: [route] }, nodes: [], templates: [], paths: [], endpoints: [] }, fields: [{ key: 'tcpFastOpen', kind: 'fast-open', group: 'sockopt', unit: '', minimum: -2147483648, maximum: 2147483647, advanced: true }], compatibility: [] }
+  const billing: DIYView['billing'] = { available: true, changed: true, useQuota: true, remaining: 5, charge: { currency: 'TXB', minor: '0', display: '0.00' }, token: 'synthetic', expiresAt: 9999999999 }
+  const view: DIYView = { billing, splitHosts: [], splitProfiles: [], settingsRevision: 0, overrides: {}, routing: { plan: { revision: 0, phase: 'active', choices: [route] }, nodes: [], templates: [], paths: [], endpoints: [] }, fields: [{ key: 'tcpFastOpen', kind: 'fast-open', group: 'sockopt', unit: '', minimum: -2147483648, maximum: 2147483647, advanced: true }], compatibility: [] }
   vi.spyOn(xnodeMemberApi, 'diy').mockResolvedValue(view)
-  const preview = vi.spyOn(xnodeMemberApi, 'previewDIY').mockResolvedValue({ valid: false, fieldErrors: { routing: 'routing_invalid_rule' }, compatibility: [], paths: [] })
+  const preview = vi.spyOn(xnodeMemberApi, 'previewDIY').mockResolvedValue({ billing, valid: false, fieldErrors: { routing: 'routing_invalid_rule' }, compatibility: [], paths: [] })
   const save = vi.spyOn(xnodeMemberApi, 'saveDIY').mockRejectedValue(new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }))
   let state!: ReturnType<typeof useDIY>
   const wrapper = mount(defineComponent({ setup() { state = useDIY(); return () => null } }))
@@ -21,7 +22,7 @@ it('retains both drafts through validation, a lost reply and a revision conflict
   await state.save()
   expect(save).not.toHaveBeenCalled()
   expect(state.choices.value[0]?.templateId).toBe('two')
-  preview.mockResolvedValue({ valid: true, fieldErrors: {}, compatibility: [], paths: [] })
+  preview.mockResolvedValue({ billing, valid: true, fieldErrors: {}, compatibility: [], paths: [] })
   await state.save(); await state.save()
   expect(save).toHaveBeenCalledTimes(2)
   expect(save.mock.calls[0]?.[1]).toBe(save.mock.calls[1]?.[1])

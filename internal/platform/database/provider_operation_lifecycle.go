@@ -68,9 +68,9 @@ func (s *Store) completeProviderOperation(ctx context.Context, operationID strin
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,
-		result_json=?,completed_at=?,updated_at=? WHERE id=? AND ((status='processing' AND attempt_started_at IS NOT NULL)
+		result_json=CASE WHEN kind='xnode_diy' THEN json_patch(result_json,?) ELSE ? END,completed_at=?,updated_at=? WHERE id=? AND ((status='processing' AND attempt_started_at IS NOT NULL)
 		OR (status='queued' AND ?='failed')) AND (? IS NULL OR attempts=?)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
-		resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
+		resultJSON, resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("complete provider operation: %w", err)
 	}

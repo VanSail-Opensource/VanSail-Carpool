@@ -27,7 +27,7 @@ func (s *Server) xnodeFirewallBans(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, page)
 }
 func (s *Server) xnodeFirewallQuote(w http.ResponseWriter, r *http.Request) {
-	quote, err := s.deps.XNode.FirewallQuote(r.Context())
+	quote, err := s.deps.XNode.OwnedFirewallQuote(r.Context(), currentUser(r).ID)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

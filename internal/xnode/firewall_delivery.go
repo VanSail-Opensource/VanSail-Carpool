@@ -15,6 +15,9 @@ import (
 // HandleOutbox uses the existing durable dispatcher and per-node send queues.
 // Command waits are deferred, so traffic acknowledgments never await a ban job.
 func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
+	if job.Kind == DIYReconcileJob {
+		return m.service.ReconcileDIY(ctx, job)
+	}
 	if job.Kind == AccessRepairJob {
 		return m.service.RepairAccess(ctx, job)
 	}
@@ -22,11 +25,22 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		NodeID string `json:"nodeId"`
 		Bank   string `json:"bank"`
 	}
-	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.NodeID == "" || (input.Bank != "dynamic" && input.Bank != "sources" && input.Bank != "geoip") {
+	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.NodeID == "" || (input.Bank != "dynamic" && input.Bank != "sources" && input.Bank != "geoip" && input.Bank != "protected") {
 		return ErrInvalid
 	}
 	if !hasFirewallCapability(m.Capabilities(input.NodeID)) {
 		return ErrUnavailable
+	}
+	if input.Bank == "protected" {
+		return m.deferOperation(job, time.Minute, func(ctx context.Context) error {
+			m.mu.RLock()
+			peer := m.peers[input.NodeID]
+			m.mu.RUnlock()
+			if peer == nil {
+				return ErrUnavailable
+			}
+			return m.deliverProtected(ctx, peer)
+		})
 	}
 	if input.Bank != "dynamic" {
 		m.mu.Lock()
@@ -78,6 +92,11 @@ func (m *Master) deliverFirewall(ctx context.Context, node string, sources bool,
 	}
 	if !owned || !desired.Enabled || !settings.Firewall.Enabled {
 		return nil
+	}
+	if containsCapability(m.Capabilities(node), "firewall_master_observation_v1") {
+		if err = m.deliverProtected(ctx, peer); err != nil {
+			return err
+		}
 	}
 	member, err := repo.FirewallMember(ctx, node)
 	if err != nil {

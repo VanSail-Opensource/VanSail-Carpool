@@ -80,6 +80,9 @@ func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, xnode.ErrInvalid) {
 			status = http.StatusUnprocessableEntity
 		}
+		if errors.Is(err, xnode.ErrConflict) {
+			status = http.StatusConflict
+		}
 	case errors.Is(err, xnode.ErrNotFound):
 		status, code = http.StatusNotFound, "XNODE_NOT_FOUND"
 	case errors.Is(err, xnode.ErrInvalid):

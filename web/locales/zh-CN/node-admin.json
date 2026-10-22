@@ -1,5 +1,7 @@
 {
   "nodeAdmin": {
+    "forceReload": "强制恢复运行时",
+    "reloadHint": "常规重载会重新检查依赖材料并保留未改变的监听器。强制恢复会重启运行时。",
     "command": "节点命令",
     "endpointOverrides": "客户端连接点覆盖配置（JSON）",
     "enabled": "已启用",

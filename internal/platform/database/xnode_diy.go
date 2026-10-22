@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -74,6 +75,11 @@ func (s *Store) SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocument, routing
 	if current != doc.Revision || currentRouting != routingRevision || current >= 9007199254740991 {
 		return op.Receipt, xnode.ErrConflict
 	}
+	if !doc.Unchanged {
+		if err = chargeDIYTx(ctx, tx, doc.UserID, op.Receipt.ID, doc.Billing, now); err != nil {
+			return op.Receipt, err
+		}
+	}
 	if plan != nil {
 		var planOwned bool
 		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=? AND user_id=?)`, plan.ProxyUserID, doc.UserID).Scan(&planOwned); err != nil {
@@ -89,10 +95,26 @@ func (s *Store) SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocument, routing
 			return op.Receipt, err
 		}
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET revision=excluded.revision,cipher=excluded.cipher`, doc.UserID, current+1, doc.Cipher); err != nil {
-		return op.Receipt, err
+	if !doc.Unchanged {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET revision=excluded.revision,cipher=excluded.cipher`, doc.UserID, current+1, doc.Cipher); err != nil {
+			return op.Receipt, err
+		}
 	}
-	if plan == nil {
+	if doc.Result != nil {
+		raw, err := json.Marshal(map[string]any{"diySave": doc.Result})
+		if err != nil {
+			return op.Receipt, err
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operations SET result_json=? WHERE id=?`, string(raw), op.Receipt.ID); err != nil {
+			return op.Receipt, err
+		}
+	}
+	if doc.NativeChanged {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1`); err != nil {
+			return op.Receipt, err
+		}
+	}
+	if plan == nil && !doc.NativeChanged {
 		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',completed_at=?,updated_at=? WHERE operation_id=?`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
 			return op.Receipt, err
 		}

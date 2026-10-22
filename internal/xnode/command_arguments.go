@@ -11,6 +11,13 @@ func (s *Service) commandArguments(ctx context.Context, node string, request Com
 		return nil, &CapabilityError{Capability: "activation_commands_v1"}
 	}
 	switch request.Name {
+	case "runtime.reload":
+		if !containsCapability(s.master.Capabilities(node), "incremental_reload_v1") {
+			return nil, &CapabilityError{Capability: "incremental_reload_v1"}
+		}
+		if request.Force {
+			args["force"] = true
+		}
 	case "geodata.refresh":
 		s.invalidatePolicyAssets()
 		if err := s.master.Sync(ctx, node); err != nil {

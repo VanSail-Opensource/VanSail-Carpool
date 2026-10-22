@@ -17,7 +17,7 @@ const { t } = useI18n()
 const resetCadences: ResetCadence[] = ['DAY', 'WEEK', 'MONTH_ROLLING']
 const resetItems = computed(() => resetCadences.map((value) => ({ value, label: t(`adminCatalogEditor.reset.${value}`) })))
 const draft = reactive({
-  ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
+  whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
   resetStrategy: 'MONTH_ROLLING' as ResetCadence, squadProductIds: [] as string[],
   rolloverMinRemainingPercent: 0, active: true,
 })
@@ -29,14 +29,14 @@ watch(() => props.combo, (combo) => {
     name: combo.name,
     description: combo.description,
     priceTxb: txbInputFromMinor(combo.price.minor),
-    ipLookupQuota: combo.ipLookupQuota ?? null, validityDays: combo.validityDays,
+    whitelistIpQuota: combo.whitelistIpQuota ?? 5, ipLookupQuota: combo.ipLookupQuota ?? null, validityDays: combo.validityDays,
     trafficLimitBytes: combo.trafficLimitBytes,
     resetStrategy: combo.resetStrategy,
     squadProductIds: combo.includedSquads.map((squad) => squad.id),
     rolloverMinRemainingPercent: combo.rolloverMinRemainingBps / 100,
     active: combo.active,
   } : {
-    ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
+    whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
     trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], rolloverMinRemainingPercent: 0, active: true,
   })
 }, { immediate: true })
@@ -49,7 +49,7 @@ function submit(): void {
   draft.trafficLimitBytes = trafficLimitBytes
   emit('save', {
     name: draft.name, description: draft.description, priceTxbMinor,
-    ipLookupQuota: draft.ipLookupQuota, validityDays: draft.validityDays, trafficLimitBytes,
+    whitelistIpQuota: draft.whitelistIpQuota, ipLookupQuota: draft.ipLookupQuota, validityDays: draft.validityDays, trafficLimitBytes,
     resetStrategy: draft.resetStrategy, squadProductIds: [...draft.squadProductIds],
     rolloverMinRemainingBps: Math.round(draft.rolloverMinRemainingPercent * 100), active: draft.active,
   })
@@ -78,6 +78,7 @@ function setSquad(id: string, selected: boolean): void {
         <TxbAmountField id="combo-price" v-model="draft.priceTxb" :label="t('adminCatalogEditor.price')" min-minor="1" required />
         <UFormField name="validity-days" :label="t('adminCatalogEditor.validityDays')" required><UInput v-model.number="draft.validityDays" class="w-full" type="number" :min="1" /></UFormField>
         <UFormField name="ip-lookup-quota" :label="t('ipLookup.quotaHeading')" :hint="t('ipLookup.quotaHelp')"><UInputNumber v-model="draft.ipLookupQuota" class="w-full" :min="0" :max="1000000" :step="1" /></UFormField>
+        <UFormField name="whitelist-quota" :label="t('diy.whitelist.comboQuota')"><UInputNumber v-model="draft.whitelistIpQuota" class="w-full" :min="0" :max="1000" :step="1" /></UFormField>
         <UFormField name="traffic-limit" :label="t('adminCatalogEditor.trafficLimit')" :hint="t('adminCatalogEditor.trafficLimitHint')" :error="trafficInvalid ? t('adminCatalogEditor.trafficLimitInvalid') : undefined" required><UInput v-model="draft.trafficLimitBytes" class="w-full" inputmode="text" @blur="normalizeTrafficLimit" /></UFormField>
         <UFormField name="reset-cadence" :label="t('adminCatalogEditor.resetCadence')"><USelect v-model="draft.resetStrategy" class="w-full" :items="resetItems" /></UFormField>
         <UFormField name="rollover-minimum" :label="t('adminCatalogEditor.rolloverMinimum')" required><UInput v-model.number="draft.rolloverMinRemainingPercent" class="w-full" type="number" :min="0" :max="100" :step="0.01" /></UFormField>

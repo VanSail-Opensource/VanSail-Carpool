@@ -143,6 +143,7 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 		peer.failedDigest, peer.retryDelay, peer.retryAt = "", 0, time.Time{}
 	}
 	peer.mu.Unlock()
+	m.recordWhitelistState(peer, normalized, revision)
 	if err = peer.send(ctx, message); err != nil {
 		peer.mu.Lock()
 		peer.digest = ""

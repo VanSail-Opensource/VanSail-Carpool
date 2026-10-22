@@ -179,3 +179,7 @@ isolated route-test identities, access revocation and traffic barrier evidence.
 Measurements reuse existing operation items; generated configurations are absent.
 
 `089_xnode_member_diy.sql` stores only member ID, settings revision and encrypted client overrides. Generated subscriptions and credentials are never duplicated; subscription-only writes do not invalidate server compilation.
+
+`091_member_whitelist.sql` adds the per-combo whitelist capacity (default five),
+a detecting-IP index for managed-node ban releases and quota cache invalidation.
+Whitelist lists remain inside the encrypted DIY document, not a mirrored table.

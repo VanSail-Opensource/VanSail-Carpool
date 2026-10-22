@@ -31,9 +31,9 @@ onMounted(() => void load())
 </script>
 
 <template>
-  <section class="grid gap-3 py-4">
+  <UProgress v-if="loading" />
+  <section v-else-if="!quote?.whitelistMode" class="grid gap-3 py-4">
     <div class="flex items-center justify-between gap-3"><h2 class="text-base font-semibold">{{ t('firewall.unbanTitle') }}</h2><UButton icon="i-ph-arrow-clockwise" color="neutral" variant="ghost" :loading="loading" :disabled="busy" :aria-label="t('common.refresh')" @click="load" /></div>
-    <UProgress v-if="loading" />
     <UAlert v-if="error" color="warning" :title="error" />
     <UAlert v-if="grant" color="success" :title="t('firewall.granted', { ip: grant.ip, until: new Date(grant.until).toLocaleString() })" :description="t('firewall.deliveryPending')" />
     <p v-if="quote && !quote.enabled" class="text-sm text-muted">{{ t('firewall.unavailable') }}</p>
