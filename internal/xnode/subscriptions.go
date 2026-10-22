@@ -125,6 +125,9 @@ func (s *Service) BearerSubscriptionForAgent(ctx context.Context, token, explici
 		return nil, metadata, err
 	}
 	if !metadata.Active {
+		if metadata.Incomplete {
+			return nil, metadata, &PolicyError{"XNODE_ACCESS_PENDING", ErrUnavailable}
+		}
 		return nil, metadata, ErrNotFound
 	}
 	config, err := s.SubscriptionTemplates(ctx)

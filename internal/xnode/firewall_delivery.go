@@ -15,6 +15,9 @@ import (
 // HandleOutbox uses the existing durable dispatcher and per-node send queues.
 // Command waits are deferred, so traffic acknowledgments never await a ban job.
 func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
+	if job.Kind == AccessRepairJob {
+		return m.service.RepairAccess(ctx, job)
+	}
 	var input struct {
 		NodeID string `json:"nodeId"`
 		Bank   string `json:"bank"`

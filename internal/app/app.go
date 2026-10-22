@@ -165,6 +165,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = outboxWorker.Register(xnode.FirewallJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}
+	if err = outboxWorker.Register(xnode.AccessRepairJob, xnodeMaster); err != nil {
+		return cleanup(err)
+	}
 	if err := registerPaymentOperationHandlers(operationDispatcher, billingService); err != nil {
 		return cleanup(err)
 	}

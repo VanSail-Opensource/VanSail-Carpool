@@ -23,6 +23,9 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	defer maintenanceTimer.Stop()
 	a.configureTelegram(ctx)
 	startupNow := time.Now().UTC()
+	if err := a.store.EnqueueXNodeAccessRepairs(ctx, startupNow); err != nil {
+		a.logger.Error("startup native access recovery failed", "error", err)
+	}
 	if err := a.store.RecoverOutbox(ctx, startupNow, startupNow); err != nil {
 		a.logger.Error("startup outbox recovery failed", "error", err)
 	}
@@ -62,6 +65,9 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 				a.logger.Error("group message fact flush failed", "error", err)
 			}
 		case now := <-transitionTicker.C:
+			if err := a.store.EnqueueXNodeAccessRepairs(ctx, now.UTC()); err != nil {
+				a.logger.Error("native access recovery scan failed", "error", err)
+			}
 			if err := a.store.RecoverOutbox(ctx, now.UTC().Add(-2*time.Minute), now.UTC()); err != nil {
 				a.logger.Error("outbox lease recovery failed", "error", err)
 			}

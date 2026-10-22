@@ -1,0 +1,66 @@
+package xnode
+
+import (
+	"context"
+	"encoding/json"
+	"strconv"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+)
+
+const AccessRepairJob = "xnode_access_repair"
+
+// RepairAccess runs only in the shared durable outbox, never in compilation or
+// bearer handlers. Existing periods retain their counters and settlement state.
+func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
+	var input struct {
+		UserID string `json:"userId"`
+	}
+	if json.Unmarshal([]byte(job.Payload), &input) != nil || input.UserID == "" {
+		return ErrInvalid
+	}
+	user, err := s.repo.UserByID(ctx, input.UserID)
+	if err != nil || user.OnboardingState != "complete" {
+		return err
+	}
+	purchase, err := s.EffectivePurchase(ctx, user.ID)
+	if err != nil || purchase == nil {
+		return err
+	}
+	restricted, err := s.repo.XNodeUserRestricted(ctx, user.ID)
+	if err != nil || restricted {
+		return err
+	}
+	identity, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
+	if isMissing(err) {
+		migration, e := s.repo.XNodeMigration(ctx)
+		if e != nil {
+			return e
+		}
+		source, e := s.settings.Optional(ctx, "remnawave.base_url")
+		if e != nil {
+			return e
+		}
+		if migration.Phase != "complete" && (migration.SourceCipher != "" || source != "") {
+			return ErrUnavailable // The queued bridge must import existing secrets.
+		}
+		identity, err = s.EnsureIdentity(ctx, user)
+	}
+	if err != nil {
+		return err
+	}
+	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)
+	if err != nil {
+		return err
+	}
+	for _, period := range periods {
+		if period.PurchaseID != purchase.ID {
+			continue
+		}
+		if period.Status != "open" {
+			return ErrConflict
+		}
+		return s.repo.SaveXNodePeriod(ctx, period)
+	}
+	return s.ApplyPurchase(ctx, strconv.FormatInt(identity.ProxyUserID, 10), purchase.TrafficLimitBytes, purchase.ResetStrategy, purchase.ValidUntil)
+}

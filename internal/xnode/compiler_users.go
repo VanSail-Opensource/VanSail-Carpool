@@ -10,25 +10,11 @@ import (
 )
 
 func (s *Service) eligibleTags(ctx context.Context, userID, nodeID string) ([]string, *Period, error) {
-	user, err := s.repo.UserByID(ctx, userID)
-	if err != nil {
-		return nil, nil, err
+	access, err := s.memberAccess(ctx, userID)
+	if err != nil || !access.allowed {
+		return []string{}, access.period, err
 	}
-	if user.OnboardingState != "complete" || user.Username == nil {
-		return []string{}, nil, nil
-	}
-	identity, err := s.repo.XNodeIdentityByUser(ctx, userID)
-	if err != nil {
-		return nil, nil, err
-	}
-	purchase, err := s.EffectivePurchase(ctx, userID)
-	if err != nil || purchase == nil {
-		return []string{}, nil, err
-	}
-	restricted, err := s.repo.XNodeUserRestricted(ctx, userID)
-	if err != nil || restricted {
-		return []string{}, nil, err
-	}
+	purchase := access.purchase
 	disabled, err := s.repo.UserDisabledSquads(ctx, userID)
 	if err != nil {
 		return nil, nil, err
@@ -53,17 +39,7 @@ func (s *Service) eligibleTags(ctx context.Context, userID, nodeID string) ([]st
 		out = append(out, tag)
 	}
 	sort.Strings(out)
-	if identity.CurrentPeriodID == "" {
-		return []string{}, nil, nil
-	}
-	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil {
-		return nil, nil, err
-	}
-	if period.Status != "open" || period.PurchaseID != purchase.ID || period.LimitBytes > 0 && period.UsedBytes >= period.LimitBytes {
-		return []string{}, &period, nil
-	}
-	return out, &period, nil
+	return out, access.period, nil
 }
 
 func (s *Service) accessibleNodeIDs(ctx context.Context, userID string) (map[string]bool, error) {

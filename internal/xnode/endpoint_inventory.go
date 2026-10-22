@@ -12,33 +12,11 @@ func (s *Service) MemberProxies(ctx context.Context, userID string) ([]subscript
 }
 
 func (s *Service) memberInventory(ctx context.Context, userID string) ([]subscription.Proxy, bool, error) {
-	identity, err := s.repo.XNodeIdentityByUser(ctx, userID)
-	if err != nil {
-		return nil, false, err
+	access, err := s.memberAccess(ctx, userID)
+	if err != nil || !access.allowed {
+		return []subscription.Proxy{}, access.pending, err
 	}
-	purchase, err := s.EffectivePurchase(ctx, userID)
-	if err != nil {
-		return nil, false, err
-	}
-	if purchase == nil {
-		return []subscription.Proxy{}, false, nil
-	}
-	restricted, err := s.repo.XNodeUserRestricted(ctx, userID)
-	if err != nil {
-		return nil, false, err
-	}
-	if restricted {
-		return []subscription.Proxy{}, false, nil
-	}
-	if identity.CurrentPeriodID != "" {
-		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-		if err != nil {
-			return nil, false, err
-		}
-		if period.Status != "open" || period.LimitBytes > 0 && period.UsedBytes >= period.LimitBytes {
-			return []subscription.Proxy{}, false, nil
-		}
-	}
+	identity, purchase := access.identity, access.purchase
 	endpoints, err := s.Endpoints(ctx)
 	if err != nil {
 		return nil, false, err

@@ -1,5 +1,16 @@
 # X-Node control plane
 
+## Paid access recovery
+
+`member_access.go` provides the common export/admission eligibility fence. Paid
+members do not require an assigned username. Missing or mismatched native periods
+produce pending provisioning, distinct from inactive access and configured empty
+HTTP responses. `access_repair.go` runs through the shared durable outbox;
+`EnqueueXNodeAccessRepairs` scans bounded batches at startup and every 30 seconds.
+Recovery reuses an existing open period without resetting its usage. Closed or
+settling periods for the same purchase require review; they are never replaced
+with a fresh allowance. Legacy-owned identities remain the queued bridge's job.
+
 `provider_zones.go` discovers Cloudflare zones from saved provider credentials
 through the existing external validation queue, one page at a time. The admin
 transport returns only ID/name pairs and a supported flag, never credentials or
