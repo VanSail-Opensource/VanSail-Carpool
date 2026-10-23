@@ -42,8 +42,7 @@ type FirewallPurchase struct {
 	Price string `json:"price"`
 	Hours int    `json:"hours"`
 }
-type FirewallInventory interface {
-	FirewallSources(context.Context, func(wire.FirewallSource, func(func([]string) error) error) error) ([]string, error)
+type FirewallDetectionSink interface {
 	SetDetectedPrefixes([]string)
 }
 type firewallRepository interface {
@@ -55,8 +54,6 @@ type firewallRepository interface {
 	RecordFirewallEvents(context.Context, string, string, []wire.FirewallEvent, wire.FirewallPolicy, time.Time, ...[]string) error
 	FirewallPage(context.Context, uint64, uint64, bool, string, int) (wire.FirewallUpdate, string, error)
 	MarkFirewallDelivered(context.Context, string, uint64, bool, bool, uint64) error
-	PublishFirewallSource(context.Context, wire.FirewallSource, time.Time) (bool, error)
-	FirewallSources(context.Context) ([]wire.FirewallSource, error)
 	SweepFirewall(context.Context, time.Time) error
 	FirewallBans(context.Context, int) ([]FirewallBanView, error)
 	FirewallPrefixes(context.Context, func([]string) error) error

@@ -110,8 +110,10 @@ func (s *Service) FirewallBans(ctx context.Context) ([]FirewallBanView, error) {
 	}
 	return repo.FirewallBans(ctx, 200)
 }
-func (m *Master) SetFirewallInventory(inventory FirewallInventory) { m.firewallInventory = inventory }
-func (m *Master) NotifyFirewallSources() {
+func (m *Master) SetFirewallDetectionSink(inventory FirewallDetectionSink) {
+	m.firewallDetectionSink = inventory
+}
+func (m *Master) NotifyFirewallChanged() {
 	select {
 	case m.firewallWake <- struct{}{}:
 	default:
@@ -173,7 +175,7 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	for i, e := range report.Events {
 		ids[i] = e.ID
 	}
-	m.NotifyFirewallSources()
+	m.NotifyFirewallChanged()
 	if err = peer.send(ctx, wire.New("firewall.events.ack", "", 0, wire.FirewallEventAck{IDs: ids})); err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_ACK_FAILED", err)
 	}

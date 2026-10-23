@@ -46,7 +46,7 @@ func (m *Master) rememberNodeIPs(peer *agentPeer, raw json.RawMessage) {
 	m.managedNodeIPs[peer.nodeID] = ips
 	m.mu.Unlock()
 	if changed {
-		m.NotifyFirewallSources()
+		m.NotifyFirewallChanged()
 	}
 }
 

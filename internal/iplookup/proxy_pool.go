@@ -27,7 +27,6 @@ type poolFlight struct {
 // EnhancedService owns shared inventories, DNS memoization and queued probes.
 type EnhancedService struct {
 	detected              *prefixIndex
-	OnFirewallPublication func()
 	settings              Settings
 	queues                map[string]*upstreamqueue.Queue
 	live                  *LiveService

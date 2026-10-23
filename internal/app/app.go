@@ -158,8 +158,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	ipLookupWorker.OnBackgroundError = func(code string) { logger.Error("background IP lookup interrupted", "code", code) }
-	xnodeMaster.SetFirewallInventory(ipLookupService.Enhanced)
-	ipLookupService.Enhanced.OnFirewallPublication = xnodeMaster.NotifyFirewallSources
+	xnodeMaster.SetFirewallDetectionSink(ipLookupService.Enhanced)
 	if err = outboxWorker.Register(xnode.FirewallJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}

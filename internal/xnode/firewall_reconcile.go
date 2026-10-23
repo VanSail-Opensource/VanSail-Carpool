@@ -2,7 +2,7 @@ package xnode
 
 import (
 	"context"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+
 	"time"
 )
 
@@ -89,30 +89,25 @@ func (m *Master) reconcileFirewall(ctx context.Context) error {
 		peer.firewallJoined = true
 		peer.mu.Unlock()
 	}
-	if m.firewallInventory != nil {
-		allowed, err := m.firewallInventory.FirewallSources(ctx, func(source wire.FirewallSource, _ func(func([]string) error) error) error {
-			_, e := repo.PublishFirewallSource(ctx, source, m.service.Now())
-			return e
-		})
-		if err != nil {
-			return err
-		}
-		if err = repo.ReconcileFirewallSources(ctx, allowed, m.service.Now()); err != nil {
-			return err
-		}
+	// Proxy inventories remain panel-only. Retire old published generations and
+	// retain their acknowledgments/tombstones through the existing source bank.
+	if err := repo.ReconcileFirewallSources(ctx, nil, m.service.Now()); err != nil {
+		return err
+	}
+	if m.firewallDetectionSink != nil {
 		version, err := repo.FirewallRevision(ctx)
 		if err != nil {
 			return err
 		}
-		if version == m.firewallInventoryVersion {
+		if version == m.firewallDetectionVersion {
 			return nil
 		}
 		prefixes := []string{}
 		if err = repo.FirewallPrefixes(ctx, func(page []string) error { prefixes = append(prefixes, page...); return nil }); err != nil {
 			return err
 		}
-		m.firewallInventory.SetDetectedPrefixes(prefixes)
-		m.firewallInventoryVersion = version
+		m.firewallDetectionSink.SetDetectedPrefixes(prefixes)
+		m.firewallDetectionVersion = version
 	}
 	return nil
 }

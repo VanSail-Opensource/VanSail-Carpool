@@ -3,50 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"github.com/RoaringBitmap/roaring/v2"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+
 	"time"
 )
-
-func (s *Store) PublishFirewallSource(ctx context.Context, source wire.FirewallSource, now time.Time) (bool, error) {
-	active := false
-	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
-		var released uint64
-		err := tx.QueryRowContext(ctx, `SELECT released_version FROM xnode_firewall_sources WHERE id=? AND generation=?`, source.ID, source.Generation).Scan(&released)
-		if err == nil {
-			active = released == 0
-			return nil
-		}
-		if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		version, err := firewallVersion(ctx, tx)
-		if err != nil {
-			return err
-		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=? WHERE singleton=1`, version); err != nil {
-			return err
-		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_sources SET released_version=?,released_at=? WHERE id=? AND released_version=0`, version, stamp(now), source.ID); err != nil {
-			return err
-		}
-		audience, err := firewallAudience(ctx, tx)
-		if err != nil {
-			return err
-		}
-		empty, err := roaring.New().ToBytes()
-		if err != nil {
-			return err
-		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_sources(id,generation,until_at,refresh_seconds,issued_version,participants,expired) VALUES(?,?,?,?,?,?,?)`, source.ID, source.Generation, stamp(source.Until), source.RefreshSeconds, version, audience, empty); err != nil {
-			return err
-		}
-		active = true
-		return queueFirewallFleetTx(ctx, tx, now)
-	})
-	return active, err
-}
 
 func (s *Store) FirewallRevision(ctx context.Context) (uint64, error) {
 	var v uint64
@@ -97,26 +56,6 @@ func (s *Store) ReconcileFirewallSources(ctx context.Context, allowed []string, 
 		}
 		return queueFirewallFleetTx(ctx, tx, now)
 	})
-}
-func (s *Store) FirewallSources(ctx context.Context) ([]wire.FirewallSource, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,generation,until_at,refresh_seconds FROM xnode_firewall_sources WHERE released_version=0 ORDER BY id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var result []wire.FirewallSource
-	for rows.Next() {
-		var v wire.FirewallSource
-		var until string
-		if err = rows.Scan(&v.ID, &v.Generation, &until, &v.RefreshSeconds); err != nil {
-			return nil, err
-		}
-		if v.Until, err = time.Parse(time.RFC3339Nano, until); err != nil {
-			return nil, err
-		}
-		result = append(result, v)
-	}
-	return result, rows.Err()
 }
 func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 	return s.firewallWrite(ctx, func(tx *sql.Tx) error {

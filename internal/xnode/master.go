@@ -30,10 +30,10 @@ type Master struct {
 	stateWake                chan struct{}
 	wg                       sync.WaitGroup
 	operations               int
-	firewallInventory        FirewallInventory
+	firewallDetectionSink    FirewallDetectionSink
 	firewallWake             chan struct{}
 	firewallSourcesRunning   int
-	firewallInventoryVersion uint64
+	firewallDetectionVersion uint64
 }
 type agentPeer struct {
 	publicIP              string

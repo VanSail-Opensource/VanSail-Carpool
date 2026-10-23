@@ -84,9 +84,6 @@ func (s *EnhancedService) finishSource(b *sourceTestRuntime, job sourceRefreshJo
 	b.mu.Unlock()
 	b.refreshCount()
 	s.inventoryMemorySummary()
-	if result.Status == "success" && s.OnFirewallPublication != nil {
-		s.OnFirewallPublication()
-	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.entries[job.id] = sourceTestEntry{test: ProxySourceTest{ID: job.id, Status: "completed", Result: result}, expires: now.Add(15 * time.Minute)}

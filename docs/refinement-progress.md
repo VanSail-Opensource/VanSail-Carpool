@@ -7,7 +7,7 @@ refinement. Work proceeds in order; each group is audited before the next.
   immutable history and exact native accounting through forward migrations.
 - [x] Allow independent queued work to progress with bounded execution while
   retaining account/node ordering, durable leases, and IP-check serialization.
-- [ ] Keep proxy inventories in panel IP Lookup and clear published node sources.
+- [x] Keep proxy inventories in panel IP Lookup and clear published node sources.
 - [ ] Delete revoked API-token records and purge earlier revoked rows.
 - [ ] Repair combo submission and verify retained drafts and successful edits.
 - [ ] Prune DIY contracts and saved overrides; correct client compatibility,

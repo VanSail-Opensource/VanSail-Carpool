@@ -411,6 +411,7 @@ extending TTL. Partial/unreadable coverage never certifies a clean miss. Status
 reads remain local and do not traverse inventories or start downloads. Refresh
 settlement logs Go memory, goroutines and cache bytes/allowance.
 
-`firewall_inventory.go` exports borrowed complete immutable source snapshots as bounded CIDR pages; `firewall_disk.go` closes disk rows and releases locks before callbacks. `firewall_detected.go` adds a compressed memory-only detection overlay; paid exemptions retain this evidence. `firewall_inventory_test.go` checks that CIDRs are never expanded. Successful publication wakes the native controller without starting parallel source refreshes.
 
 `firewall_report.go` overlays currently effective X-Node restrictions as an Abuse source on cached reads without external work, fees or quota changes. `firewall_subnet.go` removes superseded dynamic membership from subnet projections while retaining independent evidence. Live enforcement is stripped before report encoding; the existing operational ban/audit records retain history. Old terminal reports without retained negative coverage remain inconclusive after their sole dynamic refusal disappears. `firewall_report_test.go` covers cache generation replacement, independent source preservation, financial immutability and unban presentation.
+
+Proxy source inventories remain inside panel lookup caches and are never exported as node bans. `firewall_detected.go` retains only the independent compressed detection overlay used by reports; source refreshes do not enqueue node updates.
