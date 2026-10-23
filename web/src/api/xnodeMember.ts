@@ -23,16 +23,16 @@ export type DIYPreview = Schema['XNodeDIYPreview']
 export type DIYCompatibility = Schema['XNodeTuningApplicability']
 const root = '/api/v1/xnode'
 export const xnodeMemberApi = {
-  diy: (signal?: AbortSignal) => request<DIYView>(`${root}/diy`, { cache: 'no-store', signal }),
-  previewDIY: (body: DIYWrite, signal?: AbortSignal) => request<DIYPreview>(`${root}/diy/preview`, { method: 'POST', body, cache: 'no-store', signal }),
-  saveDIY: (body: DIYWrite, key: string) => request<Schema['XNodeDIYSaveResult']>(`${root}/diy`, { method: 'PUT', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
+  diy: (signal?: AbortSignal) => request<DIYView>(`${root}/diy`, { cache: 'no-store', signal, timeoutMilliseconds: 30_000 }),
+  previewDIY: (body: DIYWrite, signal?: AbortSignal) => request<DIYPreview>(`${root}/diy/preview`, { method: 'POST', body, cache: 'no-store', signal, timeoutMilliseconds: 30_000 }),
+  saveDIY: (body: DIYWrite, key: string) => request<Schema['XNodeDIYSaveResult']>(`${root}/diy`, { method: 'PUT', body, headers: { 'Idempotency-Key': key }, cache: 'no-store', timeoutMilliseconds: 60_000 }),
   startRouteSpeedtest: (body: RouteSpeedtestWrite, key: string) => request<Schema['OperationReceipt']>(`${root}/routing/speedtests`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
   routeSpeedtestResult: (id: string, signal?: AbortSignal) => request<RouteSpeedtestResult>(`${root}/routing/speedtests/${encodeURIComponent(id)}`, { cache: 'no-store', signal }),
   metrics: (signal?: AbortSignal) => request<XNodeUserMetrics>(`${root}/metrics`, { cache: 'no-store', signal }),
   subscription: (signal?: AbortSignal) => request<XNodeSubscription>(`${root}/subscription`, { cache: 'no-store', signal }),
-  routing: (signal?: AbortSignal) => request<RoutingView>(`${root}/routing`, { cache: 'no-store', signal }),
-  previewRouting: (body: Schema['XNodeRoutingPreviewWrite'], signal?: AbortSignal) => request<Schema['XNodeRoutingPreview']>(`${root}/routing/preview`, { method: 'POST', body, cache: 'no-store', signal }),
-  saveRouting: (body: Schema['XNodeRoutingWrite'], key: string) => request<Schema['OperationReceipt']>(`${root}/routing`, { method: 'PUT', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
+  routing: (signal?: AbortSignal) => request<RoutingView>(`${root}/routing`, { cache: 'no-store', signal, timeoutMilliseconds: 30_000 }),
+  previewRouting: (body: Schema['XNodeRoutingPreviewWrite'], signal?: AbortSignal) => request<Schema['XNodeRoutingPreview']>(`${root}/routing/preview`, { method: 'POST', body, cache: 'no-store', signal, timeoutMilliseconds: 30_000 }),
+  saveRouting: (body: Schema['XNodeRoutingWrite'], key: string) => request<Schema['OperationReceipt']>(`${root}/routing`, { method: 'PUT', body, headers: { 'Idempotency-Key': key }, cache: 'no-store', timeoutMilliseconds: 60_000 }),
 }
 
 // Public bearer pages do not send a browser/Mini App session or request signature.

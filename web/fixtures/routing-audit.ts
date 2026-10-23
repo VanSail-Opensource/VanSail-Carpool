@@ -16,6 +16,8 @@ import RoutingAudit from './RoutingAudit.vue'
 import { installDIYAudit } from './diy-audit'
 
 const params = new URLSearchParams(location.search)
+const liveRouting = xnodeMemberApi.routing, livePreview = xnodeMemberApi.previewRouting
+const liveSave = xnodeMemberApi.saveRouting
 setExperience(params.has('admin') ? 'browser' : 'miniapp')
 if (params.has('admin')) { await import('@/browser/styles.css'); initializeBrowserTheme() }
 else { await import('@/styles/main.css') }
@@ -49,9 +51,10 @@ function graph(choices: RoutingChoice[]) {
   }
   return result
 }
-xnodeMemberApi.routing = async () => { trace.calls.push('member-load'); await pause(); if (params.has('load-error') && !failed && !params.has('diy')) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
-xnodeMemberApi.previewRouting = async body => {
+xnodeMemberApi.routing = async signal => { trace.calls.push('member-load'); if (params.has('load-timeout') && !failed) { failed = true; return liveRouting(signal) }; await pause(); if (params.has('load-error') && !failed && !params.has('diy')) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return structuredClone({ plan, nodes, endpoints, templates: catalog.templates, paths: graph(plan.choices) }) }
+xnodeMemberApi.previewRouting = async (body, signal) => {
   trace.calls.push('member-preview'); trace.previews.push(JSON.parse(JSON.stringify(body))); await pause(params.has('stale-preview') && body.destination.domain === 'google.com' ? 1700 : 50)
+  if (params.has('preview-timeout')) return livePreview(body, signal)
   const selectedGeoSite = body.choices.some(choice => catalog.templates.find(template => template.id === choice.templateId)?.match.domain?.some(domain => domain.startsWith('geosite:')))
   if (selectedGeoSite && params.has('geosite-missing')) throw new ApiError(422, { code: 'XNODE_GEOSITE_REQUIRED', message: '' })
   if (selectedGeoSite && params.has('geosite-unavailable')) throw new ApiError(503, { code: 'XNODE_GEOSITE_UNAVAILABLE', message: '' })
@@ -61,6 +64,7 @@ xnodeMemberApi.previewRouting = async body => {
 }
 xnodeMemberApi.saveRouting = async (body, key) => {
   trace.calls.push('member-save'); trace.keys.push(key); await pause()
+  if (params.has('save-timeout')) return liveSave(body, key)
   if (params.has('save-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' })
   trace.writes.push(JSON.parse(JSON.stringify(body))); plan = { ...plan, revision: body.revision + 1, choices: JSON.parse(JSON.stringify(body.choices)), phase: 'applying', operationId: 'routing-operation' }
   receipt = { id: 'routing-operation', kind: 'xnode_routing', status: 'queued', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; return receipt

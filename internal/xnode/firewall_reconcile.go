@@ -19,7 +19,7 @@ func (m *Master) runFirewall() {
 		}
 		ctx, cancel := context.WithTimeout(m.ctx, 20*time.Second)
 		if err := m.reconcileFirewall(ctx); err != nil && ctx.Err() == nil {
-			m.logger.Warn("firewall reconciliation pending", "error_code", "XNODE_FIREWALL_PENDING")
+			m.logger.Warn("firewall reconciliation pending", "error_code", "XNODE_FIREWALL_PENDING", "cause", frameErrorCause(err))
 		}
 		cancel()
 	}

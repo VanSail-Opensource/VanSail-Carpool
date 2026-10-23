@@ -1,5 +1,12 @@
 # Frontend API
 
+`requestDeadline.ts` bounds finite requests across signing, transport and body
+reads while composing caller cancellation. Routing/DIY reads and previews use
+30 seconds; saves use 60 seconds around the backend's 45-second preparation
+limit. Operation polling also has a deadline. Existing localized error paths and
+idempotency keys handle retries after a missing reply. Streaming reads retain
+their own lifetime. `requestDeadline.test.ts` covers stalls and cleanup in CI.
+
 `comboControls.ts` reads active ownership and enabled squads, obtains early
 activation eligibility, and submits owner-scoped idempotent switch/activation
 commands. Its mutable state and quotes always bypass response snapshots.

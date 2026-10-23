@@ -10,6 +10,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
+	"time"
 )
 
 func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingView, error) {
@@ -62,11 +63,13 @@ func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingVie
 	return view, nil
 }
 func (s *Service) QueueOwnedRouting(ctx context.Context, user, key string, revision int64, choices []RoutingChoice) (model.OperationReceipt, error) {
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
 	if choices == nil {
 		choices = []RoutingChoice{}
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Preparation is read-only. The store fences replay and revision atomically;
+	// waiting for agent validation must not hold the global mutation mutex.
 	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
 	if err != nil {
 		return model.OperationReceipt{}, err

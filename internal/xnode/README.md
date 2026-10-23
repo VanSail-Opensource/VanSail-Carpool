@@ -1,5 +1,21 @@
 # X-Node control plane
 
+Routing/DIY saves bound preparation and agent validation to 45 seconds. Their
+read-only preparation runs outside the global mutation mutex; SQLite remains
+authoritative for atomic owner/revision/idempotency and DIY billing fences.
+Agent validation and deployment still use existing per-node queues and receipts.
+`routing_agent_test.go` supplies the hosted two-node agent fixture and checks
+that pending native validation does not block unrelated member mutations.
+
+Firewall event ingestion joins eligible native nodes before persisting their
+journal, independently of synchronized telemetry. Retired/disabled nodes can
+drain durable events; they cannot authorize new bans. ACKs follow committed
+cursors, and this socket path never waits for a command result.
+`firewall_journal_socket_test.go` covers event ACKs before synchronized telemetry.
+`frame_diagnostics.go` supplies allowlisted rejection/reconciliation causes;
+raw database errors, source addresses and frame contents never enter logs.
+`frame_diagnostics_test.go` checks wrapped errors and private-detail redaction.
+
 ## Paid access recovery
 
 `member_access_test.go` covers username-independent admission, pending exports,
@@ -13,6 +29,13 @@ HTTP responses. `access_repair.go` runs through the shared durable outbox;
 Recovery reuses an existing open period without resetting its usage. Closed or
 settling periods for the same purchase require review; they are never replaced
 with a fresh allowance. Legacy-owned identities remain the queued bridge's job.
+
+Repair searches the whole purchase history for one open reset period before
+considering settled predecessors. Multiple open periods require review. Repairs
+use the master's bounded deferred operation leases, so traffic barriers cannot
+occupy the shared outbox dispatcher or wait without an operation deadline.
+`access_repair_period_test.go` covers recovery after a settled reset while
+preserving the open period's counters and subscription access.
 
 ## Telegram identity
 

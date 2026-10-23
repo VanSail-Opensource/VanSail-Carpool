@@ -2,6 +2,7 @@ import type { ApiErrorBody } from './types'
 import { applyRequestSignature, requestBodyBytes } from './request-signing'
 import { cachedTransport } from './cache/transport'
 import { clearResponseCache } from './cache/session'
+import { withRequestDeadline } from './requestDeadline'
 
 export type QueryValue = string | number | boolean | readonly string[] | undefined
 export const onboardingRequiredEvent = 'txc:onboarding-required'
@@ -9,6 +10,7 @@ export const onboardingRequiredEvent = 'txc:onboarding-required'
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
   query?: Record<string, QueryValue>
+  timeoutMilliseconds?: number
 }
 
 export class ApiError extends Error {
@@ -45,6 +47,7 @@ export function createUrl(path: string, query?: Record<string, QueryValue>): str
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const { body, query, ...init } = options
+  delete init.timeoutMilliseconds
   const url = createUrl(path, query)
   const method = (init.method ?? 'GET').toUpperCase()
   const headers = new Headers(init.headers)
@@ -99,6 +102,10 @@ async function responsePayload<T>(response: Response): Promise<T> {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (options.timeoutMilliseconds !== undefined) {
+    const { timeoutMilliseconds, ...init } = options
+    return withRequestDeadline(timeoutMilliseconds, options.signal, signal => request<T>(path, { ...init, signal }))
+  }
   const url = createUrl(path, options.query)
 
   // Live 2xx data is authoritative. Runtime OpenAPI-shape validation belongs

@@ -53,14 +53,28 @@ func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 	if err != nil {
 		return err
 	}
+	var open *Period
+	found := false
 	for _, period := range periods {
 		if period.PurchaseID != purchase.ID {
 			continue
 		}
-		if period.Status != "open" {
-			return ErrConflict
+		found = true
+		if period.Status == "open" {
+			if open != nil {
+				return ErrConflict // Ambiguous allowances require review.
+			}
+			copy := period
+			open = &copy
 		}
-		return s.repo.SaveXNodePeriod(ctx, period)
+	}
+	if open != nil {
+		// Earlier resets can already be settled. Restore only the existing open
+		// period pointer and retain its counters and all historical evidence.
+		return s.repo.SaveXNodePeriod(ctx, *open)
+	}
+	if found {
+		return ErrConflict
 	}
 	return s.ApplyPurchase(ctx, strconv.FormatInt(identity.ProxyUserID, 10), purchase.TrafficLimitBytes, purchase.ResetStrategy, purchase.ValidUntil)
 }

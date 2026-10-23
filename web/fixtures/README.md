@@ -113,6 +113,10 @@ routing and browser preset forms with isolated mock APIs. Flags `admin`, `zh`,
 `slow`, `empty`, `no-routes`, `no-templates`, `load-error`, `save-error`,
 `preview-error`, `stale-preview`, `poll-error` and `disabled` cover UI states.
 `window.__routingAudit` records writes, previews and member operation polling.
+`load-timeout`, `preview-timeout` and `save-timeout` retain the real API deadline
+wrapper for that call; Chrome may construct a stalled fetch to inspect timeout
+errors and retained drafts without a backend. Initial-load timeout retries use
+the normal fixture data.
 
 `stablecoin-audit.ts` and `stablecoin-audit.html` mount actual token settings, review dismissal and selected-payment credit dialogs with constructed data. Flags `credit`, `zh`, `dark`, `slow`, `empty`, `error`, `save-error` and `action-error` cover both outcomes, failed loads/saves and retry. `window.__stablecoinAudit` records requests; it never contacts a chain.
 

@@ -6,11 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
 func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYWrite) (DIYSaveResult, error) {
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
 	result := DIYSaveResult{}
 	if key == "" || len(key) > 128 || input.Choices == nil || input.SettingsRevision < 0 || input.SettingsRevision >= 9007199254740991 {
 		return result, ErrInvalid
@@ -32,16 +35,8 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 		}
 		return replay, err
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	// Another caller can commit this key while this request waits for the lock.
-	if replay, found, err := repo.ReplayXNodeDIYResult(ctx, user, key, fingerprint); err != nil || found {
-		if found && replay.Legacy {
-			replay.SettingsRevision = input.SettingsRevision + 1
-			replay.Changed = true
-		}
-		return replay, err
-	}
+	// The store atomically fences revisions, quotes, charges and replay. Keep
+	// read-only preparation and agent waits outside the global mutation mutex.
 	preview, err := s.PreviewOwnedDIY(ctx, user, input)
 	if err != nil {
 		return result, err

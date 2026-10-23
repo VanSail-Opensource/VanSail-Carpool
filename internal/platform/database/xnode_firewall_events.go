@@ -9,13 +9,14 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
 )
 
 func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string, events []wire.FirewallEvent, policy wire.FirewallPolicy, now time.Time, excluded ...[]string) error {
-	if !wire.ValidName(namespace) || len(events) > 256 {
+	if !wire.ValidName(namespace) || len(events) > wire.MaxFirewallEventsPerFrame {
 		return xnode.ErrInvalid
 	}
 	s.firewallDetectionMu.Lock()
@@ -32,7 +33,8 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 	}
 	result := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var ordinal uint32
-		if err := tx.QueryRowContext(ctx, `SELECT ordinal FROM xnode_firewall_members WHERE node_id=? AND active=1`, node).Scan(&ordinal); err != nil {
+		var active bool
+		if err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=?`, node).Scan(&ordinal, &active); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		var cursor uint64
@@ -51,10 +53,16 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 			switch event.Kind {
 			case "detected":
 				rule, enabled := policy.Rule(event.Rule)
-				if enabled && policy.Protect {
+				if active && enabled && policy.Protect {
 					ip, e := xnode.FirewallPublicIP(event.IP)
 					if e != nil {
-						return e
+						if addr, parseErr := netip.ParseAddr(event.IP); parseErr != nil || addr.Zone() != "" {
+							return xnode.ErrInvalid
+						}
+						// Agents can observe valid reserved/shared-space addresses
+						// that master policy excludes. Retire the observation.
+						cursor = sequence
+						continue
 					}
 					if !ignored[ip] {
 						event.IP = ip
@@ -74,11 +82,17 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 					}
 				}
 			case "expired":
-				if err = expireFirewallParticipant(ctx, tx, "xnode_firewall_bans", event.Prefix, event.Generation, ordinal); err != nil {
+				if ordinal != 0 {
+					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_bans", event.Prefix, event.Generation, ordinal)
+				}
+				if err != nil {
 					return err
 				}
 			case "source_expired":
-				if err = expireFirewallParticipant(ctx, tx, "xnode_firewall_sources", event.Rule, event.Generation, ordinal); err != nil {
+				if ordinal != 0 {
+					err = expireFirewallParticipant(ctx, tx, "xnode_firewall_sources", event.Rule, event.Generation, ordinal)
+				}
+				if err != nil {
 					return err
 				}
 			case "exemption_expired": // Desired exemption expiry is driven by the master clock.

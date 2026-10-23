@@ -8,7 +8,8 @@ import (
 )
 
 // prepareOwnedRouting reuses validation/credentials/preflight for both routing
-// API compatibility and atomic DIY saves. The caller holds the service mutex.
+// API compatibility and atomic DIY saves. Preparation only reads state; the
+// repository fences revisions/replay when publishing the resulting plan.
 func (s *Service) prepareOwnedRouting(ctx context.Context, identity Identity, revision int64, choices []RoutingChoice) (RoutingPlan, error) {
 	repo, ok := s.routingRepository()
 	if !ok {

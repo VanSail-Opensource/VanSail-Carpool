@@ -33,5 +33,5 @@ export const memberOperationsApi = {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
   }),
-  getOperation: (operationId: string) => request<OperationReceipt>(`/api/v1/operations/${encodeURIComponent(operationId)}`),
+  getOperation: (operationId: string) => request<OperationReceipt>(`/api/v1/operations/${encodeURIComponent(operationId)}`, { cache: 'no-store', timeoutMilliseconds: 30_000 }),
 }

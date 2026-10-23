@@ -1,5 +1,15 @@
 # SQLite store
 
+`xnode_traffic_alias_test.go` covers alias-only legacy traffic totals, replay,
+owner validation and the node/period evidence required for late billable samples.
+Aggregate totals advance the durable journal without being charged a second time;
+native accounting continues to charge only period-scoped samples.
+
+Firewall journal cursors also commit for inactive or not-yet-joined nodes,
+without admitting new detections. Valid reserved/shared-space IP observations
+are skipped under master public-IP policy; malformed addresses remain errors.
+`xnode_firewall_journal_test.go` covers replay and mixed public/reserved batches.
+
 `telegram_identity_migration.go` owns the atomic vault-aware startup rekey and
 private backup. `telegram_identity_references.go` converts FK and explicit owner
 references through disjoint temporary keys. `telegram_identity_cipher.go` reseals

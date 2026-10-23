@@ -139,7 +139,7 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	if len(report.Events) == 0 {
 		return nil
 	}
-	_, settings, err := m.service.Node(ctx, peer.nodeID)
+	node, settings, err := m.service.Node(ctx, peer.nodeID)
 	if err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_SETTINGS_FAILED", err)
 	}
@@ -151,6 +151,20 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	repo, ok := m.service.repo.(firewallRepository)
 	if !ok {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", ErrUnavailable)
+	}
+	owned, err := m.service.NativeOwner(ctx, peer.nodeID)
+	if err != nil {
+		return firewallEventFailure("XNODE_FIREWALL_EVENT_SETTINGS_FAILED", err)
+	}
+	if owned && node.Enabled && settings.Firewall.Enabled {
+		// Durable events can precede synchronized telemetry and the periodic join.
+		// Register without waiting for agent commands on this socket reader.
+		if err = repo.ReconcileFirewallMember(ctx, peer.nodeID, true, false, 0); err != nil {
+			return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", err)
+		}
+	} else {
+		// Drain old journal events without authorizing new restrictions.
+		settings.Firewall.Protect = false
 	}
 	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now(), m.protectedIPs(true)); err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", err)

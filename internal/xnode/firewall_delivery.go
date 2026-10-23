@@ -19,7 +19,9 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return m.service.ReconcileDIY(ctx, job)
 	}
 	if job.Kind == AccessRepairJob {
-		return m.service.RepairAccess(ctx, job)
+		return m.deferOperation(job, 5*time.Minute, func(call context.Context) error {
+			return m.service.RepairAccess(call, job)
+		})
 	}
 	var input struct {
 		NodeID string `json:"nodeId"`
