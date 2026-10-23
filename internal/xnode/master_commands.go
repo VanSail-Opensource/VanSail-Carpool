@@ -66,20 +66,9 @@ func (m *Master) FlushPeriod(ctx context.Context, nodeID string, user int64, per
 func (m *Master) flush(ctx context.Context, nodeID string, args wire.TrafficFlush) (wire.TrafficBarrier, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	var barrier wire.TrafficBarrier
-	raw, err := m.Command(ctx, nodeID, "", "traffic.flush", args)
+	barrier, err := m.captureTraffic(ctx, nodeID, args)
 	if err != nil {
 		return barrier, err
-	}
-	if err = wire.Decode(raw, &barrier); err != nil || args.Quiesce && !barrier.Quiesced || barrier.AccountingPeriod != args.AccountingPeriod {
-		return barrier, ErrInvalid
-	}
-	node, err := m.service.repo.XNodeNode(ctx, nodeID)
-	if err != nil {
-		return barrier, err
-	}
-	if barrier.AgentID != node.AgentID {
-		return barrier, ErrInvalid
 	}
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()
@@ -97,4 +86,25 @@ func (m *Master) flush(ctx context.Context, nodeID string, args wire.TrafficFlus
 			return barrier, ctx.Err()
 		}
 	}
+}
+
+// captureTraffic seals the agent journal without waiting for historical replay.
+// Only financial settlement/reset needs the committed-sequence barrier in flush.
+func (m *Master) captureTraffic(ctx context.Context, nodeID string, args wire.TrafficFlush) (wire.TrafficBarrier, error) {
+	var barrier wire.TrafficBarrier
+	raw, err := m.Command(ctx, nodeID, "", "traffic.flush", args)
+	if err != nil {
+		return barrier, err
+	}
+	if err = wire.Decode(raw, &barrier); err != nil || args.Quiesce && !barrier.Quiesced || barrier.AccountingPeriod != args.AccountingPeriod {
+		return barrier, ErrInvalid
+	}
+	node, err := m.service.repo.XNodeNode(ctx, nodeID)
+	if err != nil {
+		return barrier, err
+	}
+	if barrier.AgentID != node.AgentID {
+		return barrier, ErrInvalid
+	}
+	return barrier, nil
 }

@@ -362,10 +362,15 @@ Member subscription and graph APIs never return peer secrets. Client entry count
 remain chargeable activity; authenticated transit retains accounting and bandwidth.
 
 `routing_preflight.go` uses capability negotiation and queued native validation.
-`routing_operations.go` resumes durable revoke/drain, apply and enable barriers;
+`routing_operations.go` resumes durable revoke/capture, apply and enable barriers;
 all affected nodes must acknowledge each phase before advancing. Interrupted work
 uses existing operation leases and per-node execution queues. Reconnect can wake
-exhausted routing jobs in that same queue. Financial periods are never reset.
+exhausted or delayed routing jobs in that same queue and restores a missing job
+for an unfinished routing/DIY receipt. Financial periods are never reset.
+Revocation acknowledgments fence old route/credential generations before capture.
+`master_commands.go` seals the immutable agent journal separately from waiting
+for its committed cursor: routing captures counters without waiting for unrelated
+historical replay; financial flush/period settlement still requires that cursor.
 `routing_legacy.go` converts only exact endpoint/preset matches from pre-start saved
 routes; incompatible documents are disabled with encrypted evidence and audit.
 
@@ -376,6 +381,8 @@ unknown server contexts. These regressions run in hosted CI.
 `routing_tags.go` reserves fixed-width owner tags across inactive plans and native/shared configuration edits, without retaining private peer documents in public APIs.
 
 `routing_deployment_test.go` exercises real authenticated master sockets and a deliberately held node acknowledgement, proving transit accounts stay disabled until every node applies and accounting periods remain intact.
+`routing_agent_test.go` returns an unacknowledged journal barrier during that
+deployment, proving replay backlog cannot block route activation.
 
 `compilation_errors.go` keeps private native validation details out of default errors/logs while allowing explicit validation diagnostics, including synthetic hosted fixtures.
 

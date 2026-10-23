@@ -1,5 +1,10 @@
 # Constructed browser fixtures
 
+Routing/DIY `recovered`, `recovered=review`, `recovered=failed` and `poll-error`
+exercise receipt resumption on entry, terminal states and status retry.
+`shell` includes the real mobile navigation to check sticky Save clearance;
+combine with `diy`, `populated`, `split`, `long-names` and `zh` for phone layouts.
+
 `onboarding-audit.html` mounts the real agreement flow with Telegram identity.
 `intro`, `legacy`, `slow`, `empty`, `error`, `save-error`, `nickname` and `zh`
 exercise username-free onboarding and recovery. `window.__onboardingAudit` records

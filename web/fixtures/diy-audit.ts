@@ -29,6 +29,11 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
     trace.calls.push('diy-load'); await pause()
     if (params.has('load-error') && !failed) { failed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }
     current ??= await routing()
+    if (params.has('recovered') && !current.plan.operationId) {
+      const receipt: OperationReceipt = { id: 'recovered-diy', kind: 'xnode_diy', status: params.get('recovered') === 'failed' ? 'failed' : params.get('recovered') === 'review' ? 'pending_review' : 'processing', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      current.plan = { ...current.plan, phase: 'revoking', operationId: receipt.id }
+      operations.set('recovered', { receipt, routingChanged: true, deploymentChanged: true })
+    }
     current.plan.choices = current.plan.choices.map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId ?? `${choice.inboundNodeId}-primary`, outboundEndpointId: choice.outboundEndpointId ?? `${choice.outboundNodeId}-primary` }))
     const metadata = await preview(overrides, signal)
     return structuredClone({ splitProfiles, splitHosts, billing: billing(), settingsRevision: revision, overrides, whitelist: { ...whitelist, quota: params.has('small-quota') ? 1 : 5, phase: pendingWhitelist ? 'pending' : whitelist.enabled ? 'active' : 'disabled', pendingNodes: pendingWhitelist ? ['a'] : [] }, routing: current, fields: metadata.fields, compatibility: metadata.compatibility })
@@ -59,6 +64,8 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
     trace.calls.push('diy-operation'); await pause(); polls++
     const receipt = [...operations.values()].find(op => op.receipt.id === id)?.receipt
     if (!receipt) throw new ApiError(404, { code: 'XNODE_NOT_FOUND', message: '' })
+    if (params.has('poll-error') && polls === 1) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
+    if (receipt.status === 'failed' || receipt.status === 'pending_review' || params.has('recovered') && polls < 3) return { ...receipt }
     if (params.has('deployment-error') && polls < 3) return { ...receipt, status: 'pending_review' }
     pendingWhitelist = false
     current = { ...current, plan: { ...current.plan, phase: 'active' } }

@@ -94,7 +94,9 @@ func routingAgent(ctx context.Context, f fixture, node, agent string, socket *we
 				}
 			}
 			if request.Name == "traffic.flush" {
-				data = wire.TrafficBarrier{AgentID: agent}
+				// A durable journal backlog must not block route activation. No
+				// report through this sequence is sent during the deployment.
+				data = wire.TrafficBarrier{AgentID: agent, Sequence: 1000}
 			}
 			if !send(wire.New("command.result", message.ID, 0, map[string]any{"id": message.ID, "command": request.Name, "status": "completed", "data": data, "finished": time.Now()})) {
 				return

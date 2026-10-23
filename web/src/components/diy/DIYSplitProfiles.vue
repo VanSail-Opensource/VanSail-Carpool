@@ -34,11 +34,11 @@ function update(id: string, patch: Partial<DIYSplitProfile>) { model.value = mod
     <UAlert v-if="error" color="warning" :title="error" />
     <p v-if="!hosts.length" class="text-sm text-muted">{{ t('diy.split.unavailable') }}</p>
     <p v-else-if="!model.length" class="text-sm text-muted">{{ t('diy.split.empty') }}</p>
-    <fieldset v-for="(profile, index) in model" :key="profile.id" :disabled="disabled" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_8rem_auto] gap-2 min-w-0 border-b border-default pb-3">
+    <fieldset v-for="(profile, index) in model" :key="profile.id" :disabled="disabled" class="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem_auto] gap-2 min-w-0 border-b border-default pb-3">
       <legend class="sr-only">{{ t('diy.split.number', { number: index + 1 }) }}</legend>
-      <UFormField :label="t('diy.split.upload')"><USelect :model-value="profile.uploadEndpointId" :items="uploads" class="w-full" @update:model-value="setUpload(profile, $event)" /></UFormField>
-      <UFormField :label="t('diy.split.download')"><USelect :model-value="profile.downloadEndpointId" :items="downloads(profile.uploadEndpointId)" class="w-full" @update:model-value="setDownload(profile, $event)" /></UFormField>
-      <UFormField :label="t('diy.split.mode')"><USelect :model-value="profile.mode" :items="modes(profile.uploadEndpointId, profile.downloadEndpointId)" class="w-full" @update:model-value="update(profile.id, { mode: $event })" /></UFormField>
+      <UFormField class="col-span-2 sm:col-span-1 min-w-0" :label="t('diy.split.upload')"><USelect :model-value="profile.uploadEndpointId" :items="uploads" class="w-full" @update:model-value="setUpload(profile, $event)" /></UFormField>
+      <UFormField class="col-span-2 sm:col-span-1 min-w-0" :label="t('diy.split.download')"><USelect :model-value="profile.downloadEndpointId" :items="downloads(profile.uploadEndpointId)" class="w-full" @update:model-value="setDownload(profile, $event)" /></UFormField>
+      <UFormField class="min-w-0" :label="t('diy.split.mode')"><USelect :model-value="profile.mode" :items="modes(profile.uploadEndpointId, profile.downloadEndpointId)" class="w-full" @update:model-value="update(profile.id, { mode: $event })" /></UFormField>
       <UButton data-haptic="action" class="self-end justify-self-end" variant="ghost" color="neutral" icon="i-ph-trash-bold" :aria-label="t('diy.split.remove', { number: index + 1 })" :disabled="disabled" @click="model = model.filter(item => item.id !== profile.id)" />
     </fieldset>
     <UButton data-haptic="action" class="justify-self-start" variant="outline" color="neutral" icon="i-ph-plus-bold" :label="t('diy.split.add')" :disabled="disabled || !hosts.length || model.length >= 64" @click="add" />

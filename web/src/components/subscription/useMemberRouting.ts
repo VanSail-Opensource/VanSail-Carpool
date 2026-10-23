@@ -55,7 +55,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
       for (const choice of choices.value) if (choice.inboundEndpointId && !entryHosts.has(choice.inboundNodeId)) entryHosts.set(choice.inboundNodeId, choice.inboundEndpointId)
       paths.value = value.paths
       if (!traceNodes.value.some(node => node.value === start.value)) start.value = traceNodes.value[0]?.value ?? ''
-      if (value.plan.operationId && !['active', 'disabled'].includes(value.plan.phase)) {
+      if (value.plan.operationId && !['active', 'disabled'].includes(value.plan.phase) && command.receipt.value?.id !== value.plan.operationId) {
         const receipt = await memberOperationsApi.getOperation(value.plan.operationId)
         if (!disposed && ticket === generation) command.resume(receipt, 'routing')
       }

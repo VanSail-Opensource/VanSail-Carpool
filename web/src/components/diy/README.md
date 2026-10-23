@@ -46,4 +46,12 @@ confirmation is introduced. Backend transactions own fees and revision fencing.
 
 The five tabs are Connection, XHTTP, Routing, Whitelist and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
 
+The page grid and tab root constrain intrinsic width so long labels scroll
+inside navigation instead of widening the phone viewport. The Save bar stacks
+cost above equal-width touch actions on phones and inherits the shell's mobile
+navigation clearance; desktop keeps one row. Routing inherits the page surface
+without an extra padded card. Split pairs stack both hosts above mode/delete
+on phones, then use bounded columns on desktop. Compatibility names wrap beside
+their status without squeezing either into a narrow column.
+
 Mini App tabs and selection controls use selection haptics. Buttons use existing intent feedback; Save reports success/error through the existing Telegram notification helper. Scoped CSS clarifies presses and panel/status changes only when reduced motion is not requested. Browser admin roots do not import this page or initialize these controls.

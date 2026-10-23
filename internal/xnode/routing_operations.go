@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strconv"
 	"time"
+
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 func (s *Service) routingPlanNodes(plans ...RoutingPlan) ([]string, error) {
@@ -138,7 +140,10 @@ func (s *Service) syncRoutingNodes(ctx context.Context, nodes []string, owner in
 			return err
 		}
 		if drain {
-			if _, err := s.master.Flush(ctx, node, owner, false); err != nil {
+			// Applied revocation fences the old routes and transit credentials.
+			// Seal their counters, but leave immutable journal replay to accounting:
+			// routing neither settles nor resets the owner's paid period.
+			if _, err := s.master.captureTraffic(ctx, node, wire.TrafficFlush{UserID: int(owner)}); err != nil {
 				return err
 			}
 		}

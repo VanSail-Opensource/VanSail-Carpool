@@ -57,14 +57,6 @@ func (s *Store) XNodeRoutingPlan(ctx context.Context, id int64) (xnode.RoutingPl
 	return scanRoutingPlan(s.db.QueryRowContext(ctx, routingPlanSelect+` WHERE proxy_user_id=?`, id))
 }
 
-// A reconnect is new external evidence after bounded queue retries. Resume the
-// same durable operation rather than creating a competing retry scheduler.
-func (s *Store) WakeXNodeRouting(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind='provider_operation' AND status='failed' AND json_extract(payload,'$.operationId') IN(SELECT p.operation_id FROM xnode_routing_plans p JOIN provider_operations o ON o.id=p.operation_id WHERE p.phase IN('revoking','applying','enabling') AND o.status IN('queued','processing'))`, stamp(now), stamp(now))
-	return err
-}
 func (s *Store) XNodeRoutingPlans(ctx context.Context) ([]xnode.RoutingPlan, error) {
 	rows, err := s.db.QueryContext(ctx, routingPlanSelect+` ORDER BY proxy_user_id`)
 	if err != nil {

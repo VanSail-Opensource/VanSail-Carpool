@@ -89,3 +89,10 @@ The DIY Center entrance lives on Settings. This page retains subscription links,
 host inventory and availability diagnostics.
 
 In the external DIY workspace, MemberRoutingEditor omits its repeated heading/refresh description and delegates Save to the shared bar; rule editing and trace controls keep their existing behavior.
+
+Recovered routing receipts use the shared OperationStatusNotice, including
+terminal review/failure and polling errors. Applying is shown only for active
+work; a status failure retains its refresh action and never unlocks an
+unfinished deployment. Standalone refresh remains available while deployment runs.
+`useMemberRouting.test.ts` checks receipt resumption, terminal refresh, preserved
+drafts and review locks in hosted CI.

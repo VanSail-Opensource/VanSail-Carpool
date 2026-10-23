@@ -597,3 +597,10 @@ API-token revocation deletes the complete credential row atomically with a secre
 `xnode_diy_retirement.go` pages saved member references and atomically replaces old ciphertext using user, revision and cipher fences. It does not change financial records, routing or native compilation.
 
 Due outbox jobs with identical timestamps retain insertion order through SQLite rowid; opaque random IDs never decide account execution order.
+
+`xnode_routing_recovery.go` wakes routing/DIY retries on authenticated node
+reconnection, using the existing outbox and original receipt. It transactionally
+recreates missing jobs for unfinished plans, leaves live leases and terminal
+receipts untouched, and never charges or rewrites desired routing/accounting.
+`xnode_routing_recovery_test.go` checks missing jobs, delayed/failed retries,
+duplicate wakes, live leases, terminal receipts and retained DIY result evidence.
