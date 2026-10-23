@@ -1,6 +1,7 @@
 package xnode
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -94,14 +95,26 @@ func validateSplitProfiles(profiles []SplitProfile, proxies []subscription.Proxy
 func appendSplitProxies(profiles []SplitProfile, proxies []subscription.Proxy) []subscription.Proxy {
 	result := slices.Clone(proxies)
 	byID := map[string]subscription.Proxy{}
+	names := map[string]bool{}
 	for _, p := range proxies {
 		byID[p.ID] = p
+		names[p.Name] = true
 	}
 	for _, profile := range profiles {
 		combined, err := subscription.SplitProxy(profile.ID, profile.Mode, byID[profile.UploadEndpointID], byID[profile.DownloadEndpointID])
 		if err != nil {
 			continue // A stale combined projection never removes ordinary hosts.
 		}
+		// Reverse pairs share the same compact name. Preserve ordinary names
+		// and disambiguate only the colliding projection, without changing IDs.
+		if names[combined.Name] {
+			base := combined.Name + " [" + profile.ID + "]"
+			combined.Name = base
+			for n := 2; names[combined.Name]; n++ {
+				combined.Name = fmt.Sprintf("%s-%d", base, n)
+			}
+		}
+		names[combined.Name] = true
 		result = append(result, combined)
 	}
 	return result

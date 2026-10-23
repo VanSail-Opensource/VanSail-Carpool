@@ -524,6 +524,9 @@ state. `routing_prepare.go` shares the existing deployment preparation with
 legacy routing APIs. `diy_test.go` covers concurrent same-key retries, encryption,
 inheritance, export isolation and pinned-parser output. Saved settings are local;
 combined receipts continue through the existing routing deployment guarantees.
+`diy_split.go` derives split names from current host labels and reserves ordinary
+names first. Collisions, including reversed IPv4/IPv6 pairs, receive a profile-ID
+suffix only in the export; saved endpoint/profile references stay unchanged.
 
 `metered_probe_lifecycle_test.go` exercises compiled admission, quota exhaustion, expired grants, real traffic reset and refund quiescing with duplicate late probe samples. Unfinished barriers retain origin evidence and leave successor periods uncharged.
 
