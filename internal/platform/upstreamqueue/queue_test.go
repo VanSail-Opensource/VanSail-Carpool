@@ -61,34 +61,42 @@ func TestDoOutcomesAndPanicRecovery(t *testing.T) {
 
 func TestQueueBackpressureHonorsCallerCancellation(t *testing.T) {
 	queue := startTestQueue(t, Config{Name: "bounded", Capacity: 1})
+	setupCtx, stop := context.WithTimeout(context.Background(), 3*time.Second)
+	defer stop()
 	firstStarted := make(chan struct{})
 	releaseFirst := make(chan struct{})
 	firstDone := make(chan error, 1)
 	go func() {
-		firstDone <- Execute(context.Background(), queue, func(context.Context) error {
+		firstDone <- Execute(setupCtx, queue, func(ctx context.Context) error {
 			close(firstStarted)
-			<-releaseFirst
-			return nil
+			select {
+			case <-releaseFirst:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		})
 	}()
 	<-firstStarted
 
 	var secondCalls atomic.Int32
 	secondDone := make(chan error, 1)
-	go func() {
-		secondDone <- Execute(context.Background(), queue, func(context.Context) error {
+	// Wait for actual admission, independent of the scheduler's storage layout.
+	if _, err := queue.enqueue(setupCtx, call{ctx: setupCtx,
+		run: func(context.Context) {
 			secondCalls.Add(1)
-			return nil
-		})
-	}()
-	waitFor(t, time.Second, func() bool { return len(queue.calls) == 1 })
+			secondDone <- nil
+		}, reject: func(err error) { secondDone <- err },
+	}); err != nil {
+		t.Fatal("second admission", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
 	defer cancel()
 	var backpressuredCalls atomic.Int32
-	err := Execute(ctx, queue, func(context.Context) error {
-		backpressuredCalls.Add(1)
-		return nil
+	_, err := queue.enqueue(ctx, call{ctx: ctx,
+		run:    func(context.Context) { backpressuredCalls.Add(1) },
+		reject: func(error) {},
 	})
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("Execute() error = %v, want deadline exceeded", err)

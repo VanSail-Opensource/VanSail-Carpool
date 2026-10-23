@@ -79,7 +79,9 @@ func New(config Config) (*Queue, error) {
 		capacity:    config.Capacity,
 		minInterval: config.MinInterval,
 		workers:     max(1, config.Workers),
-		calls:       make(chan call, config.Capacity),
+		// The scheduler owns the bounded pending backlog. Buffering intake as
+		// well would admit twice Capacity while all workers are occupied.
+		calls: make(chan call),
 	}, nil
 }
 

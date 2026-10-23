@@ -12,8 +12,8 @@ still have concurrent senders.
 
 `Config.Workers` defaults to one. A single scheduler preserves the provider-wide
 minimum start interval while admitting at most the configured number of calls.
-Shutdown cancels and joins all active workers. Only live RIPE (4), CAIDA (2),
-and Cloudflare (2) opt into concurrency; all other queues retain serialization.
+Shutdown cancels and joins all active workers. Provider adapters select bounded
+concurrency and account keys; IP Lookup retains its explicitly serialized lanes.
 `concurrency_test.go` covers bounded overlap, shared pacing and shutdown in hosted CI.
 
 This queue is intentionally not durable. Database outbox jobs remain the source
@@ -29,3 +29,8 @@ before invoking its provider adapter.
 `ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Cancellation and shutdown join active calls.
 
 `ordering_test.go` checks that an occupied account does not stall another account.
+
+The scheduler alone owns the `Capacity` pending slots. Its unbuffered intake
+prevents a second hidden backlog; callers waiting for admission retain context
+cancellation. `queue_test.go` waits for admission explicitly and checks that a
+full backlog rejects another admission at the caller's deadline.
