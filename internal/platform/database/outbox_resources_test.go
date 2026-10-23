@@ -11,9 +11,9 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
 	for _, row := range []struct{ id, kind, payload string }{
-		{"01", "xnode_sync_user", `{"userId":"account-a"}`},
-		{"02", "xnode_apply_entitlement", `{"userId":"account-a"}`},
-		{"03", "xnode_sync_user", `{"userId":"account-b"}`},
+		{"z-first", "xnode_sync_user", `{"userId":"account-a"}`},
+		{"a-second", "xnode_apply_entitlement", `{"userId":"account-a"}`},
+		{"m-third", "xnode_sync_user", `{"userId":"account-b"}`},
 	} {
 		_, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?,'pending',0,?,?,?)`, row.id, row.kind, row.payload, stamp(now), stamp(now), stamp(now))
 		if err != nil {
@@ -21,11 +21,11 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 		}
 	}
 	first, err := s.ClaimOutboxJob(ctx, now)
-	if err != nil || first == nil || first.ID != "01" {
+	if err != nil || first == nil || first.ID != "z-first" {
 		t.Fatalf("first=%+v %v", first, err)
 	}
 	second, err := s.ClaimOutboxJob(ctx, now)
-	if err != nil || second == nil || second.ID != "03" {
+	if err != nil || second == nil || second.ID != "m-third" {
 		t.Fatalf("independent=%+v %v", second, err)
 	}
 	blocked, err := s.ClaimOutboxJob(ctx, now)
@@ -36,7 +36,7 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 		t.Fatal(err)
 	}
 	next, err := s.ClaimOutboxJob(ctx, now)
-	if err != nil || next == nil || next.ID != "02" {
+	if err != nil || next == nil || next.ID != "a-second" {
 		t.Fatalf("successor=%+v %v", next, err)
 	}
 }

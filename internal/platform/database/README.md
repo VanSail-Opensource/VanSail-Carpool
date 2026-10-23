@@ -605,3 +605,5 @@ transaction rollback, stale/expired quotes and exact lost-response replay in hos
 API-token revocation deletes the complete credential row atomically with a secret-free audit event. The owner-scoped audit makes retries idempotent without a credential tombstone.
 
 `xnode_diy_retirement.go` pages saved member references and atomically replaces old ciphertext using user, revision and cipher fences. It does not change financial records, routing or native compilation.
+
+Due outbox jobs with identical timestamps retain insertion order through SQLite rowid; opaque random IDs never decide account execution order.
