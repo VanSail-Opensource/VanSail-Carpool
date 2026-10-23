@@ -61,7 +61,8 @@ func TestRelease1CommerceMigrationBackfillsCadenceAndCoreGross(t *testing.T) {
 		if err != nil {
 			t.Fatalf("seed %s: %v", purchase.id, err)
 		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor)
+		// This fixture deliberately stops before the native column rename.
+		if _, err := db.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor)
 			VALUES(?,'addon',?)`, purchase.id, purchase.addon); err != nil {
 			t.Fatal(err)
 		}

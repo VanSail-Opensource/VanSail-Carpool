@@ -12,7 +12,9 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-const testDatabaseOpenTimeout = 30 * time.Second
+// Full-schema renames validate every SQLite relation under the race detector;
+// retain a bounded setup budget separate from each business operation deadline.
+const testDatabaseOpenTimeout = 90 * time.Second
 
 // testDatabaseOpenGate prevents parallel tests from compiling and applying the
 // full SQLite schema simultaneously under the race detector. The timeout starts

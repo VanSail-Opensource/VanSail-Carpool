@@ -17,7 +17,8 @@ func TestRetiredLegacyControlsCannotDispatchAfterUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	ids := []string{}
-	for _, kind := range []string{"admin_proxy_relink", "host_remark_update"} {
+	// Replay the immutable upgrade's historical operation identifiers.
+	for _, kind := range []string{"admin_remna_relink", "host_remark_update"} {
 		op, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: user.ID, Kind: kind, IdempotencyKey: kind, RequestFingerprint: "retired-controls-fixture", Items: []providerops.ItemInput{{Key: "target", TargetType: "legacy", TargetID: "target"}}}, time.Now().UTC())
 		if err != nil {
 			t.Fatal(err)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func TestProductStatisticsExcludeAdministratorsFromMemberMetrics(t *testing.T) {
@@ -19,14 +20,9 @@ func TestProductStatisticsExcludeAdministratorsFromMemberMetrics(t *testing.T) {
 	if err != nil || !created {
 		t.Fatalf("create administrator = (%+v, %v, created=%v)", admin, err, created)
 	}
-	for _, identity := range []struct {
-		userID, remoteID string
-	}{
-		{userID: member.ID, remoteID: "member-proxy-id"},
-		{userID: admin.ID, remoteID: "admin-proxy-id"},
-	} {
-		if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=? WHERE id=?`, identity.remoteID, identity.userID); err != nil {
-			t.Fatalf("set Proxy identity: %v", err)
+	for _, userID := range []string{member.ID, admin.ID} {
+		if _, err := store.SaveXNodeIdentity(ctx, xnode.Identity{UserID: userID, CredentialsCipher: "encrypted"}); err != nil {
+			t.Fatalf("set native identity: %v", err)
 		}
 	}
 	memberSquad := saveTestSquad(t, store, "member-squad", 0, true)
