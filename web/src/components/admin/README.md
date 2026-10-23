@@ -55,3 +55,5 @@ admin endpoint for both credits and deductions.
 - `AdminSectionState.vue` is the shared loading/error/content presence boundary. Panel roots stay still; focused child workflows own their local Motion state.
 
 `connectivity/` composes exact-account configuration, progress, latest results and 24-hour cursor history. Its exact-account configuration and run/history workflow remain independent; the raw `connectivity.config` registry entry is excluded from generic settings fields and writes.
+
+Combo editing accepts the API-supported empty description and zero price. Its Zod submission schema enforces exact decimal money/traffic bounds, validity and quotas, with visible localized feedback for invalid drafts. Busy or failed saves retain the draft.

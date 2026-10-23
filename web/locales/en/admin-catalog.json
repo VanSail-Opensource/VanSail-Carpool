@@ -47,6 +47,7 @@
     "noSquads": "Refresh X-Node squads before assigning them.",
     "available": "Available to users",
     "liveTermsHint": "Hiding blocks new checkout. Changes to this live record affect active, queued, and historical purchases.",
-    "save": "Save combo"
+    "save": "Save combo",
+    "invalidFields": "Check the name, price, traffic, quotas and validity before saving."
   }
 }
