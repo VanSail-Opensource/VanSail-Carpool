@@ -1,5 +1,12 @@
 # SQLite store
 
+The PostgreSQL transition inventory is maintained in
+[the compatibility map](../../../docs/plans/postgresql-compatibility.md),
+[schema mapping](../../../docs/plans/postgresql-schema-mapping.md), and
+[invariants](../../../docs/plans/postgresql-invariants.md). Regenerate the final
+post-startup fixture through `go run ./cmd/db-inventory`; historical migrations
+remain immutable. Production snapshots use its explicit read-only source option.
+
 Writable transactions reserve SQLite's writer with the driver's supported
 `_txlock=immediate` option before reading mutable state. This prevents WAL
 snapshot-upgrade failures from unrelated autocommit writers; the existing busy
