@@ -8,11 +8,11 @@ Emby and the existing payment integrations retain their separate boundaries.
 
 | Flow | Accounting and settlement boundary |
 | --- | --- |
-| Resets | Current combined counters support reset reconciliation during migration. New reset periods retain the purchase reference; unfinished predecessor journals remain pending. Updating an entitlement changes its cadence without replacing its usage. |
+| Resets | Current combined native/imported counters support reset reconciliation. New reset periods retain the purchase reference; unfinished predecessor journals remain pending. Updating an entitlement changes its cadence without replacing its usage. |
 | Renewal | Existing atomic rollover-credit/debit settlement creates one paid successor. Deferred predecessor settlement selects its own purchase periods and cannot revoke successor streams. Native calculation provenance survives the transaction. |
 | Rollover | Native purchase-owned usage is counted once, without apportioning those owned daily bytes a second time at intraday boundaries. Allowance and strict remaining thresholds retain whole-term semantics; the new calculation version is `native-term-v1`. Source exports retain their documented daily resolution. |
 | Refunds | Member zero-use checks include all same-purchase reset periods and earlier imported source history. Unfinished or overflowing accounting cannot qualify. Legacy-only checks also read term history. Administrator suggestions retain the net-paid cap and manual override. |
-| Compensation | Native readiness uses fresh ready reports; legacy administrative disable state remains authoritative until handover. Approved extensions change expiry and queued continuity without resetting the existing combined quota. |
+| Compensation | Native readiness uses fresh ready reports. Approved extensions change expiry and queued continuity without resetting the existing combined quota. |
 
 Refunds and rollover use purchase-owned native settlement barriers and retain imported evidence.
 Reset prechecks use the current counter and do not borrow that financial fence.
@@ -62,10 +62,9 @@ optimistic revision. Previews use synthetic credentials, and generated member
 documents are never persisted. Explicit imported per-host Xray overrides retain
 priority; endpoint editing can remove an override when switching to shared policy.
 
-The source bridge expands upstream computed snippets and captures only referenced
-Xray client templates. Conversion preserves client settings, and preflight repairs
-older imported endpoints without overwriting administrator overrides. Xray output
-contains independently selectable endpoint configurations. New SS-2022 presets use
+Administrator templates and endpoint overrides retain their existing encrypted
+documents after bridge retirement. Xray output contains independently selectable
+endpoint configurations. New SS-2022 presets use
 AES-256; imported methods and credentials remain unchanged. TLS verification choices
 and WebSocket host fields survive format conversion. Live rates use bytes/second;
 peer speedtests explicitly report Mbps. Large integer counters cross the browser

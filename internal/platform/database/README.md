@@ -33,8 +33,8 @@ financial references, immutable audit owners and colliding late traffic in hoste
 sealed firewall IP moved through the identity conversion.
 `xnode_access_repair.go` coalesces bounded paid provisioning recovery into the
 existing outbox without resetting exhausted or settled purchase periods.
-`telegram_identity_commands.go` reseals queued administrator command and source
-migration targets using the new actor ID while retaining their retry keys.
+`telegram_identity_commands.go` reseals queued administrator commands using the
+new actor ID while retaining their retry keys.
 
 `database.go` escapes literal database paths before adding SQLite URI pragmas.
 `database_path_test.go` covers hash/percent/space filenames and isolation between
@@ -46,16 +46,10 @@ acknowledged rate boundaries; native purchase/refund evidence and unsettled
 rollovers remain protected. See [accounting retention](../../../docs/modules/native-accounting-retention.md).
 
 `xnode_*.go` implements authoritative node/profile/group/endpoint configuration,
-encrypted identity references, periods, migration checkpoints and immutable
+encrypted identity references, periods and immutable
 report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
 counter ownership, sequence gaps and fixed-point multiplier carry in hosted CI.
 Live connections, rates, IP observations and logs have no storage interface.
-purchase/native-identity references before a confirmed missing source account
-may be omitted from a preview. It introduces no persistence or account relinking.
-
-`xnode_final_accounting_test.go` verifies persistence of staged encrypted exports
-and final completion evidence without losing the original migration archive.
-
 `vansail_migration_test.go` covers seeded-brand conversion, preservation of
 custom documents/revisions and live browser devices/handoffs, and removal of
 retired browser-login credentials in hosted CI.
@@ -470,11 +464,7 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 
 - `xnode_fleet_statistics.go`: Entry points: `XNodeFleetUsage`, `XNodeIdentityGrowth`.
 
-- `xnode_legacy_accounting.go`: Entry points: `SaveXNodeLegacyHistory`, `XNodeLegacyHistory`.
-
-- `xnode_legacy_usage.go`: Entry points: `XNodeLegacyUsage`, `SyncXNodeLegacyUsage`.
-
-- `xnode_legacy_usage_test.go`: Hosted regression coverage: `TestLegacySnapshotsKeepResetTailsAndNeverReimportTheBaseline`, `TestLegacyHistoryDoesNotChargeQuotaAndReconcilesMonotonically`, `TestImportedNodePublishesLegacyOwnershipAtomicallyAndPreservesResumeEdits`.
+- `xnode_imported_history.go` and `xnode_imported_usage.go` read immutable historical accounting for settlement and history views.
 
 
 - `xnode_service_bindings.go`: Entry points: `XNodeServiceBindings`, `SaveXNodeServiceBinding`.
@@ -600,7 +590,7 @@ transaction rollback, stale/expired quotes and exact lost-response replay in hos
 
 `outbox_admission.go` and `outbox_resources.go` derive account, node, purchase, operation and chat exclusion from existing records inside transactional claims. Independent due jobs skip occupied resources. IP Lookup repair admission stays serial.
 
-`outbox_resources_test.go` checks independent account admission and cross-kind account ordering.
+`outbox_resources_test.go` checks independent account admission, cross-kind account ordering and ownerless standalone targets.
 
 API-token revocation deletes the complete credential row atomically with a secret-free audit event. The owner-scoped audit makes retries idempotent without a credential tombstone.
 

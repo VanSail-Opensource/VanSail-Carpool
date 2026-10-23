@@ -4,7 +4,7 @@
 while ordinary outbox or maintenance work waits. It shares the existing outbox
 and handlers and is cancelled/joined with the scheduler before storage closes.
 
-`xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references. It retains the migration final-accounting fence and queued legacy fallback only while the source bridge is active.
+`xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references, retaining frozen imported usage in purchase-owned settlement.
 
 `xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.
 
@@ -12,7 +12,7 @@ and handlers and is cancelled/joined with the scheduler before storage closes.
 worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
 the independent browser access-link/session flow authorizes the administrator.
 
-`connectivity_source.go` reads the monitoring account and protected raw subscription inside the X-Node queue, preserving exact host UUIDs and keeping credentials server-side. `connectivity_source_test.go` covers accessible hidden hosts, disabled filtering, credential exclusion, and ambiguous identities. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
+`xnode_connectivity.go` derives monitoring targets from native identities and published endpoints, keeping credentials server-side. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
 
 The entitlement adapter intersects applied squads with account preferences at
 execution; member receipts reuse the entitlement executor and invalidate usage.
@@ -86,8 +86,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 `pm_forum_validation.go` performs bounded, queued getChat/getMe/getChatMember preflight. `telegram_queue_pm.go` exposes factory callbacks so PM rechecks eligibility and flags after queue waits. `pm_profile.go` builds ephemeral card facts from admin profiles and queued refund/rollover projections. `pm_workflows.go` registers relay/profile/repair provider kinds and localized refusal notices through the existing outbox.
 
-`member_subscription.go` admits member inventory reads through the existing X-Node queue and verifies user/credential consistency. `member_subscription_inventory.go` intersects owned enabled and upstream active squads, shared inbounds and excluded hosts, and derives node countries. `member_subscription_links.go` matches native enabled/hidden import keys by protocol, endpoint and remark; ambiguity fails closed. Raw configuration remains transient and only the owner's link reaches the member API.
-`member_subscription_test.go` covers shared/hidden/excluded host joins, unique native key matching and credential-rotation rejection in hosted CI.
+`xnode_member_subscription.go` derives owner-scoped member hosts from native access and current group preferences. Configuration and links remain transient, and DIY tuning attaches only to owner exports.
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
 
@@ -118,14 +117,12 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
   `Traffic`, `Nodes`, `SquadNames`, `UsageSnapshotForRollover`. Native accounting
   drives aggregate partitions. Statistics read only X-Node activity, and nodes
   without native ownership or fresh connected telemetry show unavailable. Agent
-  transport liveness remains independent of migration ownership in Master.Metrics.
-  Commerce and compensation retain their queued migration bridge provider.
+  transport liveness remains independent of accounting settlement in Master.Metrics.
 
 
 - `xnode_usage.go`: Entry points: `NodeUsage`.
 
-- `xnode_compensation.go` merges provider ownership and qualifies inbound identities for node compensation.
-- `xnode_missing_source_test.go` covers confirmed missing registrations, purchase/native-accounting protection, database failures, source outages and cancellation. A source 404 can be omitted only when the local account has neither purchases nor an imported native identity; links and historical financial facts are never rewritten.
+- `xnode_compensation.go` qualifies native inbound identities for node compensation.
 
 
 Bootstrap applies container-aware memory budgeting and writable SQLite temporary
@@ -139,18 +136,12 @@ cache and authoritative database.
 
 
 
-`xnode_refund_state.go` routes purchase-scoped refund usage through the migration settlement fence and native accounting.
+`xnode_refund_state.go` routes purchase-scoped refund usage through native accounting, including frozen imported evidence.
 
-`xnode_commerce_test.go` verifies that mixed-provider reset prechecks reconcile the combined counter during migration while refunds retain the final-accounting fence. Compensation uses fresh ready native reports and preserves disabled source-node state; empty native fleets do not call retired upstream statistics.
-
-Native compensation readiness matches live node health, including report freshness. During bridging the source administrative disabled flag wins. Extensions update expiry on the existing period and retain combined quota usage.
-
-source terms, aggregate traffic and complete per-node history inside the existing
-with the remaining combined allowance and current legacy group bindings; its
-policy-shaped purchase value is never persisted as a purchase. The temporary
-subscription bridge supports these same explicit standalone groups.
-`xnode_service_connectivity.go` reuses that mixed-provider inventory for imported
-monitoring accounts, retaining legacy credentials only on source-owned hosts.
+Native compensation readiness requires fresh ready reports. Extensions update
+expiry on the existing period and retain combined quota usage.
+`xnode_service_connectivity.go` derives monitoring targets from the native
+standalone inventory and current host access.
 Provider name/ID resolution accepts explicit service identities without creating
 a Telegram association; internal bounded probes retain their separate path.
 
@@ -158,12 +149,12 @@ a Telegram association; internal bounded probes retain their separate path.
 
 `native_statistics_test.go` guards statistics against any source-provider fallback, including an empty native fleet and legacy-only accounting references.
 
-`xnode_dashboard.go` resolves native dashboard statistics from panel ownership without requiring the legacy link field. Only an active migration bridge can fall back to a queued source dashboard.
+`xnode_dashboard.go` resolves native dashboard statistics from panel ownership.
 
-`xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Native source loading uses published enabled endpoints, standalone service names and ephemeral native outbounds; it preserves the existing queued migration fallback. `xnode_member_subscription.go` resolves panel ownership before native subscription reads without requiring a legacy link.
+`xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Target loading uses published enabled endpoints, standalone service names and ephemeral native outbounds. Member subscription reads resolve panel ownership first.
 
-`xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Native bridge policy reads member preferences by panel ownership, and subscription GETs derive enabled groups without changing preferences.
+`xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Subscription GETs derive enabled groups without changing preferences.
 
-`xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. Queued legacy behavior remains available only through the migration bridge; partial bridge resets remain uncertain. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.
+`xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.
 
 `connectivity_errors.go` maps native probe failures into stable client codes. `metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.

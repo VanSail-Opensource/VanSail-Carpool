@@ -46,7 +46,7 @@ HTTP responses. `access_repair.go` runs through the shared durable outbox;
 `EnqueueXNodeAccessRepairs` scans bounded batches at startup and every 30 seconds.
 Recovery reuses an existing open period without resetting its usage. Closed or
 settling periods for the same purchase require review; they are never replaced
-with a fresh allowance. Legacy-owned identities remain the queued bridge's job.
+with a fresh allowance. Frozen imported usage remains settlement evidence.
 
 Repair searches the whole purchase history for one open reset period before
 considering settled predecessors. Multiple open periods require review. Repairs
@@ -65,7 +65,7 @@ The startup database migration reseals ID-bound ciphertext before publishing any
 new identity; agent `replaces_id` preserves credential-bound leases and period
 counters. Masters require `telegram_identity_rekey_v1` before sending a rekey.
 Hosted access regressions use returned native IDs for standalone subscriptions,
-traffic and resets, retaining source IDs only for import/resume checks. Saved
+traffic and resets, retaining old IDs only as historical evidence. Saved
 member tags stay reserved while inactive; decimal owner suffixes isolate members
 even when their historical display names contain overlapping hyphens.
 
@@ -161,7 +161,7 @@ GeoSite downloads and keeps rejected redirects distinct from network failures.
 `service_access.go` stores explicitly imported standalone terms inside encrypted
 credentials, without creating Telegram principals or purchases. Existing quota
 periods retain source and native usage exactly once, including reset tails.
-`service_cadence.go` takes over resets only after final source accounting.
+`service_cadence.go` resets eligible native service periods under settlement fences.
 `service_eligibility.go` derives access from current enabled groups and quota;
 probe bindings retain their separate bounded behavior. `service_subscriptions.go`
 uses the existing templates and host ACLs for standalone bearer subscriptions;
@@ -169,7 +169,7 @@ probe identities cannot use this path. Hosted `service_access_test.go` and
 `service_access_policy_test.go` cover resume, shared exhaustion, late resets,
 cadence handoff, host ACLs, native credentials and probe isolation.
 `ServiceIdentityByName` resolves saved service names independently of Telegram;
-`ServiceProxies` shares the same mixed-provider inventory with monitoring.
+`ServiceProxies` shares the same native inventory with monitoring.
 
 `validation_assets.go` substitutes node-local files only in an analysis copy,
 then runs native validation; actual activation still verifies node-local assets.
@@ -179,13 +179,10 @@ their matcher structure with synthetic analysis values. `validation_assets_test.
 checks both configuration previews and compiled candidates, preservation of the
 administrator document and rejection of unrelated native-core errors.
 
-`ownership.go` stages configured shared geodata in the legacy-owned blank runtime
-before candidate validation, with no listeners, users, firewall, DNS, torrent or
-update policy. Existing agent asset handling verifies downloads before native
-handover. `ownership_assets_test.go` guards this preparation/access boundary.
+`ownership.go` checks membership in the authoritative native node catalog.
 
 `types.go` Defines authoritative node, config, group, endpoint and shared policy types.
-`accounting_types.go` Defines private identities, credentials, periods and migration state.
+`accounting_types.go` defines private identities, credentials and periods.
 `metrics_types.go` Defines transient collector, node and member metric projections.
 `repository.go` Defines storage/settings dependencies.
 `service.go` Owns injected dependencies and secret-safe readers.
@@ -240,10 +237,6 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 
 - `identities.go`: Entry points: `Identity`, `IdentityForUser`, `IdentityUser`, `UserByUsername`.
 
-- `identity_import.go`: Entry points: `ImportIdentity`.
-
-- `legacy_sync.go`: Entry points: `SyncLegacyUsage`.
-
 - `master_access.go`: Entry points: `Connected`, `Sync`.
 
 - `master_operations.go`: Entry points: `DeferOperation`.
@@ -258,8 +251,6 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 - `periods.go`: Entry points: `ApplyPurchase`.
 
 - `release_check.go`: Entry points: `AgentBuild`, `VerifyRelease`, `WaitApplied`.
-
-- `service_import.go`: Entry points: `ImportServiceIdentity`.
 
 - `service_users.go`: Entry points: `AuthorizeService`.
 
