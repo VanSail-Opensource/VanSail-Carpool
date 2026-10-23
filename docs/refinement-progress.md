@@ -30,8 +30,8 @@ press and success/error haptic events were observed with a constructed SDK host.
 No console errors or failed preview requests remained in the successful flows.
 
 Static evidence: Go vet, frontend types/lint, structure/localization and diff
-checks passed. Local automated suites were not run. Hosted regressions and
-the terminal hosted workflow remains the delivery gate below.
+checks passed. Local automated suites were not run. Terminal hosted regressions
+and image publication remain the delivery gate below.
 
 The pinned X-Node revision is `5367fe1202201587e74ddea1293ae26c8be28e5b`,
 matching signed release `v2.0.13`. The pinned release verifier accepted the

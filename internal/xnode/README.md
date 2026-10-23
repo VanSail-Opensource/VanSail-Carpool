@@ -518,6 +518,8 @@ combined receipts continue through the existing routing deployment guarantees.
 `diy_split.go` derives split names from current host labels and reserves ordinary
 names first. Collisions, including reversed IPv4/IPv6 pairs, receive a profile-ID
 suffix only in the export; saved endpoint/profile references stay unchanged.
+`diy_split_names_test.go` covers reversed pairs, ordinary-host collisions and
+successful Xray/Mihomo/Stash template rendering with unique names in hosted CI.
 
 `metered_probe_lifecycle_test.go` exercises compiled admission, quota exhaustion, expired grants, real traffic reset and refund quiescing with duplicate late probe samples. Unfinished barriers retain origin evidence and leave successor periods uncharged.
 
