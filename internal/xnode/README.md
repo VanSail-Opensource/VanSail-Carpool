@@ -527,6 +527,11 @@ successful Xray/Mihomo/Stash template rendering with unique names in hosted CI.
 
 `firewall_policy.go` owns global rules and preserves common legacy fields during
 migration; `firewall_policy_test.go` checks conflict defaults.
+Inventory `source_match` is explicitly disabled in defaults and every effective
+policy, including saved enabled values. The pinned protocol enables omitted
+rules, so an explicit disabled entry preserves agent compatibility without
+distributing inventories. Migration ignores retired-rule conflicts; historical
+ban evidence remains intact.
 `firewall_protected.go` derives managed addresses from authenticated telemetry and
 unproxied authenticated peers, synchronizing them through existing per-node jobs.
 Those observations remain memory-only; shared CDN ranges are never inferred as

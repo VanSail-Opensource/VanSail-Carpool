@@ -16,7 +16,7 @@ type FirewallDetectionConfig struct {
 func DefaultFirewallDetection() *FirewallDetectionConfig {
 	config := &FirewallDetectionConfig{Rules: map[string]wire.FirewallRule{}, BanSeconds: 259200}
 	for _, name := range wire.FirewallRuleNames() {
-		config.Rules[name] = wire.FirewallRule{Enabled: true, Threshold: 3, WindowSeconds: 86400}
+		config.Rules[name] = wire.FirewallRule{Enabled: name != "source_match", Threshold: 3, WindowSeconds: 86400}
 	}
 	return config
 }
@@ -26,6 +26,12 @@ func (config *FirewallDetectionConfig) Apply(policy wire.FirewallPolicy) wire.Fi
 		config = DefaultFirewallDetection()
 	}
 	policy.Rules = maps.Clone(config.Rules)
+	if policy.Rules == nil {
+		policy.Rules = map[string]wire.FirewallRule{}
+	}
+	// Inventories stay on the master. Explicitly disable this retired rule:
+	// omitting it would enable the pinned protocol's default, even on old saves.
+	policy.Rules["source_match"] = wire.FirewallRule{Threshold: 3, WindowSeconds: 86400}
 	policy.BanSeconds = config.BanSeconds
 	return policy
 }
@@ -52,6 +58,9 @@ func MigrateFirewallDetection(policies []wire.FirewallPolicy) *FirewallDetection
 			result.BanSeconds = defaults.BanSeconds
 		}
 		for _, name := range wire.FirewallRuleNames() {
+			if name == "source_match" {
+				continue
+			}
 			next, _ := policy.Rule(name)
 			if index == 0 {
 				result.Rules[name] = next

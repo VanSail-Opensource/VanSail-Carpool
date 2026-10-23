@@ -100,7 +100,8 @@ xnodeApi.previewSubscriptionSelection = async (body, signal) => {
   return response.json()
 }
 
-global.firewallDetection = { rules: Object.fromEntries(['closed_port', 'invalid_packet', 'syn_flood', 'icmp_probe', 'xray_tcp_probe', 'xray_invalid', 'xray_auth_failure', 'source_match'].map(name => [name, { enabled: true, threshold: 3, window_seconds: 86400 }])), banSeconds: 259200, migrationNotice: params.has('migration-notice') }
+global.firewallDetection = { rules: Object.fromEntries(['closed_port', 'invalid_packet', 'syn_flood', 'icmp_probe', 'xray_tcp_probe', 'xray_invalid', 'xray_auth_failure'].map(name => [name, { enabled: true, threshold: 3, window_seconds: 86400 }])), banSeconds: 259200, migrationNotice: params.has('migration-notice') }
+if (params.has('legacy-source-rule')) global.firewallDetection.rules.source_match = { enabled: true, threshold: 3, window_seconds: 86400 }
 let globalLoadFailed = false
 function globalProjection() { const value = JSON.parse(JSON.stringify(global)) as XNodeGlobal; for (const provider of Object.values(value.providers)) for (const key of Object.keys(provider.credentials)) provider.credentials[key] = ''; return value }
 xnodeApi.global = async () => { await check('global'); if (params.has('global-load-error') && !globalLoadFailed) { globalLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return globalProjection() }

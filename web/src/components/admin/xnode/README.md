@@ -100,6 +100,9 @@ administrator grants remain a separate form with unchanged behavior.
 `XNodeGlobalDetection.vue` adapts fleet rules to the existing rules table.
 `XNodeFirewallRules.vue` keeps node enable/probe switches separate from the global
 threshold/window/ban controls; the global form displays migration conflicts.
+The editor omits the retired inventory `source_match` rule, including on old
+saves. Its localized name remains available for historical ban evidence; the
+backend always disables the rule in effective node and detection policies.
 
 `XNodeCommands.vue` defaults to normal material-rechecking reload and exposes
 an explicit forced recovery checkbox. Both use the existing durable command

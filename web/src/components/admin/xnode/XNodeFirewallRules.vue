@@ -7,7 +7,7 @@ type Policy = NonNullable<XNodeSettings['firewall']>
 const model = defineModel<Policy>({ required: true })
 defineProps<{ rulesOnly?: boolean }>()
 const { t } = useI18n()
-const names = ['closed_port', 'invalid_packet', 'syn_flood', 'icmp_probe', 'xray_tcp_probe', 'xray_invalid', 'xray_auth_failure', 'source_match']
+const names = ['closed_port', 'invalid_packet', 'syn_flood', 'icmp_probe', 'xray_tcp_probe', 'xray_invalid', 'xray_auth_failure']
 const rules = computed(() => names.map(name => ({ name, value: model.value.rules?.[name] ?? { enabled: true, threshold: 3, window_seconds: 86400 } })))
 function update(name: string, part: 'enabled' | 'threshold' | 'window_seconds', value: unknown): void {
   const previous = model.value.rules?.[name] ?? { enabled: true, threshold: 3, window_seconds: 86400 }
