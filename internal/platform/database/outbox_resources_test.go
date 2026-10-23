@@ -56,7 +56,7 @@ func TestStandaloneNativeTargetDoesNotBlockOutboxAdmission(t *testing.T) {
 	}
 	for _, key := range []string{"first", "second"} {
 		_, _, err := s.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor.ID, Kind: xnode.RoutingOperationKind,
-			IdempotencyKey: key, RequestFingerprint: key, Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}, now)
+			IdempotencyKey: key, RequestFingerprint: "standalone-admission-" + key, Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}, now)
 		if err != nil {
 			t.Fatal(err)
 		}
