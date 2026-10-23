@@ -26,23 +26,23 @@ type poolFlight struct {
 
 // EnhancedService owns shared inventories, DNS memoization and queued probes.
 type EnhancedService struct {
-	detected              *prefixIndex
-	settings              Settings
-	queues                map[string]*upstreamqueue.Queue
-	live                  *LiveService
-	mu                    sync.Mutex
-	pools                 map[[32]byte]*proxyPool
-	flights               map[[32]byte]*poolFlight
-	dns                   map[string]dnsEntry
-	ipapi                 Provider
-	inventoryFetch        func(context.Context, string, Config) ([]byte, error)
-	inventoryStream       func(context.Context, string, Config, func(string)) error
-	resolvers             map[string]resolverHealth
-	cursor                uint64
-	tests                 *sourceTestRuntime
-	disk                  *inventoryDisk
-	diskRequired          bool
-	diskError             error
+	detected        *prefixIndex
+	settings        Settings
+	queues          map[string]*upstreamqueue.Queue
+	live            *LiveService
+	mu              sync.Mutex
+	pools           map[[32]byte]*proxyPool
+	flights         map[[32]byte]*poolFlight
+	dns             map[string]dnsEntry
+	ipapi           Provider
+	inventoryFetch  func(context.Context, string, Config) ([]byte, error)
+	inventoryStream func(context.Context, string, Config, func(string)) error
+	resolvers       map[string]resolverHealth
+	cursor          uint64
+	tests           *sourceTestRuntime
+	disk            *inventoryDisk
+	diskRequired    bool
+	diskError       error
 }
 
 // NewEnhancedService reuses existing queue workers for every outbound operation.
