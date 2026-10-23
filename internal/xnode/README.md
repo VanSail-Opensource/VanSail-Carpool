@@ -1,5 +1,14 @@
 # X-Node control plane
 
+Replacement/reset revocation never waits for connected agents' replay backlogs.
+It wakes the existing state reconciler and retains the old period as `closing`;
+the accounting worker completes its barriers under its existing short deadline.
+`master_commands.go` also bounds the full traffic barrier, including cursor ACK
+waiting, to two minutes even for application-lifetime callers. The socket reader
+continues committing/acknowledging reports independently.
+`period_successor_test.go` covers an online agent withholding its traffic barrier
+while a successor becomes available with predecessor usage retained.
+
 Scheduled resets retry an interrupted successor publication from a current
 closing/closed period only after its cadence boundary and recorded revocation.
 `cadence_recovery.go` checks current purchase ownership, restrictions, existing
