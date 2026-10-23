@@ -32,7 +32,10 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		return nil, err
 	}
 	filename := (&url.URL{Path: filepath.ToSlash(path)}).EscapedPath()
-	dsn := "file:" + filename + "?_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)&_pragma=cache_size(-4096)&_pragma=mmap_size(0)&_pragma=temp_store(FILE)&_pragma=wal_autocheckpoint(1000)"
+	// Reserve the writer before reading a mutable snapshot. Deferred WAL
+	// upgrades otherwise fail immediately with SQLITE_BUSY_SNAPSHOT even when
+	// busy_timeout is set. Explicit read-only transactions remain deferred.
+	dsn := "file:" + filename + "?_txlock=immediate&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)&_pragma=cache_size(-4096)&_pragma=mmap_size(0)&_pragma=temp_store(FILE)&_pragma=wal_autocheckpoint(1000)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)

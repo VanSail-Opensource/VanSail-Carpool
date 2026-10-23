@@ -1,5 +1,17 @@
 # SQLite store
 
+Writable transactions reserve SQLite's writer with the driver's supported
+`_txlock=immediate` option before reading mutable state. This prevents WAL
+snapshot-upgrade failures from unrelated autocommit writers; the existing busy
+timeout applies at acquisition. Explicit read-only transactions keep concurrent
+WAL snapshots. `database_lock_test.go` covers both paths with separate connections.
+
+Rekeyed traffic aggregates accept either side of the recorded owner mapping.
+Live cumulative counters can move to the new ID while immutable period samples
+retain the old ID, including idle reports with no new samples. Only validated
+period samples charge usage. `xnode_traffic_alias_test.go` covers both forms and
+replay without duplicating cumulative traffic.
+
 `xnode_traffic_alias_test.go` covers alias-only legacy traffic totals, replay,
 owner validation and the node/period evidence required for late billable samples.
 Aggregate totals advance the durable journal without being charged a second time;

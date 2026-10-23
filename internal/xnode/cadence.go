@@ -39,7 +39,7 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	if err != nil {
 		return err
 	}
-	if period.Status != "open" || period.Strategy == "NO_RESET" {
+	if !cadenceReady(period, s.now()) {
 		return nil
 	}
 	next := rollover.CadenceAdvance(period.StartedAt, period.Strategy)
@@ -62,6 +62,18 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	if err != nil || current.CurrentPeriodID != period.ID {
 		return err
 	}
+	period, err = s.repo.XNodePeriod(ctx, current.CurrentPeriodID)
+	if err != nil || !cadenceReady(period, s.now()) {
+		return err
+	}
+	purchase, err = s.EffectivePurchase(ctx, identity.UserID)
+	if err != nil || purchase == nil || purchase.ID != period.PurchaseID {
+		return err
+	}
+	if allowed, err := s.cadenceRecoveryAllowed(ctx, current, period); err != nil || !allowed {
+		return err
+	}
+	next = rollover.CadenceAdvance(period.StartedAt, period.Strategy)
 	if err = s.closePeriod(ctx, period, true); err != nil {
 		return err
 	}

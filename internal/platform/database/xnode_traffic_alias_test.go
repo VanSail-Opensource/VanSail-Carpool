@@ -31,13 +31,51 @@ func TestXNodeTrafficAliasOnlyAggregateCommitsWithoutChargingAgain(t *testing.T)
 	}
 }
 
+func TestXNodeTrafficRekeyedAggregatesDoNotReplayCumulativeCounters(t *testing.T) {
+	for _, sampled := range []bool{false, true} {
+		t.Run(map[bool]string{false: "idle-rekey", true: "old-period-sample"}[sampled], func(t *testing.T) {
+			store, identity, period := xnodeTrafficFixture(t)
+			ctx := context.Background()
+			if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',?,42,?)`, identity.UserID, identity.ProxyUserID); err != nil {
+				t.Fatal(err)
+			}
+			if err := store.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
+				t.Fatal(err)
+			}
+			// Live cumulative totals move to the new ID; existing leases keep
+			// their old period keys. Idle leases may have no new sample at all.
+			report := wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{int(identity.ProxyUserID): {9000, 8000}}}
+			want := int64(0)
+			if sampled {
+				at := time.Now().UTC()
+				report.Traffic[42] = [2]uint64{4, 0}
+				report.Samples = []wire.TrafficSample{{UserID: 42, AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 4}}
+				want = 5
+			}
+			for range 2 {
+				if err := store.RecordXNodeTraffic(ctx, "node", "agent", 1, "mixed-rekey", report); err != nil {
+					t.Fatal(err)
+				}
+			}
+			sequence, err := store.XNodeReportSequence(ctx, "agent")
+			if err != nil || sequence != 1 {
+				t.Fatalf("cursor = %d, %v", sequence, err)
+			}
+			value, err := store.XNodePeriod(ctx, period.ID)
+			if err != nil || value.UsedBytes != want {
+				t.Fatalf("usage = %d, want %d, %v", value.UsedBytes, want, err)
+			}
+		})
+	}
+}
+
 func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
-	for _, scenario := range []string{"foreign-alias", "unmapped-member", "untracked-node", "tracked-node"} {
+	for _, scenario := range []string{"foreign-alias", "foreign-canonical-alias", "unmapped-member", "untracked-node", "tracked-node"} {
 		t.Run(scenario, func(t *testing.T) {
 			store, identity, period := xnodeTrafficFixture(t)
 			ctx := context.Background()
 			owner := identity.UserID
-			if scenario == "foreign-alias" {
+			if scenario == "foreign-alias" || scenario == "foreign-canonical-alias" {
 				owner = "another-member"
 			}
 			if scenario != "unmapped-member" {
@@ -46,7 +84,7 @@ func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
 				}
 			}
 			user := 42
-			if scenario == "unmapped-member" {
+			if scenario == "unmapped-member" || scenario == "foreign-canonical-alias" {
 				user = int(identity.ProxyUserID)
 			}
 			report := wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{user: {4, 0}}}

@@ -21,6 +21,14 @@ func (s *Service) resetServiceCadence(ctx context.Context, identity Identity, pe
 	if access.Disabled || !access.ExpiresAt.After(s.now()) {
 		return nil
 	}
+	period, err = s.repo.XNodePeriod(ctx, current.CurrentPeriodID)
+	if err != nil || !cadenceReady(period, s.now()) {
+		return err
+	}
+	if allowed, err := s.cadenceRecoveryAllowed(ctx, current, period); err != nil || !allowed {
+		return err
+	}
+	next = rollover.CadenceAdvance(period.StartedAt, period.Strategy)
 	if err = s.closePeriod(ctx, period, true); err != nil {
 		return err
 	}

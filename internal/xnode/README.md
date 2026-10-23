@@ -1,5 +1,14 @@
 # X-Node control plane
 
+Scheduled resets retry an interrupted successor publication from a current
+closing/closed period only after its cadence boundary and recorded revocation.
+`cadence_recovery.go` checks current purchase ownership, restrictions, existing
+open allowances and the existing member mutation fence before recovery. Earlier
+closures and review periods remain unchanged. Old usage remains in its original
+period until every journal barrier settles; a paid successor can admit traffic
+while that settlement waits. `cadence_recovery_test.go` covers recovery, replay
+and financial/review fences without changing immutable usage.
+
 Routing/DIY saves bound preparation and agent validation to 45 seconds. Their
 read-only preparation runs outside the global mutation mutex; SQLite remains
 authoritative for atomic owner/revision/idempotency and DIY billing fences.
