@@ -126,7 +126,7 @@ func (s *Store) EnqueueDueEntitlementTransitions(ctx context.Context, now time.T
 		if err := applyPendingExtensionsToActivationTx(ctx, tx, purchaseID, now); err != nil {
 			return err
 		}
-		if err := insertOutboxTx(ctx, tx, "remna_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now); err != nil {
 			return err
 		}
 	}
@@ -155,7 +155,7 @@ func (s *Store) ExpirePurchase(ctx context.Context, purchaseID string, now time.
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=? WHERE id=?`, stamp(now), purchaseID); err != nil {
 		return err
 	}
-	if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
+	if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
 		return err
 	}
 	if err := s.insertExpirationNotificationTx(ctx, tx, purchaseID, userSyncGate(userID), now); err != nil {

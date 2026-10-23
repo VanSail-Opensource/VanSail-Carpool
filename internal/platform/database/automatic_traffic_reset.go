@@ -99,7 +99,7 @@ func automaticResetCandidateTx(ctx context.Context, tx *sql.Tx, remoteID string,
 	var validFrom string
 	err := tx.QueryRowContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_from
 		FROM users JOIN purchases ON purchases.user_id=users.id JOIN combos ON combos.id=purchases.combo_id
-		WHERE users.remna_user_id=? AND users.auto_traffic_reset_enabled=1 AND purchases.status='active'
+		WHERE users.proxy_user_id=? AND users.auto_traffic_reset_enabled=1 AND purchases.status='active'
 		AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`,
 		strings.TrimSpace(remoteID), stamp(now), stamp(now)).Scan(&result.purchaseID, &result.userID, &result.combo, &validFrom)
 	if err == nil {

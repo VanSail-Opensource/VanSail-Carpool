@@ -59,7 +59,7 @@ func (s *Service) process(item *work) {
 
 func (s *Service) newAttempt(item *work, hostUUID string) Attempt {
 	return Attempt{ID: uuid.NewString(), RunID: item.run.ID, HostUUID: hostUUID, ConfigHash: item.hash,
-		RemnawaveUserID: item.config.RemnawaveUserID, Trigger: item.run.Trigger, StartedAt: s.now().UTC(),
+		ProxyUserID: item.config.ProxyUserID, Trigger: item.run.Trigger, StartedAt: s.now().UTC(),
 		Outcome: Outcome{Status: "running"}}
 }
 

@@ -1,4 +1,4 @@
-import type { Catalog, CatalogNode, Combo, PurchaseQuote, RemnaNode, SquadProduct } from './types'
+import type { Catalog, CatalogNode, Combo, PurchaseQuote, ProxyNode, SquadProduct } from './types'
 
 function objectArray<T>(value: unknown): T[] {
   if (!Array.isArray(value)) return []
@@ -37,6 +37,6 @@ export function normalizePurchaseQuote(value: PurchaseQuote): PurchaseQuote {
   const source = value as unknown as { accessibleNodes?: unknown }
   return {
     ...value,
-    accessibleNodes: objectArray<RemnaNode>(source.accessibleNodes),
+    accessibleNodes: objectArray<ProxyNode>(source.accessibleNodes),
   }
 }

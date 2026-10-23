@@ -44,8 +44,6 @@ func settingCategory(key string) string {
 		return "captcha"
 	case strings.HasPrefix(key, "telegram."):
 		return "telegram"
-	case strings.HasPrefix(key, "remnawave."):
-		return "remnawave"
 	case strings.HasPrefix(key, "billing.rate."):
 		return "rates"
 	case strings.HasPrefix(key, "billing."):

@@ -49,7 +49,7 @@ func TestNativeOnlyResetRetainsPurchaseWideRefundEvidence(t *testing.T) {
 		t.Fatal("reset erased purchase refund evidence", quote, err)
 	}
 	user, err := f.store.UserByID(ctx, f.user.ID)
-	if err != nil || user.RemnaUserID != nil {
+	if err != nil || user.ProxyUserID != nil {
 		t.Fatal("native reset required a legacy link", user, err)
 	}
 }

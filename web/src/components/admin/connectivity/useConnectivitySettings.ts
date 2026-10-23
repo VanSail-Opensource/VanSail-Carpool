@@ -22,7 +22,7 @@ export function useConnectivitySettings(snapshot: ShallowRef<ConnectivitySnapsho
   watch(snapshot, next => {
     if (!next) return
     const previous = baseline.value
-    const accountClean = username.value === baselineUsername.value && (!previous || draft.remnawaveUserId === previous.remnawaveUserId)
+    const accountClean = username.value === baselineUsername.value && (!previous || draft.proxyUserId === previous.proxyUserId)
     mergeRefreshedDraft(draft, next.config, previous ?? undefined)
     baseline.value = { ...next.config }
     if (accountClean) {
@@ -32,11 +32,11 @@ export function useConnectivitySettings(snapshot: ShallowRef<ConnectivitySnapsho
     }
   })
   const accountResolved = computed(() => username.value.trim()
-    ? user.value?.id === draft.remnawaveUserId && user.value.username === username.value.trim()
-    : draft.remnawaveUserId === 0 || (baselineUsername.value === '' && draft.remnawaveUserId === baseline.value?.remnawaveUserId))
+    ? user.value?.id === draft.proxyUserId && user.value.username === username.value.trim()
+    : draft.proxyUserId === 0 || (baselineUsername.value === '' && draft.proxyUserId === baseline.value?.proxyUserId))
   const dirty = computed(() => baseline.value !== null && (!sameConnectivityConfig(draft, baseline.value) || username.value.trim() !== baselineUsername.value))
   const valid = computed(() => validConnectivityConfig(draft) && accountResolved.value)
-  const canRun = computed(() => baseline.value !== null && baseline.value.remnawaveUserId > 0 && !dirty.value && valid.value && !busy.value && !resolving.value)
+  const canRun = computed(() => baseline.value !== null && baseline.value.proxyUserId > 0 && !dirty.value && valid.value && !busy.value && !resolving.value)
 
   async function resolve(): Promise<void> {
     const value = username.value.trim()
@@ -51,7 +51,7 @@ export function useConnectivitySettings(snapshot: ShallowRef<ConnectivitySnapsho
       if (disposed || current !== resolveGeneration || username.value.trim() !== value) return
       user.value = result
       username.value = result.username
-      draft.remnawaveUserId = result.id
+      draft.proxyUserId = result.id
       saved.value = false
     } catch (caught) {
       if (!disposed && current === resolveGeneration && !resolveController.signal.aborted) error.value = connectivityError(caught, 'hostConnectivity.resolveFailed')
@@ -66,7 +66,7 @@ export function useConnectivitySettings(snapshot: ShallowRef<ConnectivitySnapsho
     resolving.value = false
     username.value = ''
     user.value = null
-    draft.remnawaveUserId = 0
+    draft.proxyUserId = 0
     draft.scheduledEnabled = false
     saved.value = false
   }

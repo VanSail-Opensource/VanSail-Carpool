@@ -64,7 +64,7 @@ func TestCreatePurchaseSnapshotsAndRenewsAtCurrentTermEnd(t *testing.T) {
 		t.Fatalf("renewal status = %q, want queued", second.Status)
 	}
 	var provisioningJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user'
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user'
 		AND json_extract(payload,'$.userId')=?`, user.ID).Scan(&provisioningJobs); err != nil || provisioningJobs != 1 {
 		t.Fatalf("queued purchase provisioning jobs = %d, err %v", provisioningJobs, err)
 	}
@@ -93,7 +93,7 @@ func TestCreatePurchaseSnapshotsAndRenewsAtCurrentTermEnd(t *testing.T) {
 		t.Fatalf("purchase debit count = %d, want 2", got)
 	}
 	var outboxCount int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_apply_entitlement'`).Scan(&outboxCount); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement'`).Scan(&outboxCount); err != nil {
 		t.Fatalf("count entitlement outbox: %v", err)
 	}
 	if outboxCount != 1 {
@@ -189,7 +189,7 @@ func TestCreatePurchaseIdempotencyReplaysAndRejectsFingerprintReuse(t *testing.T
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='purchase_debit'`, user.ID).Scan(&debits); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_apply_entitlement' AND payload=?`, `{"purchaseId":"`+purchaseID+`"}`).Scan(&jobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+purchaseID+`"}`).Scan(&jobs); err != nil {
 		t.Fatal(err)
 	}
 	if purchases != 1 || debits != 1 || jobs != 1 {

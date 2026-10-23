@@ -105,7 +105,7 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 	if err := reconcilePurchaseContinuityTx(ctx, tx, id, "activating", now, now); err != nil {
 		return "", err
 	}
-	return id, insertOutboxTx(ctx, tx, "remna_apply_entitlement", `{"purchaseId":"`+id+`"}`, now, now)
+	return id, insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+id+`"}`, now, now)
 }
 
 func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFrom time.Time, shift time.Duration, now time.Time) error {

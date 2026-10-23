@@ -47,7 +47,7 @@ func TestRestartSourceOutageStillShowsRetainedResults(t *testing.T) {
 	started := time.Now().UTC().Add(-time.Minute)
 	finished := started.Add(time.Second)
 	repository.items = []Attempt{{ID: "retained", HostUUID: source.targets[0].HostUUID, ConfigHash: ConfigHash(cfg),
-		RemnawaveUserID: cfg.RemnawaveUserID, StartedAt: started, FinishedAt: &finished,
+		ProxyUserID: cfg.ProxyUserID, StartedAt: started, FinishedAt: &finished,
 		Outcome: Outcome{Status: "connected"}}}
 	source.fail(&CodeError{Code: "CONNECTIVITY_ACCOUNT_UNAVAILABLE"})
 	service := startTestService(t, settings, source, testProbe(func(context.Context, Target, Config) Outcome {

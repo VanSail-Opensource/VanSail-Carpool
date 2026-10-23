@@ -72,7 +72,7 @@ func (s *Server) writeConnectionError(w http.ResponseWriter, r *http.Request, er
 	case errors.Is(err, connections.ErrScanNotFound), errors.Is(err, database.ErrNotFound):
 		s.writeError(w, r, http.StatusNotFound, "CONNECTION_SCAN_NOT_FOUND", "The connection scan could not be found.")
 	case errors.Is(err, connections.ErrIdentityRequired):
-		s.writeError(w, r, http.StatusConflict, "REMNAWAVE_IDENTITY_REQUIRED", "Complete account synchronization before scanning connections.")
+		s.writeError(w, r, http.StatusConflict, "XNODE_IDENTITY_REQUIRED", "Complete account synchronization before scanning connections.")
 	case errors.Is(err, database.ErrConflict):
 		s.writeError(w, r, http.StatusConflict, "IDEMPOTENCY_CONFLICT", "The idempotency key is already used for another request.")
 	default:

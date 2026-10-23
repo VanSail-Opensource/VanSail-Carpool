@@ -39,7 +39,7 @@ post:
           $ref: '../openapi.yaml#/components/schemas/PurchaseRequest'
   responses:
     '201':
-      description: Purchase was created and its Remnawave operation was queued.
+      description: Purchase was created and its X-Node operation was queued.
       content:
         application/json:
           schema:

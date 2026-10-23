@@ -17,7 +17,7 @@ func connectivityTestAttempt(index int, host string, at time.Time) connectivity.
 	return connectivity.Attempt{
 		ID:    fmt.Sprintf("90000000-0000-4000-8000-%012d", index),
 		RunID: "90000000-0000-4000-8000-999999999999", HostUUID: host,
-		ConfigHash: strings.Repeat("a", 64), RemnawaveUserID: 41, Trigger: "manual", StartedAt: at,
+		ConfigHash: strings.Repeat("a", 64), ProxyUserID: 41, Trigger: "manual", StartedAt: at,
 	}
 }
 

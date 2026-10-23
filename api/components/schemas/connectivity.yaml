@@ -1,10 +1,10 @@
 ConnectivityConfig:
   type: object
   additionalProperties: false
-  required: [scheduledEnabled, remnawaveUserId, intervalSeconds, timeoutSeconds, maxRetries, retryIntervalSeconds, probeUrl]
+  required: [scheduledEnabled, proxyUserId, intervalSeconds, timeoutSeconds, maxRetries, retryIntervalSeconds, probeUrl]
   properties:
     scheduledEnabled: { type: boolean, default: false }
-    remnawaveUserId: { type: integer, format: int64, minimum: 0 }
+    proxyUserId: { type: integer, format: int64, minimum: 0 }
     intervalSeconds: { type: integer, minimum: 60, maximum: 86400, default: 300 }
     timeoutSeconds: { type: integer, minimum: 1, maximum: 60, default: 15 }
     maxRetries: { type: integer, minimum: 0, maximum: 10, default: 10, description: Additional attempts after the initial failed check. Zero disables retries. }
@@ -21,13 +21,13 @@ ConnectivityUser:
 ConnectivityAttempt:
   type: object
   additionalProperties: false
-  required: [id, runId, hostUuid, configHash, remnawaveUserId, trigger, startedAt, finishedAt, status, latencyMs, httpStatus, errorCode]
+  required: [id, runId, hostUuid, configHash, proxyUserId, trigger, startedAt, finishedAt, status, latencyMs, httpStatus, errorCode]
   properties:
     id: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     runId: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     hostUuid: { type: string, description: Empty for a subscription or account setup failure. }
     configHash: { type: string, pattern: '^[0-9a-f]{64}$' }
-    remnawaveUserId: { type: integer, format: int64, minimum: 1 }
+    proxyUserId: { type: integer, format: int64, minimum: 1 }
     trigger: { type: string, enum: [manual, scheduled] }
     startedAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
     finishedAt: { anyOf: [{ $ref: '../../openapi.yaml#/components/schemas/Timestamp' }, { type: 'null' }] }

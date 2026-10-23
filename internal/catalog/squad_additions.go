@@ -63,7 +63,7 @@ func (s *Service) validateLiveAddons(ctx context.Context, addonIDs []string) err
 	if err != nil {
 		return err
 	}
-	if _, live := s.remnawave.(remoteSquadLister); live {
+	if _, live := s.provider.(remoteSquadLister); live {
 		catalog, err := s.hydrateLiveCatalog(ctx, nil, addons)
 		if err != nil {
 			return err
@@ -73,7 +73,7 @@ func (s *Service) validateLiveAddons(ctx context.Context, addonIDs []string) err
 	visible := make(map[string]struct{}, len(addons))
 	for _, addon := range addons {
 		if addon.Visible && addon.UpstreamPresent {
-			visible[addon.RemnaSquadUUID] = struct{}{}
+			visible[addon.GroupID] = struct{}{}
 		}
 	}
 	for _, addonID := range addonIDs {

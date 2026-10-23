@@ -2,7 +2,7 @@ get:
   tags: [Dashboard]
   operationId: getDashboard
   summary: Get the current home-page projection
-  description: Returns balance, active and queued purchases, subscription data, and cached Remnawave statistics. `statisticsStale` is true when cached statistics were used after an upstream failure.
+  description: Returns balance, active and queued purchases, subscription data, and cached X-Node statistics. `statisticsStale` is true when cached statistics were used after an upstream failure.
   responses:
     '200':
       description: Dashboard projection.

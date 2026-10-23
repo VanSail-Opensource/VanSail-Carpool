@@ -80,8 +80,6 @@ func (s *Service) routingRepository() (routingRepository, bool) {
 		switch r := base.(type) {
 		case *compileReads:
 			base = r.Repository
-		case candidateRepository:
-			base = r.Repository
 		default:
 			value, ok := base.(routingRepository)
 			return value, ok

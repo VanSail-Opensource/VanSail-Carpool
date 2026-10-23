@@ -10,7 +10,7 @@ import (
 func TestCatalogGroupsAccessibleNodesPerUniqueSquad(t *testing.T) {
 	t.Parallel()
 	remote := &catalogNodeRemote{
-		catalogRemnawave: &catalogRemnawave{},
+		catalogProxy: &catalogProxy{},
 		squads: []RemoteSquad{
 			{UUID: "core-squad", Name: "Core"},
 			{UUID: "shared-squad", Name: "Shared"},

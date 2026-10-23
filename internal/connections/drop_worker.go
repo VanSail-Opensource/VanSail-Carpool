@@ -52,11 +52,11 @@ func (w *DropWorker) HandleProviderOperation(ctx context.Context, operation prov
 		return w.finish(ctx, operation, item, item.Status, item.ErrorCode)
 	}
 	user, err := w.repository.UserByID(ctx, operation.OwnerUserID)
-	if err != nil || user.RemnaUserID == nil {
-		return w.finish(ctx, operation, item, providerops.StatusFailed, "REMNAWAVE_IDENTITY_REQUIRED")
+	if err != nil || user.ProxyUserID == nil {
+		return w.finish(ctx, operation, item, providerops.StatusFailed, "XNODE_IDENTITY_REQUIRED")
 	}
 	if item.Status == providerops.StatusProcessing {
-		return w.reconcile(ctx, operation, item, claims, *user.RemnaUserID, nil)
+		return w.reconcile(ctx, operation, item, claims, *user.ProxyUserID, nil)
 	}
 	item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 	if err != nil {
@@ -69,7 +69,7 @@ func (w *DropWorker) HandleProviderOperation(ctx context.Context, operation prov
 	if callErr == nil {
 		return w.finish(ctx, operation, item, providerops.StatusSucceeded, "")
 	}
-	return w.reconcile(ctx, operation, item, claims, *user.RemnaUserID, callErr)
+	return w.reconcile(ctx, operation, item, claims, *user.ProxyUserID, callErr)
 }
 
 func (w *DropWorker) prepare(ctx context.Context, operation providerops.Operation, job model.OutboxJob) (providerops.Operation, providerops.Item, HandleClaims, error) {

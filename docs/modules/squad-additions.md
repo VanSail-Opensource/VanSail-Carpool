@@ -12,7 +12,7 @@ The request validates owner, active unexpired term, visible upstream-present squ
 
 ## Durability
 
-The commit transaction debits TXB, inserts one immutable ledger entry and an idempotent adjustment record, creates the `purchase_addons` rows, updates the purchase totals used by rollover, and enqueues `remna_sync_user`. It never calls Remnawave or Emby directly. Existing renewal planning reads the updated add-on rows, so the next cycle charges their normal full-term price.
+The commit transaction debits TXB, inserts one immutable ledger entry and an idempotent adjustment record, creates the `purchase_addons` rows, updates the purchase totals used by rollover, and enqueues `xnode_sync_user`. It never calls X-Node or Emby directly. Existing renewal planning reads the updated add-on rows, so the next cycle charges their normal full-term price.
 
 ## Ownership
 

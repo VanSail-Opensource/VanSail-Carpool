@@ -34,10 +34,10 @@ func TestAdminBulkExtensionUsesInclusiveORDeduplicationAndQueueShift(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	userTwo, _ := createAdminWorkflowPurchase(t, store, 42002, comboB, now, addon.RemnaSquadUUID)
+	userTwo, _ := createAdminWorkflowPurchase(t, store, 42002, comboB, now, addon.GroupID)
 	actor, _ := createAdminWorkflowPurchase(t, store, 42003, comboB, now)
 
-	filter := AdminBulkExtensionFilter{ComboIDs: []string{comboA.ID}, AddonSquadUUIDs: []string{addon.RemnaSquadUUID}}
+	filter := AdminBulkExtensionFilter{ComboIDs: []string{comboA.ID}, AddonSquadUUIDs: []string{addon.GroupID}}
 	targets, preview, err := adminBulkTargets(ctx, store.db, filter, now)
 	if err != nil {
 		t.Fatalf("adminBulkTargets(): %v", err)
@@ -111,12 +111,12 @@ func TestAdminBulkAddonFilterUsesEffectiveEntitlementOverrides(t *testing.T) {
 	original := saveTestSquad(t, store, "55555555-5555-4555-8555-555555555555", 25, true)
 	addonOverride := "66666666-6666-4666-8666-666666666666"
 	fullOverride := "77777777-7777-4777-8777-777777777777"
-	_, purchase := createAdminWorkflowPurchase(t, store, 42_004, combo, now, original.RemnaSquadUUID)
+	_, purchase := createAdminWorkflowPurchase(t, store, 42_004, combo, now, original.GroupID)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=? WHERE id=?`,
 		`["`+addonOverride+`"]`, purchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	_, stalePreview, err := adminBulkTargets(ctx, store.db, AdminBulkExtensionFilter{AddonSquadUUIDs: []string{original.RemnaSquadUUID}}, now)
+	_, stalePreview, err := adminBulkTargets(ctx, store.db, AdminBulkExtensionFilter{AddonSquadUUIDs: []string{original.GroupID}}, now)
 	if err != nil || stalePreview.MatchedUsers != 0 {
 		t.Fatalf("stale add-on preview = %+v, %v", stalePreview, err)
 	}

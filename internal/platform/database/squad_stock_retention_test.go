@@ -47,7 +47,7 @@ func TestSquadStockRetainsExistingReservationsAfterLimitReduction(t *testing.T) 
 			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=? WHERE id=?`, test.status, ownerPurchaseID); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.SaveSquadProduct(ctx, SquadProductInput{RemnaSquadUUID: addon.ID, Name: addon.Name,
+			if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: addon.ID, Name: addon.Name,
 				UpstreamPresent: true, Visible: true, PriceTXBMinor: 400, StockLimit: &test.limit}); err != nil {
 				t.Fatal(err)
 			}

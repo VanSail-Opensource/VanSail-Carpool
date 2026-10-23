@@ -10,7 +10,7 @@ func TestScopedControlSeparatesMigrationCommerceAndCredentials(t *testing.T) {
 	}{
 		{"POST", "/api/v1/admin/xnode/nodes", true},
 		{"GET", "/api/v1/admin/xnode/nodes", true},
-		{"POST", "/api/v1/admin/xnode/migration/import", false},
+
 		{"GET", "/api/v1/admin/payments", false},
 		{"GET", "/api/v1/me", false},
 		{"GET", "/api/v1/admin/xnode/../settings", false},

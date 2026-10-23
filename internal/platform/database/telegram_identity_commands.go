@@ -14,7 +14,7 @@ import (
 // bind the owner and request fingerprint. Rekey only those known contexts before
 // owner references change so unrelated ciphertext is never probed.
 func rekeyQueuedSealedTargets(ctx context.Context, tx *sql.Tx, vault *secret.Vault, key identityRekey) error {
-	rows, err := tx.QueryContext(ctx, `SELECT j.rowid,j.payload,o.kind,COALESCE(o.owner_user_id,''),o.actor_user_id,o.idempotency_key,o.request_fingerprint FROM outbox_jobs j JOIN provider_operations o ON o.id=json_extract(j.payload,'$.operationId') WHERE j.kind='provider_operation' AND j.status IN ('pending','processing','failed') AND (o.actor_user_id=? OR o.owner_user_id=?) AND o.kind IN ('xnode_command','xnode_migration','xnode_route_speedtest','emby_preferences','emby_password','connection_drop')`, key.oldUser, key.oldUser)
+	rows, err := tx.QueryContext(ctx, `SELECT j.rowid,j.payload,o.kind,COALESCE(o.owner_user_id,''),o.actor_user_id,o.idempotency_key,o.request_fingerprint FROM outbox_jobs j JOIN provider_operations o ON o.id=json_extract(j.payload,'$.operationId') WHERE j.kind='provider_operation' AND j.status IN ('pending','processing','failed') AND (o.actor_user_id=? OR o.owner_user_id=?) AND o.kind IN ('xnode_command','xnode_route_speedtest','emby_preferences','emby_password','connection_drop')`, key.oldUser, key.oldUser)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,6 @@ func queuedSealedTargetContext(kind, actor, owner, key, fingerprint, user string
 	switch kind {
 	case "xnode_command":
 		return "xnode.command." + actor + "." + key, actor == user
-	case "xnode_migration":
-		return "xnode.migration.operation." + actor + "." + key, actor == user
 	case "xnode_route_speedtest":
 		return "xnode.route-speedtest." + actor + "." + key, actor == user
 	case "emby_preferences", "emby_password":

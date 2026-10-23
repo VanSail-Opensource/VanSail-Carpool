@@ -98,7 +98,7 @@ func (r *entitlementRepository) ReleaseUserSyncNotifications(context.Context, st
 	return r.releaseErr
 }
 
-type entitlementRemnawave struct {
+type entitlementProxy struct {
 	applyCalls         int
 	applyUserID        string
 	applyLimit         int64
@@ -112,24 +112,24 @@ type entitlementRemnawave struct {
 	resetErr           error
 }
 
-func (r *entitlementRemnawave) ApplyEntitlement(_ context.Context, userID string, limit int64, strategy string, squads []string, expiresAt time.Time) error {
+func (r *entitlementProxy) ApplyEntitlement(_ context.Context, userID string, limit int64, strategy string, squads []string, expiresAt time.Time) error {
 	r.applyCalls++
 	r.applyUserID, r.applyLimit, r.applyResetStrategy = userID, limit, strategy
 	r.applySquads = append([]string(nil), squads...)
 	r.applyExpiresAt = expiresAt
 	return r.applyErr
 }
-func (r *entitlementRemnawave) ResetTraffic(context.Context, string) error {
+func (r *entitlementProxy) ResetTraffic(context.Context, string) error {
 	r.resetCalls++
 	return r.resetErr
 }
-func (r *entitlementRemnawave) RemoveEntitlement(context.Context, string) error {
+func (r *entitlementProxy) RemoveEntitlement(context.Context, string) error {
 	r.removeCalls++
 	return r.removeErr
 }
 
-func newEntitlementWorkerForTest(repository Repository, remnawave RemnawaveClient) *Worker {
-	worker := NewWorker(repository, remnawave)
+func newEntitlementWorkerForTest(repository Repository, provider ProxyClient) *Worker {
+	worker := NewWorker(repository, provider)
 	worker.now = func() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
 	return worker
 }

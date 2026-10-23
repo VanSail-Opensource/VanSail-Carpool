@@ -33,7 +33,7 @@ func TestRolloverCountsTowardAutoRenewalBalance(t *testing.T) {
 		{name: "unavailable", settings: automaticRenewalSettingsStub{err: testError}, wantErr: testError},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			service := NewService(&catalogRepository{}, &catalogRemnawave{}, 0)
+			service := NewService(&catalogRepository{}, &catalogProxy{}, 0)
 			service.SetAutomaticRenewalSettings(test.settings)
 			got, err := service.rolloverCountsTowardAutoRenewalBalance(context.Background())
 			if !errors.Is(err, test.wantErr) || got != test.want {

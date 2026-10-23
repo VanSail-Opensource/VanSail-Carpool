@@ -19,5 +19,5 @@ func (w *Worker) DrainPriority(ctx context.Context, limit int) error {
 	if !ok {
 		return nil
 	}
-	return w.drain(ctx, limit, repository.ClaimPriorityOutboxJob)
+	return w.drain(ctx, limit, repository.ClaimPriorityOutboxJob, true)
 }

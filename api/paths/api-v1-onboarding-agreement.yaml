@@ -1,9 +1,9 @@
 post:
   tags: [Onboarding]
   operationId: acceptSharingAgreement
-  summary: Accept the no-sharing agreement and provision Remnawave
+  summary: Accept the no-sharing agreement and provision X-Node
   description: |
-    Records acceptance and ensures an ACTIVE Remnawave user with a 2099
+    Records acceptance and ensures an ACTIVE X-Node user with a 2099
     upstream expiry, zero traffic, NO_RESET, and no squads. Recoverable partial
     failures remain resumable and are reconciled by username and Telegram ID.
   requestBody:

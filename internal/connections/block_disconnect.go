@@ -10,7 +10,7 @@ import (
 func (w *BlockWorker) disconnect(ctx context.Context, operation providerops.Operation, item providerops.Item,
 	block IPBlockRecord, ip string) error {
 	user, err := w.repository.UserByID(ctx, operation.OwnerUserID)
-	if err != nil || user.RemnaUserID == nil {
+	if err != nil || user.ProxyUserID == nil {
 		return w.finish(ctx, operation, item, block, providerops.StatusPartial, "DROP_RECONCILIATION_FAILED")
 	}
 	scoped, callErr := scopedControl(ctx, w.remote, block.UserID, ip, block.NodeUUID, true, 0, false)
@@ -20,7 +20,7 @@ func (w *BlockWorker) disconnect(ctx context.Context, operation providerops.Oper
 	if callErr == nil {
 		return w.finish(ctx, operation, item, block, providerops.StatusSucceeded, "")
 	}
-	jobID, err := w.remote.RequestConnectionScan(ctx, *user.RemnaUserID)
+	jobID, err := w.remote.RequestConnectionScan(ctx, *user.ProxyUserID)
 	if err != nil {
 		return w.finish(ctx, operation, item, block, providerops.StatusPartial, "DROP_RECONCILIATION_FAILED")
 	}

@@ -26,13 +26,6 @@ func (s *Service) memberInventory(ctx context.Context, userID string) ([]subscri
 		return nil, false, err
 	}
 	out := []subscription.Proxy{}
-	if s.legacyProxies != nil && identity.LegacyUserID != "" {
-		out, err = s.legacyProxies(ctx, identity)
-		if err != nil {
-			out = []subscription.Proxy{}
-		}
-	}
-	legacyError := err
 	for _, endpoint := range endpoints {
 		if !endpoint.Enabled {
 			continue
@@ -74,8 +67,5 @@ func (s *Service) memberInventory(ctx context.Context, userID string) ([]subscri
 		}
 		out = append(out, proxy)
 	}
-	if len(out) == 0 && legacyError != nil {
-		return nil, true, ErrUnavailable
-	}
-	return out, legacyError != nil, nil
+	return out, false, nil
 }

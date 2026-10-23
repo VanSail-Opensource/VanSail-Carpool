@@ -87,7 +87,7 @@ function setSquad(id: string, selected: boolean): void {
           <motion.div layout class="squad-picker__items">
             <AnimatePresence :initial="false" mode="popLayout">
               <motion.div v-for="squad in squads" :key="squad.id" layout class="squad-picker__option" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.22, ease: 'easeOut' }">
-                <span><strong>{{ squad.name }}</strong><small>{{ squad.remnaSquadUuid }}</small></span>
+                <span><strong>{{ squad.name }}</strong><small>{{ squad.groupId }}</small></span>
                 <UCheckbox :model-value="draft.squadProductIds.includes(squad.id)" :aria-label="squad.name" @update:model-value="setSquad(squad.id, Boolean($event))" />
               </motion.div>
               <motion.p v-if="!squads.length" key="empty-squads" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }">{{ t('adminCatalogEditor.noSquads') }}</motion.p>

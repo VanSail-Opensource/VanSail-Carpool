@@ -35,7 +35,7 @@ func TestRenewalRetainsStockAtCurrentDiscountedPrice(t *testing.T) {
 		t.Fatal(err)
 	}
 	zero := 0
-	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{RemnaSquadUUID: addon.ID,
+	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: addon.ID,
 		Name: addon.Name, UpstreamPresent: true, Visible: true, PriceTXBMinor: 700, StockLimit: &zero}); err != nil {
 		t.Fatal(err)
 	}

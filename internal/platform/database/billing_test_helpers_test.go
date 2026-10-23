@@ -71,7 +71,7 @@ func saveTestSquad(t *testing.T, store *Store, uuid string, price int64, visible
 	}
 	product, err := store.SaveSquadProduct(context.Background(), SquadProductInput{
 		ID:              imported.ID,
-		RemnaSquadUUID:  uuid,
+		GroupID:         uuid,
 		Name:            uuid,
 		Description:     "test squad",
 		PriceTXBMinor:   price,

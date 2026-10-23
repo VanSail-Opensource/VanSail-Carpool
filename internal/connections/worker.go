@@ -61,10 +61,10 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		if requestErr != nil {
 			return w.fail(ctx, record.ID, "XNODE_UNAVAILABLE", now, requestErr)
 		}
-	} else if user.RemnaUserID == nil {
-		return w.fail(ctx, record.ID, "REMNAWAVE_IDENTITY_REQUIRED", now, err)
+	} else if user.ProxyUserID == nil {
+		return w.fail(ctx, record.ID, "XNODE_IDENTITY_REQUIRED", now, err)
 	} else {
-		providerJobID, requestErr = w.remote.RequestConnectionScan(ctx, *user.RemnaUserID)
+		providerJobID, requestErr = w.remote.RequestConnectionScan(ctx, *user.ProxyUserID)
 	}
 	if requestErr != nil {
 		return w.pendingReview(ctx, record, now)

@@ -17,14 +17,14 @@ func TestAdminUserSearchCombinesFacetsAndBindsCursors(t *testing.T) {
 	comboA := saveTestCombo(t, store, "admin-filter-a", 100, 30)
 	comboB := saveTestCombo(t, store, "admin-filter-b", 100, 30)
 	squad := saveTestSquad(t, store, "a0a0a0a0-1111-4111-8111-111111111111", 10, true)
-	activeA, _ := createAdminWorkflowPurchase(t, store, 48_001, comboA, now, squad.RemnaSquadUUID)
+	activeA, _ := createAdminWorkflowPurchase(t, store, 48_001, comboA, now, squad.GroupID)
 	activeB, _ := createAdminWorkflowPurchase(t, store, 48_002, comboB, now)
 	inactive, expired := createAdminWorkflowPurchase(t, store, 48_003, comboB, now)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE id=?`, expired.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	items, _, err := store.ListAdminUsersPage(ctx, "", AdminUserSearchFilter{State: "active", ComboIDs: []string{comboA.ID}, SquadUUIDs: []string{squad.RemnaSquadUUID}, Match: "and"}, 25)
+	items, _, err := store.ListAdminUsersPage(ctx, "", AdminUserSearchFilter{State: "active", ComboIDs: []string{comboA.ID}, SquadUUIDs: []string{squad.GroupID}, Match: "and"}, 25)
 	if err != nil || len(items) != 1 || items[0].User.ID != activeA.ID {
 		t.Fatalf("AND facet result = (%+v, %v)", items, err)
 	}

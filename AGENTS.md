@@ -2,7 +2,7 @@
 
 ## 1. Mission
 
-You are working on **VanSail Carpool**, a carpool-management panel with an authoritative **X-Node** control plane and **Emby** integration. **Remnawave** remains a temporary, queued migration bridge until verified final source accounting completes.
+You are working on **VanSail Carpool**, a carpool-management panel with an authoritative **X-Node** control plane and **Emby** integration. X-Node is the sole proxy control plane; imported accounting remains immutable historical evidence.
 
 Complete all assigned tasks **one by one** in a sensible dependency order.
 
@@ -257,7 +257,7 @@ Before adding a column, table, cache, or duplicated record:
 
 Prefer references and upstream identifiers over duplicated upstream data.
 
-Do not unnecessarily mirror Remnawave or Emby datasets locally.
+Do not unnecessarily mirror external service datasets locally.
 
 ---
 
@@ -266,7 +266,6 @@ Do not unnecessarily mirror Remnawave or Emby datasets locally.
 The primary upstream projects are:
 
 - **X-Node**: authenticated master WebSocket and pinned public protocol/native configuration packages
-- **Remnawave**
 - **Emby**
 
 Their API documentation is located under:
@@ -295,7 +294,7 @@ Reuse upstream capabilities whenever practical instead of reproducing them local
 
 All outbound API calls performed by the **backend** to upstream/external services must pass through the project's request/job queue before execution.
 
-Backend code must not directly invoke Remnawave, Emby, or other queued upstream integrations from arbitrary handlers or business modules.
+Backend code must not directly invoke Emby or other queued upstream integrations from arbitrary handlers or business modules.
 
 The expected flow is conceptually:
 

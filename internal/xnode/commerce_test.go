@@ -16,18 +16,18 @@ type commerceRepository struct {
 	period   Period
 	periods  []Period
 	purchase model.Purchase
-	legacy   []LegacyHistory
+	legacy   []ImportedHistory
 }
 
 func (r *commerceRepository) ListPurchases(context.Context, string) ([]model.Purchase, error) {
 	return []model.Purchase{r.purchase}, nil
 }
-func (r *commerceRepository) XNodeLegacyHistory(context.Context, int64, time.Time, time.Time) ([]LegacyHistory, error) {
+func (r *commerceRepository) XNodeImportedHistory(context.Context, int64, time.Time, time.Time) ([]ImportedHistory, error) {
 	return r.legacy, nil
 }
 
 func TestRefundRejectsSourceTrafficBeforeTheImportedResetPeriod(t *testing.T) {
-	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", LegacyUserID: "7", CurrentPeriodID: "current"}, period: Period{ID: "current", ProxyUserID: 42, PurchaseID: "purchase", Status: "open"}, purchase: model.Purchase{ID: "purchase"}, legacy: []LegacyHistory{{Date: "2026-10-01", WeightedBytes: 70}}}
+	r := &commerceRepository{identity: Identity{ProxyUserID: 42, UserID: "member", LegacyUserID: "7", CurrentPeriodID: "current"}, period: Period{ID: "current", ProxyUserID: 42, PurchaseID: "purchase", Status: "open"}, purchase: model.Purchase{ID: "purchase"}, legacy: []ImportedHistory{{Date: "2026-10-01", WeightedBytes: 70}}}
 	r.periods = []Period{r.period}
 	s := &Service{repo: r, now: time.Now}
 	state, err := s.MemberRefundState(context.Background(), "42", "purchase")

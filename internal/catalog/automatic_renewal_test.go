@@ -14,7 +14,7 @@ func TestCheckoutOperationsBlockWhileAutomaticRenewalIsEnabled(t *testing.T) {
 	t.Parallel()
 	repository := &automaticRenewalCatalogRepository{catalogRepository: &catalogRepository{
 		combos: []model.Combo{{ID: "combo"}},
-		addons: []model.SquadProduct{{ID: "addon", RemnaSquadUUID: "addon"}},
+		addons: []model.SquadProduct{{ID: "addon", GroupID: "addon"}},
 	}, enabled: true}
 	service := newAutomaticRenewalCatalogService(repository)
 	user := model.User{ID: "member", OnboardingState: "complete"}
@@ -33,7 +33,7 @@ func TestAutomaticRenewalToggleDefersBalanceValidationToSettlement(t *testing.T)
 	t.Parallel()
 	now := time.Date(2026, 8, 14, 12, 0, 0, 0, time.UTC)
 	plan := database.AutoRenewalPlan{Purchase: model.Purchase{ID: "purchase", UserID: "member"}, Combo: model.Combo{ID: "combo", ValidityDays: 30,
-		IncludedSquads: []model.SquadProduct{{RemnaSquadUUID: "included"}}}, GrossMinor: 100, NetMinor: 100,
+		IncludedSquads: []model.SquadProduct{{GroupID: "included"}}}, GrossMinor: 100, NetMinor: 100,
 		ScheduledAt: now.Add(30 * 24 * time.Hour), NextCycleEndsAt: now.Add(60 * 24 * time.Hour)}
 	repository := &automaticRenewalCatalogRepository{catalogRepository: &catalogRepository{
 		combos: []model.Combo{plan.Combo}, balance: model.TXBMoney(99),
@@ -80,7 +80,7 @@ func (r *automaticRenewalCatalogRepository) AutoRenewalPlanExcludingAddons(_ con
 	plan := r.plan
 	plan.Addons = make([]model.SquadProduct, 0, len(r.plan.Addons))
 	for _, addon := range r.plan.Addons {
-		if _, skip := blocked[addon.RemnaSquadUUID]; skip {
+		if _, skip := blocked[addon.GroupID]; skip {
 			plan.GrossMinor -= addon.PriceTXBMinor
 			plan.NetMinor -= addon.PriceTXBMinor
 			continue
@@ -101,5 +101,5 @@ func (r *automaticRenewalCatalogRepository) HasEnabledAutoRenewal(context.Contex
 }
 
 func newAutomaticRenewalCatalogService(repository *automaticRenewalCatalogRepository) *Service {
-	return newCatalogServiceForTest(repository, &catalogPurchaseRemote{catalogRemnawave: &catalogRemnawave{}})
+	return newCatalogServiceForTest(repository, &catalogPurchaseRemote{catalogProxy: &catalogProxy{}})
 }

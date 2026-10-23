@@ -5,7 +5,7 @@
 Instant settlement and community raffle settlement both call
 `applyDrawEntitlementTx`. Its core-change branch delegates to
 `applyDrawCoreComboTx` in `activity_reward_combo.go` within the same transaction.
-Provider updates continue through `remna_sync_user` in the existing outbox.
+Provider updates continue through `xnode_sync_user` in the existing outbox.
 No new external API or persistent tables are introduced.
 
 A purchase with non-null `reward_renewal_price_minor` has custom terms, including
@@ -118,7 +118,7 @@ if the original core itself was edited. Future awards capture cadence at grant
 time and subsequent core/catalog changes cannot silently replace it.
 
 Each repair records `activity.custom_combo_cadence_recovered` with the source
-award/core IDs and chosen strategy, and reuses or queues `remna_sync_user`.
+award/core IDs and chosen strategy, and reuses or queues `xnode_sync_user`.
 Traffic amounts, prices, balances, expiry, renewal switches and draw results do
 not change. Provider sync applies the cadence without issuing a traffic reset.
 
@@ -140,6 +140,6 @@ checked separately.
 
 Deploy/restart the new image to apply migrations 054 through 056. Review
 `activity.custom_combo_recovered` audit entries and the corresponding
-`activity.custom_combo_cadence_recovered` entries and `remna_sync_user` jobs,
+`activity.custom_combo_cadence_recovered` entries and `xnode_sync_user` jobs,
 then reopen the renewal dialog. CI success confirms the
 constructed cases, not that a particular production purchase was repaired.

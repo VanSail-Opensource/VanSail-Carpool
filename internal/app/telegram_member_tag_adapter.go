@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
@@ -42,6 +43,7 @@ func groupMemberTagState(ctx context.Context, client *telegram.Client, chatID st
 
 // GroupMemberTag retrieves live membership and bot rights within the queue.
 func (a telegramAdapter) GroupMemberTag(ctx context.Context, chatID string, userID int64) (accounts.GroupMemberTag, error) {
+	ctx = upstreamqueue.WithKey(ctx, "chat:"+fmt.Sprint(chatID))
 	return upstreamqueue.Do(ctx, a.client.queue, func(callCtx context.Context) (accounts.GroupMemberTag, error) {
 		return groupMemberTagState(callCtx, a.client.client, chatID, userID)
 	})
@@ -49,6 +51,7 @@ func (a telegramAdapter) GroupMemberTag(ctx context.Context, chatID string, user
 
 // SetGroupMemberTag rechecks membership before the queued mutation executes.
 func (a telegramAdapter) SetGroupMemberTag(ctx context.Context, chatID string, userID int64, tag string) error {
+	ctx = upstreamqueue.WithKey(ctx, "chat:"+fmt.Sprint(chatID))
 	return upstreamqueue.Execute(ctx, a.client.queue, func(callCtx context.Context) error {
 		state, err := groupMemberTagState(callCtx, a.client.client, chatID, userID)
 		if err != nil {

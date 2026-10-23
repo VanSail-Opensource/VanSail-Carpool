@@ -24,7 +24,7 @@ const comboWithIncludedSquad: Combo = {
   ...combo,
   includedSquads: [{
     id: 'squad-1',
-    remnaSquadUuid: '00000000-0000-4000-8000-000000000001',
+    groupId: '00000000-0000-4000-8000-000000000001',
     name: 'Private included squad',
     description: 'Private included squad detail',
     profile: null,

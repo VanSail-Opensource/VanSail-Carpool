@@ -68,15 +68,6 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 	if !node.Enabled {
 		return users, nil
 	}
-	state, err := s.repo.XNodeMigration(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, migration := range state.Nodes {
-		if migration.NodeID == node.ID && migration.Phase != "native" {
-			return users, nil
-		}
-	}
 	identities, err := s.repo.XNodeIdentities(ctx)
 	if err != nil {
 		return nil, err

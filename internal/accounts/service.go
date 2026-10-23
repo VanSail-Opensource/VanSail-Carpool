@@ -18,7 +18,7 @@ var ErrInvalidAuthentication = errors.New("invalid Telegram authentication")
 // ErrAuthenticationRateLimited bounds verified Telegram identity exchanges.
 var ErrAuthenticationRateLimited = errors.New("Telegram authentication rate limited")
 
-// ErrUsernameUnavailable means either the local database or Remnawave owns the name.
+// ErrUsernameUnavailable means either the local database or Proxy owns the name.
 var ErrUsernameUnavailable = errors.New("username is unavailable")
 
 // Community invite eligibility errors.
@@ -31,11 +31,11 @@ var ErrAgreementStateConflict = errors.New("onboarding state changed")
 // ErrAgreementRevisionConflict means the user accepted a no-longer-current agreement contract.
 var ErrAgreementRevisionConflict = errors.New("onboarding agreement revision changed")
 
-// ErrRemnawaveIdentityConflict means the requested local identity is already linked elsewhere upstream.
-var ErrRemnawaveIdentityConflict = errors.New("Remnawave identity conflicts with the local account")
+// ErrProxyIdentityConflict means the requested local identity is already linked elsewhere upstream.
+var ErrProxyIdentityConflict = errors.New("Proxy identity conflicts with the local account")
 
-// ErrUpstreamUnavailable is a temporary Remnawave authentication dependency failure.
-var ErrUpstreamUnavailable = errors.New("Remnawave is temporarily unavailable")
+// ErrUpstreamUnavailable is a temporary Proxy authentication dependency failure.
+var ErrUpstreamUnavailable = errors.New("Proxy is temporarily unavailable")
 
 // InitDataValidator authenticates raw Mini App initData and returns only trusted identity fields.
 type InitDataValidator interface {
@@ -74,8 +74,8 @@ type RemoteCreateUser struct {
 	ActiveInternalSquads []string
 }
 
-// RemnawaveClient is owned by this service and adapted by the integration package.
-type RemnawaveClient interface {
+// ProxyClient is owned by this service and adapted by the integration package.
+type ProxyClient interface {
 	FindUserByUsername(ctx context.Context, username string) (RemoteUser, bool, error)
 	FindUserByTelegramID(ctx context.Context, telegramID int64) (RemoteUser, bool, error)
 	CreateUser(ctx context.Context, input RemoteCreateUser) (RemoteUser, error)
@@ -87,7 +87,7 @@ type linkedUserVerifier interface {
 }
 
 type recoveryRepository interface {
-	QueueRemnawaveRepair(context.Context, string, string, time.Time) (model.User, error)
+	QueueProxyRepair(context.Context, string, string, time.Time) (model.User, error)
 }
 
 // Settings supplies validated runtime configuration.
@@ -113,7 +113,7 @@ type Service struct {
 	eligibility CommunityEligibility
 	validator   InitDataValidator
 	telegram    TelegramClient
-	remnawave   RemnawaveClient
+	provider    ProxyClient
 	settings    Settings
 	adminIDs    map[int64]struct{}
 	authLimiter *authIdentityLimiter
@@ -122,12 +122,12 @@ type Service struct {
 }
 
 // NewService constructs an accounts service.
-func NewService(repository Repository, eligibility CommunityEligibility, validator InitDataValidator, telegram TelegramClient, remnawave RemnawaveClient, settings Settings, adminIDs []int64, sessionTTL time.Duration) *Service {
+func NewService(repository Repository, eligibility CommunityEligibility, validator InitDataValidator, telegram TelegramClient, provider ProxyClient, settings Settings, adminIDs []int64, sessionTTL time.Duration) *Service {
 	configuredAdmins := make(map[int64]struct{}, len(adminIDs))
 	for _, adminID := range adminIDs {
 		configuredAdmins[adminID] = struct{}{}
 	}
-	return &Service{repository: repository, eligibility: eligibility, validator: validator, telegram: telegram, remnawave: remnawave, settings: settings,
+	return &Service{repository: repository, eligibility: eligibility, validator: validator, telegram: telegram, provider: provider, settings: settings,
 		adminIDs: configuredAdmins, authLimiter: newAuthIdentityLimiter(), sessionTTL: sessionTTL, now: time.Now}
 }
 
@@ -149,17 +149,17 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (model.User, str
 	if err != nil {
 		return model.User{}, "", time.Time{}, err
 	}
-	if user.OnboardingState == "complete" && user.RemnaUserID != nil {
-		if verifier, ok := s.remnawave.(linkedUserVerifier); ok {
-			_, exists, verifyErr := verifier.FindUserByID(ctx, *user.RemnaUserID)
+	if user.OnboardingState == "complete" && user.ProxyUserID != nil {
+		if verifier, ok := s.provider.(linkedUserVerifier); ok {
+			_, exists, verifyErr := verifier.FindUserByID(ctx, *user.ProxyUserID)
 			// Telegram initData is the authentication boundary. A temporary
-			// Remnawave outage must not turn a valid Telegram launch into an
+			// Proxy outage must not turn a valid Telegram launch into an
 			// authentication failure; the local account can still use the app
 			// and remote-backed operations will report their own availability.
 			if verifyErr == nil && !exists {
 				repository, supported := s.repository.(recoveryRepository)
 				if supported {
-					user, err = repository.QueueRemnawaveRepair(ctx, user.ID, *user.RemnaUserID, s.now().UTC())
+					user, err = repository.QueueProxyRepair(ctx, user.ID, *user.ProxyUserID, s.now().UTC())
 					if err != nil {
 						return model.User{}, "", time.Time{}, err
 					}

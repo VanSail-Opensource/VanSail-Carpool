@@ -21,7 +21,7 @@ assignments AS (
 	FROM active,json_each(active.entitlement_squad_uuids) WHERE active.entitlement_squad_uuids IS NOT NULL
 	UNION SELECT active.purchase_id,active.user_id,active.combo_id,value FROM active
 		JOIN combos c ON c.id=active.combo_id,json_each(c.included_squad_uuids) WHERE active.entitlement_squad_uuids IS NULL
-	UNION SELECT active.purchase_id,active.user_id,active.combo_id,a.remna_squad_uuid FROM active
+	UNION SELECT active.purchase_id,active.user_id,active.combo_id,a.group_id FROM active
 		JOIN purchase_addons a ON a.purchase_id=active.purchase_id
 		WHERE active.entitlement_squad_uuids IS NULL AND active.entitlement_addon_squad_uuids IS NULL
 	UNION SELECT active.purchase_id,active.user_id,active.combo_id,value FROM active,

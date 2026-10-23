@@ -166,7 +166,7 @@ func autoRenewalFromPlan(plan database.AutoRenewalPlan) model.AutoRenewal {
 func (s *Service) autoRenewalLiveReason(ctx context.Context, plan database.AutoRenewalPlan, catalog model.Catalog) (*string, error) {
 	addonIDs := make([]string, 0, len(plan.Addons))
 	for _, addon := range plan.Addons {
-		addonIDs = append(addonIDs, addon.RemnaSquadUUID)
+		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	nodes := quoteAccessibleNodes(catalog, plan.Combo.ID, addonIDs)
 	if len(nodes) == 0 {

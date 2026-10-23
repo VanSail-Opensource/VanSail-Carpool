@@ -45,7 +45,7 @@ func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
 		t.Fatalf("CommitAutoRenewal(calculated): %v", err)
 	}
 	var applyJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_apply_entitlement' AND payload=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`,
 		`{"purchaseId":"`+successor.ID+`"}`).Scan(&applyJobs); err != nil || applyJobs != 1 {
 		t.Fatalf("automatic activation jobs = %d, %v", applyJobs, err)
 	}

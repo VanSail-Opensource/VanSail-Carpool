@@ -8,7 +8,7 @@ The POST command and member refund rules retain their existing contracts.
 The default is `roundHalfUp(netPaidMinor * max(allocated-used,0) / allocated)`.
 It reuses rollover's whole-term cadence allowance and nearest-cent helper, with
 the purchase's effective traffic and reset overrides. Observed multiplier-weighted
-per-node totals come from the existing strict queued Remnawave snapshot adapter;
+per-node totals come from the existing strict queued X-Node snapshot adapter;
 current-reset counters, forecasts and rollover thresholds do not set the amount.
 The read does not quiesce access and does not persist upstream usage series.
 The provider statistics retain their documented inclusive daily granularity.

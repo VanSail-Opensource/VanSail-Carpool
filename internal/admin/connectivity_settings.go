@@ -31,22 +31,22 @@ func (s *SettingsService) validateConnectivitySettings(ctx context.Context, key,
 	}
 	// Disabling an unchanged account must remain possible during an upstream
 	// outage or after the account expires. New selections still require validation.
-	if !config.ScheduledEnabled && config.RemnawaveUserID > 0 {
-		if decodeErr == nil && stored.RemnawaveUserID == config.RemnawaveUserID {
+	if !config.ScheduledEnabled && config.ProxyUserID > 0 {
+		if decodeErr == nil && stored.ProxyUserID == config.ProxyUserID {
 			return nil
 		}
 	}
 	if s.connectivityValidator != nil {
 		return s.connectivityValidator(ctx, config)
 	}
-	if config.RemnawaveUserID > 0 {
+	if config.ProxyUserID > 0 {
 		return &connectivity.CodeError{Code: "CONNECTIVITY_VALIDATION_UNAVAILABLE"}
 	}
 	return nil
 }
 
 func (s *SettingsService) connectivitySettingChanged(ctx context.Context, key, value string) (bool, error) {
-	if key != connectivity.SettingKey && key != "remnawave.base_url" && key != "remnawave.api_token" {
+	if key != connectivity.SettingKey {
 		return false, nil
 	}
 	previous, err := s.Optional(ctx, key)

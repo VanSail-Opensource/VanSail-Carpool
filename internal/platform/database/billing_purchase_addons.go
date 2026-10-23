@@ -93,7 +93,7 @@ func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput,
 		return model.Purchase{}, fmt.Errorf("record purchase add-on adjustment: %w", err)
 	}
 	for _, addon := range addons {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor) VALUES(?,?,?)`, input.PurchaseID, addon.product.RemnaSquadUUID, addon.price); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, input.PurchaseID, addon.product.GroupID, addon.price); err != nil {
 			if isUniqueConstraint(err) {
 				return model.Purchase{}, ErrSquadAlreadyAdded
 			}
@@ -106,7 +106,7 @@ func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput,
 	if _, err := insertLedgerTx(ctx, tx, input.UserID, -quote.PriceTXBMinor, newBalance, "purchase_addon_debit", adjustmentID, "purchase squad addition", now); err != nil {
 		return model.Purchase{}, err
 	}
-	if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {
+	if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {
 		return model.Purchase{}, err
 	}
 	if err := s.insertAddonNoticeTx(ctx, tx, adjustmentID, input.UserID, input.PurchaseID,

@@ -71,7 +71,7 @@ func (s *Service) Start(ctx context.Context, trigger string) (Run, error) {
 	if err != nil {
 		return Run{}, err
 	}
-	if cfg.RemnawaveUserID == 0 {
+	if cfg.ProxyUserID == 0 {
 		return Run{}, &CodeError{Code: "CONNECTIVITY_NOT_CONFIGURED"}
 	}
 	if trigger == "scheduled" && !cfg.ScheduledEnabled {
@@ -120,13 +120,13 @@ func (s *Service) ValidateConfig(ctx context.Context, cfg Config) error {
 	if err := validateConfig(cfg); err != nil {
 		return err
 	}
-	if cfg.RemnawaveUserID == 0 {
+	if cfg.ProxyUserID == 0 {
 		return nil
 	}
 	if s.source == nil || ctx == nil {
 		return &CodeError{Code: "CONNECTIVITY_ACCOUNT_UNAVAILABLE"}
 	}
-	return s.source.Validate(ctx, cfg.RemnawaveUserID)
+	return s.source.Validate(ctx, cfg.ProxyUserID)
 }
 
 func (s *Service) readConfig(ctx context.Context) (Config, error) {

@@ -12,9 +12,8 @@ and handlers and is cancelled/joined with the scheduler before storage closes.
 worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
 the independent browser access-link/session flow authorizes the administrator.
 
-`connectivity_source.go` reads the monitoring account and protected raw subscription inside the Remnawave queue, preserving exact host UUIDs and keeping credentials server-side. `connectivity_source_test.go` covers accessible hidden hosts, disabled filtering, credential exclusion, and ambiguous identities. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
+`connectivity_source.go` reads the monitoring account and protected raw subscription inside the X-Node queue, preserving exact host UUIDs and keeping credentials server-side. `connectivity_source_test.go` covers accessible hidden hosts, disabled filtering, credential exclusion, and ambiguous identities. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
 
-`remna_member_squads.go` reads live names through the existing request queue.
 The entitlement adapter intersects applied squads with account preferences at
 execution; member receipts reuse the entitlement executor and invalidate usage.
 - `adapters_part2.go` continues the focused implementation from its original package module.
@@ -23,7 +22,7 @@ The `app` package is the process composition root. It opens SQLite, constructs
 domain services and provider adapters, registers durable outbox handlers, and
 owns HTTP, scheduler, backup, and provider-queue lifecycles.
 
-Remnawave and Emby clients are intentionally created only inside their adapter
+X-Node and Emby clients are intentionally created only inside their adapter
 queue callbacks. Reads and writes therefore share bounded per-provider pacing;
 durable outbox handlers keep their existing retry semantics and use the same
 adapters for the final network attempt.
@@ -51,27 +50,13 @@ stopped.
 - `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
 - `bootstrap_settings.go` persists startup defaults, including the automatic-renewal rollover-balance policy, and creates the encrypted provider settings required at first startup.
-- `provider_queues.go` configures, starts, and shuts down the independent Remnawave and Emby admission queues.
+- `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
 - `adapters.go` implements Telegram identity/membership and payment-provider bridges used by domain services.
-- `remna_adapter.go` owns queued Remnawave client creation, shared call helpers, user-ID validation, and domain mapping.
-- `remna_admin_user_adapter.go` verifies replacement identities and queues documented account disable and enable actions.
-- `remna_accounts_adapter.go` implements queued Remnawave account lookup and creation operations.
-- `remna_catalog_adapter.go` implements queued dashboard reads and subscription revocation for catalog workflows.
-- `remna_usage_adapter.go` implements queued date-bounded per-node usage reads for the member dashboard.
-- `remna_admin_adapter.go` implements queued live squad and node projections for catalog composition; it exposes no node-assignment mutation.
-- `node_multiplier_cache.go` owns the copied five-minute node-multiplier cache shared by queued Remnawave projections and rollover usage mapping.
+- `node_multiplier_cache.go` owns the copied five-minute node-multiplier cache shared by queued X-Node projections and rollover usage mapping.
 - `node_multiplier_cache_test.go` covers cache expiry at the five-minute boundary.
-- `remna_entitlements_adapter.go` implements queued entitlement, traffic reset, removal, and rollover operations.
-- `remna_entitlements_rollover_statistics.go` validates complete per-node rollover snapshots against the provider aggregate and rejects malformed, truncated, or unweighted data as retryable.
-- `remna_entitlements_rollover_validation_test.go` covers complete multi-node rollover data and retryable malformed-statistics failures for hosted CI.
-- `remna_notifications_adapter.go` maps documented queued user-stream pages to
   the narrow traffic-threshold projection.
-- `remna_member_operations_adapter.go` implements queued connection scans, plugin block/unblock execution, disconnect reconciliation, usage, quiesce, and restore calls.
-- `remna_statistics_adapter.go` implements queue-backed Remnawave digest, node,
   live counts and byte rates are rounded into the integer public contract.
-- `remna_compensation_adapter.go` maps complete queue-backed node and squad snapshots without persisting authoritative assignments.
 - `maintenance_operation_test.go` covers successful, failed, and active-lease maintenance receipts.
-- `remna_statistics_adapter_test.go` covers bounded rounding of Remnawave live numeric fields.
 - `emby_adapter.go` implements queued Emby client creation, account operations, policy updates, and metadata lookups.
 - `scheduler.go` runs prompt temporary-ban restoration, automatic due-renewal revalidation before entitlement transitions, plus recurring outbox, rollover, backup, and maintenance work until application cancellation; verified-backup retention warnings are logged separately from completed cleanup.
 - `notification_scheduler.go` runs the bounded startup and five-minute reminder
@@ -85,9 +70,7 @@ stopped.
 - `telegram_queue_payments.go` queues Telegram Stars invoice, query, history, and refund operations.
 - `telegram_command_registration.go` installs localized private-chat, configured-group, and PM-topic admin command menus.
 - `app_test.go` verifies normalized Telegram Stars transaction directions.
-- `adapter_queue_test.go` verifies Remnawave and Emby adapter calls enter their queue before client construction.
-- `remna_entitlements_adapter_test.go` verifies active expiry propagation and the disabled-user far-future expiry.
-- `remna_entitlements_rollover_test.go` verifies that rollover usage keeps Remnawave's inclusive final date.
+- `adapter_queue_test.go` verifies X-Node and Emby adapter calls enter their queue before client construction.
 - `provider_queues_test.go` verifies provider queue configuration and independent worker operation.
 - `adapters_part2.go` contains the remaining payment-provider verification and callback mapping helpers.
 
@@ -103,18 +86,15 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 `pm_forum_validation.go` performs bounded, queued getChat/getMe/getChatMember preflight. `telegram_queue_pm.go` exposes factory callbacks so PM rechecks eligibility and flags after queue waits. `pm_profile.go` builds ephemeral card facts from admin profiles and queued refund/rollover projections. `pm_workflows.go` registers relay/profile/repair provider kinds and localized refusal notices through the existing outbox.
 
-`member_subscription.go` admits member inventory reads through the existing Remnawave queue and verifies user/credential consistency. `member_subscription_inventory.go` intersects owned enabled and upstream active squads, shared inbounds and excluded hosts, and derives node countries. `member_subscription_links.go` matches native enabled/hidden import keys by protocol, endpoint and remark; ambiguity fails closed. Raw configuration remains transient and only the owner's link reaches the member API.
+`member_subscription.go` admits member inventory reads through the existing X-Node queue and verifies user/credential consistency. `member_subscription_inventory.go` intersects owned enabled and upstream active squads, shared inbounds and excluded hosts, and derives node countries. `member_subscription_links.go` matches native enabled/hidden import keys by protocol, endpoint and remark; ambiguity fails closed. Raw configuration remains transient and only the owner's link reaches the member API.
 `member_subscription_test.go` covers shared/hidden/excluded host joins, unique native key matching and credential-rotation rejection in hosted CI.
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
 
 `ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before SQLite closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.
 
-- `xnode_bridge.go`: Entry points: `reconcileBridgeUsage`, `resetBridge`, `requireBridgeSettlement`.
 
-- `xnode_bridge_policy.go`: Entry points: `bridgeEntitlement`, `applyBridgePolicy`, `bridgeGroups`.
 
-- `xnode_bridge_sync.go`: Entry points: `syncBridgeAccounts`.
 
 - `xnode_catalog.go`: Entry points: `Dashboard`, `RevokeSubscription`, `ListInternalSquads`, `ListCatalogSquads`.
 
@@ -126,9 +106,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_member_subscription.go`: Entry points: `LoadMemberSubscription`.
 
-- `xnode_migration_setup.go`: Entry points: `migrationCredentials`.
 
-- `xnode_migration_source.go`: Entry points: `Capture`, `SetNodeDisabled`, `SyncUsage`.
 
 - `xnode_notifications.go`: Entry points: `ListNotificationUsers`.
 
@@ -143,14 +121,10 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
   transport liveness remains independent of migration ownership in Master.Metrics.
   Commerce and compensation retain their queued migration bridge provider.
 
-- `xnode_subscription_bridge.go`: Entry points: `legacyProxies`, `proxyFromOutbound`, `objectValue`.
 
 - `xnode_usage.go`: Entry points: `NodeUsage`.
 
 - `xnode_compensation.go` merges provider ownership and qualifies inbound identities for node compensation.
-- `xnode_final_source.go` provides queued final source inventory and a bounded provisioning fence for bridge completion. The shared fence serializes finalization with entitlement and account writes.
-- `xnode_source_accounts.go` streams bounded source pages, reports unmatched active identities without archiving their credentials, and resolves the accounts currently eligible for each source node before handover.
-- `xnode_source_accounts_test.go` covers cursor-loop rejection and credential-free unmatched-account previews in hosted CI.
 - `xnode_missing_source_test.go` covers confirmed missing registrations, purchase/native-accounting protection, database failures, source outages and cancellation. A source 404 can be omitted only when the local account has neither purchases nor an imported native identity; links and historical financial facts are never rewritten.
 
 
@@ -162,11 +136,8 @@ cache and authoritative database.
 
 `retired_detector.go` registers one bounded, durable `proxy_restriction_release` compatibility job per acknowledged historical detector ban. It preserves manual restrictions and paid entitlement terms; all legacy mutations use the existing provider queue. `retired_detector_test.go` covers manual precedence, acknowledgement checks, replay and retry failures. `payment_profile_manager_test.go` retains localized payment-profile alert coverage.
 
-`retired_detector_legacy.go` performs the final manual-ban/paid-term recheck inside the existing serialized Remnawave queue. `retired_detector_legacy_test.go` covers a manual ban acquired during queue wait, paid-term preservation, disabled squads and registration-only refusal.
 
-The detector compatibility release reuses `xnode_bridge_policy.go` combined quota calculation inside its queued legacy write, so mixed-provider users retain one allowance. Legacy usage is reconciled first; the remaining source limit never restores a second full quota.
 
-`xnode_source_topology.go` reads current source configuration, hosts and inbound/node relationships through the existing Remnawave queue before cutover. Subscription bridging resolves hosts without explicit node metadata through active inbound bindings and stops advertising their legacy variant once all resolved nodes are native.
 
 `xnode_refund_state.go` routes purchase-scoped refund usage through the migration settlement fence and native accounting.
 
@@ -174,13 +145,10 @@ The detector compatibility release reuses `xnode_bridge_policy.go` combined quot
 
 Native compensation readiness matches live node health, including report freshness. During bridging the source administrative disabled flag wins. Extensions update expiry on the existing period and retain combined quota usage.
 
-`xnode_service_source.go` captures explicitly mapped standalone credentials,
 source terms, aggregate traffic and complete per-node history inside the existing
-Remnawave queue. `xnode_service_bridge.go` reuses that queued entitlement adapter
 with the remaining combined allowance and current legacy group bindings; its
 policy-shaped purchase value is never persisted as a purchase. The temporary
 subscription bridge supports these same explicit standalone groups.
-`xnode_service_bridge_test.go` covers finite, exhausted and unlimited policies.
 `xnode_service_connectivity.go` reuses that mixed-provider inventory for imported
 monitoring accounts, retaining legacy credentials only on source-owned hosts.
 Provider name/ID resolution accepts explicit service identities without creating
@@ -197,3 +165,5 @@ a Telegram association; internal bounded probes retain their separate path.
 `xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Native bridge policy reads member preferences by panel ownership, and subscription GETs derive enabled groups without changing preferences.
 
 `xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. Queued legacy behavior remains available only through the migration bridge; partial bridge resets remain uncertain. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.
+
+`connectivity_errors.go` maps native probe failures into stable client codes. `metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.

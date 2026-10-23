@@ -59,7 +59,7 @@ function submit(): void {
     return
   }
   emit('save', {
-    remnaSquadUuid: props.squad.remnaSquadUuid,
+    groupId: props.squad.groupId,
     name: props.squad.name,
     description: draft.description.trim(),
     priceTxbMinor,

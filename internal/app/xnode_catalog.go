@@ -7,28 +7,13 @@ import (
 )
 
 func (a proxyProvider) Dashboard(ctx context.Context, id string) (catalog.RemoteDashboard, error) {
-	unlock := a.lockBridgeRead()
-	defer unlock()
-	identity, native, err := a.nativeIdentity(ctx, id)
-	if err != nil {
-		return catalog.RemoteDashboard{}, err
-	}
-	if !native {
-		return a.remnaAdapter.Dashboard(ctx, id)
-	}
-	// Display the committed local snapshot even during a source outage. Financial
-	// settlement continues requiring successful reconciliation and sealed periods.
-	_ = a.reconcileBridgeUsage(ctx, identity)
 	statistics, link, err := a.native.Statistics(ctx, id)
 	return catalog.RemoteDashboard{Statistics: statistics, SubscriptionURL: link}, err
 }
 func (a proxyProvider) RevokeSubscription(ctx context.Context, id string) (string, error) {
-	_, native, err := a.nativeIdentity(ctx, id)
+	_, err := a.native.Identity(ctx, id)
 	if err != nil {
 		return "", err
-	}
-	if !native {
-		return a.remnaAdapter.RevokeSubscription(ctx, id)
 	}
 	return a.native.RevokeSubscription(ctx, id)
 }
@@ -36,15 +21,6 @@ func (a proxyProvider) ListInternalSquads(ctx context.Context) ([]admin.Upstream
 	groups, err := a.native.Groups(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if len(groups) == 0 {
-		legacy, err := a.legacy(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if legacy {
-			return a.remnaAdapter.ListInternalSquads(ctx)
-		}
 	}
 	out := []admin.UpstreamSquad{}
 	for _, group := range groups {
@@ -56,15 +32,6 @@ func (a proxyProvider) ListCatalogSquads(ctx context.Context) ([]catalog.RemoteS
 	groups, err := a.native.Groups(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if len(groups) == 0 {
-		bridge, err := a.legacy(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if bridge {
-			return a.remnaAdapter.ListCatalogSquads(ctx)
-		}
 	}
 	out := []catalog.RemoteSquad{}
 	for _, group := range groups {
@@ -78,15 +45,6 @@ func (a proxyProvider) ListCatalogNodes(ctx context.Context) ([]catalog.RemoteNo
 	nodes, err := a.native.Nodes(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if len(nodes) == 0 {
-		legacy, err := a.legacy(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if legacy {
-			return a.remnaAdapter.ListCatalogNodes(ctx)
-		}
 	}
 	groups, err := a.native.Groups(ctx)
 	if err != nil {
@@ -115,15 +73,6 @@ func (a proxyProvider) AccessibleCatalogNodeUUIDs(ctx context.Context, id string
 	groups, err := a.native.Groups(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if len(groups) == 0 {
-		legacy, err := a.legacy(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if legacy {
-			return a.remnaAdapter.AccessibleCatalogNodeUUIDs(ctx, id)
-		}
 	}
 	out := []string{}
 	seen := map[string]bool{}

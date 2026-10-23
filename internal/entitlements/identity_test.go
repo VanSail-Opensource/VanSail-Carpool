@@ -20,17 +20,17 @@ type identityRepositoryStub struct {
 func (r *identityRepositoryStub) HasProvisionablePurchase(context.Context, string, time.Time) (bool, error) {
 	return r.purchased, nil
 }
-func (r *identityRepositoryStub) LinkProvisionedRemnaUser(_ context.Context, _, _, _, remoteID string, _ time.Time) error {
+func (r *identityRepositoryStub) LinkProvisionedProxyUser(_ context.Context, _, _, _, remoteID string, _ time.Time) error {
 	r.linkedID = remoteID
-	r.user.RemnaUserID = &remoteID
+	r.user.ProxyUserID = &remoteID
 	return nil
 }
 func (r *identityRepositoryStub) ResolveProvisioningConflict(context.Context, string, string, time.Time) error {
 	r.conflictCalls++
 	return nil
 }
-func (r *identityRepositoryStub) QueueRemnawaveRepair(_ context.Context, _, _ string, _ time.Time) (model.User, error) {
-	r.user.RemnaUserID = nil
+func (r *identityRepositoryStub) QueueProxyRepair(_ context.Context, _, _ string, _ time.Time) (model.User, error) {
+	r.user.ProxyUserID = nil
 	return r.user, nil
 }
 
@@ -90,14 +90,14 @@ func TestPurchaseProvisioningAndRecovery(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			repo := &identityRepositoryStub{entitlementRepository: &entitlementRepository{
-				user:    model.User{ID: "user", TelegramID: telegramID, Username: &username, RemnaUserID: test.linkedID, OnboardingState: "complete"},
+				user:    model.User{ID: "user", TelegramID: telegramID, Username: &username, ProxyUserID: test.linkedID, OnboardingState: "complete"},
 				desired: test.desired,
 			}, purchased: true}
-			remote := &entitlementRemnawave{}
+			remote := &entitlementProxy{}
 			identity := test.identity
 			worker := NewWorker(repo, remote, &identity)
 			worker.now = func() time.Time { return time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC) }
-			err := worker.HandleOutbox(context.Background(), model.OutboxJob{Kind: "remna_sync_user", Payload: `{"userId":"user"}`})
+			err := worker.HandleOutbox(context.Background(), model.OutboxJob{Kind: "xnode_sync_user", Payload: `{"userId":"user"}`})
 			if test.wantError != nil && !errors.Is(err, test.wantError) {
 				t.Fatalf("HandleOutbox() = %v, want %v", err, test.wantError)
 			}

@@ -82,11 +82,11 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		if loadErr != nil {
 			return model.PurchaseAddonQuote{}, nil, loadErr
 		}
-		if _, found := existing[product.RemnaSquadUUID]; found {
+		if _, found := existing[product.GroupID]; found {
 			return model.PurchaseAddonQuote{}, nil, ErrSquadAlreadyAdded
 		}
-		existing[product.RemnaSquadUUID] = struct{}{}
-		selected = append(selected, product.RemnaSquadUUID)
+		existing[product.GroupID] = struct{}{}
+		selected = append(selected, product.GroupID)
 		products = append(products, product)
 	}
 	if err := checkSquadStockTx(ctx, tx, selected, input.UserID); err != nil {
@@ -109,13 +109,13 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 	}
 	uuids := make([]string, 0, len(priced))
 	for _, addon := range priced {
-		uuids = append(uuids, addon.product.RemnaSquadUUID)
+		uuids = append(uuids, addon.product.GroupID)
 	}
 	return model.PurchaseAddonQuote{PurchaseID: purchase.ID, PriceTXBMinor: total, Price: model.TXBMoney(total), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}, priced, nil
 }
 
 func purchaseAddonFactsTx(ctx context.Context, tx *sql.Tx, purchaseID string, existing map[string]struct{}) error {
-	rows, err := tx.QueryContext(ctx, `SELECT remna_squad_uuid FROM purchase_addons WHERE purchase_id=?`, purchaseID)
+	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=?`, purchaseID)
 	if err != nil {
 		return fmt.Errorf("load purchase add-on facts: %w", err)
 	}

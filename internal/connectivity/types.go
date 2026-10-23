@@ -10,7 +10,7 @@ import (
 // Config is the atomic, credential-free runtime configuration.
 type Config struct {
 	ScheduledEnabled     bool   `json:"scheduledEnabled"`
-	RemnawaveUserID      int64  `json:"remnawaveUserId"`
+	ProxyUserID          int64  `json:"proxyUserId"`
 	IntervalSeconds      int    `json:"intervalSeconds"`
 	TimeoutSeconds       int    `json:"timeoutSeconds"`
 	MaxRetries           int    `json:"maxRetries"`
@@ -46,14 +46,14 @@ type Outcome struct {
 
 // Attempt records one host check, including retries, or a setup failure without secrets.
 type Attempt struct {
-	ID              string     `json:"id"`
-	RunID           string     `json:"runId"`
-	HostUUID        string     `json:"hostUuid"`
-	ConfigHash      string     `json:"configHash"`
-	RemnawaveUserID int64      `json:"remnawaveUserId"`
-	Trigger         string     `json:"trigger"`
-	StartedAt       time.Time  `json:"startedAt"`
-	FinishedAt      *time.Time `json:"finishedAt"`
+	ID          string     `json:"id"`
+	RunID       string     `json:"runId"`
+	HostUUID    string     `json:"hostUuid"`
+	ConfigHash  string     `json:"configHash"`
+	ProxyUserID int64      `json:"proxyUserId"`
+	Trigger     string     `json:"trigger"`
+	StartedAt   time.Time  `json:"startedAt"`
+	FinishedAt  *time.Time `json:"finishedAt"`
 	Outcome
 }
 

@@ -30,7 +30,7 @@ func TestCancelQueuedPurchase(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	service := newCatalogServiceForTest(&catalogRepository{}, &catalogRemnawave{})
+	service := newCatalogServiceForTest(&catalogRepository{}, &catalogProxy{})
 	for _, test := range []struct {
 		name string
 		user model.User
@@ -54,7 +54,7 @@ func TestCancelQueuedPurchase(t *testing.T) {
 		purchase:          model.Purchase{ID: "purchase", Status: "cancelled"},
 		err:               errors.New("cancellation failure"),
 	}
-	service = newCatalogServiceForTest(repository, &catalogRemnawave{})
+	service = newCatalogServiceForTest(repository, &catalogProxy{})
 	user := model.User{ID: "user", OnboardingState: "complete"}
 	if _, err := service.CancelQueuedPurchase(ctx, user, " purchase "); !errors.Is(err, repository.err) {
 		t.Fatalf("CancelQueuedPurchase(error) = %v", err)
@@ -118,17 +118,17 @@ func (r *renewalRepositoryStub) RenewExcludingAddons(_ context.Context, input da
 
 func renewalTestRepository() *renewalRepositoryStub {
 	return &renewalRepositoryStub{
-		catalogRepository: &catalogRepository{combos: []model.Combo{{ID: "combo", IncludedSquads: []model.SquadProduct{{RemnaSquadUUID: "core-squad"}}}}},
+		catalogRepository: &catalogRepository{combos: []model.Combo{{ID: "combo", IncludedSquads: []model.SquadProduct{{GroupID: "core-squad"}}}}},
 		quote:             model.RenewalQuote{PurchaseID: "purchase", ComboID: "combo", TermCount: 2, TotalPrice: model.TXBMoney(200)},
 	}
 }
 
 func renewalTestRemote() *catalogNodeRemote {
 	return &catalogNodeRemote{
-		catalogRemnawave: &catalogRemnawave{},
-		squads:           []RemoteSquad{{UUID: "core-squad", Name: "Core"}},
-		accessible:       map[string][]string{"core-squad": {"node-1"}},
-		nodes:            []RemoteNode{{UUID: "node-1", Name: "Node", CountryCode: "US"}},
+		catalogProxy: &catalogProxy{},
+		squads:       []RemoteSquad{{UUID: "core-squad", Name: "Core"}},
+		accessible:   map[string][]string{"core-squad": {"node-1"}},
+		nodes:        []RemoteNode{{UUID: "node-1", Name: "Node", CountryCode: "US"}},
 	}
 }
 
@@ -265,7 +265,7 @@ func dueAutoRenewalRepositoryForPlan(plan database.AutoRenewalPlan) *dueAutoRene
 func eligibleAutoRenewalPlan() database.AutoRenewalPlan {
 	return database.AutoRenewalPlan{
 		Purchase: model.Purchase{ID: "purchase", UserID: "user"},
-		Combo:    model.Combo{ID: "combo", IncludedSquads: []model.SquadProduct{{RemnaSquadUUID: "core-squad"}}},
+		Combo:    model.Combo{ID: "combo", IncludedSquads: []model.SquadProduct{{GroupID: "core-squad"}}},
 		NetMinor: 100,
 	}
 }

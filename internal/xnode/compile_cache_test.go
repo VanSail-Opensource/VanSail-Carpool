@@ -18,6 +18,7 @@ type cacheTestRepository struct {
 	Repository
 	revision int64
 	reads    int
+	config   Configuration
 	node     Node
 	failure  error
 }
@@ -28,9 +29,6 @@ func (r *cacheTestRepository) XNodeCompileVersion(context.Context, time.Time) (i
 func (r *cacheTestRepository) XNodeNode(context.Context, string) (Node, error) {
 	r.reads++
 	return r.node, r.failure
-}
-func (r *cacheTestRepository) XNodeMigration(context.Context) (MigrationState, error) {
-	return MigrationState{Nodes: []MigrationNode{{NodeID: "node", Phase: "legacy"}}}, nil
 }
 
 type cacheTestSettings struct{}
@@ -45,6 +43,10 @@ func TestCompileCacheInvalidatesEpochAndAccessBoundary(t *testing.T) {
 	}
 	repo := &cacheTestRepository{revision: 1, node: Node{ID: "node"}}
 	service := NewService(repo, cacheTestSettings{}, vault, nil, nil)
+	repo.config.DocumentCipher, err = vault.Encrypt("xnode.config.", `{"inbounds":[],"outbounds":[{"tag":"direct","protocol":"freedom"}]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	repo.node.SettingsCipher, err = service.seal("xnode.node.node", NodeSettings{})
 	if err != nil {
 		t.Fatal(err)
@@ -191,4 +193,11 @@ func BenchmarkXNodeSteadyState(b *testing.B) {
 			}
 		})
 	}
+}
+
+func (r *cacheTestRepository) XNodeConfiguration(context.Context, string) (Configuration, error) {
+	return r.config, nil
+}
+func (r *cacheTestRepository) XNodeCustomizations(context.Context, string) ([]Customization, error) {
+	return nil, nil
 }

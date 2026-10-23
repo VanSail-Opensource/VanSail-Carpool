@@ -71,7 +71,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 			reward_rollover_min_remaining_bps=NULL,reward_renewal_traffic_limit_bytes=NULL,reward_traffic_renewal=1 WHERE id=?`, target.ID, purchase.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := store.DB().ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind='remna_sync_user' AND payload=?`, fmt.Sprintf(`{"userId":%q}`, user.ID)); err != nil {
+		if _, err := store.DB().ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, fmt.Sprintf(`{"userId":%q}`, user.ID)); err != nil {
 			t.Fatal(err)
 		}
 		switch test.name {
@@ -79,7 +79,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 			seedPendingRewardRollover(t, store, purchase.ID, changeAt)
 		case "zero price and existing sync":
 			if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,available_at,created_at,updated_at)
-				VALUES(?,'remna_sync_user',?,'pending',?,?,?)`, "existing-sync", fmt.Sprintf(`{"userId":%q}`, user.ID), stamp(now), stamp(now), stamp(now)); err != nil {
+				VALUES(?,'xnode_sync_user',?,'pending',?,?,?)`, "existing-sync", fmt.Sprintf(`{"userId":%q}`, user.ID), stamp(now), stamp(now), stamp(now)); err != nil {
 				t.Fatal(err)
 			}
 		case "administrator edit":
@@ -118,12 +118,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 		test.balance = adminWorkflowBalance(t, store, user.ID)
 	}
 	for range 2 {
-		if _, err := store.DB().ExecContext(ctx, `DELETE FROM schema_migrations WHERE version=?`, customComboRecoveryMigration); err != nil {
-			t.Fatal(err)
-		}
-		if err := migrate(ctx, store.DB()); err != nil {
-			t.Fatal(err)
-		}
+		reapplyRecoveryMigration(t, store, customComboRecoveryMigration)
 		for _, test := range cases {
 			t.Run(test.name, func(t *testing.T) {
 				var price, traffic, threshold sql.NullInt64
@@ -162,7 +157,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE target_id=? AND action='activity.custom_combo_recovered'`, test.purchaseID).Scan(&auditCount); err != nil {
 					t.Fatal(err)
 				}
-				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND payload=?`, fmt.Sprintf(`{"userId":%q}`, test.userID)).Scan(&jobs); err != nil {
+				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, fmt.Sprintf(`{"userId":%q}`, test.userID)).Scan(&jobs); err != nil {
 					t.Fatal(err)
 				}
 				if auditCount != boolInt(test.recover) || jobs != boolInt(test.recover) || adminWorkflowLedgerCount(t, store, test.userID, "activity_draw_fee") != test.ledgerCount {

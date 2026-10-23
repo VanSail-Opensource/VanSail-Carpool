@@ -26,7 +26,7 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   let pendingAttempt: { fingerprint: string; key: string } | undefined
   const activeSquadSet = computed(() => new Set(options.activeSquadUuids()))
   const visibleSquads = computed(() => (catalog.value?.addons ?? []).filter((squad) =>
-    squad.visible && squad.upstreamPresent && !activeSquadSet.value.has(squad.remnaSquadUuid),
+    squad.visible && squad.upstreamPresent && !activeSquadSet.value.has(squad.groupId),
   ))
   const selectedSquads = computed(() => visibleSquads.value.filter((squad) => selectedSquadIds.value.includes(squad.id)))
   const activationSquads = computed(() => selectedSquads.value.filter((squad) => squad.activationRequired))

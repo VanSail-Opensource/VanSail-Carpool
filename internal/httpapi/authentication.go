@@ -71,7 +71,7 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, accounts.ErrUpstreamUnavailable) {
-			s.writeError(w, r, http.StatusServiceUnavailable, "REMNAWAVE_UNAVAILABLE", "Account verification is temporarily unavailable. Please retry.")
+			s.writeError(w, r, http.StatusServiceUnavailable, "XNODE_UNAVAILABLE", "Account verification is temporarily unavailable. Please retry.")
 			return
 		}
 		s.deps.Logger.Warn("Telegram Mini App authentication rejected", "request_id", middlewareRequestID(r), "error", err)

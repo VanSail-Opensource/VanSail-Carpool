@@ -58,15 +58,6 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Post("/xnode/service-identities/{id}/subscription/rotate", s.xnodeRotateServiceSubscription)
 	router.Get("/xnode/service-identities/{id}/routing/{nodeId}", s.xnodeServiceRouting)
 	router.Put("/xnode/service-identities/{id}/routing/{nodeId}", s.xnodeSaveServiceRouting)
-	if s.deps.XNodeMigration != nil {
-		router.Get("/xnode/migration", s.xnodeMigrationStatus)
-		router.Post("/xnode/migration/preview", s.xnodeMigrationPreview)
-		router.Post("/xnode/migration/import", s.xnodeMigrationImport)
-		router.Post("/xnode/migration/final-export", s.xnodeMigrationFinalExport)
-		router.Post("/xnode/migration/finalize", s.xnodeMigrationFinalize)
-		router.Post("/xnode/migration/nodes/{id}/cutover", s.xnodeMigrationCutover)
-		router.Post("/xnode/migration/nodes/{id}/rollback", s.xnodeMigrationRollback)
-	}
 }
 func (s *Server) xnodeError(w http.ResponseWriter, r *http.Request, err error) {
 	status, code := http.StatusServiceUnavailable, "XNODE_UNAVAILABLE"

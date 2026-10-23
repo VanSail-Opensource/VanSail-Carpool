@@ -72,7 +72,7 @@ func (s *Server) adminConnectivityResolve(w http.ResponseWriter, r *http.Request
 		Username string `json:"username"`
 	}
 	if err := decodeJSON(w, r, &request); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "CONNECTIVITY_INVALID_USERNAME", "An exact Remnawave username is required.")
+		s.writeError(w, r, http.StatusBadRequest, "CONNECTIVITY_INVALID_USERNAME", "An exact Proxy username is required.")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)

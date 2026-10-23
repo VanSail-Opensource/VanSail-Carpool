@@ -13,7 +13,7 @@ func TestHostRetriesCancelDuringProbeOrDelay(t *testing.T) {
 		for _, reason := range []string{"settings", "shutdown"} {
 			t.Run(during+"_"+reason, func(t *testing.T) {
 				cfg := DefaultConfig()
-				cfg.RemnawaveUserID, cfg.RetryIntervalSeconds = 42, 60
+				cfg.ProxyUserID, cfg.RetryIntervalSeconds = 42, 60
 				entered, done := make(chan struct{}), make(chan struct{})
 				var calls atomic.Int32
 				probe := testProbe(func(ctx context.Context, _ Target, _ Config) Outcome {

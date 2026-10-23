@@ -87,7 +87,7 @@ func TestConfiguredSetupFailureIsRetained(t *testing.T) {
 	}
 	waitFor(t, func() bool { items := repository.attempts(); return len(items) == 1 && items[0].FinishedAt != nil })
 	item := repository.attempts()[0]
-	if item.HostUUID != "" || item.RemnawaveUserID != cfg.RemnawaveUserID || item.Status != "error" ||
+	if item.HostUUID != "" || item.ProxyUserID != cfg.ProxyUserID || item.Status != "error" ||
 		item.ErrorCode != "CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE" {
 		t.Fatalf("setup failure metadata lost: %+v", item)
 	}

@@ -18,7 +18,7 @@ func productNames(products []model.SquadProduct) string {
 		if name := strings.TrimSpace(product.Name); name != "" {
 			names = append(names, name)
 		} else {
-			names = append(names, product.RemnaSquadUUID)
+			names = append(names, product.GroupID)
 		}
 	}
 	return strings.Join(names, ", ")

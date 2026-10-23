@@ -5,6 +5,6 @@
 - `countries.go` contains the ISO alpha-2 allowlist for country-only profiles.
 - `profile_test.go` covers profile validation and persisted JSON normalization.
 
-This package owns local squad metadata only. Remnawave remains authoritative for
+This package owns local squad metadata only. X-Node remains authoritative for
 squad identity, name, and availability. Profile values are normalized before
 they reach SQLite and are never used to make upstream provider requests.

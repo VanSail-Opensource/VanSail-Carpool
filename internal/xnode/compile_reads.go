@@ -18,7 +18,6 @@ type compileReads struct {
 	desired    map[string]*model.Purchase
 	purchases  map[string][]model.Purchase
 	periods    map[string]Period
-	migration  *MigrationState
 }
 
 func (s *Service) withCompileReads() *Service {
@@ -27,7 +26,7 @@ func (s *Service) withCompileReads() *Service {
 	}
 	repo := &compileReads{Repository: s.repo, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}}
 	next := NewService(repo, s.settings, s.vault, s.publicURL, s.validationQueue)
-	next.master, next.now, next.legacyProxies = s.master, s.now, s.legacyProxies
+	next.master, next.now = s.master, s.now
 	next.policyAssets = s.policyAssets
 	next.routingAssets = s.routingAssets
 	next.routingOverrides = s.routingOverrides
@@ -83,16 +82,6 @@ func (r *compileReads) XNodeIdentityByUser(ctx context.Context, id string) (Iden
 		return item, nil
 	}
 	return Identity{}, ErrNotFound
-}
-func (r *compileReads) XNodeMigration(ctx context.Context) (MigrationState, error) {
-	if r.migration != nil {
-		return *r.migration, nil
-	}
-	item, err := r.Repository.XNodeMigration(ctx)
-	if err == nil {
-		r.migration = &item
-	}
-	return item, err
 }
 func (r *compileReads) UserByID(ctx context.Context, id string) (model.User, error) {
 	if item, ok := r.users[id]; ok {

@@ -14,11 +14,11 @@ func TestDecodeConfigBoundariesAndSecrets(t *testing.T) {
 		valid bool
 	}{
 		{"defaults", "", true},
-		{"configured", `{"remnawaveUserId":42,"scheduledEnabled":true}`, true},
-		{"minimum", `{"remnawaveUserId":42,"intervalSeconds":60,"timeoutSeconds":1}`, true},
-		{"maximum", `{"remnawaveUserId":42,"intervalSeconds":86400,"timeoutSeconds":60}`, true},
+		{"configured", `{"proxyUserId":42,"scheduledEnabled":true}`, true},
+		{"minimum", `{"proxyUserId":42,"intervalSeconds":60,"timeoutSeconds":1}`, true},
+		{"maximum", `{"proxyUserId":42,"intervalSeconds":86400,"timeoutSeconds":60}`, true},
 		{"missing_account", `{"scheduledEnabled":true}`, false},
-		{"negative_account", `{"remnawaveUserId":-1}`, false},
+		{"negative_account", `{"proxyUserId":-1}`, false},
 		{"short_interval", `{"intervalSeconds":59}`, false},
 		{"long_interval", `{"intervalSeconds":86401}`, false},
 		{"zero_timeout", `{"timeoutSeconds":0}`, false},
@@ -38,7 +38,7 @@ func TestDecodeConfigBoundariesAndSecrets(t *testing.T) {
 		{"unknown", `{"password":"secret"}`, false},
 		{"null", `null`, false},
 		{"trailing_object", `{} {}`, false},
-		{"wrong_type", `{"remnawaveUserId":"42"}`, false},
+		{"wrong_type", `{"proxyUserId":"42"}`, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			cfg, err := DecodeConfig(test.value)
@@ -51,7 +51,7 @@ func TestDecodeConfigBoundariesAndSecrets(t *testing.T) {
 		})
 	}
 	cfg := DefaultConfig()
-	if cfg.ScheduledEnabled || cfg.RemnawaveUserID != 0 || cfg.IntervalSeconds != 300 || cfg.TimeoutSeconds != 15 ||
+	if cfg.ScheduledEnabled || cfg.ProxyUserID != 0 || cfg.IntervalSeconds != 300 || cfg.TimeoutSeconds != 15 ||
 		cfg.ProbeURL != "https://cp.cloudflare.com/generate_204" || cfg.MaxRetries != 10 || cfg.RetryIntervalSeconds != 1 {
 		t.Fatalf("unexpected defaults: %+v", cfg)
 	}
@@ -59,13 +59,13 @@ func TestDecodeConfigBoundariesAndSecrets(t *testing.T) {
 
 func TestConfigHashSeparatesChangedProbeIdentity(t *testing.T) {
 	cfg := DefaultConfig()
-	cfg.RemnawaveUserID = 42
+	cfg.ProxyUserID = 42
 	first := ConfigHash(cfg)
 	if len(first) != 64 || ConfigHash(cfg) != first {
 		t.Fatal("configuration fingerprint is unstable")
 	}
 	for _, change := range []func(*Config){
-		func(c *Config) { c.RemnawaveUserID++ },
+		func(c *Config) { c.ProxyUserID++ },
 		func(c *Config) { c.ProbeURL = "https://example.com/generate_204" },
 		func(c *Config) { c.TimeoutSeconds++ },
 		func(c *Config) { c.MaxRetries-- },
@@ -82,7 +82,7 @@ func TestConfigHashSeparatesChangedProbeIdentity(t *testing.T) {
 }
 
 func TestDecodeConfigPreservesLegacyDefaultsAndExplicitZero(t *testing.T) {
-	legacy, err := DecodeConfig(`{"remnawaveUserId":42,"intervalSeconds":300,"timeoutSeconds":15,"probeUrl":"https://example.com"}`)
+	legacy, err := DecodeConfig(`{"proxyUserId":42,"intervalSeconds":300,"timeoutSeconds":15,"probeUrl":"https://example.com"}`)
 	if err != nil || legacy.MaxRetries != 10 || legacy.RetryIntervalSeconds != 1 {
 		t.Fatalf("legacy retry defaults: %+v %v", legacy, err)
 	}

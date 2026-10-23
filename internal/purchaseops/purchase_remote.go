@@ -26,8 +26,8 @@ func purchaseRemote(ctx context.Context, remote Remote, user model.User, purchas
 	if source, ok := remote.(PurchaseRemoteSource); ok {
 		return source.PurchaseRemote(ctx, user, purchase)
 	}
-	if user.RemnaUserID == nil || *user.RemnaUserID == "" {
+	if user.ProxyUserID == nil || *user.ProxyUserID == "" {
 		return nil, "", ErrRemoteIdentityMissing
 	}
-	return remote, *user.RemnaUserID, nil
+	return remote, *user.ProxyUserID, nil
 }

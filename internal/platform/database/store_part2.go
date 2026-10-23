@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// QueueRemnawaveRepair clears a confirmed missing link without undoing signup.
-func (s *Store) QueueRemnawaveRepair(ctx context.Context, userID, missingID string, now time.Time) (model.User, error) {
+// QueueProxyRepair clears a confirmed missing link without undoing signup.
+func (s *Store) QueueProxyRepair(ctx context.Context, userID, missingID string, now time.Time) (model.User, error) {
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(missingID) == "" {
 		return model.User{}, ErrConflict
 	}
@@ -18,17 +18,17 @@ func (s *Store) QueueRemnawaveRepair(ctx context.Context, userID, missingID stri
 	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return model.User{}, fmt.Errorf("begin Remnawave repair: %w", err)
+		return model.User{}, fmt.Errorf("begin Proxy repair: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE users SET remna_user_id=NULL,remna_subscription_url=NULL,recovery_reason='',updated_at=?
-		WHERE id=? AND onboarding_state='complete' AND remna_user_id=?`, stamp(now), userID, missingID)
+	result, err := tx.ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL,recovery_reason='',updated_at=?
+		WHERE id=? AND onboarding_state='complete' AND proxy_user_id=?`, stamp(now), userID, missingID)
 	if err != nil {
-		return model.User{}, fmt.Errorf("clear missing Remnawave link: %w", err)
+		return model.User{}, fmt.Errorf("clear missing Proxy link: %w", err)
 	}
 	affected, err := result.RowsAffected()
 	if err != nil {
-		return model.User{}, fmt.Errorf("inspect Remnawave repair: %w", err)
+		return model.User{}, fmt.Errorf("inspect Proxy repair: %w", err)
 	}
 	if affected == 1 {
 		var purchased int
@@ -36,13 +36,13 @@ func (s *Store) QueueRemnawaveRepair(ctx context.Context, userID, missingID stri
 			return model.User{}, err
 		}
 		if purchased == 1 {
-			if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
+			if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
 				return model.User{}, err
 			}
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		return model.User{}, fmt.Errorf("commit Remnawave repair: %w", err)
+		return model.User{}, fmt.Errorf("commit Proxy repair: %w", err)
 	}
 	return s.UserByID(ctx, userID)
 }

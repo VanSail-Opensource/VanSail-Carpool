@@ -94,7 +94,7 @@ func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.U
 // account references come from AccountName, so the legacy field stays empty.
 const userColumns = `users.id,users.telegram_id,users.telegram_first_name,users.telegram_last_name,users.telegram_username,
 	users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
-	users.accepted_agreement_revision,users.remna_user_id,users.recovery_reason,users.new_user,users.inviter_id,
+	users.accepted_agreement_revision,users.proxy_user_id,users.recovery_reason,users.new_user,users.inviter_id,
 	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at`
 
 const userSelect = `SELECT ` + userColumns + ` FROM users`
@@ -108,12 +108,12 @@ func scanUser(row rowScanner) (model.User, error) {
 func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 	var user model.User
 	var policy, recoveryReason sql.NullString
-	var remnaID sql.NullString
+	var proxyID sql.NullString
 	var groupJoined, channelJoined, newUser, autoTrafficReset int
 	var inviterID sql.NullInt64
 	var createdAt, updatedAt string
 	destinations := []any{&user.ID, &user.TelegramID, &user.TelegramFirstName, &user.TelegramLastName, &user.TelegramUsername,
-		&user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &remnaID, &recoveryReason,
+		&user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &proxyID, &recoveryReason,
 		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &autoTrafficReset, &createdAt, &updatedAt}
 	destinations = append(destinations, extra...)
 	if err := row.Scan(destinations...); err != nil {
@@ -136,7 +136,7 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 		}
 		user.PolicyAcceptedAt = &parsed
 	}
-	user.RemnaUserID = nullableString(remnaID)
+	user.ProxyUserID = nullableString(proxyID)
 	user.RecoveryReason = recoveryReason.String
 	var err error
 	user.CreatedAt, err = parseStamp(createdAt)

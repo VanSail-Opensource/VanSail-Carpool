@@ -54,7 +54,7 @@ func (s *Server) adminUsers(w http.ResponseWriter, r *http.Request) {
 	for _, record := range users {
 		user := record.User
 		status := "not_provisioned"
-		if user.RemnaUserID != nil {
+		if user.ProxyUserID != nil {
 			status = "synchronized"
 		}
 		items = append(items, adminUser{User: mapUser(user), Balance: record.Balance, CreatedAt: user.CreatedAt, Synchronization: synchronization{Status: status}})

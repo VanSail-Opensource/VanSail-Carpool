@@ -12,13 +12,13 @@ func TestWorkerDrainAppliesEntitlementAndCompletesJob(t *testing.T) {
 	t.Parallel()
 
 	remoteID := "remote-1"
-	job := model.OutboxJob{ID: "job-1", Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 1}
+	job := model.OutboxJob{ID: "job-1", Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 1}
 	repository := &entitlementRepository{
 		jobs:     []*model.OutboxJob{&job},
 		purchase: model.Purchase{ID: "purchase-1", Status: "activating", TrafficLimitBytes: 1234, ResetStrategy: "MONTH", SquadUUIDs: []string{"squad-b", "squad-a"}, ValidUntil: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)},
-		user:     model.User{ID: "user-1", RemnaUserID: &remoteID},
+		user:     model.User{ID: "user-1", ProxyUserID: &remoteID},
 	}
-	remote := &entitlementRemnawave{}
+	remote := &entitlementProxy{}
 	worker := newEntitlementWorkerForTest(repository, remote)
 
 	if err := worker.Drain(context.Background(), 1); err != nil {
@@ -39,13 +39,13 @@ func TestWorkerDrainRetriesAndMarksTerminalFailure(t *testing.T) {
 	t.Parallel()
 
 	remoteID := "remote-1"
-	job := model.OutboxJob{ID: "job-1", Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 10}
+	job := model.OutboxJob{ID: "job-1", Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 10}
 	repository := &entitlementRepository{
 		jobs:     []*model.OutboxJob{&job},
 		purchase: model.Purchase{ID: "purchase-1", Status: "active", ValidUntil: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)},
-		user:     model.User{ID: "user-1", RemnaUserID: &remoteID},
+		user:     model.User{ID: "user-1", ProxyUserID: &remoteID},
 	}
-	remote := &entitlementRemnawave{applyErr: errors.New("upstream unavailable")}
+	remote := &entitlementProxy{applyErr: errors.New("upstream unavailable")}
 	worker := newEntitlementWorkerForTest(repository, remote)
 
 	if err := worker.Drain(context.Background(), 1); err != nil {
@@ -65,11 +65,11 @@ func TestWorkerRetryDoesNotRedispatchTrafficReset(t *testing.T) {
 	remoteID := "remote-1"
 	repository := &entitlementRepository{
 		purchase:   model.Purchase{ID: "purchase-1", Status: "activating", ValidUntil: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)},
-		user:       model.User{ID: "user-1", RemnaUserID: &remoteID},
+		user:       model.User{ID: "user-1", ProxyUserID: &remoteID},
 		resetPhase: "reset",
 	}
-	remote := &entitlementRemnawave{}
-	if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), model.OutboxJob{Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 2}); err != nil {
+	remote := &entitlementProxy{}
+	if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), model.OutboxJob{Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase-1"}`, Attempts: 2}); err != nil {
 		t.Fatalf("process(): %v", err)
 	}
 	if remote.applyCalls != 1 || remote.removeCalls != 0 || remote.resetCalls != 0 {
@@ -94,9 +94,9 @@ func TestWorkerResumesDurableTrafficResetPhases(t *testing.T) {
 	} {
 		t.Run(test.phase, func(t *testing.T) {
 			t.Parallel()
-			repository := &entitlementRepository{purchase: model.Purchase{ID: "purchase", Status: "activating", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}, resetPhase: test.phase}
-			remote := &entitlementRemnawave{}
-			if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), model.OutboxJob{Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase"}`}); err != nil {
+			repository := &entitlementRepository{purchase: model.Purchase{ID: "purchase", Status: "activating", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}, resetPhase: test.phase}
+			remote := &entitlementProxy{}
+			if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), model.OutboxJob{Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase"}`}); err != nil {
 				t.Fatalf("process(): %v", err)
 			}
 			if remote.removeCalls != test.wantRemove || remote.resetCalls != test.wantReset || remote.applyCalls != test.wantApply {
@@ -139,7 +139,7 @@ func TestWorkerDrainInfrastructureAndContextErrors(t *testing.T) {
 			} else {
 				defer cancel()
 			}
-			err := newEntitlementWorkerForTest(repository, &entitlementRemnawave{}).Drain(ctx, test.limit)
+			err := newEntitlementWorkerForTest(repository, &entitlementProxy{}).Drain(ctx, test.limit)
 			if test.wantError && err == nil {
 				t.Fatal("Drain() unexpectedly succeeded")
 			}

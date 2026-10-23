@@ -14,7 +14,7 @@ post:
           $ref: '../openapi.yaml#/components/schemas/PurchaseAddonRequest'
   responses:
     '200':
-      description: Updated active purchase; Remnawave reconciliation was queued.
+      description: Updated active purchase; X-Node reconciliation was queued.
       content:
         application/json:
           schema:

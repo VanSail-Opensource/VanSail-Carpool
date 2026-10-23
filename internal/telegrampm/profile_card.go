@@ -16,7 +16,7 @@ import (
 type ProfileFacts struct {
 	OnboardingState string
 	Balance         model.Money
-	RemnaUsername   string
+	AccountName     string
 	ActiveCombo     *model.Purchase
 	SquadNames      []string
 	Rollover        *model.RolloverProjection
@@ -61,8 +61,8 @@ func Profile(item model.PMConversation, facts ProfileFacts, publicBaseURL, timez
 			balance = model.TXBMoney(0).Display
 		}
 		lines = append(lines, profileField("\U0001F4B0", localized(item.Locale, "Balance", "\u4f59\u989d"), balance))
-		if facts.RemnaUsername != "" {
-			lines = append(lines, profileField("\U0001F464", localized(item.Locale, "Remnawave username", "Remnawave \u7528\u6237\u540d"), facts.RemnaUsername))
+		if facts.AccountName != "" {
+			lines = append(lines, profileField("\U0001F464", localized(item.Locale, "Proxy username", "Proxy \u7528\u6237\u540d"), facts.AccountName))
 		}
 		if purchase := facts.ActiveCombo; purchase != nil {
 			lines = append(lines,

@@ -9,7 +9,7 @@ import { useConnectivitySettings } from './useConnectivitySettings'
 vi.mock('@/api/connectivity', () => ({ connectivityApi: { resolve: vi.fn(), save: vi.fn() } }))
 const wrappers: ReturnType<typeof mount>[] = []
 function snapshot(): ConnectivitySnapshot {
-  return { config: { ...defaultConnectivityConfig, remnawaveUserId: 41 }, user: { id: 41, username: 'connectivity-monitor', status: 'ACTIVE' }, run: null, hosts: [], stale: false, errorCode: '' }
+  return { config: { ...defaultConnectivityConfig, proxyUserId: 41 }, user: { id: 41, username: 'connectivity-monitor', status: 'ACTIVE' }, run: null, hosts: [], stale: false, errorCode: '' }
 }
 function harness() {
   const current = shallowRef<ConnectivitySnapshot | null>(null)
@@ -73,7 +73,7 @@ describe('connectivity configuration state', () => {
     expect(connectivityApi.save).not.toHaveBeenCalled()
     vi.mocked(connectivityApi.resolve).mockResolvedValue({ id: 42, username: 'other-monitor', status: 'ACTIVE' })
     await settings.resolve()
-    expect(settings.draft.remnawaveUserId).toBe(42)
+    expect(settings.draft.proxyUserId).toBe(42)
     expect(settings.valid.value).toBe(true)
     expect(settings.canRun.value).toBe(false)
   })
@@ -90,7 +90,7 @@ describe('connectivity configuration state', () => {
     finish({ id: 41, username: 'connectivity-monitor', status: 'ACTIVE' })
     await pending
     expect(signal?.aborted).toBe(true)
-    expect(settings.draft.remnawaveUserId).toBe(0)
+    expect(settings.draft.proxyUserId).toBe(0)
     expect(settings.draft.scheduledEnabled).toBe(false)
     expect(settings.user.value).toBeNull()
   })

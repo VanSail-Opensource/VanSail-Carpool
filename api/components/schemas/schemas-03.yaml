@@ -1,4 +1,4 @@
-RemnaNode:
+ProxyNode:
   type: object
   additionalProperties: false
   required: [uuid, name, countryCode, consumptionMultiplier, activeInboundUuids, accessible, providerName, providerFaviconUrl]
@@ -63,7 +63,7 @@ PurchaseQuote:
       items: { type: string, format: uuid }
     accessibleNodes:
       type: array
-      items: { $ref: '../../openapi.yaml#/components/schemas/RemnaNode' }
+      items: { $ref: '../../openapi.yaml#/components/schemas/ProxyNode' }
 
 PurchaseAddonRequest:
   type: object

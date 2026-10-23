@@ -8,24 +8,24 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/remnawave"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 // IdentityClient exposes only the queued provider identity operations.
 type IdentityClient interface {
-	accounts.RemnawaveClient
+	accounts.ProxyClient
 	FindUserByID(context.Context, string) (accounts.RemoteUser, bool, error)
 }
 
 type provisioningRepository interface {
 	HasProvisionablePurchase(context.Context, string, time.Time) (bool, error)
-	LinkProvisionedRemnaUser(context.Context, string, string, string, string, time.Time) error
+	LinkProvisionedProxyUser(context.Context, string, string, string, string, time.Time) error
 	ResolveProvisioningConflict(context.Context, string, string, time.Time) error
-	QueueRemnawaveRepair(context.Context, string, string, time.Time) (model.User, error)
+	QueueProxyRepair(context.Context, string, string, time.Time) (model.User, error)
 }
 
-var errIdentityUnverified = errors.New("Remnawave identity cannot be verified")
+var errIdentityUnverified = errors.New("Proxy identity cannot be verified")
 
 func matchesIdentity(remote accounts.RemoteUser, user model.User) bool {
 	id, err := strconv.ParseInt(remote.ID, 10, 64)
@@ -35,7 +35,7 @@ func matchesIdentity(remote accounts.RemoteUser, user model.User) bool {
 
 func identityMismatch(remote accounts.RemoteUser, user model.User) error {
 	if remote.TelegramID != nil && *remote.TelegramID != user.TelegramID {
-		return accounts.ErrRemnawaveIdentityConflict
+		return accounts.ErrProxyIdentityConflict
 	}
 	return errIdentityUnverified
 }
@@ -49,15 +49,15 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	}
 	repository, ok := w.repository.(provisioningRepository)
 	if !ok {
-		return user, errors.New("Remnawave provisioning repository is unavailable")
+		return user, errors.New("Proxy provisioning repository is unavailable")
 	}
 	previousID := ""
 	name := user.AccountName()
-	if user.RemnaUserID != nil {
-		previousID = *user.RemnaUserID
+	if user.ProxyUserID != nil {
+		previousID = *user.ProxyUserID
 		remote, exists, err := w.identity.FindUserByID(ctx, previousID)
 		if err != nil {
-			return user, fmt.Errorf("verify linked Remnawave user: %w", err)
+			return user, fmt.Errorf("verify linked Proxy user: %w", err)
 		}
 		if exists {
 			if !matchesIdentity(remote, user) {
@@ -68,7 +68,7 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	}
 	remote, exists, err := w.identity.FindUserByUsername(ctx, name)
 	if err != nil {
-		return user, fmt.Errorf("find Remnawave username: %w", err)
+		return user, fmt.Errorf("find Proxy username: %w", err)
 	}
 	if exists && !matchesIdentity(remote, user) {
 		return user, identityMismatch(remote, user)
@@ -76,7 +76,7 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 	if !exists {
 		byTelegram, found, lookupErr := w.identity.FindUserByTelegramID(ctx, user.TelegramID)
 		if lookupErr != nil {
-			return user, fmt.Errorf("find Remnawave Telegram identity: %w", lookupErr)
+			return user, fmt.Errorf("find Proxy Telegram identity: %w", lookupErr)
 		}
 		if found {
 			if !matchesIdentity(byTelegram, user) {
@@ -94,39 +94,39 @@ func (w *Worker) ensureIdentity(ctx context.Context, user model.User) (model.Use
 		if err != nil && w.identity.IsDuplicateError(err) {
 			remote, exists, err = w.identity.FindUserByUsername(ctx, name)
 			if err == nil && !exists {
-				return user, errors.New("Remnawave duplicate could not be reconciled")
+				return user, errors.New("Proxy duplicate could not be reconciled")
 			}
 			if err == nil && !matchesIdentity(remote, user) {
 				return user, identityMismatch(remote, user)
 			}
 		}
 		if err != nil {
-			return user, fmt.Errorf("create Remnawave user: %w", err)
+			return user, fmt.Errorf("create Proxy user: %w", err)
 		}
 	}
 	if !matchesIdentity(remote, user) {
 		return user, identityMismatch(remote, user)
 	}
-	if err := repository.LinkProvisionedRemnaUser(ctx, user.ID, name, previousID, remote.ID, w.now().UTC()); err != nil {
+	if err := repository.LinkProvisionedProxyUser(ctx, user.ID, name, previousID, remote.ID, w.now().UTC()); err != nil {
 		return user, err
 	}
-	user.RemnaUserID = &remote.ID
+	user.ProxyUserID = &remote.ID
 	return user, nil
 }
 
 func (w *Worker) resolveIdentityConflict(ctx context.Context, user model.User) error {
 	repository, ok := w.repository.(provisioningRepository)
 	if !ok {
-		return errors.New("Remnawave conflict repository is unavailable")
+		return errors.New("Proxy conflict repository is unavailable")
 	}
 	return repository.ResolveProvisioningConflict(ctx, user.ID, user.AccountName(), w.now().UTC())
 }
 
 func (w *Worker) repairMissingIdentity(ctx context.Context, user model.User, failure error) error {
-	if !remnawave.IsNotFound(failure) || user.RemnaUserID == nil || w.identity == nil {
+	if !errors.Is(failure, xnode.ErrNotFound) || user.ProxyUserID == nil || w.identity == nil {
 		return failure
 	}
-	_, exists, err := w.identity.FindUserByID(ctx, *user.RemnaUserID)
+	_, exists, err := w.identity.FindUserByID(ctx, *user.ProxyUserID)
 	if err != nil || exists {
 		return errors.Join(failure, err)
 	}
@@ -134,6 +134,6 @@ func (w *Worker) repairMissingIdentity(ctx context.Context, user model.User, fai
 	if !ok {
 		return failure
 	}
-	_, err = repository.QueueRemnawaveRepair(ctx, user.ID, *user.RemnaUserID, w.now().UTC())
+	_, err = repository.QueueProxyRepair(ctx, user.ID, *user.ProxyUserID, w.now().UTC())
 	return errors.Join(failure, err)
 }

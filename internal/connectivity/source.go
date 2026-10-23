@@ -36,13 +36,13 @@ func (s *Service) loadTargets(ctx context.Context, cfg Config, hash string, fres
 		}
 	}
 	sourceCtx, cancel := context.WithTimeout(ctx, sourceTimeout)
-	user, targets, err := s.source.Load(sourceCtx, cfg.RemnawaveUserID)
+	user, targets, err := s.source.Load(sourceCtx, cfg.ProxyUserID)
 	if err == nil && sourceCtx.Err() != nil {
 		err = sourceCtx.Err()
 	}
 	cancel()
 	if err == nil {
-		err = validateSourceResult(cfg.RemnawaveUserID, user, targets)
+		err = validateSourceResult(cfg.ProxyUserID, user, targets)
 	}
 	s.mu.Lock()
 	current := s.hash == hash && s.generation == generation && ctx.Err() == nil

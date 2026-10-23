@@ -1,4 +1,4 @@
-// Package entitlements applies durable purchase state to Remnawave.
+// Package entitlements applies durable purchase state to Proxy.
 package entitlements
 
 import (
@@ -31,8 +31,8 @@ type userSyncNotificationReleaser interface {
 	ReleaseUserSyncNotifications(context.Context, string, time.Time) error
 }
 
-// RemnawaveClient atomically replaces the complete entitlement view upstream.
-type RemnawaveClient interface {
+// ProxyClient atomically replaces the complete entitlement view upstream.
+type ProxyClient interface {
 	ApplyEntitlement(ctx context.Context, remoteUserID string, trafficLimitBytes int64, resetStrategy string, squadUUIDs []string, expiresAt time.Time) error
 	ResetTraffic(context.Context, string) error
 	RemoveEntitlement(ctx context.Context, remoteUserID string) error
@@ -41,14 +41,14 @@ type RemnawaveClient interface {
 // Worker processes retryable external synchronization one job at a time.
 type Worker struct {
 	repository Repository
-	remnawave  RemnawaveClient
+	provider   ProxyClient
 	identity   IdentityClient
 	now        func() time.Time
 }
 
 // NewWorker creates an entitlement worker.
-func NewWorker(repository Repository, remnawave RemnawaveClient, identity ...IdentityClient) *Worker {
-	worker := &Worker{repository: repository, remnawave: remnawave, now: time.Now}
+func NewWorker(repository Repository, provider ProxyClient, identity ...IdentityClient) *Worker {
+	worker := &Worker{repository: repository, provider: provider, now: time.Now}
 	if len(identity) > 0 {
 		worker.identity = identity[0]
 	}
@@ -82,7 +82,7 @@ func (w *Worker) Drain(ctx context.Context, limit int) error {
 // HandleOutbox implements the shared kind-specific dispatcher contract.
 func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	jobErr := w.process(ctx, job)
-	if jobErr != nil && job.Attempts >= 10 && job.Kind == "remna_apply_entitlement" {
+	if jobErr != nil && job.Attempts >= 10 && job.Kind == "xnode_apply_entitlement" {
 		purchaseID, targetErr := outbox.TargetID(job, "purchaseId")
 		if targetErr != nil {
 			return errors.Join(jobErr, targetErr)
@@ -98,7 +98,7 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 	switch job.Kind {
 	case outbox.ContinuityKind:
 		return w.prepareContinuity(ctx, job)
-	case "remna_apply_entitlement":
+	case "xnode_apply_entitlement":
 		purchaseID, err := outbox.TargetID(job, "purchaseId")
 		if err != nil {
 			return err
@@ -118,14 +118,14 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 			return err
 		}
 		user, err = w.ensureIdentity(ctx, user)
-		if errors.Is(err, accounts.ErrRemnawaveIdentityConflict) {
+		if errors.Is(err, accounts.ErrProxyIdentityConflict) {
 			return w.resolveIdentityConflict(ctx, user)
 		}
 		if err != nil {
 			return err
 		}
-		if user.RemnaUserID == nil {
-			return errors.New("user has no Remnawave identity")
+		if user.ProxyUserID == nil {
+			return errors.New("user has no Proxy identity")
 		}
 		phase, err := w.repository.PurchaseTrafficResetPhase(ctx, purchase.ID)
 		if err != nil {
@@ -134,8 +134,8 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		if phase == "pending" {
 			// Removing squads before resetting makes ambiguous reset retries safe:
 			// no traffic can accrue between two reset attempts.
-			if err := w.remnawave.RemoveEntitlement(ctx, *user.RemnaUserID); err != nil {
-				return w.repairMissingIdentity(ctx, user, fmt.Errorf("quiesce Remnawave entitlement: %w", err))
+			if err := w.provider.RemoveEntitlement(ctx, *user.ProxyUserID); err != nil {
+				return w.repairMissingIdentity(ctx, user, fmt.Errorf("quiesce Proxy entitlement: %w", err))
 			}
 			if err := w.repository.AdvancePurchaseTrafficReset(ctx, purchase.ID, "pending", "quiesced", w.now().UTC()); err != nil {
 				return err
@@ -143,8 +143,8 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 			phase = "quiesced"
 		}
 		if phase == "quiesced" {
-			if err := w.remnawave.ResetTraffic(ctx, *user.RemnaUserID); err != nil {
-				return w.repairMissingIdentity(ctx, user, fmt.Errorf("reset Remnawave traffic: %w", err))
+			if err := w.provider.ResetTraffic(ctx, *user.ProxyUserID); err != nil {
+				return w.repairMissingIdentity(ctx, user, fmt.Errorf("reset Proxy traffic: %w", err))
 			}
 			if err := w.repository.AdvancePurchaseTrafficReset(ctx, purchase.ID, "quiesced", "reset", w.now().UTC()); err != nil {
 				return err
@@ -154,11 +154,11 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 		if phase != "reset" {
 			return fmt.Errorf("unknown traffic reset phase %q", phase)
 		}
-		if err := w.remnawave.ApplyEntitlement(ctx, *user.RemnaUserID, purchase.TrafficLimitBytes, purchase.ResetStrategy, purchase.SquadUUIDs, purchase.ValidUntil); err != nil {
-			return w.repairMissingIdentity(ctx, user, fmt.Errorf("apply Remnawave entitlement: %w", err))
+		if err := w.provider.ApplyEntitlement(ctx, *user.ProxyUserID, purchase.TrafficLimitBytes, purchase.ResetStrategy, purchase.SquadUUIDs, purchase.ValidUntil); err != nil {
+			return w.repairMissingIdentity(ctx, user, fmt.Errorf("apply Proxy entitlement: %w", err))
 		}
 		return w.repository.MarkPurchaseSyncResult(ctx, purchase.ID, true, w.now().UTC())
-	case "remna_sync_user":
+	case "xnode_sync_user":
 		userID, err := outbox.TargetID(job, "userId")
 		if err != nil {
 			return err
@@ -177,7 +177,7 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 			}
 			if purchased {
 				user, err = w.ensureIdentity(ctx, user)
-				if errors.Is(err, accounts.ErrRemnawaveIdentityConflict) {
+				if errors.Is(err, accounts.ErrProxyIdentityConflict) {
 					return w.resolveIdentityConflict(ctx, user)
 				}
 				if err != nil {
@@ -185,7 +185,7 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 				}
 			}
 		}
-		if user.RemnaUserID == nil {
+		if user.ProxyUserID == nil {
 			return w.releaseUserSyncNotifications(ctx, userID)
 		}
 		desired, err := w.repository.DesiredEntitlement(ctx, user.ID, w.now().UTC())
@@ -193,12 +193,12 @@ func (w *Worker) process(ctx context.Context, job model.OutboxJob) error {
 			return err
 		}
 		if desired == nil {
-			if err := w.remnawave.RemoveEntitlement(ctx, *user.RemnaUserID); err != nil {
+			if err := w.provider.RemoveEntitlement(ctx, *user.ProxyUserID); err != nil {
 				return w.repairMissingIdentity(ctx, user, err)
 			}
 			return w.releaseUserSyncNotifications(ctx, userID)
 		}
-		if err := w.remnawave.ApplyEntitlement(ctx, *user.RemnaUserID, desired.TrafficLimitBytes, desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil); err != nil {
+		if err := w.provider.ApplyEntitlement(ctx, *user.ProxyUserID, desired.TrafficLimitBytes, desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil); err != nil {
 			return w.repairMissingIdentity(ctx, user, err)
 		}
 		return w.releaseUserSyncNotifications(ctx, userID)

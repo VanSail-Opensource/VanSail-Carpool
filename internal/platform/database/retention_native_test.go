@@ -103,7 +103,7 @@ func TestFleetUsageAggregatesPeriodsAndLegacyWithExactIntegers(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_legacy_history(proxy_user_id,node_id,date,raw_bytes,weighted_bytes) VALUES(?,'node',?,11,13)`, identity.ProxyUserID, now.Format(time.DateOnly)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_imported_history(proxy_user_id,node_id,date,raw_bytes,weighted_bytes) VALUES(?,'node',?,11,13)`, identity.ProxyUserID, now.Format(time.DateOnly)); err != nil {
 		t.Fatal(err)
 	}
 	usage, err := s.XNodeFleetUsage(ctx, now, now)

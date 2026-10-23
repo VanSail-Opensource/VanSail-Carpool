@@ -17,13 +17,6 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if err != nil {
 		return wire.Config{}, err
 	}
-	owned, err := s.NativeOwner(ctx, nodeID)
-	if err != nil {
-		return wire.Config{}, err
-	}
-	if !owned {
-		return s.legacyConfiguration(ctx)
-	}
 	profile, err := s.repo.XNodeConfiguration(ctx, node.ConfigID)
 	if err != nil {
 		return wire.Config{}, err

@@ -3,7 +3,7 @@
     "nav": "Compensation",
     "eyebrow": "Service recovery",
     "title": "Node compensation",
-    "copy": "Review complete Remnawave outage observations before extending active members.",
+    "copy": "Review complete X-Node outage observations before extending active members.",
     "configEyebrow": "Observation policy",
     "configTitle": "Detection and calculation",
     "configCopy": "New outages snapshot this policy. Existing events keep the values captured when observation began.",

@@ -575,3 +575,5 @@ compatibility modes in hosted CI.
 `command_arguments.go` requires `incremental_reload_v1` for runtime reload,
 rechecks capability at execution and forwards typed optional forced recovery.
 `operations.go` retains durable command replay and per-node execution ordering.
+
+`shadowsocks_methods.go` validates managed native listener methods. Node ownership is native-only. Imported usage/history are frozen accounting evidence; there is no source integration, importer, synchronization loop, or migration gate in runtime compilation.

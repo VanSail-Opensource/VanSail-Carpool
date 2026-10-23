@@ -29,10 +29,10 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		return err
 	}
 	user, err := repository.UserByID(ctx, item.TargetID)
-	if err != nil || user.RemnaUserID == nil {
-		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "REMNAWAVE_IDENTITY_REQUIRED")
+	if err != nil || user.ProxyUserID == nil {
+		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "XNODE_IDENTITY_REQUIRED")
 	}
-	current, err := s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+	current, err := s.provider.Dashboard(ctx, *user.ProxyUserID)
 	if err != nil {
 		return err
 	}
@@ -51,17 +51,17 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		s.invalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
-	_, callErr := s.remnawave.RevokeSubscription(ctx, *user.RemnaUserID)
+	_, callErr := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
 	if callErr == nil {
 		s.invalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
-	after, reconcileErr := s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+	after, reconcileErr := s.provider.Dashboard(ctx, *user.ProxyUserID)
 	if reconcileErr == nil && subscriptionHash(after.SubscriptionURL) != target.PreviousHash {
 		s.invalidateDashboard(user.ID)
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusSucceeded, "")
 	}
-	if definitiveCatalogFailure(s.remnawave, callErr) {
+	if definitiveCatalogFailure(s.provider, callErr) {
 		return s.finishRevoke(ctx, repository, operation, item, providerops.StatusFailed, "REVOKE_REJECTED")
 	}
 	return s.finishRevoke(ctx, repository, operation, item, providerops.StatusPendingReview, "REVOKE_OUTCOME_AMBIGUOUS")
@@ -79,7 +79,7 @@ func revokeOperationTarget(job model.OutboxJob) (revokeTarget, error) {
 	return target, nil
 }
 
-func definitiveCatalogFailure(remote RemnawaveClient, err error) bool {
+func definitiveCatalogFailure(remote ProxyClient, err error) bool {
 	type classifier interface{ DefinitiveMutationFailure(error) bool }
 	if value, ok := remote.(classifier); ok {
 		return value.DefinitiveMutationFailure(err)

@@ -25,7 +25,7 @@ const games = shallowRef<BetGame[]>([])
   const drawColumns = computed(() => [{ accessorKey: 'name', header: t('adminWorkspace.name') }, { id: 'type', header: t('adminWorkspace.type') }, { id: 'price', header: t('adminWorkspace.price') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }])
   const iconItems = computed(() => ['dice', 'coin', 'cards', 'target', 'trophy', 'lightning', 'sparkle'].map((value) => ({ value, label: t(`adminActivityManagement.icons.${value}`) })))
   const comboItems = computed(() => catalogOptions.value.combos.map((combo) => ({ value: combo.id, label: combo.name })))
-  const squadItems = computed(() => catalogOptions.value.squads.map((squad) => ({ value: squad.remnaSquadUuid, label: squad.name })))
+  const squadItems = computed(() => catalogOptions.value.squads.map((squad) => ({ value: squad.groupId, label: squad.name })))
 
   function loadStatistics(query: StatisticsQuery): Promise<AdminStatistics> {
     if (!statisticsTarget.value) return Promise.reject(new Error(t('adminActivityManagement.chooseActivity')))

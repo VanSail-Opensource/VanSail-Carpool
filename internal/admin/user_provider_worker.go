@@ -54,13 +54,13 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 		if completion != nil {
 			return *completion
 		}
-		err = w.remote.SetAdminUserDisabled(ctx, *user.RemnaUserID, true)
+		err = w.remote.SetAdminUserDisabled(ctx, *user.ProxyUserID, true)
 	case providerops.KindAdminTemporaryUnban:
 		user, completion := w.userWithRemoteID(ctx, operation.OwnerUserID)
 		if completion != nil {
 			return *completion
 		}
-		err = w.remote.SetAdminUserDisabled(ctx, *user.RemnaUserID, false)
+		err = w.remote.SetAdminUserDisabled(ctx, *user.ProxyUserID, false)
 		if err == nil {
 			err = w.repository.CompleteAdminTemporaryUnban(ctx, user.ID, w.now().UTC())
 		}
@@ -75,7 +75,7 @@ func (w *UserProviderWorker) run(ctx context.Context, operation providerops.Oper
 
 func (w *UserProviderWorker) userWithRemoteID(ctx context.Context, userID string) (model.User, *providerops.Completion) {
 	user, err := w.repository.UserByID(ctx, userID)
-	if err != nil || user.RemnaUserID == nil {
+	if err != nil || user.ProxyUserID == nil {
 		return model.User{}, &providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "REMOTE_IDENTITY_REQUIRED"}
 	}
 	return user, nil

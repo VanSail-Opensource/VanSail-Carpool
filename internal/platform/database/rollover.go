@@ -138,11 +138,11 @@ func (s *Store) finalizeRolloverUsage(ctx context.Context, purchaseID string, su
 		if err := applyPendingExtensionsToActivationTx(ctx, tx, nextID, now); err != nil {
 			return model.PurchaseRollover{}, err
 		}
-		if err := insertOutboxTx(ctx, tx, "remna_apply_entitlement", `{"purchaseId":"`+nextID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+nextID+`"}`, now, now); err != nil {
 			return model.PurchaseRollover{}, err
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
-		if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
 			return model.PurchaseRollover{}, err
 		}
 		if err := s.insertExpirationNotificationTx(ctx, tx, purchaseID, userSyncGate(userID), now); err != nil {

@@ -19,45 +19,45 @@ type memberWorkflowServices struct {
 	purchases   *purchaseops.Service
 }
 
-func newMemberWorkflows(store *database.Store, remna proxyProvider, vault *secret.Vault, signingKey []byte) (memberWorkflowServices, *connections.Worker, *connections.ExpiryWorker, *providerops.Dispatcher, error) {
+func newMemberWorkflows(store *database.Store, proxy proxyProvider, vault *secret.Vault, signingKey []byte) (memberWorkflowServices, *connections.Worker, *connections.ExpiryWorker, *providerops.Dispatcher, error) {
 	signer, err := connections.NewSigner(signingKey)
 	if err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, err
 	}
 	secrets := emby.NewSecretBox(vault)
 	services := memberWorkflowServices{
-		connections: connections.NewService(store, remna, signer),
+		connections: connections.NewService(store, proxy, signer),
 		drops:       connections.NewDropService(store, signer, secrets),
-		purchases:   purchaseops.NewService(store, remna),
+		purchases:   purchaseops.NewService(store, proxy),
 	}
 	dispatcher := providerops.NewDispatcher(store)
-	purchaseWorker := purchaseops.NewWorker(store, remna)
+	purchaseWorker := purchaseops.NewWorker(store, proxy)
 	for _, kind := range []string{purchaseops.OperationResetKind, purchaseops.OperationRefundKind} {
 		if err := dispatcher.Register(kind, purchaseWorker); err != nil {
 			return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register %s: %w", kind, err)
 		}
 	}
-	if err := dispatcher.Register(connections.DropOperationKind, connections.NewDropWorker(store, remna, signer, secrets)); err != nil {
+	if err := dispatcher.Register(connections.DropOperationKind, connections.NewDropWorker(store, proxy, signer, secrets)); err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection drop: %w", err)
 	}
-	if err := dispatcher.Register(connections.BlockOperationKind, connections.NewBlockWorker(store, remna, secrets)); err != nil {
+	if err := dispatcher.Register(connections.BlockOperationKind, connections.NewBlockWorker(store, proxy, secrets)); err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection block: %w", err)
 	}
-	if err := dispatcher.Register(connections.UnblockOperationKind, connections.NewUnblockWorker(store, remna, secrets)); err != nil {
+	if err := dispatcher.Register(connections.UnblockOperationKind, connections.NewUnblockWorker(store, proxy, secrets)); err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection unblock: %w", err)
 	}
-	return services, connections.NewWorker(store, remna), connections.NewExpiryWorker(store, remna, secrets), dispatcher, nil
+	return services, connections.NewWorker(store, proxy), connections.NewExpiryWorker(store, proxy, secrets), dispatcher, nil
 }
 
-func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *database.Store, remna proxyProvider) error {
-	worker := admin.NewUserOperationWorker(store, remna)
+func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *database.Store, proxy proxyProvider) error {
+	worker := admin.NewUserOperationWorker(store, proxy)
 	for _, kind := range []string{providerops.KindAdminEntitlementEdit, providerops.KindAdminEntitlementRefund,
 		providerops.KindAdminComboReplacement, providerops.KindAdminBulkExtension, providerops.KindNodeCompensation} {
 		if err := dispatcher.Register(kind, worker); err != nil {
 			return err
 		}
 	}
-	providerWorker := admin.NewUserProviderWorker(store, remna)
+	providerWorker := admin.NewUserProviderWorker(store, proxy)
 	for _, kind := range []string{providerops.KindAdminTemporaryBan, providerops.KindAdminTemporaryUnban} {
 		if err := dispatcher.Register(kind, providerWorker); err != nil {
 			return err

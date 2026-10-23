@@ -7,7 +7,7 @@ import (
 
 const multiplierScale int64 = 1_000_000
 
-// NodeUsageSeries is an in-memory adapter of Remnawave's raw per-node series.
+// NodeUsageSeries is an in-memory adapter of Proxy's raw per-node series.
 // It is deliberately not part of any persisted model.
 type NodeUsageSeries struct {
 	UUID         string

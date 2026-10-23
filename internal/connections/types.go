@@ -37,7 +37,7 @@ var (
 	// ErrScanNotFound hides scans owned by another member and expired scans.
 	ErrScanNotFound = errors.New("connection scan not found")
 	// ErrIdentityRequired means the member has no usable provider identity.
-	ErrIdentityRequired = errors.New("Remnawave identity is required")
+	ErrIdentityRequired = errors.New("Proxy identity is required")
 	// ErrIPBlockNotFound hides blocks owned by another member.
 	ErrIPBlockNotFound = errors.New("connection IP block not found")
 )
@@ -94,7 +94,7 @@ type ProviderNode struct {
 	IPs         []Observation
 }
 
-// ProviderScan is the normalized, non-durable Remnawave scan response.
+// ProviderScan is the normalized, non-durable Proxy scan response.
 type ProviderScan struct {
 	Completed       bool
 	Failed          bool

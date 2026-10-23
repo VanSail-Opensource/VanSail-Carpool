@@ -98,27 +98,6 @@ func (m *Master) Start(ctx context.Context) error {
 			m.logger.Warn("accounting period remains pending", "error_code", "XNODE_ACCOUNTING_PENDING")
 		})
 	}()
-	if m.service.legacySync != nil {
-		m.wg.Add(1)
-		go func() {
-			defer m.wg.Done()
-			tick := time.NewTicker(15 * time.Second)
-			defer tick.Stop()
-			for {
-				select {
-				case <-m.ctx.Done():
-					return
-				case <-tick.C:
-					ctx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
-					err := m.service.legacySync(ctx)
-					cancel()
-					if err != nil && m.ctx.Err() == nil {
-						m.logger.Warn("legacy traffic sync remains pending", "error_code", "XNODE_LEGACY_SYNC_PENDING")
-					}
-				}
-			}
-		}()
-	}
 	return nil
 }
 

@@ -14,7 +14,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 - `schemas-01.yaml`: `ID`, `Timestamp`, `DecimalInteger`, `ApiError`, `TelegramAuthRequest`, `OnboardingStep`, `User`, `AuthState`, `JoinInvite`, `CommunityMembership`, `UsernameRequest`, `AgreementRequest`, `WelcomeMessage`, `OnboardingAgreement`, `LocalizedOnboardingContent`, `PublishedOnboarding`, `OnboardingBundle`
 - `schemas-02.yaml`: `OnboardingDraftWrite`, `OnboardingPublishRequest`, `Money`, `ResetStrategy`, typed squad profiles, `SquadProduct` with live accessible nodes, `Combo`, nullable-provider `CatalogNode`, `Catalog`, `ComboWrite`, `SquadProductWrite`
-- `schemas-03.yaml`: `RemnaNode`, `PurchaseRequest`, `PurchaseQuote`, `EntitlementStatus`, `Entitlement`, `Purchase`, `SubscriptionRotation`, `TopNode`, `Statistics`, `StatisticPoint`
+- `schemas-03.yaml`: `ProxyNode`, `PurchaseRequest`, `PurchaseQuote`, `EntitlementStatus`, `Entitlement`, `Purchase`, `SubscriptionRotation`, `TopNode`, `Statistics`, `StatisticPoint`
 - `schemas-04.yaml`: `StatisticSlice`, `AdminStatistics`, `Dashboard`, `LedgerKind`, `LedgerEntry`, `PageInfo`, `LedgerPage`, `PaymentMethodID`, `PaymentOrderMethodID`, `PaymentProvider`, `PaymentStatus`, `PaymentOrderRequest`
 - `schemas-05.yaml`: `PaymentOrder`, activity games, instant-only member `LuckyDraw` previews, typed draw reward fields, and resolved `ActivityResult`
 - `schemas-06.yaml`: `GroupMessageRewardStatus`, `ActivityOverview`, activity requests/settings, mode-specific `LuckyDrawPrize` and `LuckyDrawWrite`, `LuckyDrawAdmin`, `LuckyDrawForecast`, and coupon kinds
@@ -43,7 +43,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 `schemas-26.yaml` defines private-message conversations, moderation/repair requests, paged inventory and bounded delivery references. Telegram numeric IDs remain decimal strings.
 
-`connectivity.yaml` defines the seven credential-free connectivity configuration, account, attempt, batch, host-result, snapshot and cursor-history contracts. Nullable fields remain present; Remnawave account references are canonical numeric IDs.
+`connectivity.yaml` defines the seven credential-free connectivity configuration, account, attempt, batch, host-result, snapshot and cursor-history contracts. Nullable fields remain present; X-Node account references are canonical numeric IDs.
 
 `uptime.yaml` describes neutral-gap timelines, the credential-free home summary and member-only subscription host/squad projections, without diagnostic timing or HTTP status fields.
 - `ip-lookup-config.yaml` defines independent provider/geolocation ordering, allowance, signed pricing and response-only free cache previews. Submission uses only the signed quote fields.

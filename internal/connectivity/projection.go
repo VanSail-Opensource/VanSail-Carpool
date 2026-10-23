@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Projection follows Remnawave's resolvedProxyConfigs and native Xray JSON
+// Projection follows Proxy's resolvedProxyConfigs and native Xray JSON
 // generator. Resolved documents and generated credentials remain process-local.
 func projectTarget(target Target) ([]byte, error) {
 	outbound, err := projectOutbound(target)

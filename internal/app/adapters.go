@@ -128,7 +128,7 @@ func (a paymentAdapter) createBEPusdt(ctx context.Context, request billing.Provi
 	if err != nil {
 		return billing.ProviderCheckout{}, err
 	}
-	transaction, err := upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (*bepusdt.Transaction, error) {
+	transaction, err := upstreamqueue.Do(upstreamqueue.WithKey(ctx, "order:"+request.OrderID), a.queue, func(callCtx context.Context) (*bepusdt.Transaction, error) {
 		return client.CreateTransaction(callCtx, bepusdt.CreateTransactionRequest{OrderID: request.OrderID, Amount: request.PayableAmount,
 			Fiat: "USD", TradeType: request.Rail, Name: "TXB balance", NotifyURL: request.NotifyURL, RedirectURL: request.RedirectURL, TimeoutSeconds: 1200})
 	})
@@ -159,7 +159,7 @@ func (a paymentAdapter) Cancel(ctx context.Context, order model.PaymentOrder) er
 	if err != nil {
 		return err
 	}
-	return upstreamqueue.Execute(ctx, a.queue, func(callCtx context.Context) error {
+	return upstreamqueue.Execute(upstreamqueue.WithKey(ctx, "order:"+order.ID), a.queue, func(callCtx context.Context) error {
 		return client.CancelTransaction(callCtx, *order.ProviderTradeID)
 	})
 }

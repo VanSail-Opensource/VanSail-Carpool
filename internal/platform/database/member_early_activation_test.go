@@ -134,7 +134,7 @@ func TestEarlyActivationWorkerResumesExistingResetPhases(t *testing.T) {
 	}
 	calls, invalidations := 0, 0
 	worker := purchaseops.NewComboControlWorker(store, controlSyncFunc(func(ctx context.Context, job model.OutboxJob) error {
-		if job.Kind != "remna_apply_entitlement" {
+		if job.Kind != "xnode_apply_entitlement" {
 			t.Fatalf("kind=%s", job.Kind)
 		}
 		calls++

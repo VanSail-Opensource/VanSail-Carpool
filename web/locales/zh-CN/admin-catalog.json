@@ -1,7 +1,7 @@
 {
   "adminCatalog": {
     "title": "目录",
-    "copy": "管理实时套餐条款和上游 Remnawave 节点组的稀疏覆盖配置。",
+    "copy": "管理实时套餐条款和上游 X-Node 节点组的稀疏覆盖配置。",
     "chooseRecord": "请选择一条目录记录。",
     "newCombo": "新建套餐",
     "comboSummary": "{traffic}，有效 {days} 天",
@@ -15,10 +15,10 @@
     "noCombos": "暂无套餐",
     "noCombosHint": "创建首个套餐以开放目录。",
     "squads": "内部节点组",
-    "squadsHint": "身份来自实时 Remnawave 节点组；本地仅保存非默认展示和价格设置。",
+    "squadsHint": "身份来自实时 X-Node 节点组；本地仅保存非默认展示和价格设置。",
     "refreshSquads": "刷新节点组",
     "noSquads": "暂无上游节点组",
-    "noSquadsHint": "从 Remnawave 刷新后配置可选访问。",
+    "noSquadsHint": "从 X-Node 刷新后配置可选访问。",
     "hideTitle": "隐藏此套餐？",
     "hideDescription": "此套餐将不再用于新结算。现有及历史购买保留实时引用，因此后续修改仍会影响它们。",
     "hideCombo": "隐藏套餐"
@@ -44,7 +44,7 @@
     },
     "rolloverMinimum": "结转所需最低剩余流量百分比",
     "includedSquads": "包含的实时节点组",
-    "noSquads": "分配前请先刷新 Remnawave 节点组。",
+    "noSquads": "分配前请先刷新 X-Node 节点组。",
     "available": "向用户开放",
     "liveTermsHint": "隐藏会阻止新结算；对此实时记录的修改会影响活跃、排队和历史购买。",
     "save": "保存套餐"

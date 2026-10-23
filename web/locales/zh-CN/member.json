@@ -73,7 +73,7 @@
       "REFUND_NOT_FIRST_TERM": "只有此购买链路的首个周期可以退款。",
       "REFUND_WINDOW_EXPIRED": "严格的 24 小时退款期限已结束。",
       "REFUND_TRAFFIC_USED": "此购买已经产生流量用量。",
-      "REMNAWAVE_IDENTITY_REQUIRED": "请先完成账户同步。",
+      "XNODE_IDENTITY_REQUIRED": "请先完成账户同步。",
       "OPERATION_ALREADY_OPEN": "此购买已有另一项服务商操作正在进行。"
     },
     "operation": {

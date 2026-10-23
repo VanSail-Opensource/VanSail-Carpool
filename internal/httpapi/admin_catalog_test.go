@@ -7,7 +7,7 @@ import (
 )
 
 func TestSquadProductRequestDecodesTypedProfile(t *testing.T) {
-	request := httptest.NewRequest("PUT", "/api/v1/admin/squad-products/squad-1", strings.NewReader(`{"remnaSquadUuid":"squad-1","name":"ignored","description":"extra","profile":{"type":"international_network","portMbps":null,"countryCode":"sg","upstreamCarriers":["A, B"]},"priceTxbMinor":"100","visible":true}`))
+	request := httptest.NewRequest("PUT", "/api/v1/admin/squad-products/squad-1", strings.NewReader(`{"groupId":"squad-1","name":"ignored","description":"extra","profile":{"type":"international_network","portMbps":null,"countryCode":"sg","upstreamCarriers":["A, B"]},"priceTxbMinor":"100","visible":true}`))
 	response := httptest.NewRecorder()
 	var input squadProductRequest
 	if err := decodeJSON(response, request, &input); err != nil {

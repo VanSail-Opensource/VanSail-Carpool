@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// Statistics is the user-facing subset of Remnawave traffic analytics.
+// Statistics is the user-facing subset of Proxy traffic analytics.
 type Statistics struct {
 	UsedTrafficBytes     string     `json:"usedTrafficBytes"`
 	LifetimeTrafficBytes string     `json:"lifetimeTrafficBytes"`
@@ -51,8 +51,8 @@ type AdminStatistics struct {
 	Distribution  []StatisticSlice `json:"distribution"`
 }
 
-// RemnaNode is the administrator-visible subset of a Remnawave node contract.
-type RemnaNode struct {
+// ProxyNode is the administrator-visible subset of a Proxy node contract.
+type ProxyNode struct {
 	UUID                  string   `json:"uuid"`
 	Name                  string   `json:"name"`
 	CountryCode           string   `json:"countryCode"`
@@ -63,7 +63,7 @@ type RemnaNode struct {
 	ProviderFaviconURL    *string  `json:"providerFaviconUrl"`
 }
 
-// Dashboard combines local financial state with a briefly cached Remnawave snapshot.
+// Dashboard combines local financial state with a briefly cached Proxy snapshot.
 type Dashboard struct {
 	User               User                `json:"user"`
 	Balance            Money               `json:"balance"`
@@ -87,7 +87,7 @@ type TopNode struct {
 }
 
 // DashboardNodeUsage is the date-bounded, per-node traffic projection exposed
-// to an authenticated member. Categories retain Remnawave's UTC date labels.
+// to an authenticated member. Categories retain Proxy's UTC date labels.
 type DashboardNodeUsage struct {
 	StartDate  string                   `json:"startDate"`
 	EndDate    string                   `json:"endDate"`

@@ -18,12 +18,5 @@ func (a proxyProvider) DashboardForMember(ctx context.Context, user model.User) 
 	if !errors.Is(err, xnode.ErrNotFound) {
 		return catalog.RemoteDashboard{}, err
 	}
-	bridge, err := a.legacy(ctx)
-	if err != nil {
-		return catalog.RemoteDashboard{}, err
-	}
-	if bridge && user.RemnaUserID != nil {
-		return a.remnaAdapter.Dashboard(ctx, *user.RemnaUserID)
-	}
 	return catalog.RemoteDashboard{}, xnode.ErrNotFound
 }

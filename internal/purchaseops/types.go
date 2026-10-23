@@ -24,7 +24,7 @@ const (
 	ReasonNotFirstTerm   = "REFUND_NOT_FIRST_TERM"
 	ReasonWindowExpired  = "REFUND_WINDOW_EXPIRED"
 	ReasonTrafficUsed    = "REFUND_TRAFFIC_USED"
-	ReasonRemoteUnlinked = "REMNAWAVE_IDENTITY_REQUIRED"
+	ReasonRemoteUnlinked = "XNODE_IDENTITY_REQUIRED"
 	ReasonOperationOpen  = "OPERATION_ALREADY_OPEN"
 	OperationResetKind   = "purchase_traffic_reset"
 	OperationRefundKind  = "purchase_refund"

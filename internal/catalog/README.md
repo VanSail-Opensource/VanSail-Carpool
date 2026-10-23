@@ -2,10 +2,10 @@
 
 `rollover_native_test.go` verifies that projections use purchase-owned native accounting without a legacy account. Projection and settlement share `rollover.PurchaseSnapshot` and retain existing eligibility and financial calculations.
 
-This package builds the live catalog, validates purchase selections against current Remnawave squads, and serves member purchase and dashboard workflows.
+This package builds the live catalog, validates purchase selections against current X-Node squads, and serves member purchase and dashboard workflows.
 
 - `service.go` defines repository/provider contracts and coordinates quotes, purchases, process-local dashboard caching, and subscription revocation without durable bearer storage.
-- `catalog.go` hydrates sparse local merchandising and typed squad profiles with live Remnawave squad identities and one read-only node snapshot.
+- `catalog.go` hydrates sparse local merchandising and typed squad profiles with live X-Node squad identities and one read-only node snapshot.
 - `automatic_renewal.go` owns member toggle/status projections, catalog blocking, calculated-rollover settlement, one-successor commits, failure notices, and the global policy for whether rollover counts toward the required renewal balance. It keeps provider access behind the existing queued adapter boundary.
 - `automatic_renewal_selection.go` removes paid squads unavailable from the live provider before automatic renewal is repriced and atomically settled against its calculated rollover, forwarding the global rollover-balance policy into the transactional store.
 - `automatic_renewal_test.go` covers catalog blocking and enablement eligibility without running provider calls.

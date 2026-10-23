@@ -65,7 +65,7 @@ async function confirm(): Promise<void> {
     for (const squad of activationSquads.value) {
       const code = await requestActivationCode(squad)
       if (!code) return
-      codes[squad.remnaSquadUuid] = code
+      codes[squad.groupId] = code
     }
     if (await confirmPurchase(codes)) emit('changed')
   } finally {

@@ -26,15 +26,6 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	if identity.CurrentPeriodID == "" {
 		return nil
 	}
-	if identity.LegacyUserID != "" {
-		migration, err := s.repo.XNodeMigration(ctx)
-		if err != nil {
-			return err
-		}
-		if migration.Phase != "complete" {
-			return nil
-		}
-	}
 	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
 	if err != nil {
 		return err

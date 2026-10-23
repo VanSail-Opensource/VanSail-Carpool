@@ -29,16 +29,16 @@ func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {
 		t.Fatalf("SaveCombo(unknown update) = %v, want ErrNotFound", err)
 	}
 
-	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{ID: "invented", RemnaSquadUUID: "invented", Name: "Invented"}); !errors.Is(err, ErrNotFound) {
+	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{ID: "invented", GroupID: "invented", Name: "Invented"}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("SaveSquadProduct(unimported) = %v, want ErrNotFound", err)
 	}
 	if err := store.RefreshImportedSquads(ctx, []ImportedSquad{{UUID: "remote-1", Name: "Remote"}}); err != nil {
 		t.Fatalf("RefreshImportedSquads(): %v", err)
 	}
-	if _, err := store.SquadProductByRemnaUUID(ctx, "remote-1"); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("SquadProductByRemnaUUID(unedited upstream) = %v, want ErrNotFound", err)
+	if _, err := store.SquadProductByGroupID(ctx, "remote-1"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("SquadProductByGroupID(unedited upstream) = %v, want ErrNotFound", err)
 	}
-	productInput := SquadProductInput{ID: "remote-1", RemnaSquadUUID: "remote-1", Name: "Merchandised", Description: "Local copy", PriceTXBMinor: 25, Visible: true, UpstreamPresent: true}
+	productInput := SquadProductInput{ID: "remote-1", GroupID: "remote-1", Name: "Merchandised", Description: "Local copy", PriceTXBMinor: 25, Visible: true, UpstreamPresent: true}
 	product, err := store.SaveSquadProduct(ctx, productInput)
 	if err != nil {
 		t.Fatalf("SaveSquadProduct(imported create): %v", err)
@@ -101,7 +101,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 	if count != 1 {
 		t.Fatalf("rollover job count = %d, want 1", count)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count renewal activation jobs: %v", err)
 	}
 	if count != 0 {
@@ -113,7 +113,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 	if _, err := store.FinalizeRollover(ctx, first.ID, 1000, 500, "", first.ValidUntil); err != nil {
 		t.Fatalf("FinalizeRollover(): %v", err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count renewal activation jobs after rollover: %v", err)
 	}
 	if count != 1 {

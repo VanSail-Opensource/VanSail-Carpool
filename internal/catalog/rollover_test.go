@@ -17,19 +17,19 @@ func TestRolloverProjectionValidatesOwnerAndUsesQueuedSnapshot(t *testing.T) {
 	purchase := model.Purchase{ID: "purchase-1", UserID: "user-1", Status: "active", AutoRenewEnabled: true,
 		PriceTXBMinor: 10_000, ValidFrom: now.Add(-24 * time.Hour), ValidUntil: now.Add(24 * time.Hour),
 		Price: model.TXBMoney(10_000)}
-	remote := &rolloverRemote{catalogRemnawave: &catalogRemnawave{}, snapshot: rollover.UsageSnapshot{LimitBytes: 1_000, Strategy: "NO_RESET", NodeSeriesAvailable: true}}
+	remote := &rolloverRemote{catalogProxy: &catalogProxy{}, snapshot: rollover.UsageSnapshot{LimitBytes: 1_000, Strategy: "NO_RESET", NodeSeriesAvailable: true}}
 	repository := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
 	service := NewService(repository, remote, time.Minute)
 	service.now = func() time.Time { return now }
 
-	projection, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", RemnaUserID: &remoteID}, purchase.ID)
+	projection, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", ProxyUserID: &remoteID}, purchase.ID)
 	if err != nil || projection.PurchaseID != purchase.ID || !remote.start.Equal(purchase.ValidFrom) || !remote.end.Equal(now) {
 		t.Fatalf("RolloverProjection() = (%+v, %v), range %s to %s", projection, err, remote.start, remote.end)
 	}
-	if _, err := service.RolloverProjection(context.Background(), model.User{ID: "other", OnboardingState: "complete", RemnaUserID: &remoteID}, purchase.ID); !errors.Is(err, database.ErrNotFound) {
+	if _, err := service.RolloverProjection(context.Background(), model.User{ID: "other", OnboardingState: "complete", ProxyUserID: &remoteID}, purchase.ID); !errors.Is(err, database.ErrNotFound) {
 		t.Fatalf("owner check error = %v", err)
 	}
-	if _, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", RemnaUserID: &remoteID}, "missing"); err == nil {
+	if _, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", ProxyUserID: &remoteID}, "missing"); err == nil {
 		t.Fatal("missing purchase unexpectedly succeeded")
 	}
 }
@@ -38,7 +38,7 @@ func TestRolloverProjectionRejectsInactiveAndMissingIdentity(t *testing.T) {
 	now := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
 	purchase := model.Purchase{ID: "purchase-1", UserID: "user-1", Status: "expired", AutoRenewEnabled: true, ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour)}
 	repository := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
-	service := NewService(repository, &rolloverRemote{catalogRemnawave: &catalogRemnawave{}}, time.Minute)
+	service := NewService(repository, &rolloverRemote{catalogProxy: &catalogProxy{}}, time.Minute)
 	service.now = func() time.Time { return now }
 	if _, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete"}, purchase.ID); !errors.Is(err, ErrRolloverNotActive) {
 		t.Fatalf("inactive error = %v", err)
@@ -56,11 +56,11 @@ func TestRolloverProjectionPreservesIncompleteUsageCause(t *testing.T) {
 	purchase := model.Purchase{ID: "purchase-1", UserID: "user-1", Status: "active", AutoRenewEnabled: true,
 		ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour)}
 	repository := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
-	remote := &rolloverRemote{catalogRemnawave: &catalogRemnawave{}, err: rollover.ErrPerNodeUsageUnavailable}
+	remote := &rolloverRemote{catalogProxy: &catalogProxy{}, err: rollover.ErrPerNodeUsageUnavailable}
 	service := NewService(repository, remote, time.Minute)
 	service.now = func() time.Time { return now }
 
-	_, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", RemnaUserID: &remoteID}, purchase.ID)
+	_, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", ProxyUserID: &remoteID}, purchase.ID)
 	if !errors.Is(err, ErrRolloverUnavailable) || !errors.Is(err, rollover.ErrPerNodeUsageUnavailable) {
 		t.Fatalf("incomplete usage error = %v", err)
 	}
@@ -71,12 +71,12 @@ func TestRolloverProjectionWarnsWithoutProviderUsageWhenAutoRenewalIsDisabled(t 
 	remoteID := "remote-1"
 	purchase := model.Purchase{ID: "purchase-disabled", UserID: "user-1", Status: "active", AutoRenewEnabled: false,
 		PriceTXBMinor: 10_000, Price: model.TXBMoney(10_000), ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour)}
-	remote := &rolloverRemote{catalogRemnawave: &catalogRemnawave{}}
+	remote := &rolloverRemote{catalogProxy: &catalogProxy{}}
 	repository := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
 	service := NewService(repository, remote, time.Minute)
 	service.now = func() time.Time { return now }
 
-	projection, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", RemnaUserID: &remoteID}, purchase.ID)
+	projection, err := service.RolloverProjection(context.Background(), model.User{ID: "user-1", OnboardingState: "complete", ProxyUserID: &remoteID}, purchase.ID)
 	if err != nil || projection.WarningCode == nil || *projection.WarningCode != "AUTO_RENEWAL_DISABLED" || remote.snapshotCalls != 0 {
 		t.Fatalf("disabled rollover = (%+v, %v), snapshot calls=%d", projection, err, remote.snapshotCalls)
 	}
@@ -95,7 +95,7 @@ func (r *rolloverRepository) PurchaseByID(_ context.Context, id string) (model.P
 }
 
 type rolloverRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	snapshot      rollover.UsageSnapshot
 	err           error
 	start         time.Time

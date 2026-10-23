@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// TrafficUser is the narrow Remnawave stream projection used by threshold scans.
+// TrafficUser is the narrow Proxy stream projection used by threshold scans.
 type TrafficUser struct {
 	ID                 int64
 	UsedBytes          int64
@@ -32,7 +32,7 @@ type AutomaticResetResult struct {
 	EventCreated bool
 }
 
-// TrafficRemote pages through the documented Remnawave user stream.
+// TrafficRemote pages through the documented Proxy user stream.
 type TrafficRemote interface {
 	ListNotificationUsers(context.Context, string, int) ([]TrafficUser, *string, bool, error)
 }
@@ -65,7 +65,7 @@ func (s *Scanner) scanTraffic(ctx context.Context, now time.Time) (int, error) {
 	for {
 		users, next, more, err := s.remote.ListNotificationUsers(ctx, cursor, pageSize)
 		if err != nil {
-			return queued, fmt.Errorf("list Remnawave traffic users: %w", err)
+			return queued, fmt.Errorf("list Proxy traffic users: %w", err)
 		}
 		for _, user := range users {
 			if user.ID <= 0 || !aboveNinetyPercent(user.UsedBytes, user.LimitBytes) {

@@ -16,7 +16,6 @@ The fixed registry defines each known key's validator, sensitivity, display cate
 | --- | --- |
 | `telegram.group_chat_id`, `telegram.channel_chat_id` | Required nonzero integer chat IDs |
 | `telegram.webhook_secret` | Encrypted, URL-safe; generated at bootstrap |
-| `remnawave.base_url`, `remnawave.api_token` | Required HTTP or HTTPS origin and encrypted bearer token |
 | `billing.rate.txb_per_cny`, `txb_per_usd`, `txb_per_xtr` | Required positive fixed decimals; legacy inverse rates are not converted |
 | `billing.ezpay.*`, `billing.bepusdt.*` | Legacy compatibility/readiness keys; new provider credentials and channel choices are edited through the provider-account payment profile endpoint |
 | `billing.stars.enabled` | Boolean Stars gate |
@@ -26,14 +25,13 @@ The fixed registry defines each known key's validator, sensitivity, display cate
 
 All TXB setting/editor fields accept human-major decimals with at most two fractional digits. `150` therefore stores or resolves to `15000` minor units when used financially. Admin API domain records continue to serialize money as decimal-string minor units.
 
-Remnawave may use an internal Docker-network origin such as `http://remnawave:3000`. Use HTTP only when the panel and Remnawave share a trusted private network; public Remnawave endpoints should use HTTPS.
 
 Readiness checks required settings, enabled-provider completeness, and at least one active combo without calling external providers. Missing new-direction rates keep the corresponding payment method unavailable. Provider connectivity and permissions surface through their normal operations instead of leaking secrets through readiness.
 
 ## Domain operations and audit retention
 
 - Combo records are live: changes affect active, queued, and historical purchases and enqueue deduplicated user synchronization. Referenced combos may be hidden but not hard-deleted.
-- Squad merchandising is a sparse override over the live Remnawave list; default values remove the override. Node assignments are revalidated and re-fetched upstream and are never persisted locally.
+- Squad merchandising is a sparse override over the live X-Node list; default values remove the override. Node assignments are revalidated and re-fetched upstream and are never persisted locally.
 - Balance adjustment requires a bounded nonzero signed amount and reason and appends one ledger entry plus audit event.
 - Telegram `/deduct <amount>` is accepted only from a configured administrator in the configured group as a reply to a known human sender. Amounts are positive human-major TXB values; the atomic debit rejects insufficient balance, uses a deterministic quoted-message reference for replay safety, and appends `telegram.balance_deduct` audit metadata for the sending administrator.
 - PM-topic `/refund`, `/addtxb <value>`, and `/deducttxb <value>` target only that topic's user. Refunds use the live verified remaining-traffic quote; balance adjustments use Telegram update references, immutable ledger entries, and administrator audit metadata.
@@ -101,7 +99,7 @@ queued successor shifts by the same calendar-day count at both boundaries so
 its duration remains unchanged. The preview and job use the same target query.
 
 The shared provider-operation worker records operation and item intent before
-calling the queued Remnawave adapter. A completed target is never replayed. An
+calling the queued X-Node adapter. A completed target is never replayed. An
 interrupted attempt or uncertain network result becomes `pending_review`; mixed
 bulk results become `partial` and require audited resolution rather than a
 blind provider retry.

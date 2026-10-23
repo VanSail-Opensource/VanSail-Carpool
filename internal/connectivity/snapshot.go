@@ -16,7 +16,7 @@ func (s *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 	s.mu.Unlock()
 	result := Snapshot{Config: cfg, Hosts: []HostResult{}}
 	result.Run, _, result.ErrorCode = s.runState(hash)
-	if cfg.RemnawaveUserID == 0 {
+	if cfg.ProxyUserID == 0 {
 		result.ErrorCode = "CONNECTIVITY_NOT_CONFIGURED"
 		return result, nil
 	}

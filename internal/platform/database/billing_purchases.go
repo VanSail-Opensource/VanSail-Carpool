@@ -109,7 +109,7 @@ func (s *Store) CancelPurchase(ctx context.Context, purchaseID, reason string, n
 		return model.Purchase{}, err
 	}
 	if previousStatus != "queued" {
-		if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+purchase.UserID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+purchase.UserID+`"}`, now, now); err != nil {
 			return model.Purchase{}, err
 		}
 	}
@@ -166,16 +166,16 @@ type purchaseSquadQueryer interface {
 }
 
 func purchaseSquadsFrom(ctx context.Context, queryer purchaseSquadQueryer, purchaseID string) ([]string, error) {
-	rows, err := queryer.QueryContext(ctx, `SELECT value AS remna_squad_uuid FROM purchases,
+	rows, err := queryer.QueryContext(ctx, `SELECT value AS group_id FROM purchases,
 		json_each(purchases.entitlement_squad_uuids) WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NOT NULL
 		UNION SELECT value FROM purchases JOIN combos ON combos.id=purchases.combo_id,json_each(combos.included_squad_uuids)
 		WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NULL
-		UNION SELECT purchase_addons.remna_squad_uuid FROM purchase_addons JOIN purchases ON purchases.id=purchase_addons.purchase_id
+		UNION SELECT purchase_addons.group_id FROM purchase_addons JOIN purchases ON purchases.id=purchase_addons.purchase_id
 		WHERE purchase_addons.purchase_id=? AND purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL
 		UNION SELECT value FROM purchases,json_each(purchases.entitlement_addon_squad_uuids)
 		WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NOT NULL
 		UNION SELECT squad_uuid FROM activity_reward_squad_access WHERE purchase_id=?
-		ORDER BY remna_squad_uuid`, purchaseID, purchaseID, purchaseID, purchaseID, purchaseID)
+		ORDER BY group_id`, purchaseID, purchaseID, purchaseID, purchaseID, purchaseID)
 	if err != nil {
 		return nil, err
 	}

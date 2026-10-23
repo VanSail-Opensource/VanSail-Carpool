@@ -2,8 +2,8 @@
 
 ## Ownership
 
-This module owns local, customer-facing metadata for live Remnawave internal
-squads. Remnawave remains authoritative for squad UUIDs, names, and presence;
+This module owns local, customer-facing metadata for live X-Node internal
+squads. X-Node remains authoritative for squad UUIDs, names, and presence;
 this module never edits upstream squad or node configuration.
 
 ## Profile contract
@@ -25,7 +25,7 @@ irrelevant fields before persistence. Invalid or incomplete admin writes return
 `INVALID_SQUAD_PROFILE`. Legacy overrides may have a null profile and are
 configured through the editor before they can be saved again.
 
-All upstream reads continue through the existing Remnawave queue. Database
+All upstream reads continue through the existing X-Node queue. Database
 migration `017_squad_profiles.sql` is additive and leaves deployed migrations
 immutable. Vue uses Nuxt UI controls and locale-owned text. The member catalog
 summary adds the squad name plus a profile-specific icon and restrained

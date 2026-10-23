@@ -16,7 +16,7 @@ const editor = shallowRef(false)
 const node = { uuid: '373f14bc-089a-4c3a-91c3-3421e7c83367', name: 'Tokyo transit', countryCode: 'JP', consumptionMultiplier: 1.25, providerName: null }
 const nodes = params.has('empty') ? [] : [node]
 const detail = { temporaryBan: null, synchronization: { remoteUserId: '42' } } as AdminUserDetail
-const squad = { id: 'squad', remnaSquadUuid: node.uuid, name: 'Tokyo transit', description: '', price: { minor: '100', currency: 'TXB', scale: 2 }, visible: true, stockLimit: null, activationRequired: false, profile: null } as unknown as SquadProduct
+const squad = { id: 'squad', groupId: node.uuid, name: 'Tokyo transit', description: '', price: { minor: '100', currency: 'TXB', scale: 2 }, visible: true, stockLimit: null, activationRequired: false, profile: null } as unknown as SquadProduct
 async function load() {
   loading.value = true
   if (params.has('slow')) await new Promise(resolve => globalThis.setTimeout(resolve, 1500))

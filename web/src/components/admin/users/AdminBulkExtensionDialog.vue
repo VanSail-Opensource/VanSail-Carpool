@@ -27,7 +27,7 @@ const draft = reactive({
 let createKey: string | undefined
 
 const comboItems = computed(() => options.value.combos.map((combo) => ({ value: combo.id, label: combo.name })))
-const squadItems = computed(() => options.value.squads.map((squad) => ({ value: squad.remnaSquadUuid, label: squad.name })))
+const squadItems = computed(() => options.value.squads.map((squad) => ({ value: squad.groupId, label: squad.name })))
 const hasFilter = computed(() => draft.comboIds.length > 0 || draft.addonSquadUuids.length > 0)
 const normalizedMinutes = computed(() => durationMinutes(draft.duration))
 const canPreview = computed(() => hasFilter.value && validDurationDraft(draft.duration))

@@ -16,9 +16,6 @@ type availabilityRepository struct{ Repository }
 func (availabilityRepository) XNodeNodes(context.Context) ([]Node, error) {
 	return []Node{{ID: "node", Enabled: true}}, nil
 }
-func (availabilityRepository) XNodeMigration(context.Context) (MigrationState, error) {
-	return MigrationState{}, nil
-}
 func (availabilityRepository) XNodeIdentities(context.Context) ([]Identity, error) {
 	return []Identity{}, nil
 }

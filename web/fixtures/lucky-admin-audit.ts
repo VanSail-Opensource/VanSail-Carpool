@@ -42,7 +42,7 @@ featuresApi.getAdminLuckyDraws = async () => {
 }
 adminOperationsApi.getCatalogOptions = async () => ({
   combos: [{ id: 'combo-basic', name: 'Basic', price: { minor: '1000', currency: 'TXB', display: '10.00 TXB' }, validityDays: 30 }],
-  squads: [{ id: 'squad-1', remnaSquadUuid: 'squad-1', name: 'Europe' }],
+  squads: [{ id: 'squad-1', groupId: 'squad-1', name: 'Europe' }],
 }) as never
 featuresApi.getAdminLuckyDrawForecast = async () => ({
   entries: 100, incomeMinor: '12500', expectedExpenseMinMinor: '10200', expectedExpenseMaxMinor: '15600',

@@ -33,17 +33,6 @@ func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 	}
 	identity, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
 	if isMissing(err) {
-		migration, e := s.repo.XNodeMigration(ctx)
-		if e != nil {
-			return e
-		}
-		source, e := s.settings.Optional(ctx, "remnawave.base_url")
-		if e != nil {
-			return e
-		}
-		if migration.Phase != "complete" && (migration.SourceCipher != "" || source != "") {
-			return ErrUnavailable // The queued bridge must import existing secrets.
-		}
 		identity, err = s.EnsureIdentity(ctx, user)
 	}
 	if err != nil {

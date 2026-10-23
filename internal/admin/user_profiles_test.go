@@ -12,7 +12,7 @@ func TestUserDetailBuildsAggregateAndSelectsCurrentActiveCombo(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	remoteID := "remote-user"
-	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user-1", RemnaUserID: &remoteID},
+	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user-1", ProxyUserID: &remoteID},
 		balance: model.TXBMoney(1234), accountErr: emby.ErrNotFound,
 		purchases: []model.Purchase{
 			{ID: "expired", Status: "expired", ValidFrom: now.Add(-60 * 24 * time.Hour), ValidUntil: now.Add(-30 * 24 * time.Hour)},
@@ -46,7 +46,7 @@ func TestUserDetailBuildsAggregateAndSelectsCurrentActiveCombo(t *testing.T) {
 func TestSynchronizationForPrioritizesRecoveryFailure(t *testing.T) {
 	t.Parallel()
 	remoteID := "remote-user"
-	state := synchronizationFor(model.User{RemnaUserID: &remoteID, RecoveryReason: "identity conflict"})
+	state := synchronizationFor(model.User{ProxyUserID: &remoteID, RecoveryReason: "identity conflict"})
 	if state.Status != "failed" || state.LastError == nil || *state.LastError != "identity conflict" {
 		t.Fatalf("synchronization = %+v", state)
 	}

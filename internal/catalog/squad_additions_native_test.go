@@ -10,7 +10,7 @@ import (
 )
 
 type liveAddonRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	groups []RemoteSquad
 }
 
@@ -20,7 +20,7 @@ func (r *liveAddonRemote) ListCatalogSquads(context.Context) ([]RemoteSquad, err
 
 func TestAddonValidationUsesLiveNativeGroups(t *testing.T) {
 	repo := newPurchaseAddonCatalogRepository()
-	remote := &liveAddonRemote{catalogRemnawave: &catalogRemnawave{}, groups: []RemoteSquad{{UUID: "squad-1", Name: "Native"}}}
+	remote := &liveAddonRemote{catalogProxy: &catalogProxy{}, groups: []RemoteSquad{{UUID: "squad-1", Name: "Native"}}}
 	service := newCatalogServiceForTest(repo, remote)
 	user := model.User{ID: "member", OnboardingState: "complete"}
 	if _, err := service.QuoteAddons(context.Background(), user, "purchase", []string{"squad-1"}); err != nil {
@@ -44,7 +44,7 @@ func (r *addonReplayRepository) PurchaseAddonReplay(_ context.Context, input dat
 func TestAddonServiceReplaysBeforeReadingChangedLiveCatalog(t *testing.T) {
 	repo := &addonReplayRepository{purchaseAddonCatalogRepository: newPurchaseAddonCatalogRepository()}
 	repo.addonsErr = errors.New("live catalog must not be read on replay")
-	service := newCatalogServiceForTest(repo, &catalogRemnawave{})
+	service := newCatalogServiceForTest(repo, &catalogProxy{})
 	purchase, err := service.AddAddons(context.Background(), model.User{ID: "member", OnboardingState: "complete"}, "purchase", []string{"squad-1"}, nil, "retry")
 	if err != nil || purchase.ID != "purchase" || repo.owner != "member" {
 		t.Fatal(purchase, err, repo.owner)

@@ -7,7 +7,7 @@ afterEach(() => vi.restoreAllMocks())
 
 describe('squad addition delivery', () => {
   it('reuses the original request key after a lost purchase reply', async () => {
-    vi.spyOn(api, 'getCatalog').mockResolvedValue({ combos: [], nodes: [], addons: [{ id: 'squad', remnaSquadUuid: 'squad', name: 'Native squad', visible: true, upstreamPresent: true, stockRemaining: null, activationRequired: false }] } as unknown as Catalog)
+    vi.spyOn(api, 'getCatalog').mockResolvedValue({ combos: [], nodes: [], addons: [{ id: 'squad', groupId: 'squad', name: 'Native squad', visible: true, upstreamPresent: true, stockRemaining: null, activationRequired: false }] } as unknown as Catalog)
     vi.spyOn(api, 'quotePurchaseAddons').mockResolvedValue({ purchaseId: 'purchase', addonSquadUuids: ['squad'], expiresAt: '2030-01-01T00:00:00Z', price: { currency: 'TXB', minor: '100', display: '1 TXB' } } as PurchaseAddonQuote)
     const add = vi.spyOn(api, 'addPurchaseAddons').mockRejectedValueOnce(new Error('reply lost')).mockResolvedValue({ id: 'purchase', status: 'active' } as Purchase)
     const controller = useSquadAddition({ purchaseId: () => 'purchase', activeSquadUuids: () => [] })

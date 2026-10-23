@@ -31,12 +31,12 @@ func (s *Server) acceptAgreement(w http.ResponseWriter, r *http.Request) {
 	current := currentUser(r)
 	user, err := s.deps.Accounts.AcceptAgreementRevision(r.Context(), current, request.Revision, request.AgreementIDs)
 	if err != nil {
-		status, code := http.StatusBadGateway, "REMNAWAVE_UNAVAILABLE"
+		status, code := http.StatusBadGateway, "XNODE_UNAVAILABLE"
 		switch {
 		case errors.Is(err, accounts.ErrAgreementRevisionConflict):
 			status, code = http.StatusConflict, "AGREEMENT_OUTDATED"
-		case errors.Is(err, accounts.ErrRemnawaveIdentityConflict):
-			status, code = http.StatusConflict, "REMNAWAVE_IDENTITY_CONFLICT"
+		case errors.Is(err, accounts.ErrProxyIdentityConflict):
+			status, code = http.StatusConflict, "XNODE_IDENTITY_CONFLICT"
 		case errors.Is(err, accounts.ErrAgreementStateConflict):
 			status, code = http.StatusConflict, "ONBOARDING_STATE_CONFLICT"
 		case errors.Is(err, accounts.ErrUsernameUnavailable) || errors.Is(err, database.ErrConflict):

@@ -54,16 +54,16 @@ type DailyUsage struct {
 	WeightedBytes int64
 }
 
-// LegacyHistory is a cumulative daily source export used for history only.
+// ImportedHistory is a cumulative daily source export used for history only.
 // Quota and lifetime come from the already weighted aggregate, never this series.
-type LegacyHistory struct {
+type ImportedHistory struct {
 	ProxyUserID   int64
 	NodeID        string
 	Date          string
 	RawBytes      int64
 	WeightedBytes int64
 }
-type LegacyUsage struct {
+type ImportedUsage struct {
 	ProxyUserID   int64
 	PeriodID      string
 	UsedBytes     int64
@@ -92,26 +92,4 @@ type Customization struct {
 	Outbounds       json.RawMessage `json:"outbounds"`
 	Routing         json.RawMessage `json:"routing"`
 	Revision        int64           `json:"revision"`
-}
-
-type MigrationState struct {
-	Phase                 string          `json:"phase"`
-	SourceCipher          string          `json:"-"`
-	SnapshotCipher        string          `json:"-"`
-	SnapshotDigest        string          `json:"snapshotDigest"`
-	SourceBackupReference string          `json:"sourceBackupReference"`
-	BackupName            string          `json:"backupName"`
-	FinalSnapshotCipher   string          `json:"-"`
-	FinalDigest           string          `json:"finalDigest"`
-	FinalBackupReference  string          `json:"finalBackupReference"`
-	FinalizedAt           *time.Time      `json:"finalizedAt"`
-	Nodes                 []MigrationNode `json:"nodes"`
-}
-type MigrationNode struct {
-	NodeID       string     `json:"nodeId"`
-	LegacyNodeID string     `json:"legacyNodeId"`
-	Phase        string     `json:"phase"`
-	SourceDigest string     `json:"sourceDigest"`
-	UsageCutoff  *time.Time `json:"usageCutoff"`
-	ErrorCode    string     `json:"errorCode"`
 }

@@ -20,7 +20,7 @@ func TestConnectivitySettingsValidationAndDisableDuringOutage(t *testing.T) {
 	}, func() { invalidations++ })
 	ctx := context.Background()
 	cfg := connectivity.DefaultConfig()
-	cfg.RemnawaveUserID, cfg.ScheduledEnabled = 7, true
+	cfg.ProxyUserID, cfg.ScheduledEnabled = 7, true
 	write := func() error {
 		value, err := json.Marshal(cfg)
 		if err != nil {
@@ -48,14 +48,14 @@ func TestConnectivitySettingsValidationAndDisableDuringOutage(t *testing.T) {
 	if validations != 1 || invalidations != 2 {
 		t.Fatal("disable should not require upstream access")
 	}
-	cfg.RemnawaveUserID = 9
+	cfg.ProxyUserID = 9
 	if err := write(); err == nil {
 		t.Fatal("new selection bypassed validation")
 	}
 	if invalidations != 2 {
 		t.Fatal("failed save invalidated running work")
 	}
-	if err := service.Put(ctx, "admin", connectivity.SettingKey, `{"scheduledEnabled":true,"remnawaveUserId":0}`); err == nil {
+	if err := service.Put(ctx, "admin", connectivity.SettingKey, `{"scheduledEnabled":true,"proxyUserId":0}`); err == nil {
 		t.Fatal("generic settings path accepted enabled unconfigured checker")
 	}
 }

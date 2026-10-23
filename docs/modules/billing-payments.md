@@ -38,7 +38,7 @@ before restoring its valid TXB amount and still-enabled payment method.
 
 ## Refund and debt behavior
 
-A refund appends one reversal against one paid order and cannot be applied twice. If reversal makes the TXB balance negative, reconciliation cancels queued purchases first, then active purchases newest-first, appending compensating ledger records and durable Remnawave revocation jobs. Any debt left after cancellable value is exhausted remains visible and blocks new purchases; it never rewrites previous entries.
+A refund appends one reversal against one paid order and cannot be applied twice. If reversal makes the TXB balance negative, reconciliation cancels queued purchases first, then active purchases newest-first, appending compensating ledger records and durable X-Node revocation jobs. Any debt left after cancellable value is exhausted remains visible and blocks new purchases; it never rewrites previous entries.
 
 Administrator payment refund requires `Idempotency-Key` and first stores a `payment_refund` receipt. Telegram Stars is refunded upstream before the local reversal; an interrupted attempt queries authoritative Stars transactions, and an unprovable outcome becomes `pending_review`. A refunded-payment webhook or scheduled transaction reconciliation completes only open matching receipts. Non-Stars providers use the existing local reversal because their enabled adapters expose no upstream refund mutation.
 
@@ -78,5 +78,5 @@ catalog policy; retained legacy batch records are not a public member flow.
 - Concurrency tests settle and refund the same order from many goroutines under the race detector and assert one credit/reversal.
 - Callback tests cover signatures, reordered parameters, empty-value rules, EZPay subtype tampering, fiat/crypto/recipient mismatches, both BEPusdt callback shapes and acknowledgements, status transitions, replay, and callback-before-response.
 - Method fixtures cover every enabled EZPay/BEPusdt rail in administrator order, cancellation signatures, cancellation/paid races, and secret/capability redaction.
-- Refund tests cover queued-first/active-newest cancellation, partial debt recovery, remaining debt, retry after Remnawave failure, and immutable history.
+- Refund tests cover queued-first/active-newest cancellation, partial debt recovery, remaining debt, retry after X-Node failure, and immutable history.
 - Handler tests ensure users cannot access another order or ledger, redirects never credit, and provider/bearer secrets are absent from responses and logs.

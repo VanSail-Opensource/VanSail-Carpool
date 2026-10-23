@@ -31,7 +31,7 @@ func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 	if _, err := store.AdjustBalance(ctx, user.ID, 150_000, "held-renewal-seed", "seed", now); err != nil {
 		t.Fatal(err)
 	}
-	addon, err := store.SaveSquadProduct(ctx, database.SquadProductInput{RemnaSquadUUID: "retained",
+	addon, err := store.SaveSquadProduct(ctx, database.SquadProductInput{GroupID: "retained",
 		Name: "Retained", UpstreamPresent: true, Visible: true, PriceTXBMinor: 10_000})
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 		t.Fatal(err)
 	}
 	zero := 0
-	if _, err := store.SaveSquadProduct(ctx, database.SquadProductInput{RemnaSquadUUID: addon.ID,
+	if _, err := store.SaveSquadProduct(ctx, database.SquadProductInput{GroupID: addon.ID,
 		Name: addon.Name, UpstreamPresent: true, Visible: true, PriceTXBMinor: 49_900, StockLimit: &zero}); err != nil {
 		t.Fatal(err)
 	}

@@ -30,7 +30,7 @@ func (r *subscriptionRepositoryFixture) ActiveAndQueuedPurchases(ctx context.Con
 }
 
 type subscriptionRemoteFixture struct {
-	*catalogRemnawave
+	*catalogProxy
 	remoteID string
 	enabled  []string
 	calls    int
@@ -72,7 +72,7 @@ func TestSubscriptionAuthorizesOwnershipAndPreferences(t *testing.T) {
 			if test.active {
 				repository.active = &model.Purchase{ID: "owned-term", Status: "active", ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour), SquadUUIDs: []string{"squad-b", "squad-a"}}
 			}
-			remote := &subscriptionRemoteFixture{catalogRemnawave: &catalogRemnawave{}}
+			remote := &subscriptionRemoteFixture{catalogProxy: &catalogProxy{}}
 			if test.fail {
 				remote.err = errors.New("upstream failed")
 			}
@@ -80,7 +80,7 @@ func TestSubscriptionAuthorizesOwnershipAndPreferences(t *testing.T) {
 			service.now = func() time.Time { return now }
 			user := model.User{ID: "owner"}
 			if test.remote {
-				user.RemnaUserID = &remoteID
+				user.ProxyUserID = &remoteID
 			}
 			result, err := service.Subscription(context.Background(), user, test.links)
 			if remote.calls != test.wantCalls {

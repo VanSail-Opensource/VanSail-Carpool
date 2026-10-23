@@ -9,7 +9,7 @@ var mapperHostPaths = []string{
 	"transport", "transportOptions",
 }
 
-// Remnawave applies xrayJson operations in order. Missing copy sources and paths
+// Proxy applies xrayJson operations in order. Missing copy sources and paths
 // blocked by primitives are skipped, matching its documented generator behavior.
 func applyXrayMapper(outbound, host map[string]any) (map[string]any, error) {
 	return ApplyClientMapper(outbound, host, "xrayJson")

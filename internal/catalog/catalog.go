@@ -8,7 +8,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-// RemoteSquad is the live identity portion of a Remnawave internal squad.
+// RemoteSquad is the live identity portion of a Proxy internal squad.
 type RemoteSquad struct {
 	UUID string
 	Name string
@@ -18,7 +18,7 @@ type remoteSquadLister interface {
 	ListCatalogSquads(context.Context) ([]RemoteSquad, error)
 }
 
-// Catalog overlays local merchandising on the live Remnawave squad list. A
+// Catalog overlays local merchandising on the live Proxy squad list. A
 // combo with a stale included UUID is omitted until the upstream identity is
 // restored, preventing checkout against a locally cached catalog.
 func (s *Service) Catalog(ctx context.Context) (model.Catalog, error) {
@@ -36,9 +36,9 @@ func (s *Service) Catalog(ctx context.Context) (model.Catalog, error) {
 }
 
 func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, overrides []model.SquadProduct) (model.Catalog, error) {
-	lister, ok := s.remnawave.(remoteSquadLister)
+	lister, ok := s.provider.(remoteSquadLister)
 	if !ok {
-		if nodeLister, available := s.remnawave.(remoteNodeLister); available {
+		if nodeLister, available := s.provider.(remoteNodeLister); available {
 			return hydrateStoredCatalogNodes(ctx, nodeLister, combos, overrides)
 		}
 		return catalogWithEmptyNodes(combos, overrides), nil
@@ -53,14 +53,14 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 	}
 	uniqueSquads := make(map[string]struct{})
 	for _, override := range overrides {
-		if _, present := live[override.RemnaSquadUUID]; present {
-			uniqueSquads[override.RemnaSquadUUID] = struct{}{}
+		if _, present := live[override.GroupID]; present {
+			uniqueSquads[override.GroupID] = struct{}{}
 		}
 	}
 	for _, combo := range combos {
 		for _, included := range combo.IncludedSquads {
-			if _, present := live[included.RemnaSquadUUID]; present {
-				uniqueSquads[included.RemnaSquadUUID] = struct{}{}
+			if _, present := live[included.GroupID]; present {
+				uniqueSquads[included.GroupID] = struct{}{}
 			}
 		}
 	}
@@ -71,7 +71,7 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 	sort.Strings(squadUUIDs)
 	catalogNodes := []model.CatalogNode{}
 	nodesBySquad := make(map[string][]model.CatalogNode)
-	if nodeLister, ok := s.remnawave.(remoteNodeLister); ok {
+	if nodeLister, ok := s.provider.(remoteNodeLister); ok {
 		catalogNodes, nodesBySquad, err = hydrateSquadNodes(ctx, nodeLister, squadUUIDs)
 		if err != nil {
 			return model.Catalog{}, err
@@ -80,17 +80,17 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 	overrideByUUID := make(map[string]model.SquadProduct, len(overrides))
 	addons := make([]model.SquadProduct, 0, len(overrides))
 	for _, override := range overrides {
-		name, present := live[override.RemnaSquadUUID]
+		name, present := live[override.GroupID]
 		if !present {
 			continue
 		}
 		override.Name = name
 		override.UpstreamPresent = true
-		override.AccessibleNodes = nodesBySquad[override.RemnaSquadUUID]
+		override.AccessibleNodes = nodesBySquad[override.GroupID]
 		if override.AccessibleNodes == nil {
 			override.AccessibleNodes = []model.CatalogNode{}
 		}
-		overrideByUUID[override.RemnaSquadUUID] = override
+		overrideByUUID[override.GroupID] = override
 		if override.Visible {
 			addons = append(addons, override)
 		}
@@ -100,19 +100,19 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 		included := make([]model.SquadProduct, 0, len(combo.IncludedSquads))
 		valid := true
 		for _, placeholder := range combo.IncludedSquads {
-			name, present := live[placeholder.RemnaSquadUUID]
+			name, present := live[placeholder.GroupID]
 			if !present {
 				valid = false
 				break
 			}
-			product, hasOverride := overrideByUUID[placeholder.RemnaSquadUUID]
+			product, hasOverride := overrideByUUID[placeholder.GroupID]
 			if !hasOverride {
-				product = model.SquadProduct{ID: placeholder.RemnaSquadUUID, RemnaSquadUUID: placeholder.RemnaSquadUUID, Visible: true,
+				product = model.SquadProduct{ID: placeholder.GroupID, GroupID: placeholder.GroupID, Visible: true,
 					AccessibleNodes: []model.CatalogNode{}}
 			}
 			product.Name = name
 			product.UpstreamPresent = true
-			product.AccessibleNodes = nodesBySquad[placeholder.RemnaSquadUUID]
+			product.AccessibleNodes = nodesBySquad[placeholder.GroupID]
 			if product.AccessibleNodes == nil {
 				product.AccessibleNodes = []model.CatalogNode{}
 			}

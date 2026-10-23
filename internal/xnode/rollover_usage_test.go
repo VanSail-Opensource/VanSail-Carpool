@@ -16,7 +16,7 @@ type termRepository struct {
 	periods  []Period
 	purchase model.Purchase
 	native   []DailyUsage
-	legacy   []LegacyHistory
+	legacy   []ImportedHistory
 }
 
 func (r *termRepository) XNodeIdentity(context.Context, int64) (Identity, error) {
@@ -34,7 +34,7 @@ func (r *termRepository) ListPurchases(context.Context, string) ([]model.Purchas
 func (r *termRepository) XNodeUsage(context.Context, int64, time.Time, time.Time) ([]DailyUsage, error) {
 	return r.native, nil
 }
-func (r *termRepository) XNodeLegacyHistory(context.Context, int64, time.Time, time.Time) ([]LegacyHistory, error) {
+func (r *termRepository) XNodeImportedHistory(context.Context, int64, time.Time, time.Time) ([]ImportedHistory, error) {
 	return r.legacy, nil
 }
 
@@ -43,11 +43,11 @@ func termFixture() (*Service, *termRepository) {
 	r := &termRepository{identity: Identity{UserID: "member", ProxyUserID: 42, CurrentPeriodID: "successor"}, purchase: model.Purchase{ID: "old", UserID: "member", ValidFrom: start, ValidUntil: start.AddDate(0, 0, 2)}}
 	r.periods = []Period{{ID: "old-period", PurchaseID: "old", StartedAt: start, Status: "closed", UsedBytes: 50, LimitBytes: 1000, Strategy: "NO_RESET"}, {ID: "successor", PurchaseID: "new", StartedAt: r.purchase.ValidUntil, Status: "open"}}
 	r.native = []DailyUsage{{PeriodID: "old-period", Date: "2026-10-01", WeightedBytes: 20}, {PeriodID: "successor", Date: "2026-10-01", WeightedBytes: 900}}
-	r.legacy = []LegacyHistory{{Date: "2026-10-01", WeightedBytes: 30}, {Date: "2026-10-03", WeightedBytes: 700}}
+	r.legacy = []ImportedHistory{{Date: "2026-10-01", WeightedBytes: 30}, {Date: "2026-10-03", WeightedBytes: 700}}
 	return &Service{repo: r}, r
 }
 
-func TestRolloverCombinesLegacyHistoryWithoutIncludingSuccessor(t *testing.T) {
+func TestRolloverCombinesImportedHistoryWithoutIncludingSuccessor(t *testing.T) {
 	s, r := termFixture()
 	value, err := s.UsageSnapshotForRollover(context.Background(), "42", r.purchase.ValidFrom, r.purchase.ValidUntil)
 	if err != nil || !value.NodeSeriesAvailable || value.WeightedUsedBytes != 50 || len(value.Daily) != 1 || value.Daily[0].Bytes != 50 || value.CurrentUsedBytes == nil || *value.CurrentUsedBytes != 50 {

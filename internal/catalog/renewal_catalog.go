@@ -30,7 +30,7 @@ func (s *Service) renewalCatalog(ctx context.Context, comboID string, addonIDs [
 func (s *Service) hydrateRenewalCatalog(ctx context.Context, combos []model.Combo, addonIDs []string) (model.Catalog, []string, string, error) {
 	addons := make([]model.SquadProduct, 0, len(addonIDs))
 	for _, id := range addonIDs {
-		addons = append(addons, model.SquadProduct{ID: id, RemnaSquadUUID: id, Visible: true})
+		addons = append(addons, model.SquadProduct{ID: id, GroupID: id, Visible: true})
 	}
 	catalog, err := s.hydrateLiveCatalog(ctx, combos, addons)
 	if err != nil {
@@ -41,7 +41,7 @@ func (s *Service) hydrateRenewalCatalog(ctx context.Context, combos []model.Comb
 	}
 	liveAddons := make(map[string]bool, len(catalog.Addons))
 	for _, addon := range catalog.Addons {
-		liveAddons[addon.RemnaSquadUUID] = true
+		liveAddons[addon.GroupID] = true
 	}
 	unavailable := make([]string, 0)
 	for _, id := range addonIDs {

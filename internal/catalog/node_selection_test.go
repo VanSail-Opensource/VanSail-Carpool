@@ -11,9 +11,9 @@ func TestSelectedSquadUUIDs(t *testing.T) {
 	t.Parallel()
 	catalog := model.Catalog{
 		Combos: []model.Combo{{ID: "core", IncludedSquads: []model.SquadProduct{
-			{RemnaSquadUUID: "core-squad"}, {RemnaSquadUUID: "shared-squad"},
+			{GroupID: "core-squad"}, {GroupID: "shared-squad"},
 		}}},
-		Addons: []model.SquadProduct{{ID: "addon-id", RemnaSquadUUID: "addon-squad"}},
+		Addons: []model.SquadProduct{{ID: "addon-id", GroupID: "addon-squad"}},
 	}
 	tests := []struct {
 		name     string

@@ -20,7 +20,7 @@ func TestNativeSubscriptionWithoutLegacyIdentityRetainsOwnershipFence(t *testing
 		now := time.Now().UTC()
 		repo := &subscriptionRepositoryFixture{catalogRepository: &catalogRepository{}, change: changed, disabled: []string{"disabled"}}
 		repo.active = &model.Purchase{ID: "purchase", UserID: "member", Status: "active", ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour), SquadUUIDs: []string{"enabled", "disabled"}}
-		remote := &nativeSubscriptionRemote{subscriptionRemoteFixture: &subscriptionRemoteFixture{catalogRemnawave: &catalogRemnawave{}}}
+		remote := &nativeSubscriptionRemote{subscriptionRemoteFixture: &subscriptionRemoteFixture{catalogProxy: &catalogProxy{}}}
 		service := NewService(repo, remote, time.Minute)
 		service.now = func() time.Time { return now }
 		result, err := service.Subscription(context.Background(), model.User{ID: "member"}, true)

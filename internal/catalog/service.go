@@ -14,7 +14,7 @@ import (
 )
 
 // ErrNoAccessibleNodes means the selected entitlement cannot be delivered by
-// any currently enabled Remnawave node.
+// any currently enabled Proxy node.
 var ErrNoAccessibleNodes = errors.New("no accessible nodes")
 
 // Repository is the local catalog and entitlement persistence contract.
@@ -27,14 +27,14 @@ type Repository interface {
 	ActiveAndQueuedPurchases(context.Context, string, time.Time) (*model.Purchase, *model.Purchase, error)
 }
 
-// RemoteDashboard is the safe, normalized Remnawave dashboard response.
+// RemoteDashboard is the safe, normalized Proxy dashboard response.
 type RemoteDashboard struct {
 	Statistics      model.Statistics
 	SubscriptionURL string
 }
 
-// RemnawaveClient fetches user state and revokes subscription credentials.
-type RemnawaveClient interface {
+// ProxyClient fetches user state and revokes subscription credentials.
+type ProxyClient interface {
 	Dashboard(context.Context, string) (RemoteDashboard, error)
 	RevokeSubscription(context.Context, string) (string, error)
 }
@@ -51,7 +51,7 @@ type cachedDashboard struct {
 // Service owns price selection and short-lived statistics caching.
 type Service struct {
 	repository   Repository
-	remnawave    RemnawaveClient
+	provider     ProxyClient
 	cacheTTL     time.Duration
 	now          func() time.Time
 	cacheMu      sync.RWMutex
@@ -61,8 +61,8 @@ type Service struct {
 }
 
 // NewService creates a catalog service.
-func NewService(repository Repository, remnawave RemnawaveClient, cacheTTL time.Duration) *Service {
-	return &Service{repository: repository, remnawave: remnawave, cacheTTL: cacheTTL, now: time.Now, cache: make(map[string]cachedDashboard)}
+func NewService(repository Repository, provider ProxyClient, cacheTTL time.Duration) *Service {
+	return &Service{repository: repository, provider: provider, cacheTTL: cacheTTL, now: time.Now, cache: make(map[string]cachedDashboard)}
 }
 
 // Purchase delegates all pricing and balance work to one SQLite transaction.
@@ -126,7 +126,7 @@ func (s *Service) Quote(ctx context.Context, user model.User, comboID string, ad
 }
 
 func (s *Service) validateLiveSelection(ctx context.Context, comboID string, addonIDs []string) (model.Catalog, error) {
-	if _, ok := s.remnawave.(remoteSquadLister); !ok {
+	if _, ok := s.provider.(remoteSquadLister); !ok {
 		return s.Catalog(ctx)
 	}
 	catalog, err := s.Catalog(ctx)
@@ -145,7 +145,7 @@ func (s *Service) validateLiveSelection(ctx context.Context, comboID string, add
 	}
 	visible := make(map[string]struct{}, len(catalog.Addons))
 	for _, addon := range catalog.Addons {
-		visible[addon.RemnaSquadUUID] = struct{}{}
+		visible[addon.GroupID] = struct{}{}
 	}
 	for _, addonID := range addonIDs {
 		if _, exists := visible[strings.TrimSpace(addonID)]; !exists {

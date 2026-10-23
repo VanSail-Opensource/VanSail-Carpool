@@ -18,13 +18,13 @@ import (
 func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (model.SquadProduct, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	uuid := strings.TrimSpace(input.RemnaSquadUUID)
+	uuid := strings.TrimSpace(input.GroupID)
 	if uuid == "" || !input.UpstreamPresent {
 		return model.SquadProduct{}, ErrNotFound
 	}
 	now := time.Now().UTC()
 	if strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
-		if _, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE remna_squad_uuid=?`, uuid); err != nil {
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE group_id=?`, uuid); err != nil {
 			return model.SquadProduct{}, fmt.Errorf("remove default squad override: %w", err)
 		}
 		return virtualSquad(input, now), nil
@@ -45,13 +45,13 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(remna_squad_uuid) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at`,
+	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at`,
 		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now))
 	if err != nil {
 		return model.SquadProduct{}, fmt.Errorf("save squad override: %w", err)
 	}
-	product, err := s.SquadProductByRemnaUUID(ctx, uuid)
+	product, err := s.SquadProductByGroupID(ctx, uuid)
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
@@ -60,28 +60,28 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 }
 
 func virtualSquad(input SquadProductInput, now time.Time) model.SquadProduct {
-	return model.SquadProduct{ID: input.RemnaSquadUUID, RemnaSquadUUID: input.RemnaSquadUUID, Name: input.Name,
+	return model.SquadProduct{ID: input.GroupID, GroupID: input.GroupID, Name: input.Name,
 		Description: strings.TrimSpace(input.Description), PriceTXBMinor: input.PriceTXBMinor, Price: model.TXBMoney(input.PriceTXBMinor),
 		Profile: input.Profile, Visible: input.Visible, UpstreamPresent: true, StockLimit: input.StockLimit, ActivationRequired: input.ActivationRequired,
 		AccessibleNodes: []model.CatalogNode{}, CreatedAt: now, UpdatedAt: now}
 }
 
-// SquadProductByRemnaUUID resolves a persisted local override.
-func (s *Store) SquadProductByRemnaUUID(ctx context.Context, uuid string) (model.SquadProduct, error) {
-	return scanSquad(s.db.QueryRowContext(ctx, squadSelect+` WHERE remna_squad_uuid=?`, uuid))
+// SquadProductByGroupID resolves a persisted local override.
+func (s *Store) SquadProductByGroupID(ctx context.Context, uuid string) (model.SquadProduct, error) {
+	return scanSquad(s.db.QueryRowContext(ctx, squadSelect+` WHERE group_id=?`, uuid))
 }
 
 // SquadProductByID treats the public product ID as the upstream UUID.
 func (s *Store) SquadProductByID(ctx context.Context, id string) (model.SquadProduct, error) {
-	return s.SquadProductByRemnaUUID(ctx, id)
+	return s.SquadProductByGroupID(ctx, id)
 }
 
 // ImportSquad returns the live upstream identity overlaid with local data. It
 // deliberately performs no persistence.
-func (s *Store) ImportSquad(ctx context.Context, remnaSquadUUID, name string) (model.SquadProduct, error) {
-	product, err := s.SquadProductByRemnaUUID(ctx, remnaSquadUUID)
+func (s *Store) ImportSquad(ctx context.Context, proxySquadUUID, name string) (model.SquadProduct, error) {
+	product, err := s.SquadProductByGroupID(ctx, proxySquadUUID)
 	if errors.Is(err, ErrNotFound) {
-		return virtualSquad(SquadProductInput{RemnaSquadUUID: remnaSquadUUID, Name: name, UpstreamPresent: true}, time.Now().UTC()), nil
+		return virtualSquad(SquadProductInput{GroupID: proxySquadUUID, Name: name, UpstreamPresent: true}, time.Now().UTC()), nil
 	}
 	if err != nil {
 		return model.SquadProduct{}, err
@@ -91,7 +91,7 @@ func (s *Store) ImportSquad(ctx context.Context, remnaSquadUUID, name string) (m
 }
 
 // MarkAllSquadsMissing is retained for compatibility and intentionally does
-// nothing because presence is now read directly from Remnawave.
+// nothing because presence is now read directly from Proxy.
 func (s *Store) MarkAllSquadsMissing(context.Context) error { return nil }
 
 // RefreshImportedSquads is retained for compatibility and intentionally does
@@ -104,7 +104,7 @@ func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]mode
 	if visibleOnly {
 		query += ` WHERE visible=1`
 	}
-	query += ` ORDER BY remna_squad_uuid`
+	query += ` ORDER BY group_id`
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("list squad overrides: %w", err)
@@ -132,7 +132,7 @@ func (s *Store) attachSquadStock(ctx context.Context, product *model.SquadProduc
 	err := s.db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT user_id) FROM purchases
 		WHERE status IN ('activating','active','queued') AND (EXISTS (
 			SELECT 1 FROM json_each((SELECT included_squad_uuids FROM combos WHERE combos.id=purchases.combo_id)) WHERE value=?
-		) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_addons.purchase_id=purchases.id AND remna_squad_uuid=?))`, product.RemnaSquadUUID, product.RemnaSquadUUID).Scan(&reservations)
+		) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_addons.purchase_id=purchases.id AND group_id=?))`, product.GroupID, product.GroupID).Scan(&reservations)
 	if err != nil {
 		return fmt.Errorf("count squad stock: %w", err)
 	}
@@ -144,7 +144,7 @@ func (s *Store) attachSquadStock(ctx context.Context, product *model.SquadProduc
 	return nil
 }
 
-const squadSelect = `SELECT remna_squad_uuid,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at FROM squad_product_overrides`
+const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at FROM squad_product_overrides`
 
 func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var product model.SquadProduct
@@ -152,13 +152,13 @@ func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var created, updated string
 	var stockLimit sql.NullInt64
 	var profileJSON sql.NullString
-	if err := row.Scan(&product.RemnaSquadUUID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated); err != nil {
+	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.SquadProduct{}, ErrNotFound
 		}
 		return model.SquadProduct{}, fmt.Errorf("scan squad override: %w", err)
 	}
-	product.ID = product.RemnaSquadUUID
+	product.ID = product.GroupID
 	product.Visible = visible == 1
 	product.ActivationRequired = activationRequired == 1
 	product.UpstreamPresent = true
@@ -191,7 +191,7 @@ func activationHash(ctx context.Context, db *sql.DB, uuid string, required bool,
 		return string(hash), nil
 	}
 	var existing sql.NullString
-	if err := db.QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE remna_squad_uuid=?`, uuid).Scan(&existing); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := db.QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE group_id=?`, uuid).Scan(&existing); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("load squad activation code: %w", err)
 	}
 	if !existing.Valid || existing.String == "" {

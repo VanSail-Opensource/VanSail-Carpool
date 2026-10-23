@@ -45,7 +45,7 @@ func DecodeConfig(value string) (Config, error) {
 }
 
 func validateConfig(cfg Config) error {
-	if cfg.RemnawaveUserID < 0 || (cfg.ScheduledEnabled && cfg.RemnawaveUserID == 0) ||
+	if cfg.ProxyUserID < 0 || (cfg.ScheduledEnabled && cfg.ProxyUserID == 0) ||
 		cfg.IntervalSeconds < 60 || cfg.IntervalSeconds > 86400 || cfg.TimeoutSeconds < 1 || cfg.TimeoutSeconds > 60 ||
 		cfg.MaxRetries < 0 || cfg.MaxRetries > 10 || cfg.RetryIntervalSeconds < 1 || cfg.RetryIntervalSeconds > 60 {
 		return &CodeError{Code: "CONNECTIVITY_INVALID_CONFIG"}
@@ -59,7 +59,7 @@ func validateConfig(cfg Config) error {
 
 // ConfigHash identifies the exact settings under which retained attempts ran.
 func ConfigHash(cfg Config) string {
-	value := fmt.Sprintf("%t\n%d\n%d\n%d\n%d\n%d\n%s", cfg.ScheduledEnabled, cfg.RemnawaveUserID,
+	value := fmt.Sprintf("%t\n%d\n%d\n%d\n%d\n%d\n%s", cfg.ScheduledEnabled, cfg.ProxyUserID,
 		cfg.IntervalSeconds, cfg.TimeoutSeconds, cfg.MaxRetries, cfg.RetryIntervalSeconds, cfg.ProbeURL)
 	digest := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(digest[:])

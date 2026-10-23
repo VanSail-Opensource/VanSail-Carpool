@@ -1,7 +1,7 @@
 # Host connectivity
 
 This module measures authenticated proxy connectivity for the enabled hosts
-accessible to an existing Remnawave test account, including hidden hosts. It
+accessible to an existing X-Node test account, including hidden hosts. It
 does not modify upstream accounts or hosts or publish notifications.
 Member uptime is derived from retained observations, without new persistence.
 The administrator interface uses the service's safe snapshot and the
@@ -9,7 +9,7 @@ repository's rolling 24-hour attempt history.
 
 ## Entry points and dependencies
 
-- `NewService` receives the existing settings facade, queued Remnawave source,
+- `NewService` receives the existing settings facade, queued X-Node source,
   probe engine, SQLite repository, and a dedicated `upstreamqueue` lane.
 - `Run` recovers interrupted attempts, prunes expired diagnostics, starts one
   batch worker, and joins it before returning. The application owns starting and
@@ -38,7 +38,7 @@ Targets must be absolute HTTPS URLs without URL
 credentials. Account ID zero is permitted only while scheduling is disabled.
 
 Each batch freshly resolves the selected account and protected raw subscription
-through the application's Remnawave adapter. `Source.Load` supplies only that
+through the application's X-Node adapter. `Source.Load` supplies only that
 account's enabled accessible hosts and ephemeral resolved client configurations.
 The source contract excludes disabled and unrelated hosts. Raw configurations
 contain bearer secrets and may only enter the probe engine; cached inventory
@@ -162,9 +162,9 @@ Mapper paths, operation counts, document size and nesting are bounded.
 - `projection_safety_test.go` covers identity, unsupported configuration, and sanitized errors.
 - `mapper_test.go` covers ordered operations, source isolation, skip behavior, and bounds.
 
-Mappings follow the checked-in Remnawave API schema and its
-[native Xray generator](https://github.com/remnawave/backend/blob/main/src/modules/subscription-template/generators/xray-json.generator.service.ts)
-and [host mapper](https://github.com/remnawave/backend/blob/main/src/modules/subscription-template/host-mapper/apply-host-mapper.util.ts).
+Mappings follow the checked-in X-Node API schema and its
+[native Xray generator](https://github.com/native/backend/blob/main/src/modules/subscription-template/generators/xray-json.generator.service.ts)
+and [host mapper](https://github.com/native/backend/blob/main/src/modules/subscription-template/host-mapper/apply-host-mapper.util.ts).
 The probe uses context-owned construction in the pinned
 [core lifecycle](https://github.com/XTLS/Xray-core/blob/64fada32b5b9/core/xray.go)
 and its [stable dial API](https://github.com/XTLS/Xray-core/blob/64fada32b5b9/core/functions.go).

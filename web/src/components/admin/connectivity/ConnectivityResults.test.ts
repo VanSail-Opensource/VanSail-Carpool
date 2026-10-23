@@ -15,7 +15,7 @@ function render(snapshot: ConnectivitySnapshot) {
   return shallowMount(ConnectivityResults, { props: { snapshot }, global: { stubs: { Table: TableStub, UTable: TableStub, InlineNotice: { template: '<div><slot /></div>' }, ConnectivityAttemptSummary: true } } })
 }
 function snapshot(): ConnectivitySnapshot {
-  return { config: { ...defaultConnectivityConfig, remnawaveUserId: 41 }, user: null, run: null, stale: true, errorCode: 'CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE', hosts: [] }
+  return { config: { ...defaultConnectivityConfig, proxyUserId: 41 }, user: null, run: null, stale: true, errorCode: 'CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE', hosts: [] }
 }
 
 describe('connectivity results during subscription failure', () => {

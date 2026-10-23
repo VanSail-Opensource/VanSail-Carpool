@@ -30,7 +30,7 @@ func TestWorkerMovesAmbiguousStartsToPendingReview(t *testing.T) {
 			t.Parallel()
 			repository := &connectionWorkerRepository{
 				scan: providerops.ConnectionScan{ID: "scan-1", UserID: "user-1", Status: test.status, ProgressPercent: test.progress},
-				user: model.User{ID: "user-1", RemnaUserID: &remoteID},
+				user: model.User{ID: "user-1", ProxyUserID: &remoteID},
 			}
 			remote := &connectionWorkerRemote{requestErr: test.requestErr}
 			worker := NewWorker(repository, remote)

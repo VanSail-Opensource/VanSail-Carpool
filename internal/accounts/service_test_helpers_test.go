@@ -72,7 +72,7 @@ func (r *accountsRepository) CompleteOnboardingRevision(_ context.Context, userI
 	r.completedUserID = userID
 	return r.user, r.completeErr
 }
-func (r *accountsRepository) QueueRemnawaveRepair(_ context.Context, _ string, missingID string, _ time.Time) (model.User, error) {
+func (r *accountsRepository) QueueProxyRepair(_ context.Context, _ string, missingID string, _ time.Time) (model.User, error) {
 	r.recoveryStarted, r.recoveryReason = true, missingID
 	return r.recoveryUser, nil
 }
@@ -127,7 +127,7 @@ type accountsFindResponse struct {
 
 var errAccountsDuplicate = errors.New("duplicate")
 
-type accountsRemnawave struct {
+type accountsProxy struct {
 	findResponses    []accountsFindResponse
 	findIndex        int
 	telegramResponse accountsFindResponse
@@ -137,7 +137,7 @@ type accountsRemnawave struct {
 	linkedResponse   accountsFindResponse
 }
 
-func (r *accountsRemnawave) FindUserByUsername(context.Context, string) (RemoteUser, bool, error) {
+func (r *accountsProxy) FindUserByUsername(context.Context, string) (RemoteUser, bool, error) {
 	if r.findIndex >= len(r.findResponses) {
 		return RemoteUser{}, false, nil
 	}
@@ -145,17 +145,17 @@ func (r *accountsRemnawave) FindUserByUsername(context.Context, string) (RemoteU
 	r.findIndex++
 	return response.remote, response.exists, response.err
 }
-func (r *accountsRemnawave) FindUserByTelegramID(context.Context, int64) (RemoteUser, bool, error) {
+func (r *accountsProxy) FindUserByTelegramID(context.Context, int64) (RemoteUser, bool, error) {
 	return r.telegramResponse.remote, r.telegramResponse.exists, r.telegramResponse.err
 }
-func (r *accountsRemnawave) FindUserByID(context.Context, string) (RemoteUser, bool, error) {
+func (r *accountsProxy) FindUserByID(context.Context, string) (RemoteUser, bool, error) {
 	return r.linkedResponse.remote, r.linkedResponse.exists, r.linkedResponse.err
 }
-func (r *accountsRemnawave) CreateUser(_ context.Context, input RemoteCreateUser) (RemoteUser, error) {
+func (r *accountsProxy) CreateUser(_ context.Context, input RemoteCreateUser) (RemoteUser, error) {
 	r.created = append(r.created, input)
 	return r.createRemote, r.createErr
 }
-func (r *accountsRemnawave) IsDuplicateError(err error) bool {
+func (r *accountsProxy) IsDuplicateError(err error) bool {
 	return errors.Is(err, errAccountsDuplicate)
 }
 
@@ -175,9 +175,9 @@ func validAccountsSettings() *accountsSettings {
 	return &accountsSettings{values: map[string]string{"telegram.group_chat_id": "-1001", "telegram.channel_chat_id": "-1002", "telegram.webhook_secret": "test-invite-secret"}}
 }
 
-func newAccountsServiceForTest(repository Repository, validator InitDataValidator, telegram TelegramClient, remnawave RemnawaveClient, settings Settings, adminID int64) *Service {
+func newAccountsServiceForTest(repository Repository, validator InitDataValidator, telegram TelegramClient, provider ProxyClient, settings Settings, adminID int64) *Service {
 	eligibility, _ := repository.(CommunityEligibility)
-	service := NewService(repository, eligibility, validator, telegram, remnawave, settings, []int64{adminID}, 7*24*time.Hour)
+	service := NewService(repository, eligibility, validator, telegram, provider, settings, []int64{adminID}, 7*24*time.Hour)
 	service.now = func() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
 	return service
 }

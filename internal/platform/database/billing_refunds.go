@@ -88,7 +88,7 @@ func (s *Store) RefundPayment(ctx context.Context, actorID *string, orderID, rea
 		}
 		if item.status != "queued" {
 			requiresSync = true
-			if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+order.UserID+`"}`, now, now); err != nil {
+			if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+order.UserID+`"}`, now, now); err != nil {
 				return model.PaymentOrder{}, err
 			}
 		}

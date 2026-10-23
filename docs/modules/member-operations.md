@@ -4,7 +4,7 @@
 
 `internal/connections` owns asynchronous connection scans, transient IP projections, signed drop capabilities, and selected-IP unlink reconciliation. `internal/purchaseops` owns paid traffic-reset and first-term refund quotes, commands, and workers. HTTP exposes connection scan/poll/drop under `/api/v1/subscription/connections`, reset and refund quote/mutations under `/api/v1/purchases/{id}`, and owner-scoped receipts at `/api/v1/operations/{id}`.
 
-All mutations require `Idempotency-Key`. SQLite stores the request fingerprint, receipt, bounded target metadata, money effects, and outbox job before accepting work. Provider calls run only after the transaction commits and always enter the shared Remnawave queue. The neutral `providerops.Dispatcher` is registered once with the outbox and remains open to member, administrator, and maintenance operation kinds. Receipt reads accept only the authenticated operation actor or affected owner, allowing an administrator to poll a command they issued without exposing it to unrelated users.
+All mutations require `Idempotency-Key`. SQLite stores the request fingerprint, receipt, bounded target metadata, money effects, and outbox job before accepting work. Provider calls run only after the transaction commits and always enter the shared X-Node queue. The neutral `providerops.Dispatcher` is registered once with the outbox and remains open to member, administrator, and maintenance operation kinds. Receipt reads accept only the authenticated operation actor or affected owner, allowing an administrator to poll a command they issued without exposing it to unrelated users.
 
 ## Connection privacy and reconciliation
 

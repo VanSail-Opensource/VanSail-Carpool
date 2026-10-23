@@ -22,7 +22,7 @@ func TestSettlementUsesPurchaseScopedQuiescence(t *testing.T) {
 	events := []string{}
 	id := "42"
 	p := model.Purchase{ID: "old", ValidFrom: time.Now().UTC().Add(-48 * time.Hour), ValidUntil: time.Now().UTC().Add(-24 * time.Hour)}
-	repo := &rolloverRepository{events: &events, eligible: true, rollover: model.PurchaseRollover{PurchaseID: p.ID, Status: "pending"}, purchase: p, user: model.User{RemnaUserID: &id}}
+	repo := &rolloverRepository{events: &events, eligible: true, rollover: model.PurchaseRollover{PurchaseID: p.ID, Status: "pending"}, purchase: p, user: model.User{ProxyUserID: &id}}
 	remote := &periodRemote{rolloverRemote: rolloverRemote{events: &events}}
 	if err := NewService(repo, remote).HandleOutbox(context.Background(), model.OutboxJob{Kind: "rollover_finalize", Payload: `{"purchaseId":"old"}`}); err != nil {
 		t.Fatal(err)

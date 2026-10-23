@@ -70,7 +70,7 @@ func connectivityHTTPFixture(t *testing.T) (http.Handler, *database.Store, *conn
 	})
 	store := database.NewStore(db)
 	cfg := connectivity.DefaultConfig()
-	cfg.RemnawaveUserID = 42
+	cfg.ProxyUserID = 42
 	encoded, err := json.Marshal(cfg)
 	if err != nil {
 		t.Fatal(err)

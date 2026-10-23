@@ -29,6 +29,15 @@ func (a *Application) Run(ctx context.Context) error {
 			return err
 		}
 	}
+	if err := a.outbox.Start(runCtx, func(err error) { a.logger.Error("outbox attempt failed", "error", err) }); err != nil {
+		cancelRun()
+		if a.xnodeMaster != nil {
+			_ = a.xnodeMaster.Shutdown(context.Background())
+		}
+		_ = a.upstreams.shutdown(context.Background())
+		return err
+	}
+	defer a.outbox.Shutdown()
 	profileCtx, cancelProfiles := context.WithTimeout(runCtx, 5*time.Minute)
 	if a.usdt != nil {
 		a.usdt.Start(runCtx)
@@ -137,12 +146,14 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 	if flushErr != nil {
 		flushErr = fmt.Errorf("flush group message facts: %w", flushErr)
 	}
+	a.outbox.Shutdown()
 	queueErr := a.upstreams.shutdown(context.Background())
 	return errors.Join(masterErr, serverErr, flushErr, queueErr)
 }
 
 // Close checkpoints the authoritative on-disk database after runtime workers stop.
 func (a *Application) Close() error {
+	a.outbox.Shutdown()
 	queueErr := a.upstreams.shutdown(context.Background())
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

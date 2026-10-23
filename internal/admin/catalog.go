@@ -48,9 +48,9 @@ func (s *Service) DeleteCombo(ctx context.Context, actorID, comboID string) erro
 
 // SaveSquadProduct validates local merchandising data.
 func (s *Service) SaveSquadProduct(ctx context.Context, actorID string, input database.SquadProductInput) (model.SquadProduct, error) {
-	input.RemnaSquadUUID = strings.TrimSpace(input.RemnaSquadUUID)
+	input.GroupID = strings.TrimSpace(input.GroupID)
 	input.Name = strings.TrimSpace(input.Name)
-	if input.RemnaSquadUUID == "" || input.PriceTXBMinor < 0 || input.PriceTXBMinor > 1_000_000_000_000 || (input.StockLimit != nil && (*input.StockLimit < 0 || *input.StockLimit > 1_000_000_000)) {
+	if input.GroupID == "" || input.PriceTXBMinor < 0 || input.PriceTXBMinor > 1_000_000_000_000 || (input.StockLimit != nil && (*input.StockLimit < 0 || *input.StockLimit > 1_000_000_000)) {
 		return model.SquadProduct{}, errors.New("invalid squad product")
 	}
 	profile, profileErr := squadprofile.Normalize(input.Profile)
@@ -62,11 +62,11 @@ func (s *Service) SaveSquadProduct(ctx context.Context, actorID string, input da
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	upstreamName, exists := live[input.RemnaSquadUUID]
+	upstreamName, exists := live[input.GroupID]
 	if !exists {
 		return model.SquadProduct{}, database.ErrNotFound
 	}
-	input.ID = input.RemnaSquadUUID
+	input.ID = input.GroupID
 	input.Name = upstreamName
 	input.UpstreamPresent = true
 	product, err := s.repository.SaveSquadProduct(ctx, input)
@@ -95,7 +95,7 @@ func (s *Service) ImportSquads(ctx context.Context, actorID string) ([]model.Squ
 	return s.Squads(ctx)
 }
 
-// Squads builds the admin catalog from live Remnawave identities plus sparse
+// Squads builds the admin catalog from live Proxy identities plus sparse
 // local merchandising overrides.
 func (s *Service) Squads(ctx context.Context) ([]model.SquadProduct, error) {
 	upstream, err := s.importer.ListInternalSquads(ctx)
@@ -108,20 +108,20 @@ func (s *Service) Squads(ctx context.Context) ([]model.SquadProduct, error) {
 	}
 	overrideByUUID := make(map[string]model.SquadProduct, len(overrides))
 	for _, override := range overrides {
-		overrideByUUID[override.RemnaSquadUUID] = override
+		overrideByUUID[override.GroupID] = override
 	}
 	products := make([]model.SquadProduct, 0, len(upstream))
 	for _, squad := range upstream {
 		product, exists := overrideByUUID[squad.UUID]
 		if !exists {
-			product = model.SquadProduct{ID: squad.UUID, RemnaSquadUUID: squad.UUID, Visible: false, Price: model.TXBMoney(0),
+			product = model.SquadProduct{ID: squad.UUID, GroupID: squad.UUID, Visible: false, Price: model.TXBMoney(0),
 				AccessibleNodes: []model.CatalogNode{}}
 		}
 		if product.AccessibleNodes == nil {
 			product.AccessibleNodes = []model.CatalogNode{}
 		}
 		product.ID = squad.UUID
-		product.RemnaSquadUUID = squad.UUID
+		product.GroupID = squad.UUID
 		product.Name = squad.Name
 		product.UpstreamPresent = true
 		products = append(products, product)

@@ -16,7 +16,7 @@ The HTTP layer accepts TXB as decimal-string minor units and basis-point integer
 - A lucky draw validates its total positive weight and available stock in the same write transaction that charges the fee and applies its reward.
 - Before drawing, available balance must cover the fee plus the largest possible negative TXB prize. This prevents the random result from producing unapproved debt.
 - Prize effects are a closed `Reward` union: `none`, signed `txb_delta`, `coupon_grant`, or positive `subscription_extension`. The selected definition is snapshotted in the result.
-- A subscription extension moves an active term's expiry and every queued term by the same number of days, and queues one Remnawave desired-state synchronization in the same transaction. When no term exists, a durable extension credit is consumed by the next purchase without an upstream call until activation.
+- A subscription extension moves an active term's expiry and every queued term by the same number of days, and queues one X-Node desired-state synchronization in the same transaction. When no term exists, a durable extension credit is consumed by the next purchase without an upstream call until activation.
 
 ## Group-message rewards
 

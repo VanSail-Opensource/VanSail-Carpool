@@ -27,7 +27,7 @@ production accounts or proof that historical abuse did not occur.
   Fisher-Yates assignment happen on the server. The UI animates the returned result.
 - Fees, reserves, results, ledger entries and queued reward effects share a SQLite
   transaction. Message identity and result keys provide database uniqueness guards.
-- Remnawave effects and Telegram notifications use the existing queued integrations.
+- Native access effects and Telegram notifications use the existing durable queues.
   This change introduces no external API calls, dependencies or schema migration.
 
 ## Validation

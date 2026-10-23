@@ -39,7 +39,7 @@ func (s *Service) accountStatistics(ctx context.Context, id string) (model.Stati
 	for _, period := range periods {
 		lifetime.Add(lifetime, big.NewInt(period.UsedBytes))
 	}
-	legacy, legacyErr := s.repo.XNodeLegacyUsage(ctx, identity.ProxyUserID)
+	legacy, legacyErr := s.repo.XNodeImportedUsage(ctx, identity.ProxyUserID)
 	if legacyErr == nil {
 		lifetime = big.NewInt(legacy.LifetimeBytes)
 		all, err := s.repo.XNodeUsage(ctx, identity.ProxyUserID, time.Unix(0, 0), s.now())
@@ -58,7 +58,7 @@ func (s *Service) accountStatistics(ctx context.Context, id string) (model.Stati
 	if err != nil {
 		return result, Identity{}, err
 	}
-	legacyHistory, err := s.repo.XNodeLegacyHistory(ctx, identity.ProxyUserID, now.AddDate(0, -1, 0), now)
+	legacyHistory, err := s.repo.XNodeImportedHistory(ctx, identity.ProxyUserID, now.AddDate(0, -1, 0), now)
 	if err != nil {
 		return result, Identity{}, err
 	}
@@ -110,7 +110,7 @@ func (s *Service) Usage(ctx context.Context, id string, start, end time.Time) ([
 	if err != nil {
 		return nil, err
 	}
-	legacy, err := s.repo.XNodeLegacyHistory(ctx, identity.ProxyUserID, start, end)
+	legacy, err := s.repo.XNodeImportedHistory(ctx, identity.ProxyUserID, start, end)
 	if err != nil {
 		return nil, err
 	}

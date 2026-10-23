@@ -14,15 +14,15 @@ func selectedSquadUUIDs(catalog model.Catalog, comboID string, addonIDs []string
 			continue
 		}
 		for _, squad := range combo.IncludedSquads {
-			selected[squad.RemnaSquadUUID] = struct{}{}
+			selected[squad.GroupID] = struct{}{}
 		}
 		break
 	}
 	for _, addonID := range addonIDs {
 		trimmed := strings.TrimSpace(addonID)
 		for _, addon := range catalog.Addons {
-			if addon.ID == trimmed || addon.RemnaSquadUUID == trimmed {
-				selected[addon.RemnaSquadUUID] = struct{}{}
+			if addon.ID == trimmed || addon.GroupID == trimmed {
+				selected[addon.GroupID] = struct{}{}
 				break
 			}
 		}

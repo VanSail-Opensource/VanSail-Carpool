@@ -1,4 +1,4 @@
-// Package compensation detects Remnawave node outages and gates extensions behind review.
+// Package compensation detects Proxy node outages and gates extensions behind review.
 package compensation
 
 import (

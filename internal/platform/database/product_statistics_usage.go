@@ -13,10 +13,10 @@ import (
 func (s *Store) ActiveMemberUsageForStatistics(ctx context.Context, now time.Time) ([]model.StatisticsUsageMember, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT purchases.id,purchases.user_id,purchases.charged_txb_minor,
 		purchases.valid_from,purchases.valid_until,purchases.auto_renew_enabled,
-		COALESCE(purchases.reward_rollover_min_remaining_bps,combos.rollover_min_remaining_bps),COALESCE('xn:'||CAST(native.proxy_user_id AS TEXT),member.remna_user_id)
+		COALESCE(purchases.reward_rollover_min_remaining_bps,combos.rollover_min_remaining_bps),'xn:'||CAST(native.proxy_user_id AS TEXT)
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id JOIN users member ON member.id=purchases.user_id
-		LEFT JOIN xnode_identities native ON native.user_id=member.id
-		WHERE member.role='user' AND (native.proxy_user_id IS NOT NULL OR (member.remna_user_id IS NOT NULL AND TRIM(member.remna_user_id)<>''))
+		JOIN xnode_identities native ON native.user_id=member.id
+		WHERE member.role='user'
 		AND purchases.status IN ('active','activating') AND purchases.valid_from<=? AND purchases.valid_until>?
 		ORDER BY purchases.user_id,purchases.valid_from DESC,purchases.created_at DESC`, stamp(now), stamp(now))
 	if err != nil {

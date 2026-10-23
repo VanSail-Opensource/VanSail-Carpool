@@ -9,7 +9,7 @@ import (
 )
 
 type nativeDashboardRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	owners []string
 }
 
@@ -19,7 +19,7 @@ func (r *nativeDashboardRemote) DashboardForMember(_ context.Context, user model
 }
 
 func TestNativeDashboardUsesOwnerWithoutLegacyIdentity(t *testing.T) {
-	remote := &nativeDashboardRemote{catalogRemnawave: &catalogRemnawave{}}
+	remote := &nativeDashboardRemote{catalogProxy: &catalogProxy{}}
 	service := NewService(&catalogRepository{}, remote, time.Minute)
 	for _, id := range []string{"member", "member", "other"} {
 		value, err := service.Dashboard(context.Background(), model.User{ID: id})

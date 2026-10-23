@@ -31,13 +31,10 @@ func (r profileMetricRepository) XNodeIdentities(context.Context) ([]Identity, e
 	return []Identity{r.identity()}, nil
 }
 func (r profileMetricRepository) XNodeNodes(context.Context) ([]Node, error) {
-	return []Node{{ID: "node", Name: "Tokyo", Enabled: true}}, nil
+	return []Node{{ID: "node", Name: "Tokyo", Enabled: r.phase != "disabled"}}, nil
 }
 func (r profileMetricRepository) XNodeNode(context.Context, string) (Node, error) {
-	return Node{ID: "node", Name: "Tokyo", Enabled: true}, nil
-}
-func (r profileMetricRepository) XNodeMigration(context.Context) (MigrationState, error) {
-	return MigrationState{Phase: "active", Nodes: []MigrationNode{{NodeID: "node", Phase: r.phase}}}, nil
+	return Node{ID: "node", Name: "Tokyo", Enabled: r.phase != "disabled"}, nil
 }
 func (r profileMetricRepository) DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error) {
 	return &model.Purchase{ID: "purchase", SquadUUIDs: []string{"group"}}, nil
@@ -58,14 +55,14 @@ func (r profileMetricRepository) XNodePeriods(context.Context, int64) ([]Period,
 	value, _ := r.XNodePeriod(context.Background(), "period")
 	return []Period{value}, nil
 }
-func (r profileMetricRepository) XNodeLegacyUsage(context.Context, int64) (LegacyUsage, error) {
-	return LegacyUsage{LifetimeBytes: 1000}, nil
+func (r profileMetricRepository) XNodeImportedUsage(context.Context, int64) (ImportedUsage, error) {
+	return ImportedUsage{LifetimeBytes: 1000}, nil
 }
 func (r profileMetricRepository) XNodeUsage(context.Context, int64, time.Time, time.Time) ([]DailyUsage, error) {
 	return []DailyUsage{{NodeID: "node", Date: r.date, UploadBytes: 9007199254740993, DownloadBytes: 10, WeightedBytes: 9007199254741003}}, nil
 }
-func (r profileMetricRepository) XNodeLegacyHistory(context.Context, int64, time.Time, time.Time) ([]LegacyHistory, error) {
-	return []LegacyHistory{{NodeID: "node", Date: r.date, RawBytes: 30, WeightedBytes: 45}}, nil
+func (r profileMetricRepository) XNodeImportedHistory(context.Context, int64, time.Time, time.Time) ([]ImportedHistory, error) {
+	return []ImportedHistory{{NodeID: "node", Date: r.date, RawBytes: 30, WeightedBytes: 45}}, nil
 }
 
 func profileMetricMaster(t *testing.T, phase string) (*Master, time.Time) {
@@ -79,12 +76,12 @@ func profileMetricMaster(t *testing.T, phase string) (*Master, time.Time) {
 	return master, now
 }
 
-func TestProfileActivityUnavailableAfterRollbackDisconnectOrStaleness(t *testing.T) {
-	for _, mode := range []string{"native", "rolled_back", "disconnected", "stale"} {
+func TestProfileActivityUnavailableAfterDisableDisconnectOrStaleness(t *testing.T) {
+	for _, mode := range []string{"native", "disabled", "disconnected", "stale"} {
 		t.Run(mode, func(t *testing.T) {
 			phase := "native"
-			if mode == "rolled_back" {
-				phase = "rolled_back"
+			if mode == "disabled" {
+				phase = "disabled"
 			}
 			master, now := profileMetricMaster(t, phase)
 			if mode == "disconnected" {
@@ -102,7 +99,7 @@ func TestProfileActivityUnavailableAfterRollbackDisconnectOrStaleness(t *testing
 			if mode != "native" && (values[0].Connections != "0" || values[0].CurrentUse || values[0].UploadBytesPerSecond != 0) {
 				t.Fatal("unavailable activity leaked", values)
 			}
-			if mode == "rolled_back" {
+			if mode == "disabled" {
 				transport, err := master.Metrics(context.Background())
 				if err != nil || transport.OnlineNodes != 1 || transport.Nodes[0].Available || transport.ActiveConnections != 0 {
 					t.Fatal("transport liveness was coupled to ownership", transport, err)

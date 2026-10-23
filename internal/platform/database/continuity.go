@@ -17,7 +17,7 @@ const EntitlementContinuityLead = 3 * time.Minute
 func enqueuePurchaseTransitionTx(ctx context.Context, tx *sql.Tx, purchaseID, status string, validFrom, now time.Time) error {
 	switch status {
 	case "activating":
-		return insertOutboxTx(ctx, tx, "remna_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
+		return insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
 	case "queued":
 		return insertOutboxTx(ctx, tx, jobpayload.ContinuityKind, `{"purchaseId":"`+purchaseID+`"}`, validFrom.Add(-EntitlementContinuityLead), now)
 	default:

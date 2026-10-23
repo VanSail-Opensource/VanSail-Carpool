@@ -15,7 +15,7 @@ DashboardNodeUsage:
       maxItems: 31
       items: { type: string, format: date }
     nodes:
-      description: Remnawave's highest-traffic nodes for the selected range.
+      description: X-Node's highest-traffic nodes for the selected range.
       type: array
       maxItems: 20
       items:

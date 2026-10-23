@@ -74,7 +74,7 @@ func (r *adminCatalogRepository) SaveSquadProduct(_ context.Context, input datab
 	if r.savedSquad.ID != "" {
 		return r.savedSquad, nil
 	}
-	return model.SquadProduct{ID: input.RemnaSquadUUID, Name: input.Name}, nil
+	return model.SquadProduct{ID: input.GroupID, Name: input.Name}, nil
 }
 func (r *adminCatalogRepository) SquadProductByID(_ context.Context, id string) (model.SquadProduct, error) {
 	if r.squadLookupErr != nil {
@@ -83,16 +83,16 @@ func (r *adminCatalogRepository) SquadProductByID(_ context.Context, id string) 
 	if r.savedSquad.ID != "" {
 		return r.savedSquad, nil
 	}
-	return model.SquadProduct{ID: id, RemnaSquadUUID: "uuid", UpstreamPresent: true}, nil
+	return model.SquadProduct{ID: id, GroupID: "uuid", UpstreamPresent: true}, nil
 }
-func (r *adminCatalogRepository) SquadProductByRemnaUUID(_ context.Context, uuid string) (model.SquadProduct, error) {
+func (r *adminCatalogRepository) SquadProductByGroupID(_ context.Context, uuid string) (model.SquadProduct, error) {
 	if r.squadLookupErr != nil {
 		return model.SquadProduct{}, r.squadLookupErr
 	}
 	if r.savedSquad.ID != "" {
 		return r.savedSquad, nil
 	}
-	return model.SquadProduct{ID: "squad-existing", RemnaSquadUUID: uuid, UpstreamPresent: true}, nil
+	return model.SquadProduct{ID: "squad-existing", GroupID: uuid, UpstreamPresent: true}, nil
 }
 func (r *adminCatalogRepository) ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error) {
 	return r.listedSquads, r.listSquadsErr

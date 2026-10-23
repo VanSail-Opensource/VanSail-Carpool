@@ -89,7 +89,7 @@ func (s *Service) commitAutomaticRenewal(ctx context.Context, repository automat
 func renewalAddonIDs(addons []model.SquadProduct) []string {
 	ids := make([]string, 0, len(addons))
 	for _, addon := range addons {
-		ids = append(ids, addon.RemnaSquadUUID)
+		ids = append(ids, addon.GroupID)
 	}
 	return ids
 }

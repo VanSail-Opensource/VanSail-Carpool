@@ -101,7 +101,7 @@
     "activationCode": "激活码",
     "activationCodeHint": "编辑时留空可保留现有激活码。",
     "edit": "编辑 {name}",
-    "identityHint": "实时 Remnawave 节点组仍是身份与节点数据的权威来源。",
+    "identityHint": "实时 X-Node 节点组仍是身份与节点数据的权威来源。",
     "close": "关闭节点组编辑器",
     "description": "描述",
     "descriptionPlaceholder": "简短说明此可选节点组的用途",

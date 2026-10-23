@@ -111,7 +111,7 @@ func automaticResetFixture(t *testing.T, telegramID, seed int64) (*Store, string
 	if err := store.MarkPurchaseSyncResult(ctx, purchase.ID, true, now.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET remna_user_id=? WHERE id=?`, strconv.FormatInt(telegramID, 10), user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=? WHERE id=?`, strconv.FormatInt(telegramID, 10), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	setting, err := store.TrafficResetAutomation(ctx, user.ID)

@@ -105,7 +105,7 @@ User:
       $ref: '../../openapi.yaml#/components/schemas/DisplayCurrency'
     recoveryReason:
       type: string
-      enum: ['', remnawave_user_missing, remnawave_username_conflict]
+      enum: ['', proxy_user_missing, proxy_identity_conflict]
       description: A confirmed username conflict restarts onboarding at username entry after refunds.
     createdAt:
       $ref: '../../openapi.yaml#/components/schemas/Timestamp'

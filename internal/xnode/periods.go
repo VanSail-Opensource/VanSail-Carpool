@@ -155,19 +155,6 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 			return err
 		}
 	}
-	identity, err := s.repo.XNodeIdentity(ctx, period.ProxyUserID)
-	if err != nil {
-		return err
-	}
-	if identity.LegacyUserID != "" {
-		state, err := s.repo.XNodeMigration(ctx)
-		if err != nil {
-			return err
-		}
-		if state.Phase != "complete" {
-			pending = true
-		}
-	}
 	if pending {
 		if !canContinue {
 			return ErrUnavailable

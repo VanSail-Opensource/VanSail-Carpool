@@ -12,7 +12,7 @@ const expiredSyncCode = "SYNC_JOB_EXPIRED"
 
 // Outbound synchronization and delivery lanes are distinct from local financial
 // settlement jobs, which retain their authoritative settlement/recovery state.
-const synchronizationJobPredicate = `(job.kind LIKE 'remna_%' OR job.kind LIKE 'telegram_%'
+const synchronizationJobPredicate = `(job.kind IN ('xnode_apply_entitlement','xnode_sync_user','xnode_prepare_continuity') OR job.kind LIKE 'telegram_%'
 	OR job.kind LIKE 'draw_telegram_%' OR job.kind IN ('emby_provision_account','connection_scan_request',
 	'connection_ip_block_expiry','admin_temporary_ban_expiry',
 	'draw_raffle_reply','draw_raffle_complete','draw_raffle_private','draw_instant_announcement','draw_raffle_price_notice')
@@ -60,7 +60,7 @@ func reconcileExpiredSyncStateTx(ctx context.Context, tx *sql.Tx, now time.Time)
 		args []any
 	}{
 		{`UPDATE purchases SET status='failed',updated_at=? WHERE status='activating' AND id IN
-			(SELECT json_extract(payload,'$.purchaseId') FROM maintenance_failed_sync_jobs WHERE kind='remna_apply_entitlement')`, []any{stamp(now)}},
+			(SELECT json_extract(payload,'$.purchaseId') FROM maintenance_failed_sync_jobs WHERE kind='xnode_apply_entitlement')`, []any{stamp(now)}},
 		{`UPDATE emby_accounts SET status='pending_review',last_error=?,updated_at=? WHERE status IN ('queued','provisioning') AND id IN
 			(SELECT json_extract(payload,'$.accountId') FROM maintenance_failed_sync_jobs WHERE kind='emby_provision_account')`, []any{expiredSyncCode, stamp(now)}},
 		{`UPDATE connection_scans SET status=CASE WHEN status='queued' THEN 'failed' ELSE 'pending_review' END,error_code=?,updated_at=?

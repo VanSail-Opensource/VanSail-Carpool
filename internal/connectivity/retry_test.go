@@ -26,7 +26,7 @@ func TestHostRetriesPublishOnlyFinalOutcome(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			cfg := DefaultConfig()
-			cfg.RemnawaveUserID, cfg.MaxRetries = 42, test.retries
+			cfg.ProxyUserID, cfg.MaxRetries = 42, test.retries
 			calls, waits := 0, 0
 			var repository *testRepository
 			probe := testProbe(func(ctx context.Context, _ Target, _ Config) Outcome {
@@ -74,7 +74,7 @@ func TestHostRetriesPublishOnlyFinalOutcome(t *testing.T) {
 
 func TestHostRetriesGetFreshTimeouts(t *testing.T) {
 	cfg := DefaultConfig()
-	cfg.RemnawaveUserID, cfg.TimeoutSeconds, cfg.MaxRetries, cfg.RetryIntervalSeconds = 42, 1, 1, 3
+	cfg.ProxyUserID, cfg.TimeoutSeconds, cfg.MaxRetries, cfg.RetryIntervalSeconds = 42, 1, 1, 3
 	calls, waits := 0, 0
 	var firstDeadline time.Time
 	probe := testProbe(func(ctx context.Context, _ Target, _ Config) Outcome {
@@ -108,7 +108,7 @@ func TestHostRetriesDoNotBypassStoppedQueue(t *testing.T) {
 	for _, phase := range []string{"initial", "retry"} {
 		t.Run(phase, func(t *testing.T) {
 			cfg := DefaultConfig()
-			cfg.RemnawaveUserID = 42
+			cfg.ProxyUserID = 42
 			calls, waits, wantCalls := 0, 0, 0
 			service, repository, item := retryFixture(t, cfg, testProbe(func(context.Context, Target, Config) Outcome {
 				calls++

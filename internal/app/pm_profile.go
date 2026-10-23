@@ -27,7 +27,7 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 	if err != nil {
 		return telegrampm.ProfileFacts{}, err
 	}
-	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance, RemnaUsername: user.AccountName()}
+	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance, AccountName: user.AccountName()}
 	if user.OnboardingState != "complete" {
 		return facts, nil
 	}
@@ -42,7 +42,7 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 	facts.ActiveCombo = &purchase
 	squadNames := make(map[string]string, len(purchase.SquadUUIDs))
 	for _, squadID := range purchase.SquadUUIDs {
-		product, lookupErr := r.store.SquadProductByRemnaUUID(ctx, squadID)
+		product, lookupErr := r.store.SquadProductByGroupID(ctx, squadID)
 		if lookupErr == nil && strings.TrimSpace(product.Name) != "" {
 			squadNames[squadID] = product.Name
 		}
@@ -51,8 +51,8 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 		liveCatalog, catalogErr := r.catalog.Catalog(ctx)
 		if catalogErr == nil {
 			for _, addon := range liveCatalog.Addons {
-				if _, selected := squadNames[addon.RemnaSquadUUID]; !selected && addon.Name != "" {
-					squadNames[addon.RemnaSquadUUID] = addon.Name
+				if _, selected := squadNames[addon.GroupID]; !selected && addon.Name != "" {
+					squadNames[addon.GroupID] = addon.Name
 				}
 			}
 		}

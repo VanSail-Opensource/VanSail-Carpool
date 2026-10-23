@@ -9,7 +9,6 @@ import XNodeNodes from './XNodeNodes.vue'
 import XNodeConfigurations from './XNodeConfigurations.vue'
 import XNodeAccessGroups from './XNodeAccessGroups.vue'
 import XNodeMetrics from './XNodeMetrics.vue'
-import XNodeMigration from './XNodeMigration.vue'
 import XNodeSubscriptionTemplates from './XNodeSubscriptionTemplates.vue'
 import XNodeRoutingTemplates from './XNodeRoutingTemplates.vue'
 import { useXNodeWorkspace } from './useXNodeWorkspace'
@@ -17,7 +16,7 @@ import { useXNodeWorkspace } from './useXNodeWorkspace'
 const { t } = useI18n()
 const workspace = useXNodeWorkspace()
 const tab = shallowRef('nodes')
-const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'metrics', 'migration'].map(value => ({ value, label: t(value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : value === 'migration' ? 'xnodeMigration.title' : `xnode.tabs.${value}`) })))
+const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'metrics'].map(value => ({ value, label: t(value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
 </script>
 
 <template>
@@ -35,7 +34,6 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
       <XNodeConfigurations v-else-if="tab === 'configurations'" :configurations="workspace.configurations.value" :snippets="workspace.snippets.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
       <XNodeAccessGroups v-else-if="tab === 'groups'" :configurations="workspace.configurations.value" :save-error="workspace.actionError.value" :groups="workspace.groups.value" :endpoints="workspace.endpoints.value" :nodes="workspace.nodes.value" :busy="workspace.busy.value" :perform="workspace.perform" />
       <XNodeMetrics v-else-if="tab === 'metrics'" :metrics="workspace.metrics.value" :nodes="workspace.nodes.value" />
-      <XNodeMigration v-else :nodes="workspace.nodes.value" />
     </AdminSectionState>
   </section>
 </template>

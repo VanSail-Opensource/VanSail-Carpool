@@ -144,7 +144,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		}
 		plan.Combo.IncludedSquads = make([]model.SquadProduct, 0, len(ids))
 		for _, id := range uniqueSorted(ids) {
-			plan.Combo.IncludedSquads = append(plan.Combo.IncludedSquads, model.SquadProduct{ID: id, RemnaSquadUUID: id})
+			plan.Combo.IncludedSquads = append(plan.Combo.IncludedSquads, model.SquadProduct{ID: id, GroupID: id})
 		}
 	}
 	// Awarded hours extend only the current term; renewals use the selected core combo's cadence.
@@ -164,7 +164,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
 		plan.GrossMinor += addon.PriceTXBMinor
-		addonIDs = append(addonIDs, addon.RemnaSquadUUID)
+		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	plan.NetMinor = plan.GrossMinor
 	discount := coupons.Discount{GrossMinor: plan.GrossMinor, NetMinor: plan.GrossMinor}

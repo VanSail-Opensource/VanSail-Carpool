@@ -191,7 +191,6 @@ cancellable fake probe for hosted execution without external network traffic.
 
 - `xnode_members.go`: Entry points: `mountXNodeMembers`, `xnodeMemberMetrics`, `xnodeOwnedSubscription`, `xnodeRoutingTemplates`.
 
-- `xnode_migration.go`: Entry points: `xnodeMigrationStatus`, `xnodeMigrationPreview`, `xnodeMigrationImport`, `xnodeMigrationCutover`.
 
 - `xnode_operations.go`: Entry points: `xnodeQueueCommand`, `xnodeDeleteNode`, `xnodeDeleteGroup`, `xnodeDeleteEndpoint`.
 

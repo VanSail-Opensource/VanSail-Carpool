@@ -50,7 +50,6 @@ encrypted identity references, periods, migration checkpoints and immutable
 report cursors. `xnode_traffic_test.go` covers atomic replay rejection, byte
 counter ownership, sequence gaps and fixed-point multiplier carry in hosted CI.
 Live connections, rates, IP observations and logs have no storage interface.
-`xnode_migration_accounts.go` inventories linked accounts and checks existing
 purchase/native-identity references before a confirmed missing source account
 may be omitted from a preview. It introduces no persistence or account relinking.
 
@@ -87,7 +86,7 @@ The store uses `modernc.org/sqlite` 1.60.1 and its compatible libc dependency.
 Go module upgrades preserve the existing Go 1.26 toolchain and database contracts;
 full migration/race validation runs in hosted CI rather than local test suites.
 
-Lucky-draw storage keeps configuration, ticket charges, reservations, and immutable outcomes local. Every Remnawave effect is enqueued after the result transaction; Telegram delivery uses recorded message IDs.
+Lucky-draw storage keeps configuration, ticket charges, reservations, and immutable outcomes local. Every X-Node effect is enqueued after the result transaction; Telegram delivery uses recorded message IDs.
 
 Private draw coupons (`admin_visible=0`) can only be used through awarded wallet grants. Code lookup excludes them, and the shared grant lookup and wallet listing reject historical `source_type='code'` copies. Checkout and automatic renewal therefore cannot use copied grants; existing financial records remain intact. `activity_draw_coupon_security_test.go` covers these boundaries and normal public-code redemption.
 
@@ -143,18 +142,15 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
 - `billing_purchase_addons_test.go` covers rounding/caps, replay-safe debits, rollover and renewal totals, queued blocking, and full-squad owner selection.
-- `remna_provisioning.go` owns purchase-gated remote ID linking, confirmed-missing
   repair, and atomic full refunds plus username restart on identity conflict.
-- `remna_provisioning_test.go` covers current and queued refund idempotency,
   preserved account facts, and the localized conflict receipt.
-- `remna_provisioning_backlog.go` queues unlinked paid members after upgrades.
 
 - `timestamp_cursor.go` signs filter-bound timestamp/ID cursor payloads shared by administrative inventories.
 - `admin_users_page.go`, `admin_entitlements_page.go`, `admin_finance_pages.go`, and `admin_jobs_page.go` provide stable filtered pages without fixed-cap truncation.
 - `database.go` — opens SQLite, applies embedded migrations, checkpoints WAL,
   and exposes migration versions.
 - `store.go` — core store type, user/session persistence, membership, username,
-  and Remnawave recovery state.
+  and X-Node recovery state.
 - `store_access.go` exposes the database handle and optional structured logger.
 - `community_membership.go` queries only currently active combo windows for entitlement-gated community access.
 - `settings.go` — encrypted-or-plain application setting records.
@@ -388,7 +384,6 @@ attached-coupon policy and a unique source-successor link.
 `telegram_boost_receipts.go` and `telegram_boost_receipts_test.go` atomically deduplicate group/boost IDs with their outbox work, including concurrent and changed updates. No boost count is mirrored.
 
 `panel_entry_verification.go` and `panel_entry_verification_test.go` persist only Telegram ID and a boolean. Panel visits initialize the row, verification or a disabled challenge qualifies it, and onboarding removes it in the same transaction as agreement acceptance.
-Retained agreement revisions also qualify returning accounts. `remna_provisioning.go` preserves a completed account's verification before username-conflict recovery clears agreement fields; `remna_provisioning_test.go` checks that recovery does not request another challenge.
 
 `telegram_pm_commands.go` deduplicates webhook IDs and atomically queues notices or reference-only relay operations. `telegram_pm_reads.go` infers read timestamps from member replies and stores references against delivery IDs only. `telegram_pm_queries.go` joins routing and normalized user flags; `telegram_pm_pages.go` reuses stable cursors and exposes bounded delivery references with read evidence. `telegram_pm_moderation.go` audits idempotent flags/repair commands and queues profile refreshes; `telegram_pm_topics.go` claims creation and records durable topic/profile certainty. `telegram_pm_recovery.go` resumes only definitely unsent waiters after a proven repair. `telegram_pm_retention.go` bounds receipts at 30 days while preserving routing uncertainty; generic maintenance protects recent PM operations and conversation owners.
 `telegram_pm_commands_test.go`, `telegram_pm_permissions_test.go`, `telegram_pm_topics_test.go` and `telegram_pm_retention_test.go` cover concurrent replay, normalized flags across destinations, unauthorized mutation, serialized topic/card phases, safe recovery, retention boundaries and foreign keys in hosted CI.
@@ -466,7 +461,6 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 `xnode_periods.go` Stores accounting periods and reads exact byte aggregates.
 `xnode_traffic.go` Commits contiguous reports exactly once with transactional weighted-byte carry.
 `xnode_customizations.go` Stores owner/node customization revisions and encrypted inputs.
-`xnode_migrations.go` Stores migration and per-node handover checkpoints.
 `xnode_rates.go` Commits multiplier boundaries after accounting barriers.
 `xnode_restrictions.go` Projects existing manual access restrictions.
 
@@ -482,7 +476,6 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 
 - `xnode_legacy_usage_test.go`: Hosted regression coverage: `TestLegacySnapshotsKeepResetTailsAndNeverReimportTheBaseline`, `TestLegacyHistoryDoesNotChargeQuotaAndReconcilesMonotonically`, `TestImportedNodePublishesLegacyOwnershipAtomicallyAndPreservesResumeEdits`.
 
-- `xnode_migration_accounts.go`: Entry points: `MigrationPanelAccounts`.
 
 - `xnode_service_bindings.go`: Entry points: `XNodeServiceBindings`, `SaveXNodeServiceBinding`.
 
@@ -602,3 +595,9 @@ retain the exact initial outcome. No additional billing table or cache is added.
 
 `xnode_diy_billing_test.go` covers shared allowance races, paid and free saves,
 transaction rollback, stale/expired quotes and exact lost-response replay in hosted CI.
+
+`native_retirement.go` verifies a boundary backup before bridge cleanup. `native_retirement_test.go` covers incomplete accounting refusal, exact historical facts, and translated queued access. `proxy_provisioning.go`, `proxy_provisioning_backlog.go` and `proxy_provisioning_test.go` own paid native identity references and recovery. `xnode_imported_usage.go` and `xnode_imported_history.go` expose frozen pre-native accounting facts for settlement and historical views; they provide no ingestion or synchronization API.
+
+`outbox_admission.go` and `outbox_resources.go` derive account, node, purchase, operation and chat exclusion from existing records inside transactional claims. Independent due jobs skip occupied resources. IP Lookup repair admission stays serial.
+
+`outbox_resources_test.go` checks independent account admission and cross-kind account ordering.

@@ -26,7 +26,7 @@ func (r *refundUsageStub) UsageSnapshotForRollover(_ context.Context, _ string, 
 func refundQuoteFixture(paid, limit, used int64, strategy string, days int) (*UserWorkflows, *refundUsageStub) {
 	start := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	remoteID := "1"
-	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user", RemnaUserID: &remoteID}, purchases: []model.Purchase{{ID: "purchase", UserID: "user", Status: "active", PriceTXBMinor: paid, GrossPriceTXBMinor: 10000, TrafficLimitBytes: limit, ResetStrategy: strategy, RolloverMinRemainingBPS: 8500, ValidFrom: start, ValidUntil: start.AddDate(0, 0, days)}}}
+	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user", ProxyUserID: &remoteID}, purchases: []model.Purchase{{ID: "purchase", UserID: "user", Status: "active", PriceTXBMinor: paid, GrossPriceTXBMinor: 10000, TrafficLimitBytes: limit, ResetStrategy: strategy, RolloverMinRemainingBPS: 8500, ValidFrom: start, ValidUntil: start.AddDate(0, 0, days)}}}
 	current := int64(999999)
 	source := &refundUsageStub{snapshot: rollover.UsageSnapshot{LimitBytes: 1, Strategy: "DAY", WeightedUsedBytes: used, NodeSeriesAvailable: true, CurrentUsedBytes: &current}}
 	s := NewUserWorkflows(repository, nil)
@@ -85,7 +85,7 @@ func TestAdminRefundSuggestionQueuedAndUnavailable(t *testing.T) {
 	}
 	source.err = nil
 	source.snapshot.NodeSeriesAvailable = true
-	repository.user.RemnaUserID = nil
+	repository.user.ProxyUserID = nil
 	quote, err = s.RefundEntitlementQuote(context.Background(), "user", "purchase")
 	if err != nil || quote.SuggestedRefund != nil {
 		t.Fatalf("unlinked=%+v %v", quote, err)

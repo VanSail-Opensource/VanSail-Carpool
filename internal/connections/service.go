@@ -20,7 +20,7 @@ type Repository interface {
 	UserByID(context.Context, string) (model.User, error)
 }
 
-// Remote performs connection calls through the bounded Remnawave queue.
+// Remote performs connection calls through the bounded Proxy queue.
 type Remote interface {
 	RequestConnectionScan(context.Context, string) (string, error)
 	PollConnectionScan(context.Context, string) (ProviderScan, error)
@@ -49,7 +49,7 @@ func (s *Service) Request(ctx context.Context, user model.User, idempotencyKey s
 	if _, ok := s.remote.(NativeRemote); ok {
 		return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
 	}
-	if user.RemnaUserID == nil || strings.TrimSpace(*user.RemnaUserID) == "" {
+	if user.ProxyUserID == nil || strings.TrimSpace(*user.ProxyUserID) == "" {
 		return Scan{}, ErrIdentityRequired
 	}
 	return s.request(ctx, user, idempotencyKey, scanFingerprint())

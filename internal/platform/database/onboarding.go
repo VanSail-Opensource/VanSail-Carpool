@@ -163,7 +163,7 @@ func (s *Store) CompleteOnboardingRevision(ctx context.Context, userID string, r
 		return model.User{}, err
 	}
 	if purchased == 1 {
-		if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, acceptedAt, acceptedAt); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, acceptedAt, acceptedAt); err != nil {
 			return model.User{}, err
 		}
 	}

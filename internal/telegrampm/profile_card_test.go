@@ -25,9 +25,9 @@ func TestProfileShowsApplicableFactsAndOmittedCoupon(t *testing.T) {
 	used, allocated := int64(1<<30), int64(8<<30)
 	purchase := &model.Purchase{ComboName: "Core", ValidFrom: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), ValidUntil: time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC), AutoRenewEnabled: true, CouponDiscount: model.TXBMoney(2500)}
 	prediction := model.TXBMoney(1250)
-	card := Profile(item, ProfileFacts{OnboardingState: "complete", Balance: model.TXBMoney(10000), RemnaUsername: "remna_user", ActiveCombo: purchase,
+	card := Profile(item, ProfileFacts{OnboardingState: "complete", Balance: model.TXBMoney(10000), AccountName: "proxy_user", ActiveCombo: purchase,
 		SquadNames: []string{"Optional squad"}, Rollover: &model.RolloverProjection{PredictedRollover: &prediction}, UsedBytes: &used, AllocatedBytes: &allocated}, "https://panel.example", "UTC")
-	for _, want := range []string{"Balance", "remna\\_user", "Core", "Optional squad", "2026\\-10\\-01", "Auto renew", "Rollover prediction", "1\\.00 GiB / 8\\.00 GiB"} {
+	for _, want := range []string{"Balance", "proxy\\_user", "Core", "Optional squad", "2026\\-10\\-01", "Auto renew", "Rollover prediction", "1\\.00 GiB / 8\\.00 GiB"} {
 		if !strings.Contains(card.Text, want) {
 			t.Fatalf("profile card missing %q: %s", want, card.Text)
 		}

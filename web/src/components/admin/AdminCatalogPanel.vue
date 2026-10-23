@@ -77,7 +77,7 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
     <div v-show="activeTab === 'squads'">
       <AdminSectionState :loading="squads.loading.value" :error="squads.error.value" @retry="squads.load()">
         <UTable class="admin-table" :data="squads.items.value" :columns="columns">
-          <template #name-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.name }}</strong><code>{{ row.original.remnaSquadUuid }}</code></div></template>
+          <template #name-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.name }}</strong><code>{{ row.original.groupId }}</code></div></template>
           <template #terms-cell="{ row }"><SquadProfileSummary :profile="row.original.profile" :description="row.original.description" compact /></template>
           <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
           <template #status-cell="{ row }"><StatusBadge :tone="row.original.upstreamPresent && row.original.visible ? 'success' : 'neutral'" :label="t(row.original.upstreamPresent && row.original.visible ? 'adminCatalog.available' : 'adminCatalog.hidden')" /></template>

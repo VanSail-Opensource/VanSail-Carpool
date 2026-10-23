@@ -49,7 +49,7 @@ func (s *Store) EnabledSquadsForRemote(ctx context.Context, remoteID string, own
 	}
 	defer func() { _ = tx.Rollback() }()
 	var userID string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE remna_user_id=?`, remoteID).Scan(&userID)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE proxy_user_id=?`, remoteID).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return append([]string{}, owned...), nil
 	}

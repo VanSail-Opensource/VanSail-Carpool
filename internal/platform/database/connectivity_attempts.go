@@ -24,7 +24,7 @@ var _ connectivity.Repository = (*Store)(nil)
 func (s *Store) BeginConnectivityAttempt(ctx context.Context, attempt connectivity.Attempt) error {
 	if !cursorIDPattern.MatchString(attempt.ID) || !cursorIDPattern.MatchString(attempt.RunID) ||
 		(attempt.HostUUID != "" && (!connectivityHostPattern.MatchString(attempt.HostUUID) || attempt.HostUUID == uuid.Nil.String())) ||
-		!connectivityHashPattern.MatchString(attempt.ConfigHash) || attempt.RemnawaveUserID <= 0 ||
+		!connectivityHashPattern.MatchString(attempt.ConfigHash) || attempt.ProxyUserID <= 0 ||
 		(attempt.Trigger != "manual" && attempt.Trigger != "scheduled") || attempt.StartedAt.IsZero() {
 		return ErrConflict
 	}
@@ -35,9 +35,9 @@ func (s *Store) BeginConnectivityAttempt(ctx context.Context, attempt connectivi
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `INSERT INTO host_connectivity_attempts
-		(id,run_id,host_uuid,config_hash,remnawave_user_id,trigger,started_at,status)
+		(id,run_id,host_uuid,config_hash,proxy_user_id,trigger,started_at,status)
 		VALUES(?,?,?,?,?,?,?,'running') ON CONFLICT(id) DO NOTHING`, attempt.ID, attempt.RunID,
-		hostUUID, attempt.ConfigHash, attempt.RemnawaveUserID, attempt.Trigger, connectivityStamp(attempt.StartedAt))
+		hostUUID, attempt.ConfigHash, attempt.ProxyUserID, attempt.Trigger, connectivityStamp(attempt.StartedAt))
 	if err != nil {
 		return fmt.Errorf("begin connectivity attempt: %w", err)
 	}

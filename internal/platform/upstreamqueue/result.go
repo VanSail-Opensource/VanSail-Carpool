@@ -27,6 +27,7 @@ func Do[T any](ctx context.Context, queue *Queue, fn func(context.Context) (T, e
 	completed := make(chan result[T], 1)
 	item := call{
 		ctx: ctx,
+		key: orderingKey(ctx),
 		run: func(callCtx context.Context) {
 			value, err := fn(callCtx)
 			completed <- result[T]{value: value, err: err}

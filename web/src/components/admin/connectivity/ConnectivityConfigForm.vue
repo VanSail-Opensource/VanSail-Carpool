@@ -16,11 +16,11 @@ const { t } = useI18n()
         <UButton type="submit" color="neutral" variant="outline" :label="t('hostConnectivity.resolve')" :loading="resolving" :disabled="disabled || !username.trim() || resolving" />
       </div>
     </UFormField>
-    <div v-if="config.remnawaveUserId > 0" class="connectivity-config__selected">
-      <span>{{ user?.id === config.remnawaveUserId ? t('hostConnectivity.selectedUser', { name: user.username, id: user.id }) : t('hostConnectivity.selectedId', { id: config.remnawaveUserId }) }}</span>
+    <div v-if="config.proxyUserId > 0" class="connectivity-config__selected">
+      <span>{{ user?.id === config.proxyUserId ? t('hostConnectivity.selectedUser', { name: user.username, id: user.id }) : t('hostConnectivity.selectedId', { id: config.proxyUserId }) }}</span>
       <UButton type="button" color="neutral" variant="link" :label="t('hostConnectivity.clearUser')" :disabled="disabled" @click="emit('clear')" />
     </div>
-    <SwitchField id="connectivity-scheduled" :model-value="config.scheduledEnabled" :label="t('hostConnectivity.scheduled')" :help="t('hostConnectivity.scheduledHint')" :disabled="disabled || config.remnawaveUserId === 0" @update:model-value="emit('change', { scheduledEnabled: $event })" />
+    <SwitchField id="connectivity-scheduled" :model-value="config.scheduledEnabled" :label="t('hostConnectivity.scheduled')" :help="t('hostConnectivity.scheduledHint')" :disabled="disabled || config.proxyUserId === 0" @update:model-value="emit('change', { scheduledEnabled: $event })" />
     <div class="connectivity-config__timings">
       <UFormField name="connectivity-interval" :label="t('hostConnectivity.interval')" :description="t('hostConnectivity.intervalHint')">
         <UInput id="connectivity-interval" class="w-full" type="number" inputmode="numeric" :model-value="config.intervalSeconds" :min="60" :max="86400" :step="1" :disabled="disabled" @update:model-value="emit('change', { intervalSeconds: Number($event) })" />

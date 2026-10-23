@@ -26,11 +26,11 @@ func TestAutomaticRenewalRetainsRepricedHiddenSquads(t *testing.T) {
 			ctx := context.Background()
 			plan := eligibleAutoRenewalPlan()
 			plan.Purchase.PriceTXBMinor = 1_300
-			plan.Addons = []model.SquadProduct{{ID: "retained", RemnaSquadUUID: "retained", PriceTXBMinor: 700}}
+			plan.Addons = []model.SquadProduct{{ID: "retained", GroupID: "retained", PriceTXBMinor: 700}}
 			plan.GrossMinor, plan.NetMinor = 1_700, 1_700
 			repository := dueAutoRenewalRepositoryForPlan(plan)
 			repository.balance = model.TXBMoney(test.balance)
-			repository.addons = []model.SquadProduct{{ID: "retained", RemnaSquadUUID: "retained", Visible: false}}
+			repository.addons = []model.SquadProduct{{ID: "retained", GroupID: "retained", Visible: false}}
 			remote := renewalTestRemote()
 			if test.present {
 				remote.squads = append(remote.squads, RemoteSquad{UUID: "retained", Name: "Retained"})

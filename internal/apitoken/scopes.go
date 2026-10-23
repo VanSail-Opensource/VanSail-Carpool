@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var scopeNames = []string{"admin:read", "admin:write", "xnode:read", "xnode:write", "migration:read", "migration:write"}
+var scopeNames = []string{"admin:read", "admin:write", "xnode:read", "xnode:write"}
 
 func normalizeScopes(values []string) ([]string, error) {
 	if len(values) == 0 || len(values) > len(scopeNames) {
@@ -52,10 +52,7 @@ func (p Principal) AllowsRequest(method, path string) bool {
 	}
 	write := method != http.MethodGet && method != http.MethodHead
 	if strings.HasPrefix(resource, "operations/") && !write {
-		return p.Allows("admin", false) || p.Allows("xnode", false) || p.Allows("migration", false)
-	}
-	if resource == "xnode/migration" || strings.HasPrefix(resource, "xnode/migration/") {
-		return p.Allows("migration", write)
+		return p.Allows("admin", false) || p.Allows("xnode", false)
 	}
 	if resource == "xnode" || strings.HasPrefix(resource, "xnode/") {
 		return p.Allows("xnode", write)
@@ -65,8 +62,6 @@ func (p Principal) AllowsRequest(method, path string) bool {
 
 func (p Principal) AllowsOperation(kind string) bool {
 	switch kind {
-	case "xnode_migration":
-		return p.Allows("migration", false)
 	case "xnode_command", "xnode_routing":
 		return p.Allows("xnode", false)
 	default:

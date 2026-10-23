@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import type { NormalizedDistribution, SquadProduct } from '@/api/types'
 import { catalogSquadPresentation } from './catalogSquadPresentation'
 
-function squad(id: string, remnaSquadUuid: string, stockRemaining: number | null = null): SquadProduct {
+function squad(id: string, groupId: string, stockRemaining: number | null = null): SquadProduct {
   return {
     id,
-    remnaSquadUuid,
+    groupId,
     name: id,
     description: '',
     profile: null,
@@ -34,11 +34,11 @@ const distributions: readonly NormalizedDistribution[] = [{
   id: 'combo-1',
   label: 'Core',
   segments: [
-    { id: squads[0]!.remnaSquadUuid, label: 'Included', value: 90 },
-    { id: squads[1]!.remnaSquadUuid, label: 'Full', value: 80 },
-    { id: squads[2]!.remnaSquadUuid, label: 'Featured A', value: 40 },
-    { id: squads[3]!.remnaSquadUuid, label: 'Featured B', value: 40 },
-    { id: squads[4]!.remnaSquadUuid, label: 'Other', value: 10 },
+    { id: squads[0]!.groupId, label: 'Included', value: 90 },
+    { id: squads[1]!.groupId, label: 'Full', value: 80 },
+    { id: squads[2]!.groupId, label: 'Featured A', value: 40 },
+    { id: squads[3]!.groupId, label: 'Featured B', value: 40 },
+    { id: squads[4]!.groupId, label: 'Other', value: 10 },
   ],
 }]
 
@@ -68,9 +68,9 @@ describe('catalogSquadPresentation', () => {
     const global = [
       distributions[0]!,
       { ...distributions[0]!, id: 'combo-2', segments: [
-        { id: typed[0]!.remnaSquadUuid, label: 'A', value: 10 },
-        { id: typed[1]!.remnaSquadUuid, label: 'B', value: 30 },
-        { id: typed[2]!.remnaSquadUuid, label: 'C', value: 5 },
+        { id: typed[0]!.groupId, label: 'A', value: 10 },
+        { id: typed[1]!.groupId, label: 'B', value: 30 },
+        { id: typed[2]!.groupId, label: 'C', value: 5 },
       ] },
     ]
 

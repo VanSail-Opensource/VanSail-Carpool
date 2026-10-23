@@ -16,7 +16,7 @@ func TestPurchaseActivationCodesAreHashedAndValidated(t *testing.T) {
 	squadID := "activation-squad"
 	squad := saveTestSquad(t, store, squadID, 100, true)
 	_, err := store.SaveSquadProduct(ctx, SquadProductInput{
-		ID: squad.ID, RemnaSquadUUID: squadID, Name: squadID, Description: "gated",
+		ID: squad.ID, GroupID: squadID, Name: squadID, Description: "gated",
 		PriceTXBMinor: 100, Visible: true, UpstreamPresent: true,
 		ActivationRequired: true, ActivationCode: "secret-code",
 	})
@@ -44,7 +44,7 @@ func TestPurchaseActivationCodesAreHashedAndValidated(t *testing.T) {
 		t.Fatalf("valid activation code: %v", err)
 	}
 	var hash string
-	if err := store.DB().QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE remna_squad_uuid=?`, squadID).Scan(&hash); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT activation_code_hash FROM squad_product_overrides WHERE group_id=?`, squadID).Scan(&hash); err != nil {
 		t.Fatalf("load activation hash: %v", err)
 	}
 	if hash == "secret-code" || bcrypt.CompareHashAndPassword([]byte(hash), []byte("secret-code")) != nil {

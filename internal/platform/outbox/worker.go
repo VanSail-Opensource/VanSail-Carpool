@@ -49,6 +49,7 @@ type Worker struct {
 
 	mu       sync.RWMutex
 	handlers map[string]Handler
+	executor *executor
 }
 
 // NewWorker creates an empty dispatcher.
@@ -82,14 +83,19 @@ func (w *Worker) Kinds() []string {
 	return kinds
 }
 
-// Drain processes up to limit due jobs serially. Serial dispatch preserves the
-// existing SQLite write ordering while every handler remains independently
-// retryable and context-cancellable.
+// Drain admits bounded concurrent work after Start. Without Start it provides
+// synchronous dispatch for embedded callers. Claims retain durable ordering.
 func (w *Worker) Drain(ctx context.Context, limit int) error {
-	return w.drain(ctx, limit, w.repository.ClaimOutboxJob)
+	return w.drain(ctx, limit, w.repository.ClaimOutboxJob, false)
 }
 
-func (w *Worker) drain(ctx context.Context, limit int, claim func(context.Context, time.Time) (*model.OutboxJob, error)) error {
+func (w *Worker) drain(ctx context.Context, limit int, claim func(context.Context, time.Time) (*model.OutboxJob, error), priority bool) error {
+	w.mu.RLock()
+	executor := w.executor
+	w.mu.RUnlock()
+	if executor != nil {
+		return executor.drain(ctx, limit, claim, priority)
+	}
 	if limit <= 0 {
 		limit = 20
 	}

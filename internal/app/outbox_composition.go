@@ -34,7 +34,7 @@ func registerCoreOutboxHandlers(worker *outbox.Worker, store *database.Store, en
 	if err := worker.Register(jobpayload.UserNotificationKind, userNotifications); err != nil {
 		return fmt.Errorf("register user notification outbox handler: %w", err)
 	}
-	for _, kind := range []string{"remna_apply_entitlement", "remna_sync_user", jobpayload.ContinuityKind} {
+	for _, kind := range []string{"xnode_apply_entitlement", "xnode_sync_user", jobpayload.ContinuityKind} {
 		if err := worker.Register(kind, entitlementsWorker); err != nil {
 			return fmt.Errorf("register %s outbox handler: %w", kind, err)
 		}

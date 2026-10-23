@@ -1,6 +1,6 @@
 # Administrator host connectivity
 
-This settings module configures an existing Remnawave account and presents authenticated proxy connectivity attempts. It performs no browser-side probes and receives no proxy credentials. All data uses the administrator-only client in `web/src/api/connectivity.ts`.
+This settings module configures an existing X-Node account and presents authenticated proxy connectivity attempts. It performs no browser-side probes and receives no proxy credentials. All data uses the administrator-only client in `web/src/api/connectivity.ts`.
 
 - `AdminConnectivitySettings.vue` is the standalone `/admin/host-connectivity` panel, composing configuration, its independent Save action, Run now, latest results and history. General Settings neither loads nor saves connectivity.
 - `ConnectivityConfigForm.vue` emits typed configuration patches and exact-username actions using existing Nuxt fields and `SwitchField`. Only the resolved numeric account reference is persisted.

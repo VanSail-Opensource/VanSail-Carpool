@@ -70,7 +70,7 @@ func adminBulkMatchClause(filter AdminBulkExtensionFilter) (string, []any, error
 	if len(filter.AddonSquadUUIDs) > 0 {
 		marks := placeholders(len(filter.AddonSquadUUIDs))
 		conditions = append(conditions, `(purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL
-			AND EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND remna_squad_uuid IN (`+marks+`)))`)
+			AND EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND group_id IN (`+marks+`)))`)
 		for _, id := range filter.AddonSquadUUIDs {
 			args = append(args, id)
 		}

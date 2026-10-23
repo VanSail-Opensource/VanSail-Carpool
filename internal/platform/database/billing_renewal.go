@@ -72,7 +72,7 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	// rechecks its paid add-ons without displacing the current member.
 	selected := make([]string, 0, len(addons))
 	for _, squad := range addons {
-		selected = append(selected, squad.RemnaSquadUUID)
+		selected = append(selected, squad.GroupID)
 	}
 	if err := checkSquadStockTx(ctx, tx, selected, userID); err != nil {
 		return model.RenewalQuote{}, model.Combo{}, nil, err
@@ -88,7 +88,7 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
 		grossPerTerm += addon.PriceTXBMinor
-		addonIDs = append(addonIDs, addon.RemnaSquadUUID)
+		addonIDs = append(addonIDs, addon.GroupID)
 	}
 	discount := coupons.Discount{GrossMinor: grossPerTerm, NetMinor: grossPerTerm}
 	if purchase.RecurringDiscountAttached {
@@ -198,7 +198,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 			return model.RenewalBatch{}, err
 		}
 		for _, addon := range addons {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor) VALUES(?,?,?)`, purchaseID, addon.RemnaSquadUUID, addon.PriceTXBMinor); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, purchaseID, addon.GroupID, addon.PriceTXBMinor); err != nil {
 				return model.RenewalBatch{}, err
 			}
 		}

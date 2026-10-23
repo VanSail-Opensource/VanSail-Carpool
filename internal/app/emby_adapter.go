@@ -77,6 +77,7 @@ func embyExecute(ctx context.Context, adapter embyAdapter, call func(context.Con
 }
 
 func (a embyAdapter) FindUserByName(ctx context.Context, name string) (domain.RemoteUser, bool, error) {
+	ctx = upstreamqueue.WithKey(ctx, "name:"+name)
 	type lookup struct {
 		user   domain.RemoteUser
 		exists bool
@@ -89,18 +90,21 @@ func (a embyAdapter) FindUserByName(ctx context.Context, name string) (domain.Re
 }
 
 func (a embyAdapter) CreateUser(ctx context.Context, name string) (domain.RemoteUser, error) {
+	ctx = upstreamqueue.WithKey(ctx, "name:"+name)
 	return embyCall(ctx, a, func(callCtx context.Context, client embyClient) (domain.RemoteUser, error) {
 		return client.CreateUser(callCtx, name)
 	})
 }
 
 func (a embyAdapter) GetUser(ctx context.Context, id string) (domain.RemoteUser, error) {
+	ctx = upstreamqueue.WithKey(ctx, "user:"+id)
 	return embyCall(ctx, a, func(callCtx context.Context, client embyClient) (domain.RemoteUser, error) {
 		return client.GetUser(callCtx, id)
 	})
 }
 
 func (a embyAdapter) SetPassword(ctx context.Context, id string, currentPassword, nextPassword []byte) error {
+	ctx = upstreamqueue.WithKey(ctx, "user:"+id)
 	current := append([]byte(nil), currentPassword...)
 	next := append([]byte(nil), nextPassword...)
 	defer clear(current)
@@ -111,6 +115,7 @@ func (a embyAdapter) SetPassword(ctx context.Context, id string, currentPassword
 }
 
 func (a embyAdapter) UpdatePolicy(ctx context.Context, id string, policy domain.Policy) error {
+	ctx = upstreamqueue.WithKey(ctx, "user:"+id)
 	input := policy.Clone()
 	return embyExecute(ctx, a, func(callCtx context.Context, client embyClient) error {
 		return client.UpdatePolicy(callCtx, id, input)

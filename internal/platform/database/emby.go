@@ -13,7 +13,7 @@ const embyAccountSelect = `SELECT id,user_id,base_username,remote_user_id,remote
 	setup_price_txb_minor,setup_attempt,password_ciphertext,password_context,max_parental_rating,create_attempted,
 	last_error,created_at,updated_at,provisioned_at,refunded_at,pending_preferences_json FROM emby_accounts`
 
-// EmbyBaseUsername returns the user's immutable local Remnawave username.
+// EmbyBaseUsername returns the user's immutable local Proxy username.
 func (s *Store) EmbyBaseUsername(ctx context.Context, userID string) (string, error) {
 	var username string
 	err := s.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT base_username FROM emby_accounts WHERE user_id=users.id),CAST(telegram_id AS TEXT)) FROM users WHERE id=?`, userID).Scan(&username)

@@ -53,7 +53,7 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 			OR users.telegram_username LIKE ? ESCAPE '\' COLLATE NOCASE
 			OR CAST(users.telegram_id AS TEXT) LIKE ? ESCAPE '\'
 			OR users.id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(users.remna_user_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE)`
+			OR COALESCE(users.proxy_user_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE)`
 		args = append(args, pattern, pattern, pattern, pattern, pattern, pattern)
 	}
 	if clause, clauseArgs := adminUserFacetClause(filter, time.Now().UTC()); clause != "" {
@@ -169,7 +169,7 @@ func adminUserFacetClause(filter AdminUserSearchFilter, now time.Time) (string, 
 		marks := placeholders(len(filter.SquadUUIDs))
 		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND (
 			(purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL AND EXISTS (
-				SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND lower(remna_squad_uuid) IN (`+marks+`))) OR
+				SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND lower(group_id) IN (`+marks+`))) OR
 			EXISTS (SELECT 1 FROM json_each(CASE WHEN purchases.entitlement_squad_uuids IS NOT NULL THEN purchases.entitlement_squad_uuids
 				WHEN purchases.entitlement_addon_squad_uuids IS NOT NULL THEN purchases.entitlement_addon_squad_uuids ELSE '[]' END)
 				WHERE lower(value) IN (`+marks+`))))`)

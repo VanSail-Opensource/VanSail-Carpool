@@ -2,7 +2,7 @@ post:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: importAdminSquadProducts
-  summary: Reconcile local squad products from Remnawave
+  summary: Reconcile local squad products from X-Node
   description: Imports upstream squads and marks missing upstream records unavailable without deleting purchase history.
   responses:
     '200':

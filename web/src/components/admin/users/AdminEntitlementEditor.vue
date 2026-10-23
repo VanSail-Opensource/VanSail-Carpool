@@ -37,7 +37,7 @@ const draft = reactive<EditorDraft>({
 })
 
 const comboItems = computed(() => props.combos.map((combo) => ({ label: combo.name, value: combo.id })))
-const squadItems = computed(() => props.squads.map((squad) => ({ label: squad.name, value: squad.remnaSquadUuid })))
+const squadItems = computed(() => props.squads.map((squad) => ({ label: squad.name, value: squad.groupId })))
 const statusItems = computed(() => ['activating', 'active', 'queued', 'expired', 'cancelled', 'failed']
   .map((value) => ({ value, label: t(`adminUserProfile.entitlementStatus.${value}`) })))
 const cadenceItems = computed(() => ['DAY', 'WEEK', 'MONTH_ROLLING']

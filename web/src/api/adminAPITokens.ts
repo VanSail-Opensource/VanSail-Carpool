@@ -5,7 +5,7 @@ type Schema = components['schemas']
 export type PanelAPIToken = Schema['PanelAPIToken']
 export type PanelAPITokenWrite = Schema['PanelAPITokenWrite']
 export type PanelAPITokenIssued = Schema['PanelAPITokenIssued']
-export const apiTokenScopes = ['admin:read', 'admin:write', 'xnode:read', 'xnode:write', 'migration:read', 'migration:write'] as const
+export const apiTokenScopes = ['admin:read', 'admin:write', 'xnode:read', 'xnode:write'] as const
 
 const root = '/api/v1/admin/api-tokens'
 export const adminAPITokensApi = {

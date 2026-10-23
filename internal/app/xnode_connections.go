@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"encoding/base64"
+
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
@@ -13,36 +13,21 @@ import (
 )
 
 func (a proxyProvider) RequestConnectionScan(ctx context.Context, id string) (string, error) {
-	identity, native, err := a.nativeIdentity(ctx, id)
-	if err != nil {
+	if _, err := a.native.Identity(ctx, id); err != nil {
 		return "", err
-	}
-	if !native {
-		return a.remnaAdapter.RequestConnectionScan(ctx, id)
-	}
-	legacyJob := ""
-	bridge, err := a.legacy(ctx)
-	if err != nil {
-		return "", err
-	}
-	if bridge && identity.LegacyUserID != "" {
-		legacyJob, err = a.remnaAdapter.RequestConnectionScan(ctx, identity.LegacyUserID)
-		if err != nil {
-			return "", err
-		}
 	}
 	nonce, err := ids.Token(16)
 	if err != nil {
 		return "", err
 	}
-	return "xn:" + id + ":" + base64.RawURLEncoding.EncodeToString([]byte(legacyJob)) + ":" + nonce, nil
+	return "xn:" + id + "::" + nonce, nil
 }
 func (a proxyProvider) PollConnectionScan(ctx context.Context, id string) (connections.ProviderScan, error) {
 	if strings.HasPrefix(id, "xna:") {
 		return a.pollNativeConnectionScan(ctx, id)
 	}
 	if !strings.HasPrefix(id, "xn:") {
-		return a.remnaAdapter.PollConnectionScan(ctx, id)
+		return connections.ProviderScan{}, xnode.ErrInvalid
 	}
 	parts := strings.Split(id, ":")
 	if len(parts) != 4 {
@@ -53,26 +38,6 @@ func (a proxyProvider) PollConnectionScan(ctx context.Context, id string) (conne
 		return connections.ProviderScan{}, err
 	}
 	result := connections.ProviderScan{Completed: true, ProgressPercent: 100, Nodes: []connections.ProviderNode{}}
-	legacy, err := base64.RawURLEncoding.DecodeString(parts[2])
-	if err != nil {
-		return result, xnode.ErrInvalid
-	}
-	if len(legacy) > 0 {
-		old, err := a.remnaAdapter.PollConnectionScan(ctx, string(legacy))
-		if err != nil {
-			return result, err
-		}
-		for _, node := range old.Nodes {
-			owned, err := a.native.NativeOwner(ctx, node.UUID)
-			if err != nil {
-				return result, err
-			}
-			if !owned {
-				result.Nodes = append(result.Nodes, node)
-			}
-		}
-		result.Completed, result.Failed, result.ProgressPercent = old.Completed, old.Failed, old.ProgressPercent
-	}
 	nodes, err := a.native.Nodes(ctx)
 	if err != nil {
 		return result, err
@@ -120,18 +85,7 @@ func (a proxyProvider) ControlMemberIP(ctx context.Context, user, ip, node strin
 		return err
 	}
 	if !owned {
-		if unblock {
-			return a.remnaAdapter.UnblockIP(ctx, ip, node)
-		}
-		if seconds > 0 {
-			if err = a.remnaAdapter.BlockIP(ctx, ip, node, seconds); err != nil {
-				return err
-			}
-		}
-		if drop {
-			return a.remnaAdapter.DropConnection(ctx, ip, node)
-		}
-		return nil
+		return xnode.ErrNotFound
 	}
 	_, err = a.master.Command(ctx, node, "", "ips.control", wire.IPControl{UserID: int(identity.ProxyUserID), SourceIP: ip, Drop: drop, BlockSeconds: seconds, Unblock: unblock})
 	return err

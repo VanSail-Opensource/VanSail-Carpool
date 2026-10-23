@@ -18,20 +18,20 @@ func TestAcceptAgreementCompletesLocallyWithoutProvider(t *testing.T) {
 		user model.User
 	}{
 		{name: "first signup", user: model.User{ID: "user-1", Username: &username, OnboardingState: "agreement"}},
-		{name: "new agreement for linked user", user: model.User{ID: "user-1", Username: &username, RemnaUserID: &remoteID, OnboardingState: "agreement"}},
+		{name: "new agreement for linked user", user: model.User{ID: "user-1", Username: &username, ProxyUserID: &remoteID, OnboardingState: "agreement"}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			repository := &accountsRepository{user: model.User{ID: test.user.ID, OnboardingState: "complete", RemnaUserID: test.user.RemnaUserID},
+			repository := &accountsRepository{user: model.User{ID: test.user.ID, OnboardingState: "complete", ProxyUserID: test.user.ProxyUserID},
 				agreementRevision: 1, requiredAgreementIDs: []string{"terms"}}
-			remote := &accountsRemnawave{findResponses: []accountsFindResponse{{err: providerFailure}}, createErr: providerFailure}
+			remote := &accountsProxy{findResponses: []accountsFindResponse{{err: providerFailure}}, createErr: providerFailure}
 			completed, err := newAccountsServiceForTest(repository, &accountsValidator{}, &accountsTelegram{}, remote, &accountsSettings{}, 1).
 				AcceptAgreementRevision(context.Background(), test.user, 1, []string{"terms"})
 			if err != nil || completed.OnboardingState != "complete" || repository.completedUserID != test.user.ID {
 				t.Fatalf("AcceptAgreementRevision() = (%+v, %v), completed ID %q", completed, err, repository.completedUserID)
 			}
 			if remote.findIndex != 0 || len(remote.created) != 0 {
-				t.Fatalf("agreement acceptance called Remnawave: lookups %d creates %d", remote.findIndex, len(remote.created))
+				t.Fatalf("agreement acceptance called Proxy: lookups %d creates %d", remote.findIndex, len(remote.created))
 			}
 		})
 	}
@@ -56,7 +56,7 @@ func TestAcceptAgreementRejectsInvalidLocalState(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			repository := &accountsRepository{agreementRevision: 1, requiredAgreementIDs: []string{"terms"}, completeErr: test.completion}
-			_, err := newAccountsServiceForTest(repository, &accountsValidator{}, &accountsTelegram{}, &accountsRemnawave{}, &accountsSettings{}, 1).
+			_, err := newAccountsServiceForTest(repository, &accountsValidator{}, &accountsTelegram{}, &accountsProxy{}, &accountsSettings{}, 1).
 				AcceptAgreementRevision(context.Background(), test.user, test.revision, []string{"terms"})
 			if !errors.Is(err, test.wanted) {
 				t.Fatalf("AcceptAgreementRevision() = %v, want %v", err, test.wanted)

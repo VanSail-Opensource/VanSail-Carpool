@@ -4,7 +4,7 @@ import { comboDisplayPrice } from './comboDisplayPrice'
 
 describe('core combo price display', () => {
   it('charges each selected paid squad once and excludes included squads', () => {
-    const squad = (uuid: string, minor: string) => ({ remnaSquadUuid: uuid, price: { currency: 'TXB', minor, display: '' } }) as SquadProduct
+    const squad = (uuid: string, minor: string) => ({ groupId: uuid, price: { currency: 'TXB', minor, display: '' } }) as SquadProduct
     const included = squad('included', '2500')
     const paid = squad('paid', '9900')
     const free = squad('free', '0')
@@ -14,7 +14,7 @@ describe('core combo price display', () => {
   })
   it('keeps integer precision beyond safe floating-point values', () => {
     const combo = { price: { currency: 'TXB', minor: '9007199254740991', display: '' }, includedSquads: [] } as unknown as Combo
-    const paid = { remnaSquadUuid: 'paid', price: { minor: '12' } } as SquadProduct
+    const paid = { groupId: 'paid', price: { minor: '12' } } as SquadProduct
     expect(comboDisplayPrice(combo, [paid], true).minor).toBe('9007199254741003')
   })
 })

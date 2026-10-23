@@ -15,9 +15,6 @@ export type XNodeEndpoint = Schema['XNodeEndpoint']
 export type XNodeMetrics = Schema['XNodeMetricsSummary']
 export type XNodeValidation = Schema['XNodeValidation']
 export type XNodeEnrollment = Schema['XNodeEnrollment']
-export type XNodeMigration = Schema['XNodeMigration']
-export type XNodeMigrationPreview = Schema['XNodeMigrationPreview']
-export type XNodeMigrationPreviewWrite = Schema['XNodeMigrationPreviewWrite']
 export type XNodeCommand = Schema['XNodeCommandWrite']
 export type SubscriptionTemplate = Schema['XNodeSubscriptionTemplate']
 export type SubscriptionTemplateConfig = Schema['XNodeSubscriptionTemplateConfig']
@@ -57,10 +54,4 @@ export const xnodeApi = {
   logs: (id: string, signal?: AbortSignal) => request<Schema['XNodeLogs']>(`${root}/nodes/${encodeURIComponent(id)}/logs`, { cache: 'no-store', signal }),
   command: (id: string, body: XNodeCommand, key: string = crypto.randomUUID()) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
   commandResult: (id: string) => request<Schema['XNodeCommandResult']>(`${root}/operations/${encodeURIComponent(id)}`, { cache: 'no-store' }),
-  migration: () => request<XNodeMigration>(`${root}/migration`, { cache: 'no-store' }),
-  previewMigration: (body: XNodeMigrationPreviewWrite) => request<XNodeMigrationPreview>(`${root}/migration/preview`, { method: 'POST', body, cache: 'no-store' }),
-  importMigration: (digest: string) => request<Schema['OperationReceipt']>(`${root}/migration/import`, { method: 'POST', body: { digest }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
-  stageFinalMigration: (sourceBackupReference: string) => request<Schema['OperationReceipt']>(`${root}/migration/final-export`, { method: 'POST', body: { sourceBackupReference }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
-  finalizeMigration: (digest: string) => request<Schema['OperationReceipt']>(`${root}/migration/finalize`, { method: 'POST', body: { digest }, headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
-  migrateNode: (id: string, action: 'cutover' | 'rollback') => request<Schema['OperationReceipt']>(`${root}/migration/nodes/${encodeURIComponent(id)}/${action}`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() }, cache: 'no-store' }),
 }

@@ -72,12 +72,12 @@ func (w *ComboControlWorker) HandleProviderOperation(ctx context.Context, operat
 	if target.UserID != operation.OwnerUserID {
 		return errors.New("combo control owner mismatch")
 	}
-	kind, field, id := "remna_sync_user", "userId", operation.OwnerUserID
+	kind, field, id := "xnode_sync_user", "userId", operation.OwnerUserID
 	if operation.Receipt.Kind == OperationEarlyActivation {
 		if target.Status == "cancelled" || target.Status == "expired" {
 			return w.finish(ctx, operation, item, providerops.StatusFailed, "SUPERSEDED")
 		}
-		kind, field, id = "remna_apply_entitlement", "purchaseId", item.TargetID
+		kind, field, id = "xnode_apply_entitlement", "purchaseId", item.TargetID
 	} else if operation.Receipt.Kind != OperationSquadSwitch {
 		return errors.New("unsupported combo control")
 	}

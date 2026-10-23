@@ -153,7 +153,7 @@ func TestStoredExtensionAppliesToExactNextActivationAndDelaysQueue(t *testing.T)
 	}
 }
 
-func TestActiveExtensionQueuesRemnawaveSync(t *testing.T) {
+func TestActiveExtensionQueuesProxySync(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -197,10 +197,10 @@ func TestActiveExtensionQueuesRemnawaveSync(t *testing.T) {
 		t.Fatalf("queued dates = %s..%s, want %s..%s", updatedQueued.ValidFrom, updatedQueued.ValidUntil, queued.ValidFrom.AddDate(0, 0, 3), queued.ValidUntil.AddDate(0, 0, 3))
 	}
 	var syncJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
 		t.Fatal(err)
 	}
 	if syncJobs != 1 {
-		t.Fatalf("Remnawave sync jobs = %d, want 1", syncJobs)
+		t.Fatalf("Proxy sync jobs = %d, want 1", syncJobs)
 	}
 }

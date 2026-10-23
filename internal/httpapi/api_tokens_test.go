@@ -28,11 +28,11 @@ func TestBearerTokenScopesRevocationAndSessionIsolation(t *testing.T) {
 		})
 		r.Post("/api/v1/admin/xnode/nodes", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })
 		r.Get("/api/v1/admin/settings", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })
-		r.Get("/api/v1/admin/xnode/migration", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })
+		r.Get("/api/v1/admin/xnode/groups", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })
 		r.Get("/api/v1/admin/api-tokens", s.adminAPITokens)
 		r.Get("/api/v1/me", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })
 	})
-	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "migration", Scopes: []string{"xnode:read", "migration:write"}})
+	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "monitor", Scopes: []string{"xnode:read"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestBearerTokenScopesRevocationAndSessionIsolation(t *testing.T) {
 		}
 		return w
 	}
-	for _, path := range []string{"/api/v1/admin/xnode/nodes", "/api/v1/admin/xnode/migration"} {
+	for _, path := range []string{"/api/v1/admin/xnode/nodes", "/api/v1/admin/xnode/groups"} {
 		if w := request("GET", path, issued.Token); w.Code != 204 {
 			t.Fatalf("allowed %s=%d:%s", path, w.Code, w.Body.String())
 		}
@@ -88,7 +88,7 @@ func TestAPITokenBrowserManagementShowsSecretOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body := `{"name":"assistant","scopes":["migration:write"],"expiresInDays":7}`
+	body := `{"name":"assistant","scopes":["xnode:write"],"expiresInDays":7}`
 	r := httptest.NewRequest("POST", "/api/v1/admin/api-tokens", strings.NewReader(body))
 	signBrowserTestRequest(t, s, r, browser, body)
 	w := httptest.NewRecorder()
@@ -120,7 +120,7 @@ func TestAPIReceiptScopeDoesNotExposeOtherOperations(t *testing.T) {
 	s.deps.APITokens = apitoken.New(s.deps.Store, []int64{user.TelegramID})
 	router := handler.(chi.Router)
 	router.With(s.requireSignedRequest, s.requireSession, s.requireAdmin).Get("/api/v1/admin/operations/{operationId}", s.adminOperationReceipt)
-	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "migration", Scopes: []string{"migration:write"}})
+	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "migration", Scopes: []string{"xnode:write"}})
 	if err != nil {
 		t.Fatal(err)
 	}

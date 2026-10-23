@@ -64,7 +64,7 @@ func (s *Store) CancelAdminPurchase(ctx context.Context, actorID, purchaseID, re
 	gate := ""
 	if previousStatus != "queued" {
 		gate = userSyncGate(purchase.UserID)
-		if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+purchase.UserID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+purchase.UserID+`"}`, now, now); err != nil {
 			return model.Purchase{}, err
 		}
 	}

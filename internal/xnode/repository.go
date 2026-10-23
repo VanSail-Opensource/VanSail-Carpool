@@ -52,15 +52,10 @@ type Repository interface {
 	RecordXNodeTraffic(context.Context, string, string, uint64, string, wire.TrafficReport) error
 	XNodeReportSequence(context.Context, string) (uint64, error)
 	XNodeUsage(context.Context, int64, time.Time, time.Time) ([]DailyUsage, error)
-	XNodeLegacyUsage(context.Context, int64) (LegacyUsage, error)
-	SyncXNodeLegacyUsage(context.Context, LegacyUsage) error
-	SaveXNodeLegacyHistory(context.Context, []LegacyHistory) error
-	XNodeLegacyHistory(context.Context, int64, time.Time, time.Time) ([]LegacyHistory, error)
+	XNodeImportedUsage(context.Context, int64) (ImportedUsage, error)
+	XNodeImportedHistory(context.Context, int64, time.Time, time.Time) ([]ImportedHistory, error)
 	XNodeCustomizations(context.Context, string) ([]Customization, error)
 	SaveXNodeCustomization(context.Context, Customization) error
-	XNodeMigration(context.Context) (MigrationState, error)
-	SaveXNodeMigration(context.Context, MigrationState) error
-	SaveXNodeMigrationNode(context.Context, MigrationNode) error
 	UserByID(context.Context, string) (model.User, error)
 	UserByUsername(context.Context, string) (model.User, error)
 	UserByTelegramID(context.Context, int64) (model.User, error)

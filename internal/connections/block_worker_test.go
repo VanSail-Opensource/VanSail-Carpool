@@ -91,7 +91,7 @@ func newBlockWorkerFixture(now time.Time) (*blockWorkerRepo, *blockWorkerRemote,
 		operation: providerops.Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: BlockOperationKind, Status: "queued"}, OwnerUserID: "owner"},
 		item:      providerops.Item{OperationID: "operation", Key: "ip", TargetType: "connection_ip_hmac", TargetID: "digest", Status: providerops.StatusQueued},
 		block:     IPBlockRecord{ID: "block", UserID: "owner", NodeUUID: "6aa6d759-20de-4b11-8c0a-8e0daee3a4ee", IPDigest: "digest", SealedIP: "cipher", Status: BlockStatusBlocking, ExpiresAt: now.Add(BlockDuration)},
-		user:      model.User{ID: "owner", RemnaUserID: &remoteID},
+		user:      model.User{ID: "owner", ProxyUserID: &remoteID},
 	}
 	remote := &blockWorkerRemote{}
 	worker := NewBlockWorker(repo, remote, workerSecrets{})

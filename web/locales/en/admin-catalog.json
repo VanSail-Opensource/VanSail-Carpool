@@ -1,7 +1,7 @@
 {
   "adminCatalog": {
     "title": "Catalog",
-    "copy": "Manage live combo terms and sparse overrides for upstream Remnawave squads.",
+    "copy": "Manage live combo terms and sparse overrides for upstream X-Node squads.",
     "chooseRecord": "Choose a catalog record.",
     "newCombo": "New combo",
     "comboSummary": "{traffic} for {days} days",
@@ -15,10 +15,10 @@
     "noCombos": "No combos",
     "noCombosHint": "Create the first plan to open the catalog.",
     "squads": "Internal squads",
-    "squadsHint": "Identity comes from live Remnawave squads; only non-default display and price values are stored locally.",
+    "squadsHint": "Identity comes from live X-Node squads; only non-default display and price values are stored locally.",
     "refreshSquads": "Refresh squads",
     "noSquads": "No upstream squads",
-    "noSquadsHint": "Refresh from Remnawave to configure optional access.",
+    "noSquadsHint": "Refresh from X-Node to configure optional access.",
     "hideTitle": "Hide this combo?",
     "hideDescription": "The combo is hidden from new checkout. Existing and historical purchases keep their live reference, so later edits still affect them.",
     "hideCombo": "Hide combo"
@@ -44,7 +44,7 @@
     },
     "rolloverMinimum": "Minimum remaining traffic, percent",
     "includedSquads": "Included live squads",
-    "noSquads": "Refresh Remnawave squads before assigning them.",
+    "noSquads": "Refresh X-Node squads before assigning them.",
     "available": "Available to users",
     "liveTermsHint": "Hiding blocks new checkout. Changes to this live record affect active, queued, and historical purchases.",
     "save": "Save combo"

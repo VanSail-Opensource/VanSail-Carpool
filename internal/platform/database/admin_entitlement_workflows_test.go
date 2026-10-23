@@ -170,7 +170,7 @@ func TestReplaceAdminComboMovesNoTXB(t *testing.T) {
 	newIncluded := saveTestSquad(t, store, "22222222-2222-4222-8222-222222222222", 0, true)
 	original := saveTestCombo(t, store, "original-combo", 2_000, 30)
 	replacement := saveTestCombo(t, store, "replacement-combo", 8_000, 30, newIncluded.ID)
-	user, purchase := createAdminWorkflowPurchase(t, store, 41006, original, now, paidAddon.RemnaSquadUUID)
+	user, purchase := createAdminWorkflowPurchase(t, store, 41006, original, now, paidAddon.GroupID)
 	beforeBalance := adminWorkflowBalance(t, store, user.ID)
 	beforeLedger, err := store.ListLedger(ctx, user.ID, 100)
 	if err != nil {

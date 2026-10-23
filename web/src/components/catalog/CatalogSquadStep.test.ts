@@ -18,7 +18,7 @@ const node: CatalogNode = {
   providerName: 'Transit provider',
 }
 const squad: SquadProduct = {
-  id: 'squad-1', remnaSquadUuid: '00000000-0000-4000-8000-000000000002', name: 'North transit', description: '', profile: null,
+  id: 'squad-1', groupId: '00000000-0000-4000-8000-000000000002', name: 'North transit', description: '', profile: null,
   price: { currency: 'TXB', minor: '100', display: '1.00 TXB' }, visible: true, upstreamPresent: true, stockHeldByCurrentUser: false,
   activationRequired: false, accessibleNodes: [node], stockRemaining: 4,
   createdAt: '2026-08-21T00:00:00Z', updatedAt: '2026-08-21T00:00:00Z',

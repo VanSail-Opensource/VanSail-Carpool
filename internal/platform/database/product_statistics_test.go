@@ -22,11 +22,11 @@ func TestProductStatisticsExcludeAdministratorsFromMemberMetrics(t *testing.T) {
 	for _, identity := range []struct {
 		userID, remoteID string
 	}{
-		{userID: member.ID, remoteID: "member-remna-id"},
-		{userID: admin.ID, remoteID: "admin-remna-id"},
+		{userID: member.ID, remoteID: "member-proxy-id"},
+		{userID: admin.ID, remoteID: "admin-proxy-id"},
 	} {
-		if _, err := store.DB().ExecContext(ctx, `UPDATE users SET remna_user_id=? WHERE id=?`, identity.remoteID, identity.userID); err != nil {
-			t.Fatalf("set Remnawave identity: %v", err)
+		if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=? WHERE id=?`, identity.remoteID, identity.userID); err != nil {
+			t.Fatalf("set Proxy identity: %v", err)
 		}
 	}
 	memberSquad := saveTestSquad(t, store, "member-squad", 0, true)
@@ -67,7 +67,7 @@ func TestProductStatisticsExcludeAdministratorsFromMemberMetrics(t *testing.T) {
 		t.Fatalf("member state/catalog metrics = %+v", statistics)
 	}
 	if len(statistics.SquadByCombo) != 1 || statistics.SquadByCombo[0].ID != memberCombo.ID ||
-		len(statistics.ComboBySquad) != 1 || statistics.ComboBySquad[0].ID != memberSquad.RemnaSquadUUID {
+		len(statistics.ComboBySquad) != 1 || statistics.ComboBySquad[0].ID != memberSquad.GroupID {
 		t.Fatalf("member distributions = (%+v, %+v)", statistics.SquadByCombo, statistics.ComboBySquad)
 	}
 	members, err := store.ActiveMemberUsageForStatistics(ctx, now.Add(time.Minute))
@@ -86,14 +86,14 @@ func TestProductStatisticsUseEffectiveSquadOverrides(t *testing.T) {
 	fullOverride := saveTestSquad(t, store, "33333333-3333-4333-8333-333333333333", 0, true)
 	addonOverride := saveTestSquad(t, store, "44444444-4444-4444-8444-444444444444", 0, true)
 	combo := saveTestCombo(t, store, "Override combo", 100, 30, included.ID)
-	first, firstPurchase := createAdminWorkflowPurchase(t, store, 72_001, combo, now, staleAddon.RemnaSquadUUID)
-	second, secondPurchase := createAdminWorkflowPurchase(t, store, 72_002, combo, now, staleAddon.RemnaSquadUUID)
+	first, firstPurchase := createAdminWorkflowPurchase(t, store, 72_001, combo, now, staleAddon.GroupID)
+	second, secondPurchase := createAdminWorkflowPurchase(t, store, 72_002, combo, now, staleAddon.GroupID)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=? WHERE id=?`,
-		`["`+fullOverride.RemnaSquadUUID+`"]`, firstPurchase.ID); err != nil {
+		`["`+fullOverride.GroupID+`"]`, firstPurchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=? WHERE id=?`,
-		`["`+addonOverride.RemnaSquadUUID+`"]`, secondPurchase.ID); err != nil {
+		`["`+addonOverride.GroupID+`"]`, secondPurchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	statistics, err := store.ProductDatabaseStatistics(ctx, now.Add(time.Minute))
@@ -103,12 +103,12 @@ func TestProductStatisticsUseEffectiveSquadOverrides(t *testing.T) {
 	if statistics.AverageOptionalSquads != 1 {
 		t.Fatalf("average optional squads = %v, want 1", statistics.AverageOptionalSquads)
 	}
-	wantSquads := map[string]bool{included.RemnaSquadUUID: true, fullOverride.RemnaSquadUUID: true, addonOverride.RemnaSquadUUID: true}
+	wantSquads := map[string]bool{included.GroupID: true, fullOverride.GroupID: true, addonOverride.GroupID: true}
 	if len(statistics.ComboBySquad) != len(wantSquads) {
 		t.Fatalf("combo-by-squad = %+v", statistics.ComboBySquad)
 	}
 	for _, group := range statistics.ComboBySquad {
-		if !wantSquads[group.ID] || group.ID == staleAddon.RemnaSquadUUID {
+		if !wantSquads[group.ID] || group.ID == staleAddon.GroupID {
 			t.Fatalf("unexpected effective squad distribution for users %s/%s: %+v", first.ID, second.ID, statistics.ComboBySquad)
 		}
 	}

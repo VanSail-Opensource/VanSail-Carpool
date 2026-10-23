@@ -2,7 +2,7 @@ post:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: resolveAdminHostConnectivityTestUser
-  summary: Resolve one exact Remnawave username to safe account identity
+  summary: Resolve one exact X-Node username to safe account identity
   requestBody:
     required: true
     content:

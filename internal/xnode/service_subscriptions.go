@@ -44,13 +44,6 @@ func (s *Service) identityInventory(ctx context.Context, identity Identity) ([]s
 		return []subscription.Proxy{}, false, err
 	}
 	out := []subscription.Proxy{}
-	var legacyError error
-	if s.legacyProxies != nil && identity.LegacyUserID != "" {
-		out, legacyError = s.legacyProxies(ctx, identity)
-		if legacyError != nil {
-			out = []subscription.Proxy{}
-		}
-	}
 	endpoints, err := s.Endpoints(ctx)
 	if err != nil {
 		return nil, false, err
@@ -94,10 +87,7 @@ func (s *Service) identityInventory(ctx context.Context, identity Identity) ([]s
 			out = append(out, proxy)
 		}
 	}
-	if len(out) == 0 && legacyError != nil {
-		return nil, true, ErrUnavailable
-	}
-	return out, legacyError != nil, nil
+	return out, false, nil
 }
 
 func (s *Service) serviceSubscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {

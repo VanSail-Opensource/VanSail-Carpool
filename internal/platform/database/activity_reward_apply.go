@@ -145,13 +145,13 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 	case activity.RewardTrafficReset:
 		_, err = tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=? WHERE id=?`, stamp(now), purchaseID)
 		if err == nil {
-			return insertOutboxTx(ctx, tx, "remna_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
+			return insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
 		}
 	}
 	if err != nil {
 		return fmt.Errorf("apply draw entitlement: %w", err)
 	}
-	return insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, now, now)
+	return insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now)
 }
 
 func grantDrawCouponTx(ctx context.Context, tx *sql.Tx, userID, resultID, name string, reward activity.Reward, value int64, now time.Time) error {

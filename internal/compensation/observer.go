@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Observe records one complete, queue-backed Remnawave sample.
+// Observe records one complete, queue-backed Proxy sample.
 func (s *Service) Observe(ctx context.Context, now time.Time) error {
 	config, err := s.repository.CompensationConfig(ctx)
 	if err != nil {

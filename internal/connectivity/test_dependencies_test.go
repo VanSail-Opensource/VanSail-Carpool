@@ -75,7 +75,7 @@ func (p testProbe) Check(ctx context.Context, target Target, cfg Config) Outcome
 func configuredDependencies(t *testing.T) (*testSettings, *testSource, *testRepository, Config) {
 	t.Helper()
 	cfg := DefaultConfig()
-	cfg.RemnawaveUserID = 42
+	cfg.ProxyUserID = 42
 	settings := &testSettings{}
 	settings.set(t, cfg)
 	source := &testSource{user: User{ID: 42, Username: "monitor", Status: "ACTIVE"},

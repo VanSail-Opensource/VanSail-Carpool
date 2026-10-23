@@ -52,7 +52,7 @@
       "description": "Manage shared subscriptions, renewals, and streaming access through Telegram.",
       "services": "Your shared services",
       "connectivity": "Connectivity",
-      "connectivityHint": "Remnawave accounts and subscriptions",
+      "connectivityHint": "X-Node accounts and subscriptions",
       "streaming": "Streaming",
       "streamingHint": "Emby account and library access",
       "membership": "Membership",

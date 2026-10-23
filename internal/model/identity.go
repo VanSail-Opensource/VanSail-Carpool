@@ -42,7 +42,7 @@ type User struct {
 	ChannelJoined           bool       `json:"channelJoined"`
 	PolicyAcceptedAt        *time.Time `json:"policyAcceptedAt"`
 	AgreementRevision       int        `json:"agreementRevision"`
-	RemnaUserID             *string    `json:"-"`
+	ProxyUserID             *string    `json:"-"`
 	RecoveryReason          string     `json:"recoveryReason"`
 	NewUser                 bool       `json:"-"`
 	InviterID               *int64     `json:"-"`

@@ -2,8 +2,7 @@ package xnode_test
 
 import (
 	"context"
-	"errors"
-	"strings"
+
 	"testing"
 	"time"
 
@@ -16,53 +15,21 @@ func standaloneFixture(t *testing.T, limit, used int64, strategy string) (fixtur
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	access := xnode.ServiceAccess{LimitBytes: limit, Strategy: strategy, StartedAt: time.Now().UTC().Add(-31 * 24 * time.Hour), ExpiresAt: time.Now().UTC().AddDate(1, 0, 0), GroupIDs: []string{f.group.ID}}
-	identity, err := f.service.ImportServiceIdentity(ctx, "standalone", 376, "00000000-0000-4000-8000-000000000376", "existing-trojan", "existing-chacha", access)
+	saved, err := f.service.SaveNamedService(ctx, "", "standalone", access)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if identity.ProxyUserID < 1<<52 || identity.ProxyUserID >= 1<<53 || identity.LegacyUserID != "376" {
-		t.Fatal("standalone identity lost its separate native namespace", identity.ProxyUserID)
+	identity := saved.Identity
+	if identity.ProxyUserID < 1<<52 || identity.ProxyUserID >= 1<<53 {
+		t.Fatal("invalid service namespace", identity.ProxyUserID)
 	}
-	if err = f.store.SaveXNodeMigration(ctx, xnode.MigrationState{Phase: "active"}); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `INSERT INTO xnode_imported_usage(proxy_user_id,period_id,used_bytes,lifetime_bytes,synced_at) VALUES(?,?,?,?,?)`, identity.ProxyUserID, identity.CurrentPeriodID, used, 10000, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
-	if err = f.service.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: used, LifetimeBytes: 10000, SyncedAt: time.Now().UTC()}); err != nil {
-		t.Fatal(err)
-	}
-	identity, err = f.store.XNodeIdentity(ctx, identity.ProxyUserID)
-	if err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, used, identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
 	return f, identity, access
-}
-
-func TestStandaloneImportPreservesQuotaCredentialsAndPrivateSubscription(t *testing.T) {
-	f, identity, access := standaloneFixture(t, 1000, 100, "MONTH_ROLLING")
-	ctx := context.Background()
-	if _, err := f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Standalone host", Address: "proxy.example", Port: 443, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	metadata, err := f.service.ServiceSubscription(ctx, stringID(identity))
-	if err != nil || !metadata.Active || metadata.LimitBytes != "1000" || metadata.UsedBytes != "100" || metadata.ExpiresAt == nil || !metadata.ExpiresAt.Equal(access.ExpiresAt) {
-		t.Fatalf("standalone metadata: active=%v, used=%s, limit=%s, error=%v", metadata.Active, metadata.UsedBytes, metadata.LimitBytes, err)
-	}
-	token := metadata.URL[strings.LastIndex(metadata.URL, "/")+1:]
-	raw, _, err := f.service.BearerSubscription(ctx, token, "xray")
-	if err != nil || !strings.Contains(string(raw), "00000000-0000-4000-8000-000000000376") {
-		t.Fatalf("compatible credential missing from subscription: %v", err)
-	}
-	resumed, err := f.service.ImportServiceIdentity(ctx, "standalone", 376, "00000000-0000-4000-8000-000000000376", "existing-trojan", "existing-chacha", access)
-	if err != nil || resumed.CredentialsCipher != identity.CredentialsCipher || resumed.SubscriptionCipher != identity.SubscriptionCipher || resumed.CurrentPeriodID != identity.CurrentPeriodID {
-		t.Fatalf("resume changed identity or accounting: %v", err)
-	}
-	access.LimitBytes++
-	if _, err = f.service.ImportServiceIdentity(ctx, "standalone", 376, "00000000-0000-4000-8000-000000000376", "existing-trojan", "existing-chacha", access); !errors.Is(err, xnode.ErrConflict) {
-		t.Fatalf("resume silently changed quota: %v", err)
-	}
-	period, err := f.store.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil || period.PurchaseID != "" || period.UsedBytes != 100 || period.LimitBytes != 1000 {
-		t.Fatalf("standalone quota or purchase ownership changed: %+v, %v", period, err)
-	}
 }
 
 func TestStandaloneNativeTrafficExhaustsTheSharedAllowance(t *testing.T) {
@@ -86,19 +53,11 @@ func TestStandaloneNativeTrafficExhaustsTheSharedAllowance(t *testing.T) {
 	}
 }
 
-func TestStandaloneCadenceWaitsForFinalSourceAccounting(t *testing.T) {
+func TestStandaloneCadencePreservesHistoricalBaseline(t *testing.T) {
 	f, identity, _ := standaloneFixture(t, 1000, 100, "MONTH_ROLLING")
 	ctx := context.Background()
-	if err := f.service.ResetCadences(ctx); err != nil {
-		t.Fatal(err)
-	}
-	current, err := f.store.XNodeIdentity(ctx, identity.ProxyUserID)
-	if err != nil || current.CurrentPeriodID != identity.CurrentPeriodID {
-		t.Fatal("native reset advanced ahead of the active source")
-	}
-	if err = f.store.SaveXNodeMigration(ctx, xnode.MigrationState{Phase: "complete"}); err != nil {
-		t.Fatal(err)
-	}
+	var current xnode.Identity
+	var err error
 	if err = f.service.ResetCadences(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -113,29 +72,5 @@ func TestStandaloneCadenceWaitsForFinalSourceAccounting(t *testing.T) {
 	old, err := f.store.XNodePeriod(ctx, identity.CurrentPeriodID)
 	if err != nil || old.UsedBytes != 100 || old.Status != "closed" {
 		t.Fatalf("reset erased previous usage: %+v, %v", old, err)
-	}
-}
-
-func TestStandaloneSourceResetRetainsLateTailAndRejectsStaleImports(t *testing.T) {
-	f, identity, _ := standaloneFixture(t, 1000, 100, "MONTH_ROLLING")
-	ctx := context.Background()
-	at := time.Now().UTC().Add(time.Second)
-	if err := f.service.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: 7, LifetimeBytes: 10020, LastResetAt: &at, SyncedAt: at}); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.service.SyncLegacyUsage(ctx, identity, xnode.LegacyUsage{UsedBytes: 99, LifetimeBytes: 9999, SyncedAt: at.Add(-time.Hour)}); err != nil {
-		t.Fatal(err)
-	}
-	current, err := f.store.XNodeIdentity(ctx, identity.ProxyUserID)
-	if err != nil || current.CurrentPeriodID == identity.CurrentPeriodID {
-		t.Fatal("source reset failed to open a standalone period")
-	}
-	period, err := f.store.XNodePeriod(ctx, current.CurrentPeriodID)
-	if err != nil || period.UsedBytes != 7 {
-		t.Fatalf("new reset counter changed: %+v, %v", period, err)
-	}
-	old, err := f.store.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil || old.UsedBytes != 113 || old.Status != "closing" {
-		t.Fatalf("late source tail lost: %+v, %v", old, err)
 	}
 }

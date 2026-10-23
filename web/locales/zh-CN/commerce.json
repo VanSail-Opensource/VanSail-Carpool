@@ -38,7 +38,7 @@
       "cancelled": "已取消",
       "failed": "失败"
     },
-    "purchaseScheduled": "{name} 已排期。Remnawave 激活可能需要片刻。",
+    "purchaseScheduled": "{name} 已排期。X-Node 激活可能需要片刻。",
     "coreCombos": "核心套餐",
     "noCombos": "暂无可用套餐",
     "noCombosHint": "管理员尚未发布套餐。",

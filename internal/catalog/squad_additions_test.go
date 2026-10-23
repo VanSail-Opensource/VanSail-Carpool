@@ -14,7 +14,7 @@ func TestSquadAdditionQuoteAndCommit(t *testing.T) {
 	t.Parallel()
 
 	repository := newPurchaseAddonCatalogRepository()
-	service := newCatalogServiceForTest(repository, &catalogRemnawave{})
+	service := newCatalogServiceForTest(repository, &catalogProxy{})
 	user := model.User{ID: "member", OnboardingState: "complete"}
 	quote, err := service.QuoteAddons(context.Background(), user, "purchase", []string{" squad-1 "})
 	if err != nil || quote.PurchaseID != "purchase" || repository.quoteInput.UserID != user.ID || repository.quoteInput.PurchaseID != "purchase" || repository.quoteInput.AddonSquadIDs[0] != " squad-1 " || !repository.quoteAt.Equal(service.now().UTC()) {
@@ -41,7 +41,7 @@ func TestSquadAdditionValidation(t *testing.T) {
 
 	ctx := context.Background()
 	complete := model.User{ID: "member", OnboardingState: "complete"}
-	service := newCatalogServiceForTest(newPurchaseAddonCatalogRepository(), &catalogRemnawave{})
+	service := newCatalogServiceForTest(newPurchaseAddonCatalogRepository(), &catalogProxy{})
 	for _, user := range []model.User{{ID: "member"}, complete} {
 		addonIDs := []string{"squad-1"}
 		if user.OnboardingState == "complete" {
@@ -57,19 +57,19 @@ func TestSquadAdditionValidation(t *testing.T) {
 
 	listFailure := newPurchaseAddonCatalogRepository()
 	listFailure.addonsErr = errors.New("catalog failure")
-	if _, err := newCatalogServiceForTest(listFailure, &catalogRemnawave{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); !errors.Is(err, listFailure.addonsErr) {
+	if _, err := newCatalogServiceForTest(listFailure, &catalogProxy{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); !errors.Is(err, listFailure.addonsErr) {
 		t.Fatalf("QuoteAddons(catalog failure) = %v", err)
 	}
-	for _, product := range []model.SquadProduct{{RemnaSquadUUID: "squad-1", Visible: false, UpstreamPresent: true}, {RemnaSquadUUID: "squad-1", Visible: true}} {
+	for _, product := range []model.SquadProduct{{GroupID: "squad-1", Visible: false, UpstreamPresent: true}, {GroupID: "squad-1", Visible: true}} {
 		repository := newPurchaseAddonCatalogRepository()
 		repository.addons = []model.SquadProduct{product}
-		if _, err := newCatalogServiceForTest(repository, &catalogRemnawave{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); !errors.Is(err, database.ErrNotFound) {
+		if _, err := newCatalogServiceForTest(repository, &catalogProxy{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); !errors.Is(err, database.ErrNotFound) {
 			t.Fatalf("QuoteAddons(invisible product) = %v", err)
 		}
 	}
 
-	unsupported := &catalogRepository{addons: []model.SquadProduct{{RemnaSquadUUID: "squad-1", Visible: true, UpstreamPresent: true}}}
-	if _, err := newCatalogServiceForTest(unsupported, &catalogRemnawave{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); err == nil {
+	unsupported := &catalogRepository{addons: []model.SquadProduct{{GroupID: "squad-1", Visible: true, UpstreamPresent: true}}}
+	if _, err := newCatalogServiceForTest(unsupported, &catalogProxy{}).QuoteAddons(ctx, complete, "purchase", []string{"squad-1"}); err == nil {
 		t.Fatal("QuoteAddons() succeeded without an add-on repository")
 	}
 }
@@ -88,7 +88,7 @@ type purchaseAddonCatalogRepository struct {
 
 func newPurchaseAddonCatalogRepository() *purchaseAddonCatalogRepository {
 	return &purchaseAddonCatalogRepository{
-		catalogRepository: &catalogRepository{addons: []model.SquadProduct{{RemnaSquadUUID: "squad-1", Visible: true, UpstreamPresent: true}}},
+		catalogRepository: &catalogRepository{addons: []model.SquadProduct{{GroupID: "squad-1", Visible: true, UpstreamPresent: true}}},
 		quote:             model.PurchaseAddonQuote{PurchaseID: "purchase"},
 		add:               model.Purchase{ID: "purchase"},
 	}

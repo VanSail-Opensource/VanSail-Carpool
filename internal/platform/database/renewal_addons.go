@@ -20,9 +20,9 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 			excluded[id] = struct{}{}
 		}
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT a.remna_squad_uuid,COALESCE(o.price_txb_minor,0)
-		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.remna_squad_uuid=a.remna_squad_uuid
-		WHERE a.purchase_id=? ORDER BY a.remna_squad_uuid`, purchaseID)
+	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,COALESCE(o.price_txb_minor,0)
+		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
+		WHERE a.purchase_id=? ORDER BY a.group_id`, purchaseID)
 	if err != nil {
 		return nil, fmt.Errorf("load current renewal add-ons: %w", err)
 	}
@@ -30,12 +30,12 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 	addons := make([]model.SquadProduct, 0)
 	for rows.Next() {
 		var addon model.SquadProduct
-		if err := rows.Scan(&addon.RemnaSquadUUID, &addon.PriceTXBMinor); err != nil {
+		if err := rows.Scan(&addon.GroupID, &addon.PriceTXBMinor); err != nil {
 			return nil, fmt.Errorf("scan current renewal add-on: %w", err)
 		}
-		addon.ID = addon.RemnaSquadUUID
+		addon.ID = addon.GroupID
 		addon.Price = model.TXBMoney(addon.PriceTXBMinor)
-		if _, skip := excluded[addon.RemnaSquadUUID]; skip {
+		if _, skip := excluded[addon.GroupID]; skip {
 			continue
 		}
 		addons = append(addons, addon)

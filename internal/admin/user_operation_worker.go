@@ -105,13 +105,13 @@ func (w *UserOperationWorker) applyExactState(ctx context.Context, userID string
 	if err != nil {
 		return providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "LOCAL_STATE_UNAVAILABLE"}
 	}
-	if user.RemnaUserID == nil {
+	if user.ProxyUserID == nil {
 		return providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: `{"providerMutation":"not_required"}`}
 	}
 	if desired == nil {
-		err = w.remote.RemoveEntitlement(ctx, *user.RemnaUserID)
+		err = w.remote.RemoveEntitlement(ctx, *user.ProxyUserID)
 	} else {
-		err = w.remote.ApplyEntitlement(ctx, *user.RemnaUserID, desired.TrafficLimitBytes,
+		err = w.remote.ApplyEntitlement(ctx, *user.ProxyUserID, desired.TrafficLimitBytes,
 			desired.ResetStrategy, desired.SquadUUIDs, desired.ValidUntil)
 	}
 	if err != nil {

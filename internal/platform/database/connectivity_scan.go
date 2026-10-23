@@ -8,7 +8,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
-const connectivityAttemptColumns = `id,run_id,host_uuid,config_hash,remnawave_user_id,trigger,
+const connectivityAttemptColumns = `id,run_id,host_uuid,config_hash,proxy_user_id,trigger,
 	started_at,finished_at,status,latency_ms,http_status,error_code`
 
 func scanConnectivityAttempt(row rowScanner) (connectivity.Attempt, error) {
@@ -17,7 +17,7 @@ func scanConnectivityAttempt(row rowScanner) (connectivity.Attempt, error) {
 	var started string
 	var latency sql.NullFloat64
 	var httpStatus sql.NullInt64
-	if err := row.Scan(&attempt.ID, &attempt.RunID, &host, &attempt.ConfigHash, &attempt.RemnawaveUserID,
+	if err := row.Scan(&attempt.ID, &attempt.RunID, &host, &attempt.ConfigHash, &attempt.ProxyUserID,
 		&attempt.Trigger, &started, &finished, &attempt.Status, &latency, &httpStatus, &attempt.ErrorCode); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return connectivity.Attempt{}, ErrNotFound

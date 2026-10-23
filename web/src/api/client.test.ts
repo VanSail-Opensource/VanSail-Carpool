@@ -14,7 +14,7 @@ function jsonResponse(payload: unknown, status = 200): Response {
 
 const squad: SquadProduct = {
   id: 'squad-1',
-  remnaSquadUuid: '4fe62019-e890-4d24-9f43-2c22889ec8da',
+  groupId: '4fe62019-e890-4d24-9f43-2c22889ec8da',
   name: 'Singapore Plus',
   description: 'Priority Singapore routes.',
   profile: null,
@@ -61,7 +61,7 @@ describe('admin API mutations', () => {
   it('sends every required squad merchandising field', async () => {
     fetchMock.mockResolvedValue(jsonResponse(squad))
     const payload: SquadProductWrite = {
-      remnaSquadUuid: squad.remnaSquadUuid,
+      groupId: squad.groupId,
       name: squad.name,
       description: squad.description,
       profile: {

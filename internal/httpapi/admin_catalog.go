@@ -102,7 +102,7 @@ func (s *Server) adminSquadProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 type squadProductRequest struct {
-	RemnaSquadUUID     string                `json:"remnaSquadUuid"`
+	GroupID            string                `json:"groupId"`
 	Name               string                `json:"name"`
 	Description        string                `json:"description"`
 	Profile            *squadprofile.Profile `json:"profile"`
@@ -132,11 +132,11 @@ func (s *Server) adminSaveSquadProduct(w http.ResponseWriter, r *http.Request, i
 		s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_PRICE", "Price must be integer hundredths of TXB.")
 		return
 	}
-	if request.RemnaSquadUUID == "" {
-		request.RemnaSquadUUID = id
+	if request.GroupID == "" {
+		request.GroupID = id
 	}
 	product, err := s.deps.Admin.SaveSquadProduct(r.Context(), currentUser(r).ID, database.SquadProductInput{ID: id,
-		RemnaSquadUUID: request.RemnaSquadUUID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
+		GroupID: request.GroupID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
 		Profile: request.Profile, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
 		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode})
 	if err != nil {

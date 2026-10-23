@@ -2,7 +2,7 @@ get:
   tags: [Operations]
   operationId: getReadiness
   summary: Database and setup readiness
-  description: Returns 503 until the database is usable and required chat, Remnawave, exchange-rate, and catalog configuration is complete.
+  description: Returns 503 until the database is usable and required chat, X-Node, exchange-rate, and catalog configuration is complete.
   security: []
   responses:
     '200':

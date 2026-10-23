@@ -23,21 +23,21 @@ var (
 func validateSquadActivationCodesTx(ctx context.Context, tx *sql.Tx, combo model.Combo, addons []model.SquadProduct, supplied map[string]string) error {
 	required := make(map[string]string)
 	for _, squad := range combo.IncludedSquads {
-		hash, ok, err := activationRecordTx(ctx, tx, squad.RemnaSquadUUID)
+		hash, ok, err := activationRecordTx(ctx, tx, squad.GroupID)
 		if err != nil {
 			return err
 		}
 		if ok {
-			required[squad.RemnaSquadUUID] = hash
+			required[squad.GroupID] = hash
 		}
 	}
 	for _, squad := range addons {
-		hash, ok, err := activationRecordTx(ctx, tx, squad.RemnaSquadUUID)
+		hash, ok, err := activationRecordTx(ctx, tx, squad.GroupID)
 		if err != nil {
 			return err
 		}
 		if ok {
-			required[squad.RemnaSquadUUID] = hash
+			required[squad.GroupID] = hash
 		}
 	}
 	for rawUUID, rawCode := range supplied {
@@ -64,7 +64,7 @@ func validateSquadActivationCodesTx(ctx context.Context, tx *sql.Tx, combo model
 func activationRecordTx(ctx context.Context, tx *sql.Tx, uuid string) (string, bool, error) {
 	var required int
 	var hash sql.NullString
-	err := tx.QueryRowContext(ctx, `SELECT activation_required,activation_code_hash FROM squad_product_overrides WHERE remna_squad_uuid=?`, uuid).Scan(&required, &hash)
+	err := tx.QueryRowContext(ctx, `SELECT activation_required,activation_code_hash FROM squad_product_overrides WHERE group_id=?`, uuid).Scan(&required, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}

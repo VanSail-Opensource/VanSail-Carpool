@@ -12,7 +12,7 @@ import (
 )
 
 // ComboInput is the validated catalog representation persisted by an administrator.
-// SquadProductIDs contains Remnawave internal-squad UUIDs; the historical field
+// SquadProductIDs contains Proxy internal-squad UUIDs; the historical field
 // name remains at the service boundary for source compatibility.
 type ComboInput struct {
 	WhitelistIPQuota        *int
@@ -30,10 +30,10 @@ type ComboInput struct {
 }
 
 // SquadProductInput is the local merchandising override associated with a
-// Remnawave-owned internal squad.
+// Proxy-owned internal squad.
 type SquadProductInput struct {
 	ID                 string
-	RemnaSquadUUID     string
+	GroupID            string
 	Name               string
 	Description        string
 	Profile            *squadprofile.Profile
@@ -135,7 +135,7 @@ func (s *Store) SaveCombo(ctx context.Context, input ComboInput) (model.Combo, e
 			if marshalErr != nil {
 				return model.Combo{}, marshalErr
 			}
-			if enqueueErr := insertOutboxTx(ctx, tx, "remna_sync_user", string(payload), now, now); enqueueErr != nil {
+			if enqueueErr := insertOutboxTx(ctx, tx, "xnode_sync_user", string(payload), now, now); enqueueErr != nil {
 				return model.Combo{}, enqueueErr
 			}
 		}

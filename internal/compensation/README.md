@@ -3,7 +3,7 @@
 This package owns outage policy validation, complete-snapshot observation,
 inbound-to-squad mapping, strict-threshold calculation, and reviewed event
 commands. SQLite freezes squad identities and recipient user IDs; public
-projections expose counts only. Remnawave reads remain behind the application
+projections expose counts only. X-Node reads remain behind the application
 adapter's provider queue, while approved exact-state writes use the shared
 provider-operation worker.
 

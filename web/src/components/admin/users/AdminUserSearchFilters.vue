@@ -28,7 +28,7 @@ const matchItems = computed(() => [
   { label: t('adminUsers.matchOr'), value: 'or' },
 ])
 const comboItems = computed(() => props.combos.map((item) => ({ label: item.name, value: item.id })))
-const squadItems = computed(() => props.squads.map((item) => ({ label: item.name, value: item.remnaSquadUuid })))
+const squadItems = computed(() => props.squads.map((item) => ({ label: item.name, value: item.groupId })))
 
 function apply(): void {
   emit('apply', { state: value.state === 'all' ? '' : value.state, comboIds: [...value.comboIds], squadUuids: [...value.squadUuids], match: value.match })

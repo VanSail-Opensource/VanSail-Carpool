@@ -93,7 +93,7 @@ func (s *Service) MemberRefundState(ctx context.Context, id, purchase string) (p
 				continue
 			}
 			found = true
-			history, err := s.repo.XNodeLegacyHistory(ctx, identity.ProxyUserID, item.ValidFrom, item.ValidUntil)
+			history, err := s.repo.XNodeImportedHistory(ctx, identity.ProxyUserID, item.ValidFrom, item.ValidUntil)
 			if err != nil {
 				return state, err
 			}

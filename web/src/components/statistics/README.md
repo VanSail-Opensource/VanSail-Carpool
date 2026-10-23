@@ -2,7 +2,7 @@
 
 
 - `StatisticsPage.vue` is the thin page orchestrator for loading, stale, empty, and partial-error states, with separate Overview, Nodes, Seven-day traffic, Distributions, and Squad composition tabs. Overview also contains both source-freshness panels.
-- `StatisticsFreshness.vue` exposes the Remnawave and database snapshot timestamps as independent Overview panels with separate stale state.
+- `StatisticsFreshness.vue` exposes the X-Node and database snapshot timestamps as independent Overview panels with separate stale state.
 - `StatisticsFreshness.test.ts` covers independent partition timestamps and stale/current disclosure.
 - `StatisticsOverview.vue` centers the weekly added-user total in the user donut, with its color legend below the chart, and combines live usage and predicted average rollover with spend, activity, squad, and database KPIs.
 - `StatisticsNodes.test.ts` covers the card action, open-intent feedback marker, and removal of version/multiplier rows.

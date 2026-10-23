@@ -22,11 +22,11 @@ func (s *Service) CatalogForUser(ctx context.Context, user model.User) (model.Ca
 		held[squadUUID] = struct{}{}
 	}
 	for index := range catalog.Addons {
-		_, catalog.Addons[index].StockHeldByCurrentUser = held[catalog.Addons[index].RemnaSquadUUID]
+		_, catalog.Addons[index].StockHeldByCurrentUser = held[catalog.Addons[index].GroupID]
 	}
 	for comboIndex := range catalog.Combos {
 		for squadIndex := range catalog.Combos[comboIndex].IncludedSquads {
-			_, catalog.Combos[comboIndex].IncludedSquads[squadIndex].StockHeldByCurrentUser = held[catalog.Combos[comboIndex].IncludedSquads[squadIndex].RemnaSquadUUID]
+			_, catalog.Combos[comboIndex].IncludedSquads[squadIndex].StockHeldByCurrentUser = held[catalog.Combos[comboIndex].IncludedSquads[squadIndex].GroupID]
 		}
 	}
 	return catalog, nil

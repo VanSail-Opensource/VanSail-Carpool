@@ -22,21 +22,21 @@ func PurchaseSnapshot(ctx context.Context, remote any, user model.User, purchase
 	legacy, ok := remote.(interface {
 		UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (UsageSnapshot, error)
 	})
-	if !ok || user.RemnaUserID == nil {
+	if !ok || user.ProxyUserID == nil {
 		return UsageSnapshot{}, ErrRemoteUserMissing
 	}
-	return legacy.UsageSnapshotForRollover(ctx, *user.RemnaUserID, purchase.ValidFrom, end)
+	return legacy.UsageSnapshotForRollover(ctx, *user.ProxyUserID, purchase.ValidFrom, end)
 }
 
 func quiescePurchase(ctx context.Context, remote Remote, user model.User, purchase model.Purchase) error {
 	if native, ok := remote.(PurchaseRemote); ok {
 		return native.QuiescePurchaseForRollover(ctx, user, purchase)
 	}
-	if user.RemnaUserID == nil {
+	if user.ProxyUserID == nil {
 		return ErrRemoteUserMissing
 	}
 	if period, ok := remote.(PeriodRemote); ok {
-		return period.QuiesceRolloverPeriod(ctx, *user.RemnaUserID, purchase.ValidFrom, purchase.ValidUntil)
+		return period.QuiesceRolloverPeriod(ctx, *user.ProxyUserID, purchase.ValidFrom, purchase.ValidUntil)
 	}
-	return remote.QuiesceForRollover(ctx, *user.RemnaUserID)
+	return remote.QuiesceForRollover(ctx, *user.ProxyUserID)
 }

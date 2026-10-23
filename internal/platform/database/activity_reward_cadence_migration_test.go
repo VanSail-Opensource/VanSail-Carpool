@@ -111,7 +111,7 @@ func TestCustomCadenceRecoveryUsesAwardCoreAndPreservesExplicitOverrides(t *test
 				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='activity.custom_combo_cadence_recovered' AND target_id=?`, purchase.ID).Scan(&audits); err != nil {
 					t.Fatal(err)
 				}
-				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND json_extract(payload,'$.userId')=? AND status IN ('pending','processing')`, user.ID).Scan(&syncs); err != nil {
+				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND json_extract(payload,'$.userId')=? AND status IN ('pending','processing')`, user.ID).Scan(&syncs); err != nil {
 					t.Fatal(err)
 				}
 				if audits != boolInt(test.recover) || syncs != 1 {

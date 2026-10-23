@@ -1,22 +1,22 @@
 # VanSail Carpool
 
 Administrators can configure built-in host connectivity checks in **Settings**.
-Resolve an existing Remnawave monitoring username, save the configuration, then
+Resolve an existing X-Node monitoring username, save the configuration, then
 run a manual check or enable scheduling. Checks use that account's accessible
 enabled hosts, including hidden hosts; every attempt is retained for 24 hours.
 The engine tests authenticated HTTPS traffic and reports status, TTFB, and safe
 diagnostics. [Module details](internal/connectivity/README.md) describe supported
 configurations, lifecycle, retention, and extension points.
 
-VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared Remnawave access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, SQLite database, and static assets. Production therefore needs one container, one persistent volume, and one HTTP port.
+VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared X-Node access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, SQLite database, and static assets. Production therefore needs one container, one persistent volume, and one HTTP port.
 
 ## What is included
 
 - Telegram-only authentication with five-minute `initData` validation, seven-day HttpOnly sessions, and replay-protected HMAC signing on every authenticated API request.
 - Resumable group/channel membership, immutable username, and agreement onboarding.
-- Server-priced combos, optional Remnawave internal squads, renewals, queued plan changes, and a transactional TXB ledger.
+- Server-priced combos, optional X-Node internal squads, renewals, queued plan changes, and a transactional TXB ledger.
 - EZPay, BEPusdt, and Telegram Stars top-ups with signed, idempotent callback processing.
-- Queue-first Remnawave and Emby access, subscription rotation, traffic statistics, and persistent synchronization jobs.
+- Queue-first X-Node and Emby access, subscription rotation, traffic statistics, and persistent synchronization jobs.
 - Multiple Activity games, daily check-ins, weighted lucky draws, coupon wallets, and one-active questionnaire CSV settlement.
 - Durable Emby account setup, encrypted temporary credentials, server-enforced restricted policies, and compensating refunds.
 - Audited administration for settings, catalog, users, adjustments, entitlements, refunds, schema-aware database editing, backups, staged restore, and failed jobs.
@@ -35,7 +35,7 @@ Go HTTP server :8080 ---- embedded Vue assets
       +---- SQLite WAL at /data/tx-carpool.db
       +---- persistent outbox and scheduler
       +---- Telegram Bot API
-      +---- Remnawave API
+      +---- X-Node API
       +---- Emby API
       +---- EZPay / BEPusdt / Telegram Stars
 ```
@@ -52,14 +52,14 @@ Copy `.env.example` to a secret deployment-specific file and set these four valu
 
 | Variable | Requirement |
 | --- | --- |
-| `ADMIN_TELEGRAM_ID` | One or more positive Telegram user IDs separated by commas. Each configured identity starts in the admin dashboard and can optionally complete signup; Remnawave creation begins after a combo purchase. |
+| `ADMIN_TELEGRAM_ID` | One or more positive Telegram user IDs separated by commas. Each configured identity starts in the admin dashboard and can optionally complete signup; X-Node creation begins after a combo purchase. |
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather. It is also used for Mini App auth validation and Stars. |
 | `PUBLIC_BASE_URL` | Canonical externally reachable HTTPS origin, without a trailing path. Webhooks and returns are derived only from this value. |
 | `CONFIG_MASTER_KEY` | Base64 encoding of exactly 32 random bytes, for example `openssl rand -base64 32`. Keep it stable and backed up. |
 
 Optional runtime settings are `PORT=8080`, `DATA_DIR=/data`, `TZ=UTC`, and `LOG_LEVEL=info`. `ALLOW_INSECURE_HTTP=true` exists only for isolated local development; never enable it for a Telegram deployment.
 
-Remnawave credentials, provider credentials, provider feature flags, chat IDs, rates, and catalog data are configured in the admin dashboard. Sensitive values are encrypted with AES-256-GCM under `CONFIG_MASTER_KEY`, are masked after entry, and are write-only over the API. Losing or changing the master key makes encrypted settings unreadable.
+X-Node credentials, provider credentials, provider feature flags, chat IDs, rates, and catalog data are configured in the admin dashboard. Sensitive values are encrypted with AES-256-GCM under `CONFIG_MASTER_KEY`, are masked after entry, and are write-only over the API. Losing or changing the master key makes encrypted settings unreadable.
 
 ## Build and run
 
@@ -103,9 +103,9 @@ If a host bind mount is used instead of a named volume, make the mounted directo
 ## First-time setup
 
 1. Deploy the HTTPS origin with the required environment and a durable `/data` volume.
-2. Open the Mini App as one of the configured `ADMIN_TELEGRAM_ID` values. It opens directly to the admin dashboard; authorization is the validated Telegram session plus a configured environment ID. Select **Set up user account** there when the admin also needs normal user-side access. A Remnawave identity is created after a combo purchase.
-3. Configure the target Telegram group and channel, Remnawave endpoint and token, enabled payment methods and required `txb_per_*` rates, and at least one combo. Configure the encrypted Emby token, HTTPS URL, and setup price only when Emby access is offered.
-4. Review the live Remnawave internal squads, then add only the local descriptions, TXB prices, and visibility overrides you need. Upstream-owned squad identities are not duplicated in SQLite.
+2. Open the Mini App as one of the configured `ADMIN_TELEGRAM_ID` values. It opens directly to the admin dashboard; authorization is the validated Telegram session plus a configured environment ID. Select **Set up user account** there when the admin also needs normal user-side access. A X-Node identity is created after a combo purchase.
+3. Configure the target Telegram group and channel, X-Node endpoint and token, enabled payment methods and required `txb_per_*` rates, and at least one combo. Configure the encrypted Emby token, HTTPS URL, and setup price only when Emby access is offered.
+4. Review the live X-Node internal squads, then add only the local descriptions, TXB prices, and visibility overrides you need. Upstream-owned squad identities are not duplicated in SQLite.
 5. In BotFather, select the deployed URL as the bot's Main Mini App. The service configures the Telegram webhook and chat menu button from `PUBLIC_BASE_URL`; the bot needs invite and join-request administration rights in both chats.
 6. Confirm `/readyz` reports `status: ok` before sharing the Mini App.
 
@@ -123,7 +123,7 @@ Payment redirects are navigation only. TXB is credited exclusively after a verif
 - A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, rollover finalization, questionnaire settlement, Emby provisioning, and daily online backups.
 - Verified backups are written atomically under `/data/backups`; completed files older than seven days are removed. Failed backup attempts remain visible to the admin and never publish a partial database file.
 - An administrator can download a verified backup. Restore accepts only a stored snapshot, creates a rescue backup, verifies integrity and migration compatibility, stages an adjacent copy, records a marker, returns `202`, and exits gracefully. Startup performs the atomic pre-open swap, rolls back a failed swap, records the result, and requires clients to reauthenticate.
-- Logs are structured. Bot tokens, provider secrets, encrypted setting plaintext, session cookies, Telegram raw `initData`, and Remnawave subscription URLs must never appear in logs or audit details.
+- Logs are structured. Bot tokens, provider secrets, encrypted setting plaintext, session cookies, Telegram raw `initData`, and X-Node subscription URLs must never appear in logs or audit details.
 
 The admin API exposes domain operations plus an allowlisted, schema-aware table editor; it never accepts raw SQL. Generic edits use typed values, cursor pagination, optimistic hashes, diff review, typed confirmation, automatic rescue backup, and audit records. The UI warns that direct table edits bypass domain synchronization hooks. Ordinary domain APIs keep ledger rows, refunds, audit events, and provider event records append-only; the break-glass editor can bypass those hooks only through its reviewed, rescued, and audited workflow.
 

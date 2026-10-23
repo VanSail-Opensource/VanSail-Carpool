@@ -105,7 +105,7 @@ func saveRenewalSquadPrice(t *testing.T, store *Store, id string, current int64)
 	// Rising prices stay listed, lower prices become hidden, and zero prices
 	// remove the sparse override entirely. All retain the purchased identity.
 	if _, err := store.SaveSquadProduct(context.Background(), SquadProductInput{
-		RemnaSquadUUID: id, Name: id, UpstreamPresent: true,
+		GroupID: id, Name: id, UpstreamPresent: true,
 		PriceTXBMinor: current, Visible: current >= 300,
 	}); err != nil {
 		t.Fatal(err)

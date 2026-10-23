@@ -3,7 +3,7 @@
 
 This package owns the in-memory admission queues for synchronous provider API
 calls. Each provider gets a separate bounded FIFO and context-owned workers,
-so slow Remnawave traffic cannot block Emby traffic (or vice versa).
+so slow X-Node traffic cannot block Emby traffic (or vice versa).
 
 `Do` and `Execute` wait for capacity, provider pacing, and the final result. The
 caller's context cancels all three phases. Application shutdown also cancels the
@@ -25,3 +25,7 @@ before invoking its provider adapter.
 - `queue_test.go` verifies validation, results, panic recovery, backpressure, pacing, active-call cancellation, and shutdown state.
 - `queue_part2.go` contains queue worker and lifecycle helpers.
 - `config.go` exposes read-only queue configuration accessors.
+
+`ordering.go` exposes WithKey for per-resource FIFO. The existing scheduler bounds pending work and active workers, skips occupied keys, and retains one provider-wide pacing clock. Cancellation and shutdown join active calls.
+
+`ordering_test.go` checks that an occupied account does not stall another account.

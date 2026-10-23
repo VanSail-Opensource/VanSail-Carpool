@@ -30,13 +30,6 @@ func (a proxyProvider) PurchaseRemote(ctx context.Context, user model.User, purc
 	if !errors.Is(err, xnode.ErrNotFound) {
 		return nil, "", err
 	}
-	bridge, err := a.legacy(ctx)
-	if err != nil {
-		return nil, "", err
-	}
-	if bridge && user.RemnaUserID != nil {
-		return a.remnaAdapter, *user.RemnaUserID, nil
-	}
 	return nil, "", purchaseops.ErrRemoteIdentityMissing
 }
 
@@ -49,9 +42,6 @@ func (r purchaseScopedProvider) MemberOperationState(ctx context.Context, id str
 		return purchaseops.RemoteState{}, xnode.ErrInvalid
 	}
 	if err := r.provider.native.CheckPurchaseOperation(ctx, id, r.purchase.ID); err != nil {
-		return purchaseops.RemoteState{}, err
-	}
-	if err := r.provider.reconcileBridgeUsage(ctx, r.identity); err != nil {
 		return purchaseops.RemoteState{}, err
 	}
 	return r.provider.native.PurchaseOperationState(ctx, id, r.purchase.ID)
@@ -68,9 +58,6 @@ func (r purchaseScopedProvider) QuiesceMemberOperation(ctx context.Context, id s
 	if !r.validID(id) {
 		return xnode.ErrInvalid
 	}
-	if err := r.provider.requireBridgeSettlement(ctx, r.identity); err != nil {
-		return err
-	}
 	return r.provider.native.QuiescePurchaseOperation(ctx, id, r.purchase.ID)
 }
 
@@ -85,5 +72,5 @@ func (r purchaseScopedProvider) RestoreMemberOperation(ctx context.Context, id s
 }
 
 func (r purchaseScopedProvider) DefinitiveMutationFailure(err error) bool {
-	return !errors.Is(err, errBridgePurchaseResetUncertain) && r.provider.DefinitiveMutationFailure(err)
+	return r.provider.DefinitiveMutationFailure(err)
 }

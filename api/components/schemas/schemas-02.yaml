@@ -86,7 +86,7 @@ SquadProduct:
   additionalProperties: false
   required:
     - id
-    - remnaSquadUuid
+    - groupId
     - name
     - description
     - profile
@@ -101,7 +101,7 @@ SquadProduct:
   properties:
     id:
       $ref: '../../openapi.yaml#/components/schemas/ID'
-    remnaSquadUuid:
+    groupId:
       type: string
       format: uuid
     name:
@@ -269,7 +269,7 @@ ComboWrite:
     includedSquadIds:
       type: array
       uniqueItems: true
-      description: Compatibility alias used by the combo picker for included live Remnawave squads.
+      description: Compatibility alias used by the combo picker for included live X-Node squads.
       items:
         $ref: '../../openapi.yaml#/components/schemas/ID'
     active:
@@ -282,9 +282,9 @@ ComboWrite:
 SquadProductWrite:
   type: object
   additionalProperties: false
-  required: [remnaSquadUuid, name, description, profile, priceTxbMinor, visible, activationRequired]
+  required: [groupId, name, description, profile, priceTxbMinor, visible, activationRequired]
   properties:
-    remnaSquadUuid:
+    groupId:
       type: string
       format: uuid
     name:

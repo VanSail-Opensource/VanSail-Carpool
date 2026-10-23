@@ -2,7 +2,7 @@ package outbox
 
 // ContinuityKind extends the current upstream entitlement before a queued term
 // reaches its local activation boundary.
-const ContinuityKind = "remna_prepare_continuity"
+const ContinuityKind = "xnode_prepare_continuity"
 
 // PaymentSuccessAnnouncementKind sends one durable channel announcement for
 // the authoritative first transition of a provider payment to paid.
@@ -39,5 +39,5 @@ const (
 	UserEventManualResetRefunded        = "manual_reset_refunded"
 	UserEventMemberRefundCompleted      = "member_refund_completed"
 	UserEventMemberRefundFailed         = "member_refund_failed"
-	UserEventProvisionConflict          = "remnawave_username_conflict_refund"
+	UserEventProvisionConflict          = "proxy_identity_conflict_refund"
 )

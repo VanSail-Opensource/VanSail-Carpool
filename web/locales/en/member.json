@@ -73,7 +73,7 @@
       "REFUND_NOT_FIRST_TERM": "Only the first term in this purchase lineage can be refunded.",
       "REFUND_WINDOW_EXPIRED": "The strict 24-hour refund window has ended.",
       "REFUND_TRAFFIC_USED": "Traffic has already been used for this purchase.",
-      "REMNAWAVE_IDENTITY_REQUIRED": "Account synchronization must finish first.",
+      "XNODE_IDENTITY_REQUIRED": "Account synchronization must finish first.",
       "OPERATION_ALREADY_OPEN": "Another provider operation is already open for this purchase."
     },
     "operation": {

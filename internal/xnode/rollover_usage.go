@@ -117,7 +117,7 @@ func (s *Service) rolloverSnapshot(ctx context.Context, identity Identity, start
 			}
 		}
 	}
-	legacy, err := s.repo.XNodeLegacyHistory(ctx, identity.ProxyUserID, start, end)
+	legacy, err := s.repo.XNodeImportedHistory(ctx, identity.ProxyUserID, start, end)
 	if err != nil {
 		return result, err
 	}

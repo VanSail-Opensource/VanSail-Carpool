@@ -28,24 +28,24 @@ func TestSettingsServiceStoresAndDecryptsSecrets(t *testing.T) {
 		t.Fatalf("plain stored setting = %+v, actor %v", plain, repository.lastActor)
 	}
 
-	if err := service.Put(ctx, "admin-1", "remnawave.api_token", "  bearer-secret  "); err != nil {
+	if err := service.Put(ctx, "admin-1", "emby.api_token", "  bearer-secret  "); err != nil {
 		t.Fatalf("Put(secret): %v", err)
 	}
-	encrypted := repository.settings["remnawave.api_token"]
+	encrypted := repository.settings["emby.api_token"]
 	if !encrypted.Encrypted || encrypted.Value == "bearer-secret" || !strings.HasPrefix(encrypted.Value, "v1:") {
 		t.Fatalf("secret stored in unexpected form: %+v", encrypted)
 	}
-	decrypted, err := service.Plaintext(ctx, "remnawave.api_token")
+	decrypted, err := service.Plaintext(ctx, "emby.api_token")
 	if err != nil || decrypted != "bearer-secret" {
 		t.Fatalf("Plaintext(secret) = (%q, %v)", decrypted, err)
 	}
-	if err := service.Put(ctx, "admin-1", "remnawave.api_token", "  replacement-token  "); err != nil {
+	if err := service.Put(ctx, "admin-1", "emby.api_token", "  replacement-token  "); err != nil {
 		t.Fatalf("Put(secret replacement): %v", err)
 	}
-	if repository.settings["remnawave.api_token"].Value == encrypted.Value {
+	if repository.settings["emby.api_token"].Value == encrypted.Value {
 		t.Fatal("secret replacement did not update the encrypted database value")
 	}
-	decrypted, err = service.Plaintext(ctx, "remnawave.api_token")
+	decrypted, err = service.Plaintext(ctx, "emby.api_token")
 	if err != nil || decrypted != "replacement-token" {
 		t.Fatalf("Plaintext(replaced secret) = (%q, %v)", decrypted, err)
 	}
@@ -55,7 +55,7 @@ func TestSettingsServiceStoresAndDecryptsSecrets(t *testing.T) {
 	}
 
 	putCalls := repository.putCalls
-	if err := service.Put(ctx, "admin-1", "remnawave.api_token", ""); err != nil {
+	if err := service.Put(ctx, "admin-1", "emby.api_token", ""); err != nil {
 		t.Fatalf("Put(empty existing secret): %v", err)
 	}
 	if repository.putCalls != putCalls {
@@ -73,7 +73,7 @@ func TestSettingsServiceErrorsAndOptional(t *testing.T) {
 	if err := service.Put(ctx, "admin", "unknown.setting", "value"); err == nil {
 		t.Fatal("unknown setting unexpectedly accepted")
 	}
-	if err := service.Put(ctx, "admin", "remnawave.api_token", ""); err == nil {
+	if err := service.Put(ctx, "admin", "emby.api_token", ""); err == nil {
 		t.Fatal("empty required secret unexpectedly accepted")
 	}
 	optional, err := service.Optional(ctx, "billing.ezpay.enabled")
@@ -86,8 +86,8 @@ func TestSettingsServiceErrorsAndOptional(t *testing.T) {
 	}
 
 	repository.getErr = nil
-	repository.settings["remnawave.api_token"] = database.Setting{Key: "remnawave.api_token", Value: "v1:invalid", Encrypted: true}
-	if _, err := service.Plaintext(ctx, "remnawave.api_token"); err == nil {
+	repository.settings["emby.api_token"] = database.Setting{Key: "emby.api_token", Value: "v1:invalid", Encrypted: true}
+	if _, err := service.Plaintext(ctx, "emby.api_token"); err == nil {
 		t.Fatal("Plaintext() accepted invalid ciphertext")
 	}
 	repository.putErr = errors.New("write failure")
@@ -102,7 +102,7 @@ func TestSettingsSafeListMasksAndSorts(t *testing.T) {
 	updated := time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC)
 	repository := newAdminSettingsRepository()
 	repository.settings["telegram.group_chat_id"] = database.Setting{Key: "telegram.group_chat_id", Value: "-1001", UpdatedAt: updated}
-	repository.settings["remnawave.api_token"] = database.Setting{Key: "remnawave.api_token", Value: "ciphertext", Encrypted: true, UpdatedAt: updated}
+	repository.settings["emby.api_token"] = database.Setting{Key: "emby.api_token", Value: "ciphertext", Encrypted: true, UpdatedAt: updated}
 	repository.settings["not.registered"] = database.Setting{Key: "not.registered", Value: "ignored", UpdatedAt: updated}
 	service := NewSettingsService(repository, testVault(t))
 
@@ -116,7 +116,7 @@ func TestSettingsSafeListMasksAndSorts(t *testing.T) {
 	keys := make([]string, len(settings))
 	for index, setting := range settings {
 		keys[index] = setting.Key
-		if setting.Key == "remnawave.api_token" && (setting.Value != "" || !setting.Encrypted || !setting.Configured) {
+		if setting.Key == "emby.api_token" && (setting.Value != "" || !setting.Encrypted || !setting.Configured) {
 			t.Fatalf("secret SafeList entry = %+v", setting)
 		}
 		if setting.Key == "telegram.group_chat_id" && (setting.Value != "-1001" || setting.Encrypted || !setting.Configured) {
@@ -140,15 +140,14 @@ func TestSettingsReadiness(t *testing.T) {
 	repository := newAdminSettingsRepository()
 	service := NewSettingsService(repository, testVault(t))
 	issues := service.Readiness(ctx, 0)
-	if !containsString(issues, "missing:catalog.active_combo") || !containsString(issues, "missing_or_invalid:remnawave.api_token") {
+	if !containsString(issues, "missing:catalog.active_combo") || !containsString(issues, "missing_or_invalid:telegram.group_chat_id") {
 		t.Fatalf("Readiness(empty) = %v", issues)
 	}
 
 	required := map[string]string{
 		"telegram.group_chat_id":   "-1001",
 		"telegram.channel_chat_id": "-1002",
-		"remnawave.base_url":       "http://remnawave:3000",
-		"remnawave.api_token":      "secret",
+		"emby.api_token":           "secret",
 		"billing.rate.txb_per_cny": "1",
 		"billing.rate.txb_per_usd": "10",
 		"billing.rate.txb_per_xtr": "0.5",
@@ -192,7 +191,7 @@ func TestSettingValidators(t *testing.T) {
 		{name: "integer", validate: validateInteger, valid: []string{"1", "-1001"}, invalid: []string{"0", "1.5", "x"}},
 		{name: "optional integer", validate: validateOptionalInteger, valid: []string{"", "-1001"}, invalid: []string{"0", "1.5", "x"}},
 		{name: "HTTPS URL", validate: validateHTTPSURL, valid: []string{"https://example.test/path"}, invalid: []string{"http://example.test", "https://user@example.test", "/relative", "https:///missing"}},
-		{name: "HTTP or HTTPS URL", validate: validateHTTPOrHTTPSURL, valid: []string{"http://remnawave:3000", "https://example.test/path"}, invalid: []string{"https://user@example.test", "/relative", "http:///missing"}},
+		{name: "HTTP or HTTPS URL", validate: validateHTTPOrHTTPSURL, valid: []string{"http://provider:3000", "https://example.test/path"}, invalid: []string{"https://user@example.test", "/relative", "http:///missing"}},
 		{name: "boolean", validate: validateBoolean, valid: []string{"true", "false"}, invalid: []string{"TRUE", "1", ""}},
 		{name: "ack", validate: validateAck, valid: []string{"ok", "success", "SUCCESS"}, invalid: []string{"true", "done"}},
 		{name: "EZPay methods", validate: billing.ValidateEZPayMethods, valid: []string{"alipay", "wxpay,alipay", "qqpay,bank,jdpay"}, invalid: []string{"card", "", "alipay,alipay"}},

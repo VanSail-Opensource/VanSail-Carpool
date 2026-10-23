@@ -2,14 +2,17 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 )
 
 func (a *queuedTelegram) GetChat(ctx context.Context, id int64) (telegram.ChatInfo, error) {
+	ctx = upstreamqueue.WithKey(ctx, "callback:"+fmt.Sprint(id))
 	return upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (telegram.ChatInfo, error) { return a.client.GetChat(callCtx, id) })
 }
 func (a *queuedTelegram) CreatePMTopic(ctx context.Context, name string, guard func(context.Context) (int64, error)) (telegram.ForumTopic, error) {
+	ctx = upstreamqueue.WithKey(ctx, "pm")
 	return upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (telegram.ForumTopic, error) {
 		id, err := guard(callCtx)
 		if err != nil {
@@ -19,6 +22,7 @@ func (a *queuedTelegram) CreatePMTopic(ctx context.Context, name string, guard f
 	})
 }
 func (a *queuedTelegram) CopyPMMessage(ctx context.Context, guard func(context.Context) (telegram.CopyMessageRequest, error)) (int64, error) {
+	ctx = upstreamqueue.WithKey(ctx, "pm")
 	return upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (int64, error) {
 		input, err := guard(callCtx)
 		if err != nil {
@@ -29,6 +33,7 @@ func (a *queuedTelegram) CopyPMMessage(ctx context.Context, guard func(context.C
 }
 
 func (a *queuedTelegram) SendPMText(ctx context.Context, guard func(context.Context) (telegram.PMTextRequest, error)) (int64, error) {
+	ctx = upstreamqueue.WithKey(ctx, "pm")
 	return upstreamqueue.Do(ctx, a.queue, func(ctx context.Context) (int64, error) {
 		input, err := guard(ctx)
 		if err != nil {
@@ -38,6 +43,7 @@ func (a *queuedTelegram) SendPMText(ctx context.Context, guard func(context.Cont
 	})
 }
 func (a *queuedTelegram) PublishPMProfile(ctx context.Context, guard func(context.Context) (telegram.TopicProfileRequest, error)) (int64, error) {
+	ctx = upstreamqueue.WithKey(ctx, "pm")
 	return upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (int64, error) {
 		input, err := guard(callCtx)
 		if err != nil {
@@ -47,6 +53,7 @@ func (a *queuedTelegram) PublishPMProfile(ctx context.Context, guard func(contex
 	})
 }
 func (a *queuedTelegram) EditPMProfile(ctx context.Context, guard func(context.Context) (telegram.TopicProfileRequest, error)) (telegram.Message, error) {
+	ctx = upstreamqueue.WithKey(ctx, "pm")
 	return upstreamqueue.Do(ctx, a.queue, func(callCtx context.Context) (telegram.Message, error) {
 		input, err := guard(callCtx)
 		if err != nil {
@@ -56,5 +63,6 @@ func (a *queuedTelegram) EditPMProfile(ctx context.Context, guard func(context.C
 	})
 }
 func (a *queuedTelegram) AnswerCallbackQuery(ctx context.Context, id, text string, alert bool) error {
+	ctx = upstreamqueue.WithKey(ctx, "callback:"+fmt.Sprint(id))
 	return upstreamqueue.Execute(ctx, a.queue, func(callCtx context.Context) error { return a.client.AnswerCallbackQuery(callCtx, id, text, alert) })
 }

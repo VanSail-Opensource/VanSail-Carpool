@@ -26,7 +26,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"io/fs"
@@ -56,7 +55,6 @@ type telegramProvider interface {
 type Dependencies struct {
 	APITokens          *apitoken.Service
 	XNode              *xnode.Service
-	XNodeMigration     *xnodemigration.Service
 	XNodeMaster        *xnode.Master
 	BrowserAuth        *browserauth.Service
 	USDT               *usdt.Service

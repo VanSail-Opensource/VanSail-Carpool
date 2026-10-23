@@ -29,8 +29,6 @@ func (s *Service) probeRepository() (probeRepository, bool) {
 		switch r := base.(type) {
 		case *compileReads:
 			base = r.Repository
-		case candidateRepository:
-			base = r.Repository
 		default:
 			value, ok := base.(probeRepository)
 			return value, ok

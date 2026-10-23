@@ -23,7 +23,7 @@ type rolloverPurchaseReader interface {
 }
 
 // RolloverProjection returns a fresh aggregate-only projection for the active
-// member term. Raw Remnawave usage data remains inside the queued adapter.
+// member term. Raw Proxy usage data remains inside the queued adapter.
 func (s *Service) RolloverProjection(ctx context.Context, user model.User, purchaseID string) (model.RolloverProjection, error) {
 	if user.OnboardingState != "complete" || strings.TrimSpace(purchaseID) == "" {
 		return model.RolloverProjection{}, ErrRolloverUnavailable
@@ -52,7 +52,7 @@ func (s *Service) RolloverProjection(ctx context.Context, user model.User, purch
 	if end.After(purchase.ValidUntil) {
 		end = purchase.ValidUntil
 	}
-	snapshot, err := rollover.PurchaseSnapshot(ctx, s.remnawave, user, purchase, end)
+	snapshot, err := rollover.PurchaseSnapshot(ctx, s.provider, user, purchase, end)
 	if errors.Is(err, rollover.ErrRemoteUserMissing) || errors.Is(err, rollover.ErrPerNodeUsageUnavailable) {
 		return model.RolloverProjection{}, fmt.Errorf("%w: %w", ErrRolloverUnavailable, err)
 	}

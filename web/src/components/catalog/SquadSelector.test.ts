@@ -8,7 +8,7 @@ import SquadSelector from './SquadSelector.vue'
 function squad(id: string, profile: SquadProduct['profile']): SquadProduct {
   return {
     id,
-    remnaSquadUuid: `00000000-0000-4000-8000-${id.padStart(12, '0')}`,
+    groupId: `00000000-0000-4000-8000-${id.padStart(12, '0')}`,
     name: `Squad ${id}`,
     description: '',
     profile,

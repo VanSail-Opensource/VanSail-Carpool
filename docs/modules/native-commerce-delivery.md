@@ -1,7 +1,7 @@
 # Native commerce and subscription delivery
 
 The panel owns native identities, desired configuration, access and accounting.
-Remnawave is a queued migration bridge until verified final source accounting.
+X-Node is the sole control plane. Reconciled imported usage remains immutable accounting evidence.
 Emby and the existing payment integrations retain their separate boundaries.
 
 ## Commerce audit
@@ -14,14 +14,14 @@ Emby and the existing payment integrations retain their separate boundaries.
 | Refunds | Member zero-use checks include all same-purchase reset periods and earlier imported source history. Unfinished or overflowing accounting cannot qualify. Legacy-only checks also read term history. Administrator suggestions retain the net-paid cap and manual override. |
 | Compensation | Native readiness uses fresh ready reports; legacy administrative disable state remains authoritative until handover. Approved extensions change expiry and queued continuity without resetting the existing combined quota. |
 
-Refunds and rollover retain the final-source-accounting fence during migration.
+Refunds and rollover use purchase-owned native settlement barriers and retain imported evidence.
 Reset prechecks use the current counter and do not borrow that financial fence.
 Previously settled financial records are not repriced. Saturating arithmetic and
 exact decimal serialization prevent overflow or browser rounding from fabricating
 unused traffic. Live telemetry never enters the database.
 
 Hosted regression sources include `xnode/commerce_test.go`,
-`app/xnode_commerce_test.go`, `rollover/native_term_test.go`,
+`app/xnode_purchase_operations_test.go`, `rollover/native_term_test.go`,
 `database/native_rollover_version_test.go` and existing reset, automatic renewal,
 refund and compensation suites. No local automated test suite was executed.
 
@@ -79,7 +79,6 @@ formats have no usable download or import action.
 
 Client-field references: [sing-box TLS](https://sing-box.sagernet.org/configuration/shared/tls/),
 [Clash Meta TLS](https://wiki.metacubex.one/en/config/proxies/tls/).
-Source integration contracts remain under `reference/Upstream/Remnawave/api.json`.
 
 ## Validation and release evidence
 

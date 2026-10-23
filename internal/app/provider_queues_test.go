@@ -20,7 +20,6 @@ func TestProviderQueueConfiguration(t *testing.T) {
 		wantCapacity int
 		wantPace     time.Duration
 	}{
-		{name: "Remnawave", queue: queues.remnawave, wantCapacity: remnawaveQueueCapacity, wantPace: remnawavePace},
 		{name: "Emby", queue: queues.emby, wantCapacity: embyQueueCapacity, wantPace: embyPace},
 		{name: "Telegram", queue: queues.telegram, wantCapacity: telegramQueueCapacity, wantPace: telegramPace},
 		{name: "Turnstile", queue: queues.turnstile, wantCapacity: 32, wantPace: 100 * time.Millisecond},
@@ -51,16 +50,16 @@ func TestProviderQueuesUseIndependentWorkers(t *testing.T) {
 		}
 	})
 
-	remnaStarted := make(chan struct{})
-	remnaDone := make(chan error, 1)
+	telegramStarted := make(chan struct{})
+	telegramDone := make(chan error, 1)
 	go func() {
-		remnaDone <- upstreamqueue.Execute(context.Background(), queues.remnawave, func(ctx context.Context) error {
-			close(remnaStarted)
+		telegramDone <- upstreamqueue.Execute(context.Background(), queues.telegram, func(ctx context.Context) error {
+			close(telegramStarted)
 			<-ctx.Done()
 			return ctx.Err()
 		})
 	}()
-	<-remnaStarted
+	<-telegramStarted
 
 	embyDone := make(chan error, 1)
 	go func() {
@@ -72,11 +71,11 @@ func TestProviderQueuesUseIndependentWorkers(t *testing.T) {
 			t.Fatalf("Emby call failed: %v", err)
 		}
 	case <-time.After(time.Second):
-		t.Fatal("Emby worker was blocked by Remnawave")
+		t.Fatal("Emby worker was blocked by Telegram")
 	}
 
 	cancel()
-	if err := <-remnaDone; !errors.Is(err, context.Canceled) {
-		t.Fatalf("Remnawave call error = %v, want canceled", err)
+	if err := <-telegramDone; !errors.Is(err, context.Canceled) {
+		t.Fatalf("Telegram call error = %v, want canceled", err)
 	}
 }

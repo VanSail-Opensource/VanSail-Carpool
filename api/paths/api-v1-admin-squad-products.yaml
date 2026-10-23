@@ -2,7 +2,7 @@ get:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: listAdminSquadProducts
-  summary: List imported Remnawave squad products
+  summary: List imported X-Node squad products
   responses:
     '200':
       description: Squad products, including hidden or unavailable records.
@@ -24,7 +24,7 @@ post:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin]
   operationId: createAdminSquadProduct
-  summary: Create a local product for an existing Remnawave squad
+  summary: Create a local product for an existing X-Node squad
   requestBody:
     required: true
     content:

@@ -74,7 +74,7 @@ func (s *Store) SaveXNodeGroup(ctx context.Context, item xnode.Group) error {
 }
 func (s *Store) DeleteXNodeGroup(ctx context.Context, id string) error {
 	var used int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos,json_each(combos.included_squad_uuids) selected WHERE selected.value=? UNION SELECT 1 FROM purchase_squads WHERE remna_squad_uuid=?)`, id, id).Scan(&used)
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos,json_each(combos.included_squad_uuids) selected WHERE selected.value=? UNION SELECT 1 FROM purchase_squads WHERE group_id=?)`, id, id).Scan(&used)
 	if err != nil {
 		return err
 	}

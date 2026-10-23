@@ -190,7 +190,7 @@ func (s *Server) validateDrawCatalog(w http.ResponseWriter, r *http.Request, pri
 		}
 		known := make(map[string]bool, len(squads))
 		for _, squad := range squads {
-			known[squad.RemnaSquadUUID] = true
+			known[squad.GroupID] = true
 		}
 		for _, prize := range prizes {
 			for _, uuid := range prize.Reward.SquadUUIDs {

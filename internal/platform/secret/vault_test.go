@@ -13,14 +13,14 @@ func TestVaultRoundTripAndSettingBinding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVault(): %v", err)
 	}
-	ciphertext, err := vault.Encrypt("remnawave.api_token", "bearer-secret")
+	ciphertext, err := vault.Encrypt("provider.api_token", "bearer-secret")
 	if err != nil {
 		t.Fatalf("Encrypt(): %v", err)
 	}
 	if strings.Contains(ciphertext, "bearer-secret") {
 		t.Fatal("ciphertext contains plaintext")
 	}
-	plaintext, err := vault.Decrypt("remnawave.api_token", ciphertext)
+	plaintext, err := vault.Decrypt("provider.api_token", ciphertext)
 	if err != nil || plaintext != "bearer-secret" {
 		t.Fatalf("Decrypt() = %q, %v", plaintext, err)
 	}

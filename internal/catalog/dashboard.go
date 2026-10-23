@@ -30,8 +30,8 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 		}
 		dashboard.AutoRenewalFailure = failure
 	}
-	memberRemote, native := s.remnawave.(memberDashboardReader)
-	if !native && user.RemnaUserID == nil {
+	memberRemote, native := s.provider.(memberDashboardReader)
+	if !native && user.ProxyUserID == nil {
 		return dashboard, nil
 	}
 	s.cacheMu.RLock()
@@ -48,7 +48,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	if native {
 		remote, remoteErr = memberRemote.DashboardForMember(ctx, user)
 	} else {
-		remote, remoteErr = s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+		remote, remoteErr = s.provider.Dashboard(ctx, *user.ProxyUserID)
 	}
 	if remoteErr == nil {
 		dashboard.Statistics = &remote.Statistics
@@ -73,10 +73,10 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 
 // RevokeSubscription rotates the bearer URL and invalidates the process-local cache.
 func (s *Service) RevokeSubscription(ctx context.Context, user model.User) (string, error) {
-	if user.RemnaUserID == nil {
+	if user.ProxyUserID == nil {
 		return "", database.ErrNotFound
 	}
-	url, err := s.remnawave.RevokeSubscription(ctx, *user.RemnaUserID)
+	url, err := s.provider.RevokeSubscription(ctx, *user.ProxyUserID)
 	if err != nil {
 		return "", err
 	}

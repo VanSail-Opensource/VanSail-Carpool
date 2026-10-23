@@ -102,11 +102,11 @@ func hydrateStoredCatalogNodes(ctx context.Context, provider remoteNodeLister, c
 	unique := make(map[string]struct{})
 	for _, combo := range combos {
 		for _, squad := range combo.IncludedSquads {
-			unique[squad.RemnaSquadUUID] = struct{}{}
+			unique[squad.GroupID] = struct{}{}
 		}
 	}
 	for _, squad := range addons {
-		unique[squad.RemnaSquadUUID] = struct{}{}
+		unique[squad.GroupID] = struct{}{}
 	}
 	squadUUIDs := make([]string, 0, len(unique))
 	for squadUUID := range unique {
@@ -120,11 +120,11 @@ func hydrateStoredCatalogNodes(ctx context.Context, provider remoteNodeLister, c
 	for comboIndex := range combos {
 		for squadIndex := range combos[comboIndex].IncludedSquads {
 			squad := &combos[comboIndex].IncludedSquads[squadIndex]
-			squad.AccessibleNodes = nonNilCatalogNodes(bySquad[squad.RemnaSquadUUID])
+			squad.AccessibleNodes = nonNilCatalogNodes(bySquad[squad.GroupID])
 		}
 	}
 	for index := range addons {
-		addons[index].AccessibleNodes = nonNilCatalogNodes(bySquad[addons[index].RemnaSquadUUID])
+		addons[index].AccessibleNodes = nonNilCatalogNodes(bySquad[addons[index].GroupID])
 	}
 	return model.Catalog{Combos: combos, Addons: addons, Nodes: nodes}, nil
 }
@@ -148,16 +148,16 @@ func catalogWithEmptyNodes(combos []model.Combo, addons []model.SquadProduct) mo
 	return model.Catalog{Combos: combos, Addons: addons, Nodes: []model.CatalogNode{}}
 }
 
-func quoteAccessibleNodes(catalog model.Catalog, comboID string, addonIDs []string) []model.RemnaNode {
+func quoteAccessibleNodes(catalog model.Catalog, comboID string, addonIDs []string) []model.ProxyNode {
 	squadUUIDs := selectedSquadUUIDs(catalog, comboID, addonIDs)
 	bySquad := make(map[string][]model.CatalogNode, len(catalog.Addons)+len(catalog.Combos))
 	for _, combo := range catalog.Combos {
 		for _, squad := range combo.IncludedSquads {
-			bySquad[squad.RemnaSquadUUID] = squad.AccessibleNodes
+			bySquad[squad.GroupID] = squad.AccessibleNodes
 		}
 	}
 	for _, squad := range catalog.Addons {
-		bySquad[squad.RemnaSquadUUID] = squad.AccessibleNodes
+		bySquad[squad.GroupID] = squad.AccessibleNodes
 	}
 	accessible := make(map[string]model.CatalogNode)
 	for _, squadUUID := range squadUUIDs {
@@ -165,13 +165,13 @@ func quoteAccessibleNodes(catalog model.Catalog, comboID string, addonIDs []stri
 			accessible[node.UUID] = node
 		}
 	}
-	result := make([]model.RemnaNode, 0, len(accessible))
+	result := make([]model.ProxyNode, 0, len(accessible))
 	for _, node := range accessible {
 		providerName := ""
 		if node.ProviderName != nil {
 			providerName = *node.ProviderName
 		}
-		result = append(result, model.RemnaNode{UUID: node.UUID, Name: node.Name, CountryCode: node.CountryCode,
+		result = append(result, model.ProxyNode{UUID: node.UUID, Name: node.Name, CountryCode: node.CountryCode,
 			ConsumptionMultiplier: node.ConsumptionMultiplier, ActiveInboundUUIDs: node.ActiveInboundUUIDs, Accessible: true,
 			ProviderName: providerName, ProviderFaviconURL: node.ProviderFaviconURL})
 	}

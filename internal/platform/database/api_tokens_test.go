@@ -21,7 +21,7 @@ func TestAPITokenHashOnlyStorageExpiryAndOwnerRevocation(t *testing.T) {
 	}
 	user.Role, other.Role = "admin", "admin"
 	service := apitoken.New(store, []int64{user.TelegramID, other.TelegramID})
-	issued, err := service.Create(ctx, user, apitoken.CreateInput{Name: "scoped", Scopes: []string{"migration:write"}})
+	issued, err := service.Create(ctx, user, apitoken.CreateInput{Name: "scoped", Scopes: []string{"xnode:write"}})
 	if err != nil {
 		t.Fatal(err)
 	}

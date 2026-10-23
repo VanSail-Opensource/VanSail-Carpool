@@ -19,7 +19,7 @@ func TestQuoteProjectsAccessibleNodes(t *testing.T) {
 		quote:             model.PurchaseQuote{ComboID: "core", ComboName: "Core"},
 	}
 	remote := &catalogNodeRemote{
-		catalogRemnawave: &catalogRemnawave{},
+		catalogProxy: &catalogProxy{},
 		squads: []RemoteSquad{
 			{UUID: "core-squad", Name: "Core"},
 			{UUID: "shared-squad", Name: "Shared"},
@@ -46,7 +46,7 @@ func TestQuoteProjectsAccessibleNodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Quote(): %v", err)
 	}
-	wantNodes := []model.RemnaNode{
+	wantNodes := []model.ProxyNode{
 		{UUID: "berlin", Name: "Berlin", CountryCode: "DE", ConsumptionMultiplier: 0.8, Accessible: true},
 		{UUID: "austin", Name: "Austin", CountryCode: "US", ActiveInboundUUIDs: []string{"inbound-1"}, Accessible: true},
 		{UUID: "zulu", Name: "Zulu", CountryCode: "US", ConsumptionMultiplier: 1.5, Accessible: true},
@@ -104,7 +104,7 @@ func TestQuoteAccessibleNodesHandlesUnavailableProviders(t *testing.T) {
 	}
 
 	repository := &catalogQuoteRepository{catalogRepository: nodeCatalogRepository(), quote: model.PurchaseQuote{ComboID: "core"}}
-	service := newCatalogServiceForTest(repository, &catalogRemnawave{})
+	service := newCatalogServiceForTest(repository, &catalogProxy{})
 	quote, err := service.Quote(context.Background(), model.User{ID: "user", OnboardingState: "complete"}, "core", []string{"addon-squad"}, "")
 	if !errors.Is(err, ErrNoAccessibleNodes) || len(quote.AccessibleNodes) != 0 {
 		t.Fatalf("Quote() without node provider = (%v, %v), want ErrNoAccessibleNodes", quote.AccessibleNodes, err)
@@ -125,7 +125,7 @@ func (r *catalogQuoteRepository) QuotePurchase(_ context.Context, input database
 }
 
 type catalogNodeRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	squads          []RemoteSquad
 	nodes           []RemoteNode
 	accessible      map[string][]string
@@ -155,17 +155,17 @@ func nodeCatalogRepository() *catalogRepository {
 		combos: []model.Combo{{
 			ID: "core",
 			IncludedSquads: []model.SquadProduct{
-				{RemnaSquadUUID: "core-squad"},
-				{RemnaSquadUUID: "shared-squad"},
+				{GroupID: "core-squad"},
+				{GroupID: "shared-squad"},
 			},
 		}},
-		addons: []model.SquadProduct{{ID: "addon-product", RemnaSquadUUID: "addon-squad", Visible: true}},
+		addons: []model.SquadProduct{{ID: "addon-product", GroupID: "addon-squad", Visible: true}},
 	}
 }
 
 func newCatalogNodeRemote() *catalogNodeRemote {
 	return &catalogNodeRemote{
-		catalogRemnawave: &catalogRemnawave{},
+		catalogProxy: &catalogProxy{},
 		squads: []RemoteSquad{
 			{UUID: "core-squad", Name: "Core"},
 			{UUID: "shared-squad", Name: "Shared"},

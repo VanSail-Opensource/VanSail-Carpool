@@ -17,7 +17,7 @@ export function catalogSquadPresentation(
     : new Map(composition?.segments.map(segment => [segment.id, segment.value]) ?? [])
   const included = new Set(includedIds)
   const rows = squads.map((squad, index) => {
-    const value = shares.get(squad.remnaSquadUuid) ?? 0
+    const value = shares.get(squad.groupId) ?? 0
     return {
       id: squad.id,
       index,

@@ -110,7 +110,7 @@ func TestOrderedCustomComboRecoveryFromSettledRaffleTickets(t *testing.T) {
 				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE target_id=? AND action='activity.custom_combo_recovered'`, purchase.ID).Scan(&audits); err != nil {
 					t.Fatal(err)
 				}
-				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND json_extract(payload,'$.userId')=? AND status IN ('pending','processing')`, user.ID).Scan(&jobs); err != nil {
+				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND json_extract(payload,'$.userId')=? AND status IN ('pending','processing')`, user.ID).Scan(&jobs); err != nil {
 					t.Fatal(err)
 				}
 				if audits != boolInt(test.recover) || jobs != 1 || adminWorkflowBalance(t, store, user.ID) != balance {

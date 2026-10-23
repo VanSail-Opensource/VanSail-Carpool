@@ -91,8 +91,8 @@ memberOperationsApi.getPurchaseRefundQuote = async () => ({ purchaseId: active.i
 memberOperationsApi.refundPurchase = async () => receipt('purchase_member_refund')
 api.getAutoRenewal = async () => ({ enabled: false, canEnable: true, ineligibleReason: null, purchaseId: active.id, quotedAt: at(0) }) as never
 const optionalSquads = [
-  { id: 'optional-jp', remnaSquadUuid: 'optional-jp', name: 'Japan transit', country: 'JP', multiplier: 1 },
-  { id: 'optional-nl', remnaSquadUuid: 'optional-nl', name: 'Netherlands transit', country: 'NL', multiplier: 0.5 },
+  { id: 'optional-jp', groupId: 'optional-jp', name: 'Japan transit', country: 'JP', multiplier: 1 },
+  { id: 'optional-nl', groupId: 'optional-nl', name: 'Netherlands transit', country: 'NL', multiplier: 0.5 },
 ].map((squad, index) => ({ ...squad, description: '', profile: { type: 'international_network', countryCode: squad.country, portMbps: null, upstreamCarriers: [] }, price: { currency: 'TXB', minor: String(100 + index * 100), display: '' }, visible: true, upstreamPresent: true, activationRequired: false, stockHeldByCurrentUser: false, stockLimit: null, stockRemaining: null, createdAt: at(0), updatedAt: at(0), accessibleNodes: [{ uuid: 'node-' + squad.id, name: squad.name + ' edge', countryCode: squad.country, consumptionMultiplier: squad.multiplier }], geocheckEnabled: false }))
 api.getCatalog = async () => {
   if (params.has('addonslow')) await new Promise(resolve => setTimeout(resolve, 10000))

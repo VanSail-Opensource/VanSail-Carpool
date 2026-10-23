@@ -18,23 +18,13 @@ func (a proxyProvider) LoadSubscriptionForMember(ctx context.Context, user model
 	if !errors.Is(err, xnode.ErrNotFound) {
 		return connectivity.MemberSubscription{}, err
 	}
-	bridge, err := a.legacy(ctx)
-	if err != nil {
-		return connectivity.MemberSubscription{}, err
-	}
-	if bridge && user.RemnaUserID != nil {
-		return a.remnaAdapter.LoadMemberSubscription(ctx, *user.RemnaUserID, enabled, links)
-	}
 	return connectivity.MemberSubscription{}, connectivityFailure("ACCOUNT_UNAVAILABLE")
 }
 
 func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, enabled []string, links bool) (connectivity.MemberSubscription, error) {
-	identity, native, err := a.nativeIdentity(ctx, id)
+	identity, err := a.native.Identity(ctx, id)
 	if err != nil {
 		return connectivity.MemberSubscription{}, err
-	}
-	if !native {
-		return a.remnaAdapter.LoadMemberSubscription(ctx, id, enabled, links)
 	}
 	proxies, err := a.native.MemberProxies(ctx, identity.UserID)
 	if err != nil {

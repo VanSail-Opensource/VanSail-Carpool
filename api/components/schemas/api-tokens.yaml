@@ -20,9 +20,7 @@
             "admin:read",
             "admin:write",
             "xnode:read",
-            "xnode:write",
-            "migration:read",
-            "migration:write"
+            "xnode:write"
           ]
         }
       },
@@ -83,9 +81,7 @@
             "admin:read",
             "admin:write",
             "xnode:read",
-            "xnode:write",
-            "migration:read",
-            "migration:write"
+            "xnode:write"
           ]
         }
       },

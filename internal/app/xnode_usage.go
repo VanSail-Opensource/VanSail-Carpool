@@ -8,12 +8,9 @@ import (
 )
 
 func (a proxyProvider) NodeUsage(ctx context.Context, id string, start, end time.Time) (model.DashboardNodeUsage, error) {
-	_, native, err := a.nativeIdentity(ctx, id)
+	_, err := a.native.Identity(ctx, id)
 	if err != nil {
 		return model.DashboardNodeUsage{}, err
-	}
-	if !native {
-		return a.remnaAdapter.NodeUsage(ctx, id, start, end)
 	}
 	usage, err := a.native.Usage(ctx, id, start, end)
 	if err != nil {

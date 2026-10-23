@@ -7,16 +7,15 @@ import { useI18n } from '@/i18n'
 defineProps<{ busy: boolean }>()
 const emit = defineEmits<{ create: [value: PanelAPITokenWrite] }>()
 const { t } = useI18n()
-const draft = reactive<PanelAPITokenWrite>({ name: '', scopes: ['xnode:write', 'migration:write'], expiresInDays: 30 })
 const schema = computed(() => z.object({ name: z.string().trim().min(1, t('apiTokens.nameRequired')).max(80, t('apiTokens.nameRequired')), scopes: z.array(z.enum(apiTokenScopes)).min(1, t('apiTokens.scopeRequired')), expiresInDays: z.number().int().min(0).max(365) }))
-const groups = computed(() => ['admin', 'xnode', 'migration'].map(group => ({ group, label: t(`apiTokens.groups.${group}`), scopes: apiTokenScopes.filter(value => value.startsWith(`${group}:`)) })))
+const draft = reactive<PanelAPITokenWrite>({ name: '', scopes: ['admin:read'], expiresInDays: 30 })
+const groups = computed(() => ['admin', 'xnode'].map(group => ({ group, label: t(`apiTokens.groups.${group}`), scopes: apiTokenScopes.filter(value => value.startsWith(`${group}:`)) })))
 function toggle(scope: PanelAPITokenWrite['scopes'][number], checked: boolean): void {
   draft.scopes = checked ? [...new Set([...draft.scopes, scope])] : draft.scopes.filter(value => value !== scope)
 }
 const expiry = computed(() => [7, 30, 90, 365, 0].map(value => ({ value, label: value ? t('apiTokens.days', { days: value }) : t('apiTokens.never') })))
 const presets = computed(() => [
   { label: t('apiTokens.readOnly'), scopes: ['admin:read'] },
-  { label: t('apiTokens.migration'), scopes: ['xnode:write', 'migration:write'] },
   { label: t('apiTokens.fullAccess'), scopes: ['admin:write'] },
 ] satisfies { label: string; scopes: PanelAPITokenWrite['scopes'] }[])
 function submit(): void {

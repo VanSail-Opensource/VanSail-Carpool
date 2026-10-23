@@ -30,7 +30,7 @@ import { useCatalog } from './useCatalog'
 const money = (minor: string) => ({ currency: 'TXB' as const, minor, display: `${Number(minor) / 100} TXB` })
 const squad = (id: string): SquadProduct => ({
   id,
-  remnaSquadUuid: `00000000-0000-4000-8000-${id.padStart(12, '0')}`,
+  groupId: `00000000-0000-4000-8000-${id.padStart(12, '0')}`,
   name: `Squad ${id}`,
   description: '',
   profile: null,

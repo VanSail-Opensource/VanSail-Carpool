@@ -10,7 +10,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
+
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
@@ -30,8 +30,6 @@ type Service struct {
 	now                  func() time.Time
 	mu                   sync.Mutex
 	templateMu           sync.Mutex
-	legacyProxies        func(context.Context, Identity) ([]subscription.Proxy, error)
-	legacySync           func(context.Context) error
 }
 
 func NewService(repo Repository, settings Settings, vault *secret.Vault, publicURL *url.URL, validationQueue *upstreamqueue.Queue) *Service {
@@ -42,12 +40,7 @@ func NewService(repo Repository, settings Settings, vault *secret.Vault, publicU
 	return service
 }
 
-// SetLegacyProxies attaches the temporary, queued subscription bridge at bootstrap.
-func (s *Service) SetLegacyProxies(source func(context.Context, Identity) ([]subscription.Proxy, error)) {
-	s.legacyProxies = source
-}
-func (s *Service) Now() time.Time                                 { return s.now().UTC() }
-func (s *Service) SetLegacySync(sync func(context.Context) error) { s.legacySync = sync }
+func (s *Service) Now() time.Time { return s.now().UTC() }
 func (s *Service) Global(ctx context.Context) (GlobalConfig, error) {
 	raw, err := s.settings.Optional(ctx, GlobalSettingKey)
 	if err != nil {

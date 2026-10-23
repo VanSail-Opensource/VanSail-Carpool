@@ -131,11 +131,11 @@ func (s *UserWorkflows) UserDetail(ctx context.Context, userID string) (UserDeta
 }
 
 func synchronizationFor(user model.User) UserSynchronization {
-	state := UserSynchronization{Status: "not_provisioned", RemoteUserID: user.RemnaUserID}
+	state := UserSynchronization{Status: "not_provisioned", RemoteUserID: user.ProxyUserID}
 	if user.RecoveryReason != "" {
 		state.Status = "failed"
 		state.LastError = &user.RecoveryReason
-	} else if user.RemnaUserID != nil {
+	} else if user.ProxyUserID != nil {
 		state.Status = "synchronized"
 	}
 	return state

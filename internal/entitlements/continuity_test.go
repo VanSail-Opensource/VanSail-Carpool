@@ -15,8 +15,8 @@ func TestPrepareContinuityExtendsExpiryWithoutReset(t *testing.T) {
 	extended := time.Date(2026, 10, 17, 12, 0, 0, 0, time.UTC)
 	current := model.Purchase{ID: "current", TrafficLimitBytes: 1024, ResetStrategy: "MONTH_ROLLING",
 		SquadUUIDs: []string{"squad-a"}, ValidUntil: extended}
-	repository := &entitlementRepository{continuity: &current, user: model.User{RemnaUserID: &remoteID}}
-	remote := &entitlementRemnawave{}
+	repository := &entitlementRepository{continuity: &current, user: model.User{ProxyUserID: &remoteID}}
+	remote := &entitlementProxy{}
 	job := model.OutboxJob{Kind: jobpayload.ContinuityKind, Payload: `{"purchaseId":"successor"}`}
 	if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), job); err != nil {
 		t.Fatalf("process(continuity): %v", err)
@@ -32,7 +32,7 @@ func TestPrepareContinuityExtendsExpiryWithoutReset(t *testing.T) {
 func TestPrepareContinuityIsNoopAfterBoundary(t *testing.T) {
 	t.Parallel()
 	repository := &entitlementRepository{}
-	remote := &entitlementRemnawave{}
+	remote := &entitlementProxy{}
 	job := model.OutboxJob{Kind: jobpayload.ContinuityKind, Payload: `{"purchaseId":"successor"}`}
 	if err := newEntitlementWorkerForTest(repository, remote).process(context.Background(), job); err != nil {
 		t.Fatalf("process(continuity): %v", err)

@@ -22,7 +22,7 @@ type SettingDefinition struct {
 }
 
 var settingDefinitions = map[string]SettingDefinition{
-	connectivity.SettingKey:                  {Default: `{"scheduledEnabled":false,"remnawaveUserId":0,"intervalSeconds":300,"timeoutSeconds":15,"maxRetries":10,"retryIntervalSeconds":1,"probeUrl":"https://cp.cloudflare.com/generate_204"}`, Validate: func(value string) error { _, err := connectivity.DecodeConfig(value); return err }},
+	connectivity.SettingKey:                  {Default: `{"scheduledEnabled":false,"proxyUserId":0,"intervalSeconds":300,"timeoutSeconds":15,"maxRetries":10,"retryIntervalSeconds":1,"probeUrl":"https://cp.cloudflare.com/generate_204"}`, Validate: func(value string) error { _, err := connectivity.DecodeConfig(value); return err }},
 	"telegram.pm.enabled":                    {Default: "false", Validate: validateBoolean},
 	"telegram.pm.group_chat_id":              {Validate: validatePMGroup},
 	"captcha.turnstile.enabled":              {Default: "false", Validate: validateBoolean},
@@ -32,8 +32,6 @@ var settingDefinitions = map[string]SettingDefinition{
 	"telegram.channel_chat_id":               {Required: true, Validate: validateInteger},
 	billing.PaymentAnnouncementChatIDSetting: {Validate: validateOptionalInteger},
 	"telegram.webhook_secret":                {Secret: true, Validate: validateWebhookSecret},
-	"remnawave.base_url":                     {Required: true, Validate: validateHTTPOrHTTPSURL},
-	"remnawave.api_token":                    {Secret: true, Required: true, Validate: nonempty},
 	"billing.rate.txb_per_cny":               {Required: true, Validate: validatePositiveDecimal},
 	"billing.rate.txb_per_usd":               {Required: true, Validate: validatePositiveDecimal},
 	"billing.rate.txb_per_xtr":               {Required: true, Validate: validatePositiveDecimal},

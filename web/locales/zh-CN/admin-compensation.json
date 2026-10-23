@@ -3,7 +3,7 @@
     "nav": "补偿",
     "eyebrow": "服务恢复",
     "title": "节点补偿",
-    "copy": "在延长活跃成员权益前，审核完整的 Remnawave 节点离线观测。",
+    "copy": "在延长活跃成员权益前，审核完整的 X-Node 节点离线观测。",
     "configEyebrow": "观测策略",
     "configTitle": "检测与计算",
     "configCopy": "新离线事件会快照此策略；已存在的事件保留开始观测时的数值。",

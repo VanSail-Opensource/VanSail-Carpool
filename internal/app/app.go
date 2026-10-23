@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
@@ -40,7 +39,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/webui"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnodemigration"
 )
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
@@ -99,15 +97,10 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(err)
 	}
-	legacy := newRemnaAdapter(settings, upstreams.remnawave)
-	legacy.squadPreferences = store
-	legacy.sourceConfig = migrationCredentials(store, settings, vault)
 	xnodeService := xnode.NewService(store, settings, vault, cfg.PublicBaseURL, upstreams.xnodeValidation)
 	xnodeMaster := xnode.NewMaster(xnodeService, logger)
-	remna := proxyProvider{remnaAdapter: legacy, native: xnodeService, master: xnodeMaster, store: store, bridgeGate: new(sync.RWMutex)}
-	xnodeService.SetLegacyProxies(remna.legacyProxies)
-	xnodeService.SetLegacySync(remna.syncBridgeAccounts)
-	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: remna}, connectivity.NewXrayProbe(), store, upstreams.connectivity)
+	provider := proxyProvider{native: xnodeService, master: xnodeMaster, store: store}
+	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: provider}, connectivity.NewXrayProbe(), store, upstreams.connectivity)
 	settings.SetConnectivityValidation(connectivityService.ValidateConfig, connectivityService.Invalidate)
 	queuedTelegramClient := &queuedTelegram{client: telegramClient, queue: upstreams.telegram}
 	settings.SetPMForumValidator(validatePMForum(queuedTelegramClient))
@@ -118,7 +111,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store, usdt: usdtService}
 	paymentProfiles := newPaymentProfileManager(settings, paymentChannels, upstreams.payment, queuedTelegramClient, store, cfg.AdminTelegramIDs, cfg.PublicBaseURL, logger)
 	backupService := backup.NewService(db, store, filepath.Join(cfg.DataDir, "backups"), cfg.BackupRetention)
-	migrationService := xnodemigration.New(store, migrationSource{provider: remna}, xnodeService, xnodeMaster, vault, backupService)
 	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	reconcileErr := backupService.ReconcileUploads(reconcileCtx, migrationVersions)
 	reconcileCancel()
@@ -129,8 +121,8 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	databaseEditor := databaseadmin.NewService(db, backupService, vault, logger)
 	databaseAdminHTTP := httpapi.NewDatabaseAdministrationHTTP(databaseEditor, backupService, migrationVersions)
 	databaseAdminHTTP.SetBackupUploadMaxBytes(cfg.BackupUploadMaxBytes)
-	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, remna, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
-	catalogService := catalog.NewService(store, remna, 2*time.Minute)
+	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, provider, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
+	catalogService := catalog.NewService(store, provider, 2*time.Minute)
 	catalogService.SetConnectivity(connectivityService)
 	catalogService.SetAutomaticRenewalSettings(settings)
 	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL)
@@ -145,16 +137,16 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err != nil {
 		return cleanup(err)
 	}
-	adminService := admin.NewService(store, settings, remna, backupService, paymentBridge)
-	adminUserWorkflows := admin.NewUserWorkflows(store, remna)
-	entitlementWorker := entitlements.NewWorker(store, remna, remna)
-	rolloverWorker := rollover.NewService(store, remna)
+	adminService := admin.NewService(store, settings, provider, backupService, paymentBridge)
+	adminUserWorkflows := admin.NewUserWorkflows(store, provider)
+	entitlementWorker := entitlements.NewWorker(store, provider, provider)
+	rolloverWorker := rollover.NewService(store, provider)
 	outboxWorker := outbox.NewWorker(store)
 	paymentAnnouncementWorker := billing.NewPaymentAnnouncementWorker(settings, queuedTelegramClient)
 	affiliateNotificationWorker := affiliates.NewNotificationWorker(queuedTelegramClient, store)
 	userNotificationWorker := notifications.NewWorker(queuedTelegramClient, logger, cfg.Timezone, store)
-	userNotificationScanner := notifications.NewScanner(store, remna, logger)
-	memberServices, scanWorker, blockExpiryWorker, operationDispatcher, err := newMemberWorkflows(store, remna, vault, cfg.MasterKey)
+	userNotificationScanner := notifications.NewScanner(store, provider, logger)
+	memberServices, scanWorker, blockExpiryWorker, operationDispatcher, err := newMemberWorkflows(store, provider, vault, cfg.MasterKey)
 	if err != nil {
 		return cleanup(err)
 	}
@@ -189,11 +181,11 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, cfg.DatabasePath, logger); err != nil {
 		return cleanup(err)
 	}
-	if err := registerAdminOperationHandlers(operationDispatcher, store, remna); err != nil {
+	if err := registerAdminOperationHandlers(operationDispatcher, store, provider); err != nil {
 		return cleanup(err)
 	}
-	statisticsService := productstats.NewService(store, nativeStatisticsProvider{proxyProvider: remna})
-	compensationService := compensation.NewService(store, remna)
+	statisticsService := productstats.NewService(store, nativeStatisticsProvider{proxyProvider: provider})
+	compensationService := compensation.NewService(store, provider)
 	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, rolloverWorker, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {
 		return cleanup(err)
@@ -207,7 +199,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerBoostAppreciationHandler(outboxWorker, settings, queuedTelegramClient); err != nil {
 		return cleanup(err)
 	}
-	if err := registerRetiredDetectorRelease(outboxWorker, store, remna); err != nil {
+	if err := registerRetiredDetectorRelease(outboxWorker, store, provider); err != nil {
 		return cleanup(err)
 	}
 	pmService, err := newApplicationPMWorkflows(store, settings, queuedTelegramClient, cfg.AdminTelegramIDs,
@@ -238,12 +230,8 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = operationDispatcher.Register(xnode.FirewallExemptionOperation, xnodeService); err != nil {
 		return cleanup(err)
 	}
-	if err = operationDispatcher.Register(xnodemigration.OperationKind, migrationService); err != nil {
-		return cleanup(err)
-	}
 	api, err := httpapi.New(httpapi.Dependencies{
-		XNodeMigration: migrationService,
-		XNode:          xnodeService, XNodeMaster: xnodeMaster,
+		XNode: xnodeService, XNodeMaster: xnodeMaster,
 		BrowserAuth:  browserauth.New(store, cfg.PublicBaseURL, cfg.AdminTelegramIDs),
 		USDT:         usdtService,
 		IPLookup:     ipLookupService,

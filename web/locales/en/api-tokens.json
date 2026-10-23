@@ -1,14 +1,13 @@
 {
   "apiTokens": {
     "title": "API access",
-    "description": "Manage your administrator tokens for automation and assisted migration.",
+    "description": "Manage administrator tokens for automation.",
     "name": "Name",
-    "namePlaceholder": "Migration assistant",
+    "namePlaceholder": "Node monitor",
     "expiration": "Expires after",
     "days": "{days} days",
     "never": "No expiry",
     "readOnly": "Read only",
-    "migration": "Migration assistant",
     "fullAccess": "Full administration",
     "permissions": "Permissions",
     "permissionsHint": "Write permission includes reading that resource. Full administration also controls commerce and system settings.",
@@ -33,15 +32,20 @@
     "loadFailed": "Could not load API tokens. Please retry.",
     "createFailed": "Could not create the token. Check the settings and active token limit.",
     "revokeFailed": "Could not revoke the token. Please retry.",
-    "states": { "active": "Active", "expired": "Expired", "revoked": "Revoked" },
-    "groups": { "admin": "Administration", "xnode": "Nodes", "migration": "Migration" },
+    "states": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "groups": {
+      "admin": "Administration",
+      "xnode": "Nodes"
+    },
     "scopes": {
       "admin:read": "Read all administration data",
       "admin:write": "Control all administration",
       "xnode:read": "Read nodes and configuration",
-      "xnode:write": "Configure nodes and run commands",
-      "migration:read": "Read migration status",
-      "migration:write": "Import, cut over and finalize migration"
+      "xnode:write": "Configure nodes and run commands"
     }
   }
 }

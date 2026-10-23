@@ -16,7 +16,7 @@ type ExpiryRepository interface {
 	FinalizeConnectionIPBlockExpiry(context.Context, string, bool, time.Time) error
 }
 
-// ExpiryWorker is the scheduled backstop to Remnawave's plugin timeout.
+// ExpiryWorker is the scheduled backstop to Proxy's plugin timeout.
 type ExpiryWorker struct {
 	repository ExpiryRepository
 	remote     BlockRemote

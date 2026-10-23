@@ -20,13 +20,13 @@ describe('connectivity polling lifecycle', () => {
     let monitor!: ReturnType<typeof useConnectivityMonitor>
     const wrapper = mount(defineComponent({ setup() { monitor = useConnectivityMonitor(); return () => null } }))
     const refresh = monitor.refresh()
-    const latest: ConnectivitySnapshot = { config: { ...defaultConnectivityConfig, remnawaveUserId: 42 }, user: null, run: null, hosts: [], stale: false, errorCode: '' }
+    const latest: ConnectivitySnapshot = { config: { ...defaultConnectivityConfig, proxyUserId: 42 }, user: null, run: null, hosts: [], stale: false, errorCode: '' }
     responses[1]!(latest)
     await refresh
-    responses[0]!({ ...latest, config: { ...latest.config, remnawaveUserId: 41 } })
+    responses[0]!({ ...latest, config: { ...latest.config, proxyUserId: 41 } })
     await Promise.resolve()
     expect(signals[0]?.aborted).toBe(true)
-    expect(monitor.snapshot.value?.config.remnawaveUserId).toBe(42)
+    expect(monitor.snapshot.value?.config.proxyUserId).toBe(42)
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(60000)
     expect(connectivityApi.snapshot).toHaveBeenCalledTimes(2)

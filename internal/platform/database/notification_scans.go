@@ -78,7 +78,7 @@ func (s *Store) EnqueueTrafficThresholdNotification(ctx context.Context, remoteI
 	err = tx.QueryRowContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_from,
 		COALESCE(purchases.entitlement_reset_strategy,combos.reset_strategy)
 		FROM users JOIN purchases ON purchases.user_id=users.id JOIN combos ON combos.id=purchases.combo_id
-		WHERE users.remna_user_id=? AND purchases.status='active'
+		WHERE users.proxy_user_id=? AND purchases.status='active'
 		AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`,
 		remoteID, stamp(now), stamp(now)).Scan(&purchaseID, &userID, &combo, &validFrom, &reset)
 	if err != nil {

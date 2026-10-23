@@ -7,7 +7,7 @@ Audited administrative operations for catalog data, settings, balances, refunds,
 ## Files
 
 - `service.go` defines admin-facing dependency contracts, service construction, backup deletion, and settings forwarding.
-- `catalog.go` manages combos, typed squad profiles, and upstream squad imports; Remnawave remains authoritative for node accessibility, while administrator projections initialize required node arrays without storing assignments.
+- `catalog.go` manages combos, typed squad profiles, and upstream squad imports; X-Node remains authoritative for node accessibility, while administrator projections initialize required node arrays without storing assignments.
 - `finance.go` validates balance adjustments, deductions, refunds,
   terminal-payment courtesy credits, and entitlement cancellations; production
   persistence commits their audit and user notification atomically.

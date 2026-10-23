@@ -59,7 +59,7 @@ func (s *Service) profileAccounting(ctx context.Context, userID string, result P
 			return result, err
 		}
 	}
-	legacy, err := s.repo.XNodeLegacyHistory(ctx, identity.ProxyUserID, start, now)
+	legacy, err := s.repo.XNodeImportedHistory(ctx, identity.ProxyUserID, start, now)
 	if err != nil {
 		return result, err
 	}

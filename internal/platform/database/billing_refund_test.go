@@ -124,7 +124,7 @@ func TestRefundCancelsQueuedBeforeActiveAndIsIdempotent(t *testing.T) {
 		}
 	}
 	var syncJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
 		t.Fatalf("count refund sync jobs: %v", err)
 	}
 	if syncJobs != 1 {

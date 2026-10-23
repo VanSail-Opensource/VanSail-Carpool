@@ -9,7 +9,7 @@ import (
 
 // Fleet accounting excludes all connection, session and live-rate reports.
 func (s *Store) XNodeFleetUsage(ctx context.Context, from, to time.Time) ([]xnode.DailyUsage, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT node_id,date,upload_bytes,download_bytes,weighted_bytes FROM xnode_daily_usage WHERE date>=? AND date<=? UNION ALL SELECT node_id,date,raw_bytes,0,weighted_bytes FROM xnode_legacy_history WHERE date>=? AND date<=? ORDER BY node_id,date`, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly), from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id,date,upload_bytes,download_bytes,weighted_bytes FROM xnode_daily_usage WHERE date>=? AND date<=? UNION ALL SELECT node_id,date,raw_bytes,0,weighted_bytes FROM xnode_imported_history WHERE date>=? AND date<=? ORDER BY node_id,date`, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly), from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}

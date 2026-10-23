@@ -37,11 +37,11 @@ func (s *Server) telegramSquadNames(ctx context.Context, squadUUIDs []string) []
 	names := make(map[string]string, len(catalog.Addons))
 	for _, combo := range catalog.Combos {
 		for _, squad := range combo.IncludedSquads {
-			names[squad.RemnaSquadUUID] = squad.Name
+			names[squad.GroupID] = squad.Name
 		}
 	}
 	for _, squad := range catalog.Addons {
-		names[squad.RemnaSquadUUID] = squad.Name
+		names[squad.GroupID] = squad.Name
 	}
 	result := make([]string, 0, len(squadUUIDs))
 	for _, uuid := range squadUUIDs {

@@ -84,7 +84,7 @@ func TestAddPurchaseAddonsDebitsOnceAndFeedsFutureTotals(t *testing.T) {
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE kind='purchase_addon_debit'`).Scan(&debits); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='remna_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.DB().QueryRowContext(ctx, `SELECT net_paid_txb_minor FROM purchase_rollovers WHERE purchase_id=?`, purchase.ID).Scan(&rolloverPaid); err != nil {
@@ -102,7 +102,7 @@ func TestPurchaseAddonsBlockQueuedTermsAndAllowOwnerHeldFullSquads(t *testing.T)
 	now := time.Date(2026, time.August, 24, 12, 0, 0, 0, time.UTC)
 	owner := createTestUser(t, store, 69_002)
 	limit := 1
-	addon, err := store.SaveSquadProduct(ctx, SquadProductInput{RemnaSquadUUID: "full-owner-squad", Name: "full-owner-squad", Description: "test", PriceTXBMinor: 200, Visible: true, UpstreamPresent: true, StockLimit: &limit})
+	addon, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: "full-owner-squad", Name: "full-owner-squad", Description: "test", PriceTXBMinor: 200, Visible: true, UpstreamPresent: true, StockLimit: &limit})
 	if err != nil {
 		t.Fatal(err)
 	}

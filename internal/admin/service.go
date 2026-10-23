@@ -15,7 +15,7 @@ type CatalogRepository interface {
 	ListCombos(context.Context, bool) ([]model.Combo, error)
 	SaveSquadProduct(context.Context, database.SquadProductInput) (model.SquadProduct, error)
 	SquadProductByID(context.Context, string) (model.SquadProduct, error)
-	SquadProductByRemnaUUID(context.Context, string) (model.SquadProduct, error)
+	SquadProductByGroupID(context.Context, string) (model.SquadProduct, error)
 	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)
 	RefreshImportedSquads(context.Context, []database.ImportedSquad) error
 	ListUsers(context.Context, int) ([]model.User, error)
@@ -39,13 +39,13 @@ type PaymentRefunder interface {
 	RefundProvider(context.Context, model.PaymentOrder) error
 }
 
-// UpstreamSquad is imported from Remnawave without granting direct mutation access.
+// UpstreamSquad is imported from Proxy without granting direct mutation access.
 type UpstreamSquad struct {
 	UUID string
 	Name string
 }
 
-// SquadImporter lists Remnawave internal squads.
+// SquadImporter lists Proxy internal squads.
 type SquadImporter interface {
 	ListInternalSquads(context.Context) ([]UpstreamSquad, error)
 }

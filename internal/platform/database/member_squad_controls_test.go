@@ -89,7 +89,7 @@ func TestSquadPreferencesCarryAndRestoreStableFirst(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 49003)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET remna_user_id='49003' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id='49003' WHERE id=?`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES(?,'squad-a'),(?,'squad-b')`, user.ID, user.ID); err != nil {

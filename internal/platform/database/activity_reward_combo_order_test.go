@@ -62,12 +62,7 @@ func TestRecoveryLeavesCustomCombosAwardedAfterCoreChangeUntouched(t *testing.T)
 			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs`).Scan(&jobsBefore); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `DELETE FROM schema_migrations WHERE version=?`, customComboRecoveryMigration); err != nil {
-				t.Fatal(err)
-			}
-			if err := migrate(ctx, store.DB()); err != nil {
-				t.Fatal(err)
-			}
+			reapplyRecoveryMigration(t, store, customComboRecoveryMigration)
 			if after := customComboRecoverySnapshot(t, store, purchase.ID); after != before {
 				t.Fatalf("recovery changed a later custom award:\nbefore=%s\nafter=%s", before, after)
 			}

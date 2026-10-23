@@ -15,11 +15,11 @@ func TestCompensationObservationPersistsMissingDisabledAndRepeatedNodes(t *testi
 	now := time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC)
 	combo := saveTestCombo(t, store, "compensation-observe", 100, 30)
 	squad := saveTestSquad(t, store, "88888888-8888-4888-8888-888888888888", 10, true)
-	_, _ = createAdminWorkflowPurchase(t, store, 48_001, combo, now, squad.RemnaSquadUUID)
+	_, _ = createAdminWorkflowPurchase(t, store, 48_001, combo, now, squad.GroupID)
 	threshold, multiplier := 1, 10_000
 	config := compensation.Config{Enabled: true, ThresholdMinutes: &threshold, MultiplierBPS: &multiplier}
 	node := compensation.Node{UUID: "11111111-1111-4111-8111-111111111111", Name: "Alpha",
-		AffectedSquads: []compensation.Squad{{UUID: squad.RemnaSquadUUID, Name: squad.Name}}}
+		AffectedSquads: []compensation.Squad{{UUID: squad.GroupID, Name: squad.Name}}}
 
 	if err := store.RecordCompensationObservation(ctx, config, []compensation.Node{node}, now); err != nil {
 		t.Fatalf("start observation: %v", err)

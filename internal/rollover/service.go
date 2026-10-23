@@ -11,7 +11,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
-var ErrRemoteUserMissing = errors.New("Remnawave user is missing")
+var ErrRemoteUserMissing = errors.New("Proxy user is missing")
 var ErrPerNodeUsageUnavailable = errors.New("per-node rollover usage is unavailable")
 
 type Repository interface {
@@ -97,14 +97,14 @@ func (s *Service) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return err
 	}
 	_, purchaseRemote := s.remote.(PurchaseRemote)
-	if !purchaseRemote && user.RemnaUserID == nil {
+	if !purchaseRemote && user.ProxyUserID == nil {
 		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "local_identity_missing")
 	}
 	if rollover.Status == "pending" {
 		err := quiescePurchase(ctx, s.remote, user, purchase)
 		if err != nil {
 			if errors.Is(err, ErrRemoteUserMissing) {
-				return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "remnawave_user_missing")
+				return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "proxy_user_missing")
 			}
 			return fmt.Errorf("quiesce rollover: %w", err)
 		}
@@ -114,7 +114,7 @@ func (s *Service) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	}
 	snapshot, err := PurchaseSnapshot(ctx, s.remote, user, purchase, purchase.ValidUntil)
 	if errors.Is(err, ErrRemoteUserMissing) {
-		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "remnawave_user_missing")
+		return s.finalizeWithoutCalculation(ctx, purchaseID, rollover, "proxy_user_missing")
 	}
 	if err != nil {
 		return fmt.Errorf("fetch per-node rollover traffic: %w", err)

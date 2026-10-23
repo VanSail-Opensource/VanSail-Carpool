@@ -30,15 +30,8 @@ func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly 
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	job, err := scanOutbox(tx.QueryRowContext(ctx, outboxSelect+` WHERE status='pending' AND available_at<=? AND (?=0 OR (`+priorityOutboxFilter+`))
-		AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
-			NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
-			AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
-		ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 0 ELSE 1 END,available_at,created_at LIMIT 1`, stamp(now), boolInt(priorityOnly)))
-	if errors.Is(err, ErrNotFound) {
-		return nil, nil
-	}
-	if err != nil {
+	job, err := claimableOutboxTx(ctx, tx, now, priorityOnly)
+	if err != nil || job == nil {
 		return nil, err
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='processing',attempts=attempts+1,updated_at=? WHERE id=? AND status='pending'`, stamp(now), job.ID)
@@ -54,7 +47,7 @@ func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly 
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return &job, nil
+	return job, nil
 }
 
 // CompleteOutboxJob removes successful work or schedules bounded exponential retry.

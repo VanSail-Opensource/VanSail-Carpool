@@ -17,10 +17,10 @@ func TestFailedSynchronizationRetentionUsesFinalFailureAndKeepsFinancialWork(t *
 		id, kind, status string
 		failed           time.Time
 	}{
-		{"expired", "remna_sync_user", "failed", now.Add(-failedSyncRetention)},
-		{"recent-failure", "remna_sync_user", "failed", now.Add(-failedSyncRetention + time.Nanosecond)},
-		{"pending", "remna_apply_entitlement", "pending", now.Add(-8 * 24 * time.Hour)},
-		{"processing", "remna_sync_user", "processing", now.Add(-8 * 24 * time.Hour)},
+		{"expired", "xnode_sync_user", "failed", now.Add(-failedSyncRetention)},
+		{"recent-failure", "xnode_sync_user", "failed", now.Add(-failedSyncRetention + time.Nanosecond)},
+		{"pending", "xnode_apply_entitlement", "pending", now.Add(-8 * 24 * time.Hour)},
+		{"processing", "xnode_sync_user", "processing", now.Add(-8 * 24 * time.Hour)},
 		{"financial", "rollover_finalize", "failed", now.Add(-8 * 24 * time.Hour)},
 		{"raffle-financial", "draw_raffle_settle", "failed", now.Add(-8 * 24 * time.Hour)},
 	} {
@@ -55,10 +55,10 @@ func TestFailedSyncCleanupKeepsPurchaseMoneyAndProtectsQueuedManualRetry(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=? WHERE kind='remna_apply_entitlement' AND json_extract(payload,'$.purchaseId')=?`, stamp(now.Add(-failedSyncRetention)), purchase.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=? WHERE kind='xnode_apply_entitlement' AND json_extract(payload,'$.purchaseId')=?`, stamp(now.Add(-failedSyncRetention)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES('retry-target','remna_sync_user','{"userId":"missing"}','failed',10,?,?,?)`, stamp(now), stamp(now.Add(-8*24*time.Hour)), stamp(now.Add(-failedSyncRetention))); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES('retry-target','xnode_sync_user','{"userId":"missing"}','failed',10,?,?,?)`, stamp(now), stamp(now.Add(-8*24*time.Hour)), stamp(now.Add(-failedSyncRetention))); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor.ID, Kind: providerops.KindOutboxRetry, IdempotencyKey: "retained-retry", RequestFingerprint: "retained-retry-fingerprint", Items: []providerops.ItemInput{{Key: "job", TargetType: "outbox_job", TargetID: "retry-target"}}}, now); err != nil {

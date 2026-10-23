@@ -17,26 +17,26 @@ func TestWorkerProcessApplyBranches(t *testing.T) {
 	tests := []struct {
 		name       string
 		repository *entitlementRepository
-		remote     *entitlementRemnawave
+		remote     *entitlementProxy
 		wantError  bool
 		wantApply  bool
 	}{
-		{name: "cancelled purchase", repository: &entitlementRepository{purchase: model.Purchase{Status: "cancelled"}}, remote: &entitlementRemnawave{}},
-		{name: "expired purchase", repository: &entitlementRepository{purchase: model.Purchase{Status: "expired"}}, remote: &entitlementRemnawave{}},
-		{name: "purchase lookup", repository: &entitlementRepository{purchaseErr: testError}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "user lookup", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, userForPurchaseErr: testError}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "missing remote identity", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{}}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "reset phase lookup", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}, resetPhaseErr: testError}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "quiesce", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}}, remote: &entitlementRemnawave{removeErr: testError}, wantError: true},
-		{name: "reset traffic", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}, resetPhase: "quiesced"}, remote: &entitlementRemnawave{resetErr: testError}, wantError: true},
-		{name: "unknown reset phase", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}, resetPhase: "mystery"}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "remote apply", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}}, remote: &entitlementRemnawave{applyErr: testError}, wantError: true, wantApply: true},
-		{name: "mark result", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{RemnaUserID: &remoteID}, markErr: testError}, remote: &entitlementRemnawave{}, wantError: true, wantApply: true},
+		{name: "cancelled purchase", repository: &entitlementRepository{purchase: model.Purchase{Status: "cancelled"}}, remote: &entitlementProxy{}},
+		{name: "expired purchase", repository: &entitlementRepository{purchase: model.Purchase{Status: "expired"}}, remote: &entitlementProxy{}},
+		{name: "purchase lookup", repository: &entitlementRepository{purchaseErr: testError}, remote: &entitlementProxy{}, wantError: true},
+		{name: "user lookup", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, userForPurchaseErr: testError}, remote: &entitlementProxy{}, wantError: true},
+		{name: "missing remote identity", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{}}, remote: &entitlementProxy{}, wantError: true},
+		{name: "reset phase lookup", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}, resetPhaseErr: testError}, remote: &entitlementProxy{}, wantError: true},
+		{name: "quiesce", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}}, remote: &entitlementProxy{removeErr: testError}, wantError: true},
+		{name: "reset traffic", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}, resetPhase: "quiesced"}, remote: &entitlementProxy{resetErr: testError}, wantError: true},
+		{name: "unknown reset phase", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}, resetPhase: "mystery"}, remote: &entitlementProxy{}, wantError: true},
+		{name: "remote apply", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}}, remote: &entitlementProxy{applyErr: testError}, wantError: true, wantApply: true},
+		{name: "mark result", repository: &entitlementRepository{purchase: model.Purchase{ID: "purchase", ValidUntil: future}, user: model.User{ProxyUserID: &remoteID}, markErr: testError}, remote: &entitlementProxy{}, wantError: true, wantApply: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			err := newEntitlementWorkerForTest(test.repository, test.remote).process(context.Background(), model.OutboxJob{Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase"}`})
+			err := newEntitlementWorkerForTest(test.repository, test.remote).process(context.Background(), model.OutboxJob{Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase"}`})
 			if test.wantError && err == nil {
 				t.Fatal("process() unexpectedly succeeded")
 			}
@@ -65,7 +65,7 @@ func TestWorkerProcessExpiresDuePurchase(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			repository := &entitlementRepository{purchase: model.Purchase{ID: "purchase", Status: "active", ValidUntil: time.Date(2026, 8, 7, 11, 0, 0, 0, time.UTC)}, expireErr: test.expireErr}
-			err := newEntitlementWorkerForTest(repository, &entitlementRemnawave{}).process(context.Background(), model.OutboxJob{Kind: "remna_apply_entitlement", Payload: `{"purchaseId":"purchase"}`})
+			err := newEntitlementWorkerForTest(repository, &entitlementProxy{}).process(context.Background(), model.OutboxJob{Kind: "xnode_apply_entitlement", Payload: `{"purchaseId":"purchase"}`})
 			if test.wantError && err == nil {
 				t.Fatal("process() unexpectedly succeeded")
 			}
@@ -84,30 +84,30 @@ func TestWorkerProcessSynchronizesDesiredOrEmptyState(t *testing.T) {
 
 	remoteID := "remote-1"
 	username := "member"
-	completedUser := model.User{OnboardingState: "complete", Username: &username, RemnaUserID: &remoteID}
+	completedUser := model.User{OnboardingState: "complete", Username: &username, ProxyUserID: &remoteID}
 	desired := model.Purchase{TrafficLimitBytes: 4321, ResetStrategy: "WEEK", SquadUUIDs: []string{"squad"}, ValidUntil: time.Date(2099, 8, 7, 0, 0, 0, 0, time.UTC)}
 	testError := errors.New("test failure")
 	tests := []struct {
 		name       string
 		repository *entitlementRepository
-		remote     *entitlementRemnawave
+		remote     *entitlementProxy
 		wantError  bool
 		wantApply  bool
 		wantRemove bool
 	}{
-		{name: "user lookup", repository: &entitlementRepository{userByIDErr: testError}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "incomplete onboarding", repository: &entitlementRepository{user: model.User{RemnaUserID: &remoteID}, desired: &desired}, remote: &entitlementRemnawave{}},
-		{name: "no remote identity", repository: &entitlementRepository{user: model.User{OnboardingState: "complete", Username: &username}}, remote: &entitlementRemnawave{}},
-		{name: "desired lookup", repository: &entitlementRepository{user: completedUser, desiredErr: testError}, remote: &entitlementRemnawave{}, wantError: true},
-		{name: "remove empty", repository: &entitlementRepository{user: completedUser}, remote: &entitlementRemnawave{}, wantRemove: true},
-		{name: "remove error", repository: &entitlementRepository{user: completedUser}, remote: &entitlementRemnawave{removeErr: testError}, wantRemove: true, wantError: true},
-		{name: "apply desired", repository: &entitlementRepository{user: completedUser, desired: &desired}, remote: &entitlementRemnawave{}, wantApply: true},
-		{name: "apply desired error", repository: &entitlementRepository{user: completedUser, desired: &desired}, remote: &entitlementRemnawave{applyErr: testError}, wantApply: true, wantError: true},
+		{name: "user lookup", repository: &entitlementRepository{userByIDErr: testError}, remote: &entitlementProxy{}, wantError: true},
+		{name: "incomplete onboarding", repository: &entitlementRepository{user: model.User{ProxyUserID: &remoteID}, desired: &desired}, remote: &entitlementProxy{}},
+		{name: "no remote identity", repository: &entitlementRepository{user: model.User{OnboardingState: "complete", Username: &username}}, remote: &entitlementProxy{}},
+		{name: "desired lookup", repository: &entitlementRepository{user: completedUser, desiredErr: testError}, remote: &entitlementProxy{}, wantError: true},
+		{name: "remove empty", repository: &entitlementRepository{user: completedUser}, remote: &entitlementProxy{}, wantRemove: true},
+		{name: "remove error", repository: &entitlementRepository{user: completedUser}, remote: &entitlementProxy{removeErr: testError}, wantRemove: true, wantError: true},
+		{name: "apply desired", repository: &entitlementRepository{user: completedUser, desired: &desired}, remote: &entitlementProxy{}, wantApply: true},
+		{name: "apply desired error", repository: &entitlementRepository{user: completedUser, desired: &desired}, remote: &entitlementProxy{applyErr: testError}, wantApply: true, wantError: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			err := newEntitlementWorkerForTest(test.repository, test.remote).process(context.Background(), model.OutboxJob{Kind: "remna_sync_user", Payload: `{"userId":"user-1"}`})
+			err := newEntitlementWorkerForTest(test.repository, test.remote).process(context.Background(), model.OutboxJob{Kind: "xnode_sync_user", Payload: `{"userId":"user-1"}`})
 			if test.wantError && err == nil {
 				t.Fatal("process() unexpectedly succeeded")
 			}
@@ -133,7 +133,7 @@ func TestWorkerProcessSynchronizesDesiredOrEmptyState(t *testing.T) {
 func TestWorkerProcessRejectsUnknownJob(t *testing.T) {
 	t.Parallel()
 
-	err := newEntitlementWorkerForTest(&entitlementRepository{}, &entitlementRemnawave{}).process(context.Background(), model.OutboxJob{Kind: "mystery"})
+	err := newEntitlementWorkerForTest(&entitlementRepository{}, &entitlementProxy{}).process(context.Background(), model.OutboxJob{Kind: "mystery"})
 	if err == nil {
 		t.Fatal("process() unexpectedly accepted unknown job")
 	}
@@ -143,14 +143,14 @@ func TestWorkerReleasesNotificationsOnlyAfterLaterSyncSuccess(t *testing.T) {
 	remoteID := "remote-1"
 	username := "member"
 	repository := &entitlementRepository{
-		user: model.User{OnboardingState: "complete", Username: &username, RemnaUserID: &remoteID},
+		user: model.User{OnboardingState: "complete", Username: &username, ProxyUserID: &remoteID},
 		desired: &model.Purchase{TrafficLimitBytes: 1024, ResetStrategy: "DAY",
 			ValidUntil: time.Date(2099, 8, 7, 0, 0, 0, 0, time.UTC)},
 	}
 	providerFailure := errors.New("provider failure")
-	remote := &entitlementRemnawave{applyErr: providerFailure}
+	remote := &entitlementProxy{applyErr: providerFailure}
 	worker := newEntitlementWorkerForTest(repository, remote)
-	job := model.OutboxJob{Kind: "remna_sync_user", Payload: `{"userId":"user-1"}`}
+	job := model.OutboxJob{Kind: "xnode_sync_user", Payload: `{"userId":"user-1"}`}
 	if err := worker.process(context.Background(), job); !errors.Is(err, providerFailure) {
 		t.Fatalf("failed sync = %v", err)
 	}

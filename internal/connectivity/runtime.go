@@ -83,7 +83,7 @@ func (s *Service) observeConfiguration(ctx context.Context) {
 		return
 	}
 	s.applyConfigLocked(cfg)
-	due := cfg.ScheduledEnabled && cfg.RemnawaveUserID > 0 && s.pending == nil && s.active == nil &&
+	due := cfg.ScheduledEnabled && cfg.ProxyUserID > 0 && s.pending == nil && s.active == nil &&
 		(s.completed.IsZero() || !s.now().Before(s.completed.Add(time.Duration(cfg.IntervalSeconds)*time.Second)))
 	s.mu.Unlock()
 	if due {

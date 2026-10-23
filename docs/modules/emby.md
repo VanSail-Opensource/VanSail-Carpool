@@ -8,12 +8,12 @@ The Emby module owns setup pricing, account linkage, temporary-password protecti
 
 ## Provisioning saga
 
-Setup validates the selected rating and libraries against live Emby options, derives the base name from the local Remnawave username, and seals the temporary password with the existing AES-GCM vault using `emby.provisioning.password:<localUserId>` as authenticated context. One transaction debits the snapshotted setup price, appends its ledger entry, stores the sealed secret and preferences, and queues one `provider_operation` receipt. The legacy `emby_provision_account` handler remains registered only to drain jobs created before this command boundary existed.
+Setup validates the selected rating and libraries against live Emby options, derives the base name from the local X-Node username, and seals the temporary password with the existing AES-GCM vault using `emby.provisioning.password:<localUserId>` as authenticated context. One transaction debits the snapshotted setup price, appends its ledger entry, stores the sealed secret and preferences, and queues one `provider_operation` receipt. The legacy `emby_provision_account` handler remains registered only to drain jobs created before this command boundary existed.
 
 The kind-specific worker advances idempotently:
 
 1. Reserve the local provisioning attempt and exact candidate name.
-2. Use the base Remnawave name if free. If an unrelated Emby account owns it, append `-` plus the stable first eight hexadecimal characters of SHA-256(local user ID).
+2. Use the base X-Node name if free. If an unrelated Emby account owns it, append `-` plus the stable first eight hexadecimal characters of SHA-256(local user ID).
 3. If both candidates exist, fail instead of adopting an unknown account.
 4. Mark creation attempted before calling Emby. After an ambiguous error, reconcile only by the exact persisted candidate.
 5. Fetch the complete created user, set the password, fetch/overlay policy, and mark active.

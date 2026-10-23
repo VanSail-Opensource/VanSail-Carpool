@@ -15,7 +15,7 @@ setExperience('browser'); initializeBrowserTheme(); setLocale(params.has('zh') ?
 const trace = { calls: [] as string[], copied: [] as string[], failures: 0 }
 const stamp = new Date().toISOString()
 let items: PanelAPIToken[] = params.has('empty') ? [] : [
-  { id: 'migration', name: 'Migration assistant', prefix: 'vsc_example1', scopes: ['xnode:write', 'migration:write'], createdAt: stamp, expiresAt: '2099-01-01T00:00:00Z', lastUsedAt: stamp, revokedAt: null },
+  { id: 'migration', name: 'Migration assistant', prefix: 'vsc_example1', scopes: ['xnode:write', 'xnode:write'], createdAt: stamp, expiresAt: '2099-01-01T00:00:00Z', lastUsedAt: stamp, revokedAt: null },
   { id: 'expired', name: 'Expired monitoring token', prefix: 'vsc_example2', scopes: ['xnode:read'], createdAt: '2000-01-01T00:00:00Z', expiresAt: '2000-02-01T00:00:00Z', lastUsedAt: null, revokedAt: null },
   { id: 'revoked', name: 'Old integration', prefix: 'vsc_example3', scopes: ['admin:read'], createdAt: stamp, expiresAt: null, lastUsedAt: null, revokedAt: stamp },
 ]

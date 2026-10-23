@@ -22,7 +22,7 @@ type PurchaseInput struct {
 }
 
 // CreatePurchase atomically revalidates live pricing, debits TXB, stores only
-// transaction facts and selected paid add-ons, and queues Remnawave sync.
+// transaction facts and selected paid add-ons, and queues Proxy sync.
 func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
 	fingerprint, err := normalizeAndFingerprintPurchase(&input)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 	if input.CouponGrantID != "" {
 		pricedAddonIDs := make([]string, 0, len(addonRows))
 		for _, addon := range addonRows {
-			pricedAddonIDs = append(pricedAddonIDs, addon.RemnaSquadUUID)
+			pricedAddonIDs = append(pricedAddonIDs, addon.GroupID)
 		}
 		discount, err = applyPurchaseCouponTx(ctx, tx, coupons.PurchaseContext{
 			UserID: input.UserID, GrantID: input.CouponGrantID, ComboID: combo.ID,
@@ -106,7 +106,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 		}
 	}
 	for _, product := range addonRows {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor) VALUES(?,?,?)`, purchaseID, product.RemnaSquadUUID, product.PriceTXBMinor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, purchaseID, product.GroupID, product.PriceTXBMinor); err != nil {
 			return model.Purchase{}, fmt.Errorf("snapshot add-on squad: %w", err)
 		}
 	}
@@ -117,7 +117,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 		return model.Purchase{}, err
 	}
 	if status == "queued" {
-		if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {
+		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {
 			return model.Purchase{}, err
 		}
 		if err := s.insertQueuedPurchaseNoticeTx(ctx, tx, purchaseID, input.UserID, combo, addonRows,
@@ -138,7 +138,7 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 	}
 	includedUUIDs := make(map[string]struct{}, len(combo.IncludedSquads))
 	for _, product := range combo.IncludedSquads {
-		includedUUIDs[product.RemnaSquadUUID] = struct{}{}
+		includedUUIDs[product.GroupID] = struct{}{}
 	}
 	addonRows := make([]model.SquadProduct, 0, len(input.AddonSquadIDs))
 	addonPrice := int64(0)
@@ -147,10 +147,10 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 		if loadErr != nil {
 			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
 		}
-		if _, included := includedUUIDs[product.RemnaSquadUUID]; included {
+		if _, included := includedUUIDs[product.GroupID]; included {
 			continue
 		}
-		includedUUIDs[product.RemnaSquadUUID] = struct{}{}
+		includedUUIDs[product.GroupID] = struct{}{}
 		addonRows = append(addonRows, product)
 		addonPrice += product.PriceTXBMinor
 	}
@@ -169,7 +169,7 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 	discount := coupons.Discount{GrossMinor: grossMinor, NetMinor: grossMinor}
 	addonUUIDs := make([]string, 0, len(addonRows))
 	for _, addon := range addonRows {
-		addonUUIDs = append(addonUUIDs, addon.RemnaSquadUUID)
+		addonUUIDs = append(addonUUIDs, addon.GroupID)
 	}
 	if input.CouponGrantID != "" {
 		discount, err = quoteCouponGrantTx(ctx, tx, coupons.PurchaseContext{

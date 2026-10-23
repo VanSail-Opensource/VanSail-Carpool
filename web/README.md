@@ -44,11 +44,11 @@ Each source folder has its own `README.md` file map. Start with [the source map]
 ## Member features
 
 - Resumable intro, reserved username, and agreement onboarding; a confirmed
-  Remnawave username collision after a paid purchase shows the full-refund
+  X-Node username collision after a paid purchase shows the full-refund
   notice and returns the member to username entry. Decisive onboarding actions
   mirror to Telegram's native MainButton when available.
 - Community group and channel access stays outside onboarding, shows canonical Telegram membership, and requires a currently active combo only when joining.
-- Dashboard balance, entitlement, Remnawave traffic, node summaries, and subscription-link rotation.
+- Dashboard balance, entitlement, X-Node traffic, node summaries, and subscription-link rotation.
 - A six-step catalog journey for core combos, optional squads, accessible nodes, coupon redemption, review, and idempotent purchase confirmation.
 - Provider/rail selection, exact payment instructions, QR/address rendering, cancellation, and authoritative settlement polling.
 - Provider redirects land on `/payment-result`, which verifies durable payment state: paid orders show the green confirmation, while failed or expired orders offer an owner-verified replacement handoff to Home.

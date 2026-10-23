@@ -13,7 +13,7 @@ import (
 func TestUserOperationWorkerLeavesAmbiguousOutcomePendingReview(t *testing.T) {
 	remoteID := "remote-user"
 	repository := newUserOperationRepositoryStub([]string{"user-1"})
-	repository.users["user-1"] = model.User{ID: "user-1", RemnaUserID: &remoteID}
+	repository.users["user-1"] = model.User{ID: "user-1", ProxyUserID: &remoteID}
 	repository.desired["user-1"] = desiredAdminPurchase()
 	remote := &entitlementRemoteStub{failures: map[string]error{remoteID: errors.New("connection closed")}}
 	worker := NewUserOperationWorker(repository, remote)
@@ -35,7 +35,7 @@ func TestUserOperationWorkerSummarizesMixedTargetsAsPartial(t *testing.T) {
 	remoteID := "remote-failure"
 	repository := newUserOperationRepositoryStub([]string{"local-only", "remote-user"})
 	repository.users["local-only"] = model.User{ID: "local-only"}
-	repository.users["remote-user"] = model.User{ID: "remote-user", RemnaUserID: &remoteID}
+	repository.users["remote-user"] = model.User{ID: "remote-user", ProxyUserID: &remoteID}
 	repository.desired["local-only"] = desiredAdminPurchase()
 	repository.desired["remote-user"] = desiredAdminPurchase()
 	remote := &entitlementRemoteStub{failures: map[string]error{remoteID: errors.New("timeout")}}

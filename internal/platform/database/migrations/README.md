@@ -67,7 +67,7 @@ file instead.
 - `008_group_message_rewards.sql` — Telegram group-message reward tracking.
 - `009_expansion_and_cleanup.sql` — current expansion, normalization, and obsolete
   snapshot cleanup.
-- `010_clear_subscription_cache.sql` — clears legacy Remnawave subscription bearer
+- `010_clear_subscription_cache.sql` — clears legacy X-Node subscription bearer
   values while retaining the nullable column for backup/restore schema compatibility.
 - `011_minimize_payment_payloads.sql` — clears terminal provider display payloads
   that are not required for settlement.
@@ -190,3 +190,5 @@ Measurements reuse existing operation items; generated configurations are absent
 `091_member_whitelist.sql` adds the per-combo whitelist capacity (default five),
 a detecting-IP index for managed-node ban releases and quota cache invalidation.
 Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
+
+`093_native_only.sql` requires completed final accounting, translates pending native entitlement work, removes obsolete bridge secrets/checkpoints, renames native group/account fields, and retains historical usage without repricing it. Old migrations stay immutable.

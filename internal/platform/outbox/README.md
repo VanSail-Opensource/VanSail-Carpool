@@ -10,3 +10,7 @@ repository, handlers, leases and retry path. The application polls this claim
 path once per second independently of long provider/maintenance work. SQLite
 transactions prevent ordinary and reserved dispatch from claiming a job twice;
 native executor limits still bound actual execution. It is not a separate queue.
+
+`executor.go` enables four normal attempts and one urgent slot after application Start. Attempts have five-minute contexts, 20-second fenced lease heartbeats, panic isolation and joined shutdown. Embedded callers retain synchronous Drain. Deferred node commands retain the native executor lease.
+
+`executor_test.go` checks independent completion and cancellation joins without relying on timing sleeps.

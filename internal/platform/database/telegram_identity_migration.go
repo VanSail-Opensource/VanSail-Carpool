@@ -88,7 +88,7 @@ func (s *Store) MigrateTelegramIdentities(ctx context.Context, vault *secret.Vau
 	if err = rekeyIdentityReferences(ctx, tx); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE users SET remna_user_id=(SELECT CAST(proxy_user_id AS TEXT) FROM xnode_identities WHERE user_id=users.id) WHERE EXISTS(SELECT 1 FROM xnode_identities WHERE user_id=users.id)`); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE users SET proxy_user_id=(SELECT CAST(proxy_user_id AS TEXT) FROM xnode_identities WHERE user_id=users.id) WHERE EXISTS(SELECT 1 FROM xnode_identities WHERE user_id=users.id)`); err != nil {
 		return err
 	}
 	if err = removeAssignedUsername(ctx, tx); err != nil {

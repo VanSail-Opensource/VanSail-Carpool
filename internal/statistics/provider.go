@@ -48,7 +48,7 @@ type Provider interface {
 	Nodes(context.Context) ([]Node, error)
 }
 
-// SquadNameProvider exposes the live Remnawave identity labels used only to
+// SquadNameProvider exposes the live Proxy identity labels used only to
 // decorate statistics. The labels remain upstream-owned and are not stored.
 type SquadNameProvider interface {
 	SquadNames(context.Context) (map[string]string, error)

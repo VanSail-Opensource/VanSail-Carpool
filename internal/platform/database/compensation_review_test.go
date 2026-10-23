@@ -20,9 +20,9 @@ func TestCompensationApprovalSkipsInactiveLinksOperationAndIsIdempotent(t *testi
 	combo := saveTestCombo(t, store, "compensation-review", 100, 30)
 	squad := saveTestSquad(t, store, "99999999-9999-4999-8999-999999999999", 10, true)
 	actor := createTestUser(t, store, 49_000)
-	_, active := createAdminWorkflowPurchase(t, store, 49_001, combo, now, squad.RemnaSquadUUID)
-	_, inactive := createAdminWorkflowPurchase(t, store, 49_002, combo, now, squad.RemnaSquadUUID)
-	event := recoveredCompensationEvent(t, store, now, squad.RemnaSquadUUID, squad.Name)
+	_, active := createAdminWorkflowPurchase(t, store, 49_001, combo, now, squad.GroupID)
+	_, inactive := createAdminWorkflowPurchase(t, store, 49_002, combo, now, squad.GroupID)
+	event := recoveredCompensationEvent(t, store, now, squad.GroupID, squad.Name)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=? WHERE id=?`, stamp(now), inactive.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -85,8 +85,8 @@ func TestCompensationDismissalPersistsAndReplays(t *testing.T) {
 	combo := saveTestCombo(t, store, "compensation-dismiss", 100, 30)
 	squad := saveTestSquad(t, store, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", 10, true)
 	actor := createTestUser(t, store, 49_100)
-	_, _ = createAdminWorkflowPurchase(t, store, 49_101, combo, now, squad.RemnaSquadUUID)
-	event := recoveredCompensationEvent(t, store, now, squad.RemnaSquadUUID, squad.Name)
+	_, _ = createAdminWorkflowPurchase(t, store, 49_101, combo, now, squad.GroupID)
+	event := recoveredCompensationEvent(t, store, now, squad.GroupID, squad.Name)
 	input := compensation.ReviewInput{EventID: event.ID, ActorUserID: actor.ID, IdempotencyKey: "dismiss-key",
 		Reason: "not customer affecting", Revision: event.Revision}
 	dismissed, err := store.DismissCompensationEvent(context.Background(), input, "dismiss-fingerprint", now.Add(3*time.Minute))

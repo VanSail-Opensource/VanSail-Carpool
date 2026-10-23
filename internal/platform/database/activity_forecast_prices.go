@@ -107,7 +107,7 @@ func (s *Store) drawPrizeExpense(ctx context.Context, price drawPriceContext, re
 	case activity.RewardSquadAccess:
 		for _, uuid := range reward.SquadUUIDs {
 			var squadPrice sql.NullInt64
-			err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM squad_product_overrides WHERE remna_squad_uuid=?`, uuid).Scan(&squadPrice)
+			err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM squad_product_overrides WHERE group_id=?`, uuid).Scan(&squadPrice)
 			if err != nil && err != sql.ErrNoRows {
 				return 0, 0, false, err
 			}

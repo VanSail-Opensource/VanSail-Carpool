@@ -16,7 +16,7 @@ type NormalizedDistribution struct {
 	Segments []NamedShare `json:"segments"`
 }
 
-// NodeTrafficSeries is one raw seven-day Remnawave node series.
+// NodeTrafficSeries is one raw seven-day Proxy node series.
 type NodeTrafficSeries struct {
 	UUID        string   `json:"uuid"`
 	Name        string   `json:"name"`
@@ -24,7 +24,7 @@ type NodeTrafficSeries struct {
 	DailyBytes  []string `json:"dailyBytes"`
 }
 
-// RemoteStatistics is the 30-minute Remnawave aggregate partition.
+// RemoteStatistics is the 30-minute Proxy aggregate partition.
 type RemoteStatistics struct {
 	WeeklyUserIncrease       int64               `json:"weeklyUserIncrease"`
 	MonthlyAverageUsageBPS   int                 `json:"-"`

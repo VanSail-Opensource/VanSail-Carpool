@@ -15,7 +15,7 @@ func TestSquadProfileOverrideRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	profile := &squadprofile.Profile{Type: squadprofile.InternationalNetwork, CountryCode: "sg", UpstreamCarriers: []string{"Carrier A, Carrier B"}}
-	product, err := store.SaveSquadProduct(ctx, SquadProductInput{RemnaSquadUUID: uuid, Name: "ignored", Description: "Extra **Markdown**", Profile: profile, UpstreamPresent: true})
+	product, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: uuid, Name: "ignored", Description: "Extra **Markdown**", Profile: profile, UpstreamPresent: true})
 	if err != nil {
 		t.Fatalf("SaveSquadProduct() error = %v", err)
 	}
@@ -34,7 +34,7 @@ func TestLegacySquadDescriptionKeepsNullableProfile(t *testing.T) {
 	if _, err := store.ImportSquad(ctx, uuid, "Legacy"); err != nil {
 		t.Fatal(err)
 	}
-	product, err := store.SaveSquadProduct(ctx, SquadProductInput{RemnaSquadUUID: uuid, Description: "Legacy Markdown", UpstreamPresent: true})
+	product, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: uuid, Description: "Legacy Markdown", UpstreamPresent: true})
 	if err != nil {
 		t.Fatalf("SaveSquadProduct() error = %v", err)
 	}

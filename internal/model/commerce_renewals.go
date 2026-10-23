@@ -15,7 +15,7 @@ type RenewalQuote struct {
 	EffectiveAt     time.Time   `json:"effectiveAt"`
 	ExpiresAt       time.Time   `json:"expiresAt"`
 	AddonSquadUUIDs []string    `json:"addonSquadUuids"`
-	AccessibleNodes []RemnaNode `json:"accessibleNodes"`
+	AccessibleNodes []ProxyNode `json:"accessibleNodes"`
 }
 
 // RenewalBatch records one retained legacy renewal debit and its generated terms.

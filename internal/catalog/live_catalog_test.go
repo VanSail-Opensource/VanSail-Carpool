@@ -15,18 +15,18 @@ func TestCatalogAndPurchaseRejectMissingLiveSquads(t *testing.T) {
 
 	repository := &catalogRepository{
 		combos: []model.Combo{
-			{ID: "live-combo", IncludedSquads: []model.SquadProduct{{RemnaSquadUUID: "live-squad"}}},
-			{ID: "stale-combo", IncludedSquads: []model.SquadProduct{{RemnaSquadUUID: "stale-squad"}}},
+			{ID: "live-combo", IncludedSquads: []model.SquadProduct{{GroupID: "live-squad"}}},
+			{ID: "stale-combo", IncludedSquads: []model.SquadProduct{{GroupID: "stale-squad"}}},
 		},
 		addons: []model.SquadProduct{
-			{ID: "live-addon", RemnaSquadUUID: "live-addon", Visible: true},
-			{ID: "stale-addon", RemnaSquadUUID: "stale-addon", Visible: true},
+			{ID: "live-addon", GroupID: "live-addon", Visible: true},
+			{ID: "stale-addon", GroupID: "stale-addon", Visible: true},
 		},
 		purchase: model.Purchase{ID: "purchase-1"},
 	}
 	remote := &catalogLiveRemote{
-		catalogRemnawave: &catalogRemnawave{},
-		squads:           []RemoteSquad{{UUID: "live-squad", Name: "Core"}, {UUID: "live-addon", Name: "Extra"}},
+		catalogProxy: &catalogProxy{},
+		squads:       []RemoteSquad{{UUID: "live-squad", Name: "Core"}, {UUID: "live-addon", Name: "Extra"}},
 	}
 	service := NewService(repository, remote, time.Minute)
 	user := model.User{ID: "user-1", OnboardingState: "complete"}
@@ -47,7 +47,7 @@ func TestCatalogAndPurchaseRejectMissingLiveSquads(t *testing.T) {
 }
 
 type catalogLiveRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	squads []RemoteSquad
 	err    error
 }

@@ -31,7 +31,7 @@ type revokeTarget struct {
 // QueueSubscriptionRevoke records one credential rotation before provider mutation.
 func (s *Service) QueueSubscriptionRevoke(ctx context.Context, user model.User, key string) (model.OperationReceipt, error) {
 	repository, ok := s.repository.(revokeOperationRepository)
-	if !ok || user.RemnaUserID == nil {
+	if !ok || user.ProxyUserID == nil {
 		return model.OperationReceipt{}, errors.New("durable subscription revocation is unavailable")
 	}
 	fingerprint := revokeFingerprint(user.ID)
@@ -39,7 +39,7 @@ func (s *Service) QueueSubscriptionRevoke(ctx context.Context, user model.User, 
 		strings.TrimSpace(key), fingerprint); found || err != nil {
 		return receipt, err
 	}
-	current, err := s.remnawave.Dashboard(ctx, *user.RemnaUserID)
+	current, err := s.provider.Dashboard(ctx, *user.ProxyUserID)
 	if err != nil || strings.TrimSpace(current.SubscriptionURL) == "" {
 		return model.OperationReceipt{}, errors.New("load current subscription credential")
 	}

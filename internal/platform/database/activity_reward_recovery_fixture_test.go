@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -81,13 +82,15 @@ func reproduceLegacyCoreRewards(t *testing.T, store *Store, purchaseID string, r
 	}
 }
 
+// Historical repair intent is replayed against the current native schema.
 func reapplyRecoveryMigration(t *testing.T, store *Store, name string) {
 	t.Helper()
-	ctx := context.Background()
-	if _, err := store.DB().ExecContext(ctx, `DELETE FROM schema_migrations WHERE version=?`, name); err != nil {
+	raw, err := migrations.ReadFile("migrations/" + name)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := migrate(ctx, store.DB()); err != nil {
+	script := strings.ReplaceAll(string(raw), "remna_sync_user", "xnode_sync_user")
+	if _, err = store.DB().ExecContext(context.Background(), script); err != nil {
 		t.Fatal(err)
 	}
 }

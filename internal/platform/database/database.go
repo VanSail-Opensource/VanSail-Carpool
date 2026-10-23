@@ -59,6 +59,10 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 		_ = db.Close()
 		return nil, err
 	}
+	if err := backupBeforeNativeRetirement(ctx, db, path); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
 	if err := migrate(ctx, db); err != nil {
 		_ = db.Close()
 		return nil, err

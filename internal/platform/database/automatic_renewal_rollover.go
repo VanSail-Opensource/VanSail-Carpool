@@ -156,7 +156,7 @@ func insertAutomaticRenewalSuccessorTx(ctx context.Context, tx *sql.Tx, successo
 		return fmt.Errorf("insert automatic renewal successor: %w", err)
 	}
 	for _, addon := range plan.Addons {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,remna_squad_uuid,charged_txb_minor) VALUES(?,?,?)`, successorID, addon.RemnaSquadUUID, addon.PriceTXBMinor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, successorID, addon.GroupID, addon.PriceTXBMinor); err != nil {
 			return fmt.Errorf("snapshot automatic renewal add-on: %w", err)
 		}
 	}
@@ -192,7 +192,7 @@ func (s *Store) failCalculatedAutoRenewalTx(ctx context.Context, tx *sql.Tx, pur
 		WHERE id=? AND status IN ('active','activating')`, reason, stamp(now), stamp(now), purchaseID); err != nil {
 		return false, fmt.Errorf("expire failed automatic renewal: %w", err)
 	}
-	if err := insertOutboxTx(ctx, tx, "remna_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
+	if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {
 		return false, err
 	}
 	if err := s.insertAutoRenewalFailureNoticeTx(ctx, tx, purchaseID, userID, reason, userSyncGate(userID), now); err != nil {

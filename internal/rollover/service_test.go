@@ -20,7 +20,7 @@ func TestHandleOutboxCalculatesBeforeAutomaticRenewal(t *testing.T) {
 		wantError               bool
 	}{
 		{name: "happy", status: "pending", wantEvents: []string{"quiesce", "mark", "usage", "calculated"}},
-		{name: "missing after quiesce", status: "pending", usageErr: ErrRemoteUserMissing, exception: "remnawave_user_missing", wantEvents: []string{"quiesce", "mark", "usage", "finalize"}},
+		{name: "missing after quiesce", status: "pending", usageErr: ErrRemoteUserMissing, exception: "proxy_user_missing", wantEvents: []string{"quiesce", "mark", "usage", "finalize"}},
 		{name: "quiesce retry", status: "pending", quiesceErr: transient, wantEvents: []string{"quiesce"}, wantError: true},
 		{name: "usage retry", status: "processing", usageErr: transient, wantEvents: []string{"usage"}, wantError: true},
 	}
@@ -30,7 +30,7 @@ func TestHandleOutboxCalculatesBeforeAutomaticRenewal(t *testing.T) {
 			events := make([]string, 0, 4)
 			remoteID := "remote-1"
 			repository := &rolloverRepository{events: &events, eligible: true, rollover: model.PurchaseRollover{PurchaseID: "purchase-1", Status: test.status},
-				purchase: model.Purchase{ID: "purchase-1", ValidFrom: time.Date(2026, 8, 7, 0, 0, 0, 0, time.UTC), ValidUntil: time.Date(2026, 8, 8, 0, 0, 0, 0, time.UTC)}, user: model.User{ID: "user-1", RemnaUserID: &remoteID}}
+				purchase: model.Purchase{ID: "purchase-1", ValidFrom: time.Date(2026, 8, 7, 0, 0, 0, 0, time.UTC), ValidUntil: time.Date(2026, 8, 8, 0, 0, 0, 0, time.UTC)}, user: model.User{ID: "user-1", ProxyUserID: &remoteID}}
 			remote := &rolloverRemote{events: &events, quiesceErr: test.quiesceErr, usageErr: test.usageErr}
 			service := NewService(repository, remote)
 			service.now = func() time.Time { return time.Date(2026, 8, 8, 12, 0, 0, 0, time.UTC) }
@@ -62,7 +62,7 @@ func TestHandleOutboxRejectsAggregateUsageFallback(t *testing.T) {
 	events := make([]string, 0, 3)
 	remoteID := "remote-1"
 	repository := &rolloverRepository{events: &events, eligible: true, rollover: model.PurchaseRollover{PurchaseID: "purchase-1", Status: "processing"},
-		purchase: model.Purchase{ID: "purchase-1", ValidUntil: time.Now().UTC()}, user: model.User{RemnaUserID: &remoteID}}
+		purchase: model.Purchase{ID: "purchase-1", ValidUntil: time.Now().UTC()}, user: model.User{ProxyUserID: &remoteID}}
 	err := NewService(repository, &rolloverRemote{events: &events, snapshot: UsageSnapshot{LimitBytes: 1_000}}).HandleOutbox(context.Background(), model.OutboxJob{Kind: "rollover_finalize", Payload: `{"purchaseId":"purchase-1"}`})
 	if !errors.Is(err, ErrPerNodeUsageUnavailable) || !reflect.DeepEqual(events, []string{"usage"}) {
 		t.Fatalf("aggregate fallback = (%v, %v)", err, events)

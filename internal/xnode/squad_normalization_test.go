@@ -24,7 +24,7 @@ func TestNativeEntitlementNormalizesLastSquadWithoutLegacyIdentity(t *testing.T)
 		t.Fatal("native mutation left the last purchased squad disabled", disabled, err)
 	}
 	user, err := f.store.UserByID(ctx, f.user.ID)
-	if err != nil || user.RemnaUserID != nil {
+	if err != nil || user.ProxyUserID != nil {
 		t.Fatal("normalization manufactured a legacy link", user, err)
 	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type nativeProjectionRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 	owner, purchase string
 }
 
@@ -26,7 +26,7 @@ func TestProjectionReadsNativePurchaseWithoutLegacyIdentity(t *testing.T) {
 	now := time.Now().UTC()
 	purchase := model.Purchase{ID: "purchase", UserID: "member", Status: "active", AutoRenewEnabled: true, ValidFrom: now.Add(-time.Hour), ValidUntil: now.Add(time.Hour)}
 	repo := &rolloverRepository{catalogRepository: &catalogRepository{}, purchase: purchase}
-	remote := &nativeProjectionRemote{catalogRemnawave: &catalogRemnawave{}}
+	remote := &nativeProjectionRemote{catalogProxy: &catalogProxy{}}
 	service := NewService(repo, remote, time.Minute)
 	service.now = func() time.Time { return now }
 	projection, err := service.RolloverProjection(context.Background(), model.User{ID: "member", OnboardingState: "complete"}, purchase.ID)

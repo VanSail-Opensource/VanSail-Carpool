@@ -55,7 +55,7 @@ func (s *Service) ProjectMember(ctx context.Context, subscription *MemberSubscri
 }
 
 func (s *Service) projectHostTimelines(ctx context.Context, hosts []SubscriptionHost, now time.Time, cfg Config) error {
-	if cfg.RemnawaveUserID == 0 {
+	if cfg.ProxyUserID == 0 {
 		return &CodeError{Code: "CONNECTIVITY_NOT_CONFIGURED"}
 	}
 	repository, ok := s.repository.(timelineRepository)

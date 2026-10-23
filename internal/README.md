@@ -8,6 +8,6 @@ Application code is private to this Go module and grouped into domain services, 
 
 `providerops/` owns provider-neutral receipts, items, replay metadata, and kind dispatch.
 
-`statistics/` owns cached product metrics and scheduled Remnawave host remark upkeep.
+`statistics/` owns cached product metrics and scheduled X-Node host remark upkeep.
 
 - `ARCHITECTURE.md` describes the dependency direction and ownership boundaries for internal packages.

@@ -27,17 +27,17 @@ func (w *Worker) prepareContinuity(ctx context.Context, job model.OutboxJob) err
 		return err
 	}
 	user, err = w.ensureIdentity(ctx, user)
-	if errors.Is(err, accounts.ErrRemnawaveIdentityConflict) {
+	if errors.Is(err, accounts.ErrProxyIdentityConflict) {
 		return w.resolveIdentityConflict(ctx, user)
 	}
 	if err != nil {
 		return err
 	}
-	if user.RemnaUserID == nil {
-		return errors.New("user has no Remnawave identity")
+	if user.ProxyUserID == nil {
+		return errors.New("user has no Proxy identity")
 	}
-	if err := w.remnawave.ApplyEntitlement(ctx, *user.RemnaUserID, current.TrafficLimitBytes, current.ResetStrategy, current.SquadUUIDs, current.ValidUntil); err != nil {
-		return w.repairMissingIdentity(ctx, user, fmt.Errorf("prepare Remnawave entitlement continuity: %w", err))
+	if err := w.provider.ApplyEntitlement(ctx, *user.ProxyUserID, current.TrafficLimitBytes, current.ResetStrategy, current.SquadUUIDs, current.ValidUntil); err != nil {
+		return w.repairMissingIdentity(ctx, user, fmt.Errorf("prepare Proxy entitlement continuity: %w", err))
 	}
 	return nil
 }

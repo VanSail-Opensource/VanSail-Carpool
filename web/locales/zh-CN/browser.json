@@ -52,7 +52,7 @@
       "description": "通过 Telegram 管理共享订阅、续费及流媒体访问。",
       "services": "你的共享服务",
       "connectivity": "网络连接",
-      "connectivityHint": "Remnawave 账户与订阅",
+      "connectivityHint": "X-Node 账户与订阅",
       "streaming": "流媒体",
       "streamingHint": "Emby 账户与媒体库访问",
       "membership": "会员服务",

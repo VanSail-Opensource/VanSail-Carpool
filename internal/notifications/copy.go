@@ -9,7 +9,7 @@ type copySet struct {
 
 var englishCopy = copySet{
 	titles: map[string]string{
-		"remnawave_username_conflict_refund":   "↩️ Combo access refunded",
+		"proxy_identity_conflict_refund":       "↩️ Combo access refunded",
 		"automatic_traffic_reset":              "🔄 Automatic traffic reset completed",
 		"automatic_traffic_reset_insufficient": "⏸ Automatic traffic reset disabled",
 		"automatic_traffic_reset_failed":       "↩️ Automatic traffic reset refunded",
@@ -50,7 +50,7 @@ var englishCopy = copySet{
 	},
 	values: map[string]string{
 		"disabled": "Disabled", "resetFailed": "The reset could not be completed",
-		"PURCHASE_NOT_ACTIVE": "The combo is no longer active", "REMNAWAVE_IDENTITY_REQUIRED": "The subscription is not connected",
+		"PURCHASE_NOT_ACTIVE": "The combo is no longer active", "XNODE_IDENTITY_REQUIRED": "The subscription is not connected",
 		"RESET_PRECHECK_FAILED": "The provider could not verify the subscription", "RESET_REJECTED": "The provider rejected the reset",
 		"ezpay": "EZPay", "bepusdt": "BEPUSDT", "builtin_usdt": "USDT", "stars": "Telegram Stars",
 		"off": "Off", "none": "None", "yes": "Yes", "unavailable": "Unavailable", "DAY": "Daily", "WEEK": "Weekly",
@@ -79,7 +79,7 @@ var englishCopy = copySet{
 
 var chineseCopy = copySet{
 	titles: map[string]string{
-		"remnawave_username_conflict_refund":   "↩️ 套餐费用已退还",
+		"proxy_identity_conflict_refund":       "↩️ 套餐费用已退还",
 		"automatic_traffic_reset":              "🔄 自动流量重置已完成",
 		"automatic_traffic_reset_insufficient": "⏸ 自动流量重置已关闭",
 		"automatic_traffic_reset_failed":       "↩️ 自动流量重置已退款",
@@ -120,7 +120,7 @@ var chineseCopy = copySet{
 	},
 	values: map[string]string{
 		"disabled": "已关闭", "resetFailed": "流量重置未能完成",
-		"PURCHASE_NOT_ACTIVE": "套餐已不再生效", "REMNAWAVE_IDENTITY_REQUIRED": "订阅尚未连接",
+		"PURCHASE_NOT_ACTIVE": "套餐已不再生效", "XNODE_IDENTITY_REQUIRED": "订阅尚未连接",
 		"RESET_PRECHECK_FAILED": "服务商未能核验订阅", "RESET_REJECTED": "服务商拒绝了重置请求",
 		"ezpay": "EZPay", "bepusdt": "BEPUSDT", "builtin_usdt": "USDT", "stars": "Telegram Stars",
 		"off": "关闭", "none": "无", "yes": "是", "unavailable": "不可用", "DAY": "每日", "WEEK": "每周",

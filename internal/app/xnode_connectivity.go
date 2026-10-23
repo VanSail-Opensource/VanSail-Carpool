@@ -24,12 +24,9 @@ func (s proxyConnectivitySource) Resolve(ctx context.Context, username string) (
 	return connectivity.User{ID: id, Username: remote.Username, Status: "ACTIVE"}, nil
 }
 func (s proxyConnectivitySource) Validate(ctx context.Context, id int64) error {
-	identity, native, err := s.provider.nativeIdentity(ctx, strconv.FormatInt(id, 10))
+	identity, err := s.provider.native.Identity(ctx, strconv.FormatInt(id, 10))
 	if err != nil {
 		return err
-	}
-	if !native {
-		return (connectivitySource{adapter: s.provider.remnaAdapter}).Validate(ctx, id)
 	}
 	if identity.AccessDisabled {
 		return connectivityFailure("ACCOUNT_UNAVAILABLE")
@@ -62,12 +59,9 @@ func (s proxyConnectivitySource) Validate(ctx context.Context, id int64) error {
 	return nil
 }
 func (s proxyConnectivitySource) Load(ctx context.Context, id int64) (connectivity.User, []connectivity.Target, error) {
-	identity, native, err := s.provider.nativeIdentity(ctx, strconv.FormatInt(id, 10))
+	identity, err := s.provider.native.Identity(ctx, strconv.FormatInt(id, 10))
 	if err != nil {
 		return connectivity.User{}, nil, err
-	}
-	if !native {
-		return (connectivitySource{adapter: s.provider.remnaAdapter}).Load(ctx, id)
 	}
 	user := connectivity.User{ID: id, Username: identity.Username, Status: "ACTIVE"}
 	if identity.AccessDisabled {

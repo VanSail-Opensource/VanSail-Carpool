@@ -1,8 +1,8 @@
 post:
   tags: [Dashboard]
   operationId: revokeSubscription
-  summary: Rotate the current Remnawave subscription URL
-  description: Queues a durable Remnawave revoke with `revokeOnlyPasswords:false`. Reload the dashboard after the receipt succeeds.
+  summary: Rotate the current X-Node subscription URL
+  description: Queues a durable X-Node revoke with `revokeOnlyPasswords:false`. Reload the dashboard after the receipt succeeds.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   responses:

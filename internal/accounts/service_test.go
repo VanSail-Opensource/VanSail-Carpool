@@ -16,7 +16,7 @@ func TestAuthenticateAndSessionLookup(t *testing.T) {
 	profile := model.TelegramProfile{ID: 42, FirstName: "Ada"}
 	repository := &accountsRepository{user: model.User{ID: "user-1", TelegramID: profile.ID}}
 	validator := &accountsValidator{profile: profile}
-	service := newAccountsServiceForTest(repository, validator, &accountsTelegram{}, &accountsRemnawave{}, &accountsSettings{}, profile.ID)
+	service := newAccountsServiceForTest(repository, validator, &accountsTelegram{}, &accountsProxy{}, &accountsSettings{}, profile.ID)
 
 	user, token, expiresAt, err := service.Authenticate(context.Background(), "signed-init-data")
 	if err != nil {
@@ -53,7 +53,7 @@ func TestAuthenticateMarksConfiguredAdminIDs(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			repository := &accountsRepository{user: model.User{ID: "user-1", TelegramID: test.profile.ID}}
-			service := NewService(repository, repository, &accountsValidator{profile: test.profile}, &accountsTelegram{}, &accountsRemnawave{}, &accountsSettings{}, []int64{42, 43}, 7*24*time.Hour)
+			service := NewService(repository, repository, &accountsValidator{profile: test.profile}, &accountsTelegram{}, &accountsProxy{}, &accountsSettings{}, []int64{42, 43}, 7*24*time.Hour)
 			if _, _, _, err := service.Authenticate(context.Background(), "signed-init-data"); err != nil {
 				t.Fatalf("Authenticate(): %v", err)
 			}
@@ -83,14 +83,14 @@ func TestAuthenticationFailures(t *testing.T) {
 			repository := &accountsRepository{user: model.User{ID: "user"}}
 			validator := &accountsValidator{profile: model.TelegramProfile{ID: 1}}
 			test.configure(repository, validator)
-			_, _, _, err := newAccountsServiceForTest(repository, validator, &accountsTelegram{}, &accountsRemnawave{}, &accountsSettings{}, 99).Authenticate(context.Background(), "raw")
+			_, _, _, err := newAccountsServiceForTest(repository, validator, &accountsTelegram{}, &accountsProxy{}, &accountsSettings{}, 99).Authenticate(context.Background(), "raw")
 			if !errors.Is(err, test.want) {
 				t.Fatalf("Authenticate() error = %v, want %v", err, test.want)
 			}
 		})
 	}
 
-	service := newAccountsServiceForTest(&accountsRepository{sessionLookupErr: testError}, &accountsValidator{}, &accountsTelegram{}, &accountsRemnawave{}, &accountsSettings{}, 1)
+	service := newAccountsServiceForTest(&accountsRepository{sessionLookupErr: testError}, &accountsValidator{}, &accountsTelegram{}, &accountsProxy{}, &accountsSettings{}, 1)
 	if _, err := service.UserBySession(context.Background(), ""); !errors.Is(err, ErrInvalidAuthentication) {
 		t.Fatalf("empty UserBySession() error = %v", err)
 	}
@@ -99,7 +99,7 @@ func TestAuthenticationFailures(t *testing.T) {
 	}
 }
 
-func TestAuthenticateRechecksLinkedRemnawaveUser(t *testing.T) {
+func TestAuthenticateRechecksLinkedProxyUser(t *testing.T) {
 	t.Parallel()
 
 	remoteID := "remote-1"
@@ -119,11 +119,11 @@ func TestAuthenticateRechecksLinkedRemnawaveUser(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			user := model.User{ID: "user-1", TelegramID: profile.ID, OnboardingState: "complete", RemnaUserID: &remoteID}
+			user := model.User{ID: "user-1", TelegramID: profile.ID, OnboardingState: "complete", ProxyUserID: &remoteID}
 			repository := &accountsRepository{user: user, recoveryUser: model.User{
 				ID: user.ID, TelegramID: user.TelegramID, OnboardingState: "complete",
 			}}
-			remote := &accountsRemnawave{linkedResponse: test.linked}
+			remote := &accountsProxy{linkedResponse: test.linked}
 			_, token, _, err := newAccountsServiceForTest(repository, &accountsValidator{profile: profile}, &accountsTelegram{}, remote, &accountsSettings{}, 99).Authenticate(context.Background(), "signed")
 			if test.wantUpstream && (err != nil || token == "" || repository.sessionUserID == "") {
 				t.Fatalf("Authenticate() did not fall back to local session: token %q, err %v, stored session %q", token, err, repository.sessionUserID)

@@ -66,18 +66,18 @@ func (t *communityHTTPTelegram) ApproveJoinRequest(context.Context, string, int6
 func (t *communityHTTPTelegram) DeclineJoinRequest(context.Context, string, int64) error { return nil }
 func (t *communityHTTPTelegram) RevokeInviteLink(context.Context, string, string) error  { return nil }
 
-type communityHTTPRemnawave struct{}
+type communityHTTPProxy struct{}
 
-func (communityHTTPRemnawave) FindUserByUsername(context.Context, string) (accounts.RemoteUser, bool, error) {
+func (communityHTTPProxy) FindUserByUsername(context.Context, string) (accounts.RemoteUser, bool, error) {
 	return accounts.RemoteUser{}, false, nil
 }
-func (communityHTTPRemnawave) FindUserByTelegramID(context.Context, int64) (accounts.RemoteUser, bool, error) {
+func (communityHTTPProxy) FindUserByTelegramID(context.Context, int64) (accounts.RemoteUser, bool, error) {
 	return accounts.RemoteUser{}, false, nil
 }
-func (communityHTTPRemnawave) CreateUser(context.Context, accounts.RemoteCreateUser) (accounts.RemoteUser, error) {
+func (communityHTTPProxy) CreateUser(context.Context, accounts.RemoteCreateUser) (accounts.RemoteUser, error) {
 	return accounts.RemoteUser{}, nil
 }
-func (communityHTTPRemnawave) IsDuplicateError(error) bool { return false }
+func (communityHTTPProxy) IsDuplicateError(error) bool { return false }
 
 type communityHTTPSettings struct{}
 
@@ -86,7 +86,7 @@ func (communityHTTPSettings) Plaintext(_ context.Context, key string) (string, e
 }
 
 func communityMembershipServer(repository *communityHTTPRepository, telegram *communityHTTPTelegram) *Server {
-	service := accounts.NewService(repository, repository, communityHTTPValidator{}, telegram, communityHTTPRemnawave{}, communityHTTPSettings{}, []int64{99}, time.Hour)
+	service := accounts.NewService(repository, repository, communityHTTPValidator{}, telegram, communityHTTPProxy{}, communityHTTPSettings{}, []int64{99}, time.Hour)
 	return &Server{deps: Dependencies{Accounts: service}}
 }
 

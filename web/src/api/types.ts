@@ -57,9 +57,9 @@ export interface PurchaseQuote {
   expiresAt: RFC3339
   queued: boolean
   addonSquadUuids: string[]
-  accessibleNodes: RemnaNode[]
+  accessibleNodes: ProxyNode[]
 }
-export type RemnaNode = DeepReadonly<components['schemas']['RemnaNode']>
+export type ProxyNode = DeepReadonly<components['schemas']['ProxyNode']>
 export type TopNode = DeepReadonly<components['schemas']['TopNode']>
 export type UsageStatistics = DeepReadonly<components['schemas']['Statistics']>
 export type Dashboard = DeepReadonly<components['schemas']['Dashboard']>

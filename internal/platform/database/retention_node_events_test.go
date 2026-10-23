@@ -70,8 +70,8 @@ func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
 	combo := saveTestCombo(t, store, "retained-compensation", 100, 30)
 	squad := saveTestSquad(t, store, "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", 10, true)
 	actor := createTestUser(t, store, 31931)
-	_, purchase := createAdminWorkflowPurchase(t, store, 31932, combo, old, squad.RemnaSquadUUID)
-	event := recoveredCompensationEvent(t, store, old, squad.RemnaSquadUUID, squad.Name)
+	_, purchase := createAdminWorkflowPurchase(t, store, 31932, combo, old, squad.GroupID)
+	event := recoveredCompensationEvent(t, store, old, squad.GroupID, squad.Name)
 	approved, err := store.ApproveCompensationEvent(ctx, compensation.ReviewInput{EventID: event.ID, ActorUserID: actor.ID, IdempotencyKey: "retention-approval", Reason: "approved", Revision: event.Revision, ExtensionMinutes: 17}, "retention-approval-fingerprint", old.Add(3*time.Minute))
 	if err != nil {
 		t.Fatal(err)

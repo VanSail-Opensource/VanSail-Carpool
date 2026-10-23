@@ -6,7 +6,7 @@ post:
   description: |
     Reverses the credited TXB exactly once. If the balance becomes negative,
     queued purchases are cancelled first, then active purchases newest-first,
-    and Remnawave revocations are queued. Remaining debt blocks purchases.
+    and X-Node revocations are queued. Remaining debt blocks purchases.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'

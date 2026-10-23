@@ -14,7 +14,7 @@ func TestRecoverOutboxReleasesAbandonedLease(t *testing.T) {
 	ctx := context.Background()
 	store := newTestStore(t)
 	now := time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC)
-	if err := store.EnqueueOutbox(ctx, "remna_sync_user", `{"userId":"user-1"}`, now); err != nil {
+	if err := store.EnqueueOutbox(ctx, "xnode_sync_user", `{"userId":"user-1"}`, now); err != nil {
 		t.Fatalf("EnqueueOutbox(): %v", err)
 	}
 	claimed, err := store.ClaimOutboxJob(ctx, now)
@@ -45,7 +45,7 @@ func TestCompleteOutboxJobRemovesSuccessAndRetainsFailure(t *testing.T) {
 		{name: "failure", jobErr: errors.New("provider unavailable"), wantStatus: "pending"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if err := store.EnqueueOutbox(ctx, "remna_sync_user", `{"userId":"user-1"}`, now); err != nil {
+			if err := store.EnqueueOutbox(ctx, "xnode_sync_user", `{"userId":"user-1"}`, now); err != nil {
 				t.Fatalf("EnqueueOutbox(): %v", err)
 			}
 			claimed, err := store.ClaimOutboxJob(ctx, now)

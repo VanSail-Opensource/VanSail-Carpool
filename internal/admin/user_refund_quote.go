@@ -60,14 +60,14 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 	}
 	snapshot := rollover.UsageSnapshot{LimitBytes: p.TrafficLimitBytes, Strategy: p.ResetStrategy}
 	if p.Status != "queued" && !now.Before(p.ValidFrom) {
-		if user.RemnaUserID == nil || s.refundUsage == nil {
+		if user.ProxyUserID == nil || s.refundUsage == nil {
 			return unavailableRefundQuote(quote, "REFUND_USAGE_UNAVAILABLE"), nil
 		}
 		asOf := now
 		if asOf.After(p.ValidUntil) {
 			asOf = p.ValidUntil
 		}
-		snapshot, err = s.refundUsage.UsageSnapshotForRollover(ctx, *user.RemnaUserID, p.ValidFrom, asOf)
+		snapshot, err = s.refundUsage.UsageSnapshotForRollover(ctx, *user.ProxyUserID, p.ValidFrom, asOf)
 		if err != nil {
 			return quote, fmt.Errorf("%w: %w", ErrRefundUsageUnavailable, err)
 		}

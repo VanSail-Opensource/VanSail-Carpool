@@ -59,18 +59,11 @@ func handleRetiredDetectorRelease(ctx context.Context, job model.OutboxJob, repo
 }
 
 func (p proxyProvider) releaseRetiredDetector(ctx context.Context, user model.User) error {
-	unlock := p.lockBridgeRead()
-	defer unlock()
 	identity, err := p.native.IdentityForUser(ctx, user.ID)
 	if err != nil && !errors.Is(err, xnode.ErrNotFound) {
 		return err
 	}
-	legacyID := ""
-	if user.RemnaUserID != nil {
-		legacyID = *user.RemnaUserID
-	}
 	if err == nil {
-		legacyID = identity.LegacyUserID
 		if err = p.store.SetXNodeAccessDisabled(ctx, identity.ProxyUserID, false); err != nil {
 			return err
 		}
@@ -88,22 +81,5 @@ func (p proxyProvider) releaseRetiredDetector(ctx context.Context, user model.Us
 			return err
 		}
 	}
-	bridge, err := p.legacy(ctx)
-	if err != nil || !bridge || legacyID == "" {
-		return err
-	}
-	var desired func(context.Context) (*model.Purchase, error)
-	if identity.ProxyUserID > 0 {
-		if err = p.reconcileBridgeUsage(ctx, identity); err != nil {
-			return err
-		}
-		desired = func(callCtx context.Context) (*model.Purchase, error) {
-			usage, err := p.store.XNodeLegacyUsage(callCtx, identity.ProxyUserID)
-			if err != nil {
-				return nil, err
-			}
-			return p.bridgePurchase(callCtx, identity, usage.UsedBytes)
-		}
-	}
-	return releaseRetiredDetectorLegacy(ctx, p.remnaAdapter, p.store, user.ID, legacyID, desired)
+	return nil
 }

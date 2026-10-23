@@ -13,10 +13,10 @@ type Money struct {
 	Display  string `json:"display"`
 }
 
-// SquadProduct enriches an upstream Remnawave internal squad with customer-facing catalog data.
+// SquadProduct enriches an upstream Proxy internal squad with customer-facing catalog data.
 type SquadProduct struct {
 	ID                     string                `json:"id"`
-	RemnaSquadUUID         string                `json:"remnaSquadUuid"`
+	GroupID                string                `json:"groupId"`
 	Name                   string                `json:"name"`
 	Description            string                `json:"description"`
 	Profile                *squadprofile.Profile `json:"profile"`
@@ -176,5 +176,5 @@ type PurchaseQuote struct {
 	ExpiresAt          time.Time   `json:"expiresAt"`
 	Queued             bool        `json:"queued"`
 	AddonSquadUUIDs    []string    `json:"addonSquadUuids"`
-	AccessibleNodes    []RemnaNode `json:"accessibleNodes"`
+	AccessibleNodes    []ProxyNode `json:"accessibleNodes"`
 }

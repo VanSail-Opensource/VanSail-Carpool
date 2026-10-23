@@ -35,8 +35,8 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 		return result, nil
 	}
 	result.ActiveCombo, result.Summary.ActiveCombo = true, true
-	nativeSource, native := s.remnawave.(nativeSubscriptionSource)
-	if !native && user.RemnaUserID == nil {
+	nativeSource, native := s.provider.(nativeSubscriptionSource)
+	if !native && user.ProxyUserID == nil {
 		result.Summary.ErrorCode = "CONNECTIVITY_ACCOUNT_UNAVAILABLE"
 		return result, nil
 	}
@@ -49,14 +49,14 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 		return result, err
 	}
 	enabled := purchaseops.EnabledSquads(active.SquadUUIDs, disabled)
-	source, ok := s.remnawave.(subscriptionSource)
+	source, ok := s.provider.(subscriptionSource)
 	if !ok && !native {
 		return result, &connectivity.CodeError{Code: "CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE"}
 	}
 	if native {
 		result, err = nativeSource.LoadSubscriptionForMember(ctx, user, enabled, links)
 	} else {
-		result, err = source.LoadMemberSubscription(ctx, *user.RemnaUserID, enabled, links)
+		result, err = source.LoadMemberSubscription(ctx, *user.ProxyUserID, enabled, links)
 	}
 	if err != nil {
 		return connectivity.MemberSubscription{}, err

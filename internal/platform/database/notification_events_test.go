@@ -93,7 +93,7 @@ func TestTrafficNotificationRearmsAfterResetOnly(t *testing.T) {
 	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().Exec(`UPDATE users SET remna_user_id='99' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='99' WHERE id=?`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	firstReset := now
@@ -130,7 +130,7 @@ func TestNoResetTrafficNotificationIsLifetimeOnly(t *testing.T) {
 	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().Exec(`UPDATE users SET remna_user_id='100' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='100' WHERE id=?`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	firstReset, secondReset := now, now.Add(24*time.Hour)

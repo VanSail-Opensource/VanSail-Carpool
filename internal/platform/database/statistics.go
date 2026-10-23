@@ -49,14 +49,14 @@ func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to ti
 }
 
 // SquadStatistics reports included-versus-addon selection usage for one live
-// Remnawave internal squad UUID.
+// Proxy internal squad UUID.
 
 func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
-		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id AND remna_squad_uuid=?),0),p.created_at
+		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id AND group_id=?),0),p.created_at
 		FROM purchases p JOIN combos c ON c.id=p.combo_id
 		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<? AND
-		(EXISTS (SELECT 1 FROM json_each(c.included_squad_uuids) WHERE value=?) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=p.id AND remna_squad_uuid=?))
+		(EXISTS (SELECT 1 FROM json_each(c.included_squad_uuids) WHERE value=?) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=p.id AND group_id=?))
 		ORDER BY p.created_at`, squadUUID, stamp(from), stamp(to), squadUUID, squadUUID)
 	if err != nil {
 		return model.AdminStatistics{}, err
@@ -85,14 +85,14 @@ func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID
 		SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, json_each(c.included_squad_uuids) j
 		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?
 		UNION ALL
-		SELECT 'addon',a.remna_squad_uuid FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
+		SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
 		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?) usage WHERE 1=1`
 	args := []any{stamp(from), stamp(to), stamp(from), stamp(to)}
 	if comboID != "" {
 		query = `SELECT kind,uuid,COUNT(*) FROM (
 			SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, json_each(c.included_squad_uuids) j
 			WHERE p.combo_id=? AND p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?
-			UNION ALL SELECT 'addon',a.remna_squad_uuid FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
+			UNION ALL SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
 			WHERE p.combo_id=? AND p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?) usage WHERE 1=1`
 		args = []any{comboID, stamp(from), stamp(to), comboID, stamp(from), stamp(to)}
 	}

@@ -102,7 +102,7 @@ func (s *Store) insertAutoRenewalNotificationTx(ctx context.Context, tx *sql.Tx,
 }
 
 func purchaseAddonSummaryTx(ctx context.Context, tx *sql.Tx, purchaseID string) (string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT remna_squad_uuid FROM purchase_addons WHERE purchase_id=? ORDER BY remna_squad_uuid`, purchaseID)
+	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=? ORDER BY group_id`, purchaseID)
 	if err != nil {
 		return "", err
 	}

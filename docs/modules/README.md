@@ -16,7 +16,7 @@ These documents describe the implemented module boundaries. They are maintenance
 | Coupon definitions, wallet grants, and purchase discounts | [coupons.md](coupons.md) |
 | Questionnaire participation and CSV settlement | [questionnaires.md](questionnaires.md) |
 | Emby account setup and restricted policy management | [emby.md](emby.md) |
-| Telegram, Remnawave, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
+| Telegram, X-Node, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
 | Retired detector upgrade | [detector-retirement.md](detector-retirement.md) |
 | Admin authorization and domain operations | [admin-operations.md](admin-operations.md) |
 | Vue Mini App and generated API client | [web-ui.md](web-ui.md) |
@@ -29,7 +29,7 @@ contracts: `web-ui.md` owns responsive catalog, renewal, traffic, admin, and
 payment surfaces; `billing-payments.md` owns stable-ID provider-account profiles;
 `admin-operations.md` owns stock, balance, coupon, backup, and database-editor
 administration; and `integrations.md` owns shared provider credentials and
-callback capabilities. No Remnawave or Emby request bypasses the upstream queue
+callback capabilities. No X-Node or Emby request bypasses the upstream queue
 boundary described in the integration specification.
 
 ## Source package maps
@@ -62,7 +62,7 @@ These READMEs describe the direct files in each implementation package:
 | BEPusdt integration | [internal/integrations/bepusdt/README.md](../../internal/integrations/bepusdt/README.md) |
 | Emby integration | [internal/integrations/emby/README.md](../../internal/integrations/emby/README.md) |
 | EZPay integration | [internal/integrations/ezpay/README.md](../../internal/integrations/ezpay/README.md) |
-| Remnawave integration | [internal/integrations/remnawave/README.md](../../internal/integrations/remnawave/README.md) |
+| X-Node integration | [internal/integrations/native/README.md](../../internal/integrations/native/README.md) |
 | Telegram integration | [internal/integrations/telegram/README.md](../../internal/integrations/telegram/README.md) |
 | Platform boundary | [internal/platform/README.md](../../internal/platform/README.md) |
 | Backups and restore | [internal/platform/backup/README.md](../../internal/platform/backup/README.md) |

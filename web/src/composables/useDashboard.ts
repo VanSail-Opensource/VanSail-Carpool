@@ -43,9 +43,9 @@ export function useDashboard() {
   const activeSquadNames = computed(() => {
     const active = dashboard.value?.activePurchase
     if (!active || !catalog.value) return []
-    const names = new Map(catalog.value.addons.map((squad) => [squad.remnaSquadUuid, squad.name]))
+    const names = new Map(catalog.value.addons.map((squad) => [squad.groupId, squad.name]))
     for (const combo of catalog.value.combos) {
-      for (const squad of combo.includedSquads) names.set(squad.remnaSquadUuid, squad.name)
+      for (const squad of combo.includedSquads) names.set(squad.groupId, squad.name)
     }
     return active.squadUuids.map((uuid) => names.get(uuid)).filter((name): name is string => Boolean(name))
   })

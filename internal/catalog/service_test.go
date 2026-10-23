@@ -15,11 +15,11 @@ func TestCatalogAndPurchaseForwarding(t *testing.T) {
 
 	repository := &catalogRepository{
 		combos:    []model.Combo{{ID: "combo-1"}},
-		addons:    []model.SquadProduct{{ID: "addon-1", RemnaSquadUUID: "addon-squad"}},
+		addons:    []model.SquadProduct{{ID: "addon-1", GroupID: "addon-squad"}},
 		purchase:  model.Purchase{ID: "purchase-1"},
 		purchases: []model.Purchase{{ID: "purchase-1"}},
 	}
-	service := newCatalogServiceForTest(repository, &catalogPurchaseRemote{catalogRemnawave: &catalogRemnawave{}})
+	service := newCatalogServiceForTest(repository, &catalogPurchaseRemote{catalogProxy: &catalogProxy{}})
 
 	result, err := service.Catalog(context.Background())
 	if err != nil {
@@ -77,7 +77,7 @@ func TestCatalogErrors(t *testing.T) {
 			t.Parallel()
 			repository := &catalogRepository{}
 			test.configure(repository)
-			if _, err := newCatalogServiceForTest(repository, &catalogRemnawave{}).Catalog(context.Background()); err == nil {
+			if _, err := newCatalogServiceForTest(repository, &catalogProxy{}).Catalog(context.Background()); err == nil {
 				t.Fatal("Catalog() unexpectedly succeeded")
 			}
 		})
@@ -93,11 +93,11 @@ func TestDashboardLocalFreshAndStale(t *testing.T) {
 	active := model.Purchase{ID: "active"}
 	queued := model.Purchase{ID: "queued"}
 	repository := &catalogRepository{balance: model.TXBMoney(1234), active: &active, queued: &queued}
-	remnawave := &catalogRemnawave{dashboard: RemoteDashboard{
+	provider := &catalogProxy{dashboard: RemoteDashboard{
 		Statistics:      model.Statistics{UsedTrafficBytes: "42", LastTrafficResetAt: &lastReset},
 		SubscriptionURL: "https://subscription.test/token",
 	}}
-	service := NewService(repository, remnawave, time.Minute)
+	service := NewService(repository, provider, time.Minute)
 	service.now = func() time.Time { return now }
 
 	local, err := service.Dashboard(context.Background(), model.User{ID: "local"})
@@ -108,7 +108,7 @@ func TestDashboardLocalFreshAndStale(t *testing.T) {
 		t.Fatalf("local dashboard = %+v", local)
 	}
 
-	user := model.User{ID: "user-1", RemnaUserID: &remoteID}
+	user := model.User{ID: "user-1", ProxyUserID: &remoteID}
 	fresh, err := service.Dashboard(context.Background(), user)
 	if err != nil {
 		t.Fatalf("Dashboard(fresh): %v", err)
@@ -116,21 +116,21 @@ func TestDashboardLocalFreshAndStale(t *testing.T) {
 	if fresh.Statistics == nil || fresh.Statistics.UsedTrafficBytes != "42" || fresh.SubscriptionURL == nil || fresh.StatisticsStale {
 		t.Fatalf("fresh dashboard = %+v", fresh)
 	}
-	if remnawave.dashboardUserID != remoteID {
-		t.Fatalf("remote dashboard user = %q, want %q", remnawave.dashboardUserID, remoteID)
+	if provider.dashboardUserID != remoteID {
+		t.Fatalf("remote dashboard user = %q, want %q", provider.dashboardUserID, remoteID)
 	}
 	if fresh.Statistics.LastTrafficResetAt == nil || !fresh.Statistics.LastTrafficResetAt.Equal(lastReset) {
 		t.Fatal("upstream reset timestamp lost")
 	}
 
-	remnawave.dashboardErr = errors.New("upstream unavailable")
+	provider.dashboardErr = errors.New("upstream unavailable")
 	service.now = func() time.Time { return now.Add(30 * time.Second) }
 	cached, err := service.Dashboard(context.Background(), user)
 	if err != nil {
 		t.Fatalf("Dashboard(cached): %v", err)
 	}
-	if cached.StatisticsStale || cached.Statistics == nil || remnawave.dashboardCalls != 1 {
-		t.Fatalf("cached dashboard = %+v, remote calls %d", cached, remnawave.dashboardCalls)
+	if cached.StatisticsStale || cached.Statistics == nil || provider.dashboardCalls != 1 {
+		t.Fatalf("cached dashboard = %+v, remote calls %d", cached, provider.dashboardCalls)
 	}
 
 	service.now = func() time.Time { return now.Add(2 * time.Minute) }
@@ -154,11 +154,11 @@ func TestDashboardErrors(t *testing.T) {
 	tests := []struct {
 		name       string
 		repository *catalogRepository
-		remote     *catalogRemnawave
+		remote     *catalogProxy
 		user       model.User
 	}{
-		{name: "balance", repository: &catalogRepository{balanceErr: testError}, remote: &catalogRemnawave{}, user: model.User{ID: "user"}},
-		{name: "entitlements", repository: &catalogRepository{activeErr: testError}, remote: &catalogRemnawave{}, user: model.User{ID: "user"}},
+		{name: "balance", repository: &catalogRepository{balanceErr: testError}, remote: &catalogProxy{}, user: model.User{ID: "user"}},
+		{name: "entitlements", repository: &catalogRepository{activeErr: testError}, remote: &catalogProxy{}, user: model.User{ID: "user"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -169,8 +169,8 @@ func TestDashboardErrors(t *testing.T) {
 		})
 	}
 
-	service := newCatalogServiceForTest(&catalogRepository{}, &catalogRemnawave{dashboardErr: testError})
-	uncached, err := service.Dashboard(context.Background(), model.User{ID: "user", RemnaUserID: &remoteID})
+	service := newCatalogServiceForTest(&catalogRepository{}, &catalogProxy{dashboardErr: testError})
+	uncached, err := service.Dashboard(context.Background(), model.User{ID: "user", ProxyUserID: &remoteID})
 	if err != nil || !uncached.StatisticsStale || uncached.Statistics != nil || uncached.SubscriptionURL != nil || uncached.StatisticsWarning == "" {
 		t.Fatalf("Dashboard(uncached upstream failure) = (%+v, %v)", uncached, err)
 	}
@@ -185,12 +185,12 @@ func TestRevokeSubscription(t *testing.T) {
 		name       string
 		user       model.User
 		repository *catalogRepository
-		remote     *catalogRemnawave
+		remote     *catalogProxy
 		want       error
 	}{
-		{name: "missing remote identity", user: model.User{ID: "user"}, repository: &catalogRepository{}, remote: &catalogRemnawave{}, want: database.ErrNotFound},
-		{name: "remote failure", user: model.User{ID: "user", RemnaUserID: &remoteID}, repository: &catalogRepository{}, remote: &catalogRemnawave{revokeErr: testError}, want: testError},
-		{name: "success", user: model.User{ID: "user", RemnaUserID: &remoteID}, repository: &catalogRepository{}, remote: &catalogRemnawave{revokeURL: "https://new.test"}},
+		{name: "missing remote identity", user: model.User{ID: "user"}, repository: &catalogRepository{}, remote: &catalogProxy{}, want: database.ErrNotFound},
+		{name: "remote failure", user: model.User{ID: "user", ProxyUserID: &remoteID}, repository: &catalogRepository{}, remote: &catalogProxy{revokeErr: testError}, want: testError},
+		{name: "success", user: model.User{ID: "user", ProxyUserID: &remoteID}, repository: &catalogRepository{}, remote: &catalogProxy{revokeURL: "https://new.test"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -255,7 +255,7 @@ func (r *catalogRepository) ActiveAndQueuedPurchases(context.Context, string, ti
 	return r.active, r.queued, r.activeErr
 }
 
-type catalogRemnawave struct {
+type catalogProxy struct {
 	dashboard       RemoteDashboard
 	dashboardErr    error
 	dashboardUserID string
@@ -264,17 +264,17 @@ type catalogRemnawave struct {
 	revokeErr       error
 }
 
-func (r *catalogRemnawave) Dashboard(_ context.Context, userID string) (RemoteDashboard, error) {
+func (r *catalogProxy) Dashboard(_ context.Context, userID string) (RemoteDashboard, error) {
 	r.dashboardCalls++
 	r.dashboardUserID = userID
 	return r.dashboard, r.dashboardErr
 }
-func (r *catalogRemnawave) RevokeSubscription(context.Context, string) (string, error) {
+func (r *catalogProxy) RevokeSubscription(context.Context, string) (string, error) {
 	return r.revokeURL, r.revokeErr
 }
 
 type catalogPurchaseRemote struct {
-	*catalogRemnawave
+	*catalogProxy
 }
 
 func (*catalogPurchaseRemote) ListCatalogNodes(context.Context) ([]RemoteNode, error) {
@@ -285,8 +285,8 @@ func (*catalogPurchaseRemote) AccessibleCatalogNodeUUIDs(context.Context, string
 	return []string{"node-1"}, nil
 }
 
-func newCatalogServiceForTest(repository Repository, remnawave RemnawaveClient) *Service {
-	service := NewService(repository, remnawave, time.Minute)
+func newCatalogServiceForTest(repository Repository, provider ProxyClient) *Service {
+	service := NewService(repository, provider, time.Minute)
 	service.now = func() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
 	return service
 }
