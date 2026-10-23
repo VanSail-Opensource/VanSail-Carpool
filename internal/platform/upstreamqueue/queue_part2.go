@@ -104,23 +104,6 @@ func (q *Queue) execute(lifecycle context.Context, item call, started chan<- tim
 	item.run(executionCtx)
 }
 
-func waitUntil(caller, lifecycle context.Context, target time.Time) error {
-	delay := time.Until(target)
-	if delay <= 0 {
-		return nil
-	}
-	timer := time.NewTimer(delay)
-	defer timer.Stop()
-	select {
-	case <-timer.C:
-		return nil
-	case <-caller.Done():
-		return caller.Err()
-	case <-lifecycle.Done():
-		return lifecycle.Err()
-	}
-}
-
 func mergeCancellation(caller, lifecycle context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(caller)
 	stop := context.AfterFunc(lifecycle, cancel)
