@@ -120,11 +120,11 @@ func TestAPIReceiptScopeDoesNotExposeOtherOperations(t *testing.T) {
 	s.deps.APITokens = apitoken.New(s.deps.Store, []int64{user.TelegramID})
 	router := handler.(chi.Router)
 	router.With(s.requireSignedRequest, s.requireSession, s.requireAdmin).Get("/api/v1/admin/operations/{operationId}", s.adminOperationReceipt)
-	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "migration", Scopes: []string{"xnode:write"}})
+	issued, err := s.deps.APITokens.Create(context.Background(), user, apitoken.CreateInput{Name: "node automation", Scopes: []string{"xnode:write"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, kind := range []string{"xnode_migration", "xnode_command", "refund"} {
+	for _, kind := range []string{"xnode_command", "refund"} {
 		op, _, err := s.deps.Store.CreateProviderOperation(context.Background(), providerops.CreateInput{ActorUserID: user.ID, Kind: kind, IdempotencyKey: kind, RequestFingerprint: strings.Repeat("f", 64), SealedTarget: "private"}, time.Now().UTC())
 		if err != nil {
 			t.Fatal(err)
@@ -134,7 +134,7 @@ func TestAPIReceiptScopeDoesNotExposeOtherOperations(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, r)
 		want := 403
-		if kind == "xnode_migration" {
+		if kind == "xnode_command" {
 			want = 200
 		}
 		if w.Code != want {

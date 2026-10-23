@@ -108,6 +108,10 @@ func compileCacheFixture(t *testing.T) (*Service, *cacheTestRepository, *agentPe
 	}
 	repo := &cacheTestRepository{revision: 1, node: Node{ID: "node"}}
 	service := NewService(repo, cacheTestSettings{}, vault, nil, nil)
+	repo.config.DocumentCipher, err = vault.Encrypt("xnode.config.", `{"inbounds":[],"outbounds":[{"tag":"direct","protocol":"freedom"}]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	repo.node.SettingsCipher, err = service.seal("xnode.node.node", NodeSettings{})
 	if err != nil {
 		t.Fatal(err)

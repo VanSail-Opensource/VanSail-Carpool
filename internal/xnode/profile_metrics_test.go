@@ -93,17 +93,21 @@ func TestProfileActivityUnavailableAfterDisableDisconnectOrStaleness(t *testing.
 				master.live["node"] = snapshot
 			}
 			values, err := master.UserNodeMetrics(context.Background(), "member")
+			if mode == "disabled" {
+				if err != nil || len(values) != 0 {
+					t.Fatalf("disabled nodes escaped paid scope: %+v %v", values, err)
+				}
+				transport, err := master.Metrics(context.Background())
+				if err != nil || transport.OnlineNodes != 1 || transport.Nodes[0].Available || transport.ActiveConnections != 0 {
+					t.Fatal("disabled node activity leaked", transport, err)
+				}
+				return
+			}
 			if err != nil || len(values) != 1 || values[0].Available != (mode == "native") {
 				t.Fatal(mode, values, err)
 			}
 			if mode != "native" && (values[0].Connections != "0" || values[0].CurrentUse || values[0].UploadBytesPerSecond != 0) {
 				t.Fatal("unavailable activity leaked", values)
-			}
-			if mode == "disabled" {
-				transport, err := master.Metrics(context.Background())
-				if err != nil || transport.OnlineNodes != 1 || transport.Nodes[0].Available || transport.ActiveConnections != 0 {
-					t.Fatal("transport liveness was coupled to ownership", transport, err)
-				}
 			}
 		})
 	}
