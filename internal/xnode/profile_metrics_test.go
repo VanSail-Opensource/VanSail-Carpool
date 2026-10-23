@@ -65,7 +65,7 @@ func (r profileMetricRepository) XNodeImportedHistory(context.Context, int64, ti
 	return []ImportedHistory{{NodeID: "node", Date: r.date, RawBytes: 30, WeightedBytes: 45}}, nil
 }
 
-func profileMetricMaster(t *testing.T, disabled bool) (*Master, time.Time) {
+func profileMetricMaster(t *testing.T, state string) (*Master, time.Time) {
 	t.Helper()
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
 	service := NewService(profileMetricRepository{disabled: state == "disabled", date: now.Format(time.DateOnly)}, cacheTestSettings{}, nil, nil, nil)
