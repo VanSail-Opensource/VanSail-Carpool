@@ -109,6 +109,21 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 	if err != nil {
 		return err
 	}
+	if canContinue && s.master != nil {
+		for _, node := range nodes {
+			if s.master.Connected(node.ID) {
+				// Revocation is durable. The existing reconciler publishes it,
+				// and ResumeAccounting settles the old journal under a deadline.
+				// A paid successor must not wait behind an online replay backlog
+				// while the caller holds the shared service mutation mutex.
+				select {
+				case s.master.stateWake <- struct{}{}:
+				default:
+				}
+				return nil
+			}
+		}
+	}
 	pending := false
 	for _, node := range nodes {
 		if s.master != nil && s.master.Connected(node.ID) {

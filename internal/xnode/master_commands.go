@@ -64,6 +64,8 @@ func (m *Master) FlushPeriod(ctx context.Context, nodeID string, user int64, per
 	return m.flush(ctx, nodeID, wire.TrafficFlush{UserID: int(user), Quiesce: true, AccountingPeriod: period})
 }
 func (m *Master) flush(ctx context.Context, nodeID string, args wire.TrafficFlush) (wire.TrafficBarrier, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
 	var barrier wire.TrafficBarrier
 	raw, err := m.Command(ctx, nodeID, "", "traffic.flush", args)
 	if err != nil {
