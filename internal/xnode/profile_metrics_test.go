@@ -14,8 +14,8 @@ import (
 
 type profileMetricRepository struct {
 	Repository
-	phase string
-	date  string
+	disabled bool
+	date     string
 }
 
 func (r profileMetricRepository) identity() Identity {
@@ -31,10 +31,10 @@ func (r profileMetricRepository) XNodeIdentities(context.Context) ([]Identity, e
 	return []Identity{r.identity()}, nil
 }
 func (r profileMetricRepository) XNodeNodes(context.Context) ([]Node, error) {
-	return []Node{{ID: "node", Name: "Tokyo", Enabled: r.phase != "disabled"}}, nil
+	return []Node{{ID: "node", Name: "Tokyo", Enabled: !r.disabled}}, nil
 }
 func (r profileMetricRepository) XNodeNode(context.Context, string) (Node, error) {
-	return Node{ID: "node", Name: "Tokyo", Enabled: r.phase != "disabled"}, nil
+	return Node{ID: "node", Name: "Tokyo", Enabled: !r.disabled}, nil
 }
 func (r profileMetricRepository) DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error) {
 	return &model.Purchase{ID: "purchase", SquadUUIDs: []string{"group"}}, nil
@@ -65,10 +65,10 @@ func (r profileMetricRepository) XNodeImportedHistory(context.Context, int64, ti
 	return []ImportedHistory{{NodeID: "node", Date: r.date, RawBytes: 30, WeightedBytes: 45}}, nil
 }
 
-func profileMetricMaster(t *testing.T, phase string) (*Master, time.Time) {
+func profileMetricMaster(t *testing.T, disabled bool) (*Master, time.Time) {
 	t.Helper()
 	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
-	service := NewService(profileMetricRepository{phase: phase, date: now.Format(time.DateOnly)}, cacheTestSettings{}, nil, nil, nil)
+	service := NewService(profileMetricRepository{disabled: state == "disabled", date: now.Format(time.DateOnly)}, cacheTestSettings{}, nil, nil, nil)
 	service.now = func() time.Time { return now }
 	master := NewMaster(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	master.peers["node"] = &agentPeer{}
@@ -98,7 +98,7 @@ func TestProfileActivityUnavailableAfterDisableDisconnectOrStaleness(t *testing.
 					t.Fatalf("disabled nodes escaped paid scope: %+v %v", values, err)
 				}
 				transport, err := master.Metrics(context.Background())
-				if err != nil || transport.OnlineNodes != 1 || transport.Nodes[0].Available || transport.ActiveConnections != 0 {
+				if err != nil || transport.OnlineNodes != 0 || !transport.Nodes[0].Connected || transport.Nodes[0].Available || transport.ActiveConnections != 0 {
 					t.Fatal("disabled node activity leaked", transport, err)
 				}
 				return

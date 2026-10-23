@@ -37,10 +37,8 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 	for _, node := range nodes {
 		snapshot := m.live[node.ID]
 		_, connected := m.peers[node.ID]
-		// Liveness comes from the authenticated agent stream. Migration phase
-		// controls configuration ownership and admission, not whether an agent
-		// is online, so imported or preparing agents stay visible while a
-		// rolling cutover is in progress.
+		// Only fresh, enabled native agents contribute to activity totals.
+		// Disconnected and disabled agents retain their transport metadata.
 		fresh := node.Enabled && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
 		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: []json.RawMessage{}}
 		if len(summary) == 0 || !summary[0] {

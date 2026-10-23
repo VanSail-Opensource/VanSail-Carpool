@@ -9,7 +9,7 @@ import (
 )
 
 func TestNativeActivityDistinguishesIdleFromUnavailable(t *testing.T) {
-	for _, mode := range []string{"online", "offline", "stale", "unsupported", "rolled_back"} {
+	for _, mode := range []string{"online", "offline", "stale", "unsupported", "disabled"} {
 		master, now := profileMetricMaster(t, "native")
 		snapshot := master.live["node"]
 		if mode == "offline" {
@@ -22,8 +22,8 @@ func TestNativeActivityDistinguishesIdleFromUnavailable(t *testing.T) {
 		if mode == "unsupported" {
 			snapshot.hello.Capabilities = nil
 		}
-		if mode == "rolled_back" {
-			master.service.repo = profileMetricRepository{phase: "rolled_back", date: now.Format(time.DateOnly)}
+		if mode == "disabled" {
+			master.service.repo = profileMetricRepository{disabled: true, date: now.Format(time.DateOnly)}
 		}
 		master.live["node"] = snapshot
 		result, err := master.UserMetrics(context.Background(), "member")

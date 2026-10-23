@@ -27,7 +27,6 @@ func TestTelegramIdentityMigrationRekeysMemberOperationTargets(t *testing.T) {
 		kind, key, before, after string
 	}{
 		{"xnode_command", "command", "xnode.command.legacy-owner.command", "xnode.command.99101.command"},
-		{"xnode_migration", "migration", "xnode.migration.operation.legacy-owner.migration", "xnode.migration.operation.99101.migration"},
 		{"xnode_route_speedtest", "speedtest", "xnode.route-speedtest.legacy-owner.speedtest", "xnode.route-speedtest.99101.speedtest"},
 		{"emby_preferences", "preferences", "emby-operation:legacy-owner:emby_preferences:" + fingerprint, "emby-operation:99101:emby_preferences:" + fingerprint},
 		{"emby_password", "password", "emby-operation:legacy-owner:emby_password:" + fingerprint, "emby-operation:99101:emby_password:" + fingerprint},
