@@ -58,13 +58,13 @@ func (s *Store) RevokeAdminAPIToken(ctx context.Context, id, userID string, now 
 	}
 	defer tx.Rollback()
 	var exists bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=? AND user_id=?)`, id, userID).Scan(&exists); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=? AND user_id=?) OR EXISTS(SELECT 1 FROM audit_events WHERE target_type='api_token' AND target_id=? AND actor_user_id=? AND action='api_token.revoked')`, id, userID, id, userID).Scan(&exists); err != nil {
 		return err
 	}
 	if !exists {
 		return apitoken.ErrNotFound
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE admin_api_tokens SET revoked_at=? WHERE id=? AND user_id=? AND revoked_at IS NULL`, stamp(now), id, userID)
+	result, err := tx.ExecContext(ctx, `DELETE FROM admin_api_tokens WHERE id=? AND user_id=?`, id, userID)
 	if err != nil {
 		return err
 	}

@@ -81,6 +81,16 @@ func TestAPITokenActiveLimitReleasesAfterIdempotentRevocation(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	var count int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE id=?`, first.Item.ID).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("revoked credential remains: %d %v", count, err)
+	}
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE target_type='api_token' AND target_id=? AND action='api_token.revoked'`, first.Item.ID).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("idempotent audit: %d %v", count, err)
+	}
+	if _, err := service.Authenticate(ctx, first.Token); !errors.Is(err, apitoken.ErrUnauthorized) {
+		t.Fatalf("deleted credential authenticated: %v", err)
+	}
 	if _, err := service.Create(ctx, user, apitoken.CreateInput{Name: "replacement", Scopes: []string{"admin:read"}}); err != nil {
 		t.Fatal(err)
 	}

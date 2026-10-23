@@ -16,3 +16,5 @@ cache or local-storage credential state.
 The inventory now opens creation in a focused modal. Administrative, node and migration permissions use localized checkbox groups; one-time secrets clear at session logout as well as disposal/page hide.
 
 `APITokenForm.test.ts` guards unique native checkbox labels and cross-group permission retention using real Nuxt UI components. The shared validation field has no outer control label; every permission has an explicit unique control ID.
+
+Successful revocation immediately removes the row and clears its one-time secret. Invalidated list requests cannot restore deleted credentials; a failed refresh retains the filtered list.

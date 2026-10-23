@@ -40,8 +40,8 @@ func scanAPIToken(row rowScanner) (apitoken.Token, error) {
 }
 
 func (s *Store) AdminAPITokens(ctx context.Context, userID string) ([]apitoken.Token, error) {
-	// All active keys fit in the first page (creation caps them at 50). Older
-	// revoked/expired metadata remains archived alongside the creation audit.
+	// All active keys fit in the first page (creation caps them at 50).
+	// Revocations delete credentials; only secret-free audit events survive.
 	rows, err := s.db.QueryContext(ctx, apiTokenSelect+` WHERE user_id=? ORDER BY (revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?)) DESC,created_at DESC,id DESC LIMIT 200`, userID, stamp(time.Now().UTC()))
 	if err != nil {
 		return nil, err

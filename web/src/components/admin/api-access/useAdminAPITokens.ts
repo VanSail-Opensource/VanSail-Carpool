@@ -40,12 +40,13 @@ export function useAdminAPITokens() {
   }
   async function revoke(id: string): Promise<void> {
     if (busy.value) return
+    controller?.abort(); generation++; loading.value = false
     busy.value = true; error.value = null
     try {
       await adminAPITokensApi.revoke(id)
       if (active) {
         if (issued.value?.item.id === id) dismiss()
-        items.value = items.value.map(item => item.id === id ? { ...item, revokedAt: new Date().toISOString() } : item)
+        items.value = items.value.filter(item => item.id !== id)
         await load()
       }
     } catch (caught) { if (active) error.value = localizedError(caught, 'apiTokens.revokeFailed') }

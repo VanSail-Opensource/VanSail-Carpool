@@ -31,3 +31,5 @@ URLs or query parameters. Creation defaults to 30 days; `expiresInDays: 0`
 selects no expiry. Each administrator may hold 50 active tokens. Migration
 endpoints, scopes, and source credentials are retired. Native catalog contracts
 use `groupId`; previous provider-specific wire aliases are removed.
+
+Revoking a token deletes its credential record. Earlier revoked records are purged on upgrade. Secret-free audit events remain, and repeat revocation by the same owner is idempotent.

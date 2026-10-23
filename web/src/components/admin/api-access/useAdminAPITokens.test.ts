@@ -44,4 +44,15 @@ describe('administrator token secret lifecycle', () => {
     await state.create({ name: 'Assistant', scopes: ['xnode:write'], expiresInDays: 30 }); resolve({ items: [] }); await flushPromises()
     expect(state.items.value[0]?.id).toBe('one'); wrapper.unmount()
   })
+  it('cannot restore a deleted token from a stale list response', async () => {
+    let resolve!: (value: { items: typeof issued.item[] }) => void
+    mock.list.mockReturnValueOnce(new Promise(done => { resolve = done })).mockResolvedValue({ items: [] })
+    const { wrapper, state } = setup()
+    state.items.value = [issued.item]
+    await state.revoke('one')
+    resolve({ items: [issued.item] }); await flushPromises()
+    expect(state.items.value).toEqual([])
+    wrapper.unmount()
+  })
+
 })

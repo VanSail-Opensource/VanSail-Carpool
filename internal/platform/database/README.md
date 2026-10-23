@@ -601,3 +601,5 @@ transaction rollback, stale/expired quotes and exact lost-response replay in hos
 `outbox_admission.go` and `outbox_resources.go` derive account, node, purchase, operation and chat exclusion from existing records inside transactional claims. Independent due jobs skip occupied resources. IP Lookup repair admission stays serial.
 
 `outbox_resources_test.go` checks independent account admission and cross-kind account ordering.
+
+API-token revocation deletes the complete credential row atomically with a secret-free audit event. The owner-scoped audit makes retries idempotent without a credential tombstone.

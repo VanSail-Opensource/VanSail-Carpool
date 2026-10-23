@@ -8,7 +8,7 @@ refinement. Work proceeds in order; each group is audited before the next.
 - [x] Allow independent queued work to progress with bounded execution while
   retaining account/node ordering, durable leases, and IP-check serialization.
 - [x] Keep proxy inventories in panel IP Lookup and clear published node sources.
-- [ ] Delete revoked API-token records and purge earlier revoked rows.
+- [x] Delete revoked API-token records and purge earlier revoked rows.
 - [ ] Repair combo submission and verify retained drafts and successful edits.
 - [ ] Prune DIY contracts and saved overrides; correct client compatibility,
   XHTTP multiplex policy, MPTCP, range editing, and split-profile names.

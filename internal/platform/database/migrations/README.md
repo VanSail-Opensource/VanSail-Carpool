@@ -192,3 +192,5 @@ a detecting-IP index for managed-node ban releases and quota cache invalidation.
 Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 
 `093_native_only.sql` requires completed final accounting, translates pending native entitlement work, removes obsolete bridge secrets/checkpoints, renames native group/account fields, and retains historical usage without repricing it. Old migrations stay immutable.
+
+`094_delete_revoked_api_tokens.sql` purges credentials from earlier soft revocations while retaining immutable audit events.
