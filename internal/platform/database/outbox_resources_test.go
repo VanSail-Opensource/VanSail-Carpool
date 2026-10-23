@@ -2,8 +2,12 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
@@ -38,5 +42,38 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 	next, err := s.ClaimOutboxJob(ctx, now)
 	if err != nil || next == nil || next.ID != "a-second" {
 		t.Fatalf("successor=%+v %v", next, err)
+	}
+}
+
+func TestStandaloneNativeTargetDoesNotBlockOutboxAdmission(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	actor := createTestUser(t, s, 91723)
+	identity, err := s.SaveXNodeIdentity(ctx, xnode.Identity{ServiceName: "standalone", CredentialsCipher: "encrypted"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"first", "second"} {
+		_, _, err := s.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor.ID, Kind: xnode.RoutingOperationKind,
+			IdempotencyKey: key, RequestFingerprint: key, Items: []providerops.ItemInput{{Key: "routing", TargetType: "xnode_user", TargetID: fmt.Sprint(identity.ProxyUserID)}}}, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := s.ClaimOutboxJob(ctx, now)
+	if err != nil || first == nil {
+		t.Fatal("standalone admission failed", first, err)
+	}
+	next, err := s.ClaimOutboxJob(ctx, now)
+	if err != nil || next != nil {
+		t.Fatal("standalone target overlapped", next, err)
+	}
+	if err := s.CompleteOutboxJob(ctx, first.ID, first.Attempts, nil, now); err != nil {
+		t.Fatal(err)
+	}
+	next, err = s.ClaimOutboxJob(ctx, now)
+	if err != nil || next == nil {
+		t.Fatal("standalone successor blocked", next, err)
 	}
 }

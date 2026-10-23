@@ -73,12 +73,12 @@ func outboxResourcesTx(ctx context.Context, tx *sql.Tx, job model.OutboxJob) ([]
 				add("node", t.id)
 			case "purchase", "emby_account", "xnode_user":
 				query := map[string]string{"purchase": "SELECT user_id FROM purchases WHERE id=?", "emby_account": "SELECT user_id FROM emby_accounts WHERE id=?", "xnode_user": "SELECT user_id FROM xnode_identities WHERE proxy_user_id=?"}[t.kind]
-				var user string
+				var user sql.NullString // Standalone native identities have no member owner.
 				err := tx.QueryRowContext(ctx, query, t.id).Scan(&user)
 				if err != nil && !errors.Is(err, sql.ErrNoRows) {
 					return nil, err
 				}
-				add("user", user)
+				add("user", user.String)
 				add(t.kind, t.id)
 			default:
 				add(t.kind, t.id)
