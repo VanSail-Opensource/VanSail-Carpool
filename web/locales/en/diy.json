@@ -10,7 +10,7 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "system": "System default",
-    "reset": "Restore inheritance",
+    "reset": "Reset options",
     "resetField": "Inherit this option",
     "resetHint": "Subscription options only. Custom routing is retained.",
     "minimum": "Minimum",
@@ -62,7 +62,8 @@
       "applied": "Applied",
       "inherited": "Inherited",
       "unsupported": "Unsupported",
-      "endpoint-incompatible": "Endpoint incompatible"
+      "endpoint-incompatible": "Endpoint incompatible",
+      "fixed-off": "Always disabled"
     },
     "reasons": {
       "format": "This format has no documented equivalent.",
@@ -77,7 +78,8 @@
       "trust": "Requires administrator-provided certificate trust.",
       "mode": "A separate download connection is unavailable in stream-one mode.",
       "serverLimit": "Exceeds the endpoint's configured limit.",
-      "dependency": "This option is inactive in the current mode."
+      "dependency": "This option is inactive in the current mode.",
+      "builtInMultiplex": "XHTTP uses its built-in multiplexing."
     },
     "restrictions": {
       "linux": "Routing marks require Linux.",
@@ -87,7 +89,8 @@
       "stashInterface": "Stash interface binding is available on macOS.",
       "stashUotVersions": "Stash UoT requires iOS/tvOS 3.1.1+ or macOS 3.1+, plus a compatible server.",
       "stashXhttpVersions": "Stash XHTTP requires iOS/tvOS 3.6+ or macOS 4.3+.",
-      "serverCapability": "Enabling requires a compatible server protocol."
+      "serverCapability": "Enabling requires a compatible server protocol.",
+      "fixedOff": "MPTCP stays disabled."
     },
     "errors": {
       "invalid": "Enter a supported value within the displayed bounds.",
@@ -98,7 +101,8 @@
       "xrayValidation": "The resulting client options failed pinned Xray validation. Review dependent options.",
       "routing": "Review the custom routing draft.",
       "whitelistInvalid": "Enter unique public IPs within your quota.",
-      "splitInvalid": "A host or mode is unavailable. Select compatible hosts or remove the profile."
+      "splitInvalid": "A host or mode is unavailable. Select compatible hosts or remove the profile.",
+      "fixedOff": "This setting stays disabled."
     },
     "units": {
       "seconds": "seconds",
@@ -127,9 +131,9 @@
     "tabs": {
       "connection": "Connection",
       "xhttp": "XHTTP",
-      "network": "Network",
       "routing": "Routing",
-      "whitelist": "Whitelist"
+      "whitelist": "Whitelist",
+      "compatibility": "Compatibility"
     },
     "split": {
       "title": "Split profiles",
@@ -150,6 +154,8 @@
       "unavailable": "Save price is not configured."
     },
     "noApplicableFields": "No applicable options for your current hosts.",
-    "quoteChanged": "Allowance or price changed. The quote has refreshed and your draft is retained. Review it before saving again."
+    "quoteChanged": "Allowance or price changed. The quote has refreshed and your draft is retained. Review it before saving again.",
+    "rangeExample": "e.g. 100 or 100-200",
+    "rangeInvalid": "Enter a number or an ascending range, such as 100-200."
   }
 }

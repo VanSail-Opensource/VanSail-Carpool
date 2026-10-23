@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
@@ -75,18 +74,12 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 		return nil, err
 	}
 	overrides := subscription.ActiveTuningFor(settings.Overrides, proxies)
-	raw, err := json.Marshal(overrides)
-	if err != nil {
-		return nil, err
-	}
 	if len(subscription.ValidateTuning(overrides)) > 0 {
 		return nil, ErrInvalid
 	}
 	result := append([]subscription.Proxy(nil), proxies...)
 	for index := range result {
-		if string(raw) != "{}" {
-			result[index].Tuning = &overrides
-		}
+		result[index].Tuning = &overrides
 	}
 	return appendSplitProxies(settings.SplitProfiles, result), nil
 }

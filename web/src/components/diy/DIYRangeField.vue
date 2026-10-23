@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { useI18n } from '@/i18n'
-import { useId } from 'vue'
-defineProps<{ modelValue?: { min: number; max: number }; disabled?: boolean; label: string }>()
-const emit = defineEmits<{ 'update:modelValue': [value: { min: number; max: number } | undefined] }>()
+import { formatDIYRange, parseDIYRange } from './diyRange'
+
+defineProps<{ modelValue?: unknown; disabled?: boolean; label: string }>()
+const emit = defineEmits<{ 'update:modelValue': [value: unknown] }>()
 const { t } = useI18n()
-const id = useId()
-function change(side: 'min' | 'max', value: string | number | undefined, current?: { min: number; max: number }) {
-  if (value === '' || value === undefined) { emit('update:modelValue', undefined); return }
-  const number = Number(value)
-  emit('update:modelValue', { ...(current ?? { min: number, max: number }), [side]: number })
+function change(value: string | number) {
+  const text = String(value)
+  emit('update:modelValue', text.trim() ? parseDIYRange(text) ?? text : undefined)
 }
 </script>
 <template>
-  <div role="group" :aria-label="label" class="grid grid-cols-2 gap-2">
-    <UInput :id="`${id}-min`" :model-value="modelValue?.min" type="number" min="0" max="2147483647" step="1" :aria-label="`${label}: ${t('diy.minimum')}`" :placeholder="t('diy.inherit')" :disabled="disabled" class="w-full" @update:model-value="change('min', $event, modelValue)" />
-    <UInput :id="`${id}-max`" :model-value="modelValue?.max" type="number" min="0" max="2147483647" step="1" :aria-label="`${label}: ${t('diy.maximum')}`" :placeholder="t('diy.inherit')" :disabled="disabled" class="w-full" @update:model-value="change('max', $event, modelValue)" />
-  </div>
+  <UInput :model-value="formatDIYRange(modelValue)" :aria-label="label" :aria-invalid="typeof modelValue === 'string'" :placeholder="t('diy.rangeExample')" :disabled="disabled" inputmode="text" class="w-full" @update:model-value="change" />
 </template>

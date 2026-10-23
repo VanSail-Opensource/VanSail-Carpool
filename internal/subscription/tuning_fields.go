@@ -1,7 +1,6 @@
 package subscription
 
 import (
-	"crypto/tls"
 	"maps"
 	"slices"
 	"sync"
@@ -39,8 +38,11 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 	for index := range result {
 		spec := &result[index]
 		switch spec.Key {
-		case "fingerprint", "downloadFingerprint":
+		case "fingerprint":
 			set := map[string]bool{"unsafe": true}
+			for _, name := range mihomoFingerprints {
+				set[name] = true
+			}
 			for name := range xraytls.PresetFingerprints {
 				set[name] = true
 			}
@@ -51,27 +53,12 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 				set[name] = true
 			}
 			spec.Enum = slices.Sorted(maps.Keys(set))
-		case "cipherSuites", "downloadCipherSuites":
-			for _, suite := range append(tls.CipherSuites(), tls.InsecureCipherSuites()...) {
-				if !slices.Contains(suite.SupportedVersions, tls.VersionTLS13) {
-					spec.Enum = append(spec.Enum, suite.Name)
-				}
-			}
 		}
-		if spec.Key == "mark" || spec.Key == "downloadMark" {
-			spec.Restrictions = []string{"linux"}
-		}
-		if spec.Key == "tcpMptcp" || spec.Key == "downloadTcpMptcp" {
-			spec.Restrictions = []string{"go121"}
-		}
-		if spec.Key == "tcpKeepAliveIdle" || spec.Key == "tcpKeepAliveInterval" {
-			spec.Restrictions = []string{"singbox113"}
+		if spec.Key == "tcpMptcp" {
+			spec.Restrictions = []string{"fixedOff"}
 		}
 		if spec.Key == "curvePreferences" {
 			spec.Restrictions = []string{"singboxCurves"}
-		}
-		if spec.Key == "interface" {
-			spec.Restrictions = []string{"stashInterface"}
 		}
 		if spec.Group == "shadowsocks" {
 			spec.Restrictions = append(spec.Restrictions, "stashUotVersions")
@@ -79,7 +66,7 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 		if spec.Context == "uot" || spec.Context == "sager-mux" {
 			spec.Restrictions = append(spec.Restrictions, "serverCapability")
 		}
-		if spec.Context == "xhttp" || spec.Group == "download" {
+		if spec.Context == "xhttp" {
 			spec.Restrictions = append(spec.Restrictions, "stashXhttpVersions")
 		}
 	}

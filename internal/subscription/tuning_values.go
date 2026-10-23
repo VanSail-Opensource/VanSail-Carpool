@@ -15,14 +15,6 @@ type TuningHeader struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
-type TuningSocketOption struct {
-	System  string `json:"system"`
-	Network string `json:"network"`
-	Level   string `json:"level"`
-	Opt     string `json:"opt"`
-	Value   string `json:"value"`
-	Type    string `json:"type"`
-}
 
 // FastOpenSetting is the pinned socket parser's bounded boolean/integer union.
 // It accepts no object, array, fractional number or raw JSON extension.

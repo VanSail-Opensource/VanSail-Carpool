@@ -1,6 +1,7 @@
 import { computed, onMounted, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { xnodeMemberApi, type DIYView, type DIYSplitProfile, type DIYWhitelist, type DIYOverrides, type DIYWrite, type DIYPreview, type RoutingChoice } from '@/api/xnodeMember'
 import { ApiError } from '@/api/http'
+import { notifyHaptic } from '@/utils/telegramHaptics'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { useOperationReceipt } from '@/composables/useOperationReceipt'
 import { localizedError, t } from '@/i18n'
@@ -28,7 +29,9 @@ export function useDIY() {
     if (!disposed && !['queued', 'processing'].includes(receipt.status)) void load(true)
     return receipt
   })
-  const autoPreview = useDIYPreview(() => view.value ? { settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: activeDIYOverrides(view.value.fields, overrides.value), whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value } : null, () => submitting.value)
+  const activeOverrides = computed(() => view.value ? activeDIYOverrides(view.value.fields, overrides.value) : {})
+  const invalid = computed(() => view.value ? !diySchema(view.value.fields).safeParse(activeOverrides.value).success : false)
+  const autoPreview = useDIYPreview(() => view.value && !invalid.value ? { settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: activeOverrides.value, whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value } : null, () => submitting.value)
   const billing = computed(() => autoPreview.result.value?.billing ?? view.value?.billing)
   const compatibility = computed(() => autoPreview.result.value?.compatibility ?? preview.value?.compatibility ?? view.value?.compatibility ?? [])
   const errors = computed(() => ({ ...autoPreview.result.value?.fieldErrors, ...fieldErrors.value }))
@@ -52,7 +55,7 @@ export function useDIY() {
     if (!parsed.success) {
       const codes = new Set(['range', 'conflict', 'dependency', 'serverCapability'])
       for (const issue of parsed.error.issues) fieldErrors.value[String(issue.path[0] ?? 'overrides')] = codes.has(issue.message) ? issue.message : 'invalid'
-      error.value = t('diy.validationFailed'); return
+      error.value = t('diy.validationFailed'); notifyHaptic('error'); return
     }
     let body: DIYWrite = JSON.parse(JSON.stringify({ settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: parsed.data, whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value })) as DIYWrite
     const fingerprint = JSON.stringify(body), retry = keys.get(fingerprint), key = retry?.key ?? createUuid()
@@ -64,16 +67,17 @@ export function useDIY() {
         const validation = await xnodeMemberApi.previewDIY(body, validator.signal)
         if (disposed) return
         preview.value = validation; fieldErrors.value = validation.fieldErrors
-        if (!validation.valid) { error.value = t('diy.validationFailed'); return }
+        if (!validation.valid) { error.value = t('diy.validationFailed'); notifyHaptic('error'); return }
       }
       keys.set(fingerprint, { key, body })
       const result = await xnodeMemberApi.saveDIY(body, key)
       if (disposed) return
-      keys.delete(fingerprint); saved.value = true
+      keys.delete(fingerprint); saved.value = true; notifyHaptic('success')
       if (view.value) view.value = { ...view.value, settingsRevision: result.settingsRevision, overrides: body.overrides, routing: { ...view.value.routing, plan: { ...view.value.routing.plan, choices: body.choices, ...(result.routingChanged ? { revision: body.routingRevision + 1, phase: 'revoking', operationId: result.receipt.id } : {}) } } }
       if (result.deploymentChanged || result.routingChanged) tracker.track(result.receipt)
       void load(true)
     } catch (caught) {
+      if (!disposed) notifyHaptic('error')
       if (!disposed) error.value = caught && typeof caught === 'object' && 'code' in caught && caught.code === 'XNODE_CONFLICT' ? t('diy.conflict') : localizedError(caught, 'diy.saveFailed')
       if (caught instanceof ApiError && caught.status >= 400 && caught.status < 500) {
         keys.delete(fingerprint)
@@ -85,5 +89,5 @@ export function useDIY() {
   onMounted(() => void load(false))
   watch([overrides, whitelist, splitProfiles], () => { saved.value = false; preview.value = null; fieldErrors.value = {} }, { deep: true })
   onScopeDispose(() => { disposed = true; latest.dispose(); controller?.abort(); validator?.abort(); keys.clear() })
-  return { view, overrides, whitelist, splitProfiles, billing, choices, loading, submitting, saved, error, errors, compatibility, tracker, autoPreview, load, save, reset, routeDraft }
+  return { invalid, view, overrides, whitelist, splitProfiles, billing, choices, loading, submitting, saved, error, errors, compatibility, tracker, autoPreview, load, save, reset, routeDraft }
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
 )
 
 func tuningDependenciesMet(field TuningField, values map[string]any) bool {
@@ -59,15 +58,6 @@ func ActiveTuning(input ConnectionOverrides) ConnectionOverrides {
 
 func tuningContextAvailable(context string, proxy Proxy) bool {
 	stream := proxy.Stream
-	if strings.HasPrefix(context, "download:") {
-		if text(stream, "network") != "xhttp" {
-			return false
-		}
-		context = strings.TrimPrefix(context, "download:")
-		if down := object(object(object(stream, "xhttpSettings"), "extra"), "downloadSettings"); len(down) > 0 {
-			stream = down
-		}
-	}
 	security := text(stream, "security")
 	switch context {
 	case "tls":
@@ -83,7 +73,7 @@ func tuningContextAvailable(context string, proxy Proxy) bool {
 	case "uot", "sager-mux":
 		return false
 	case "xray-mux":
-		return slices.Contains([]string{"vless", "vmess", "trojan", "shadowsocks"}, proxy.Protocol)
+		return text(stream, "network") != "xhttp" && slices.Contains([]string{"vless", "vmess", "trojan", "shadowsocks"}, proxy.Protocol)
 	}
 	return true
 }

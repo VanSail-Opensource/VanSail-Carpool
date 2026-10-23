@@ -15,7 +15,7 @@ both revision fences, idempotent retry keys and durable deployment receipts.
 `useDIYPreview.ts` debounces cancellable server validation with stale-response
 fencing. `DIYSettingsGroup.vue` groups server-described typed fields;
 `DIYFieldControl.vue` chooses native/Nuxt controls, with `DIYRangeField.vue`,
-`DIYHeadersField.vue` and `DIYSocketsField.vue` for structured values.
+`DIYHeadersField.vue` for structured values.
 `diyValidation.ts` and `diyStructuredValidation.ts` provide frontend Zod checks;
 the backend repeats validation and checks generated Xray with the pinned parser.
 `DIYCompatibility.vue` and `TuningCompatibilityList.vue` display shared server
@@ -41,3 +41,9 @@ price. `useDIY.ts` retains the exact request, quote and key after uncertain repl
 a retry reads the committed receipt before validating current access or prices.
 A changed quote requires another Save with the updated displayed price. No extra
 confirmation is introduced. Backend transactions own fees and revision fencing.
+
+`diyRange.ts` parses exact values or ascending hyphen ranges into the existing min/max wire object. `DIYRangeField.vue` retains incomplete text in the shared draft, shows examples when empty, and blocks invalid Save/automatic preview without discarding input.
+
+The five tabs are Connection, XHTTP, Routing, Whitelist and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
+
+Mini App tabs and selection controls use selection haptics. Buttons use existing intent feedback; Save reports success/error through the existing Telegram notification helper. Scoped CSS clarifies presses and panel/status changes only when reduced motion is not requested. Browser admin roots do not import this page or initialize these controls.

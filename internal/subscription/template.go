@@ -52,6 +52,9 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	if template.Format == "xray" {
 		configs := []any{}
 		for _, proxy := range proxies {
+			if proxy.Tuning == nil {
+				proxy.Tuning = &ConnectionOverrides{}
+			}
 			current := template
 			if len(proxy.XrayTemplate) > 0 {
 				current.Document = proxy.XrayTemplate
@@ -95,6 +98,9 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	}
 	values, names := []any{}, []any{}
 	for _, proxy := range proxies {
+		if proxy.Tuning == nil {
+			proxy.Tuning = &ConnectionOverrides{}
+		}
 		var out map[string]any
 		if yamlFormat(template.Format) {
 			out, err = proxy.yamlProxy(template.Format)

@@ -3,6 +3,7 @@ import { computed, shallowRef } from 'vue'
 import { z } from 'zod'
 import type { DIYWhitelist, DIYWhitelistView } from '@/api/xnodeMember'
 import { useI18n } from '@/i18n'
+import { selectionHaptic } from '@/utils/telegramHaptics'
 
 const model = defineModel<DIYWhitelist>({ required: true })
 const props = defineProps<{ view?: DIYWhitelistView; disabled?: boolean; error?: string }>()
@@ -19,14 +20,14 @@ function remove(value: string) { model.value = { ...model.value, ips: model.valu
 
 <template>
   <section class="grid gap-3">
-    <div class="flex justify-between items-center gap-3"><h2 class="text-base font-medium">{{ t('diy.whitelist.title') }}</h2><span class="text-xs text-muted">{{ t('diy.whitelist.quota', { used: model.ips.length, quota }) }}</span></div>
-    <USwitch :model-value="model.enabled" :disabled="disabled" :label="t('diy.whitelist.enabled')" :description="t('diy.whitelist.hint')" @update:model-value="model = { ...model, enabled: $event }" />
+    <div class="flex justify-between items-center gap-3"><span class="text-xs text-muted">{{ t('diy.whitelist.quota', { used: model.ips.length, quota }) }}</span></div>
+    <USwitch :model-value="model.enabled" :disabled="disabled" :label="t('diy.whitelist.enabled')" :description="t('diy.whitelist.hint')" @update:model-value="selectionHaptic(); model = { ...model, enabled: $event }" />
     <p v-if="view" class="text-xs text-muted" role="status">{{ t(dirty ? 'diy.whitelist.unsaved' : `diy.whitelist.phase.${view.phase}`, { count: view.pendingNodes.length }) }}</p>
     <UAlert v-if="error" color="warning" :title="error" />
     <UFormField :label="t('firewall.ip')">
-      <div class="flex gap-2"><UInput v-model="ip" class="min-w-0 flex-1 font-mono" autocomplete="off" :disabled="disabled || model.ips.length >= quota" @keydown.enter.prevent="add" /><UButton icon="i-ph-plus" variant="outline" color="neutral" :aria-label="t('diy.whitelist.add')" :disabled="disabled || !valid" @click="add" /></div>
+      <div class="flex gap-2"><UInput v-model="ip" class="min-w-0 flex-1 font-mono" autocomplete="off" :disabled="disabled || model.ips.length >= quota" @keydown.enter.prevent="add" /><UButton data-haptic="action" icon="i-ph-plus" variant="outline" color="neutral" :aria-label="t('diy.whitelist.add')" :disabled="disabled || !valid" @click="add" /></div>
     </UFormField>
     <p v-if="model.ips.length === 0" class="text-xs text-muted">{{ t(model.enabled ? 'diy.whitelist.blocksAll' : 'diy.whitelist.empty') }}</p>
-    <ul v-else class="grid gap-1"><li v-for="value in model.ips" :key="value" class="flex items-center justify-between gap-2 py-1"><code class="text-sm break-all">{{ value }}</code><UButton icon="i-ph-trash" variant="ghost" color="neutral" :aria-label="t('common.delete')" :disabled="disabled" @click="remove(value)" /></li></ul>
+    <ul v-else class="grid gap-1"><li v-for="value in model.ips" :key="value" class="flex items-center justify-between gap-2 py-1"><code class="text-sm break-all">{{ value }}</code><UButton data-haptic="action" icon="i-ph-trash" variant="ghost" color="neutral" :aria-label="t('common.delete')" :disabled="disabled" @click="remove(value)" /></li></ul>
   </section>
 </template>

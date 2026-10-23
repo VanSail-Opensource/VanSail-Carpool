@@ -603,3 +603,5 @@ transaction rollback, stale/expired quotes and exact lost-response replay in hos
 `outbox_resources_test.go` checks independent account admission and cross-kind account ordering.
 
 API-token revocation deletes the complete credential row atomically with a secret-free audit event. The owner-scoped audit makes retries idempotent without a credential tombstone.
+
+`xnode_diy_retirement.go` pages saved member references and atomically replaces old ciphertext using user, revision and cipher fences. It does not change financial records, routing or native compilation.

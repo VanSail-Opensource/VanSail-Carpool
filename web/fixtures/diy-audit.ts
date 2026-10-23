@@ -4,7 +4,7 @@ import { ApiError } from '@/api/http'
 import type { OperationReceipt } from '@/api/types'
 
 export function installDIYAudit(params: URLSearchParams, trace: { calls: string[]; keys: string[]; writes: unknown[] }, routing: () => Promise<RoutingView>) {
-  let revision = 0, overrides: DIYOverrides = params.has('populated') ? { fingerprint: 'firefox', tcpFastOpen: false, tcpKeepAliveIdle: 0, muxConcurrency: -1 } : {}
+  let revision = 0, overrides: DIYOverrides = params.has('populated') ? { fingerprint: 'firefox', tcpFastOpen: false, muxXudpConcurrency: -1 } : {}
   let whitelist: DIYWhitelist = { enabled: params.has('whitelist'), ips: params.has('whitelist') ? ['8.8.8.8'] : [] }, pendingWhitelist = false
   let splitProfiles: DIYSplitProfile[] = params.has('split') ? [{ id: 'split-one', uploadEndpointId: 'a-primary', downloadEndpointId: 'a-secondary', mode: 'auto' }] : []
   let remaining = params.has('paid') ? 0 : 5, chargeCount = 0
@@ -18,7 +18,10 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
   const operations = new Map<string, { receipt: OperationReceipt; routingChanged: boolean; deploymentChanged: boolean }>()
   const pause = () => new Promise(resolve => setTimeout(resolve, params.has('slow') ? 1800 : 30))
   async function preview(value: DIYOverrides, signal?: AbortSignal): Promise<DIYPreview & { fields: DIYView['fields'] }> {
-    const response = await fetch(`http://127.0.0.1:5175/diy${params.has('inherited-stream-one') ? '?mode=stream-one' : ''}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value), signal })
+    const query = new URLSearchParams()
+    if (params.has('inherited-stream-one')) query.set('mode', 'stream-one')
+    if (params.has('empty')) query.set('empty', '1')
+    const response = await fetch(`http://127.0.0.1:5175/diy?${query}`,  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value), signal })
     if (!response.ok) throw new ApiError(response.status, { code: 'XNODE_INVALID', message: '' })
     return { ...await response.json(), billing: billing() }
   }

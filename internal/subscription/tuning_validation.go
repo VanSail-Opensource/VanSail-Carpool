@@ -3,7 +3,7 @@ package subscription
 import (
 	"fmt"
 	"slices"
-	"strconv"
+
 	"strings"
 
 	"golang.org/x/net/http/httpguts"
@@ -53,47 +53,16 @@ func ValidateTuning(overrides ConnectionOverrides) map[string]string {
 			invalid = invalid || len(value.([]any)) > 64
 		case "headers":
 			invalid = !validTuningHeaders(value.([]any))
-		case "sockets":
-			invalid = !validTuningSockets(value.([]any))
 		}
 		if invalid {
 			errors[spec.Key] = "invalid"
 		}
 	}
-	if low, ok := values["minVersion"].(string); ok {
-		if high, ok := values["maxVersion"].(string); ok && low > high {
-			errors["maxVersion"] = "range"
-		}
+	if values["tcpMptcp"] == true {
+		errors["tcpMptcp"] = "fixedOff"
 	}
-	if low, ok := values["downloadMinVersion"].(string); ok {
-		if high, ok := values["downloadMaxVersion"].(string); ok && low > high {
-			errors["downloadMaxVersion"] = "range"
-		}
-	}
-	if values["penetrate"] == true {
-		for _, spec := range allTuningSpecs() {
-			if spec.Context == "download:socket" {
-				if _, exists := values[spec.Key]; exists {
-					errors[spec.Key] = "conflict"
-				}
-			}
-		}
-	}
-	for _, prefix := range []string{"", "download"} {
-		a, b := "xmuxMaxConcurrency", "xmuxMaxConnections"
-		if prefix != "" {
-			a, b = "downloadXmuxMaxConcurrency", "downloadXmuxMaxConnections"
-		}
-		if tuningRangePositive(values[a]) && tuningRangePositive(values[b]) {
-			errors[b] = "conflict"
-		}
-	}
-	if values["xhttpMode"] == "stream-one" {
-		for key := range values {
-			if strings.HasPrefix(key, "download") {
-				errors[key] = "conflict"
-			}
-		}
+	if tuningRangePositive(values["xmuxMaxConcurrency"]) && tuningRangePositive(values["xmuxMaxConnections"]) {
+		errors["xmuxMaxConnections"] = "conflict"
 	}
 	for _, prefix := range []string{"singboxMux", "mihomoMux"} {
 		if positiveNumber(values[prefix+"MaxStreams"]) && (positiveNumber(values[prefix+"MaxConnections"]) || positiveNumber(values[prefix+"MinStreams"])) {
@@ -133,37 +102,6 @@ func validTuningHeaders(values []any) bool {
 			return false
 		}
 		seen[key] = true
-	}
-	return true
-}
-
-func validTuningSockets(values []any) bool {
-	if len(values) > 32 {
-		return false
-	}
-	for _, raw := range values {
-		row := raw.(map[string]any)
-		if !slices.Contains([]string{"", "linux", "android", "windows", "darwin", "ios", "freebsd"}, fmt.Sprint(row["system"])) || !slices.Contains([]string{"", "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6"}, fmt.Sprint(row["network"])) {
-			return false
-		}
-		if row["type"] != "int" && row["type"] != "str" || row["system"] == "windows" && row["type"] == "str" || len(fmt.Sprint(row["value"])) > 512 {
-			return false
-		}
-		for _, key := range []string{"level", "opt"} {
-			value := fmt.Sprint(row[key])
-			if key == "level" && value == "" {
-				continue
-			}
-			n, err := strconv.ParseInt(value, 10, 32)
-			if err != nil || n < 0 {
-				return false
-			}
-		}
-		if row["type"] == "int" {
-			if _, err := strconv.ParseInt(fmt.Sprint(row["value"]), 10, 32); err != nil {
-				return false
-			}
-		}
 	}
 	return true
 }

@@ -8,6 +8,8 @@ import (
 func (p Proxy) tunedNativeLink() (string, error) {
 	base := p
 	base.Tuning = nil
+	base.Stream = cloneTuningObject(base.Stream)
+	enforceClientStream(base.Stream)
 	raw, err := base.NativeLink()
 	if err != nil {
 		return "", err

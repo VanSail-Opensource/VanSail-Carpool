@@ -29,7 +29,18 @@ func TuningCompatibility(overrides ConnectionOverrides, proxies []Proxy) []Tunin
 		}
 		eligible, _, _ := CompatibleProxies(format, plain)
 		for _, spec := range allTuningSpecs() {
-			item := TuningApplicability{Key: spec.Key, Format: format, State: "inherited", Reasons: []string{}, Restrictions: spec.Restrictions}
+			_, chosen := values[spec.Key]
+			available := len(proxies) == 0 && spec.Context != "uot" && spec.Context != "sager-mux" || slices.ContainsFunc(proxies, func(p Proxy) bool { return tuningContextAvailable(spec.Context, p) })
+			if !chosen && !available {
+				continue
+			}
+
+			item := TuningApplicability{Key: spec.Key, Format: format, State: "inherited", Reasons: []string{}, Restrictions: tuningRestrictions(spec, format)}
+			if spec.Key == "tcpMptcp" {
+				item.State = "fixed-off"
+				items = append(items, item)
+				continue
+			}
 			if value, exists := values[spec.Key]; exists {
 				if spec.Mappings[format] == "" {
 					item.State = "unsupported"
@@ -67,22 +78,6 @@ func tuningReason(p Proxy, spec tuningSpec, format string, value any, values map
 	}
 	context := spec.Context
 	stream := p.Stream
-	if strings.HasPrefix(context, "download:") {
-		context = strings.TrimPrefix(context, "download:")
-		if text(stream, "network") != "xhttp" {
-			return "transport"
-		}
-		mode := text(object(stream, "xhttpSettings"), "mode")
-		if explicit, ok := values["xhttpMode"].(string); ok {
-			mode = explicit
-		}
-		if mode == "stream-one" {
-			return "mode"
-		}
-		if down := object(object(object(stream, "xhttpSettings"), "extra"), "downloadSettings"); len(down) > 0 {
-			stream = down
-		}
-	}
 	security := text(stream, "security")
 	switch context {
 	case "tls":
@@ -115,8 +110,14 @@ func tuningReason(p Proxy, spec tuningSpec, format string, value any, values map
 			return "value"
 		}
 	case "sager-mux":
+		if text(stream, "network") == "xhttp" {
+			return "builtInMultiplex"
+		}
 		return "serverCapability" // Xray Mux is not SagerNet multiplex.
 	case "xray-mux":
+		if text(stream, "network") == "xhttp" {
+			return "builtInMultiplex"
+		}
 		if p.Protocol != "vless" && p.Protocol != "vmess" && p.Protocol != "trojan" && p.Protocol != "shadowsocks" {
 			return "protocol"
 		}
@@ -136,31 +137,15 @@ func tuningReason(p Proxy, spec tuningSpec, format string, value any, values map
 			return "serverLimit"
 		}
 	}
-	if strings.HasSuffix(spec.Key, "Fingerprint") || spec.Key == "fingerprint" {
-		if format == "sing-box" && !slices.Contains([]string{"chrome", "firefox", "edge", "safari", "360", "qq", "ios", "android", "random", "randomized"}, value.(string)) {
-			return "fingerprint"
-		}
-		if format == "clash" && (!slices.Contains([]string{"chrome", "firefox", "edge", "safari", "360", "qq", "ios", "android", "random"}, value.(string)) || p.Protocol != "vless" && p.Protocol != "vmess" && p.Protocol != "trojan") {
-			return "fingerprint"
-		}
+	if spec.Key == "fingerprint" && !fingerprintSupported(format, value.(string)) {
+		return "fingerprint"
 	}
-	if (spec.Key == "disableSystemRoot" || spec.Key == "downloadDisableSystemRoot") && value == true {
-		tls := object(stream, "tlsSettings")
-		if tls["pinnedPeerCertSha256"] == nil && tls["certificates"] == nil {
-			return "trust"
-		}
-	}
-	if (format == "sing-box" || format == "clash") && (spec.Key == "tcpFastOpen" || spec.Key == "downloadTcpFastOpen") {
+	if (format == "sing-box" || format == "clash") && spec.Key == "tcpFastOpen" {
 		if _, ok := value.(bool); !ok {
 			return "value"
 		}
 	}
-	if format == "sing-box" && spec.Key == "mark" {
-		if n, _ := value.(float64); n < 0 {
-			return "value"
-		}
-	}
-	if spec.Key == "spiderX" || spec.Key == "downloadSpiderX" {
+	if spec.Key == "spiderX" {
 		if text, _ := value.(string); text != "" && !strings.HasPrefix(text, "/") {
 			return "value"
 		}

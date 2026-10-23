@@ -27,6 +27,9 @@ func main() {
 		if r.URL.Query().Get("mode") == "stream-one" {
 			proxies[1].Stream["xhttpSettings"].(map[string]any)["mode"] = "stream-one"
 		}
+		if r.URL.Query().Has("empty") {
+			proxies = nil
+		}
 		input = subscription.ActiveTuningFor(input, proxies)
 		errors := subscription.ValidateTuning(input)
 		if len(errors) == 0 {

@@ -113,6 +113,9 @@ func RenderNative(proxies []Proxy) ([]byte, error) {
 	links := []string{}
 	total := 0
 	for _, proxy := range proxies {
+		if proxy.Tuning == nil {
+			proxy.Tuning = &ConnectionOverrides{}
+		}
 		link, err := proxy.NativeLink()
 		if err != nil {
 			return nil, err

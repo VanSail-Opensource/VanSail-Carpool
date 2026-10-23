@@ -81,7 +81,7 @@ func SplitProxy(id, mode string, up, down Proxy) (Proxy, error) {
 	object(settings, "extra")["downloadSettings"] = download
 	result := up
 	result.ID = "split:" + id
-	result.Name = up.Name + " ↑ / " + down.Name + " ↓"
+	result.Name = splitProfileName(up.Name, down.Name)
 	result.Stream = stream
 	result.Tuning = &options
 	result.MapperHost = nil

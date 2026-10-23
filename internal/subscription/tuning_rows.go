@@ -25,8 +25,3 @@ func (h *TuningHeader) UnmarshalJSON(raw []byte) error {
 	type plain TuningHeader
 	return decodeTuningRow(raw, []string{"name", "value"}, (*plain)(h))
 }
-
-func (s *TuningSocketOption) UnmarshalJSON(raw []byte) error {
-	type plain TuningSocketOption
-	return decodeTuningRow(raw, []string{"system", "network", "level", "opt", "value", "type"}, (*plain)(s))
-}

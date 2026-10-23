@@ -87,3 +87,5 @@ format selection and explicit-format URLs remain available.
 
 The DIY Center entrance lives on Settings. This page retains subscription links,
 host inventory and availability diagnostics.
+
+In the external DIY workspace, MemberRoutingEditor omits its repeated heading/refresh description and delegates Save to the shared bar; rule editing and trace controls keep their existing behavior.

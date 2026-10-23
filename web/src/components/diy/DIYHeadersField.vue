@@ -12,8 +12,8 @@ function update(index: number, key: keyof Header, value: unknown) { emit('update
   <div class="grid gap-2">
     <div v-for="(row, index) in modelValue ?? []" :key="index" class="flex items-start gap-2">
       <div class="grid flex-1 min-w-0 gap-2 sm:grid-cols-2"><UInput :id="`${id}-${index}-name`" :model-value="row.name" :aria-label="t('diy.headerName')" :placeholder="t('diy.headerName')" :disabled="disabled" :maxlength="128" @update:model-value="update(index, 'name', $event)" /><UInput :id="`${id}-${index}-value`" :model-value="row.value" :aria-label="t('diy.headerValue')" :placeholder="t('diy.headerValue')" :disabled="disabled" :maxlength="4096" @update:model-value="update(index, 'value', $event)" /></div>
-      <UButton icon="i-ph-trash" color="neutral" variant="ghost" :aria-label="t('common.delete')" :disabled="disabled" @click="emit('update:modelValue', modelValue!.filter((_, i) => i !== index))" />
+      <UButton data-haptic="action" icon="i-ph-trash" color="neutral" variant="ghost" :aria-label="t('common.delete')" :disabled="disabled" @click="emit('update:modelValue', modelValue!.filter((_, i) => i !== index))" />
     </div>
-    <UButton class="justify-self-start" icon="i-ph-plus" color="neutral" variant="outline" :label="t('diy.addRow')" :disabled="disabled || (modelValue?.length ?? 0) >= 32" @click="emit('update:modelValue', [...(modelValue ?? []), { name: '', value: '' }])" />
+    <UButton data-haptic="action" class="justify-self-start" icon="i-ph-plus" color="neutral" variant="outline" :label="t('diy.addRow')" :disabled="disabled || (modelValue?.length ?? 0) >= 32" @click="emit('update:modelValue', [...(modelValue ?? []), { name: '', value: '' }])" />
   </div>
 </template>

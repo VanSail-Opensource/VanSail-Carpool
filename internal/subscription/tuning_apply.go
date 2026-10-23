@@ -3,12 +3,11 @@ package subscription
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
 func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, error) {
-	if p.Tuning == nil {
+	if p.Tuning == nil && format == "xray" {
 		return out, nil
 	}
 	raw, err := json.Marshal(out)
@@ -19,7 +18,10 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 	if err = json.Unmarshal(raw, &result); err != nil {
 		return nil, err
 	}
-	values, err := p.Tuning.values()
+	values := map[string]any{}
+	if p.Tuning != nil {
+		values, err = p.Tuning.values()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -32,15 +34,7 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 		if format == "xray" && strings.HasPrefix(path, "streamSettings.xhttpSettings.extra.") {
 			preserveXHTTPExtra(result)
 		}
-		if strings.Contains(path, "downloadSettings.") {
-			prepareDownloadTuning(result)
-		}
 		security := text(p.Stream, "security")
-		if strings.HasPrefix(spec.Context, "download:") {
-			if down := object(object(object(p.Stream, "xhttpSettings"), "extra"), "downloadSettings"); len(down) > 0 {
-				security = text(down, "security")
-			}
-		}
 		path = strings.ReplaceAll(path, "$security", security+"Settings")
 		if spec.Kind == "range" {
 			value = wireTuningRange(value.(map[string]any))
@@ -52,25 +46,6 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 				headers[row["name"].(string)] = row["value"]
 			}
 			value = headers
-		}
-		if format == "xray" && (spec.Key == "cipherSuites" || spec.Key == "downloadCipherSuites") {
-			names := []string{}
-			for _, v := range value.([]any) {
-				names = append(names, v.(string))
-			}
-			value = strings.Join(names, ":")
-		}
-		if format == "sing-box" && (spec.Key == "tcpKeepAliveInterval" || spec.Key == "tcpKeepAliveIdle" || spec.Key == "connectTimeoutMs") {
-			n := value.(float64)
-			if n < 0 {
-				setTuningPath(result, "disable_tcp_keep_alive", true)
-				continue
-			}
-			unit := "s"
-			if spec.Key == "connectTimeoutMs" {
-				unit = "ms"
-			}
-			value = strconv.FormatInt(int64(n), 10) + unit
 		}
 		if (format == "clash" || format == "stash") && spec.Key == "ssNetwork" {
 			value = value != "tcp"
@@ -89,15 +64,13 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 			}
 			value = curves
 		}
-		if format == "clash" && (spec.Key == "fingerprint" || spec.Key == "downloadFingerprint") && value == "ios" {
-			value = "iOS"
-		}
 		if spec.Kind == "headers" {
 			mergeTuningHeaders(result, path, value.(map[string]any))
 		} else {
 			setTuningPath(result, path, value)
 		}
 	}
+	applyClientPolicy(format, result)
 	return result, nil
 }
 
@@ -141,27 +114,4 @@ func mergeTuningHeaders(root map[string]any, path string, headers map[string]any
 		}
 		current[name] = value
 	}
-}
-
-func prepareDownloadTuning(root map[string]any) {
-	stream := object(root, "streamSettings")
-	if stream == nil {
-		return
-	}
-	xhttp := object(stream, "xhttpSettings")
-	extra := object(xhttp, "extra")
-	if extra == nil {
-		extra = map[string]any{}
-		xhttp["extra"] = extra
-	}
-	if object(extra, "downloadSettings") != nil {
-		return
-	}
-	// Inherit the administrator's transport/security identity. Only the member's
-	// allowlisted download tuning is then applied; no address/key/path is editable.
-	// root has already passed a JSON round trip, so this clone cannot contain
-	// unsupported values. Copy recursively without an ignored marshal error.
-	download := cloneTuningObject(stream)
-	delete(object(object(download, "xhttpSettings"), "extra"), "downloadSettings")
-	extra["downloadSettings"] = download
 }

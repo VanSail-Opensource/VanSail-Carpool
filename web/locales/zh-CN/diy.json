@@ -10,7 +10,7 @@
     "enabled": "启用",
     "disabled": "停用",
     "system": "系统默认",
-    "reset": "恢复继承",
+    "reset": "重置选项",
     "resetField": "继承此选项",
     "resetHint": "仅重置订阅选项，保留自定义路由。",
     "minimum": "最小值",
@@ -62,7 +62,8 @@
       "applied": "已应用",
       "inherited": "继承",
       "unsupported": "不支持",
-      "endpoint-incompatible": "端点不兼容"
+      "endpoint-incompatible": "端点不兼容",
+      "fixed-off": "始终禁用"
     },
     "reasons": {
       "format": "此格式没有文档规定的等价选项。",
@@ -77,7 +78,8 @@
       "trust": "需要管理员提供证书信任配置。",
       "mode": "stream-one 模式不支持独立下行连接。",
       "serverLimit": "超过端点配置的限制。",
-      "dependency": "此选项在当前模式下不适用。"
+      "dependency": "此选项在当前模式下不适用。",
+      "builtInMultiplex": "XHTTP 使用自身内置的多路复用。"
     },
     "restrictions": {
       "linux": "路由标记需要 Linux。",
@@ -87,7 +89,8 @@
       "singbox113": "sing-box 保活选项需要 1.13+。",
       "stashUotVersions": "Stash UoT 需要 iOS/tvOS 3.1.1+ 或 macOS 3.1+，并须有兼容服务器。",
       "stashXhttpVersions": "Stash XHTTP 需要 iOS/tvOS 3.6+ 或 macOS 4.3+。",
-      "serverCapability": "启用前须有兼容的服务器协议。"
+      "serverCapability": "启用前须有兼容的服务器协议。",
+      "fixedOff": "MPTCP 始终禁用。"
     },
     "errors": {
       "invalid": "请输入受支持且位于显示范围内的值。",
@@ -98,7 +101,8 @@
       "xrayValidation": "客户端选项未通过固定版本的 Xray 校验，请检查相互依赖的选项。",
       "routing": "请检查自定义路由草稿。",
       "whitelistInvalid": "请输入不超过额度的唯一公网 IP。",
-      "splitInvalid": "主机或模式已不可用，请选择兼容主机或移除此配置。"
+      "splitInvalid": "主机或模式已不可用，请选择兼容主机或移除此配置。",
+      "fixedOff": "此设置始终禁用。"
     },
     "units": {
       "seconds": "秒",
@@ -127,9 +131,9 @@
     "tabs": {
       "connection": "连接",
       "xhttp": "XHTTP",
-      "network": "网络",
       "routing": "路由",
-      "whitelist": "白名单"
+      "whitelist": "白名单",
+      "compatibility": "客户端兼容性"
     },
     "split": {
       "title": "上下行分离",
@@ -150,6 +154,8 @@
       "unavailable": "保存价格尚未配置。"
     },
     "noApplicableFields": "当前主机没有适用的选项。",
-    "quoteChanged": "额度或价格已变更。已刷新报价并保留草稿，请查看后再次保存。"
+    "quoteChanged": "额度或价格已变更。已刷新报价并保留草稿，请查看后再次保存。",
+    "rangeExample": "例如 100 或 100-200",
+    "rangeInvalid": "请输入数值或从小到大的范围，例如 100-200。"
   }
 }

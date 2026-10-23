@@ -9,6 +9,7 @@ import { ApiError } from '@/api/http'
 import { initializeBrowserTheme } from '@/browser/theme'
 import { operationReceiptLoaderKey } from '@/composables/operationReceiptLoader'
 import { setExperience } from '@/utils/experience'
+import { installHapticClickFeedback } from '@/utils/telegramHaptics'
 import { setLocale, t } from '@/i18n'
 import type { components } from '@/api/generated'
 import type { OperationReceipt } from '@/api/types'
@@ -22,7 +23,11 @@ setExperience(params.has('admin') ? 'browser' : 'miniapp')
 if (params.has('admin')) { await import('@/browser/styles.css'); initializeBrowserTheme() }
 else { await import('@/styles/main.css') }
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
-const trace = { calls: [] as string[], writes: [] as unknown[], keys: [] as string[], previews: [] as unknown[], polls: 0 }
+const trace = { calls: [] as string[], writes: [] as unknown[], keys: [] as string[], previews: [] as unknown[], polls: 0, haptics: [] as string[] }
+if (params.has('haptics') && !params.has('admin')) {
+  Object.assign(window, { Telegram: { WebApp: { version: '8.0', isVersionAtLeast: () => true, HapticFeedback: { impactOccurred: (value: string) => trace.haptics.push(value), selectionChanged: () => trace.haptics.push('selection'), notificationOccurred: (value: string) => trace.haptics.push(value) } } } })
+  installHapticClickFeedback()
+}
 const nodes = params.has('empty') ? [] : [{ id: 'a', name: 'Amsterdam' }, { id: 'b', name: 'Singapore' }, { id: 'c', name: 'Tokyo' }]
 if (params.has('unused') && nodes.length) nodes.push({ id: 'd', name: 'New York' })
 const endpoints: NonNullable<RoutingView['endpoints']> = nodes.flatMap(node => [

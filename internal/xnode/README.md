@@ -250,9 +250,8 @@ handover. `ownership_assets_test.go` guards this preparation/access boundary.
 
 - `master_socket_test.go`: Hosted regression coverage: `TestEnrollmentReconnectAndReplayUseAuthoritativeRevisions`, `TestNodeSnapshotsReplaceCountsWithoutPersistingTelemetry`.
 
-- `migration_preflight.go`: Entry points: `VerifyClientEndpoints`.
 
-- `ownership.go`: Entry points: `NativeOwner`, `Candidate`, `XNodeMigration`.
+- `ownership.go`: Entry points: `NativeOwner`.
 
 - `period_operations.go`: Entry points: `Quiesce`, `CloseForReplacement`, `ResetTraffic`, `RestorePurchase`.
 
@@ -586,3 +585,7 @@ rechecks capability at execution and forwards typed optional forced recovery.
 `operations.go` retains durable command replay and per-node execution ordering.
 
 `shadowsocks_methods.go` validates managed native listener methods. Node ownership is native-only. Imported usage/history are frozen accounting evidence; there is no source integration, importer, synchronization loop, or migration gate in runtime compilation.
+
+`diy_retirement.go` upgrades encrypted version 0/1 documents to version 2 before HTTP starts. It removes retired tuning, retains whitelist and split references, and reseals with a fenced revision increment without charging or modifying receipts. Unknown versions or malformed retained values refuse startup rather than erase data.
+
+`diy_retirement_test.go` checks encrypted cleanup, retained whitelist/split references, fenced revisions, unchanged ledger and idempotent upgrades.

@@ -5,7 +5,7 @@ XNodeDIYField:
   properties:
     key: {type: string}
     group: {type: string}
-    kind: {type: string, enum: [boolean, integer, enum-number, enum, string, strings, range, headers, sockets, fast-open]}
+    kind: {type: string, enum: [boolean, integer, enum-number, enum, string, strings, range, headers, fast-open]}
     minimum: {type: integer}
     maximum: {type: integer}
     enum: {type: array, items: {type: string}}
@@ -32,7 +32,7 @@ XNodeTuningApplicability:
   properties:
     key: {type: string}
     format: {type: string}
-    state: {type: string, enum: [inherited, applied, unsupported, endpoint-incompatible]}
+    state: {type: string, enum: [inherited, applied, unsupported, endpoint-incompatible, fixed-off]}
     appliedHosts: {type: integer, minimum: 0}
     incompatibleHosts: {type: integer, minimum: 0}
     reasons: {type: array, items: {type: string}}

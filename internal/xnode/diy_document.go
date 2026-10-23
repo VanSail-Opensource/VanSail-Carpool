@@ -39,7 +39,7 @@ type diyReader interface {
 }
 
 func (s *Service) readDIYSettings(ctx context.Context, user string) (DIYDocument, DIYSettings, error) {
-	settings := DIYSettings{Version: 1, Whitelist: WhitelistPolicy{IPs: []string{}}, SplitProfiles: []SplitProfile{}}
+	settings := DIYSettings{Version: 2, Whitelist: WhitelistPolicy{IPs: []string{}}, SplitProfiles: []SplitProfile{}}
 	doc := DIYDocument{UserID: user}
 	repo, ok := s.repo.(diyReader)
 	if !ok {
@@ -53,19 +53,7 @@ func (s *Service) readDIYSettings(ctx context.Context, user string) (DIYDocument
 	if err = s.open("xnode.diy."+user, doc.Cipher, &raw); err != nil {
 		return doc, settings, err
 	}
-	var header struct {
-		Version int `json:"version"`
-	}
-	if err = json.Unmarshal(raw, &header); err != nil {
-		return doc, settings, err
-	}
-	if header.Version == 0 {
-		err = json.Unmarshal(raw, &settings.Overrides)
-	} else if header.Version == 1 {
-		err = json.Unmarshal(raw, &settings)
-	} else {
-		err = ErrInvalid
-	}
+	settings, _, err = decodeDIYSettings(raw)
 	if settings.Whitelist.IPs == nil {
 		settings.Whitelist.IPs = []string{}
 	}

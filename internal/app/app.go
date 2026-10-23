@@ -98,6 +98,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	xnodeService := xnode.NewService(store, settings, vault, cfg.PublicBaseURL, upstreams.xnodeValidation)
+	if err = xnodeService.RetireDIYOptions(ctx); err != nil {
+		return cleanup(fmt.Errorf("retire saved client options: %w", err))
+	}
 	xnodeMaster := xnode.NewMaster(xnodeService, logger)
 	provider := proxyProvider{native: xnodeService, master: xnodeMaster, store: store}
 	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: provider}, connectivity.NewXrayProbe(), store, upstreams.connectivity)

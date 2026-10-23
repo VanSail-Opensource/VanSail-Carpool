@@ -18,6 +18,7 @@ func tuningFixture(t *testing.T, raw string) ConnectionOverrides {
 
 func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 	p := Proxy{ID: "one", Name: "TLS host", Protocol: "vless", Address: "server.example", Port: 443, Account: map[string]any{"id": "c1d50c69-2f17-41ec-a23c-b30eb375639f", "encryption": "none"}, Stream: map[string]any{"network": "tcp", "security": "tls", "tlsSettings": map[string]any{"serverName": "admin.example", "fingerprint": "chrome"}, "sockopt": map[string]any{"tcpKeepAliveIdle": 42, "tcpFastOpen": true}}}
+	p.Tuning = &ConnectionOverrides{}
 	before, err := p.Outbound()
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +31,7 @@ func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 	if err != nil || string(a) != string(b) {
 		t.Fatal("inheritance changed behavior", err)
 	}
-	o := tuningFixture(t, `{"fingerprint":"firefox","tcpFastOpen":false,"tcpKeepAliveIdle":0,"muxConcurrency":-1}`)
+	o := tuningFixture(t, `{"fingerprint":"firefox","tcpFastOpen":false,"muxXudpConcurrency":-1}`)
 	if errors := ValidateTuning(o); len(errors) != 0 {
 		t.Fatal(errors)
 	}
@@ -45,7 +46,7 @@ func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 		t.Fatal("explicit member option did not follow administrator mapping")
 	}
 	socket := object(stream, "sockopt")
-	if socket["tcpFastOpen"] != false || socket["tcpKeepAliveIdle"] != float64(0) || object(out, "mux")["concurrency"] != float64(-1) {
+	if socket["tcpFastOpen"] != false || socket["tcpKeepAliveIdle"] != float64(42) || object(out, "mux")["xudpConcurrency"] != float64(-1) {
 		t.Fatal("explicit values lost", out)
 	}
 	if text(object(stream, "tlsSettings"), "serverName") != "admin.example" || text(object(p.Stream, "tlsSettings"), "fingerprint") != "chrome" {
@@ -69,18 +70,18 @@ func TestTuningInheritanceExplicitValuesAndProtectedIdentity(t *testing.T) {
 }
 
 func TestTuningStrictTypesRangesDependenciesAndMixedHosts(t *testing.T) {
-	for _, raw := range []string{`{"password":"secret"}`, `{"serverName":"changed"}`, `{"tcpFastOpen":null}`, `{"tcpFastOpen":0.5}`, `{"xhttpXPaddingBytes":{"min":null,"max":1}}`, `{"unknown":true}`} {
+	for _, raw := range []string{`{"password":"secret"}`, `{"serverName":"changed"}`, `{"tcpFastOpen":null}`, `{"tcpFastOpen":0.5}`, `{"xhttpXPaddingBytes":{"min":null,"max":1}}`, `{"unknown":true}`, `{"minVersion":"1.3","maxVersion":"1.2"}`, `{"downloadTcpFastOpen":false}`, `{"customSockopt":[]}`} {
 		var o ConnectionOverrides
 		if json.Unmarshal([]byte(raw), &o) == nil {
 			t.Fatal("protected/invalid accepted", raw)
 		}
 	}
-	for _, raw := range []string{`{"muxXudpConcurrency":1025}`, `{"minVersion":"1.3","maxVersion":"1.2"}`, `{"xhttpHeaders":[{"name":"Host","value":"evil"}]}`, `{"xmuxMaxConcurrency":{"min":1,"max":2},"xmuxMaxConnections":{"min":1,"max":2}}`, `{"singboxMuxEnabled":true}`} {
+	for _, raw := range []string{`{"muxXudpConcurrency":1025}`, `{"xhttpHeaders":[{"name":"Host","value":"evil"}]}`, `{"xmuxMaxConcurrency":{"min":1,"max":2},"xmuxMaxConnections":{"min":1,"max":2}}`, `{"singboxMuxEnabled":true}`} {
 		if errors := ValidateTuning(tuningFixture(t, raw)); len(errors) == 0 {
 			t.Fatal("invalid values accepted", raw)
 		}
 	}
-	o := tuningFixture(t, `{"fingerprint":"firefox","spiderX":"/member","tcpFastOpen":0,"xmuxHKeepAlivePeriod":-1}`)
+	o := tuningFixture(t, `{"fingerprint":"firefox","spiderX":"/member","tcpFastOpen":0,"xmuxMaxConcurrency":{"min":1,"max":2}}`)
 	items := TuningCompatibility(o, []Proxy{{ID: "tls", Name: "TLS", Protocol: "trojan", Address: "one.example", Port: 443, Account: map[string]any{"password": "protected"}, Stream: map[string]any{"security": "tls", "tlsSettings": map[string]any{}, "network": "tcp"}}, {ID: "ss", Name: "SS", Protocol: "shadowsocks", Address: "two.example", Port: 443, Account: map[string]any{"method": "aes-128-gcm", "password": "protected"}, Stream: map[string]any{"network": "tcp"}}})
 	for _, item := range items {
 		if item.Key == "fingerprint" && item.Format == "xray" && (item.AppliedHosts != 1 || item.IncompatibleHosts != 1) {
@@ -89,7 +90,7 @@ func TestTuningStrictTypesRangesDependenciesAndMixedHosts(t *testing.T) {
 		if item.Key == "tcpFastOpen" && item.Format == "sing-box" && item.State != "endpoint-incompatible" {
 			t.Fatal("integer TFO mapped to boolean", item)
 		}
-		if item.Key == "xmuxHKeepAlivePeriod" && item.Format == "stash" && item.State != "unsupported" {
+		if item.Key == "xmuxMaxConcurrency" && item.Format == "stash" && item.State != "unsupported" {
 			t.Fatal("invented Stash XMUX mapping", item)
 		}
 	}

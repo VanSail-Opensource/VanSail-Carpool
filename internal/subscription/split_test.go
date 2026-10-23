@@ -14,7 +14,7 @@ func TestSplitSessionIdentityModesAndClientFormats(t *testing.T) {
 	for _, mode := range []string{"auto", "packet-up", "stream-up"} {
 		t.Run(mode, func(t *testing.T) {
 			up, down := splitFixture("upload"), splitFixture("download")
-			options := tuningFixture(t, `{"xhttpMode":"stream-one","downloadTcpFastOpen":false}`)
+			options := tuningFixture(t, `{"xhttpMode":"stream-one"}`)
 			up.Tuning = &options
 			p, err := SplitProxy("one", mode, up, down)
 			if err != nil {
@@ -23,7 +23,7 @@ func TestSplitSessionIdentityModesAndClientFormats(t *testing.T) {
 			out, err := p.Outbound()
 			stream := object(out, "streamSettings")
 			download := object(object(object(stream, "xhttpSettings"), "extra"), "downloadSettings")
-			if err != nil || download["address"] != "download.example" || text(object(download, "tlsSettings"), "serverName") != "download.example" || object(download, "sockopt")["tcpFastOpen"] != false {
+			if err != nil || download["address"] != "download.example" || text(object(download, "tlsSettings"), "serverName") != "download.example" {
 				t.Fatal("download reference/tuning lost", out, err)
 			}
 			if text(object(stream, "xhttpSettings"), "mode") != mode || text(object(up.Stream, "xhttpSettings"), "mode") != "auto" {
@@ -68,12 +68,12 @@ func TestSplitSessionIdentityModesAndClientFormats(t *testing.T) {
 }
 
 func TestInactiveTuningIsExcludedBeforeValidationAndExport(t *testing.T) {
-	o := tuningFixture(t, `{"xhttpMode":"stream-one","downloadTcpFastOpen":false,"xhttpScMaxEachPostBytes":{"min":9,"max":1}}`)
+	o := tuningFixture(t, `{"xhttpMode":"stream-one","xhttpScMaxEachPostBytes":{"min":9,"max":1}}`)
 	if problems := ValidateTuning(o); len(problems) != 0 {
 		t.Fatal("inactive values validated", problems)
 	}
 	active := ActiveTuning(o)
-	if active.DownloadTcpFastOpen != nil || active.XhttpScMaxEachPostBytes != nil || o.DownloadTcpFastOpen == nil {
+	if active.XhttpScMaxEachPostBytes != nil || o.XhttpScMaxEachPostBytes == nil {
 		t.Fatal("inactive value escaped or draft mutated")
 	}
 	p := splitFixture("ordinary")
@@ -88,9 +88,9 @@ func TestInactiveTuningIsExcludedBeforeValidationAndExport(t *testing.T) {
 func TestInheritedModeControlsShareApplicability(t *testing.T) {
 	p := splitFixture("inherited")
 	object(p.Stream, "xhttpSettings")["mode"] = "stream-one"
-	o := tuningFixture(t, `{"downloadTcpFastOpen":false,"xhttpScMaxEachPostBytes":{"min":9,"max":1}}`)
+	o := tuningFixture(t, `{"xhttpScMaxEachPostBytes":{"min":9,"max":1}}`)
 	active := ActiveTuningFor(o, []Proxy{p})
-	if active.DownloadTcpFastOpen != nil || active.XhttpScMaxEachPostBytes != nil {
+	if active.XhttpScMaxEachPostBytes != nil {
 		t.Fatal("inherited stream-one retained inactive options")
 	}
 	for _, field := range TuningFieldsFor([]Proxy{p}) {
