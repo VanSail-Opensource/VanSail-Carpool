@@ -5,6 +5,7 @@ This generator only consumes schema/empty-installation metadata, never live rows
 """
 
 import json
+import hashlib
 import re
 from pathlib import Path
 
@@ -90,11 +91,14 @@ def main():
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text("\n".join(chunks), encoding="utf-8", newline="\n")
     contract = {
+        "order": ordered,
         "tables": [{"name": t["name"], "columns": t["columns"]} for t in inventory["tables"]],
         "indexes": [o["name"] for o in inventory["objects"] if o["type"] == "index"],
         "triggers": [o["name"] for o in inventory["objects"] if o["type"] == "trigger"],
     }
     (destination.parent.parent / "contract.json").write_text(json.dumps(contract, indent=2) + "\n", encoding="utf-8", newline="\n")
+    canonical = "".join(o["type"] + "\0" + o["name"] + "\0" + o["sql"].replace("\r", "") + "\0" for o in inventory["objects"])
+    (destination.parent.parent / "source-schema.sha256").write_text(hashlib.sha256(canonical.encode()).hexdigest() + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

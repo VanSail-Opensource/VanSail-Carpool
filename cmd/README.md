@@ -15,3 +15,7 @@ does not start HTTP, schedulers or provider executors. See
 using database-only configuration. Use migration-role credentials for `migrate`;
 `verify` checks version history and the complete catalog contract without schema
 mutation. See [PostgreSQL](../internal/platform/database/postgres/README.md).
+
+`db-migrate inspect|export|import|verify|cutover-check` converts a frozen SQLite
+snapshot into an inactive, empty PostgreSQL target and records exact verification
+evidence. See [conversion](../internal/platform/datamigrate/README.md).

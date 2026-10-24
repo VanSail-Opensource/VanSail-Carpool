@@ -31,3 +31,7 @@ legacy binding boundary while retaining `database/sql` repository contracts.
 
 `bind_test.go` verifies SQL-aware quoting, comments, dollar strings, native
 parameters, aggregate/scalar distinctions and null equality in hosted CI.
+
+`contract.go` exposes the generated source contract and `source-schema.sha256`
+fingerprint to offline conversion. Migration `00005_cutover_state.sql` records
+inactive import/verification gates and makes source FKs transaction-deferrable.

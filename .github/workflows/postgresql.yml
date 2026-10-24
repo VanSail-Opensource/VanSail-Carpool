@@ -61,6 +61,18 @@ jobs:
             export POSTGRES_CONTRACT_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
             /tmp/database.test -test.v -test.parallel=2 -test.timeout=20m -test.run "$(cat /tmp/postgres-contracts.regex)"
           '
+      - name: Verify exact snapshot conversion and cutover refusal paths
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go test -c -o "$RUNNER_TEMP/migration.test" ./internal/platform/datamigrate
+          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          docker cp "$RUNNER_TEMP/migration.test" "$container:/tmp/migration.test"
+          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+            password=$(cat /run/secrets/migration_password)
+            export POSTGRES_MIGRATION_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
+            /tmp/migration.test -test.v -test.timeout=5m
+          '
       - uses: actions/upload-artifact@v7
         if: always()
         with:
