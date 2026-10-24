@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { paygApi } from '@/api/payg'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
@@ -9,6 +10,8 @@ import PAYGSquadCard from './PAYGSquadCard.vue'
 
 const { t } = useI18n()
 const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed')
+const emit = defineEmits<{ ready: [value: boolean] }>()
+watch(loading, value => emit('ready', !value), { immediate: true })
 </script>
 
 <template>

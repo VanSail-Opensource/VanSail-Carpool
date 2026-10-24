@@ -23,6 +23,7 @@ import { useCatalogSquadPresentation } from './useCatalogSquadPresentation'
 import { useCatalogStepPersistence } from './useCatalogStepPersistence'
 
 defineProps<{ embedded?: boolean }>()
+const emit = defineEmits<{ ready: [value: boolean] }>()
 
 const activeStep = shallowRef(1)
 const stepDirection = shallowRef(1)
@@ -59,6 +60,7 @@ const {
   discardCoupon,
   confirmPurchase,
 } = useCatalog()
+watch(loading, value => emit('ready', !value), { immediate: true })
 
 const { clearPersistedStep } = useCatalogStepPersistence({
   activeStep,

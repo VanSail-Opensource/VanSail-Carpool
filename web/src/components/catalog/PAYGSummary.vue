@@ -27,7 +27,7 @@ const { t } = useI18n()
 
 <style scoped>
 .payg-summary { display: grid; gap: .5rem; padding: 0 0 .65rem; border-bottom: 1px solid var(--line); }
-.payg-summary__wallet > div, .payg-summary__window { animation: payg-summary 200ms ease-out both; animation-delay: var(--catalog-entry-delay, 0ms); }
+.payg-summary__window { animation: payg-summary 200ms ease-out both; animation-delay: var(--catalog-entry-delay, 0ms); }
 .payg-summary__wallet { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .payg-summary__wallet > div { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; gap: .1rem .6rem; }
 .payg-summary__wallet span, .payg-summary__window small, dt { color: var(--text-muted); font-size: .72rem; }
@@ -39,5 +39,5 @@ const { t } = useI18n()
 .payg-summary dd .iconify { color: var(--text-muted); font-size: .85rem; }
 @media (min-width: 900px) { .payg-summary { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2rem; } .payg-summary__wallet { justify-content: flex-start; } }
 @keyframes payg-summary { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .payg-summary__wallet > div, .payg-summary__window { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .payg-summary__window { animation: none; } }
 </style>
