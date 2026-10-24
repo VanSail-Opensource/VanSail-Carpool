@@ -1,5 +1,9 @@
 name: remna-user-panel
 
+# Optional, isolated PostgreSQL 18 infrastructure and protected-secret setup:
+# deploy/postgres/compose.yml and deploy/postgres/README.md.
+# Keep SQLite until the explicit migration and verification gates pass.
+
 services:
   vansail-carpool:
     image: ghcr.io/txyyddss/remna-user-panel:latest

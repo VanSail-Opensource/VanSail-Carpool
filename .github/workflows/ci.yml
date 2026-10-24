@@ -47,6 +47,10 @@ jobs:
             backend:
               - '.github/workflows/ci.yml'
               - '.github/workflows/container.yml'
+              - '.github/workflows/postgresql.yml'
+              - 'deploy/postgres/**'
+              - 'docs/plans/postgresql/**'
+              - 'scripts/postgresql_inventory.py'
               - 'scripts/ci/**'
               - 'cmd/**'
               - 'internal/**'
@@ -56,6 +60,12 @@ jobs:
               - 'go.sum'
               - 'go.work'
               - 'go.work.sum'
+
+  postgresql:
+    name: PostgreSQL foundation gates
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/postgresql.yml
 
   frontend:
     name: Frontend contract and quality

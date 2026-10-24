@@ -43,6 +43,9 @@ import (
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
 func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
+	if cfg.Database.Driver == "postgres" {
+		return nil, fmt.Errorf("PostgreSQL application activation requires completed repository compatibility and migration verification")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	migrationVersions, err := database.MigrationVersions()

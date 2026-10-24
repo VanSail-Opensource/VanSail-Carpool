@@ -1,5 +1,14 @@
 # Runtime configuration
 
+`database.go` validates explicit `DB_DRIVER` selection, protected
+`DATABASE_URL_FILE` or `DATABASE_URL`, pool bounds, duration deadlines and startup
+migration policy. SQLite remains the default. An explicitly configured PostgreSQL
+deployment must never silently open SQLite; application activation remains gated
+until repository compatibility is implemented. Errors never echo connection URLs
+or secret file contents. See [infrastructure](../../../deploy/postgres/README.md).
+`database_test.go` covers explicit opt-in, URL redaction, pool/deadline bounds and
+migration defaults in hosted CI.
+
 - `config.go` loads environment-backed server, database, Telegram, provider, and security configuration with validated defaults.
 - `ADMIN_TELEGRAM_ID` accepts one or more comma-separated positive Telegram user IDs; duplicates are ignored.
 - `config_test.go` verifies canonical public-origin validation and complete valid environment loading.

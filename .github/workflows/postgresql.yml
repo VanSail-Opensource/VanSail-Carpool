@@ -1,0 +1,47 @@
+name: PostgreSQL migration gates
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Verify configuration and deterministic post-startup schema
+        run: |
+          go test ./internal/platform/config ./internal/platform/dbinventory ./cmd/db-inventory
+          go run ./cmd/db-inventory --output "$RUNNER_TEMP/schema"
+          diff --strip-trailing-cr docs/plans/postgresql/sqlite-schema.sql "$RUNNER_TEMP/schema/sqlite-schema.sql"
+          diff --strip-trailing-cr docs/plans/postgresql/sqlite-inventory.json "$RUNNER_TEMP/schema/sqlite-inventory.json"
+      - name: Create protected infrastructure secrets
+        run: |
+          umask 077
+          mkdir -p deploy/postgres/secrets
+          for role in postgres application migration; do
+            openssl rand -hex 32 > "deploy/postgres/secrets/${role}_password"
+          done
+          docker compose -f deploy/postgres/compose.yml --profile postgres config --quiet
+      - name: Start PostgreSQL 18
+        run: docker compose -f deploy/postgres/compose.yml --profile postgres up -d --wait
+      - name: Verify SCRAM authentication and application privileges
+        run: |
+          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+            export PGPASSWORD="$(cat /run/secrets/application_password)"
+            psql -h 127.0.0.1 -U vansail_app -d vansail --set ON_ERROR_STOP=1 <<'"'"'SQL'"'"'
+          SELECT 1 / ((current_user = 'vansail_app')::int);
+          SELECT 1 / ((NOT has_schema_privilege(current_user, 'public', 'CREATE'))::int);
+          SELECT 1 / ((current_setting('password_encryption') = 'scram-sha-256')::int);
+          SQL
+          '
+      - name: Stop isolated infrastructure
+        if: always()
+        run: docker compose -f deploy/postgres/compose.yml --profile postgres down -v

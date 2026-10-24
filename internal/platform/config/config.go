@@ -15,6 +15,7 @@ import (
 
 // Config contains the values required before encrypted dashboard settings can be read.
 type Config struct {
+	Database             DatabaseConfig
 	Port                 string
 	DataDir              string
 	DatabasePath         string
@@ -37,6 +38,11 @@ type Config struct {
 // Load reads configuration from the environment and returns an actionable error for invalid input.
 func Load() (Config, error) {
 	var cfg Config
+	var databaseErr error
+	cfg.Database, databaseErr = loadDatabase()
+	if databaseErr != nil {
+		return Config{}, databaseErr
+	}
 	cfg.Port = envDefault("PORT", "8080")
 	cfg.DataDir = envDefault("DATA_DIR", "/data")
 	cfg.DatabasePath = filepath.Join(cfg.DataDir, "tx-carpool.db")
