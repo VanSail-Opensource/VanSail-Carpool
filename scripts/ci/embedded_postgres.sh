@@ -89,8 +89,13 @@ restored=$(docker exec -e PGHOST=/var/lib/postgresql/socket "$container" \
 docker exec "$container" /usr/libexec/postgresql18/pg_ctl \
   -D /var/lib/pgbackrest/restore -m fast -w stop
 # PostgreSQL failure must also stop the Go process/container, without a restart loop.
+[[ $(docker inspect -f '{{.State.Running}}' "$container") == true ]]
+stop_status=0
 docker exec "$container" /usr/libexec/postgresql18/pg_ctl \
-  -D /var/lib/postgresql/18/docker -m immediate -w stop
+  -D /var/lib/postgresql/18/docker -m immediate -w stop || stop_status=$?
+if [[ $stop_status != 0 ]]; then
+  echo "pg_ctl exec ended with status $stop_status; verifying supervised container shutdown."
+fi
 for attempt in $(seq 1 15); do
   [[ $(docker inspect -f '{{.State.Running}}' "$container") == false ]] && break
   sleep 1

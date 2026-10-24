@@ -137,5 +137,6 @@ describe('BalancePaymentSheet', () => {
 
     await back.trigger('click')
     expect(wrapper.find('[aria-label="Change provider"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 })
