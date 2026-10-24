@@ -1745,9 +1745,7 @@ CREATE INDEX telegram_pm_conversation_page_idx ON telegram_pm_conversations(crea
 
 CREATE INDEX telegram_pm_payload_expiry_idx ON telegram_pm_payloads(expires_at);
 
-CREATE UNIQUE INDEX telegram_pm_profile_attempt_idx ON provider_operation_items(
-    CASE WHEN target_type='pm_topic_recovery' THEN substr(target_id,1,instr(target_id,':')-1) ELSE target_id END
-) WHERE status='processing' AND ((target_type='pm_conversation' AND item_key='profile') OR target_type='pm_topic_recovery');
+CREATE UNIQUE INDEX telegram_pm_profile_attempt_idx ON provider_operation_items((CASE WHEN target_type='pm_topic_recovery' THEN substr(target_id,1,instr(target_id,':')-1) ELSE target_id END)) WHERE status='processing' AND ((target_type='pm_conversation' AND item_key='profile') OR target_type='pm_topic_recovery');
 
 CREATE UNIQUE INDEX telegram_pm_topic_idx ON telegram_pm_conversations(chat_id,topic_id) WHERE topic_id IS NOT NULL;
 

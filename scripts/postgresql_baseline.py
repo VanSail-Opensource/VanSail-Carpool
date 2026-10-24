@@ -61,6 +61,17 @@ CREATE TRIGGER \"{name}\" {timing} {event} ON \"{table}\" FOR EACH ROW EXECUTE F
 """
 
 
+def index_sql(sql):
+    # PostgreSQL requires parentheses around a CASE index expression. This is
+    # trusted inventoried DDL, with one reviewed CASE expression in the baseline.
+    converted = convert(sql)
+    if re.search(r"\(\s*CASE\b", converted, re.I):
+        converted, count = re.subn(r"\(\s*(CASE\b.*?\bEND)\s*\)", r"((\1))", converted, flags=re.S | re.I)
+        if count != 1:
+            raise ValueError("unreviewed CASE index grammar")
+    return converted
+
+
 def main():
     inventory = json.loads((ROOT / "docs/plans/postgresql/sqlite-inventory.json").read_text(encoding="utf-8"))
     tables = {o["name"]: o for o in inventory["objects"] if o["type"] == "table"}
@@ -83,7 +94,7 @@ def main():
         chunks.append("INSERT INTO schema_migrations(version,applied_at) VALUES('" + version.replace("'", "''") + "',vansail_now());\n")
     for obj in inventory["objects"]:
         if obj["type"] == "index":
-            chunks.append(convert(obj["sql"]) + ";\n")
+            chunks.append(index_sql(obj["sql"]) + ";\n")
         elif obj["type"] == "trigger":
             chunks.append(trigger(obj))
     chunks.append("-- +goose Down\n-- +goose StatementBegin\nDO $$ BEGIN RAISE EXCEPTION 'Authoritative database downgrades require a separately verified recovery'; END $$;\n-- +goose StatementEnd\n")
