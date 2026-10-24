@@ -560,6 +560,12 @@ overrides. `whitelist_policy.go` validates exact public IPs, preserves insertion
 order and derives capacity. `whitelist_deployment.go` requires applied, fresh node
 state before reporting protection active. `diy_deployment.go` shares the existing
 operation dispatcher with routing and waits outside the socket reader.
+`master_access.go` shares the publish-all-then-wait barrier between whitelist and
+routing deployment. Every affected node receives its configuration before the
+first acknowledgement wait. Failures retain the stage and node ID, and whitelist
+confirmation timeouts list pending node IDs without exposing member IPs.
+`deployment_nodes_test.go` holds one acknowledgement to verify publication to
+other nodes, mandatory barriers and contextual cancellation in hosted CI.
 `diy_reconcile.go` trims excess newest IPs for free; disconnected nodes do not
 change saved eligibility. Empty enabled lists deny all member credentials.
 
@@ -603,10 +609,12 @@ rechecks capability at execution and forwards typed optional forced recovery.
 
 `diy_retirement_test.go` checks encrypted cleanup, retained whitelist/split references, fenced revisions, unchanged ledger and idempotent upgrades.
 
-Member deployment latency: `operation_capacity.go` reserves one bounded member
-slot alongside the three ordinary and one urgent firewall slots in the existing
+Member deployment latency: `operation_capacity.go` reserves four bounded member
+slots alongside the three ordinary and one urgent firewall slots in the existing
 durable executor. `master_operations.go` retains heartbeat/generation fencing,
 joins cancellation and converts deferred panics to sanitized failures.
+Transactional outbox resource keys still serialize work for the same member;
+independent members can advance while another waits for an agent.
 `operation_capacity_test.go` covers capacity, panic/cancellation and receipt scope.
 Routing/DIY attempts have a five-minute total deadline; each phase is bounded to
 one minute and sends all phase configurations before awaiting acknowledgements.

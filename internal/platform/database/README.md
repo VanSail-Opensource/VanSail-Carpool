@@ -622,6 +622,12 @@ transaction rollback, stale/expired quotes and exact lost-response replay in hos
 
 `outbox_admission.go` and `outbox_resources.go` derive account, node, purchase, operation and chat exclusion from existing records inside transactional claims. Independent due jobs skip occupied resources. IP Lookup repair admission stays serial.
 
+Ordinary admission prefers non-dynamic work; dynamic firewall jobs retain their
+dedicated reserved claim path and can use idle ordinary capacity. A continuously
+replenished firewall backlog therefore cannot starve member/provider jobs.
+`outbox_admission_test.go` checks both paths progress across repeated busy retries
+without exhausting attempts. Per-resource exclusion applies to both paths.
+
 `outbox_resources_test.go` checks independent account admission, cross-kind account ordering and ownerless standalone targets.
 
 API-token revocation deletes the complete credential row atomically with a secret-free audit event. The owner-scoped audit makes retries idempotent without a credential tombstone.

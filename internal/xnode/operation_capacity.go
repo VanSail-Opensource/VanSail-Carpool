@@ -12,7 +12,9 @@ import (
 // executor, never another queue. Member work cannot consume the firewall reserve.
 func (m *Master) reserveOperation(job model.OutboxJob, member bool) bool {
 	if member {
-		if m.memberOperations >= 1 {
+		// Durable resource admission already serializes each member. A slow
+		// member must not serialize every other member behind its agent wait.
+		if m.memberOperations >= 4 {
 			return false
 		}
 		m.memberOperations++

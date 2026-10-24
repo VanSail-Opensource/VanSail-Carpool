@@ -134,23 +134,16 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 func (s *Service) syncRoutingNodes(ctx context.Context, nodes []string, owner int64, drain bool) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	// Deliver the whole phase before awaiting any node. A slow acknowledgement
-	// must not prevent the remaining nodes from receiving the same safe phase.
-	for _, node := range nodes {
-		if err := s.master.Sync(ctx, node); err != nil {
-			return err
-		}
+	if err := syncDeploymentNodes(ctx, s.master, nodes); err != nil {
+		return err
 	}
 	for _, node := range nodes {
-		if err := s.master.WaitApplied(ctx, node); err != nil {
-			return err
-		}
 		if drain {
 			// Applied revocation fences the old routes and transit credentials.
 			// Seal their counters, but leave immutable journal replay to accounting:
 			// routing neither settles nor resets the owner's paid period.
 			if _, err := s.master.captureTraffic(ctx, node, wire.TrafficFlush{UserID: int(owner)}); err != nil {
-				return err
+				return fmt.Errorf("routing capture node %s: %w", node, err)
 			}
 		}
 	}

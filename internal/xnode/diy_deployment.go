@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"time"
 
@@ -41,13 +42,8 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 			ids = append(ids, id)
 		}
 		slices.Sort(ids)
-		for _, id := range ids {
-			if err = s.master.Sync(ctx, id); err != nil {
-				return err
-			}
-			if err = s.master.WaitApplied(ctx, id); err != nil {
-				return err
-			}
+		if err = syncDeploymentNodes(ctx, s.master, ids); err != nil {
+			return fmt.Errorf("whitelist: %w", err)
 		}
 		ticker := time.NewTicker(100 * time.Millisecond)
 		defer ticker.Stop()
@@ -61,16 +57,18 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 				return err
 			}
 			settings.Whitelist.IPs = settings.Whitelist.IPs[:min(len(settings.Whitelist.IPs), quota)]
-			ready := true
+			pending := []string{}
 			for _, id := range ids {
-				ready = ready && s.master.whitelistApplied(id, operation.OwnerUserID, settings.Whitelist)
+				if !s.master.whitelistApplied(id, operation.OwnerUserID, settings.Whitelist) {
+					pending = append(pending, id)
+				}
 			}
-			if ready {
+			if len(pending) == 0 {
 				return nil
 			}
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return fmt.Errorf("whitelist confirmation nodes %v: %w", pending, ctx.Err())
 			case <-ticker.C:
 			}
 		}

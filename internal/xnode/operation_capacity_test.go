@@ -16,7 +16,15 @@ func TestMemberAdmissionSurvivesLongCommandsAndKeepsFirewallReserve(t *testing.T
 			t.Fatal("ordinary capacity reduced")
 		}
 	}
-	if m.reserveOperation(ordinary, false) || !m.reserveOperation(ordinary, true) || m.reserveOperation(ordinary, true) {
+	if m.reserveOperation(ordinary, false) {
+		t.Fatal("ordinary capacity became unbounded")
+	}
+	for range 4 {
+		if !m.reserveOperation(ordinary, true) {
+			t.Fatal("independent member was blocked by other operations")
+		}
+	}
+	if m.reserveOperation(ordinary, true) {
 		t.Fatal("member capacity was blocked or became unbounded")
 	}
 	urgent := model.OutboxJob{Kind: FirewallJob, Payload: `{"bank":"dynamic"}`}

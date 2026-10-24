@@ -7,7 +7,8 @@
 
 `priority.go` reserves admission for dynamic firewall jobs through the same
 repository, handlers, leases and retry path. The application polls this claim
-path once per second independently of long provider/maintenance work. SQLite
+path and ordinary admission once per second independently of scheduled
+maintenance work. Ordinary claims prefer other work before dynamic bans. SQLite
 transactions prevent ordinary and reserved dispatch from claiming a job twice;
 native executor limits still bound actual execution. It is not a separate queue.
 

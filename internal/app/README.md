@@ -8,9 +8,12 @@ falls back to SQLite and never prunes retained source migration snapshots.
 30 seconds without SQL, payload or user labels. `postgres_bootstrap_test.go`
 rehearses verified activation, health and refusal of a second hosted application.
 
-`scheduler_priority.go` keeps dynamic firewall admission active once per second
-while ordinary outbox or maintenance work waits. It shares the existing outbox
-and handlers and is cancelled/joined with the scheduler before storage closes.
+`scheduler_priority.go` runs `runOutboxAdmission` once per second for both dynamic
+firewall and ordinary jobs while maintenance or entitlement scans wait. Reserved
+and ordinary claims share the existing outbox, executor, handlers and fenced
+leases. The pump is cancelled/joined with the scheduler before storage closes.
+`scheduler_admission_test.go` verifies ordinary member work starts without a
+scheduled drain, with cancellation and executor shutdown joined in hosted CI.
 
 `xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references, retaining frozen imported usage in purchase-owned settlement.
 
