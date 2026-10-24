@@ -25,7 +25,9 @@ func (s *Service) whitelistQuota(ctx context.Context, user string) (int, error) 
 }
 
 func normalizeWhitelist(previous, input WhitelistPolicy, quota int) (WhitelistPolicy, error) {
-	if quota == 0 && input.Enabled { return input,ErrInvalid }
+	if quota == 0 && input.Enabled {
+		return input, ErrInvalid
+	}
 	if len(input.IPs) > quota || len(input.IPs) > 1000 {
 		return input, ErrInvalid
 	}
