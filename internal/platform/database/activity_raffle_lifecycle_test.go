@@ -49,7 +49,7 @@ func TestRafflePublishingFreezesTermsAndCleansUpLateMessage(t *testing.T) {
 	}
 	var cleanup int
 	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='draw_telegram_delete'
-		AND status='pending' AND json_extract(payload,'$.messageId')=42`).Scan(&cleanup); err != nil || cleanup != 1 {
+		AND status='pending' AND CAST(json_extract(payload,'$.messageId') AS INTEGER)=42`).Scan(&cleanup); err != nil || cleanup != 1 {
 		t.Fatalf("late cleanup jobs = %d, %v", cleanup, err)
 	}
 	if _, err = store.SettleRaffle(ctx, draw.ID, fixedActivityRandom{}, now); err != nil {

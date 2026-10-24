@@ -18,8 +18,8 @@ func (s *Store) FirewallPage(ctx context.Context, after, target uint64, full boo
 	}
 	result := wire.FirewallUpdate{Version: target}
 	rows, err := s.db.QueryContext(ctx, `SELECT key,kind,prefix,generation,until_at,refresh_seconds,released FROM (
- SELECT 'b:'||generation AS key,'ban' AS kind,prefix,generation,until_at,refresh_seconds,released_version AS released FROM xnode_firewall_bans WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (? OR issued_version>?)
- UNION ALL SELECT 'e:'||id,'exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (? OR issued_version>?)
+ SELECT 'b:'||generation AS key,'ban' AS kind,prefix,generation,until_at,refresh_seconds,released_version AS released FROM xnode_firewall_bans WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (?<>0 OR issued_version>?)
+ UNION ALL SELECT 'e:'||id,'exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (?<>0 OR issued_version>?)
  UNION ALL SELECT 'r:'||generation,'remove',prefix,generation,until_at,0,released_version FROM xnode_firewall_bans WHERE ?=0 AND released_version>? AND released_version<=? AND NOT EXISTS(SELECT 1 FROM xnode_firewall_bans newer WHERE newer.prefix=xnode_firewall_bans.prefix AND newer.issued_version<=? AND (newer.released_version=0 OR newer.released_version>?))
  UNION ALL SELECT 'x:'||id,'remove_exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE ?=0 AND released_version>? AND released_version<=? AND NOT EXISTS(SELECT 1 FROM xnode_firewall_exemptions newer WHERE newer.ip=xnode_firewall_exemptions.ip AND newer.issued_version<=? AND (newer.released_version=0 OR newer.released_version>?))
  ) WHERE key>? ORDER BY key LIMIT ?`, target, target, boolInt(full), after, target, target, boolInt(full), after, boolInt(full), after, target, target, target, boolInt(full), after, target, target, target, cursor, limit)

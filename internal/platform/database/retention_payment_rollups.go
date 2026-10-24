@@ -36,7 +36,7 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 			CASE WHEN payment.status='refunded' THEN 'refunded' WHEN payment.status='paid' THEN 'paid'
 				WHEN payment.cancelled_at IS NOT NULL THEN 'cancelled' ELSE payment.status END
 		ON CONFLICT(local_date,provider,status) DO UPDATE SET
-			order_count=order_count+excluded.order_count,txb_minor=txb_minor+excluded.txb_minor,
+			order_count=payment_status_rollups.order_count+excluded.order_count,txb_minor=payment_status_rollups.txb_minor+excluded.txb_minor,
 			updated_at=excluded.updated_at`, stamp(now))
 	if err != nil {
 		return fmt.Errorf("roll up payment statuses: %w", err)

@@ -115,6 +115,9 @@ func integerQuery(ctx context.Context, db *sql.DB, query string, args ...any) (i
 }
 
 func databaseDiskBytes(ctx context.Context, db *sql.DB) (int64, error) {
+	if IsPostgres(db) {
+		return integerQuery(ctx, db, `SELECT pg_database_size(current_database())`)
+	}
 	rows, err := db.QueryContext(ctx, `PRAGMA database_list`)
 	if err != nil {
 		return 0, err

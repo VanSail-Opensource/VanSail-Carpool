@@ -35,3 +35,9 @@ parameters, aggregate/scalar distinctions and null equality in hosted CI.
 `contract.go` exposes the generated source contract and `source-schema.sha256`
 fingerprint to offline conversion. Migration `00005_cutover_state.sql` records
 inactive import/verification gates and makes source FKs transaction-deferrable.
+
+Original TEXT columns explicitly use PostgreSQL `C` collation. This preserves
+SQLite binary range/pagination behavior, including compact IPv4 subnet reuse,
+independently of the operator's cluster locale. The catalog verifier checks it.
+JSON merge-patch completion documents follow RFC 7396; byte-sensitive stored
+payloads are copied unchanged and are never implicitly converted to JSONB.

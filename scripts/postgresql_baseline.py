@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TOKENS = re.compile(r"'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\"|--[^\n]*|/\*.*?\*/|\w+|\s+|.", re.S)
 
 
-def convert(sql):
+def convert(sql, collate=False):
     tokens = TOKENS.findall(sql)
     for i, token in enumerate(tokens):
         upper = token.upper()
@@ -23,6 +23,10 @@ def convert(sql):
             tokens[i] = "BYTEA"
         elif upper == "REAL":
             tokens[i] = "DOUBLE PRECISION"
+        elif upper == "TEXT" and collate:
+            previous = next((t for t in reversed(tokens[:i]) if not t.isspace()), "")
+            if previous.upper() != "AS":
+                tokens[i] = 'TEXT COLLATE "C"'
         elif upper == "IS":
             following = [j for j in range(i + 1, len(tokens)) if not tokens[j].isspace()]
             if not following:
@@ -88,7 +92,7 @@ def main():
             deps.difference_update(ready)
     chunks = ["-- +goose Up\n-- Final SQLite schema; exact timestamp text retained by deployment-owner decision.\n"]
     for name in ordered:
-        chunks.append(convert(tables[name]["sql"]) + ";\n")
+        chunks.append(convert(tables[name]["sql"], collate=True) + ";\n")
     chunks.append((ROOT / "docs/plans/postgresql/fixture-seeds.sql").read_text(encoding="utf-8"))
     for version in inventory["migrations"]:
         chunks.append("INSERT INTO schema_migrations(version,applied_at) VALUES('" + version.replace("'", "''") + "',vansail_now());\n")

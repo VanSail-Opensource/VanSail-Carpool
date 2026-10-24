@@ -24,7 +24,9 @@ func openPostgresContractDatabase(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := sql.Open("pgx", parsed.String())
+	adminURL := *parsed
+	adminURL.Path = "/postgres"
+	admin, err := sql.Open("pgx", adminURL.String())
 	if err != nil {
 		t.Fatal(err)
 	}

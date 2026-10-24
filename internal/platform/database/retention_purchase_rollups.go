@@ -89,10 +89,10 @@ func rollupPurchaseTrafficTx(ctx context.Context, tx *sql.Tx, now time.Time) err
 		JOIN maintenance_purchase_candidates candidate ON candidate.id=rollover.purchase_id
 		WHERE rollover.status IN ('credited','zero') AND rollover.completed_at IS NOT NULL
 		GROUP BY substr(rollover.completed_at,1,10),purchase.user_id
-		ON CONFLICT(local_date,user_id) DO UPDATE SET settlement_count=settlement_count+excluded.settlement_count,
-		credited_txb_minor=credited_txb_minor+excluded.credited_txb_minor,
-		allocated_traffic_bytes=allocated_traffic_bytes+excluded.allocated_traffic_bytes,
-		used_traffic_bytes=used_traffic_bytes+excluded.used_traffic_bytes,updated_at=excluded.updated_at`, stamp(now))
+		ON CONFLICT(local_date,user_id) DO UPDATE SET settlement_count=rollover_member_daily_rollups.settlement_count+excluded.settlement_count,
+		credited_txb_minor=rollover_member_daily_rollups.credited_txb_minor+excluded.credited_txb_minor,
+		allocated_traffic_bytes=rollover_member_daily_rollups.allocated_traffic_bytes+excluded.allocated_traffic_bytes,
+		used_traffic_bytes=rollover_member_daily_rollups.used_traffic_bytes+excluded.used_traffic_bytes,updated_at=excluded.updated_at`, stamp(now))
 	if err != nil {
 		return fmt.Errorf("roll up purchase traffic: %w", err)
 	}

@@ -69,7 +69,7 @@ func (s *Store) FinalizeAdminFirewallExemption(ctx context.Context, operation st
 			return err
 		}
 		var version uint64
-		err := tx.QueryRowContext(ctx, `SELECT grant.id,grant.until_at,grant.issued_version,operation.status FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='grant' JOIN xnode_firewall_exemptions grant ON grant.id=item.target_id AND grant.grant_kind='admin' WHERE operation.id=? AND operation.kind=?`, operation, xnode.FirewallExemptionOperation).Scan(&grant, &until, &version, &status)
+		err := tx.QueryRowContext(ctx, `SELECT exemption.id,exemption.until_at,exemption.issued_version,operation.status FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='grant' JOIN xnode_firewall_exemptions exemption ON exemption.id=item.target_id AND exemption.grant_kind='admin' WHERE operation.id=? AND operation.kind=?`, operation, xnode.FirewallExemptionOperation).Scan(&grant, &until, &version, &status)
 		if err != nil {
 			return err
 		}

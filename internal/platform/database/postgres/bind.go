@@ -51,6 +51,13 @@ func Bind(query string, args []driver.NamedValue) (string, error) {
 			}
 			t.raw = "$" + strconv.Itoa(parameter)
 			switch args[parameter-1].Value.(type) {
+			case bool:
+				flag := int64(0)
+				if args[parameter-1].Value.(bool) {
+					flag = 1
+				}
+				args[parameter-1].Value = flag
+				t.raw += "::bigint"
 			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 				t.raw += "::bigint"
 			}

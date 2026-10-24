@@ -73,7 +73,7 @@ func (s *Service) openStoredFile(path string) (*os.File, os.FileInfo, error) {
 		return nil, nil, fmt.Errorf("stored backup path is outside the backup directory")
 	}
 	name := filepath.Base(cleanPath)
-	if !strings.HasPrefix(name, "tx-carpool-") || (!strings.HasSuffix(name, ".db")&&!strings.HasSuffix(name,".dump")) {
+	if !strings.HasPrefix(name, "tx-carpool-") || (!strings.HasSuffix(name, ".db") && !strings.HasSuffix(name, ".dump")) {
 		return nil, nil, fmt.Errorf("stored backup filename is not recognized")
 	}
 	linkInfo, err := os.Lstat(cleanPath)

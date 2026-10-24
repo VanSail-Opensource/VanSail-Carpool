@@ -43,6 +43,15 @@ func VerifySchema(ctx context.Context, db *sql.DB) error {
 			if declared != wantType || primary != column.PrimaryKey || notNull != (column.NotNull || primary > 0) {
 				return fmt.Errorf("schema contract differs at %s.%s", table.Name, column.Name)
 			}
+			if column.Type == "TEXT" {
+				var collation string
+				if err := db.QueryRowContext(ctx, `SELECT c.collname FROM pg_attribute a JOIN pg_collation c ON c.oid=a.attcollation WHERE a.attrelid=to_regclass($1) AND a.attname=$2`, "public."+table.Name, column.Name).Scan(&collation); err != nil {
+					return err
+				}
+				if collation != "C" {
+					return fmt.Errorf("binary text ordering differs at %s.%s", table.Name, column.Name)
+				}
+			}
 		}
 	}
 	for _, name := range contract.Indexes {

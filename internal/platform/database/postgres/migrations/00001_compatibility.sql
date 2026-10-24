@@ -32,6 +32,21 @@ CREATE FUNCTION vansail_json(value text) RETURNS jsonb LANGUAGE sql IMMUTABLE ST
 CREATE FUNCTION json_set(value text,path text,replacement jsonb) RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
  SELECT jsonb_set(value::jsonb,string_to_array(substr(path,3),'.'),replacement,true)::text
 $$;
+-- RFC 7396 merge-patch semantics used by provider completion documents.
+-- +goose StatementBegin
+CREATE FUNCTION json_patch(document text,patch text) RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT AS $$
+DECLARE result jsonb; item record;
+BEGIN
+ IF jsonb_typeof(patch::jsonb)<>'object' THEN RETURN patch::jsonb::text; END IF;
+ result := CASE WHEN jsonb_typeof(document::jsonb)='object' THEN document::jsonb ELSE '{}'::jsonb END;
+ FOR item IN SELECT * FROM jsonb_each(patch::jsonb) LOOP
+  IF item.value='null'::jsonb THEN result:=result-item.key;
+  ELSE result:=jsonb_set(result,ARRAY[item.key],json_patch(COALESCE(result->item.key,'null'::jsonb)::text,item.value::text)::jsonb,true);
+  END IF;
+ END LOOP;
+ RETURN result::text;
+END $$;
+-- +goose StatementEnd
 -- Only absolute ISO dates are accepted. Fixed parser settings make this safe in
 -- expression indexes; relative inputs such as 'now' must never be indexed.
 -- +goose StatementBegin
