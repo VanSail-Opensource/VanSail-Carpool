@@ -18,7 +18,7 @@ func TestRoutingRetryRemainsPromptWithoutChangingCommandPolicy(t *testing.T) {
 	for _, kind := range []string{"xnode_routing", "xnode_diy", "xnode_command"} {
 		t.Run(kind, func(t *testing.T) {
 			op, _, err := s.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: user.ID, OwnerUserID: user.ID, Kind: kind,
-				IdempotencyKey: kind, RequestFingerprint: kind, Items: []providerops.ItemInput{{Key: "scope", TargetType: "user", TargetID: user.ID}}}, now)
+				IdempotencyKey: kind, RequestFingerprint: "routing-retry-policy-" + kind, Items: []providerops.ItemInput{{Key: "scope", TargetType: "user", TargetID: user.ID}}}, now)
 			if err != nil {
 				t.Fatal(err)
 			}

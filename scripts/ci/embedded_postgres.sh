@@ -59,7 +59,8 @@ healthy
 [[ $(sql "SELECT phase FROM vansail_migration_state") == active ]]
 [[ $(sql "SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole FROM pg_roles WHERE rolname='vansail_app'") == t ]]
 [[ $(sql "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='balances'::regclass") == vansail_migration ]]
-docker logs "$container" 2>&1 | grep -Eq 'go_limit_bytes["=: ]+402653184'
+docker logs "$container" > "$RUNNER_TEMP/embedded-startup.log" 2>&1
+grep -Eq 'go_limit_bytes["=: ]+402653184' "$RUNNER_TEMP/embedded-startup.log"
 sql "INSERT INTO settings(key,value,updated_at) VALUES ('ci.embedded_canary','preserved',vansail_now())"
 docker stop -t 75 "$container"
 [[ $(docker inspect -f '{{.State.ExitCode}}' "$container") != 137 ]]
@@ -120,5 +121,6 @@ for attempt in $(seq 1 30); do
 done
 [[ $(docker inspect -f '{{.State.Running}}' "$guard") == false ]]
 [[ $(docker inspect -f '{{.State.ExitCode}}' "$guard") != 0 ]]
-docker logs "$guard" 2>&1 | grep -q 'Existing SQLite requires verified import'
+docker logs "$guard" > "$RUNNER_TEMP/embedded-guard.log" 2>&1
+grep -q 'Existing SQLite requires verified import' "$RUNNER_TEMP/embedded-guard.log"
 echo 'Verified 1 GiB embedded PostgreSQL startup, tuning, persistence, encrypted recovery, signals and failure supervision.'

@@ -27,8 +27,13 @@ portable business and concurrency contracts, exact conversion/refusal/rollback,
 restricted-role logical restoration, encrypted physical restoration and named
 PITR matching all 127 table hashes, restricted-role application activation,
 single ownership, and private exporter scraping. The new actual-image embedded
-rehearsal caught pgBackRest's default lock path on a read-only root; its lock
-path now lives on the writable recovery volume and requires a replacement run.
+rehearsal caught pgBackRest's default lock path on a read-only root; locks now
+live on the writable recovery volume. Run 40066567080 subsequently completed
+embedded startup, credential regeneration/restart, encrypted backup/isolated
+restore, failure supervision and SQLite cutover refusal, then failed its final
+log-pipe assertion (SIGPIPE). The log assertion now reads a captured file.
+The added retry-policy fixture also now uses the required fingerprint length;
+the replacement complete gates remain pending.
 The selected release head must pass the entire hosted workflow before delivery.
 
 The owner selected PostgreSQL server inside the application container and a

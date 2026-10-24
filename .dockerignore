@@ -4,6 +4,7 @@
 .codex
 .env
 .env.*
+deploy/postgres/secrets
 !.env.example
 reference
 docs/*
