@@ -13,7 +13,7 @@ import (
 )
 
 // CreateConnectionScan persists or replays metadata and queues the provider request atomically.
-func (s *Store) CreateConnectionScan(ctx context.Context, input providerops.ConnectionScanInput, now time.Time) (providerops.ConnectionScan, bool, error) {
+func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input providerops.ConnectionScanInput, now time.Time) (providerops.ConnectionScan, bool, error) {
 	input.UserID = strings.TrimSpace(input.UserID)
 	input.IdempotencyKey = strings.TrimSpace(input.IdempotencyKey)
 	input.RequestFingerprint = strings.TrimSpace(input.RequestFingerprint)
@@ -23,8 +23,10 @@ func (s *Store) CreateConnectionScan(ctx context.Context, input providerops.Conn
 		return providerops.ConnectionScan{}, false, ErrConflict
 	}
 	now = now.UTC()
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.ConnectionScan{}, false, fmt.Errorf("begin connection scan: %w", err)

@@ -31,7 +31,7 @@ func ipAllowanceTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) 
 }
 
 // IPLookupState reads safe prices and the active purchase allowance.
-func (s *Store) IPLookupState(ctx context.Context, user string, now time.Time) (iplookup.State, error) {
+func (s *Store) retryAttempt_IPLookupState(ctx context.Context, user string, now time.Time) (iplookup.State, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return iplookup.State{}, err
@@ -121,7 +121,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 }
 
 // IPLookupQuote does not reserve funds or run providers.
-func (s *Store) IPLookupQuote(ctx context.Context, user, ip string, refresh bool, now time.Time) (iplookup.Quote, error) {
+func (s *Store) retryAttempt_IPLookupQuote(ctx context.Context, user, ip string, refresh bool, now time.Time) (iplookup.Quote, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return iplookup.Quote{}, err
@@ -138,7 +138,7 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 	var cached, refunded int
 	var usedQuota int
 	var charge int64
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(r.report_json,''),COALESCE(r.live_state_json,'{}'),c.cached,c.refunded,COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip,''),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END),c.quota_consumed FROM ip_lookup_checks c LEFT JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch, &result.QuotaConsumed)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(r.report_json,''),COALESCE(r.live_state_json,'{}'),c.cached,c.refunded,COALESCE(CAST(json_extract(o.result_json,'$.usedQuota') AS INTEGER),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip,''),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END),c.quota_consumed FROM ip_lookup_checks c LEFT JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch, &result.QuotaConsumed)
 	if err == sql.ErrNoRows {
 		return result, ErrNotFound
 	}

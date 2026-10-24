@@ -14,9 +14,11 @@ import (
 )
 
 // RefundPayment appends a reversal and unwinds entitlements until the account is solvent or no purchases remain.
-func (s *Store) RefundPayment(ctx context.Context, actorID *string, orderID, reason string, now time.Time) (model.PaymentOrder, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string, orderID, reason string, now time.Time) (model.PaymentOrder, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PaymentOrder{}, err

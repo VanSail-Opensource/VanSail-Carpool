@@ -54,13 +54,15 @@ func (s *Store) BeginMemberRefund(ctx context.Context, input providerops.CreateI
 	return s.beginMemberPurchaseOperation(ctx, input, purchaseID, false, now)
 }
 
-func (s *Store) beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, reset bool, now time.Time) (providerops.Operation, bool, error) {
+func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, reset bool, now time.Time) (providerops.Operation, bool, error) {
 	input, err := providerops.NormalizeCreate(input)
 	if err != nil || len(input.Items) != 1 || input.Items[0].TargetID != purchaseID {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err

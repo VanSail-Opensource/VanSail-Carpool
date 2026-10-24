@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -29,6 +30,9 @@ func newTestStore(t *testing.T) *Store {
 
 func openTestDatabase(t *testing.T, filename string) *sql.DB {
 	t.Helper()
+	if os.Getenv("POSTGRES_CONTRACT_URL") != "" {
+		return openPostgresContractDatabase(t)
+	}
 
 	testDatabaseOpenGate <- struct{}{}
 	defer func() { <-testDatabaseOpenGate }()

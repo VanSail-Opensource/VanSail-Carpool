@@ -21,7 +21,7 @@ CREATE FUNCTION json_each(document text) RETURNS TABLE(key text,value text) LANG
  SELECT e.key,e.value #>> '{}' FROM jsonb_each(CASE WHEN jsonb_typeof(document::jsonb)='object' THEN document::jsonb ELSE '{}'::jsonb END) e
  UNION ALL SELECT (a.ordinality-1)::text,a.value #>> '{}' FROM jsonb_array_elements(CASE WHEN jsonb_typeof(document::jsonb)='array' THEN document::jsonb ELSE '[]'::jsonb END) WITH ORDINALITY a
 $$;
-CREATE FUNCTION json(value text) RETURNS jsonb LANGUAGE sql IMMUTABLE STRICT AS $$ SELECT value::jsonb $$;
+CREATE FUNCTION vansail_json(value text) RETURNS jsonb LANGUAGE sql IMMUTABLE STRICT AS $$ SELECT value::jsonb $$;
 CREATE FUNCTION json_set(value text,path text,replacement jsonb) RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
  SELECT jsonb_set(value::jsonb,string_to_array(substr(path,3),'.'),replacement,true)::text
 $$;

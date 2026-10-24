@@ -42,9 +42,11 @@ func (s *Store) SetPaymentProviderCancellation(ctx context.Context, orderID, sta
 }
 
 // SettlePayment records one authoritative provider event and credits the exact requested TXB amount once.
-func (s *Store) SettlePayment(ctx context.Context, provider, dedupeKey, payloadHash, orderID, tradeID, chargeID string, now time.Time) (model.PaymentOrder, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SettlePayment(ctx context.Context, provider, dedupeKey, payloadHash, orderID, tradeID, chargeID string, now time.Time) (model.PaymentOrder, bool, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PaymentOrder{}, false, err

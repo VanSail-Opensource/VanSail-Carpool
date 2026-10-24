@@ -8,9 +8,11 @@ import (
 	"time"
 )
 
-func (s *Store) CreatePaymentOrder(ctx context.Context, order model.PaymentOrder) (model.PaymentOrder, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CreatePaymentOrder(ctx context.Context, order model.PaymentOrder) (model.PaymentOrder, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	if order.ID == "" {
 		var err error
 		order.ID, err = ids.New()

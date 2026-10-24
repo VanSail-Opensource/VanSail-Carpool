@@ -21,12 +21,12 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 			return nil
 		}
 		if fresh {
-			result, e := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_members(node_id,active) VALUES(?,1)`, node)
+			var id int64
+			e := tx.QueryRowContext(ctx, `INSERT INTO xnode_firewall_members(node_id,active) VALUES(?,1) RETURNING ordinal`, node).Scan(&id)
 			if e != nil {
 				return e
 			}
-			id, e := result.LastInsertId()
-			if e != nil || id > 4294967295 {
+			if id > 4294967295 {
 				return xnode.ErrInvalid
 			}
 			ordinal = uint32(id)

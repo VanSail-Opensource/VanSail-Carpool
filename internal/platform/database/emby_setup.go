@@ -13,9 +13,11 @@ import (
 )
 
 // QueueEmbySetup atomically debits setup and queues the legacy provisioning lane.
-func (s *Store) QueueEmbySetup(ctx context.Context, input domain.QueueSetupInput, now time.Time) (domain.Account, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_QueueEmbySetup(ctx context.Context, input domain.QueueSetupInput, now time.Time) (domain.Account, bool, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, false, err

@@ -13,9 +13,11 @@ import (
 )
 
 // RefundAdminEntitlement atomically credits one cancellation and queues exact sync.
-func (s *Store) RefundAdminEntitlement(ctx context.Context, input AdminEntitlementRefundInput, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RefundAdminEntitlement(ctx context.Context, input AdminEntitlementRefundInput, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

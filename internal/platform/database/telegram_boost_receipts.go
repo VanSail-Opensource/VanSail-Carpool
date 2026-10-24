@@ -10,12 +10,14 @@ import (
 )
 
 // EnqueueBoostAppreciation atomically records a boost identity and its durable job.
-func (s *Store) EnqueueBoostAppreciation(ctx context.Context, item model.TelegramBoostAppreciation, now time.Time) (bool, error) {
+func (s *Store) retryAttempt_EnqueueBoostAppreciation(ctx context.Context, item model.TelegramBoostAppreciation, now time.Time) (bool, error) {
 	if item.ChatID >= 0 || strings.TrimSpace(item.BoostID) == "" {
 		return false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err

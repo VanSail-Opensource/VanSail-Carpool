@@ -13,12 +13,14 @@ import (
 )
 
 // GrantAdminCoupon records one idempotent, audited purchase-discount wallet grant.
-func (s *Store) GrantAdminCoupon(ctx context.Context, input AdminCouponGrantInput, now time.Time) (coupons.Grant, error) {
+func (s *Store) retryAttempt_GrantAdminCoupon(ctx context.Context, input AdminCouponGrantInput, now time.Time) (coupons.Grant, error) {
 	if strings.TrimSpace(input.ActorUserID) == "" || strings.TrimSpace(input.UserID) == "" || strings.TrimSpace(input.CouponID) == "" || strings.TrimSpace(input.IdempotencyKey) == "" {
 		return coupons.Grant{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return coupons.Grant{}, err
@@ -69,13 +71,15 @@ func (s *Store) GrantAdminCoupon(ctx context.Context, input AdminCouponGrantInpu
 }
 
 // DiscardAdminCoupon records administrative ownership before retaining the discard history.
-func (s *Store) DiscardAdminCoupon(ctx context.Context, actorID, userID, grantID, key string, now time.Time) error {
+func (s *Store) retryAttempt_DiscardAdminCoupon(ctx context.Context, actorID, userID, grantID, key string, now time.Time) error {
 	actorID, userID, grantID, key = strings.TrimSpace(actorID), strings.TrimSpace(userID), strings.TrimSpace(grantID), strings.TrimSpace(key)
 	if actorID == "" || userID == "" || grantID == "" || key == "" {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

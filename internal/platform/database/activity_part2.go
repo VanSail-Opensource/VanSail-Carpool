@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (s *Store) claimDailyActivity(ctx context.Context, userID, localDate, timezone string, minimumMinor, maximumMinor int64, boostCount int, rng activity.RandomSource, now time.Time) (activity.DailyCheckIn, error) {
+func (s *Store) retryAttempt_claimDailyActivity(ctx context.Context, userID, localDate, timezone string, minimumMinor, maximumMinor int64, boostCount int, rng activity.RandomSource, now time.Time) (activity.DailyCheckIn, error) {
 	location, err := time.LoadLocation(timezone)
 	if err != nil || minimumMinor < 0 || maximumMinor < minimumMinor || maximumMinor-minimumMinor == math.MaxInt64 || strings.TrimSpace(userID) == "" {
 		return activity.DailyCheckIn{}, activity.ErrInvalidInput
@@ -19,8 +19,10 @@ func (s *Store) claimDailyActivity(ctx context.Context, userID, localDate, timez
 	if _, err := time.Parse(time.DateOnly, localDate); err != nil || now.In(location).Format(time.DateOnly) != localDate {
 		return activity.DailyCheckIn{}, activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

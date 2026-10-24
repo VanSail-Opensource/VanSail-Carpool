@@ -26,15 +26,16 @@ type AuditEvent struct {
 
 // OutboxJob is a durable external synchronization operation.
 type OutboxJob struct {
-	ID          string    `json:"id"`
-	Kind        string    `json:"kind"`
-	Payload     string    `json:"payload"`
-	Status      string    `json:"status"`
-	Attempts    int       `json:"attempts"`
-	AvailableAt time.Time `json:"availableAt"`
-	LastError   string    `json:"lastError"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ClaimGeneration int64     `json:"-"`
+	ID              string    `json:"id"`
+	Kind            string    `json:"kind"`
+	Payload         string    `json:"payload"`
+	Status          string    `json:"status"`
+	Attempts        int       `json:"attempts"`
+	AvailableAt     time.Time `json:"availableAt"`
+	LastError       string    `json:"lastError"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 // Setting is a safe administrative view. Encrypted values are never returned.

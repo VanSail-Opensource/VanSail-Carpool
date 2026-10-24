@@ -32,9 +32,11 @@ func recordPMUpdateTx(ctx context.Context, tx *sql.Tx, updateID int64, now time.
 	return count == 1, err
 }
 
-func (s *Store) QueuePMNotice(ctx context.Context, updateID int64, notice model.PMNotice, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_QueuePMNotice(ctx context.Context, updateID int64, notice model.PMNotice, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -54,15 +56,17 @@ func (s *Store) QueuePMNotice(ctx context.Context, updateID int64, notice model.
 	return tx.Commit()
 }
 
-func (s *Store) QueuePMRelay(ctx context.Context, input model.PMRelayInput, now time.Time) (*model.OperationReceipt, error) {
+func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRelayInput, now time.Time) (*model.OperationReceipt, error) {
 	if input.ChatID >= 0 || input.SourceChatID == 0 || input.SourceMessageID <= 0 {
 		return nil, ErrConflict
 	}
 	if input.Inbound && input.ActorUserID != input.UserID {
 		return nil, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err

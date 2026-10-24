@@ -1,4 +1,9 @@
 # Database administration
+
+`postgres.go` discovers PostgreSQL tables, columns and declared keys through system
+catalogs. It retains masking, typed values and sealed cursor paging while generic
+mutation review/application refuse PostgreSQL until editor parity is verified.
+Ciphertext columns are masked by both `_cipher` and `ciphertext` naming.
 - `mutation_prepare_part2.go` continues the focused implementation from its original package module.
 - `mutations_part2.go` continues the focused implementation from its original package module.
 - `query_part2.go` continues the focused implementation from its original package module.

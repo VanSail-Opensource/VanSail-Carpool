@@ -11,10 +11,12 @@ import (
 )
 
 // CompleteOutboxRetryOperation reactivates one job and completes its receipt atomically.
-func (s *Store) CompleteOutboxRetryOperation(ctx context.Context, operationID, itemKey, jobID string,
+func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, operationID, itemKey, jobID string,
 	now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

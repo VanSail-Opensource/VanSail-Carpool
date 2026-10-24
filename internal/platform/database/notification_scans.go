@@ -12,9 +12,11 @@ import (
 )
 
 // EnqueueExpiryReminderNotifications records newly eligible 48-hour reminders.
-func (s *Store) EnqueueExpiryReminderNotifications(ctx context.Context, now time.Time) (int, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Context, now time.Time) (int, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -65,10 +67,12 @@ func (s *Store) EnqueueExpiryReminderNotifications(ctx context.Context, now time
 }
 
 // EnqueueTrafficThresholdNotification records one event per purchase reset period.
-func (s *Store) EnqueueTrafficThresholdNotification(ctx context.Context, remoteID string, used, limit int64,
+func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Context, remoteID string, used, limit int64,
 	remoteReset string, lastReset *time.Time, now time.Time) (bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err

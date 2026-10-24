@@ -114,7 +114,7 @@ func (w *Worker) drain(ctx context.Context, limit int, claim func(context.Contex
 		if errors.Is(jobErr, ErrDeferred) {
 			continue
 		}
-		if err := w.repository.CompleteOutboxJob(ctx, job.ID, job.Attempts, jobErr, w.now().UTC()); err != nil {
+		if err := CompleteClaim(ctx, w.repository, *job, jobErr, w.now().UTC()); err != nil {
 			return fmt.Errorf("complete outbox job %s: %w", job.ID, err)
 		}
 	}

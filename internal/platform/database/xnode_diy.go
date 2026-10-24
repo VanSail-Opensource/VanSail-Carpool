@@ -39,12 +39,14 @@ func (s *Store) ReplayXNodeDIY(ctx context.Context, user, key, fingerprint strin
 
 // SaveXNodeDIY commits client overrides and optional routing desired state under
 // both revision fences, in the same transaction as the existing durable receipt.
-func (s *Store) SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocument, routingRevision int64, plan *xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {
+func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocument, routingRevision int64, plan *xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {
 	if doc.UserID == "" || doc.UserID != input.OwnerUserID || doc.UserID != input.ActorUserID {
 		return model.OperationReceipt{}, xnode.ErrNotFound
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

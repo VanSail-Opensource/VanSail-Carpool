@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (s *Store) RedeemCoupon(ctx context.Context, userID, code, idempotencyKey string, now time.Time) (coupons.RedemptionResult, error) {
+func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, idempotencyKey string, now time.Time) (coupons.RedemptionResult, error) {
 	canonical, err := coupons.CanonicalCode(code)
 	if err != nil {
 		return coupons.RedemptionResult{}, err
@@ -18,8 +18,10 @@ func (s *Store) RedeemCoupon(ctx context.Context, userID, code, idempotencyKey s
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 {
 		return coupons.RedemptionResult{}, coupons.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -95,12 +97,14 @@ func (s *Store) RedeemCoupon(ctx context.Context, userID, code, idempotencyKey s
 
 // GrantCoupon idempotently puts a purchase-discount coupon in a member wallet.
 
-func (s *Store) GrantCoupon(ctx context.Context, userID, couponID, sourceType, sourceID string, now time.Time) (coupons.Grant, error) {
+func (s *Store) retryAttempt_GrantCoupon(ctx context.Context, userID, couponID, sourceType, sourceID string, now time.Time) (coupons.Grant, error) {
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(couponID) == "" || strings.TrimSpace(sourceType) == "" || strings.TrimSpace(sourceID) == "" {
 		return coupons.Grant{}, coupons.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return coupons.Grant{}, err

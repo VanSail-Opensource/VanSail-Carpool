@@ -55,9 +55,11 @@ func (s *Store) FinalizeRolloverUsage(ctx context.Context, purchaseID string, su
 	return s.finalizeRolloverUsage(ctx, purchaseID, summary, exceptionCode, now)
 }
 
-func (s *Store) finalizeRolloverUsage(ctx context.Context, purchaseID string, summary model.RolloverUsageSummary, exceptionCode string, now time.Time) (model.PurchaseRollover, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_finalizeRolloverUsage(ctx context.Context, purchaseID string, summary model.RolloverUsageSummary, exceptionCode string, now time.Time) (model.PurchaseRollover, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PurchaseRollover{}, err

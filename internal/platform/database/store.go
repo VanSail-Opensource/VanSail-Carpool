@@ -82,7 +82,11 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 
 // UserByID returns a user by internal ID.
 func (s *Store) UserByID(ctx context.Context, userID string) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=COALESCE((SELECT user_id FROM member_identity_aliases WHERE old_user_id=? AND old_user_id GLOB '*[^0-9]*'),?)`, userID, userID))
+	condition := `old_user_id GLOB '*[^0-9]*'`
+	if IsPostgres(s.db) {
+		condition = `old_user_id ~ '[^0-9]'`
+	}
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=COALESCE((SELECT user_id FROM member_identity_aliases WHERE old_user_id=? AND `+condition+`),?)`, userID, userID))
 }
 
 // UserByTelegramID returns a user by trusted Telegram ID.
@@ -151,9 +155,11 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 }
 
 // ReplaceSession stores one current opaque session per user.
-func (s *Store) ReplaceSession(ctx context.Context, tokenHash []byte, userID string, expiresAt time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byte, userID string, expiresAt time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 
 	now := time.Now().UTC()
 	tx, err := s.db.BeginTx(ctx, nil)

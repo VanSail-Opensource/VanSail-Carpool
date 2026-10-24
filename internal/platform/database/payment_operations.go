@@ -11,10 +11,12 @@ import (
 )
 
 // BeginPaymentOrderOperation atomically stores a priced order and queues checkout creation.
-func (s *Store) BeginPaymentOrderOperation(ctx context.Context, order model.PaymentOrder,
+func (s *Store) retryAttempt_BeginPaymentOrderOperation(ctx context.Context, order model.PaymentOrder,
 	input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("begin payment create command: %w", err)
@@ -39,10 +41,12 @@ func (s *Store) BeginPaymentOrderOperation(ctx context.Context, order model.Paym
 }
 
 // BeginPaymentCancellationOperation atomically stops polling and queues provider cancellation.
-func (s *Store) BeginPaymentCancellationOperation(ctx context.Context, orderID, userID string,
+func (s *Store) retryAttempt_BeginPaymentCancellationOperation(ctx context.Context, orderID, userID string,
 	input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("begin payment cancel command: %w", err)

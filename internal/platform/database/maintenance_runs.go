@@ -15,13 +15,15 @@ import (
 // ClaimMaintenanceRun acquires one durable lease for a configured local date.
 // Forced claims bypass only the successful-day guard; an unexpired running
 // lease still prevents overlap.
-func (s *Store) ClaimMaintenanceRun(ctx context.Context, localDate, leaseOwner string, leaseUntil, now time.Time, force bool) (string, bool, error) {
+func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate, leaseOwner string, leaseUntil, now time.Time, force bool) (string, bool, error) {
 	localDate, leaseOwner = strings.TrimSpace(localDate), strings.TrimSpace(leaseOwner)
 	if _, err := time.Parse(time.DateOnly, localDate); err != nil || leaseOwner == "" || !leaseUntil.After(now) {
 		return "", false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", false, fmt.Errorf("begin maintenance claim: %w", err)

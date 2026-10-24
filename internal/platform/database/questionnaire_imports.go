@@ -13,7 +13,7 @@ import (
 )
 
 // CreateQuestionnaireImport persists a bounded preview without applying rewards.
-func (s *Store) CreateQuestionnaireImport(ctx context.Context, questionnaireID string, document questionnaires.CSVDocument, idempotencyKey string, now time.Time) (questionnaires.ImportPreview, error) {
+func (s *Store) retryAttempt_CreateQuestionnaireImport(ctx context.Context, questionnaireID string, document questionnaires.CSVDocument, idempotencyKey string, now time.Time) (questionnaires.ImportPreview, error) {
 	if strings.TrimSpace(questionnaireID) == "" || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 || len(document.Raw) == 0 || len(document.Raw) > 5<<20 || len(document.Headers) == 0 || len(document.Headers) > 100 || document.DataRowCount > 50_000 {
 		return questionnaires.ImportPreview{}, questionnaires.ErrInvalidInput
 	}
@@ -28,8 +28,10 @@ func (s *Store) CreateQuestionnaireImport(ctx context.Context, questionnaireID s
 	if err != nil {
 		return questionnaires.ImportPreview{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return questionnaires.ImportPreview{}, err
@@ -68,12 +70,14 @@ func (s *Store) CreateQuestionnaireImport(ctx context.Context, questionnaireID s
 }
 
 // AnalyzeQuestionnaireImport matches a selected code column without applying rewards.
-func (s *Store) AnalyzeQuestionnaireImport(ctx context.Context, importID, codeColumn string, now time.Time) (questionnaires.ImportAnalysis, error) {
+func (s *Store) retryAttempt_AnalyzeQuestionnaireImport(ctx context.Context, importID, codeColumn string, now time.Time) (questionnaires.ImportAnalysis, error) {
 	if strings.TrimSpace(importID) == "" || strings.TrimSpace(codeColumn) == "" {
 		return questionnaires.ImportAnalysis{}, questionnaires.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return questionnaires.ImportAnalysis{}, err

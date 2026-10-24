@@ -74,9 +74,11 @@ func (s *Store) SaveOnboardingDraft(ctx context.Context, kind string, content on
 	return s.OnboardingBundle(ctx, kind)
 }
 
-func (s *Store) PublishOnboarding(ctx context.Context, kind string, expectedDraftRevision int, actorID string, now time.Time) (onboarding.Bundle, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_PublishOnboarding(ctx context.Context, kind string, expectedDraftRevision int, actorID string, now time.Time) (onboarding.Bundle, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return onboarding.Bundle{}, err
@@ -126,11 +128,13 @@ func (s *Store) CurrentAgreementContract(ctx context.Context) (int, []string, er
 	return bundle.PublishedRevision, ids, err
 }
 
-func (s *Store) CompleteOnboardingRevision(ctx context.Context, userID string, revision int, agreementIDs []string, acceptedAt time.Time) (model.User, error) {
+func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, userID string, revision int, agreementIDs []string, acceptedAt time.Time) (model.User, error) {
 	provided := append([]string(nil), agreementIDs...)
 	slices.Sort(provided)
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.User{}, err

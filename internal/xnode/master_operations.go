@@ -60,7 +60,7 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 				case <-ctx.Done():
 					return
 				case <-tick.C:
-					owned, err := repo.RenewOutboxJob(ctx, job.ID, job.Attempts, m.service.now().UTC())
+					owned, err := outbox.RenewClaim(ctx, repo, job, m.service.now().UTC())
 					if err != nil || !owned {
 						cancel()
 						return
@@ -68,7 +68,7 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 				}
 			}
 		}()
-		owned, err := repo.RenewOutboxJob(ctx, job.ID, job.Attempts, m.service.now().UTC())
+		owned, err := outbox.RenewClaim(ctx, repo, job, m.service.now().UTC())
 		if err == nil && !owned {
 			err = ErrConflict
 		}
@@ -79,7 +79,7 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 		<-heartbeatDone
 		finish, stop := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		defer stop()
-		if completionErr := repo.CompleteOutboxJob(finish, job.ID, job.Attempts, err, m.service.now().UTC()); completionErr != nil && !errors.Is(completionErr, context.Canceled) {
+		if completionErr := outbox.CompleteClaim(finish, repo, job, err, m.service.now().UTC()); completionErr != nil && !errors.Is(completionErr, context.Canceled) {
 			m.logger.Warn("deferred node operation remains leased", "error_code", "XNODE_OPERATION_COMPLETION_PENDING")
 		}
 	}()

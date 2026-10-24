@@ -23,13 +23,15 @@ type PurchaseInput struct {
 
 // CreatePurchase atomically revalidates live pricing, debits TXB, stores only
 // transaction facts and selected paid add-ons, and queues Proxy sync.
-func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
+func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
 	fingerprint, err := normalizeAndFingerprintPurchase(&input)
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

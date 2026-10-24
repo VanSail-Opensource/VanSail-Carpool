@@ -22,19 +22,30 @@ func (s *Store) ClaimPriorityOutboxJob(ctx context.Context, now time.Time) (*mod
 
 const priorityOutboxFilter = `kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic'`
 
-func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool) (*model.OutboxJob, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	tx, err := s.db.BeginTx(ctx, nil)
+func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool) (*model.OutboxJob, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
+	var options *sql.TxOptions
+	if IsPostgres(s.db) {
+		options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	}
+	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if IsPostgres(s.db) {
+		if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(72173681)`); err != nil {
+			return nil, err
+		}
+	}
 	job, err := claimableOutboxTx(ctx, tx, now, priorityOnly)
 	if err != nil || job == nil {
 		return nil, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='processing',attempts=attempts+1,updated_at=? WHERE id=? AND status='pending'`, stamp(now), job.ID)
+	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='processing',attempts=attempts+1,updated_at=? /*pg:advance-claim*/ WHERE id=? AND status='pending'`, stamp(now), job.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +54,9 @@ func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly 
 	}
 	job.Status = "processing"
 	job.Attempts++
+	if IsPostgres(s.db) {
+		job.ClaimGeneration++
+	}
 	job.UpdatedAt = now
 	if err := tx.Commit(); err != nil {
 		return nil, err
@@ -52,9 +66,11 @@ func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly 
 
 // CompleteOutboxJob removes successful work or schedules bounded exponential retry.
 
-func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts int, jobErr error, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID string, attempts int, generation int64, jobErr error, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -62,13 +78,14 @@ func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts in
 	defer func() { _ = tx.Rollback() }()
 	var currentAttempts int
 	var currentStatus string
-	if err = tx.QueryRowContext(ctx, `SELECT attempts,status FROM outbox_jobs WHERE id=?`, jobID).Scan(&currentAttempts, &currentStatus); errors.Is(err, sql.ErrNoRows) {
+	var currentGeneration int64
+	if err = tx.QueryRowContext(ctx, `SELECT attempts,status,/*pg:claim-generation*/0 FROM outbox_jobs WHERE id=? /*pg:FOR UPDATE*/`, jobID).Scan(&currentAttempts, &currentStatus, &currentGeneration); errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return err
 	}
 	// An older asynchronous attempt cannot remove or overwrite a recovered lease.
-	if currentAttempts != attempts || currentStatus != "processing" {
+	if currentAttempts != attempts || currentStatus != "processing" || (IsPostgres(s.db) && currentGeneration != generation) {
 		return nil
 	}
 	if jobErr == nil {
@@ -111,9 +128,11 @@ func (s *Store) CompleteOutboxJob(ctx context.Context, jobID string, attempts in
 
 // RetryOutboxJob lets an administrator explicitly retry a failed operation.
 
-func (s *Store) RetryOutboxJob(ctx context.Context, jobID string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RetryOutboxJob(ctx context.Context, jobID string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -134,9 +153,11 @@ func (s *Store) RetryOutboxJob(ctx context.Context, jobID string, now time.Time)
 
 // DeleteOutboxJob removes any job that is not currently leased by a worker.
 
-func (s *Store) DeleteOutboxJob(ctx context.Context, jobID string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

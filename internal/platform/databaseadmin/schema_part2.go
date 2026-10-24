@@ -25,7 +25,7 @@ func isSensitiveColumn(table, column string) bool {
 	if table == "settings" && column == "value" {
 		return true
 	}
-	for _, fragment := range []string{"password", "secret", "token", "hash", "ciphertext", "subscription_url", "invite_link", "capability", "provider_payload", "raw_csv"} {
+	for _, fragment := range []string{"password", "secret", "token", "hash", "cipher", "subscription_url", "invite_link", "capability", "provider_payload", "raw_csv"} {
 		if strings.Contains(column, fragment) {
 			return true
 		}

@@ -9,9 +9,11 @@ import (
 
 // SaveXNodeNamedService commits encrypted terms, authorization and quota changes
 // together. Existing usage and settled periods can never be rewritten by edits.
-func (s *Store) SaveXNodeNamedService(ctx context.Context, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return item, err
@@ -19,7 +21,11 @@ func (s *Store) SaveXNodeNamedService(ctx context.Context, item xnode.Identity, 
 	defer tx.Rollback()
 	created := item.ProxyUserID == 0
 	if created {
-		if err = tx.QueryRowContext(ctx, `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`).Scan(&item.ProxyUserID); err != nil {
+		query := `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`
+		if IsPostgres(s.db) {
+			query = `SELECT nextval('xnode_service_proxy_id_seq')`
+		}
+		if err = tx.QueryRowContext(ctx, query).Scan(&item.ProxyUserID); err != nil {
 			return item, err
 		}
 		if item.ProxyUserID >= 1<<53 {

@@ -19,10 +19,12 @@ type AdminOperationResolutionInput struct {
 }
 
 // ResolveAdminOperation records a human decision without another provider attempt.
-func (s *Store) ResolveAdminOperation(ctx context.Context, input AdminOperationResolutionInput,
+func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input AdminOperationResolutionInput,
 	now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

@@ -48,3 +48,7 @@ peak RSS below 224 MiB, settled heap growth at most 8 MiB after warm-up, stable
 goroutines and the 1 GiB cache allowance. Container state, cycle measurements
 and a final heap profile are uploaded as memory-soak artifacts. Failure blocks
 image publication. Local automated suites remain prohibited.
+
+`postgresql_contracts.py` selects the same repository business tests for hosted
+PostgreSQL while retaining SQLite-only upgrade/metadata fixtures in normal CI;
+the selection manifest is saved for review.

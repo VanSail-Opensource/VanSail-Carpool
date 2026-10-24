@@ -14,9 +14,11 @@ import (
 
 // SettleUSDTTransfer consumes verified evidence and uses the established ledger
 // transaction. An administrator may override only the original payment window.
-func (s *Store) SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, reason string) (model.PaymentOrder, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, reason string) (model.PaymentOrder, bool, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PaymentOrder{}, false, err

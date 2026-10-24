@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
-func (s *Store) EnsureQuestionnaireParticipant(ctx context.Context, questionnaireID, userID string, generator questionnaires.CodeGenerator, now time.Time) (questionnaires.Participant, error) {
+func (s *Store) retryAttempt_EnsureQuestionnaireParticipant(ctx context.Context, questionnaireID, userID string, generator questionnaires.CodeGenerator, now time.Time) (questionnaires.Participant, error) {
 	if strings.TrimSpace(questionnaireID) == "" || strings.TrimSpace(userID) == "" || generator == nil {
 		return questionnaires.Participant{}, questionnaires.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return questionnaires.Participant{}, err

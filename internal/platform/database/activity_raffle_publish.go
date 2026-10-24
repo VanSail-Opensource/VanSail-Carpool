@@ -10,12 +10,14 @@ import (
 )
 
 // PublishRaffle queues the group announcement; entries remain closed until its ID is saved.
-func (s *Store) PublishRaffle(ctx context.Context, id string, groupID int64, now time.Time) error {
+func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, groupID int64, now time.Time) error {
 	if groupID == 0 {
 		return activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -53,12 +55,14 @@ func (s *Store) PublishRaffle(ctx context.Context, id string, groupID int64, now
 
 // ConfirmRafflePublished opens a publishing draft or schedules cleanup if the
 // administrator cancelled while Telegram was sending the announcement.
-func (s *Store) ConfirmRafflePublished(ctx context.Context, id string, messageID int64, now time.Time) error {
+func (s *Store) retryAttempt_ConfirmRafflePublished(ctx context.Context, id string, messageID int64, now time.Time) error {
 	if messageID <= 0 {
 		return activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

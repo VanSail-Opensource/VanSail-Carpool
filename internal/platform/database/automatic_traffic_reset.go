@@ -21,10 +21,12 @@ type automaticResetCandidate struct {
 }
 
 // ProcessAutomaticTrafficResetObservation revalidates and records one reset period atomically.
-func (s *Store) ProcessAutomaticTrafficResetObservation(ctx context.Context, remoteID string, used, limit int64,
+func (s *Store) retryAttempt_ProcessAutomaticTrafficResetObservation(ctx context.Context, remoteID string, used, limit int64,
 	remoteReset string, lastReset *time.Time, now time.Time) (notifications.AutomaticResetResult, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return notifications.AutomaticResetResult{}, err

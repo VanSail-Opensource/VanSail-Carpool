@@ -15,15 +15,17 @@ import (
 )
 
 // PlayLuckyDraw charges and settles an instant draw in one transaction.
-func (s *Store) PlayLuckyDraw(ctx context.Context, userID, drawID, key string, rng activity.RandomSource, now time.Time) (activity.DrawResult, error) {
+func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, key string, rng activity.RandomSource, now time.Time) (activity.DrawResult, error) {
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(drawID) == "" || strings.TrimSpace(key) == "" || len(key) > 128 || rng == nil {
 		return activity.DrawResult{}, activity.ErrInvalidInput
 	}
 	if strings.HasPrefix(key, "raffle:") {
 		return activity.DrawResult{}, activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

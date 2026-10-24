@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"math"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 func balanceTx(ctx context.Context, tx *sql.Tx, userID string) (int64, error) {
 	var balance int64
-	if err := tx.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, userID).Scan(&balance); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=? /*pg:FOR UPDATE*/`, userID).Scan(&balance); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrNotFound
 		}
@@ -108,5 +109,12 @@ func int64Pointer(value sql.NullInt64) *int64 {
 }
 
 func isUniqueConstraint(err error) bool {
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		return pg.Code == "23505"
+	}
+	if err == nil {
+		return false
+	}
 	return strings.Contains(strings.ToLower(err.Error()), "unique constraint")
 }

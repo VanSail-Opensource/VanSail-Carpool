@@ -12,12 +12,14 @@ import (
 )
 
 // QueueQuestionnaireSettlement confirms an analyzed import and appends durable work.
-func (s *Store) QueueQuestionnaireSettlement(ctx context.Context, importID string, now time.Time) (questionnaires.ImportPreview, error) {
+func (s *Store) retryAttempt_QueueQuestionnaireSettlement(ctx context.Context, importID string, now time.Time) (questionnaires.ImportPreview, error) {
 	if strings.TrimSpace(importID) == "" {
 		return questionnaires.ImportPreview{}, questionnaires.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return questionnaires.ImportPreview{}, err
@@ -72,12 +74,14 @@ func (s *Store) QueueQuestionnaireSettlement(ctx context.Context, importID strin
 }
 
 // SettleQuestionnaireImport atomically matches codes and credits each participant once.
-func (s *Store) SettleQuestionnaireImport(ctx context.Context, importID string, now time.Time) (questionnaires.SettlementReport, error) {
+func (s *Store) retryAttempt_SettleQuestionnaireImport(ctx context.Context, importID string, now time.Time) (questionnaires.SettlementReport, error) {
 	if strings.TrimSpace(importID) == "" {
 		return questionnaires.SettlementReport{}, questionnaires.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

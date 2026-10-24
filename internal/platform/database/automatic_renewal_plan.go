@@ -52,7 +52,7 @@ func (s *Store) AutoRenewalPlanExcludingAddons(ctx context.Context, userID, purc
 	return s.autoRenewalPlan(ctx, userID, purchaseID, excludedAddonIDs, now)
 }
 
-func (s *Store) autoRenewalPlan(ctx context.Context, userID, purchaseID string, excludedAddonIDs []string, now time.Time) (AutoRenewalPlan, error) {
+func (s *Store) retryAttempt_autoRenewalPlan(ctx context.Context, userID, purchaseID string, excludedAddonIDs []string, now time.Time) (AutoRenewalPlan, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("begin automatic renewal quote: %w", err)

@@ -8,9 +8,11 @@ import (
 	"time"
 )
 
-func (s *Store) DiscardCouponGrant(ctx context.Context, userID, grantID string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_DiscardCouponGrant(ctx context.Context, userID, grantID string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin coupon discard: %w", err)

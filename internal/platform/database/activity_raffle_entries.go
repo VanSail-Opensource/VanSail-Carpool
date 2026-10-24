@@ -14,13 +14,15 @@ import (
 )
 
 // JoinRaffle atomically sells one seat for one Telegram group message.
-func (s *Store) JoinRaffle(ctx context.Context, userID string, chatID, messageID int64, text string, now time.Time) (activity.RaffleEntry, bool, error) {
+func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chatID, messageID int64, text string, now time.Time) (activity.RaffleEntry, bool, error) {
 	token, isCommand := raffleToken(text)
 	if token == "" || chatID == 0 || messageID <= 0 {
 		return activity.RaffleEntry{}, false, nil
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return activity.RaffleEntry{}, false, err

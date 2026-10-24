@@ -26,6 +26,17 @@ type identityRekey struct {
 // MigrateTelegramIdentities is an atomic, restart-safe startup migration. It must
 // complete before workers start; ciphertext and all references commit together.
 func (s *Store) MigrateTelegramIdentities(ctx context.Context, vault *secret.Vault, backupBase ...string) (result error) {
+	if IsPostgres(s.db) {
+		var invalid bool
+		err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id<>CAST(telegram_id AS TEXT))`).Scan(&invalid)
+		if err != nil {
+			return err
+		}
+		if invalid {
+			return fmt.Errorf("complete source identity migration before PostgreSQL import")
+		}
+		return nil
+	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	var done int

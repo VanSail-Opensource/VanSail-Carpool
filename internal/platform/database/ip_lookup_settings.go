@@ -11,9 +11,11 @@ import (
 )
 
 // SaveIPLookupSettings commits configuration, encrypted secrets, quotas and audit together.
-func (s *Store) SaveIPLookupSettings(ctx context.Context, actor string, config iplookup.Config, secrets map[string]string, quotas map[string]*int) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor string, config iplookup.Config, secrets map[string]string, quotas map[string]*int) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

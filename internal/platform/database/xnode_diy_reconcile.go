@@ -51,9 +51,11 @@ func (s *Store) EnqueueDIYReconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-func (s *Store) SaveSystemDIY(ctx context.Context, doc xnode.DIYDocument) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveSystemDIY(ctx context.Context, doc xnode.DIYDocument) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

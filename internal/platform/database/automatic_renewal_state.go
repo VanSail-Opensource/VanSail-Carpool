@@ -29,9 +29,11 @@ func (s *Store) HasEnabledAutoRenewal(ctx context.Context, userID string, _ time
 
 // SetAutoRenewal stores the member's explicit choice for an active, activating,
 // or settled expired source term. Callers must validate eligibility first.
-func (s *Store) SetAutoRenewal(ctx context.Context, userID, purchaseID string, enabled bool, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchaseID string, enabled bool, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin automatic renewal update: %w", err)
@@ -59,12 +61,12 @@ func (s *Store) SetAutoRenewal(ctx context.Context, userID, purchaseID string, e
 		}
 		return nil
 	}
+	var exists int
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE id=? AND user_id=?)`, purchaseID, userID).Scan(&exists); err != nil {
+		return fmt.Errorf("find automatic renewal purchase: %w", err)
+	}
 	if err := tx.Rollback(); err != nil {
 		return fmt.Errorf("close automatic renewal update: %w", err)
-	}
-	var exists int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE id=? AND user_id=?)`, purchaseID, userID).Scan(&exists); err != nil {
-		return fmt.Errorf("find automatic renewal purchase: %w", err)
 	}
 	if exists == 0 {
 		return ErrNotFound
@@ -112,12 +114,14 @@ func (s *Store) RenewalAwaitingRollover(ctx context.Context, purchaseID string) 
 }
 
 // MarkAutoRenewalFailed disables a due source without charging its owner.
-func (s *Store) MarkAutoRenewalFailed(ctx context.Context, purchaseID, reason string, now time.Time) error {
+func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchaseID, reason string, now time.Time) error {
 	if reason == "" {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin automatic renewal failure: %w", err)

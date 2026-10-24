@@ -9,14 +9,16 @@ import (
 )
 
 // BeginEarlyActivation forfeits and rebases terms without altering balances or prices.
-func (s *Store) BeginEarlyActivation(ctx context.Context, input providerops.CreateInput, currentID, queuedID string, now time.Time) (providerops.Operation, error) {
+func (s *Store) retryAttempt_BeginEarlyActivation(ctx context.Context, input providerops.CreateInput, currentID, queuedID string, now time.Time) (providerops.Operation, error) {
 	input, err := providerops.NormalizeCreate(input)
 	if err != nil || input.Kind != purchaseops.OperationEarlyActivation || input.ActorUserID != input.OwnerUserID || len(input.Items) != 1 || input.Items[0].TargetType != "purchase" || input.Items[0].TargetID != queuedID {
 		return providerops.Operation{}, ErrConflict
 	}
 	now = now.UTC()
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, err

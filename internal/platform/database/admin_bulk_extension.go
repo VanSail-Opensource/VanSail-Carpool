@@ -14,9 +14,11 @@ import (
 )
 
 // CreateAdminBulkExtension atomically shifts targets and queues exact provider sync.
-func (s *Store) CreateAdminBulkExtension(ctx context.Context, input AdminBulkExtensionInput, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CreateAdminBulkExtension(ctx context.Context, input AdminBulkExtensionInput, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

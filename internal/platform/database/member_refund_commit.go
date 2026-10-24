@@ -11,9 +11,11 @@ import (
 )
 
 // FinalizeMemberRefund credits the original net debit and activates an independent successor atomically.
-func (s *Store) FinalizeMemberRefund(ctx context.Context, operationID, purchaseID string, now time.Time) (purchaseops.RefundResult, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operationID, purchaseID string, now time.Time) (purchaseops.RefundResult, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return purchaseops.RefundResult{}, err

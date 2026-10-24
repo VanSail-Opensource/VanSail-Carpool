@@ -12,9 +12,11 @@ import (
 )
 
 // ReplaceAdminCombo changes active configuration without moving TXB facts.
-func (s *Store) ReplaceAdminCombo(ctx context.Context, input AdminComboReplacementInput, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminComboReplacementInput, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

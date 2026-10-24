@@ -22,6 +22,10 @@ var migrations embed.FS
 
 // Open creates the data directory, opens SQLite, and applies pending migrations.
 func Open(ctx context.Context, path string) (*sql.DB, error) {
+	return openSQLite(ctx, path, true)
+}
+
+func openSQLite(ctx context.Context, path string, migrateOnStart bool) (*sql.DB, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return nil, fmt.Errorf("create database directory: %w", err)
 	}
@@ -46,6 +50,13 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("ping sqlite: %w", err)
+	}
+	if !migrateOnStart {
+		if err := verifySQLiteVersion(ctx, db); err != nil {
+			db.Close()
+			return nil, err
+		}
+		return db, nil
 	}
 	if err := backupBeforeExpansionMigration(ctx, db, path); err != nil {
 		_ = db.Close()
@@ -73,6 +84,9 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 // Checkpoint flushes committed WAL pages without changing the on-disk database
 // as the authoritative source of truth.
 func Checkpoint(ctx context.Context, db *sql.DB, truncate bool) error {
+	if IsPostgres(db) {
+		return nil
+	}
 	mode := "PASSIVE"
 	if truncate {
 		mode = "TRUNCATE"

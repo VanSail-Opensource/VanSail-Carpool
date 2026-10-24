@@ -9,7 +9,7 @@ permissions:
 jobs:
   infrastructure:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -47,6 +47,26 @@ jobs:
             export POSTGRES_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
             /tmp/postgres.test -test.v
           '
+      - name: Run business contracts and concurrency checks on PostgreSQL
+        env:
+          CGO_ENABLED: 0
+        run: |
+          python3 scripts/ci/postgresql_contracts.py "$RUNNER_TEMP/postgres-contracts.regex" "$RUNNER_TEMP/postgres-contracts.json"
+          go test -c -o "$RUNNER_TEMP/database.test" ./internal/platform/database
+          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          docker cp "$RUNNER_TEMP/database.test" "$container:/tmp/database.test"
+          docker cp "$RUNNER_TEMP/postgres-contracts.regex" "$container:/tmp/postgres-contracts.regex"
+          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+            password=$(cat /run/secrets/postgres_password)
+            export POSTGRES_CONTRACT_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
+            /tmp/database.test -test.v -test.parallel=2 -test.timeout=20m -test.run "$(cat /tmp/postgres-contracts.regex)"
+          '
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: postgresql-contract-selection
+          path: ${{ runner.temp }}/postgres-contracts.json
+          if-no-files-found: ignore
       - name: Stop isolated infrastructure
         if: always()
         run: |

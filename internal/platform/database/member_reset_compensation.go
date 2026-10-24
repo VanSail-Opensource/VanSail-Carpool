@@ -15,9 +15,11 @@ import (
 )
 
 // CompensateTrafficReset credits one failed reset debit and closes its receipt atomically.
-func (s *Store) CompensateTrafficReset(ctx context.Context, operationID, errorCode string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operationID, errorCode string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

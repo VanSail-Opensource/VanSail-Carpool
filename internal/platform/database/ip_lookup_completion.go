@@ -50,15 +50,17 @@ func (s *Store) SaveIPLookupProgress(ctx context.Context, report iplookup.Report
 }
 
 // FinishIPLookupRun freezes the report and completes/refunds every joined check atomically.
-func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, now time.Time) error {
+func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iplookup.Report, now time.Time) error {
 	if report.Status == "failed" && iplookup.ReportAttempted(report) {
 		report.Status, report.Verdict = "partial", "inconclusive"
 	}
 	if report.Status != "succeeded" && report.Status != "partial" && report.Status != "failed" {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -143,7 +145,7 @@ func (s *Store) FinishIPLookupRun(ctx context.Context, report iplookup.Report, n
 func finishIPCheckTx(ctx context.Context, tx *sql.Tx, operationID, reportID, status string, now time.Time) error {
 	var usedQuota int
 	var metadata string
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(json_extract(o.result_json,'$.usedQuota'),c.allowance_id IS NOT NULL),o.result_json FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=?`, operationID).Scan(&usedQuota, &metadata); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(CAST(json_extract(o.result_json,'$.usedQuota') AS INTEGER),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),o.result_json FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=?`, operationID).Scan(&usedQuota, &metadata); err != nil {
 		return err
 	}
 	errorCode := ""

@@ -15,13 +15,15 @@ import (
 )
 
 // CancelAdminPurchase atomically cancels, credits, audits, and gates delivery.
-func (s *Store) CancelAdminPurchase(ctx context.Context, actorID, purchaseID, reason string, now time.Time) (model.Purchase, error) {
+func (s *Store) retryAttempt_CancelAdminPurchase(ctx context.Context, actorID, purchaseID, reason string, now time.Time) (model.Purchase, error) {
 	reason = strings.TrimSpace(reason)
 	if actorID == "" || purchaseID == "" || reason == "" || len(reason) > 500 {
 		return model.Purchase{}, errors.New("administrator cancellation is invalid")
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err

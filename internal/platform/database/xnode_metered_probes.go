@@ -53,9 +53,11 @@ func (s *Store) XNodePeriodProbes(ctx context.Context, period string) ([]xnode.M
 
 // SaveXNodeMeteredProbe atomically binds access and attribution, only while the
 // originating identity still owns its open period. References never rebind.
-func (s *Store) SaveXNodeMeteredProbe(ctx context.Context, p xnode.MeteredProbe) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveXNodeMeteredProbe(ctx context.Context, p xnode.MeteredProbe) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

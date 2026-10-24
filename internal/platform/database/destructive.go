@@ -96,9 +96,11 @@ func (s *Store) DeleteQuestionnaire(ctx context.Context, actorID, questionnaireI
 	})
 }
 
-func (s *Store) deleteFeature(ctx context.Context, actorID, action, targetType, targetID string, now time.Time, mutate func(*sql.Tx) error) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_deleteFeature(ctx context.Context, actorID, action, targetType, targetID string, now time.Time, mutate func(*sql.Tx) error) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

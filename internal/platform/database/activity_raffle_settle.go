@@ -12,9 +12,11 @@ import (
 )
 
 // SettleRaffle distributes the stock in one atomic transaction or reopens after refunds.
-func (s *Store) SettleRaffle(ctx context.Context, id string, rng activity.RandomSource, now time.Time) (activity.RaffleSettlement, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng activity.RandomSource, now time.Time) (activity.RaffleSettlement, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return activity.RaffleSettlement{}, err

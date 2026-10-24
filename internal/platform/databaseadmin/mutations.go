@@ -26,6 +26,9 @@ type preparedMutation struct {
 // process restart.
 
 func (s *Service) ReviewMutation(ctx context.Context, actorUserID string, request MutationRequest) (MutationReview, error) {
+	if s.postgresReadOnly() {
+		return MutationReview{}, fmt.Errorf("%w: PostgreSQL generic mutations are disabled pending parity verification", ErrInvalidValue)
+	}
 	request.ReviewHash = ""
 	request.Confirmation = ""
 	if err := validateAction(request.Action); err != nil {
@@ -101,6 +104,9 @@ func (s *Service) ReviewMutation(ctx context.Context, actorUserID string, reques
 // optimistic record hash, and performs the edit plus audit in one transaction.
 
 func (s *Service) ApplyMutation(ctx context.Context, actorUserID string, request MutationRequest) (MutationResult, error) {
+	if s.postgresReadOnly() {
+		return MutationResult{}, fmt.Errorf("%w: PostgreSQL generic mutations are disabled pending parity verification", ErrInvalidValue)
+	}
 	s.mutation.Lock()
 	defer s.mutation.Unlock()
 	if err := validateAction(request.Action); err != nil {

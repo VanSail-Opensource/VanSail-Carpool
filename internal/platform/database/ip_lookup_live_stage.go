@@ -19,9 +19,11 @@ func ipLiveStageTx(ctx context.Context, tx *sql.Tx, id string) (iplookup.LiveSta
 }
 
 // ClaimIPLookupLiveStage recovers a persisted snapshot before considering replay.
-func (s *Store) ClaimIPLookupLiveStage(ctx context.Context, id string) (iplookup.LiveStage, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ClaimIPLookupLiveStage(ctx context.Context, id string) (iplookup.LiveStage, bool, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return iplookup.LiveStage{}, false, err
@@ -75,9 +77,11 @@ func (s *Store) MarkIPLookupLiveAttempt(ctx context.Context, id string) error {
 }
 
 // FinishIPLookupLiveStage keeps the durable attempted marker independent of readers.
-func (s *Store) FinishIPLookupLiveStage(ctx context.Context, id string, stage iplookup.LiveStage) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_FinishIPLookupLiveStage(ctx context.Context, id string, stage iplookup.LiveStage) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

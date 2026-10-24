@@ -79,9 +79,11 @@ func (s *Store) ListAllPurchases(ctx context.Context, limit int) ([]model.Purcha
 }
 
 // CancelPurchase credits its snapshotted price and schedules entitlement replacement when needed.
-func (s *Store) CancelPurchase(ctx context.Context, purchaseID, reason string, now time.Time) (model.Purchase, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CancelPurchase(ctx context.Context, purchaseID, reason string, now time.Time) (model.Purchase, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err

@@ -13,10 +13,12 @@ import (
 )
 
 // CreateProviderOperation persists an idempotent command and queues it atomically.
-func (s *Store) CreateProviderOperation(ctx context.Context, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
+func (s *Store) retryAttempt_CreateProviderOperation(ctx context.Context, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
 	now = now.UTC()
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("begin provider operation: %w", err)

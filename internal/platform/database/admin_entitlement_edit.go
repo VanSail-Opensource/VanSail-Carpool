@@ -13,9 +13,11 @@ import (
 )
 
 // EditAdminEntitlement atomically replaces mutable fields, audits, and queues sync.
-func (s *Store) EditAdminEntitlement(ctx context.Context, input AdminEntitlementEditInput, now time.Time) (model.Purchase, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input AdminEntitlementEditInput, now time.Time) (model.Purchase, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err

@@ -11,9 +11,11 @@ import (
 )
 
 // BeginProviderOperationAttempt durably marks the attempt before provider mutation.
-func (s *Store) BeginProviderOperationAttempt(ctx context.Context, operationID string, now time.Time) (providerops.Operation, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_BeginProviderOperationAttempt(ctx context.Context, operationID string, now time.Time) (providerops.Operation, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("begin provider attempt: %w", err)
@@ -50,7 +52,7 @@ func (s *Store) CompleteXNodeProviderOperation(ctx context.Context, operationID 
 	return s.completeProviderOperation(ctx, operationID, &attempt, completion, now)
 }
 
-func (s *Store) completeProviderOperation(ctx context.Context, operationID string, attempt *int, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
+func (s *Store) retryAttempt_completeProviderOperation(ctx context.Context, operationID string, attempt *int, completion providerops.Completion, now time.Time) (providerops.Operation, error) {
 	if !providerops.Terminal(completion.Status) {
 		return providerops.Operation{}, ErrConflict
 	}
@@ -60,8 +62,10 @@ func (s *Store) completeProviderOperation(ctx context.Context, operationID strin
 	}
 	completion.ProviderReference = strings.TrimSpace(completion.ProviderReference)
 	completion.ErrorCode = operationCode(completion.ErrorCode)
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("begin provider completion: %w", err)

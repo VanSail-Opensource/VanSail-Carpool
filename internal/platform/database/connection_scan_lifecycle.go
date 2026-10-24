@@ -15,7 +15,7 @@ const connectionScanSelect = `SELECT id,user_id,idempotency_key,request_fingerpr
 	progress_percent,error_code,created_at,updated_at,completed_at,expires_at FROM connection_scans`
 
 // UpdateConnectionScan advances progress without permitting job identity changes or regressions.
-func (s *Store) UpdateConnectionScan(ctx context.Context, scanID string, update providerops.ConnectionScanUpdate, now time.Time) (providerops.ConnectionScan, error) {
+func (s *Store) retryAttempt_UpdateConnectionScan(ctx context.Context, scanID string, update providerops.ConnectionScanUpdate, now time.Time) (providerops.ConnectionScan, error) {
 	update.ProviderJobID = strings.TrimSpace(update.ProviderJobID)
 	update.ErrorCode = operationCode(update.ErrorCode)
 	if update.ProgressPercent < 0 || update.ProgressPercent > 100 ||
@@ -23,8 +23,10 @@ func (s *Store) UpdateConnectionScan(ctx context.Context, scanID string, update 
 			update.Status != providerops.StatusFailed && update.Status != providerops.StatusPendingReview) {
 		return providerops.ConnectionScan{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.ConnectionScan{}, fmt.Errorf("begin connection scan update: %w", err)

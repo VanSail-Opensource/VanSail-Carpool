@@ -75,9 +75,11 @@ func (s *Store) RotateXNodeToken(ctx context.Context, id string, hash []byte) er
 	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=?,updated_at=? WHERE id=?`, hash, stamp(time.Now().UTC()), id)
 	return err
 }
-func (s *Store) BindXNodeAgent(ctx context.Context, id, agent string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent string) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

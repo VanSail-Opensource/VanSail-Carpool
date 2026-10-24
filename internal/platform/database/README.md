@@ -1,5 +1,13 @@
 # SQLite store
 
+`open_configured.go` explicitly selects SQLite or PostgreSQL. `transaction_retry.go`
+classifies whole-operation retries; generated adapters retain existing public
+repository interfaces. `postgres_concurrency_test.go` exercises debit contention and stale outbox generations.
+`postgres_contract_test.go` supplies isolated PostgreSQL
+databases to the same business contracts in hosted CI. `outbox_fencing.go` owns
+generation-checked completion/heartbeats. `xnode_traffic_sample.go` contains exact
+fixed-point sample validation and charging after sorted period locks.
+
 The PostgreSQL transition inventory is maintained in
 [the compatibility map](../../../docs/plans/postgresql-compatibility.md),
 [schema mapping](../../../docs/plans/postgresql-schema-mapping.md), and
@@ -611,3 +619,138 @@ recreates missing jobs for unfinished plans, leaves live leases and terminal
 receipts untouched, and never charges or rewrites desired routing/accounting.
 `xnode_routing_recovery_test.go` checks missing jobs, delayed/failed retries,
 duplicate wakes, live leases, terminal receipts and retained DIY result evidence.
+
+<!-- generated transaction retry map -->
+
+Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
+40001/40P01, with bounded context-aware backoff. SQLite retains its writer lock.
+The generator excludes methods that access SQL outside their transaction or own
+mutable in-memory batches. Provider requests remain outside every transaction.
+
+- `activity_draws_part2_retry_generated.go` wraps the transactional methods in `activity_draws_part2.go`.
+- `activity_draws_retry_generated.go` wraps the transactional methods in `activity_draws.go`.
+- `activity_history_part2_retry_generated.go` wraps the transactional methods in `activity_history_part2.go`.
+- `activity_part2_retry_generated.go` wraps the transactional methods in `activity_part2.go`.
+- `activity_raffle_entries_retry_generated.go` wraps the transactional methods in `activity_raffle_entries.go`.
+- `activity_raffle_publish_retry_generated.go` wraps the transactional methods in `activity_raffle_publish.go`.
+- `activity_raffle_settle_retry_generated.go` wraps the transactional methods in `activity_raffle_settle.go`.
+- `activity_retry_generated.go` wraps the transactional methods in `activity.go`.
+- `admin_bulk_extension_retry_generated.go` wraps the transactional methods in `admin_bulk_extension.go`.
+- `admin_combo_replacement_retry_generated.go` wraps the transactional methods in `admin_combo_replacement.go`.
+- `admin_coupon_grants_retry_generated.go` wraps the transactional methods in `admin_coupon_grants.go`.
+- `admin_entitlement_edit_retry_generated.go` wraps the transactional methods in `admin_entitlement_edit.go`.
+- `admin_entitlement_refund_retry_generated.go` wraps the transactional methods in `admin_entitlement_refund.go`.
+- `admin_operation_resolution_retry_generated.go` wraps the transactional methods in `admin_operation_resolution.go`.
+- `admin_user_provider_commands_retry_generated.go` wraps the transactional methods in `admin_user_provider_commands.go`.
+- `administration_records_retry_generated.go` wraps the transactional methods in `administration_records.go`.
+- `affiliate_config_retry_generated.go` wraps the transactional methods in `affiliate_config.go`.
+- `affiliate_referrals_retry_generated.go` wraps the transactional methods in `affiliate_referrals.go`.
+- `api_token_writes_retry_generated.go` wraps the transactional methods in `api_token_writes.go`.
+- `automatic_renewal_plan_retry_generated.go` wraps the transactional methods in `automatic_renewal_plan.go`.
+- `automatic_renewal_rollover_retry_generated.go` wraps the transactional methods in `automatic_renewal_rollover.go`.
+- `automatic_renewal_state_retry_generated.go` wraps the transactional methods in `automatic_renewal_state.go`.
+- `automatic_traffic_reset_retry_generated.go` wraps the transactional methods in `automatic_traffic_reset.go`.
+- `billing_bounds_retry_generated.go` wraps the transactional methods in `billing_bounds.go`.
+- `billing_courtesy_retry_generated.go` wraps the transactional methods in `billing_courtesy.go`.
+- `billing_ledger_retry_generated.go` wraps the transactional methods in `billing_ledger.go`.
+- `billing_payment_settlement_retry_generated.go` wraps the transactional methods in `billing_payment_settlement.go`.
+- `billing_payments_retry_generated.go` wraps the transactional methods in `billing_payments.go`.
+- `billing_purchase_addons_retry_generated.go` wraps the transactional methods in `billing_purchase_addons.go`.
+- `billing_purchase_cancellation_retry_generated.go` wraps the transactional methods in `billing_purchase_cancellation.go`.
+- `billing_purchases_retry_generated.go` wraps the transactional methods in `billing_purchases.go`.
+- `billing_quote_retry_generated.go` wraps the transactional methods in `billing_quote.go`.
+- `billing_refunds_retry_generated.go` wraps the transactional methods in `billing_refunds.go`.
+- `billing_renewal_retry_generated.go` wraps the transactional methods in `billing_renewal.go`.
+- `billing_retry_generated.go` wraps the transactional methods in `billing.go`.
+- `browser_access_links_retry_generated.go` wraps the transactional methods in `browser_access_links.go`.
+- `catalog_retry_generated.go` wraps the transactional methods in `catalog.go`.
+- `compensation_config_retry_generated.go` wraps the transactional methods in `compensation_config.go`.
+- `compensation_dismiss_retry_generated.go` wraps the transactional methods in `compensation_dismiss.go`.
+- `compensation_observation_retry_generated.go` wraps the transactional methods in `compensation_observation.go`.
+- `compensation_review_retry_generated.go` wraps the transactional methods in `compensation_review.go`.
+- `connection_ip_block_completion_retry_generated.go` wraps the transactional methods in `connection_ip_block_completion.go`.
+- `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
+- `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
+- `connection_ip_blocks_retry_generated.go` wraps the transactional methods in `connection_ip_blocks.go`.
+- `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
+- `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
+- `continuity_retry_generated.go` wraps the transactional methods in `continuity.go`.
+- `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
+- `coupons_part2_retry_generated.go` wraps the transactional methods in `coupons_part2.go`.
+- `coupons_part3_retry_generated.go` wraps the transactional methods in `coupons_part3.go`.
+- `destructive_retry_generated.go` wraps the transactional methods in `destructive.go`.
+- `emby_operations_retry_generated.go` wraps the transactional methods in `emby_operations.go`.
+- `emby_provisioning_part2_retry_generated.go` wraps the transactional methods in `emby_provisioning_part2.go`.
+- `emby_provisioning_retry_generated.go` wraps the transactional methods in `emby_provisioning.go`.
+- `emby_setup_retry_generated.go` wraps the transactional methods in `emby_setup.go`.
+- `ip_lookup_cache_retry_generated.go` wraps the transactional methods in `ip_lookup_cache.go`.
+- `ip_lookup_commands_retry_generated.go` wraps the transactional methods in `ip_lookup_commands.go`.
+- `ip_lookup_completion_retry_generated.go` wraps the transactional methods in `ip_lookup_completion.go`.
+- `ip_lookup_live_cache_retry_generated.go` wraps the transactional methods in `ip_lookup_live_cache.go`.
+- `ip_lookup_live_stage_retry_generated.go` wraps the transactional methods in `ip_lookup_live_stage.go`.
+- `ip_lookup_queries_retry_generated.go` wraps the transactional methods in `ip_lookup_queries.go`.
+- `ip_lookup_settings_retry_generated.go` wraps the transactional methods in `ip_lookup_settings.go`.
+- `maintenance_runs_retry_generated.go` wraps the transactional methods in `maintenance_runs.go`.
+- `member_early_activation_retry_generated.go` wraps the transactional methods in `member_early_activation.go`.
+- `member_operation_begin_retry_generated.go` wraps the transactional methods in `member_operation_begin.go`.
+- `member_refund_commit_retry_generated.go` wraps the transactional methods in `member_refund_commit.go`.
+- `member_reset_compensation_retry_generated.go` wraps the transactional methods in `member_reset_compensation.go`.
+- `member_squad_access_retry_generated.go` wraps the transactional methods in `member_squad_access.go`.
+- `member_squad_preferences_retry_generated.go` wraps the transactional methods in `member_squad_preferences.go`.
+- `notification_admin_cancel_retry_generated.go` wraps the transactional methods in `notification_admin_cancel.go`.
+- `notification_admin_finance_retry_generated.go` wraps the transactional methods in `notification_admin_finance.go`.
+- `notification_events_retry_generated.go` wraps the transactional methods in `notification_events.go`.
+- `notification_scans_retry_generated.go` wraps the transactional methods in `notification_scans.go`.
+- `onboarding_retry_generated.go` wraps the transactional methods in `onboarding.go`.
+- `operations_retry_generated.go` wraps the transactional methods in `operations.go`.
+- `outbox_jobs_retry_generated.go` wraps the transactional methods in `outbox_jobs.go`.
+- `outbox_retry_operations_retry_generated.go` wraps the transactional methods in `outbox_retry_operations.go`.
+- `panel_entry_verification_retry_generated.go` wraps the transactional methods in `panel_entry_verification.go`.
+- `payment_operation_resolution_retry_generated.go` wraps the transactional methods in `payment_operation_resolution.go`.
+- `payment_operations_retry_generated.go` wraps the transactional methods in `payment_operations.go`.
+- `payment_profiles_retry_generated.go` wraps the transactional methods in `payment_profiles.go`.
+- `payment_refund_resolution_retry_generated.go` wraps the transactional methods in `payment_refund_resolution.go`.
+- `provider_operation_lifecycle_retry_generated.go` wraps the transactional methods in `provider_operation_lifecycle.go`.
+- `provider_operation_notification_completion_retry_generated.go` wraps the transactional methods in `provider_operation_notification_completion.go`.
+- `provider_operations_retry_generated.go` wraps the transactional methods in `provider_operations.go`.
+- `proxy_provisioning_backlog_retry_generated.go` wraps the transactional methods in `proxy_provisioning_backlog.go`.
+- `purchase_sync_retry_generated.go` wraps the transactional methods in `purchase_sync.go`.
+- `questionnaire_imports_retry_generated.go` wraps the transactional methods in `questionnaire_imports.go`.
+- `questionnaire_operations_retry_generated.go` wraps the transactional methods in `questionnaire_operations.go`.
+- `questionnaire_settlement_retry_generated.go` wraps the transactional methods in `questionnaire_settlement.go`.
+- `questionnaires_part2_retry_generated.go` wraps the transactional methods in `questionnaires_part2.go`.
+- `questionnaires_retry_generated.go` wraps the transactional methods in `questionnaires.go`.
+- `retention_compaction_retry_generated.go` wraps the transactional methods in `retention_compaction.go`.
+- `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
+- `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
+- `rollover_calculation_retry_generated.go` wraps the transactional methods in `rollover_calculation.go`.
+- `rollover_retry_generated.go` wraps the transactional methods in `rollover.go`.
+- `store_part2_retry_generated.go` wraps the transactional methods in `store_part2.go`.
+- `store_retry_generated.go` wraps the transactional methods in `store.go`.
+- `telegram_boost_receipts_retry_generated.go` wraps the transactional methods in `telegram_boost_receipts.go`.
+- `telegram_pm_commands_retry_generated.go` wraps the transactional methods in `telegram_pm_commands.go`.
+- `telegram_pm_moderation_retry_generated.go` wraps the transactional methods in `telegram_pm_moderation.go`.
+- `telegram_pm_recovery_retry_generated.go` wraps the transactional methods in `telegram_pm_recovery.go`.
+- `usdt_quotes_retry_generated.go` wraps the transactional methods in `usdt_quotes.go`.
+- `usdt_review_retry_generated.go` wraps the transactional methods in `usdt_review.go`.
+- `usdt_settlement_retry_generated.go` wraps the transactional methods in `usdt_settlement.go`.
+- `usdt_transfers_retry_generated.go` wraps the transactional methods in `usdt_transfers.go`.
+- `user_preferences_retry_generated.go` wraps the transactional methods in `user_preferences.go`.
+- `xnode_access_repair_retry_generated.go` wraps the transactional methods in `xnode_access_repair.go`.
+- `xnode_barriers_retry_generated.go` wraps the transactional methods in `xnode_barriers.go`.
+- `xnode_configurations_retry_generated.go` wraps the transactional methods in `xnode_configurations.go`.
+- `xnode_diy_billing_retry_generated.go` wraps the transactional methods in `xnode_diy_billing.go`.
+- `xnode_diy_reconcile_retry_generated.go` wraps the transactional methods in `xnode_diy_reconcile.go`.
+- `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.
+- `xnode_firewall_policy_retry_generated.go` wraps the transactional methods in `xnode_firewall_policy.go`.
+- `xnode_firewall_tx_retry_generated.go` wraps the transactional methods in `xnode_firewall_tx.go`.
+- `xnode_groups_retry_generated.go` wraps the transactional methods in `xnode_groups.go`.
+- `xnode_metered_probes_retry_generated.go` wraps the transactional methods in `xnode_metered_probes.go`.
+- `xnode_named_services_retry_generated.go` wraps the transactional methods in `xnode_named_services.go`.
+- `xnode_nodes_retry_generated.go` wraps the transactional methods in `xnode_nodes.go`.
+- `xnode_periods_retry_generated.go` wraps the transactional methods in `xnode_periods.go`.
+- `xnode_rates_retry_generated.go` wraps the transactional methods in `xnode_rates.go`.
+- `xnode_routing_access_retry_generated.go` wraps the transactional methods in `xnode_routing_access.go`.
+- `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
+- `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
+- `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.

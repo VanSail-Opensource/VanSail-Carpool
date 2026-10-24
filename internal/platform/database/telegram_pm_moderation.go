@@ -12,12 +12,14 @@ import (
 )
 
 // QueuePMModeration commits normalized user flags and a recoverable profile update.
-func (s *Store) QueuePMModeration(ctx context.Context, actorID, key string, input model.PMModerationInput, updateID int64, now time.Time) (model.OperationReceipt, error) {
+func (s *Store) retryAttempt_QueuePMModeration(ctx context.Context, actorID, key string, input model.PMModerationInput, updateID int64, now time.Time) (model.OperationReceipt, error) {
 	if input.Blocked == nil && input.Muted == nil {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -78,12 +80,14 @@ func (s *Store) QueuePMModeration(ctx context.Context, actorID, key string, inpu
 }
 
 // QueuePMProfileRefresh records an authorized profile-card refresh request.
-func (s *Store) QueuePMProfileRefresh(ctx context.Context, actorID, key, conversationID string, updateID int64, now time.Time) (model.OperationReceipt, error) {
+func (s *Store) retryAttempt_QueuePMProfileRefresh(ctx context.Context, actorID, key, conversationID string, updateID int64, now time.Time) (model.OperationReceipt, error) {
 	if strings.TrimSpace(key) == "" || strings.TrimSpace(conversationID) == "" {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -126,12 +130,14 @@ func (s *Store) QueuePMProfileRefresh(ctx context.Context, actorID, key, convers
 	return operation.Receipt, nil
 }
 
-func (s *Store) QueuePMTopicRepair(ctx context.Context, actorID, key string, input model.PMTopicRepairInput, now time.Time) (model.OperationReceipt, error) {
+func (s *Store) retryAttempt_QueuePMTopicRepair(ctx context.Context, actorID, key string, input model.PMTopicRepairInput, now time.Time) (model.OperationReceipt, error) {
 	if input.TopicID <= 1 || input.ProfileMessageID < 0 {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

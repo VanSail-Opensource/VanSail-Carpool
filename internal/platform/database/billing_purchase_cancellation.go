@@ -12,15 +12,17 @@ import (
 // CancelQueuedPurchase refunds a queued purchase only to its owning user.
 // Status transition, balance credit, and immutable ledger entry share one
 // transaction so a retry cannot produce a partial refund.
-func (s *Store) CancelQueuedPurchase(ctx context.Context, userID, purchaseID, reason string, now time.Time) (model.Purchase, error) {
+func (s *Store) retryAttempt_CancelQueuedPurchase(ctx context.Context, userID, purchaseID, reason string, now time.Time) (model.Purchase, error) {
 	userID = strings.TrimSpace(userID)
 	purchaseID = strings.TrimSpace(purchaseID)
 	if userID == "" || purchaseID == "" {
 		return model.Purchase{}, ErrConflict
 	}
 
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err

@@ -28,3 +28,6 @@ migration verification and recovery integration have been delivered.
 migrations, immutable histories, exact timestamps and future-version refusal in
 hosted PostgreSQL. `tokens.go`, `bind.go` and `connector.go` provide the SQL-aware
 legacy binding boundary while retaining `database/sql` repository contracts.
+
+`bind_test.go` verifies SQL-aware quoting, comments, dollar strings, native
+parameters, aggregate/scalar distinctions and null equality in hosted CI.

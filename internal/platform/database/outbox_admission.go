@@ -31,7 +31,7 @@ func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority 
    AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
     NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
     AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
-   ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 0 ELSE 1 END,available_at,created_at,rowid LIMIT ? OFFSET ?`, stamp(now), boolInt(priority), batchSize, offset)
+   ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 0 ELSE 1 END,available_at,created_at,rowid LIMIT ? OFFSET ? /*pg:FOR UPDATE SKIP LOCKED*/`, stamp(now), boolInt(priority), batchSize, offset)
 		if err != nil {
 			return nil, err
 		}

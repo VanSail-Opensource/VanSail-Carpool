@@ -7,9 +7,11 @@ import (
 )
 
 // EnqueueUnlinkedPaidUsers repairs paid members left without a provider link.
-func (s *Store) EnqueueUnlinkedPaidUsers(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnqueueUnlinkedPaidUsers(ctx context.Context, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin unlinked purchase scan: %w", err)

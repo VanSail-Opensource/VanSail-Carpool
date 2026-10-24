@@ -12,9 +12,11 @@ import (
 )
 
 // DismissCompensationEvent records one idempotent reviewed rejection.
-func (s *Store) DismissCompensationEvent(ctx context.Context, input compensation.ReviewInput, fingerprint string, now time.Time) (compensation.Event, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_DismissCompensationEvent(ctx context.Context, input compensation.ReviewInput, fingerprint string, now time.Time) (compensation.Event, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return compensation.Event{}, err

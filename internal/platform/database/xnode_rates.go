@@ -7,12 +7,14 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-func (s *Store) SetXNodeRate(ctx context.Context, nodeID, agent string, cutoff uint64, multiplier int64) error {
+func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent string, cutoff uint64, multiplier int64) error {
 	if multiplier < 0 || cutoff >= math.MaxInt64 {
 		return xnode.ErrInvalid
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

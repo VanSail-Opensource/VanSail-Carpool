@@ -21,7 +21,7 @@ type PurchaseAddonInput struct {
 }
 
 // QuotePurchaseAddons returns the authoritative active-term price without a mutation.
-func (s *Store) QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, error) {
+func (s *Store) retryAttempt_QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, error) {
 	input.IdempotencyKey = "quote"
 	if _, err := normalizeAndFingerprintPurchaseAddons(&input); err != nil {
 		return model.PurchaseAddonQuote{}, err
@@ -36,13 +36,15 @@ func (s *Store) QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInpu
 }
 
 // AddPurchaseAddons atomically debits the price, records squads, and queues reconciliation.
-func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
+func (s *Store) retryAttempt_AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
 	fingerprint, err := normalizeAndFingerprintPurchaseAddons(&input)
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

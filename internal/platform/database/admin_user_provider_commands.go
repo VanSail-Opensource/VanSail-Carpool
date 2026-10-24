@@ -13,12 +13,14 @@ import (
 // AdminTemporaryBanExpiryOutboxKind queues the one-time expiry restoration check.
 const AdminTemporaryBanExpiryOutboxKind = "admin_temporary_ban_expiry"
 
-func (s *Store) CreateAdminTemporaryBan(ctx context.Context, input AdminTemporaryBanInput, now time.Time) (model.OperationReceipt, error) {
+func (s *Store) retryAttempt_CreateAdminTemporaryBan(ctx context.Context, input AdminTemporaryBanInput, now time.Time) (model.OperationReceipt, error) {
 	if input.DurationMinutes < 1 || input.DurationMinutes > 525600 {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -58,9 +60,11 @@ func (s *Store) CreateAdminTemporaryBan(ctx context.Context, input AdminTemporar
 	return op.Receipt, nil
 }
 
-func (s *Store) CreateAdminTemporaryUnban(ctx context.Context, actorID, userID, key, fingerprint, reason string, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CreateAdminTemporaryUnban(ctx context.Context, actorID, userID, key, fingerprint, reason string, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -98,9 +102,11 @@ func (s *Store) CreateAdminTemporaryUnban(ctx context.Context, actorID, userID, 
 	return op.Receipt, nil
 }
 
-func (s *Store) QueueExpiredAdminTemporaryBan(ctx context.Context, userID string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_QueueExpiredAdminTemporaryBan(ctx context.Context, userID string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

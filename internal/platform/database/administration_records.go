@@ -10,9 +10,11 @@ import (
 )
 
 // AppendAudit writes an immutable privileged action record.
-func (s *Store) AppendAudit(ctx context.Context, actorUserID *string, action, targetType, targetID, detail string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_AppendAudit(ctx context.Context, actorUserID *string, action, targetType, targetID, detail string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	id, err := ids.New()
 	if err != nil {
 		return err

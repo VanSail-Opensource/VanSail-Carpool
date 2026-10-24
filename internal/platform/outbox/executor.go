@@ -107,7 +107,7 @@ func (e *executor) execute(job model.OutboxJob) {
 				return
 			case <-ticker.C:
 				renewalCtx, stop := context.WithTimeout(ctx, 5*time.Second)
-				owned, err := e.worker.repository.(leaseRepository).RenewOutboxJob(renewalCtx, job.ID, job.Attempts, e.worker.now().UTC())
+				owned, err := RenewClaim(renewalCtx, e.worker.repository.(leaseRepository), job, e.worker.now().UTC())
 				stop()
 				if err != nil || !owned {
 					cancel()
@@ -124,7 +124,7 @@ func (e *executor) execute(job model.OutboxJob) {
 	} // Native executor owns its own heartbeat.
 	completionCtx, stop := context.WithTimeout(context.WithoutCancel(e.ctx), 5*time.Second)
 	defer stop()
-	if err := e.worker.repository.CompleteOutboxJob(completionCtx, job.ID, job.Attempts, jobErr, e.worker.now().UTC()); err != nil && e.report != nil {
+	if err := CompleteClaim(completionCtx, e.worker.repository, job, jobErr, e.worker.now().UTC()); err != nil && e.report != nil {
 		e.report(fmt.Errorf("complete outbox attempt %s: %w", job.ID, err))
 	}
 }

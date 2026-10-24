@@ -10,13 +10,15 @@ import (
 
 // ResolvePaymentCreateOperation lets an authoritative paid callback close an
 // interrupted or review-required checkout command without another provider call.
-func (s *Store) ResolvePaymentCreateOperation(ctx context.Context, orderID, providerReference string, now time.Time) error {
+func (s *Store) retryAttempt_ResolvePaymentCreateOperation(ctx context.Context, orderID, providerReference string, now time.Time) error {
 	result, err := json.Marshal(map[string]string{"paymentOrderId": orderID, "source": "provider_callback"})
 	if err != nil {
 		return err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin payment operation resolution: %w", err)

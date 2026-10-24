@@ -17,9 +17,11 @@ func (s *Store) RequeuePMItem(ctx context.Context, operationID, key string, now 
 }
 
 // ResetMissingPMTopic accepts only the worker's definitive missing-topic response.
-func (s *Store) ResetMissingPMTopic(ctx context.Context, id, operationID string, missingTopicID int64, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ResetMissingPMTopic(ctx context.Context, id, operationID string, missingTopicID int64, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -38,12 +40,14 @@ func (s *Store) ResetMissingPMTopic(ctx context.Context, id, operationID string,
 }
 
 // SavePMTopicRepair binds only a topic/profile pair successfully probed by the queued executor.
-func (s *Store) SavePMTopicRepair(ctx context.Context, id, operationID string, topicID, profileID int64, now time.Time) error {
+func (s *Store) retryAttempt_SavePMTopicRepair(ctx context.Context, id, operationID string, topicID, profileID int64, now time.Time) error {
 	if topicID <= 1 || profileID <= 0 {
 		return ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

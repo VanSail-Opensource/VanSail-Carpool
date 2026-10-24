@@ -17,9 +17,11 @@ func (s *Store) CreateBrowserAccessLink(ctx context.Context, hash []byte, userID
 }
 
 // ExchangeBrowserAccessLink atomically consumes a live handoff and creates its browser session.
-func (s *Store) ExchangeBrowserAccessLink(ctx context.Context, linkHash, sessionHash []byte, now, expires time.Time) (string, string, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ExchangeBrowserAccessLink(ctx context.Context, linkHash, sessionHash []byte, now, expires time.Time) (string, string, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", "", err

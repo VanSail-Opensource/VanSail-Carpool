@@ -84,9 +84,11 @@ func queueFirewallFleetTx(ctx context.Context, tx *sql.Tx, now time.Time) error 
 	}
 	return nil
 }
-func (s *Store) firewallWrite(ctx context.Context, fn func(*sql.Tx) error) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_firewallWrite(ctx context.Context, fn func(*sql.Tx) error) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -8,12 +8,14 @@ import (
 )
 
 // CompactAndPrune aggregates required facts and removes expired detail in one transaction.
-func (s *Store) CompactAndPrune(ctx context.Context, cutoff7Days, cutoff24Hours, now time.Time) (map[string]int64, error) {
+func (s *Store) retryAttempt_CompactAndPrune(ctx context.Context, cutoff7Days, cutoff24Hours, now time.Time) (map[string]int64, error) {
 	if !cutoff7Days.Before(now) || !cutoff24Hours.Before(now) {
 		return nil, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin retention compaction: %w", err)

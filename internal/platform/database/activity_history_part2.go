@@ -14,12 +14,14 @@ import (
 	"time"
 )
 
-func (s *Store) RecordGroupMessage(ctx context.Context, userID string, chatID, messageID int64, localDate, timezone string, threshold int, rewardMinor int64, boostCount int, now time.Time) (activity.GroupMessageRewardResult, error) {
+func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID string, chatID, messageID int64, localDate, timezone string, threshold int, rewardMinor int64, boostCount int, now time.Time) (activity.GroupMessageRewardResult, error) {
 	if strings.TrimSpace(userID) == "" || chatID == 0 || messageID <= 0 || threshold < 0 || rewardMinor < 0 || boostCount < 0 {
 		return activity.GroupMessageRewardResult{}, activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

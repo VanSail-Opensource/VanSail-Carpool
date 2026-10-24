@@ -14,3 +14,7 @@ native executor limits still bound actual execution. It is not a separate queue.
 `executor.go` enables four normal attempts and one urgent slot after application Start. Attempts have five-minute contexts, 20-second fenced lease heartbeats, panic isolation and joined shutdown. Embedded callers retain synchronous Drain. Deferred node commands retain the native executor lease.
 
 `executor_test.go` checks independent completion and cancellation joins without relying on timing sleeps.
+
+`claim.go` chooses durable generation-aware completion/renewal when supported,
+while retaining legacy test adapters. PostgreSQL claims serialize only resource
+admission, lock candidates with SKIP LOCKED, then release locks before providers.

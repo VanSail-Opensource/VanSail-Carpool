@@ -23,9 +23,11 @@ func (s *Store) Balance(ctx context.Context, userID string) (model.Money, error)
 }
 
 // AdjustBalance appends an immutable administrator-authored ledger entry.
-func (s *Store) AdjustBalance(ctx context.Context, userID string, delta int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_AdjustBalance(ctx context.Context, userID string, delta int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err
@@ -46,12 +48,14 @@ func (s *Store) AdjustBalance(ctx context.Context, userID string, delta int64, r
 }
 
 // DeductBalance appends an immutable administrator-authored debit without allowing debt.
-func (s *Store) DeductBalance(ctx context.Context, userID string, amount int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
+func (s *Store) retryAttempt_DeductBalance(ctx context.Context, userID string, amount int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
 	if amount <= 0 {
 		return model.LedgerEntry{}, ErrInsufficientBalance
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err

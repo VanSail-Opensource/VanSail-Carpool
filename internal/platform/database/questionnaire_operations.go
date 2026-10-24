@@ -10,10 +10,12 @@ import (
 )
 
 // BeginQuestionnaireSettlementOperation atomically confirms an import and queues its receipt.
-func (s *Store) BeginQuestionnaireSettlementOperation(ctx context.Context, input providerops.CreateInput,
+func (s *Store) retryAttempt_BeginQuestionnaireSettlementOperation(ctx context.Context, input providerops.CreateInput,
 	importID string, now time.Time) (providerops.Operation, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database/postgres"
 	"regexp"
 	"sort"
 	"strings"
@@ -43,6 +44,9 @@ type tableSchema struct {
 // internals. Identifiers are sourced exclusively from sqlite_schema.
 
 func (s *Service) Tables(ctx context.Context) ([]Table, error) {
+	if postgres.Is(s.db.Driver()) {
+		return s.postgresTables(ctx)
+	}
 	rows, err := s.db.QueryContext(ctx, `SELECT name,sql FROM sqlite_schema
 		WHERE type='table' AND name<>'schema_migrations' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
 	if err != nil {
@@ -68,6 +72,9 @@ func (s *Service) Tables(ctx context.Context) ([]Table, error) {
 }
 
 func (s *Service) schema(ctx context.Context, table string) (tableSchema, error) {
+	if postgres.Is(s.db.Driver()) {
+		return s.postgresSchema(ctx, table)
+	}
 	if !identifierPattern.MatchString(table) || table == "schema_migrations" || strings.HasPrefix(strings.ToLower(table), "sqlite_") {
 		return tableSchema{}, ErrTableNotFound
 	}
@@ -175,7 +182,7 @@ func columnAffinity(declared string) affinity {
 		return affinityInteger
 	case strings.Contains(declared, "CHAR"), strings.Contains(declared, "CLOB"), strings.Contains(declared, "TEXT"):
 		return affinityText
-	case strings.Contains(declared, "BLOB") || strings.TrimSpace(declared) == "":
+	case strings.Contains(declared, "BLOB") || declared == "BYTEA" || strings.TrimSpace(declared) == "":
 		return affinityBlob
 	case strings.Contains(declared, "REAL"), strings.Contains(declared, "FLOA"), strings.Contains(declared, "DOUB"):
 		return affinityReal

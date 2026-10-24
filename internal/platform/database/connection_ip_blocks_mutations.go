@@ -29,10 +29,12 @@ func (s *Store) ListConnectionIPBlocksForUser(ctx context.Context, userID string
 }
 
 // BeginConnectionIPUnblock atomically marks the row and queues the command.
-func (s *Store) BeginConnectionIPUnblock(ctx context.Context, blockID, ownerID string,
+func (s *Store) retryAttempt_BeginConnectionIPUnblock(ctx context.Context, blockID, ownerID string,
 	command providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err

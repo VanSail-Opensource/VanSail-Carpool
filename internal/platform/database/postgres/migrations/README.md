@@ -9,3 +9,6 @@ The parent package embeds these forward-only Goose migrations. New changes use
 new numbers; every downgrade refuses authoritative-data mutation. Original SQLite
 migrations remain separate and immutable. The baseline is reproducible from the
 isolated schema inventory and the reviewed generator, never from production data.
+
+`00004_outbox_fencing.sql` adds monotonic claims, transactional wake-up hints and
+a sequence for the disjoint X-Node service-ID range.

@@ -13,7 +13,7 @@ import (
 )
 
 // CachedIPDetails reads exact evidence first, then IPv4 /24, without side effects.
-func (s *Store) CachedIPDetails(ctx context.Context, ip string) (*iplookup.LiveDetails, error) {
+func (s *Store) retryAttempt_CachedIPDetails(ctx context.Context, ip string) (*iplookup.LiveDetails, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func decodeIPDetails(raw, id, requested, match string) (iplookup.LiveDetails, er
 }
 
 // SaveIPDetails stores one normalized snapshot; a durable run key is replay safe.
-func (s *Store) SaveIPDetails(ctx context.Context, run string, r iplookup.LiveDetails, now time.Time) (string, error) {
+func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r iplookup.LiveDetails, now time.Time) (string, error) {
 	r = iplookup.CompactLiveDetails(r)
 	if r.IP != r.SourceIP {
 		return "", ErrConflict
@@ -91,8 +91,10 @@ func (s *Store) SaveIPDetails(ctx context.Context, run string, r iplookup.LiveDe
 	if status == "partial" {
 		retryDelay, retryEnabled = s.ipLiveRetryDelay(ctx)
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err

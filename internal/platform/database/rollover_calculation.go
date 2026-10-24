@@ -24,12 +24,14 @@ func (s *Store) RolloverEligible(ctx context.Context, purchaseID string) (bool, 
 }
 
 // RecordRolloverCalculation stores the aggregate used to settle automatic renewal.
-func (s *Store) RecordRolloverCalculation(ctx context.Context, purchaseID string, summary model.RolloverUsageSummary, now time.Time) (model.PurchaseRollover, error) {
+func (s *Store) retryAttempt_RecordRolloverCalculation(ctx context.Context, purchaseID string, summary model.RolloverUsageSummary, now time.Time) (model.PurchaseRollover, error) {
 	if err := validateRolloverSummary(summary); err != nil {
 		return model.PurchaseRollover{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PurchaseRollover{}, fmt.Errorf("begin rollover calculation: %w", err)

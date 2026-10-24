@@ -13,9 +13,11 @@ import (
 )
 
 // SaveUSDTBatch durably stores verified receiving events before advancing progress.
-func (s *Store) SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

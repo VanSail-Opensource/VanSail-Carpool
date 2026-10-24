@@ -76,9 +76,11 @@ func (s *Store) XNodeRoutingPlans(ctx context.Context) ([]xnode.RoutingPlan, err
 
 // QueueXNodeRouting commits the desired graph and its existing durable outbox
 // operation together. Retries cannot create an unowned or unqueued generation.
-func (s *Store) QueueXNodeRouting(ctx context.Context, p xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_QueueXNodeRouting(ctx context.Context, p xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -96,9 +98,11 @@ func (s *Store) QueueXNodeRouting(ctx context.Context, p xnode.RoutingPlan, inpu
 	}
 	return op.Receipt, tx.Commit()
 }
-func (s *Store) AdvanceXNodeRouting(ctx context.Context, id int64, operation, from, to string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_AdvanceXNodeRouting(ctx context.Context, id int64, operation, from, to string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	valid := to == "disabled" || from == "revoking" && to == "applying" || from == "applying" && to == "enabling" || from == "enabling" && to == "active"
 	if !valid {
 		return xnode.ErrInvalid

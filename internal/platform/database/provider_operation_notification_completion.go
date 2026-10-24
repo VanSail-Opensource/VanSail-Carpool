@@ -10,7 +10,7 @@ import (
 
 // CompleteProviderOperationItemAndReleaseNotifications records a real worker
 // success and releases only that item's provider-gated user messages.
-func (s *Store) CompleteProviderOperationItemAndReleaseNotifications(ctx context.Context, operationID, itemKey string,
+func (s *Store) retryAttempt_CompleteProviderOperationItemAndReleaseNotifications(ctx context.Context, operationID, itemKey string,
 	completion providerops.Completion, now time.Time) (providerops.Item, error) {
 	if completion.Status != providerops.StatusSucceeded {
 		return providerops.Item{}, ErrConflict
@@ -19,8 +19,10 @@ func (s *Store) CompleteProviderOperationItemAndReleaseNotifications(ctx context
 	if err != nil {
 		return providerops.Item{}, err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Item{}, err

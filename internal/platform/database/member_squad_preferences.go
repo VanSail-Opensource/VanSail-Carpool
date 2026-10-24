@@ -40,9 +40,11 @@ func (s *Store) UserDisabledSquads(ctx context.Context, userID string) ([]string
 
 // EnabledSquadsForRemote applies account preferences immediately before provider execution.
 // A new term whose owned squads are all disabled clears the stable first preference.
-func (s *Store) EnabledSquadsForRemote(ctx context.Context, remoteID string, owned []string) ([]string, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnabledSquadsForRemote(ctx context.Context, remoteID string, owned []string) ([]string, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -64,13 +66,15 @@ func (s *Store) EnabledSquadsForRemote(ctx context.Context, remoteID string, own
 }
 
 // BeginSquadSwitch checks ownership and access under the shared write transaction.
-func (s *Store) BeginSquadSwitch(ctx context.Context, input providerops.CreateInput, purchaseID, uuid string, enabled bool, now time.Time) (providerops.Operation, error) {
+func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input providerops.CreateInput, purchaseID, uuid string, enabled bool, now time.Time) (providerops.Operation, error) {
 	input, err := providerops.NormalizeCreate(input)
 	if err != nil || input.Kind != purchaseops.OperationSquadSwitch || input.ActorUserID != input.OwnerUserID || len(input.Items) != 1 || input.Items[0].TargetType != "purchase" || input.Items[0].TargetID != purchaseID {
 		return providerops.Operation{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, err

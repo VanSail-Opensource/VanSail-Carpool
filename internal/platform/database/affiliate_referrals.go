@@ -12,12 +12,14 @@ import (
 )
 
 // AcceptAffiliateReferral freezes a valid inviter on a private /start stub.
-func (s *Store) AcceptAffiliateReferral(ctx context.Context, inviteeTelegramID, inviterTelegramID int64, now time.Time) (string, bool, error) {
+func (s *Store) retryAttempt_AcceptAffiliateReferral(ctx context.Context, inviteeTelegramID, inviterTelegramID int64, now time.Time) (string, bool, error) {
 	if inviteeTelegramID <= 0 || inviterTelegramID <= 0 || inviteeTelegramID == inviterTelegramID {
 		return "", false, affiliates.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", false, err

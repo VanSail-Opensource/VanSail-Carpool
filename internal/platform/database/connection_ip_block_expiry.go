@@ -12,9 +12,11 @@ import (
 )
 
 // FinalizeConnectionIPBlockExpiry resolves linked work before scrubbing an expired sensitive row.
-func (s *Store) FinalizeConnectionIPBlockExpiry(ctx context.Context, blockID string, accepted bool, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_FinalizeConnectionIPBlockExpiry(ctx context.Context, blockID string, accepted bool, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin connection IP block expiry: %w", err)

@@ -20,15 +20,17 @@ const courtesyCreditSelect = `SELECT id,payment_order_id,actor_user_id,txb_minor
 // CourtesyCreditPayment appends one administrator-authorized local credit for
 // a failed or expired payment order. It never changes the payment's provider
 // settlement state, and its ledger and audit records commit atomically.
-func (s *Store) CourtesyCreditPayment(ctx context.Context, actorID, orderID, reason string, now time.Time) (model.CourtesyCredit, error) {
+func (s *Store) retryAttempt_CourtesyCreditPayment(ctx context.Context, actorID, orderID, reason string, now time.Time) (model.CourtesyCredit, error) {
 	actorID = strings.TrimSpace(actorID)
 	orderID = strings.TrimSpace(orderID)
 	reason = strings.TrimSpace(reason)
 	if actorID == "" || orderID == "" || len(reason) < 3 || len(reason) > 500 {
 		return model.CourtesyCredit{}, errors.New("a courtesy-credit actor, payment order, and reason of 3 to 500 bytes are required")
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.CourtesyCredit{}, fmt.Errorf("begin payment courtesy credit: %w", err)

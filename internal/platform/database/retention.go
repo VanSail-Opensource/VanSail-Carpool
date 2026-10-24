@@ -16,9 +16,11 @@ const (
 // PruneTransientRecords bounds retry artifacts and Telegram message-deduplication
 // state. Accounting records, active jobs, and imports still eligible for retry
 // are deliberately preserved.
-func (s *Store) PruneTransientRecords(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_PruneTransientRecords(ctx context.Context, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transient retention: %w", err)

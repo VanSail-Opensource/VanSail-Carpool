@@ -37,13 +37,15 @@ func (s *Store) USDTQuote(ctx context.Context, orderID string) (usdt.Quote, erro
 }
 
 // ReserveUSDTQuote commits the fingerprint and checkout together before displaying it.
-func (s *Store) ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.NetworkSpec, addresses []string, base string) (usdt.Quote, error) {
+func (s *Store) retryAttempt_ReserveUSDTQuote(ctx context.Context, orderID string, spec usdt.NetworkSpec, addresses []string, base string) (usdt.Quote, error) {
 	pinned, ok := usdt.Network(spec.Rail)
 	if !ok || pinned != spec {
 		return usdt.Quote{}, usdt.ErrProof
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return usdt.Quote{}, err

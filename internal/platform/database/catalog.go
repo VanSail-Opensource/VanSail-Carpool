@@ -54,12 +54,14 @@ type ImportedSquad struct {
 
 // SaveCombo creates or updates one stable live combo and schedules affected
 // active users for upstream re-synchronization after an edit.
-func (s *Store) SaveCombo(ctx context.Context, input ComboInput) (model.Combo, error) {
+func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (model.Combo, error) {
 	if input.WhitelistIPQuota != nil && (*input.WhitelistIPQuota < 0 || *input.WhitelistIPQuota > 1000) {
 		return model.Combo{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	creating := input.ID == ""
 	if creating {
 		var err error

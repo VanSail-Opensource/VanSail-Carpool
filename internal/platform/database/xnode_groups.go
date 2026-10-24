@@ -50,9 +50,11 @@ func (s *Store) XNodeGroups(ctx context.Context) ([]xnode.Group, error) {
 	}
 	return out, bindings.Err()
 }
-func (s *Store) SaveXNodeGroup(ctx context.Context, item xnode.Group) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveXNodeGroup(ctx context.Context, item xnode.Group) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -73,9 +73,11 @@ func (s *Store) SealXNodePeriodNode(ctx context.Context, period, node string, se
 	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=? WHERE period_id=? AND node_id=?`, sequence, period, node)
 	return err
 }
-func (s *Store) ReopenXNodePeriod(ctx context.Context, id string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

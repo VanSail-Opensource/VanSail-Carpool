@@ -11,14 +11,16 @@ import (
 )
 
 // BeginEmbySetupOperation atomically stores the debit, account, and provider command.
-func (s *Store) BeginEmbySetupOperation(ctx context.Context, command providerops.CreateInput,
+func (s *Store) retryAttempt_BeginEmbySetupOperation(ctx context.Context, command providerops.CreateInput,
 	setup domain.QueueSetupInput, now time.Time) (providerops.Operation, bool, error) {
 	if len(command.Items) != 1 || command.Items[0].TargetType != "emby_user" ||
 		command.Items[0].TargetID != setup.UserID || command.OwnerUserID != setup.UserID {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err
@@ -40,14 +42,16 @@ func (s *Store) BeginEmbySetupOperation(ctx context.Context, command providerops
 }
 
 // BeginEmbyProvisionRetryOperation replaces inactive legacy work with one command.
-func (s *Store) BeginEmbyProvisionRetryOperation(ctx context.Context, command providerops.CreateInput,
+func (s *Store) retryAttempt_BeginEmbyProvisionRetryOperation(ctx context.Context, command providerops.CreateInput,
 	accountID string, now time.Time) (providerops.Operation, bool, error) {
 	if len(command.Items) != 1 || command.Items[0].TargetType != "emby_account" ||
 		command.Items[0].TargetID != accountID {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err

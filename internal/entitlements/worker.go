@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	queueoutbox "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
@@ -72,7 +73,7 @@ func (w *Worker) Drain(ctx context.Context, limit int) error {
 			return nil
 		}
 		jobErr := w.HandleOutbox(ctx, *job)
-		if err := w.repository.CompleteOutboxJob(ctx, job.ID, job.Attempts, jobErr, w.now().UTC()); err != nil {
+		if err := queueoutbox.CompleteClaim(ctx, w.repository, *job, jobErr, w.now().UTC()); err != nil {
 			return err
 		}
 	}

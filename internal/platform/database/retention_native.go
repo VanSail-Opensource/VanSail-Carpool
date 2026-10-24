@@ -12,8 +12,8 @@ import (
 // acknowledged cursor are disposable. Each maintenance pass deletes bounded work.
 func pruneNativeMaintenanceTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, counts map[string]int64) error {
 	var err error
-	counts["xnode_service_bindings"], err = deleteCount(ctx, tx, `DELETE FROM xnode_service_bindings WHERE rowid IN
-		(SELECT rowid FROM xnode_service_bindings WHERE valid_until<? ORDER BY valid_until LIMIT 1000)`, stamp(cutoff))
+	counts["xnode_service_bindings"], err = deleteCount(ctx, tx, `DELETE FROM xnode_service_bindings WHERE (proxy_user_id,node_id,inbound_tag) IN
+		(SELECT proxy_user_id,node_id,inbound_tag FROM xnode_service_bindings WHERE valid_until<? ORDER BY valid_until,proxy_user_id,node_id,inbound_tag LIMIT 1000)`, stamp(cutoff))
 	if err != nil {
 		return fmt.Errorf("prune expired native service access: %w", err)
 	}

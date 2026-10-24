@@ -16,10 +16,12 @@ const ipBlockSelect = `SELECT id,user_id,node_uuid,ip_digest,sealed_ip,status,
 	FROM connection_ip_blocks`
 
 // BeginConnectionIPBlock atomically stores the encrypted target and both jobs.
-func (s *Store) BeginConnectionIPBlock(ctx context.Context, input connections.CreateIPBlockInput,
+func (s *Store) retryAttempt_BeginConnectionIPBlock(ctx context.Context, input connections.CreateIPBlockInput,
 	command providerops.CreateInput, now time.Time) (connections.IPBlockRecord, providerops.Operation, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return connections.IPBlockRecord{}, providerops.Operation{}, false, err

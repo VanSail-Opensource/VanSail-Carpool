@@ -4,9 +4,11 @@ import "context"
 
 // RegisterPanelEntry creates a first-entry row only for never-onboarded accounts.
 // Entering while CAPTCHA is off qualifies the account without a challenge.
-func (s *Store) RegisterPanelEntry(ctx context.Context, telegramID int64, challenge bool) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RegisterPanelEntry(ctx context.Context, telegramID int64, challenge bool) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

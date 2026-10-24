@@ -18,7 +18,7 @@ const questionnaireSelect = `SELECT q.id,q.title,q.description,q.form_url,q.rewa
 
 // SaveQuestionnaire creates or updates a draft, active, or closed questionnaire.
 
-func (s *Store) SaveQuestionnaire(ctx context.Context, input questionnaires.QuestionnaireInput, now time.Time) (questionnaires.Questionnaire, error) {
+func (s *Store) retryAttempt_SaveQuestionnaire(ctx context.Context, input questionnaires.QuestionnaireInput, now time.Time) (questionnaires.Questionnaire, error) {
 	if err := input.Validate(); err != nil {
 		return questionnaires.Questionnaire{}, err
 	}
@@ -33,8 +33,10 @@ func (s *Store) SaveQuestionnaire(ctx context.Context, input questionnaires.Ques
 			return questionnaires.Questionnaire{}, questionnaires.ErrInvalidInput
 		}
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return questionnaires.Questionnaire{}, fmt.Errorf("begin questionnaire save: %w", err)

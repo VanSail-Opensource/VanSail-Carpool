@@ -12,9 +12,11 @@ import (
 )
 
 // RecordCompensationObservation atomically advances only nodes present in a complete sample.
-func (s *Store) RecordCompensationObservation(ctx context.Context, config compensation.Config, nodes []compensation.Node, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RecordCompensationObservation(ctx context.Context, config compensation.Config, nodes []compensation.Node, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

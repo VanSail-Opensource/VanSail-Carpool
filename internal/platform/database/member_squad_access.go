@@ -9,9 +9,11 @@ import (
 )
 
 // EnabledSquadsForUser applies native ownership without requiring a legacy link.
-func (s *Store) EnabledSquadsForUser(ctx context.Context, userID string, owned []string) ([]string, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnabledSquadsForUser(ctx context.Context, userID string, owned []string) ([]string, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err

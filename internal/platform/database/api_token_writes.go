@@ -9,9 +9,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
-func (s *Store) CreateAdminAPIToken(ctx context.Context, item apitoken.Token) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apitoken.Token) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -49,9 +51,11 @@ func (s *Store) CreateAdminAPIToken(ctx context.Context, item apitoken.Token) er
 	return tx.Commit()
 }
 
-func (s *Store) RevokeAdminAPIToken(ctx context.Context, id, userID string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

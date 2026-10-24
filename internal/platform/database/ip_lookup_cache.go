@@ -90,7 +90,7 @@ func newestIPCacheTableTx(ctx context.Context, tx *sql.Tx, table, predicate stri
 }
 
 // IPLookupQuoteResponse previews a shared cache without creating an operation or charging.
-func (s *Store) IPLookupQuoteResponse(ctx context.Context, user, ip string, refresh bool, now time.Time) (iplookup.QuoteResponse, error) {
+func (s *Store) retryAttempt_IPLookupQuoteResponse(ctx context.Context, user, ip string, refresh bool, now time.Time) (iplookup.QuoteResponse, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return iplookup.QuoteResponse{}, err

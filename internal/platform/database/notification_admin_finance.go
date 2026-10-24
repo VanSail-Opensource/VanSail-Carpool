@@ -32,14 +32,16 @@ func (s *Store) DeductAdminBalance(ctx context.Context, actorID, userID string, 
 		"telegram.balance_deduct", "balance_deduction", now)
 }
 
-func (s *Store) adminBalanceChange(ctx context.Context, actorID, userID string, delta int64, referenceID, reason,
+func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, userID string, delta int64, referenceID, reason,
 	ledgerKind, action, change string, now time.Time) (model.LedgerEntry, error) {
 	reason = strings.TrimSpace(reason)
 	if actorID == "" || userID == "" || delta == 0 || reason == "" || len(reason) > 500 {
 		return model.LedgerEntry{}, errors.New("administrator balance change is invalid")
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err

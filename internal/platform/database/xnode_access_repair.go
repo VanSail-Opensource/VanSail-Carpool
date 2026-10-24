@@ -10,9 +10,11 @@ import (
 
 // EnqueueXNodeAccessRepairs coalesces bounded paid-access recovery into the
 // existing outbox. Quota exhaustion is never treated as missing provisioning.
-func (s *Store) EnqueueXNodeAccessRepairs(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

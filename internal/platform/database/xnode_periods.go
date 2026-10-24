@@ -40,9 +40,11 @@ func (s *Store) XNodePeriod(ctx context.Context, id string) (xnode.Period, error
 	}
 	return item, nil
 }
-func (s *Store) SaveXNodePeriod(ctx context.Context, item xnode.Period) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Period) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -46,12 +46,14 @@ func affiliateConfig(ctx context.Context, query interface {
 	return config, rows.Err()
 }
 
-func (s *Store) SaveAffiliateConfig(ctx context.Context, actorID string, input affiliates.ConfigInput, now time.Time) (affiliates.Config, error) {
+func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID string, input affiliates.ConfigInput, now time.Time) (affiliates.Config, error) {
 	if input.ExpectedVersion < 1 || affiliates.ValidateTiers(input.Tiers) != nil {
 		return affiliates.Config{}, affiliates.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return affiliates.Config{}, err

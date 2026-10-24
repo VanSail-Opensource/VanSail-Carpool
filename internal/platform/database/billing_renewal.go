@@ -18,7 +18,7 @@ type RenewalInput struct {
 	TermCount                          int
 }
 
-func (s *Store) RenewalQuote(ctx context.Context, userID, purchaseID string, termCount int, now time.Time) (model.RenewalQuote, error) {
+func (s *Store) retryAttempt_RenewalQuote(ctx context.Context, userID, purchaseID string, termCount int, now time.Time) (model.RenewalQuote, error) {
 	if termCount < 1 || termCount > 6 {
 		return model.RenewalQuote{}, ErrConflict
 	}
@@ -32,7 +32,7 @@ func (s *Store) RenewalQuote(ctx context.Context, userID, purchaseID string, ter
 }
 
 // RenewalQuoteExcludingAddons previews a renewal without live-unavailable paid squads.
-func (s *Store) RenewalQuoteExcludingAddons(ctx context.Context, userID, purchaseID string, termCount int, excludedAddonIDs []string, now time.Time) (model.RenewalQuote, error) {
+func (s *Store) retryAttempt_RenewalQuoteExcludingAddons(ctx context.Context, userID, purchaseID string, termCount int, excludedAddonIDs []string, now time.Time) (model.RenewalQuote, error) {
 	if termCount < 1 || termCount > 6 {
 		return model.RenewalQuote{}, ErrConflict
 	}
@@ -118,12 +118,14 @@ func (s *Store) RenewExcludingAddons(ctx context.Context, input RenewalInput, ex
 	return s.renew(ctx, input, excludedAddonIDs, now)
 }
 
-func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs []string, now time.Time) (model.RenewalBatch, error) {
+func (s *Store) retryAttempt_renew(ctx context.Context, input RenewalInput, excludedAddonIDs []string, now time.Time) (model.RenewalBatch, error) {
 	if input.TermCount < 1 || input.TermCount > 6 || strings.TrimSpace(input.IdempotencyKey) == "" {
 		return model.RenewalBatch{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.RenewalBatch{}, err

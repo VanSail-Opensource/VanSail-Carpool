@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (s *Store) QuotePurchaseCoupon(ctx context.Context, input coupons.PurchaseContext, now time.Time) (coupons.Discount, error) {
+func (s *Store) retryAttempt_QuotePurchaseCoupon(ctx context.Context, input coupons.PurchaseContext, now time.Time) (coupons.Discount, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return coupons.Discount{}, err

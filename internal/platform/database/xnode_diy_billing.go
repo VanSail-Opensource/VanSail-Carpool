@@ -43,7 +43,7 @@ func diyQuoteTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) (xn
 	return q, nil
 }
 
-func (s *Store) XNodeDIYBillingQuote(ctx context.Context, user string, now time.Time) (xnode.DIYBillingQuote, error) {
+func (s *Store) retryAttempt_XNodeDIYBillingQuote(ctx context.Context, user string, now time.Time) (xnode.DIYBillingQuote, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return xnode.DIYBillingQuote{}, err

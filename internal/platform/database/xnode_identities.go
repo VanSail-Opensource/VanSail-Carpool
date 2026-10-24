@@ -56,6 +56,9 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 		// Member IDs are Telegram IDs. Non-member services use a disjoint range.
 		var next int64
 		query := `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities WHERE user_id IS NULL`
+		if IsPostgres(s.db) {
+			query = `SELECT nextval('xnode_service_proxy_id_seq')`
+		}
 		if item.UserID != "" {
 			query = `SELECT telegram_id FROM users WHERE id=?`
 		}
@@ -69,11 +72,11 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 		if next >= 1<<53 {
 			return item, xnode.ErrConflict
 		}
-		result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 		if err != nil {
 			return item, err
 		}
-		item.ProxyUserID, err = result.LastInsertId()
+		item.ProxyUserID = next
 		return item, err
 	}
 	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id WHERE xnode_identities.user_id IS excluded.user_id AND xnode_identities.service_name IS excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))

@@ -10,12 +10,14 @@ import (
 )
 
 // QueueProxyRepair clears a confirmed missing link without undoing signup.
-func (s *Store) QueueProxyRepair(ctx context.Context, userID, missingID string, now time.Time) (model.User, error) {
+func (s *Store) retryAttempt_QueueProxyRepair(ctx context.Context, userID, missingID string, now time.Time) (model.User, error) {
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(missingID) == "" {
 		return model.User{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.User{}, fmt.Errorf("begin Proxy repair: %w", err)

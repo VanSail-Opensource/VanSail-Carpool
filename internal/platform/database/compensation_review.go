@@ -14,9 +14,11 @@ import (
 )
 
 // ApproveCompensationEvent rechecks frozen recipients and atomically queues exact-state sync.
-func (s *Store) ApproveCompensationEvent(ctx context.Context, input compensation.ReviewInput, fingerprint string, now time.Time) (compensation.Event, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ApproveCompensationEvent(ctx context.Context, input compensation.ReviewInput, fingerprint string, now time.Time) (compensation.Event, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return compensation.Event{}, err

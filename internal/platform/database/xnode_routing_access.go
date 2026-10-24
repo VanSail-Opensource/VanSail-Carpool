@@ -11,12 +11,14 @@ import (
 // fencing. Existing compile-version triggers make every affected node receive
 // the disabled graph through the normal master synchronization path, including
 // reconnects. No upstream request or second delivery queue is created here.
-func (s *Store) PruneXNodeRoutingAccess(ctx context.Context, plan xnode.RoutingPlan, actor string, version int64, now time.Time) error {
+func (s *Store) retryAttempt_PruneXNodeRoutingAccess(ctx context.Context, plan xnode.RoutingPlan, actor string, version int64, now time.Time) error {
 	if actor == "" || plan.Cipher == "" {
 		return xnode.ErrInvalid
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -19,9 +19,11 @@ func (s *Store) RetiredDetectorReleaseUser(ctx context.Context, id string) (mode
 	return user, true, err
 }
 
-func (s *Store) CompleteRetiredDetectorRelease(ctx context.Context, id string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CompleteRetiredDetectorRelease(ctx context.Context, id string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

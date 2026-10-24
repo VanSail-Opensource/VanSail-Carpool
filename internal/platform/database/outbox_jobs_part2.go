@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Store) RecoverOutbox(ctx context.Context, staleBefore, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=?,last_error='worker interrupted',updated_at=? WHERE status='processing' AND updated_at<?`, stamp(now), stamp(now), stamp(staleBefore))
+	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=?,last_error='worker interrupted',updated_at=? /*pg:advance-claim*/ WHERE status='processing' AND updated_at<?`, stamp(now), stamp(now), stamp(staleBefore))
 	if err != nil {
 		return fmt.Errorf("recover outbox leases: %w", err)
 	}
@@ -39,12 +39,12 @@ func (s *Store) ListOutboxJobs(ctx context.Context, limit int) ([]model.OutboxJo
 	return jobs, rows.Err()
 }
 
-const outboxSelect = `SELECT id,kind,payload,status,attempts,available_at,last_error,created_at,updated_at FROM outbox_jobs`
+const outboxSelect = `SELECT id,kind,payload,status,attempts,available_at,last_error,created_at,updated_at,/*pg:claim-generation*/0 FROM outbox_jobs`
 
 func scanOutbox(row rowScanner) (model.OutboxJob, error) {
 	var job model.OutboxJob
 	var available, created, updated string
-	if err := row.Scan(&job.ID, &job.Kind, &job.Payload, &job.Status, &job.Attempts, &available, &job.LastError, &created, &updated); err != nil {
+	if err := row.Scan(&job.ID, &job.Kind, &job.Payload, &job.Status, &job.Attempts, &available, &job.LastError, &created, &updated, &job.ClaimGeneration); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.OutboxJob{}, ErrNotFound
 		}

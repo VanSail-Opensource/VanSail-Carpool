@@ -38,7 +38,7 @@ func insertOutboxJobTx(ctx context.Context, tx *sql.Tx, kind, payload string, av
 }
 
 // EnqueueOutbox appends a durable job.
-func (s *Store) EnqueueOutbox(ctx context.Context, kind, payload string, availableAt time.Time) error {
+func (s *Store) retryAttempt_EnqueueOutbox(ctx context.Context, kind, payload string, availableAt time.Time) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -51,9 +51,11 @@ func (s *Store) EnqueueOutbox(ctx context.Context, kind, payload string, availab
 }
 
 // EnqueueDueEntitlementTransitions turns time-bound state changes into durable work.
-func (s *Store) EnqueueDueEntitlementTransitions(ctx context.Context, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Context, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -134,9 +136,11 @@ func (s *Store) EnqueueDueEntitlementTransitions(ctx context.Context, now time.T
 }
 
 // ExpirePurchase closes a delayed activation and requests a user-level entitlement reconciliation.
-func (s *Store) ExpirePurchase(ctx context.Context, purchaseID string, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_ExpirePurchase(ctx context.Context, purchaseID string, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

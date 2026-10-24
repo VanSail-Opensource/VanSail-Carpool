@@ -13,13 +13,15 @@ import (
 
 // DismissUSDTTransfer preserves verified evidence and records a permanent decision.
 // The same write lock/transaction boundary excludes scanner and settlement races.
-func (s *Store) DismissUSDTTransfer(ctx context.Context, id, actor, reason string) (bool, error) {
+func (s *Store) retryAttempt_DismissUSDTTransfer(ctx context.Context, id, actor, reason string) (bool, error) {
 	reason = strings.TrimSpace(reason)
 	if actor == "" || len(reason) < 3 || len(reason) > 500 {
 		return false, usdt.ErrConfiguration
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
@@ -65,7 +67,7 @@ func (s *Store) DismissUSDTTransfer(ctx context.Context, id, actor, reason strin
 
 // USDTMatchingEvidence returns only unique, same-token receiving evidence for the
 // selected quote. Settlement rechecks the match under its own write transaction.
-func (s *Store) USDTMatchingEvidence(ctx context.Context, orderID string) (usdt.ReviewPage, error) {
+func (s *Store) retryAttempt_USDTMatchingEvidence(ctx context.Context, orderID string) (usdt.ReviewPage, error) {
 	result := usdt.ReviewPage{Items: []usdt.Transfer{}}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

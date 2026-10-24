@@ -39,9 +39,11 @@ func (s *Store) UserPreferenceSnapshot(ctx context.Context, userID string, now t
 }
 
 // UpdateUserPreferences merges supplied flags atomically with live eligibility.
-func (s *Store) UpdateUserPreferences(ctx context.Context, userID string, patch preferences.Patch, now time.Time) (preferences.Snapshot, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID string, patch preferences.Patch, now time.Time) (preferences.Snapshot, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return preferences.Snapshot{}, err

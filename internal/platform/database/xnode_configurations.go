@@ -74,9 +74,11 @@ func (s *Store) XNodeConfiguration(ctx context.Context, id string) (xnode.Config
 	}
 	return config, rows.Err()
 }
-func (s *Store) SaveXNodeConfiguration(ctx context.Context, config xnode.Configuration) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_SaveXNodeConfiguration(ctx context.Context, config xnode.Configuration) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

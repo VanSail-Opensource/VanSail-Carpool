@@ -13,7 +13,7 @@ import (
 )
 
 // CompleteConnectionIPBlockOperation atomically closes a receipt and transitions its sensitive row.
-func (s *Store) CompleteConnectionIPBlockOperation(ctx context.Context, blockID, operationID, itemKey string,
+func (s *Store) retryAttempt_CompleteConnectionIPBlockOperation(ctx context.Context, blockID, operationID, itemKey string,
 	completion connections.BlockOperationCompletion, now time.Time) error {
 	if !validBlockCompletion(completion) {
 		return ErrConflict
@@ -22,8 +22,10 @@ func (s *Store) CompleteConnectionIPBlockOperation(ctx context.Context, blockID,
 	if err != nil {
 		return err
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin connection IP block completion: %w", err)

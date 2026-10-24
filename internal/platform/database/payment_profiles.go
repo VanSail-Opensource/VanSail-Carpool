@@ -81,9 +81,11 @@ func (s *Store) SetPaymentProfileEnabled(ctx context.Context, id string, enabled
 }
 
 // DeletePaymentProfile removes a profile only after its provider attempts are gone.
-func (s *Store) DeletePaymentProfile(ctx context.Context, id string) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_DeletePaymentProfile(ctx context.Context, id string) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin payment profile deletion: %w", err)

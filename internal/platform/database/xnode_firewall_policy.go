@@ -14,9 +14,11 @@ import (
 
 // MigrateGlobalFirewallDetection runs after vault initialization and preserves
 // the encryption and audit ownership of an existing global configuration.
-func (s *Store) MigrateGlobalFirewallDetection(ctx context.Context, vault *secret.Vault) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_MigrateGlobalFirewallDetection(ctx context.Context, vault *secret.Vault) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

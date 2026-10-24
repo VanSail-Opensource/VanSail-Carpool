@@ -80,12 +80,14 @@ func (s *Store) ListActivityGames(ctx context.Context, enabledOnly bool) ([]acti
 
 // PlaceActivityBet atomically debits the stake before selecting and recording an outcome.
 
-func (s *Store) PlaceActivityBet(ctx context.Context, userID, gameID string, stakeMinor int64, idempotencyKey string, rng activity.RandomSource, now time.Time) (activity.BetResult, error) {
+func (s *Store) retryAttempt_PlaceActivityBet(ctx context.Context, userID, gameID string, stakeMinor int64, idempotencyKey string, rng activity.RandomSource, now time.Time) (activity.BetResult, error) {
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(gameID) == "" || stakeMinor <= 0 || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 || rng == nil {
 		return activity.BetResult{}, activity.ErrInvalidInput
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

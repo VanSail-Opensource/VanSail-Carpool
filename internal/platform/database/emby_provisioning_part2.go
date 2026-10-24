@@ -7,9 +7,11 @@ import (
 	"time"
 )
 
-func (s *Store) FailAndRefundEmbySetup(ctx context.Context, accountID, reason string, now time.Time) (domain.Account, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_FailAndRefundEmbySetup(ctx context.Context, accountID, reason string, now time.Time) (domain.Account, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err
@@ -46,9 +48,11 @@ func (s *Store) FailAndRefundEmbySetup(ctx context.Context, accountID, reason st
 
 // UpdateEmbyPreferences persists only preferences that were accepted upstream.
 
-func (s *Store) UpdateEmbyPreferences(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) (domain.Account, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_UpdateEmbyPreferences(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) (domain.Account, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err

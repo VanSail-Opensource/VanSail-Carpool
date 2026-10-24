@@ -15,9 +15,11 @@ import (
 )
 
 // CreateIPLookupCheck atomically replays or charges, joins a report and queues its receipt.
-func (s *Store) CreateIPLookupCheck(ctx context.Context, user, key string, q iplookup.Quote, now time.Time) (model.OperationReceipt, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key string, q iplookup.Quote, now time.Time) (model.OperationReceipt, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err

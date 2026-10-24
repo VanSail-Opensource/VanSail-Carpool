@@ -8,9 +8,11 @@ import (
 	"time"
 )
 
-func (s *Store) RetryEmbyProvisioning(ctx context.Context, accountID string, now time.Time) (domain.Account, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountID string, now time.Time) (domain.Account, error) {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err
@@ -149,9 +151,11 @@ func (s *Store) MarkEmbyPendingReview(ctx context.Context, accountID string, pro
 // MarkEmbyProvisioned persists disabled folders only after the service has
 // re-fetched and verified the remote full policy.
 
-func (s *Store) MarkEmbyProvisioned(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+func (s *Store) retryAttempt_MarkEmbyProvisioned(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) error {
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

@@ -24,12 +24,14 @@ func (s *Store) AddTXBBounds(ctx context.Context) (model.AddTXBBounds, error) {
 }
 
 // UpdateAddTXBBounds atomically changes the singleton range and audits the actor.
-func (s *Store) UpdateAddTXBBounds(ctx context.Context, minimumMinor, maximumMinor int64, actorID string, now time.Time) (model.AddTXBBounds, error) {
+func (s *Store) retryAttempt_UpdateAddTXBBounds(ctx context.Context, minimumMinor, maximumMinor int64, actorID string, now time.Time) (model.AddTXBBounds, error) {
 	if minimumMinor <= 0 || maximumMinor < minimumMinor {
 		return model.AddTXBBounds{}, ErrConflict
 	}
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
+	if !IsPostgres(s.db) {
+		s.writeMu.Lock()
+		defer s.writeMu.Unlock()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.AddTXBBounds{}, fmt.Errorf("begin Add TXB bounds update: %w", err)
