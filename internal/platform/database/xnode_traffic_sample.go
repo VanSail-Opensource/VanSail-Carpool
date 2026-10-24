@@ -21,7 +21,7 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 		return err
 	}
 	if status == "closed" || status == "review" {
-		return xnode.ErrConflict
+		return xnode.ErrTrafficPeriodSettled
 	}
 	if owner != int64(sample.UserID) {
 		var migrated bool

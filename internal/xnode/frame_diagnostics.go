@@ -6,6 +6,14 @@ import (
 	"errors"
 )
 
+func frameErrorDetails(err error) []any {
+	var gap trafficSequenceGap
+	if errors.As(err, &gap) {
+		return []any{"received_sequence", gap.received, "expected_sequence", gap.expected}
+	}
+	return nil
+}
+
 // frameErrorCause is an allowlist: raw SQL, agent payloads and secrets never log.
 func frameErrorCause(err error) string {
 	for _, item := range []struct {

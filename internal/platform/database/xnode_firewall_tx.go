@@ -3,11 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/RoaringBitmap/roaring/v2"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"time"
 )
 
@@ -44,45 +42,6 @@ func firewallAudience(ctx context.Context, tx *sql.Tx) ([]byte, error) {
 		return nil, err
 	}
 	return b.ToBytes()
-}
-func queueFirewallTx(ctx context.Context, tx *sql.Tx, node string, now time.Time) error {
-	for _, bank := range []string{"dynamic", "sources"} {
-		raw, _ := json.Marshal(map[string]string{"nodeId": node, "bank": bank})
-		// One intent per node and bank; desired state is read at execution time.
-		if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind=? AND payload=? AND status IN ('failed','pending')`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
-			return err
-		}
-		if err := insertOutboxTx(ctx, tx, xnode.FirewallJob, string(raw), now, now); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func queueFirewallFleetTx(ctx context.Context, tx *sql.Tx, now time.Time) error {
-	rows, err := tx.QueryContext(ctx, `SELECT node_id FROM xnode_firewall_members WHERE active=1`)
-	if err != nil {
-		return err
-	}
-	var nodes []string
-	for rows.Next() {
-		var id string
-		if err = rows.Scan(&id); err != nil {
-			rows.Close()
-			return err
-		}
-		nodes = append(nodes, id)
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-	for _, id := range nodes {
-		if err = queueFirewallTx(ctx, tx, id, now); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 func (s *Store) retryAttempt_firewallWrite(ctx context.Context, fn func(*sql.Tx) error) error {
 	if !IsPostgres(s.db) {

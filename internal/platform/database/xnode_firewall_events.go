@@ -32,6 +32,10 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		}
 	}
 	result := s.firewallWrite(ctx, func(tx *sql.Tx) error {
+		var before uint64
+		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&before); err != nil {
+			return err
+		}
 		var ordinal uint32
 		var active bool
 		if err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=?`, node).Scan(&ordinal, &active); err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -104,7 +108,14 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_cursors(node_id,namespace,sequence) VALUES(?,?,?) ON CONFLICT(node_id,namespace) DO UPDATE SET sequence=excluded.sequence`, node, namespace, cursor); err != nil {
 			return err
 		}
-		return queueFirewallFleetTx(ctx, tx, now)
+		var after uint64
+		if err := tx.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&after); err != nil {
+			return err
+		}
+		if before != after {
+			return queueFirewallFleetTx(ctx, tx, now)
+		}
+		return nil
 	})
 	if result == nil {
 		for key, window := range s.firewallWindows {

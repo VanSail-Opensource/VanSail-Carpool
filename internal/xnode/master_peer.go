@@ -10,10 +10,11 @@ import (
 )
 
 type agentPeer struct {
-	paygRecoveryAt        time.Time // mu; bounded recovery requeue after interrupted attempts
-	paygReady             bool      // mu; true only after a committed journal barrier
-	paygRecoveryQueued    bool      // mu; durable recovery is coalesced per boot
-	paygOverlayKey        string    // syncMu; disposable authorization projection
+	trafficRetry          trafficRetry // mu; bounded retries for an unchanged rejected journal head
+	paygRecoveryAt        time.Time    // mu; bounded recovery requeue after interrupted attempts
+	paygReady             bool         // mu; true only after a committed journal barrier
+	paygRecoveryQueued    bool         // mu; durable recovery is coalesced per boot
+	paygOverlayKey        string       // syncMu; disposable authorization projection
 	publicIP              string
 	protectedMu           sync.Mutex
 	protectedDigest       string

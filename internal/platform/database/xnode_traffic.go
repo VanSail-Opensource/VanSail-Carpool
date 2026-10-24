@@ -33,7 +33,7 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 		return err
 	}
 	if bound != agent {
-		return xnode.ErrConflict
+		return xnode.ErrTrafficAgentMismatch
 	}
 	var previous uint64
 	var previousDigest string
@@ -46,12 +46,12 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	}
 	if sequence <= previous {
 		if sequence == previous && digest != previousDigest {
-			return xnode.ErrConflict
+			return xnode.ErrTrafficDigestMismatch
 		}
 		return tx.Commit()
 	}
 	if sequence != previous+1 {
-		return xnode.ErrConflict
+		return xnode.NewTrafficSequenceGap(sequence, previous+1)
 	}
 	var priced int64
 	err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id=? AND from_sequence<=? ORDER BY from_sequence DESC LIMIT 1`, agent, sequence).Scan(&priced)
@@ -107,7 +107,7 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 			return err
 		}
 		if (!service.Valid && !migrated) || metered {
-			return xnode.ErrConflict
+			return xnode.ErrTrafficSampleMissing
 		}
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(agent_id) DO UPDATE SET last_sequence=excluded.last_sequence,last_digest=excluded.last_digest,updated_at=excluded.updated_at`, agent, nodeID, sequence, digest, stamp(time.Now().UTC()))

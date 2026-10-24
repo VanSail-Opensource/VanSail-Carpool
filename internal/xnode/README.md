@@ -1,5 +1,21 @@
 # X-Node control plane
 
+`master_traffic.go` handles durable report ingestion for the socket reader.
+An unchanged rejected head backs off from one to 30 seconds using one in-memory
+fingerprint per peer; telemetry and command results continue immediately.
+Suppressed reports receive no ACK. Changed frames are checked immediately, and
+successful commit/ACK clears the delay. Pending PAYG recovery remains coalesced.
+`traffic_errors.go` supplies fixed rejection codes for sequence gaps, digest,
+enrollment, missing samples, ownership and settled-period conflicts. The existing
+`ErrConflict` contract is retained; payloads and storage errors are never logged.
+Sequence-gap warnings include numeric received/expected positions for migration
+reconciliation, without advancing or fabricating any durable cursor.
+Hosted regressions cover replay work bounds and unchanged accounting fences.
+
+Firewall reconciliation retains per-node execution and durable receipts. Its
+database queue projects only lagging banks, avoiding fleet delivery work for
+unchanged observation/event replay and preserving pending retry deadlines.
+
 `master_observability.go` keeps aggregate commit/ACK counts and timing in memory.
 `master_receive.go` records ACK latency only after durable report commit; failed
 sends leave reports replayable. No journal protocol fields or live user metrics

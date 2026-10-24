@@ -31,11 +31,13 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 			}
 			ordinal = uint32(id)
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=CASE WHEN version<? THEN ?+1 ELSE source_version END,version=MAX(version,?)+CASE WHEN version<? THEN 1 ELSE 0 END WHERE singleton=1`, observed, observed, observed, observed); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=?+1,version=?+1 WHERE singleton=1 AND version<?`, observed, observed, observed); err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=?,force_sync=MAX(force_sync,?),connection_epoch=connection_epoch+? WHERE node_id=?`, boolInt(active), boolInt(reconnect), boolInt(reconnect), node); err != nil {
-			return err
+		if reconnect || previous != boolInt(active) {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=?,force_sync=MAX(force_sync,?),connection_epoch=connection_epoch+? WHERE node_id=?`, boolInt(active), boolInt(reconnect), boolInt(reconnect), node); err != nil {
+				return err
+			}
 		}
 
 		if active {

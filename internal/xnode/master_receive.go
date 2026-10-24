@@ -2,12 +2,8 @@ package xnode
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"math"
-	"strconv"
-	"strings"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -83,42 +79,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		m.rememberNodeIPs(peer, report.Machine)
 		return nil
 	case "traffic.report":
-		var report wire.TrafficReport
-		if err := wire.Decode(message.Data, &report); err != nil {
-			return ErrInvalid
-		}
-		raw, ok := strings.CutPrefix(report.ID, peer.agentID+":")
-		if !ok || message.ID != report.ID {
-			return ErrInvalid
-		}
-		sequence, err := strconv.ParseUint(raw, 10, 63)
-		if err != nil {
-			return ErrInvalid
-		}
-		normalized, err := json.Marshal(report)
-		if err != nil {
-			return ErrInvalid
-		}
-		digest := sha256.Sum256(normalized)
-		commitStarted := time.Now()
-		if err = m.service.repo.RecordXNodeTraffic(ctx, peer.nodeID, peer.agentID, sequence, hex.EncodeToString(digest[:]), report); err != nil {
-			peer.mu.Lock()
-			peer.paygReady = false
-			peer.paygRecoveryQueued = false
-			peer.mu.Unlock()
-			return err
-		}
-		committed := time.Now()
-		m.trafficMetrics.commits.Add(1)
-		m.trafficMetrics.commitNanos.Add(uint64(committed.Sub(commitStarted)))
-		err = peer.send(ctx, wire.New("traffic.ack", "", 0, map[string]string{"id": report.ID}))
-		m.trafficMetrics.ackNanos.Add(uint64(time.Since(committed)))
-		if err == nil {
-			m.trafficMetrics.acknowledged.Add(1)
-		} else {
-			m.trafficMetrics.ackFailures.Add(1)
-		}
-		return err
+		return m.receiveTraffic(ctx, peer, message)
 	case "command.accepted", "command.result":
 		peer.mu.Lock()
 		pending := peer.pending[message.ID]

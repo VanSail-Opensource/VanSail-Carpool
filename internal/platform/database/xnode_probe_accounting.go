@@ -18,7 +18,7 @@ func attributeProbeSample(ctx context.Context, tx *sql.Tx, node string, owner in
 		return err
 	}
 	if !allowed {
-		return xnode.ErrConflict
+		return xnode.ErrTrafficOwnerMismatch
 	}
 	sample.UserID = int(owner)
 	return nil

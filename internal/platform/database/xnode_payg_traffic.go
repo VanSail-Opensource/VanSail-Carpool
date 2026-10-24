@@ -67,7 +67,7 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 		return true, err
 	}
 	if status != "open" {
-		return true, xnode.ErrConflict
+		return true, xnode.ErrTrafficPeriodSettled
 	}
 	bytes := int64(sample.UploadBytes + sample.DownloadBytes)
 	if a.UsedBytes > math.MaxInt64-bytes {

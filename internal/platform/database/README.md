@@ -38,6 +38,19 @@ snapshot-upgrade failures from unrelated autocommit writers; the existing busy
 timeout applies at acquisition. Explicit read-only transactions keep concurrent
 WAL snapshots. `database_lock_test.go` covers both paths with separate connections.
 
+Traffic ingestion returns specific `xnode.ErrTraffic*` conflicts while preserving
+`errors.Is(err, xnode.ErrConflict)`. Rejections never advance a cursor or charge
+usage. A post-migration sequence gap requires reconciliation with the retained
+final SQLite source; skipping the cursor loses already acknowledged accounting.
+`xnode_traffic_conflicts_test.go` covers those diagnostic and atomicity contracts.
+
+`xnode_firewall_queue.go` projects lagging dynamic/source banks onto the existing
+durable outbox. Periodic reconciliation preserves pending retry deadlines and
+processing leases. Journal ingestion queues fleet work only when desired firewall
+versions change; below-threshold observations, partial expiry and replay still
+commit their event cursors. Reconnects retain full delivery for both banks.
+`xnode_firewall_queue_test.go` covers recovery, bank selection and retry pacing.
+
 Rekeyed traffic aggregates accept either side of the recorded owner mapping.
 Live cumulative counters can move to the new ID while immutable period samples
 retain the old ID, including idle reports with no new samples. Only validated
