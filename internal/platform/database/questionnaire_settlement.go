@@ -160,7 +160,7 @@ func (s *Store) retryAttempt_SettleQuestionnaireImport(ctx context.Context, impo
 	if err != nil {
 		return questionnaires.SettlementReport{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE questionnaire_imports SET status='settled',raw_csv=x'',sample_rows_json='[]',report_json=?,last_error='',updated_at=? WHERE id=?`, string(reportBytes), stamp(now), importID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE questionnaire_imports SET status='settled',raw_csv=CAST('' AS BLOB),sample_rows_json='[]',report_json=?,last_error='',updated_at=? WHERE id=?`, string(reportBytes), stamp(now), importID); err != nil {
 		return questionnaires.SettlementReport{}, err
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE questionnaires SET status='settled',updated_at=? WHERE id=? AND status='settling'`, stamp(now), preview.QuestionnaireID)

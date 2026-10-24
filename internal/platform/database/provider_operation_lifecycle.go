@@ -73,7 +73,7 @@ func (s *Store) retryAttempt_completeProviderOperation(ctx context.Context, oper
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,
 		result_json=CASE WHEN kind='xnode_diy' THEN json_patch(result_json,?) ELSE ? END,completed_at=?,updated_at=? WHERE id=? AND ((status='processing' AND attempt_started_at IS NOT NULL)
-		OR (status='queued' AND ?='failed')) AND (? IS NULL OR attempts=?)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
+		OR (status='queued' AND ?='failed')) AND (CAST(? AS INTEGER) IS NULL OR attempts=?)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
 		resultJSON, resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("complete provider operation: %w", err)

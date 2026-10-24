@@ -29,6 +29,8 @@ func runMaintenanceTask(ctx context.Context, service *maintenance.Service, datab
 	if err != nil {
 		return result, err
 	}
-	result.MigrationSnapshotRetentionWarning = database.PruneExpansionBackups(databasePath, at)
+	if databasePath != "" {
+		result.MigrationSnapshotRetentionWarning = database.PruneExpansionBackups(databasePath, at)
+	}
 	return result, nil
 }

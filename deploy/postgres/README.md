@@ -36,3 +36,8 @@ Database failures must stop startup; they must never select the other backend.
 
 References: [official image](https://hub.docker.com/_/postgres),
 [PostgreSQL authentication](https://www.postgresql.org/docs/18/auth-password.html).
+
+The explicit application overlay is `compose.application.yml`; follow
+[cutover and rehearsal](cutover.md) before starting it. The private exporter
+overlay, aggregate queries, Prometheus rules and physical-backup metrics are
+documented in [monitoring](monitoring.md). Preserve the existing `/data` volume.

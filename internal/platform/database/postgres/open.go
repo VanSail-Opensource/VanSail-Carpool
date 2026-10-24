@@ -21,7 +21,7 @@ import (
 var migrations embed.FS
 
 // SchemaVersion is the newest PostgreSQL schema understood by this binary.
-const SchemaVersion int64 = 5
+const SchemaVersion int64 = 6
 
 // Open opens exactly the configured PostgreSQL backend and enforces schema policy.
 func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {
@@ -35,7 +35,7 @@ func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {
 	parsed.RuntimeParams["statement_timeout"] = strconv.FormatInt(cfg.StatementTimeout.Milliseconds(), 10)
 	parsed.RuntimeParams["lock_timeout"] = strconv.FormatInt(cfg.LockTimeout.Milliseconds(), 10)
 	parsed.RuntimeParams["idle_in_transaction_session_timeout"] = strconv.FormatInt(cfg.StatementTimeout.Milliseconds(), 10)
-	db := sql.OpenDB(connector{stdlib.GetConnector(*parsed)})
+	db := sql.OpenDB(connector{Connector: stdlib.GetConnector(*parsed), metrics: &transactionMetrics{}})
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
 	db.SetConnMaxLifetime(cfg.ConnMaxLifetime)

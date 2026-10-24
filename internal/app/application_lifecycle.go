@@ -17,6 +17,8 @@ func (a *Application) Run(ctx context.Context) error {
 		return errors.New("application run context is nil")
 	}
 	runCtx, cancelRun := context.WithCancel(ctx)
+	stopGuard := a.startDatabaseGuard(runCtx, cancelRun)
+	defer stopGuard()
 	if err := a.upstreams.start(runCtx); err != nil {
 		cancelRun()
 		_ = a.upstreams.shutdown(context.Background())
@@ -91,7 +93,10 @@ func (a *Application) Run(ctx context.Context) error {
 
 	var runErr error
 	select {
-	case <-ctx.Done():
+	case <-runCtx.Done():
+		if ctx.Err() == nil {
+			runErr = errors.New("database ownership lost; runtime stopped")
+		}
 	case err := <-connectivityDone:
 		if err != nil && !errors.Is(err, context.Canceled) {
 			runErr = fmt.Errorf("run connectivity checker: %w", err)
@@ -162,5 +167,5 @@ func (a *Application) Close() error {
 	if a.ipLookup != nil && a.ipLookup.Enhanced != nil {
 		cacheErr = a.ipLookup.Enhanced.CloseInventoryCache()
 	}
-	return errors.Join(queueErr, checkpointErr, cacheErr, a.store.DB().Close())
+	return errors.Join(queueErr, checkpointErr, cacheErr, a.store.DB().Close(), a.databaseOwner.Close())
 }

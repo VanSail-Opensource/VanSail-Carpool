@@ -1,0 +1,41 @@
+groups:
+  - name: vansail-postgres
+    rules:
+      - alert: VanSailDatabaseUnavailable
+        expr: pg_up == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: PostgreSQL exporter cannot reach its database}
+      - alert: VanSailFinancialMismatch
+        expr: vansail_financial_discrepancies > 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: Balance and ledger reconciliation differs}
+      - alert: VanSailOutboxDelayed
+        expr: vansail_outbox_oldest_seconds{status="pending"} > 300
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: Durable outbox work is delayed}
+      - alert: VanSailAccountingBacklog
+        expr: vansail_accounting_pending_period_nodes > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: Accounting barriers remain unfinished}
+      - alert: VanSailDeadlocks
+        expr: increase(pg_stat_database_deadlocks[5m]) > 0
+        labels: {severity: warning}
+        annotations: {summary: PostgreSQL deadlock retries need review}
+      - alert: VanSailArchiveFailure
+        expr: increase(pg_stat_archiver_failed_count[5m]) > 0
+        labels: {severity: critical}
+        annotations: {summary: WAL archiving failed}
+      - alert: VanSailBackupOverdue
+        expr: time() - vansail_backup_last_complete_timestamp_seconds > 93600
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: Administrative database export is overdue}
+      - alert: VanSailPhysicalBackupOverdue
+        expr: time() - vansail_pgbackrest_last_backup_timestamp_seconds > 93600
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: Encrypted physical backup is overdue}

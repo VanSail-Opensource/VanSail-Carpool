@@ -1,7 +1,7 @@
 # VanSail-Carpool PostgreSQL Migration — Development Plan
 
 **Document version:** 1.0  
-**Status:** Proposed for implementation  
+**Status:** Implementation in progress; acceptance evidence in [progress](plans/postgresql-progress.md)  
 **Reference commit:** `808a59e`  
 **Target:** PostgreSQL 18 + pgx + Goose + pgBackRest + pg_stat_statements + postgres_exporter  
 **Optional:** Redis/Valkey, sqlc, PgBouncer
@@ -131,7 +131,7 @@ Both database configurations load correctly, secrets are not logged, and Postgre
 - Financial values: `BIGINT`
 - Stable IDs and externally referenced identifiers: preserve existing exact representations
 - Binary tokens and hashes: `BYTEA`
-- Timestamps: `TIMESTAMPTZ` with updated Go scanners and time-bound queries
+- Timestamps: preserve exact existing `TEXT` initially, per owner decision on 2026-10-24; defer `TIMESTAMPTZ` conversion and its precision reconciliation
 - Existing 0/1 flags: preserve constrained integer compatibility initially; convert deliberately later
 - Canonical, byte-sensitive JSON payloads: preserve as `TEXT`
 - New structured/queryable JSON: use `JSONB` where appropriate

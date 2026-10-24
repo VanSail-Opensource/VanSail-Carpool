@@ -40,14 +40,14 @@ func pruneAbandonedUsersTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, co
 		return fmt.Errorf("create abandoned user set: %w", err)
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_user_candidates(id,telegram_id)
-		SELECT user.id,user.telegram_id FROM users user
-		WHERE user.role='user' AND user.onboarding_state='intro' AND user.created_at<?
-		AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=user.id)
-		AND NOT EXISTS (SELECT 1 FROM ledger_entries WHERE user_id=user.id)
-		AND NOT EXISTS (SELECT 1 FROM purchases WHERE user_id=user.id)
-		AND NOT EXISTS (SELECT 1 FROM payment_orders WHERE user_id=user.id)
-		AND NOT EXISTS (SELECT 1 FROM affiliate_settlements WHERE invited_user_id=user.id OR inviter_user_id=user.id)
-		AND NOT EXISTS (SELECT 1 FROM affiliate_tier_awards WHERE inviter_user_id=user.id)`, stamp(cutoff))
+		SELECT member.id,member.telegram_id FROM users member
+		WHERE member.role='user' AND member.onboarding_state='intro' AND member.created_at<?
+		AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM ledger_entries WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM purchases WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM payment_orders WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM affiliate_settlements WHERE invited_user_id=member.id OR inviter_user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM affiliate_tier_awards WHERE inviter_user_id=member.id)`, stamp(cutoff))
 	if err != nil {
 		return fmt.Errorf("select abandoned users: %w", err)
 	}

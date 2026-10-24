@@ -119,6 +119,9 @@ func (s *Service) removeExpiredFiles(ctx context.Context) error {
 	cutoff := s.now().UTC().Add(-s.retention)
 	for _, entry := range entries {
 		name := entry.Name()
+		if s.postgresURL != "" && !strings.HasSuffix(name, ".dump") && !strings.Contains(name, ".dump.") {
+			continue
+		}
 		published := strings.HasPrefix(name, "tx-carpool-") && (strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".dump"))
 		crashTemporary := strings.HasPrefix(name, ".tx-carpool-") &&
 			(strings.HasSuffix(name, ".db.tmp") || strings.Contains(name, ".db.deleting-") || strings.HasSuffix(name, ".dump.tmp") || strings.Contains(name, ".dump.deleting-"))

@@ -1,5 +1,13 @@
 # Application composition
 
+`persistence.go` selects the configured backend and applies SQLite file recovery
+or PostgreSQL import/ownership gates before bootstrap mutations. PostgreSQL never
+falls back to SQLite and never prunes retained source migration snapshots.
+`database_runtime.go` joins ownership monitoring on shutdown;
+`database_observability.go` logs bounded pool/transaction/journal aggregates every
+30 seconds without SQL, payload or user labels. `postgres_bootstrap_test.go`
+rehearses verified activation, health and refusal of a second hosted application.
+
 `scheduler_priority.go` keeps dynamic firewall admission active once per second
 while ordinary outbox or maintenance work waits. It shares the existing outbox
 and handlers and is cancelled/joined with the scheduler before storage closes.

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
@@ -24,11 +25,22 @@ func (s *Store) retryAttempt_claimDailyActivity(ctx context.Context, userID, loc
 		defer s.writeMu.Unlock()
 	}
 	now = now.UTC()
-	tx, err := s.db.BeginTx(ctx, nil)
+	var options *sql.TxOptions
+	if IsPostgres(s.db) {
+		options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+	}
+	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return activity.DailyCheckIn{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	// Under READ COMMITTED, a waiting claimant sees the winner's receipt before
+	// sampling. The balance lock also preserves debit/credit atomicity.
+	if IsPostgres(s.db) {
+		if _, err = balanceTx(ctx, tx, userID); err != nil {
+			return activity.DailyCheckIn{}, err
+		}
+	}
 	if existing, loadErr := dailyCheckInByDateTx(ctx, tx, userID, localDate); loadErr == nil {
 		existing.AlreadyClaimed = true
 		return existing, nil

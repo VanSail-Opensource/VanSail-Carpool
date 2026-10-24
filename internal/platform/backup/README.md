@@ -53,3 +53,5 @@ does not prove recoverability: `postgres_test.go` restores the archive into a
 separate hosted database and compares all exact records and encrypted settings.
 PostgreSQL online upload/file replacement is refused. Physical restore and PITR
 require stopped application workers and the separate pgBackRest operator flow.
+Automatic PostgreSQL retention skips legacy SQLite files/records, retaining the
+source recovery evidence until an operator deliberately removes it.

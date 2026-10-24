@@ -14,6 +14,7 @@ import (
 )
 
 type Master struct {
+	trafficMetrics           trafficObservations
 	protectedReleaseDigest   string
 	managedNodeIPs           map[string][]string
 	managedHostIPs           []string

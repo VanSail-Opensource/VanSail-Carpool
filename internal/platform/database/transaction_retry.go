@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -26,6 +27,7 @@ func (s *Store) retryTransaction(ctx context.Context, err error, attempt int) bo
 	case <-ctx.Done():
 		return false
 	case <-timer.C:
+		postgres.ObserveRetry(s.db.Driver())
 		return true
 	}
 }

@@ -8,7 +8,14 @@ import (
 )
 
 func (s *Store) claimDailyActivity(ctx context.Context, userID, localDate, timezone string, minimumMinor, maximumMinor int64, boostCount int, rng activity.RandomSource, now time.Time) (activity.DailyCheckIn, error) {
+	retryRandom := newTransactionRandom(rng)
+	if retryRandom != nil {
+		rng = retryRandom
+	}
 	for retryIndex := 0; ; retryIndex++ {
+		if retryRandom != nil {
+			retryRandom.position = 0
+		}
 		r0, r1 := s.retryAttempt_claimDailyActivity(ctx, userID, localDate, timezone, minimumMinor, maximumMinor, boostCount, rng, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1

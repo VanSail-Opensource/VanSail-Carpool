@@ -5,19 +5,26 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"time"
 )
 
-type connector struct{ driver.Connector }
+type connector struct {
+	driver.Connector
+	metrics *transactionMetrics
+}
 
 func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
 	conn, err := c.Connector.Connect(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &connection{Conn: conn}, nil
+	return &connection{Conn: conn, metrics: c.metrics}, nil
 }
 
-type connection struct{ driver.Conn }
+type connection struct {
+	driver.Conn
+	metrics *transactionMetrics
+}
 
 func (c *connection) CheckNamedValue(value *driver.NamedValue) error {
 	if checker, ok := c.Conn.(driver.NamedValueChecker); ok {
@@ -40,7 +47,12 @@ func (c *connection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver
 	if opts.Isolation == 0 && !opts.ReadOnly {
 		opts.Isolation = driver.IsolationLevel(sql.LevelSerializable)
 	} // database/sql.LevelSerializable
-	return c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	started := time.Now()
+	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &measuredTransaction{Tx: tx, metrics: c.metrics, started: started}, nil
 }
 
 func (c *connection) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -93,9 +105,12 @@ func (r compatRows) Next(values []driver.Value) error {
 // Is reports whether a sql.DB driver is the PostgreSQL compatibility connector.
 func Is(dbDriver driver.Driver) bool { _, ok := dbDriver.(compatDriver); return ok }
 
-type compatDriver struct{ driver.Driver }
+type compatDriver struct {
+	driver.Driver
+	metrics *transactionMetrics
+}
 
-func (c connector) Driver() driver.Driver { return compatDriver{c.Connector.Driver()} }
+func (c connector) Driver() driver.Driver { return compatDriver{c.Connector.Driver(), c.metrics} }
 func (compatDriver) Open(string) (driver.Conn, error) {
 	return nil, errors.New("use the PostgreSQL connector")
 }

@@ -20,8 +20,8 @@ synthetic bootstrap rows; source inventory never exports business values.
 New schema changes belong in new numbered migrations. Update `SchemaVersion` and
 hosted schema-parity checks in the same change.
 
-Application activation remains disabled until domain contracts, locking,
-migration verification and recovery integration have been delivered.
+Application activation requires a new empty installation or an unchanged verified
+import. Production cutover additionally requires the operator acceptance gates.
 
 `open.go` owns connections and schema policy. `schema.go` checks the generated
 `contract.json` catalog manifest. `schema_test.go` exercises fresh/reapplied
@@ -41,3 +41,10 @@ SQLite binary range/pagination behavior, including compact IPv4 subnet reuse,
 independently of the operator's cluster locale. The catalog verifier checks it.
 JSON merge-patch completion documents follow RFC 7396; byte-sensitive stored
 payloads are copied unchanged and are never implicitly converted to JSONB.
+
+`runtime.go` owns the dedicated single-master advisory session and reconnecting
+LISTEN session; `runtime_test.go` checks exclusion, wake-up and ownership loss.
+Notifications carry hints only and never replace durable polling. `metrics.go`
+keeps bounded aggregate transaction/retry counters in memory. Ownership loss
+stops the application; this initial design requires one application process and
+does not enable HA or automatic failover.

@@ -30,7 +30,7 @@ type maintenanceOperationHandler struct {
 
 func registerMaintenanceOperationHandler(dispatcher *providerops.Dispatcher, repository maintenanceOperationRepository,
 	service *maintenance.Service, databasePath string, logger *slog.Logger) error {
-	if dispatcher == nil || repository == nil || service == nil || databasePath == "" {
+	if dispatcher == nil || repository == nil || service == nil {
 		return errors.New("maintenance operation dependencies are incomplete")
 	}
 	handler := &maintenanceOperationHandler{repository: repository, maintenance: service, databasePath: databasePath, logger: logger, now: time.Now}

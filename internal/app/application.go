@@ -16,6 +16,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/backup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database/postgres"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
@@ -24,6 +25,7 @@ import (
 
 // Application owns all context-managed process resources.
 type Application struct {
+	databaseOwner   *postgres.Owner
 	usdt            *usdt.Service
 	xnodeService    *xnode.Service
 	xnodeMaster     *xnode.Master

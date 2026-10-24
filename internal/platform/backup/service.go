@@ -1,4 +1,4 @@
-// Package backup creates verified online SQLite backups with bounded retention.
+// Package backup creates database exports with bounded retention and contained downloads.
 package backup
 
 import (
@@ -139,7 +139,7 @@ func (s *Service) resolveBackupFile(path string, allowMissing bool) (string, err
 	return target, nil
 }
 
-// Service owns the SQLite online-backup and retention lifecycle.
+// Service owns backend-specific backup and retention lifecycles.
 
 type Service struct {
 	postgresURL string // Secret; never persisted in backup metadata or logs.

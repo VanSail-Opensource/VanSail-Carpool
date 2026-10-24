@@ -73,6 +73,8 @@ func Bind(query string, args []driver.NamedValue) (string, error) {
 			}
 		case "INTEGER":
 			t.raw = "BIGINT"
+		case "BLOB":
+			t.raw = "BYTEA"
 		case "REAL":
 			t.raw = "DOUBLE PRECISION"
 		case "LIKE":

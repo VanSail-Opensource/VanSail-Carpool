@@ -1,0 +1,47 @@
+# Merge with compose.yml and, for recovery, compose.recovery.yml. One app only.
+services:
+  application:
+    image: ${VANSAIL_IMAGE:?Set a reviewed PostgreSQL-capable image digest}
+    profiles: [application]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: ./secrets/application.env
+    environment:
+      DB_DRIVER: postgres
+      DATABASE_URL: ""
+      DATABASE_URL_FILE: /run/secrets/application_url
+      DB_MIGRATE_ON_START: "false"
+      DB_MAX_OPEN_CONNS: "8"
+      DB_MAX_IDLE_CONNS: "4"
+      DATA_DIR: /data
+    secrets: [application_url]
+    volumes:
+      - application_data:/data
+    ports: [127.0.0.1:8080:8080]
+    networks: [database, application]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /usr/local/bin/vansail-carpool, healthcheck, --url, http://127.0.0.1:8080/healthz]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+networks:
+  application:
+
+volumes:
+  application_data:
+    name: tx-carpool-data
+
+secrets:
+  application_url:
+    file: ./secrets/application_url

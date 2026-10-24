@@ -6,9 +6,20 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database/postgres"
 )
 
 func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- struct{}) {
+	notifyCtx, stopNotify := context.WithCancel(ctx)
+	wake := make(chan struct{}, 1)
+	notifyDone := make(chan struct{})
+	go func() {
+		defer close(notifyDone)
+		if a.databaseOwner != nil {
+			postgres.RunNotifications(notifyCtx, a.config.Database.URL, wake, a.logger)
+		}
+	}()
+	defer func() { stopNotify(); <-notifyDone }()
 	outboxTicker := time.NewTicker(5 * time.Second)
 	groupFactsTicker := time.NewTicker(time.Second)
 	transitionTicker := time.NewTicker(30 * time.Second)
@@ -63,6 +74,10 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 			if err := a.outbox.Drain(ctx, 20); err != nil && !errors.Is(err, context.Canceled) {
 				a.logger.Error("outbox drain failed", "error", err)
 			}
+		case <-wake:
+			if err := a.outbox.Drain(ctx, 20); err != nil && !errors.Is(err, context.Canceled) {
+				a.logger.Error("notified outbox drain failed", "error", err)
+			}
 		case <-groupFactsTicker.C:
 			if err := a.store.FlushGroupMessageFacts(ctx); err != nil && !errors.Is(err, context.Canceled) {
 				a.logger.Error("group message fact flush failed", "error", err)
@@ -99,7 +114,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 		case <-maintenanceTimer.C:
 			maintenanceCtx, cancel := context.WithTimeout(ctx, maintenance.RunTimeout)
 			maintenanceNow := time.Now().UTC()
-			maintenanceResult, err := runMaintenanceTask(maintenanceCtx, a.maintenance, a.config.DatabasePath, maintenanceNow, false)
+			maintenanceResult, err := runMaintenanceTask(maintenanceCtx, a.maintenance, maintenanceDatabasePath(a.config), maintenanceNow, false)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				a.logger.Error("daily maintenance failed", "error", err)
 			} else if err == nil {

@@ -1,4 +1,11 @@
-# SQLite store
+# Application store
+
+`postgres_commerce_concurrency_test.go` races duplicate payment callbacks/debits,
+limited stock and renewal cancellation. `postgres_deadlock_test.go` constructs a
+real PostgreSQL deadlock and checks whole-operation retry. `transaction_random.go`
+retains random choices across rollback; daily check-ins lock the balance under
+READ COMMITTED before checking an existing receipt, so concurrent claimants
+sample only the winning outcome.
 
 `open_configured.go` explicitly selects SQLite or PostgreSQL. `transaction_retry.go`
 classifies whole-operation retries; generated adapters retain existing public

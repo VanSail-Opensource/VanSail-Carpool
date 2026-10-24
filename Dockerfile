@@ -28,7 +28,7 @@ COPY --from=frontend-build /src/internal/webui/dist ./internal/webui/dist
 RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags="-s -w" -o /out/vansail-carpool ./cmd/server
+    go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/server ./cmd/db-schema ./cmd/db-migrate
 
 FROM alpine:3.24 AS runtime
 ARG VERSION=dev
@@ -47,7 +47,8 @@ RUN apk add --no-cache ca-certificates tzdata postgresql18-client \
     && adduser -S -D -H -u 10001 -G txcarpool txcarpool \
     && install -d -o txcarpool -g txcarpool /data
 
-COPY --from=go-build --chown=10001:10001 /out/vansail-carpool /usr/local/bin/vansail-carpool
+COPY --from=go-build --chown=10001:10001 /out/server /usr/local/bin/vansail-carpool
+COPY --from=go-build --chown=10001:10001 /out/db-schema /out/db-migrate /usr/local/bin/
 COPY docs/licenses /usr/share/licenses/vansail-carpool
 
 ENV PORT=8080 \

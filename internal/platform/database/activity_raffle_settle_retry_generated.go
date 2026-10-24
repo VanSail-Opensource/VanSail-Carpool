@@ -8,7 +8,14 @@ import (
 )
 
 func (s *Store) SettleRaffle(ctx context.Context, id string, rng activity.RandomSource, now time.Time) (activity.RaffleSettlement, error) {
+	retryRandom := newTransactionRandom(rng)
+	if retryRandom != nil {
+		rng = retryRandom
+	}
 	for retryIndex := 0; ; retryIndex++ {
+		if retryRandom != nil {
+			retryRandom.position = 0
+		}
 		r0, r1 := s.retryAttempt_SettleRaffle(ctx, id, rng, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1

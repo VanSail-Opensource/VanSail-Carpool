@@ -1,0 +1,21 @@
+vansail_outbox:
+  query: SELECT status,jobs,attempts,oldest_seconds FROM vansail_outbox_observability
+  metrics:
+    - status: {usage: LABEL, description: Durable job status}
+    - jobs: {usage: GAUGE, description: Current durable jobs}
+    - attempts: {usage: GAUGE, description: Attempts retained in current jobs}
+    - oldest_seconds: {usage: GAUGE, description: Oldest job age}
+vansail_financial:
+  query: SELECT discrepancies FROM vansail_financial_observability
+  metrics:
+    - discrepancies: {usage: GAUGE, description: Balance and exact ledger discrepancies}
+vansail_accounting:
+  query: SELECT pending_period_nodes,known_sequence_backlog FROM vansail_accounting_observability
+  metrics:
+    - pending_period_nodes: {usage: GAUGE, description: Unfinished accounting barriers}
+    - known_sequence_backlog: {usage: GAUGE, description: Known barrier sequences awaiting commit}
+vansail_backup:
+  query: SELECT extract(epoch FROM last_complete) AS last_complete_timestamp_seconds,failed_exports FROM vansail_backup_observability
+  metrics:
+    - last_complete_timestamp_seconds: {usage: GAUGE, description: Last completed logical export}
+    - failed_exports: {usage: GAUGE, description: Retained failed logical exports}

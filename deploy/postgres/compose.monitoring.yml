@@ -1,0 +1,29 @@
+services:
+  postgres:
+    volumes:
+      - ./monitoring-init.sh:/opt/vansail/monitoring-init.sh:ro
+    secrets: [monitoring_password]
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+    profiles: [monitoring]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_URI: postgres:5432/vansail?sslmode=disable
+      DATA_SOURCE_USER: vansail_monitor
+      DATA_SOURCE_PASS_FILE: /run/secrets/monitoring_password
+      PG_EXPORTER_COLLECTION_TIMEOUT: 10s
+    command: [--collector.long_running_transactions, --collector.stat_statements, --extend.query-path=/etc/postgres-exporter/queries.yml]
+    secrets: [monitoring_password]
+    volumes:
+      - ./exporter-queries.yml:/etc/postgres-exporter/queries.yml:ro
+    networks: [database]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+secrets:
+  monitoring_password:
+    file: ./secrets/monitoring_password

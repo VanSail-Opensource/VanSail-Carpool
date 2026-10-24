@@ -6,18 +6,18 @@ evidence from the selected deployment.
 
 | Step | Repository implementation | Validation / remaining gate |
 | --- | --- | --- |
-| 01 Inventory | Fixture utility, final schema, SQL-contract/source locations, mapping, invariants and risk report implemented | Static review passed; hosted determinism pending; production measurements require target access |
-| 02 Infrastructure/config | Isolated PostgreSQL 18 profile, SCRAM roles/secrets, pool/deadline/policy validation, explicit activation refusal implemented | Hosted startup/authentication/privilege checks pending; application network dependency belongs to activation stage |
-| 03 Goose baseline | Forward-only engine, full generated baseline, catalog contract and schema CLI implemented | Hosted fresh/reapply/immutability checks pending |
-| 04 pgx compatibility | Pending | Depends on baseline and exact value/scanner contracts |
-| 05 Domain repositories | Pending | Depends on backend compatibility |
-| 06 Financial concurrency | Pending | Requires hosted row-lock, stock, callback and retry regressions |
-| 07 X-Node accounting | Pending | Requires hosted cursor/replay/reset/concurrency regressions |
-| 08 Outbox | Pending | Resource exclusion, monotonic fencing, SKIP LOCKED and notifications |
-| 09 Recovery | Pending | Backup repository, full restore and PITR environment required |
-| 10 Observability | Pending | PostgreSQL telemetry/exporter/alerts; Redis remains separately gated |
-| 11 Conversion CLI | Pending | Schema/type policy and reconciliation contracts required |
-| 12 Rehearsal/cutover | Pending | Staging/production target, verified ingress policy and recovery evidence required |
+| 01 Inventory | Final post-startup schema, dialect/write inventory and invariants implemented | Hosted schema determinism passes; production size/latency/lock measurements require target access |
+| 02 Infrastructure/config | Isolated PG18, SCRAM/secrets, separate roles, bounded pools and secure opt-in application overlay implemented | Hosted authentication/privilege checks pass; target deployment pending |
+| 03 Goose baseline | Faithful numbered schema, triggers, C text ordering and catalog/version checks implemented | Fresh/reapply/immutability checks pass; latest complete CI pending |
+| 04 pgx compatibility | SQL-aware binding, typed null/blob/bool handling and whole-operation retries implemented | Hosted domain regressions actively resolving remaining differences |
+| 05 Domain repositories | All domains ported; PostgreSQL generic admin writes refused while read/masking use system catalogs | Portable hosted contracts plus SQLite upgrade contracts retained; full green gate pending |
+| 06 Financial concurrency | Balance locks, exact arithmetic, stock/payment/renewal races and real deadlock regression implemented | Latest hosted concurrency run pending |
+| 07 X-Node accounting | Cursor/period locking, ordered charging, replay/digest invariants and commit-before-ACK preserved | Existing journal regressions run on PG; full latest gate pending |
+| 08 Outbox | SKIP LOCKED, resource exclusion, monotonic claim fencing, dedicated LISTEN and polling fallback implemented | Hosted generation/exclusion/session-loss checks pending on latest code |
+| 09 Recovery | Logical exports, encrypted pgBackRest/WAL, S3 option, offline procedure and isolated full/PITR drills implemented | Recovery drills pending successful round-trip fixture; live storage/key drill requires target |
+| 10 Observability | Private exporter, aggregate views/rules, pool/retry/ACK logs and pgBackRest textfile metrics implemented | Hosted exporter scrape pending; production Prometheus/Grafana/off-site integration external; Redis deferred |
+| 11 Conversion CLI | Inspect/export/import/verify/readiness/recovery, exact hashes, sequences, encryption and activation gates implemented | Hosted round-trip and refusal paths pending latest CI |
+| 12 Rehearsal/cutover | Hosted conversion/recovery/application gates and complete operator runbooks implemented | Access-controlled staging, browser/upstream rehearsal, benchmarks and live cutover remain external gates |
 
 ## Deployment decisions
 

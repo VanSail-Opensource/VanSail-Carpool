@@ -42,6 +42,9 @@ func (s *Service) removeExpiredRuns(ctx context.Context, cutoff time.Time) error
 		return fmt.Errorf("close expired backup list: %w", err)
 	}
 	for _, run := range runs {
+		if s.postgresURL != "" && !strings.HasSuffix(run.path, ".dump") {
+			continue
+		}
 		if err = s.removeExpiredRun(ctx, run); err != nil {
 			return err
 		}

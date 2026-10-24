@@ -15,3 +15,6 @@ a sequence for the disjoint X-Node service-ID range.
 
 `00005_cutover_state.sql` records the inactive import and verification gates and
 makes foreign keys deferrable during a controlled, atomic source import.
+
+`00006_observability.sql` adds derived aggregate views for outbox, reconciliation,
+accounting barriers and logical backup age. It duplicates no authoritative rows.

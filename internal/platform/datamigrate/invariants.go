@@ -9,6 +9,9 @@ import (
 )
 
 func checkBalances(ctx context.Context, q queryer, report *Report) error {
+	if err := q.QueryRowContext(ctx, `SELECT COUNT(DISTINCT l.user_id) FROM ledger_entries l LEFT JOIN balances b ON b.user_id=l.user_id WHERE b.user_id IS NULL`).Scan(&report.FinancialMismatches); err != nil {
+		return err
+	}
 	rows, err := q.QueryContext(ctx, `SELECT b.user_id,b.txb_minor,l.delta_txb_minor FROM balances b LEFT JOIN ledger_entries l ON l.user_id=b.user_id ORDER BY b.user_id,l.created_at,l.id`)
 	if err != nil {
 		return err

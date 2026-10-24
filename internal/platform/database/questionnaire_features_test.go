@@ -214,9 +214,13 @@ func TestQuestionnaireSettlementRollsBackIfLifecycleFinalizationConflicts(t *tes
 	if _, err := store.QueueQuestionnaireSettlement(ctx, preview.ID, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `CREATE TRIGGER questionnaire_settlement_conflict
+	conflictTrigger := `CREATE TRIGGER questionnaire_settlement_conflict
 		AFTER UPDATE OF status ON questionnaire_imports WHEN NEW.status='settled'
-		BEGIN UPDATE questionnaires SET status='closed' WHERE id=NEW.questionnaire_id; END`); err != nil {
+		BEGIN UPDATE questionnaires SET status='closed' WHERE id=NEW.questionnaire_id; END`
+	if IsPostgres(store.DB()) {
+		conflictTrigger = `CREATE FUNCTION questionnaire_settlement_conflict_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE questionnaires SET status='closed' WHERE id=NEW.questionnaire_id; RETURN NEW; END $$; CREATE TRIGGER questionnaire_settlement_conflict AFTER UPDATE OF status ON questionnaire_imports FOR EACH ROW WHEN (NEW.status='settled') EXECUTE FUNCTION questionnaire_settlement_conflict_fn()`
+	}
+	if _, err := store.DB().ExecContext(ctx, conflictTrigger); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.SettleQuestionnaireImport(ctx, preview.ID, now.Add(time.Minute)); !errors.Is(err, ErrConflict) {

@@ -9,6 +9,8 @@ psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --set ON_ERROR_STOP=1 <
 \getenv migration_password MIGRATION_PASSWORD
 CREATE ROLE vansail_app LOGIN PASSWORD :'app_password';
 CREATE ROLE vansail_migration LOGIN PASSWORD :'migration_password';
+CREATE ROLE vansail_monitor NOLOGIN;
+GRANT pg_monitor TO vansail_monitor;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT CONNECT ON DATABASE vansail TO vansail_app, vansail_migration;
 GRANT USAGE ON SCHEMA public TO vansail_app;

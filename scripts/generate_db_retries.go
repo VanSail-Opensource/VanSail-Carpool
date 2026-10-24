@@ -95,7 +95,12 @@ func main() {
 			start, end := fs.Position(fn.Pos()).Offset, fs.Position(fn.Body.Pos()).Offset
 			signature := string(raw[start:end])
 			signature = strings.Replace(signature, fn.Name.Name+"(", name+"(", 1)
-			wrappers = append(wrappers, fmt.Sprintf("%s{\n for retryIndex:=0;;retryIndex++ {\n %s := s.%s(%s)\n if !s.retryTransaction(ctx,%s,retryIndex) { return %s }\n }\n}\n", signature, strings.Join(returns, ","), attemptName, strings.Join(params, ","), errorName, strings.Join(returns, ",")))
+			setup, rewind := "", ""
+			if strings.Contains(signature, "rng activity.RandomSource") {
+				setup = "retryRandom:=newTransactionRandom(rng); if retryRandom!=nil { rng=retryRandom }\n"
+				rewind = "if retryRandom!=nil { retryRandom.position=0 }\n"
+			}
+			wrappers = append(wrappers, fmt.Sprintf("%s{\n %s for retryIndex:=0;;retryIndex++ {\n %s %s := s.%s(%s)\n if !s.retryTransaction(ctx,%s,retryIndex) { return %s }\n }\n}\n", signature, setup, rewind, strings.Join(returns, ","), attemptName, strings.Join(params, ","), errorName, strings.Join(returns, ",")))
 			if fn.Name.Name != attemptName {
 				edits = append(edits, edit{fs.Position(fn.Name.Pos()).Offset, fs.Position(fn.Name.End()).Offset, attemptName})
 			}

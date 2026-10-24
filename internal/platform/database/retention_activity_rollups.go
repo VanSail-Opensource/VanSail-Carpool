@@ -29,11 +29,11 @@ func compactActivityTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24Hou
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO activity_daily_rollups(local_date,checkin_count,
 		checkin_reward_txb_minor,group_message_count,group_message_reward_txb_minor,updated_at)
-		SELECT window.local_date,0,0,0,
+		SELECT messages.local_date,0,0,0,
 			COALESCE(SUM((SELECT COALESCE(SUM(ledger.delta_txb_minor),0) FROM ledger_entries ledger
-				WHERE ledger.user_id=window.user_id AND ledger.kind='activity_group_message_reward'
-				AND ledger.note=window.local_date)),0),?
-		FROM activity_group_message_windows window WHERE window.updated_at<? GROUP BY window.local_date
+				WHERE ledger.user_id=messages.user_id AND ledger.kind='activity_group_message_reward'
+				AND ledger.note=messages.local_date)),0),?
+		FROM activity_group_message_windows messages WHERE messages.updated_at<? GROUP BY messages.local_date
 		ON CONFLICT(local_date) DO UPDATE SET
 		group_message_reward_txb_minor=activity_daily_rollups.group_message_reward_txb_minor+excluded.group_message_reward_txb_minor,
 		updated_at=excluded.updated_at`, stamp(now), stamp(cutoff24Hours))

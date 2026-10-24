@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 env:
-  COMPOSE_FILE: deploy/postgres/compose.yml:deploy/postgres/compose.recovery.yml
+  COMPOSE_FILE: deploy/postgres/compose.yml:deploy/postgres/compose.recovery.yml:deploy/postgres/compose.monitoring.yml
   COMPOSE_PROFILES: postgres
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
         run: |
           umask 077
           mkdir -p deploy/postgres/secrets
-          for role in postgres application migration; do
+          for role in postgres application migration monitoring; do
             openssl rand -hex 32 > "deploy/postgres/secrets/${role}_password"
             chmod 0444 "deploy/postgres/secrets/${role}_password"
           done
@@ -110,6 +110,32 @@ jobs:
           container=$(docker compose ps -q postgres)
           docker cp "$RUNNER_TEMP/db-migrate" "$container:/tmp/db-migrate"
           bash scripts/ci/postgresql_recovery.sh
+      - name: Verify PostgreSQL application composition and single ownership
+        if: ${{ !cancelled() && steps.conversion.outcome == 'success' }}
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go test -c -o "$RUNNER_TEMP/application.test" ./internal/app
+          container=$(docker compose ps -q postgres)
+          docker cp "$RUNNER_TEMP/application.test" "$container:/tmp/application.test"
+          docker compose exec -T postgres sh -c '
+            password=$(cat /run/secrets/postgres_password)
+            export POSTGRES_BOOTSTRAP_ADMIN_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
+            /tmp/application.test -test.v -test.timeout=5m -test.run TestPostgresApplicationBootstrap
+          '
+      - name: Verify private exporter and aggregate monitoring grants
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: |
+          docker compose exec -T --user postgres postgres sh /opt/vansail/monitoring-init.sh
+          docker compose --profile monitoring up -d postgres-exporter
+          exporter=$(docker compose ps -q postgres-exporter)
+          for attempt in $(seq 1 10); do
+            if docker run --rm --network "container:$exporter" alpine:3.24 wget -T 15 -qO- http://127.0.0.1:9187/metrics > "$RUNNER_TEMP/postgres.metrics"; then break; fi
+            sleep 2
+          done
+          grep -q '^pg_up 1' "$RUNNER_TEMP/postgres.metrics"
+          grep -q '^vansail_financial_discrepancies 0' "$RUNNER_TEMP/postgres.metrics"
+          grep -q '^vansail_accounting_known_sequence_backlog' "$RUNNER_TEMP/postgres.metrics"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

@@ -100,10 +100,21 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return ErrInvalid
 		}
 		digest := sha256.Sum256(normalized)
+		commitStarted := time.Now()
 		if err = m.service.repo.RecordXNodeTraffic(ctx, peer.nodeID, peer.agentID, sequence, hex.EncodeToString(digest[:]), report); err != nil {
 			return err
 		}
-		return peer.send(ctx, wire.New("traffic.ack", "", 0, map[string]string{"id": report.ID}))
+		committed := time.Now()
+		m.trafficMetrics.commits.Add(1)
+		m.trafficMetrics.commitNanos.Add(uint64(committed.Sub(commitStarted)))
+		err = peer.send(ctx, wire.New("traffic.ack", "", 0, map[string]string{"id": report.ID}))
+		m.trafficMetrics.ackNanos.Add(uint64(time.Since(committed)))
+		if err == nil {
+			m.trafficMetrics.acknowledged.Add(1)
+		} else {
+			m.trafficMetrics.ackFailures.Add(1)
+		}
+		return err
 	case "command.accepted", "command.result":
 		peer.mu.Lock()
 		pending := peer.pending[message.ID]

@@ -30,3 +30,7 @@ encrypted configuration, report cursor, multiplier carry and daily usage evidenc
 `recovery.go` verifies a consistent PostgreSQL snapshot after logical, physical
 or point-in-time restore. `db-migrate recovery-check --expected-hash` compares it
 with secured pre-backup evidence without changing activation state.
+
+`activate.go` admits only a genuinely fresh baseline or a still-identical verified
+import before application bootstrap writes, under the dedicated ownership lock.
+An imported but unverified target refuses application startup.

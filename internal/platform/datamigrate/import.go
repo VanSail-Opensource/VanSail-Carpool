@@ -33,13 +33,10 @@ func Import(ctx context.Context, source *Source, targetURL string) (Report, erro
 	if phase != "fresh" {
 		return report, fmt.Errorf("target is not a fresh migration database")
 	}
-	seedCounts := map[string]int64{"affiliate_config_current": 1, "affiliate_config_versions": 1, "affiliate_tiers": 1, "node_compensation_config": 1, "onboarding_content": 2, "payment_profiles": 2, "schema_migrations": int64(len(source.Tables)), "txb_limits": 1, "xnode_compile_revision": 1, "xnode_firewall_clock": 1}
-	// Source migration history has one row per filename, independently of table count.
-	var seedCountsValue int64
-	if err = source.Tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&seedCountsValue); err != nil {
+	seedCounts, err := bootstrapCounts()
+	if err != nil {
 		return report, err
 	}
-	seedCounts["schema_migrations"] = seedCountsValue
 	var names []string
 	for _, table := range source.Tables {
 		var count int64

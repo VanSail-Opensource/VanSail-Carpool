@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -43,34 +42,27 @@ import (
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
 func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
+	startupTimeout := 20 * time.Second
 	if cfg.Database.Driver == "postgres" {
-		return nil, fmt.Errorf("PostgreSQL application activation requires completed repository compatibility and migration verification")
+		startupTimeout = 30 * time.Minute
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), startupTimeout)
 	defer cancel()
 	migrationVersions, err := database.MigrationVersions()
 	if err != nil {
 		return nil, err
 	}
-	if _, restoreErr := backup.ApplyPendingRestore(ctx, cfg.DatabasePath, migrationVersions); restoreErr != nil {
-		if _, statErr := os.Stat(cfg.DatabasePath); statErr != nil {
-			return nil, fmt.Errorf("apply pending database restore: %w", restoreErr)
-		}
-		logger.Error("pending database restore rolled back or was rejected", "error", restoreErr)
-	}
-	db, err := database.Open(ctx, cfg.DatabasePath)
+	db, owner, err := openPersistence(ctx, cfg, logger, migrationVersions)
 	if err != nil {
 		return nil, err
 	}
 	cleanup := func(err error) (*Application, error) {
+		_ = owner.Close()
 		_ = db.Close()
 		return nil, err
 	}
 	store := database.NewStore(db)
 	store.SetLogger(logger)
-	if _, err := backup.RecordStartupRestore(ctx, db, cfg.DatabasePath); err != nil {
-		return cleanup(fmt.Errorf("record startup database restore: %w", err))
-	}
 	vault, err := secret.NewVault(cfg.MasterKey)
 	if err != nil {
 		return cleanup(err)
@@ -117,6 +109,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store, usdt: usdtService}
 	paymentProfiles := newPaymentProfileManager(settings, paymentChannels, upstreams.payment, queuedTelegramClient, store, cfg.AdminTelegramIDs, cfg.PublicBaseURL, logger)
 	backupService := backup.NewService(db, store, filepath.Join(cfg.DataDir, "backups"), cfg.BackupRetention)
+	if database.IsPostgres(db) {
+		backupService.ConfigurePostgres(cfg.Database.URL)
+	}
 	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	reconcileErr := backupService.ReconcileUploads(reconcileCtx, migrationVersions)
 	reconcileCancel()
@@ -183,7 +178,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerMutationOperationHandlers(operationDispatcher, catalogService, embyOperations, questionnaireService, adminService); err != nil {
 		return cleanup(err)
 	}
-	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, cfg.DatabasePath, logger); err != nil {
+	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, maintenanceDatabasePath(cfg), logger); err != nil {
 		return cleanup(err)
 	}
 	if err := registerAdminOperationHandlers(operationDispatcher, store, provider); err != nil {
@@ -265,7 +260,8 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		logger.Error("proxy inventory cache unavailable", "error", err)
 	}
 	return &Application{
-		xnodeService: xnodeService, xnodeMaster: xnodeMaster,
+		databaseOwner: owner,
+		xnodeService:  xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
 		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService,

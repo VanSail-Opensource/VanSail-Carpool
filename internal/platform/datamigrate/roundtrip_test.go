@@ -47,7 +47,7 @@ func TestPostgresExactRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,category,updated_at) VALUES(?,?,1,'system',?)`, "migration.fixture", cipher, now.Format(time.RFC3339Nano)); err != nil {
+	if _, err = db.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at) VALUES(?,?,1,?)`, "migration.fixture", cipher, now.Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)`, []byte{0, 1, 2, 255}, user.ID, now.Add(time.Hour).Format(time.RFC3339Nano), now.Format(time.RFC3339Nano)); err != nil {

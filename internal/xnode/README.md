@@ -1,5 +1,10 @@
 # X-Node control plane
 
+`master_observability.go` keeps aggregate commit/ACK counts and timing in memory.
+`master_receive.go` records ACK latency only after durable report commit; failed
+sends leave reports replayable. No journal protocol fields or live user metrics
+are persisted for monitoring.
+
 Replacement/reset revocation never waits for connected agents' replay backlogs.
 It wakes the existing state reconciler and retains the old period as `closing`;
 the accounting worker completes its barriers under its existing short deadline.

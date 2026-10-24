@@ -8,7 +8,14 @@ import (
 )
 
 func (s *Store) PlayLuckyDraw(ctx context.Context, userID, drawID, key string, rng activity.RandomSource, now time.Time) (activity.DrawResult, error) {
+	retryRandom := newTransactionRandom(rng)
+	if retryRandom != nil {
+		rng = retryRandom
+	}
 	for retryIndex := 0; ; retryIndex++ {
+		if retryRandom != nil {
+			retryRandom.position = 0
+		}
 		r0, r1 := s.retryAttempt_PlayLuckyDraw(ctx, userID, drawID, key, rng, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
