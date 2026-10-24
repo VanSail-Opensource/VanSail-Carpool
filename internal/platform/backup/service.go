@@ -142,6 +142,7 @@ func (s *Service) resolveBackupFile(path string, allowMissing bool) (string, err
 // Service owns the SQLite online-backup and retention lifecycle.
 
 type Service struct {
+	postgresURL string // Secret; never persisted in backup metadata or logs.
 	db          *sql.DB
 	repository  Repository
 	directory   string

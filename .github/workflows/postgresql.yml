@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+env:
+  COMPOSE_FILE: deploy/postgres/compose.yml:deploy/postgres/compose.recovery.yml
+  COMPOSE_PROFILES: postgres
+
 jobs:
   infrastructure:
     runs-on: ubuntu-latest
@@ -30,19 +34,23 @@ jobs:
             openssl rand -hex 32 > "deploy/postgres/secrets/${role}_password"
             chmod 0444 "deploy/postgres/secrets/${role}_password"
           done
-          docker compose -f deploy/postgres/compose.yml --profile postgres config --quiet
+          cp deploy/postgres/pgbackrest.conf.example deploy/postgres/secrets/pgbackrest_config
+          pass=$(openssl rand -hex 32)
+          sed -i "s/REPLACE_WITH_INDEPENDENT_RECOVERY_SECRET/$pass/" deploy/postgres/secrets/pgbackrest_config
+          chmod 0444 deploy/postgres/secrets/pgbackrest_config
+          docker compose config --quiet
       - name: Start PostgreSQL 18
-        run: docker compose -f deploy/postgres/compose.yml --profile postgres up -d --wait
+        run: docker compose up -d --build --wait
       - name: Verify SCRAM authentication and application privileges
-        run: docker compose -f deploy/postgres/compose.yml exec -T postgres sh /opt/vansail/verify.sh
+        run: docker compose exec -T postgres sh /opt/vansail/verify.sh
       - name: Verify fresh PostgreSQL baseline and migration contracts
         env:
           CGO_ENABLED: 0
         run: |
           go test -c -o "$RUNNER_TEMP/postgres.test" ./internal/platform/database/postgres
-          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          container=$(docker compose ps -q postgres)
           docker cp "$RUNNER_TEMP/postgres.test" "$container:/tmp/postgres.test"
-          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+          docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/migration_password)
             export POSTGRES_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
             /tmp/postgres.test -test.v
@@ -53,10 +61,10 @@ jobs:
         run: |
           python3 scripts/ci/postgresql_contracts.py "$RUNNER_TEMP/postgres-contracts.regex" "$RUNNER_TEMP/postgres-contracts.json"
           go test -c -o "$RUNNER_TEMP/database.test" ./internal/platform/database
-          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          container=$(docker compose ps -q postgres)
           docker cp "$RUNNER_TEMP/database.test" "$container:/tmp/database.test"
           docker cp "$RUNNER_TEMP/postgres-contracts.regex" "$container:/tmp/postgres-contracts.regex"
-          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+          docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/postgres_password)
             export POSTGRES_CONTRACT_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
             /tmp/database.test -test.v -test.parallel=2 -test.timeout=20m -test.run "$(cat /tmp/postgres-contracts.regex)"
@@ -66,13 +74,35 @@ jobs:
           CGO_ENABLED: 0
         run: |
           go test -c -o "$RUNNER_TEMP/migration.test" ./internal/platform/datamigrate
-          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          container=$(docker compose ps -q postgres)
           docker cp "$RUNNER_TEMP/migration.test" "$container:/tmp/migration.test"
-          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+          docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/migration_password)
             export POSTGRES_MIGRATION_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
             /tmp/migration.test -test.v -test.timeout=5m
           '
+      - name: Verify administrative logical export and isolated restoration
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go test -c -o "$RUNNER_TEMP/backup.test" ./internal/platform/backup
+          container=$(docker compose ps -q postgres)
+          docker cp "$RUNNER_TEMP/backup.test" "$container:/tmp/backup.test"
+          docker compose exec -T postgres sh -c '
+            password=$(cat /run/secrets/migration_password)
+            admin=$(cat /run/secrets/postgres_password)
+            export POSTGRES_RECOVERY_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
+            export POSTGRES_RECOVERY_ADMIN_URL="postgres://postgres:$admin@127.0.0.1/vansail?sslmode=disable"
+            /tmp/backup.test -test.v -test.timeout=5m -test.run TestPostgresLogicalRecovery
+          '
+      - name: Verify encrypted physical backup and point-in-time recovery
+        env:
+          CGO_ENABLED: 0
+        run: |
+          go build -o "$RUNNER_TEMP/db-migrate" ./cmd/db-migrate
+          container=$(docker compose ps -q postgres)
+          docker cp "$RUNNER_TEMP/db-migrate" "$container:/tmp/db-migrate"
+          bash scripts/ci/postgresql_recovery.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -82,5 +112,5 @@ jobs:
       - name: Stop isolated infrastructure
         if: always()
         run: |
-          docker compose -f deploy/postgres/compose.yml logs --no-color postgres
-          docker compose -f deploy/postgres/compose.yml --profile postgres down -v
+          docker compose logs --no-color postgres
+          docker compose down -v

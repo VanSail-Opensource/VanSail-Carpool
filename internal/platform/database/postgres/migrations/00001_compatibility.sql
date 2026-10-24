@@ -12,7 +12,7 @@ CREATE FUNCTION json_type(value text) RETURNS text LANGUAGE sql IMMUTABLE STRICT
  WHEN 'boolean' THEN value::jsonb::text
  ELSE jsonb_typeof(value::jsonb) END
 $$;
-CREATE FUNCTION instr(value text,needle text) RETURNS integer LANGUAGE sql IMMUTABLE STRICT AS $$ SELECT strpos(value,needle) $$;
+CREATE FUNCTION instr(value text,needle text) RETURNS int4 LANGUAGE sql IMMUTABLE STRICT AS $$ SELECT strpos(value,needle) $$;
 -- +goose StatementBegin
 CREATE FUNCTION json_extract(value text,path text) RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT AS $$
 DECLARE result jsonb;

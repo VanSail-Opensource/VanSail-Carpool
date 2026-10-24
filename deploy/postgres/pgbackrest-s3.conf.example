@@ -1,0 +1,13 @@
+# Merge into the protected configuration only when off-site storage is selected.
+[global]
+repo2-type=s3
+repo2-path=/vansail
+repo2-s3-bucket=REPLACE_WITH_BUCKET
+repo2-s3-endpoint=REPLACE_WITH_S3_ENDPOINT
+repo2-s3-region=REPLACE_WITH_REGION
+repo2-s3-uri-style=path
+repo2-s3-key=REPLACE_WITH_ACCESS_KEY
+repo2-s3-key-secret=REPLACE_WITH_SECRET_KEY
+repo2-retention-full=2
+repo2-cipher-type=aes-256-cbc
+repo2-cipher-pass=REPLACE_WITH_INDEPENDENT_OFFSITE_KEY

@@ -31,6 +31,7 @@ func run() error {
 	sourcePath := flags.String("source", "", "verified source SQLite file (never modified)")
 	output := flags.String("output", "", "new protected JSON verification report")
 	snapshot := flags.String("snapshot", "", "new consistent SQLite snapshot destination")
+	expectedHash := flags.String("expected-hash", "", "required exact hash for a recovery-check")
 	if err := flags.Parse(os.Args[2:]); err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func run() error {
 		report, err = datamigrate.Export(ctx, *sourcePath, *snapshot)
 	} else {
 		var source *datamigrate.Source
-		if operation != "cutover-check" {
+		if operation != "cutover-check" && operation != "recovery-check" {
 			if *sourcePath == "" {
 				return fmt.Errorf("--source is required")
 			}
@@ -82,6 +83,15 @@ func run() error {
 				report, err = datamigrate.Verify(ctx, source, target, key)
 			case "cutover-check":
 				report, err = datamigrate.CutoverCheck(ctx, target)
+			case "recovery-check":
+				key, e := base64.StdEncoding.DecodeString(os.Getenv("CONFIG_MASTER_KEY"))
+				if e != nil || *expectedHash == "" {
+					return fmt.Errorf("recovery-check requires a valid CONFIG_MASTER_KEY and --expected-hash")
+				}
+				report, err = datamigrate.InspectPostgres(ctx, target, key)
+				if err == nil && (report.Hash != *expectedHash || report.FinancialMismatches != 0) {
+					err = fmt.Errorf("recovered data differs from verification evidence")
+				}
 			default:
 				return fmt.Errorf("unsupported migration operation")
 			}

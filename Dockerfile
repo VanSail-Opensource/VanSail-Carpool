@@ -42,7 +42,7 @@ LABEL org.opencontainers.image.title="VanSail Carpool" \
       org.opencontainers.image.revision="${COMMIT}" \
       org.opencontainers.image.created="${BUILD_DATE}"
 
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk add --no-cache ca-certificates tzdata postgresql18-client \
     && addgroup -S -g 10001 txcarpool \
     && adduser -S -D -H -u 10001 -G txcarpool txcarpool \
     && install -d -o txcarpool -g txcarpool /data

@@ -26,3 +26,7 @@ Source snapshots must remain immutable until cutover verification completes.
 `roundtrip_test.go` exercises hosted exact import, overwrite refusal, key failure
 and changed-data readiness rejection. `roundtrip_fixture_test.go` supplies real
 encrypted configuration, report cursor, multiplier carry and daily usage evidence.
+
+`recovery.go` verifies a consistent PostgreSQL snapshot after logical, physical
+or point-in-time restore. `db-migrate recovery-check --expected-hash` compares it
+with secured pre-backup evidence without changing activation state.

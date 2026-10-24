@@ -12,3 +12,6 @@ isolated schema inventory and the reviewed generator, never from production data
 
 `00004_outbox_fencing.sql` adds monotonic claims, transactional wake-up hints and
 a sequence for the disjoint X-Node service-ID range.
+
+`00005_cutover_state.sql` records the inactive import and verification gates and
+makes foreign keys deferrable during a controlled, atomic source import.

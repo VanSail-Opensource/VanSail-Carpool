@@ -3,7 +3,7 @@
 - `restore_startup_part2.go` continues the focused implementation from its original package module.
 - `service_part2.go` continues the focused implementation from its original package module.
 
-This package creates verified SQLite backups, serves contained downloads, stages
+This package creates database backups, serves contained downloads, stages
 administrator restore requests, and performs the pre-open database swap. Restore
 markers and results are written atomically so process crashes remain recoverable.
 Marker version 3 carries the initiating actor scope, idempotency key, and request
@@ -46,3 +46,10 @@ Streamed upload ownership is split across focused files:
   truncation, and atomic JSON file replacement.
 - `service_test.go` — backup creation, retention, download containment, staged
   swap/rollback, and migration-marker verification tests.
+
+`postgres.go` produces private pg_dump custom archives and checks their structure
+before publication through the existing backup metadata API. Archive inspection
+does not prove recoverability: `postgres_test.go` restores the archive into a
+separate hosted database and compares all exact records and encrypted settings.
+PostgreSQL online upload/file replacement is refused. Physical restore and PITR
+require stopped application workers and the separate pgBackRest operator flow.

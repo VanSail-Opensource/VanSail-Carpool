@@ -1,5 +1,8 @@
 # PostgreSQL infrastructure
 
+See [recovery operations](recovery.md) for the pgBackRest image, encrypted local
+and S3 repository examples, offline restore, retention and hosted recovery drills.
+
 This opt-in Compose project starts PostgreSQL independently. It does not switch
 the application database. PostgreSQL 18 stores its versioned PGDATA below the
 volume mounted at `/var/lib/postgresql`, per the official image contract.

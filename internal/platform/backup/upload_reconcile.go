@@ -28,6 +28,9 @@ func (s *Service) AbortUpload(ctx context.Context, candidateID string, cause err
 
 // ReconcileUploads resolves files left between durable publication phases.
 func (s *Service) ReconcileUploads(ctx context.Context, supportedMigrations []string) error {
+	if s.postgresURL != "" {
+		return nil
+	}
 	s.restoreMu.Lock()
 	defer s.restoreMu.Unlock()
 	s.mu.Lock()

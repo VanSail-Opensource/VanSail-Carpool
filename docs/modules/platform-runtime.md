@@ -39,6 +39,12 @@ A restore accepts only a verified stored snapshot. It creates a rescue backup, c
 
 ## Verification
 
+Explicit PostgreSQL installations use pg_dump logical exports instead of SQLite
+file operations. The live API refuses PostgreSQL upload/file-swap restore.
+Encrypted physical backups, continuous WAL archiving and stopped-worker recovery
+are documented in [PostgreSQL recovery](../../deploy/postgres/recovery.md).
+Archive completion is separate from successful restore/PITR verification.
+
 - Migration tests cover a fresh database and reopening an existing schema with foreign keys/WAL enabled.
 - Secret tests cover random nonces, authentication failure, invalid base64 master keys, masking, and no plaintext response.
 - Scheduler tests use a controllable clock and cover cancellation, duplicate ticks, crash/retry, and bounded backoff.

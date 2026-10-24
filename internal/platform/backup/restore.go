@@ -72,6 +72,9 @@ type StartupRestoreResult struct {
 // No live database file is replaced by this method.
 
 func (s *Service) StageRestore(ctx context.Context, backupID, actorUserID, idempotencyKey, reason, confirmation string, supportedMigrations []string) (RestoreJob, error) {
+	if s.postgresURL != "" {
+		return RestoreJob{}, fmt.Errorf("%w: PostgreSQL restore requires offline maintenance and recovery validation", ErrRestoreConflict)
+	}
 	s.restoreMu.Lock()
 	defer s.restoreMu.Unlock()
 

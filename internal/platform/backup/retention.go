@@ -119,5 +119,5 @@ func (s *Service) restoreExpiredBackup(path, staged string, exists bool, cause e
 }
 
 func isPublishedBackup(name string) bool {
-	return strings.HasPrefix(name, "tx-carpool-") && strings.HasSuffix(name, ".db")
+	return strings.HasPrefix(name, "tx-carpool-") && (strings.HasSuffix(name, ".db")||strings.HasSuffix(name,".dump"))
 }

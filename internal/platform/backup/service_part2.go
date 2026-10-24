@@ -19,6 +19,9 @@ func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
 		return model.BackupRun{}, fmt.Errorf("create backup directory: %w", err)
 	}
 	name := "tx-carpool-" + now.Format("20060102T150405.000000000Z") + ".db"
+	if s.postgresURL != "" {
+		name = "tx-carpool-" + now.Format("20060102T150405.000000000Z") + ".dump"
+	}
 	finalPath := filepath.Join(s.directory, name)
 	temporaryPath := filepath.Join(s.directory, "."+name+".tmp")
 	run, err := s.repository.StartBackupRun(ctx, finalPath, now)
@@ -53,6 +56,9 @@ func (s *Service) Run(ctx context.Context) (model.BackupRun, error) {
 }
 
 func (s *Service) createAndVerify(ctx context.Context, temporaryPath, finalPath string) error {
+	if s.postgresURL != "" {
+		return s.exportPostgres(ctx, temporaryPath, finalPath)
+	}
 	if _, err := os.Stat(temporaryPath); err == nil {
 		if removeErr := os.Remove(temporaryPath); removeErr != nil {
 			return fmt.Errorf("remove stale temporary backup: %w", removeErr)
@@ -113,9 +119,9 @@ func (s *Service) removeExpiredFiles(ctx context.Context) error {
 	cutoff := s.now().UTC().Add(-s.retention)
 	for _, entry := range entries {
 		name := entry.Name()
-		published := strings.HasPrefix(name, "tx-carpool-") && strings.HasSuffix(name, ".db")
+		published := strings.HasPrefix(name, "tx-carpool-") && (strings.HasSuffix(name, ".db") || strings.HasSuffix(name, ".dump"))
 		crashTemporary := strings.HasPrefix(name, ".tx-carpool-") &&
-			(strings.HasSuffix(name, ".db.tmp") || strings.Contains(name, ".db.deleting-"))
+			(strings.HasSuffix(name, ".db.tmp") || strings.Contains(name, ".db.deleting-") || strings.HasSuffix(name, ".dump.tmp") || strings.Contains(name, ".dump.deleting-"))
 		if entry.IsDir() || (!published && !crashTemporary) {
 			continue
 		}

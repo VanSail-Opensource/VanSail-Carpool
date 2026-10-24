@@ -16,6 +16,9 @@ import (
 
 // ReceiveUpload streams one bounded candidate to private storage and hashes it.
 func (s *Service) ReceiveUpload(ctx context.Context, actorID, idempotencyKey, originalFilename string, source io.Reader, maximumBytes int64) (UploadCandidate, error) {
+	if s.postgresURL != "" {
+		return UploadCandidate{}, fmt.Errorf("%w: PostgreSQL archive import requires offline recovery", ErrUploadConflict)
+	}
 	actorID, idempotencyKey = strings.TrimSpace(actorID), strings.TrimSpace(idempotencyKey)
 	if actorID == "" || idempotencyKey == "" || len(idempotencyKey) > 128 || source == nil {
 		return UploadCandidate{}, ErrUploadConflict
