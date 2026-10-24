@@ -602,3 +602,19 @@ rechecks capability at execution and forwards typed optional forced recovery.
 `diy_retirement.go` upgrades encrypted version 0/1 documents to version 2 before HTTP starts. It removes retired tuning, retains whitelist and split references, and reseals with a fenced revision increment without charging or modifying receipts. Unknown versions or malformed retained values refuse startup rather than erase data.
 
 `diy_retirement_test.go` checks encrypted cleanup, retained whitelist/split references, fenced revisions, unchanged ledger and idempotent upgrades.
+
+Member deployment latency: `operation_capacity.go` reserves one bounded member
+slot alongside the three ordinary and one urgent firewall slots in the existing
+durable executor. `master_operations.go` retains heartbeat/generation fencing,
+joins cancellation and converts deferred panics to sanitized failures.
+`operation_capacity_test.go` covers capacity, panic/cancellation and receipt scope.
+Routing/DIY attempts have a five-minute total deadline; each phase is bounded to
+one minute and sends all phase configurations before awaiting acknowledgements.
+Revoke/apply/enable barriers remain mandatory. A disconnect ends an observed
+applied-state wait promptly. `diy_deployment.go` reads the existing receipt's
+`whitelistChanged` evidence: routing-only changes do not redeploy whitelist state
+to unrelated paid nodes. Legacy receipts retain the conservative barrier.
+The existing outbox retry policy caps only desired-state routing/DIY delays at
+30 seconds, preserving external-payment uncertainty rules and the ten-attempt
+limit. Startup and reconnect recovery resume the same receipt and phase,
+including routing jobs left in the former multi-hour retry delay.

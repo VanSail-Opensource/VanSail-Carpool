@@ -5,6 +5,7 @@ repo1-cipher-type=aes-256-cbc
 repo1-cipher-pass=REPLACE_WITH_INDEPENDENT_RECOVERY_SECRET
 log-path=/var/lib/pgbackrest/log
 spool-path=/var/lib/pgbackrest/spool
+lock-path=/var/lib/pgbackrest/lock
 start-fast=y
 process-max=2
 log-level-console=info

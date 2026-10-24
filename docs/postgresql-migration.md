@@ -1,10 +1,18 @@
 # VanSail-Carpool PostgreSQL Migration — Development Plan
 
-**Document version:** 1.0  
+**Document version:** 1.1
 **Status:** Implementation in progress; acceptance evidence in [progress](plans/postgresql-progress.md)  
 **Reference commit:** `808a59e`  
 **Target:** PostgreSQL 18 + pgx + Goose + pgBackRest + pg_stat_statements + postgres_exporter  
 **Optional:** Redis/Valkey, sqlc, PgBouncer
+
+Checked items below mean implemented and audited repository work, with hosted
+PostgreSQL evidence in [run 40065516216](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/40065516216).
+Its PostgreSQL job passed schema/upgrade, business/concurrency, conversion,
+logical restore, encrypted full/PITR, restricted application startup and exporter
+scrape gates. The complete release and new embedded-image checks remain pending.
+Staging, production measurements/cutover, optional Redis and unselected R2 remain
+unticked. Timestamp TEXT preserves the owner-selected nanosecond policy.
 
 ## Architecture decisions
 
@@ -20,6 +28,7 @@ Before implementation, adopt the following decisions:
 8. Introduce Redis only after PostgreSQL correctness and cutover have been demonstrated.
 9. Keep one active Go application/X-Node master during the initial production migration.
 10. Never switch a production database automatically based on its availability.
+11. Per owner decision on 2026-10-24, embed PostgreSQL 18 server in the application image, with a 1 GiB container memory limit and a persistent database volume. Keep the separate-service profile for CI and external/recovery deployments.
 
 ---
 
@@ -41,16 +50,16 @@ Before implementation, adopt the following decisions:
 
 ### Tasks
 
-- [ ] Inventory all current SQLite tables, indexes, constraints, triggers, and migration scripts.
-- [ ] Generate the actual deployed SQLite schema using an isolated, up-to-date database fixture.
-- [ ] Record every direct `*sql.DB` and `*sql.Tx` dependency.
-- [ ] Inventory every database write protected by `Store.writeMu`.
-- [ ] Identify uses of SQLite-specific syntax: `PRAGMA`, `sqlite_schema`, `sqlite_master`, `rowid`, `GLOB`, `json_extract`, `json_valid`, scalar `MAX()`, `INSERT OR ...`, `IS ?`, and SQLite-specific error messages.
-- [ ] Identify timestamp, boolean, BLOB, JSON, and auto-increment compatibility assumptions.
-- [ ] Enumerate all database triggers implementing immutability, accounting revisions, and audit protections.
-- [ ] Identify all operations spanning business records and outbox jobs.
+- [x] Inventory all current SQLite tables, indexes, constraints, triggers, and migration scripts.
+- [x] Generate the actual deployed SQLite schema using an isolated, up-to-date database fixture.
+- [x] Record every direct `*sql.DB` and `*sql.Tx` dependency.
+- [x] Inventory every database write protected by `Store.writeMu`.
+- [x] Identify uses of SQLite-specific syntax: `PRAGMA`, `sqlite_schema`, `sqlite_master`, `rowid`, `GLOB`, `json_extract`, `json_valid`, scalar `MAX()`, `INSERT OR ...`, `IS ?`, and SQLite-specific error messages.
+- [x] Identify timestamp, boolean, BLOB, JSON, and auto-increment compatibility assumptions.
+- [x] Enumerate all database triggers implementing immutability, accounting revisions, and audit protections.
+- [x] Identify all operations spanning business records and outbox jobs.
 - [ ] Record production database size, key table row counts, journal backlog, transaction latency, and lock contention.
-- [ ] Identify SQLite file-backup, checkpoint, schema-editor, and startup-rekey dependencies.
+- [x] Identify SQLite file-backup, checkpoint, schema-editor, and startup-rekey dependencies.
 
 ### Deliverables
 
@@ -65,20 +74,23 @@ Before implementation, adopt the following decisions:
 
 ## Step 02 — PostgreSQL infrastructure and configuration
 
-**Goal:** Introduce an independently deployable PostgreSQL service without modifying existing production behavior.
+**Goal:** Provide an explicit embedded PostgreSQL deployment and an isolated infrastructure profile without automatically changing existing installations.
 
 ### Tasks
 
-- [ ] Add PostgreSQL 18 to a new development Docker Compose profile.
-- [ ] Update `docker-compose.example.yml` with optional PostgreSQL services.
-- [ ] Mount PostgreSQL 18 persistent storage at `/var/lib/postgresql`, respecting the official image's version-specific PGDATA layout.
-- [ ] Add database health checks and startup dependencies.
-- [ ] Configure PostgreSQL authentication using SCRAM-SHA-256.
-- [ ] Use Docker secrets or protected environment files for credentials.
-- [ ] Do not publish PostgreSQL port 5432 externally.
-- [ ] Create separate application, migration, and backup roles where feasible.
-- [ ] Preserve `/data` for application files, assets, temporary data, and any remaining local artifacts.
-- [ ] Keep the application container's read-only filesystem and existing security restrictions.
+- [x] Add PostgreSQL 18 to a new development Docker Compose profile.
+- [x] Link `docker-compose.example.yml` to the explicit embedded PostgreSQL Compose deployment and retain the separate-service profile.
+- [x] Mount PostgreSQL 18 persistent storage at `/var/lib/postgresql`, respecting the official image's version-specific PGDATA layout.
+- [x] Add database health checks and startup dependencies.
+- [x] Configure PostgreSQL authentication using SCRAM-SHA-256.
+- [x] Use Docker secrets or protected environment files for credentials.
+- [x] Do not publish PostgreSQL port 5432 externally.
+- [x] Separate application DML and migration DDL roles; run physical backups as the database OS owner (shared OS user in embedded mode).
+- [x] Preserve `/data` for application files, assets, temporary data, and any remaining local artifacts.
+- [x] Keep the application container's read-only filesystem and existing security restrictions.
+- [x] Embed PostgreSQL server with persistent storage, startup/migration ordering and coordinated shutdown.
+- [x] Set a 1 GiB container ceiling and reserve memory separately for Go and PostgreSQL.
+- [ ] Pass the hosted embedded-image startup, persistence, encrypted recovery and failure-supervision gate.
 
 ### Configuration contract
 
@@ -112,19 +124,19 @@ Both database configurations load correctly, secrets are not logged, and Postgre
 
 ### Tasks
 
-- [ ] Add `github.com/pressly/goose/v3`.
-- [ ] Embed PostgreSQL migrations in the application or a dedicated migration command.
-- [ ] Create one initial PostgreSQL baseline matching the final deployed SQLite schema.
-- [ ] Use separate, numbered PostgreSQL migrations for future changes.
-- [ ] Keep the old SQLite migration files immutable.
-- [ ] Preserve all foreign keys, uniqueness rules, partial indexes, and check constraints.
-- [ ] Reimplement immutable financial/audit triggers in PostgreSQL.
-- [ ] Reimplement X-Node compile-revision invalidation triggers.
-- [ ] Preserve the special identity-rekey exceptions for immutable references.
-- [ ] Recreate partial unique indexes that deduplicate active outbox work.
-- [ ] Explicitly define sequence ownership and starting values.
-- [ ] Implement migration-version compatibility and refusal of unsupported downgrades.
-- [ ] Add schema-diff checks against the inventoried SQLite schema.
+- [x] Add `github.com/pressly/goose/v3`.
+- [x] Embed PostgreSQL migrations in the application or a dedicated migration command.
+- [x] Create one initial PostgreSQL baseline matching the final deployed SQLite schema.
+- [x] Use separate, numbered PostgreSQL migrations for future changes.
+- [x] Keep the old SQLite migration files immutable.
+- [x] Preserve all foreign keys, uniqueness rules, partial indexes, and check constraints.
+- [x] Reimplement immutable financial/audit triggers in PostgreSQL.
+- [x] Reimplement X-Node compile-revision invalidation triggers.
+- [x] Preserve the special identity-rekey exceptions for immutable references.
+- [x] Recreate partial unique indexes that deduplicate active outbox work.
+- [x] Explicitly define sequence ownership and starting values.
+- [x] Implement migration-version compatibility and refusal of unsupported downgrades.
+- [x] Add schema-diff checks against the inventoried SQLite schema.
 
 ### Data type strategy
 
@@ -151,18 +163,18 @@ An empty PostgreSQL database initializes deterministically, all expected constra
 
 ### Tasks
 
-- [ ] Add `github.com/jackc/pgx/v5/stdlib`.
-- [ ] Introduce a backend-aware database-opening function.
-- [ ] Preserve existing domain repository interfaces.
-- [ ] Add database dialect helpers for explicitly supported SQL differences.
-- [ ] Move SQLite-only setup, checkpoint, and migration routines behind the SQLite backend.
-- [ ] Normalize PostgreSQL SQLSTATE errors into existing domain errors.
-- [ ] Support context cancellation, bounded transactions, and statement deadlines.
-- [ ] Introduce explicit transaction retries for deadlock/serialization failures where the entire operation can safely be retried.
-- [ ] Avoid retries of individual statements inside failed transactions.
-- [ ] Establish a deterministic transaction lock-ordering convention.
-- [ ] Ensure database transactions do not retain locks while performing slow upstream API calls.
-- [ ] Set conservative PostgreSQL pool limits initially and tune from measured demand.
+- [x] Add `github.com/jackc/pgx/v5/stdlib`.
+- [x] Introduce a backend-aware database-opening function.
+- [x] Preserve existing domain repository interfaces.
+- [x] Add database dialect helpers for explicitly supported SQL differences.
+- [x] Move SQLite-only setup, checkpoint, and migration routines behind the SQLite backend.
+- [x] Normalize PostgreSQL SQLSTATE errors into existing domain errors.
+- [x] Support context cancellation, bounded transactions, and statement deadlines.
+- [x] Introduce explicit transaction retries for deadlock/serialization failures where the entire operation can safely be retried.
+- [x] Avoid retries of individual statements inside failed transactions.
+- [x] Establish a deterministic transaction lock-ordering convention.
+- [x] Ensure database transactions do not retain locks while performing slow upstream API calls.
+- [x] Set conservative PostgreSQL pool limits initially and expose metrics for later tuning from measured demand.
 
 ### SQL conversion rules
 
@@ -222,16 +234,16 @@ All domain workflows operate with PostgreSQL, and the existing HTTP API and exte
 
 ### Tasks
 
-- [ ] Replace global SQLite write serialization with PostgreSQL row-level concurrency control.
-- [ ] Lock balance rows or use checked atomic updates for debit/credit operations.
-- [ ] Preserve 64-bit overflow checks.
-- [ ] Preserve insufficient-balance protection.
-- [ ] Preserve administrator adjustments and legitimate reversal/debt semantics.
-- [ ] Ensure balances and ledger records commit atomically.
-- [ ] Ensure purchases, reservations, entitlements, and outbox jobs are consistent within transactions.
-- [ ] Preserve payment provider deduplication and unique transaction references.
-- [ ] Use a consistent lock order for accounts, orders, reservations, and entitlements.
-- [ ] Audit all check-then-insert and check-then-update logic for races introduced by removing `writeMu`.
+- [x] Replace global SQLite write serialization with PostgreSQL row-level concurrency control.
+- [x] Lock balance rows or use checked atomic updates for debit/credit operations.
+- [x] Preserve 64-bit overflow checks.
+- [x] Preserve insufficient-balance protection.
+- [x] Preserve administrator adjustments and legitimate reversal/debt semantics.
+- [x] Ensure balances and ledger records commit atomically.
+- [x] Ensure purchases, reservations, entitlements, and outbox jobs are consistent within transactions.
+- [x] Preserve payment provider deduplication and unique transaction references.
+- [x] Use a consistent lock order for accounts, orders, reservations, and entitlements.
+- [x] Audit all check-then-insert and check-then-update logic for races introduced by removing `writeMu`.
 
 ### Required hosted CI scenarios
 
@@ -261,19 +273,19 @@ All domain workflows operate with PostgreSQL, and the existing HTTP API and exte
 
 ### Tasks
 
-- [ ] Introduce transaction-level serialization of reports by agent.
-- [ ] Lock the agent's durable report cursor before evaluating a new sequence.
-- [ ] Handle missing initial cursors safely under concurrent first reports.
-- [ ] Require contiguous journal sequences.
-- [ ] Preserve the digest check for replay of an existing sequence.
-- [ ] Lock all affected accounting periods in deterministic order.
-- [ ] Preserve the exact fixed-point multiplier and remainder calculations.
-- [ ] Preserve separate upload, download, raw, and weighted usage values.
-- [ ] Advance usage totals and report cursors atomically.
-- [ ] Send ACK only after successful PostgreSQL commit.
-- [ ] Preserve late reports, migrated identities, service identities, and metered probes.
-- [ ] Preserve period closing, successor publication, reset barriers, and incomplete accounting states.
-- [ ] Ensure unrelated agents can commit independently without violating shared-period locking.
+- [x] Introduce transaction-level serialization of reports by agent.
+- [x] Lock the agent's durable report cursor before evaluating a new sequence.
+- [x] Handle missing initial cursors safely under concurrent first reports.
+- [x] Require contiguous journal sequences.
+- [x] Preserve the digest check for replay of an existing sequence.
+- [x] Lock all affected accounting periods in deterministic order.
+- [x] Preserve the exact fixed-point multiplier and remainder calculations.
+- [x] Preserve separate upload, download, raw, and weighted usage values.
+- [x] Advance usage totals and report cursors atomically.
+- [x] Send ACK only after successful PostgreSQL commit.
+- [x] Preserve late reports, migrated identities, service identities, and metered probes.
+- [x] Preserve period closing, successor publication, reset barriers, and incomplete accounting states.
+- [x] Ensure unrelated agents can commit independently without violating shared-period locking.
 
 ### Required failure tests
 
@@ -304,18 +316,18 @@ All domain workflows operate with PostgreSQL, and the existing HTTP API and exte
 
 ### Tasks
 
-- [ ] Rewrite outbox claims using atomic PostgreSQL updates and `FOR UPDATE SKIP LOCKED`.
-- [ ] Preserve job priority, retry policy, max attempts, and error reporting.
-- [ ] Introduce persistent claim generation/fencing.
-- [ ] Ensure a recovered job cannot be completed by an older worker attempt.
-- [ ] Preserve exclusive processing requirements for sensitive job categories.
-- [ ] Keep priority firewall work separated from ordinary backlog processing.
-- [ ] Preserve provider-specific concurrency and pacing queues.
-- [ ] Add PostgreSQL `LISTEN/NOTIFY` to wake the dispatcher after new work commits.
-- [ ] Use a dedicated PostgreSQL session for `LISTEN`.
-- [ ] Preserve scheduled polling and recovery when notifications are missed.
-- [ ] Avoid holding database locks during upstream network requests.
-- [ ] Keep the scheduler single-owner during the initial deployment.
+- [x] Rewrite outbox claims using atomic PostgreSQL updates and `FOR UPDATE SKIP LOCKED`.
+- [x] Preserve job priority, retry policy, max attempts, and error reporting.
+- [x] Introduce persistent claim generation/fencing.
+- [x] Ensure a recovered job cannot be completed by an older worker attempt.
+- [x] Preserve exclusive processing requirements for sensitive job categories.
+- [x] Keep priority firewall work separated from ordinary backlog processing.
+- [x] Preserve provider-specific concurrency and pacing queues.
+- [x] Add PostgreSQL `LISTEN/NOTIFY` to wake the dispatcher after new work commits.
+- [x] Use a dedicated PostgreSQL session for `LISTEN`.
+- [x] Preserve scheduled polling and recovery when notifications are missed.
+- [x] Avoid holding database locks during upstream network requests.
+- [x] Keep the scheduler single-owner during the initial deployment.
 
 ### Correctness requirement
 
@@ -340,19 +352,19 @@ Do not use Redis Pub/Sub or an independently committed Redis queue for financial
 
 ### Tasks
 
-- [ ] Add pgBackRest as an operational integration.
-- [ ] Configure physical base backups and continuous WAL archiving.
-- [ ] Configure encrypted backup repositories.
-- [ ] Add an off-site repository option using S3-compatible storage.
+- [x] Add pgBackRest as an operational integration.
+- [x] Configure physical base backups and continuous WAL archiving.
+- [x] Configure encrypted backup repositories.
+- [x] Add an off-site repository option using S3-compatible storage.
 - [ ] Validate Cloudflare R2 compatibility if selected.
-- [ ] Implement PostgreSQL logical exports for administrative use.
-- [ ] Define backup retention, recoverability, and storage-capacity policies.
-- [ ] Expose verified backup metadata through supported administrative APIs.
-- [ ] Replace SQLite-specific restore semantics for PostgreSQL installations.
-- [ ] Prevent direct production restore while applications or workers remain active.
-- [ ] Implement explicit maintenance, restore, and validation steps.
-- [ ] Retain the old SQLite restore workflow only for SQLite installations.
-- [ ] Conduct a full backup restoration drill and a point-in-time recovery drill.
+- [x] Implement PostgreSQL logical exports for administrative use.
+- [x] Define backup retention, recoverability, and storage-capacity policies.
+- [x] Expose verified backup metadata through supported administrative APIs.
+- [x] Replace SQLite-specific restore semantics for PostgreSQL installations.
+- [x] Prevent direct production restore while applications or workers remain active.
+- [x] Implement explicit maintenance, restore, and validation steps.
+- [x] Retain the old SQLite restore workflow only for SQLite installations.
+- [x] Conduct a full backup restoration drill and a point-in-time recovery drill.
 
 ### Operational safeguards
 
@@ -370,15 +382,15 @@ A successful backup command is not proof of recoverability; restoration must be 
 
 ### PostgreSQL observability
 
-- [ ] Enable `pg_stat_statements`.
-- [ ] Add postgres_exporter.
+- [x] Enable `pg_stat_statements`.
+- [x] Add postgres_exporter.
 - [ ] Integrate with Prometheus and Grafana where available.
-- [ ] Measure connection-pool saturation.
-- [ ] Measure transaction latency, locks, deadlocks, and long-running transactions.
-- [ ] Record outbox queue age and claim/retry counts.
-- [ ] Record X-Node journal backlog and commit-to-ACK latency.
-- [ ] Monitor backup age and WAL archive failures.
-- [ ] Add alerts for financial reconciliation anomalies, accounting backlogs, deadlocks, and backup failures.
+- [x] Measure connection-pool saturation.
+- [x] Measure transaction latency, locks, deadlocks, and long-running transactions.
+- [x] Record outbox queue age and claim/retry counts.
+- [x] Record known X-Node accounting-barrier backlog and commit-to-ACK latency; full agent journal depth requires agent-side metrics.
+- [x] Monitor backup age and WAL archive failures.
+- [x] Add alerts for financial reconciliation anomalies, accounting backlogs, deadlocks, and backup failures.
 
 ### Redis/Valkey integration (optional, separately gated)
 
@@ -427,21 +439,21 @@ Commands must be non-destructive by default and must never silently overwrite a 
 
 ### Data migration
 
-- [ ] Freeze and verify the exact source schema version.
-- [ ] Create a verified SQLite snapshot.
-- [ ] Perform required source-side identity migrations using the compatible old application before export.
-- [ ] Transfer records in foreign-key dependency order.
-- [ ] Preserve exact identifiers and encrypted ciphertext.
-- [ ] Preserve payment idempotency keys and provider event references.
-- [ ] Preserve immutable ledger, audit, and refund histories.
-- [ ] Preserve X-Node proxy IDs, accounting periods, journal cursors, multiplier remainders, and usage history.
-- [ ] Preserve unfinished recovery, rollover, and migration metadata.
-- [ ] Preserve outbox payloads and retry attempts.
-- [ ] Classify in-flight operations before resumption; do not blindly replay uncertain provider-side effects.
-- [ ] Reset PostgreSQL identity sequences appropriately.
-- [ ] Validate all constraints and relationships after import.
-- [ ] Compare row counts, identities, hashes, and financial/accounting invariants.
-- [ ] Produce a signed or hashed verification report.
+- [x] Freeze and verify the exact source schema version.
+- [x] Create a verified SQLite snapshot.
+- [ ] Perform required source-side identity migrations on the selected source using the compatible old application before export (the CLI currently verifies/refuses noncanonical sources).
+- [x] Transfer records in foreign-key dependency order.
+- [x] Preserve exact identifiers and encrypted ciphertext.
+- [x] Preserve payment idempotency keys and provider event references.
+- [x] Preserve immutable ledger, audit, and refund histories.
+- [x] Preserve X-Node proxy IDs, accounting periods, journal cursors, multiplier remainders, and usage history.
+- [x] Preserve unfinished recovery, rollover, and migration metadata.
+- [x] Preserve outbox payloads and retry attempts.
+- [x] Classify in-flight operations before resumption; do not blindly replay uncertain provider-side effects.
+- [x] Reset PostgreSQL identity sequences appropriately.
+- [x] Validate all constraints and relationships after import.
+- [x] Compare row counts, identities, hashes, and financial/accounting invariants.
+- [x] Produce a signed or hashed verification report.
 
 ### Reconciliation checks
 
@@ -470,16 +482,16 @@ Migration can be repeated from the same snapshot into an empty PostgreSQL databa
 
 Extend `.github/workflows/ci.yml`.
 
-- [ ] Add a PostgreSQL 18 service for backend integration tests.
-- [ ] Add fresh-schema and upgrade-migration verification.
-- [ ] Add repository contract tests for both SQLite and PostgreSQL.
-- [ ] Add financial transaction concurrency tests.
-- [ ] Add X-Node accounting replay/crash tests.
-- [ ] Add PostgreSQL outbox locking and lease tests.
-- [ ] Add migration export/import and integrity tests.
-- [ ] Add backup and restoration integration checks.
+- [x] Add a PostgreSQL 18 service for backend integration tests.
+- [x] Add fresh-schema and upgrade-migration verification.
+- [x] Add repository contract tests for both SQLite and PostgreSQL.
+- [x] Add financial transaction concurrency tests.
+- [x] Add X-Node accounting replay/crash tests.
+- [x] Add PostgreSQL outbox locking and lease tests.
+- [x] Add migration export/import and integrity tests.
+- [x] Add backup and restoration integration checks.
 - [ ] Add optional Redis integration tests.
-- [ ] Preserve existing race detection, vulnerability scans, and build checks.
+- [x] Preserve existing race detection, vulnerability scans, and build checks.
 
 Follow the repository's `AGENTS.md` restriction against running local automated test suites. Execute the full automated suites through the permitted hosted CI pipeline.
 
@@ -556,16 +568,16 @@ Each development stage should result in a focused pull request, with larger stag
 
 ## Definition of done for each PR
 
-- [ ] All modified modules have reviewed SQL and Go interfaces.
-- [ ] Repository invariants remain documented and enforced.
-- [ ] SQLite legacy behavior is not accidentally broken.
-- [ ] PostgreSQL-specific operations have appropriate error handling.
-- [ ] No new unnecessary copies of upstream X-Node or Remnawave state exist.
+- [x] All modified modules have reviewed SQL and Go interfaces.
+- [x] Repository invariants remain documented and enforced.
+- [x] SQLite legacy behavior is not accidentally broken.
+- [x] PostgreSQL-specific operations have appropriate error handling.
+- [x] No new unnecessary copies of upstream X-Node or Remnawave state exist.
 - [ ] CI validates affected backend paths.
-- [ ] Security and data-integrity impacts are reviewed.
-- [ ] Relevant module documentation and operator instructions are updated.
-- [ ] Changes are limited to the PR's intended scope.
-- [ ] The PR does not depend on unimplemented future stages for correctness.
+- [x] Security and data-integrity impacts are reviewed.
+- [x] Relevant module documentation and operator instructions are updated.
+- [x] Changes are limited to the PR's intended scope.
+- [x] The PR does not depend on unimplemented future stages for correctness.
 
 ## Final architectural requirements
 

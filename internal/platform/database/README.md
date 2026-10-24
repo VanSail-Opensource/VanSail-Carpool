@@ -1,5 +1,11 @@
 # Application store
 
+`outbox_retry_policy.go` keeps desired-state routing/DIY retries between five
+and thirty seconds while preserving the existing firewall and external-command
+policies. `outbox_retry_policy_test.go` verifies a late retry on both backends
+through the real claim/completion path. DIY receipts retain `whitelistChanged`
+in their existing result JSON so routing-only work avoids unrelated nodes.
+
 `postgres_commerce_concurrency_test.go` races duplicate payment callbacks/debits,
 limited stock and renewal cancellation. `postgres_deadlock_test.go` constructs a
 real PostgreSQL deadlock and checks whole-operation retry. `transaction_random.go`

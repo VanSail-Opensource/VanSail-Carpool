@@ -161,6 +161,11 @@ a Telegram association; internal bounded probes retain their separate path.
 
 `xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Target loading uses published enabled endpoints, standalone service names and ephemeral native outbounds. Member subscription reads resolve panel ownership first.
 
+`xnode_subscription_projection.go` keeps owner-scoped split XHTTP import links
+while restricting Squad status membership to the original published inventory.
+`xnode_subscription_projection_test.go` verifies link retention, enabled-group
+filtering and identical monitoring membership with and without export profiles.
+
 `xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Subscription GETs derive enabled groups without changing preferences.
 
 `xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.

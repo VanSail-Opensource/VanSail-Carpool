@@ -6,7 +6,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"slices"
 	"strconv"
 )
 
@@ -30,6 +29,10 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	if err != nil {
 		return connectivity.MemberSubscription{}, err
 	}
+	monitored := make(map[string]bool, len(proxies))
+	for _, proxy := range proxies {
+		monitored[proxy.ID] = true
+	}
 	if links {
 		proxies, err = a.native.ExportProxiesForUser(ctx, identity.UserID, proxies)
 		if err != nil {
@@ -41,37 +44,8 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	if err != nil {
 		return result, err
 	}
-	squads := map[string]int{}
-	for _, proxy := range proxies {
-		groups := []string{}
-		for _, id := range proxy.GroupIDs {
-			if slices.Contains(enabled, id) {
-				groups = append(groups, id)
-			}
-		}
-		if len(groups) == 0 {
-			continue
-		}
-		host := connectivity.SubscriptionHost{UUID: proxy.ID, Name: proxy.Name, CountryCodes: proxy.Countries, SquadUUIDs: groups, Timeline: connectivity.UnknownTimeline(a.native.Now())}
-		if links {
-			link, err := proxy.NativeLink()
-			if err != nil {
-				host.LinkErrorCode = "CONNECTIVITY_LINK_UNAVAILABLE"
-			} else {
-				host.Link = &link
-			}
-		}
-		result.Hosts = append(result.Hosts, host)
-		for _, id := range groups {
-			index, ok := squads[id]
-			if !ok {
-				index = len(result.Squads)
-				squads[id] = index
-				result.Squads = append(result.Squads, connectivity.SubscriptionSquad{UUID: id, Name: names[id], HostUUIDs: []string{}, Timeline: connectivity.UnknownTimeline(a.native.Now())})
-			}
-			result.Squads[index].HostUUIDs = append(result.Squads[index].HostUUIDs, host.UUID)
-		}
-	}
+	result = projectMemberSubscription(proxies, monitored, enabled, names, links, a.native.Now())
+
 	if links {
 		link, err := a.native.SubscriptionURL(identity)
 		if err != nil {

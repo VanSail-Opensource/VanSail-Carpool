@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
@@ -21,6 +20,14 @@ func (m *Master) DeferOperation(job model.OutboxJob, execute func(context.Contex
 	return m.deferOperation(job, 5*time.Minute, execute)
 }
 func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, execute func(context.Context) error) error {
+	return m.deferOperationClass(job, timeout, false, execute)
+}
+
+func (m *Master) deferMemberOperation(job model.OutboxJob, execute func(context.Context) error) error {
+	return m.deferOperationClass(job, 5*time.Minute, true, execute)
+}
+
+func (m *Master) deferOperationClass(job model.OutboxJob, timeout time.Duration, member bool, execute func(context.Context) error) error {
 	repo, ok := m.service.repo.(operationLeaseRepository)
 	if !ok {
 		return ErrUnavailable
@@ -30,26 +37,25 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 		m.mu.Unlock()
 		return ErrUnavailable
 	}
-	var payload struct {
-		Bank string `json:"bank"`
-	}
-	urgent := job.Kind == FirewallJob && json.Unmarshal([]byte(job.Payload), &payload) == nil && payload.Bank == "dynamic"
-	limit := 3
-	if urgent {
-		limit = 4
-	}
-	if m.operations >= limit {
+	if !m.reserveOperation(job, member) {
 		m.mu.Unlock()
 		return outbox.ErrBusy
 	}
 	ctx, cancel := context.WithTimeout(m.ctx, timeout)
-	m.operations++
 	m.wg.Add(1)
 	m.mu.Unlock()
 	go func() {
 		defer m.wg.Done()
 		defer cancel()
-		defer func() { m.mu.Lock(); m.operations--; m.mu.Unlock() }()
+		defer func() {
+			m.mu.Lock()
+			if member {
+				m.memberOperations--
+			} else {
+				m.operations--
+			}
+			m.mu.Unlock()
+		}()
 		heartbeatDone := make(chan struct{})
 		go func() {
 			defer close(heartbeatDone)
@@ -73,7 +79,7 @@ func (m *Master) deferOperation(job model.OutboxJob, timeout time.Duration, exec
 			err = ErrConflict
 		}
 		if err == nil {
-			err = execute(ctx)
+			err = runDeferredOperation(ctx, execute)
 		}
 		cancel()
 		<-heartbeatDone

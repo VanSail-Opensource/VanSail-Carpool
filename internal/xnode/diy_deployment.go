@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"time"
 
@@ -23,7 +24,14 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 	if len(items) != 1 {
 		return ErrInvalid
 	}
+	// Routing-only receipts must not wait for unrelated paid nodes. Legacy
+	// receipts retain the conservative whitelist barrier during recovery.
+	if items[0].TargetType == "xnode_user" && !diyWhitelistDeployment(operation.ResultJSON) {
+		return s.runRoutingOperation(ctx, operation)
+	}
 	apply := func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
 		nodes, err := s.accessibleNodeIDs(ctx, operation.OwnerUserID)
 		if err != nil {
 			return err
@@ -82,4 +90,14 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 	}
 	_, err = repo.CompleteXNodeProviderOperation(ctx, operation.Receipt.ID, operation.Attempts, providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: `{"whitelist":true}`}, s.now())
 	return err
+}
+
+func diyWhitelistDeployment(raw string) bool {
+	var scope struct {
+		WhitelistChanged *bool `json:"whitelistChanged"`
+	}
+	if json.Unmarshal([]byte(raw), &scope) != nil || scope.WhitelistChanged == nil {
+		return true
+	}
+	return *scope.WhitelistChanged
 }

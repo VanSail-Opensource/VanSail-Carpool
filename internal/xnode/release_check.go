@@ -110,6 +110,7 @@ func releaseFile(ctx context.Context, target string, max int64) ([]byte, error) 
 func (m *Master) WaitApplied(ctx context.Context, nodeID string) error {
 	tick := time.NewTicker(100 * time.Millisecond)
 	defer tick.Stop()
+	wasConnected := false
 	for {
 		node, err := m.service.repo.XNodeNode(ctx, nodeID)
 		if err != nil {
@@ -126,6 +127,10 @@ func (m *Master) WaitApplied(ctx context.Context, nodeID string) error {
 		firewallConfirmed := snapshot.firewallPending == ""
 		report := snapshot.report
 		m.mu.RUnlock()
+		if wasConnected && !connected {
+			return ErrUnavailable
+		}
+		wasConnected = wasConnected || connected
 		if fresh && firewallConfirmed && node.AppliedRevision >= node.DesiredRevision && report.ConfigRevision >= node.DesiredRevision && report.Ready && report.Synchronized {
 			return nil
 		}

@@ -132,10 +132,16 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 	return s.completeRoutingOperation(ctx, operation, providerops.StatusSucceeded, "")
 }
 func (s *Service) syncRoutingNodes(ctx context.Context, nodes []string, owner int64, drain bool) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	// Deliver the whole phase before awaiting any node. A slow acknowledgement
+	// must not prevent the remaining nodes from receiving the same safe phase.
 	for _, node := range nodes {
 		if err := s.master.Sync(ctx, node); err != nil {
 			return err
 		}
+	}
+	for _, node := range nodes {
 		if err := s.master.WaitApplied(ctx, node); err != nil {
 			return err
 		}
@@ -158,5 +164,5 @@ func (s *Service) completeRoutingOperation(ctx context.Context, operation provid
 	return err
 }
 func (s *Service) handleRoutingOperation(operation providerops.Operation, job model.OutboxJob) error {
-	return s.master.deferOperation(job, 15*time.Minute, func(ctx context.Context) error { return s.runRoutingOperation(ctx, operation) })
+	return s.master.deferMemberOperation(job, func(ctx context.Context) error { return s.runRoutingOperation(ctx, operation) })
 }

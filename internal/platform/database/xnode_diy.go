@@ -103,7 +103,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		}
 	}
 	if doc.Result != nil {
-		raw, err := json.Marshal(map[string]any{"diySave": doc.Result})
+		raw, err := json.Marshal(map[string]any{"diySave": doc.Result, "whitelistChanged": doc.NativeChanged})
 		if err != nil {
 			return op.Receipt, err
 		}

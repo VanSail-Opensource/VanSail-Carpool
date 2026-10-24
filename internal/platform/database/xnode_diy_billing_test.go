@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -111,6 +112,13 @@ func TestDIYBillingRollbackReplayAndFreeUnchangedSave(t *testing.T) {
 			}
 			if err != nil || receipt.Status != wantStatus {
 				t.Fatal(receipt, err)
+			}
+			savedOperation, err := s.ProviderOperationByID(ctx, receipt.ID)
+			var scope struct {
+				WhitelistChanged *bool `json:"whitelistChanged"`
+			}
+			if err != nil || json.Unmarshal([]byte(savedOperation.ResultJSON), &scope) != nil || scope.WhitelistChanged == nil || *scope.WhitelistChanged != doc.NativeChanged {
+				t.Fatal("committed deployment scope missing or wrong", err)
 			}
 			if doc.NativeChanged {
 				op, err := s.BeginProviderOperationAttempt(ctx, receipt.ID, now)

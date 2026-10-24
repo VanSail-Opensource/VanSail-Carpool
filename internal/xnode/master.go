@@ -31,6 +31,7 @@ type Master struct {
 	stateWake                chan struct{}
 	wg                       sync.WaitGroup
 	operations               int
+	memberOperations         int
 	firewallDetectionSink    FirewallDetectionSink
 	firewallWake             chan struct{}
 	firewallSourcesRunning   int

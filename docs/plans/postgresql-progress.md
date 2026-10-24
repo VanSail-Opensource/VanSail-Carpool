@@ -6,29 +6,37 @@ evidence from the selected deployment.
 
 | Step | Repository implementation | Validation / remaining gate |
 | --- | --- | --- |
-| 01 Inventory | Final post-startup schema, dialect/write inventory and invariants implemented | Hosted schema determinism passes; production size/latency/lock measurements require target access |
-| 02 Infrastructure/config | Isolated PG18, SCRAM/secrets, separate roles, bounded pools and secure opt-in application overlay implemented | Hosted authentication/privilege checks pass; target deployment pending |
-| 03 Goose baseline | Faithful numbered schema, triggers, C text ordering and catalog/version checks implemented | Fresh/reapply/immutability checks pass; latest complete CI pending |
-| 04 pgx compatibility | SQL-aware binding, typed null/blob/bool handling and whole-operation retries implemented | Hosted domain regressions actively resolving remaining differences |
-| 05 Domain repositories | All domains ported; PostgreSQL generic admin writes refused while read/masking use system catalogs | Portable hosted contracts plus SQLite upgrade contracts retained; full green gate pending |
-| 06 Financial concurrency | Balance locks, exact arithmetic, stock/payment/renewal races and real deadlock regression implemented | Latest hosted concurrency run pending |
-| 07 X-Node accounting | Cursor/period locking, ordered charging, replay/digest invariants and commit-before-ACK preserved | Existing journal regressions run on PG; full latest gate pending |
-| 08 Outbox | SKIP LOCKED, resource exclusion, monotonic claim fencing, dedicated LISTEN and polling fallback implemented | Hosted generation/exclusion/session-loss checks pending on latest code |
-| 09 Recovery | Logical exports, encrypted pgBackRest/WAL, S3 option, offline procedure and isolated full/PITR drills implemented | Recovery drills pending successful round-trip fixture; live storage/key drill requires target |
-| 10 Observability | Private exporter, aggregate views/rules, pool/retry/ACK logs and pgBackRest textfile metrics implemented | Hosted exporter scrape pending; production Prometheus/Grafana/off-site integration external; Redis deferred |
-| 11 Conversion CLI | Inspect/export/import/verify/readiness/recovery, exact hashes, sequences, encryption and activation gates implemented | Hosted round-trip and refusal paths pending latest CI |
-| 12 Rehearsal/cutover | Hosted conversion/recovery/application gates and complete operator runbooks implemented | Access-controlled staging, browser/upstream rehearsal, benchmarks and live cutover remain external gates |
+| 01 Inventory | Final schema, dialect/write inventory and invariants implemented | Hosted determinism passes; production size/latency/locks require target |
+| 02 Infrastructure/config | PG18 embedded in the selected 1 GiB app container, persistent storage, SCRAM/roles, bounded pools and supervision; external profile retained | External-role gate passes; new embedded image gate pending |
+| 03 Goose baseline | Numbered schema, triggers, C text ordering, catalog/version checks | Hosted fresh/reapply and prefix-upgrade gates pass |
+| 04 pgx compatibility | SQL-aware binding, typed null/blob/bool handling and complete-operation retries | Hosted portable business contracts pass |
+| 05 Domain repositories | Domains ported; generic admin writes refused while catalog reads/masking remain | Hosted portable contracts pass; live workflow rehearsal pending |
+| 06 Financial concurrency | Balance locks, exact arithmetic, stock/payment/renewal races, real deadlock retry | Hosted PostgreSQL concurrency gate passes |
+| 07 X-Node accounting | Cursor/period locks, exact charging/replay/digests and commit-before-ACK | Hosted journal contracts pass; live reconnect rehearsal pending |
+| 08 Outbox | SKIP LOCKED, resource/fencing, dedicated LISTEN and poll fallback; bounded member admission, scoped DIY deployment and 30s retry cap | Hosted original lease/resource gates pass; added routing regressions pending |
+| 09 Recovery | Logical export, encrypted pgBackRest/WAL, S3 option and offline procedures | Hosted restricted-role logical restore and all-127-table full/PITR verification pass; target repository/key drill pending |
+| 10 Observability | Private exporter, aggregate views/rules, pool/retry/ACK logs, physical-backup metrics | Hosted scrape/grant gate passes; live Prometheus/Grafana and off-site integration pending; Redis deferred |
+| 11 Conversion CLI | Exact inspect/export/import/verify/readiness/recovery, sequences, ciphertext and activation gates | Hosted round-trip, failure rollback and refusal paths pass |
+| 12 Rehearsal/cutover | Hosted gates and operator runbooks implemented | Complete replacement release CI, protected staging/browser/upstream rehearsal, benchmark and live cutover pending |
 
 ## Deployment decisions
 
-Hosted run [40063479916](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/40063479916)
-at `b27f217e` passed fresh/reapplied schema, exact conversion, logical restoration,
-encrypted physical restoration, named-target PITR and single-owner application
-bootstrap. Its PostgreSQL job failed overall because the limited-stock fixture
-reused a globally unique seed reference and the exporter profile omitted its
-database dependency. Subsequent changes fix those gates and extend generation-
-aware queue contracts, failed-import rollback and service-sequence evidence.
+Hosted [PostgreSQL job in run 40065516216](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/40065516216)
+at `eb5d7cd3` passed all database gates: fresh/reapplied/prefix-upgraded schema,
+portable business and concurrency contracts, exact conversion/refusal/rollback,
+restricted-role logical restoration, encrypted physical restoration and named
+PITR matching all 127 table hashes, restricted-role application activation,
+single ownership, and private exporter scraping. The new actual-image embedded
+rehearsal caught pgBackRest's default lock path on a read-only root; its lock
+path now lives on the writable recovery volume and requires a replacement run.
 The selected release head must pass the entire hosted workflow before delivery.
+
+The owner selected PostgreSQL server inside the application container and a
+1 GiB memory limit. See [embedded deployment](../../deploy/embedded/README.md).
+The selected profile keeps the legacy `/data` volume and a separate durable
+PostgreSQL volume, uses 128 MiB shared buffers and a 384 MiB Go heap budget,
+and retains full commit durability. These conservative values still need live
+workload measurements; they are not a production benchmark claim.
 
 PostgreSQL TIMESTAMPTZ stores microseconds, while current Go timestamp values can
 contain nanoseconds. The proposed safe transition is to preserve exact timestamp

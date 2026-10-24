@@ -88,7 +88,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 		return s.handleRouteSpeedtest(ctx, operation, job)
 	}
 	if operation.Receipt.Kind == DIYOperationKind {
-		return s.master.deferOperation(job, 15*time.Minute, func(ctx context.Context) error { return s.runDIYOperation(ctx, operation) })
+		return s.master.deferMemberOperation(job, func(ctx context.Context) error { return s.runDIYOperation(ctx, operation) })
 	}
 	if operation.Receipt.Kind == RoutingOperationKind {
 		return s.handleRoutingOperation(operation, job)
