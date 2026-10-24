@@ -550,6 +550,11 @@ suffix only in the export; saved endpoint/profile references stay unchanged.
 `diy_split_names_test.go` covers reversed pairs, ordinary-host collisions and
 successful Xray/Mihomo/Stash template rendering with unique names in hosted CI.
 
+`payg_subscription_test.go` covers two PAYG squads sharing a published endpoint
+and PAYG overlapping a paid combo. Metadata and bearer downloads use the shared
+subscription name allocator after client mapping, keeping every distinct billing
+credential while avoiding duplicate sing-box tags and Mihomo/Stash names.
+
 `metered_probe_lifecycle_test.go` exercises compiled admission, quota exhaustion, expired grants, real traffic reset and refund quiescing with duplicate late probe samples. Unfinished barriers retain origin evidence and leave successor periods uncharged.
 
 ## Firewall and member whitelist

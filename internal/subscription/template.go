@@ -96,7 +96,7 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	values, names := []any{}, []any{}
+	values := []any{}
 	for _, proxy := range proxies {
 		if proxy.Tuning == nil {
 			proxy.Tuning = &ConnectionOverrides{}
@@ -119,15 +119,10 @@ func RenderTemplate(template Template, proxies []Proxy) ([]byte, error) {
 			return nil, errors.New("rendered subscription exceeds 8 MiB")
 		}
 		values = append(values, out)
-		nameKey := "tag"
-		if yamlFormat(template.Format) {
-			nameKey = "name"
-		}
-		name, ok := out[nameKey].(string)
-		if !ok || name == "" {
-			return nil, errors.New("mapped proxy name is required")
-		}
-		names = append(names, name)
+	}
+	names, err := templateProxyNames(template.Format, root, proxies, values)
+	if err != nil {
+		return nil, err
 	}
 	value, err := expandTemplate(root, values, names, 0)
 	if err != nil {

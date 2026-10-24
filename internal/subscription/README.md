@@ -103,3 +103,12 @@ no authoritative host inventory, generic future-host preferences are retained.
 `tuning_restrictions.go` confines version/platform guidance to the client format that implements it. Inapplicable inherited fields do not add empty compatibility rows.
 
 Internal `Proxy` attribution retains its published endpoint and billing principal for PAYG routing selection. These private references and credentials never enter ordinary JSON. Distinct squad credentials on one endpoint receive stable export IDs, and insufficient funds do not remove inventory entries.
+
+`template_names.go` allocates sing-box tags and Mihomo/Stash names after client
+mapping and before expanding `SubscriptionNames`. PAYG principals sharing a
+published endpoint retain their separate credentials; duplicate mapped labels
+receive stable public proxy-ID suffixes. Template-owned names and built-in
+policies are reserved, and existing endpoint labels are preserved when unique.
+Only the ephemeral rendered document changes; inventory, routing, accounting
+and saved templates remain authoritative. Regression coverage lives in
+`template_names_test.go` and `internal/xnode/payg_subscription_test.go`.
