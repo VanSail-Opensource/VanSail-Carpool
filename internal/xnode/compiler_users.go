@@ -86,6 +86,9 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 		byTag[tag] = inbound
 	}
 	for _, identity := range identities {
+		if isPAYGIdentity(identity) {
+			continue
+		}
 		if identity.UserID == "" {
 			user, err := s.serviceUser(ctx, identity, node, byTag)
 			user.ReplacesID = int(identity.ReplacesID)
@@ -137,5 +140,6 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 		}
 		users = append(users, user)
 	}
-	return users, nil
+	payg, err := s.paygUsers(ctx, node, byTag)
+	return append(users, payg...), err
 }

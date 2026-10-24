@@ -1,0 +1,33 @@
+PAYGView:
+  type: object
+  additionalProperties: false
+  required: [balance, windowStart, asOf, squads, trafficBytes, spent]
+  properties:
+    balance:
+      $ref: '../../openapi.yaml#/components/schemas/Money'
+    windowStart:
+      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
+    asOf:
+      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
+    trafficBytes:
+      $ref: '../../openapi.yaml#/components/schemas/DecimalInteger'
+    spent:
+      $ref: '../../openapi.yaml#/components/schemas/Money'
+    squads:
+      type: array
+      items:
+        $ref: '#/PAYGSquad'
+PAYGSquad:
+  type: object
+  additionalProperties: false
+  required: [squad, status, trafficBytes, spent]
+  properties:
+    squad:
+      $ref: '../../openapi.yaml#/components/schemas/SquadProduct'
+    status:
+      type: string
+      enum: [available, insufficient_balance, combo_covered, queued_combo, unavailable, sync_pending]
+    trafficBytes:
+      $ref: '../../openapi.yaml#/components/schemas/DecimalInteger'
+    spent:
+      $ref: '../../openapi.yaml#/components/schemas/Money'

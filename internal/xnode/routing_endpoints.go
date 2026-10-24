@@ -12,6 +12,7 @@ func (s *Service) loadRoutingEndpoints(ctx context.Context, identity Identity, i
 	in.byEndpoint, in.sources, in.targets = map[string]Endpoint{}, map[string]Endpoint{}, map[string]Endpoint{}
 	in.endpointInbounds, in.vertices = map[string]map[string]any{}, map[string]string{}
 	in.available = []RoutingEndpoint{}
+	in.principals = map[string]Identity{}
 	proxies, err := s.MemberProxies(ctx, identity.UserID)
 	if err != nil {
 		return fmt.Errorf("routing endpoint inventory: %w", err)
@@ -23,6 +24,27 @@ func (s *Service) loadRoutingEndpoints(ctx context.Context, identity Identity, i
 	endpoints, err := s.Endpoints(ctx)
 	if err != nil {
 		return err
+	}
+	published := map[string]Endpoint{}
+	for _, e := range endpoints {
+		published[e.ID] = e
+	}
+	for _, p := range proxies {
+		if p.PrincipalID == 0 {
+			in.principals[p.ID] = identity
+			continue
+		}
+		e, ok := published[p.PublishedEndpointID]
+		if !ok {
+			continue
+		}
+		e.ID = p.ID
+		endpoints = append(endpoints, e)
+		principal, err := s.repo.XNodeIdentity(ctx, p.PrincipalID)
+		if err != nil {
+			return err
+		}
+		in.principals[p.ID] = principal
 	}
 	sort.Slice(endpoints, func(i, j int) bool { return endpoints[i].ID < endpoints[j].ID })
 	for _, endpoint := range endpoints {

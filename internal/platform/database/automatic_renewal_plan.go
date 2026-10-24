@@ -12,36 +12,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-const (
-	AutoRenewalReasonQueuedPurchase       = "QUEUED_PURCHASE"
-	AutoRenewalReasonPurchaseUnavailable  = "PURCHASE_UNAVAILABLE"
-	AutoRenewalReasonComboUnavailable     = "COMBO_UNAVAILABLE"
-	AutoRenewalReasonPaidAddonUnavailable = "PAID_ADDON_UNAVAILABLE"
-	AutoRenewalReasonDiscountUnavailable  = "RECURRING_DISCOUNT_UNAVAILABLE"
-	AutoRenewalReasonInsufficientBalance  = "INSUFFICIENT_BALANCE"
-	AutoRenewalReasonNoAccessibleNodes    = "NO_ACCESSIBLE_NODES"
-	AutoRenewalReasonUnavailable          = "RENEWAL_UNAVAILABLE"
-)
-
-// AutoRenewalPlan is the local, current-price source for one next-cycle quote.
-type AutoRenewalPlan struct {
-	Purchase              model.Purchase
-	Combo                 model.Combo
-	Addons                []model.SquadProduct
-	GrossMinor            int64
-	DiscountMinor         int64
-	NetMinor              int64
-	ScheduledAt           time.Time
-	NextCycleEndsAt       time.Time
-	IneligibleReason      string
-	trafficLimitOverride  *int64
-	resetStrategyOverride *string
-	squadUUIDsOverride    *string
-	rewardRenewalPrice    *int64
-	rewardRolloverBPS     *int64
-	rewardTrafficRenewal  bool
-}
-
 // AutoRenewalPlan returns current local pricing and availability for an owned term.
 func (s *Store) AutoRenewalPlan(ctx context.Context, userID, purchaseID string, now time.Time) (AutoRenewalPlan, error) {
 	return s.autoRenewalPlan(ctx, userID, purchaseID, nil, now)
@@ -147,6 +117,14 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 			plan.Combo.IncludedSquads = append(plan.Combo.IncludedSquads, model.SquadProduct{ID: id, GroupID: id})
 		}
 	}
+	plan.Combo, err = renewalComboTx(ctx, tx, purchase.ID, plan.Combo)
+	if err != nil {
+		return AutoRenewalPlan{}, err
+	}
+	if plan.squadUUIDsOverride != nil {
+		value := squadJSON(plan.Combo.IncludedSquads)
+		plan.squadUUIDsOverride = &value
+	}
 	// Awarded hours extend only the current term; renewals use the selected core combo's cadence.
 	plan.NextCycleEndsAt = plan.ScheduledAt.AddDate(0, 0, combo.ValidityDays)
 	plan.GrossMinor, plan.DiscountMinor, plan.NetMinor = combo.PriceTXBMinor, 0, combo.PriceTXBMinor
@@ -161,6 +139,12 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		addons = nil
 	}
 	plan.Addons = addons
+	if empty, e := emptyRenewalTx(ctx, tx, purchase.ID); e != nil {
+		return AutoRenewalPlan{}, e
+	} else if empty {
+		plan.IneligibleReason = AutoRenewalReasonNoAccessibleNodes
+		return plan, nil
+	}
 	addonIDs := make([]string, 0, len(addons))
 	for _, addon := range addons {
 		plan.GrossMinor += addon.PriceTXBMinor

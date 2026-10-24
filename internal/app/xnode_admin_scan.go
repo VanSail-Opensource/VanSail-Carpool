@@ -2,10 +2,8 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
@@ -42,32 +40,20 @@ func (a proxyProvider) pollNativeConnectionScan(ctx context.Context, jobID strin
 	for _, node := range nodes {
 		item := connections.ProviderNode{UUID: node.NodeID, Name: node.Name, CountryCode: node.CountryCode, Unavailable: !node.Available, IPs: []connections.Observation{}}
 		if node.Available {
-			// Master.Command uses the existing durable receipt and per-node executor.
-			raw, err := a.master.Command(ctx, node.NodeID, "", "users.active_ips", map[string]int64{"user_id": identity.ProxyUserID})
+			ips, err := a.memberNodeIPs(ctx, identity.MemberOwnerID(), node.NodeID)
 			if ctx.Err() != nil {
 				return result, ctx.Err()
+			}
+			if err == xnode.ErrInvalid {
+				return result, err
 			}
 			if err != nil {
 				item.Unavailable = true
 			} else {
-				var ips []struct {
-					UserID      int64  `json:"user_id"`
-					SourceIP    string `json:"source_ip"`
-					Connections int    `json:"connections"`
-				}
-				if json.Unmarshal(raw, &ips) != nil {
-					return result, xnode.ErrInvalid
-				}
-				for _, ip := range ips {
-					if ip.UserID != identity.ProxyUserID || ip.Connections < 0 {
-						return result, xnode.ErrInvalid
-					}
-					if ip.Connections > 0 {
-						item.IPs = append(item.IPs, connections.Observation{Address: ip.SourceIP, LastSeen: time.Now().UTC()})
-					}
-				}
+				item.IPs = ips
 			}
 		}
+
 		result.Nodes = append(result.Nodes, item)
 	}
 	// Discard observations if ownership/freshness changed while queued work ran.

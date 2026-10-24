@@ -637,6 +637,20 @@ receipts untouched, and never charges or rewrites desired routing/accounting.
 `xnode_routing_recovery_test.go` checks missing jobs, delayed/failed retries,
 duplicate wakes, live leases, terminal receipts and retained DIY result evidence.
 
+
+## Automatic PAYG
+
+`payg_catalog.go` filters future sales and snapshots base squad references only when the filtered set differs while preserving full custom overrides and editable add-ons. `payg_rollover.go` settles reconciled rollover when conversion removes the last eligible renewal squad. Existing paid terms do not filter against live billing mode. `payg_commerce_test.go` covers grandfathered terms and empty-renewal settlement.
+
+`xnode_payg_accounts.go` stores immutable member/squad/node attribution, its native period and atomic accounting participant reference. `xnode_payg_billing.go` appends exact GB block charges to the existing wallet ledger with immutable rate evidence. `xnode_payg_traffic.go` integrates raw usage and debits with contiguous traffic-journal commits; balances precede periods in its lock order. Connection purchases require funds, while delayed traffic may create wallet debt. PAYG never consumes combo quota or node multipliers. The first GB is purchased only after 10,240 cumulative raw bytes on that member/squad/node; idle connections and wallet funding cannot charge a first block. Initial bytes count toward the purchased GB.
+
+`xnode_payg_jobs.go` coalesces balance-change provisioning through the existing outbox, scans missing tuples in bounded batches and prunes disposable 72-hour minute aggregates. Credentials, cumulative counters and financial evidence remain durable. Source IPs, connection observations, generated subscriptions and lease timestamps are never stored. `xnode_payg_owners.go` provides indexed service lookups, node-scoped compiler identities and credential-free activity ownership reads.
+
+`xnode_payg_billing_test.go` and `xnode_payg_concurrency_test.go` cover automatic GB boundaries, replay, price changes, debt, failed batches, simultaneous nodes and bounded statistics in hosted SQLite/PostgreSQL CI. Local automated suites remain prohibited.
+
+`automatic_renewal_types.go` owns renewal quote contracts. `automatic_renewal_failure.go` retains existing failed-renewal settlement; PAYG empty renewals preserve rollover separately. `billing_renewal_quote.go` isolates future-term pricing from batch mutation.
+
+
 <!-- generated transaction retry map -->
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
@@ -765,6 +779,9 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_metered_probes_retry_generated.go` wraps the transactional methods in `xnode_metered_probes.go`.
 - `xnode_named_services_retry_generated.go` wraps the transactional methods in `xnode_named_services.go`.
 - `xnode_nodes_retry_generated.go` wraps the transactional methods in `xnode_nodes.go`.
+- `xnode_payg_accounts_retry_generated.go` wraps the transactional methods in `xnode_payg_accounts.go`.
+- `xnode_payg_jobs_retry_generated.go` wraps the transactional methods in `xnode_payg_jobs.go`.
+- `xnode_payg_traffic_retry_generated.go` wraps the transactional methods in `xnode_payg_traffic.go`.
 - `xnode_periods_retry_generated.go` wraps the transactional methods in `xnode_periods.go`.
 - `xnode_rates_retry_generated.go` wraps the transactional methods in `xnode_rates.go`.
 - `xnode_routing_access_retry_generated.go` wraps the transactional methods in `xnode_routing_access.go`.

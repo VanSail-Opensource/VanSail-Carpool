@@ -102,6 +102,8 @@ func (s *Server) adminSquadProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 type squadProductRequest struct {
+	BillingMode        string                `json:"billingMode"`
+	PAYGPriceTXBMinor  string                `json:"paygPriceTxbMinor"`
 	GroupID            string                `json:"groupId"`
 	Name               string                `json:"name"`
 	Description        string                `json:"description"`
@@ -135,7 +137,16 @@ func (s *Server) adminSaveSquadProduct(w http.ResponseWriter, r *http.Request, i
 	if request.GroupID == "" {
 		request.GroupID = id
 	}
+	paygPrice := int64(0)
+	if request.PAYGPriceTXBMinor != "" {
+		paygPrice, err = strconv.ParseInt(request.PAYGPriceTXBMinor, 10, 64)
+		if err != nil {
+			s.writeError(w, r, http.StatusUnprocessableEntity, "INVALID_PRICE", "Price must be integer hundredths of TXB.")
+			return
+		}
+	}
 	product, err := s.deps.Admin.SaveSquadProduct(r.Context(), currentUser(r).ID, database.SquadProductInput{ID: id,
+		BillingMode: request.BillingMode, PAYGPriceTXBMinor: paygPrice,
 		GroupID: request.GroupID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
 		Profile: request.Profile, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
 		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode})

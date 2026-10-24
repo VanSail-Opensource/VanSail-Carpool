@@ -21,3 +21,5 @@
 The `Statistics` projection in `analytics.go` carries nullable upstream `lastTrafficResetAt` without deriving or persisting a reset timestamp.
 - `txb_parse.go` owns the shared exact TXB parser used by billing and IP Lookup without package cycles.
 `telegram_pm_content.go` defines stable expired/invalid pending-content errors; PMRelayInput carries transient JSON excluded from serialized fingerprints and outbox data.
+
+`SquadProduct` carries optional billing mode and an exact per-GB TXB price without changing existing combo price fields. PAYG public billing models live beside the native service; all money and traffic transports retain decimal strings.

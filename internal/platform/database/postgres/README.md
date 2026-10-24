@@ -52,3 +52,5 @@ does not enable HA or automatic failover.
 `upgrade_test.go` applies a supported earlier Goose prefix in a separate database,
 refuses it without migration, then upgrades through the application connector and
 verifies the final catalog and safe reapplication.
+
+PAYG upgrade 00007 adds only required durable financial attribution and bounded presentation aggregates. Existing historical migrations and the baseline remain immutable; the inventoried schema and conversion contract include the new reference columns and tables.

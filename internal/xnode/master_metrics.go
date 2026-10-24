@@ -22,15 +22,9 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		return MetricsSummary{}, err
 	}
 	now := m.service.now()
-	identities, err := m.service.repo.XNodeIdentities(ctx)
+	paid, err := m.service.principalOwners(ctx)
 	if err != nil {
 		return MetricsSummary{}, err
-	}
-	paid := map[int64]bool{}
-	for _, identity := range identities {
-		if identity.UserID != "" {
-			paid[identity.ProxyUserID] = true
-		}
 	}
 	result := MetricsSummary{Nodes: []NodeMetrics{}, TotalNodes: len(nodes), FetchedAt: now}
 	m.mu.RLock()
@@ -62,9 +56,11 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 			result.OnlineNodes++
 		}
 		if item.Available {
+			seenMembers := map[string]bool{}
 			for id, count := range snapshot.report.Users.Connections {
 				item.ActiveConnections += int64(count)
-				if count > 0 && paid[int64(id)] {
+				if owner := paid[id]; count > 0 && owner != "" && !seenMembers[owner] {
+					seenMembers[owner] = true
 					item.UsersOnline++
 				}
 			}

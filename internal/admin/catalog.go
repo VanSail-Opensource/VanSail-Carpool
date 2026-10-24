@@ -49,6 +49,12 @@ func (s *Service) DeleteCombo(ctx context.Context, actorID, comboID string) erro
 // SaveSquadProduct validates local merchandising data.
 func (s *Service) SaveSquadProduct(ctx context.Context, actorID string, input database.SquadProductInput) (model.SquadProduct, error) {
 	input.GroupID = strings.TrimSpace(input.GroupID)
+	if input.BillingMode == "" {
+		input.BillingMode = "combo"
+	}
+	if (input.BillingMode != "combo" && input.BillingMode != "payg") || input.PAYGPriceTXBMinor < 0 || input.PAYGPriceTXBMinor > 1_000_000_000_000 || (input.BillingMode == "payg" && input.PAYGPriceTXBMinor == 0) {
+		return model.SquadProduct{}, errors.New("invalid PAYG price or billing mode")
+	}
 	input.Name = strings.TrimSpace(input.Name)
 	if input.GroupID == "" || input.PriceTXBMinor < 0 || input.PriceTXBMinor > 1_000_000_000_000 || (input.StockLimit != nil && (*input.StockLimit < 0 || *input.StockLimit > 1_000_000_000)) {
 		return model.SquadProduct{}, errors.New("invalid squad product")
@@ -114,7 +120,7 @@ func (s *Service) Squads(ctx context.Context) ([]model.SquadProduct, error) {
 	for _, squad := range upstream {
 		product, exists := overrideByUUID[squad.UUID]
 		if !exists {
-			product = model.SquadProduct{ID: squad.UUID, GroupID: squad.UUID, Visible: false, Price: model.TXBMoney(0),
+			product = model.SquadProduct{ID: squad.UUID, GroupID: squad.UUID, BillingMode: "combo", Visible: false, Price: model.TXBMoney(0),
 				AccessibleNodes: []model.CatalogNode{}}
 		}
 		if product.AccessibleNodes == nil {

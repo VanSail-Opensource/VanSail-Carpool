@@ -1,0 +1,26 @@
+{
+  "payg": {
+    "title": "Pay as you go",
+    "combo": "Combo",
+    "mode": "Billing view",
+    "automatic": "Billed automatically per GB on each node after 10 KiB of traffic. Unused prepaid traffic stays available.",
+    "balance": "Balance",
+    "perGB": "/ GB",
+    "window": "Last 72 hours",
+    "total": "72-hour total",
+    "empty": "No pay-as-you-go squads available yet.",
+    "loadFailed": "Pay-as-you-go details could not be loaded.",
+    "addBalance": "Add balance",
+    "billingMode": "Billing mode",
+    "price": "Price per GB",
+    "adminHint": "PAYG is automatic for all eligible members. Active and paid queued combos keep their squads until expiry; future renewals exclude them.",
+    "status": {
+      "available": "Available",
+      "insufficient_balance": "Insufficient balance",
+      "combo_covered": "Included in your combo",
+      "queued_combo": "Reserved by queued combo",
+      "unavailable": "Unavailable",
+      "sync_pending": "Sync pending"
+    }
+  }
+}

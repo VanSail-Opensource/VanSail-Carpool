@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
 	"sort"
 	"strings"
 )
@@ -101,4 +102,40 @@ func intPointer(value sql.NullInt64) *int {
 	}
 	result := int(value.Int64)
 	return &result
+}
+
+const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at,billing_mode,payg_price_minor FROM squad_product_overrides`
+
+func scanSquad(row rowScanner) (model.SquadProduct, error) {
+	var product model.SquadProduct
+	var visible, activationRequired int
+	var created, updated string
+	var stockLimit sql.NullInt64
+	var profileJSON sql.NullString
+	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated, &product.BillingMode, &product.PAYGPriceTXBMinor); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.SquadProduct{}, ErrNotFound
+		}
+		return model.SquadProduct{}, fmt.Errorf("scan squad override: %w", err)
+	}
+	product.ID = product.GroupID
+	product.Visible = visible == 1
+	product.ActivationRequired = activationRequired == 1
+	product.UpstreamPresent = true
+	product.StockLimit = intPointer(stockLimit)
+	product.Price = model.TXBMoney(product.PriceTXBMinor)
+	paygPrice := model.TXBMoney(product.PAYGPriceTXBMinor)
+	product.PAYGPrice = &paygPrice
+	product.AccessibleNodes = []model.CatalogNode{}
+	var err error
+	product.Profile, err = squadprofile.ParseJSON(profileJSON.String)
+	if err != nil {
+		return model.SquadProduct{}, err
+	}
+	product.CreatedAt, err = parseStamp(created)
+	if err != nil {
+		return model.SquadProduct{}, err
+	}
+	product.UpdatedAt, err = parseStamp(updated)
+	return product, err
 }

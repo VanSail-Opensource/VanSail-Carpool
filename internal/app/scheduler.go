@@ -37,6 +37,9 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	if err := a.store.EnqueueDIYReconcile(ctx, startupNow); err != nil {
 		a.logger.Error("startup DIY reconciliation failed", "error", err)
 	}
+	if err := a.store.EnqueueXNodePAYGRepairs(ctx, startupNow); err != nil {
+		a.logger.Error("startup PAYG recovery failed", "error", err)
+	}
 	if err := a.store.EnqueueXNodeAccessRepairs(ctx, startupNow); err != nil {
 		a.logger.Error("startup native access recovery failed", "error", err)
 	}
@@ -88,6 +91,9 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 		case now := <-transitionTicker.C:
 			if err := a.store.EnqueueDIYReconcile(ctx, now.UTC()); err != nil {
 				a.logger.Error("DIY reconciliation scan failed", "error", err)
+			}
+			if err := a.store.EnqueueXNodePAYGRepairs(ctx, now.UTC()); err != nil {
+				a.logger.Error("PAYG recovery scan failed", "error", err)
 			}
 			if err := a.store.EnqueueXNodeAccessRepairs(ctx, now.UTC()); err != nil {
 				a.logger.Error("native access recovery scan failed", "error", err)

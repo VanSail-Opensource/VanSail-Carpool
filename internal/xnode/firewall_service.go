@@ -67,7 +67,11 @@ func (s *Service) OwnedFirewallQuote(ctx context.Context, user string) (Firewall
 	if err != nil {
 		return quote, err
 	}
-	quote.WhitelistMode = settings.Whitelist.Enabled
+	purchase, err := s.EffectivePurchase(ctx, user)
+	if err != nil {
+		return quote, err
+	}
+	quote.WhitelistMode = purchase != nil && settings.Whitelist.Enabled
 	quote.Enabled = quote.Enabled && !quote.WhitelistMode
 	return quote, nil
 }
@@ -101,7 +105,11 @@ func (s *Service) PurchaseFirewallExemption(ctx context.Context, user string, in
 	if err != nil {
 		return FirewallGrant{}, err
 	}
-	return repo.PurchaseFirewallExemption(ctx, user, input, price, s.Now(), !settings.Whitelist.Enabled)
+	purchase, err := s.EffectivePurchase(ctx, user)
+	if err != nil {
+		return FirewallGrant{}, err
+	}
+	return repo.PurchaseFirewallExemption(ctx, user, input, price, s.Now(), purchase == nil || !settings.Whitelist.Enabled)
 }
 func (s *Service) FirewallBans(ctx context.Context) ([]FirewallBanView, error) {
 	repo, ok := s.repo.(firewallRepository)

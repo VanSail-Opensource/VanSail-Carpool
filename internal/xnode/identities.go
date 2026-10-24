@@ -19,10 +19,10 @@ func (s *Service) IdentityForUser(ctx context.Context, id string) (Identity, err
 	return s.repo.XNodeIdentityByUser(ctx, id)
 }
 func (s *Service) IdentityUser(ctx context.Context, identity Identity) (model.User, error) {
-	if identity.UserID == "" {
+	if identity.MemberOwnerID() == "" {
 		return model.User{}, ErrNotFound
 	}
-	return s.repo.UserByID(ctx, identity.UserID)
+	return s.repo.UserByID(ctx, identity.MemberOwnerID())
 }
 func (s *Service) UserByUsername(ctx context.Context, name string) (model.User, error) {
 	return s.repo.UserByUsername(ctx, name)
@@ -84,6 +84,9 @@ func (s *Service) RevokeSubscription(ctx context.Context, id string) (string, er
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
 		return "", err
+	}
+	if isPAYGIdentity(identity) {
+		return "", ErrInvalid
 	}
 	if err = s.newSubscription(&identity); err != nil {
 		return "", err

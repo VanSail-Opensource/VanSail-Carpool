@@ -12,9 +12,13 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-// HandleOutbox uses the existing durable dispatcher and per-node send queues.
-// Command waits are deferred, so traffic acknowledgments never await a ban job.
 func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
+	if job.Kind == PAYGJob {
+		return m.service.ReconcilePAYG(ctx, job)
+	}
+	if job.Kind == PAYGRecoveryJob {
+		return m.deferOperation(job, 2*time.Minute, func(call context.Context) error { return m.recoverPAYG(call, job) })
+	}
 	if job.Kind == DIYReconcileJob {
 		return m.service.ReconcileDIY(ctx, job)
 	}

@@ -47,6 +47,10 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 	if err != nil {
 		return nil, err
 	}
+	principals, err := m.service.MemberPrincipals(ctx, userID, "")
+	if err != nil {
+		return nil, err
+	}
 	now := m.service.now()
 	result := []UserNodeMetric{}
 	m.mu.RLock()
@@ -60,12 +64,16 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 		item := UserNodeMetric{NodeID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Connections: "0", UploadBytes: "0", DownloadBytes: "0", WeightedBytes: "0"}
 		item.Available = owned && node.Enabled && m.peers[node.ID] != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
 		if item.Available {
-			id := int(identity.ProxyUserID)
-			count := snapshot.report.Users.Connections[id]
-			rate := snapshot.report.Users.Rates[id]
-			item.Connections = strconv.Itoa(count)
-			item.UploadBytesPerSecond, item.DownloadBytesPerSecond = rate.UploadBytesPerSecond, rate.DownloadBytesPerSecond
-			item.CurrentUse = count > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0
+			count := int64(0)
+			for _, principal := range principals {
+				id := int(principal)
+				count += int64(snapshot.report.Users.Connections[id])
+				rate := snapshot.report.Users.Rates[id]
+				item.UploadBytesPerSecond += rate.UploadBytesPerSecond
+				item.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
+			}
+			item.Connections = strconv.FormatInt(count, 10)
+			item.CurrentUse = count > 0 || item.UploadBytesPerSecond > 0 || item.DownloadBytesPerSecond > 0
 		}
 		result = append(result, item)
 	}

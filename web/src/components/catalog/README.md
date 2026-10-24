@@ -39,3 +39,7 @@ Combo, squad, and coupon feedback is emitted only when the selection changes; st
 `CatalogPage.vue` owns the four-step purchase flow. `CatalogSquadStep.test.ts` covers prepared ordering and `SquadNodeBlocks.test.ts` covers node labels and multipliers.
 
 Informational node rows no longer sit above the card selection button or receive pointer/focus decoration, so retiring node-image actions leaves the entire card selectable.
+
+`CatalogExperience.vue` owns the PAYG/Combo view selection, defaulting to PAYG, and the accessible reduced-motion entry transition. `PAYGPage.vue` polls owner-scoped availability and 72-hour raw traffic/wallet spending with the existing `useSubscriptionData` lifecycle. It reuses `SquadPricingCard.vue` in informational mode, without node rows, stock gates, selection controls or traffic multipliers. The Combo flow remains in `CatalogPage.vue`; only Combo retains the automatic-renewal purchase gate.
+
+`CatalogExperience.test.ts` guards PAYG defaults, isolation from the combo purchase gate and view switching in hosted CI.

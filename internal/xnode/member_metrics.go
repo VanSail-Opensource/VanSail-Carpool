@@ -21,6 +21,10 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 	result := UserMetrics{ActivityStatus: "unavailable", Reasons: reasons, Limited: len(reasons) > 0, FetchedAt: m.service.now()}
 	var offlineExpiry, onlineExpiry time.Time
 	id := int(identity.ProxyUserID)
+	principals, err := m.service.MemberPrincipals(ctx, userID, "")
+	if err != nil {
+		return result, err
+	}
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	for nodeID := range nodes {
@@ -29,27 +33,30 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 			result.Incomplete = true
 			continue
 		}
-		result.Connections += int64(snapshot.report.Users.Connections[id])
-		rate := snapshot.report.Users.Rates[id]
-		expires := snapshot.receivedAt.Add(reportWindow(global.Telemetry.ReportSeconds))
-		if offlineExpiry.IsZero() || expires.Before(offlineExpiry) {
-			offlineExpiry = expires
-		}
-		if snapshot.report.Users.Connections[id] > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0 {
-			if expires.After(onlineExpiry) {
-				onlineExpiry = expires
+		for _, principal := range principals {
+			id := int(principal)
+			result.Connections += int64(snapshot.report.Users.Connections[id])
+			rate := snapshot.report.Users.Rates[id]
+			expires := snapshot.receivedAt.Add(reportWindow(global.Telemetry.ReportSeconds))
+			if offlineExpiry.IsZero() || expires.Before(offlineExpiry) {
+				offlineExpiry = expires
 			}
-		}
-		result.UploadBytesPerSecond += rate.UploadBytesPerSecond
-		result.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
-		status := snapshot.report.Users.Status[id]
-		if status.Limited {
-			reason := status.Reason
-			if reason == "block_new" && m.globalBlocks[id] {
-				reason = "global_connection_limit"
+			if snapshot.report.Users.Connections[id] > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0 {
+				if expires.After(onlineExpiry) {
+					onlineExpiry = expires
+				}
 			}
-			result.Reasons = append(result.Reasons, UserLimit{NodeID: nodeID, Reason: reason, Scope: status.Scope})
-			result.Limited = true
+			result.UploadBytesPerSecond += rate.UploadBytesPerSecond
+			result.DownloadBytesPerSecond += rate.DownloadBytesPerSecond
+			status := snapshot.report.Users.Status[id]
+			if status.Limited {
+				reason := status.Reason
+				if reason == "block_new" && m.globalBlocks[id] {
+					reason = "global_connection_limit"
+				}
+				result.Reasons = append(result.Reasons, UserLimit{NodeID: nodeID, Reason: reason, Scope: status.Scope})
+				result.Limited = true
+			}
 		}
 	}
 	if !onlineExpiry.IsZero() {

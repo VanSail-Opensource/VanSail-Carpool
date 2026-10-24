@@ -102,6 +102,10 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		digest := sha256.Sum256(normalized)
 		commitStarted := time.Now()
 		if err = m.service.repo.RecordXNodeTraffic(ctx, peer.nodeID, peer.agentID, sequence, hex.EncodeToString(digest[:]), report); err != nil {
+			peer.mu.Lock()
+			peer.paygReady = false
+			peer.paygRecoveryQueued = false
+			peer.mu.Unlock()
 			return err
 		}
 		committed := time.Now()

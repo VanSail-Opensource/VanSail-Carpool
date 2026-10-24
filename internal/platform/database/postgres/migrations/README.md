@@ -18,3 +18,5 @@ makes foreign keys deferrable during a controlled, atomic source import.
 
 `00006_observability.sql` adds derived aggregate views for outbox, reconciliation,
 accounting barriers and logical backup age. It duplicates no authoritative rows.
+
+`00007_payg.sql` is the forward-only PostgreSQL equivalent of SQLite PAYG migration 095, including binary text collation and compile invalidation triggers. The older baseline is unchanged.

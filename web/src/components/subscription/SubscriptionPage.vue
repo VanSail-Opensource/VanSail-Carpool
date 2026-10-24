@@ -47,7 +47,7 @@ function consumeRevoke(): void {
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <UButton v-if="error" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="refresh()" />
     <div v-if="loading" class="subscription-page__loading"><SkeletonBlock height="11rem" /><SkeletonBlock height="10rem" /></div>
-    <template v-else-if="subscription?.activeCombo">
+    <template v-else-if="subscription?.subscriptionUrl">
       <SubscriptionPanel :subscription-url="subscription.subscriptionUrl" :revoking="busy" :revoke-blocked="blocksMutations" :open-revoke="revokeRequested" show-desktop-actions @revoke="revoke" @revoke-request-consumed="consumeRevoke" />
       <SubscriptionFormats :key="subscription.subscriptionUrl ?? ''" />
       <section class="section-block">

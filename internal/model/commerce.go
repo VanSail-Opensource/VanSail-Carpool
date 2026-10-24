@@ -15,6 +15,9 @@ type Money struct {
 
 // SquadProduct enriches an upstream Proxy internal squad with customer-facing catalog data.
 type SquadProduct struct {
+	BillingMode            string                `json:"billingMode,omitempty"`
+	PAYGPriceTXBMinor      int64                 `json:"-"`
+	PAYGPrice              *Money                `json:"paygPrice,omitempty"`
 	ID                     string                `json:"id"`
 	GroupID                string                `json:"groupId"`
 	Name                   string                `json:"name"`

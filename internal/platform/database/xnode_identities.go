@@ -9,12 +9,12 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const xnodeIdentitySelect = `SELECT p.proxy_user_id,COALESCE(p.user_id,''),COALESCE(CAST(u.telegram_id AS TEXT),p.service_name,''),COALESCE(p.service_name,''),p.credentials_cipher,p.subscription_hash,p.subscription_cipher,COALESCE(p.current_period_id,''),COALESCE(p.legacy_user_id,''),p.lifetime_base,p.access_disabled,p.created_at,COALESCE((SELECT old_proxy_id FROM member_identity_aliases WHERE proxy_id=p.proxy_user_id AND old_proxy_id<>proxy_id),0) FROM xnode_identities p LEFT JOIN users u ON u.id=p.user_id`
+const xnodeIdentitySelect = `SELECT p.proxy_user_id,COALESCE(p.user_id,''),COALESCE(CAST(u.telegram_id AS TEXT),p.service_name,''),COALESCE(p.service_name,''),p.credentials_cipher,p.subscription_hash,p.subscription_cipher,COALESCE(p.current_period_id,''),COALESCE(p.legacy_user_id,''),p.lifetime_base,p.access_disabled,p.created_at,COALESCE((SELECT old_proxy_id FROM member_identity_aliases WHERE proxy_id=p.proxy_user_id AND old_proxy_id<>proxy_id),0),COALESCE((SELECT a.user_id FROM xnode_payg_accounts a WHERE a.proxy_user_id=p.proxy_user_id),'') FROM xnode_identities p LEFT JOIN users u ON u.id=p.user_id`
 
 func scanXNodeIdentity(row rowScanner) (xnode.Identity, error) {
 	var item xnode.Identity
 	var created string
-	err := row.Scan(&item.ProxyUserID, &item.UserID, &item.Username, &item.ServiceName, &item.CredentialsCipher, &item.SubscriptionHash, &item.SubscriptionCipher, &item.CurrentPeriodID, &item.LegacyUserID, &item.LifetimeBase, &item.AccessDisabled, &created, &item.ReplacesID)
+	err := row.Scan(&item.ProxyUserID, &item.UserID, &item.Username, &item.ServiceName, &item.CredentialsCipher, &item.SubscriptionHash, &item.SubscriptionCipher, &item.CurrentPeriodID, &item.LegacyUserID, &item.LifetimeBase, &item.AccessDisabled, &created, &item.ReplacesID, &item.PAYGOwnerID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return item, xnode.ErrNotFound
 	}

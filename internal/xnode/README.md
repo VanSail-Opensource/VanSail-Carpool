@@ -618,3 +618,15 @@ The existing outbox retry policy caps only desired-state routing/DIY delays at
 30 seconds, preserving external-payment uncertainty rules and the ten-attempt
 limit. Startup and reconnect recovery resume the same receipt and phase,
 including routing jobs left in the former multi-hour retry delay.
+
+## Automatic PAYG
+
+`payg_types.go` defines optional repository contracts and owner-only transport models. `payg_provision.go` provisions encrypted internal member/squad/node identities through the shared outbox; they have no independent bearer subscription. Active and paid queued combo squads suppress PAYG admission without deleting prepaid balances.
+
+`payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for automatic continuation purchases after at least 10 KiB has been metered on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; raw bytes remain cumulative across reconnects and count toward the first purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
+
+`payg_inventory.go` separates owner subscription inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Existing subscriptions retain PAYG entries while unfunded. Unused prepaid bytes remain scoped to their original node and survive reconnects and temporary ineligibility.
+
+`payg_owners.go` shares member ownership across activity counters without reading credentials each reconciliation. `payg_leases_test.go` verifies lease-only refresh, stale/unsupported/debt admission and whitelist gating; `payg_access_test.go` covers paid combo precedence, retained unfunded subscriptions and parent disablement. These regressions run only in hosted CI.
+
+`master_peer.go` contains per-socket transport, synchronization and ephemeral PAYG lease state; the master retains ownership of peer lifetimes and the existing execution queues. Existing oversized application/catalog composition files retain their established boundaries; added PAYG behavior lives in focused modules.

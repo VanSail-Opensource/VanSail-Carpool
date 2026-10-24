@@ -21,7 +21,14 @@ func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[s
 	if restricted {
 		reasons = append(reasons, UserLimit{Reason: "account_disabled", Scope: "all_connections"})
 	}
-	if purchase == nil {
+	payg, err := s.paygInventory(ctx, identity.UserID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, p := range payg {
+		nodes[p.NodeID] = true
+	}
+	if purchase == nil && len(payg) == 0 {
 		reasons = append(reasons, UserLimit{Reason: "authorization_expired", Scope: "all_connections"})
 	}
 	if identity.CurrentPeriodID != "" {

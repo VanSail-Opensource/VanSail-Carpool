@@ -22,6 +22,8 @@ import SquadActivationDialog from './SquadActivationDialog.vue'
 import { useCatalogSquadPresentation } from './useCatalogSquadPresentation'
 import { useCatalogStepPersistence } from './useCatalogStepPersistence'
 
+defineProps<{ embedded?: boolean }>()
+
 const activeStep = shallowRef(1)
 const stepDirection = shallowRef(1)
 const sessionStore = useSessionStore()
@@ -167,13 +169,13 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
 </script>
 
 <template>
-  <div class="page page--catalog">
+  <div :class="[embedded ? '' : 'page', 'page--catalog']">
     <template v-if="purchase">
       <CatalogConfirmation :purchase="purchase" @home="goHome" />
     </template>
 
     <template v-else>
-      <header class="page-header">
+      <header v-if="!embedded" class="page-header">
         <h1>{{ $t('catalog.title') }}</h1>
       </header>
 

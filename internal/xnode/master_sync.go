@@ -16,15 +16,9 @@ func (m *Master) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	identities, err := m.service.repo.XNodeIdentities(ctx)
+	paid, err := m.service.principalOwners(ctx)
 	if err != nil {
 		return err
-	}
-	paid := map[int]bool{}
-	for _, identity := range identities {
-		if identity.UserID != "" {
-			paid[int(identity.ProxyUserID)] = true
-		}
 	}
 	native, err := m.service.nativeAvailability(ctx)
 	if err != nil {
@@ -32,29 +26,32 @@ func (m *Master) reconcile(ctx context.Context) error {
 	}
 	now := m.service.now()
 	m.mu.Lock()
-	totals := map[int]int64{}
+	totals := map[string]int64{}
 	peers := []*agentPeer{}
 	for id, peer := range m.peers {
 		peers = append(peers, peer)
 		snapshot := m.live[id]
 		if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
 			for user, count := range snapshot.report.Users.Connections {
-				if paid[user] {
-					totals[user] += int64(count)
+				if owner := paid[user]; owner != "" {
+					totals[owner] += int64(count)
 				}
 			}
 		}
 	}
 	blocks := map[int]bool{}
 	if global.ConnectionLimit > 0 {
-		for user, count := range totals {
-			if count >= int64(global.ConnectionLimit) {
-				blocks[user] = true
+		for id, owner := range paid {
+			if totals[owner] >= int64(global.ConnectionLimit) {
+				blocks[id] = true
 			}
 		}
 	}
 	m.globalBlocks = blocks
 	m.mu.Unlock()
+	if err := m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds); err != nil {
+		return err
+	}
 	for _, peer := range peers {
 		peer.mu.Lock()
 		force := peer.forceSync
@@ -101,6 +98,10 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	if !ready {
 		return nil
 	}
+	config, err = m.overlayPAYG(ctx, peer, config, hello.Capabilities)
+	if err != nil {
+		return err
+	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	}
 	message := wire.New("state.sync", "", revision, normalized)
 	for _, user := range config.Users {
-		if user.AccountingPeriod != "" {
+		if user.AccountingPeriod != "" && !isPAYGPeriod(user.AccountingPeriod) {
 			if err = m.service.repo.TrackXNodePeriodNode(ctx, user.AccountingPeriod, peer.nodeID); err != nil {
 				return err
 			}

@@ -12,7 +12,7 @@ func (s *Service) Compile(ctx context.Context, nodeID string) (wire.Config, erro
 	return s.compile(ctx, nodeID, nil, nil, nil, nil)
 }
 func (s *Service) compile(ctx context.Context, nodeID string, replacement *Configuration, shared *Snippet, fleet *GlobalConfig, member *Customization) (wire.Config, error) {
-	s = s.withCompileReads()
+	s = s.withCompileReads(nodeID)
 	node, settings, err := s.Node(ctx, nodeID)
 	if err != nil {
 		return wire.Config{}, err
@@ -122,6 +122,9 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 			return wire.Config{}, err
 		}
 		if err = s.open("xnode.routing."+customizationOwner(custom)+"."+nodeID, custom.RoutingCipher, &rules); err != nil {
+			return wire.Config{}, err
+		}
+		if err = s.extendOwnerRules(ctx, users, custom, rules); err != nil {
 			return wire.Config{}, err
 		}
 		for _, raw := range outs {

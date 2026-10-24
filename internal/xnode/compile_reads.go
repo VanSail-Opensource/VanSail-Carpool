@@ -10,6 +10,7 @@ import (
 // across transactions or goroutines; the epoch check rejects concurrent changes.
 type compileReads struct {
 	Repository
+	nodeID     string
 	groups     []Group
 	identities []Identity
 	users      map[string]model.User
@@ -20,11 +21,14 @@ type compileReads struct {
 	periods    map[string]Period
 }
 
-func (s *Service) withCompileReads() *Service {
+func (s *Service) withCompileReads(node ...string) *Service {
 	if _, ok := s.repo.(*compileReads); ok {
 		return s
 	}
 	repo := &compileReads{Repository: s.repo, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}}
+	if len(node) > 0 {
+		repo.nodeID = node[0]
+	}
 	next := NewService(repo, s.settings, s.vault, s.publicURL, s.validationQueue)
 	next.master, next.now = s.master, s.now
 	next.policyAssets = s.policyAssets
@@ -49,7 +53,15 @@ func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) 
 	if r.identities != nil {
 		return r.identities, nil
 	}
-	items, err := r.Repository.XNodeIdentities(ctx)
+	var items []Identity
+	var err error
+	if source, ok := r.Repository.(interface {
+		XNodeIdentitiesForNode(context.Context, string) ([]Identity, error)
+	}); ok && r.nodeID != "" {
+		items, err = source.XNodeIdentitiesForNode(ctx, r.nodeID)
+	} else {
+		items, err = r.Repository.XNodeIdentities(ctx)
+	}
 	if err == nil {
 		r.identities = items
 		for _, item := range items {
@@ -70,7 +82,11 @@ func (r *compileReads) XNodeIdentity(ctx context.Context, id int64) (Identity, e
 	if item, ok := r.byID[id]; ok {
 		return item, nil
 	}
-	return Identity{}, ErrNotFound
+	item, err := r.Repository.XNodeIdentity(ctx, id)
+	if err == nil {
+		r.byID[id] = item
+	}
+	return item, err
 }
 func (r *compileReads) XNodeIdentityByUser(ctx context.Context, id string) (Identity, error) {
 	items, err := r.XNodeIdentities(ctx)

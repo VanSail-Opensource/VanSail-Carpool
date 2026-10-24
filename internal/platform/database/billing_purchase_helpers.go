@@ -122,13 +122,5 @@ func debitBalanceTx(ctx context.Context, tx *sql.Tx, userID string, amount int64
 	if amount < 0 {
 		return 0, errors.New("negative debit")
 	}
-	var balance int64
-	err := tx.QueryRowContext(ctx, `UPDATE balances SET txb_minor=txb_minor-?,updated_at=? WHERE user_id=? AND txb_minor>=? RETURNING txb_minor`, amount, stamp(now), userID, amount).Scan(&balance)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, ErrInsufficientBalance
-	}
-	if err != nil {
-		return 0, fmt.Errorf("debit balance: %w", err)
-	}
-	return balance, nil
+	return changeBalanceTx(ctx, tx, userID, -amount, now)
 }

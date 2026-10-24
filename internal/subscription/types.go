@@ -10,22 +10,24 @@ import (
 )
 
 type Proxy struct {
-	ID              string               `json:"id"`
-	NodeID          string               `json:"nodeId"`
-	InboundTag      string               `json:"-"`
-	GroupIDs        []string             `json:"-"`
-	Countries       []string             `json:"-"`
-	Name            string               `json:"name"`
-	Protocol        string               `json:"protocol"`
-	Address         string               `json:"address"`
-	Port            int                  `json:"port"`
-	Account         map[string]any       `json:"-"`
-	Stream          map[string]any       `json:"-"`
-	Mux             map[string]any       `json:"-"`
-	MapperHost      map[string]any       `json:"-"`
-	ExcludedFormats []string             `json:"-"`
-	XrayTemplate    json.RawMessage      `json:"-"`
-	Tuning          *ConnectionOverrides `json:"-"`
+	PublishedEndpointID string               `json:"-"`
+	PrincipalID         int64                `json:"-"`
+	ID                  string               `json:"id"`
+	NodeID              string               `json:"nodeId"`
+	InboundTag          string               `json:"-"`
+	GroupIDs            []string             `json:"-"`
+	Countries           []string             `json:"-"`
+	Name                string               `json:"name"`
+	Protocol            string               `json:"protocol"`
+	Address             string               `json:"address"`
+	Port                int                  `json:"port"`
+	Account             map[string]any       `json:"-"`
+	Stream              map[string]any       `json:"-"`
+	Mux                 map[string]any       `json:"-"`
+	MapperHost          map[string]any       `json:"-"`
+	ExcludedFormats     []string             `json:"-"`
+	XrayTemplate        json.RawMessage      `json:"-"`
+	Tuning              *ConnectionOverrides `json:"-"`
 }
 
 func (p Proxy) Tag() string {

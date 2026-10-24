@@ -9,6 +9,14 @@ import (
 	"strconv"
 )
 
+func (a proxyProvider) LoadUnifiedSubscription(ctx context.Context, user model.User, links bool) (connectivity.MemberSubscription, error) {
+	result, err := a.LoadSubscriptionForMember(ctx, user, nil, links)
+	if errors.Is(err, xnode.ErrNotFound) {
+		return connectivity.MemberSubscription{Hosts: []connectivity.SubscriptionHost{}, Squads: []connectivity.SubscriptionSquad{}}, nil
+	}
+	return result, err
+}
+
 func (a proxyProvider) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (connectivity.MemberSubscription, error) {
 	identity, err := a.native.IdentityForUser(ctx, user.ID)
 	if err == nil {
@@ -30,6 +38,17 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 		return connectivity.MemberSubscription{}, err
 	}
 	monitored := make(map[string]bool, len(proxies))
+	if enabled == nil {
+		seen := map[string]bool{}
+		for _, proxy := range proxies {
+			for _, group := range proxy.GroupIDs {
+				if !seen[group] {
+					enabled = append(enabled, group)
+					seen[group] = true
+				}
+			}
+		}
+	}
 	for _, proxy := range proxies {
 		monitored[proxy.ID] = true
 	}

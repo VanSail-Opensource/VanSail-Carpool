@@ -191,3 +191,5 @@ explicit forced reload payloads.
 `SettingsAudit.vue` and `settings-audit.ts` reuse the DIY fixture when the real
 Settings entrance is opened. This checks the actual DIY route at mobile/desktop
 widths without production traffic; returning restores the settings receipt loader.
+
+`payg-audit.html`, `payg-audit.ts` and `PAYGAudit.vue` mount the actual PAYG/Combo catalog and administrator squad editor with synthetic signed-transport-compatible data. Query flags select loading, empty, failure, locale, appearance and admin states; no real member data or upstream calls are used.

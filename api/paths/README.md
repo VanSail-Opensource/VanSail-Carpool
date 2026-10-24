@@ -274,3 +274,5 @@ provides browser-only admin preset inventory and optimistic writes.
 `api-v1-xnode-routing-speedtests-id.yaml` returns durable pair results/estimates.
 
 `api-v1-xnode-diy.yaml` provides owner reads and atomic saves; `api-v1-xnode-diy-preview.yaml` validates both draft sections without persistence.
+
+`api-v1-payg.yaml` describes private authenticated PAYG reads; it exposes no purchase/enrollment switch or arbitrary member selector.

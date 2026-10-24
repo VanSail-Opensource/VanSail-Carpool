@@ -61,6 +61,13 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 		return err
 	}
 	sampled := map[int]bool{}
+	paygIDs := map[int64]bool{}
+	for _, sample := range report.Samples {
+		paygIDs[int64(sample.UserID)] = true
+	}
+	if err = lockPAYGOwnersTx(ctx, tx, nodeID, paygIDs); err != nil {
+		return err
+	}
 	periods := map[string]bool{}
 	for _, sample := range report.Samples {
 		periods[sample.AccountingPeriod] = true
@@ -78,6 +85,11 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	}
 	for _, sample := range report.Samples {
 		sampled[sample.UserID] = true
+		if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
+			return e
+		} else if handled {
+			continue
+		}
 		if err = recordXNodeSample(ctx, tx, nodeID, multiplier, sample); err != nil {
 			return err
 		}

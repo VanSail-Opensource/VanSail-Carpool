@@ -1,0 +1,26 @@
+{
+  "payg": {
+    "title": "按量付费",
+    "combo": "套餐",
+    "mode": "计费视图",
+    "automatic": "每个节点累计使用 10 KiB 后，独立按 GB 自动扣费。未用完的预付流量持续保留。",
+    "balance": "余额",
+    "perGB": "/ GB",
+    "window": "近 72 小时",
+    "total": "72 小时合计",
+    "empty": "暂无按量付费分组。",
+    "loadFailed": "无法加载按量付费信息。",
+    "addBalance": "充值",
+    "billingMode": "计费模式",
+    "price": "每 GB 价格",
+    "adminHint": "所有符合条件的成员自动使用按量付费。生效及已付款待生效套餐保留原分组至到期，后续续费不再包含这些分组。",
+    "status": {
+      "available": "可用",
+      "insufficient_balance": "余额不足",
+      "combo_covered": "当前套餐已包含",
+      "queued_combo": "待生效套餐已预留",
+      "unavailable": "不可用",
+      "sync_pending": "等待同步"
+    }
+  }
+}

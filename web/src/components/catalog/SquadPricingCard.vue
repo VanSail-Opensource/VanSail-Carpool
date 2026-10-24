@@ -9,6 +9,8 @@ import { selectionHaptic } from '@/utils/telegram'
 import SquadNodeBlocks from './SquadNodeBlocks.vue'
 
 const props = defineProps<{
+  informational?: boolean
+  showNodes?: boolean
   squad: SquadProduct
   selected: boolean
   included: boolean
@@ -52,13 +54,13 @@ function toggle(): void {
       {
         'squad-pricing-card--selected': selected,
         'squad-pricing-card--included': included,
-        'squad-pricing-card--nonselectable': included || isFull,
+        'squad-pricing-card--nonselectable': informational || included || isFull,
       },
     ]"
     :aria-label="squad.name"
   >
     <UButton
-      v-if="!included && !isFull"
+      v-if="!informational && !included && !isFull"
       type="button"
       color="neutral"
       variant="ghost"
@@ -80,24 +82,26 @@ function toggle(): void {
           <UIcon v-if="featured" class="squad-card__featured" name="i-ph-crown" :aria-label="$t('catalog.featured')" />
         </template>
         <template #nameTags>
-          <UIcon v-if="!squad.visible" name="i-ph-lock-key" :aria-label="$t('catalog.hidden')" />
-          <UBadge v-if="squad.activationRequired" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="warning" variant="solid" icon="i-ph-lock-key" :aria-label="$t('catalog.activationRequired')" />
-          <UBadge v-if="isFull" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="error" variant="solid" icon="i-lucide-user-x" :aria-label="$t('catalog.full')" />
-          <UBadge v-else-if="!included" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" :color="remainingBadge.color" variant="solid" :icon="remainingBadge.icon" :aria-label="`${$t('catalog.remaining')} ${remainingBadge.label}`" />
+          <slot name="status" />
+          <UIcon v-if="!informational && !squad.visible" name="i-ph-lock-key" :aria-label="$t('catalog.hidden')" />
+          <UBadge v-if="!informational && squad.activationRequired" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="warning" variant="solid" icon="i-ph-lock-key" :aria-label="$t('catalog.activationRequired')" />
+          <UBadge v-if="!informational && isFull" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="error" variant="solid" icon="i-lucide-user-x" :aria-label="$t('catalog.full')" />
+          <UBadge v-else-if="!informational && !included" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" :color="remainingBadge.color" variant="solid" :icon="remainingBadge.icon" :aria-label="`${$t('catalog.remaining')} ${remainingBadge.label}`" />
         </template>
       </SquadProfileSummary>
       <div v-if="!included" class="squad-card__price">
-        <strong>{{ formatMemberMoney(squad.price) }}</strong>
+        <slot name="price"><strong>{{ formatMemberMoney(squad.price) }}</strong></slot>
       </div>
     </div>
 
-    <div v-if="squad.accessibleNodes.length" class="squad-card__nodes">
+    <div v-if="showNodes !== false && squad.accessibleNodes.length" class="squad-card__nodes">
       <div class="squad-card__nodes-heading">
         <span class="squad-card__nodes-label">{{ $t('catalog.nodes') }}</span>
         <SquadProfileFacts class="squad-card__tags" :profile="squad.profile" presentation="member" />
       </div>
       <SquadNodeBlocks :nodes="squad.accessibleNodes" />
     </div>
+    <slot />
   </article>
 </template>
 

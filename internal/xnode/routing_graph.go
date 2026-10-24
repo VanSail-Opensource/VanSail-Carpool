@@ -11,6 +11,7 @@ import (
 )
 
 type routingInput struct {
+	principals       map[string]Identity
 	graph            *routingmatch.Graph
 	rules            []routingmatch.Rule
 	endpoints        map[string]Endpoint

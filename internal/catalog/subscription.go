@@ -15,6 +15,9 @@ type subscriptionSource interface {
 type nativeSubscriptionSource interface {
 	LoadSubscriptionForMember(context.Context, model.User, []string, bool) (connectivity.MemberSubscription, error)
 }
+type unifiedSubscriptionSource interface {
+	LoadUnifiedSubscription(context.Context, model.User, bool) (connectivity.MemberSubscription, error)
+}
 type subscriptionPreferences interface {
 	UserDisabledSquads(context.Context, string) ([]string, error)
 }
@@ -30,6 +33,15 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 	active, _, err := s.repository.ActiveAndQueuedPurchases(ctx, user.ID, now)
 	if err != nil {
 		return result, err
+	}
+	if source, ok := s.provider.(unifiedSubscriptionSource); ok {
+		result, err = source.LoadUnifiedSubscription(ctx, user, links)
+		if err != nil {
+			return result, err
+		}
+		result.ActiveCombo = activeSubscription(active, now)
+		s.connectivity.ProjectMember(ctx, &result, s.now().UTC())
+		return result, nil
 	}
 	if !activeSubscription(active, now) {
 		return result, nil

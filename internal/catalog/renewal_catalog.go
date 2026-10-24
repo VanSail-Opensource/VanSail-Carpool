@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"slices"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
@@ -28,8 +29,23 @@ func (s *Service) renewalCatalog(ctx context.Context, comboID string, addonIDs [
 // hydrateRenewalCatalog validates the selected entitlement, including persisted
 // custom squads, through the same queued provider used by the storefront.
 func (s *Service) hydrateRenewalCatalog(ctx context.Context, combos []model.Combo, addonIDs []string) (model.Catalog, []string, string, error) {
+	current, err := s.repository.ListSquadProducts(ctx, false)
+	if err != nil {
+		return model.Catalog{}, nil, "", err
+	}
+	payg := map[string]bool{}
+	for _, p := range current {
+		payg[p.GroupID] = p.BillingMode == "payg"
+	}
+	combos = slices.Clone(combos)
+	for index := range combos {
+		combos[index].IncludedSquads = slices.DeleteFunc(slices.Clone(combos[index].IncludedSquads), func(p model.SquadProduct) bool { return payg[p.GroupID] })
+	}
 	addons := make([]model.SquadProduct, 0, len(addonIDs))
 	for _, id := range addonIDs {
+		if payg[id] {
+			continue
+		}
 		addons = append(addons, model.SquadProduct{ID: id, GroupID: id, Visible: true})
 	}
 	catalog, err := s.hydrateLiveCatalog(ctx, combos, addons)

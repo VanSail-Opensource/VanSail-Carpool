@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import CatalogPage from '@/components/catalog/CatalogPage.vue'
+import CatalogExperience from '@/components/catalog/CatalogExperience.vue'
 </script>
 
 <template>
-  <CatalogPage />
+  <CatalogExperience />
 </template>

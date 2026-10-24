@@ -166,6 +166,11 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err = outboxWorker.Register(xnode.AccessRepairJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}
+	for _, kind := range []string{xnode.PAYGJob, xnode.PAYGRecoveryJob} {
+		if err = outboxWorker.Register(kind, xnodeMaster); err != nil {
+			return nil, err
+		}
+	}
 	if err = outboxWorker.Register(xnode.DIYReconcileJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}

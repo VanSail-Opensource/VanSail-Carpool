@@ -94,7 +94,8 @@
     "091_member_whitelist.sql",
     "092_identity_rekey_immutable_references.sql",
     "093_native_only.sql",
-    "094_delete_revoked_api_tokens.sql"
+    "094_delete_revoked_api_tokens.sql",
+    "095_payg.sql"
   ],
   "objects": [
     {
@@ -539,7 +540,7 @@
       "type": "table",
       "name": "purchases",
       "table": "purchases",
-      "sql": "CREATE TABLE purchases (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL REFERENCES users(id),\n  combo_id TEXT NOT NULL REFERENCES combos(id),\n  charged_txb_minor INTEGER NOT NULL CHECK (charged_txb_minor \u003e= 0),\n  valid_from TEXT NOT NULL,\n  valid_until TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('activating','active','queued','expired','cancelled','failed')),\n  traffic_reset_phase TEXT NOT NULL DEFAULT 'pending' CHECK (traffic_reset_phase IN ('pending','quiesced','reset')),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, coupon_grant_id TEXT REFERENCES coupon_grants(id), gross_price_txb_minor INTEGER CHECK (gross_price_txb_minor IS NULL OR gross_price_txb_minor \u003e= 0), coupon_discount_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (coupon_discount_txb_minor \u003e= 0), idempotency_key TEXT, request_fingerprint TEXT NOT NULL DEFAULT '', renewal_batch_id TEXT, renewal_index INTEGER, auto_renew_enabled INTEGER NOT NULL DEFAULT 0\n  CHECK (auto_renew_enabled IN (0,1)), auto_renew_failure_reason TEXT NOT NULL DEFAULT '', auto_renew_failed_at TEXT, recurring_discount_attached INTEGER NOT NULL DEFAULT 0\n  CHECK (recurring_discount_attached IN (0,1)), auto_renew_source_purchase_id TEXT\n  REFERENCES purchases(id), core_gross_txb_minor INTEGER NOT NULL DEFAULT 0\n  CHECK (core_gross_txb_minor \u003e= 0), entitlement_traffic_limit_bytes INTEGER\n  CHECK (entitlement_traffic_limit_bytes IS NULL OR entitlement_traffic_limit_bytes \u003e 0), entitlement_reset_strategy TEXT\n  CHECK (entitlement_reset_strategy IS NULL OR entitlement_reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), entitlement_squad_uuids TEXT\n  CHECK (entitlement_squad_uuids IS NULL OR (json_valid(entitlement_squad_uuids) AND json_type(entitlement_squad_uuids)='array')), entitlement_addon_squad_uuids TEXT\n  CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor \u003e= 0), reward_rollover_min_remaining_bps INTEGER CHECK (reward_rollover_min_remaining_bps IS NULL OR reward_rollover_min_remaining_bps BETWEEN 0 AND 10000), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER\n  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes \u003e 0))"
+      "sql": "CREATE TABLE purchases (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL REFERENCES users(id),\n  combo_id TEXT NOT NULL REFERENCES combos(id),\n  charged_txb_minor INTEGER NOT NULL CHECK (charged_txb_minor \u003e= 0),\n  valid_from TEXT NOT NULL,\n  valid_until TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('activating','active','queued','expired','cancelled','failed')),\n  traffic_reset_phase TEXT NOT NULL DEFAULT 'pending' CHECK (traffic_reset_phase IN ('pending','quiesced','reset')),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, coupon_grant_id TEXT REFERENCES coupon_grants(id), gross_price_txb_minor INTEGER CHECK (gross_price_txb_minor IS NULL OR gross_price_txb_minor \u003e= 0), coupon_discount_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (coupon_discount_txb_minor \u003e= 0), idempotency_key TEXT, request_fingerprint TEXT NOT NULL DEFAULT '', renewal_batch_id TEXT, renewal_index INTEGER, auto_renew_enabled INTEGER NOT NULL DEFAULT 0\n  CHECK (auto_renew_enabled IN (0,1)), auto_renew_failure_reason TEXT NOT NULL DEFAULT '', auto_renew_failed_at TEXT, recurring_discount_attached INTEGER NOT NULL DEFAULT 0\n  CHECK (recurring_discount_attached IN (0,1)), auto_renew_source_purchase_id TEXT\n  REFERENCES purchases(id), core_gross_txb_minor INTEGER NOT NULL DEFAULT 0\n  CHECK (core_gross_txb_minor \u003e= 0), entitlement_traffic_limit_bytes INTEGER\n  CHECK (entitlement_traffic_limit_bytes IS NULL OR entitlement_traffic_limit_bytes \u003e 0), entitlement_reset_strategy TEXT\n  CHECK (entitlement_reset_strategy IS NULL OR entitlement_reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), entitlement_squad_uuids TEXT\n  CHECK (entitlement_squad_uuids IS NULL OR (json_valid(entitlement_squad_uuids) AND json_type(entitlement_squad_uuids)='array')), entitlement_addon_squad_uuids TEXT\n  CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor \u003e= 0), reward_rollover_min_remaining_bps INTEGER CHECK (reward_rollover_min_remaining_bps IS NULL OR reward_rollover_min_remaining_bps BETWEEN 0 AND 10000), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER\n  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes \u003e 0), combo_squad_uuids TEXT)"
     },
     {
       "type": "table",
@@ -605,7 +606,7 @@
       "type": "table",
       "name": "squad_product_overrides",
       "table": "squad_product_overrides",
-      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT)"
+      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor\u003e=0 AND (billing_mode\u003c\u003e'payg' OR payg_price_minor\u003e0)))"
     },
     {
       "type": "table",
@@ -822,6 +823,24 @@
       "name": "xnode_nodes",
       "table": "xnode_nodes",
       "sql": "CREATE TABLE \"xnode_nodes\" (\n id TEXT PRIMARY KEY, name TEXT NOT NULL, country_code TEXT NOT NULL DEFAULT '',\n provider_name TEXT NOT NULL DEFAULT '', multiplier_fp INTEGER NOT NULL DEFAULT 1000000 CHECK(multiplier_fp\u003e=0),\n enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),\n config_id TEXT NOT NULL REFERENCES xnode_configs(id), settings_cipher TEXT NOT NULL,\n token_hash BLOB UNIQUE CHECK(token_hash IS NULL OR length(token_hash)=32), agent_id TEXT UNIQUE,\n desired_revision INTEGER NOT NULL DEFAULT 0, accepted_revision INTEGER NOT NULL DEFAULT 0,\n applied_revision INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_payg_accounts",
+      "table": "xnode_payg_accounts",
+      "sql": "CREATE TABLE xnode_payg_accounts (\n proxy_user_id INTEGER PRIMARY KEY REFERENCES xnode_identities(proxy_user_id),\n user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id),\n period_id TEXT NOT NULL UNIQUE REFERENCES xnode_periods(id),\n unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor\u003e0),\n purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes\u003e=0),\n UNIQUE(user_id,group_id,node_id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_payg_charges",
+      "table": "xnode_payg_charges",
+      "sql": "CREATE TABLE xnode_payg_charges (\n ledger_id TEXT PRIMARY KEY REFERENCES ledger_entries(id),\n proxy_user_id INTEGER NOT NULL REFERENCES xnode_payg_accounts(proxy_user_id),\n first_block INTEGER NOT NULL CHECK(first_block\u003e=0),\n blocks INTEGER NOT NULL CHECK(blocks\u003e0),\n unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor\u003e0),\n UNIQUE(proxy_user_id,first_block)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_payg_minutes",
+      "table": "xnode_payg_minutes",
+      "sql": "CREATE TABLE xnode_payg_minutes (\n user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,\n minute TEXT NOT NULL, traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes\u003e=0),\n spent_minor INTEGER NOT NULL DEFAULT 0 CHECK(spent_minor\u003e=0),\n PRIMARY KEY(user_id,group_id,minute)\n)"
     },
     {
       "type": "table",
@@ -1557,6 +1576,18 @@
     },
     {
       "type": "index",
+      "name": "xnode_payg_minutes_expiry",
+      "table": "xnode_payg_minutes",
+      "sql": "CREATE INDEX xnode_payg_minutes_expiry ON xnode_payg_minutes(minute)"
+    },
+    {
+      "type": "index",
+      "name": "xnode_payg_node",
+      "table": "xnode_payg_accounts",
+      "sql": "CREATE INDEX xnode_payg_node ON xnode_payg_accounts(node_id,user_id)"
+    },
+    {
+      "type": "index",
       "name": "xnode_periods_purchase_idx",
       "table": "xnode_periods",
       "sql": "CREATE INDEX xnode_periods_purchase_idx ON xnode_periods(purchase_id)"
@@ -1620,6 +1651,30 @@
       "name": "compile_combo_whitelist_update",
       "table": "combos",
       "sql": "CREATE TRIGGER compile_combo_whitelist_update AFTER UPDATE OF whitelist_ip_quota ON combos\n BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_account_insert",
+      "table": "xnode_payg_accounts",
+      "sql": "CREATE TRIGGER compile_payg_account_insert AFTER INSERT ON xnode_payg_accounts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_product_delete",
+      "table": "squad_product_overrides",
+      "sql": "CREATE TRIGGER compile_payg_product_delete AFTER DELETE ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_product_insert",
+      "table": "squad_product_overrides",
+      "sql": "CREATE TRIGGER compile_payg_product_insert AFTER INSERT ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_product_update",
+      "table": "squad_product_overrides",
+      "sql": "CREATE TRIGGER compile_payg_product_update AFTER UPDATE ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
     },
     {
       "type": "trigger",
@@ -7024,6 +7079,13 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "combo_squad_uuids",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },
@@ -7540,7 +7602,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 95,
+      "rows": 96,
       "columns": [
         {
           "name": "version",
@@ -7719,6 +7781,20 @@
           "type": "TEXT",
           "notNull": false,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "billing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'combo'",
+          "primaryKey": 0
+        },
+        {
+          "name": "payg_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
           "primaryKey": 0
         }
       ]
@@ -9713,6 +9789,143 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_accounts",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unit_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchased_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_charges",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "ledger_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "first_block",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "blocks",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unit_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_minutes",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "minute",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "spent_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
           "primaryKey": 0
         }
       ]

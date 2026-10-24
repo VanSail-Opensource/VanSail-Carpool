@@ -126,7 +126,10 @@
     "xnode_daily_usage",
     "xnode_imported_usage",
     "xnode_metered_probes",
-    "xnode_period_nodes"
+    "xnode_period_nodes",
+    "xnode_payg_accounts",
+    "xnode_payg_charges",
+    "xnode_payg_minutes"
   ],
   "tables": [
     {
@@ -5102,6 +5105,13 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "combo_squad_uuids",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },
@@ -5786,6 +5796,20 @@
           "type": "TEXT",
           "notNull": false,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "billing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'combo'",
+          "primaryKey": 0
+        },
+        {
+          "name": "payg_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
           "primaryKey": 0
         }
       ]
@@ -7749,6 +7773,140 @@
       ]
     },
     {
+      "name": "xnode_payg_accounts",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unit_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchased_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_charges",
+      "columns": [
+        {
+          "name": "ledger_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "first_block",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "blocks",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unit_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_minutes",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "minute",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "spent_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "xnode_period_nodes",
       "columns": [
         {
@@ -8162,6 +8320,8 @@
     "xnode_firewall_exemption_versions",
     "xnode_legacy_history_date_node_idx",
     "xnode_metered_probes_period",
+    "xnode_payg_minutes_expiry",
+    "xnode_payg_node",
     "xnode_periods_purchase_idx",
     "xnode_periods_user_idx",
     "xnode_service_bindings_expiry_idx"
@@ -8175,6 +8335,10 @@
     "compile_admin_temporary_bans_insert",
     "compile_admin_temporary_bans_update",
     "compile_combo_whitelist_update",
+    "compile_payg_account_insert",
+    "compile_payg_product_delete",
+    "compile_payg_product_insert",
+    "compile_payg_product_update",
     "compile_purchases_delete",
     "compile_purchases_insert",
     "compile_purchases_update",

@@ -37,6 +37,7 @@
     "managed-routing",
     "native-metrics",
     "diy",
-    "diy-fields"
+    "diy-fields",
+    "payg"
   ]
 }

@@ -91,7 +91,7 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 			override.AccessibleNodes = []model.CatalogNode{}
 		}
 		overrideByUUID[override.GroupID] = override
-		if override.Visible {
+		if override.Visible && override.BillingMode != "payg" {
 			addons = append(addons, override)
 		}
 	}
@@ -106,6 +106,9 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 				break
 			}
 			product, hasOverride := overrideByUUID[placeholder.GroupID]
+			if product.BillingMode == "payg" {
+				continue
+			}
 			if !hasOverride {
 				product = model.SquadProduct{ID: placeholder.GroupID, GroupID: placeholder.GroupID, Visible: true,
 					AccessibleNodes: []model.CatalogNode{}}

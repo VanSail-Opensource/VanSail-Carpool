@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -20,7 +21,19 @@ func (s *Store) RolloverEligible(ctx context.Context, purchaseID string) (bool, 
 	if err != nil {
 		return false, fmt.Errorf("check rollover eligibility: %w", err)
 	}
-	return eligible == 1, nil
+	if eligible == 1 {
+		return true, nil
+	}
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+	var active int
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases p WHERE p.id=? AND p.status IN ('active','activating') AND NOT EXISTS(SELECT 1 FROM purchases q WHERE q.user_id=p.user_id AND q.status='queued' AND q.id<>p.id))`, purchaseID).Scan(&active); err != nil || active == 0 {
+		return false, err
+	}
+	return emptyRenewalTx(ctx, tx, purchaseID)
 }
 
 // RecordRolloverCalculation stores the aggregate used to settle automatic renewal.
@@ -66,6 +79,13 @@ func (s *Store) retryAttempt_RecordRolloverCalculation(ctx context.Context, purc
 		return model.PurchaseRollover{}, rowsErr
 	} else if affected != 1 {
 		return model.PurchaseRollover{}, ErrConflict
+	}
+	if empty, e := emptyRenewalTx(ctx, tx, purchaseID); e != nil {
+		return model.PurchaseRollover{}, e
+	} else if empty {
+		if e = s.settleEmptyRolloverTx(ctx, tx, purchaseID, now); e != nil {
+			return model.PurchaseRollover{}, e
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return model.PurchaseRollover{}, fmt.Errorf("commit rollover calculation: %w", err)

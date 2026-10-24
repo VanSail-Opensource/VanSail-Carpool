@@ -1,0 +1,13 @@
+get:
+  operationId: getOwnedPAYG
+  tags: [Catalog]
+  summary: Read automatic PAYG availability and the last 72 completed hours
+  responses:
+    '200':
+      description: Owner-scoped PAYG summaries, independent of subscription inventory
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/PAYGView'
+    default:
+      $ref: '../openapi.yaml#/components/responses/InternalFailure'

@@ -872,7 +872,7 @@ CREATE TABLE purchases (
   CHECK (entitlement_reset_strategy IS NULL OR entitlement_reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), entitlement_squad_uuids TEXT
   CHECK (entitlement_squad_uuids IS NULL OR (json_valid(entitlement_squad_uuids) AND json_type(entitlement_squad_uuids)='array')), entitlement_addon_squad_uuids TEXT
   CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor >= 0), reward_rollover_min_remaining_bps INTEGER CHECK (reward_rollover_min_remaining_bps IS NULL OR reward_rollover_min_remaining_bps BETWEEN 0 AND 10000), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER
-  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes > 0));
+  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes > 0), combo_squad_uuids TEXT);
 
 CREATE TABLE questionnaire_imports (
   id TEXT PRIMARY KEY,
@@ -991,7 +991,7 @@ CREATE TABLE squad_product_overrides (
 , stock_limit INTEGER
   CHECK (stock_limit IS NULL OR stock_limit >= 0), profile_json TEXT
   CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0
-  CHECK (activation_required IN (0,1)), activation_code_hash TEXT);
+  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor>=0 AND (billing_mode<>'payg' OR payg_price_minor>0)));
 
 CREATE TABLE statistics_snapshots (
   partition TEXT PRIMARY KEY CHECK (length(partition) BETWEEN 1 AND 80),
@@ -1264,6 +1264,32 @@ CREATE TABLE "xnode_nodes" (
  token_hash BLOB UNIQUE CHECK(token_hash IS NULL OR length(token_hash)=32), agent_id TEXT UNIQUE,
  desired_revision INTEGER NOT NULL DEFAULT 0, accepted_revision INTEGER NOT NULL DEFAULT 0,
  applied_revision INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+
+CREATE TABLE xnode_payg_accounts (
+ proxy_user_id INTEGER PRIMARY KEY REFERENCES xnode_identities(proxy_user_id),
+ user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,
+ node_id TEXT NOT NULL REFERENCES xnode_nodes(id),
+ period_id TEXT NOT NULL UNIQUE REFERENCES xnode_periods(id),
+ unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor>0),
+ purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes>=0),
+ UNIQUE(user_id,group_id,node_id)
+);
+
+CREATE TABLE xnode_payg_charges (
+ ledger_id TEXT PRIMARY KEY REFERENCES ledger_entries(id),
+ proxy_user_id INTEGER NOT NULL REFERENCES xnode_payg_accounts(proxy_user_id),
+ first_block INTEGER NOT NULL CHECK(first_block>=0),
+ blocks INTEGER NOT NULL CHECK(blocks>0),
+ unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor>0),
+ UNIQUE(proxy_user_id,first_block)
+);
+
+CREATE TABLE xnode_payg_minutes (
+ user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,
+ minute TEXT NOT NULL, traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes>=0),
+ spent_minor INTEGER NOT NULL DEFAULT 0 CHECK(spent_minor>=0),
+ PRIMARY KEY(user_id,group_id,minute)
 );
 
 CREATE TABLE xnode_period_nodes (
@@ -1582,6 +1608,10 @@ CREATE INDEX xnode_legacy_history_date_node_idx ON "xnode_imported_history"(date
 
 CREATE INDEX xnode_metered_probes_period ON xnode_metered_probes(period_id,node_id);
 
+CREATE INDEX xnode_payg_minutes_expiry ON xnode_payg_minutes(minute);
+
+CREATE INDEX xnode_payg_node ON xnode_payg_accounts(node_id,user_id);
+
 CREATE INDEX xnode_periods_purchase_idx ON xnode_periods(purchase_id);
 
 CREATE INDEX xnode_periods_user_idx ON xnode_periods(proxy_user_id,started_at);
@@ -1619,6 +1649,14 @@ CREATE TRIGGER compile_admin_temporary_bans_update AFTER UPDATE ON admin_tempora
 
 CREATE TRIGGER compile_combo_whitelist_update AFTER UPDATE OF whitelist_ip_quota ON combos
  BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_account_insert AFTER INSERT ON xnode_payg_accounts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_product_delete AFTER DELETE ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_product_insert AFTER INSERT ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_product_update AFTER UPDATE ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
 CREATE TRIGGER compile_purchases_delete AFTER DELETE ON purchases BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 

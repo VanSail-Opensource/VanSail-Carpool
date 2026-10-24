@@ -13,6 +13,9 @@ func customizationOwner(item Customization) string {
 	return "native." + strconv.FormatInt(item.ProxyUserID, 10)
 }
 func identityCustomizationOwner(item Identity) string {
+	if item.PAYGOwnerID != "" {
+		return item.PAYGOwnerID
+	}
 	return customizationOwner(Customization{UserID: item.UserID, ProxyUserID: item.ProxyUserID})
 }
 func (s *Service) customizationIdentity(ctx context.Context, owner, node string) (Identity, []string, error) {

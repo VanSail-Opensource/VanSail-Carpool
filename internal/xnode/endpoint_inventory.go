@@ -11,7 +11,7 @@ func (s *Service) MemberProxies(ctx context.Context, userID string) ([]subscript
 	return proxies, err
 }
 
-func (s *Service) memberInventory(ctx context.Context, userID string) ([]subscription.Proxy, bool, error) {
+func (s *Service) comboInventory(ctx context.Context, userID string) ([]subscription.Proxy, bool, error) {
 	access, err := s.memberAccess(ctx, userID)
 	if err != nil || !access.allowed {
 		return []subscription.Proxy{}, access.pending, err

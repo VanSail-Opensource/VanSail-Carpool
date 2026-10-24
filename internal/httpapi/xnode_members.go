@@ -10,6 +10,7 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 	if s.deps.XNode == nil {
 		return
 	}
+	router.Get("/api/v1/payg", s.ownedPAYG)
 	router.Route("/api/v1/xnode", func(router chi.Router) {
 		router.Get("/diy", s.xnodeDIY)
 		router.Post("/diy/preview", s.xnodePreviewDIY)

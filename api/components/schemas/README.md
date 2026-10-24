@@ -77,3 +77,5 @@ paths, destination previews and durable deployment phases without private secret
 measurements/estimates. Traffic counters and probe credentials are never exposed.
 
 `xnode-diy.yaml` defines owner DIY views, previews, both-revision writes and save receipts. `xnode-diy-overrides.yaml` is generated from the typed client-only tuning catalog.
+
+`payg.yaml` defines owner-only PAYG summaries, reporting timestamps, availability states and decimal-string traffic/wallet values. Squad-product contracts carry optional billing fields for compatibility with existing clients.

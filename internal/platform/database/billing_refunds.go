@@ -81,8 +81,8 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), item.id); err != nil {
 			return model.PaymentOrder{}, err
 		}
-		balance += item.price
-		if _, err := tx.ExecContext(ctx, `UPDATE balances SET txb_minor=?,updated_at=? WHERE user_id=?`, balance, stamp(now), order.UserID); err != nil {
+		balance, err = adjustBalanceTx(ctx, tx, order.UserID, item.price, now)
+		if err != nil {
 			return model.PaymentOrder{}, err
 		}
 		if _, err := insertLedgerTx(ctx, tx, order.UserID, item.price, balance, "purchase_cancellation", item.id, "cancelled after payment refund", now); err != nil {

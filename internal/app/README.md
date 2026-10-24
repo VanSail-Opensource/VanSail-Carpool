@@ -171,3 +171,5 @@ filtering and identical monitoring membership with and without export profiles.
 `xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.
 
 `connectivity_errors.go` maps native probe failures into stable client codes. `metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.
+
+PAYG jobs use the existing durable outbox and master executor. Startup and 30-second scans provision missing member/squad/node references in bounded batches. Connection scans and IP controls resolve every internal PAYG principal back to the authenticated member; source IP observations stay memory-only.

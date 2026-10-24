@@ -99,6 +99,11 @@ SquadProduct:
     - createdAt
     - updatedAt
   properties:
+    billingMode:
+      type: string
+      enum: [combo, payg]
+    paygPrice:
+      $ref: '../../openapi.yaml#/components/schemas/Money'
     id:
       $ref: '../../openapi.yaml#/components/schemas/ID'
     groupId:
@@ -284,6 +289,12 @@ SquadProductWrite:
   additionalProperties: false
   required: [groupId, name, description, profile, priceTxbMinor, visible, activationRequired]
   properties:
+    billingMode:
+      type: string
+      enum: [combo, payg]
+    paygPriceTxbMinor:
+      type: string
+      pattern: '^\d+$'
     groupId:
       type: string
       format: uuid

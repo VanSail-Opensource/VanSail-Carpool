@@ -14,7 +14,7 @@ func (s *Service) whitelistQuota(ctx context.Context, user string) (int, error) 
 		return 0, err
 	}
 	if purchase == nil {
-		return 5, nil
+		return 0, nil
 	}
 	if repo, ok := s.repo.(interface {
 		XNodeWhitelistQuota(context.Context, string) (int, error)
@@ -25,6 +25,7 @@ func (s *Service) whitelistQuota(ctx context.Context, user string) (int, error) 
 }
 
 func normalizeWhitelist(previous, input WhitelistPolicy, quota int) (WhitelistPolicy, error) {
+	if quota == 0 && input.Enabled { return input,ErrInvalid }
 	if len(input.IPs) > quota || len(input.IPs) > 1000 {
 		return input, ErrInvalid
 	}
@@ -54,6 +55,15 @@ func normalizeWhitelist(previous, input WhitelistPolicy, quota int) (WhitelistPo
 }
 
 func (s *Service) applyMemberWhitelist(ctx context.Context, user string, policy *wire.User) error {
+	purchase, err := s.EffectivePurchase(ctx, user)
+	if err != nil {
+		return err
+	}
+	if purchase == nil {
+		policy.WhitelistEnabled = false
+		policy.WhitelistedIPs = nil
+		return nil
+	}
 	_, settings, err := s.readDIYSettings(ctx, user)
 	if err != nil {
 		return err
@@ -77,6 +87,11 @@ func (s *Service) ownedWhitelist(ctx context.Context, user string, policy Whitel
 		return WhitelistView{}, err
 	}
 	view := WhitelistView{WhitelistPolicy: policy, Quota: quota, Phase: "disabled", PendingNodes: []string{}}
+	if quota == 0 {
+		view.Enabled = false
+		view.IPs = []string{}
+		return view, nil
+	}
 	view.IPs = slices.Clone(policy.IPs[:min(len(policy.IPs), quota)])
 	if !policy.Enabled {
 		return view, nil

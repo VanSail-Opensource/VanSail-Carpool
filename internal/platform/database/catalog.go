@@ -32,6 +32,8 @@ type ComboInput struct {
 // SquadProductInput is the local merchandising override associated with a
 // Proxy-owned internal squad.
 type SquadProductInput struct {
+	BillingMode        string
+	PAYGPriceTXBMinor  int64
 	ID                 string
 	GroupID            string
 	Name               string

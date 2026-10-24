@@ -16,6 +16,7 @@ type Credentials struct {
 }
 
 type Identity struct {
+	PAYGOwnerID        string    `json:"-"`
 	ProxyUserID        int64     `json:"proxyUserId,string"`
 	ReplacesID         int64     `json:"-"`
 	UserID             string    `json:"userId"`
@@ -29,6 +30,13 @@ type Identity struct {
 	LifetimeBase       int64     `json:"-"`
 	AccessDisabled     bool      `json:"accessDisabled"`
 	CreatedAt          time.Time `json:"createdAt"`
+}
+
+func (i Identity) MemberOwnerID() string {
+	if i.UserID != "" {
+		return i.UserID
+	}
+	return i.PAYGOwnerID
 }
 
 type Period struct {

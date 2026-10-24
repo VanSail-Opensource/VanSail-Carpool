@@ -244,3 +244,7 @@ the selected final status with zero body bytes. `subscription_response_test.go`
 covers both delivery paths and status boundaries in hosted CI.
 
 `xnode_diy.go` exposes authenticated owner-scoped DIY reads, draft previews and atomic saves with existing idempotency headers; request owners always come from the authenticated session.
+
+`payg.go` exposes authenticated `GET /api/v1/payg` for the current onboarded member only, with private/no-store headers. The existing squad-product write contract accepts billing mode and integer per-GB pricing.
+
+`payg_test.go` verifies owner isolation even when another user ID is supplied in the query string and confirms no-store financial responses.

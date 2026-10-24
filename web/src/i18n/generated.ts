@@ -1,3 +1,5 @@
+import enPAYG from '../../locales/en/payg.json'
+import zhPAYG from '../../locales/zh-CN/payg.json'
 import enNativeMetrics from '../../locales/en/native-metrics.json'
 import enDIY from '../../locales/en/diy.json'
 import enDIYFields from '../../locales/en/diy-fields.json'
@@ -107,8 +109,8 @@ const zhCN: typeof en = {
 }
 
 export const localeMessages = {
-  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics, ...enDIY, ...enDIYFields },
-  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics, ...zhDIY, ...zhDIYFields },
+  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics, ...enDIY, ...enDIYFields, ...enPAYG },
+  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics, ...zhDIY, ...zhDIYFields, ...zhPAYG },
 } as const
 
 export type Locale = keyof typeof localeMessages

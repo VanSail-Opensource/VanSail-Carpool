@@ -101,3 +101,5 @@ no authoritative host inventory, generic future-host preferences are retained.
 `client_policy.go` applies export policy after mappers: MPTCP is disabled on both XHTTP legs and external Mux/SMUX is omitted for XHTTP, while built-in XMUX remains. `client_policy_test.go` covers mapper precedence and supported Mihomo fingerprints. `tuning_fingerprints.go` follows https://github.com/MetaCubeX/mihomo/blob/Meta/component/tls/utls.go (reviewed 2026-10-23). `tuning_retirement.go` strips only known retired options from older saved documents. `split_name.go` merges shared name terms and canonical V4V6 families; `split_name_test.go` covers shared and unrelated names.
 
 `tuning_restrictions.go` confines version/platform guidance to the client format that implements it. Inapplicable inherited fields do not add empty compatibility rows.
+
+Internal `Proxy` attribution retains its published endpoint and billing principal for PAYG routing selection. These private references and credentials never enter ordinary JSON. Distinct squad credentials on one endpoint receive stable export IDs, and insufficient funds do not remove inventory entries.

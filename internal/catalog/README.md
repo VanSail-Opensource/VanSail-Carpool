@@ -42,3 +42,5 @@ This package builds the live catalog, validates purchase selections against curr
 `subscription_native_test.go` verifies native-only subscription reads retain disabled-squad preferences and the post-read purchase ownership fence. Existing legacy provider contracts remain compatible.
 
 `squad_additions_native_test.go` covers current native group validation and replay before live catalog reads. Add-ons use live group hydration; charged request keys retain their existing selection fingerprint and do not repeat activation-code checks or debits.
+
+PAYG conversion affects new quotes and future renewals, including custom squad overrides and add-ons. Purchased active/queued squads retain access. The native unified subscription source also supports PAYG-only members, while activeCombo continues to describe an actual combo. Wallet-funded PAYG is never treated as combo quota or rollover usage.

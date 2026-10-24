@@ -57,7 +57,14 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 		}
 		for _, r := range input.rules {
 			e := input.targets[r.ID]
-			credentials, binding := routingCredentials(doc, identity, routingmatchRule{r.ID, r.From, r.To}, e)
+			target, source := input.principals[e.ID], input.principals[input.sources[r.ID].ID]
+			if target.ProxyUserID == 0 {
+				target = identity
+			}
+			if source.ProxyUserID == 0 {
+				source = identity
+			}
+			credentials, binding := routingCredentials(doc, target, routingmatchRule{r.ID, r.From, r.To}, e)
 			if r.To == node && (plan.Phase == "active" || plan.Phase == "enabling") {
 				raw, err := inboundCredential(input.endpointInbounds[e.ID], credentials)
 				if err != nil {
@@ -65,7 +72,7 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 				}
 				binding.Credential = raw
 				for i := range users {
-					if int64(users[i].ID) == identity.ProxyUserID {
+					if int64(users[i].ID) == target.ProxyUserID {
 						found := false
 						for _, existing := range users[i].TransitCredentials {
 							found = found || existing.SourceNodeID == binding.SourceNodeID && existing.InboundTag == binding.InboundTag
@@ -99,7 +106,7 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 			}
 			out["tag"] = tag
 			outs = append(outs, out)
-			rule := managedNativeRule(r, identity.ProxyUserID, tag)
+			rule := managedNativeRule(r, source.ProxyUserID, tag)
 			if !input.legacy {
 				rule["inboundTag"] = []string{input.sources[r.ID].InboundTag}
 			}

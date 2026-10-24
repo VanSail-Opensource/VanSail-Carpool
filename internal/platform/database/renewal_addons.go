@@ -22,7 +22,7 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,COALESCE(o.price_txb_minor,0)
 		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
-		WHERE a.purchase_id=? ORDER BY a.group_id`, purchaseID)
+		WHERE a.purchase_id=? AND COALESCE(o.billing_mode,'combo')='combo' ORDER BY a.group_id`, purchaseID)
 	if err != nil {
 		return nil, fmt.Errorf("load current renewal add-ons: %w", err)
 	}

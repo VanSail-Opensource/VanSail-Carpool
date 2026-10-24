@@ -50,33 +50,18 @@ func (a proxyProvider) PollConnectionScan(ctx context.Context, id string) (conne
 		if !owned || !a.master.Connected(node.ID) {
 			continue
 		}
-		raw, err := a.master.Command(ctx, node.ID, "", "users.active_ips", map[string]int64{"user_id": identity.ProxyUserID})
+		ips, err := a.memberNodeIPs(ctx, identity.MemberOwnerID(), node.ID)
 		if err != nil {
 			return result, err
 		}
-		var ips []struct {
-			UserID      int64  `json:"user_id"`
-			SourceIP    string `json:"source_ip"`
-			Connections int    `json:"connections"`
-		}
-		if json.Unmarshal(raw, &ips) != nil {
-			return result, xnode.ErrInvalid
-		}
-		item := connections.ProviderNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, IPs: []connections.Observation{}}
-		for _, ip := range ips {
-			if ip.UserID != identity.ProxyUserID || ip.Connections < 0 {
-				return result, xnode.ErrInvalid
-			}
-			if ip.Connections > 0 {
-				item.IPs = append(item.IPs, connections.Observation{Address: ip.SourceIP, LastSeen: time.Now().UTC()})
-			}
-		}
+		item := connections.ProviderNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, IPs: ips}
+
 		result.Nodes = append(result.Nodes, item)
 	}
 	return result, nil
 }
 func (a proxyProvider) ControlMemberIP(ctx context.Context, user, ip, node string, drop bool, seconds int, unblock bool) error {
-	identity, err := a.native.IdentityForUser(ctx, user)
+	_, err := a.native.IdentityForUser(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -87,9 +72,52 @@ func (a proxyProvider) ControlMemberIP(ctx context.Context, user, ip, node strin
 	if !owned {
 		return xnode.ErrNotFound
 	}
-	_, err = a.master.Command(ctx, node, "", "ips.control", wire.IPControl{UserID: int(identity.ProxyUserID), SourceIP: ip, Drop: drop, BlockSeconds: seconds, Unblock: unblock})
-	return err
+	principals, err := a.native.MemberPrincipals(ctx, user, node)
+	if err != nil {
+		return err
+	}
+	for _, principal := range principals {
+		if _, err = a.master.Command(ctx, node, "", "ips.control", wire.IPControl{UserID: int(principal), SourceIP: ip, Drop: drop, BlockSeconds: seconds, Unblock: unblock}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 func (a proxyProvider) DropConnection(context.Context, string, string) error { return xnode.ErrInvalid }
 func (a proxyProvider) BlockIP(context.Context, string, string, int) error   { return xnode.ErrInvalid }
 func (a proxyProvider) UnblockIP(context.Context, string, string) error      { return xnode.ErrInvalid }
+
+// The caller supplies the authenticated member. No principal selector comes
+// from browser input, and observations stay request-local.
+func (a proxyProvider) memberNodeIPs(ctx context.Context, user, node string) ([]connections.Observation, error) {
+	principals, err := a.native.MemberPrincipals(ctx, user, node)
+	if err != nil {
+		return nil, err
+	}
+	out := []connections.Observation{}
+	seen := map[string]bool{}
+	for _, principal := range principals {
+		raw, err := a.master.Command(ctx, node, "", "users.active_ips", map[string]int64{"user_id": principal})
+		if err != nil {
+			return nil, err
+		}
+		var ips []struct {
+			UserID      int64  `json:"user_id"`
+			SourceIP    string `json:"source_ip"`
+			Connections int    `json:"connections"`
+		}
+		if json.Unmarshal(raw, &ips) != nil {
+			return nil, xnode.ErrInvalid
+		}
+		for _, ip := range ips {
+			if ip.UserID != principal || ip.Connections < 0 {
+				return nil, xnode.ErrInvalid
+			}
+			if ip.Connections > 0 && !seen[ip.SourceIP] {
+				seen[ip.SourceIP] = true
+				out = append(out, connections.Observation{Address: ip.SourceIP, LastSeen: time.Now().UTC()})
+			}
+		}
+	}
+	return out, nil
+}

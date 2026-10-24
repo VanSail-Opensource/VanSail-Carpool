@@ -102,6 +102,13 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	if err != nil {
 		return result, err
 	}
+	for _, proxy := range proxies {
+		if proxy.PrincipalID != 0 {
+			result.ExpiresAt = nil
+			result.LimitBytes = "0"
+			break
+		}
+	}
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete
 	proxies, err = s.ExportProxiesForUser(ctx, identity.UserID, proxies)

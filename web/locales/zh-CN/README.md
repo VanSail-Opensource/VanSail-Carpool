@@ -62,3 +62,5 @@ than in Vue templates, composables, or API clients.
 `native-metrics.json` labels browser-only profile, accounting and machine metric tables/charts.
 
 `diy.json` contains DIY controls, errors and compatibility messages; `diy-fields.json` contains generated typed option labels.
+
+`payg.json` localizes automatic PAYG pricing, eligibility, statistics and administrator conversion copy.

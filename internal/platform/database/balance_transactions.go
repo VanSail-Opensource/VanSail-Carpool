@@ -39,6 +39,9 @@ func setBalanceTx(ctx context.Context, tx *sql.Tx, userID string, current, next 
 	} else if affected != 1 {
 		return ErrConflict
 	}
+	if current != next {
+		return enqueuePAYGUserTx(ctx, tx, userID, now)
+	}
 	return nil
 }
 

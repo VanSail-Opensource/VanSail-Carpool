@@ -1,6 +1,5 @@
 import { createRouter } from 'vue-router'
 
-import { api } from '@/api/client'
 import { useSessionStore } from '@/stores/session'
 import { getTelegramStartParam, isTelegramWebAppDetected } from '@/utils/telegram'
 import { resolveProtectedRoute } from './guards'
@@ -39,23 +38,8 @@ const router = createRouter({
   ],
 })
 
-let catalogCheckVersion = 0
 let telegramStartParamConsumed = false
-router.afterEach((to, _from, failure) => {
-  completeRouteRecovery(to.fullPath)
-  if (failure) return
-  const version = ++catalogCheckVersion
-  const store = useSessionStore()
-  if (to.name !== 'catalog' || !store.user || store.user.role === 'admin' || store.session?.captcha?.required) return
-  const userId = store.user.id
-  // Render the page snapshot while retaining the live, server-enforced renewal gate.
-  void api.getDashboard().then(dashboard => {
-    if (version !== catalogCheckVersion || store.user?.id !== userId) return
-    if (dashboard.activePurchase?.autoRenewEnabled || dashboard.queuedPurchase?.autoRenewEnabled) {
-      void router.replace({ name: 'home', query: { autoRenewBlocked: '1' } })
-    }
-  }).catch(() => undefined)
-})
+router.afterEach((to) => { completeRouteRecovery(to.fullPath) })
 
 router.onError((error, to) => {
   if (!isRouteChunkError(error) || !beginRouteRecovery(to.fullPath)) return

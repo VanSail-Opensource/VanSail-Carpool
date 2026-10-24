@@ -194,3 +194,5 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 `093_native_only.sql` requires completed final accounting, translates pending native entitlement work, removes obsolete bridge secrets/checkpoints, renames native group/account fields, and retains historical usage without repricing it. Old migrations stay immutable.
 
 `094_delete_revoked_api_tokens.sql` purges credentials from earlier soft revocations while retaining immutable audit events.
+
+`095_payg.sql` adds sparse billing configuration, base-term squad references, native PAYG attribution, immutable ledger charge metadata and bounded minute aggregates. It preserves prior migrations and existing combo entitlements.
