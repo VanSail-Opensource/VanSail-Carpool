@@ -42,6 +42,16 @@ jobs:
           SELECT 1 / ((current_setting('password_encryption') = 'scram-sha-256')::int);
           SQL
           '
+      - name: Verify fresh PostgreSQL baseline and migration contracts
+        run: |
+          go test -c -o "$RUNNER_TEMP/postgres.test" ./internal/platform/database/postgres
+          container=$(docker compose -f deploy/postgres/compose.yml ps -q postgres)
+          docker cp "$RUNNER_TEMP/postgres.test" "$container:/tmp/postgres.test"
+          docker compose -f deploy/postgres/compose.yml exec -T postgres sh -c '
+            password=$(cat /run/secrets/migration_password)
+            export POSTGRES_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
+            /tmp/postgres.test -test.v
+          '
       - name: Stop isolated infrastructure
         if: always()
         run: docker compose -f deploy/postgres/compose.yml --profile postgres down -v

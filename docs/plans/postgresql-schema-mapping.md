@@ -12,7 +12,7 @@ The SQL companion preserves the full definitions for review and schema compariso
 | TEXT stable identifier | TEXT | Preserve bytes and case; no UUID coercion |
 | BLOB secret/hash/token | BYTEA | Preserve ciphertext and associated-data identity contexts |
 | TEXT canonical payload | TEXT | No JSONB recanonicalization of fingerprints, outbox or signed data |
-| Timestamp text | TIMESTAMPTZ | Update scanners and time-bound queries; preserve nanosecond evidence where required before choosing precision |
+| Timestamp text | TEXT initially | Owner selected exact preservation; defer TIMESTAMPTZ conversion |
 | Date-only bucket | DATE or deliberate TEXT | Preserve the accounting timezone/date policy |
 | INTEGER PRIMARY KEY | BIGINT identity or explicit stable ID | Explicit IDs remain allowed; reset sequences after import |
 | Implicit row ordering | Declared generated ordering column | Import original order for caches/queues; not a general editor row identity |
@@ -20,7 +20,8 @@ The SQL companion preserves the full definitions for review and schema compariso
 PostgreSQL timestamps have microsecond precision. Existing RFC3339Nano financial,
 cursor and optimistic-review values can contain nanoseconds; migration must
 explicitly preserve byte-sensitive evidence and define comparison/cursor semantics
-before conversion. Blind casts would discard information.
+before conversion. The owner selected exact timestamp text on 2026-10-24.
+No initial timestamp cast or rounding is permitted.
 
 All 127 tables require a baseline definition. Circular foreign keys require a
 second constraint phase or deferred validation during import. All 119 explicit

@@ -1,0 +1,8109 @@
+{
+  "tables": [
+    {
+      "name": "abuse_incident_facts",
+      "columns": [
+        {
+          "name": "incident_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "incident_bucket_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "selected_action",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "abuse_notification_deliveries",
+      "columns": [
+        {
+          "name": "record_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "recipient_telegram_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "delivered_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "abuse_record_nodes",
+      "columns": [
+        {
+          "name": "record_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "abuse_record_reasons",
+      "columns": [
+        {
+          "name": "record_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "abuse_records",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "incident_bucket_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "measured_qps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "qps_limit",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "selected_action",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "punishment_completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "abuse_temp_bans",
+      "columns": [
+        {
+          "name": "record_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "restore_queued_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "restored_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_bets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "game_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "stake_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "won",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payout_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_after_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "configuration_snapshot",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_daily_checkins",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "timezone",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_after_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_daily_rollups",
+      "columns": [
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "checkin_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "checkin_reward_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "group_message_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "group_message_reward_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_draw_delivery",
+      "columns": [
+        {
+          "name": "delivery_key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_draw_results",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "draw_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "prize_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "prize_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "fee_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_payload",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_after_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "configuration_snapshot",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_draw_revisions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "draw_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "snapshot_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_extension_credits",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "consumed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "consumed_by_purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "hours",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_games",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "icon",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "win_chance_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "minimum_stake_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "maximum_stake_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "return_multiplier_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_group_message_events",
+      "columns": [
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "counted",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_group_message_raw_events",
+      "columns": [
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_group_message_windows",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "message_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "rewarded_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_lucky_draws",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "fee_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expected_participation",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "threshold",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "keyword",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "command",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "group_chat_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "announcement_message_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_lucky_prizes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "draw_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "position",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability_bps",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "stock",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_payload",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_raffle_tickets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "draw_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "fee_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reserve_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "configuration_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "prize_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "result_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "activity_reward_squad_access",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "squad_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "source_result_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        }
+      ]
+    },
+    {
+      "name": "admin_api_tokens",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "token_prefix",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "token_hash",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scopes_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_used_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revoked_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "admin_coupon_discard_commands",
+      "columns": [
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "grant_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "admin_temporary_bans",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ban_operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unban_operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unban_reason",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "restored_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "affiliate_config_current",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "config_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "affiliate_config_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "affiliate_settlements",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "invited_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "inviter_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payment_order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "config_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "tier_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "tier_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "commission_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "topup_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "commission_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settled_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "affiliate_tier_awards",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "inviter_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "tier_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settlement_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "tier_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_coupon_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_txb_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_extension_days",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "awarded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "affiliate_tiers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "config_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "position",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "success_threshold",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "commission_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "commission_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_coupon_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_txb_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_extension_days",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "audit_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "action",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "detail",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "backup_runs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "path",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'generated'",
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "sha256",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "original_filename",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "backup_uploads",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "backup_run_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expected_sha256",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "actual_sha256",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "temporary_path",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "final_path",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "balances",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "browser_access_links",
+      "columns": [
+        {
+          "name": "token_hash",
+          "type": "BLOB",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "return_to",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "combos",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "price_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "validity_days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_limit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "active",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "rollover_min_remaining_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "included_squad_uuids",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "reset_strategy",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'MONTH_ROLLING'",
+          "primaryKey": 0
+        },
+        {
+          "name": "ip_lookup_quota",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "whitelist_ip_quota",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "5",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "connection_ip_blocks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ip_digest",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sealed_ip",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'blocking'",
+          "primaryKey": 0
+        },
+        {
+          "name": "block_operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "unblock_operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expiry_job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "connection_scans",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'queued'",
+          "primaryKey": 0
+        },
+        {
+          "name": "progress_percent",
+          "type": "REAL",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "error_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "coupon_definitions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "discount_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "value_minor_or_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "percent_cap_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "eligible_combo_ids",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "eligible_squad_ids",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "global_use_limit",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "per_user_use_limit",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "active",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "admin_visible",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "coupon_grant_discards",
+      "columns": [
+        {
+          "name": "grant_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "discarded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "coupon_grants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "coupon_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'active'",
+          "primaryKey": 0
+        },
+        {
+          "name": "use_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "consumed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "coupon_redemptions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "coupon_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "grant_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_delta_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_after_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "coupon_uses",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "coupon_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "grant_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "gross_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "discount_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "net_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "courtesy_credits",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "payment_order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ledger_entry_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "database_admin_reviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "action",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "table_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "consumed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "emby_account_disabled_folders",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "folder_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "emby_accounts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "base_username",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "remote_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "remote_username",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "candidate_username",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "setup_price_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "setup_attempt",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "password_ciphertext",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "password_context",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "max_parental_rating",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "create_attempted",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "provisioned_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "refunded_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "pending_preferences_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "host_connectivity_attempts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "host_uuid",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "config_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "trigger",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "finished_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "latency_ms",
+          "type": "REAL",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "http_status",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "error_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "ip_lookup_allowances",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "total",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "used",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "ip_lookup_checks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "report_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "allowance_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charge_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cached",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "refunded",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "quota_consumed",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "ip_lookup_live_snapshots",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "ip",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "details_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "run_key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "ip_lookup_reports",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "ip",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "report_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "live_state_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "heartbeat_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lease_owner",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lease_expires_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cache_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "ledger_entries",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "delta_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "balance_after",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reference_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "note",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "maintenance_runs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lease_owner",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lease_expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "backup_run_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cleanup_counts_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "error_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "member_identity_aliases",
+      "columns": [
+        {
+          "name": "old_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "old_proxy_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proxy_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "node_compensation_config",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "threshold_minutes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "multiplier_bps",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "node_compensation_event_recipients",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "node_compensation_event_squads",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "squad_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "squad_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "node_compensation_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "offline_observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recovered_observed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_duration_seconds",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "threshold_minutes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "multiplier_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proposed_extension_minutes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "final_extension_minutes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "capped",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "frozen_recipient_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "eligible_recipient_count",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "skipped_recipient_count",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ineligible_reason",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reviewed_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reviewed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "review_reason",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "review_idempotency_key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "review_fingerprint",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "node_compensation_node_state",
+      "columns": [
+        {
+          "name": "node_uuid",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "is_connected",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "is_disabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "open_event_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "onboarding_content",
+      "columns": [
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "draft_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "published_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "draft_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "published_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "published_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "outbox_jobs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payload",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'pending'",
+          "primaryKey": 0
+        },
+        {
+          "name": "attempts",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "available_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "panel_entry_verification",
+      "columns": [
+        {
+          "name": "telegram_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "checked",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "payment_callback_tombstones",
+      "columns": [
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "dedupe_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payload_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "received_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "processed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "payment_orders",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payable_amount",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payable_currency",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "rate_snapshot",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_trade_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_charge_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payment_url",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "qr_payload",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_payload",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "paid_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "refunded_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "method_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_rail",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "rate_direction",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'currency_per_txb'",
+          "primaryKey": 0
+        },
+        {
+          "name": "receiving_address",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actual_crypto_amount",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actual_crypto_currency",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cancelled_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cancel_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_cancel_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "payment_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled_channels",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "endpoint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "merchant_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "credential_ciphertext",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "acknowledgement",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "payment_status_rollups",
+      "columns": [
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "order_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "provider_operation_items",
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "item_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "target_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'queued'",
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_reference",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "error_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "result_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "attempt_started_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "provider_operation_replays",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "provider_operations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "owner_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'queued'",
+          "primaryKey": 0
+        },
+        {
+          "name": "attempts",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "attempt_started_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_reference",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "error_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "result_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'{}'",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "purchase_addon_adjustments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "purchase_addons",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "charged_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "purchase_history_tombstones",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "combo_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "gross_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "core_gross_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coupon_discount_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "addon_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_limit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reset_strategy",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_batch_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_index",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_renew_source_purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "removed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "purchase_rollovers",
+      "columns": [
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_limit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "used_traffic_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "remaining_traffic_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "minimum_remaining_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "net_paid_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "credited_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "exception_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "attempts",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "allocated_traffic_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "eligible_unused_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "algorithm_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "purchases",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "combo_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_reset_phase",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'pending'",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coupon_grant_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "gross_price_txb_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coupon_discount_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_batch_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_index",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_renew_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_renew_failure_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_renew_failed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recurring_discount_attached",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_renew_source_purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "core_gross_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "entitlement_traffic_limit_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entitlement_reset_strategy",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entitlement_squad_uuids",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entitlement_addon_squad_uuids",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_renewal_price_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_rollover_min_remaining_bps",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_traffic_renewal",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_renewal_traffic_limit_bytes",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "questionnaire_imports",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "questionnaire_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "raw_csv",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "delimiter",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "headers_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sample_rows_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "data_row_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "malformed_row_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "code_column",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "analysis_json",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "report_json",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "questionnaire_participants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "questionnaire_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "validation_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "awarded_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "questionnaires",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "form_url",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reward_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "closes_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "refunds",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "payment_order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "renewal_batches",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "term_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "restore_jobs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "backup_run_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "staged_path",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "rescue_path",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_sha256",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "error",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_actor_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "rollover_member_daily_rollups",
+      "columns": [
+        {
+          "name": "local_date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "settlement_count",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "credited_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "allocated_traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "used_traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "schema_migrations",
+      "columns": [
+        {
+          "name": "version",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "applied_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "sessions",
+      "columns": [
+        {
+          "name": "token_hash",
+          "type": "BLOB",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scope",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'miniapp'",
+          "primaryKey": 0
+        },
+        {
+          "name": "renewed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "columns": [
+        {
+          "name": "key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "value",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "encrypted",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "squad_product_overrides",
+      "columns": [
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "price_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "visible",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "stock_limit",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "profile_json",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "activation_required",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "activation_code_hash",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "statistics_snapshots",
+      "columns": [
+        {
+          "name": "partition",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "payload_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_boost_receipts",
+      "columns": [
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "boost_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_pm_conversations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "topic_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "profile_message_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "profile_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'missing'",
+          "primaryKey": 0
+        },
+        {
+          "name": "topic_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'new'",
+          "primaryKey": 0
+        },
+        {
+          "name": "topic_operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_pm_payloads",
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "encrypted_payload",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_pm_read_status",
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "read_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "telegram_pm_updates",
+      "columns": [
+        {
+          "name": "update_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "txb_limits",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "minimum_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "maximum_txb_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "usdt_quotes",
+      "columns": [
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "network",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "token",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recipient",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "amount",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "atomic_amount",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "usdt_scan_cursors",
+      "columns": [
+        {
+          "name": "network",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "token",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "value",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "usdt_transfers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "network",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "token",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recipient",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "atomic_amount",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "amount",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "tx_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "occurred_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "received_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "dismissed_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "dismissed_reason",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "dismissed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "user_disabled_squads",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "squad_uuid",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "user_notification_events",
+      "columns": [
+        {
+          "name": "event_key",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payload_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "gate_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "queued_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "user_preferences",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "notify_combos",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "notify_traffic",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "notify_money",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "notify_activity",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "notify_account",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "show_referral_username",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "show_around_tx",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "show_activity",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "include_node_prices",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "telegram_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "telegram_first_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "telegram_last_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "telegram_username",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'user'",
+          "primaryKey": 0
+        },
+        {
+          "name": "onboarding_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'intro'",
+          "primaryKey": 0
+        },
+        {
+          "name": "group_joined",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "channel_joined",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_accepted_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recovery_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "accepted_agreement_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "new_user",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "inviter_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "notification_locale",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'en'",
+          "primaryKey": 0
+        },
+        {
+          "name": "auto_traffic_reset_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "display_currency",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'TXB'",
+          "primaryKey": 0
+        },
+        {
+          "name": "pm_blocked",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "pm_muted",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "webhook_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "dedupe_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "order_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "payload_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "received_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "processed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_compile_revision",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_config_snippets",
+      "columns": [
+        {
+          "name": "config_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "snippet_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "position",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_configs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "document_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_customizations",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "outbounds_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "routing_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_daily_usage",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 4
+        },
+        {
+          "name": "upload_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "download_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "weighted_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "weight_remainder",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_endpoints",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "inbound_tag",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "port",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "hidden",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "overrides_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_bans",
+      "columns": [
+        {
+          "name": "generation",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "prefix",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ip",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "rule",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "detected_count",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "detected_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "until_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "refresh_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "issued_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "released_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "released_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "participants",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expired",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_clock",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "inventory_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "active_bans",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_cursors",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "namespace",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "sequence",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_exemptions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ip",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "hours",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "until_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "issued_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "released_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "ledger_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "grant_kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'member'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_members",
+      "columns": [
+        {
+          "name": "ordinal",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "active",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "applied",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "source_applied",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "force_sync",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "connection_epoch",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_firewall_sources",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "generation",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "until_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "refresh_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "issued_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "released_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "released_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "participants",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expired",
+          "type": "BLOB",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_group_bindings",
+      "columns": [
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "inbound_tag",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        }
+      ]
+    },
+    {
+      "name": "xnode_groups",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_identities",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "service_name",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "credentials_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "subscription_hash",
+          "type": "BLOB",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "subscription_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "current_period_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "legacy_user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lifetime_base",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "access_disabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_imported_history",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "date",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "raw_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "weighted_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_imported_usage",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "used_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "lifetime_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_reset_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "synced_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_member_diy",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_metered_probes",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "pair_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "endpoint_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "inbound_tag",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revoked_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "flushed_sequence",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_node_rates",
+      "columns": [
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "from_sequence",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "multiplier_fp",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_nodes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "country_code",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "provider_name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "multiplier_fp",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1000000",
+          "primaryKey": 0
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "config_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settings_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "token_hash",
+          "type": "BLOB",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "desired_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "accepted_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "applied_revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_period_nodes",
+      "columns": [
+        {
+          "name": "period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "flushed_sequence",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_periods",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ended_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "limit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "strategy",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_reset_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "used_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'open'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_report_cursors",
+      "columns": [
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_sequence",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_digest",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_routing_plans",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "legacy_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "phase",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_service_bindings",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "inbound_tag",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_snippets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "document_cipher",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    }
+  ],
+  "indexes": [
+    "abuse_incident_facts_member",
+    "abuse_records_member",
+    "activity_bets_game_created_idx",
+    "activity_bets_user_created_idx",
+    "activity_checkins_user_created_idx",
+    "activity_draw_results_draw_created_idx",
+    "activity_draw_results_user_created_idx",
+    "activity_extension_user_idx",
+    "activity_group_message_events_created_idx",
+    "activity_group_message_raw_events_created_idx",
+    "activity_group_message_windows_date_idx",
+    "activity_prizes_draw_idx",
+    "activity_raffle_open_command_idx",
+    "activity_raffle_open_keyword_idx",
+    "activity_raffle_tickets_draw_status_idx",
+    "admin_api_tokens_owner",
+    "admin_temporary_bans_due",
+    "affiliate_settlements_inviter_idx",
+    "affiliate_tiers_enabled_threshold_idx",
+    "audit_created_idx",
+    "backup_runs_upload_idempotency_idx",
+    "backup_uploads_status_updated_idx",
+    "browser_access_links_expiry_idx",
+    "connection_ip_blocks_expiry_job_idx",
+    "connection_ip_blocks_owner_expiry_idx",
+    "connection_scans_owner_expiry_idx",
+    "coupon_active_expiry_idx",
+    "coupon_grant_discards_user_idx",
+    "coupon_grants_user_status_idx",
+    "coupon_redemptions_coupon_user_idx",
+    "coupon_uses_coupon_user_idx",
+    "courtesy_credits_created_idx",
+    "database_admin_reviews_expiry_idx",
+    "emby_accounts_status_idx",
+    "emby_setup_open_operation_idx",
+    "firewall_bans_detecting_ip_active",
+    "host_connectivity_attempts_host_idx",
+    "host_connectivity_attempts_latest_idx",
+    "host_connectivity_attempts_started_idx",
+    "ip_lookup_cache",
+    "ip_lookup_cache_key",
+    "ip_lookup_check_report",
+    "ip_lookup_inflight",
+    "ip_lookup_live_cache",
+    "ledger_user_created_idx",
+    "maintenance_runs_local_date_idx",
+    "maintenance_runs_status_lease_idx",
+    "node_compensation_events_created_idx",
+    "node_compensation_events_status_cursor",
+    "node_compensation_one_observing_per_node",
+    "node_compensation_review_keys",
+    "outbox_active_payload_idx",
+    "outbox_available_idx",
+    "outbox_failed_retention_idx",
+    "outbox_jobs_admin_page_idx",
+    "outbox_jobs_admin_status_page_idx",
+    "payment_callback_tombstones_order_idx",
+    "payment_orders_admin_page_idx",
+    "payment_orders_admin_status_page_idx",
+    "payment_orders_method_created_idx",
+    "payment_orders_user_created_idx",
+    "payment_profiles_provider_idx",
+    "provider_operation_items_status_idx",
+    "provider_operation_replays_resolution_key_idx",
+    "provider_operations_owner_created_idx",
+    "provider_operations_status_updated_idx",
+    "purchase_addon_adjustments_purchase_created_idx",
+    "purchase_addons_squad_idx",
+    "purchase_history_tombstones_combo_created_idx",
+    "purchase_history_tombstones_user_created_idx",
+    "purchase_rollovers_status_idx",
+    "purchases_admin_page_idx",
+    "purchases_admin_status_page_idx",
+    "purchases_auto_renew_due_idx",
+    "purchases_auto_renew_successor_idx",
+    "purchases_combo_created_idx",
+    "purchases_renewal_term_idx",
+    "purchases_user_idempotency_idx",
+    "purchases_user_status_idx",
+    "purchases_xnode_from_idx",
+    "purchases_xnode_until_idx",
+    "questionnaire_imports_status_idx",
+    "questionnaire_participants_lookup_idx",
+    "questionnaire_participants_questionnaire_awarded_idx",
+    "questionnaire_participants_user_history_idx",
+    "questionnaires_active_closes_idx",
+    "questionnaires_created_idx",
+    "questionnaires_single_active_idx",
+    "refunds_admin_status_page_idx",
+    "refunds_created_idx",
+    "restore_jobs_created_idx",
+    "restore_jobs_request_key_idx",
+    "rollover_member_daily_user_date_idx",
+    "sessions_miniapp_user_unique_idx",
+    "sessions_scope_expiry_idx",
+    "sessions_user_id_idx",
+    "telegram_pm_conversation_page_idx",
+    "telegram_pm_payload_expiry_idx",
+    "telegram_pm_profile_attempt_idx",
+    "telegram_pm_topic_idx",
+    "telegram_pm_update_retention_idx",
+    "usdt_transfers_match_idx",
+    "usdt_transfers_review_idx",
+    "user_notification_events_gate_idx",
+    "user_notification_events_source_idx",
+    "users_admin_page_idx",
+    "users_inviter_created_idx",
+    "xnode_daily_usage_date_node_idx",
+    "xnode_daily_usage_user_date_idx",
+    "xnode_endpoints_node_idx",
+    "xnode_firewall_active_prefix",
+    "xnode_firewall_active_source",
+    "xnode_firewall_ban_versions",
+    "xnode_firewall_exemption_versions",
+    "xnode_legacy_history_date_node_idx",
+    "xnode_metered_probes_period",
+    "xnode_periods_purchase_idx",
+    "xnode_periods_user_idx",
+    "xnode_service_bindings_expiry_idx"
+  ],
+  "triggers": [
+    "affiliate_config_versions_no_delete",
+    "affiliate_config_versions_no_update",
+    "affiliate_tiers_no_delete",
+    "affiliate_tiers_no_update",
+    "compile_admin_temporary_bans_delete",
+    "compile_admin_temporary_bans_insert",
+    "compile_admin_temporary_bans_update",
+    "compile_combo_whitelist_update",
+    "compile_purchases_delete",
+    "compile_purchases_insert",
+    "compile_purchases_update",
+    "compile_routing_templates_insert",
+    "compile_routing_templates_update",
+    "compile_settings_delete",
+    "compile_settings_insert",
+    "compile_settings_update",
+    "compile_user_disabled_squads_delete",
+    "compile_user_disabled_squads_insert",
+    "compile_user_disabled_squads_update",
+    "compile_users_delete",
+    "compile_users_insert",
+    "compile_users_update",
+    "compile_xnode_config_snippets_delete",
+    "compile_xnode_config_snippets_insert",
+    "compile_xnode_config_snippets_update",
+    "compile_xnode_configs_delete",
+    "compile_xnode_configs_insert",
+    "compile_xnode_configs_update",
+    "compile_xnode_customizations_delete",
+    "compile_xnode_customizations_insert",
+    "compile_xnode_customizations_update",
+    "compile_xnode_group_bindings_delete",
+    "compile_xnode_group_bindings_insert",
+    "compile_xnode_group_bindings_update",
+    "compile_xnode_groups_delete",
+    "compile_xnode_groups_insert",
+    "compile_xnode_groups_update",
+    "compile_xnode_identities_delete",
+    "compile_xnode_identities_insert",
+    "compile_xnode_identities_update",
+    "compile_xnode_nodes_delete",
+    "compile_xnode_nodes_insert",
+    "compile_xnode_nodes_update",
+    "compile_xnode_periods_delete",
+    "compile_xnode_periods_insert",
+    "compile_xnode_periods_update",
+    "compile_xnode_probe_insert",
+    "compile_xnode_probe_revoke",
+    "compile_xnode_routing_insert",
+    "compile_xnode_routing_update",
+    "compile_xnode_service_bindings_delete",
+    "compile_xnode_service_bindings_insert",
+    "compile_xnode_service_bindings_update",
+    "compile_xnode_snippets_delete",
+    "compile_xnode_snippets_insert",
+    "compile_xnode_snippets_update",
+    "firewall_exemption_inventory_insert",
+    "firewall_exemption_inventory_release",
+    "firewall_inventory_insert",
+    "firewall_inventory_release",
+    "preference_visibility_after_transition",
+    "preference_visibility_before_purchase",
+    "preference_visibility_before_transition",
+    "provider_operation_items_open_host_guard",
+    "retire_xnode_firewall_member",
+    "usdt_terminal_evidence_immutable",
+    "user_notification_events_immutable"
+  ]
+}

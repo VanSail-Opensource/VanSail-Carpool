@@ -23,6 +23,9 @@ type DatabaseConfig struct {
 	MigrateOnStart   bool
 }
 
+// LoadDatabase validates database-only bootstrap settings for operator commands.
+func LoadDatabase() (DatabaseConfig, error) { return loadDatabase() }
+
 func loadDatabase() (DatabaseConfig, error) {
 	cfg := DatabaseConfig{Driver: strings.ToLower(envDefault("DB_DRIVER", "sqlite"))}
 	if cfg.Driver != "sqlite" && cfg.Driver != "postgres" {

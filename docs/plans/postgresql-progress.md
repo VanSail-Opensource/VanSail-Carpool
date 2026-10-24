@@ -8,7 +8,7 @@ evidence from the selected deployment.
 | --- | --- | --- |
 | 01 Inventory | Fixture utility, final schema, SQL-contract/source locations, mapping, invariants and risk report implemented | Static review passed; hosted determinism pending; production measurements require target access |
 | 02 Infrastructure/config | Isolated PostgreSQL 18 profile, SCRAM roles/secrets, pool/deadline/policy validation, explicit activation refusal implemented | Hosted startup/authentication/privilege checks pending; application network dependency belongs to activation stage |
-| 03 Goose baseline | Pending | Timestamp precision decision required before durable type mapping |
+| 03 Goose baseline | Forward-only engine, full generated baseline, catalog contract and schema CLI implemented | Hosted fresh/reapply/immutability checks pending |
 | 04 pgx compatibility | Pending | Depends on baseline and exact value/scanner contracts |
 | 05 Domain repositories | Pending | Depends on backend compatibility |
 | 06 Financial concurrency | Pending | Requires hosted row-lock, stock, callback and retry regressions |
@@ -19,14 +19,13 @@ evidence from the selected deployment.
 | 11 Conversion CLI | Pending | Schema/type policy and reconciliation contracts required |
 | 12 Rehearsal/cutover | Pending | Staging/production target, verified ingress policy and recovery evidence required |
 
-## Decisions requiring deployment-owner input
+## Deployment decisions
 
 PostgreSQL TIMESTAMPTZ stores microseconds, while current Go timestamp values can
 contain nanoseconds. The proposed safe transition is to preserve exact timestamp
 text initially, then perform a separately verified conversion. This changes the
-plan's initial type mapping and has not been silently adopted. Alternatively,
-the deployment owner may explicitly accept microsecond rounding with updated
-cursor/optimistic-review/reconciliation semantics.
+plan's initial type mapping. The owner explicitly selected exact preservation on
+2026-10-24; the PostgreSQL baseline retains timestamp TEXT accordingly.
 
 Staging and production targets, protected snapshot access and backup repository
 have not been selected. No live cutover or database mutation has been attempted.

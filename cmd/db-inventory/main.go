@@ -44,6 +44,9 @@ func run(output, source string) error {
 	if err == nil {
 		err = database.NewStore(db).MigrateTelegramIdentities(ctx, vault)
 	}
+	if err == nil {
+		err = dbinventory.WriteFixtureSeeds(ctx, db, output)
+	}
 	closeErr := db.Close()
 	if err != nil {
 		return err
