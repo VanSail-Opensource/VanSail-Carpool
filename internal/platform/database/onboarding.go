@@ -11,6 +11,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/onboarding"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func (s *Store) OnboardingBundle(ctx context.Context, kind string) (onboarding.Bundle, error) {
@@ -162,6 +163,13 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 	if _, err := tx.ExecContext(ctx, `DELETE FROM panel_entry_verification WHERE telegram_id=(SELECT telegram_id FROM users WHERE id=?)`, userID); err != nil {
 		return model.User{}, err
 	}
+	payload, err := json.Marshal(map[string]string{"userId": userID})
+	if err != nil {
+		return model.User{}, err
+	}
+	if err := insertOutboxTx(ctx, tx, xnode.AccessRepairJob, string(payload), acceptedAt, acceptedAt); err != nil {
+		return model.User{}, err
+	}
 	var purchased int
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status IN ('active','activating','queued') AND valid_until>?)`, userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
 		return model.User{}, err
@@ -170,6 +178,9 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, acceptedAt, acceptedAt); err != nil {
 			return model.User{}, err
 		}
+	}
+	if err := enqueuePAYGUserTx(ctx, tx, userID, acceptedAt); err != nil {
+		return model.User{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return model.User{}, err

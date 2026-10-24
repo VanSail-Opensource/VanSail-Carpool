@@ -66,6 +66,11 @@ members do not require an assigned username. Missing or mismatched native period
 produce pending provisioning, distinct from inactive access and configured empty
 HTTP responses. `access_repair.go` runs through the shared durable outbox;
 `EnqueueXNodeAccessRepairs` scans bounded batches at startup and every 30 seconds.
+All onboarded members receive stable subscription credentials through this queue,
+including members without a combo or wallet funds. The same scan backfills older
+members without identities; credential creation alone grants no node admission.
+`onboarding_provisioning_test.go` covers queued signup, idempotent links and the
+absence of unpaid combo quota or admission in hosted CI.
 Recovery reuses an existing open period without resetting its usage. Closed or
 settling periods for the same purchase require review; they are never replaced
 with a fresh allowance. Frozen imported usage remains settlement evidence.
@@ -652,6 +657,13 @@ including routing jobs left in the former multi-hour retry delay.
 ## Automatic PAYG
 
 `payg_types.go` defines optional repository contracts and owner-only transport models. `payg_provision.go` provisions encrypted internal member/squad/node identities through the shared outbox; they have no independent bearer subscription. Active and paid queued combo squads suppress PAYG admission without deleting prepaid balances.
+
+Agreement completion immediately queues provisioning for configured PAYG squads,
+including wallets funded before onboarding. Existing 30-second bounded scans and
+wallet-change jobs repair missing tuples after catalog or node changes.
+`onboarding_payg_sync_test.go` follows funded signup through the real durable
+dispatcher, agent synchronization, committed recovery barrier and expiring PAYG
+authorization; idle provisioning must preserve the wallet and prepaid counters.
 
 `payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for automatic continuation purchases after at least 10 KiB has been metered on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; raw bytes remain cumulative across reconnects and count toward the first purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
 

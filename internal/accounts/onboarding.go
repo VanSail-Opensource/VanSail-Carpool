@@ -23,7 +23,7 @@ func (s *Service) BeginAgreement(ctx context.Context, user model.User) (model.Us
 }
 
 // AcceptAgreementRevision validates the published agreements and completes the
-// local account. Proxy provisioning begins only after a combo purchase.
+// local account. Credential and PAYG provisioning run in the durable outbox.
 func (s *Service) AcceptAgreementRevision(ctx context.Context, user model.User, revision int, agreementIDs []string) (model.User, error) {
 	if user.OnboardingState != "agreement" || revision <= 0 {
 		return model.User{}, fmt.Errorf("%w: %w", ErrAgreementStateConflict, database.ErrConflict)

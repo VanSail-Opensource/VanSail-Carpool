@@ -11,7 +11,8 @@ import (
 const AccessRepairJob = "xnode_access_repair"
 
 // RepairAccess runs only in the shared durable outbox, never in compilation or
-// bearer handlers. Existing periods retain their counters and settlement state.
+// bearer handlers. Every onboarded member receives subscription credentials;
+// existing periods retain their counters and settlement state.
 func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 	var input struct {
 		UserID string `json:"userId"`
@@ -23,19 +24,19 @@ func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 	if err != nil || user.OnboardingState != "complete" {
 		return err
 	}
-	purchase, err := s.EffectivePurchase(ctx, user.ID)
-	if err != nil || purchase == nil {
-		return err
-	}
-	restricted, err := s.repo.XNodeUserRestricted(ctx, user.ID)
-	if err != nil || restricted {
-		return err
-	}
 	identity, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
 	if isMissing(err) {
 		identity, err = s.EnsureIdentity(ctx, user)
 	}
 	if err != nil {
+		return err
+	}
+	purchase, err := s.EffectivePurchase(ctx, user.ID)
+	if err != nil || purchase == nil {
+		return err
+	}
+	restricted, err := s.repo.XNodeUserRestricted(ctx, user.ID)
+	if err != nil || restricted || identity.AccessDisabled {
 		return err
 	}
 	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)

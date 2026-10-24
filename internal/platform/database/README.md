@@ -665,6 +665,14 @@ duplicate wakes, live leases, terminal receipts and retained DIY result evidence
 
 `xnode_payg_jobs.go` coalesces balance-change provisioning through the existing outbox, scans missing tuples in bounded batches and prunes disposable 72-hour minute aggregates. Credentials, cumulative counters and financial evidence remain durable. Source IPs, connection observations, generated subscriptions and lease timestamps are never stored. `xnode_payg_owners.go` provides indexed service lookups, node-scoped compiler identities and credential-free activity ownership reads.
 
+`onboarding.go` queues `xnode_access_repair` for every agreement completion and
+`xnode_payg_reconcile` when PAYG is configured, in the agreement transaction.
+`xnode_access_repair.go` also backfills completed members without credentials,
+independently of purchases or funds. Existing paid-period repair retains its
+restriction and accounting fences. `onboarding_provisioning_test.go` covers
+purchase-free signup, PAYG queueing, incomplete-member exclusion and coalesced
+backfill in hosted SQLite/PostgreSQL CI.
+
 `xnode_payg_billing_test.go` and `xnode_payg_concurrency_test.go` cover automatic GB boundaries, replay, price changes, debt, failed batches, simultaneous nodes and bounded statistics in hosted SQLite/PostgreSQL CI. Local automated suites remain prohibited.
 
 `automatic_renewal_types.go` owns renewal quote contracts. `automatic_renewal_failure.go` retains existing failed-renewal settlement; PAYG empty renewals preserve rollover separately. `billing_renewal_quote.go` isolates future-term pricing from batch mutation.
