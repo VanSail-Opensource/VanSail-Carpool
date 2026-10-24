@@ -6,6 +6,13 @@ $$;
 CREATE FUNCTION json_valid(value text) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
  SELECT COALESCE(value IS JSON, false)
 $$;
+CREATE FUNCTION json_type(value text) RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
+ SELECT CASE jsonb_typeof(value::jsonb)
+ WHEN 'number' THEN CASE WHEN value::jsonb::text ~ '^-?[0-9]+$' THEN 'integer' ELSE 'real' END
+ WHEN 'boolean' THEN value::jsonb::text
+ ELSE jsonb_typeof(value::jsonb) END
+$$;
+CREATE FUNCTION instr(value text,needle text) RETURNS integer LANGUAGE sql IMMUTABLE STRICT AS $$ SELECT strpos(value,needle) $$;
 -- +goose StatementBegin
 CREATE FUNCTION json_extract(value text,path text) RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT AS $$
 DECLARE result jsonb;
