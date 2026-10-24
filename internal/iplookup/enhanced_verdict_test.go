@@ -1,10 +1,6 @@
 package iplookup
 
-import (
-	"encoding/json"
-	"reflect"
-	"testing"
-)
+import "testing"
 
 func TestProbeGateAndSuspectedFindings(t *testing.T) {
 	cases := []struct {
@@ -33,27 +29,5 @@ func TestNeighborAbuseDoesNotRefuseRequestedIP(t *testing.T) {
 	applyEnhancedVerdict(&r)
 	if r.Verdict != "unsuitable" {
 		t.Fatal("proxy match did not refuse")
-	}
-}
-
-func TestConfirmedServicesCombinePerPortAndCloudflareRefuses(t *testing.T) {
-	r := Report{Verdict: "suitable", Proxy: &ProxyAssessment{Status: "success"}, Ports: []PortProbe{
-		{Port: 443, Status: "success", Findings: []ProbeFinding{
-			{Protocol: "socks5", Confidence: "confirmed"},
-			{Protocol: "socks5", Confidence: "confirmed"},
-			{Protocol: "http", Confidence: "confirmed"},
-			{Protocol: "cloudflare", Confidence: "confirmed"},
-		}},
-		{Port: 8443, Status: "success", Findings: []ProbeFinding{{Protocol: "socks5", Confidence: "confirmed"}}},
-	}, Refusals: []Refusal{{Kind: "active_proxy", Source: "http", Value: float64(443)}, {Kind: "active_proxy", Source: "socks5", Value: json.Number("443")}}}
-	applyEnhancedVerdict(&r)
-	applyEnhancedVerdict(&r)
-	want := []Refusal{
-		{Kind: "active_proxy", Source: "socks5,http", Value: 443},
-		{Kind: "cloudflare_cdn", Source: "cloudflare", Value: 443},
-		{Kind: "active_proxy", Source: "socks5", Value: 8443},
-	}
-	if r.Verdict != "unsuitable" || r.Rating != "poor" || !reflect.DeepEqual(r.Refusals, want) || probesPassed(r.Ports) {
-		t.Fatalf("wrong confirmed evidence: %+v", r)
 	}
 }

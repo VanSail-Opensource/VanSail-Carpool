@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/txyyddss/Remna-User-Panel/internal/model"
 )
 
 // liveRetryRepository repairs frozen snapshot rows and appends durable jobs.

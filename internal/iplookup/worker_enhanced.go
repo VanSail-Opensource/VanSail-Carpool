@@ -11,6 +11,19 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 	}
 	checkpoint := r.Checkpoint.Enhanced
 	save := func() error { return w.repository.SaveIPLookupProgress(ctx, *r) }
+	if r.Proxy == nil {
+		checkpoint.Phase = "proxy"
+		if err := save(); err != nil {
+			return err
+		}
+		// Global inventory membership does not depend on optional geolocation.
+		pool, err := w.Enhanced.pool(ctx, c)
+		if err != nil {
+			return err
+		}
+		r.Proxy = pool.assessment(r.IP)
+		applyProxyRefusal(r)
+	}
 	if !checkpoint.LiveDone {
 		checkpoint.Phase = "live"
 		if err := save(); err != nil {
@@ -18,7 +31,6 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 		}
 		// Enrichment has a short deadline; active probes have their own long budgets.
 		liveCtx, cancel := context.WithTimeout(withQualityScores(ctx, checkpoint.Scores), 60*time.Second)
-		liveCtx = context.WithValue(liveCtx, deferBlockKey{}, true)
 		details := w.Live.livePipeline(withLiveRequests(liveCtx), r.IP, c, func(LiveEvent) {})
 		cancel()
 		if ctx.Err() != nil {
@@ -27,6 +39,12 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 		details.SourceIP, details.CacheMatch = r.IP, "none"
 		r.LiveDetails = &details
 		checkpoint.LiveDone = true
+		if err := save(); err != nil {
+			return err
+		}
+	}
+	if checkpoint.LiveDone && r.LiveDetails != nil && r.LiveDetails.Block.Status == "skipped" {
+		r.LiveDetails.Block = w.Live.block(ctx, r.IP, c)
 		if err := save(); err != nil {
 			return err
 		}
@@ -40,12 +58,6 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 	}
 	requested := Aggregate(*r, time.Now().UTC())
 	applyEnhancedVerdict(&requested)
-	if len(requested.Refusals) == 0 && r.LiveDetails != nil && r.LiveDetails.Block.Status == "skipped" {
-		r.LiveDetails.Block = w.Live.block(ctx, r.IP, c)
-		if err := save(); err != nil {
-			return err
-		}
-	}
 	reason := ""
 	if requested.Verdict != "suitable" {
 		reason = "ip_not_passed"
@@ -55,64 +67,58 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 		reason = "probes_incomplete"
 	}
 	if reason != "" {
-		finishInventorySubnet(r, reason)
+		r.Subnet = &SubnetResult{Prefix: blockPrefix(r.IP), Status: "skipped", Reason: reason, Addresses: []SubnetAddress{}}
+		checkpoint.Phase = "complete"
+		return save()
 	}
 	checkpoint.Phase = "subnet"
 	if err := save(); err != nil {
 		return err
 	}
-	if reason == "" {
-		if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
-			return err
-		}
-	}
-	applyPortRefusals(r)
-	if err := w.Enhanced.probeSubnet(ctx, r, c, save); err != nil {
+	if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
 		return err
 	}
 	checkpoint.Phase = "complete"
 	return save()
 }
 func applyProxyRefusal(r *Report) {
-	if r.Proxy == nil {
-		return
-	}
-	groups := map[string][]string{}
-	for _, id := range r.Proxy.Matches {
-		name, category := id, ProxyPoolCategory
-		for _, source := range r.Proxy.Sources {
-			if source.ID == id {
-				name, category = source.Name, sourceCategory(source.Category)
-				break
+	if r.Proxy != nil && len(r.Proxy.Matches) > 0 {
+		for _, item := range r.Refusals {
+			if item.Kind == "proxy_list" {
+				return
 			}
 		}
-		kind := "proxy_list"
-		if category == ProxyDatabaseCategory {
-			kind = "proxy_database"
+		names := []string{}
+		for _, id := range r.Proxy.Matches {
+			name := id
+			for _, source := range r.Proxy.Sources {
+				if source.ID == id {
+					name = source.Name
+					break
+				}
+			}
+			names = append(names, name)
 		}
-		if category == AbuseCategory {
-			kind = "abuse_list"
-		}
-		groups[kind] = append(groups[kind], name)
-	}
-	for _, kind := range []string{"proxy_list", "proxy_database", "abuse_list"} {
-		if len(groups[kind]) == 0 {
-			continue
-		}
-		exists := false
-		for _, item := range r.Refusals {
-			exists = exists || item.Kind == kind
-		}
-		if !exists {
-			r.Refusals = append(r.Refusals, Refusal{Kind: kind, Source: "proxy_lists", Value: joinEvidence(groups[kind])})
-		}
+		r.Refusals = append(r.Refusals, Refusal{Kind: "proxy_list", Source: "proxy_lists", Value: joinEvidence(names)})
 	}
 }
 func applyEnhancedVerdict(r *Report) {
 	moveDatacenterWarnings(r)
 	applyProxyRefusal(r)
 	applyShodanRefusals(r)
-	applyPortRefusals(r)
+	for _, port := range r.Ports {
+		for _, finding := range port.Findings {
+			if finding.Confidence == "confirmed" {
+				exists := false
+				for _, refusal := range r.Refusals {
+					exists = exists || (refusal.Kind == "active_proxy" && refusal.Source == finding.Protocol)
+				}
+				if !exists {
+					r.Refusals = append(r.Refusals, Refusal{Kind: "active_proxy", Source: finding.Protocol, Value: port.Port})
+				}
+			}
+		}
+	}
 	if len(r.Refusals) > 0 {
 		r.Verdict = "unsuitable"
 		r.Reasons = []string{}

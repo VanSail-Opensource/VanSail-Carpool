@@ -25,21 +25,29 @@ func (s *EnhancedService) checkSubnet(ctx context.Context, r *Report, c Config, 
 		r.Subnet = &SubnetResult{Prefix: prefix, Status: "skipped", Reason: "ipv6", Addresses: []SubnetAddress{}}
 		return save()
 	}
+	pool, err := s.pool(ctx, c)
+	if err != nil {
+		return err
+	}
 	if r.Subnet == nil || r.Subnet.Status == "skipped" {
-		pool, err := s.pool(ctx, c)
-		if err != nil {
-			return err
-		}
-		if err := initializeSubnet(ctx, r, pool); err != nil {
-			return err
+		r.Subnet = &SubnetResult{Prefix: prefix, Status: "processing", Addresses: make([]SubnetAddress, 0, 256)}
+		network, _ := netip.ParsePrefix(prefix)
+		for ip := network.Addr(); network.Contains(ip); ip = ip.Next() {
+			row := SubnetAddress{IP: ip.String(), Status: "unknown", Proxy: "success", Abuse: "pending", IPAPI: "pending", Sources: []string{}}
+			if !pool.complete {
+				row.Proxy = "partial"
+			}
+			if ids := pool.matchingSources(ip); len(ids) > 0 {
+				row.Status = "flagged"
+				row.Proxy = "flagged"
+				row.Abuse, row.IPAPI = "skipped", "skipped"
+				row.Sources = append(row.Sources, ids...)
+			}
+			r.Subnet.Addresses = append(r.Subnet.Addresses, row)
 		}
 		if err := save(); err != nil {
 			return err
 		}
-	}
-	if len(r.Refusals) > 0 {
-		finishInventorySubnet(r, "ip_not_passed")
-		return save()
 	}
 	// An earlier /24 AbuseIPDB block check that reported zero abusive
 	// addresses already covers the abuse item of this scan: skip it instead
