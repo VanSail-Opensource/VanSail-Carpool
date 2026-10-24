@@ -125,6 +125,8 @@ jobs:
           docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/postgres_password)
             export POSTGRES_BOOTSTRAP_ADMIN_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
+            application=$(cat /run/secrets/application_password)
+            export POSTGRES_BOOTSTRAP_APP_URL="postgres://vansail_app:$application@127.0.0.1/vansail?sslmode=disable"
             /tmp/application.test -test.v -test.timeout=5m -test.run TestPostgresApplicationBootstrap
           '
       - name: Verify private exporter and aggregate monitoring grants

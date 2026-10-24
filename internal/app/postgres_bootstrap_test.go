@@ -35,7 +35,7 @@ func TestPostgresApplicationBootstrap(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer admin.Exec(context.Background(), `DROP DATABASE vansail_application_rehearsal WITH (FORCE)`)
-	applicationURL, err := neturl.Parse(url)
+	applicationURL, err := neturl.Parse(os.Getenv("POSTGRES_BOOTSTRAP_APP_URL"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,6 +68,10 @@ func TestPostgresApplicationBootstrap(t *testing.T) {
 		t.Fatal("second application acquired scheduler ownership")
 	}
 	var phase string
+	var role string
+	if err = app.store.DB().QueryRowContext(ctx, `SELECT current_user`).Scan(&role); err != nil || role != "vansail_app" {
+		t.Fatal("application did not use restricted role", err)
+	}
 	if err = app.store.DB().QueryRowContext(ctx, `SELECT phase FROM vansail_migration_state WHERE singleton=1`).Scan(&phase); err != nil || phase != "active" {
 		t.Fatal("verified activation failed", err)
 	}
