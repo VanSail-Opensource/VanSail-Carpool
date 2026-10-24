@@ -2,6 +2,7 @@ package backup_test
 
 import (
 	"context"
+	neturl "net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -64,16 +65,16 @@ func TestPostgresLogicalRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer admin.Exec(context.Background(), `DROP DATABASE `+name+` WITH (FORCE)`)
-	parsed, err := pgx.ParseConfig(os.Getenv("POSTGRES_RECOVERY_ADMIN_URL"))
+	parsed, err := neturl.Parse(os.Getenv("POSTGRES_RECOVERY_ADMIN_URL"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsed.Database = name
-	restore := exec.CommandContext(ctx, "pg_restore", "--exit-on-error", "--no-owner", "--no-acl", "--dbname="+parsed.ConnString(), run.Path)
+	parsed.Path = "/" + name
+	restore := exec.CommandContext(ctx, "pg_restore", "--exit-on-error", "--no-owner", "--no-acl", "--dbname="+parsed.String(), run.Path)
 	if output, e := restore.CombinedOutput(); e != nil {
 		t.Fatalf("restore: %v %s", e, output)
 	}
-	cfg.URL = parsed.ConnString()
+	cfg.URL = parsed.String()
 	restored, err := postgres.Open(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
