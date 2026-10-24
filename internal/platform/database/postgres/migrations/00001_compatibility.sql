@@ -32,9 +32,17 @@ CREATE FUNCTION vansail_json(value text) RETURNS jsonb LANGUAGE sql IMMUTABLE ST
 CREATE FUNCTION json_set(value text,path text,replacement jsonb) RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
  SELECT jsonb_set(value::jsonb,string_to_array(substr(path,3),'.'),replacement,true)::text
 $$;
-CREATE FUNCTION julianday(value text) RETURNS double precision LANGUAGE sql STABLE STRICT AS $$
- SELECT extract(epoch FROM value::timestamptz)::double precision/86400.0+2440587.5
-$$;
+-- Only absolute ISO dates are accepted. Fixed parser settings make this safe in
+-- expression indexes; relative inputs such as 'now' must never be indexed.
+-- +goose StatementBegin
+CREATE FUNCTION julianday(value text) RETURNS double precision LANGUAGE plpgsql IMMUTABLE STRICT
+SET TimeZone='UTC' SET DateStyle='ISO,YMD' AS $$
+BEGIN
+ IF value !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}([T ][0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})?)?$' THEN RETURN NULL; END IF;
+ RETURN extract(epoch FROM value::timestamptz)::double precision/86400.0+2440587.5;
+ EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow THEN RETURN NULL;
+END $$;
+-- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
 DO $$ BEGIN RAISE EXCEPTION 'Authoritative schema downgrade is not supported'; END $$;
