@@ -38,20 +38,20 @@ func TestNodeOperationReplayFencesTheInterruptedAttempt(t *testing.T) {
 	if _, err = store.CompleteXNodeProviderOperation(ctx, op.Receipt.ID, first.Attempts, providerops.Completion{Status: providerops.StatusSucceeded}, at.Add(5*time.Second)); err == nil {
 		t.Fatal("interrupted callback overwrote the recovered operation")
 	}
-	if err = store.CompleteOutboxJob(ctx, job.ID, job.Attempts, nil, at.Add(5*time.Second)); err != nil {
+	if err = store.CompleteOutboxClaim(ctx, *job, nil, at.Add(5*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	jobs, err := store.ListOutboxJobs(ctx, 10)
 	if err != nil || len(jobs) != 1 || jobs[0].Status != "processing" {
 		t.Fatal("old attempt removed the recovered lease")
 	}
-	if owned, err := store.RenewOutboxJob(ctx, job.ID, job.Attempts, at); err != nil || owned {
+	if owned, err := store.RenewOutboxClaim(ctx, *job, at); err != nil || owned {
 		t.Fatal("old attempt renewed a recovered lease")
 	}
 	if _, err = store.CompleteXNodeProviderOperation(ctx, op.Receipt.ID, second.Attempts, providerops.Completion{Status: providerops.StatusSucceeded}, at.Add(6*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if err = store.CompleteOutboxJob(ctx, recovered.ID, recovered.Attempts, nil, at.Add(6*time.Second)); err != nil {
+	if err = store.CompleteOutboxClaim(ctx, *recovered, nil, at.Add(6*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 }

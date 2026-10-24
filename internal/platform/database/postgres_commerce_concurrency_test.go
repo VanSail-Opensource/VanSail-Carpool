@@ -75,7 +75,7 @@ func TestPostgresLimitedStockConcurrentPurchases(t *testing.T) {
 	var actions []func() error
 	for _, id := range []int64{917102, 917103} {
 		user := createTestUser(t, s, id)
-		if _, err = s.AdjustBalance(ctx, user.ID, 1000, "seed", "seed", now); err != nil {
+		if _, err = s.AdjustBalance(ctx, user.ID, 1000, "stock-seed:"+user.ID, "seed", now); err != nil {
 			t.Fatal(err)
 		}
 		actions = append(actions, func() error {

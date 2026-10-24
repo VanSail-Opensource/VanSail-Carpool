@@ -34,6 +34,7 @@ type Store struct {
 	db                  *sql.DB
 	logger              *slog.Logger
 	writeMu             sync.Mutex
+	randomMu            sync.Mutex
 	groupFactsMu        sync.Mutex
 	groupFacts          map[groupMessageFactKey]groupMessageFact
 }

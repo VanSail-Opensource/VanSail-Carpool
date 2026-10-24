@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Store) claimDailyActivity(ctx context.Context, userID, localDate, timezone string, minimumMinor, maximumMinor int64, boostCount int, rng activity.RandomSource, now time.Time) (activity.DailyCheckIn, error) {
-	retryRandom := newTransactionRandom(rng)
+	retryRandom := newTransactionRandom(rng, &s.randomMu)
 	if retryRandom != nil {
 		rng = retryRandom
 	}

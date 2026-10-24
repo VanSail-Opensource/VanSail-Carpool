@@ -56,6 +56,8 @@ jobs:
           docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/migration_password)
             export POSTGRES_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
+            admin=$(cat /run/secrets/postgres_password)
+            export POSTGRES_TEST_ADMIN_URL="postgres://postgres:$admin@127.0.0.1/postgres?sslmode=disable"
             /tmp/postgres.test -test.v
           '
       - name: Run business contracts and concurrency checks on PostgreSQL

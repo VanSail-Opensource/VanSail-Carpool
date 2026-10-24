@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Store) PlaceActivityBet(ctx context.Context, userID, gameID string, stakeMinor int64, idempotencyKey string, rng activity.RandomSource, now time.Time) (activity.BetResult, error) {
-	retryRandom := newTransactionRandom(rng)
+	retryRandom := newTransactionRandom(rng, &s.randomMu)
 	if retryRandom != nil {
 		rng = retryRandom
 	}

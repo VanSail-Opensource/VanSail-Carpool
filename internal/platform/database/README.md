@@ -6,6 +6,10 @@ real PostgreSQL deadlock and checks whole-operation retry. `transaction_random.g
 retains random choices across rollback; daily check-ins lock the balance under
 READ COMMITTED before checking an existing receipt, so concurrent claimants
 sample only the winning outcome.
+Source calls through the retry tape use the store's short random-source mutex;
+the potentially concurrent injected source retains its previous serialization.
+Outbox priority/resource/recovery tests use the generation-aware completion
+contract on both backends, including interrupted native operation attempts.
 
 `open_configured.go` explicitly selects SQLite or PostgreSQL. `transaction_retry.go`
 classifies whole-operation retries; generated adapters retain existing public

@@ -79,6 +79,7 @@ func TestPostgresExactRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer target.Close()
+	assertImportRollback(t, ctx, snapshot, url, target)
 	imported, err := Import(ctx, source, url)
 	if err != nil {
 		t.Fatal(err)

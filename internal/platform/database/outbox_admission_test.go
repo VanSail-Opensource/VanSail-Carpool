@@ -22,7 +22,7 @@ func TestFirewallControlPriorityAndBusyAdmissionDoNotConsumeAttempts(t *testing.
 		if err != nil || job == nil || job.ID != "urgent" || job.Attempts != 1 {
 			t.Fatalf("priority/admission = %+v %v", job, err)
 		}
-		if err = s.CompleteOutboxJob(ctx, job.ID, job.Attempts, outbox.ErrBusy, now); err != nil {
+		if err = s.CompleteOutboxClaim(ctx, *job, outbox.ErrBusy, now); err != nil {
 			t.Fatal(err)
 		}
 		now = now.Add(2 * time.Second)

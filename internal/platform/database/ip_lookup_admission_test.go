@@ -124,7 +124,7 @@ func TestIPLookupRepairsYieldToFreshChecksWithoutBurningAttempts(t *testing.T) {
 			if claimed, err := store.ClaimIPLookupLease(ctx, fresh.ID, "fresh", now); err != nil || claimed {
 				t.Fatalf("fresh overlapped repair: %v %v", claimed, err)
 			}
-			if err := store.CompleteOutboxJob(ctx, repair.ID, repair.Attempts, nil, now); err != nil {
+			if err := store.CompleteOutboxClaim(ctx, *repair, nil, now); err != nil {
 				t.Fatal(err)
 			}
 			if claimed, err := store.ClaimIPLookupLease(ctx, fresh.ID, "fresh", now); err != nil || !claimed {

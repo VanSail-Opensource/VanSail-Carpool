@@ -134,7 +134,7 @@ func (s *Source) validate(ctx context.Context) error {
 		s.Tables = append(s.Tables, byName[name])
 	}
 	var bad bool
-	if err = s.Tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id<>CAST(telegram_id AS TEXT))`).Scan(&bad); err != nil {
+	if err = s.Tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id<>CAST(telegram_id AS TEXT) OR telegram_id<=0 OR telegram_id>=4503599627370496) OR EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id<=0 OR proxy_user_id>=9007199254740992 OR (user_id IS NOT NULL AND proxy_user_id<>CAST(user_id AS INTEGER)) OR (user_id IS NULL AND proxy_user_id<4503599627370496))`).Scan(&bad); err != nil {
 		return err
 	}
 	if bad {

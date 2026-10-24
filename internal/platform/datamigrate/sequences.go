@@ -35,5 +35,21 @@ func readSequences(ctx context.Context, q queryer, pg bool) (map[string]int64, e
 		}
 		result[table] = value
 	}
+	// The service sequence is deliberately separate from the member identity
+	// default. Cover its high water mark in recovery evidence as well.
+	service := result["xnode_identities"]
+	if service < 4503599627370496 {
+		service = 0
+	}
+	if pg {
+		var called bool
+		if err := q.QueryRowContext(ctx, `SELECT last_value,is_called FROM xnode_service_proxy_id_seq`).Scan(&service, &called); err != nil {
+			return nil, err
+		}
+		if !called {
+			service = 0
+		}
+	}
+	result["xnode_service_proxy_id_seq"] = service
 	return result, nil
 }

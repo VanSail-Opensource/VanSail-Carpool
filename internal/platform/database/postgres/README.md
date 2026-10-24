@@ -48,3 +48,7 @@ Notifications carry hints only and never replace durable polling. `metrics.go`
 keeps bounded aggregate transaction/retry counters in memory. Ownership loss
 stops the application; this initial design requires one application process and
 does not enable HA or automatic failover.
+
+`upgrade_test.go` applies a supported earlier Goose prefix in a separate database,
+refuses it without migration, then upgrades through the application connector and
+verifies the final catalog and safe reapplication.

@@ -1,22 +1,26 @@
 package database
 
-import "github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+import (
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
+	"sync"
+)
 
 type randomChoice struct {
 	bound, value int64
 	err          error
 }
 type transactionRandom struct {
+	mu       *sync.Mutex
 	source   activity.RandomSource
 	choices  []randomChoice
 	position int
 }
 
-func newTransactionRandom(source activity.RandomSource) *transactionRandom {
+func newTransactionRandom(source activity.RandomSource, mu *sync.Mutex) *transactionRandom {
 	if source == nil {
 		return nil
 	}
-	return &transactionRandom{source: source}
+	return &transactionRandom{source: source, mu: mu}
 }
 
 // Int63n preserves a logical operation's random outcomes across SQL rollback.
@@ -30,6 +34,8 @@ func (r *transactionRandom) Int63n(bound int64) (int64, error) {
 		}
 		return choice.value, choice.err
 	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	value, err := r.source.Int63n(bound)
 	r.choices = append(r.choices, randomChoice{bound: bound, value: value, err: err})
 	r.position++

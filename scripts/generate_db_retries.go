@@ -97,7 +97,7 @@ func main() {
 			signature = strings.Replace(signature, fn.Name.Name+"(", name+"(", 1)
 			setup, rewind := "", ""
 			if strings.Contains(signature, "rng activity.RandomSource") {
-				setup = "retryRandom:=newTransactionRandom(rng); if retryRandom!=nil { rng=retryRandom }\n"
+				setup = "retryRandom:=newTransactionRandom(rng,&s.randomMu); if retryRandom!=nil { rng=retryRandom }\n"
 				rewind = "if retryRandom!=nil { retryRandom.position=0 }\n"
 			}
 			wrappers = append(wrappers, fmt.Sprintf("%s{\n %s for retryIndex:=0;;retryIndex++ {\n %s %s := s.%s(%s)\n if !s.retryTransaction(ctx,%s,retryIndex) { return %s }\n }\n}\n", signature, setup, rewind, strings.Join(returns, ","), attemptName, strings.Join(params, ","), errorName, strings.Join(returns, ",")))

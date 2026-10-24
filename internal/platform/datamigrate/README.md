@@ -34,3 +34,7 @@ with secured pre-backup evidence without changing activation state.
 `activate.go` admits only a genuinely fresh baseline or a still-identical verified
 import before application bootstrap writes, under the dedicated ownership lock.
 An imported but unverified target refuses application startup.
+
+`rollback_test.go` forces a mid-copy PostgreSQL constraint failure and checks
+that no partial records, trigger suspension or activation state survives it.
+Recovery evidence includes the independent service-ID sequence high water mark.

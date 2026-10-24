@@ -52,8 +52,8 @@ func TestCompleteOutboxJobRemovesSuccessAndRetainsFailure(t *testing.T) {
 			if err != nil || claimed == nil {
 				t.Fatalf("ClaimOutboxJob() = %+v, %v", claimed, err)
 			}
-			if err := store.CompleteOutboxJob(ctx, claimed.ID, claimed.Attempts, test.jobErr, now.Add(time.Second)); err != nil {
-				t.Fatalf("CompleteOutboxJob(): %v", err)
+			if err := store.CompleteOutboxClaim(ctx, *claimed, test.jobErr, now.Add(time.Second)); err != nil {
+				t.Fatalf("CompleteOutboxClaim(): %v", err)
 			}
 
 			var status string

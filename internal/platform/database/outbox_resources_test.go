@@ -36,7 +36,7 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 	if err != nil || blocked != nil {
 		t.Fatalf("account overlapped=%+v %v", blocked, err)
 	}
-	if err := s.CompleteOutboxJob(ctx, first.ID, first.Attempts, nil, now); err != nil {
+	if err := s.CompleteOutboxClaim(ctx, *first, nil, now); err != nil {
 		t.Fatal(err)
 	}
 	next, err := s.ClaimOutboxJob(ctx, now)
@@ -69,7 +69,7 @@ func TestStandaloneNativeTargetDoesNotBlockOutboxAdmission(t *testing.T) {
 	if err != nil || next != nil {
 		t.Fatal("standalone target overlapped", next, err)
 	}
-	if err := s.CompleteOutboxJob(ctx, first.ID, first.Attempts, nil, now); err != nil {
+	if err := s.CompleteOutboxClaim(ctx, *first, nil, now); err != nil {
 		t.Fatal(err)
 	}
 	next, err = s.ClaimOutboxJob(ctx, now)

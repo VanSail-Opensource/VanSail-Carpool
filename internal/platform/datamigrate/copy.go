@@ -60,7 +60,7 @@ func resetSequences(ctx context.Context, tx pgx.Tx, evidence map[string]int64) e
 			return err
 		}
 	}
-	maximum := max(int64(4503599627370496), evidence["xnode_identities"])
-	_, err = tx.Exec(ctx, `SELECT setval('xnode_service_proxy_id_seq',GREATEST($1,COALESCE((SELECT MAX(proxy_user_id) FROM xnode_identities WHERE user_id IS NULL),0)),$2 OR EXISTS(SELECT 1 FROM xnode_identities WHERE user_id IS NULL AND proxy_user_id>=4503599627370496))`, maximum, evidence["xnode_identities"] >= 4503599627370496)
+	maximum := max(int64(4503599627370496), evidence["xnode_service_proxy_id_seq"])
+	_, err = tx.Exec(ctx, `SELECT setval('xnode_service_proxy_id_seq',GREATEST($1,COALESCE((SELECT MAX(proxy_user_id) FROM xnode_identities WHERE user_id IS NULL),0)),$2 OR EXISTS(SELECT 1 FROM xnode_identities WHERE user_id IS NULL AND proxy_user_id>=4503599627370496))`, maximum, evidence["xnode_service_proxy_id_seq"] >= 4503599627370496)
 	return err
 }

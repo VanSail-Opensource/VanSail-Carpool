@@ -3,7 +3,7 @@ name: vansail-postgres
 services:
   postgres:
     image: postgres:18-bookworm
-    profiles: [postgres]
+    profiles: [postgres, application, monitoring]
     restart: unless-stopped
     stop_grace_period: 60s
     environment:

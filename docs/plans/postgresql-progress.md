@@ -21,6 +21,15 @@ evidence from the selected deployment.
 
 ## Deployment decisions
 
+Hosted run [40063479916](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/40063479916)
+at `b27f217e` passed fresh/reapplied schema, exact conversion, logical restoration,
+encrypted physical restoration, named-target PITR and single-owner application
+bootstrap. Its PostgreSQL job failed overall because the limited-stock fixture
+reused a globally unique seed reference and the exporter profile omitted its
+database dependency. Subsequent changes fix those gates and extend generation-
+aware queue contracts, failed-import rollback and service-sequence evidence.
+The selected release head must pass the entire hosted workflow before delivery.
+
 PostgreSQL TIMESTAMPTZ stores microseconds, while current Go timestamp values can
 contain nanoseconds. The proposed safe transition is to preserve exact timestamp
 text initially, then perform a separately verified conversion. This changes the
