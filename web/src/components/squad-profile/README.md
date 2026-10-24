@@ -9,3 +9,4 @@
 
 The summary is a pure projection of the typed API profile. It does not invent
 provider data or persist a second generated description.
+Member facts keep configured country/region visible independently of node inventory. Bandwidth stays in the member summary heading; route/carrier tokens wrap within narrow cards.

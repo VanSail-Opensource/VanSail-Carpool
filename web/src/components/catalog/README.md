@@ -1,12 +1,14 @@
 # Catalog components
 
 Optional squads sort by ascending popularity within their existing type groups;
-included and sold-out entries remain last. Node controls show name, country and
-consumption multiplier, including for single-node squads.
+included and sold-out entries remain last. Combo and PAYG cards show squad names
+and configured profile facts, including carriers, routes, bandwidth and region.
+Individual node names, rows and multipliers are omitted.
+Shared cards use compact padding and profile gaps; PAYG keeps its wallet, totals
+and cards close together while preserving 44px primary controls.
 At desktop widths, squad cards use content-sized masonry columns within each
 type group, preserving the prepared order down each column and reducing gaps
-between squads with different node counts. Node controls can form a compact
-two-column grid when their card width allows; mobile keeps the existing layout.
+between squads with different profile content; mobile keeps a single column.
 
 
 - `useCatalogStepPersistence.ts` owns user-scoped step restoration, scroll reset, and quote refresh after a restored or changed coupon/squad selection; it stores only the current step and keeps quote state server-authoritative.
@@ -34,12 +36,19 @@ Combo, squad, and coupon feedback is emitted only when the selection changes; st
 `comboDisplayPrice.ts` adds selected paid squads while excluding included squads, using integer minor units and the account price-display preference.
 `comboDisplayPrice.test.ts` covers included/free/duplicate squads and integer precision.
 
-`CatalogSquadStep.vue` composes `SquadSelector.vue`, `SquadPricingTable.vue` and `SquadPricingCard.vue` for localized ordering and selection. `SquadNodeBlocks.vue` renders readable node names, flags and multipliers as informational content. Their matching `.test.ts` files cover ordering, selection and node rendering.
+`CatalogSquadStep.vue` composes `SquadSelector.vue`, `SquadPricingTable.vue` and `SquadPricingCard.vue` for localized ordering and selection. Profile facts render independently of accessible nodes. `SquadPricingCard.test.ts` covers profile types, empty node lists, missing profiles and hidden node names.
 
-`CatalogPage.vue` owns the four-step purchase flow. `CatalogSquadStep.test.ts` covers prepared ordering and `SquadNodeBlocks.test.ts` covers node labels and multipliers.
+`CatalogPage.vue` owns the four-step purchase flow. `CatalogSquadStep.test.ts` covers prepared ordering.
 
-Informational node rows no longer sit above the card selection button or receive pointer/focus decoration, so retiring node-image actions leaves the entire card selectable.
+Shared cards keep the entire selection surface keyboard accessible; profile facts have no independent selection behavior.
 
 `CatalogExperience.vue` owns the PAYG/Combo view selection, defaulting to PAYG, and the accessible reduced-motion entry transition. `PAYGPage.vue` polls owner-scoped availability and 72-hour raw traffic/wallet spending with the existing `useSubscriptionData` lifecycle. It reuses `SquadPricingCard.vue` in informational mode, without node rows, stock gates, selection controls or traffic multipliers. The Combo flow remains in `CatalogPage.vue`; only Combo retains the automatic-renewal purchase gate.
 
 `CatalogExperience.test.ts` guards PAYG defaults, isolation from the combo purchase gate and view switching in hosted CI.
+
+- `CatalogModeIntro.vue` keeps localized promotional mode captions and a native PAYG information disclosure compact. `CatalogModeIntro.test.ts` covers both captions and the disclosure without technical billing copy.
+- `CatalogModeTransition.vue` presents an 800ms full-viewport typographic introduction through a body teleport, then disposes its timer and observers. It never captures pointer/focus input, restarts on a real mode change and is omitted for reduced motion or unsupported clipping. The summary and individual PAYG cards enter in a short stagger during its reveal; Combo retains its existing component transitions.
+- `modeTransitionMask.ts` derives merged native clip-path cutouts around visible controls, leaving buttons, navigation links and disclosures uncovered throughout the animation. An 8px reserve covers component movement; active-only mutation/resize/scroll observation tracks new controls. `modeTransitionMask.test.ts` covers overlapping cutouts and viewport edges.
+- `CatalogModeTransition.test.ts` covers rapid scene replacement, timed disposal and reduced-motion omission in hosted CI.
+- `PAYGSummary.vue` presents authoritative wallet balance, recharge navigation and one 72-hour traffic/spend summary. `PAYGSquadCard.vue` reuses the shared profile card with price/GB, availability and raw-traffic/spend metrics; neither derives financial totals or exposes node names.
+- `PAYGPage.test.ts` covers initial loading, empty results, exact summary values and retained totals after a background refresh failure. All automated regressions run in hosted CI.

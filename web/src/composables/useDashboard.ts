@@ -8,6 +8,7 @@ import { notifyHaptic } from '@/utils/telegram'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { createNodeUsageController, type NodeUsageController } from './dashboardNodeUsage'
 import { useDurableCommand } from './useDurableCommand'
+import { usePurchaseValidity } from './usePurchaseValidity'
 
 const nodeUsageControllerKey: InjectionKey<NodeUsageController> = Symbol('dashboard-node-usage')
 
@@ -30,8 +31,21 @@ export function useDashboard() {
     },
   })
   const error = computed(() => loadError.value ?? revokeCommand.error.value)
+  const validity = usePurchaseValidity(
+    () => [dashboard.value?.activePurchase, dashboard.value?.queuedPurchase].filter(item => item != null),
+    () => load({ quiet: true }),
+  )
+  const currentDashboard = computed(() => {
+    const value = dashboard.value
+    if (!value) return null
+    return {
+      ...value,
+      activePurchase: validity.current(value.activePurchase) ? value.activePurchase : null,
+      queuedPurchase: value.queuedPurchase && validity.status(value.queuedPurchase) === 'queued' ? value.queuedPurchase : null,
+    }
+  })
 
-  const hasEntitlement = computed(() => dashboard.value?.activePurchase != null)
+  const hasEntitlement = computed(() => currentDashboard.value?.activePurchase != null)
   const catalogNodes = computed<readonly CatalogNode[]>(() => catalog.value?.nodes ?? [])
   const usageRatio = computed(() => {
     if (!dashboard.value?.statistics) return 0
@@ -41,7 +55,7 @@ export function useDashboard() {
     return Math.min(1, used / limit)
   })
   const activeSquadNames = computed(() => {
-    const active = dashboard.value?.activePurchase
+    const active = currentDashboard.value?.activePurchase
     if (!active || !catalog.value) return []
     const names = new Map(catalog.value.addons.map((squad) => [squad.groupId, squad.name]))
     for (const combo of catalog.value.combos) {
@@ -95,7 +109,7 @@ export function useDashboard() {
   })
 
   return {
-    dashboard: readonly(dashboard), loading: readonly(loading), refreshing: readonly(refreshing),
+    dashboard: currentDashboard, loading: readonly(loading), refreshing: readonly(refreshing),
     revoking: revokeCommand.busy, revokeBlocked: revokeCommand.blocksMutations,
     revokeReceipt: revokeCommand.receipt, revokeChecking: revokeCommand.checking,
     revokeError: revokeCommand.error,

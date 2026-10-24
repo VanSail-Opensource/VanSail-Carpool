@@ -3,7 +3,14 @@
     "title": "Pay as you go",
     "combo": "Combo",
     "mode": "Billing view",
-    "automatic": "Billed automatically per GB on each node after 10 KiB of traffic. Unused prepaid traffic stays available.",
+    "automatic": "Connect freely. Pay as you go.",
+    "headline": "Your connection. Your pace.",
+    "comboIntro": "One plan. More room to explore.",
+    "comboHeadline": "Make every journey yours.",
+    "billingDetails": "About PAYG",
+    "billingDetailsText": "Connect when you need it. Unused data stays ready for your next journey.",
+    "traffic": "Traffic",
+    "spent": "Spent",
     "balance": "Balance",
     "perGB": "/ GB",
     "window": "Last 72 hours",
@@ -17,10 +24,10 @@
     "status": {
       "available": "Available",
       "insufficient_balance": "Insufficient balance",
-      "combo_covered": "Included in your combo",
-      "queued_combo": "Reserved by queued combo",
+      "combo_covered": "In combo",
+      "queued_combo": "Queued combo",
       "unavailable": "Unavailable",
-      "sync_pending": "Sync pending"
+      "sync_pending": "Syncing"
     }
   }
 }

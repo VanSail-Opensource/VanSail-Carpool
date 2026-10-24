@@ -193,3 +193,4 @@ Settings entrance is opened. This checks the actual DIY route at mobile/desktop
 widths without production traffic; returning restores the settings receipt loader.
 
 `payg-audit.html`, `payg-audit.ts` and `PAYGAudit.vue` mount the actual PAYG/Combo catalog and administrator squad editor with synthetic signed-transport-compatible data. Query flags select loading, empty, failure, locale, appearance and admin states; no real member data or upstream calls are used.
+`validity-audit.html` mounts the real member dashboard summary and admin entitlement tables with constructed raw lifecycle states. `boundary` expires an active term after 15 seconds; `inventory`, `zh`, `light` and `error` cover filters, themes and offline loading. `payg-audit.html?cards` mounts shared combo cards; PAYG fixtures include all profile types, missing profiles and long carriers, with an internal node-name sentinel that must never appear.

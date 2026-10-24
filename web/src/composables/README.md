@@ -1,5 +1,8 @@
 # Composables
 
+- `usePurchaseValidity.ts` owns a boundary timer and focus/visibility revalidation for member and browser-admin purchase displays. Consumers pass raw purchases and an optional error-handling refresh callback; the returned status/current helpers derive UI validity without changing settlement state. Timers/listeners are disposed with their consumer.
+- `usePurchaseValidity.test.ts` covers offline boundary expiry, focus refresh and timer/listener disposal in hosted CI.
+
 - `motionPresets.ts` owns the shared timing tokens and critically damped layout spring.
 - `useMotionPreferences.ts` is the central reduced-motion boundary for Motion Vue components; it returns reduced-safe transitions and bounded offsets without storing animation state in components.
 

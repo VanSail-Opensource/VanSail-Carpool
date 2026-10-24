@@ -19,6 +19,7 @@
 - `AdminUserProviderActions.vue` emits the queued provider receipt to the profile shell before its reload.
 - `adminUserFormat.ts` owns profile-specific status tones and date conversion helpers.
 - `useAdminUserProfile.ts` loads the aggregate and serializes idempotent profile mutations with conflict handling.
+- Profile summaries and entitlement badges derive current validity at time boundaries and on focus/visibility refresh. Advanced edits and explicit manual refunds retain the raw lifecycle status; presentation never settles accounting or rewrites a purchase.
 - Table cells and native overlays keep the profile stable during mutation review.
 `useAdminRefundQuote.ts` loads server refund suggestions without overwriting manual edits or changed entitlement contexts. `useAdminRefundQuote.test.ts` covers defaults, failed loads, retries and stale responses.
 

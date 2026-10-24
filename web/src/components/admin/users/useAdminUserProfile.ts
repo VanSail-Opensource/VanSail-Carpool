@@ -6,6 +6,7 @@ import { adminOperationsApi, type AdminCatalogOptions, type AdminUserDetail } fr
 import { ApiError } from '@/api/http'
 import { localizedError } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
+import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
 
 export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   const detail = shallowRef<AdminUserDetail | null>(null)
@@ -24,13 +25,20 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   let controller: AbortController | undefined
 
   const error = computed(() => loadError.value ?? actionError.value)
+  const validity = usePurchaseValidity(() => detail.value?.entitlements ?? [], () => load(true))
+  const currentDetail = computed(() => detail.value ? {
+    ...detail.value,
+    activeCombo: validity.current(detail.value.activeCombo) ? detail.value.activeCombo : null,
+  } : null)
 
-  async function load(): Promise<void> {
+  async function load(quiet = false): Promise<void> {
     controller?.abort(); controller = new AbortController()
     const ticket = ++generation
     const expectedId = toValue(userId)
-    detail.value = null
-    loading.value = !restoreRef(`/api/v1/admin/users/${encodeURIComponent(expectedId)}`, detail)
+    if (!quiet) {
+      detail.value = null
+      loading.value = !restoreRef(`/api/v1/admin/users/${encodeURIComponent(expectedId)}`, detail)
+    }
     loadError.value = null
     try {
       const result = await adminOperationsApi.getUser(expectedId, controller.signal)
@@ -91,7 +99,7 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   onScopeDispose(() => { active = false; generation++; identityVersion++; controller?.abort(); detail.value = null })
 
   return {
-    detail: shallowReadonly(detail), options: shallowReadonly(options), loading: shallowReadonly(loading),
+    detail: currentDetail, options: shallowReadonly(options), loading: shallowReadonly(loading),
     optionsLoading: shallowReadonly(optionsLoading), busyAction: shallowReadonly(busyAction), error,
     optionsError: shallowReadonly(optionsError), conflict: shallowReadonly(conflict), load, loadOptions, perform, clearActionError,
   }

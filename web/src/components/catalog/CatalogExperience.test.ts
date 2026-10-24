@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import CatalogExperience from './CatalogExperience.vue'
 import CatalogPage from './CatalogPage.vue'
 import PAYGPage from './PAYGPage.vue'
+import CatalogModeIntro from './CatalogModeIntro.vue'
 
 const button = { props: ['label'], emits: ['click'], template: '<div role="button" tabindex="0" @click="$emit(\'click\')">{{ label }}</div>' }
 
@@ -11,11 +12,16 @@ describe('CatalogExperience', () => {
     const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(false)
+    expect(wrapper.findComponent(CatalogModeIntro).props('mode')).toBe('payg')
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).props('embedded')).toBe(true)
+    expect(wrapper.findComponent(CatalogModeIntro).props('mode')).toBe('combo')
     await wrapper.findAll('[role=button]')[0]!.trigger('click')
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
+    for (const index of [1, 0, 1, 0, 1, 0]) await wrapper.findAll('[role=button]')[index]!.trigger('click')
+    expect(wrapper.findComponent(CatalogModeIntro).props('mode')).toBe('payg')
+    expect(wrapper.findAll('.mode-intro')).toHaveLength(1)
     wrapper.unmount()
   })
 })

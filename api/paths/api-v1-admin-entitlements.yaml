@@ -9,6 +9,11 @@ get:
     - $ref: '../openapi.yaml#/components/parameters/Search'
     - name: status
       in: query
+      description: >-
+        Filters display validity at the current UTC time. Active, activating and queued
+        terms whose validUntil has been reached match expired; future active or activating
+        terms match queued. Terminal statuses are preserved. Response status remains the
+        stored lifecycle state used by settlement and advanced editing.
       schema: { $ref: '../openapi.yaml#/components/schemas/EntitlementStatus' }
   responses:
     '200':

@@ -807,3 +807,4 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
+`admin_entitlements_page.go` filters display validity using the current UTC boundary while returning the untouched purchase lifecycle status. Pending rollover/renewal work remains recoverable. `admin_entitlement_validity_test.go` covers exclusive expiry, future terms, terminal states and unchanged pending settlement/balances in hosted CI.

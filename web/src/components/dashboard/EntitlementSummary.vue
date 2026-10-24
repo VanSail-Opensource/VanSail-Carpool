@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { Purchase } from '@/api/types'
@@ -12,6 +12,7 @@ import PurchaseActions from './PurchaseActions.vue'
 import { formatDate } from '@/utils/format'
 import { localizedError } from '@/i18n'
 import { notifyHaptic } from '@/utils/telegram'
+import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
 
 const props = defineProps<{
   active?: Purchase | null
@@ -19,6 +20,9 @@ const props = defineProps<{
   squadNames?: readonly string[]
 }>()
 const emit = defineEmits<{ queuedCancelled: []; autoRenewalChanged: [] }>()
+const validity = usePurchaseValidity(() => [props.active, props.queued].filter(item => item != null))
+const currentActive = computed(() => validity.current(props.active) ? props.active : null)
+const currentQueued = computed(() => [props.queued, props.active].find(item => item && validity.status(item) === 'queued'))
 
 const router = useRouter()
 const queuedCancelOpen = shallowRef(false)
@@ -30,11 +34,11 @@ function openQueuedCancellation(): void {
   queuedCancelOpen.value = true
 }
 async function cancelQueued(): Promise<void> {
-  if (!props.queued || queuedCancelBusy.value) return
+  if (!currentQueued.value || queuedCancelBusy.value) return
   queuedCancelBusy.value = true
   queuedCancelError.value = null
   try {
-    await api.cancelQueuedPurchase(props.queued.id)
+    await api.cancelQueuedPurchase(currentQueued.value.id)
     queuedCancelOpen.value = false
     notifyHaptic('success')
     emit('queuedCancelled')
@@ -56,16 +60,16 @@ function goToCatalog(): void {
   <section class="section-block home-ride">
     <div class="section-heading">
       <h2>{{ $t('dashboard.yourRide') }}</h2>
-      <StatusBadge v-if="active" tone="success" :label="$t('common.active')" />
+      <StatusBadge v-if="currentActive" tone="success" :label="$t('common.active')" />
     </div>
 
-    <div v-if="active || queued" class="home-ride__content">
-      <RolloverFlipCard v-if="active" :active="active" :squad-names="squadNames" />
-      <div v-if="queued" class="home-ride__queued">
+    <div v-if="currentActive || currentQueued" class="home-ride__content">
+      <RolloverFlipCard v-if="currentActive" :active="currentActive" :squad-names="squadNames" />
+      <div v-if="currentQueued" class="home-ride__queued">
         <div class="home-ride__queued-content">
           <span>
             <StatusBadge tone="warning" :label="$t('common.queued')" />
-            {{ $t('dashboard.queuedStarts', { name: queued.comboName, date: formatDate(queued.validFrom) }) }}
+            {{ $t('dashboard.queuedStarts', { name: currentQueued.comboName, date: formatDate(currentQueued.validFrom) }) }}
           </span>
           <UButton
             color="error"
@@ -79,7 +83,7 @@ function goToCatalog(): void {
           <InlineNotice v-if="queuedCancelError" tone="warning">{{ queuedCancelError }}</InlineNotice>
         </div>
       </div>
-      <PurchaseActions v-if="active" :purchase="active" @changed="emit('autoRenewalChanged')" />
+      <PurchaseActions v-if="currentActive" :purchase="currentActive" @changed="emit('autoRenewalChanged')" />
     </div>
 
     <div v-else class="empty-inline">

@@ -3,7 +3,14 @@
     "title": "按量付费",
     "combo": "套餐",
     "mode": "计费视图",
-    "automatic": "每个节点累计使用 10 KiB 后，独立按 GB 自动扣费。未用完的预付流量持续保留。",
+    "automatic": "按需付费，自在连接",
+    "headline": "自在连接，随心出发",
+    "comboIntro": "一份套餐，从容出发",
+    "comboHeadline": "畅享每一程",
+    "billingDetails": "关于按量付费",
+    "billingDetailsText": "想连就连，按需付费。未用流量继续保留，下次出发接着用。",
+    "traffic": "流量",
+    "spent": "花费",
     "balance": "余额",
     "perGB": "/ GB",
     "window": "近 72 小时",
@@ -17,10 +24,10 @@
     "status": {
       "available": "可用",
       "insufficient_balance": "余额不足",
-      "combo_covered": "当前套餐已包含",
-      "queued_combo": "待生效套餐已预留",
+      "combo_covered": "套餐已含",
+      "queued_combo": "套餐预留",
       "unavailable": "不可用",
-      "sync_pending": "等待同步"
+      "sync_pending": "同步中"
     }
   }
 }

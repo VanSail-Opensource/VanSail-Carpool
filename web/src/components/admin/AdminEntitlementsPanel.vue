@@ -6,6 +6,7 @@ import type { AdminEntitlement } from '@/api/types'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
+import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
 import { useI18n } from '@/i18n'
 import { formatDate, formatMoney } from '@/utils/format'
 import AdminReasonDialog from './AdminReasonDialog.vue'
@@ -17,6 +18,8 @@ const reason = shallowRef('')
 const statusFilter = shallowRef<'all' | AdminEntitlement['status']>('all')
 const { t } = useI18n()
 const { reducedMotion, offset } = useMotionPreferences()
+const { status } = usePurchaseValidity(() => entitlements.items.value, reloadEntitlements)
+const visibleItems = computed(() => entitlements.items.value.filter(item => statusFilter.value === 'all' || status(item) === statusFilter.value))
 
 const statusItems = computed(() => [
   { value: 'all', label: t('adminEntitlements.all') },
@@ -34,7 +37,7 @@ function reloadEntitlements(): Promise<void> {
 watch(statusFilter, () => void reloadEntitlements(), { immediate: true })
 
 function canCancel(item: AdminEntitlement): boolean {
-  return item.status === 'activating' || item.status === 'active' || item.status === 'queued'
+  return ['activating', 'active', 'queued'].includes(status(item))
 }
 
 function tone(status: AdminEntitlement['status']): 'neutral' | 'success' | 'warning' | 'danger' {
@@ -73,14 +76,14 @@ function setCancelOpen(open: boolean): void {
     <AdminSectionState :loading="entitlements.loading.value" :error="entitlements.error.value" @retry="reloadEntitlements">
       <motion.div layout class="admin-list">
         <AnimatePresence :initial="false" mode="popLayout">
-          <motion.article v-for="entitlement in entitlements.items.value" :key="entitlement.id" layout class="admin-list-row admin-list-row--entitlement" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
+          <motion.article v-for="entitlement in visibleItems" :key="entitlement.id" layout class="admin-list-row admin-list-row--entitlement" :initial="reducedMotion ? false : { opacity: 0, y: offset(6) }" :animate="{ opacity: 1, y: 0 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }">
             <span class="feature-icon feature-icon--small"><UIcon name="i-ph-stack" /></span>
             <div><strong>{{ entitlement.comboName }}</strong><small>{{ t('adminEntitlements.summary', { user: entitlement.userId, from: formatDate(entitlement.validFrom), to: formatDate(entitlement.validUntil) }) }}</small></div>
             <strong>{{ formatMoney(entitlement.price) }}</strong>
-            <StatusBadge :tone="tone(entitlement.status)" :label="statusLabel(entitlement.status)" />
+            <StatusBadge :tone="tone(status(entitlement))" :label="statusLabel(status(entitlement))" />
             <UButton v-if="canCancel(entitlement)" size="sm" color="error" variant="ghost" icon="i-ph-prohibit" :label="t('common.cancel')" @click="selected = entitlement" />
           </motion.article>
-          <motion.div v-if="!entitlements.items.value.length" key="empty-entitlements" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminEntitlements.none') }}</h3><p>{{ t('adminEntitlements.noneHint') }}</p></div></motion.div>
+          <motion.div v-if="!visibleItems.length" key="empty-entitlements" class="empty-inline" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"><div><h3>{{ t('adminEntitlements.none') }}</h3><p>{{ t('adminEntitlements.noneHint') }}</p></div></motion.div>
         </AnimatePresence>
       </motion.div>
       <UButton v-if="entitlements.nextCursor.value" class="database-load-more" color="neutral" variant="outline" icon="i-ph-arrow-down" :loading="entitlements.loading.value" :disabled="entitlements.loading.value" :label="t('adminEntitlements.loadMore')" @click="entitlements.loadMore" />

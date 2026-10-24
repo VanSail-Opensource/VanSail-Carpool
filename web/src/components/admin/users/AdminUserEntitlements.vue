@@ -5,7 +5,9 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatBytes, formatDateTime, formatMoney } from '@/utils/format'
 import { entitlementTone } from './adminUserFormat'
-defineProps<{ items: AdminEntitlement[]; busy: boolean }>()
+import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
+const props = defineProps<{ items: AdminEntitlement[]; busy: boolean }>()
+const { status } = usePurchaseValidity(() => props.items)
 const emit = defineEmits<{ edit: [item: AdminEntitlement]; refund: [item: AdminEntitlement] }>()
 const { t } = useI18n()
 const columns = computed(() => [
@@ -25,7 +27,7 @@ function refundable(item: AdminEntitlement): boolean { return ['activating', 'ac
       <template #validity-cell="{ row }"><div class="admin-cell"><span>{{ formatDateTime(row.original.validFrom) }}</span><small>{{ formatDateTime(row.original.validUntil) }}</small></div></template>
       <template #traffic-cell="{ row }"><div class="admin-cell"><span>{{ formatBytes(row.original.trafficLimitBytes) }}</span><small>{{ t(`adminUserProfile.cadence.${row.original.resetStrategy}`) }} / {{ row.original.squadUuids.length }}</small></div></template>
       <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
-      <template #status-cell="{ row }"><StatusBadge :tone="entitlementTone(row.original.status)" :label="t(`adminUserProfile.entitlementStatus.${row.original.status}`)" /></template>
+      <template #status-cell="{ row }"><StatusBadge :tone="entitlementTone(status(row.original))" :label="t(`adminUserProfile.entitlementStatus.${status(row.original)}`)" /></template>
       <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminUserProfile.edit')" :disabled="busy" @click="emit('edit', row.original)" /><UButton v-if="refundable(row.original)" color="warning" variant="ghost" icon="i-ph-arrow-u-up-left" :label="t('adminUserProfile.refund')" :disabled="busy" @click="emit('refund', row.original)" /></div></template>
       <template #empty>{{ t('adminUserProfile.noEntitlements') }}</template>
     </UTable>

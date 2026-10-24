@@ -6,11 +6,9 @@ import SquadProfileFacts from '@/components/squad-profile/SquadProfileFacts.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 import { selectionHaptic } from '@/utils/telegram'
-import SquadNodeBlocks from './SquadNodeBlocks.vue'
 
 const props = defineProps<{
   informational?: boolean
-  showNodes?: boolean
   squad: SquadProduct
   selected: boolean
   included: boolean
@@ -81,7 +79,7 @@ function toggle(): void {
         <template #namePrefix>
           <UIcon v-if="featured" class="squad-card__featured" name="i-ph-crown" :aria-label="$t('catalog.featured')" />
         </template>
-        <template #nameTags>
+        <template v-if="!informational || $slots.status" #nameTags>
           <slot name="status" />
           <UIcon v-if="!informational && !squad.visible" name="i-ph-lock-key" :aria-label="$t('catalog.hidden')" />
           <UBadge v-if="!informational && squad.activationRequired" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="warning" variant="solid" icon="i-ph-lock-key" :aria-label="$t('catalog.activationRequired')" />
@@ -94,13 +92,7 @@ function toggle(): void {
       </div>
     </div>
 
-    <div v-if="showNodes !== false && squad.accessibleNodes.length" class="squad-card__nodes">
-      <div class="squad-card__nodes-heading">
-        <span class="squad-card__nodes-label">{{ $t('catalog.nodes') }}</span>
-        <SquadProfileFacts class="squad-card__tags" :profile="squad.profile" presentation="member" />
-      </div>
-      <SquadNodeBlocks :nodes="squad.accessibleNodes" />
-    </div>
+    <SquadProfileFacts :profile="squad.profile" presentation="member" />
     <slot />
   </article>
 </template>
@@ -110,8 +102,8 @@ function toggle(): void {
   position: relative;
   min-width: 0;
   display: grid;
-  gap: 0.7rem;
-  padding: 0.8rem;
+  gap: 0.45rem;
+  padding: 0.6rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
@@ -131,24 +123,8 @@ function toggle(): void {
 .squad-card__header { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.65rem; align-items: start; }
 .squad-card__price { min-width: 0; padding-top: 0.05rem; text-align: right; }
 .squad-card__price > strong { display: block; white-space: nowrap; font-family: var(--font-mono); font-size: 1.1rem; }
-.squad-card__nodes {
-  display: grid;
-  gap: 0.35rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--line);
-}
-.squad-card__nodes-heading { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0.55rem; }
-.squad-card__tags { justify-content: flex-end; margin-top: -0.25rem; }
-.squad-card__nodes-label {
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 @media (min-width: 900px) {
-  .squad-pricing-card { gap: 0.55rem; padding: 0.65rem; }
+  .squad-pricing-card { gap: 0.4rem; padding: 0.55rem; }
   .squad-card__header { gap: 0.45rem; }
-  .squad-card__nodes { gap: 0.3rem; padding-top: 0.5rem; }
 }
 </style>

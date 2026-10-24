@@ -33,11 +33,11 @@ const countryText = computed(() => {
       <span class="squad-profile-facts__carrier-route"><CarrierLogo carrier="unicom" :label="t('squadProfile.carriers.chinaUnicom')" />{{ profile.cu }}</span>
       <span class="squad-profile-facts__carrier-route"><CarrierLogo carrier="mobile" :label="t('squadProfile.carriers.chinaMobile')" />{{ profile.cm }}</span>
       <span v-if="presentation !== 'member'"><UIcon name="i-ph-gauge" />{{ portText }}</span>
-      <span v-if="presentation !== 'member'"><UIcon name="i-ph-map-pin" />{{ countryText }}</span>
+      <span><UIcon name="i-ph-map-pin" />{{ countryText }}</span>
     </template>
     <template v-else-if="profile.type === 'international_network'">
       <span v-if="presentation !== 'member'"><UIcon name="i-ph-gauge" />{{ portText }}</span>
-      <span v-if="presentation !== 'member'"><UIcon name="i-ph-map-pin" />{{ countryText }}</span>
+      <span><UIcon name="i-ph-map-pin" />{{ countryText }}</span>
       <span><UIcon name="i-ph-broadcast" />{{ profile.upstreamCarriers.join(', ') }}</span>
     </template>
   </div>
@@ -45,8 +45,8 @@ const countryText = computed(() => {
 
 <style scoped>
 .squad-profile-facts { min-width: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; color: var(--text-faint); font-size: 0.68rem; line-height: 1.45; }
-.squad-profile-facts > span { display: inline-flex; align-items: center; gap: 0.25rem; min-width: 0; }
-.squad-profile-facts :deep(svg) { flex: 0 0 auto; }
+.squad-profile-facts > span { display: inline-flex; align-items: center; gap: 0.25rem; min-width: 0; overflow-wrap: anywhere; }
+.squad-profile-facts :deep(svg), .squad-profile-facts :deep(.iconify) { flex: 0 0 auto; }
 .squad-profile-facts__carrier-route { font-weight: 600; }
 .squad-profile-facts--member { gap: 0.35rem; }
 .squad-profile-facts--member > span { max-width: 100%; padding: 0.27rem 0.38rem; border: 1px solid var(--squad-profile-tone-line); border-radius: 7px; color: var(--text-muted); background: color-mix(in srgb, var(--squad-profile-tone-soft) 70%, var(--surface)); }

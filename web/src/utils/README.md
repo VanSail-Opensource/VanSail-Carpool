@@ -1,5 +1,8 @@
 # Utilities
 
+- `purchaseValidity.ts` derives display status and current-term eligibility from raw lifecycle status and exclusive validity boundaries. It never mutates purchase or financial records; terminal statuses remain authoritative.
+- `purchaseValidity.test.ts` covers exclusive expiry, future terms, terminal states and predecessor/successor isolation in hosted CI.
+
 - `experience.ts` selects browser or Mini App behavior without loading the Telegram SDK.
 - `feedback.ts` delegates member haptics installed by Mini App bootstrap and stays inactive in the browser console.
 
