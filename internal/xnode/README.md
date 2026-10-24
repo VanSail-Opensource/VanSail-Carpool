@@ -10,7 +10,8 @@ enrollment, missing samples, ownership and settled-period conflicts. The existin
 `ErrConflict` contract is retained; payloads and storage errors are never logged.
 Sequence-gap warnings include numeric received/expected positions for migration
 reconciliation, without advancing or fabricating any durable cursor.
-Hosted regressions cover replay work bounds and unchanged accounting fences.
+`master_traffic_test.go` covers replay work bounds, command-result delivery and
+safe conflict diagnostics in hosted CI; accounting fences remain unchanged.
 
 Firewall reconciliation retains per-node execution and durable receipts. Its
 database queue projects only lagging banks, avoiding fleet delivery work for
