@@ -42,7 +42,7 @@ func (s *Service) exportPostgres(ctx context.Context, temporary, final string) e
 	if err != nil {
 		return err
 	}
-	dump := exec.CommandContext(ctx, "pg_dump", "--format=custom", "--no-owner", "--no-acl", "--no-password")
+	dump := exec.CommandContext(ctx, "pg_dump", "--format=custom", "--no-owner", "--no-acl", "--no-password", "--exclude-extension=pg_stat_statements")
 	dump.Env = environment
 	dump.Stdout = file
 	dump.Stderr = io.Discard

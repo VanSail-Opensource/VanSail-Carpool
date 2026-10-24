@@ -55,3 +55,6 @@ PostgreSQL online upload/file replacement is refused. Physical restore and PITR
 require stopped application workers and the separate pgBackRest operator flow.
 Automatic PostgreSQL retention skips legacy SQLite files/records, retaining the
 source recovery evidence until an operator deliberately removes it.
+Logical recovery runs as the schema owner, reapplies database-local grants, and
+verifies the restored database through the restricted application role. Monitoring
+extension provisioning remains an administrator step outside the data archive.

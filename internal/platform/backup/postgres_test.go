@@ -65,7 +65,7 @@ func TestPostgresLogicalRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer admin.Exec(context.Background(), `DROP DATABASE `+name+` WITH (FORCE)`)
-	parsed, err := neturl.Parse(os.Getenv("POSTGRES_RECOVERY_ADMIN_URL"))
+	parsed, err := neturl.Parse(os.Getenv("POSTGRES_RECOVERY_MIGRATION_URL"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,32 @@ func TestPostgresLogicalRecovery(t *testing.T) {
 	if output, e := restore.CombinedOutput(); e != nil {
 		t.Fatalf("restore: %v %s", e, output)
 	}
-	cfg.URL = parsed.String()
+	// Recover owner/application permissions as a separate administrator step.
+	// Database-local grants are not part of a --no-acl logical archive.
+	adminConfig, err := pgx.ParseConfig(os.Getenv("POSTGRES_RECOVERY_ADMIN_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	adminConfig.Database = name
+	provision, err := pgx.ConnectConfig(ctx, adminConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer provision.Close(ctx)
+	if _, err = provision.Exec(ctx, `CREATE EXTENSION pg_stat_statements;
+GRANT USAGE ON SCHEMA public TO vansail_app;
+GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO vansail_app;
+GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO vansail_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE vansail_migration IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO vansail_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE vansail_migration IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO vansail_app;`); err != nil {
+		t.Fatal(err)
+	}
+	applicationURL, err := neturl.Parse(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	applicationURL.Path = "/" + name
+	cfg.URL = applicationURL.String()
 	restored, err := postgres.Open(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -86,6 +111,10 @@ func TestPostgresLogicalRecovery(t *testing.T) {
 	}
 	if before.Hash != after.Hash {
 		t.Fatal("logical recovery changed authoritative records")
+	}
+	var role, owner string
+	if err = restored.QueryRowContext(ctx, `SELECT current_user,pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.balances'::regclass`).Scan(&role, &owner); err != nil || role != "vansail_app" || owner != "vansail_migration" {
+		t.Fatal("logical recovery role boundary changed", err)
 	}
 	t.Logf("restored %d exact tables, evidence %s", len(after.Tables), after.Hash)
 }

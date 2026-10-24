@@ -63,9 +63,13 @@ SQLite snapshots and hashed reports independently until the cutover is accepted.
    timeline and take a fresh full backup before normal traffic resumes.
 
 Logical `.dump` exports are administrative snapshots produced by `pg_dump` and
-listed through the existing backup API. Restore with PostgreSQL 18 `pg_restore
---exit-on-error` into a separate empty database, using a recovery administrator
-for extensions/ownership and then restoring application grants. The live API
+listed through the existing backup API. They exclude pg_stat_statements, which
+contains monitoring data and requires administrator extension ownership. Restore
+with PostgreSQL 18 `pg_restore --exit-on-error --no-owner --no-acl` as the migration
+role into a separate empty database owned by that role. As recovery administrator,
+create pg_stat_statements and restore the application's schema USAGE, table DML,
+sequence USAGE/SELECT and migration-role default privileges from `init.sh` in the
+new database. Verify both schema ownership and application-role access. The live API
 refuses PostgreSQL archive upload and file-swap restore. A completed archive
 record proves creation/structural inspection only; successful restore drills are
 separate operational evidence.

@@ -99,7 +99,9 @@ jobs:
           docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/migration_password)
             admin=$(cat /run/secrets/postgres_password)
-            export POSTGRES_RECOVERY_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
+            application=$(cat /run/secrets/application_password)
+            export POSTGRES_RECOVERY_TEST_URL="postgres://vansail_app:$application@127.0.0.1/vansail?sslmode=disable"
+            export POSTGRES_RECOVERY_MIGRATION_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
             export POSTGRES_RECOVERY_ADMIN_URL="postgres://postgres:$admin@127.0.0.1/vansail?sslmode=disable"
             /tmp/backup.test -test.v -test.timeout=5m -test.run TestPostgresLogicalRecovery
           '
