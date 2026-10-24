@@ -29,7 +29,11 @@ func ConfigureMemory(cfg Config, logger *slog.Logger) error {
 	}
 	if _, explicit := os.LookupEnv("GOMEMLIMIT"); !explicit {
 		if limit := containerMemoryLimit(os.ReadFile); limit > 0 {
-			debug.SetMemoryLimit(limit / 8 * 5)
+			fraction := int64(5)
+			if os.Getenv("PG_EMBEDDED") == "true" {
+				fraction = 3 // PostgreSQL shares this cgroup: 384 MiB of a 1 GiB limit.
+			}
+			debug.SetMemoryLimit(limit / 8 * fraction)
 		}
 	}
 	logger.Info("process memory budget", "go_limit_bytes", debug.SetMemoryLimit(-1), "proxy_cache_bytes", cfg.ProxyCacheMaxBytes, "temporary_directory", temporary, "sqlite_temporary_directory", os.Getenv("SQLITE_TMPDIR"))

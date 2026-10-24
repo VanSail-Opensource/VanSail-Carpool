@@ -134,4 +134,9 @@ Pull requests enforce source line limits, per-folder file maps, locale parity, i
 Dependabot checks the root Go module, `web` npm dependencies, Docker base images, and GitHub Actions weekly. Dependabot pull requests are eligible for squash auto-merge only after every reported check succeeds; enable repository auto-merge and protect `main` with the required checks for this policy to take effect.
 
 Existing deployments retain `/data/tx-carpool.db` and the `tx-carpool-data` volume.
+
+The image also embeds PostgreSQL 18 server and pgBackRest. The selected opt-in
+[single-container deployment](deploy/embedded/README.md) has a 1 GiB memory
+budget and persistent PostgreSQL storage. Existing SQLite installations must
+complete the verified offline migration before changing the authoritative backend.
 The product and executable names change without relocating persistent data.

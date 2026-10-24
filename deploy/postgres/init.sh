@@ -1,15 +1,17 @@
 #!/bin/sh
 set -eu
 # psql variable interpolation quotes secrets as SQL literals; never enable xtrace.
-APP_PASSWORD=$(cat /run/secrets/application_password)
-MIGRATION_PASSWORD=$(cat /run/secrets/migration_password)
+APP_PASSWORD=$(cat "${APP_PASSWORD_FILE:-/run/secrets/application_password}")
+MIGRATION_PASSWORD=$(cat "${MIGRATION_PASSWORD_FILE:-/run/secrets/migration_password}")
 export APP_PASSWORD MIGRATION_PASSWORD
 psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --set ON_ERROR_STOP=1 <<'SQL'
 \getenv app_password APP_PASSWORD
 \getenv migration_password MIGRATION_PASSWORD
-CREATE ROLE vansail_app LOGIN PASSWORD :'app_password';
-CREATE ROLE vansail_migration LOGIN PASSWORD :'migration_password';
-CREATE ROLE vansail_monitor NOLOGIN;
+SELECT 'CREATE ROLE vansail_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname='vansail_app') \gexec
+SELECT 'CREATE ROLE vansail_migration LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname='vansail_migration') \gexec
+SELECT 'CREATE ROLE vansail_monitor NOLOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname='vansail_monitor') \gexec
+ALTER ROLE vansail_app PASSWORD :'app_password';
+ALTER ROLE vansail_migration PASSWORD :'migration_password';
 GRANT pg_monitor TO vansail_monitor;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT CONNECT ON DATABASE vansail TO vansail_app, vansail_migration;
@@ -19,6 +21,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE vansail_migration IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO vansail_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE vansail_migration IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO vansail_app;
-CREATE EXTENSION pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SQL
 unset APP_PASSWORD MIGRATION_PASSWORD

@@ -69,6 +69,8 @@ func VerifyEncryption(ctx context.Context, q queryer, key []byte) error {
 		`SELECT 'xnode.identity.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,credentials_cipher FROM xnode_identities WHERE credentials_cipher<>''`,
 		`SELECT 'xnode.subscription.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,subscription_cipher FROM xnode_identities WHERE subscription_cipher<>''`,
 		`SELECT password_context,password_ciphertext FROM emby_accounts WHERE password_ciphertext<>''`,
+		`SELECT 'connection-ip-block:'||user_id||':'||node_uuid||':'||ip_digest,sealed_ip FROM connection_ip_blocks WHERE sealed_ip<>''`,
+		`SELECT 'telegram_pm:'||operation_id,encrypted_payload FROM telegram_pm_payloads WHERE encrypted_payload<>''`,
 		`SELECT 'xnode.command.'||o.actor_user_id||'.'||o.idempotency_key,json_extract(j.payload,'$.sealedTarget') FROM outbox_jobs j JOIN provider_operations o ON json_extract(j.payload,'$.operationId')=o.id WHERE j.kind='provider_operation' AND o.kind='xnode_command' AND json_extract(j.payload,'$.sealedTarget')<>''`,
 	}
 	for _, query := range queries {

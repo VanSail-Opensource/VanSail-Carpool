@@ -1,5 +1,10 @@
 # PostgreSQL infrastructure
 
+The selected application deployment now runs PostgreSQL inside the
+[1 GiB application container](../embedded/README.md). This separate-service
+profile remains available for isolated CI, recovery drills and external database
+deployments. Never run both server layouts against the same data volume.
+
 See [recovery operations](recovery.md) for the pgBackRest image, encrypted local
 and S3 repository examples, offline restore, retention and hosted recovery drills.
 

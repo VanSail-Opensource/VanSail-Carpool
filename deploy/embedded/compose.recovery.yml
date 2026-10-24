@@ -1,0 +1,14 @@
+# Merge with compose.yml to enable encrypted physical backups and WAL archiving.
+services:
+  application:
+    environment:
+      PGBACKREST_CONFIG: /run/secrets/pgbackrest_config
+    secrets: [pgbackrest_config]
+    volumes:
+      - backup_repository:/var/lib/pgbackrest
+secrets:
+  pgbackrest_config:
+    file: ../postgres/secrets/embedded_pgbackrest_config
+volumes:
+  backup_repository:
+    name: vansail-pgbackrest

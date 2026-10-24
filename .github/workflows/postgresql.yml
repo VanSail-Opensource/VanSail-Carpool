@@ -136,11 +136,16 @@ jobs:
           docker compose --profile monitoring up -d postgres-exporter
           exporter=$(docker compose ps -q postgres-exporter)
           for attempt in $(seq 1 10); do
-            if docker run --rm --network "container:$exporter" alpine:3.24 wget -T 15 -qO- http://127.0.0.1:9187/metrics > "$RUNNER_TEMP/postgres.metrics"; then break; fi
+            if docker run --rm --network "container:$exporter" alpine:3.24 wget -T 15 -qO- http://127.0.0.1:9187/metrics > "$RUNNER_TEMP/postgres.metrics" &&
+              grep -Eq '^pg_up(\{[^}]*\})? 1$' "$RUNNER_TEMP/postgres.metrics" &&
+              grep -Eq '^vansail_financial_discrepancies(\{[^}]*\})? 0$' "$RUNNER_TEMP/postgres.metrics"; then break; fi
             sleep 2
           done
-          grep -q '^pg_up 1' "$RUNNER_TEMP/postgres.metrics"
-          grep -q '^vansail_financial_discrepancies 0' "$RUNNER_TEMP/postgres.metrics"
+          docker compose --profile monitoring logs --no-color postgres-exporter
+          grep -E '^(pg_up|pg_exporter_last_scrape_error|vansail_)' "$RUNNER_TEMP/postgres.metrics"
+          grep -Eq '^pg_up(\{[^}]*\})? 1$' "$RUNNER_TEMP/postgres.metrics"
+          grep -Eq '^pg_exporter_last_scrape_error(\{[^}]*\})? 0$' "$RUNNER_TEMP/postgres.metrics"
+          grep -Eq '^vansail_financial_discrepancies(\{[^}]*\})? 0$' "$RUNNER_TEMP/postgres.metrics"
           grep -q '^vansail_accounting_known_sequence_backlog' "$RUNNER_TEMP/postgres.metrics"
       - uses: actions/upload-artifact@v7
         if: always()

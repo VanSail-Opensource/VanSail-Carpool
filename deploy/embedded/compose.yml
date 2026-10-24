@@ -1,0 +1,39 @@
+name: vansail-carpool
+services:
+  application:
+    image: ${VANSAIL_IMAGE:?Set the reviewed image digest}
+    restart: unless-stopped
+    stop_grace_period: 90s
+    mem_limit: 1g
+    memswap_limit: 1g
+    shm_size: 64m
+    env_file: ../postgres/secrets/application.env
+    environment:
+      PG_EMBEDDED: "true"
+      DB_DRIVER: postgres
+      DATABASE_URL: ""
+      DATABASE_URL_FILE: ""
+      DB_MAX_OPEN_CONNS: "8"
+      DB_MAX_IDLE_CONNS: "4"
+      DATA_DIR: /data
+    volumes:
+      - application_data:/data
+      - postgres_data:/var/lib/postgresql
+    ports: [127.0.0.1:8080:8080]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, /usr/local/bin/vansail-carpool, healthcheck, --url, http://127.0.0.1:8080/healthz]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+volumes:
+  application_data:
+    name: tx-carpool-data
+  postgres_data:
+    name: vansail-postgres-data

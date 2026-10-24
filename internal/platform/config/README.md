@@ -14,7 +14,9 @@ migration defaults in hosted CI.
 - `config_test.go` verifies canonical public-origin validation and complete valid environment loading.
 - `memory.go` configures writable process and SQLite temporary storage and derives a Go soft
   memory limit from cgroup v1/v2 limits (including ancestors) unless GOMEMLIMIT
-  is explicit. A 256 MiB container gets a 160 MiB runtime budget. `memory_test.go`
+  is explicit. A 256 MiB legacy container gets a 160 MiB runtime budget. Embedded
+  PostgreSQL (`PG_EMBEDDED=true`) reserves more memory for the database: Go gets
+  384 MiB of the selected 1 GiB container limit. `memory_test.go`
   covers finite, inherited, missing and unlimited container limits in hosted CI.
 - PROXY_CACHE_MAX_BYTES bounds the rebuildable proxy cache, including staging
   and sidecars; the default is 1073741824 (1 GiB), with a 16 MiB minimum.

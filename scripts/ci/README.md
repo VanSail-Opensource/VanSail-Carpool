@@ -1,5 +1,12 @@
 # Hosted Go race checks
 
+`embedded_postgres.sh` rehearses the actual production image with no external
+network, read-only root, unprivileged user and a 1 GiB cgroup. It verifies embedded
+PostgreSQL health, tuning/durability, restricted schema/application roles, fresh
+activation, data surviving shutdown/restart, Go memory reservation, and whole
+container termination when PostgreSQL dies. Dedicated disposable named volumes
+are cleaned up only after the container is removed.
+
 The quality job also runs the managed two-node deployment barrier regression
 early, so a preflight or acknowledgement regression produces focused diagnostics
 before the complete race shards finish. The race/coverage inventories still

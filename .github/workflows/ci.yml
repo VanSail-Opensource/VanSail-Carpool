@@ -49,6 +49,9 @@ jobs:
               - '.github/workflows/container.yml'
               - '.github/workflows/postgresql.yml'
               - 'deploy/postgres/**'
+              - 'deploy/embedded/**'
+              - 'Dockerfile'
+              - 'docker-compose.example.yml'
               - 'docs/plans/postgresql/**'
               - 'scripts/postgresql_inventory.py'
               - 'scripts/ci/**'
@@ -272,8 +275,13 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
+          load: true
+          tags: vansail-image-rehearsal:ci
           cache-from: type=gha,scope=tx-carpool
           cache-to: type=gha,mode=max,scope=tx-carpool
+
+      - name: Verify embedded PostgreSQL production image
+        run: bash scripts/ci/embedded_postgres.sh vansail-image-rehearsal:ci
 
   xnode-performance:
     name: X-Node steady-state CPU profile

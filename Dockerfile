@@ -42,25 +42,27 @@ LABEL org.opencontainers.image.title="VanSail Carpool" \
       org.opencontainers.image.revision="${COMMIT}" \
       org.opencontainers.image.created="${BUILD_DATE}"
 
-RUN apk add --no-cache ca-certificates tzdata postgresql18-client \
+RUN apk add --no-cache ca-certificates tzdata postgresql18 postgresql18-contrib pgbackrest tini \
     && addgroup -S -g 10001 txcarpool \
     && adduser -S -D -H -u 10001 -G txcarpool txcarpool \
-    && install -d -o txcarpool -g txcarpool /data
+    && install -d -o txcarpool -g txcarpool /data /var/lib/postgresql /var/lib/pgbackrest
 
 COPY --from=go-build --chown=10001:10001 /out/server /usr/local/bin/vansail-carpool
 COPY --from=go-build --chown=10001:10001 /out/db-schema /out/db-migrate /usr/local/bin/
 COPY docs/licenses /usr/share/licenses/vansail-carpool
+COPY --chmod=755 deploy/embedded/*.sh /usr/local/lib/vansail/
+COPY deploy/postgres/init.sh /usr/local/lib/vansail/init-roles.sh
 
 ENV PORT=8080 \
     DATA_DIR=/data \
     TZ=UTC
 
 USER 10001:10001
-VOLUME ["/data"]
+VOLUME ["/data", "/var/lib/postgresql"]
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["/usr/local/bin/vansail-carpool", "healthcheck", "--url", "http://127.0.0.1:8080/healthz"]
 
-ENTRYPOINT ["/usr/local/bin/vansail-carpool"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/lib/vansail/entrypoint.sh"]
 CMD ["serve"]

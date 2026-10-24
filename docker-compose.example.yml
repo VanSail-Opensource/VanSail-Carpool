@@ -1,5 +1,7 @@
 name: remna-user-panel
 
+# Selected 1 GiB embedded PostgreSQL deployment: deploy/embedded/compose.yml.
+# Existing SQLite installations must complete the offline cutover gates first.
 # Optional, isolated PostgreSQL 18 infrastructure and protected-secret setup:
 # deploy/postgres/compose.yml and deploy/postgres/README.md.
 # Keep SQLite until the explicit migration and verification gates pass.
@@ -10,6 +12,8 @@ services:
     hostname: vansail-carpool
     restart: unless-stopped
     stop_grace_period: 30s
+    mem_limit: 1g
+    memswap_limit: 1g
 
     environment:
       PORT: 8080
