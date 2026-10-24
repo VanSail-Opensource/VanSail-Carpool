@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Hosted-only production-image rehearsal. Synthetic configuration; no network.
 set -euo pipefail
+trap 'echo "Embedded image check failed at line $LINENO" >&2' ERR
 [[ ${GITHUB_ACTIONS:-} == true ]] || { echo 'Hosted CI only' >&2; exit 1; }
 image=${1:?image required}
 container="vansail-embedded-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -55,10 +56,18 @@ healthy
 [[ $(sql "SELECT phase FROM vansail_migration_state") == active ]]
 [[ $(sql "SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole FROM pg_roles WHERE rolname='vansail_app'") == t ]]
 [[ $(sql "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='balances'::regclass") == vansail_migration ]]
-docker logs "$container" 2>&1 | grep -q 'go_limit_bytes=402653184'
+docker logs "$container" 2>&1 | grep -Eq 'go_limit_bytes["=: ]+402653184'
 sql "INSERT INTO settings(key,value,updated_at) VALUES ('ci.embedded_canary','preserved',vansail_now())"
 docker stop -t 75 "$container"
 [[ $(docker inspect -f '{{.State.ExitCode}}' "$container") != 137 ]]
+# Physical recovery contains role hashes, not the separate plaintext URL files.
+# Rehearse lost credentials in this stopped, disposable CI volume only.
+docker run --rm --network none --read-only --user 10001:10001 --entrypoint sh \
+  -v "$pgdata:/var/lib/postgresql" "$image" -ec '
+    rm /var/lib/postgresql/credentials/application_password \
+      /var/lib/postgresql/credentials/migration_password \
+      /var/lib/postgresql/credentials/postgres_password
+  '
 docker start "$container"
 healthy
 [[ $(sql "SELECT value FROM settings WHERE key='ci.embedded_canary'") == preserved ]]

@@ -45,7 +45,8 @@ LABEL org.opencontainers.image.title="VanSail Carpool" \
 RUN apk add --no-cache ca-certificates tzdata postgresql18 postgresql18-contrib pgbackrest tini \
     && addgroup -S -g 10001 txcarpool \
     && adduser -S -D -H -u 10001 -G txcarpool txcarpool \
-    && install -d -o txcarpool -g txcarpool /data /var/lib/postgresql /var/lib/pgbackrest
+    && install -d -o txcarpool -g txcarpool /data /var/lib/postgresql \
+       /var/lib/pgbackrest /var/lib/pgbackrest/log /var/lib/pgbackrest/spool /var/lib/pgbackrest/lock
 
 COPY --from=go-build --chown=10001:10001 /out/server /usr/local/bin/vansail-carpool
 COPY --from=go-build --chown=10001:10001 /out/db-schema /out/db-migrate /usr/local/bin/

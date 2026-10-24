@@ -21,6 +21,9 @@ durable PostgreSQL shutdown. Either process failing stops the whole container.
 when required. Secrets/URLs persist with mode 0600 below the database volume;
 the shared role initializer is restart-safe. A populated SQLite source prevents
 an accidental fresh PostgreSQL application startup.
+If recovery lacks the separate password files, peer-authenticated bootstrap
+recreates and synchronizes SQL login passwords before starting the application;
+the application master key must still come from independent protected recovery.
 
 For an existing installation, follow the [cutover gates](../postgres/cutover.md).
 Start this container with command `postgres-only` while the application is
