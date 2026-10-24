@@ -6,7 +6,10 @@ volume mounted at `/var/lib/postgresql`, per the official image contract.
 
 1. Create `secrets/` with mode 0700. Generate three different passwords into
    `postgres_password`, `application_password`, and `migration_password`, mode
-   0600. These files are ignored by Git. Use a secret manager in production.
+   0444 inside that private directory. Compose file secrets are bind mounts;
+   PostgreSQL's container OS user must be able to read them. The 0700 parent
+   protects them on the host. These files are ignored by Git. Use managed Docker
+   secrets or a secret manager in production.
 2. Run `docker compose -f deploy/postgres/compose.yml --profile postgres up -d`.
 3. Check health and authenticate using the application role from a container
    joined to `vansail-postgres_database`. No database port is published.

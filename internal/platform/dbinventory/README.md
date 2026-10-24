@@ -1,5 +1,8 @@
 # Persistence inventory
 
+`capture.go` reads schema and counts through one read-only transaction.
+`seeds.go` emits deterministic bootstrap rows exclusively from a private fixture.
+
 `go run ./cmd/db-inventory` creates an isolated SQLite fixture using the real
 embedded migrations and startup identity rekey, then writes its schema and a
 deterministic metadata inventory. It never opens the application's configured

@@ -22,3 +22,9 @@ hosted schema-parity checks in the same change.
 
 Application activation remains disabled until domain contracts, locking,
 migration verification and recovery integration have been delivered.
+
+`open.go` owns connections and schema policy. `schema.go` checks the generated
+`contract.json` catalog manifest. `schema_test.go` exercises fresh/reapplied
+migrations, immutable histories, exact timestamps and future-version refusal in
+hosted PostgreSQL. `tokens.go`, `bind.go` and `connector.go` provide the SQL-aware
+legacy binding boundary while retaining `database/sql` repository contracts.

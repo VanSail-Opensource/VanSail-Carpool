@@ -28,6 +28,7 @@ jobs:
           mkdir -p deploy/postgres/secrets
           for role in postgres application migration; do
             openssl rand -hex 32 > "deploy/postgres/secrets/${role}_password"
+            chmod 0444 "deploy/postgres/secrets/${role}_password"
           done
           docker compose -f deploy/postgres/compose.yml --profile postgres config --quiet
       - name: Start PostgreSQL 18
@@ -54,4 +55,6 @@ jobs:
           '
       - name: Stop isolated infrastructure
         if: always()
-        run: docker compose -f deploy/postgres/compose.yml --profile postgres down -v
+        run: |
+          docker compose -f deploy/postgres/compose.yml logs --no-color postgres
+          docker compose -f deploy/postgres/compose.yml --profile postgres down -v
