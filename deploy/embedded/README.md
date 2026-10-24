@@ -33,6 +33,23 @@ verification and cutover-check, recreate with the normal `serve` command. The
 application's activation gate rechecks imported hashes before workers can run.
 Do not run the external PostgreSQL Compose service against this same volume.
 
+Merge `compose.offline.yml` for database-only mode with a database health check.
+For example, from the repository root with protected configuration already set:
+
+```sh
+docker compose -f deploy/embedded/compose.yml -f deploy/embedded/compose.recovery.yml -f deploy/embedded/compose.offline.yml up -d --wait
+docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-schema migrate
+docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate import --source /data/final-snapshot.db --output /data/import-report.json
+docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate verify --source /data/final-snapshot.db --output /data/verification-report.json
+docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate cutover-check --output /data/readiness-report.json
+```
+
+Reports and snapshot paths must be new/protected as required by the CLI. After
+all gates pass, stop the offline container, then `up -d --wait` with the base and
+recovery files only. Removing the offline overlay restores `serve`; `/data` and
+database volumes persist. Do not use `down -v`. Retained SQLite data also blocks
+an initialized-but-fresh PostgreSQL application until import is verified.
+
 `tuning.sh` budgets for the combined container rather than a dedicated database:
 at 1 GiB, 128 MiB shared buffers, 256 MiB effective cache estimate, 2 MiB per sort,
 32 MiB maintenance, two 16 MiB autovacuum workers and 32 connections. Go derives

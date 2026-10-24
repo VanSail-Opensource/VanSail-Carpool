@@ -1,0 +1,10 @@
+# Temporary database-only mode for conversion/recovery; no Go workers or HTTP.
+services:
+  application:
+    command: [postgres-only]
+    healthcheck:
+      test: [CMD, /usr/libexec/postgresql18/pg_isready, -h, 127.0.0.1, -U, postgres, -d, vansail]
+      interval: 5s
+      timeout: 5s
+      start_period: 60s
+      retries: 12

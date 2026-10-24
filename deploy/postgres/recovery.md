@@ -1,5 +1,14 @@
 # PostgreSQL recovery operations
 
+For the selected [embedded layout](../embedded/README.md), PostgreSQL and
+pgBackRest are installed in the application image. Use its recovery overlay and
+config (socket `/var/lib/postgresql/socket`, OS user `txcarpool`, UID 10001).
+Stop the whole application container before restoring to a new database volume;
+start with its offline overlay for verification before enabling `serve`. The
+commands below apply to both layouts after selecting the correct container,
+configuration and database OS owner. Missing embedded password files are
+recreated through local peer authentication; preserve CONFIG_MASTER_KEY separately.
+
 `Dockerfile` adds pgBackRest to the official PostgreSQL 18 image.
 `compose.recovery.yml` overlays `compose.yml` with continuous WAL archiving and
 a separate repository volume. `pgbackrest.conf.example` configures AES-256-CBC

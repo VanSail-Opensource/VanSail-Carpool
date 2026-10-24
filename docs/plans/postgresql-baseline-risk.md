@@ -32,6 +32,10 @@ Capture them before choosing production pool limits or estimating outage time.
 Inventory capture and Go static analysis are permitted local checks. Full Go
 regressions and PostgreSQL role/authentication checks run in hosted Actions.
 The optional infrastructure creates no host port and uses separate SCRAM roles.
-Application activation refuses PostgreSQL until the remaining compatibility work
-is implemented; it cannot silently open SQLite in response to an explicit request
-for PostgreSQL. No production settings or database files have been changed.
+Application activation requires a supported fresh schema or an unchanged,
+verified import with matching encryption key and no unresolved processing work.
+It cannot silently open SQLite after an explicit PostgreSQL request. Hosted
+schema, business/concurrency, conversion, logical/full/PITR and exporter gates
+have passed; the selected embedded image and complete release remain tracked in
+[progress](postgresql-progress.md). Production measurements/cutover remain
+unperformed, and no production settings or database files have been changed.

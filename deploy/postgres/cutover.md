@@ -1,5 +1,11 @@
 # PostgreSQL cutover and rehearsal
 
+The selected production layout is the [embedded 1 GiB container](../embedded/README.md).
+Use its base/recovery/offline Compose files, run migration commands with the
+generated migration URL file, then stop database-only mode before normal startup.
+The separate PostgreSQL/application service commands below remain the alternative
+external-database rehearsal. Never attach both layouts to the same PGDATA.
+
 Repository code and synthetic CI evidence are not production acceptance.
 Record the source image/schema, final snapshot hashes, protected master key,
 callback ingress policy, operator, target, measured downtime and recovery results

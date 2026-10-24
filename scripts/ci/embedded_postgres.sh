@@ -8,10 +8,13 @@ container="vansail-embedded-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 data="${container}-data"
 pgdata="${container}-postgres"
 repository="${container}-backup"
+guard="${container}-guard"
+guarddata="${container}-guard-data"
 cleanup() {
   docker logs --tail 100 "$container" || true
-  docker rm -f "$container" || true
-  docker volume rm "$data" "$pgdata" "$repository" || true
+  docker logs --tail 30 "$guard" 2>/dev/null || true
+  docker rm -f "$container" "$guard" || true
+  docker volume rm "$data" "$pgdata" "$repository" "$guarddata" || true
 }
 trap cleanup EXIT
 docker volume create "$data"
@@ -93,4 +96,29 @@ for attempt in $(seq 1 15); do
 done
 [[ $(docker inspect -f '{{.State.Running}}' "$container") == false ]]
 [[ $(docker inspect -f '{{.State.ExitCode}}' "$container") != 0 ]]
+# An offline-initialized empty database must not bypass the SQLite source guard.
+docker volume create "$guarddata"
+start_guard() {
+  docker run -d --name "$guard" --network none --memory 1g --memory-swap 1g \
+    --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+    -v "$data:/data" -v "$guarddata:/var/lib/postgresql" \
+    -e PG_EMBEDDED=true -e DB_DRIVER=postgres "$image" "$@"
+}
+start_guard postgres-only
+for attempt in $(seq 1 30); do
+  if docker exec "$guard" test -s /var/lib/postgresql/credentials/migration_url; then break; fi
+  sleep 1
+done
+docker exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url "$guard" db-schema migrate
+docker exec "$guard" sh -ec 'set -C; printf synthetic-legacy-source > /data/tx-carpool.db'
+docker stop -t 75 "$guard"
+docker rm "$guard"
+start_guard serve
+for attempt in $(seq 1 30); do
+  [[ $(docker inspect -f '{{.State.Running}}' "$guard") == false ]] && break
+  sleep 1
+done
+[[ $(docker inspect -f '{{.State.Running}}' "$guard") == false ]]
+[[ $(docker inspect -f '{{.State.ExitCode}}' "$guard") != 0 ]]
+docker logs "$guard" 2>&1 | grep -q 'Existing SQLite requires verified import'
 echo 'Verified 1 GiB embedded PostgreSQL startup, tuning, persistence, encrypted recovery, signals and failure supervision.'

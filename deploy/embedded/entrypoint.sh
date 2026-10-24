@@ -41,6 +41,13 @@ if [ "$1" = postgres-only ]; then
 fi
 # Schema work uses migration credentials before the restricted app is started.
 DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url db-schema migrate
+if [ -s "${DATA_DIR:-/data}/tx-carpool.db" ]; then
+  phase=$(psql -Atc 'SELECT phase FROM vansail_migration_state WHERE singleton=1')
+  if [ "$phase" = fresh ]; then
+    echo 'Existing SQLite requires verified import before starting the PostgreSQL application' >&2
+    exit 1
+  fi
+fi
 export DATABASE_URL_FILE=/var/lib/postgresql/credentials/application_url
 export DB_MIGRATE_ON_START=false
 /usr/local/bin/vansail-carpool "$@" &
