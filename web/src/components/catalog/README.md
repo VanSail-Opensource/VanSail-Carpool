@@ -61,6 +61,13 @@ Shared cards keep the entire selection surface keyboard accessible; profile fact
 
 `CatalogExperience.test.ts` guards PAYG defaults, isolation from the combo purchase gate and view switching in hosted CI.
 
+Explore is a lazy router entry. Its PAYG and Combo components are independent
+Vue async imports; only the rendered mode loads its resources. `CatalogChunkState.vue`
+uses shared skeleton/notice components for import loading and recovery, preserving
+mode controls. API errors retain each mode's existing retry flow. Catalog/coupon
+reads are excluded from session preload and Home; financial decisions still make
+fresh requests through their existing loaders and checkout paths.
+
 - `CatalogModeTransition.vue` presents an 800ms viewport-wide introduction. Animation completion releases the content gate; a 900ms fallback handles suppressed WebView events. Readiness remeasures controls without restarting the scene. Combo content mounts immediately but stays hidden/inert until completion, then enters over 200ms. Only mode navigation and application navigation sit outside its continuous cover; PAYG additionally reserves its wallet. Scroll/viewport changes remeasure without ending the scene. Reduced motion skips both animations. Generation checks discard stale scenes on rapid switching.
 
 - `CatalogModeTransition.test.ts` covers rapid scene replacement, timed disposal and reduced-motion omission in hosted CI.

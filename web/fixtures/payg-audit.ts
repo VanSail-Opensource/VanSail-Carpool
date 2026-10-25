@@ -12,6 +12,7 @@ import '@/styles/main.css'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
+performance.setResourceTimingBufferSize(4000)
 const admin = params.has('admin')
 setExperience(admin ? 'browser' : 'miniapp')
 initializeBrowserTheme(); setBrowserTheme(params.has('light') ? 'light' : 'dark')

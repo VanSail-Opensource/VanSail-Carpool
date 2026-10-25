@@ -1,5 +1,11 @@
 # Constructed browser fixtures
 
+PAYG `deferred` exposes an Explore entry action; `window.paygAuditCalls` and
+resource timings show that PAYG/Combo imports and reads start on selection.
+Combine with `slow=1800`, `empty`, `combo-empty`, `error` or `combo-error` for
+loading/recovery states. An isolated browser context can go offline after PAYG
+loads to exercise the Combo chunk recovery, then return online and Reload.
+
 Routing/DIY `recovered`, `recovered=review`, `recovered=failed` and `poll-error`
 exercise receipt resumption on entry, terminal states and status retry.
 `shell` includes the real mobile navigation to check sticky Save clearance;

@@ -68,6 +68,7 @@ type Dashboard struct {
 	User               User                `json:"user"`
 	Balance            Money               `json:"balance"`
 	ActivePurchase     *Purchase           `json:"activePurchase"`
+	ActiveSquadNames   []string            `json:"activeSquadNames,omitempty"`
 	QueuedPurchase     *Purchase           `json:"queuedPurchase"`
 	AutoRenewalFailure *AutoRenewalFailure `json:"autoRenewalFailure"`
 	Statistics         *Statistics         `json:"statistics"`

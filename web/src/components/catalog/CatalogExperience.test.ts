@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { selectionHaptic } from '@/utils/telegram'
 import CatalogExperience from './CatalogExperience.vue'
@@ -16,7 +16,9 @@ vi.mock('@/composables/useMotionPreferences', async () => {
 describe('CatalogExperience', () => {
   it('keeps a ready Combo inert until its introduction completes', async () => {
     const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    await flushPromises()
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
+    await flushPromises()
     const content = () => wrapper.get('.catalog-experience__content')
     expect(content().attributes('aria-hidden')).toBe('true')
     expect(content().attributes()).toHaveProperty('inert')
@@ -32,12 +34,14 @@ describe('CatalogExperience', () => {
   it('opens PAYG without mounting the gated combo flow and switches both ways', async () => {
     vi.mocked(selectionHaptic).mockClear()
     const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    await flushPromises()
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(false)
     await wrapper.findAll('[role=button]')[0]!.trigger('click')
     expect(selectionHaptic).not.toHaveBeenCalled()
     expect(wrapper.findComponent(CatalogModeTransition).props('mode')).toBe('payg')
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
+    await flushPromises()
     expect(selectionHaptic).toHaveBeenCalledTimes(1)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).props('embedded')).toBe(true)

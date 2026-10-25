@@ -8,14 +8,14 @@ import { formatBytes, formatDateTime } from '@/utils/format'
 import TrafficUsageBar from './TrafficUsageBar.vue'
 import type { ActivityStatus } from './memberActivity'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   activity?: ActivityStatus
   statistics: UsageStatistics
   ratio: number
   stale: boolean
   fetchedAt: RFC3339
-  catalogNodes: readonly CatalogNode[]
-}>()
+  catalogNodes?: readonly CatalogNode[]
+}>(), { activity: 'unavailable', catalogNodes: () => [] })
 
 const percentage = computed(() => Math.min(100, Math.max(0, Math.round(props.ratio * 100))))
 const tone = computed(() => percentage.value >= 90 ? 'danger' : percentage.value >= 75 ? 'warning' : 'safe')

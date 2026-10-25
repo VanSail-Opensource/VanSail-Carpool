@@ -15,7 +15,7 @@ import UsagePanel from './UsagePanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
 import type { ActivityStatus } from './memberActivity'
 
-const { dashboard, loading, error, usageRatio, catalogNodes, activeSquadNames, load } = useDashboard()
+const { dashboard, loading, error, usageRatio, activeSquadNames, load } = useDashboard()
 const { activeCombo: hasValidCombo, refresh: refreshCommunityAccess } = useCommunityAccess()
 const queuedCancellationNotice = shallowRef(false)
 const activity = shallowRef<ActivityStatus>('unavailable')
@@ -102,7 +102,6 @@ function consumeReissueRequest(): void {
             :ratio="usageRatio"
             :stale="dashboard.statisticsStale"
             :fetched-at="dashboard.fetchedAt"
-            :catalog-nodes="catalogNodes"
           />
           <section v-else class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
             <div><h3>{{ $t('dashboard.noStatistics') }}</h3><p>{{ $t('dashboard.statisticsPending') }}</p></div>

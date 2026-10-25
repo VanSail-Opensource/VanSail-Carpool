@@ -1,5 +1,9 @@
 # Catalog domain
 
+Dashboard includes optional ordered `activeSquadNames` resolved from local squad
+references for its active term. This avoids fetching the full purchasable catalog
+on Home. Label failures remain nonfatal; balance and paid entitlements stay fresh.
+
 Member catalog responses project `autoRenewalBlockedUntil` without restricting
 browsing. Quotes and checkout share the store's exact current-term check, which
 ends at expiry and applies equally to administrators using member commerce.

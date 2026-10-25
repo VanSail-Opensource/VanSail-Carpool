@@ -31,3 +31,20 @@ func TestNativeDashboardUsesOwnerWithoutLegacyIdentity(t *testing.T) {
 		t.Fatal("native cache crossed ownership", remote.owners)
 	}
 }
+
+func TestDashboardLabelsDoNotRequireCatalogOrVisibility(t *testing.T) {
+	repository := &catalogRepository{active: &model.Purchase{SquadUUIDs: []string{"second", "first", "missing"}}, addons: []model.SquadProduct{
+		{GroupID: "first", Name: "Hidden paid squad", PAYGState: "hidden"},
+		{GroupID: "second", Name: "Other paid squad"},
+	}}
+	service := NewService(repository, &catalogProxy{}, time.Minute)
+	value, err := service.Dashboard(context.Background(), model.User{ID: "member"})
+	if err != nil || len(value.ActiveSquadNames) != 2 || value.ActiveSquadNames[0] != "Other paid squad" || value.ActiveSquadNames[1] != "Hidden paid squad" || repository.addonsVisibleOnly {
+		t.Fatal(value, err)
+	}
+	repository.addonsErr = context.DeadlineExceeded
+	value, err = service.Dashboard(context.Background(), model.User{ID: "member"})
+	if err != nil || value.ActivePurchase == nil || len(value.ActiveSquadNames) != 0 {
+		t.Fatal("optional label failure hid dashboard", value, err)
+	}
+}

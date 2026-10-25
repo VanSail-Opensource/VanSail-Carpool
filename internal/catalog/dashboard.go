@@ -23,6 +23,21 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 		return model.Dashboard{}, err
 	}
 	dashboard := model.Dashboard{User: user, Balance: balance, ActivePurchase: active, QueuedPurchase: queued, FetchedAt: now}
+	// Home needs entitlement labels, not the full purchasable Combo catalog.
+	// Labels are optional presentation data, so failures do not hide finances.
+	if active != nil {
+		if squads, labelsErr := s.repository.ListSquadProducts(ctx, false); labelsErr == nil {
+			names := make(map[string]string, len(squads))
+			for _, squad := range squads {
+				names[squad.GroupID] = squad.Name
+			}
+			for _, id := range active.SquadUUIDs {
+				if name := names[id]; name != "" {
+					dashboard.ActiveSquadNames = append(dashboard.ActiveSquadNames, name)
+				}
+			}
+		}
+	}
 	if repository, ok := s.repository.(automaticRenewalFailureRepository); ok {
 		failure, failureErr := repository.AutoRenewalFailure(ctx, user.ID)
 		if failureErr != nil {

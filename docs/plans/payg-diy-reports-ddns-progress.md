@@ -65,7 +65,19 @@ maintenance receipts, protocol compatibility and performance measurements below.
   per-message deflate at 1 KiB with legacy fallback. Hosted fixtures measure
   actual framed socket bytes and enforce at least 50% reduction while retaining
   large integer accounting. No new persistent telemetry or source-IP collection
-  was added. Static checks passed; hosted measurements remain pending.
+  was added. Hosted socket measurements: 146,977 legacy bytes versus 2,753
+  negotiated compact/compressed bytes (98.13% reduction). Agent regression/schema
+  job passed after adding its missing public reference entry; remaining hosted
+  jobs and panel run `40203394601` are still running.
+- Item 22 implementation removes catalog/coupon bootstrap reads and Home's full
+  catalog fetch, uses existing usage metadata and optional dashboard squad labels,
+  and lazy-imports mode components. Chrome at 320px reduced motion, 390px and
+  1280px verified no pre-entry Explore requests, PAYG-only entry, Combo-only
+  catalog/coupon reads, slow loading, populated/empty/error states and retries.
+  An isolated offline Combo chunk showed contained recovery; online Reload
+  restored PAYG with no console errors. No layout overflow remained. Typecheck,
+  ESLint, Go vet, structure/i18n checks and production build passed. Hosted
+  acceptance remains pending. Removed a stale member-side admin statistics read.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Items 01-19 passed implementation/static/browser checks and hosted run

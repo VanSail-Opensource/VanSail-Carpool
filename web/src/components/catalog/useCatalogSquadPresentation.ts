@@ -1,8 +1,6 @@
-import { restoreCached } from '@/api/cache/restore'
-import { computed, onScopeDispose, shallowRef, type ComputedRef, type Ref } from 'vue'
+import { computed, type ComputedRef, type Ref } from 'vue'
 
-import { api } from '@/api/client'
-import type { NormalizedDistribution, SquadProduct } from '@/api/types'
+import type { SquadProduct } from '@/api/types'
 import { catalogSquadPresentation } from './catalogSquadPresentation'
 
 export function useCatalogSquadPresentation(
@@ -10,22 +8,12 @@ export function useCatalogSquadPresentation(
   includedIds: ComputedRef<readonly string[]>,
   comboId: Ref<string | null>,
 ) {
-  const composition = shallowRef<readonly NormalizedDistribution[]>([])
-  let disposed = false
-  restoreCached<Awaited<ReturnType<typeof api.getStatistics>>>('/api/v1/statistics', value => { composition.value = value.database.squadByCombo })
-
-  void api.getStatistics()
-    .then((snapshot) => {
-      if (!disposed) composition.value = snapshot.database.squadByCombo
-    })
-    .catch(() => { /* Composition ranking must not block catalog browsing. */ })
-
-  onScopeDispose(() => { disposed = true })
-
+  // Statistics belong to the browser console. Member ordering uses catalog
+  // order, profile and stock without attempting a forbidden admin read.
   const presentation = computed(() => catalogSquadPresentation(
     squads.value,
     includedIds.value,
-    composition.value,
+    [],
     comboId.value,
   ))
 

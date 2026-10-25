@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onErrorCaptured, shallowRef, watch } from 'vue'
 import { useI18n } from '@/i18n'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { selectionHaptic } from '@/utils/telegram'
-import CatalogPage from './CatalogPage.vue'
-import PAYGPage from './PAYGPage.vue'
+import { isRouteChunkError } from '@/router/recovery'
+import CatalogChunkState from './CatalogChunkState.vue'
 import CatalogModeTransition from './CatalogModeTransition.vue'
+
+const CatalogPage = defineAsyncComponent({ loader: () => import('./CatalogPage.vue'), loadingComponent: CatalogChunkState, errorComponent: CatalogChunkState, delay: 0 })
+const PAYGPage = defineAsyncComponent({ loader: () => import('./PAYGPage.vue'), loadingComponent: CatalogChunkState, errorComponent: CatalogChunkState, delay: 0 })
+onErrorCaptured(error => isRouteChunkError(error) ? false : undefined)
 
 const { t } = useI18n()
 const mode = shallowRef<'payg' | 'combo'>('payg')

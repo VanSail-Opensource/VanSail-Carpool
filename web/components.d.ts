@@ -90,6 +90,7 @@ declare module 'vue' {
     CarrierLogo: typeof import('./src/components/squad-profile/CarrierLogo.vue')['default']
     CatalogBlocked: typeof import('./src/components/catalog/CatalogBlocked.vue')['default']
     CatalogCheckout: typeof import('./src/components/catalog/CatalogCheckout.vue')['default']
+    CatalogChunkState: typeof import('./src/components/catalog/CatalogChunkState.vue')['default']
     CatalogComboPricingTable: typeof import('./src/components/catalog/CatalogComboPricingTable.vue')['default']
     CatalogConfirmation: typeof import('./src/components/catalog/CatalogConfirmation.vue')['default']
     CatalogCouponStep: typeof import('./src/components/catalog/CatalogCouponStep.vue')['default']

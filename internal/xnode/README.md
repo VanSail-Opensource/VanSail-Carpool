@@ -10,7 +10,8 @@ commands and acknowledgements retain their uncompressed single-writer path.
 earlier online user snapshot. Accounting reports retain their original body.
 
 `master_report_lanes.go` separates incoming command results, ordered traffic,
-latest-snapshot telemetry and disposable logs. Each lane has its own bounded
+latest-snapshot telemetry and disposable logs. `master_report_lanes_test.go`
+covers saturation and report freshness. Each lane has its own bounded
 consumer; queued command/traffic payloads have a 32 MiB byte budget, logs have
 eight frames capped at 256 KiB each, and telemetry retains one current frame.
 The existing per-node outbound queue remains the only WebSocket writer. Durable

@@ -56,6 +56,11 @@ Dashboard:
       oneOf:
         - $ref: '../../openapi.yaml#/components/schemas/Purchase'
         - type: 'null'
+    activeSquadNames:
+      type: array
+      description: Ordered labels for the active purchase, independent of Explore catalog loading.
+      items:
+        type: string
     queuedPurchase:
       oneOf:
         - $ref: '../../openapi.yaml#/components/schemas/Purchase'

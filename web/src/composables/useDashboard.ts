@@ -3,7 +3,7 @@ import { computed, inject, onMounted, onScopeDispose, provide, readonly, shallow
 import { api } from '@/api/client'
 import { restoreRef } from '@/api/cache/restore'
 import { localizedError } from '@/i18n'
-import type { Catalog, CatalogNode, Dashboard } from '@/api/types'
+import type { Dashboard } from '@/api/types'
 import { notifyHaptic } from '@/utils/telegram'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { createNodeUsageController, type NodeUsageController } from './dashboardNodeUsage'
@@ -14,7 +14,6 @@ const nodeUsageControllerKey: InjectionKey<NodeUsageController> = Symbol('dashbo
 
 export function useDashboard() {
   const dashboard = shallowRef<Dashboard | null>(null)
-  const catalog = shallowRef<Catalog | null>(null)
   const loading = shallowRef(true)
   const refreshing = shallowRef(false)
   const loadError = shallowRef<string | null>(null)
@@ -46,7 +45,6 @@ export function useDashboard() {
   })
 
   const hasEntitlement = computed(() => currentDashboard.value?.activePurchase != null)
-  const catalogNodes = computed<readonly CatalogNode[]>(() => catalog.value?.nodes ?? [])
   const usageRatio = computed(() => {
     if (!dashboard.value?.statistics) return 0
     const used = Number(dashboard.value.statistics.usedTrafficBytes)
@@ -54,35 +52,18 @@ export function useDashboard() {
     if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0) return 0
     return Math.min(1, used / limit)
   })
-  const activeSquadNames = computed(() => {
-    const active = currentDashboard.value?.activePurchase
-    if (!active || !catalog.value) return []
-    const names = new Map(catalog.value.addons.map((squad) => [squad.groupId, squad.name]))
-    for (const combo of catalog.value.combos) {
-      for (const squad of combo.includedSquads) names.set(squad.groupId, squad.name)
-    }
-    return active.squadUuids.map((uuid) => names.get(uuid)).filter((name): name is string => Boolean(name))
-  })
+  const activeSquadNames = computed(() => currentDashboard.value?.activePurchase ? currentDashboard.value.activeSquadNames ?? [] : [])
 
   async function load(options: { quiet?: boolean } = {}): Promise<void> {
     const token = latestLoad.begin()
     if (options.quiet) refreshing.value = true
     else {
-      restoreRef('/api/v1/catalog', catalog)
       loading.value = !restoreRef('/api/v1/dashboard', dashboard)
     }
     loadError.value = null
     try {
-      await Promise.all([
-        api.getDashboard().then(response => {
-          if (!latestLoad.isCurrent(token)) return
-          dashboard.value = response
-          loading.value = false
-        }),
-        api.getCatalog().then(response => {
-          if (latestLoad.isCurrent(token)) catalog.value = response
-        }).catch(() => undefined),
-      ])
+      const response = await api.getDashboard()
+      if (latestLoad.isCurrent(token)) dashboard.value = response
     } catch (caught) {
       if (!latestLoad.isCurrent(token)) return
       loadError.value = localizedError(caught, 'errors.dashboardUnavailable')
@@ -118,7 +99,6 @@ export function useDashboard() {
     nodeUsageError: readonly(nodeUsageError), nodeUsageStart: readonly(nodeUsageStart),
     nodeUsageEnd: readonly(nodeUsageEnd), hasEntitlement,
     usageRatio,
-    catalogNodes,
     activeSquadNames,
     load,
     revokeSubscription,
