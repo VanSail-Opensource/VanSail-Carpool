@@ -26,9 +26,13 @@ export function validDDNSSettings(settings: XNodeSettings, hosts: readonly XNode
     if (builtin && (!job.ipv4 && !job.ipv6 || job.ipv4 && job.ipv4 !== 'auto' || job.ipv6 && job.ipv6 !== 'auto')) return false
     if (!discoverable(job.ipv4, job.interface, job.ipv4_url) || !discoverable(job.ipv6, job.interface, job.ipv6_url)) return false
     const binding = settings.ddnsBindings?.[job.id]
-    for (const [source, id] of [[job.ipv4, binding?.ipv4HostId], [job.ipv6, binding?.ipv6HostId]]) {
-      if (builtin && source && !id || id && (!source || !available.has(id) || used.has(id))) return false
-      if (id) used.add(id)
+    for (const [source, hostIds] of [[job.ipv4, binding?.ipv4HostIds ?? []], [job.ipv6, binding?.ipv6HostIds ?? []]] as const) {
+      if (!builtin && hostIds.length > 1) return false
+      if (builtin && source && !hostIds.length || !source && hostIds.length) return false
+      for (const id of hostIds) {
+        if (!available.has(id) || used.has(id)) return false
+        used.add(id)
+      }
     }
   }
   return true

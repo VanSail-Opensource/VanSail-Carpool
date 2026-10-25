@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -39,7 +40,7 @@ func TestDDNSChangesRequireCurrentAuthenticatedConfiguration(t *testing.T) {
 	repo := &ddnsChangeTestRepository{ddnsBindingTestRepository: ddnsBindingTestRepository{nodes: map[string]Node{}, bindings: map[string]DDNSHostBinding{}, role: "admin"}}
 	s := NewService(repo, cacheTestSettings{}, vault, nil, nil)
 	node := Node{ID: "node", AgentID: "agent", Name: "Node", ConfigID: "config", Multiplier: 1}
-	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, IPv4: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostID: "host-v4"}}}
+	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, IPv4: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostIDs: []string{"host-v4"}}}}
 	if _, err = s.SaveNodeAs(ctx, node, settings, "admin"); err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +82,7 @@ func TestDDNSChangesRequireCurrentAuthenticatedConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 	in := repo.accepted[0]
-	if in.Operation.ActorUserID != "admin" || in.Operation.OwnerUserID != "" || in.Operation.Kind != DDNSOperationKind || in.Version != 7 || in.Binding.IPv4HostID != "host-v4" {
+	if in.Operation.ActorUserID != "admin" || in.Operation.OwnerUserID != "" || in.Operation.Kind != DDNSOperationKind || in.Version != 7 || !slices.Equal(in.Binding.IPv4HostIDs, []string{"host-v4"}) {
 		t.Fatal("wrong ownership or financial scope", in)
 	}
 	master := NewMaster(s, nil)

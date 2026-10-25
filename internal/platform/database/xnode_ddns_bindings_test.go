@@ -3,6 +3,7 @@ package database
 import (
 	"bytes"
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -33,19 +34,19 @@ func TestDDNSBindingOwnershipIsAtomicAndProtectsCredentials(t *testing.T) {
 	if err := s.RotateXNodeToken(ctx, node.ID, token); err != nil {
 		t.Fatal(err)
 	}
-	bindings := map[string]xnode.DDNSHostBinding{"wan": {ConfiguredBy: owner.ID, IPv4HostID: "v4", IPv6HostID: "v6"}}
+	bindings := map[string]xnode.DDNSHostBinding{"wan": {ConfiguredBy: owner.ID, IPv4HostIDs: []string{"v4"}, IPv6HostIDs: []string{"v6"}}}
 	if err := s.SaveXNodeNodeDDNS(ctx, node, bindings); err != nil {
 		t.Fatal(err)
 	}
 	loaded, err := s.XNodeDDNSBindings(ctx, node.ID)
-	if err != nil || loaded["wan"] != bindings["wan"] {
+	if err != nil || loaded["wan"].ConfiguredBy != bindings["wan"].ConfiguredBy || !slices.Equal(loaded["wan"].IPv4HostIDs, bindings["wan"].IPv4HostIDs) || !slices.Equal(loaded["wan"].IPv6HostIDs, bindings["wan"].IPv6HostIDs) {
 		t.Fatal(loaded, err)
 	}
 	saved, err := s.XNodeNode(ctx, node.ID)
 	if err != nil || !bytes.Equal(saved.TokenHash, token) {
 		t.Fatal("binding save changed credentials", err)
 	}
-	for _, invalid := range []xnode.DDNSHostBinding{{ConfiguredBy: owner.ID, IPv4HostID: "v4", IPv6HostID: "v4"}, {ConfiguredBy: owner.ID, IPv4HostID: "foreign"}} {
+	for _, invalid := range []xnode.DDNSHostBinding{{ConfiguredBy: owner.ID, IPv4HostIDs: []string{"v4"}, IPv6HostIDs: []string{"v4"}}, {ConfiguredBy: owner.ID, IPv4HostIDs: []string{"foreign"}}} {
 		changed := node
 		changed.Name = "Must roll back"
 		if err = s.SaveXNodeNodeDDNS(ctx, changed, map[string]xnode.DDNSHostBinding{"wan": invalid}); err == nil {

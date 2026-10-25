@@ -8,6 +8,10 @@ to normal; omitted values on older-client writes preserve administrator intent.
 `xnode-providers.yaml` defines the supported flag and public zone ID/name pairs
 for request-local administrator discovery. DDNS saves names, not Cloudflare IDs.
 
+`xnode.yaml` defines panel-owned DDNS endpoint bindings. Built-in address families
+accept multiple endpoint IDs; the deprecated single-ID fields remain readable
+during rolling client upgrades.
+
 `browser-auth.yaml` defines public entrance configuration,
 one-use handoff inputs/results, and the discriminated browser
 administrator/member/anonymous session state.

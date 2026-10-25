@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00016_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
+family while retaining the unique host constraint.
+
 `00014_xnode_endpoint_epoch.sql` mirrors SQLite 102 endpoint invalidation without
 invalidating on equal values or timestamp-only updates.
 

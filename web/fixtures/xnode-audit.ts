@@ -135,7 +135,7 @@ if (params.has('ddns') || params.has('builtin-ddns')) {
     value.settings.ddns = [{ id: 'primary', provider: 'cloudflare', zone: 'saved.example', name: 'node', ttl_seconds: 300 }]
     if (params.has('builtin-ddns')) {
       value.settings.ddns = [{ id: 'primary', provider: 'builtin:panel', zone: '', name: '', ipv4: params.has('ipv6-only') ? '' : 'auto', ipv6: params.has('ipv4-only') ? '' : 'auto', interface: 'eth0', interval_seconds: 300 }]
-      value.settings.ddnsBindings = { primary: { ipv4HostId: params.has('ipv6-only') ? undefined : id, ipv6HostId: params.has('ipv4-only') ? undefined : id === nodes[0]?.id ? '33333333-3333-4333-8333-333333333333' : '44444444-4444-4444-8444-444444444444' } }
+      value.settings.ddnsBindings = { primary: { ipv4HostIds: params.has('ipv6-only') ? [] : [id], ipv6HostIds: params.has('ipv4-only') ? [] : [id === nodes[0]?.id ? '33333333-3333-4333-8333-333333333333' : '44444444-4444-4444-8444-444444444444'] } }
     }
     return value
   }

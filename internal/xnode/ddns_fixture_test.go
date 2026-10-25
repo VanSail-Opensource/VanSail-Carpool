@@ -60,7 +60,7 @@ func ddnsRoutingFixture(t *testing.T) (fixture, xnode.Node, xnode.Endpoint, xnod
 		}
 		hosts = append(hosts, host)
 	}
-	if _, err = f.service.SaveNodeAs(ctx, peer, xnode.NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, IPv4: "auto", Interface: "eth0"}}, DDNSBindings: map[string]xnode.DDNSHostBinding{"wan": {IPv4HostID: hosts[1].ID}}}, f.user.ID); err != nil {
+	if _, err = f.service.SaveNodeAs(ctx, peer, xnode.NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, IPv4: "auto", Interface: "eth0"}}, DDNSBindings: map[string]xnode.DDNSHostBinding{"wan": {IPv4HostIDs: []string{hosts[1].ID}}}}, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = f.service.SaveRoutingTemplates(ctx, f.user.ID, xnode.RoutingTemplateConfig{Templates: []xnode.RoutingTemplate{{ID: "search", Name: "Search", Match: routingmatch.Match{Domains: []string{"domain:example.com"}}}}}); err != nil {

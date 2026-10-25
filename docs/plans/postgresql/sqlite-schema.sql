@@ -1183,7 +1183,7 @@ CREATE TABLE xnode_ddns_hosts (
  node_id TEXT NOT NULL,job_id TEXT NOT NULL,
  family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),
  host_id TEXT NOT NULL UNIQUE,
- PRIMARY KEY(node_id,job_id,family),
+ PRIMARY KEY(node_id,job_id,family,host_id),
  FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,
  FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)
 );

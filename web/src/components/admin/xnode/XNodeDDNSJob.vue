@@ -16,7 +16,7 @@ watch(builtin, value => {
 })
 function enable(family: 'ipv4' | 'ipv6', value: boolean): void { job.value = { ...job.value, [family]: value ? 'auto' : '' } }
 watch(() => [job.value.ipv4, job.value.ipv6], () => {
-  if (!job.value.ipv4 && binding.value.ipv4HostId || !job.value.ipv6 && binding.value.ipv6HostId) binding.value = { ...binding.value, ipv4HostId: job.value.ipv4 ? binding.value.ipv4HostId : undefined, ipv6HostId: job.value.ipv6 ? binding.value.ipv6HostId : undefined }
+  if (!job.value.ipv4 && binding.value.ipv4HostIds?.length || !job.value.ipv6 && binding.value.ipv6HostIds?.length) binding.value = { ...binding.value, ipv4HostIds: job.value.ipv4 ? binding.value.ipv4HostIds : [], ipv6HostIds: job.value.ipv6 ? binding.value.ipv6HostIds : [] }
 })
 </script>
 

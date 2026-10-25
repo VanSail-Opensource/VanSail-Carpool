@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -55,7 +56,7 @@ func TestDDNSBindingsKeepDiscoveryAndHostOwnershipSeparate(t *testing.T) {
 	s := NewService(repo, cacheTestSettings{}, vault, nil, nil)
 	ctx := context.Background()
 	node := Node{ID: "node", Name: "Node", ConfigID: "config", Enabled: true, Multiplier: 1}
-	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, Generation: "caller-value", IPv4: "auto", IPv6: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostID: "host-v4", IPv6HostID: "host-v6", ConfiguredBy: "forged"}}}
+	settings := NodeSettings{DDNS: []wire.DDNSJob{{ID: "wan", Provider: wire.BuiltinDDNSProvider, Generation: "caller-value", IPv4: "auto", IPv6: "auto", Interface: "eth0"}}, DDNSBindings: map[string]DDNSHostBinding{"wan": {IPv4HostIDs: []string{"host-v4"}, IPv6HostIDs: []string{"host-v6"}, ConfiguredBy: "forged"}}}
 	saved, err := s.SaveNodeAs(ctx, node, settings, "admin")
 	if err != nil {
 		t.Fatal(err)
@@ -75,19 +76,19 @@ func TestDDNSBindingsKeepDiscoveryAndHostOwnershipSeparate(t *testing.T) {
 	}
 	oldGeneration := jobs[0].Generation
 	binding := restored.DDNSBindings["wan"]
-	binding.IPv6HostID = "host-v4"
+	binding.IPv6HostIDs = []string{"host-v4"}
 	restored.DDNSBindings["wan"] = binding
 	if _, err = s.SaveNodeAs(ctx, node, restored, "admin"); err == nil {
 		t.Fatal("same host used for both families")
 	}
-	binding.IPv6HostID = "foreign-host"
+	binding.IPv6HostIDs = []string{"foreign-host"}
 	restored.DDNSBindings["wan"] = binding
 	if _, err = s.SaveNodeAs(ctx, node, restored, "admin"); err == nil {
 		t.Fatal("foreign node host accepted")
 	}
 	_, restored, _ = s.Node(ctx, node.ID)
 	restored.DDNSBindings = nil
-	if _, err = s.SaveNode(ctx, node, restored); err != nil || repo.bindings["wan"].IPv6HostID != "host-v6" {
+	if _, err = s.SaveNode(ctx, node, restored); err != nil || !slices.Equal(repo.bindings["wan"].IPv6HostIDs, []string{"host-v6"}) {
 		t.Fatal("old client omission erased bindings", err)
 	}
 	_, restored, _ = s.Node(ctx, node.ID)

@@ -1,5 +1,8 @@
 # Database migrations
 
+`104_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
+family while preserving global host uniqueness and compile invalidation.
+
 `103_paid_member_access.sql` retains community preferences for PAYG spenders,
 preserves the saved Around TX choice across combo transitions and enables that
 entrance once for existing commerce spenders. PostgreSQL 00015 carries the same

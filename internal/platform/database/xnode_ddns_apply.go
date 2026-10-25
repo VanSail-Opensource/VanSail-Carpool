@@ -12,7 +12,7 @@ import (
 // Only address fields change; listener settings, credentials, member choices
 // and accounting remain untouched. The same transaction invalidates caches.
 func (s *Store) retryAttempt_ApplyXNodeDDNSChange(ctx context.Context, state xnode.DDNSChangeState, in xnode.DDNSChangeInput, now time.Time) error {
-	if in.Change != state.Change || in.Binding.IPv4HostID != "" && state.Change.IPv4 == "" || in.Binding.IPv6HostID != "" && state.Change.IPv6 == "" {
+	if in.Change != state.Change || len(in.Binding.IPv4HostIDs) > 0 && state.Change.IPv4 == "" || len(in.Binding.IPv6HostIDs) > 0 && state.Change.IPv6 == "" {
 		return xnode.ErrInvalid
 	}
 	if !IsPostgres(s.db) {
@@ -46,23 +46,22 @@ func (s *Store) retryAttempt_ApplyXNodeDDNSChange(ctx context.Context, state xno
 		return xnode.ErrConflict
 	}
 	previous := slices.Clone(current.PreviousIPs)
-	for _, family := range []string{"ipv4", "ipv6"} {
-		host, address := in.Binding.IPv4HostID, state.Change.IPv4
-		if family == "ipv6" {
-			host, address = in.Binding.IPv6HostID, state.Change.IPv6
-		}
-		if host == "" {
-			continue
-		}
-		var old string
-		if err = tx.QueryRowContext(ctx, `SELECT e.address FROM xnode_endpoints e JOIN xnode_ddns_hosts h ON h.host_id=e.id WHERE h.node_id=? AND h.job_id=? AND h.family=? AND h.host_id=?`, state.NodeID, state.Change.JobID, family, host).Scan(&old); err != nil {
-			return err
-		}
-		if ip, e := xnode.FirewallPublicIP(old); e == nil {
-			previous = append(previous, ip)
-		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_endpoints SET address=?,updated_at=? WHERE id=? AND node_id=? AND address<>?`, address, stamp(now), host, state.NodeID, address); err != nil {
-			return err
+	for _, family := range []struct {
+		name    string
+		hosts   []string
+		address string
+	}{{"ipv4", in.Binding.IPv4HostIDs, state.Change.IPv4}, {"ipv6", in.Binding.IPv6HostIDs, state.Change.IPv6}} {
+		for _, host := range family.hosts {
+			var old string
+			if err = tx.QueryRowContext(ctx, `SELECT e.address FROM xnode_endpoints e JOIN xnode_ddns_hosts h ON h.host_id=e.id WHERE h.node_id=? AND h.job_id=? AND h.family=? AND h.host_id=?`, state.NodeID, state.Change.JobID, family.name, host).Scan(&old); err != nil {
+				return err
+			}
+			if ip, e := xnode.FirewallPublicIP(old); e == nil {
+				previous = append(previous, ip)
+			}
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_endpoints SET address=?,updated_at=? WHERE id=? AND node_id=? AND address<>?`, family.address, stamp(now), host, state.NodeID, family.address); err != nil {
+				return err
+			}
 		}
 	}
 	slices.Sort(previous)

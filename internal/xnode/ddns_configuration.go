@@ -20,7 +20,7 @@ func ddnsJobsForNode(node string, settings NodeSettings, providers map[string]wi
 		if binding.ConfiguredBy == "" {
 			continue
 		}
-		raw, _ := json.Marshal([]any{node, *job, binding.IPv4HostID, binding.IPv6HostID, providers[job.Provider]})
+		raw, _ := json.Marshal([]any{node, *job, binding.IPv4HostIDs, binding.IPv6HostIDs, providers[job.Provider]})
 		digest := sha256.Sum256(raw)
 		job.Generation = hex.EncodeToString(digest[:])
 	}
@@ -44,6 +44,13 @@ func (s *Service) prepareDDNSSettings(ctx context.Context, node string, settings
 		job.Generation = "" // never trust or persist a caller-supplied generation
 		jobs[job.ID] = true
 		binding := settings.DDNSBindings[job.ID]
+		var valid bool
+		if binding.IPv4HostIDs, valid = canonicalDDNSHostIDs(binding.IPv4HostIDs); !valid {
+			return ErrInvalid
+		}
+		if binding.IPv6HostIDs, valid = canonicalDDNSHostIDs(binding.IPv6HostIDs); !valid {
+			return ErrInvalid
+		}
 		binding.ConfiguredBy = existing[job.ID].ConfiguredBy
 		if settings.ddnsActor != "" {
 			binding.ConfiguredBy = settings.ddnsActor
@@ -52,16 +59,17 @@ func (s *Service) prepareDDNSSettings(ctx context.Context, node string, settings
 		if builtin && strings.TrimSpace(job.Interface) == "" && (job.IPv4 != "" && job.IPv4URL == "" || job.IPv6 != "" && job.IPv6URL == "") {
 			return ErrInvalid
 		}
-		if builtin && (binding.ConfiguredBy == "" || job.IPv4 != "" && binding.IPv4HostID == "" || job.IPv6 != "" && binding.IPv6HostID == "") {
+		if builtin && (binding.ConfiguredBy == "" || job.IPv4 != "" && len(binding.IPv4HostIDs) == 0 || job.IPv6 != "" && len(binding.IPv6HostIDs) == 0) {
 			return ErrInvalid
 		}
-		if binding.IPv4HostID != "" && job.IPv4 == "" || binding.IPv6HostID != "" && job.IPv6 == "" {
+		if !builtin && (len(binding.IPv4HostIDs) > 1 || len(binding.IPv6HostIDs) > 1) {
 			return ErrInvalid
 		}
-		for _, id := range []string{binding.IPv4HostID, binding.IPv6HostID} {
-			if id == "" {
-				continue
-			}
+		if len(binding.IPv4HostIDs) > 0 && job.IPv4 == "" || len(binding.IPv6HostIDs) > 0 && job.IPv6 == "" {
+			return ErrInvalid
+		}
+		hostIDs := append(slices.Clone(binding.IPv4HostIDs), binding.IPv6HostIDs...)
+		for _, id := range hostIDs {
 			if binding.ConfiguredBy == "" || hosts[id] {
 				return ErrInvalid
 			}
@@ -94,6 +102,18 @@ func (s *Service) prepareDDNSSettings(ctx context.Context, node string, settings
 	}
 	settings.DDNSBindings = bindings
 	return nil
+}
+
+func canonicalDDNSHostIDs(ids []string) ([]string, bool) {
+	result := slices.Clone(ids)
+	for _, id := range result {
+		if strings.TrimSpace(id) == "" {
+			return nil, false
+		}
+	}
+	slices.Sort(result)
+	compact := slices.Compact(result)
+	return compact, len(compact) == len(result)
 }
 
 // Keep ordinary authorization updates compatible with older agents. Unsupported

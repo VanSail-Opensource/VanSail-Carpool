@@ -33,14 +33,15 @@ digests. `ddns_origins_test.go` covers scope, generation, staging and unchanged
 cache reuse without external DNS requests.
 
 `ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
-references from encrypted agent discovery settings. Built-in DDNS binds each
-enabled address family to a distinct existing host on the same node; it creates
-no public DNS records. External providers may use optional host bindings. Only
-the authenticated configuring administrator supplies audit ownership. Generations
-are derived from discovery/provider configuration and binding references; neither
-host IDs nor audit ownership enter the agent configuration. Omitted bindings
-preserve older editor writes. Unsupported peers retain ordinary authorization
-updates and external DNS jobs while built-in jobs await negotiated support.
+references from encrypted agent discovery settings. Built-in DDNS can bind each
+enabled address family to multiple existing hosts on the same node, with each host
+assigned once across jobs and families; it creates no public DNS records. External
+providers may use optional single-host bindings. The authenticated configuring
+administrator supplies audit ownership. Generations are derived from
+discovery/provider configuration and binding references; neither host IDs nor
+audit ownership enter the agent configuration. Omitted bindings preserve older
+editor writes. Unsupported peers retain ordinary authorization updates and
+external DNS jobs while built-in jobs await negotiated support.
 `ddns_bindings_test.go` checks actor ownership, omission/rename compatibility,
 generation changes, separate references and legacy configuration projection.
 

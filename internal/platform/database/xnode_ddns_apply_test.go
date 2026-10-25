@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -20,12 +21,12 @@ func TestDDNSHostMutationFamiliesFencesAndRecovery(t *testing.T) {
 				}
 			}
 			if family != "ipv6" {
-				in.Binding.IPv4HostID = "ddns-v4"
+				in.Binding.IPv4HostIDs = []string{"ddns-v4"}
 			} else {
 				in.Change.IPv4 = ""
 			}
 			if family != "ipv4" {
-				in.Binding.IPv6HostID = "ddns-v6"
+				in.Binding.IPv6HostIDs = []string{"ddns-v6"}
 				in.Change.IPv6 = "2001:db8::8"
 			}
 			if err := s.SaveXNodeNodeDDNS(ctx, in.Node, map[string]xnode.DDNSHostBinding{"wan": in.Binding}); err != nil {
@@ -64,10 +65,10 @@ func TestDDNSHostMutationFamiliesFencesAndRecovery(t *testing.T) {
 				if host.ID == "ddns-v6" {
 					expected = "2001:db8::7"
 				}
-				if host.ID == in.Binding.IPv4HostID {
+				if slices.Contains(in.Binding.IPv4HostIDs, host.ID) {
 					expected = in.Change.IPv4
 				}
-				if host.ID == in.Binding.IPv6HostID {
+				if slices.Contains(in.Binding.IPv6HostIDs, host.ID) {
 					expected = in.Change.IPv6
 				}
 				if host.Address != expected || host.InboundTag != "paid" || host.Port != 443 || !host.Enabled {
