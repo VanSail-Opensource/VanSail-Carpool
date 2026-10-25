@@ -44,11 +44,13 @@ describe('routing tree', () => {
     expect(tree.edges.filter(edge => edge.highlighted)).toHaveLength(4)
     expect(tree.edges.filter(edge => !edge.highlighted)).toHaveLength(3)
   })
-  it('separates rule sequences even when all hosts and nodes match', () => {
+  it('shares the ingress and branches ordered rule sequences even when destinations match', () => {
     const other = { ...choices[0]!, id: 'other-rule' }
     const full = path(['a', 'b'], ['ab'])
     const tree = routingTree(nodes, [full, path(['a', 'b'], ['other-rule'])], [...choices, other], [], templates, 'You', full)
-    expect(tree.nodes.filter(node => node.nodeId === 'a')).toHaveLength(2)
+    expect(tree.nodes.filter(node => node.nodeId === 'a')).toHaveLength(1)
+    expect(tree.edges.filter(edge => edge.from === 1)).toHaveLength(1)
+    expect(tree.nodes.filter(node => node.nodeId === 'b')).toHaveLength(2)
     expect(tree.nodes.filter(node => node.nodeId === 'b' && node.highlighted)).toHaveLength(1)
   })
 })

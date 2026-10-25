@@ -90,3 +90,7 @@ maintenance receipts, protocol compatibility and performance measurements below.
   the same published host. Go vet passed; Chrome exercised compatible selectors
   and the ineligible/empty state. The production token lacks member DIY scope,
   so live member-specific inventory was not queried.
+- Routing diagrams share the ingress host, then branch by ordered rule identity.
+  Chrome checked 320px reduced motion, 390px and desktop, long host labels and
+  exact trace highlighting (three shared/selected edges, two other branch edges).
+  Separate endpoint identities remain distinct in hosted regression coverage.

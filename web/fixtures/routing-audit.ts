@@ -40,6 +40,10 @@ if (params.has('geosite')) for (const template of catalog.templates) if (templat
 if (params.has('unrelated-geosite')) catalog.templates.push({ id: 'unrelated', name: 'Unused streaming', match: { domain: ['geosite:youtube'] } })
 let plan: RoutingView['plan'] = { revision: 1, phase: params.has('disabled') ? 'disabled' : 'active', reason: params.has('disabled') ? 'routing_legacy_incompatible' : '', choices: params.has('empty') || params.has('no-routes') ? [] : [{ id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google-ai' }, { id: 'bc', inboundNodeId: 'b', outboundNodeId: 'c', templateId: 'google' }] }
 let failed = false, receipt: OperationReceipt | null = null
+if (params.has('branches')) plan.choices = [
+  { id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google', inboundEndpointId: 'a-primary', outboundEndpointId: 'b-primary' },
+  { id: 'ac', inboundNodeId: 'a', outboundNodeId: 'c', templateId: 'ai', inboundEndpointId: 'a-primary', outboundEndpointId: 'c-primary' },
+]
 function pause(delay = params.has('slow') ? 2000 : 30) { return new Promise(resolve => setTimeout(resolve, delay)) }
 function path(ids: string[], rules: string[]): RoutingPath { return { nodes: ids, rules, conditions: [], exclusions: [], excludedRules: ids.join() === 'a,b' ? ['bc'] : [] } }
 function graph(choices: RoutingChoice[]) {
@@ -64,7 +68,9 @@ xnodeMemberApi.previewRouting = async (body, signal) => {
   if (selectedGeoSite && params.has('geosite-missing')) throw new ApiError(422, { code: 'XNODE_GEOSITE_REQUIRED', message: '' })
   if (selectedGeoSite && params.has('geosite-unavailable')) throw new ApiError(503, { code: 'XNODE_GEOSITE_UNAVAILABLE', message: '' })
   if (params.has('preview-error')) throw new ApiError(422, { code: 'routing_overlap_unproven', message: '' })
-  const paths = graph(body.choices), domain = body.destination.domain ?? '', exact = domain.endsWith('google.com') ? ['a', 'b', 'c'] : domain.endsWith('openai.com') ? ['a', 'b'] : [body.start]
+  const paths = graph(body.choices), domain = body.destination.domain ?? ''
+  if (params.has('branches')) return { paths, trace: paths.find(path => path.rules[0] === (domain.endsWith('google.com') ? 'ab' : domain.endsWith('openai.com') ? 'ac' : '')) ?? null }
+  const exact = domain.endsWith('google.com') ? ['a', 'b', 'c'] : domain.endsWith('openai.com') ? ['a', 'b'] : [body.start]
   return { paths, trace: body.start ? path(exact.slice(Math.max(0, exact.indexOf(body.start))), exact.length === 3 ? ['ab', 'bc'] : ['ab']) : null }
 }
 xnodeMemberApi.saveRouting = async (body, key) => {

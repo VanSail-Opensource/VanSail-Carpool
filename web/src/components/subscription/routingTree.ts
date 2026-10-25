@@ -39,7 +39,9 @@ export function routingTree(nodes: RoutingView['nodes'], paths: RoutingPath[], c
     for (const [index, id] of path.nodes.entries()) {
       const rule = rules.get(path.rules[Math.max(0, index - 1)] ?? '')
       const endpointId = index === 0 ? rule?.inboundEndpointId : rule?.outboundEndpointId
-      parent = append(parent, JSON.stringify([parent.asn, id, endpointId, rule?.id]), { name: names.get(id) ?? id, subtitle: endpointAddress(hosts.get(endpointId ?? '')), nodeId: id }, highlighted)
+      // Share the ingress host before rule paths diverge. Subsequent hops keep
+      // their rule identity, so equal destinations never merge rule branches.
+      parent = append(parent, JSON.stringify([parent.asn, id, endpointId, index === 0 ? undefined : rule?.id]), { name: names.get(id) ?? id, subtitle: endpointAddress(hosts.get(endpointId ?? '')), nodeId: id }, highlighted)
     }
     const templateIds = [...new Set(path.rules.map(id => rules.get(id)?.templateId).filter((id): id is string => !!id))]
     if (templateIds.length) append(parent, JSON.stringify([parent.asn, path.rules, path.excludedRules]), { name: templateIds.map(id => catalog.get(id)?.name ?? id).join(' ∩ '), subtitle: '', templateIds, excludedRules: path.excludedRules }, highlighted)

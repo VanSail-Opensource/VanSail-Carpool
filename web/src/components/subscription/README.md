@@ -18,6 +18,9 @@ template attribution. Graph fitting runs on layout/data/viewport changes without
 capturing wheel/touch scrolling or exposing pan/zoom controls. Only configured
 inbound nodes/hosts can start a trace; nodes without rules retain graph selection
 and filtering without becoming trace entries.
+Multiple rules share their ingress node/host before branching by ordered rule
+identity. Separate entry hosts stay separate, and only the traced branch plus
+its shared ingress is highlighted.
 `MemberRoutingTemplateDetails.vue` shows read-only original match settings and
 exclusions when a template leaf is selected. Leaf status represents applied,
 draft, checking, unavailable or disabled routing; it never implies measured
