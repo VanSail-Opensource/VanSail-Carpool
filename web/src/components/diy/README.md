@@ -13,6 +13,13 @@ and revision conflicts retain both sections. Reset restores subscription
 inheritance without touching routing. The backend owns the allowlist,
 compatibility and atomic encrypted persistence; generated clients type all data.
 
+Categories reuse native Nuxt tabs in one scrollable row. `useScrollableTabs.ts`
+keeps the selected tab visible using horizontal-only scrolling, exposes overflow
+cues, observes label/viewport changes and disposes its listeners with the view.
+Hidden category panels stay mounted, preserving drafts. The Save bar follows
+document flow below 900px and is sticky only on desktop; reduced motion disables
+smooth category scrolling and panel animations.
+
 The page uses member theme assets and no administrator resources. Client
 refresh, not route deployment, activates connection tuning. Routing remains on
 the existing durable fleet deployment queue and keeps its own pending status.

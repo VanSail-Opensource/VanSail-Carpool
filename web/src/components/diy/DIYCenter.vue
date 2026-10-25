@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { selectionHaptic } from '@/utils/telegramHaptics'
 import { useI18n } from '@/i18n'
 import MemberRoutingEditor from '@/components/subscription/MemberRoutingEditor.vue'
@@ -9,11 +9,15 @@ import DIYCompatibility from './DIYCompatibility.vue'
 import DIYSplitProfiles from './DIYSplitProfiles.vue'
 import DIYWhitelist from './DIYWhitelist.vue'
 import { useDIY } from './useDIY'
+import { useScrollableTabs } from './useScrollableTabs'
 
 const { t } = useI18n()
 const state = useDIY()
 const tabs = computed(() => ['connection', 'xhttp', 'routing', 'whitelist', 'compatibility'].map(value => ({ value, label: t(`diy.tabs.${value}`) })))
 const activeTab = shallowRef<string | number>('connection')
+const tabRoot = shallowRef<InstanceType<typeof globalThis.HTMLElement> | null>(null)
+const scrolling = useScrollableTabs(tabRoot)
+watch([activeTab, tabs], scrolling.revealSelected, { flush: 'post' })
 function selectTab(value: string | number) { if (value !== activeTab.value) selectionHaptic(); activeTab.value = value }
 const routePending = computed(() => state.view.value && !['active', 'disabled'].includes(state.view.value.routing.plan.phase))
 const routingError = computed(() => state.errors.value.routing ? t(`managedRouting.errors.${state.errors.value.routing}`) : '')
@@ -33,18 +37,22 @@ const cost = computed(() => {
     <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
     <UButton v-if="state.error.value && !state.view.value" class="justify-self-start" variant="outline" :label="t('common.tryAgain')" @click="state.load(true)" />
     <template v-if="state.view.value">
-      <UTabs class="diy-tabs" :items="tabs" :model-value="activeTab" @update:model-value="selectTab" :unmount-on-hide="false" variant="link" color="neutral" size="sm" :ui="{ root: 'w-full min-w-0', list: 'w-full min-w-0 max-w-full overflow-x-auto', trigger: 'shrink-0 flex-none min-h-11 px-3', label: 'shrink-0 whitespace-nowrap text-xs sm:text-sm', content: 'pt-3 min-w-0' }">
-        <template #content="{ item }">
-          <div v-if="['connection', 'xhttp'].includes(item.value)" class="grid gap-4 min-w-0">
-            <DIYSplitProfiles v-if="item.value === 'xhttp'" v-model="state.splitProfiles.value" :hosts="state.view.value.splitHosts ?? []" :disabled="state.submitting.value" :error="state.errors.value.splitProfiles ? t(`diy.errors.${state.errors.value.splitProfiles}`) : undefined" />
-            <DIYTuningPanel v-model="state.overrides.value" :fields="state.view.value.fields" :groups="item.value === 'connection' ? ['tls', 'shadowsocks', 'mux', 'singboxMux', 'mihomoMux'] : ['xhttp', 'xmux']" :errors="state.errors.value" :disabled="state.submitting.value" />
-            <UAlert v-if="state.errors.value.overrides" color="warning" :title="t(`diy.errors.${state.errors.value.overrides}`)" />
-          </div>
-          <div v-else-if="item.value === 'routing'"><MemberRoutingEditor external :initial="state.view.value.routing" :disabled="state.submitting.value" @draft="state.routeDraft" @refresh="state.load(true)" @save="state.save" /><UAlert v-if="routingError" color="warning" :title="routingError" /></div>
-          <DIYCompatibility v-else-if="item.value === 'compatibility'" :items="state.compatibility.value" />
-          <DIYWhitelist v-else v-model="state.whitelist.value" :view="state.view.value.whitelist" :disabled="state.submitting.value" :error="state.errors.value.whitelist ? t(`diy.errors.${state.errors.value.whitelist}`) : undefined" />
-        </template>
-      </UTabs>
+      <div ref="tabRoot" class="diy-categories">
+        <UTabs class="diy-tabs" :items="tabs" :model-value="activeTab" @update:model-value="selectTab" :unmount-on-hide="false" variant="link" color="neutral" size="sm" :ui="{ root: 'w-full min-w-0', list: 'w-full min-w-0 max-w-full overflow-x-auto', trigger: 'shrink-0 flex-none min-h-11 px-3', label: 'shrink-0 whitespace-nowrap text-xs sm:text-sm', content: 'pt-3 min-w-0' }">
+          <template #content="{ item }">
+            <div v-if="['connection', 'xhttp'].includes(item.value)" class="grid gap-4 min-w-0">
+              <DIYSplitProfiles v-if="item.value === 'xhttp'" v-model="state.splitProfiles.value" :hosts="state.view.value.splitHosts ?? []" :disabled="state.submitting.value" :error="state.errors.value.splitProfiles ? t(`diy.errors.${state.errors.value.splitProfiles}`) : undefined" />
+              <DIYTuningPanel v-model="state.overrides.value" :fields="state.view.value.fields" :groups="item.value === 'connection' ? ['tls', 'shadowsocks', 'mux', 'singboxMux', 'mihomoMux'] : ['xhttp', 'xmux']" :errors="state.errors.value" :disabled="state.submitting.value" />
+              <UAlert v-if="state.errors.value.overrides" color="warning" :title="t(`diy.errors.${state.errors.value.overrides}`)" />
+            </div>
+            <div v-else-if="item.value === 'routing'"><MemberRoutingEditor external :initial="state.view.value.routing" :disabled="state.submitting.value" @draft="state.routeDraft" @refresh="state.load(true)" @save="state.save" /><UAlert v-if="routingError" color="warning" :title="routingError" /></div>
+            <DIYCompatibility v-else-if="item.value === 'compatibility'" :items="state.compatibility.value" />
+            <DIYWhitelist v-else v-model="state.whitelist.value" :view="state.view.value.whitelist" :disabled="state.submitting.value" :error="state.errors.value.whitelist ? t(`diy.errors.${state.errors.value.whitelist}`) : undefined" />
+          </template>
+        </UTabs>
+        <span v-if="scrolling.before.value" class="diy-overflow diy-overflow--before" aria-hidden="true"><UIcon name="i-ph-caret-left-bold" /></span>
+        <span v-if="scrolling.after.value" class="diy-overflow diy-overflow--after" aria-hidden="true"><UIcon name="i-ph-caret-right-bold" /></span>
+      </div>
       <UProgress v-if="state.autoPreview.pending.value" />
       <UAlert v-if="state.autoPreview.error.value" color="warning" :title="state.autoPreview.error.value" />
       <OperationStatusNotice :receipt="state.tracker.receipt.value" :error="state.tracker.error.value" :checking="state.tracker.checking.value" @refresh="state.tracker.refresh" />
@@ -64,9 +72,11 @@ const cost = computed(() => {
 .diy-save { position: sticky; z-index: 2; bottom: var(--mobile-nav-clearance, var(--shell-safe-bottom, 0px)); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding-block: .65rem; background: var(--canvas); }
 .diy-save-actions { display: flex; gap: .5rem; }
 .diy-tabs { min-width: 0; max-width: 100%; }
-/* Keep swipe and keyboard navigation without a visible scrollbar. */
-.diy-tabs :deep([role="tablist"]) { scrollbar-width: none; }
-.diy-tabs :deep([role="tablist"]::-webkit-scrollbar) { display: none; }
+.diy-categories { position: relative; min-width: 0; }
+.diy-tabs :deep([role="tablist"]) { scrollbar-width: thin; scrollbar-color: var(--line) transparent; scroll-padding-inline: .5rem; }
+.diy-overflow { position: absolute; top: 0; height: 2.75rem; width: .8rem; display: grid; place-items: center; pointer-events: none; color: var(--text-muted); background: var(--canvas); }
+.diy-overflow--before { left: 0; }
+.diy-overflow--after { right: 0; }
 @media (prefers-reduced-motion: no-preference) {
   .diy-tabs :deep([role="tabpanel"][data-state="active"]) { animation: diy-enter .16s ease-out; }
   .diy-center :deep(button) { transition: color .14s, background-color .14s, opacity .14s, transform .14s; }
@@ -80,5 +90,6 @@ const cost = computed(() => {
   .diy-save-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .diy-save-actions :deep(button) { min-width: 0; }
 }
+@media(max-width:899px) { .diy-save { position: static; } }
 @media(min-width:900px) { .diy-save { bottom: var(--shell-safe-bottom, 0px); } }
 </style>

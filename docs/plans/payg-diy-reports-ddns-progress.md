@@ -79,3 +79,8 @@ maintenance receipts, protocol compatibility and performance measurements below.
   390px and desktop, including error/retry and native button navigation. Chrome
   reported no warnings/errors or page overflow. Static/type/lint checks passed;
   the missing-native-identity empty response has a hosted regression.
+- DIY categories retain one scrollable tab row with 44px targets, directional
+  overflow cues and automatic horizontal-only reveal. Chrome checked 320px,
+  390px reduced motion, long labels, keyboard Home/End/arrows, retained edits,
+  loading and empty/error recovery. Mobile Save is static in document flow;
+  desktop Save is sticky. No overflow or console warnings/errors remained.
