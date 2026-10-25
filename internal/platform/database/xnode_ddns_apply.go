@@ -10,7 +10,7 @@ import (
 )
 
 // Only address fields change; listener settings, credentials, member choices
-// and accounting remain untouched. Existing endpoint triggers invalidate caches.
+// and accounting remain untouched. The same transaction invalidates caches.
 func (s *Store) retryAttempt_ApplyXNodeDDNSChange(ctx context.Context, state xnode.DDNSChangeState, in xnode.DDNSChangeInput, now time.Time) error {
 	if in.Change != state.Change || in.Binding.IPv4HostID != "" && state.Change.IPv4 == "" || in.Binding.IPv6HostID != "" && state.Change.IPv6 == "" {
 		return xnode.ErrInvalid
@@ -72,6 +72,9 @@ func (s *Store) retryAttempt_ApplyXNodeDDNSChange(ctx context.Context, state xno
 	}
 	raw, err := json.Marshal(previous)
 	if err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1`); err != nil {
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE xnode_ddns_changes SET phase='routes',previous_ips=? WHERE node_id=? AND job_id=? AND operation_id=?`, string(raw), state.NodeID, state.Change.JobID, state.OperationID); err != nil {

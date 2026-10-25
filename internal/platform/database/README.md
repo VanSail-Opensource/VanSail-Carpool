@@ -6,7 +6,7 @@ Node and compile-revision locks fence authentication/settings changes before
 cursor, operation and outbox commit together. The table deliberately has no job
 FK so active old routes can retain attestations after a job is removed.
 `xnode_ddns_apply.go` changes only bound host addresses and advances durable
-phases; existing triggers invalidate catalog/compile caches. No wallet write or
+phases; the transaction advances the catalog/compile revision. No wallet write or
 member configuration fee occurs. Maintenance protects referenced receipts and
 pending phases. The existing routing recovery path also resumes DDNS receipts.
 `xnode_ddns_changes_test.go` covers replay/order, full-width sequences, config

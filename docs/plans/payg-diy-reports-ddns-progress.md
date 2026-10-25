@@ -69,6 +69,10 @@ maintenance receipts, protocol compatibility and performance measurements below.
   IPv4/IPv6/dual updates, held acknowledgments, credential/ledger preservation,
   bypass replacement and offline convergence. Static review and Go vet passed;
   hosted execution and final signed release verification remain pending.
+  Hosted SQLite/PostgreSQL checks exposed a missing compile-revision advance
+  after direct DDNS host writes; the transaction now advances it explicitly.
+  The new socket fixture also needed the existing paid-traffic capabilities.
+  Both failures are corrected; replacement hosted acceptance is pending.
 
 - Item 25 implements normalized same-node IPv4/IPv6 bindings, atomic node saves,
   generated API types, administrator attribution and negotiated legacy fallback.

@@ -42,7 +42,8 @@ func newDDNSFixtureAgent(t *testing.T, ctx context.Context, f fixture, server *h
 		t.Fatal("DDNS negotiation missing")
 	}
 	a := &ddnsFixtureAgent{socket: socket, acks: make(chan string, 16), done: make(chan struct{})}
-	if err = a.send(wire.New("agent.hello", "", 0, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Capabilities: []string{"traffic_periods_v1", "traffic_period_barriers_v1", "config_validation_v1", "transit_credentials_v1", "authorization_expiry", "member_outbound_guards", "firewall_control_v1", "firewall_master_observation_v1", wire.BuiltinDDNSCapability, wire.DDNSChangesCapability}})); err != nil {
+	capabilities := []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "sampled_activity_v1", "config_validation_v1", "transit_credentials_v1", "authorization_expiry", "member_outbound_guards", "firewall_control_v1", "firewall_master_observation_v1", wire.BuiltinDDNSCapability, wire.DDNSChangesCapability}
+	if err = a.send(wire.New("agent.hello", "", 0, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Version: "fixture", XrayVersion: "26.10.17", Capabilities: capabilities})); err != nil {
 		t.Fatal(err)
 	}
 	go func() { defer close(a.done); a.run(ctx, agent) }()
