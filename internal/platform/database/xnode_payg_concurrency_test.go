@@ -34,7 +34,12 @@ func TestPAYGNodesSpendOneWalletWithoutDuplicatingCredit(t *testing.T) {
 		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, xnode.PAYGGB, a.PeriodID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=? WHERE proxy_user_id=?`, xnode.PAYGGB, a.ProxyUserID); err != nil {
+		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, xnode.PAYGGB, stamp(time.Now()), a.ProxyUserID); err != nil {
+			t.Fatal(err)
+		}
+		// Outstanding metered traffic, rather than an idle exhausted allowance,
+		// is required before an observation may buy a replacement GB.
+		if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES(?,?,?,1)`, a.ProxyUserID, paygWindowStamp(time.Now().Add(-time.Second)), xnode.PAYGStartBytes); err != nil {
 			t.Fatal(err)
 		}
 	}

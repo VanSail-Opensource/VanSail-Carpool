@@ -29,7 +29,7 @@ const cost = computed(() => {
 <template>
   <div class="page diy-center">
     <header class="flex justify-between items-start gap-3"><div><h1>{{ t('diy.title') }}</h1></div><UButton icon="i-ph-arrow-clockwise" variant="ghost" color="neutral" data-haptic="refresh" :aria-label="t('common.refresh')" :loading="state.loading.value" :disabled="state.submitting.value" @click="state.load(true)" /></header>
-    <UProgress v-if="state.loading.value" />
+    <UProgress v-if="state.loading.value || state.view.value?.inventoryPending" />
     <UAlert v-if="state.error.value" color="warning" :title="state.error.value" />
     <UButton v-if="state.error.value && !state.view.value" class="justify-self-start" variant="outline" :label="t('common.tryAgain')" @click="state.load(true)" />
     <template v-if="state.view.value">

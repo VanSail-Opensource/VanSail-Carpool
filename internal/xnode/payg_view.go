@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"math"
 	"math/big"
@@ -100,7 +99,7 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 					if s.master != nil && s.master.Connected(a.NodeID) && paygCapabilities(s.master.Capabilities(a.NodeID)) {
 						compatible = true
 					}
-					funded := a.BalanceMinor >= 0 && (a.PurchasedBytes > a.UsedBytes || a.BalanceMinor >= a.UnitPriceMinor)
+					funded := a.Funded(s.now())
 					available = available || funded
 					if funded && s.master != nil && s.master.paygNodeReady(a.NodeID) {
 						healthy = true
@@ -126,36 +125,8 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	}
 	out.TrafficBytes = total.String()
 	out.Spent = model.TXBMoney(spent)
-	known := map[string]bool{}
-	for _, a := range accounts {
-		known[a.GroupID+"\x00"+a.NodeID] = true
-	}
-	missing := false
-	for _, p := range products {
-		if p.BillingMode != "payg" {
-			continue
-		}
-		g := groupByID[p.GroupID]
-		if !g.Enabled {
-			continue
-		}
-		for _, b := range g.Bindings {
-			if !known[g.ID+"\x00"+b.NodeID] {
-				node, e := s.repo.XNodeNode(ctx, b.NodeID)
-				if e != nil {
-					return out, e
-				}
-				missing = missing || node.Enabled
-			}
-		}
-	}
-	if missing {
-		raw, _ := json.Marshal(map[string]string{"userId": user})
-		if err = r.EnqueueOutbox(ctx, PAYGJob, string(raw), s.now()); err != nil {
-			return out, err
-		}
-	}
-	return out, nil
+	_, err = s.queueMissingPAYG(ctx, user, products, accounts, groups)
+	return out, err
 }
 
 func (m *Master) paygNodeReady(node string) bool {

@@ -1,5 +1,9 @@
 # PostgreSQL persistence
 
+Schema version 8 adds prepaid PAYG remainder/charge timestamps and rolling raw
+report windows through migration 00008. The contract and source inventory are
+regenerated from an isolated SQLite fixture; the original baseline is unchanged.
+
 This package owns pgx stdlib connections, bounded pools/deadlines and embedded
 forward-only Goose migrations. `Open` selects PostgreSQL explicitly; it never
 falls back to SQLite. `Migrate` uses a dedicated advisory session lock and

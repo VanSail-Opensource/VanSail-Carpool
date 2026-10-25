@@ -1,5 +1,12 @@
 # Member DIY Center
 
+`useDIY.ts` refreshes every 1.5 seconds while `inventoryPending` reports queued
+PAYG provisioning, preserving option, split and routing drafts. Polling pauses
+for submission and is disposed with the view. `useDIY.test.ts` covers completion
+and teardown. `DIYCenter.vue` keeps the loading indicator visible until that
+inventory is ready. Positive sub-GB balances can expose hosts in both selectors;
+backend queue/account ownership and protocol compatibility remain authoritative.
+
 This module composes client-only subscription tuning and existing managed
 routing under one page Save. Drafts stay in memory; failed validation, requests
 and revision conflicts retain both sections. Reset restores subscription

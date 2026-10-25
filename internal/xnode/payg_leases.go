@@ -68,11 +68,15 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 			users = append(users, u)
 			continue
 		}
-		if !healthy || !ready || a.BalanceMinor < 0 || (a.PurchasedBytes <= a.UsedBytes && a.BalanceMinor < a.UnitPriceMinor) {
+		if !healthy || !ready || !a.Funded(m.service.now()) {
 			continue
 		}
-		u.ValidUntil = &until
-		_, _ = hash.Write([]byte("/" + strconv.Itoa(u.ID)))
+		validUntil := until
+		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(m.service.now()) && a.CreditStartedAt.Add(PAYGWindow).Before(validUntil) {
+			validUntil = a.CreditStartedAt.Add(PAYGWindow)
+		}
+		u.ValidUntil = &validUntil
+		_, _ = hash.Write([]byte("/" + strconv.Itoa(u.ID) + "@" + validUntil.Format(time.RFC3339Nano)))
 		users = append(users, u)
 	}
 	config.Users = users

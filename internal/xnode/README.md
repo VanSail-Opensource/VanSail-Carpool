@@ -1,5 +1,16 @@
 # X-Node control plane
 
+PAYG billing ignores node multipliers and uses a 100 MiB rolling 72-hour raw
+traffic threshold. Prepaid remainder expires 72 hours after its charge; funds,
+credit expiry and readiness jointly govern volatile admission, with leases
+capped at credit expiry when replacement funds are unavailable. Exact period
+totals and financial history remain intact. `payg_repairs.go` shares the existing
+missing-principal outbox repair between PAYG and DIY reads. Positive balances
+request DIY repair even below a GB price, and `inventoryPending` lets the client
+refresh both routing and compatible XHTTP choices without changing drafts.
+`diy_payg_test.go` covers this queued path with a one-minor-unit balance and no
+combo. Existing stock, activation and wallet admission gates remain independent.
+
 New members receive PAYG provisioning from the onboarding outbox without buying
 a combo. Completed onboarding exposes owner-scoped PAYG listings and stable
 subscription links even with an empty wallet; actual connection leases require
@@ -686,9 +697,9 @@ wallet-change jobs repair missing tuples after catalog or node changes.
 dispatcher, agent synchronization, committed recovery barrier and expiring PAYG
 authorization; idle provisioning must preserve the wallet and prepaid counters.
 
-`payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for automatic continuation purchases after at least 10 MiB (10,485,760 bytes) has been metered on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; raw bytes remain cumulative across reconnects and count toward the first purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
+`payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for settlement of pending traffic only when at least 100 MiB (104,857,600 bytes) was metered in the rolling 72-hour window on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; exact raw totals survive reconnects; only unbilled bytes inside the rolling window count toward a newly purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
 
-`payg_inventory.go` separates owner subscription inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Existing subscriptions retain PAYG entries while unfunded. Unused prepaid bytes remain scoped to their original node and survive reconnects and temporary ineligibility.
+`payg_inventory.go` separates owner subscription inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Existing subscriptions retain PAYG entries while unfunded. Unused prepaid bytes remain scoped to their original node and survive reconnects until 72 hours after their original charge.
 
 `payg_owners.go` shares member ownership across activity counters without reading credentials each reconciliation. `payg_leases_test.go` verifies lease-only refresh, stale/unsupported/debt admission and whitelist gating; `payg_access_test.go` covers paid combo precedence, retained unfunded subscriptions and parent disablement. These regressions run only in hosted CI.
 

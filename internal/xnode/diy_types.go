@@ -51,6 +51,7 @@ func (input *DIYWrite) UnmarshalJSON(raw []byte) error {
 }
 
 type DIYView struct {
+	InventoryPending bool                               `json:"inventoryPending"`
 	SplitHosts       []DIYSplitHost                     `json:"splitHosts"`
 	Billing          DIYBillingQuote                    `json:"billing"`
 	Whitelist        WhitelistView                      `json:"whitelist"`

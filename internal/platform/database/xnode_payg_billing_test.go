@@ -53,9 +53,9 @@ func TestPAYGAutomaticGBReconnectPriceAndDebt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// An explicit 10 MiB boundary catches accidental reuse of the old 10 KiB
-	// threshold; idle connections and repeated reports must still stay free.
-	const threshold = int64(10 * 1024 * 1024)
+	// An explicit 100 MiB boundary catches accidental reuse of the old threshold.
+	// Idle connections and repeated reports must still stay free.
+	const threshold = int64(100 * 1024 * 1024)
 	paygReport(t, s, a, 1, uint64(threshold-1))
 	value, err := s.XNodePAYGAccount(ctx, a.ProxyUserID)
 	if err != nil || value.UsedBytes != threshold-1 || value.PurchasedBytes != 0 || value.BalanceMinor != 1000 {

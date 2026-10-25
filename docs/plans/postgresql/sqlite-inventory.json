@@ -95,7 +95,8 @@
     "092_identity_rekey_immutable_references.sql",
     "093_native_only.sql",
     "094_delete_revoked_api_tokens.sql",
-    "095_payg.sql"
+    "095_payg.sql",
+    "096_payg_credit_windows.sql"
   ],
   "objects": [
     {
@@ -828,7 +829,7 @@
       "type": "table",
       "name": "xnode_payg_accounts",
       "table": "xnode_payg_accounts",
-      "sql": "CREATE TABLE xnode_payg_accounts (\n proxy_user_id INTEGER PRIMARY KEY REFERENCES xnode_identities(proxy_user_id),\n user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id),\n period_id TEXT NOT NULL UNIQUE REFERENCES xnode_periods(id),\n unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor\u003e0),\n purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes\u003e=0),\n UNIQUE(user_id,group_id,node_id)\n)"
+      "sql": "CREATE TABLE xnode_payg_accounts (\n proxy_user_id INTEGER PRIMARY KEY REFERENCES xnode_identities(proxy_user_id),\n user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id),\n period_id TEXT NOT NULL UNIQUE REFERENCES xnode_periods(id),\n unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor\u003e0),\n purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes\u003e=0), credit_bytes INTEGER NOT NULL DEFAULT 0 CHECK(credit_bytes\u003e=0), credit_started_at TEXT,\n UNIQUE(user_id,group_id,node_id)\n)"
     },
     {
       "type": "table",
@@ -841,6 +842,12 @@
       "name": "xnode_payg_minutes",
       "table": "xnode_payg_minutes",
       "sql": "CREATE TABLE xnode_payg_minutes (\n user_id TEXT NOT NULL REFERENCES users(id), group_id TEXT NOT NULL,\n minute TEXT NOT NULL, traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes\u003e=0),\n spent_minor INTEGER NOT NULL DEFAULT 0 CHECK(spent_minor\u003e=0),\n PRIMARY KEY(user_id,group_id,minute)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_payg_windows",
+      "table": "xnode_payg_windows",
+      "sql": "CREATE TABLE xnode_payg_windows (\n proxy_user_id INTEGER NOT NULL REFERENCES xnode_payg_accounts(proxy_user_id),\n through TEXT NOT NULL,\n traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes\u003e=0),\n unbilled_bytes INTEGER NOT NULL DEFAULT 0 CHECK(unbilled_bytes\u003e=0 AND unbilled_bytes\u003c=traffic_bytes),\n PRIMARY KEY(proxy_user_id,through)\n)"
     },
     {
       "type": "table",
@@ -1585,6 +1592,12 @@
       "name": "xnode_payg_node",
       "table": "xnode_payg_accounts",
       "sql": "CREATE INDEX xnode_payg_node ON xnode_payg_accounts(node_id,user_id)"
+    },
+    {
+      "type": "index",
+      "name": "xnode_payg_windows_expiry",
+      "table": "xnode_payg_windows",
+      "sql": "CREATE INDEX xnode_payg_windows_expiry ON xnode_payg_windows(through)"
     },
     {
       "type": "index",
@@ -7602,7 +7615,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 96,
+      "rows": 97,
       "columns": [
         {
           "name": "version",
@@ -9845,6 +9858,20 @@
           "notNull": true,
           "default": "0",
           "primaryKey": 0
+        },
+        {
+          "name": "credit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "credit_started_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },
@@ -9923,6 +9950,40 @@
         },
         {
           "name": "spent_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_windows",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "through",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "unbilled_bytes",
           "type": "INTEGER",
           "notNull": true,
           "default": "0",

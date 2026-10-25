@@ -68,5 +68,8 @@ func (s *Store) retryAttempt_EnqueueXNodePAYGRepairs(ctx context.Context, now ti
 			break
 		}
 	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE (proxy_user_id,through) IN (SELECT proxy_user_id,through FROM xnode_payg_windows WHERE through<=? ORDER BY through LIMIT 65536)`, paygWindowStamp(now.Add(-xnode.PAYGWindow))); err != nil {
+		return err
+	}
 	return tx.Commit()
 }

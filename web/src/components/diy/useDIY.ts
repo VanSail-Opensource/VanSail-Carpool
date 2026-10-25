@@ -24,6 +24,7 @@ export function useDIY() {
   let controller: InstanceType<typeof globalThis.AbortController> | undefined
   let validator: InstanceType<typeof globalThis.AbortController> | undefined
   let disposed = false, hydrated = false
+  let inventoryTimer: ReturnType<typeof globalThis.setTimeout> | undefined
   const tracker = useOperationReceipt(1500, async id => {
     const receipt = await memberOperationsApi.getOperation(id)
     if (!disposed && !['queued', 'processing'].includes(receipt.status)) void load(true)
@@ -35,7 +36,16 @@ export function useDIY() {
   const billing = computed(() => autoPreview.result.value?.billing ?? view.value?.billing)
   const compatibility = computed(() => autoPreview.result.value?.compatibility ?? preview.value?.compatibility ?? view.value?.compatibility ?? [])
   const errors = computed(() => ({ ...autoPreview.result.value?.fieldErrors, ...fieldErrors.value }))
+  function scheduleInventoryRefresh() {
+    inventoryTimer = globalThis.setTimeout(() => {
+      if (disposed) return
+      if (submitting.value) scheduleInventoryRefresh()
+      else void load(true)
+    }, 1500)
+  }
   async function load(preserve = true) {
+    if (disposed) return
+    if (inventoryTimer) globalThis.clearTimeout(inventoryTimer)
     controller?.abort(); controller = new globalThis.AbortController()
     const ticket = latest.begin(); loading.value = true; error.value = null
     try {
@@ -43,6 +53,7 @@ export function useDIY() {
       if (!latest.isCurrent(ticket)) return
       view.value = value
       if (!hydrated || !preserve) { overrides.value = globalThis.structuredClone(value.overrides); splitProfiles.value = globalThis.structuredClone(value.splitProfiles ?? []); whitelist.value = { enabled: value.whitelist?.enabled ?? false, ips: [...value.whitelist?.ips ?? []] }; choices.value = globalThis.structuredClone(value.routing.plan.choices); hydrated = true }
+      if (value.inventoryPending) scheduleInventoryRefresh()
     } catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'diy.loadFailed') }
     finally { if (latest.isCurrent(ticket)) loading.value = false }
   }
@@ -88,6 +99,6 @@ export function useDIY() {
   }
   onMounted(() => void load(false))
   watch([overrides, whitelist, splitProfiles], () => { saved.value = false; preview.value = null; fieldErrors.value = {} }, { deep: true })
-  onScopeDispose(() => { disposed = true; latest.dispose(); controller?.abort(); validator?.abort(); keys.clear() })
+  onScopeDispose(() => { disposed = true; latest.dispose(); controller?.abort(); validator?.abort(); if (inventoryTimer) globalThis.clearTimeout(inventoryTimer); keys.clear() })
   return { invalid, view, overrides, whitelist, splitProfiles, billing, choices, loading, submitting, saved, error, errors, compatibility, tracker, autoPreview, load, save, reset, routeDraft }
 }

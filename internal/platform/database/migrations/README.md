@@ -1,5 +1,10 @@
 # Database migrations
 
+`096_payg_credit_windows.sql` preserves paid history while adding prepaid
+remainder/charge-time state and bounded raw/unbilled report counters for exact
+rolling 72-hour thresholds. Existing remaining credit keeps its last charge's
+original timestamp; historical unbilled traffic is not charged on upgrade.
+
 `090_telegram_member_identity.sql` introduces only upgrade compatibility aliases.
 After the vault is available, `MigrateTelegramIdentities` takes a private SQLite
 backup and atomically rekeys member references and encrypted X-Node/Emby desired

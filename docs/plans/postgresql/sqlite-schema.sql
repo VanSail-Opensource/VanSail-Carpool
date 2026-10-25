@@ -1272,7 +1272,7 @@ CREATE TABLE xnode_payg_accounts (
  node_id TEXT NOT NULL REFERENCES xnode_nodes(id),
  period_id TEXT NOT NULL UNIQUE REFERENCES xnode_periods(id),
  unit_price_minor INTEGER NOT NULL CHECK(unit_price_minor>0),
- purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes>=0),
+ purchased_bytes INTEGER NOT NULL DEFAULT 0 CHECK(purchased_bytes>=0), credit_bytes INTEGER NOT NULL DEFAULT 0 CHECK(credit_bytes>=0), credit_started_at TEXT,
  UNIQUE(user_id,group_id,node_id)
 );
 
@@ -1290,6 +1290,14 @@ CREATE TABLE xnode_payg_minutes (
  minute TEXT NOT NULL, traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes>=0),
  spent_minor INTEGER NOT NULL DEFAULT 0 CHECK(spent_minor>=0),
  PRIMARY KEY(user_id,group_id,minute)
+);
+
+CREATE TABLE xnode_payg_windows (
+ proxy_user_id INTEGER NOT NULL REFERENCES xnode_payg_accounts(proxy_user_id),
+ through TEXT NOT NULL,
+ traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes>=0),
+ unbilled_bytes INTEGER NOT NULL DEFAULT 0 CHECK(unbilled_bytes>=0 AND unbilled_bytes<=traffic_bytes),
+ PRIMARY KEY(proxy_user_id,through)
 );
 
 CREATE TABLE xnode_period_nodes (
@@ -1611,6 +1619,8 @@ CREATE INDEX xnode_metered_probes_period ON xnode_metered_probes(period_id,node_
 CREATE INDEX xnode_payg_minutes_expiry ON xnode_payg_minutes(minute);
 
 CREATE INDEX xnode_payg_node ON xnode_payg_accounts(node_id,user_id);
+
+CREATE INDEX xnode_payg_windows_expiry ON xnode_payg_windows(through);
 
 CREATE INDEX xnode_periods_purchase_idx ON xnode_periods(purchase_id);
 

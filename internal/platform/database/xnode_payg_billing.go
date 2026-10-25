@@ -15,7 +15,7 @@ func buyPAYGTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, blocks int
 	if blocks <= 0 {
 		return nil
 	}
-	if a.UnitPriceMinor <= 0 || blocks > math.MaxInt64/a.UnitPriceMinor || blocks > (math.MaxInt64-a.PurchasedBytes)/xnode.PAYGGB {
+	if a.UnitPriceMinor <= 0 || blocks > math.MaxInt64/a.UnitPriceMinor || blocks > (math.MaxInt64-a.PurchasedBytes)/xnode.PAYGGB || blocks > (math.MaxInt64-a.CreditBytes)/xnode.PAYGGB {
 		return xnode.ErrInvalid
 	}
 	cost := blocks * a.UnitPriceMinor
@@ -38,7 +38,9 @@ func buyPAYGTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, blocks int
 		return err
 	}
 	a.PurchasedBytes += blocks * xnode.PAYGGB
-	if _, err = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,unit_price_minor=? WHERE proxy_user_id=?`, a.PurchasedBytes, a.UnitPriceMinor, a.ProxyUserID); err != nil {
+	a.CreditBytes += blocks * xnode.PAYGGB
+	a.CreditStartedAt = now
+	if _, err = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,unit_price_minor=?,credit_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, a.PurchasedBytes, a.UnitPriceMinor, a.CreditBytes, stamp(now), a.ProxyUserID); err != nil {
 		return err
 	}
 	return recordPAYGMinuteTx(ctx, tx, a.UserID, a.GroupID, now, 0, cost)

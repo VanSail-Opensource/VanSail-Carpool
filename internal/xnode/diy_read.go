@@ -32,6 +32,11 @@ func (s *Service) diyProxies(ctx context.Context, user string) ([]subscription.P
 
 func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
 	view := DIYView{}
+	pending, err := s.requestDIYPAYG(ctx, user)
+	if err != nil {
+		return view, err
+	}
+	view.InventoryPending = pending
 	doc, settings, err := s.readDIYSettings(ctx, user)
 	if err != nil {
 		return view, err

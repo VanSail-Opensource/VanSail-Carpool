@@ -57,6 +57,7 @@ XNodeDIYView:
   additionalProperties: false
   required: [settingsRevision, overrides, routing, fields, compatibility, splitProfiles, splitHosts, billing]
   properties:
+    inventoryPending: {type: boolean}
     billing: {$ref: '#/XNodeDIYBillingQuote'}
     splitHosts: {type: array, items: {$ref: '#/XNodeDIYSplitHost'}}
     whitelist: {$ref: '#/XNodeWhitelistView'}

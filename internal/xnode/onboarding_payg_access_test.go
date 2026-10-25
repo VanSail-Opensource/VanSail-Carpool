@@ -13,7 +13,8 @@ import (
 
 func TestNewUnfundedMemberGetsPAYGSubscriptionThroughOnboardingQueue(t *testing.T) {
 	f := controlFixture(t, false)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	if _, err := f.store.SaveSquadProduct(ctx, database.SquadProductInput{GroupID: f.group.ID, UpstreamPresent: true, BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
 		t.Fatal(err)
 	}
@@ -47,10 +48,23 @@ func TestNewUnfundedMemberGetsPAYGSubscriptionThroughOnboardingQueue(t *testing.
 			t.Fatal(err)
 		}
 	}
-	if err := worker.Drain(ctx, 20); err != nil {
-		t.Fatal(err)
+	var accounts []xnode.PAYGAccount
+	tick := time.NewTicker(25 * time.Millisecond)
+	defer tick.Stop()
+	for len(accounts) == 0 {
+		select {
+		case <-ctx.Done():
+			t.Fatal("onboarding queue never provisioned PAYG", ctx.Err())
+		case <-tick.C:
+			if err := worker.Drain(ctx, 20); err != nil {
+				t.Fatal(err)
+			}
+			accounts, err = f.store.XNodePAYGAccounts(ctx, user.ID, f.node.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
-	accounts, err := f.store.XNodePAYGAccounts(ctx, user.ID, f.node.ID)
 	if err != nil || len(accounts) != 1 || accounts[0].BalanceMinor != 0 || accounts[0].PurchasedBytes != 0 {
 		t.Fatal("new member provisioning charged or missing", accounts, err)
 	}

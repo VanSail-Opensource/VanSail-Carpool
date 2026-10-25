@@ -32,8 +32,9 @@ const { t } = useI18n()
 .payg-summary__wallet > div { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; gap: .1rem .6rem; }
 .payg-summary__wallet span, .payg-summary__window small, dt { color: var(--text-muted); font-size: .72rem; }
 .payg-summary__wallet strong { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 650; overflow-wrap: anywhere; }
-.payg-summary__window { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; }
-.payg-summary dl { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin: 0; }
+.payg-summary__window { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; }
+.payg-summary__window small { white-space: nowrap; }
+.payg-summary dl { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; margin: 0; }
 .payg-summary dl > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: .55rem; }
 .payg-summary dd { display: inline-flex; align-items: center; gap: .3rem; margin: 0; font-family: var(--font-mono); font-size: .85rem; }
 .payg-summary dd .iconify { color: var(--text-muted); font-size: .85rem; }

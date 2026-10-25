@@ -1,5 +1,8 @@
 # Catalog components
 
+`PAYGSummary.vue` centers the 72-hour label and traffic/spending metrics on one
+row, with contained wrapping when available width is insufficient.
+
 Optional squads sort by ascending popularity within their existing type groups;
 included and sold-out entries remain last. Combo and PAYG cards show squad names
 and configured profile facts, including carriers, routes, bandwidth and region.

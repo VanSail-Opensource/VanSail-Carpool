@@ -73,6 +73,7 @@
     "xnode_identities",
     "xnode_member_diy",
     "xnode_nodes",
+    "xnode_payg_minutes",
     "abuse_notification_deliveries",
     "abuse_record_nodes",
     "abuse_record_reasons",
@@ -126,10 +127,10 @@
     "xnode_daily_usage",
     "xnode_imported_usage",
     "xnode_metered_probes",
-    "xnode_period_nodes",
     "xnode_payg_accounts",
+    "xnode_period_nodes",
     "xnode_payg_charges",
-    "xnode_payg_minutes"
+    "xnode_payg_windows"
   ],
   "tables": [
     {
@@ -7823,6 +7824,20 @@
           "notNull": true,
           "default": "0",
           "primaryKey": 0
+        },
+        {
+          "name": "credit_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "credit_started_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },
@@ -7899,6 +7914,39 @@
         },
         {
           "name": "spent_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_payg_windows",
+      "columns": [
+        {
+          "name": "proxy_user_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "through",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "traffic_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "unbilled_bytes",
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
@@ -8322,6 +8370,7 @@
     "xnode_metered_probes_period",
     "xnode_payg_minutes_expiry",
     "xnode_payg_node",
+    "xnode_payg_windows_expiry",
     "xnode_periods_purchase_idx",
     "xnode_periods_user_idx",
     "xnode_service_bindings_expiry_idx"

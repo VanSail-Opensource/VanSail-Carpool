@@ -74,15 +74,8 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 		return true, xnode.ErrInvalid
 	}
 	a.UsedBytes += bytes
-	if a.UsedBytes >= xnode.PAYGStartBytes && a.UsedBytes > a.PurchasedBytes {
-		unpaid := a.UsedBytes - a.PurchasedBytes
-		blocks := unpaid / xnode.PAYGGB
-		if unpaid%xnode.PAYGGB != 0 {
-			blocks++
-		}
-		if err = buyPAYGTx(ctx, tx, &a, blocks, true, time.Now().UTC()); err != nil {
-			return true, err
-		}
+	if err = recordPAYGWindowTx(ctx, tx, &a, sample.Through, bytes, time.Now().UTC()); err != nil {
+		return true, err
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=? AND status='open'`, a.UsedBytes, a.PeriodID); err != nil {
 		return true, err
@@ -127,10 +120,10 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 		if e != nil {
 			return e
 		}
-		if a.UsedBytes < xnode.PAYGStartBytes || a.PurchasedBytes > a.UsedBytes {
+		if a.HasCredit(now) {
 			continue
 		}
-		if e = buyPAYGTx(ctx, tx, &a, 1, false, now); errors.Is(e, ErrInsufficientBalance) {
+		if e = settlePAYGWindowTx(ctx, tx, &a, now, false, now); errors.Is(e, ErrInsufficientBalance) {
 			continue
 		} else if e != nil {
 			return e

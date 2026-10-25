@@ -46,7 +46,7 @@ func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {
 	service, base, peer, master := compileCacheFixture(t)
 	now := time.Now().UTC()
 	service.now = func() time.Time { return now }
-	r := &paygLeaseRepository{cacheTestRepository: base, accounts: []PAYGAccount{{ProxyUserID: 4503599627370496, NodeID: "node", PurchasedBytes: PAYGGB, UsedBytes: 1, UnitPriceMinor: 100}}}
+	r := &paygLeaseRepository{cacheTestRepository: base, accounts: []PAYGAccount{{ProxyUserID: 4503599627370496, NodeID: "node", PurchasedBytes: PAYGGB, UsedBytes: 1, UnitPriceMinor: 100, CreditBytes: PAYGGB - 1, CreditStartedAt: now}}}
 	service.repo = r
 	peer.paygReady = true
 	master.live["node"] = liveSnapshot{receivedAt: now, report: wire.TelemetryReport{Ready: true, Synchronized: true}}
@@ -60,6 +60,20 @@ func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {
 	if until.Sub(now) > 60*time.Second || until.Sub(now) < 40*time.Second || config.Users[1].ValidUntil != nil {
 		t.Fatal("lease mutated cached native input", until, config)
 	}
+	// A wallet without replacement funds cannot obtain a lease past prepaid
+	// credit expiry, even within the current 20-second synchronization interval.
+	originalKey := peer.paygOverlayKey
+	r.accounts[0].CreditStartedAt = now.Add(-PAYGWindow + 10*time.Second)
+	limited, err := master.overlayPAYG(context.Background(), peer, config, caps)
+	if err != nil || !limited.Users[1].ValidUntil.Equal(now.Add(10*time.Second)) || peer.paygOverlayKey == originalKey {
+		t.Fatal("prepaid expiry did not cap lease", limited, err)
+	}
+	r.accounts[0].CreditStartedAt = now.Add(-PAYGWindow)
+	expired, err := master.overlayPAYG(context.Background(), peer, config, caps)
+	if err != nil || len(expired.Users) != 1 {
+		t.Fatal("expired prepaid credit renewed an unfunded lease", expired, err)
+	}
+	r.accounts[0].CreditStartedAt = now
 	key := peer.paygOverlayKey
 	now = now.Add(21 * time.Second)
 	master.live["node"] = liveSnapshot{receivedAt: now, report: wire.TelemetryReport{Ready: true, Synchronized: true}}

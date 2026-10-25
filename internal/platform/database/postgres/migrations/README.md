@@ -1,5 +1,9 @@
 # PostgreSQL migration history
 
+`00008_payg_credit_windows.sql` applies SQLite migration 096's prepaid expiry
+state and rolling report windows with BIGINT counters and binary timestamp text.
+Existing charge evidence is retained. Downgrade refuses authoritative mutation.
+
 `00001_compatibility.sql` installs the explicitly supported text/JSON/time
 compatibility functions. `00002_baseline.sql` creates the final post-startup
 schema, bootstrap defaults, constraints, indexes and invariant triggers.

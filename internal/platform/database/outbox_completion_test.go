@@ -22,7 +22,7 @@ func TestPostgresConcurrentBusyCompletionAndHeartbeats(t *testing.T) {
 	now := time.Now().UTC()
 	jobs := make([]model.OutboxJob, 0, 12)
 	for i := range 12 {
-		if err := s.EnqueueOutbox(ctx, "completion_test", fmt.Sprintf(`{"index":%d}`, i), now); err != nil {
+		if err := s.EnqueueOutbox(ctx, "completion_test", fmt.Sprintf(`{"userId":"completion-%d"}`, i), now); err != nil {
 			t.Fatal(err)
 		}
 	}

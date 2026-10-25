@@ -7,13 +7,17 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const paygSelect = `SELECT a.proxy_user_id,a.user_id,a.group_id,a.node_id,a.period_id,a.purchased_bytes,p.used_bytes,COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor),b.txb_minor FROM xnode_payg_accounts a JOIN xnode_periods p ON p.id=a.period_id JOIN balances b ON b.user_id=a.user_id LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id`
+const paygSelect = `SELECT a.proxy_user_id,a.user_id,a.group_id,a.node_id,a.period_id,a.purchased_bytes,p.used_bytes,COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor),b.txb_minor,a.credit_bytes,a.credit_started_at FROM xnode_payg_accounts a JOIN xnode_periods p ON p.id=a.period_id JOIN balances b ON b.user_id=a.user_id LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id`
 
 func scanPAYG(row rowScanner) (xnode.PAYGAccount, error) {
 	var a xnode.PAYGAccount
-	err := row.Scan(&a.ProxyUserID, &a.UserID, &a.GroupID, &a.NodeID, &a.PeriodID, &a.PurchasedBytes, &a.UsedBytes, &a.UnitPriceMinor, &a.BalanceMinor)
+	var started sql.NullString
+	err := row.Scan(&a.ProxyUserID, &a.UserID, &a.GroupID, &a.NodeID, &a.PeriodID, &a.PurchasedBytes, &a.UsedBytes, &a.UnitPriceMinor, &a.BalanceMinor, &a.CreditBytes, &started)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = xnode.ErrNotFound
+	}
+	if err == nil && started.Valid {
+		a.CreditStartedAt, err = parseStamp(started.String)
 	}
 	return a, err
 }
