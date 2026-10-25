@@ -68,9 +68,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	if remoteErr == nil {
 		dashboard.Statistics = &remote.Statistics
 		dashboard.SubscriptionURL = &remote.SubscriptionURL
-		s.cacheMu.Lock()
-		s.cache[user.ID] = cachedDashboard{value: remote, fetchedAt: now}
-		s.cacheMu.Unlock()
+		s.cacheDashboard(user.ID, remote, now)
 		return dashboard, nil
 	}
 	if !exists {
@@ -95,15 +93,14 @@ func (s *Service) RevokeSubscription(ctx context.Context, user model.User) (stri
 	if err != nil {
 		return "", err
 	}
-	s.cacheMu.Lock()
-	delete(s.cache, user.ID)
-	s.cacheMu.Unlock()
+	s.InvalidateDashboard(user.ID)
 	return url, nil
 }
 
 // InvalidateDashboard drops usage cached before an entitlement reset or change.
 func (s *Service) InvalidateDashboard(userID string) {
 	s.cacheMu.Lock()
+	s.cacheBytes -= s.cache[userID].bytes
 	delete(s.cache, userID)
 	s.cacheMu.Unlock()
 }

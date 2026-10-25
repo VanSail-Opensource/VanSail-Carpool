@@ -10,22 +10,26 @@ import (
 // across transactions or goroutines; the epoch check rejects concurrent changes.
 type compileReads struct {
 	Repository
-	nodeID          string
-	nodes           []Node
-	nodesLoaded     bool
-	endpoints       []Endpoint
-	endpointsLoaded bool
-	groups          []Group
-	identities      []Identity
-	nodeByID        map[string]Node
-	users           map[string]model.User
-	byID            map[int64]Identity
-	byUser          map[string]Identity
-	desired         map[string]*model.Purchase
-	purchases       map[string][]model.Purchase
-	periods         map[string]Period
-	disabled        map[string][]string
-	restricted      map[string]bool
+	nodeID           string
+	nodes            []Node
+	nodesLoaded      bool
+	endpoints        []Endpoint
+	endpointsLoaded  bool
+	groups           []Group
+	groupsLoaded     bool
+	identities       []Identity
+	identitiesLoaded bool
+	configurations   map[string]Configuration
+	snippets         map[string]Snippet
+	nodeByID         map[string]Node
+	users            map[string]model.User
+	byID             map[int64]Identity
+	byUser           map[string]Identity
+	desired          map[string]*model.Purchase
+	purchases        map[string][]model.Purchase
+	periods          map[string]Period
+	disabled         map[string][]string
+	restricted       map[string]bool
 }
 
 func (s *Service) withCompileReads(node ...string) *Service {
@@ -33,6 +37,7 @@ func (s *Service) withCompileReads(node ...string) *Service {
 		return s
 	}
 	repo := &compileReads{Repository: s.repo, nodeByID: map[string]Node{}, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}, disabled: map[string][]string{}, restricted: map[string]bool{}}
+	repo.configurations, repo.snippets = map[string]Configuration{}, map[string]Snippet{}
 	if len(node) > 0 {
 		repo.nodeID = node[0]
 	}
@@ -43,22 +48,23 @@ func (s *Service) withCompileReads(node ...string) *Service {
 	next.routingOverrides = s.routingOverrides
 	next.routingRuntime = s.routingRuntime
 	next.compilation = s.compilation
+	next.topology = s.topology
 	return next
 }
 
 func (r *compileReads) XNodeGroups(ctx context.Context) ([]Group, error) {
-	if r.groups != nil {
+	if r.groupsLoaded {
 		return r.groups, nil
 	}
 	items, err := r.Repository.XNodeGroups(ctx)
 	if err == nil {
-		r.groups = items
+		r.groups, r.groupsLoaded = items, true
 	}
 	return items, err
 }
 
 func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) {
-	if r.identities != nil {
+	if r.identitiesLoaded {
 		return r.identities, nil
 	}
 	var items []Identity
@@ -71,7 +77,7 @@ func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) 
 		items, err = r.Repository.XNodeIdentities(ctx)
 	}
 	if err == nil {
-		r.identities = items
+		r.identities, r.identitiesLoaded = items, true
 		for _, item := range items {
 			r.byID[item.ProxyUserID] = item
 			if item.UserID != "" {

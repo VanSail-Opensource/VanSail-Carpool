@@ -1,5 +1,15 @@
 # Catalog domain
 
+`topology.go` accepts a provider's shared metadata snapshot to avoid per-squad
+full group reads, retaining the older provider interface fallback. Native snapshots
+are bounded and revision keyed in X-Node. Catalog still reads current price and
+stock on every call; owner-held stock and automatic-renewal metadata are composed
+freshly after shared metadata. `topology_test.go` covers this projection boundary.
+`dashboard_cache.go` bounds the existing owner-scoped usage cache to 256 entries
+and 8 MiB. TTL and entitlement validity checks retain their existing behavior;
+financial state and permissions precede cache lookup. `dashboard_cache_test.go`
+covers owner isolation, eviction, invalidation budget and oversized snapshots.
+
 Dashboard includes optional ordered `activeSquadNames` resolved from local squad
 references for its active term. This avoids fetching the full purchasable catalog
 on Home. Label failures remain nonfatal; balance and paid entitlements stay fresh.

@@ -1,5 +1,14 @@
 # X-Node control plane
 
+`catalog_topology.go` retains one credential-free node/group snapshot (4 MiB
+encoded limit), keyed by the transactional compile revision. Each read checks
+the authoritative revision; a loader verifies it again before publication.
+Overlapping loads share a flight, canceled waiters leave immediately, and callers
+receive isolated copies. It caches no member access, health, balance or price.
+`catalog_topology_test.go` covers query counts, mutation/copy isolation, byte
+bounds, cross-revision retries and canceled waiters. Node metadata changes join
+the existing revision triggers; live agent bookkeeping does not invalidate it.
+
 `master_report_frames.go` bounds expanded WebSocket input before parsing and
 normalizes negotiated compact reports into existing live snapshot types. The
 upgrade echoes `X-XNode-Telemetry: compact-v1` only when offered; compact frames
@@ -368,6 +377,7 @@ administrator document and rejection of unrelated native-core errors.
 - `compile_cache.go`: Caches validated per-peer state against transactional desired-state revisions and access deadlines; controls remain memory-only.
 - `compile_reads.go`: Reuses groups, identities, users, periods and purchase reads within one compilation.
 - `compile_read_inventory.go`: Reuses nodes, endpoints, disabled squads and restriction reads within one compilation.
+- `compile_read_documents.go`: Batches encrypted configuration/snippet reads across branches and preflight nodes within the existing compile scope; errors are not retained. Empty group/identity inventories are cached explicitly, including nil results.
 - `compile_reads_test.go`: Hosted regression proving repeated shared inventory reads hit the repository once per compile.
 - `compile_cache_test.go`: Hosted regression for revision/boundary invalidation, timeout backoff and the before/after CPU profile with 1, 10 and 100 nodes and 1000 synthetic users.
 - `routing_compile_scope_test.go`: Hosted regression proving unrelated routing plans do not enter member inventory while plans touching the node still do.

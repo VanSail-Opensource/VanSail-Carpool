@@ -296,10 +296,15 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Profile old and cached reconciliation work
-        run: go test ./internal/xnode -run '^$' -bench BenchmarkXNodeSteadyState -benchtime=2s -benchmem -cpuprofile=xnode-cpu.pprof -o /tmp/xnode-profile.test > xnode-benchmark.txt
+        run: |
+          go test ./internal/xnode -run '^$' -bench BenchmarkXNodeSteadyState -benchtime=2s -benchmem -cpuprofile=xnode-cpu.pprof -o /tmp/xnode-profile.test > xnode-benchmark.txt
+          cat xnode-benchmark.txt
+      - name: Measure authoritative cache reads
+        run: go test ./internal/xnode -run '^(TestCatalogTopologyRevisionIsolationAndBounds|TestCompileCacheInvalidatesEpochAndAccessBoundary)$' -count=1 -v | tee xnode-cache-reads.txt
       - uses: actions/upload-artifact@v7
         with:
           name: xnode-cpu-profile
           path: |
             xnode-cpu.pprof
             xnode-benchmark.txt
+            xnode-cache-reads.txt

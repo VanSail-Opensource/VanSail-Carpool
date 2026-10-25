@@ -15,6 +15,7 @@ import (
 )
 
 type Service struct {
+	topology             *topologyCache
 	routingRuntime       *routingRuntime
 	compilation          *validationCache
 	routingOverrides     map[int64]RoutingPlan
@@ -33,7 +34,7 @@ type Service struct {
 }
 
 func NewService(repo Repository, settings Settings, vault *secret.Vault, publicURL *url.URL, validationQueue *upstreamqueue.Queue) *Service {
-	service := &Service{repo: repo, settings: settings, vault: vault, publicURL: publicURL, validationQueue: validationQueue, now: time.Now, compilation: &validationCache{}}
+	service := &Service{repo: repo, settings: settings, vault: vault, publicURL: publicURL, validationQueue: validationQueue, now: time.Now, compilation: &validationCache{}, topology: &topologyCache{}}
 	service.policyAssets = &policyAssets{publish: func() { service.localCompileRevision.Add(1) }}
 	service.routingAssets = &routingAssets{publish: func() { service.localCompileRevision.Add(1) }}
 	service.routingRuntime = &routingRuntime{peers: map[string]routingPeer{}, legacyBefore: service.now()}

@@ -67,8 +67,9 @@ maintenance receipts, protocol compatibility and performance measurements below.
   large integer accounting. No new persistent telemetry or source-IP collection
   was added. Hosted socket measurements: 146,977 legacy bytes versus 2,753
   negotiated compact/compressed bytes (98.13% reduction). Agent regression/schema
-  job passed after adding its missing public reference entry; remaining hosted
-  jobs and panel run `40203394601` are still running.
+  job passed after adding its missing public reference entry. X-Node run
+  `40203699740` completed successfully. Panel runs were superseded by later
+  reviewed main commits; combined hosted acceptance remains pending.
 - Item 22 implementation removes catalog/coupon bootstrap reads and Home's full
   catalog fetch, uses existing usage metadata and optional dashboard squad labels,
   and lazy-imports mode components. Chrome at 320px reduced motion, 390px and
@@ -85,6 +86,13 @@ maintenance receipts, protocol compatibility and performance measurements below.
   showed no cover/entrance and immediate full opacity. Six rapid mode switches
   settled to PAYG with no stuck gate, duplicates, overflow or console errors.
   Typecheck/lint passed; hosted regressions are pending.
+- Item 24 adds a revision-keyed, deduplicated 4 MiB topology snapshot and replaces
+  per-squad full group queries with one snapshot. Fresh catalog pricing/stock,
+  owner eligibility, quotes and operation status are retained. The existing
+  dashboard usage cache is bounded to 256 owners/8 MiB; compile scopes batch
+  encrypted documents and empty inventories. SQLite/PostgreSQL metadata triggers
+  and hosted mutation/cancellation/owner-isolation/budget regressions were added.
+  Go vet passed. Hosted cache query counts and CPU profiles remain pending.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Items 01-19 passed implementation/static/browser checks and hosted run

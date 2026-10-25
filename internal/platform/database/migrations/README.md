@@ -1,5 +1,9 @@
 # Database migrations
 
+`099_catalog_topology_epoch.sql` reuses the existing authoritative revision for
+node name/country/provider/multiplier changes. Equal values, heartbeats and live
+agent revisions do not advance it. No metadata or telemetry copy is persisted.
+
 `098_payg_squad_state.sql` adds the administrator-owned normal/hidden/unavailable
 state without changing member preferences, credit, charges or Combo terms.
 

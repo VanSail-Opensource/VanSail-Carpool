@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00011_catalog_topology_epoch.sql` is the forward equivalent of SQLite 099,
+adding narrow metadata invalidation to the existing authoritative epoch.
+
 `00010_payg_squad_state.sql` adds the same administrator-owned availability state
 as SQLite migration 098. Existing products default to normal.
 

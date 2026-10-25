@@ -46,6 +46,7 @@ type quoteRepository interface {
 type cachedDashboard struct {
 	value     RemoteDashboard
 	fetchedAt time.Time
+	bytes     int
 }
 
 // Service owns price selection and short-lived statistics caching.
@@ -56,6 +57,7 @@ type Service struct {
 	now          func() time.Time
 	cacheMu      sync.RWMutex
 	cache        map[string]cachedDashboard
+	cacheBytes   int
 	settings     AutomaticRenewalSettings
 	connectivity *connectivity.Service
 }

@@ -1,5 +1,10 @@
 # Application store
 
+`catalog_topology_epoch_test.go` verifies native metadata changes advance the
+shared revision while equal values and live agent bookkeeping do not. It runs
+through both SQLite and the hosted PostgreSQL contract factory. Forward
+migrations 099/00011 add only invalidation triggers, with no copied datasets.
+
 `payg_squad_state_test.go` checks unavailable admission and compatibility with
 older clients omitting `paygState`. Squad merchandising stores only the durable
 administrator state; live health and wallet eligibility remain derived.

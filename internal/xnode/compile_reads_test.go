@@ -7,11 +7,29 @@ import (
 
 type compileReadsRepository struct {
 	Repository
-	nodeReads       int
-	nodesReads      int
-	endpointReads   int
-	disabledReads   int
-	restrictedReads int
+	nodeReads                                                   int
+	nodesReads                                                  int
+	endpointReads                                               int
+	disabledReads                                               int
+	restrictedReads                                             int
+	groupReads, identityReads, configurationReads, snippetReads int
+}
+
+func (r *compileReadsRepository) XNodeGroups(context.Context) ([]Group, error) {
+	r.groupReads++
+	return nil, nil
+}
+func (r *compileReadsRepository) XNodeIdentities(context.Context) ([]Identity, error) {
+	r.identityReads++
+	return nil, nil
+}
+func (r *compileReadsRepository) XNodeConfiguration(context.Context, string) (Configuration, error) {
+	r.configurationReads++
+	return Configuration{}, nil
+}
+func (r *compileReadsRepository) XNodeSnippet(context.Context, string) (Snippet, error) {
+	r.snippetReads++
+	return Snippet{}, nil
 }
 
 func (r *compileReadsRepository) XNodeNode(context.Context, string) (Node, error) {
@@ -46,6 +64,18 @@ func TestCompileReadsMemoizesSharedInventory(t *testing.T) {
 	ctx := context.Background()
 
 	for range 2 {
+		if _, err := reads.XNodeGroups(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := reads.XNodeIdentities(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := reads.XNodeConfiguration(ctx, "config"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := reads.XNodeSnippet(ctx, "snippet"); err != nil {
+			t.Fatal(err)
+		}
 		if _, err := reads.XNodeNode(ctx, "node"); err != nil {
 			t.Fatal(err)
 		}
@@ -61,6 +91,9 @@ func TestCompileReadsMemoizesSharedInventory(t *testing.T) {
 		if _, err := reads.XNodeUserRestricted(ctx, "member"); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if repo.groupReads != 1 || repo.identityReads != 1 || repo.configurationReads != 1 || repo.snippetReads != 1 {
+		t.Fatal("empty inventories/documents repeated", repo)
 	}
 
 	if repo.nodeReads != 1 || repo.nodesReads != 1 || repo.endpointReads != 1 || repo.disabledReads != 1 || repo.restrictedReads != 1 {

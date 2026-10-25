@@ -36,9 +36,17 @@ func (s *Service) Catalog(ctx context.Context) (model.Catalog, error) {
 }
 
 func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, overrides []model.SquadProduct) (model.Catalog, error) {
-	lister, ok := s.provider.(remoteSquadLister)
+	var provider any = s.provider
+	if source, ok := provider.(remoteTopologyLister); ok {
+		snapshot, err := source.ListCatalogTopology(ctx)
+		if err != nil {
+			return model.Catalog{}, err
+		}
+		provider = topologySnapshot{snapshot}
+	}
+	lister, ok := provider.(remoteSquadLister)
 	if !ok {
-		if nodeLister, available := s.provider.(remoteNodeLister); available {
+		if nodeLister, available := provider.(remoteNodeLister); available {
 			return hydrateStoredCatalogNodes(ctx, nodeLister, combos, overrides)
 		}
 		return catalogWithEmptyNodes(combos, overrides), nil
@@ -71,7 +79,7 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 	sort.Strings(squadUUIDs)
 	catalogNodes := []model.CatalogNode{}
 	nodesBySquad := make(map[string][]model.CatalogNode)
-	if nodeLister, ok := s.provider.(remoteNodeLister); ok {
+	if nodeLister, ok := provider.(remoteNodeLister); ok {
 		catalogNodes, nodesBySquad, err = hydrateSquadNodes(ctx, nodeLister, squadUUIDs)
 		if err != nil {
 			return model.Catalog{}, err

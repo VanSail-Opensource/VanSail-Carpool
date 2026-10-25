@@ -66,6 +66,7 @@ func TestCompileCacheInvalidatesEpochAndAccessBoundary(t *testing.T) {
 	if repo.reads != 1 {
 		t.Fatal("unchanged state recompiled", repo.reads)
 	}
+	t.Logf("1000 steady-state reconciliations: full compiles=%d", repo.reads)
 	if _, err = master.cachedConfiguration(ctx, peer, true); err != nil || repo.reads != 1 {
 		t.Fatal("baseline resend recompiled unchanged configuration", err, repo.reads)
 	}

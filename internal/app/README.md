@@ -1,5 +1,9 @@
 # Application composition
 
+`xnode_catalog_topology.go` adapts the native revision-keyed topology snapshot to
+catalog squad/node metadata in one pass. It deduplicates published inbound tags
+and group node IDs without caching commerce, permissions or live node health.
+
 `pm_profile_payg.go` reads existing 72-hour PAYG minute summaries for PM cards
 before the optional Combo projection. It performs no provisioning or upstream
 requests and creates no duplicate accounting storage.
