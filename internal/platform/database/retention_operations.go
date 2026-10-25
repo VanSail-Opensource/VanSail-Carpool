@@ -72,6 +72,8 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 			WHERE ban.ban_operation_id=operation.id OR ban.unban_operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM node_compensation_events event
 			WHERE event.provider_operation_id=operation.id)
+		AND NOT EXISTS (SELECT 1 FROM xnode_routing_plans plan WHERE plan.operation_id=operation.id)
+		AND NOT EXISTS (SELECT 1 FROM xnode_metered_probes probe WHERE probe.operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM ip_lookup_checks check_record WHERE check_record.operation_id=operation.id)`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune processed provider operations: %w", err)
 	}

@@ -1,5 +1,11 @@
 # Application store
 
+Maintenance preserves provider receipts referenced by native routing plans and
+metered probes, including terminal receipts. These links are required desired
+state and immutable billing attribution, not disposable operation history.
+`retention_native_operations_test.go` covers repeated cleanup with both kinds of
+references, alongside the existing retention and backup-gating regressions.
+
 `xnode_payg_credit_window.go` retains exact report-time raw/unbilled counters for the
 rolling `(through-72h, through]` threshold. Settled samples older than the newest
 100 MiB are redundant and compacted; low-traffic samples and pending evidence
