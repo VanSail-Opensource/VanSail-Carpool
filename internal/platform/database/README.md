@@ -23,8 +23,11 @@ all transitive predecessors. Status/age alone cannot establish deletability;
 native periods and unfinished settlements also retain terms. Tombstones and
 settled financial rollups are written only for the final deletion set. Hosted
 regressions cover native-retained expired chains, mixed renewal-batch chains,
-repeat compaction and exact tombstone charges. Abandoned-user cleanup excludes
-every restrictive user reference, including audit actors and desired DIY state.
+repeat compaction and exact tombstone charges. `retention_purchase_lineage_test.go`
+covers transitive predecessor retention for automatic-renewal and renewal-batch
+chains, plus exactly-once compaction of unreferenced history. Abandoned-user
+cleanup excludes every restrictive user reference, including audit actors and
+desired DIY state.
 
 `xnode_payg_credit_window.go` retains exact report-time raw/unbilled counters for the
 rolling `(through-72h, through]` threshold. Settled samples older than the newest
