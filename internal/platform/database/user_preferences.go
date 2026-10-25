@@ -25,7 +25,7 @@ func (s *Store) UserPreferences(ctx context.Context, userID string) (preferences
 	return scanPreferences(s.db.QueryRowContext(ctx, preferenceSelect, userID))
 }
 
-// UserPreferenceSnapshot projects the strict active-combo gate.
+// UserPreferenceSnapshot projects combo-or-paid-PAYG member eligibility.
 func (s *Store) UserPreferenceSnapshot(ctx context.Context, userID string, now time.Time) (preferences.Snapshot, error) {
 	p, err := s.UserPreferences(ctx, userID)
 	if err != nil {
@@ -61,8 +61,7 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 		return preferences.Snapshot{}, err
 	}
 	var active bool
-	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status='active'
- AND valid_from<=? AND valid_until>?)`, userID, stamp(now), stamp(now)).Scan(&active)
+	err = tx.QueryRowContext(ctx, memberEligibilitySQL, userID, stamp(now), stamp(now), userID).Scan(&active)
 	if err != nil {
 		return preferences.Snapshot{}, err
 	}

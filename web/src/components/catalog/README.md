@@ -83,3 +83,10 @@ cover data arriving before scene completion; Chrome samples verify CSS timing.
 - `PAYGPage.test.ts` covers initial loading, empty results, exact summary values and retained totals after a background refresh failure. All automated regressions run in hosted CI.
 
 Mode changes emit exactly one selection haptic; tapping the active mode is silent. PAYG recharge and retry controls use the existing delegated semantic feedback. Informational PAYG cards remain non-interactive.
+# PAYG squad presentation
+
+PAYG cards stretch within each grid row and place usage at the bottom left with
+an auto-margin footer. The status marker stays fixed; synchronized opacity and
+ring animations provide blink/ripple feedback without vertical movement.
+Reduced-motion preferences disable both animations. Status labels remain
+localized and available to keyboard and screen-reader users.

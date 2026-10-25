@@ -13,7 +13,7 @@
       "confirmation": "ACTIVATE NEXT COMBO",
       "confirmPrompt": "Type {text} to confirm",
       "loadFailed": "Combo controls could not be loaded.",
-      "operationFailed": "The change could not be queued. Refresh and try again.",
+      "operationFailed": "The change could not be saved. Refresh and try again.",
       "syncPending": "Your access change is being applied.",
       "updated": "Your access is updated.",
       "syncFailed": "Access synchronization needs recovery. Check its status or contact an administrator."

@@ -1,5 +1,13 @@
 # User preferences
 
+The compatibility `activeCombo` field also admits members with actual PAYG
+purchases, derived from existing lifetime purchased-byte evidence. Community
+invites, Around TX and activity entrance gates share this rule. Real combo,
+add-on, automatic-renewal and PAYG debits enable Show Around TX in the same
+transaction. Later manual opt-outs remain effective until another qualifying
+purchase. Upgrade backfills the entrance for existing spenders; unrelated
+notification and PAYG choices are preserved. Boost checks remain required.
+
 `types.go` owns defaults, typed partial updates, snapshots, and the delivery reader.
 `delivery.go` maps every automatic private notification to exactly one category.
 The database stores ten preference flags; eligibility, language, currency, reset

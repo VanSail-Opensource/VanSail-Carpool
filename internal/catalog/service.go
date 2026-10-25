@@ -21,6 +21,7 @@ var ErrNoAccessibleNodes = errors.New("no accessible nodes")
 type Repository interface {
 	ListCombos(context.Context, bool) ([]model.Combo, error)
 	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)
+	ListSquadProductOverrides(context.Context, bool) ([]model.SquadProduct, error)
 	CreatePurchase(context.Context, database.PurchaseInput, time.Time) (model.Purchase, error)
 	ListPurchases(context.Context, string) ([]model.Purchase, error)
 	Balance(context.Context, string) (model.Money, error)

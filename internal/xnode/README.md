@@ -791,3 +791,8 @@ PAYG member opt-outs apply to provisioning, inventory/DIY, native compilation, l
 `payg_preferences_test.go` covers member opt-outs across subscription inventory and compilation, re-enabling and paid Combo isolation.
 
 `payg_account_provision.go` owns idempotent internal principal/account creation; reconciliation and coverage remain in `payg_provision.go`.
+# PAYG catalog reads
+
+PAYG compilation returns before reading products/topology when a node has no
+accounts. PAYG provisioning, inventory, export and display use stockless local
+overrides; derived catalog capacity never enters the reconciliation deadline.

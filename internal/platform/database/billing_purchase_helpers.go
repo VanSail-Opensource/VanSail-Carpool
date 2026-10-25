@@ -30,10 +30,11 @@ func checkSquadStockTx(ctx context.Context, tx *sql.Tx, squadUUIDs []string, hol
 		if len(holderUserID) > 0 {
 			holderID = holderUserID[0]
 		}
-		if err := tx.QueryRowContext(ctx, `SELECT COUNT(DISTINCT user_id),COALESCE(MAX(CASE WHEN user_id=? THEN 1 ELSE 0 END),0) FROM purchases
-			WHERE status IN ('activating','active','queued') AND (EXISTS (
-				SELECT 1 FROM json_each((SELECT included_squad_uuids FROM combos WHERE combos.id=purchases.combo_id)) WHERE value=?
-			) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_addons.purchase_id=purchases.id AND group_id=?))`, holderID, squadUUID, squadUUID).Scan(&reservations, &heldByUser); err != nil {
+		if err := tx.QueryRowContext(ctx, `WITH selected_purchases AS (
+            SELECT `+purchaseSquadColumns+` FROM purchases WHERE status IN ('activating','active','queued')
+        ), `+purchaseSquadMembershipCTE+`
+        SELECT COUNT(DISTINCT user_id),COALESCE(MAX(CASE WHEN user_id=? THEN 1 ELSE 0 END),0)
+        FROM owned_squads WHERE group_id=?`, holderID, squadUUID).Scan(&reservations, &heldByUser); err != nil {
 			return fmt.Errorf("count squad reservations: %w", err)
 		}
 		// Capacity counts distinct members. Continuing an existing reservation

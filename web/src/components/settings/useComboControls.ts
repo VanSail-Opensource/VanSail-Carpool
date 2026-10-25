@@ -16,7 +16,7 @@ export function useComboControls() {
   const latest = createLatestRequest()
   const command = useDurableCommand({ errorKey: 'settings.combo.operationFailed', onTerminal: async () => { clearResponseCache(); await load() } })
   const error = computed(() => command.error.value ?? loadError.value)
-  const blocked = computed(() => command.blocksMutations.value || loading.value || !value.value?.mutable)
+  const blocked = computed(() => command.busy.value || command.blocksMutations.value || loading.value || !value.value?.mutable)
 
   async function load(): Promise<void> {
     if (blockedTimer) globalThis.clearTimeout(blockedTimer)

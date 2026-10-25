@@ -26,7 +26,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	// Home needs entitlement labels, not the full purchasable Combo catalog.
 	// Labels are optional presentation data, so failures do not hide finances.
 	if active != nil {
-		if squads, labelsErr := s.repository.ListSquadProducts(ctx, false); labelsErr == nil {
+		if squads, labelsErr := s.repository.ListSquadProductOverrides(ctx, false); labelsErr == nil {
 			names := make(map[string]string, len(squads))
 			for _, squad := range squads {
 				names[squad.GroupID] = squad.Name

@@ -168,16 +168,8 @@ type purchaseSquadQueryer interface {
 }
 
 func purchaseSquadsFrom(ctx context.Context, queryer purchaseSquadQueryer, purchaseID string) ([]string, error) {
-	rows, err := queryer.QueryContext(ctx, `SELECT value AS group_id FROM purchases,
-		json_each(purchases.entitlement_squad_uuids) WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NOT NULL
-		UNION SELECT value FROM purchases JOIN combos ON combos.id=purchases.combo_id,json_each(COALESCE(purchases.combo_squad_uuids,combos.included_squad_uuids))
-		WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NULL
-		UNION SELECT purchase_addons.group_id FROM purchase_addons JOIN purchases ON purchases.id=purchase_addons.purchase_id
-		WHERE purchase_addons.purchase_id=? AND purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL
-		UNION SELECT value FROM purchases,json_each(purchases.entitlement_addon_squad_uuids)
-		WHERE purchases.id=? AND purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NOT NULL
-		UNION SELECT squad_uuid FROM activity_reward_squad_access WHERE purchase_id=?
-		ORDER BY group_id`, purchaseID, purchaseID, purchaseID, purchaseID, purchaseID)
+	rows, err := queryer.QueryContext(ctx, `WITH selected_purchases AS (SELECT `+purchaseSquadColumns+` FROM purchases WHERE id=?), `+purchaseSquadMembershipCTE+`
+		SELECT DISTINCT group_id FROM owned_squads ORDER BY group_id`, purchaseID)
 	if err != nil {
 		return nil, err
 	}

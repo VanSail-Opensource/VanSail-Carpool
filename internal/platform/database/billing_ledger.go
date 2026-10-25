@@ -91,7 +91,21 @@ func insertLedgerTx(ctx context.Context, tx *sql.Tx, userID string, delta, balan
 	if err != nil {
 		return "", fmt.Errorf("append ledger: %w", err)
 	}
+	if delta < 0 && memberCommerceKind(kind) {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO user_preferences(user_id,show_around_tx) VALUES(?,1)
+			ON CONFLICT(user_id) DO UPDATE SET show_around_tx=1`, userID); err != nil {
+			return "", fmt.Errorf("enable member community entrance: %w", err)
+		}
+	}
 	return id, nil
+}
+
+func memberCommerceKind(kind string) bool {
+	switch kind {
+	case "purchase_debit", "purchase_addon_debit", "automatic_renewal", "payg_gb":
+		return true
+	}
+	return false
 }
 
 // LedgerEntryByID returns one immutable ledger row.

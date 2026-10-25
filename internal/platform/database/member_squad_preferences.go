@@ -80,6 +80,10 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 		return providerops.Operation{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	// Serialize preferences with other owner controls before replay/ownership reads.
+	if _, err := balanceTx(ctx, tx, input.OwnerUserID); err != nil {
+		return providerops.Operation{}, err
+	}
 	if operation, found, err := memberOperationReplayTx(ctx, tx, input, now); found || err != nil {
 		if err == nil {
 			err = tx.Commit()
@@ -119,7 +123,7 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 	if err != nil {
 		return providerops.Operation{}, err
 	}
-	operation, _, err := createProviderOperationTx(ctx, tx, input, now)
+	operation, _, err := createProviderOperationStateTx(ctx, tx, input, now, true)
 	if err != nil {
 		return providerops.Operation{}, err
 	}

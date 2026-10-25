@@ -101,7 +101,8 @@
     "098_payg_squad_state.sql",
     "099_catalog_topology_epoch.sql",
     "100_xnode_ddns_bindings.sql",
-    "101_xnode_ddns_changes.sql"
+    "101_xnode_ddns_changes.sql",
+    "103_paid_member_access.sql"
   ],
   "objects": [
     {
@@ -2118,19 +2119,19 @@
       "type": "trigger",
       "name": "preference_visibility_after_transition",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_after_transition\nAFTER UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_after_transition\nAFTER UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
     },
     {
       "type": "trigger",
       "name": "preference_visibility_before_purchase",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_before_purchase\nBEFORE INSERT ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.created_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.created_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_before_purchase\nBEFORE INSERT ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.created_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.created_at)\n  );\nEND"
     },
     {
       "type": "trigger",
       "name": "preference_visibility_before_transition",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_before_transition\nBEFORE UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_before_transition\nBEFORE UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
     },
     {
       "type": "trigger",
@@ -7728,7 +7729,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 102,
+      "rows": 103,
       "columns": [
         {
           "name": "version",

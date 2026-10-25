@@ -1,5 +1,13 @@
 # IP Lookup
 
+`proxy_disk_cleanup.go` removes only the named inventory database and sidecars
+at boot and orderly shutdown. Sources rebuild through the existing download/DNS
+queues after startup; a growing current cache can therefore be expected. During
+maintenance, expired pool references are released before retiring generations.
+Free pages are reclaimed in 256-page batches within the existing 20-second
+maintenance deadline, rather than retaining most of a large expired source on
+disk. Live reader generations and operator files remain protected.
+
 ## Responsibility and entry points
 
 This module owns queued public-IP reputation checks, compact source-attributed

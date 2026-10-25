@@ -35,13 +35,8 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	if bound != agent {
 		return xnode.ErrTrafficAgentMismatch
 	}
-	var previous uint64
-	var previousDigest string
-	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES(?,?,0,'',?) ON CONFLICT(agent_id) DO NOTHING`, agent, nodeID, stamp(time.Now().UTC())); err != nil {
-		return err
-	}
-	err = tx.QueryRowContext(ctx, `SELECT last_sequence,last_digest FROM xnode_report_cursors WHERE agent_id=? /*pg:FOR UPDATE*/`, agent).Scan(&previous, &previousDigest)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	previous, previousDigest, err := lockXNodeCursorTx(ctx, tx, nodeID, agent)
+	if err != nil {
 		return err
 	}
 	if sequence <= previous {
@@ -80,6 +75,9 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	for _, period := range ordered {
 		var locked string
 		if err = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=? /*pg:FOR UPDATE*/`, period).Scan(&locked); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return xnode.ErrTrafficPeriodMissing
+			}
 			return err
 		}
 	}
@@ -104,6 +102,9 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 			EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id),
 			EXISTS(SELECT 1 FROM member_identity_aliases a WHERE (a.old_proxy_id=? OR a.proxy_id=?) AND a.proxy_id=i.proxy_user_id AND a.user_id=i.user_id)
 			FROM xnode_identities i WHERE proxy_user_id=COALESCE((SELECT proxy_id FROM member_identity_aliases WHERE old_proxy_id=?),?)`, user, user, user, user).Scan(&service, &metered, &migrated); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return xnode.ErrTrafficIdentityMissing
+			}
 			return err
 		}
 		if (!service.Valid && !migrated) || metered {

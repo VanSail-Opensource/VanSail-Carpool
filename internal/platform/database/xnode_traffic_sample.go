@@ -18,6 +18,9 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	var owner int64
 	var status string
 	if err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status FROM xnode_periods WHERE id=?`, sample.AccountingPeriod).Scan(&owner, &status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return xnode.ErrTrafficPeriodMissing
+		}
 		return err
 	}
 	if status == "closed" || status == "review" {

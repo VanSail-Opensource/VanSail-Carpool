@@ -2,6 +2,7 @@ package iplookup
 
 import (
 	"context"
+	"fmt"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -83,5 +84,55 @@ func TestDiskInventoryUnavailableDoesNotFallBackToMemory(t *testing.T) {
 	index, result := s.collectSource(context.Background(), ProxySource{ID: "unavailable"}, DefaultConfig(), false, nil)
 	if called || index != nil || result.Status == "success" {
 		t.Fatal("unavailable disk cache used memory or certified coverage")
+	}
+}
+
+func TestDiskCacheShutdownRemovesOnlyOwnedFiles(t *testing.T) {
+	dir := t.TempDir()
+	s := NewEnhancedService(nil, nil, nil)
+	if err := s.ConfigureInventoryCache(context.Background(), dir, 32<<20); err != nil {
+		t.Fatal(err)
+	}
+	keep := filepath.Join(dir, "operator-note")
+	if err := os.WriteFile(keep, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CloseInventoryCache(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "inventory.db")); !os.IsNotExist(err) {
+		t.Fatal("cache retained after shutdown", err)
+	}
+	if _, err := os.Stat(keep); err != nil {
+		t.Fatal("removed operator file", err)
+	}
+}
+
+func TestDiskCacheReclaimsLargeRetiredSourceInOnePass(t *testing.T) {
+	s := diskService(t, 32<<20)
+	ctx := context.Background()
+	index, err := s.disk.newGeneration(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := &diskWriter{ctx: ctx, index: index, limit: 50000}
+	for i := range 30000 {
+		writer.add(netip.MustParsePrefix(fmt.Sprintf("11.%d.%d.%d/32", i>>16, i>>8&255, i&255)))
+	}
+	writer.flush()
+	if writer.err != nil {
+		t.Fatal(writer.err)
+	}
+	before := s.disk.usage()
+	index.release()
+	if err := s.disk.prune(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var free int64
+	if err := s.disk.db.QueryRow("PRAGMA freelist_count").Scan(&free); err != nil || free != 0 {
+		t.Fatal("retired pages retained", free, err)
+	}
+	if after := s.disk.usage(); after >= before/2 {
+		t.Fatal("retired source kept disk allocation", before, after)
 	}
 }

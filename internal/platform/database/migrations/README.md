@@ -1,5 +1,10 @@
 # Database migrations
 
+`103_paid_member_access.sql` retains community preferences for PAYG spenders,
+preserves the saved Around TX choice across combo transitions and enables that
+entrance once for existing commerce spenders. PostgreSQL 00015 carries the same
+trigger/backfill change; no entitlement, charge or wallet evidence is modified.
+
 `101_xnode_ddns_changes.sql` persists bounded desired address mutation evidence,
 replay cursors and operation references, separately from disposable telemetry.
 

@@ -27,8 +27,7 @@ func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent str
 	if bound != agent {
 		return xnode.ErrConflict
 	}
-	var committed uint64
-	err = tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT last_sequence FROM xnode_report_cursors WHERE agent_id=?),0)`, agent).Scan(&committed)
+	committed, _, err := lockXNodeCursorTx(ctx, tx, nodeID, agent)
 	if err != nil {
 		return err
 	}

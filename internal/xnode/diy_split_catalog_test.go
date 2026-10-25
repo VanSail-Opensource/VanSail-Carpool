@@ -61,3 +61,15 @@ func TestSplitHostCatalogKeepsPairModesAndDeduplicatesCompatibilityModes(t *test
 		}
 	}
 }
+
+func TestSplitHostCatalogOmitsStreamOnePAYGEndpoints(t *testing.T) {
+	proxies := []subscription.Proxy{splitCatalogProxy("dmit-v4", "stream-one"), splitCatalogProxy("dmit-v6", "stream-one"), splitCatalogProxy("split-v4", "auto"), splitCatalogProxy("split-v6", "auto")}
+	for i := range proxies {
+		proxies[i].PrincipalID = 21
+	}
+	proxies[2].NodeID, proxies[3].NodeID = "split-node", "split-node"
+	hosts := splitHostCatalog(proxies)
+	if len(hosts) != 2 || hosts[0].ID != "split-v4" || hosts[1].ID != "split-v6" {
+		t.Fatal("stream-one hosts appeared as split-compatible", hosts)
+	}
+}

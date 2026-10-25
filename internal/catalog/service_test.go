@@ -240,6 +240,9 @@ func (r *catalogRepository) ListSquadProducts(_ context.Context, visible bool) (
 	r.addonsVisibleOnly = visible
 	return r.addons, r.addonsErr
 }
+func (r *catalogRepository) ListSquadProductOverrides(ctx context.Context, visible bool) ([]model.SquadProduct, error) {
+	return r.ListSquadProducts(ctx, visible)
+}
 func (r *catalogRepository) CreatePurchase(_ context.Context, input database.PurchaseInput, at time.Time) (model.Purchase, error) {
 	r.purchaseInput, r.purchaseAt = input, at
 	return r.purchase, r.purchaseErr

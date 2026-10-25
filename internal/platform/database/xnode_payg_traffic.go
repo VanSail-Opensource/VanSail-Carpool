@@ -64,6 +64,9 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 	}
 	var status string
 	if err = tx.QueryRowContext(ctx, `SELECT status FROM xnode_periods WHERE id=?`, a.PeriodID).Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return true, xnode.ErrTrafficPAYGPeriodMissing
+		}
 		return true, err
 	}
 	if status != "open" {

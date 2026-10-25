@@ -21,7 +21,20 @@ const (
 	ErrTrafficPeriodSettled trafficConflict = "XNODE_TRAFFIC_PERIOD_SETTLED"
 	// ErrTrafficOwnerMismatch rejects samples without period ownership evidence.
 	ErrTrafficOwnerMismatch trafficConflict = "XNODE_TRAFFIC_OWNER_MISMATCH"
+	// Missing journal references must never be skipped or acknowledged.
+	ErrTrafficPeriodMissing     trafficConflict = "XNODE_TRAFFIC_PERIOD_MISSING"
+	ErrTrafficPAYGPeriodMissing trafficConflict = "XNODE_TRAFFIC_PAYG_PERIOD_MISSING"
+	ErrTrafficIdentityMissing   trafficConflict = "XNODE_TRAFFIC_IDENTITY_MISSING"
 )
+
+type trafficReportFailure struct {
+	err      error
+	sequence uint64
+	samples  int
+}
+
+func (e trafficReportFailure) Error() string { return e.err.Error() }
+func (e trafficReportFailure) Unwrap() error { return e.err }
 
 type trafficSequenceGap struct{ received, expected uint64 }
 

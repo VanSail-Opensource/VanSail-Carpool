@@ -1,5 +1,10 @@
 # PostgreSQL persistence
 
+Schema version 15 updates community-preference transition functions and
+backfills Show Around TX for existing combo/PAYG spenders. Community access is
+derived from current combo validity or existing lifetime PAYG purchased bytes.
+No new data columns or indexes are required.
+
 Schema version 8 adds prepaid PAYG remainder/charge timestamps and rolling raw
 report windows through migration 00008. The contract and source inventory are
 regenerated from an isolated SQLite fixture; the original baseline is unchanged.

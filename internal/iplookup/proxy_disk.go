@@ -47,7 +47,10 @@ func (s *EnhancedService) CloseInventoryCache() error {
 	if s == nil || s.disk == nil {
 		return nil
 	}
-	return s.disk.db.Close()
+	if err := s.disk.db.Close(); err != nil {
+		return err
+	}
+	return removeInventoryFiles(s.disk.dir)
 }
 
 func openInventoryDisk(ctx context.Context, dir string, quota int64) (*inventoryDisk, error) {
@@ -64,12 +67,8 @@ func openInventoryDisk(ctx context.Context, dir string, quota int64) (*inventory
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("proxy cache directory is not a regular directory")
 	}
-	// Only these application-owned files are rebuildable. Never remove the directory.
-	for _, name := range []string{"inventory.db", "inventory.db-wal", "inventory.db-shm", "inventory.db-journal"} {
-		path := filepath.Join(dir, name)
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
+	if err := removeInventoryFiles(dir); err != nil {
+		return nil, err
 	}
 	path := filepath.Join(dir, "inventory.db")
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
@@ -171,8 +170,7 @@ func (d *inventoryDisk) prune(ctx context.Context) error {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	_, err := d.db.ExecContext(ctx, "PRAGMA incremental_vacuum(256)")
-	return err
+	return d.reclaim(ctx)
 }
 
 func (d *inventoryDisk) usage() int64 {

@@ -38,7 +38,7 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 
 <style scoped>
 .payg-page { display: grid; gap: .6rem; }
-.payg-page__grid { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
+.payg-page__grid { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: stretch; }
 .payg-page__empty { margin: 0; padding-block: 1.5rem; text-align: center; color: var(--text-muted); font-size: .8rem; }
 .payg-page__error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .payg-page__grid--content > * { animation: payg-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
