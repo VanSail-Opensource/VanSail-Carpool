@@ -92,7 +92,14 @@ maintenance receipts, protocol compatibility and performance measurements below.
   dashboard usage cache is bounded to 256 owners/8 MiB; compile scopes batch
   encrypted documents and empty inventories. SQLite/PostgreSQL metadata triggers
   and hosted mutation/cancellation/owner-isolation/budget regressions were added.
-  Go vet passed. Hosted cache query counts and CPU profiles remain pending.
+  Go vet passed. Hosted CPU/cache job `121205458565` passed: 100 synthetic catalog
+  topology reads fetched nodes once and groups once; 1000 unchanged reconciliation
+  calls compiled once. The 100-node/1000-user synthetic cached-sync benchmark used
+  7.67 ms and 600 allocations per iteration versus 1.76 s/9.75 million allocations
+  in the repeated-validation fixture; this is not a production latency claim.
+  Hosted frontend job `121205458556` passed. CI found the PostgreSQL version guard
+  and generated SQLite schema inventory needed advancing for migration 099;
+  both are corrected. Combined hosted acceptance remains pending.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Items 01-19 passed implementation/static/browser checks and hosted run

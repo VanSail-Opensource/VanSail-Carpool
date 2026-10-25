@@ -98,7 +98,8 @@
     "095_payg.sql",
     "096_payg_credit_windows.sql",
     "097_payg_preferences.sql",
-    "098_payg_squad_state.sql"
+    "098_payg_squad_state.sql",
+    "099_catalog_topology_epoch.sql"
   ],
   "objects": [
     {
@@ -1918,6 +1919,12 @@
       "name": "compile_xnode_identities_update",
       "table": "xnode_identities",
       "sql": "CREATE TRIGGER compile_xnode_identities_update AFTER UPDATE OF credentials_cipher,current_period_id,access_disabled ON xnode_identities WHEN OLD.credentials_cipher IS NOT NEW.credentials_cipher OR OLD.current_period_id IS NOT NEW.current_period_id OR OLD.access_disabled IS NOT NEW.access_disabled BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_node_catalog_metadata",
+      "table": "xnode_nodes",
+      "sql": "CREATE TRIGGER compile_xnode_node_catalog_metadata AFTER UPDATE OF name,country_code,provider_name,multiplier_fp ON xnode_nodes\nWHEN OLD.name IS NOT NEW.name OR OLD.country_code IS NOT NEW.country_code OR OLD.provider_name IS NOT NEW.provider_name OR OLD.multiplier_fp IS NOT NEW.multiplier_fp\nBEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
     },
     {
       "type": "trigger",
@@ -7653,7 +7660,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 99,
+      "rows": 100,
       "columns": [
         {
           "name": "version",
