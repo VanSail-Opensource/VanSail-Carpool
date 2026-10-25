@@ -19,6 +19,10 @@ per-host omission when a projection fails.
 native links, Xray JSON, sing-box JSON and Clash Meta YAML. Credential maps,
 mapper sources and transport settings are excluded from ordinary JSON encoding.
 The HTTP layer owns bearer authorization, revocation and no-store headers.
+Split XHTTP pairs must share the same billed principal, node, listener, protocol,
+path and session options, and use distinct published hosts. PAYG inventory uses
+its owner-specific host IDs in loading, validation, saved references and export;
+no Combo or whole-GB wallet threshold gates those client metadata projections.
 
 Xray rendering and connectivity probes share the existing ordered mapper in
 `internal/connectivity`. Sing-box and Mihomo apply their own mapper operations.

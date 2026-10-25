@@ -58,7 +58,7 @@ func TestSplitSessionIdentityModesAndClientFormats(t *testing.T) {
 			}
 		})
 	}
-	for _, change := range []func(*Proxy){func(p *Proxy) { p.NodeID = "other" }, func(p *Proxy) { p.InboundTag = "other" }, func(p *Proxy) { object(p.Stream, "xhttpSettings")["path"] = "/other" }, func(p *Proxy) { object(p.Stream, "xhttpSettings")["mode"] = "stream-one" }} {
+	for _, change := range []func(*Proxy){func(p *Proxy) { p.PrincipalID = 7 }, func(p *Proxy) { p.NodeID = "other" }, func(p *Proxy) { p.InboundTag = "other" }, func(p *Proxy) { object(p.Stream, "xhttpSettings")["path"] = "/other" }, func(p *Proxy) { object(p.Stream, "xhttpSettings")["mode"] = "stream-one" }} {
 		up, down := splitFixture("up"), splitFixture("down")
 		change(&down)
 		if len(SplitModes(up, down)) != 0 {

@@ -84,3 +84,9 @@ maintenance receipts, protocol compatibility and performance measurements below.
   390px reduced motion, long labels, keyboard Home/End/arrows, retained edits,
   loading and empty/error recovery. Mobile Save is static in document flow;
   desktop Save is sticky. No overflow or console warnings/errors remained.
+- Confirmed DIY Split XHTTP uses the same PAYG owner inventory as Routing,
+  including queued repair after sub-GB top-ups. Extended hosted coverage through
+  preview, save and export, and reject split pairs across billed principals or
+  the same published host. Go vet passed; Chrome exercised compatible selectors
+  and the ineligible/empty state. The production token lacks member DIY scope,
+  so live member-specific inventory was not queried.

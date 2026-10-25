@@ -9,8 +9,13 @@ import (
 // SplitModes requires two administrator hosts reaching the same XHTTP listener.
 // A node ID alone is insufficient: sessions belong to one inbound's handler.
 func SplitModes(up, down Proxy) []string {
-	if up.ID == down.ID || up.NodeID == "" || up.NodeID != down.NodeID || up.InboundTag == "" || up.InboundTag != down.InboundTag || up.Protocol != down.Protocol ||
+	if up.ID == down.ID || up.PrincipalID != down.PrincipalID || up.NodeID == "" || up.NodeID != down.NodeID || up.InboundTag == "" || up.InboundTag != down.InboundTag || up.Protocol != down.Protocol ||
 		text(up.Stream, "network") != "xhttp" || text(down.Stream, "network") != "xhttp" {
+		return nil
+	}
+	// Two squads may publish the same listener under different billed principals.
+	// Download settings contain transport only and must never cross identities.
+	if up.PublishedEndpointID != "" && up.PublishedEndpointID == down.PublishedEndpointID {
 		return nil
 	}
 	a, b := object(up.Stream, "xhttpSettings"), object(down.Stream, "xhttpSettings")
