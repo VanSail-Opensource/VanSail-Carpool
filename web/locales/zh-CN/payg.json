@@ -26,6 +26,7 @@
       "sync_pending": "同步中",
       "disabled": "已关闭"
     },
-    "disabled": "按量付费已关闭。"
+    "disabled": "按量付费已关闭。",
+    "comboBlocked": "已启用自动续费"
   }
 }

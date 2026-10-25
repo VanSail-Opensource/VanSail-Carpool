@@ -79,7 +79,7 @@ func shiftAdminSubscriptionTx(ctx context.Context, tx *sql.Tx, target adminBulkT
 			}
 			return ErrConflict
 		}
-		if err := reconcilePurchaseContinuityTx(ctx, tx, term.id, "queued", shiftedFrom, now); err != nil {
+		if err := retirePurchaseContinuityTx(ctx, tx, term.id, now); err != nil {
 			return err
 		}
 	}

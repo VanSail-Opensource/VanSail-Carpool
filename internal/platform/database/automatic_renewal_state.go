@@ -17,14 +17,9 @@ type DueAutoRenewal struct {
 }
 
 // HasEnabledAutoRenewal reports whether an active entitlement chain blocks catalog checkout.
-func (s *Store) HasEnabledAutoRenewal(ctx context.Context, userID string, _ time.Time) (bool, error) {
-	var enabled int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases
-		WHERE user_id=? AND auto_renew_enabled=1 AND status IN ('active','activating','queued'))`, userID).Scan(&enabled)
-	if err != nil {
-		return false, fmt.Errorf("check automatic renewal: %w", err)
-	}
-	return enabled == 1, nil
+func (s *Store) HasEnabledAutoRenewal(ctx context.Context, userID string, now time.Time) (bool, error) {
+	until, err := s.AutoRenewalBlockedUntil(ctx, userID, now)
+	return until != nil, err
 }
 
 // SetAutoRenewal stores the member's explicit choice for an active, activating,
@@ -39,6 +34,9 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 		return fmt.Errorf("begin automatic renewal update: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := lockMemberPurchaseTx(ctx, tx, userID); err != nil {
+		return err
+	}
 	result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=?,auto_renew_failure_reason=CASE WHEN ?=1 THEN '' ELSE auto_renew_failure_reason END,
 		auto_renew_failed_at=CASE WHEN ?=1 THEN NULL ELSE auto_renew_failed_at END,updated_at=?
 		WHERE id=? AND user_id=? AND status IN ('active','activating','expired')`, boolInt(enabled), boolInt(enabled), boolInt(enabled), stamp(now), purchaseID, userID)

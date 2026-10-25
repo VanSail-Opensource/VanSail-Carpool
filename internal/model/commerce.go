@@ -160,9 +160,10 @@ type CatalogNode struct {
 
 // Catalog is the complete customer-visible catalog snapshot.
 type Catalog struct {
-	Combos []Combo        `json:"combos"`
-	Addons []SquadProduct `json:"addons"`
-	Nodes  []CatalogNode  `json:"nodes"`
+	AutoRenewalBlockedUntil *time.Time     `json:"autoRenewalBlockedUntil"`
+	Combos                  []Combo        `json:"combos"`
+	Addons                  []SquadProduct `json:"addons"`
+	Nodes                   []CatalogNode  `json:"nodes"`
 }
 
 // PurchaseQuote is a server-priced, non-mutating checkout preview.

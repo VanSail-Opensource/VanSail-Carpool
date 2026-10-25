@@ -104,7 +104,7 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 	if affected, rowsErr := result.RowsAffected(); rowsErr != nil || affected != 1 {
 		return "", ErrConflict
 	}
-	if err := reconcilePurchaseContinuityTx(ctx, tx, id, "activating", now, now); err != nil {
+	if err := retirePurchaseContinuityTx(ctx, tx, id, now); err != nil {
 		return "", err
 	}
 	return id, insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+id+`"}`, now, now)
@@ -143,7 +143,7 @@ func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFro
 			return err
 		}
 		if index > 0 {
-			if err := reconcilePurchaseContinuityTx(ctx, tx, term.id, "queued", from.Add(shift), now); err != nil {
+			if err := retirePurchaseContinuityTx(ctx, tx, term.id, now); err != nil {
 				return err
 			}
 		}

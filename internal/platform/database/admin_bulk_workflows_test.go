@@ -84,14 +84,10 @@ func TestAdminBulkExtensionUsesInclusiveORDeduplicationAndQueueShift(t *testing.
 	if !queued.ValidFrom.Equal(wantQueuedFrom) || !queued.ValidUntil.Equal(wantQueuedUntil) {
 		t.Fatalf("queued successor = %+v, want minute-precise shift", queued)
 	}
-	var continuityValue string
-	if err := store.DB().QueryRowContext(ctx, `SELECT available_at FROM outbox_jobs WHERE kind=? AND payload=? AND status='pending'`,
-		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&continuityValue); err != nil {
-		t.Fatalf("load shifted continuity job: %v", err)
-	}
-	continuityAt, err := parseStamp(continuityValue)
-	if err != nil || !continuityAt.Equal(queued.ValidFrom.Add(-EntitlementContinuityLead)) {
-		t.Fatalf("shifted continuity = %s, %v; want %s", continuityAt, err, queued.ValidFrom.Add(-EntitlementContinuityLead))
+	var retiredJobs int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
+		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
 	var itemCount int
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operation_items WHERE operation_id=?`, operation.ID).Scan(&itemCount); err != nil {

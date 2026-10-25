@@ -27,6 +27,7 @@ export function normalizeCatalog(value: Catalog | null | undefined): Catalog {
     : {}
 
   return {
+    autoRenewalBlockedUntil: value?.autoRenewalBlockedUntil ?? null,
     combos: objectArray<Combo>(source.combos).map(normalizeCombo),
     addons: objectArray<SquadProduct>(source.addons).map(normalizeSquadProduct),
     nodes: objectArray<CatalogNode>(source.nodes),

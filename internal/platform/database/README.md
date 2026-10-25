@@ -1,5 +1,12 @@
 # Application store
 
+`purchase_admission.go` shares exact-time automatic-renewal admission between
+catalog metadata, quotes and checkout. Manual purchase, renewal and preference
+changes serialize on the existing member balance row. A completed manual
+successor prevents a delayed automatic renewal from charging again.
+`purchase_admission_test.go` checks exact expiry, quote/transaction enforcement,
+checkout replay and a delayed renewal after a manual successor.
+
 Maintenance preserves provider receipts referenced by native routing plans and
 metered probes, including terminal receipts. These links are required desired
 state and immutable billing attribution, not disposable operation history.
@@ -361,8 +368,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `retention_operations.go` fails stale open provider operations after 24 hours, resolves linked local state, and removes processed receipts plus their queue records.
 - `retention_operation_compensation.go` refunds stale traffic-reset and Emby-setup debits before their operations are removed.
 - `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
-- `continuity.go` — three-minute queued-entitlement preparation jobs and
-  provider-expiry continuity projections.
+- `continuity.go` retains native paid-successor projections and retires unclaimed legacy preparation jobs without deleting history.
 - `statistics.go` — catalog and activity administrator statistics.
 - `product_statistics.go` calculates range-free KPIs across live and compacted
   facts, immutable spending flows, and database/WAL size.
@@ -404,7 +410,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `outbox_priority_dispatch_test.go` covers reserved priority dispatch, one-second coalescing and ordinary-job ordering.
 - `maintenance_runs_test.go` covers local-day locking, forced same-day history, and backup-gated maintenance state.
 - `retention_provider_operations_test.go` covers retaining provider operations referenced by durable administrative and compensation records.
-- `continuity_test.go` covers three-minute provider-expiry preparation without an access gap.
+- `continuity_test.go` covers native successor projections without preparation jobs and idempotent legacy-job retirement.
 - `connection_scans_test.go` covers metadata-only scan lifecycle and expiry.
 - `member_operations_test.go` covers paid reset compensation and zero-usage first-term refunds.
 - `automatic_traffic_reset_test.go` covers strict transactional debit replay, provider-gated success, insufficient-balance disablement, and failure compensation notice release.
@@ -762,7 +768,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `connection_ip_blocks_retry_generated.go` wraps the transactional methods in `connection_ip_blocks.go`.
 - `connection_scan_lifecycle_retry_generated.go` wraps the transactional methods in `connection_scan_lifecycle.go`.
 - `connection_scans_retry_generated.go` wraps the transactional methods in `connection_scans.go`.
-- `continuity_retry_generated.go` wraps the transactional methods in `continuity.go`.
 - `coupon_purchase_retry_generated.go` wraps the transactional methods in `coupon_purchase.go`.
 - `coupons_part2_retry_generated.go` wraps the transactional methods in `coupons_part2.go`.
 - `coupons_part3_retry_generated.go` wraps the transactional methods in `coupons_part3.go`.

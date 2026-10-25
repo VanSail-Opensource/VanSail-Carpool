@@ -100,14 +100,10 @@ func TestEditQueuedAdminEntitlementReconcilesContinuitySchedule(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EditAdminEntitlement(shift): %v", err)
 	}
-	var availableValue string
-	if err := store.DB().QueryRowContext(ctx, `SELECT available_at FROM outbox_jobs WHERE kind=? AND payload=? AND status='pending'`,
-		jobpayload.ContinuityKind, `{"purchaseId":"`+queued.ID+`"}`).Scan(&availableValue); err != nil {
-		t.Fatalf("load shifted continuity job: %v", err)
-	}
-	available, err := parseStamp(availableValue)
-	if err != nil || !available.Equal(shiftedFrom.Add(-EntitlementContinuityLead)) {
-		t.Fatalf("continuity available_at = %s, %v", available, err)
+	var retiredJobs int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+		jobpayload.ContinuityKind, `{"purchaseId":"`+queued.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
+		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
 	_, err = store.EditAdminEntitlement(ctx, AdminEntitlementEditInput{ActorUserID: actor.ID, UserID: user.ID,
 		PurchaseID: queued.ID, IdempotencyKey: "queued-edit-cancel", RequestFingerprint: "queued-edit-cancel-fingerprint",

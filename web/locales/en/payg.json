@@ -26,6 +26,7 @@
       "sync_pending": "Syncing",
       "disabled": "Disabled"
     },
-    "disabled": "PAYG is off."
+    "disabled": "PAYG is off.",
+    "comboBlocked": "Automatic renewal is enabled"
   }
 }

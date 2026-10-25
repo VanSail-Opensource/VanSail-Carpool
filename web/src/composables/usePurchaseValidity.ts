@@ -1,4 +1,4 @@
-import { onMounted, onScopeDispose, readonly, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { getCurrentInstance, onMounted, onScopeDispose, readonly, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import { effectivePurchaseStatus, isCurrentPurchase, type PurchaseValidity } from '@/utils/purchaseValidity'
 
 // One boundary timer per consumer; no polling or mutation of purchase records.
@@ -32,7 +32,7 @@ export function usePurchaseValidity(
   }
 
   watch(() => toValue(purchases), schedule, { immediate: true })
-  onMounted(() => {
+  if (getCurrentInstance()) onMounted(() => {
     document.addEventListener('visibilitychange', resume)
     window.addEventListener('focus', resume)
   })

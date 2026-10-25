@@ -27,6 +27,13 @@ func (s *Store) retryAttempt_QuotePurchase(ctx context.Context, input PurchaseIn
 }
 
 func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now time.Time) (model.PurchaseQuote, model.Combo, []model.SquadProduct, error) {
+	until, err := renewalBlockedUntil(ctx, tx, input.UserID, now)
+	if err != nil {
+		return model.PurchaseQuote{}, model.Combo{}, nil, err
+	}
+	if until != nil {
+		return model.PurchaseQuote{}, model.Combo{}, nil, ErrAutoRenewalEnabled
+	}
 	combo, err := comboByIDTx(ctx, tx, input.ComboID, true)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err

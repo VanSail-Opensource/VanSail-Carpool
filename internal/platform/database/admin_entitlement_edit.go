@@ -72,7 +72,7 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 		}
 		return model.Purchase{}, ErrConflict
 	}
-	if err := reconcilePurchaseContinuityTx(ctx, tx, input.PurchaseID, input.Status, input.ValidFrom, now); err != nil {
+	if err := retirePurchaseContinuityTx(ctx, tx, input.PurchaseID, now); err != nil {
 		return model.Purchase{}, err
 	}
 	if err := refreshPendingRolloverTx(ctx, tx, input.PurchaseID, input.TrafficLimitBytes, input.ComboID, now); err != nil {

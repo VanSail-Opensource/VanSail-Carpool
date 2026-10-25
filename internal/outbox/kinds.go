@@ -1,7 +1,6 @@
 package outbox
 
-// ContinuityKind extends the current upstream entitlement before a queued term
-// reaches its local activation boundary.
+// ContinuityKind is retained only to acknowledge pre-upgrade retired jobs.
 const ContinuityKind = "xnode_prepare_continuity"
 
 // PaymentSuccessAnnouncementKind sends one durable channel announcement for

@@ -26,7 +26,7 @@ func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
 	if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 		t.Fatalf("SetAutoRenewal(on): %v", err)
 	}
-	tooEarly := source.ValidUntil.Add(-EntitlementContinuityLead - time.Second)
+	tooEarly := source.ValidUntil.Add(-3*time.Minute - time.Second)
 	if due, err := store.DueAutoRenewals(ctx, tooEarly); err != nil || len(due) != 0 {
 		t.Fatalf("DueAutoRenewals(early) = (%v, %v)", due, err)
 	}

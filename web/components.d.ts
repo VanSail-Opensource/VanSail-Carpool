@@ -88,6 +88,7 @@ declare module 'vue' {
     CaptchaGate: typeof import('./src/components/session/CaptchaGate.vue')['default']
     CardsPresenter: typeof import('./src/components/activity/draw/presenters/CardsPresenter.vue')['default']
     CarrierLogo: typeof import('./src/components/squad-profile/CarrierLogo.vue')['default']
+    CatalogBlocked: typeof import('./src/components/catalog/CatalogBlocked.vue')['default']
     CatalogCheckout: typeof import('./src/components/catalog/CatalogCheckout.vue')['default']
     CatalogComboPricingTable: typeof import('./src/components/catalog/CatalogComboPricingTable.vue')['default']
     CatalogConfirmation: typeof import('./src/components/catalog/CatalogConfirmation.vue')['default']

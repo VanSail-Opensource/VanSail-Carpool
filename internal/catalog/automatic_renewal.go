@@ -12,7 +12,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
-var ErrAutoRenewalEnabled = errors.New("automatic renewal is enabled")
+var ErrAutoRenewalEnabled = database.ErrAutoRenewalEnabled
 var ErrAutoRenewalIneligible = errors.New("automatic renewal is currently ineligible")
 
 // RolloverBeforeAutoRenewalSetting controls whether a calculated rollover can

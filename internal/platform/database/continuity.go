@@ -11,102 +11,29 @@ import (
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
-// EntitlementContinuityLead is the provider-expiry preparation window.
-const EntitlementContinuityLead = 3 * time.Minute
-
-func enqueuePurchaseTransitionTx(ctx context.Context, tx *sql.Tx, purchaseID, status string, validFrom, now time.Time) error {
-	switch status {
-	case "activating":
+// Native compilation derives queued paid access directly from purchase state.
+func enqueuePurchaseTransitionTx(ctx context.Context, tx *sql.Tx, purchaseID, status string, _ time.Time, now time.Time) error {
+	if status == "activating" {
 		return insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
-	case "queued":
-		return insertOutboxTx(ctx, tx, jobpayload.ContinuityKind, `{"purchaseId":"`+purchaseID+`"}`, validFrom.Add(-EntitlementContinuityLead), now)
-	default:
-		return nil
 	}
+	return nil
 }
 
-func reconcilePurchaseContinuityTx(ctx context.Context, tx *sql.Tx, purchaseID, status string, validFrom, now time.Time) error {
-	var processing int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?
-		AND json_extract(payload,'$.purchaseId')=? AND status='processing'`, jobpayload.ContinuityKind, purchaseID).Scan(&processing); err != nil {
-		return err
-	}
-	if processing != 0 {
-		return ErrConflict
-	}
-	if status != "queued" {
-		_, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind=?
-			AND json_extract(payload,'$.purchaseId')=? AND status IN ('pending','done','failed')`, jobpayload.ContinuityKind, purchaseID)
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind=?
-		AND json_extract(payload,'$.purchaseId')=? AND status IN ('done','failed')`, jobpayload.ContinuityKind, purchaseID); err != nil {
-		return err
-	}
-	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET attempts=0,last_error='',available_at=?,updated_at=?
-		WHERE kind=? AND json_extract(payload,'$.purchaseId')=? AND status='pending'`,
-		stamp(validFrom.Add(-EntitlementContinuityLead)), stamp(now), jobpayload.ContinuityKind, purchaseID)
-	if err != nil {
-		return err
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected > 1 {
-		return ErrConflict
-	}
-	if affected == 1 {
-		return nil
-	}
-	return enqueuePurchaseTransitionTx(ctx, tx, purchaseID, status, validFrom, now)
+// Retire only unclaimed legacy jobs. Existing claims complete through the
+// compatibility handler and retain their generation fence and audit history.
+func retirePurchaseContinuityTx(ctx context.Context, tx *sql.Tx, purchaseID string, now time.Time) error {
+	_, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=?
+        WHERE kind=? AND json_extract(payload,'$.purchaseId')=? AND status IN ('pending','failed')`,
+		stamp(now), jobpayload.ContinuityKind, purchaseID)
+	return err
 }
 
-// EnqueueContinuityBacklog repairs every queued term created before continuity
-// jobs were introduced. Normal writes enqueue in the purchase transaction.
-func (s *Store) retryAttempt_EnqueueContinuityBacklog(ctx context.Context, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin continuity backlog: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-	rows, err := tx.QueryContext(ctx, `SELECT queued.id,queued.valid_from FROM purchases queued
-		WHERE queued.status='queued' AND NOT EXISTS (
-			SELECT 1 FROM outbox_jobs job WHERE job.kind=?
-			AND json_extract(job.payload,'$.purchaseId')=queued.id)
-		ORDER BY queued.valid_from,queued.id`, jobpayload.ContinuityKind)
-	if err != nil {
-		return fmt.Errorf("list continuity backlog: %w", err)
-	}
-	type pending struct{ id, validFrom string }
-	items := make([]pending, 0)
-	for rows.Next() {
-		var item pending
-		if err := rows.Scan(&item.id, &item.validFrom); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return err
-	}
-	_ = rows.Close()
-	for _, item := range items {
-		validFrom, err := parseStamp(item.validFrom)
-		if err != nil {
-			return err
-		}
-		if err := enqueuePurchaseTransitionTx(ctx, tx, item.id, "queued", validFrom, now); err != nil {
-			return err
-		}
-	}
-	return tx.Commit()
+// RetireContinuityJobs acknowledges dormant pre-upgrade jobs without extending
+// an entitlement, deleting history, or touching a currently owned claim.
+func (s *Store) RetireContinuityJobs(ctx context.Context, now time.Time) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=?
+        WHERE kind=? AND status IN ('pending','failed')`, stamp(now), jobpayload.ContinuityKind)
+	return err
 }
 
 // ContinuityEntitlement returns the current term with the queued successor's

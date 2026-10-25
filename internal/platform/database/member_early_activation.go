@@ -60,7 +60,7 @@ func (s *Store) retryAttempt_BeginEarlyActivation(ctx context.Context, input pro
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=? WHERE id=? AND status='queued'`, stamp(now), queuedID); err != nil {
 		return providerops.Operation{}, err
 	}
-	if err := reconcilePurchaseContinuityTx(ctx, tx, queuedID, "activating", now, now); err != nil {
+	if err := retirePurchaseContinuityTx(ctx, tx, queuedID, now); err != nil {
 		return providerops.Operation{}, err
 	}
 	if err := applyPendingExtensionsToActivationTx(ctx, tx, queuedID, now); err != nil {

@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -12,6 +13,14 @@ func (s *Service) CatalogForUser(ctx context.Context, user model.User) (model.Ca
 	catalog, err := s.Catalog(ctx)
 	if err != nil {
 		return model.Catalog{}, err
+	}
+	if admission, ok := s.repository.(interface {
+		AutoRenewalBlockedUntil(context.Context, string, time.Time) (*time.Time, error)
+	}); ok {
+		catalog.AutoRenewalBlockedUntil, err = admission.AutoRenewalBlockedUntil(ctx, user.ID, s.now().UTC())
+		if err != nil {
+			return model.Catalog{}, err
+		}
 	}
 	active, _, err := s.repository.ActiveAndQueuedPurchases(ctx, user.ID, s.now().UTC())
 	if err != nil || active == nil {

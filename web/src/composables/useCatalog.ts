@@ -11,6 +11,7 @@ import { clearCatalogDraft, writeCatalogDraft } from '@/composables/catalogDraft
 import { loadCatalogData } from '@/composables/catalogLoader'
 import { useCatalogQuote } from '@/composables/catalogQuoteState'
 import { createLatestRequest } from '@/utils/latestRequest'
+import { useCatalogAdmission } from './useCatalogAdmission'
 export function useCatalog() {
   const sessionStore = useSessionStore()
   const catalog = shallowRef<Catalog | null>(null)
@@ -25,7 +26,8 @@ export function useCatalog() {
   const selectedCouponGrantId = shallowRef<string | null>(null)
   const couponDiscarding = shallowRef(false)
   const needsBalance = shallowRef(false)
-  const autoRenewalBlocked = shallowRef(false)
+  const admission = useCatalogAdmission(catalog, load)
+  const autoRenewalBlocked = admission.blocked
   const purchaseIdempotencyKey = shallowRef<string | null>(null)
   const draftRestored = shallowRef(false)
   const latestLoad = createLatestRequest()
@@ -110,7 +112,7 @@ export function useCatalog() {
   function paidAddonIsFull(id: string): boolean { return !includedSquadIds.value.includes(id) && visibleSquads.value.some((squad) => squad.id === id && squad.stockRemaining === 0 && !squad.stockHeldByCurrentUser) }
   function blocksCatalog(caught: unknown): boolean {
     if (!(caught instanceof ApiError) || caught.code !== 'AUTO_RENEW_ENABLED') return false
-    autoRenewalBlocked.value = true
+    admission.reject()
     return true
   }
   async function discardCoupon(grantID: string): Promise<boolean> {

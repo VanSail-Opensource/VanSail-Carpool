@@ -1,5 +1,11 @@
 # Catalog components
 
+`CatalogBlocked.vue` presents the automatic-renewal prohibition for every member
+role without redirecting or blocking the PAYG mode switch. The catalog's optional
+`autoRenewalBlockedUntil` is refreshed on focus and expiry by
+`useCatalogAdmission.ts`; quotes and transactional checkout enforce the same
+time window. `useCatalogAdmission.test.ts` covers expiry and authoritative refresh.
+
 `PAYGSummary.vue` centers the 72-hour label and traffic/spending metrics on one
 row, with contained wrapping when available width is insufficient.
 

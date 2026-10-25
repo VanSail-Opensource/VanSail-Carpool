@@ -1,5 +1,8 @@
 # Application composition
 
+Startup retires dormant `xnode_prepare_continuity` jobs before admission starts;
+native purchase compilation and ordinary activation preserve paid successors.
+
 `persistence.go` selects the configured backend and applies SQLite file recovery
 or PostgreSQL import/ownership gates before bootstrap mutations. PostgreSQL never
 falls back to SQLite and never prunes retained source migration snapshots.

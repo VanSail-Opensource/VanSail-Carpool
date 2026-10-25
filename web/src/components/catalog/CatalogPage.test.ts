@@ -191,19 +191,13 @@ describe('CatalogPage quote restoration', () => {
     wrapper.unmount()
   })
 
-  it('returns Home when the catalog reports automatic-renewal blocking', async () => {
+  it('keeps blocked members in Combo mode without redirecting', async () => {
     const { autoRenewalBlocked, router, wrapper } = await mountPage(null, 1)
-
-    await new Promise<void>((resolve) => {
-      const remove = router.afterEach((to) => {
-        if (to.path !== '/home') return
-        remove()
-        resolve()
-      })
-      autoRenewalBlocked.value = true
-    })
-
-    expect(router.currentRoute.value.query.autoRenewBlocked).toBe('1')
+    autoRenewalBlocked.value = true
+    await nextTick()
+    expect(router.currentRoute.value.path).toBe('/catalog')
+    expect(wrapper.findComponent({ name: 'CatalogBlocked' }).exists()).toBe(true)
+    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(false)
     wrapper.unmount()
   })
 })

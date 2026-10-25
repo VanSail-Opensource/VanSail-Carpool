@@ -21,7 +21,6 @@ type Repository interface {
 	UserForPurchase(context.Context, string) (model.User, error)
 	UserByID(context.Context, string) (model.User, error)
 	DesiredEntitlement(context.Context, string, time.Time) (*model.Purchase, error)
-	ContinuityEntitlement(context.Context, string, time.Time) (*model.Purchase, error)
 	PurchaseTrafficResetPhase(context.Context, string) (string, error)
 	AdvancePurchaseTrafficReset(context.Context, string, string, string, time.Time) error
 	MarkPurchaseSyncResult(context.Context, string, bool, time.Time) error

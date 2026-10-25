@@ -219,6 +219,9 @@ Catalog:
   additionalProperties: false
   required: [combos, addons, nodes]
   properties:
+    autoRenewalBlockedUntil:
+      type: [string, 'null']
+      format: date-time
     combos:
       type: array
       items:

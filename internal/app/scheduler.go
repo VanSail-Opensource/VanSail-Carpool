@@ -47,6 +47,9 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	if err := a.store.RecoverOutbox(ctx, startupNow, startupNow); err != nil {
 		a.logger.Error("startup outbox recovery failed", "error", err)
 	}
+	if err := a.store.RetireContinuityJobs(ctx, startupNow); err != nil {
+		a.logger.Error("retire legacy continuity jobs", "error", err)
+	}
 	if err := a.store.WakeXNodeRouting(ctx, startupNow); err != nil {
 		a.logger.Error("startup routing recovery failed", "error", err)
 	}
@@ -56,9 +59,6 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	defer func() { stopPriority(); <-priorityDone }()
 	if err := a.store.EnqueueUnlinkedPaidUsers(ctx, startupNow); err != nil {
 		a.logger.Error("startup unlinked paid user scan failed", "error", err)
-	}
-	if err := a.store.EnqueueContinuityBacklog(ctx, startupNow); err != nil {
-		a.logger.Error("startup entitlement continuity scan failed", "error", err)
 	}
 	if err := a.store.EnqueueDueEntitlementTransitions(ctx, startupNow); err != nil {
 		a.logger.Error("startup entitlement transition scan failed", "error", err)

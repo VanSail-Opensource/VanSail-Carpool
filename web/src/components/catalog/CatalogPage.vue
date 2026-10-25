@@ -12,6 +12,7 @@ import { motionDurations } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useSessionStore } from '@/stores/session'
 import CatalogCheckout from './CatalogCheckout.vue'
+import CatalogBlocked from './CatalogBlocked.vue'
 import CatalogConfirmation from './CatalogConfirmation.vue'
 import CatalogCouponStep from './CatalogCouponStep.vue'
 import CatalogFlowControls from './CatalogFlowControls.vue'
@@ -82,10 +83,6 @@ const {
 
 watch(activeStep, (value, previous) => {
   stepDirection.value = value >= (previous ?? value) ? 1 : -1
-})
-
-watch(autoRenewalBlocked, (blocked) => {
-  if (blocked) void router.replace({ path: '/home', query: { autoRenewBlocked: '1' } })
 })
 
 const selectedCoupon = computed(
@@ -172,7 +169,8 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
 
 <template>
   <div :class="[embedded ? '' : 'page', 'page--catalog']">
-    <template v-if="purchase">
+    <CatalogBlocked v-if="autoRenewalBlocked" />
+    <template v-else-if="purchase">
       <CatalogConfirmation :purchase="purchase" @home="goHome" />
     </template>
 

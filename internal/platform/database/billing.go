@@ -38,6 +38,9 @@ func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseI
 		return model.Purchase{}, fmt.Errorf("begin purchase: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	if err := lockMemberPurchaseTx(ctx, tx, input.UserID); err != nil {
+		return model.Purchase{}, err
+	}
 	var existingID, existingFingerprint string
 	loadErr := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=? AND idempotency_key=?`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
 	if loadErr == nil {

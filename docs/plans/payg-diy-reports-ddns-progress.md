@@ -56,3 +56,12 @@ maintenance receipts, protocol compatibility and performance measurements below.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Production maintenance reproduction and browser validation are pending.
+- Live revision `cdcd729f` failed manual maintenance operation
+  `73225c11-64d9-484a-b685-c5f21247de72` after backup, with SQLSTATE 23503 on
+  `xnode_routing_plans_operation_id_fkey`. Fixes `2586aa86` and `d71ce956` protect
+  routing/probe receipts and native/receipt-owned members. Hosted rerun pending.
+- Lifecycle changes passed Go vet, generated API contracts, Vue type checking,
+  ESLint and structure/localization checks. Chrome checked the blocked Combo
+  state at 390px and 1280px, 320px reduced motion, PAYG switching and Settings
+  access, with no overflow or console warnings/errors. These are fixture checks;
+  production maintenance and hosted regression acceptance remain open.

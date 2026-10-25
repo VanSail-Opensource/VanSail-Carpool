@@ -38,6 +38,9 @@ func (s *Store) retryAttempt_commitAutoRenewal(ctx context.Context, purchaseID s
 		}
 		return model.Purchase{}, fmt.Errorf("load automatic renewal owner: %w", err)
 	}
+	if err := lockMemberPurchaseTx(ctx, tx, userID); err != nil {
+		return model.Purchase{}, err
+	}
 	plan, err := automaticRenewalPlanTx(ctx, tx, userID, purchaseID, excludedAddonIDs, now)
 	if err != nil {
 		return model.Purchase{}, err

@@ -106,14 +106,10 @@ func TestMemberRefundCreditsNetAndShiftsQueuedTimeline(t *testing.T) {
 	if err != nil || !third.ValidFrom.Equal(result.Successor.ValidUntil) {
 		t.Fatalf("third queued start = %s, %v; want %s", third.ValidFrom, err, result.Successor.ValidUntil)
 	}
-	var continuityRaw string
-	if err := store.DB().QueryRowContext(ctx, `SELECT available_at FROM outbox_jobs WHERE kind=? AND payload=? AND status='pending'`,
-		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&continuityRaw); err != nil {
-		t.Fatalf("load shifted refund continuity: %v", err)
-	}
-	continuityAt, err := parseStamp(continuityRaw)
-	if err != nil || !continuityAt.Equal(third.ValidFrom.Add(-EntitlementContinuityLead)) {
-		t.Fatalf("shifted refund continuity = %s, %v", continuityAt, err)
+	var retiredJobs int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
+		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
 	var activatedContinuity int
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=?`,

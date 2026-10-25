@@ -11,8 +11,8 @@ The durable entitlement worker translates outbox jobs and desired purchase state
   conflicts to the transactional refund and username restart.
 - `identity_test.go` covers first purchase, missing linked users, name conflicts,
   and retryable provider outages.
-- `continuity.go` reserves and applies a queued or renewed successor before upstream expiry without exposing an expired gap.
-- `continuity_test.go` covers the three-minute continuity window and boundary settlement behavior.
+- `continuity.go` only acknowledges retired preparation jobs without provider calls. Native compilation retains paid-successor access.
+- `continuity_test.go` verifies legacy jobs cannot change provider authorization or accounting.
 - `worker_test.go` covers draining, retry behavior, traffic-reset resumption, and infrastructure errors.
 - `worker_process_test.go` covers individual processing branches, expiration, desired-state synchronization, and unknown jobs.
 - `worker_test_helpers_test.go` contains shared repository and X-Node test doubles.
