@@ -58,3 +58,5 @@ refuses it without migration, then upgrades through the application connector an
 verifies the final catalog and safe reapplication.
 
 PAYG upgrade 00007 adds only required durable financial attribution and bounded presentation aggregates. Existing historical migrations and the baseline remain immutable; the inventoried schema and conversion contract include the new reference columns and tables.
+
+After a forward migration, refresh the isolated SQLite inventory and run `python scripts/postgresql_baseline.py --contract-only` to update import/schema verification metadata while preserving the immutable baseline and prior Goose migrations.

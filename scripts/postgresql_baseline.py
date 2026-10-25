@@ -7,6 +7,7 @@ This generator only consumes schema/empty-installation metadata, never live rows
 import json
 import hashlib
 import re
+import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +78,9 @@ def index_sql(sql):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--contract-only", action="store_true", help="Refresh current import metadata without rewriting the immutable PostgreSQL baseline")
+    args = parser.parse_args()
     inventory = json.loads((ROOT / "docs/plans/postgresql/sqlite-inventory.json").read_text(encoding="utf-8"))
     tables = {o["name"]: o for o in inventory["objects"] if o["type"] == "table"}
     dependencies = {name: set(re.findall(r'REFERENCES\s+"?(\w+)', o["sql"], re.I)) - {name} for name, o in tables.items()}
@@ -104,7 +108,8 @@ def main():
     chunks.append("-- +goose Down\n-- +goose StatementBegin\nDO $$ BEGIN RAISE EXCEPTION 'Authoritative database downgrades require a separately verified recovery'; END $$;\n-- +goose StatementEnd\n")
     destination = ROOT / "internal/platform/database/postgres/migrations/00002_baseline.sql"
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text("\n".join(chunks), encoding="utf-8", newline="\n")
+    if not args.contract_only:
+        destination.write_text("\n".join(chunks), encoding="utf-8", newline="\n")
     contract = {
         "order": ordered,
         "tables": [{"name": t["name"], "columns": t["columns"]} for t in inventory["tables"]],

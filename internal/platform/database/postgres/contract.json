@@ -66,6 +66,7 @@
     "sessions",
     "settings",
     "txb_limits",
+    "user_disabled_payg_squads",
     "user_disabled_squads",
     "user_notification_events",
     "user_preferences",
@@ -6265,6 +6266,25 @@
       ]
     },
     {
+      "name": "user_disabled_payg_squads",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
       "name": "user_disabled_squads",
       "columns": [
         {
@@ -6419,6 +6439,13 @@
         },
         {
           "name": "include_node_prices",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "payg_enabled",
           "type": "INTEGER",
           "notNull": true,
           "default": "1",
@@ -8384,7 +8411,12 @@
     "compile_admin_temporary_bans_insert",
     "compile_admin_temporary_bans_update",
     "compile_combo_whitelist_update",
+    "compile_disabled_payg_delete",
+    "compile_disabled_payg_insert",
     "compile_payg_account_insert",
+    "compile_payg_preference_delete",
+    "compile_payg_preference_insert",
+    "compile_payg_preference_update",
     "compile_payg_product_delete",
     "compile_payg_product_insert",
     "compile_payg_product_update",

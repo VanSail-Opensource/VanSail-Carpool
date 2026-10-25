@@ -1069,6 +1069,12 @@ CREATE TABLE "usdt_transfers" (
  CHECK((status='dismissed')=(dismissed_by IS NOT NULL AND dismissed_reason IS NOT NULL AND dismissed_at IS NOT NULL))
 );
 
+CREATE TABLE user_disabled_payg_squads (
+ user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ group_id TEXT NOT NULL REFERENCES xnode_groups(id) ON DELETE CASCADE,
+ PRIMARY KEY(user_id,group_id)
+);
+
 CREATE TABLE user_disabled_squads (
  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  squad_uuid TEXT NOT NULL,
@@ -1099,7 +1105,7 @@ CREATE TABLE user_preferences (
   show_around_tx INTEGER NOT NULL DEFAULT 0 CHECK (show_around_tx IN (0,1)),
   show_activity INTEGER NOT NULL DEFAULT 0 CHECK (show_activity IN (0,1)),
   include_node_prices INTEGER NOT NULL DEFAULT 1 CHECK (include_node_prices IN (0,1))
-);
+, payg_enabled INTEGER NOT NULL DEFAULT 1 CHECK(payg_enabled IN (0,1)));
 
 CREATE TABLE "users" (
   id TEXT PRIMARY KEY,
@@ -1660,7 +1666,17 @@ CREATE TRIGGER compile_admin_temporary_bans_update AFTER UPDATE ON admin_tempora
 CREATE TRIGGER compile_combo_whitelist_update AFTER UPDATE OF whitelist_ip_quota ON combos
  BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
+CREATE TRIGGER compile_disabled_payg_delete AFTER DELETE ON user_disabled_payg_squads BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_disabled_payg_insert AFTER INSERT ON user_disabled_payg_squads BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
 CREATE TRIGGER compile_payg_account_insert AFTER INSERT ON xnode_payg_accounts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_preference_delete AFTER DELETE ON user_preferences WHEN OLD.payg_enabled=0 BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_preference_insert AFTER INSERT ON user_preferences WHEN NEW.payg_enabled=0 BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_payg_preference_update AFTER UPDATE OF payg_enabled ON user_preferences WHEN OLD.payg_enabled<>NEW.payg_enabled BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
 CREATE TRIGGER compile_payg_product_delete AFTER DELETE ON squad_product_overrides BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 

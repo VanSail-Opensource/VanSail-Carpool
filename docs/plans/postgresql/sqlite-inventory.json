@@ -96,7 +96,8 @@
     "093_native_only.sql",
     "094_delete_revoked_api_tokens.sql",
     "095_payg.sql",
-    "096_payg_credit_windows.sql"
+    "096_payg_credit_windows.sql",
+    "097_payg_preferences.sql"
   ],
   "objects": [
     {
@@ -671,6 +672,12 @@
     },
     {
       "type": "table",
+      "name": "user_disabled_payg_squads",
+      "table": "user_disabled_payg_squads",
+      "sql": "CREATE TABLE user_disabled_payg_squads (\n user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n group_id TEXT NOT NULL REFERENCES xnode_groups(id) ON DELETE CASCADE,\n PRIMARY KEY(user_id,group_id)\n)"
+    },
+    {
+      "type": "table",
       "name": "user_disabled_squads",
       "table": "user_disabled_squads",
       "sql": "CREATE TABLE user_disabled_squads (\n user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n squad_uuid TEXT NOT NULL,\n PRIMARY KEY(user_id,squad_uuid)\n)"
@@ -685,7 +692,7 @@
       "type": "table",
       "name": "user_preferences",
       "table": "user_preferences",
-      "sql": "CREATE TABLE user_preferences (\n  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,\n  notify_combos INTEGER NOT NULL DEFAULT 1 CHECK (notify_combos IN (0,1)),\n  notify_traffic INTEGER NOT NULL DEFAULT 1 CHECK (notify_traffic IN (0,1)),\n  notify_money INTEGER NOT NULL DEFAULT 1 CHECK (notify_money IN (0,1)),\n  notify_activity INTEGER NOT NULL DEFAULT 1 CHECK (notify_activity IN (0,1)),\n  notify_account INTEGER NOT NULL DEFAULT 1 CHECK (notify_account IN (0,1)),\n  show_referral_username INTEGER NOT NULL DEFAULT 1 CHECK (show_referral_username IN (0,1)),\n  show_around_tx INTEGER NOT NULL DEFAULT 0 CHECK (show_around_tx IN (0,1)),\n  show_activity INTEGER NOT NULL DEFAULT 0 CHECK (show_activity IN (0,1)),\n  include_node_prices INTEGER NOT NULL DEFAULT 1 CHECK (include_node_prices IN (0,1))\n)"
+      "sql": "CREATE TABLE user_preferences (\n  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,\n  notify_combos INTEGER NOT NULL DEFAULT 1 CHECK (notify_combos IN (0,1)),\n  notify_traffic INTEGER NOT NULL DEFAULT 1 CHECK (notify_traffic IN (0,1)),\n  notify_money INTEGER NOT NULL DEFAULT 1 CHECK (notify_money IN (0,1)),\n  notify_activity INTEGER NOT NULL DEFAULT 1 CHECK (notify_activity IN (0,1)),\n  notify_account INTEGER NOT NULL DEFAULT 1 CHECK (notify_account IN (0,1)),\n  show_referral_username INTEGER NOT NULL DEFAULT 1 CHECK (show_referral_username IN (0,1)),\n  show_around_tx INTEGER NOT NULL DEFAULT 0 CHECK (show_around_tx IN (0,1)),\n  show_activity INTEGER NOT NULL DEFAULT 0 CHECK (show_activity IN (0,1)),\n  include_node_prices INTEGER NOT NULL DEFAULT 1 CHECK (include_node_prices IN (0,1))\n, payg_enabled INTEGER NOT NULL DEFAULT 1 CHECK(payg_enabled IN (0,1)))"
     },
     {
       "type": "table",
@@ -1667,9 +1674,39 @@
     },
     {
       "type": "trigger",
+      "name": "compile_disabled_payg_delete",
+      "table": "user_disabled_payg_squads",
+      "sql": "CREATE TRIGGER compile_disabled_payg_delete AFTER DELETE ON user_disabled_payg_squads BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_disabled_payg_insert",
+      "table": "user_disabled_payg_squads",
+      "sql": "CREATE TRIGGER compile_disabled_payg_insert AFTER INSERT ON user_disabled_payg_squads BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
       "name": "compile_payg_account_insert",
       "table": "xnode_payg_accounts",
       "sql": "CREATE TRIGGER compile_payg_account_insert AFTER INSERT ON xnode_payg_accounts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_preference_delete",
+      "table": "user_preferences",
+      "sql": "CREATE TRIGGER compile_payg_preference_delete AFTER DELETE ON user_preferences WHEN OLD.payg_enabled=0 BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_preference_insert",
+      "table": "user_preferences",
+      "sql": "CREATE TRIGGER compile_payg_preference_insert AFTER INSERT ON user_preferences WHEN NEW.payg_enabled=0 BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_payg_preference_update",
+      "table": "user_preferences",
+      "sql": "CREATE TRIGGER compile_payg_preference_update AFTER UPDATE OF payg_enabled ON user_preferences WHEN OLD.payg_enabled\u003c\u003eNEW.payg_enabled BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
     },
     {
       "type": "trigger",
@@ -7615,7 +7652,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 97,
+      "rows": 98,
       "columns": [
         {
           "name": "version",
@@ -8272,6 +8309,26 @@
       ]
     },
     {
+      "name": "user_disabled_payg_squads",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "group_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        }
+      ]
+    },
+    {
       "name": "user_disabled_squads",
       "rows": 0,
       "columns": [
@@ -8429,6 +8486,13 @@
         },
         {
           "name": "include_node_prices",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "payg_enabled",
           "type": "INTEGER",
           "notNull": true,
           "default": "1",
