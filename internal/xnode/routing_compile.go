@@ -96,7 +96,7 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 				return nil, nil, nil, err
 			}
 			host := proxy.Address
-			proxy.Address, err = s.resolveRoutingPeer(ctx, host)
+			proxy.Address, err = s.resolveRoutingPeer(ctx, host, e.NodeID)
 			if err != nil {
 				return nil, nil, nil, err
 			}

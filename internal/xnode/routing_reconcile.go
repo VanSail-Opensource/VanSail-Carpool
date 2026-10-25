@@ -22,6 +22,11 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		return nil
 	}
 	defer func() { finish(result == nil) }()
+	// A dependency change is new recovery evidence for routing and DDNS desired
+	// state, alongside startup/reconnect. No periodic competing scheduler is added.
+	if err := repo.WakeXNodeRouting(ctx, s.now()); err != nil {
+		return err
+	}
 	if err := s.migrateLegacyRouting(ctx); err != nil {
 		return err
 	}

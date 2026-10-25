@@ -49,7 +49,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 	if err != nil {
 		return nil, err
 	}
-	products, err := r.ListSquadProducts(ctx, false)
+	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return nil, err
 	}

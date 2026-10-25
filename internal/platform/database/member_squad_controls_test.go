@@ -38,6 +38,13 @@ func TestSquadSwitchPreservesOwnershipAndLastEnabled(t *testing.T) {
 	if err != nil || replay.Receipt.ID != operation.Receipt.ID {
 		t.Fatalf("replay = %v, %v", replay, err)
 	}
+	if operation.Receipt.Status != "succeeded" {
+		t.Fatal("local preference waited for a worker")
+	}
+	var queued int
+	if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, operation.Receipt.ID).Scan(&queued); err != nil || queued != 0 {
+		t.Fatal("squad preference created a provider job", queued, err)
+	}
 	completeComboControlFixture(t, store, operation, now)
 	_, err = store.BeginSquadSwitch(ctx, memberOperationInput(user.ID, purchase.ID, purchaseops.OperationSquadSwitch, "switch-b"), purchase.ID, "squad-b", false, now)
 	if !errors.Is(err, purchaseops.ErrLastEnabledSquad) {
@@ -115,6 +122,9 @@ func TestSquadPreferencesCarryAndRestoreStableFirst(t *testing.T) {
 
 func completeComboControlFixture(t *testing.T, store *Store, operation providerops.Operation, now time.Time) {
 	t.Helper()
+	if operation.Receipt.Status == "succeeded" {
+		return
+	}
 	ctx := context.Background()
 	if _, err := store.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, now); err != nil {
 		t.Fatal(err)

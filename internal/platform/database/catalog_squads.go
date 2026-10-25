@@ -115,8 +115,9 @@ func (s *Store) MarkAllSquadsMissing(context.Context) error { return nil }
 // not store upstream-owned identities.
 func (s *Store) RefreshImportedSquads(context.Context, []ImportedSquad) error { return nil }
 
-// ListSquadProducts loads only local overrides.
-func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]model.SquadProduct, error) {
+// ListSquadProductOverrides loads merchandising without derived stock counts.
+// Compilation, inventory and exports must use this bounded-cost read.
+func (s *Store) ListSquadProductOverrides(ctx context.Context, visibleOnly bool) ([]model.SquadProduct, error) {
 	query := squadSelect
 	if visibleOnly {
 		query += ` WHERE visible=1`
@@ -133,32 +134,9 @@ func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]mode
 		if scanErr != nil {
 			return nil, scanErr
 		}
-		if err := s.attachSquadStock(ctx, &product); err != nil {
-			return nil, err
-		}
 		products = append(products, product)
 	}
 	return products, rows.Err()
-}
-
-func (s *Store) attachSquadStock(ctx context.Context, product *model.SquadProduct) error {
-	if product == nil || product.StockLimit == nil || product.BillingMode == "payg" {
-		return nil
-	}
-	var reservations int
-	err := s.db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT user_id) FROM purchases
-		WHERE status IN ('activating','active','queued') AND (EXISTS (
-			SELECT 1 FROM json_each((SELECT included_squad_uuids FROM combos WHERE combos.id=purchases.combo_id)) WHERE value=?
-		) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_addons.purchase_id=purchases.id AND group_id=?))`, product.GroupID, product.GroupID).Scan(&reservations)
-	if err != nil {
-		return fmt.Errorf("count squad stock: %w", err)
-	}
-	remaining := *product.StockLimit - reservations
-	if remaining < 0 {
-		remaining = 0
-	}
-	product.StockRemaining = &remaining
-	return nil
 }
 
 func activationHash(ctx context.Context, db *sql.DB, uuid string, required bool, code string) (any, error) {

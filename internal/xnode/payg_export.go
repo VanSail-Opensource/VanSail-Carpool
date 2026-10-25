@@ -14,7 +14,7 @@ func (s *Service) visiblePAYGExports(ctx context.Context, proxies []subscription
 	if !ok {
 		return proxies, nil
 	}
-	products, err := repo.ListSquadProducts(ctx, false)
+	products, err := repo.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,15 @@ import (
 )
 
 func (s *Store) XNodeCustomizations(ctx context.Context, node string) ([]xnode.Customization, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,COALESCE(user_id,''),node_id,outbounds_cipher,routing_cipher,revision FROM xnode_customizations WHERE node_id=? ORDER BY proxy_user_id`, node)
+	return s.xnodeCustomizations(ctx, `WHERE node_id=? ORDER BY proxy_user_id`, node)
+}
+
+func (s *Store) XNodeAllCustomizations(ctx context.Context) ([]xnode.Customization, error) {
+	return s.xnodeCustomizations(ctx, `ORDER BY node_id,proxy_user_id`)
+}
+
+func (s *Store) xnodeCustomizations(ctx context.Context, clause string, args ...any) ([]xnode.Customization, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,COALESCE(user_id,''),node_id,outbounds_cipher,routing_cipher,revision FROM xnode_customizations `+clause, args...)
 	if err != nil {
 		return nil, err
 	}

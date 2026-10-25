@@ -36,6 +36,11 @@ func (s *Store) retryAttempt_CreateProviderOperation(ctx context.Context, input 
 
 // createProviderOperationTx lets local mutations and provider queueing share one transaction.
 func createProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
+	return createProviderOperationStateTx(ctx, tx, input, now, false)
+}
+
+// Local preference receipts preserve replay compatibility without an outbox job.
+func createProviderOperationStateTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time, completed bool) (providerops.Operation, bool, error) {
 	input, err := providerops.NormalizeCreate(input)
 	if err != nil {
 		return providerops.Operation{}, false, err
@@ -58,10 +63,15 @@ func createProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerop
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
+	status := "queued"
+	var finished any
+	if completed {
+		status, finished = "succeeded", stamp(now)
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO provider_operations(id,actor_user_id,owner_user_id,kind,idempotency_key,
-		request_fingerprint,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'queued',?,?)`, operationID,
+		request_fingerprint,status,created_at,updated_at,completed_at) VALUES(?,?,?,?,?,?,?,?,?,?)`, operationID,
 		input.ActorUserID, nullIfEmpty(input.OwnerUserID), input.Kind, input.IdempotencyKey,
-		input.RequestFingerprint, stamp(now), stamp(now))
+		input.RequestFingerprint, status, stamp(now), stamp(now), finished)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return providerops.Operation{}, false, ErrConflict
@@ -70,22 +80,24 @@ func createProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerop
 	}
 	for _, item := range input.Items {
 		_, err := tx.ExecContext(ctx, `INSERT INTO provider_operation_items(operation_id,item_key,target_type,target_id,
-			status,created_at,updated_at) VALUES(?,?,?,?,'queued',?,?)`, operationID, item.Key, item.TargetType,
-			item.TargetID, stamp(now), stamp(now))
+			status,created_at,updated_at,completed_at) VALUES(?,?,?,?,?,?,?,?)`, operationID, item.Key, item.TargetType,
+			item.TargetID, status, stamp(now), stamp(now), finished)
 		if err != nil {
 			return providerops.Operation{}, false, fmt.Errorf("insert provider operation item: %w", err)
 		}
 	}
-	job := map[string]string{"operationId": operationID}
-	if input.SealedTarget != "" {
-		job["sealedTarget"] = input.SealedTarget
-	}
-	payload, err := json.Marshal(job)
-	if err != nil {
-		return providerops.Operation{}, false, fmt.Errorf("encode provider operation job: %w", err)
-	}
-	if err := insertOutboxTx(ctx, tx, "provider_operation", string(payload), now, now); err != nil {
-		return providerops.Operation{}, false, err
+	if !completed {
+		job := map[string]string{"operationId": operationID}
+		if input.SealedTarget != "" {
+			job["sealedTarget"] = input.SealedTarget
+		}
+		payload, err := json.Marshal(job)
+		if err != nil {
+			return providerops.Operation{}, false, fmt.Errorf("encode provider operation job: %w", err)
+		}
+		if err := insertOutboxTx(ctx, tx, "provider_operation", string(payload), now, now); err != nil {
+			return providerops.Operation{}, false, err
+		}
 	}
 	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
 	if err != nil {

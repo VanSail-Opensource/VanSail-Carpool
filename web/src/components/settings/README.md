@@ -1,5 +1,10 @@
 # User settings
 
+Internal squad switches return completed local preference receipts immediately;
+the UI refreshes confirmed state without waiting for a provider job. Submission
+disables repeated actions. Existing queued receipts still resume after reload,
+and early activation retains its durable operation and progress feedback.
+
 - `AdminAccessPanel.vue` is the Mini App's sole admin surface, displaying one-use browser entrance links.
 
 `SettingsComboControls.vue` composes owned-squad switches, recoverable operation

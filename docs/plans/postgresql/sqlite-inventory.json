@@ -100,7 +100,11 @@
     "097_payg_preferences.sql",
     "098_payg_squad_state.sql",
     "099_catalog_topology_epoch.sql",
-    "100_xnode_ddns_bindings.sql"
+    "100_xnode_ddns_bindings.sql",
+    "101_xnode_ddns_changes.sql",
+    "102_xnode_endpoint_epoch.sql",
+    "103_paid_member_access.sql",
+    "104_xnode_ddns_multi_hosts.sql"
   ],
   "objects": [
     {
@@ -741,9 +745,15 @@
     },
     {
       "type": "table",
+      "name": "xnode_ddns_changes",
+      "table": "xnode_ddns_changes",
+      "sql": "CREATE TABLE xnode_ddns_changes (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,\n job_id TEXT NOT NULL,agent_id TEXT NOT NULL,event_id TEXT NOT NULL,\n generation TEXT NOT NULL,sequence TEXT NOT NULL,\n ipv4 TEXT NOT NULL DEFAULT '',ipv6 TEXT NOT NULL DEFAULT '',observed_at TEXT NOT NULL,\n previous_ips TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(previous_ips)),\n operation_id TEXT NOT NULL REFERENCES provider_operations(id),\n phase TEXT NOT NULL CHECK(phase IN ('staging','routes','settled','obsolete')),\n PRIMARY KEY(node_id,job_id)\n)"
+    },
+    {
+      "type": "table",
       "name": "xnode_ddns_hosts",
       "table": "xnode_ddns_hosts",
-      "sql": "CREATE TABLE xnode_ddns_hosts (\n node_id TEXT NOT NULL,job_id TEXT NOT NULL,\n family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),\n host_id TEXT NOT NULL UNIQUE,\n PRIMARY KEY(node_id,job_id,family),\n FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,\n FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)\n)"
+      "sql": "CREATE TABLE xnode_ddns_hosts (\n node_id TEXT NOT NULL,job_id TEXT NOT NULL,\n family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),\n host_id TEXT NOT NULL UNIQUE,\n PRIMARY KEY(node_id,job_id,family,host_id),\n FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,\n FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)\n)"
     },
     {
       "type": "table",
@@ -1563,6 +1573,12 @@
     },
     {
       "type": "index",
+      "name": "xnode_ddns_changes_operation_idx",
+      "table": "xnode_ddns_changes",
+      "sql": "CREATE INDEX xnode_ddns_changes_operation_idx ON xnode_ddns_changes(operation_id)"
+    },
+    {
+      "type": "index",
       "name": "xnode_endpoint_ownership_idx",
       "table": "xnode_endpoints",
       "sql": "CREATE UNIQUE INDEX xnode_endpoint_ownership_idx ON xnode_endpoints(id,node_id)"
@@ -1923,6 +1939,24 @@
     },
     {
       "type": "trigger",
+      "name": "compile_xnode_endpoints_delete",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_delete AFTER DELETE ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_endpoints_insert",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_insert AFTER INSERT ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_endpoints_update",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_update AFTER UPDATE OF node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher ON xnode_endpoints\nWHEN OLD.node_id IS NOT NEW.node_id OR OLD.inbound_tag IS NOT NEW.inbound_tag OR OLD.name IS NOT NEW.name OR OLD.address IS NOT NEW.address OR OLD.port IS NOT NEW.port OR OLD.enabled IS NOT NEW.enabled OR OLD.hidden IS NOT NEW.hidden OR OLD.overrides_cipher IS NOT NEW.overrides_cipher\nBEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
       "name": "compile_xnode_group_bindings_delete",
       "table": "xnode_group_bindings",
       "sql": "CREATE TRIGGER compile_xnode_group_bindings_delete AFTER DELETE ON xnode_group_bindings BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
@@ -2105,19 +2139,19 @@
       "type": "trigger",
       "name": "preference_visibility_after_transition",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_after_transition\nAFTER UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_after_transition\nAFTER UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
     },
     {
       "type": "trigger",
       "name": "preference_visibility_before_purchase",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_before_purchase\nBEFORE INSERT ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.created_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.created_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_before_purchase\nBEFORE INSERT ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.created_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.created_at)\n  );\nEND"
     },
     {
       "type": "trigger",
       "name": "preference_visibility_before_transition",
       "table": "purchases",
-      "sql": "CREATE TRIGGER preference_visibility_before_transition\nBEFORE UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_around_tx=0,show_activity=0\n  WHERE user_id=NEW.user_id AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
+      "sql": "CREATE TRIGGER preference_visibility_before_transition\nBEFORE UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
     },
     {
       "type": "trigger",
@@ -7715,7 +7749,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 101,
+      "rows": 105,
       "columns": [
         {
           "name": "version",
@@ -8998,6 +9032,96 @@
       ]
     },
     {
+      "name": "xnode_ddns_changes",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generation",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sequence",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv4",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv6",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_ips",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "phase",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "xnode_ddns_hosts",
       "rows": 0,
       "columns": [
@@ -9027,7 +9151,7 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
-          "primaryKey": 0
+          "primaryKey": 4
         }
       ]
     },

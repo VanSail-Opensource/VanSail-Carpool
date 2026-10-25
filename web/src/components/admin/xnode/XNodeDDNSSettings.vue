@@ -24,7 +24,7 @@ function add(): void {
 }
 const valid = computed(() => validDDNSSettings(model.value, props.hosts))
 watch(valid, value => emit('valid', value), { immediate: true })
-const used = computed(() => Object.values(model.value.ddnsBindings ?? {}).flatMap(binding => [binding.ipv4HostId, binding.ipv6HostId]).filter((id): id is string => Boolean(id)))
+const used = computed(() => Object.values(model.value.ddnsBindings ?? {}).flatMap(binding => [...(binding.ipv4HostIds ?? []), ...(binding.ipv6HostIds ?? [])]))
 function setBinding(id: string, binding: DDNSHostBinding): void { model.value = { ...model.value, ddnsBindings: { ...model.value.ddnsBindings, [id]: binding } } }
 watch(() => jobs.value.map(job => job.id), (ids, previous) => {
   const bindings = { ...model.value.ddnsBindings }
@@ -44,7 +44,7 @@ function remove(index: number): void { model.value = { ...model.value, ddns: job
 <template>
   <div class="grid gap-4 py-4">
     <div v-if="discovery.error.value" role="alert"><p>{{ discovery.error.value }}</p><UButton :label="t('common.tryAgain')" variant="link" @click="discovery.load" /></div>
-    <XNodeDDNSJob v-for="(job, index) in jobs" :key="index" v-model="jobs[index]!" :binding="model.ddnsBindings?.[job.id] ?? {}" :providers="providers" :loading="discovery.loading.value" :hosts="hosts" :used="used" @update:binding="setBinding(job.id, $event)" @remove="remove(index)" />
+    <XNodeDDNSJob v-for="(job, index) in jobs" :key="job.id" v-model="jobs[index]!" :binding="model.ddnsBindings?.[job.id] ?? {}" :providers="providers" :loading="discovery.loading.value" :hosts="hosts" :used="used" @update:binding="setBinding(job.id, $event)" @remove="remove(index)" />
     <UButton variant="outline" color="neutral" icon="i-ph-plus-bold" :label="t('xnode.addDDNS')" class="justify-self-start" @click="add" />
   </div>
 </template>

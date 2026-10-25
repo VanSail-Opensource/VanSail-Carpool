@@ -63,7 +63,7 @@ func TestRejectedTrafficBackoffKeepsSocketReaderAndRecoveryAvailable(t *testing.
 }
 
 func TestTrafficConflictDiagnosticsPreserveConflictMatching(t *testing.T) {
-	for _, err := range []error{ErrTrafficAgentMismatch, ErrTrafficDigestMismatch, ErrTrafficSequenceGap, ErrTrafficSampleMissing, ErrTrafficPeriodSettled, ErrTrafficOwnerMismatch} {
+	for _, err := range []error{ErrTrafficAgentMismatch, ErrTrafficDigestMismatch, ErrTrafficSequenceGap, ErrTrafficSampleMissing, ErrTrafficPeriodSettled, ErrTrafficOwnerMismatch, ErrTrafficPeriodMissing, ErrTrafficPAYGPeriodMissing, ErrTrafficIdentityMissing} {
 		wrapped := fmt.Errorf("private storage context: %w", err)
 		if !errors.Is(wrapped, ErrConflict) || frameErrorCause(wrapped) != "state_conflict" || safeFrameErrorCode(wrapped) != err.Error() {
 			t.Fatal("traffic diagnostic lost safe classification", err)

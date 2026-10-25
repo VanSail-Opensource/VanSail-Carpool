@@ -7,11 +7,16 @@ import (
 )
 
 func frameErrorDetails(err error) []any {
+	var fields []any
+	var report trafficReportFailure
+	if errors.As(err, &report) {
+		fields = append(fields, "report_sequence", report.sequence, "sample_count", report.samples)
+	}
 	var gap trafficSequenceGap
 	if errors.As(err, &gap) {
-		return []any{"received_sequence", gap.received, "expected_sequence", gap.expected}
+		fields = append(fields, "received_sequence", gap.received, "expected_sequence", gap.expected)
 	}
-	return nil
+	return fields
 }
 
 // frameErrorCause is an allowlist: raw SQL, agent payloads and secrets never log.

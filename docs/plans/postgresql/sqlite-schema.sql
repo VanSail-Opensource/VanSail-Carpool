@@ -1168,11 +1168,22 @@ CREATE TABLE xnode_daily_usage (
  PRIMARY KEY(proxy_user_id,node_id,period_id,date)
 );
 
+CREATE TABLE xnode_ddns_changes (
+ node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,
+ job_id TEXT NOT NULL,agent_id TEXT NOT NULL,event_id TEXT NOT NULL,
+ generation TEXT NOT NULL,sequence TEXT NOT NULL,
+ ipv4 TEXT NOT NULL DEFAULT '',ipv6 TEXT NOT NULL DEFAULT '',observed_at TEXT NOT NULL,
+ previous_ips TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(previous_ips)),
+ operation_id TEXT NOT NULL REFERENCES provider_operations(id),
+ phase TEXT NOT NULL CHECK(phase IN ('staging','routes','settled','obsolete')),
+ PRIMARY KEY(node_id,job_id)
+);
+
 CREATE TABLE xnode_ddns_hosts (
  node_id TEXT NOT NULL,job_id TEXT NOT NULL,
  family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),
  host_id TEXT NOT NULL UNIQUE,
- PRIMARY KEY(node_id,job_id,family),
+ PRIMARY KEY(node_id,job_id,family,host_id),
  FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,
  FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)
 );
@@ -1625,6 +1636,8 @@ CREATE INDEX xnode_daily_usage_date_node_idx ON xnode_daily_usage(date,node_id);
 
 CREATE INDEX xnode_daily_usage_user_date_idx ON xnode_daily_usage(proxy_user_id,date,node_id,period_id);
 
+CREATE INDEX xnode_ddns_changes_operation_idx ON xnode_ddns_changes(operation_id);
+
 CREATE UNIQUE INDEX xnode_endpoint_ownership_idx ON xnode_endpoints(id,node_id);
 
 CREATE INDEX xnode_endpoints_node_idx ON xnode_endpoints(node_id,inbound_tag);
@@ -1761,6 +1774,14 @@ CREATE TRIGGER compile_xnode_customizations_insert AFTER INSERT ON xnode_customi
 
 CREATE TRIGGER compile_xnode_customizations_update AFTER UPDATE ON xnode_customizations BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
+CREATE TRIGGER compile_xnode_endpoints_delete AFTER DELETE ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_xnode_endpoints_insert AFTER INSERT ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_xnode_endpoints_update AFTER UPDATE OF node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher ON xnode_endpoints
+WHEN OLD.node_id IS NOT NEW.node_id OR OLD.inbound_tag IS NOT NEW.inbound_tag OR OLD.name IS NOT NEW.name OR OLD.address IS NOT NEW.address OR OLD.port IS NOT NEW.port OR OLD.enabled IS NOT NEW.enabled OR OLD.hidden IS NOT NEW.hidden OR OLD.overrides_cipher IS NOT NEW.overrides_cipher
+BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
 CREATE TRIGGER compile_xnode_group_bindings_delete AFTER DELETE ON xnode_group_bindings BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
 CREATE TRIGGER compile_xnode_group_bindings_insert AFTER INSERT ON xnode_group_bindings BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
@@ -1829,8 +1850,10 @@ CREATE TRIGGER firewall_inventory_release AFTER UPDATE OF released_version ON xn
 CREATE TRIGGER preference_visibility_after_transition
 AFTER UPDATE OF status,valid_from,valid_until ON purchases
 BEGIN
-  UPDATE user_preferences SET show_around_tx=0,show_activity=0
-  WHERE user_id=NEW.user_id AND NOT EXISTS (
+  UPDATE user_preferences SET show_activity=0
+  WHERE user_id=NEW.user_id
+    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes>0)
+    AND NOT EXISTS (
     SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'
       AND julianday(valid_from)<=julianday(NEW.updated_at)
       AND julianday(valid_until)>julianday(NEW.updated_at)
@@ -1840,8 +1863,10 @@ END;
 CREATE TRIGGER preference_visibility_before_purchase
 BEFORE INSERT ON purchases
 BEGIN
-  UPDATE user_preferences SET show_around_tx=0,show_activity=0
-  WHERE user_id=NEW.user_id AND NOT EXISTS (
+  UPDATE user_preferences SET show_activity=0
+  WHERE user_id=NEW.user_id
+    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes>0)
+    AND NOT EXISTS (
     SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'
       AND julianday(valid_from)<=julianday(NEW.created_at)
       AND julianday(valid_until)>julianday(NEW.created_at)
@@ -1851,8 +1876,10 @@ END;
 CREATE TRIGGER preference_visibility_before_transition
 BEFORE UPDATE OF status,valid_from,valid_until ON purchases
 BEGIN
-  UPDATE user_preferences SET show_around_tx=0,show_activity=0
-  WHERE user_id=NEW.user_id AND NOT EXISTS (
+  UPDATE user_preferences SET show_activity=0
+  WHERE user_id=NEW.user_id
+    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes>0)
+    AND NOT EXISTS (
     SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'
       AND julianday(valid_from)<=julianday(NEW.updated_at)
       AND julianday(valid_until)>julianday(NEW.updated_at)

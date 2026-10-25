@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-// SwitchSquad queues an owner-scoped access change with atomic last-squad validation.
+// SwitchSquad commits an owner-scoped preference with atomic last-squad validation.
+// Native reconciliation reads the committed choice; no provider job is created.
 func (s *Service) SwitchSquad(ctx context.Context, userID, purchaseID, uuid string, enabled bool, key string) (model.OperationReceipt, error) {
 	fingerprint := operationFingerprint(OperationSquadSwitch, purchaseID+":"+uuid+":"+strconv.FormatBool(enabled))
 	if receipt, found, err := s.replay(ctx, userID, OperationSquadSwitch, key, fingerprint); found || err != nil {

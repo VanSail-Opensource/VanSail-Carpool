@@ -62,3 +62,9 @@ This package builds the live catalog, validates purchase selections against curr
 `squad_additions_native_test.go` covers current native group validation and replay before live catalog reads. Add-ons use live group hydration; charged request keys retain their existing selection fingerprint and do not repeat activation-code checks or debits.
 
 PAYG conversion affects new quotes and future renewals, including custom squad overrides and add-ons. Purchased active/queued squads retain access. The native unified subscription source also supports PAYG-only members, while activeCombo continues to describe an actual combo. Wallet-funded PAYG is never treated as combo quota or rollover usage.
+# Stock display boundary
+
+Member catalog and add-squad displays load stock-enriched products. Dashboard
+labels and renewal mode checks use raw overrides, as do native inventory and
+compilation. Stock display failures cannot stall the node reconciliation loop;
+checkout continues using exact transactional admission.

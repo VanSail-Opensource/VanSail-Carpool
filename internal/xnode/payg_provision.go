@@ -30,7 +30,7 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 	if err != nil {
 		return err
 	}
-	products, err := r.ListSquadProducts(ctx, false)
+	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return err
 	}

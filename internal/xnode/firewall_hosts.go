@@ -63,6 +63,9 @@ func (m *Master) refreshHostOrigins(ctx context.Context) error {
 	for id, ips := range m.managedNodeIPs {
 		trusted[id] = slices.Clone(ips)
 	}
+	for id, ips := range m.ddnsNodeIPs {
+		trusted[id] = append(trusted[id], ips...)
+	}
 	m.mu.RUnlock()
 	for _, node := range nodes {
 		_, settings, err := m.service.Node(ctx, node.ID)

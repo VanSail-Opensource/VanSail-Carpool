@@ -31,7 +31,7 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	if err != nil {
 		return out, err
 	}
-	products, err := r.ListSquadProducts(ctx, false)
+	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return out, err
 	}

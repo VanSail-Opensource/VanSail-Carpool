@@ -14,6 +14,7 @@ type routingRuntime struct {
 	legacyBefore time.Time
 	mu           sync.Mutex
 	peers        map[string]routingPeer
+	ddns         map[string]string
 	revision     int64
 	local        int64
 	checked      bool
@@ -21,7 +22,12 @@ type routingRuntime struct {
 	retryDelay   time.Duration
 }
 
-func (s *Service) resolveRoutingPeer(ctx context.Context, address string) (string, error) {
+func (s *Service) resolveRoutingPeer(ctx context.Context, address string, node ...string) (string, error) {
+	if len(node) > 0 {
+		if ip := s.ddnsRoutingPeer(node[0], address); ip != "" {
+			return ip, nil
+		}
+	}
 	r := s.routingRuntime
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -17,6 +17,11 @@ type Master struct {
 	protectedReleaseDigest   string
 	managedNodeIPs           map[string][]string
 	managedHostIPs           []string
+	ddnsProtectedIPs         []string
+	ddnsNodeIPs              map[string][]string
+	ddnsProtectionMu         sync.Mutex
+	ddnsProtectionDigest     string
+	ddnsProtectionVersion    int64
 	hostOrigins              map[string]hostOrigin
 	whitelistStates          map[string]whitelistNodeState
 	service                  *Service

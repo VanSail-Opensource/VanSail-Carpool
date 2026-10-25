@@ -11,8 +11,9 @@ import (
 
 type paygLeaseRepository struct {
 	*cacheTestRepository
-	accounts []PAYGAccount
-	enqueues int
+	accounts     []PAYGAccount
+	enqueues     int
+	productReads int
 }
 
 func (r *paygLeaseRepository) XNodeIdentityByService(context.Context, string) (Identity, error) {
@@ -32,7 +33,8 @@ func (r *paygLeaseRepository) ObserveXNodePAYGConnections(context.Context, strin
 func (r *paygLeaseRepository) XNodePAYGUsage(context.Context, string, time.Time, time.Time) ([]PAYGUsage, error) {
 	return nil, nil
 }
-func (r *paygLeaseRepository) ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error) {
+func (r *paygLeaseRepository) ListSquadProductOverrides(context.Context, bool) ([]model.SquadProduct, error) {
+	r.productReads++
 	return nil, nil
 }
 func (r *paygLeaseRepository) Balance(context.Context, string) (model.Money, error) {
@@ -41,6 +43,16 @@ func (r *paygLeaseRepository) Balance(context.Context, string) (model.Money, err
 func (r *paygLeaseRepository) EnqueueOutbox(context.Context, string, string, time.Time) error {
 	r.enqueues++
 	return nil
+}
+
+func TestEmptyPAYGCompilationDoesNotReadProducts(t *testing.T) {
+	service, base, _, _ := compileCacheFixture(t)
+	r := &paygLeaseRepository{cacheTestRepository: base}
+	service.repo = r
+	users, err := service.paygUsers(context.Background(), Node{ID: "node"}, nil)
+	if err != nil || len(users) != 0 || r.productReads != 0 {
+		t.Fatal("empty PAYG compilation loaded products", users, r.productReads, err)
+	}
 }
 
 func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {

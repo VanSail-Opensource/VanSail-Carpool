@@ -45,9 +45,13 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	compactOffer := r.Header.Get(wire.TelemetryFormatHeader) == wire.CompactTelemetryFormat
+	ddnsOffer := r.Header.Get(wire.DDNSChangesHeader) == wire.DDNSChangesFormat
 	responseHeaders := http.Header{}
 	if compactOffer {
 		responseHeaders.Set(wire.TelemetryFormatHeader, wire.CompactTelemetryFormat)
+	}
+	if ddnsOffer {
+		responseHeaders.Set(wire.DDNSChangesHeader, wire.DDNSChangesFormat)
 	}
 	upgrader := websocket.Upgrader{EnableCompression: true, Subprotocols: []string{"x-node.v1"}, CheckOrigin: func(*http.Request) bool { return true }, HandshakeTimeout: 15 * time.Second}
 	socket, err := upgrader.Upgrade(w, r, responseHeaders)
@@ -82,6 +86,10 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer queue.Shutdown(context.Background())
 	peer := &agentPeer{nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
+	peer.ddnsChanges = ddnsOffer && containsCapability(hello.Capabilities, wire.DDNSChangesCapability)
+	if err = m.refreshDDNSProtection(ctx); err != nil {
+		return
+	}
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && r.Header.Get("X-Forwarded-For") == "" {
 		peer.publicIP, _ = FirewallPublicIP(host)
 	}

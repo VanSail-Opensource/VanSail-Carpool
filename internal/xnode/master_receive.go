@@ -84,6 +84,8 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		return nil
 	case "traffic.report":
 		return m.receiveTraffic(ctx, peer, message)
+	case "ddns.changes":
+		return m.receiveDDNSChanges(ctx, peer, message)
 	case "command.accepted", "command.result":
 		peer.mu.Lock()
 		pending := peer.pending[message.ID]

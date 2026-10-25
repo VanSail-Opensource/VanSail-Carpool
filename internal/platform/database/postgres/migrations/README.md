@@ -1,5 +1,14 @@
 # PostgreSQL migration history
 
+`00016_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
+family while retaining the unique host constraint.
+
+`00014_xnode_endpoint_epoch.sql` mirrors SQLite 102 endpoint invalidation without
+invalidating on equal values or timestamp-only updates.
+
+`00013_xnode_ddns_changes.sql` mirrors SQLite 101 desired mutation/order state
+with exact text sequences and durable operation references.
+
 `00012_xnode_ddns_bindings.sql` matches SQLite 100 host ownership, audit references
 and invalidation triggers without copying encrypted discovery settings.
 
@@ -35,3 +44,8 @@ accounting barriers and logical backup age. It duplicates no authoritative rows.
 `00007_payg.sql` is the forward-only PostgreSQL equivalent of SQLite PAYG migration 095, including binary text collation and compile invalidation triggers. The older baseline is unchanged.
 
 `00009_payg_preferences.sql` is the forward-only equivalent of SQLite 097. It retains BIGINT flags, C text collation, foreign keys and narrow compile invalidation.
+# Paid member access
+
+`00015_paid_member_access.sql` updates preference transition functions to retain
+paid PAYG access and backfills Show Around TX for existing commerce spenders.
+The existing columns and immutable financial records remain unchanged.

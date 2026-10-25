@@ -60,7 +60,7 @@ type paygRepository interface {
 	SaveXNodePAYGAccount(context.Context, PAYGAccount) error
 	ObserveXNodePAYGConnections(context.Context, string, []int64, time.Time) error
 	XNodePAYGUsage(context.Context, string, time.Time, time.Time) ([]PAYGUsage, error)
-	ListSquadProducts(context.Context, bool) ([]model.SquadProduct, error)
+	ListSquadProductOverrides(context.Context, bool) ([]model.SquadProduct, error)
 	Balance(context.Context, string) (model.Money, error)
 	EnqueueOutbox(context.Context, string, string, time.Time) error
 }

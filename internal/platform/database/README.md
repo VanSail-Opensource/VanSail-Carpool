@@ -1,5 +1,47 @@
 # Application store
 
+`catalog_stock.go` owns bounded aggregate stock display;
+`purchase_squad_membership.go` shares ownership precedence with checkout.
+`catalog_stock_test.go` verifies snapshot/fallback behavior and stockless reads;
+`catalog_stock_plan_test.go` emits the hosted 2,001-term PostgreSQL query plan.
+`paid_member_access_test.go` checks actual PAYG spending, automatic entrance
+visibility, manual overrides and independence from later combo transitions.
+`xnode_cursor_test.go` races rate/report writes and checks missing-reference
+failures leave the cursor untouched on both storage backends.
+
+`ListSquadProductOverrides` is the stockless merchandising interface used by
+native compilation, PAYG, inventory and export. `ListSquadProducts` is reserved
+for catalog/stock display; it computes all limited combo squads in one aggregate
+under its own two-second deadline, after closing the override rows. Both stock
+and `purchaseSquadsFrom` share `purchaseSquadMembershipCTE` snapshot precedence.
+Checkout still enforces capacity in its existing financial transaction. The
+hosted PostgreSQL stock regression emits EXPLAIN (ANALYZE, BUFFERS); indexes are
+added only when measured plans justify them, never to mask repeated queries.
+
+`xnode_cursor.go` provides the shared transaction cursor lock for journal commits
+and multiplier changes. Both paths retain SERIALIZABLE whole-operation retries
+and SQLite write serialization; rates begin at the next uncommitted sequence.
+Missing period/identity references reject the entire report with fixed diagnostic
+codes, sequence and sample count, without logging credentials or report payloads.
+
+`xnode_endpoint_epoch_test.go` verifies endpoint insert, semantic edits and deletion
+invalidate routing/bypass references while equal values and timestamp-only writes
+do not. Forward migrations 102/00014 supply the missing endpoint epoch triggers.
+
+`xnode_ddns_changes.go` stores one desired mutation/replay cursor per node/job,
+with exact decimal uint64 sequence values and a durable operation reference.
+Node and compile-revision locks fence authentication/settings changes before
+cursor, operation and outbox commit together. The table deliberately has no job
+FK so active old routes can retain attestations after a job is removed.
+`xnode_ddns_apply.go` changes only bound host addresses and advances durable
+phases; the transaction advances the catalog/compile revision. No wallet write or
+member configuration fee occurs. Maintenance protects referenced receipts and
+pending phases. The existing routing recovery path also resumes DDNS receipts.
+`xnode_ddns_changes_test.go` covers replay/order, full-width sequences, config
+fences, atomic rollback and retention. `xnode_ddns_apply_test.go` covers IPv4-only,
+IPv6-only/dual host mutation, epoch invalidation and reconnect recovery on the
+shared SQLite/PostgreSQL contract factory.
+
 `xnode_ddns_bindings.go` commits node discovery settings and normalized job/host
 references in one transaction. Forward migrations 100/00012 enforce same-node
 host ownership, distinct family/job bindings and administrator audit references.
@@ -873,7 +915,9 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_access_repair_retry_generated.go` wraps the transactional methods in `xnode_access_repair.go`.
 - `xnode_barriers_retry_generated.go` wraps the transactional methods in `xnode_barriers.go`.
 - `xnode_configurations_retry_generated.go` wraps the transactional methods in `xnode_configurations.go`.
+- `xnode_ddns_apply_retry_generated.go` wraps the transactional methods in `xnode_ddns_apply.go`.
 - `xnode_ddns_bindings_retry_generated.go` wraps the transactional methods in `xnode_ddns_bindings.go`.
+- `xnode_ddns_changes_retry_generated.go` wraps the transactional methods in `xnode_ddns_changes.go`.
 - `xnode_diy_billing_retry_generated.go` wraps the transactional methods in `xnode_diy_billing.go`.
 - `xnode_diy_reconcile_retry_generated.go` wraps the transactional methods in `xnode_diy_reconcile.go`.
 - `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.

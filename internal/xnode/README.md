@@ -1,14 +1,47 @@
 # X-Node control plane
 
+`ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
+upgrade-header and hello-capability negotiation. It validates authenticated agent
+ownership, canonical addresses, enabled families and the current configuration
+generation. Obsolete jobs/generations are acknowledged without mutation; durable
+cursor/operation commit precedes every successful acknowledgment. Delivery uses
+the existing control lane and single WebSocket writer, independently of traffic.
+
+`ddns_operations.go` stages the existing protected firewall bank, atomically
+updates bound hosts and resumes automatic free routing in `ddns_routes.go`.
+Saved endpoint choices, credentials and accounting remain authoritative. Pending
+routes keep old bypass addresses through their existing apply barriers. Offline
+nodes retain desired state; startup, dependency changes and reconnect resume the
+same receipts through the existing outbox. `ddns_protection.go` caches the derived
+bank by durable-state digest plus compile revision. `ddns_references.go` retains
+literal endpoint/custom-outbound references and trusts only authenticated or
+administrator-owned address evidence, never arbitrary DNS/CDN answers.
+
+`ddns_changes_test.go` covers ownership, generation, malformed/oversized input
+and legacy negotiation. `ddns_integration_test.go` exercises real sockets and
+durable handlers, held firewall acknowledgments, free graph regeneration,
+credential/ledger preservation, bypass replacement and offline convergence.
+`ddns_fixture_test.go` supplies the paid encrypted-route scenario and real job
+drain; `ddns_agent_fixture_test.go` supplies one serialized synthetic agent writer
+and controllable protected-bank acknowledgments. These run only in hosted CI.
+`ddns_protection_test.go` checks reconnect activation for both outbound target
+addresses and inbound transit source nodes, plus legacy/unrelated compatibility.
+`ddns_origins.go` projects successful external-provider attestations onto matching
+same-node endpoint hostnames after bypass staging. It preserves TLS/SNI names,
+invalidates stale DNS/compile inputs and participates in routing dependency
+digests. `ddns_origins_test.go` covers scope, generation, staging and unchanged
+cache reuse without external DNS requests.
+
 `ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
-references from encrypted agent discovery settings. Built-in DDNS binds each
-enabled address family to a distinct existing host on the same node; it creates
-no public DNS records. External providers may use optional host bindings. Only
-the authenticated configuring administrator supplies audit ownership. Generations
-are derived from discovery/provider configuration and binding references; neither
-host IDs nor audit ownership enter the agent configuration. Omitted bindings
-preserve older editor writes. Unsupported peers retain ordinary authorization
-updates and external DNS jobs while built-in jobs await negotiated support.
+references from encrypted agent discovery settings. Built-in DDNS can bind each
+enabled address family to multiple existing hosts on the same node, with each host
+assigned once across jobs and families; it creates no public DNS records. External
+providers may use optional single-host bindings. The authenticated configuring
+administrator supplies audit ownership. Generations are derived from
+discovery/provider configuration and binding references; neither host IDs nor
+audit ownership enter the agent configuration. Omitted bindings preserve older
+editor writes. Unsupported peers retain ordinary authorization updates and
+external DNS jobs while built-in jobs await negotiated support.
 `ddns_bindings_test.go` checks actor ownership, omission/rename compatibility,
 generation changes, separate references and legacy configuration projection.
 
@@ -759,3 +792,8 @@ PAYG member opt-outs apply to provisioning, inventory/DIY, native compilation, l
 `payg_preferences_test.go` covers member opt-outs across subscription inventory and compilation, re-enabling and paid Combo isolation.
 
 `payg_account_provision.go` owns idempotent internal principal/account creation; reconciliation and coverage remain in `payg_provision.go`.
+# PAYG catalog reads
+
+PAYG compilation returns before reading products/topology when a node has no
+accounts. PAYG provisioning, inventory, export and display use stockless local
+overrides; derived catalog capacity never enters the reconciliation deadline.

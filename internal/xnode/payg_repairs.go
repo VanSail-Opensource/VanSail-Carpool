@@ -63,7 +63,7 @@ func (s *Service) requestDIYPAYG(ctx context.Context, user string) (bool, error)
 	if err != nil || balance.MinorInt64() <= 0 {
 		return false, err
 	}
-	products, err := r.ListSquadProducts(ctx, false)
+	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return false, err
 	}

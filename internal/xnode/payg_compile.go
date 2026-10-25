@@ -19,7 +19,10 @@ func (s *Service) paygUsers(ctx context.Context, node Node, inbounds map[string]
 	if err != nil {
 		return nil, err
 	}
-	products, err := r.ListSquadProducts(ctx, false)
+	if len(accounts) == 0 {
+		return out, nil
+	}
+	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return nil, err
 	}

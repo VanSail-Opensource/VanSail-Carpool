@@ -32,7 +32,7 @@ func TestUserPreferencesDefaultsMergeAndEligibility(t *testing.T) {
 	}
 }
 
-func TestPreferenceEntrancesStayOffAfterLaterActivation(t *testing.T) {
+func TestPaidAroundEntranceReturnsAfterLaterActivation(t *testing.T) {
 	ctx := context.Background()
 	s := newTestStore(t)
 	u := createTestUser(t, s, 55103)
@@ -60,7 +60,7 @@ func TestPreferenceEntrancesStayOffAfterLaterActivation(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err = s.UserPreferenceSnapshot(ctx, u.ID, now.Add(3*time.Hour))
-	if err != nil || !got.ActiveCombo || got.ShowActivity || got.ShowAroundTX {
+	if err != nil || !got.ActiveCombo || got.ShowActivity || !got.ShowAroundTX {
 		t.Fatalf("later activation: %+v %v", got, err)
 	}
 }
