@@ -25,6 +25,9 @@ func (m *Master) runFirewall() {
 	}
 }
 func (m *Master) reconcileFirewall(ctx context.Context) error {
+	if err := m.refreshDDNSProtection(ctx); err != nil {
+		return err
+	}
 	if err := m.pruneManagedNodes(ctx); err != nil {
 		return err
 	}

@@ -1168,6 +1168,17 @@ CREATE TABLE xnode_daily_usage (
  PRIMARY KEY(proxy_user_id,node_id,period_id,date)
 );
 
+CREATE TABLE xnode_ddns_changes (
+ node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,
+ job_id TEXT NOT NULL,agent_id TEXT NOT NULL,event_id TEXT NOT NULL,
+ generation TEXT NOT NULL,sequence TEXT NOT NULL,
+ ipv4 TEXT NOT NULL DEFAULT '',ipv6 TEXT NOT NULL DEFAULT '',observed_at TEXT NOT NULL,
+ previous_ips TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(previous_ips)),
+ operation_id TEXT NOT NULL REFERENCES provider_operations(id),
+ phase TEXT NOT NULL CHECK(phase IN ('staging','routes','settled','obsolete')),
+ PRIMARY KEY(node_id,job_id)
+);
+
 CREATE TABLE xnode_ddns_hosts (
  node_id TEXT NOT NULL,job_id TEXT NOT NULL,
  family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),
@@ -1624,6 +1635,8 @@ CREATE INDEX users_inviter_created_idx ON users(inviter_id,created_at DESC);
 CREATE INDEX xnode_daily_usage_date_node_idx ON xnode_daily_usage(date,node_id);
 
 CREATE INDEX xnode_daily_usage_user_date_idx ON xnode_daily_usage(proxy_user_id,date,node_id,period_id);
+
+CREATE INDEX xnode_ddns_changes_operation_idx ON xnode_ddns_changes(operation_id);
 
 CREATE UNIQUE INDEX xnode_endpoint_ownership_idx ON xnode_endpoints(id,node_id);
 

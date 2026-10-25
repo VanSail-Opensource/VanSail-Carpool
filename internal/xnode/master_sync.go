@@ -9,6 +9,9 @@ import (
 )
 
 func (m *Master) reconcile(ctx context.Context) error {
+	if err := m.refreshDDNSProtection(ctx); err != nil {
+		return err
+	}
 	if err := m.service.reconcileRoutingPlans(ctx); err != nil {
 		m.logger.Warn("routing reconciliation deferred", "error_code", "XNODE_ROUTING_RECONCILE_PENDING")
 	}
@@ -104,6 +107,9 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
+		return err
+	}
+	if ready, err = m.ddnsRouteProtectionReady(ctx, peer, prepared, hello.Capabilities); err != nil || !ready {
 		return err
 	}
 	controls := m.connectionControls(prepared.config)

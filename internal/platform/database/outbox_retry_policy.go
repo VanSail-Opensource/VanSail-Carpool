@@ -21,7 +21,7 @@ func outboxRetryDelayTx(ctx context.Context, tx *sql.Tx, jobID string, attempts 
 	if kind == "xnode_firewall" {
 		return 5 * time.Second << min(max(attempts-1, 0), 4), nil
 	}
-	if kind == "provider_operation" && (operationKind == "xnode_routing" || operationKind == "xnode_diy") {
+	if kind == "provider_operation" && (operationKind == "xnode_routing" || operationKind == "xnode_diy" || operationKind == "xnode_ddns_update") {
 		return min(5*time.Second<<min(max(attempts-1, 0), 3), 30*time.Second), nil
 	}
 	return time.Minute << min(max(attempts-1, 0), 8), nil

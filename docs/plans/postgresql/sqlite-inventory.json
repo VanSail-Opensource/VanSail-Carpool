@@ -100,7 +100,8 @@
     "097_payg_preferences.sql",
     "098_payg_squad_state.sql",
     "099_catalog_topology_epoch.sql",
-    "100_xnode_ddns_bindings.sql"
+    "100_xnode_ddns_bindings.sql",
+    "101_xnode_ddns_changes.sql"
   ],
   "objects": [
     {
@@ -738,6 +739,12 @@
       "name": "xnode_daily_usage",
       "table": "xnode_daily_usage",
       "sql": "CREATE TABLE xnode_daily_usage (\n proxy_user_id INTEGER NOT NULL REFERENCES xnode_identities(proxy_user_id),\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id), period_id TEXT NOT NULL REFERENCES xnode_periods(id),\n date TEXT NOT NULL, upload_bytes INTEGER NOT NULL DEFAULT 0 CHECK(upload_bytes\u003e=0),\n download_bytes INTEGER NOT NULL DEFAULT 0 CHECK(download_bytes\u003e=0),\n weighted_bytes INTEGER NOT NULL DEFAULT 0 CHECK(weighted_bytes\u003e=0),\n weight_remainder INTEGER NOT NULL DEFAULT 0 CHECK(weight_remainder BETWEEN 0 AND 999999),\n PRIMARY KEY(proxy_user_id,node_id,period_id,date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_ddns_changes",
+      "table": "xnode_ddns_changes",
+      "sql": "CREATE TABLE xnode_ddns_changes (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,\n job_id TEXT NOT NULL,agent_id TEXT NOT NULL,event_id TEXT NOT NULL,\n generation TEXT NOT NULL,sequence TEXT NOT NULL,\n ipv4 TEXT NOT NULL DEFAULT '',ipv6 TEXT NOT NULL DEFAULT '',observed_at TEXT NOT NULL,\n previous_ips TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(previous_ips)),\n operation_id TEXT NOT NULL REFERENCES provider_operations(id),\n phase TEXT NOT NULL CHECK(phase IN ('staging','routes','settled','obsolete')),\n PRIMARY KEY(node_id,job_id)\n)"
     },
     {
       "type": "table",
@@ -1560,6 +1567,12 @@
       "name": "xnode_daily_usage_user_date_idx",
       "table": "xnode_daily_usage",
       "sql": "CREATE INDEX xnode_daily_usage_user_date_idx ON xnode_daily_usage(proxy_user_id,date,node_id,period_id)"
+    },
+    {
+      "type": "index",
+      "name": "xnode_ddns_changes_operation_idx",
+      "table": "xnode_ddns_changes",
+      "sql": "CREATE INDEX xnode_ddns_changes_operation_idx ON xnode_ddns_changes(operation_id)"
     },
     {
       "type": "index",
@@ -7715,7 +7728,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 101,
+      "rows": 102,
       "columns": [
         {
           "name": "version",
@@ -8993,6 +9006,96 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_ddns_changes",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generation",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sequence",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv4",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv6",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_ips",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "phase",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
           "primaryKey": 0
         }
       ]

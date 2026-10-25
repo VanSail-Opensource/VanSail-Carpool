@@ -62,6 +62,9 @@ func (m *Master) protectedIPs(includeMembers bool) []string {
 	for _, ip := range m.managedHostIPs {
 		set[ip] = true
 	}
+	for _, ip := range m.ddnsProtectedIPs {
+		set[ip] = true
+	}
 	if includeMembers {
 		for _, state := range m.whitelistStates {
 			for ip, until := range state.exemptions {
@@ -103,6 +106,7 @@ func (m *Master) deliverProtected(ctx context.Context, peer *agentPeer) error {
 	if err == nil {
 		peer.mu.Lock()
 		peer.protectedDigest = digest
+		peer.protectedIPs = slices.Clone(ips)
 		peer.protectedAt = m.service.now()
 		peer.mu.Unlock()
 	}

@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00013_xnode_ddns_changes.sql` mirrors SQLite 101 desired mutation/order state
+with exact text sequences and durable operation references.
+
 `00012_xnode_ddns_bindings.sql` matches SQLite 100 host ownership, audit references
 and invalidation triggers without copying encrypted discovery settings.
 

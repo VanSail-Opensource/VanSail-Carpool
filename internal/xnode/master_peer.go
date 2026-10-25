@@ -20,6 +20,7 @@ type agentPeer struct {
 	ddnsChanges           bool // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string
+	protectedIPs          []string // mu; last acknowledged protected bank
 	protectedAt           time.Time
 	nodeID                string
 	agentID               string

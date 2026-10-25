@@ -43,7 +43,7 @@ and the applicable validation are complete, not merely that code was written.
 
 ## DDNS
 
-- [ ] 25 Add built-in per-family node-to-host bindings.
+- [x] 25 Add built-in per-family node-to-host bindings.
 - [ ] 26 Add authenticated, acknowledged, replayable address-change events.
 - [ ] 27 Rebuild affected routes and stage fleet-wide bypass redistribution.
 
@@ -54,6 +54,21 @@ checks, and verified signed amd64/arm64 agent artifacts. Record browser evidence
 maintenance receipts, protocol compatibility and performance measurements below.
 
 ## Evidence
+
+- Item 25 passed terminal panel run `40223378321` on `6d6b998e`, including
+  SQLite/PostgreSQL contracts, frontend checks and production image validation.
+
+- Items 26-27 add negotiated authenticated DDNS events, exact replay cursors,
+  atomic durable operations and staged protected-bank redistribution. Host
+  addresses change only after connected capable nodes acknowledge the union;
+  custom routes rebuild from saved endpoint choices through existing barriers
+  without a member charge. Previous addresses remain protected through pending
+  and offline routes; literal remaining references retain them afterward.
+  Startup, dependency changes and reconnect recover the same desired receipts.
+  Added hosted regressions for stale/duplicate/oversized events, queue rollback,
+  IPv4/IPv6/dual updates, held acknowledgments, credential/ledger preservation,
+  bypass replacement and offline convergence. Static review and Go vet passed;
+  hosted execution and final signed release verification remain pending.
 
 - Item 25 implements normalized same-node IPv4/IPv6 bindings, atomic node saves,
   generated API types, administrator attribution and negotiated legacy fallback.

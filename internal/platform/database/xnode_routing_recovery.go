@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+const pendingXNodeDesiredOperations = `SELECT p.operation_id FROM xnode_routing_plans p JOIN provider_operations o ON o.id=p.operation_id WHERE p.phase IN('revoking','applying','enabling') AND o.status IN('queued','processing') AND o.kind IN('xnode_routing','xnode_diy')
+ UNION SELECT c.operation_id FROM xnode_ddns_changes c JOIN provider_operations o ON o.id=c.operation_id WHERE o.status IN('queued','processing') AND o.kind='xnode_ddns_update'`
+
 // A reconnect is new external evidence after bounded queue retries. Resume the
 // same durable operation rather than creating a competing retry scheduler.
 func (s *Store) retryAttempt_WakeXNodeRouting(ctx context.Context, now time.Time) error {
@@ -18,11 +21,11 @@ func (s *Store) retryAttempt_WakeXNodeRouting(ctx context.Context, now time.Time
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind='provider_operation' AND (status='failed' OR status='pending' AND attempts>0) AND json_extract(payload,'$.operationId') IN(SELECT p.operation_id FROM xnode_routing_plans p JOIN provider_operations o ON o.id=p.operation_id WHERE p.phase IN('revoking','applying','enabling') AND o.status IN('queued','processing'))`, stamp(now), stamp(now))
+	_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind='provider_operation' AND (status='failed' OR status='pending' AND attempts>0) AND json_extract(payload,'$.operationId') IN(`+pendingXNodeDesiredOperations+`)`, stamp(now), stamp(now))
 	if err != nil {
 		return err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT p.operation_id FROM xnode_routing_plans p JOIN provider_operations o ON o.id=p.operation_id WHERE p.phase IN('revoking','applying','enabling') AND o.status IN('queued','processing') AND o.kind IN('xnode_routing','xnode_diy') AND NOT EXISTS(SELECT 1 FROM outbox_jobs j WHERE j.kind='provider_operation' AND json_extract(j.payload,'$.operationId')=p.operation_id)`)
+	rows, err := tx.QueryContext(ctx, `SELECT desired.operation_id FROM (`+pendingXNodeDesiredOperations+`) desired WHERE NOT EXISTS(SELECT 1 FROM outbox_jobs j WHERE j.kind='provider_operation' AND json_extract(j.payload,'$.operationId')=desired.operation_id)`)
 	if err != nil {
 		return err
 	}

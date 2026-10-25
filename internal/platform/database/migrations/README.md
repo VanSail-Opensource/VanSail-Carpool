@@ -1,5 +1,8 @@
 # Database migrations
 
+`101_xnode_ddns_changes.sql` persists bounded desired address mutation evidence,
+replay cursors and operation references, separately from disposable telemetry.
+
 `100_xnode_ddns_bindings.sql` adds normalized administrator/job and per-family
 host references with same-node ownership and compile-revision invalidation.
 

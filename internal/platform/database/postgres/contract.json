@@ -103,6 +103,7 @@
     "telegram_pm_read_status",
     "webhook_events",
     "xnode_customizations",
+    "xnode_ddns_changes",
     "xnode_ddns_jobs",
     "xnode_endpoints",
     "xnode_firewall_cursors",
@@ -6883,6 +6884,95 @@
       ]
     },
     {
+      "name": "xnode_ddns_changes",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "agent_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "event_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generation",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "sequence",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv4",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "ipv6",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_ips",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "phase",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "xnode_ddns_hosts",
       "columns": [
         {
@@ -8456,6 +8546,7 @@
     "users_inviter_created_idx",
     "xnode_daily_usage_date_node_idx",
     "xnode_daily_usage_user_date_idx",
+    "xnode_ddns_changes_operation_idx",
     "xnode_endpoint_ownership_idx",
     "xnode_endpoints_node_idx",
     "xnode_firewall_active_prefix",

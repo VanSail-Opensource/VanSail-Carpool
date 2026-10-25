@@ -1,5 +1,30 @@
 # X-Node control plane
 
+`ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
+upgrade-header and hello-capability negotiation. It validates authenticated agent
+ownership, canonical addresses, enabled families and the current configuration
+generation. Obsolete jobs/generations are acknowledged without mutation; durable
+cursor/operation commit precedes every successful acknowledgment. Delivery uses
+the existing control lane and single WebSocket writer, independently of traffic.
+
+`ddns_operations.go` stages the existing protected firewall bank, atomically
+updates bound hosts and resumes automatic free routing in `ddns_routes.go`.
+Saved endpoint choices, credentials and accounting remain authoritative. Pending
+routes keep old bypass addresses through their existing apply barriers. Offline
+nodes retain desired state; startup, dependency changes and reconnect resume the
+same receipts through the existing outbox. `ddns_protection.go` caches the derived
+bank by durable-state digest plus compile revision. `ddns_references.go` retains
+literal endpoint/custom-outbound references and trusts only authenticated or
+administrator-owned address evidence, never arbitrary DNS/CDN answers.
+
+`ddns_changes_test.go` covers ownership, generation, malformed/oversized input
+and legacy negotiation. `ddns_integration_test.go` exercises real sockets and
+durable handlers, held firewall acknowledgments, free graph regeneration,
+credential/ledger preservation, bypass replacement and offline convergence.
+`ddns_fixture_test.go` supplies the paid encrypted-route scenario and real job
+drain; `ddns_agent_fixture_test.go` supplies one serialized synthetic agent writer
+and controllable protected-bank acknowledgments. These run only in hosted CI.
+
 `ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
 references from encrypted agent discovery settings. Built-in DDNS binds each
 enabled address family to a distinct existing host on the same node; it creates

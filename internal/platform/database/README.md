@@ -1,5 +1,19 @@
 # Application store
 
+`xnode_ddns_changes.go` stores one desired mutation/replay cursor per node/job,
+with exact decimal uint64 sequence values and a durable operation reference.
+Node and compile-revision locks fence authentication/settings changes before
+cursor, operation and outbox commit together. The table deliberately has no job
+FK so active old routes can retain attestations after a job is removed.
+`xnode_ddns_apply.go` changes only bound host addresses and advances durable
+phases; existing triggers invalidate catalog/compile caches. No wallet write or
+member configuration fee occurs. Maintenance protects referenced receipts and
+pending phases. The existing routing recovery path also resumes DDNS receipts.
+`xnode_ddns_changes_test.go` covers replay/order, full-width sequences, config
+fences, atomic rollback and retention. `xnode_ddns_apply_test.go` covers IPv4-only,
+IPv6-only/dual host mutation, epoch invalidation and reconnect recovery on the
+shared SQLite/PostgreSQL contract factory.
+
 `xnode_ddns_bindings.go` commits node discovery settings and normalized job/host
 references in one transaction. Forward migrations 100/00012 enforce same-node
 host ownership, distinct family/job bindings and administrator audit references.
@@ -873,7 +887,9 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_access_repair_retry_generated.go` wraps the transactional methods in `xnode_access_repair.go`.
 - `xnode_barriers_retry_generated.go` wraps the transactional methods in `xnode_barriers.go`.
 - `xnode_configurations_retry_generated.go` wraps the transactional methods in `xnode_configurations.go`.
+- `xnode_ddns_apply_retry_generated.go` wraps the transactional methods in `xnode_ddns_apply.go`.
 - `xnode_ddns_bindings_retry_generated.go` wraps the transactional methods in `xnode_ddns_bindings.go`.
+- `xnode_ddns_changes_retry_generated.go` wraps the transactional methods in `xnode_ddns_changes.go`.
 - `xnode_diy_billing_retry_generated.go` wraps the transactional methods in `xnode_diy_billing.go`.
 - `xnode_diy_reconcile_retry_generated.go` wraps the transactional methods in `xnode_diy_reconcile.go`.
 - `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.

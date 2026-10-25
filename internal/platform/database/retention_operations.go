@@ -17,6 +17,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_operation_candidates(id)
 		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<?
 		AND kind<>'node_compensation'
+		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id AND change.phase IN ('staging','routes'))
 		AND (kind NOT LIKE 'telegram_pm_%' OR created_at<=?) AND NOT (`+liveComboControlPredicate+`)`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
 	if err != nil {
 		return fmt.Errorf("select stale operations: %w", err)
@@ -74,6 +75,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 			WHERE event.provider_operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_routing_plans plan WHERE plan.operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_metered_probes probe WHERE probe.operation_id=operation.id)
+		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM ip_lookup_checks check_record WHERE check_record.operation_id=operation.id)`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune processed provider operations: %w", err)
 	}
