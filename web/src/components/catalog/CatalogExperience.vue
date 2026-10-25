@@ -37,7 +37,7 @@ function selectMode(next: 'payg' | 'combo'): void {
       </div>
     </header>
     <div :key="mode" class="catalog-experience__content" :class="{ 'catalog-experience__content--hidden': hideCombo, 'catalog-experience__content--entering': mode === 'combo' && !hideCombo }" :inert="hideCombo" :aria-hidden="hideCombo || undefined">
-      <PAYGPage v-if="mode === 'payg'" @ready="ready = $event" />
+      <PAYGPage v-if="mode === 'payg'" :entrance-ready="!transitioning || reducedMotion" @ready="ready = $event" />
       <CatalogPage v-else embedded @ready="ready = $event" />
     </div>
   </div>
@@ -47,7 +47,6 @@ function selectMode(next: 'payg' | 'combo'): void {
 .catalog-experience__header { margin-bottom: .15rem; }
 .catalog-experience__modes { display: flex; gap: .2rem; width: 100%; max-width: 24rem; padding: .2rem; border-radius: var(--radius-control); background: var(--surface-raised); }
 .catalog-experience__modes :deep(button) { flex: 1; justify-content: center; min-height: 44px; border-radius: var(--radius-control); }
-.catalog-experience--transitioning { --catalog-entry-delay: 320ms; }
 .catalog-experience__content--hidden { visibility: hidden; pointer-events: none; }
 .catalog-experience__content--entering { animation: catalog-content-enter 200ms ease-out both; }
 @keyframes catalog-content-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

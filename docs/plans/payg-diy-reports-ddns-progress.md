@@ -78,6 +78,13 @@ maintenance receipts, protocol compatibility and performance measurements below.
   restored PAYG with no console errors. No layout overflow remained. Typecheck,
   ESLint, Go vet, structure/i18n checks and production build passed. Hosted
   acceptance remains pending. Removed a stale member-side admin statistics read.
+- Item 23 pauses loaded PAYG card/summary entrances until scene completion,
+  replacing the 320 ms guess. Chrome frame sampling at 390px showed card time
+  remaining 0 while covered, then advancing to 220 ms at full opacity. Desktop
+  slow loading retained skeletons after the cover ended; 320px reduced motion
+  showed no cover/entrance and immediate full opacity. Six rapid mode switches
+  settled to PAYG with no stuck gate, duplicates, overflow or console errors.
+  Typecheck/lint passed; hosted regressions are pending.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Items 01-19 passed implementation/static/browser checks and hosted run

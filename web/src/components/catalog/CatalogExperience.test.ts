@@ -14,6 +14,19 @@ vi.mock('@/composables/useMotionPreferences', async () => {
 })
 
 describe('CatalogExperience', () => {
+  it('holds fast PAYG data for scene completion without delaying readiness', async () => {
+    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    await flushPromises()
+    const page = wrapper.findComponent(PAYGPage)
+    expect(page.props('entranceReady')).toBe(false)
+    page.vm.$emit('ready', true)
+    await wrapper.vm.$nextTick()
+    expect(page.props('entranceReady')).toBe(false)
+    wrapper.findComponent(CatalogModeTransition).vm.$emit('active', false)
+    await wrapper.vm.$nextTick()
+    expect(page.props('entranceReady')).toBe(true)
+    wrapper.unmount()
+  })
   it('keeps a ready Combo inert until its introduction completes', async () => {
     const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
     await flushPromises()

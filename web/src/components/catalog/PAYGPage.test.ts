@@ -14,12 +14,23 @@ const view: PAYGView = {
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
-function mountPage() {
+function mountPage(entranceReady = true) {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }] })
-  return mount(PAYGPage, { global: { plugins: [router, createPinia()] } })
+  return mount(PAYGPage, { props: { entranceReady }, global: { plugins: [router, createPinia()] } })
 }
 
 describe('PAYG live presentation', () => {
+  it('keeps resolved totals paused until its scene releases the entrance', async () => {
+    vi.spyOn(paygApi, 'get').mockResolvedValue(view)
+    const wrapper = mountPage(false)
+    await flushPromises()
+    expect(wrapper.text()).toContain('15.00 TXB')
+    expect(wrapper.get('.payg-summary__window').classes()).toContain('payg-summary__window--enter')
+    expect(wrapper.get('.payg-summary__window').classes()).toContain('payg-summary__window--waiting')
+    await wrapper.setProps({ entranceReady: true })
+    expect(wrapper.get('.payg-summary__window').classes()).not.toContain('payg-summary__window--waiting')
+    wrapper.unmount()
+  })
   it('renders loading and empty states with one reporting window and no recharge action', async () => {
     vi.spyOn(paygApi, 'get').mockResolvedValue(view)
     const wrapper = mountPage()

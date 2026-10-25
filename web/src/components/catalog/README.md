@@ -71,6 +71,14 @@ fresh requests through their existing loaders and checkout paths.
 - `CatalogModeTransition.vue` presents an 800ms viewport-wide introduction. Animation completion releases the content gate; a 900ms fallback handles suppressed WebView events. Readiness remeasures controls without restarting the scene. Combo content mounts immediately but stays hidden/inert until completion, then enters over 200ms. Only mode navigation and application navigation sit outside its continuous cover; PAYG additionally reserves its wallet. Scroll/viewport changes remeasure without ending the scene. Reduced motion skips both animations. Generation checks discard stale scenes on rapid switching.
 
 - `CatalogModeTransition.test.ts` covers rapid scene replacement, timed disposal and reduced-motion omission in hosted CI.
+
+PAYG receives an `entranceReady` gate from actual scene completion (or reduced
+motion), rather than a fixed animation delay. Cards and populated 72-hour totals
+pause their CSS entrance at time zero until that gate opens. A slow response
+keeps ordinary loading skeletons visible and starts its entrance on arrival;
+background refreshes do not restart existing card animations. The wallet and
+mode controls remain available. `PAYGPage.test.ts` and `CatalogExperience.test.ts`
+cover data arriving before scene completion; Chrome samples verify CSS timing.
 - `PAYGSummary.vue` presents authoritative wallet balance, recharge navigation and one 72-hour traffic/spend summary. `PAYGSquadCard.vue` reuses the shared profile card with price/GB, availability and raw-traffic/spend metrics; neither derives financial totals or exposes node names.
 - `PAYGPage.test.ts` covers initial loading, empty results, exact summary values and retained totals after a background refresh failure. All automated regressions run in hosted CI.
 

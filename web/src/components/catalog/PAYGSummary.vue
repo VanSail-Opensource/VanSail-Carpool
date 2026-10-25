@@ -4,7 +4,7 @@ import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
 import { formatMemberMoney } from '@/utils/displayCurrency'
 
-defineProps<{ data: PAYGView | null; loading: boolean }>()
+withDefaults(defineProps<{ data: PAYGView | null; loading: boolean; entranceReady?: boolean }>(), { entranceReady: true })
 const { t } = useI18n()
 </script>
 
@@ -13,7 +13,7 @@ const { t } = useI18n()
     <div class="payg-summary__wallet">
       <div><span>{{ t('payg.balance') }}</span><strong v-if="data">{{ formatMemberMoney(data.balance) }}</strong><USkeleton v-else-if="loading" class="h-7 w-28" /><span v-else>{{ t('payg.status.unavailable') }}</span></div>
     </div>
-    <div class="payg-summary__window">
+    <div class="payg-summary__window" :class="{ 'payg-summary__window--enter': data, 'payg-summary__window--waiting': !entranceReady }">
       <small>{{ t('payg.window') }}</small>
       <dl v-if="data">
         <div><dt class="sr-only">{{ t('payg.traffic') }}</dt><dd><UIcon name="i-ph-arrows-down-up" aria-hidden="true" />{{ formatBytes(data.trafficBytes) }}</dd></div>
@@ -26,7 +26,8 @@ const { t } = useI18n()
 
 <style scoped>
 .payg-summary { display: grid; gap: .5rem; padding: 0 0 .65rem; border-bottom: 1px solid var(--line); }
-.payg-summary__window { animation: payg-summary 200ms ease-out both; animation-delay: var(--catalog-entry-delay, 0ms); }
+.payg-summary__window--enter { animation: payg-summary 200ms ease-out both; }
+.payg-summary__window--waiting { animation-play-state: paused; }
 .payg-summary__wallet { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .payg-summary__wallet > div { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; gap: .1rem .6rem; }
 .payg-summary__wallet span, .payg-summary__window small, dt { color: var(--text-muted); font-size: .72rem; }
