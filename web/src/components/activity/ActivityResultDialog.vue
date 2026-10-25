@@ -27,7 +27,7 @@ const description = computed(() => {
     :title="result ? $t('activity.result.' + result.outcome + '.title') : ''"
     :description="description"
     :close="false"
-    :ui="{ header: 'tg-overlay-header--centered', wrapper: 'tg-overlay-copy--centered' }"
+    :ui="{ header: 'tg-overlay-header--centered min-h-0 py-3 sm:py-3', wrapper: 'tg-overlay-copy--centered', ...(result?.kind === 'check_in' ? { body: 'p-3 sm:p-4', footer: 'p-3 sm:p-4' } : {}) }"
     @update:open="!$event && $emit('close')"
   >
     <template v-if="result" #body>

@@ -38,7 +38,7 @@ const rewardLabel = computed(() => {
 </script>
 
 <template>
-  <div class="result-body" :class="{ 'result-body--draw': result.kind === 'draw' }">
+  <div class="result-body" :class="{ 'result-body--draw': result.kind === 'draw', 'result-body--check-in': result.kind === 'check_in' }">
     <BetSuccessFireworks v-if="showFireworks" :key="result.id" />
     <AnimatePresence mode="wait" :initial="false">
       <motion.div
@@ -49,7 +49,7 @@ const rewardLabel = computed(() => {
         :transition="{ duration: reducedMotion ? 0.08 : 0.22, delay: reducedMotion ? 0 : 0.05, ease: 'easeOut' }"
       >
         <motion.div
-          v-if="result.kind !== 'draw'"
+          v-if="result.kind === 'bet'"
           :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.86 }"
           :animate="{ opacity: 1, scale: 1 }"
           :transition="{ duration: reducedMotion ? 0.08 : 0.2, ease: 'easeOut' }"
@@ -88,4 +88,6 @@ const rewardLabel = computed(() => {
 .result-reward { margin-top: 0.55rem; border-color: #304138; color: var(--accent); background: var(--accent-soft); }
 .result-prize { margin-top: 0.2rem; }
 .result-body--draw .result-reward { border-color: var(--line); background: var(--surface-raised); color: var(--text); }
+.result-body--check-in .result-balance { margin-top: 0; }
+.result-body--check-in .result-balance, .result-body--check-in .result-reward { padding: .55rem .65rem; }
 </style>

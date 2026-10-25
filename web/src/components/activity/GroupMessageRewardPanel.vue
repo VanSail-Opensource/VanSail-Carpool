@@ -48,7 +48,7 @@ const { reducedMotion } = useMotionPreferences()
 </template>
 
 <style scoped>
-.group-reward-panel__card { display: grid; gap: 0.85rem; padding: 1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+.group-reward-panel__card { display: grid; gap: .6rem; }
 .group-reward-panel__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
 .group-reward-panel__stats div { display: grid; gap: 0.2rem; }
 .group-reward-panel__stats span, .group-reward-panel__status { color: var(--text-faint); font-size: 0.78rem; }

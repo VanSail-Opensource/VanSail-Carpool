@@ -28,7 +28,7 @@ const {
     </header>
     <template v-if="loading">
       <SkeletonBlock height="9rem" />
-      <div class="activity-layout"><SkeletonBlock height="24rem" /><SkeletonBlock height="12rem" /></div>
+      <div class="activity-layout"><SkeletonBlock height="14rem" /><SkeletonBlock height="10rem" /></div>
     </template>
     <template v-else-if="overview">
       <div class="page-toolbar">
@@ -78,7 +78,14 @@ const {
 </template>
 
 <style scoped>
-.page--activity { display: grid; gap: 1rem; }
-.activity-layout { display: grid; gap: 0.9rem; }
+.page--activity { display: grid; gap: .65rem; }
+.page--activity .page-header, .page--activity .page-toolbar { margin: 0; }
+.page--activity .page-header h1 { font-size: 1.4rem; line-height: 1.2; }
+.activity-layout { display: grid; gap: .65rem; }
+.page--activity :deep(.section-block) { padding: .85rem; }
+.page--activity :deep(.section-heading) { margin-bottom: .6rem; }
+.page--activity :deep(.empty-inline) { min-height: 0; padding: .65rem; }
+.page--activity :deep(.empty-inline h3) { margin: 0; font-size: .9rem; }
+.page--activity :deep(.empty-inline p) { margin: .3rem 0 0; font-size: .8rem; }
 @media (min-width: 1180px) { .activity-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 </style>

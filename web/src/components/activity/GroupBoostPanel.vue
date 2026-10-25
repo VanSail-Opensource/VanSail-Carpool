@@ -38,7 +38,7 @@ function openBoost(): void {
 </template>
 
 <style scoped>
-.boost-panel { display: grid; gap: 1rem; }
+.boost-panel { display: grid; gap: .65rem; }
 .boost-panel__copy h2 { margin: 0; font-size: 1.05rem; }
 .boost-panel__copy p { margin: 0.4rem 0 0; color: var(--text-muted); font-size: 0.82rem; }
 .boost-panel__copy .boost-panel__rule { color: var(--text-faint); }

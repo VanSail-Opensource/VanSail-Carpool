@@ -99,3 +99,8 @@ maintenance receipts, protocol compatibility and performance measurements below.
   final estimates, status-read failure/retry and uncertain outcomes. Closing and
   reopening retained one probe operation; Escape restores focus to View results
   even while the original Test route action is disabled. Static checks passed.
+- Activity removes compounded header/toolbar margins, nested message padding and
+  fixed empty-state gaps. On the 390px fixture the page shrank from 1279px to
+  991px; check-in modal height fell from 356px to about 261px. Chrome checked
+  320px reduced motion, English/Chinese, 390px, desktop columns, initial loading,
+  empty games/draws and error recovery without overflow or console errors.
