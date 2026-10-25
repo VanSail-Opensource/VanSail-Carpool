@@ -7001,7 +7001,7 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
-          "primaryKey": 0
+          "primaryKey": 4
         }
       ]
     },

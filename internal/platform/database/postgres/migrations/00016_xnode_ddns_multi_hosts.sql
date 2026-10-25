@@ -1,3 +1,4 @@
+-- +goose Up
 -- Keep global host uniqueness while permitting multiple endpoints per family.
 ALTER TABLE xnode_ddns_hosts DROP CONSTRAINT xnode_ddns_hosts_pkey;
 ALTER TABLE xnode_ddns_hosts ADD CONSTRAINT xnode_ddns_hosts_pkey PRIMARY KEY(node_id,job_id,family,host_id);

@@ -103,7 +103,8 @@
     "100_xnode_ddns_bindings.sql",
     "101_xnode_ddns_changes.sql",
     "102_xnode_endpoint_epoch.sql",
-    "103_paid_member_access.sql"
+    "103_paid_member_access.sql",
+    "104_xnode_ddns_multi_hosts.sql"
   ],
   "objects": [
     {
@@ -752,7 +753,7 @@
       "type": "table",
       "name": "xnode_ddns_hosts",
       "table": "xnode_ddns_hosts",
-      "sql": "CREATE TABLE xnode_ddns_hosts (\n node_id TEXT NOT NULL,job_id TEXT NOT NULL,\n family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),\n host_id TEXT NOT NULL UNIQUE,\n PRIMARY KEY(node_id,job_id,family),\n FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,\n FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)\n)"
+      "sql": "CREATE TABLE xnode_ddns_hosts (\n node_id TEXT NOT NULL,job_id TEXT NOT NULL,\n family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),\n host_id TEXT NOT NULL UNIQUE,\n PRIMARY KEY(node_id,job_id,family,host_id),\n FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,\n FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)\n)"
     },
     {
       "type": "table",
@@ -7748,7 +7749,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 104,
+      "rows": 105,
       "columns": [
         {
           "name": "version",
@@ -9150,7 +9151,7 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
-          "primaryKey": 0
+          "primaryKey": 4
         }
       ]
     },
