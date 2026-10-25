@@ -1,5 +1,16 @@
 # X-Node control plane
 
+`master_report_lanes.go` separates incoming command results, ordered traffic,
+latest-snapshot telemetry and disposable logs. Each lane has its own bounded
+consumer; queued command/traffic payloads have a 32 MiB byte budget, logs have
+eight frames capped at 256 KiB each, and telemetry retains one current frame.
+The existing per-node outbound queue remains the only WebSocket writer. Durable
+overflow disconnects without acknowledgement, allowing journal replay; telemetry
+coalesces and discarded logs increment the memory-only dropped counter. Replaced
+peers cannot overwrite current telemetry/log snapshots. Shutdown cancels workers
+and waits for their active context-aware work. Hosted saturation regressions
+hold accounting blocked while requiring fresh telemetry and command delivery.
+
 `payg_squad_state_test.go` verifies hidden squads retain credentials and access,
 unavailable squads lose PAYG authorization, and normal restores the same period.
 `payg_export.go` removes hidden PAYG entries from refreshed subscriptions and

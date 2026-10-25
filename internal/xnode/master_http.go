@@ -131,6 +131,8 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return socket.WriteControl(websocket.PongMessage, []byte(payload), time.Now().Add(10*time.Second))
 		})
 	})
+	receivers := m.startPeerReceivers(peer)
+	defer receivers.stop()
 	for {
 		kind, data, err = socket.ReadMessage()
 		if err != nil {
@@ -146,9 +148,8 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		if err = m.receive(ctx, peer, message); err != nil {
-			fields := []any{"node_id", node.ID, "type", message.Type, "error_code", safeFrameErrorCode(err), "cause", frameErrorCause(err)}
-			m.logger.Warn("agent frame rejected", append(fields, frameErrorDetails(err)...)...)
+		if err = receivers.offer(message); err != nil {
+			return
 		}
 	}
 }

@@ -68,6 +68,10 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return ErrInvalid
 		}
 		m.mu.Lock()
+		if m.peers[peer.nodeID] != peer {
+			m.mu.Unlock()
+			return ErrConflict
+		}
 		snapshot := m.live[peer.nodeID]
 		snapshot.report = report
 		snapshot.receivedAt = m.service.now()
@@ -103,6 +107,10 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return ErrInvalid
 		}
 		m.mu.Lock()
+		if m.peers[peer.nodeID] != peer {
+			m.mu.Unlock()
+			return ErrConflict
+		}
 		snapshot := m.live[peer.nodeID]
 		snapshot.logs = append(snapshot.logs, report.Entries...)
 		snapshot.logsDropped += min(report.Dropped, ^uint64(0)-snapshot.logsDropped)

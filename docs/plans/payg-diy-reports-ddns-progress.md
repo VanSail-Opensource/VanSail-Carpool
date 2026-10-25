@@ -6,32 +6,32 @@ and the applicable validation are complete, not merely that code was written.
 
 ## Lifecycle
 
-- [ ] 01 Reproduce and repair backup-gated maintenance; verify a successful rerun.
-- [ ] 02 Retire the continuity job while preserving native paid-successor access.
-- [ ] 03 Release expired automatic-renewal purchase restrictions atomically.
-- [ ] 04 Show the repeating Combo prohibition state for members and administrators.
+- [x] 01 Reproduce and repair backup-gated maintenance; verify a successful rerun.
+- [x] 02 Retire the continuity job while preserving native paid-successor access.
+- [x] 03 Release expired automatic-renewal purchase restrictions atomically.
+- [x] 04 Show the repeating Combo prohibition state for members and administrators.
 
 ## PAYG
 
-- [ ] 05 Add normal, hidden and unavailable administrator squad states; hidden
+- [x] 05 Add normal, hidden and unavailable administrator squad states; hidden
   removes Explore/subscription entries without cutting existing connections.
-- [ ] 06 Replace status words with accessible semantic animated dots.
-- [ ] 07 Remove the PAYG Add balance button.
-- [ ] 08 Place traffic left and spending right at the card bottom.
-- [ ] 09 Remove duplicate proxy username from the PM card.
-- [ ] 10 Add last-72-hour PAYG traffic and spending to PM cards without Combo gates.
+- [x] 06 Replace status words with accessible semantic animated dots.
+- [x] 07 Remove the PAYG Add balance button.
+- [x] 08 Place traffic left and spending right at the card bottom.
+- [x] 09 Remove duplicate proxy username from the PM card.
+- [x] 10 Add last-72-hour PAYG traffic and spending to PM cards without Combo gates.
 
 ## Member experience
 
-- [ ] 11 Remove the member TX Statistics shortcut.
-- [ ] 12 Remove Admin access from member navigation, retaining Settings access.
-- [ ] 13 Display subscription access without an active Combo.
-- [ ] 14 Make the DIY save bar nonfloating on phones.
-- [ ] 15 Refine swipeable DIY categories and retain drafts.
-- [ ] 16 Repair compatible PAYG Split XHTTP inventory through export.
-- [ ] 17 Branch multiple routing rules after their shared ingress node.
-- [ ] 18 Move route-test progress and results into an accessible modal.
-- [ ] 19 Reduce Activity and sign-in result popup whitespace.
+- [x] 11 Remove the member TX Statistics shortcut.
+- [x] 12 Remove Admin access from member navigation, retaining Settings access.
+- [x] 13 Display subscription access without an active Combo.
+- [x] 14 Make the DIY save bar nonfloating on phones.
+- [x] 15 Refine swipeable DIY categories and retain drafts.
+- [x] 16 Repair compatible PAYG Split XHTTP inventory through export.
+- [x] 17 Branch multiple routing rules after their shared ingress node.
+- [x] 18 Move route-test progress and results into an accessible modal.
+- [x] 19 Reduce Activity and sign-in result popup whitespace.
 
 ## Reporting and performance
 
@@ -55,8 +55,17 @@ maintenance receipts, protocol compatibility and performance measurements below.
 
 ## Evidence
 
+- Item 20 implementation isolates bounded report lanes in both repositories,
+  retains one writer and adds hosted saturation/byte-budget/order regressions.
+  Go vet/build and terminal hosted results are recorded as they become available.
+
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
-- Production maintenance reproduction and browser validation are pending.
+- Items 01-19 passed implementation/static/browser checks and hosted run
+  [40183204793](https://github.com/VanSail-Opensource/VanSail-Carpool/actions/runs/40183204793)
+  on c9d5a99c, including SQLite and PostgreSQL regressions. The user confirmed
+  successful production maintenance and instructed proceeding to reporting.
+  No further SSH checks or maintenance reproduction is required.
+  Earlier pending notes below record intermediate states.
 - Live revision `cdcd729f` failed manual maintenance operation
   `73225c11-64d9-484a-b685-c5f21247de72` after backup, with SQLSTATE 23503 on
   `xnode_routing_plans_operation_id_fkey`. Fixes `2586aa86` and `d71ce956` protect
