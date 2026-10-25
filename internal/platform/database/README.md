@@ -13,6 +13,15 @@ state and immutable billing attribution, not disposable operation history.
 `retention_native_operations_test.go` covers repeated cleanup with both kinds of
 references, alongside the existing retention and backup-gating regressions.
 
+`retention_purchase_lineage.go` computes the final deletion set to a fixed point:
+any retained automatic successor or renewal-batch term protects its source and
+all transitive predecessors. Status/age alone cannot establish deletability;
+native periods and unfinished settlements also retain terms. Tombstones and
+settled financial rollups are written only for the final deletion set. Hosted
+regressions cover native-retained expired chains, mixed renewal-batch chains,
+repeat compaction and exact tombstone charges. Abandoned-user cleanup excludes
+every restrictive user reference, including audit actors and desired DIY state.
+
 `xnode_payg_credit_window.go` retains exact report-time raw/unbilled counters for the
 rolling `(through-72h, through]` threshold. Settled samples older than the newest
 100 MiB are redundant and compacted; low-traffic samples and pending evidence

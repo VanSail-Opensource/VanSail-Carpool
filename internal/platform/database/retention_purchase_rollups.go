@@ -21,18 +21,12 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 		AND NOT EXISTS (SELECT 1 FROM provider_operation_items item
 			JOIN provider_operations operation ON operation.id=item.operation_id
 			WHERE item.target_type='purchase' AND item.target_id=purchase.id
-			AND operation.status IN ('queued','processing','pending_review','partial'))
-		AND NOT EXISTS (SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchase.id
-			AND NOT (successor.status IN ('expired','cancelled','failed') AND successor.updated_at<?))`, stamp(cutoff), stamp(cutoff))
+			AND operation.status IN ('queued','processing','pending_review','partial'))`, stamp(cutoff))
 	if err != nil {
 		return fmt.Errorf("select purchase cleanup set: %w", err)
 	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM maintenance_purchase_candidates WHERE id IN (
-		SELECT batch.source_purchase_id FROM renewal_batches batch
-		WHERE EXISTS (SELECT 1 FROM purchases term WHERE term.renewal_batch_id=batch.id
-			AND NOT EXISTS (SELECT 1 FROM maintenance_purchase_candidates candidate WHERE candidate.id=term.id)))`)
-	if err != nil {
-		return fmt.Errorf("protect live renewal lineage: %w", err)
+	if err = protectPurchaseLineageTx(ctx, tx); err != nil {
+		return err
 	}
 	_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO purchase_history_tombstones(purchase_id,user_id,combo_id,status,
 		charged_txb_minor,gross_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,addon_count,
