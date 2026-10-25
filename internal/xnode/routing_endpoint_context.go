@@ -70,6 +70,9 @@ func (s *Service) prepareRoutingContexts(ctx context.Context, identity Identity,
 		}
 		items, _ := root["inbounds"].([]any)
 		for _, endpoint := range selected {
+			if address := s.ddnsRoutingPeer(endpoint.NodeID, endpoint.Address); address != "" {
+				dependencies = append(dependencies, "ddns-origin-v1", endpoint.ID, address)
+			}
 			for _, item := range items {
 				inbound, _ := item.(map[string]any)
 				if inbound["tag"] == endpoint.InboundTag {

@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"slices"
+
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 // Desired DDNS addresses participate in the existing protected firewall bank.
@@ -41,26 +43,30 @@ func (m *Master) refreshDDNSProtection(ctx context.Context) error {
 	}
 	protected := []string{}
 	trusted := map[string][]string{}
+	jobs := map[string]map[string]wire.DDNSJob{}
 	if len(states) > 0 {
+		global, err := m.service.Global(ctx)
+		if err != nil {
+			return err
+		}
 		references, err := m.service.ddnsAddressReferences(ctx)
 		if err != nil {
 			return err
 		}
-		jobs := map[string]map[string]bool{}
 		for _, state := range states {
 			if jobs[state.NodeID] == nil {
 				_, settings, err := m.service.Node(ctx, state.NodeID)
 				if err != nil {
 					return err
 				}
-				jobs[state.NodeID] = map[string]bool{}
-				for _, job := range settings.DDNS {
-					jobs[state.NodeID][job.ID] = true
+				jobs[state.NodeID] = map[string]wire.DDNSJob{}
+				for _, job := range ddnsJobsForNode(state.NodeID, settings, global.Providers) {
+					jobs[state.NodeID][job.ID] = job
 				}
 			}
 			pending := state.Phase == "staging" || state.Phase == "routes"
 			for _, address := range []string{state.Change.IPv4, state.Change.IPv6} {
-				if pending || jobs[state.NodeID][state.Change.JobID] || references[address] {
+				if pending || jobs[state.NodeID][state.Change.JobID].ID != "" || references[address] {
 					trusted[state.NodeID] = append(trusted[state.NodeID], address)
 				}
 			}
@@ -89,6 +95,9 @@ func (m *Master) refreshDDNSProtection(ctx context.Context) error {
 	m.ddnsProtectedIPs = protected
 	m.ddnsNodeIPs = trusted
 	m.mu.Unlock()
+	if err = m.service.publishDDNSOrigins(ctx, states, jobs); err != nil {
+		return err
+	}
 	m.ddnsProtectionDigest, m.ddnsProtectionVersion = digest, version
 	return nil
 }

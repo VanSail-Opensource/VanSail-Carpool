@@ -26,6 +26,11 @@ drain; `ddns_agent_fixture_test.go` supplies one serialized synthetic agent writ
 and controllable protected-bank acknowledgments. These run only in hosted CI.
 `ddns_protection_test.go` checks reconnect activation for both outbound target
 addresses and inbound transit source nodes, plus legacy/unrelated compatibility.
+`ddns_origins.go` projects successful external-provider attestations onto matching
+same-node endpoint hostnames after bypass staging. It preserves TLS/SNI names,
+invalidates stale DNS/compile inputs and participates in routing dependency
+digests. `ddns_origins_test.go` covers scope, generation, staging and unchanged
+cache reuse without external DNS requests.
 
 `ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
 references from encrypted agent discovery settings. Built-in DDNS binds each

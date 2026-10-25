@@ -99,6 +99,11 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 		return false, tx.Commit() // duplicate or out-of-order delivery has no effects
 	}
 	ips := slices.Clone(prior.PreviousIPs)
+	for _, address := range in.PreviousIPs {
+		if ip, e := xnode.FirewallPublicIP(address); e == nil {
+			ips = append(ips, ip)
+		}
+	}
 	for _, ip := range []string{prior.Change.IPv4, prior.Change.IPv6} {
 		if ip != "" {
 			ips = append(ips, ip)

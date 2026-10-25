@@ -22,11 +22,12 @@ type DDNSChangeState struct {
 }
 
 type DDNSChangeInput struct {
-	Node      Node
-	Version   int64
-	Binding   DDNSHostBinding
-	Change    wire.DDNSChange
-	Operation providerops.CreateInput
+	Node        Node
+	Version     int64
+	Binding     DDNSHostBinding
+	Change      wire.DDNSChange
+	Operation   providerops.CreateInput
+	PreviousIPs []string
 }
 
 type ddnsChangeRepository interface {
@@ -89,7 +90,7 @@ func (s *Service) prepareDDNSChange(ctx context.Context, node, agent string, cha
 		digest := sha256.Sum256(raw)
 		key := sha256.Sum256([]byte(node + "\n" + agent + "\n" + change.ID))
 		binding := settings.DDNSBindings[job.ID]
-		input := DDNSChangeInput{Node: current, Version: version, Binding: binding, Change: change, Operation: providerops.CreateInput{
+		input := DDNSChangeInput{Node: current, Version: version, Binding: binding, Change: change, PreviousIPs: s.previousDDNSOrigin(node, job), Operation: providerops.CreateInput{
 			ActorUserID: binding.ConfiguredBy, Kind: DDNSOperationKind,
 			IdempotencyKey: "ddns-" + hex.EncodeToString(key[:]), RequestFingerprint: hex.EncodeToString(digest[:]),
 			Items: []providerops.ItemInput{{Key: "ddns", TargetType: "xnode_ddns", TargetID: node}},

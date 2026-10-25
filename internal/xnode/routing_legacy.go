@@ -92,7 +92,7 @@ func (s *Service) convertLegacyChoices(ctx context.Context, identity Identity, i
 			return nil, err
 		}
 		host := proxy.Address
-		proxy.Address, err = s.resolveRoutingPeer(ctx, host)
+		proxy.Address, err = s.resolveRoutingPeer(ctx, host, e.NodeID)
 		if err != nil {
 			return nil, err
 		}
