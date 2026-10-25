@@ -15,7 +15,7 @@ vi.mock('@/composables/useMotionPreferences', async () => {
 
 describe('CatalogExperience', () => {
   it('keeps a ready Combo inert until its introduction completes', async () => {
-    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, CatalogPage: true, PAYGPage: true } } })
+    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
     const content = () => wrapper.get('.catalog-experience__content')
     expect(content().attributes('aria-hidden')).toBe('true')
