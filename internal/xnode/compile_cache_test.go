@@ -16,11 +16,12 @@ import (
 
 type cacheTestRepository struct {
 	Repository
-	revision int64
-	reads    int
-	config   Configuration
-	node     Node
-	failure  error
+	revision   int64
+	reads      int
+	config     Configuration
+	node       Node
+	failure    error
+	beforeRead func()
 }
 
 func (r *cacheTestRepository) XNodeCompileVersion(context.Context, time.Time) (int64, time.Time, error) {
@@ -28,6 +29,9 @@ func (r *cacheTestRepository) XNodeCompileVersion(context.Context, time.Time) (i
 }
 func (r *cacheTestRepository) XNodeNode(context.Context, string) (Node, error) {
 	r.reads++
+	if r.beforeRead != nil {
+		r.beforeRead()
+	}
 	return r.node, r.failure
 }
 
@@ -110,6 +114,43 @@ func TestFailedCompileIsBoundedAndAuthoritativeChangesRetryImmediately(t *testin
 	_, _ = master.cachedConfiguration(context.Background(), peer, false)
 	if repo.reads != 4 {
 		t.Fatal("refreshed assets were held behind old backoff")
+	}
+}
+
+func TestTimedOutCompileBacksOffFromCompletionTime(t *testing.T) {
+	repo := &cacheTestRepository{revision: 1, failure: context.DeadlineExceeded}
+	service := NewService(repo, cacheTestSettings{}, nil, nil, nil)
+	now := time.Now()
+	service.now = func() time.Time { return now }
+	repo.beforeRead = func() { now = now.Add(10 * time.Second) }
+	master := NewMaster(service, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	peer := &agentPeer{nodeID: "node"}
+
+	expired, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	if _, err := master.cachedConfiguration(expired, peer, true); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("timed-out compile returned %v", err)
+	}
+	if repo.reads != 1 {
+		t.Fatalf("timed-out compile read count = %d", repo.reads)
+	}
+	for range 1000 {
+		if _, err := master.cachedConfiguration(context.Background(), peer, false); !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("timeout backoff returned %v", err)
+		}
+	}
+	if repo.reads != 1 {
+		t.Fatalf("timed-out compile retried before completion backoff: %d", repo.reads)
+	}
+	now = now.Add(time.Second)
+	_, _ = master.cachedConfiguration(context.Background(), peer, false)
+	if repo.reads != 2 {
+		t.Fatalf("timeout was never retried: %d", repo.reads)
+	}
+	repo.revision++
+	_, _ = master.cachedConfiguration(context.Background(), peer, false)
+	if repo.reads != 3 {
+		t.Fatalf("changed desired state was held behind timeout backoff: %d", repo.reads)
 	}
 }
 

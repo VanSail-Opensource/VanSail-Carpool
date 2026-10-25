@@ -41,11 +41,16 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 		if plan.Phase == "revoking" || plan.Phase == "disabled" {
 			continue
 		}
-		identity, err := s.repo.XNodeIdentity(ctx, plan.ProxyUserID)
+		doc, err := s.routingDocument(plan)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		doc, err := s.routingDocument(plan)
+		// A plan that does not touch this node contributes no outbound or rule.
+		// Resolve member inventory only for plans that actually compile here.
+		if !routingDocumentTouchesNode(doc, node) {
+			continue
+		}
+		identity, err := s.repo.XNodeIdentity(ctx, plan.ProxyUserID)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -115,6 +120,16 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 	}
 	return outs, rules, owners, nil
 }
+
+func routingDocumentTouchesNode(doc RoutingDocument, node string) bool {
+	for _, choice := range doc.Choices {
+		if choice.InboundNodeID == node || choice.OutboundNodeID == node {
+			return true
+		}
+	}
+	return false
+}
+
 func managedNativeRule(r routingmatch.Rule, id int64, tag string) map[string]any {
 	raw, _ := json.Marshal(r.Match)
 	out := map[string]any{}

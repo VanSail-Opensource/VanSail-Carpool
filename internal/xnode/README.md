@@ -164,6 +164,8 @@ online while their unsampled counts stay excluded from admission decisions.
 `compile_cache.go` reuses unchanged candidates for baseline resends and backs off
 failed compilation in memory, capped at one minute. Authoritative revisions,
 asset generations and access deadlines bypass obsolete failures immediately.
+Timeout/cancellation failures are recorded at compile completion, so a slow or
+timed-out attempt cannot immediately retry on the next one-second controller tick.
 `master_wire.go` prepares capability projection and the normalized digest once
 per immutable compiled candidate/peer. Only scalar admission controls are copied
 for a resend. It shares read-only documents/CIDRs/credential maps, and caches
@@ -314,7 +316,10 @@ administrator document and rejection of unrelated native-core errors.
 
 - `compile_cache.go`: Caches validated per-peer state against transactional desired-state revisions and access deadlines; controls remain memory-only.
 - `compile_reads.go`: Reuses groups, identities, users, periods and purchase reads within one compilation.
-- `compile_cache_test.go`: Hosted regression and before/after CPU profile with 1, 10 and 100 nodes and 1000 synthetic users.
+- `compile_read_inventory.go`: Reuses nodes, endpoints, disabled squads and restriction reads within one compilation.
+- `compile_reads_test.go`: Hosted regression proving repeated shared inventory reads hit the repository once per compile.
+- `compile_cache_test.go`: Hosted regression for revision/boundary invalidation, timeout backoff and the before/after CPU profile with 1, 10 and 100 nodes and 1000 synthetic users.
+- `routing_compile_scope_test.go`: Hosted regression proving unrelated routing plans do not enter member inventory while plans touching the node still do.
 - `customization_owner.go`: Resolves member and admin-only native-identity routing ownership without introducing Telegram principals.
 - `named_services.go`: Admin-managed standalone access terms; quota edits preserve exact usage and probe identities remain separate.
 - `named_services_test.go`: Hosted standalone quota, routing scope and disable regressions.
@@ -385,6 +390,9 @@ public endpoint DNS caching and gates maintenance by the existing compile epoch.
 `routing_transit.go` derives private owner/source/destination/inbound/period-scoped
 credentials from encrypted unpredictable seeds. `routing_compile.go` adds those
 accounts only in enabling/active phases and generates private native outbounds.
+Plans that do not reference the compiling node are skipped before member
+inventory, credentials or native validation are resolved; their ownership still
+suppresses the member's legacy routing document.
 Member subscription and graph APIs never return peer secrets. Client entry counts
 remain chargeable activity; authenticated transit retains accounting and bandwidth.
 

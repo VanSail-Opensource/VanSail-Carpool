@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -52,12 +51,12 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	}
 	config, err := m.service.Compile(ctx, peer.nodeID)
 	if err != nil {
-		if !errors.Is(err, context.Canceled) && ctx.Err() == nil {
+		if m.compileMayBackoff() {
 			delay := time.Second
 			if sameFailure {
 				delay = min(time.Minute, failed.delay*2)
 			}
-			peer.compileFailure = &compileFailure{version: version, local: localVersion, at: now.Add(delay), boundary: next, delay: delay, err: err}
+			peer.compileFailure = &compileFailure{version: version, local: localVersion, at: m.service.now().Add(delay), boundary: next, delay: delay, err: err}
 		}
 		return config, err
 	}
@@ -96,6 +95,12 @@ func (m *Master) cachedConfiguration(ctx context.Context, peer *agentPeer, _ boo
 	peer.compiled = &compiledState{version: version, localVersion: localVersion, until: next, config: config, fingerprint: fingerprint}
 	peer.compileFailure = nil
 	return config, nil
+}
+
+func (m *Master) compileMayBackoff() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.ctx == nil || m.ctx.Err() == nil
 }
 
 func (m *Master) connectionControls(config wire.Config) map[int]bool {

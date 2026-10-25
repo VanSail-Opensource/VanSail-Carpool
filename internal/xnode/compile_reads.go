@@ -10,22 +10,29 @@ import (
 // across transactions or goroutines; the epoch check rejects concurrent changes.
 type compileReads struct {
 	Repository
-	nodeID     string
-	groups     []Group
-	identities []Identity
-	users      map[string]model.User
-	byID       map[int64]Identity
-	byUser     map[string]Identity
-	desired    map[string]*model.Purchase
-	purchases  map[string][]model.Purchase
-	periods    map[string]Period
+	nodeID          string
+	nodes           []Node
+	nodesLoaded     bool
+	endpoints       []Endpoint
+	endpointsLoaded bool
+	groups          []Group
+	identities      []Identity
+	nodeByID        map[string]Node
+	users           map[string]model.User
+	byID            map[int64]Identity
+	byUser          map[string]Identity
+	desired         map[string]*model.Purchase
+	purchases       map[string][]model.Purchase
+	periods         map[string]Period
+	disabled        map[string][]string
+	restricted      map[string]bool
 }
 
 func (s *Service) withCompileReads(node ...string) *Service {
 	if _, ok := s.repo.(*compileReads); ok {
 		return s
 	}
-	repo := &compileReads{Repository: s.repo, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}}
+	repo := &compileReads{Repository: s.repo, nodeByID: map[string]Node{}, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}, disabled: map[string][]string{}, restricted: map[string]bool{}}
 	if len(node) > 0 {
 		repo.nodeID = node[0]
 	}
@@ -49,6 +56,7 @@ func (r *compileReads) XNodeGroups(ctx context.Context) ([]Group, error) {
 	}
 	return items, err
 }
+
 func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) {
 	if r.identities != nil {
 		return r.identities, nil
@@ -74,11 +82,9 @@ func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) 
 	return items, err
 }
 func (r *compileReads) XNodeIdentity(ctx context.Context, id int64) (Identity, error) {
-	items, err := r.XNodeIdentities(ctx)
-	if err != nil {
+	if _, err := r.XNodeIdentities(ctx); err != nil {
 		return Identity{}, err
 	}
-	_ = items
 	if item, ok := r.byID[id]; ok {
 		return item, nil
 	}
@@ -89,11 +95,9 @@ func (r *compileReads) XNodeIdentity(ctx context.Context, id int64) (Identity, e
 	return item, err
 }
 func (r *compileReads) XNodeIdentityByUser(ctx context.Context, id string) (Identity, error) {
-	items, err := r.XNodeIdentities(ctx)
-	if err != nil {
+	if _, err := r.XNodeIdentities(ctx); err != nil {
 		return Identity{}, err
 	}
-	_ = items
 	if item, ok := r.byUser[id]; ok {
 		return item, nil
 	}
