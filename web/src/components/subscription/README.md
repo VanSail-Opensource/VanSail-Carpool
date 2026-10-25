@@ -21,6 +21,11 @@ and filtering without becoming trace entries.
 Multiple rules share their ingress node/host before branching by ordered rule
 identity. Separate entry hosts stay separate, and only the traced branch plus
 its shared ingress is highlighted.
+
+`RouteSpeedtestPanel.vue` opens progress, measurements, estimates and failures in
+the existing Nuxt modal. Closing the dialog does not reset the durable command
+or repeat billed probes; View results reopens the same receipt. Retry refreshes
+its status without issuing another probe. Draft changes remain independent.
 `MemberRoutingTemplateDetails.vue` shows read-only original match settings and
 exclusions when a template leaf is selected. Leaf status represents applied,
 draft, checking, unavailable or disabled routing; it never implies measured

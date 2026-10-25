@@ -57,6 +57,9 @@
     }
   },
   "routeSpeedtest": {
+    "resultsTitle": "路由测试",
+    "resultsHint": "关闭窗口后测试仍会继续，可重新打开查看进度与结果。",
+    "viewResults": "查看结果",
     "start": "测试路由",
     "metered": "计入流量额度。每对节点最多下载 32 MiB、上传 8 MiB，限时 60 秒。",
     "requirements": "请先保存并追踪已生效的路由，节点须已同步。",

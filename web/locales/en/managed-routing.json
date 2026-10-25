@@ -57,6 +57,9 @@
     }
   },
   "routeSpeedtest": {
+    "resultsTitle": "Route test",
+    "resultsHint": "The test continues if you close this window. Reopen it to view progress and results.",
+    "viewResults": "View results",
     "start": "Test route",
     "metered": "Uses your traffic quota. Each pair: up to 32 MiB down, 8 MiB up, 60 seconds.",
     "requirements": "Save and trace an active route before testing. Nodes must be synchronized.",

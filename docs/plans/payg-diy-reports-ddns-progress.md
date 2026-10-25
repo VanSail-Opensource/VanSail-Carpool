@@ -94,3 +94,8 @@ maintenance receipts, protocol compatibility and performance measurements below.
   Chrome checked 320px reduced motion, 390px and desktop, long host labels and
   exact trace highlighting (three shared/selected edges, two other branch edges).
   Separate endpoint identities remain distinct in hosted regression coverage.
+- Route-test progress/results now use the existing accessible modal. Chrome
+  checked 320px reduced motion, 390px and desktop, long labels, active progress,
+  final estimates, status-read failure/retry and uncertain outcomes. Closing and
+  reopening retained one probe operation; Escape restores focus to View results
+  even while the original Test route action is disabled. Static checks passed.
