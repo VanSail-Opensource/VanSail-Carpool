@@ -67,39 +67,53 @@ func (w *Worker) runEnhanced(ctx context.Context, r *Report, c Config) error {
 		reason = "probes_incomplete"
 	}
 	if reason != "" {
-		r.Subnet = &SubnetResult{Prefix: blockPrefix(r.IP), Status: "skipped", Reason: reason, Addresses: []SubnetAddress{}}
-		checkpoint.Phase = "complete"
-		return save()
+		finishInventorySubnet(r, reason)
 	}
 	checkpoint.Phase = "subnet"
 	if err := save(); err != nil {
 		return err
 	}
-	if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
-		return err
+	if reason == "" {
+		if err := w.Enhanced.checkSubnet(ctx, r, c, save); err != nil {
+			return err
+		}
 	}
 	checkpoint.Phase = "complete"
 	return save()
 }
 func applyProxyRefusal(r *Report) {
-	if r.Proxy != nil && len(r.Proxy.Matches) > 0 {
+	if r.Proxy == nil {
+		return
+	}
+	groups := map[string][]string{}
+	for _, id := range r.Proxy.Matches {
+		name, category := id, ProxyPoolCategory
+		for _, source := range r.Proxy.Sources {
+			if source.ID == id {
+				name, category = source.Name, sourceCategory(source.Category)
+				break
+			}
+		}
+		kind := "proxy_list"
+		if category == ProxyDatabaseCategory {
+			kind = "proxy_database"
+		}
+		if category == AbuseCategory {
+			kind = "abuse_list"
+		}
+		groups[kind] = append(groups[kind], name)
+	}
+	for _, kind := range []string{"proxy_list", "proxy_database", "abuse_list"} {
+		if len(groups[kind]) == 0 {
+			continue
+		}
+		exists := false
 		for _, item := range r.Refusals {
-			if item.Kind == "proxy_list" {
-				return
-			}
+			exists = exists || item.Kind == kind
 		}
-		names := []string{}
-		for _, id := range r.Proxy.Matches {
-			name := id
-			for _, source := range r.Proxy.Sources {
-				if source.ID == id {
-					name = source.Name
-					break
-				}
-			}
-			names = append(names, name)
+		if !exists {
+			r.Refusals = append(r.Refusals, Refusal{Kind: kind, Source: "proxy_lists", Value: joinEvidence(groups[kind])})
 		}
-		r.Refusals = append(r.Refusals, Refusal{Kind: "proxy_list", Source: "proxy_lists", Value: joinEvidence(names)})
 	}
 }
 func applyEnhancedVerdict(r *Report) {
