@@ -92,7 +92,7 @@ function consumeReissueRequest(): void {
             <InlineNotice v-if="autoRenewalFailureMessage" tone="warning" :title="$t('home.autoRenewalFailureTitle')">{{ autoRenewalFailureMessage }}</InlineNotice>
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>
-          <HomeUptimePanel v-if="hasValidCombo" />
+          <HomeUptimePanel />
           <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
           <UsagePanel
             v-if="dashboard.statistics"

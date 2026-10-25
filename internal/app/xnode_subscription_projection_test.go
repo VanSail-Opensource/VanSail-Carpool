@@ -1,13 +1,28 @@
 package app
 
 import (
+	"context"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
+
+func TestUnifiedSubscriptionWithoutNativeIdentityIsEmpty(t *testing.T) {
+	fixture := newNativePurchaseFixture(t)
+	ctx := context.Background()
+	user, _, err := fixture.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 89021, FirstName: "New member"}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := fixture.provider.LoadUnifiedSubscription(ctx, user, true)
+	if err != nil || view.SubscriptionURL != nil || view.Hosts == nil || len(view.Hosts) != 0 || len(view.Squads) != 0 {
+		t.Fatal("unprovisioned member did not receive an empty subscription", view, err)
+	}
+}
 
 func TestSplitXHTTPLinksDoNotChangeSquadMonitoringMembership(t *testing.T) {
 	now := time.Now().UTC()

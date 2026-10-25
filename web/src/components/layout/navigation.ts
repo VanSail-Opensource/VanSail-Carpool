@@ -19,14 +19,12 @@ const mobileNavigation: readonly MobileNavigationItem[] = [
 
 
 
-export function mobileNavigationItems(isAdmin: boolean, showActivity = false): MobileNavigationItem[] {
+export function mobileNavigationItems(_isAdmin: boolean, showActivity = false): MobileNavigationItem[] {
   const visible = mobileNavigation.filter(item => item.to !== '/activity' || showActivity)
-  return isAdmin
-    ? [...visible, { labelKey: 'browser.adminAccess', to: '/settings/admin-access', icon: 'i-ph-shield-check' }]
-    : [...visible]
+  return [...visible]
 }
 
-export function desktopNavigationItems(t: Translate, isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false): NavigationMenuItem[] {
+export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false): NavigationMenuItem[] {
   const items: NavigationMenuItem[] = [
     {
       label: t('nav.home'), to: '/home', icon: 'i-ph-house', defaultOpen: true, exactQuery: true,
@@ -52,11 +50,6 @@ export function desktopNavigationItems(t: Translate, isAdmin: boolean, showAroun
         { label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
         ] : []),
       ],
-    })
-  }
-  if (isAdmin) {
-    items.push({
-      label: t('browser.adminAccess'), icon: 'i-ph-shield-check', to: '/settings/admin-access',
     })
   }
   return items

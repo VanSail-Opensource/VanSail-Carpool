@@ -10,11 +10,14 @@ import (
 )
 
 func (a proxyProvider) LoadUnifiedSubscription(ctx context.Context, user model.User, links bool) (connectivity.MemberSubscription, error) {
-	result, err := a.LoadSubscriptionForMember(ctx, user, nil, links)
+	identity, err := a.native.IdentityForUser(ctx, user.ID)
 	if errors.Is(err, xnode.ErrNotFound) {
 		return connectivity.MemberSubscription{Hosts: []connectivity.SubscriptionHost{}, Squads: []connectivity.SubscriptionSquad{}}, nil
 	}
-	return result, err
+	if err != nil {
+		return connectivity.MemberSubscription{}, err
+	}
+	return a.LoadMemberSubscription(ctx, strconv.FormatInt(identity.ProxyUserID, 10), nil, links)
 }
 
 func (a proxyProvider) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (connectivity.MemberSubscription, error) {

@@ -13,6 +13,7 @@ import { memberOperationsApi } from '@/api/memberOperations'
 import { preferencesApi } from '@/api/preferences'
 import { displayCurrencyApi } from '@/api/displayCurrency'
 import { useSessionStore } from '@/stores/session'
+import { usePreferencesStore } from '@/stores/preferences'
 import { setLocale, t } from '@/i18n'
 import SubscriptionAudit from './SubscriptionAudit.vue'
 
@@ -37,9 +38,9 @@ const timeline = (status: UptimeTimeline['state']): UptimeTimeline => ({ from: a
   { from: at(-day * 0.25), to: at(0), state: status },
 ] })
 const data = (): MemberSubscription => ({
-  activeCombo: !params.has('inactive'), subscriptionUrl: params.has('inactive') ? null : 'https://subscription.example/import/revision-' + state.revocations,
+  activeCombo: !params.has('inactive'), subscriptionUrl: params.has('inactive') && !params.has('payg') ? null : 'https://subscription.example/import/revision-' + state.revocations,
   summary: { monitoringEnabled: !params.has('monitor-off'), activeCombo: !params.has('inactive'), ...timeline(params.has('unknown') ? 'unknown' : 'partial'), errorCode: params.has('unknown') ? 'CONNECTIVITY_NOT_CONFIGURED' : '' },
-  hosts: params.has('empty') || params.has('inactive') ? [] : [
+  hosts: params.has('empty') || params.has('inactive') && !params.has('payg') ? [] : [
     { uuid: 'tokyo-edge', name: 'Tokyo transit', countryCodes: ['JP'], squadUuids: ['international'], link: 'vless://fixture-' + state.revocations + '@tokyo.example:443#Tokyo%20transit', linkErrorCode: '', timeline: timeline('operational') },
     { uuid: 'shared-edge', name: 'Shared transit with a deliberately long host name to check narrow layouts', countryCodes: ['DE', 'NL'], squadUuids: ['international', 'europe'], link: 'trojan://fixture-' + state.revocations + '@europe.example:443#Shared', linkErrorCode: '', timeline: timeline('outage') },
     { uuid: 'unknown-edge', name: 'Unmeasured host', countryCodes: [], squadUuids: ['europe'], link: null, linkErrorCode: 'CONNECTIVITY_LINK_AMBIGUOUS', timeline: timeline('unknown') },
@@ -74,6 +75,7 @@ app.mixin({ errorCaptured(error) { console.error(error) } })
 app.config.globalProperties.$t = t
 const pinia = createPinia()
 app.use(pinia)
+usePreferencesStore(pinia).value = { paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: true, showActivity: true, includeNodePrices: true, notifications: {} } as never
 useSessionStore(pinia).session = { authenticated: true, user: { id: 'audit-member', telegramId: '42', firstName: 'Mira', role: 'user', onboardingState: 'complete' } } as never
 useSessionStore(pinia).status = 'ready'
 preferencesApi.get = async () => ({ activeCombo: true, showAroundTx: false, showActivity: false, includeNodePrices: true, notifications: {} }) as never

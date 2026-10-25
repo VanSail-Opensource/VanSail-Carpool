@@ -96,7 +96,7 @@ describe('AppShell accessibility', () => {
     expect(offClick).toHaveBeenCalledOnce()
   })
 
-  it('adds the admin entry to mobile navigation for administrators', async () => {
+  it('keeps administrators on the member navigation with console access in Settings', async () => {
     const pinia = createPinia()
     useSessionStore(pinia).session = session('admin')
     const router = createRouter({
@@ -114,13 +114,14 @@ describe('AppShell accessibility', () => {
 
     await nextTick()
     const bottomNavigationItems = wrapper.findAll('.bottom-nav__item')
-    expect(bottomNavigationItems).toHaveLength(4)
+    expect(bottomNavigationItems).toHaveLength(3)
     expect(wrapper.find('.bottom-nav__locale').exists()).toBe(false)
-    expect(bottomNavigationItems[3]?.text()).toContain('Admin access')
+    expect(bottomNavigationItems.map(item => item.text()).join()).not.toContain('Admin access')
+    expect(desktopNavigationItems(key => key, true).some(item => item.to === '/settings/admin-access')).toBe(false)
 
     await router.push('/settings/admin-access')
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/settings/admin-access'))
-    expect(wrapper.findAll('.bottom-nav__item[data-state="active"]')).toHaveLength(1)
+    expect(wrapper.findAll('.bottom-nav__item[data-state="active"]')).toHaveLength(0)
 
     wrapper.unmount()
   })

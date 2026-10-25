@@ -73,3 +73,9 @@ maintenance receipts, protocol compatibility and performance measurements below.
   loading, empty, error/retry, admin state saving and mobile light appearance.
   No unexpected console messages or layout overflow remained. Hosted acceptance
   and the successful production maintenance rerun are still pending.
+- Member navigation no longer exposes TX Statistics or Admin access; Settings
+  retains the administrator console entrance. Subscription entry is present on
+  Home without a Combo; PAYG links and the no-host state were checked at 320px,
+  390px and desktop, including error/retry and native button navigation. Chrome
+  reported no warnings/errors or page overflow. Static/type/lint checks passed;
+  the missing-native-identity empty response has a hosted regression.

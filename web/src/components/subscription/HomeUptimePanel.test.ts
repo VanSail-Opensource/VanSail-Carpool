@@ -34,9 +34,9 @@ describe('home subscription entrance', () => {
     }
   })
 
-  it('hides disabled monitoring while retaining subscription navigation', async () => {
+  it.each([true, false])('retains subscription navigation without monitoring or Combo (active=%s)', async activeCombo => {
     const now = new Date().toISOString()
-    vi.mocked(subscriptionApi.summary).mockResolvedValue({ activeCombo: true, monitoringEnabled: false, from: now, to: now, state: 'unknown', segments: [], errorCode: '' })
+    vi.mocked(subscriptionApi.summary).mockResolvedValue({ activeCombo, monitoringEnabled: !activeCombo, from: now, to: now, state: 'unknown', segments: [], errorCode: '' })
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/home', component: { template: '<div />' } }, { path: '/subscription', name: 'subscription', component: { template: '<div />' } }] })
     await router.push('/home')
     const wrapper = mount(HomeUptimePanel, { global: { plugins: [router] } })

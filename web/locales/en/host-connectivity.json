@@ -131,8 +131,8 @@
     "noHosts": "No accessible hosts are available.",
     "noSquadHosts": "No accessible hosts are available for this squad.",
     "noSquads": "No active squads are available yet.",
-    "noCombo": "No active combo",
-    "noComboHint": "Activate a combo to access subscription links and uptime.",
+    "noCombo": "No subscription hosts yet",
+    "noComboHint": "Explore available PAYG squads or activate a Combo to get connected.",
     "loadFailed": "Subscription and uptime data could not be loaded."
   }
 }

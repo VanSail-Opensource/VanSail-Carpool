@@ -175,6 +175,9 @@ a Telegram association; internal bounded probes retain their separate path.
 while restricting Squad status membership to the original published inventory.
 `xnode_subscription_projection_test.go` verifies link retention, enabled-group
 filtering and identical monitoring membership with and without export profiles.
+The unified member subscription adapter returns empty hosts for members without
+a native identity, allowing the entrance to remain available before provisioning.
+PAYG-only identities use the same owner-scoped export path without a Combo gate.
 
 `xnode_squad_catalog_test.go` verifies disabled native groups are omitted from new purchases while names remain available for owned groups. Subscription GETs derive enabled groups without changing preferences.
 

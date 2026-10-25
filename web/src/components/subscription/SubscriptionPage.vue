@@ -55,7 +55,7 @@ function consumeRevoke(): void {
         <ul v-if="subscription.hosts.length" class="subscription-page__hosts"><HostLinkRow v-for="host in subscription.hosts" :key="host.uuid" :host="host" /></ul>
         <p v-else class="subscription-page__empty">{{ t('subscription.noHosts') }}</p>
       </section>
-      <section v-if="subscription.summary.monitoringEnabled" class="section-block">
+      <section v-if="subscription.activeCombo && subscription.summary.monitoringEnabled" class="section-block">
         <div class="section-heading"><h2>{{ t('subscription.squads') }}</h2><small>{{ t('uptime.window') }}</small></div>
         <p v-if="subscription.summary.errorCode" class="subscription-page__empty">{{ t('uptime.notAvailable') }}</p>
         <SquadUptime v-for="squad in subscription.squads" :key="squad.uuid" :squad="squad" :hosts="subscription.hosts" />

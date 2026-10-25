@@ -18,12 +18,12 @@ function openSubscription(): void {
 </script>
 
 <template>
-  <section v-if="!summary || summary.activeCombo" class="section-block home-uptime">
+  <section class="section-block home-uptime">
     <SkeletonBlock v-if="loading" height="6rem" />
-    <UptimeBar v-else-if="summary?.monitoringEnabled && !error" :timeline="summary" :label="t('uptime.summary')" />
+    <UptimeBar v-else-if="summary?.activeCombo && summary.monitoringEnabled && !error" :timeline="summary" :label="t('uptime.summary')" />
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
-    <p v-else-if="summary?.monitoringEnabled && summary.errorCode" class="home-uptime__hint">{{ t('uptime.notAvailable') }}</p>
-    <div class="home-uptime__entrance" :class="{ 'home-uptime__entrance--only': summary && !summary.monitoringEnabled }">
+    <p v-else-if="summary?.activeCombo && summary.monitoringEnabled && summary.errorCode" class="home-uptime__hint">{{ t('uptime.notAvailable') }}</p>
+    <div class="home-uptime__entrance" :class="{ 'home-uptime__entrance--only': summary && (!summary.activeCombo || !summary.monitoringEnabled) }">
       <UButton type="button" color="neutral" variant="link" icon="i-ph-link-bold" :label="t('subscription.title')" data-haptic="navigate" @click="openSubscription" />
       <UButton v-if="error" color="neutral" variant="ghost" :label="t('common.tryAgain')" @click="refresh()" />
     </div>

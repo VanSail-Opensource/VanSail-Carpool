@@ -24,7 +24,10 @@ draft, checking, unavailable or disabled routing; it never implies measured
 destination reachability. `routingPresentation.ts` simplifies only proven literal
 selector inclusion and preserves other intersections/exclusions without guessing.
 
-`HomeUptimePanel.vue` replaces the home subscription block only for active combos.
+`HomeUptimePanel.vue` exposes the subscription entrance to every onboarded member,
+including PAYG-only members. Only the uptime bar and squad history require an
+active Combo. Members without native identities receive an empty subscription
+projection; no credentials are allocated by browsing this page.
 Its subscription entrance stays centered on mobile and desktop; a failed read
 places Retry on a separate row so it does not shift the entrance.
 The entrance is a native button calling the named Vue Router route, following
