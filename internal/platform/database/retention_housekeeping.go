@@ -64,6 +64,8 @@ func pruneAbandonedUsersTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, co
 		AND NOT EXISTS (SELECT 1 FROM ledger_entries WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM purchases WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM payment_orders WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM xnode_identities WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM provider_operations WHERE actor_user_id=member.id OR owner_user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM affiliate_settlements WHERE invited_user_id=member.id OR inviter_user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM affiliate_tier_awards WHERE inviter_user_id=member.id)`, stamp(cutoff))
 	if err != nil {
