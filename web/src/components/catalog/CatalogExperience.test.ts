@@ -2,11 +2,14 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { selectionHaptic } from '@/utils/telegram'
 import CatalogExperience from './CatalogExperience.vue'
-import CatalogPage from './CatalogPage.vue'
-import PAYGPage from './PAYGPage.vue'
 import CatalogModeTransition from './CatalogModeTransition.vue'
 
 const button = { props: ['label'], emits: ['click'], template: '<div role="button" tabindex="0" @click="$emit(\'click\')">{{ label }}</div>' }
+// Async wrappers cannot infer props for automatic boolean stubs. Declare the
+// child contracts explicitly and select the uniquely named stub components.
+const CatalogPage = { name: 'ComboContentStub', props: { embedded: Boolean }, emits: ['ready'], template: '<div />' }
+const PAYGPage = { name: 'PAYGContentStub', props: { entranceReady: Boolean }, emits: ['ready'], template: '<div />' }
+const stubs = { UButton: button, Button: button, CatalogPage, PAYGPage }
 vi.mock('@/utils/telegram', () => ({ selectionHaptic: vi.fn() }))
 vi.mock('@/composables/useMotionPreferences', async () => {
   const { shallowRef } = await import('vue')
@@ -15,7 +18,7 @@ vi.mock('@/composables/useMotionPreferences', async () => {
 
 describe('CatalogExperience', () => {
   it('holds fast PAYG data for scene completion without delaying readiness', async () => {
-    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    const wrapper = mount(CatalogExperience, { global: { stubs } })
     await flushPromises()
     const page = wrapper.findComponent(PAYGPage)
     expect(page.props('entranceReady')).toBe(false)
@@ -28,7 +31,7 @@ describe('CatalogExperience', () => {
     wrapper.unmount()
   })
   it('keeps a ready Combo inert until its introduction completes', async () => {
-    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    const wrapper = mount(CatalogExperience, { global: { stubs } })
     await flushPromises()
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
     await flushPromises()
@@ -46,7 +49,7 @@ describe('CatalogExperience', () => {
   })
   it('opens PAYG without mounting the gated combo flow and switches both ways', async () => {
     vi.mocked(selectionHaptic).mockClear()
-    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
+    const wrapper = mount(CatalogExperience, { global: { stubs } })
     await flushPromises()
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(false)
