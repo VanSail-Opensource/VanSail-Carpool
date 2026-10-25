@@ -135,6 +135,11 @@ func (m *Master) ddnsRouteProtectionReady(ctx context.Context, peer *agentPeer, 
 			needed = append(needed, ip)
 		}
 	}
+	for node, ips := range m.ddnsNodeIPs {
+		if prepared.routeSources[node] {
+			needed = append(needed, ips...)
+		}
+	}
 	m.mu.RUnlock()
 	if len(needed) == 0 || !containsCapability(capabilities, "firewall_master_observation_v1") {
 		return true, nil

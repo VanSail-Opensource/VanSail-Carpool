@@ -15,6 +15,7 @@ type preparedWire struct {
 	digest         string
 	err            error
 	routeAddresses map[string]bool
+	routeSources   map[string]bool
 }
 
 // Called under syncMu. The candidate and negotiated hello capabilities are
@@ -36,6 +37,12 @@ func preparePeerWire(peer *agentPeer, config wire.Config, capabilities []string)
 		}
 		p.routeAddresses = map[string]bool{}
 		collectDDNSAddressReferences(native, p.routeAddresses)
+	}
+	p.routeSources = map[string]bool{}
+	for _, user := range p.config.Users {
+		for _, credential := range user.TransitCredentials {
+			p.routeSources[credential.SourceNodeID] = true
+		}
 	}
 	// Copy just the slice whose scalar controls change. The validated document,
 	// CIDRs and credential maps stay shared and immutable, avoiding JSON cloning.

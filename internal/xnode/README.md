@@ -24,6 +24,8 @@ credential/ledger preservation, bypass replacement and offline convergence.
 `ddns_fixture_test.go` supplies the paid encrypted-route scenario and real job
 drain; `ddns_agent_fixture_test.go` supplies one serialized synthetic agent writer
 and controllable protected-bank acknowledgments. These run only in hosted CI.
+`ddns_protection_test.go` checks reconnect activation for both outbound target
+addresses and inbound transit source nodes, plus legacy/unrelated compatibility.
 
 `ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
 references from encrypted agent discovery settings. Built-in DDNS binds each
