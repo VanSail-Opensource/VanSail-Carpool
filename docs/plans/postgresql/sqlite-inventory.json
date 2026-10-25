@@ -102,6 +102,7 @@
     "099_catalog_topology_epoch.sql",
     "100_xnode_ddns_bindings.sql",
     "101_xnode_ddns_changes.sql",
+    "102_xnode_endpoint_epoch.sql",
     "103_paid_member_access.sql"
   ],
   "objects": [
@@ -1934,6 +1935,24 @@
       "name": "compile_xnode_customizations_update",
       "table": "xnode_customizations",
       "sql": "CREATE TRIGGER compile_xnode_customizations_update AFTER UPDATE ON xnode_customizations BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_endpoints_delete",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_delete AFTER DELETE ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_endpoints_insert",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_insert AFTER INSERT ON xnode_endpoints BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_xnode_endpoints_update",
+      "table": "xnode_endpoints",
+      "sql": "CREATE TRIGGER compile_xnode_endpoints_update AFTER UPDATE OF node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher ON xnode_endpoints\nWHEN OLD.node_id IS NOT NEW.node_id OR OLD.inbound_tag IS NOT NEW.inbound_tag OR OLD.name IS NOT NEW.name OR OLD.address IS NOT NEW.address OR OLD.port IS NOT NEW.port OR OLD.enabled IS NOT NEW.enabled OR OLD.hidden IS NOT NEW.hidden OR OLD.overrides_cipher IS NOT NEW.overrides_cipher\nBEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
     },
     {
       "type": "trigger",
@@ -7729,7 +7748,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 103,
+      "rows": 104,
       "columns": [
         {
           "name": "version",

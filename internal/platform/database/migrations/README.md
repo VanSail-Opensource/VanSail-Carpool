@@ -5,6 +5,9 @@ preserves the saved Around TX choice across combo transitions and enables that
 entrance once for existing commerce spenders. PostgreSQL 00015 carries the same
 trigger/backfill change; no entitlement, charge or wallet evidence is modified.
 
+`102_xnode_endpoint_epoch.sql` invalidates routing and bypass-reference caches on
+semantic endpoint changes, including removal of the last old-address reference.
+
 `101_xnode_ddns_changes.sql` persists bounded desired address mutation evidence,
 replay cursors and operation references, separately from disposable telemetry.
 
