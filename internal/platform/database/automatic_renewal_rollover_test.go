@@ -181,7 +181,15 @@ func TestRolloverEligibilityRequiresAutoRenewalWithoutQueuedCombo(t *testing.T) 
 	if eligible, err := store.RolloverEligible(ctx, source.ID); err != nil || !eligible {
 		t.Fatalf("RolloverEligible(auto on) = (%t, %v)", eligible, err)
 	}
+	// Checkout now enforces admission inside the transaction. Seed the legacy
+	// queued/auto-enabled combination explicitly through separate preference steps.
+	if err := store.SetAutoRenewal(ctx, user.ID, source.ID, false, now); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "rollover-gate-queued"}, now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
 	if eligible, err := store.RolloverEligible(ctx, source.ID); err != nil || eligible {
