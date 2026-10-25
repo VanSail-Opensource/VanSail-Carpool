@@ -53,14 +53,17 @@ func TestPAYGAutomaticGBReconnectPriceAndDebt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	paygReport(t, s, a, 1, uint64(xnode.PAYGStartBytes-1))
+	// An explicit 10 MiB boundary catches accidental reuse of the old 10 KiB
+	// threshold; idle connections and repeated reports must still stay free.
+	const threshold = int64(10 * 1024 * 1024)
+	paygReport(t, s, a, 1, uint64(threshold-1))
 	value, err := s.XNodePAYGAccount(ctx, a.ProxyUserID)
-	if err != nil || value.UsedBytes != xnode.PAYGStartBytes-1 || value.PurchasedBytes != 0 || value.BalanceMinor != 1000 {
+	if err != nil || value.UsedBytes != threshold-1 || value.PurchasedBytes != 0 || value.BalanceMinor != 1000 {
 		t.Fatal("funding/idle/sub-threshold traffic charged", value, err)
 	}
 	paygReport(t, s, a, 2, 1)
 	value, err = s.XNodePAYGAccount(ctx, a.ProxyUserID)
-	if err != nil || value.UsedBytes != xnode.PAYGStartBytes || value.PurchasedBytes != xnode.PAYGGB || value.BalanceMinor != 900 {
+	if err != nil || value.UsedBytes != threshold || value.PurchasedBytes != xnode.PAYGGB || value.BalanceMinor != 900 {
 		t.Fatalf("first/reconnect/raw=%+v,%v", value, err)
 	}
 	if period, err := s.XNodePeriod(ctx, combo.ID); err != nil || period.UsedBytes != 0 {

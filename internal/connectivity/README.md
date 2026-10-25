@@ -1,5 +1,9 @@
 # Host connectivity
 
+Configuration-build logging uses the shared `platform/xraydiagnostics.Quiet`
+policy, also installed before X-Node native validation. Raw diagnostics stay
+silent while structured probe outcomes remain available to callers.
+
 This module measures authenticated proxy connectivity for the enabled hosts
 accessible to an existing X-Node test account, including hidden hosts. It
 does not modify upstream accounts or hosts or publish notifications.

@@ -32,10 +32,10 @@ function stop(): void {
   emit('active', false)
 }
 
-watch([() => props.mode, () => props.ready, reducedMotion], async () => {
+watch([() => props.mode, reducedMotion], async () => {
   const ticket = ++generation
   stop()
-  if (reducedMotion.value || !props.ready) return
+  if (reducedMotion.value) return
   await nextTick()
   if (ticket !== generation) return
   if (!reserveControls()) return
@@ -45,6 +45,14 @@ watch([() => props.mode, () => props.ready, reducedMotion], async () => {
   globalThis.window.addEventListener('resize', stop)
   globalThis.window.addEventListener('scroll', stop, true)
 }, { immediate: true })
+
+// Loading completion may reveal wallet/checkout controls. Reserve their space
+// without restarting the introduction or waiting for a network response.
+watch(() => props.ready, async () => {
+  const ticket = generation
+  await nextTick()
+  if (ticket === generation && visible.value && !reserveControls()) stop()
+})
 onScopeDispose(() => { generation++; stop() })
 </script>
 

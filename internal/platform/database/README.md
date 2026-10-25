@@ -1,5 +1,15 @@
 # Application store
 
+`outbox_completion.go` locks the exact claim and uses PostgreSQL READ COMMITTED
+for completion/busy deferral, matching queue admission. Heartbeats and unrelated
+jobs can progress without serializable dependency cycles. Attempt, status and
+generation fencing remain mandatory; business transactions retain SERIALIZABLE
+and whole-operation retries. Hosted outbox completion regressions cover racing
+heartbeats, duplicate completion and recovery generations.
+`outbox_completion_retry_generated.go` retains bounded whole-operation retry;
+`outbox_completion_test.go` exercises contention and stale completion in hosted
+PostgreSQL without requiring serialization retries for claim completion.
+
 `outbox_retry_policy.go` keeps desired-state routing/DIY retries between five
 and thirty seconds while preserving the existing firewall and external-command
 policies. `outbox_retry_policy_test.go` verifies a late retry on both backends
@@ -661,7 +671,7 @@ duplicate wakes, live leases, terminal receipts and retained DIY result evidence
 
 `payg_catalog.go` filters future sales and snapshots base squad references only when the filtered set differs while preserving full custom overrides and editable add-ons. `payg_rollover.go` settles reconciled rollover when conversion removes the last eligible renewal squad. Existing paid terms do not filter against live billing mode. `payg_commerce_test.go` covers grandfathered terms and empty-renewal settlement.
 
-`xnode_payg_accounts.go` stores immutable member/squad/node attribution, its native period and atomic accounting participant reference. `xnode_payg_billing.go` appends exact GB block charges to the existing wallet ledger with immutable rate evidence. `xnode_payg_traffic.go` integrates raw usage and debits with contiguous traffic-journal commits; balances precede periods in its lock order. Connection purchases require funds, while delayed traffic may create wallet debt. PAYG never consumes combo quota or node multipliers. The first GB is purchased only after 10,240 cumulative raw bytes on that member/squad/node; idle connections and wallet funding cannot charge a first block. Initial bytes count toward the purchased GB.
+`xnode_payg_accounts.go` stores immutable member/squad/node attribution, its native period and atomic accounting participant reference. `xnode_payg_billing.go` appends exact GB block charges to the existing wallet ledger with immutable rate evidence. `xnode_payg_traffic.go` integrates raw usage and debits with contiguous traffic-journal commits; balances precede periods in its lock order. Connection purchases require funds, while delayed traffic may create wallet debt. PAYG never consumes combo quota or node multipliers. The first GB is purchased only after 10,485,760 cumulative raw bytes (10 MiB) on that member/squad/node; idle connections and wallet funding cannot charge a first block. Initial bytes count toward the purchased GB.
 
 `xnode_payg_jobs.go` coalesces balance-change provisioning through the existing outbox, scans missing tuples in bounded batches and prunes disposable 72-hour minute aggregates. Credentials, cumulative counters and financial evidence remain durable. Source IPs, connection observations, generated subscriptions and lease timestamps are never stored. `xnode_payg_owners.go` provides indexed service lookups, node-scoped compiler identities and credential-free activity ownership reads.
 

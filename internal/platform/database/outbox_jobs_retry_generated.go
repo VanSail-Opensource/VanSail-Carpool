@@ -16,15 +16,6 @@ func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly 
 	}
 }
 
-func (s *Store) completeOutboxClaim(ctx context.Context, jobID string, attempts int, generation int64, jobErr error, now time.Time) error {
-	for retryIndex := 0; ; retryIndex++ {
-		r0 := s.retryAttempt_completeOutboxClaim(ctx, jobID, attempts, generation, jobErr, now)
-		if !s.retryTransaction(ctx, r0, retryIndex) {
-			return r0
-		}
-	}
-}
-
 func (s *Store) RetryOutboxJob(ctx context.Context, jobID string, now time.Time) error {
 	for retryIndex := 0; ; retryIndex++ {
 		r0 := s.retryAttempt_RetryOutboxJob(ctx, jobID, now)

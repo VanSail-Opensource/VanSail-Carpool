@@ -1,13 +1,12 @@
 package connectivity
 
 import (
-	"sync"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/xraydiagnostics"
 
 	_ "github.com/xtls/xray-core/app/dispatcher"
 	_ "github.com/xtls/xray-core/app/log"
 	_ "github.com/xtls/xray-core/app/proxyman/inbound"
 	_ "github.com/xtls/xray-core/app/proxyman/outbound"
-	xraylog "github.com/xtls/xray-core/common/log"
 	_ "github.com/xtls/xray-core/proxy/shadowsocks"
 	_ "github.com/xtls/xray-core/proxy/trojan"
 	_ "github.com/xtls/xray-core/proxy/vless/outbound"
@@ -27,14 +26,8 @@ import (
 
 // Registry imports deliberately omit commands, metrics, listeners, geo-file
 // management and a direct outbound. Engine JSON also disables access/error logs.
-type discardXrayLog struct{}
-
-func (discardXrayLog) Handle(xraylog.Message) {}
-
-var quietXrayOnce sync.Once
-
 func quietXrayLogging() {
 	// Config-build diagnostics precede the engine's "none" logger. Suppress those
 	// once as well; raw Xray error text can include upstream credential values.
-	quietXrayOnce.Do(func() { xraylog.RegisterHandler(discardXrayLog{}) })
+	xraydiagnostics.Quiet()
 }

@@ -1,5 +1,18 @@
 # X-Node control plane
 
+New members receive PAYG provisioning from the onboarding outbox without buying
+a combo. Completed onboarding exposes owner-scoped PAYG listings and stable
+subscription links even with an empty wallet; actual connection leases require
+funds for a GB block (or unused paid bytes), a compatible ready agent and no owner
+restriction. `onboarding_payg_access_test.go` covers unfunded onboarding through
+the queue, incomplete-onboarding rejection, no purchase/debit and stable links.
+`onboarding_payg_sync_test.go` covers funded admission through the agent barrier.
+
+Native validation applies the shared `platform/xraydiagnostics` raw-log policy
+before building configurations, including startup validation. Repeated upstream
+protocol advisories do not flood logs; validation failures still return through
+`ValidationResult`, with the same pinned validator and agent-side checks.
+
 `master_traffic.go` handles durable report ingestion for the socket reader.
 An unchanged rejected head backs off from one to 30 seconds using one in-memory
 fingerprint per peer; telemetry and command results continue immediately.
@@ -673,7 +686,7 @@ wallet-change jobs repair missing tuples after catalog or node changes.
 dispatcher, agent synchronization, committed recovery barrier and expiring PAYG
 authorization; idle provisioning must preserve the wallet and prepaid counters.
 
-`payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for automatic continuation purchases after at least 10 KiB has been metered on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; raw bytes remain cumulative across reconnects and count toward the first purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
+`payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for automatic continuation purchases after at least 10 MiB (10,485,760 bytes) has been metered on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; raw bytes remain cumulative across reconnects and count toward the first purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
 
 `payg_inventory.go` separates owner subscription inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Existing subscriptions retain PAYG entries while unfunded. Unused prepaid bytes remain scoped to their original node and survive reconnects and temporary ineligibility.
 

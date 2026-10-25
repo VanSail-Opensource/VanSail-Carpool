@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/xraydiagnostics"
+
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/VanSail-Opensource/X-Node/pkg/xrayconfig"
 	"github.com/xtls/xray-core/core"
@@ -108,6 +110,7 @@ func (s *Service) validateDocumentCached(context string, raw json.RawMessage) Va
 }
 
 func nativeValidate(config wire.Config, validator *xrayconfig.Validator) error {
+	xraydiagnostics.Quiet()
 	if validator != nil {
 		return validator.Validate(config)
 	}

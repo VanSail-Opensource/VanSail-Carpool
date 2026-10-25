@@ -9,7 +9,7 @@ import (
 const PAYGJob = "xnode_payg_reconcile"
 const PAYGRecoveryJob = "xnode_payg_recover"
 const PAYGGB int64 = 1 << 30
-const PAYGStartBytes int64 = 10 << 10
+const PAYGStartBytes int64 = 10 << 20
 const paygPrefix = "member-payg-"
 
 type PAYGAccount struct {
