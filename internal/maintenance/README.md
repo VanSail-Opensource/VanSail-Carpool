@@ -1,7 +1,7 @@
 # Daily maintenance
 
 `Service` owns the once-per-local-date maintenance order: claim the durable
-lease, create and verify a SQLite backup, then invoke the database's atomic
+lease, create and verify the configured database backup, then invoke the database's atomic
 fact compaction and retention transaction. Failed backups are recorded and
 never permit cleanup. The database layer preserves active and queued purchases,
 immutable ledger/audit evidence, pending work, provider replay tombstones, and
@@ -21,3 +21,5 @@ history. Stale locally debited operations are compensated before removal.
 - `README.md` documents the package ownership boundary.
 
 The shared backup-gated compact-and-prune transaction reports `node_compensation_events` and `failed_synchronization_jobs` counts. Event age uses creation time; terminal failed outbound jobs use final failure time, with linked state reconciled and financial settlement lanes preserved.
+
+After backup verification, PAYG sample expiry commits bounded batches before the atomic domain compaction. Its counts and errors join the existing maintenance receipt; scheduler expiry also runs independently of provisioning. PostgreSQL uses ordinary autovacuum for reusable space, with no online table rewrite.

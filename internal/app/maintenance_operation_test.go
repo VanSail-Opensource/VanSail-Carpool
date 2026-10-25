@@ -115,3 +115,7 @@ type maintenanceBackupFake struct {
 func (b *maintenanceBackupFake) Run(context.Context) (model.BackupRun, error) {
 	return b.run, b.err
 }
+
+func (r *maintenanceRepositoryFake) PrunePAYGTransientRecords(context.Context, time.Time) (map[string]int64, error) {
+	return map[string]int64{}, nil
+}

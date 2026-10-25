@@ -73,7 +73,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 		return nil, err
 	}
 	for _, a := range accounts {
-		if !payg[a.GroupID] || coverage[a.GroupID] != "" {
+		if a.Disabled || !payg[a.GroupID] || coverage[a.GroupID] != "" {
 			continue
 		}
 		i, e := s.repo.XNodeIdentity(ctx, a.ProxyUserID)

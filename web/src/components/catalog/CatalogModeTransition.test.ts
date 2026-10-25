@@ -14,7 +14,7 @@ function preferences(reduced = false) {
 }
 
 describe('full-screen mode introduction', () => {
-  it('replaces the scene on rapid switching and disposes it within 800ms', async () => {
+  it('replaces the scene on rapid switching and disposes it after animation completion', async () => {
     vi.useFakeTimers()
     const schedule = vi.spyOn(globalThis, 'setTimeout')
     preferences()
@@ -29,11 +29,11 @@ describe('full-screen mode introduction', () => {
     await flushPromises()
     expect(wrapper.findAll('.mode-transition')).toHaveLength(1)
     expect(wrapper.get('.mode-transition strong').text()).toBe('One plan. More room to explore.')
-    await vi.advanceTimersByTimeAsync(800)
+    await vi.advanceTimersByTimeAsync(900)
     expect(wrapper.find('.mode-transition').exists()).toBe(false)
     await wrapper.setProps({ mode: 'payg' })
     await flushPromises()
-    const ownedIndex = schedule.mock.calls.map((call, index) => call[1] === 800 ? index : -1).filter(index => index >= 0).pop()!
+    const ownedIndex = schedule.mock.calls.map((call, index) => call[1] === 900 ? index : -1).filter(index => index >= 0).pop()!
     const ownedTimer = schedule.mock.results[ownedIndex]!.value
     const clear = vi.spyOn(globalThis, 'clearTimeout')
     wrapper.unmount()
@@ -65,9 +65,11 @@ describe('full-screen mode introduction', () => {
     await flushPromises()
     const style = wrapper.get('.mode-transition').attributes('style')
     expect(style).toContain('top: 160px')
-    expect(style).toContain(`bottom: ${window.innerHeight - 500}px`)
+    expect(style).toContain(`bottom: 0px`)
     window.dispatchEvent(new Event('scroll'))
     await flushPromises()
+    expect(wrapper.find('.mode-transition').exists()).toBe(true)
+    await wrapper.get('.mode-transition').trigger('animationend')
     expect(wrapper.find('.mode-transition').exists()).toBe(false)
     wrapper.unmount()
     for (const element of controls) element.remove()
@@ -84,6 +86,8 @@ describe('full-screen mode introduction', () => {
     await flushPromises()
     expect(wrapper.find('.mode-transition').exists()).toBe(true)
     await vi.advanceTimersByTimeAsync(300)
+    expect(wrapper.find('.mode-transition').exists()).toBe(true)
+    await wrapper.get('.mode-transition').trigger('animationend')
     expect(wrapper.find('.mode-transition').exists()).toBe(false)
     await wrapper.setProps({ ready: false })
     await wrapper.setProps({ ready: true })

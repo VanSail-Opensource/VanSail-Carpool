@@ -704,3 +704,9 @@ authorization; idle provisioning must preserve the wallet and prepaid counters.
 `payg_owners.go` shares member ownership across activity counters without reading credentials each reconciliation. `payg_leases_test.go` verifies lease-only refresh, stale/unsupported/debt admission and whitelist gating; `payg_access_test.go` covers paid combo precedence, retained unfunded subscriptions and parent disablement. These regressions run only in hosted CI.
 
 `master_peer.go` contains per-socket transport, synchronization and ephemeral PAYG lease state; the master retains ownership of peer lifetimes and the existing execution queues. Existing oversized application/catalog composition files retain their established boundaries; added PAYG behavior lives in focused modules.
+
+PAYG member opt-outs apply to provisioning, inventory/DIY, native compilation, lease overlay and observed-connection purchases. Dormant account identities and prepaid credit remain unchanged; native journal ingestion always settles delivered traffic. PAYG reconcile jobs wake the existing node reconciler, with no new queue or protocol commands.
+
+`payg_preferences_test.go` covers member opt-outs across subscription inventory and compilation, re-enabling and paid Combo isolation.
+
+`payg_account_provision.go` owns idempotent internal principal/account creation; reconciliation and coverage remain in `payg_provision.go`.

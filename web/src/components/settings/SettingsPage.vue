@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import LanguageControl from '@/components/layout/LanguageControl.vue'
 import CurrencyControl from '@/components/layout/CurrencyControl.vue'
@@ -11,24 +10,23 @@ import NotificationSettings from './NotificationSettings.vue'
 import SettingsSwitchRow from './SettingsSwitchRow.vue'
 import GroupMemberTagEditor from './GroupMemberTagEditor.vue'
 import SettingsComboControls from './SettingsComboControls.vue'
+import SettingsPAYGControls from './SettingsPAYGControls.vue'
+import SettingsNavigationRow from './SettingsNavigationRow.vue'
 import { useSettings } from './useSettings'
 
 const preferences = usePreferencesStore()
 const session = useSessionStore()
 const settings = useSettings()
-const router = useRouter()
 onMounted(() => void preferences.refresh())
-
-function navigate(path: string): void {
-  void router.push(path).catch(() => undefined)
-}
 </script>
 
 <template>
   <div class="settings-page">
     <header class="page-header"><h1>{{ $t('settings.title') }}</h1></header>
-    <UButton v-if="session.isAdmin" color="neutral" variant="outline" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" @click="navigate('/settings/admin-access')" />
-    <UButton color="neutral" variant="outline" icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" @click="navigate('/settings/diy')" />
+    <div class="settings-entrances">
+      <SettingsNavigationRow v-if="session.isAdmin" icon="i-ph-shield-check-bold" :label="$t('browser.adminAccess')" path="/settings/admin-access" />
+      <SettingsNavigationRow icon="i-ph-sliders-horizontal-bold" :label="$t('diy.title')" path="/settings/diy" />
+    </div>
     <InlineNotice v-if="preferences.error" tone="warning">{{ preferences.error }}<UButton variant="link" :label="$t('common.tryAgain')" @click="preferences.refresh()" /></InlineNotice>
     <USkeleton v-if="preferences.loading && !preferences.value" class="h-48" />
     <NotificationSettings />
@@ -37,6 +35,7 @@ function navigate(path: string): void {
       <TrafficResetAutomationControl :enabled="settings.automation.value?.enabled ?? null" :loading="settings.automationLoading.value" :saving="settings.automationSaving.value" :error="settings.automationError.value" @update="settings.setAutomation" />
       <UButton v-if="settings.automationError.value" variant="link" :label="$t('common.tryAgain')" @click="settings.loadAutomation()" />
       <SettingsComboControls />
+      <SettingsPAYGControls />
     </section>
     <section class="settings-section">
       <h2>{{ $t('settings.display') }}</h2>

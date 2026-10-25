@@ -68,7 +68,7 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 			users = append(users, u)
 			continue
 		}
-		if !healthy || !ready || !a.Funded(m.service.now()) {
+		if a.Disabled || !healthy || !ready || !a.Funded(m.service.now()) {
 			continue
 		}
 		validUntil := until

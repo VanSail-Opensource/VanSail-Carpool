@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { createPinia } from 'pinia'
 import { paygApi, type PAYGView } from '@/api/payg'
 import PAYGPage from './PAYGPage.vue'
 import PAYGSummary from './PAYGSummary.vue'
@@ -15,7 +16,7 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
 function mountPage() {
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { template: '<div />' } }] })
-  return mount(PAYGPage, { global: { plugins: [router] } })
+  return mount(PAYGPage, { global: { plugins: [router, createPinia()] } })
 }
 
 describe('PAYG live presentation', () => {
@@ -28,6 +29,7 @@ describe('PAYG live presentation', () => {
     expect(wrapper.text()).toContain('9 GiB')
     expect(wrapper.text()).toContain('15.00 TXB')
     expect(wrapper.find('.payg-page__empty').exists()).toBe(true)
+    expect(wrapper.find('a[href="/settings"]').exists()).toBe(false)
     expect(wrapper.text().match(/Last 72 hours/g)).toHaveLength(1)
     expect(wrapper.get('a[href="/home?topUp=1"]').text()).toContain('Add balance')
     wrapper.unmount()

@@ -12,6 +12,10 @@ func (s *Service) queueMissingPAYG(ctx context.Context, user string, products []
 	if !ok {
 		return false, nil
 	}
+	choices, err := r.XNodePAYGPreferences(ctx, user)
+	if err != nil {
+		return false, err
+	}
 	known := map[string]bool{}
 	for _, a := range accounts {
 		known[a.GroupID+"\x00"+a.NodeID] = true
@@ -21,7 +25,7 @@ func (s *Service) queueMissingPAYG(ctx context.Context, user string, products []
 		payg[p.GroupID] = p.BillingMode == "payg"
 	}
 	for _, g := range groups {
-		if !g.Enabled || !payg[g.ID] {
+		if !choices.Allows(g.ID) || !g.Enabled || !payg[g.ID] {
 			continue
 		}
 		for _, b := range g.Bindings {

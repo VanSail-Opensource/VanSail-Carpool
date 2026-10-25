@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"testing"
 	"time"
@@ -102,4 +103,8 @@ func TestWhitelistCannotEnableWithoutActiveComboQuota(t *testing.T) {
 	if _, err := normalizeWhitelist(WhitelistPolicy{}, WhitelistPolicy{Enabled: true}, 0); err == nil {
 		t.Fatal("PAYG-only whitelist enabled")
 	}
+}
+
+func (r *paygLeaseRepository) XNodePAYGPreferences(context.Context, string) (preferences.PAYG, error) {
+	return preferences.PAYG{Enabled: true}, nil
 }

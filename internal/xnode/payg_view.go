@@ -27,6 +27,10 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	if err != nil {
 		return out, err
 	}
+	choices, err := r.XNodePAYGPreferences(ctx, user)
+	if err != nil {
+		return out, err
+	}
 	products, err := r.ListSquadProducts(ctx, false)
 	if err != nil {
 		return out, err
@@ -85,7 +89,10 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 		p.Name = g.Name
 		p.AccessibleNodes = []model.CatalogNode{}
 		status := "unavailable"
-		if p.BillingMode == "payg" && g.Enabled && !restricted {
+		if !choices.Allows(p.GroupID) {
+			status = "disabled"
+		}
+		if p.BillingMode == "payg" && choices.Allows(p.GroupID) && g.Enabled && !restricted {
 			status = "sync_pending"
 			if covered := coverage[p.GroupID]; covered != "" {
 				status = covered

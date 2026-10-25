@@ -14,6 +14,7 @@ type Notifications struct {
 
 // Preferences contains only choices that cannot be derived from other records.
 type Preferences struct {
+	PAYGEnabled          bool          `json:"paygEnabled"`
 	Notifications        Notifications `json:"notifications"`
 	ShowReferralUsername bool          `json:"showReferralUsername"`
 	ShowAroundTX         bool          `json:"showAroundTx"`
@@ -24,7 +25,8 @@ type Preferences struct {
 // Snapshot adds server-owned current eligibility to the stored choices.
 type Snapshot struct {
 	Preferences
-	ActiveCombo bool `json:"activeCombo"`
+	ActiveCombo bool            `json:"activeCombo"`
+	PAYGSquads  map[string]bool `json:"paygSquads"`
 }
 
 // NotificationPatch distinguishes omitted values from an explicit false.
@@ -38,6 +40,8 @@ type NotificationPatch struct {
 
 // Patch merges only supplied fields into the latest stored preferences.
 type Patch struct {
+	PAYGEnabled          *bool              `json:"paygEnabled"`
+	PAYGSquads           map[string]bool    `json:"paygSquads"`
 	Notifications        *NotificationPatch `json:"notifications"`
 	ShowReferralUsername *bool              `json:"showReferralUsername"`
 	ShowAroundTX         *bool              `json:"showAroundTx"`
@@ -52,7 +56,7 @@ type Reader interface {
 
 // Defaults preserves delivery and pricing while keeping optional entrances hidden.
 func Defaults() Preferences {
-	return Preferences{Notifications: Notifications{true, true, true, true, true}, ShowReferralUsername: true, IncludeNodePrices: true}
+	return Preferences{PAYGEnabled: true, Notifications: Notifications{true, true, true, true, true}, ShowReferralUsername: true, IncludeNodePrices: true}
 }
 
 // Apply merges a partial update without replacing unrelated fields.
@@ -62,6 +66,7 @@ func (p *Preferences) Apply(patch Patch) {
 			*target = *value
 		}
 	}
+	set(&p.PAYGEnabled, patch.PAYGEnabled)
 	set(&p.ShowReferralUsername, patch.ShowReferralUsername)
 	set(&p.ShowAroundTX, patch.ShowAroundTX)
 	set(&p.ShowActivity, patch.ShowActivity)
@@ -73,4 +78,16 @@ func (p *Preferences) Apply(patch Patch) {
 		set(&p.Notifications.Activity, n.Activity)
 		set(&p.Notifications.Account, n.Account)
 	}
+}
+
+// PAYG contains durable opt-outs only; an absent squad choice is enabled.
+type PAYG struct {
+	Enabled bool
+	Squads  map[string]bool
+}
+
+// Allows applies the master switch without changing saved squad choices.
+func (p PAYG) Allows(group string) bool {
+	enabled, exists := p.Squads[group]
+	return p.Enabled && (!exists || enabled)
 }

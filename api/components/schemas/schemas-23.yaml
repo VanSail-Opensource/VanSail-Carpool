@@ -10,13 +10,18 @@ NotificationPreferences:
     account: { type: boolean, default: true }
 UserPreferences:
   type: object
-  required: [notifications, showReferralUsername, showAroundTx, showActivity, includeNodePrices, activeCombo]
+  required: [notifications, showReferralUsername, showAroundTx, showActivity, includeNodePrices, activeCombo, paygEnabled, paygSquads]
   properties:
     notifications: { $ref: '#/NotificationPreferences' }
     showReferralUsername: { type: boolean, default: true }
     showAroundTx: { type: boolean, default: false }
     showActivity: { type: boolean, default: false }
     includeNodePrices: { type: boolean, default: true }
+    paygEnabled: { type: boolean, default: true }
+    paygSquads:
+      type: object
+      description: Sparse squad opt-outs; missing IDs are enabled. PATCH merges supplied entries.
+      additionalProperties: { type: boolean }
     activeCombo: { type: boolean, readOnly: true }
 UserPreferencesPatch:
   type: object
@@ -35,6 +40,11 @@ UserPreferencesPatch:
     showAroundTx: { type: boolean }
     showActivity: { type: boolean }
     includeNodePrices: { type: boolean }
+    paygEnabled: { type: boolean }
+    paygSquads:
+      type: object
+      maxProperties: 1000
+      additionalProperties: { type: boolean }
 GroupMemberTag:
   type: object
   required: [groupJoined, editable, tag, reasonCode]

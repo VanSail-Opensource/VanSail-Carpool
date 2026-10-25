@@ -18,6 +18,7 @@ func TestFailedSynchronizationRetentionUsesFinalFailureAndKeepsFinancialWork(t *
 		failed           time.Time
 	}{
 		{"expired", "xnode_sync_user", "failed", now.Add(-failedSyncRetention)},
+		{"expired-payg", "xnode_payg_reconcile", "failed", now.Add(-failedSyncRetention)},
 		{"recent-failure", "xnode_sync_user", "failed", now.Add(-failedSyncRetention + time.Nanosecond)},
 		{"pending", "xnode_apply_entitlement", "pending", now.Add(-8 * 24 * time.Hour)},
 		{"processing", "xnode_sync_user", "processing", now.Add(-8 * 24 * time.Hour)},
@@ -32,7 +33,7 @@ func TestFailedSynchronizationRetentionUsesFinalFailureAndKeepsFinancialWork(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	if counts["failed_synchronization_jobs"] != 1 {
+	if counts["failed_synchronization_jobs"] != 2 {
 		t.Fatalf("counts=%+v", counts)
 	}
 	var remaining int

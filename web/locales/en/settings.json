@@ -55,6 +55,10 @@
         "GROUP_TAG_EDIT_RESTRICTED": "The group has restricted your permission to edit a member tag.",
         "GROUP_TAG_PERMISSION_REQUIRED": "The group bot needs permission to manage member tags."
       }
+    },
+    "payg": {
+      "enabled": "Enable PAYG",
+      "hint": "Off stops PAYG access and new credit purchases. Existing credit keeps its normal expiry."
     }
   }
 }

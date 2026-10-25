@@ -29,6 +29,7 @@ var ErrBusy = errors.New("maintenance is already running")
 type Repository interface {
 	ClaimMaintenanceRun(context.Context, string, string, time.Time, time.Time, bool) (string, bool, error)
 	CompactAndPrune(context.Context, time.Time, time.Time, time.Time) (map[string]int64, error)
+	PrunePAYGTransientRecords(context.Context, time.Time) (map[string]int64, error)
 	CompleteMaintenanceRun(context.Context, string, string, map[string]int64, error, time.Time) error
 }
 
@@ -105,7 +106,15 @@ func (s *Service) run(ctx context.Context, at time.Time, force bool) (RunResult,
 		return result, errors.Join(backupErr, s.complete(ctx, runID, backup.ID, nil, backupErr, now))
 	}
 	result.BackupRetentionWarning = backupErr
+	samples, sampleErr := s.repository.PrunePAYGTransientRecords(ctx, now)
 	counts, compactErr := s.repository.CompactAndPrune(ctx, now.Add(-7*24*time.Hour), now.Add(-24*time.Hour), now)
+	if counts == nil {
+		counts = map[string]int64{}
+	}
+	for key, count := range samples {
+		counts[key] += count
+	}
+	compactErr = errors.Join(sampleErr, compactErr)
 	return result, errors.Join(compactErr, s.complete(ctx, runID, backup.ID, counts, compactErr, now))
 }
 

@@ -23,7 +23,9 @@
       "combo_covered": "套餐已含",
       "queued_combo": "套餐预留",
       "unavailable": "不可用",
-      "sync_pending": "同步中"
-    }
+      "sync_pending": "同步中",
+      "disabled": "已关闭"
+    },
+    "disabled": "按量付费已关闭。"
   }
 }

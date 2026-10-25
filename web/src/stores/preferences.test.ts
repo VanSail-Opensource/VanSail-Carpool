@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ get: vi.fn(), update: vi.fn() }))
 vi.mock('@/api/preferences', () => ({ preferencesApi: mocks }))
 import { usePreferencesStore } from './preferences'
 
-const defaults: UserPreferences = { notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showReferralUsername: true, showAroundTx: false, showActivity: false, includeNodePrices: true, activeCombo: true }
+const defaults: UserPreferences = { paygEnabled: true, paygSquads: {}, notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showReferralUsername: true, showAroundTx: false, showActivity: false, includeNodePrices: true, activeCombo: true }
 describe('account preferences', () => {
   beforeEach(() => { setActivePinia(createPinia()); vi.resetAllMocks(); mocks.get.mockResolvedValue(defaults) })
   it('keeps the confirmed setting after a failed partial save', async () => {

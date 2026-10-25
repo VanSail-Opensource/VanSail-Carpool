@@ -12,7 +12,7 @@ const expiredSyncCode = "SYNC_JOB_EXPIRED"
 
 // Outbound synchronization and delivery lanes are distinct from local financial
 // settlement jobs, which retain their authoritative settlement/recovery state.
-const synchronizationJobPredicate = `(job.kind IN ('xnode_apply_entitlement','xnode_sync_user','xnode_prepare_continuity') OR job.kind LIKE 'telegram_%'
+const synchronizationJobPredicate = `(job.kind IN ('xnode_apply_entitlement','xnode_sync_user','xnode_prepare_continuity','xnode_payg_reconcile','xnode_payg_recover') OR job.kind LIKE 'telegram_%'
 	OR job.kind LIKE 'draw_telegram_%' OR job.kind IN ('emby_provision_account','connection_scan_request',
 	'connection_ip_block_expiry','admin_temporary_ban_expiry',
 	'draw_raffle_reply','draw_raffle_complete','draw_raffle_private','draw_instant_announcement','draw_raffle_price_notice')

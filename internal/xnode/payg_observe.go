@@ -30,7 +30,7 @@ func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeco
 		}
 		ids := []int64{}
 		for _, a := range accounts {
-			if a.HasCredit(m.service.now()) || a.BalanceMinor < a.UnitPriceMinor || live.report.Users.Connections[int(a.ProxyUserID)] == 0 {
+			if a.Disabled || a.HasCredit(m.service.now()) || a.BalanceMinor < a.UnitPriceMinor || live.report.Users.Connections[int(a.ProxyUserID)] == 0 {
 				continue
 			}
 			coverage, e := m.service.paygCoverage(ctx, a.UserID)

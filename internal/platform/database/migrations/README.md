@@ -201,3 +201,7 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 `094_delete_revoked_api_tokens.sql` purges credentials from earlier soft revocations while retaining immutable audit events.
 
 `095_payg.sql` adds sparse billing configuration, base-term squad references, native PAYG attribution, immutable ledger charge metadata and bounded minute aggregates. It preserves prior migrations and existing combo entitlements.
+
+097 adds default-on PAYG access and sparse member/group opt-outs with narrow compile-revision triggers. Existing historical migrations remain unchanged.
+
+`097_payg_preferences.sql` adds the PAYG preference and sparse group opt-outs without changing historical migrations.

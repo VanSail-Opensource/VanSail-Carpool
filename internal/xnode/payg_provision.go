@@ -2,11 +2,8 @@ package xnode
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"strings"
 )
 
@@ -29,21 +26,25 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 	if err != nil || user.OnboardingState != "complete" {
 		return err
 	}
+	choices, err := r.XNodePAYGPreferences(ctx, user.ID)
+	if err != nil {
+		return err
+	}
 	products, err := r.ListSquadProducts(ctx, false)
 	if err != nil {
 		return err
 	}
 	prices := map[string]int64{}
 	for _, p := range products {
-		if p.BillingMode == "payg" {
+		if p.BillingMode == "payg" && choices.Allows(p.GroupID) {
 			prices[p.GroupID] = p.PAYGPriceTXBMinor
 		}
 	}
-	if len(prices) == 0 {
-		return nil
-	}
-	if _, err = s.EnsureIdentity(ctx, user); err != nil {
-		return err
+
+	if len(prices) > 0 {
+		if _, err = s.EnsureIdentity(ctx, user); err != nil {
+			return err
+		}
 	}
 	accounts, err := r.XNodePAYGAccounts(ctx, user.ID, "")
 	if err != nil {
@@ -80,60 +81,17 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 			}
 		}
 	}
+	if s.master != nil {
+		for _, account := range accounts {
+			s.master.mu.RLock()
+			peer := s.master.peers[account.NodeID]
+			s.master.mu.RUnlock()
+			if peer != nil {
+				s.master.requestSync(peer)
+			}
+		}
+	}
 	return nil
-}
-
-func (s *Service) ensurePAYGAccount(ctx context.Context, user, group, node string, price int64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	r, _ := s.paygRepository()
-	accounts, err := r.XNodePAYGAccounts(ctx, user, node)
-	if err != nil {
-		return err
-	}
-	for _, a := range accounts {
-		if a.GroupID == group {
-			return nil
-		}
-	}
-	hash := sha256.Sum256([]byte(user + "\x00" + group + "\x00" + node))
-	name := paygPrefix + hex.EncodeToString(hash[:20])
-	i, err := r.XNodeIdentityByService(ctx, name)
-	if err != nil && !isMissing(err) {
-		return err
-	}
-	if isMissing(err) {
-		i = Identity{ServiceName: name}
-	}
-	if i.UserID != "" || len(i.SubscriptionHash) > 0 {
-		return ErrConflict
-	}
-	if i.ProxyUserID == 0 {
-		c, e := NewCredentials()
-		if e != nil {
-			return e
-		}
-		i.CredentialsCipher, e = sealCredentials(s.vault, i, c)
-		if e != nil {
-			return e
-		}
-		i, e = s.repo.SaveXNodeIdentity(ctx, i)
-		if e != nil {
-			return e
-		}
-	}
-	period := i.CurrentPeriodID
-	if period == "" {
-		period, err = ids.New()
-		if err != nil {
-			return err
-		}
-		period = "payg-" + period
-		if err = s.repo.SaveXNodePeriod(ctx, Period{ID: period, ProxyUserID: i.ProxyUserID, StartedAt: s.now().UTC(), Strategy: "PAYG", Status: "open"}); err != nil {
-			return err
-		}
-	}
-	return r.SaveXNodePAYGAccount(ctx, PAYGAccount{ProxyUserID: i.ProxyUserID, UserID: user, GroupID: group, NodeID: node, PeriodID: period, UnitPriceMinor: price})
 }
 
 func (s *Service) paygCoverage(ctx context.Context, user string) (map[string]string, error) {

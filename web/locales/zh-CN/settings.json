@@ -55,6 +55,10 @@
         "GROUP_TAG_EDIT_RESTRICTED": "群组已限制你修改成员标签的权限。",
         "GROUP_TAG_PERMISSION_REQUIRED": "群组机器人需要管理成员标签的权限。"
       }
+    },
+    "payg": {
+      "enabled": "启用按量付费",
+      "hint": "关闭后停止按量访问和购买新流量，已有流量按原时间到期。"
     }
   }
 }

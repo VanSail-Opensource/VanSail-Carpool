@@ -1,19 +1,44 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { selectionHaptic } from '@/utils/telegram'
 import CatalogExperience from './CatalogExperience.vue'
 import CatalogPage from './CatalogPage.vue'
 import PAYGPage from './PAYGPage.vue'
 import CatalogModeTransition from './CatalogModeTransition.vue'
 
 const button = { props: ['label'], emits: ['click'], template: '<div role="button" tabindex="0" @click="$emit(\'click\')">{{ label }}</div>' }
+vi.mock('@/utils/telegram', () => ({ selectionHaptic: vi.fn() }))
+vi.mock('@/composables/useMotionPreferences', async () => {
+  const { shallowRef } = await import('vue')
+  return { useMotionPreferences: () => ({ reducedMotion: shallowRef(false) }) }
+})
 
 describe('CatalogExperience', () => {
+  it('keeps a ready Combo inert until its introduction completes', async () => {
+    const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, CatalogPage: true, PAYGPage: true } } })
+    await wrapper.findAll('[role=button]')[1]!.trigger('click')
+    const content = () => wrapper.get('.catalog-experience__content')
+    expect(content().attributes('aria-hidden')).toBe('true')
+    expect(content().attributes()).toHaveProperty('inert')
+    wrapper.findComponent(CatalogPage).vm.$emit('ready', true)
+    await wrapper.vm.$nextTick()
+    expect(content().classes()).toContain('catalog-experience__content--hidden')
+    wrapper.findComponent(CatalogModeTransition).vm.$emit('active', false)
+    await wrapper.vm.$nextTick()
+    expect(content().attributes('aria-hidden')).toBeUndefined()
+    expect(content().attributes()).not.toHaveProperty('inert')
+    wrapper.unmount()
+  })
   it('opens PAYG without mounting the gated combo flow and switches both ways', async () => {
+    vi.mocked(selectionHaptic).mockClear()
     const wrapper = mount(CatalogExperience, { global: { stubs: { UButton: button, Button: button, CatalogPage: true, PAYGPage: true } } })
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(false)
+    await wrapper.findAll('[role=button]')[0]!.trigger('click')
+    expect(selectionHaptic).not.toHaveBeenCalled()
     expect(wrapper.findComponent(CatalogModeTransition).props('mode')).toBe('payg')
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
+    expect(selectionHaptic).toHaveBeenCalledTimes(1)
     expect(wrapper.findComponent(CatalogPage).exists()).toBe(true)
     expect(wrapper.findComponent(CatalogPage).props('embedded')).toBe(true)
     expect(wrapper.findComponent(CatalogModeTransition).props('mode')).toBe('combo')

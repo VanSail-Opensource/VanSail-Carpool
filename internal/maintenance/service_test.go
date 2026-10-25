@@ -132,6 +132,10 @@ func (r *maintenanceRepository) CompleteMaintenanceRun(ctx context.Context, _, b
 	return r.completionErr
 }
 
+func (r *maintenanceRepository) PrunePAYGTransientRecords(context.Context, time.Time) (map[string]int64, error) {
+	return map[string]int64{"xnode_payg_minutes": 2}, nil
+}
+
 type maintenanceBackup struct {
 	run   model.BackupRun
 	err   error

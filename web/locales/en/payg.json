@@ -23,7 +23,9 @@
       "combo_covered": "In combo",
       "queued_combo": "Queued combo",
       "unavailable": "Unavailable",
-      "sync_pending": "Syncing"
-    }
+      "sync_pending": "Syncing",
+      "disabled": "Disabled"
+    },
+    "disabled": "PAYG is off."
   }
 }

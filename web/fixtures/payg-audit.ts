@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
+import { installHapticClickFeedback } from '@/utils/telegram'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme, setBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
@@ -37,6 +38,10 @@ const squad = (index: number): SquadProduct => ({
   createdAt: stamp, updatedAt: stamp,
 })
 const statuses = ['available', 'insufficient_balance', 'combo_covered', 'queued_combo', 'unavailable', 'sync_pending'] as const
+const haptics: string[] = []
+window.Telegram = { WebApp: { version: '9.0', HapticFeedback: { impactOccurred: value => haptics.push(value), notificationOccurred: value => haptics.push(value), selectionChanged: () => haptics.push('selection') } } } as unknown as typeof window.Telegram
+if (!admin) installHapticClickFeedback()
+Object.assign(window, { paygAuditHaptics: haptics })
 const calls: string[] = []
 Object.assign(window, { paygAuditCalls: calls })
 let paygReads = 0
@@ -51,7 +56,10 @@ window.fetch = async (input, init) => {
   }
   let value: unknown = { items: [] }
   if (url.pathname === '/api/v1/payg') value = { balance: money('2500'), asOf: stamp, windowStart: '2026-10-21T00:00:00Z', squads: params.has('empty') ? [] : statuses.map((status, index) => ({ squad: squad(index), status, trafficBytes: '1610612736', spent: money('250') })), trafficBytes: params.has('empty') ? '0' : '9663676416', spent: money(params.has('empty') ? '0' : '1500') }
-  else if (url.pathname === '/api/v1/catalog') value = { combos: [], addons: [], nodes: [] }
+  else if (url.pathname === '/api/v1/catalog') {
+    if (params.has('combo-error')) return new Response(JSON.stringify({ code: 'XNODE_UNAVAILABLE', message: 'fixture unavailable' }), { status: 503 })
+    value = { combos: params.has('combo-empty') ? [] : [{ id: 'audit-combo', name: 'Standard', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, rolloverMinRemainingBps: 1000, createdAt: stamp, updatedAt: stamp }], addons: params.has('combo-empty') ? [] : statuses.map((_, index) => ({ ...squad(index), billingMode: 'combo' })), nodes: [] }
+  }
   else if (url.pathname === '/api/v1/dashboard') value = { activePurchase: null, queuedPurchase: null, balance: money('2500'), user: { id: '99101', role: 'member' } }
   else if (url.pathname === '/api/v1/balance') value = { balance: money('2500'), methods: [] }
   void init

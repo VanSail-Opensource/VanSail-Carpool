@@ -5,7 +5,7 @@ Telegram Settings button. The page inherits the premium dark theme and English
 and Simplified Chinese catalogs; language, currency and reset automation reuse
 their existing state and endpoints.
 
-`GET/PATCH /api/v1/me/preferences` exposes nine typed choices. Missing database
+`GET/PATCH /api/v1/me/preferences` exposes ten preference flags and sparse PAYG squad choices. Missing database
 rows read as defaults; partial saves merge atomically. All notification groups,
 referral attribution and combined node prices default on. Around TX and Activity
 default off and require a currently active combo. Purchase transitions clear
@@ -47,3 +47,11 @@ uses Nuxt UI's documented `storage="local"` and `persistent` prop, keeping
 Telegram persistence disabled without a runtime warning.
 
 Regression cases are authored for hosted CI. No local automated suite was run.
+
+PAYG settings add a master switch and independent per-squad opt-outs, all default on. Existing prepaid credit retains its original expiry. Saving queues native reconciliation atomically and does not change paid Combo entitlement. Disabled admission cannot trigger connection purchases; delivered traffic remains accountable.
+
+## Browser evidence, 2026-10-25
+
+Chrome DevTools MCP validation used production Settings/catalog components with constructed account/API fixtures at 320px, 390px and 1440px. PAYG master-off preserved squad opt-outs, disabled subordinate controls and restored saved choices. Failed saves retained confirmed state; empty/error/loading paths were exercised. Member-only DIY and admin-only console entrances retained their routes and 60px touch rows. PAYG controls remain exclusively in Settings; the PAYG page has no settings link.
+
+Combo stayed hidden/inert at 50ms, 500ms and 760ms, and became visible after its introduction. Slow loading, rapid switching, scroll/resize, reduced motion and single semantic haptic delivery were inspected. No production operations or local automated suites were used.

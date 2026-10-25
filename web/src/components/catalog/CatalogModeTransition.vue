@@ -14,51 +14,64 @@ let generation = 0
 
 function reserveControls(): boolean {
   const height = globalThis.window.innerHeight
+  const viewport = globalThis.window.visualViewport
   const rectangles = (selector: string) => [...globalThis.document.querySelectorAll(selector)]
     .map(element => element.getBoundingClientRect()).filter(rectangle => rectangle.width > 0 && rectangle.height > 0)
-  const top = Math.max(0, ...rectangles('.catalog-experience__header, .payg-summary__wallet').map(rectangle => rectangle.bottom))
-  const lowerControls = rectangles('.bottom-nav, .catalog-flow-controls').filter(rectangle => rectangle.top >= top && rectangle.top < height)
-  const bottom = Math.min(height, ...lowerControls.map(rectangle => rectangle.top))
+  const reserved = props.mode === 'payg' ? '.catalog-experience__header, .payg-summary__wallet' : '.catalog-experience__header'
+  const top = Math.max(viewport?.offsetTop ?? 0, ...rectangles(reserved).map(rectangle => rectangle.bottom))
+  const lowerControls = rectangles('.bottom-nav').filter(rectangle => rectangle.top >= top && rectangle.top < height)
+  const bottom = Math.min((viewport?.offsetTop ?? 0) + (viewport?.height ?? height), ...lowerControls.map(rectangle => rectangle.top))
   const left = Math.max(0, ...rectangles('.side-rail').map(rectangle => rectangle.right))
-  bounds.value = { top: `${top}px`, bottom: `${height - bottom}px`, left: `${left}px` }
-  return bottom - top >= 160
+  bounds.value = { top: `${top}px`, bottom: `${Math.max(0, height - bottom)}px`, left: `${left}px` }
+  return bottom - top >= 120
 }
 
-function stop(): void {
+function remeasure(): void { if (visible.value) reserveControls() }
+
+function clearScene(): void {
   if (timer) globalThis.clearTimeout(timer)
-  globalThis.window.removeEventListener('resize', stop)
-  globalThis.window.removeEventListener('scroll', stop, true)
+  timer = undefined
+  globalThis.window.removeEventListener('resize', remeasure)
+  globalThis.window.removeEventListener('scroll', remeasure, true)
+  globalThis.window.visualViewport?.removeEventListener('resize', remeasure)
+  globalThis.window.visualViewport?.removeEventListener('scroll', remeasure)
   visible.value = false
+}
+
+function finish(): void {
+  clearScene()
   emit('active', false)
 }
 
 watch([() => props.mode, reducedMotion], async () => {
   const ticket = ++generation
-  stop()
-  if (reducedMotion.value) return
+  clearScene()
+  if (reducedMotion.value) { emit('active', false); return }
+  emit('active', true)
   await nextTick()
   if (ticket !== generation) return
-  if (!reserveControls()) return
+  if (!reserveControls()) { emit('active', false); return }
   visible.value = true
-  emit('active', true)
-  timer = globalThis.setTimeout(stop, 800)
-  globalThis.window.addEventListener('resize', stop)
-  globalThis.window.addEventListener('scroll', stop, true)
+  // The animation event owns completion. This fallback also releases the gate
+  // if a WebView suppresses animation events while backgrounded.
+  timer = globalThis.setTimeout(() => { if (ticket === generation) finish() }, 900)
+  globalThis.window.addEventListener('resize', remeasure)
+  globalThis.window.addEventListener('scroll', remeasure, true)
+  globalThis.window.visualViewport?.addEventListener('resize', remeasure)
+  globalThis.window.visualViewport?.addEventListener('scroll', remeasure)
 }, { immediate: true })
 
-// Loading completion may reveal wallet/checkout controls. Reserve their space
-// without restarting the introduction or waiting for a network response.
 watch(() => props.ready, async () => {
   const ticket = generation
   await nextTick()
-  if (ticket === generation && visible.value && !reserveControls()) stop()
+  if (ticket === generation) remeasure()
 })
-onScopeDispose(() => { generation++; stop() })
+onScopeDispose(() => { generation++; clearScene() })
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="visible" :key="mode" class="mode-transition" :style="bounds" aria-hidden="true">
+    <div v-if="visible" :key="mode" class="mode-transition" :style="bounds" aria-hidden="true" @animationend.self="finish">
       <div class="mode-transition__scene">
         <div class="mode-transition__icons" aria-hidden="true">
           <UIcon class="mode-transition__leading" :name="mode === 'payg' ? 'i-ph-coins' : 'i-ph-globe-hemisphere-east'" />
@@ -74,7 +87,7 @@ onScopeDispose(() => { generation++; stop() })
 <style scoped>
 .mode-transition { position: fixed; right: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: var(--bg, var(--surface)); color: var(--text); pointer-events: none; animation: mode-cover 800ms ease both; }
 .mode-transition__scene { display: grid; justify-items: center; gap: 1rem; text-align: center; animation: mode-scene 800ms ease both; }
-.mode-transition__scene strong { font-size: clamp(1.05rem, 4.6vw, 2rem); font-weight: 650; line-height: 1.4; letter-spacing: -.02em; white-space: nowrap; animation: mode-headline 650ms ease both; }
+.mode-transition__scene strong { font-size: clamp(.85rem, 3.8vw, 1.8rem); font-weight: 650; line-height: 1.4; letter-spacing: -.02em; white-space: nowrap; animation: mode-headline 650ms ease both; }
 .mode-transition__icons { display: flex; align-items: center; gap: 1.25rem; font-size: 1.5rem; color: var(--text-muted); }
 .mode-transition__primary { font-size: 3rem; color: var(--accent); animation: mode-icon 650ms ease both; }
 .mode-transition__leading { animation: mode-leading 600ms ease both; }

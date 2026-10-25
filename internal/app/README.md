@@ -176,3 +176,5 @@ filtering and identical monitoring membership with and without export profiles.
 `connectivity_errors.go` maps native probe failures into stable client codes. `metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.
 
 PAYG jobs use the existing durable outbox and master executor. Startup and 30-second scans provision missing member/squad/node references in bounded batches. Connection scans and IP controls resolve every internal PAYG principal back to the authenticated member; source IP observations stay memory-only.
+
+`retention.go` runs bounded PAYG expiry independently at startup and each transition tick, reporting counts and failures without coupling deletion to account repairs.

@@ -3,12 +3,14 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
+import { paygApi } from '@/api/payg'
 import { comboControlsApi } from '@/api/comboControls'
 import { api } from '@/api/client'
 import { preferencesApi, type GroupMemberTag, type UserPreferences } from '@/api/preferences'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { ApiError } from '@/api/http'
 import type { ComboControls, EarlyActivationQuote, OperationReceipt, Purchase } from '@/api/types'
+import { useSessionStore } from '@/stores/session'
 import { usePreferencesStore } from '@/stores/preferences'
 import { setLocale, t } from '@/i18n'
 import SettingsAudit from './SettingsAudit.vue'
@@ -41,7 +43,7 @@ const queued = { ...purchase('queued', at(25 * day), at(32 * day)), status: 'que
 let controls: ComboControls = { activePurchase: params.has('inactive') ? null : active, queuedPurchase: params.has('inactive') || params.has('noqueued') ? null : queued, squads: params.has('inactive') ? [] : squads, mutable: !params.has('inactive') && !params.has('blocked'), operation: null }
 const receipts = new Map<string, OperationReceipt>()
 const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null, automation: true }
-let preferences: UserPreferences = { activeCombo: !params.has('inactive'), notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showAroundTx: true, showActivity: true, includeNodePrices: true, showReferralUsername: true }
+let preferences: UserPreferences = { paygEnabled: true, paygSquads: {}, activeCombo: !params.has('inactive'), notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showAroundTx: true, showActivity: true, includeNodePrices: true, showReferralUsername: true }
 let tag: GroupMemberTag = { groupJoined: true, editable: true, tag: 'Traveler', reasonCode: null }
 async function pause(): Promise<void> {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, Number(params.get('slow')) || 2500))
@@ -81,8 +83,14 @@ memberOperationsApi.getOperation = async id => {
   if (next.status === 'succeeded') controls = { ...controls, mutable: true, operation: null, activePurchase: controls.activePurchase ? { ...controls.activePurchase, status: 'active' } : null }
   return next
 }
+paygApi.get = async () => {
+ await pause()
+ return { balance: active.price, windowStart: at(-3*day), asOf: at(0), trafficBytes: '0', spent: active.price, squads: params.has('payg-empty') ? [] : [
+ { squad: { id: 'payg-jp', groupId: 'payg-jp', name: 'Tokyo PAYG', billingMode: 'payg' } as never, status: 'available' as const, trafficBytes: '0', spent: active.price },
+ { squad: { id: 'payg-nl', groupId: 'payg-nl', name: 'Amsterdam PAYG', billingMode: 'payg' } as never, status: 'available' as const, trafficBytes: '0', spent: active.price } ] }
+}
 preferencesApi.get = async () => preferences
-preferencesApi.update = async body => { preferences = { ...preferences, ...body, notifications: { ...preferences.notifications, ...body.notifications } }; return preferences }
+preferencesApi.update = async body => { if (params.has('save-error')) throw new Error('Constructed save failure'); preferences = { ...preferences, ...body, paygSquads: { ...preferences.paygSquads, ...body.paygSquads }, notifications: { ...preferences.notifications, ...body.notifications } }; return preferences }
 preferencesApi.getTag = async () => tag
 preferencesApi.updateTag = async value => { tag = { ...tag, tag: value }; return tag }
 memberOperationsApi.getTrafficResetAutomation = async () => ({ enabled: state.automation, updatedAt: at(0) })
@@ -123,10 +131,12 @@ const app = createApp(SettingsAudit, { purchase: active })
 app.config.globalProperties.$t = t
 app.use(createPinia())
 usePreferencesStore().bind('audit-user')
+if (params.has('admin')) useSessionStore().session = { user: { id: 'audit-user', role: 'admin', onboardingState: 'complete' } } as never
 const operationLoader = memberOperationsApi.getOperation
 const routePreview = xnodeMemberApi.previewRouting
 const router = createRouter({ history: createWebHistory(), routes: [
   { path: '/fixtures/settings-audit.html', component: SettingsAudit },
+  { path: '/settings/admin-access', component: { template: '<div />' } },
   { path: '/settings/diy', component: () => import('@/views/DIYView.vue'), beforeEnter: () => {
     const trace = { calls: [] as string[], keys: [] as string[], writes: [] as unknown[] }
     installDIYAudit(params, trace, async () => ({ plan: { revision: 0, phase: 'active', choices: [] }, nodes: [], endpoints: [], templates: [], paths: [] }))

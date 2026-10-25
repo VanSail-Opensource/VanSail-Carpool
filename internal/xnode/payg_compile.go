@@ -58,7 +58,7 @@ func (s *Service) paygUsers(ctx context.Context, node Node, inbounds map[string]
 			allowed[a.UserID] = user.OnboardingState == "complete" && !parent.AccessDisabled && !restricted
 		}
 		group := byGroup[a.GroupID]
-		if !payg[a.GroupID] || !group.Enabled || !allowed[a.UserID] || coverage[a.UserID][a.GroupID] != "" {
+		if a.Disabled || !payg[a.GroupID] || !group.Enabled || !allowed[a.UserID] || coverage[a.UserID][a.GroupID] != "" {
 			continue
 		}
 		i, e := s.repo.XNodeIdentity(ctx, a.ProxyUserID)

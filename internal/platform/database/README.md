@@ -1,9 +1,9 @@
 # Application store
 
-`xnode_payg_windows.go` retains exact report-time raw/unbilled counters for the
+`xnode_payg_credit_window.go` retains exact report-time raw/unbilled counters for the
 rolling `(through-72h, through]` threshold. Settled samples older than the newest
 100 MiB are redundant and compacted; low-traffic samples and pending evidence
-age out after 72 hours. `xnode_payg_windows_test.go` covers exact cutoff/expiry,
+age out after 72 hours. `xnode_payg_credit_window_test.go` covers exact cutoff/expiry,
 late pre-expiry usage, duplicate reports, replacement credit and ignored node
 multipliers. Lifetime period totals and immutable charge/ledger records remain
 independent. Remaining prepaid bytes and their original charge time are required
@@ -785,6 +785,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `notification_scans_retry_generated.go` wraps the transactional methods in `notification_scans.go`.
 - `onboarding_retry_generated.go` wraps the transactional methods in `onboarding.go`.
 - `operations_retry_generated.go` wraps the transactional methods in `operations.go`.
+- `outbox_completion_retry_generated.go` wraps the transactional methods in `outbox_completion.go`.
 - `outbox_jobs_retry_generated.go` wraps the transactional methods in `outbox_jobs.go`.
 - `outbox_retry_operations_retry_generated.go` wraps the transactional methods in `outbox_retry_operations.go`.
 - `panel_entry_verification_retry_generated.go` wraps the transactional methods in `panel_entry_verification.go`.
@@ -803,6 +804,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `questionnaires_part2_retry_generated.go` wraps the transactional methods in `questionnaires_part2.go`.
 - `questionnaires_retry_generated.go` wraps the transactional methods in `questionnaires.go`.
 - `retention_compaction_retry_generated.go` wraps the transactional methods in `retention_compaction.go`.
+- `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
 - `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
 - `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
 - `rollover_calculation_retry_generated.go` wraps the transactional methods in `rollover_calculation.go`.
@@ -839,4 +841,11 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
-`admin_entitlements_page.go` filters display validity using the current UTC boundary while returning the untouched purchase lifecycle status. Pending rollover/renewal work remains recoverable. `admin_entitlement_validity_test.go` covers exclusive expiry, future terms, terminal states and unchanged pending settlement/balances in hosted CI.
+
+`user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices under the wallet lock. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
+
+`retention_imports_test.go` covers abandoned upload expiry and live settlement preservation. `retention_payg_test.go` covers independent batch commits, precise boundaries and unchanged accounting. `user_payg_preferences_test.go` covers default choices, master precedence, concurrent merges and delivered-traffic settlement. `admin_entitlement_validity_test.go` covers exclusive validity boundaries and pending settlement preservation.
+
+Terminal failed PAYG provisioning/recovery jobs share the three-day failed synchronization window and explicit-retry protection. Financial journal state remains independent.
+
+`xnode_payg_credit_window.go` and `xnode_payg_credit_window_test.go` use platform-neutral names so Go includes the rolling billing helpers and regressions on Linux as well as Windows.

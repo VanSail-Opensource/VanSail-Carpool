@@ -120,7 +120,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 		if e != nil {
 			return e
 		}
-		if a.HasCredit(now) {
+		if a.Disabled || a.HasCredit(now) {
 			continue
 		}
 		if e = settlePAYGWindowTx(ctx, tx, &a, now, false, now); errors.Is(e, ErrInsufficientBalance) {

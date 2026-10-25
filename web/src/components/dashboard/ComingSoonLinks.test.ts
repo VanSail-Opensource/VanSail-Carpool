@@ -15,7 +15,7 @@ describe('ComingSoonLinks navigation', () => {
     await router.push('/home')
     await router.isReady()
     const pinia = createPinia()
-    usePreferencesStore(pinia).value = { activeCombo: true, showAroundTx: true, showActivity: false, includeNodePrices: true, showReferralUsername: true, notifications: { combos: true, traffic: true, money: true, activity: true, account: true } }
+    usePreferencesStore(pinia).value = { paygEnabled: true, paygSquads: {}, activeCombo: true, showAroundTx: true, showActivity: false, includeNodePrices: true, showReferralUsername: true, notifications: { combos: true, traffic: true, money: true, activity: true, account: true } }
     const wrapper = mount(ComingSoonLinks, { props: { hasValidCombo: true }, global: { plugins: [pinia, router] } })
     const launchURL = window.location.href
     const actions = wrapper.findAll('.home-around__link')

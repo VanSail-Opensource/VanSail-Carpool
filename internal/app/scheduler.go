@@ -34,6 +34,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	defer maintenanceTimer.Stop()
 	a.configureTelegram(ctx)
 	startupNow := time.Now().UTC()
+	a.prunePAYGSamples(ctx, startupNow)
 	if err := a.store.EnqueueDIYReconcile(ctx, startupNow); err != nil {
 		a.logger.Error("startup DIY reconciliation failed", "error", err)
 	}
@@ -89,6 +90,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 				a.logger.Error("group message fact flush failed", "error", err)
 			}
 		case now := <-transitionTicker.C:
+			a.prunePAYGSamples(ctx, now.UTC())
 			if err := a.store.EnqueueDIYReconcile(ctx, now.UTC()); err != nil {
 				a.logger.Error("DIY reconciliation scan failed", "error", err)
 			}

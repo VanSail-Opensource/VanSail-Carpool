@@ -10,13 +10,13 @@ import (
 const preferenceSelect = `SELECT COALESCE(p.notify_combos,1),COALESCE(p.notify_traffic,1),
  COALESCE(p.notify_money,1),COALESCE(p.notify_activity,1),COALESCE(p.notify_account,1),
  COALESCE(p.show_referral_username,1),COALESCE(p.show_around_tx,0),COALESCE(p.show_activity,0),
- COALESCE(p.include_node_prices,1) FROM users u LEFT JOIN user_preferences p ON p.user_id=u.id WHERE u.id=?`
+ COALESCE(p.include_node_prices,1),COALESCE(p.payg_enabled,1) FROM users u LEFT JOIN user_preferences p ON p.user_id=u.id WHERE u.id=?`
 
 func scanPreferences(row rowScanner) (preferences.Preferences, error) {
 	var p preferences.Preferences
 	err := row.Scan(&p.Notifications.Combos, &p.Notifications.Traffic, &p.Notifications.Money,
 		&p.Notifications.Activity, &p.Notifications.Account, &p.ShowReferralUsername, &p.ShowAroundTX,
-		&p.ShowActivity, &p.IncludeNodePrices)
+		&p.ShowActivity, &p.IncludeNodePrices, &p.PAYGEnabled)
 	return p, err
 }
 
@@ -35,7 +35,11 @@ func (s *Store) UserPreferenceSnapshot(ctx context.Context, userID string, now t
 	if !active {
 		p.ShowAroundTX, p.ShowActivity = false, false
 	}
-	return preferences.Snapshot{Preferences: p, ActiveCombo: active}, err
+	if err != nil {
+		return preferences.Snapshot{}, err
+	}
+	squads, err := paygSquadPreferencesFrom(ctx, s.db, userID)
+	return preferences.Snapshot{Preferences: p, ActiveCombo: active, PAYGSquads: squads}, err
 }
 
 // UpdateUserPreferences merges supplied flags atomically with live eligibility.
@@ -49,6 +53,9 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 		return preferences.Snapshot{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
+	if _, err := balanceTx(ctx, tx, userID); err != nil {
+		return preferences.Snapshot{}, err
+	}
 	p, err := scanPreferences(tx.QueryRowContext(ctx, preferenceSelect, userID))
 	if err != nil {
 		return preferences.Snapshot{}, err
@@ -67,20 +74,24 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 	if err != nil {
 		return preferences.Snapshot{}, err
 	}
+	squads, err := savePAYGPreferencesTx(ctx, tx, userID, patch, now)
+	if err != nil {
+		return preferences.Snapshot{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return preferences.Snapshot{}, err
 	}
-	return preferences.Snapshot{Preferences: p, ActiveCombo: active}, nil
+	return preferences.Snapshot{Preferences: p, ActiveCombo: active, PAYGSquads: squads}, nil
 }
 
 func savePreferences(ctx context.Context, tx *sql.Tx, userID string, p preferences.Preferences) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO user_preferences VALUES(?,?,?,?,?,?,?,?,?,?)
+	_, err := tx.ExecContext(ctx, `INSERT INTO user_preferences(user_id,notify_combos,notify_traffic,notify_money,notify_activity,notify_account,show_referral_username,show_around_tx,show_activity,include_node_prices,payg_enabled) VALUES(?,?,?,?,?,?,?,?,?,?,?)
  ON CONFLICT(user_id) DO UPDATE SET notify_combos=excluded.notify_combos,notify_traffic=excluded.notify_traffic,
  notify_money=excluded.notify_money,notify_activity=excluded.notify_activity,notify_account=excluded.notify_account,
  show_referral_username=excluded.show_referral_username,show_around_tx=excluded.show_around_tx,
- show_activity=excluded.show_activity,include_node_prices=excluded.include_node_prices`, userID,
+ show_activity=excluded.show_activity,include_node_prices=excluded.include_node_prices,payg_enabled=excluded.payg_enabled`, userID,
 		p.Notifications.Combos, p.Notifications.Traffic, p.Notifications.Money, p.Notifications.Activity, p.Notifications.Account,
-		p.ShowReferralUsername, p.ShowAroundTX, p.ShowActivity, p.IncludeNodePrices)
+		p.ShowReferralUsername, p.ShowAroundTX, p.ShowActivity, p.IncludeNodePrices, p.PAYGEnabled)
 	return err
 }
 

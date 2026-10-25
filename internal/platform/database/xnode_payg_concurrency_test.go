@@ -90,7 +90,7 @@ func TestPAYGMinuteWindowAndRetention(t *testing.T) {
 	if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes) VALUES(?,?,?,1)`, parent.UserID, a.GroupID, stamp(asOf.Add(-74*time.Hour))); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.EnqueueXNodePAYGRepairs(ctx, asOf); err != nil {
+	if _, err = s.PrunePAYGTransientRecords(ctx, asOf); err != nil {
 		t.Fatal(err)
 	}
 	var old int

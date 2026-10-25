@@ -2,20 +2,16 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 )
 
-const (
-	questionnaireImportRetention = 7 * 24 * time.Hour
-	completedOutboxRetention     = 7 * 24 * time.Hour
-	groupMessageEventRetention   = 31 * 24 * time.Hour
-	groupMessageWindowRetention  = 365 * 24 * time.Hour
-)
+const questionnaireImportRetention = 7 * 24 * time.Hour
+const completedOutboxRetention = 7 * 24 * time.Hour
 
-// PruneTransientRecords bounds retry artifacts and Telegram message-deduplication
-// state. Accounting records, active jobs, and imports still eligible for retry
-// are deliberately preserved.
+// PruneTransientRecords retains the legacy entry point for retry artifacts.
+// Scheduled cleanup shares its helper inside the backup-gated transaction.
 func (s *Store) retryAttempt_PruneTransientRecords(ctx context.Context, now time.Time) error {
 	if !IsPostgres(s.db) {
 		s.writeMu.Lock()
@@ -23,37 +19,56 @@ func (s *Store) retryAttempt_PruneTransientRecords(ctx context.Context, now time
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("begin transient retention: %w", err)
+		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	now = now.UTC()
-	importCutoff := stamp(now.Add(-questionnaireImportRetention))
+	if err := pruneAbandonedImportsTx(ctx, tx, now.UTC(), map[string]int64{}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
 
-	// A failed settlement leaves its questionnaire in settling state while an
-	// administrator may retry it. Once that bounded retry window expires, close
-	// the questionnaire before erasing the upload and its failed job.
-	if _, err := tx.ExecContext(ctx, `UPDATE questionnaires SET status='closed',updated_at=?
-		WHERE status='settling' AND id IN (SELECT questionnaire_id FROM questionnaire_imports WHERE status='failed' AND updated_at<?)`, stamp(now), importCutoff); err != nil {
-		return fmt.Errorf("close abandoned questionnaire settlements: %w", err)
+func pruneAbandonedImportsTx(ctx context.Context, tx *sql.Tx, now time.Time, counts map[string]int64) error {
+	ids, err := expiredTimestampIDsTx(ctx, tx, `SELECT upload.id,upload.updated_at FROM questionnaire_imports upload
+ WHERE upload.status IN ('preview','failed') AND upload.updated_at<?
+ AND NOT EXISTS(SELECT 1 FROM questionnaire_imports other WHERE other.questionnaire_id=upload.questionnaire_id AND other.status IN ('queued','processing'))
+ AND NOT EXISTS(SELECT 1 FROM outbox_jobs job WHERE job.kind='questionnaire_settlement'
+ AND json_extract(job.payload,'$.importId')=upload.id AND (job.status IN ('pending','processing')
+ OR EXISTS(SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
+ WHERE item.target_type='outbox_job' AND item.target_id=job.id AND operation.kind='outbox_retry'
+ AND operation.status IN ('queued','processing','pending_review','partial'))))`, now.Add(-questionnaireImportRetention))
+	if err != nil {
+		return fmt.Errorf("select abandoned questionnaire imports: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind='questionnaire_settlement' AND status<>'processing'
-		AND json_extract(payload,'$.importId') IN (SELECT id FROM questionnaire_imports WHERE status IN ('preview','failed') AND updated_at<?)`, importCutoff); err != nil {
-		return fmt.Errorf("prune abandoned questionnaire jobs: %w", err)
+	for _, id := range ids {
+		if _, err := tx.ExecContext(ctx, `UPDATE questionnaires SET status='closed',updated_at=?
+   WHERE status='settling' AND id=(SELECT questionnaire_id FROM questionnaire_imports WHERE id=? AND status='failed')`, stamp(now), id); err != nil {
+			return err
+		}
+		count, err := deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE kind='questionnaire_settlement'
+   AND status IN ('failed','done') AND json_extract(payload,'$.importId')=?`, id)
+		if err != nil {
+			return err
+		}
+		counts["questionnaire_jobs"] += count
+		count, err = deleteCount(ctx, tx, `DELETE FROM questionnaire_imports WHERE id=?`, id)
+		if err != nil {
+			return err
+		}
+		counts["questionnaire_imports"] += count
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM questionnaire_imports WHERE status IN ('preview','failed') AND updated_at<?`, importCutoff); err != nil {
-		return fmt.Errorf("prune abandoned questionnaire imports: %w", err)
+	expired, err := expiredTimestampIDsTx(ctx, tx, `SELECT job.id,job.updated_at FROM outbox_jobs job WHERE job.status='done' AND job.updated_at<?
+ AND NOT EXISTS(SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
+ WHERE item.target_type='outbox_job' AND item.target_id=job.id AND operation.status IN ('queued','processing','pending_review','partial'))`, now.Add(-completedOutboxRetention))
+	if err != nil {
+		return err
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE status='done' AND updated_at<?`, stamp(now.Add(-completedOutboxRetention))); err != nil {
-		return fmt.Errorf("prune completed outbox jobs: %w", err)
-	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_events WHERE created_at<?`, stamp(now.Add(-groupMessageEventRetention))); err != nil {
-		return fmt.Errorf("prune group-message events: %w", err)
-	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_windows WHERE updated_at<?`, stamp(now.Add(-groupMessageWindowRetention))); err != nil {
-		return fmt.Errorf("prune group-message windows: %w", err)
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit transient retention: %w", err)
+	for _, id := range expired {
+		count, err := deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE id=? AND status='done'`, id)
+		if err != nil {
+			return err
+		}
+		counts["completed_outbox_jobs"] += count
 	}
 	return nil
 }

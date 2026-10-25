@@ -26,3 +26,7 @@ Telegram APIs. Optional entrances require current server-confirmed eligibility.
 `useSettings.test.ts` covers immediate reset persistence and failed-save state retention.
 
 `useComboControls.ts` refreshes temporarily blocked eligibility every five seconds while visible, stops after errors/disposal and retains receipt-driven reconciliation. The settings header also offers refresh; purchase/activation constraints and the last-enabled-squad guard remain authoritative.
+
+`SettingsPAYGControls.vue` composes the master and sparse per-group preference switches with existing controlled rows. Its owner-scoped PAYG loader supplies squad names and loading/error states; confirmed preferences remain authoritative after save failures. The master switch preserves subordinate choices.
+
+`SettingsNavigationRow.vue` supplies flat full-width DIY/admin entrances with localized labels, existing icons and router-only navigation. Admin visibility and one-use console access remain owned by the session and AdminAccessPanel.

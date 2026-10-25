@@ -5,10 +5,12 @@ import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
 import { useI18n } from '@/i18n'
+import { usePreferencesStore } from '@/stores/preferences'
 import PAYGSummary from './PAYGSummary.vue'
 import PAYGSquadCard from './PAYGSquadCard.vue'
 
 const { t } = useI18n()
+const preferences = usePreferencesStore()
 const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed')
 const emit = defineEmits<{ ready: [value: boolean] }>()
 watch(loading, value => emit('ready', !value), { immediate: true })
@@ -17,9 +19,10 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 <template>
   <section class="payg-page">
     <PAYGSummary :data="data" :loading="loading" />
+    <InlineNotice v-if="preferences.value?.paygEnabled === false" tone="info">{{ t('payg.disabled') }}</InlineNotice>
     <div v-if="error" class="payg-page__error">
       <InlineNotice tone="warning">{{ error }}</InlineNotice>
-      <UButton color="neutral" variant="outline" :label="t('common.tryAgain')" @click="refresh()" />
+      <UButton color="neutral" variant="outline" :label="t('common.tryAgain')" data-haptic="retry" @click="refresh()" />
     </div>
     <div v-if="loading" class="payg-page__grid" aria-busy="true"><SkeletonBlock v-for="index in 3" :key="index" height="9rem" /></div>
     <template v-else-if="data">

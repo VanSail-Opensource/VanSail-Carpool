@@ -24,3 +24,5 @@ makes foreign keys deferrable during a controlled, atomic source import.
 accounting barriers and logical backup age. It duplicates no authoritative rows.
 
 `00007_payg.sql` is the forward-only PostgreSQL equivalent of SQLite PAYG migration 095, including binary text collation and compile invalidation triggers. The older baseline is unchanged.
+
+`00009_payg_preferences.sql` is the forward-only equivalent of SQLite 097. It retains BIGINT flags, C text collation, foreign keys and narrow compile invalidation.

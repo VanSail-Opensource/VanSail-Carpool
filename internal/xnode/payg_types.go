@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const PAYGWindow = 72 * time.Hour
 const paygPrefix = "member-payg-"
 
 type PAYGAccount struct {
+	Disabled                                                bool
 	ProxyUserID                                             int64
 	UserID, GroupID, NodeID, PeriodID                       string
 	PurchasedBytes, UsedBytes, UnitPriceMinor, BalanceMinor int64
@@ -51,6 +53,7 @@ type PAYGView struct {
 }
 
 type paygRepository interface {
+	XNodePAYGPreferences(context.Context, string) (preferences.PAYG, error)
 	XNodeIdentityByService(context.Context, string) (Identity, error)
 	XNodePAYGAccounts(context.Context, string, string) ([]PAYGAccount, error)
 	XNodePAYGAccount(context.Context, int64) (PAYGAccount, error)
