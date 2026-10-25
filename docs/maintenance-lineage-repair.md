@@ -20,4 +20,5 @@ references retain their existing policies. Restrictive user references preserve
 actors, desired state and financial attribution rather than deleting their facts.
 
 Go vet and static schema review are permitted locally. Regressions run on hosted
-SQLite/PostgreSQL jobs; successful production rerun remains the acceptance gate.
+SQLite/PostgreSQL jobs. The user confirmed a successful production maintenance
+rerun and instructed proceeding to reporting, with further SSH checks skipped.

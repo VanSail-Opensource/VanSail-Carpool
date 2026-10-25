@@ -35,7 +35,7 @@ and the applicable validation are complete, not merely that code was written.
 
 ## Reporting and performance
 
-- [ ] 20 Isolate bounded report queues while preserving durable traffic order.
+- [x] 20 Isolate bounded report queues while preserving durable traffic order.
 - [ ] 21 Add negotiated compact telemetry and bounded report compression.
 - [ ] 22 Load Explore on entry and Combo resources on mode selection.
 - [ ] 23 Synchronize PAYG entrance animations with fullscreen scene completion.
@@ -57,7 +57,15 @@ maintenance receipts, protocol compatibility and performance measurements below.
 
 - Item 20 implementation isolates bounded report lanes in both repositories,
   retains one writer and adds hosted saturation/byte-budget/order regressions.
-  Go vet/build and terminal hosted results are recorded as they become available.
+  Hosted panel run `40199291173` and X-Node run `40199279206` completed successfully.
+  No local automated suites ran.
+- Item 21 uses connection-header plus hello-capability negotiation for compact
+  telemetry, default omission and fresh-snapshot normalization. Both readers cap
+  expanded input before JSON parsing, and the agent uses fast report-only
+  per-message deflate at 1 KiB with legacy fallback. Hosted fixtures measure
+  actual framed socket bytes and enforce at least 50% reduction while retaining
+  large integer accounting. No new persistent telemetry or source-IP collection
+  was added. Static checks passed; hosted measurements remain pending.
 
 - Starting panel revision: `cdcd729f`; both worktrees were clean.
 - Items 01-19 passed implementation/static/browser checks and hosted run

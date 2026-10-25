@@ -16,6 +16,7 @@ type agentPeer struct {
 	paygRecoveryQueued    bool         // mu; durable recovery is coalesced per boot
 	paygOverlayKey        string       // syncMu; disposable authorization projection
 	publicIP              string
+	compactTelemetry      bool // immutable, negotiated upgrade header plus hello capability
 	protectedMu           sync.Mutex
 	protectedDigest       string
 	protectedAt           time.Time

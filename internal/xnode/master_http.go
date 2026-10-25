@@ -44,21 +44,25 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "agent WebSocket upgrade required", http.StatusUpgradeRequired)
 		return
 	}
-	upgrader := websocket.Upgrader{Subprotocols: []string{"x-node.v1"}, CheckOrigin: func(*http.Request) bool { return true }, HandshakeTimeout: 15 * time.Second}
-	socket, err := upgrader.Upgrade(w, r, nil)
+	compactOffer := r.Header.Get(wire.TelemetryFormatHeader) == wire.CompactTelemetryFormat
+	responseHeaders := http.Header{}
+	if compactOffer {
+		responseHeaders.Set(wire.TelemetryFormatHeader, wire.CompactTelemetryFormat)
+	}
+	upgrader := websocket.Upgrader{EnableCompression: true, Subprotocols: []string{"x-node.v1"}, CheckOrigin: func(*http.Request) bool { return true }, HandshakeTimeout: 15 * time.Second}
+	socket, err := upgrader.Upgrade(w, r, responseHeaders)
 	if err != nil {
 		return
 	}
 	defer socket.Close()
+	// Master commands/acks stay uncompressed; only the agent report writer opts
+	// into compression. This remains inside the single-writer contract.
+	socket.EnableWriteCompression(false)
 	socket.SetReadLimit(wire.MaxFrameBytes)
 	if err = socket.SetReadDeadline(time.Now().Add(15 * time.Second)); err != nil {
 		return
 	}
-	kind, data, err := socket.ReadMessage()
-	if err != nil || kind != websocket.TextMessage {
-		return
-	}
-	message, err := wire.Parse(data)
+	message, err := readAgentFrame(socket)
 	if err != nil || message.Type != "agent.hello" {
 		return
 	}
@@ -77,6 +81,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer queue.Shutdown(context.Background())
 	peer := &agentPeer{nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
+	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && r.Header.Get("X-Forwarded-For") == "" {
 		peer.publicIP, _ = FirewallPublicIP(host)
 	}
@@ -134,18 +139,11 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	receivers := m.startPeerReceivers(peer)
 	defer receivers.stop()
 	for {
-		kind, data, err = socket.ReadMessage()
+		message, err = readAgentFrame(socket)
 		if err != nil {
-			return
-		}
-		if kind != websocket.TextMessage {
 			return
 		}
 		if err = socket.SetReadDeadline(time.Now().Add(90 * time.Second)); err != nil {
-			return
-		}
-		message, err = wire.Parse(data)
-		if err != nil {
 			return
 		}
 		if err = receivers.offer(message); err != nil {

@@ -1,5 +1,14 @@
 # X-Node control plane
 
+`master_report_frames.go` bounds expanded WebSocket input before parsing and
+normalizes negotiated compact reports into existing live snapshot types. The
+upgrade echoes `X-XNode-Telemetry: compact-v1` only when offered; compact frames
+also require `compact_telemetry_v1` in the authenticated agent hello. Legacy
+reports remain accepted. Per-message deflate is negotiated by Gorilla; master
+commands and acknowledgements retain their uncompressed single-writer path.
+`master_report_frames_test.go` covers mixed agents, negotiation and clearing an
+earlier online user snapshot. Accounting reports retain their original body.
+
 `master_report_lanes.go` separates incoming command results, ordered traffic,
 latest-snapshot telemetry and disposable logs. Each lane has its own bounded
 consumer; queued command/traffic payloads have a 32 MiB byte budget, logs have

@@ -59,9 +59,9 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		}
 		peer.mu.Unlock()
 		return nil
-	case "telemetry.report":
-		var report wire.TelemetryReport
-		if err := wire.Decode(message.Data, &report); err != nil {
+	case "telemetry.report", "telemetry.compact":
+		report, err := decodeTelemetryFrame(peer, message)
+		if err != nil {
 			return ErrInvalid
 		}
 		if report.AgentID != peer.agentID || report.BootID != peer.bootID || !validMetrics(report.Users) {
