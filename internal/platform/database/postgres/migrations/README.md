@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00012_xnode_ddns_bindings.sql` matches SQLite 100 host ownership, audit references
+and invalidation triggers without copying encrypted discovery settings.
+
 `00011_catalog_topology_epoch.sql` is the forward equivalent of SQLite 099,
 adding narrow metadata invalidation to the existing authoritative epoch.
 

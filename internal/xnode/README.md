@@ -1,5 +1,17 @@
 # X-Node control plane
 
+`ddns_bindings.go` and `ddns_configuration.go` separate administrator-owned host
+references from encrypted agent discovery settings. Built-in DDNS binds each
+enabled address family to a distinct existing host on the same node; it creates
+no public DNS records. External providers may use optional host bindings. Only
+the authenticated configuring administrator supplies audit ownership. Generations
+are derived from discovery/provider configuration and binding references; neither
+host IDs nor audit ownership enter the agent configuration. Omitted bindings
+preserve older editor writes. Unsupported peers retain ordinary authorization
+updates and external DNS jobs while built-in jobs await negotiated support.
+`ddns_bindings_test.go` checks actor ownership, omission/rename compatibility,
+generation changes, separate references and legacy configuration projection.
+
 `catalog_topology.go` retains one credential-free node/group snapshot (4 MiB
 encoded limit), keyed by the transactional compile revision. Each read checks
 the authoritative revision; a loader verifies it again before publication.

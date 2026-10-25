@@ -81,6 +81,8 @@ type GlobalConfig struct {
 }
 
 type NodeSettings struct {
+	DDNSBindings        map[string]DDNSHostBinding `json:"ddnsBindings,omitempty"`
+	ddnsActor           string
 	Bandwidth           *BandwidthPolicy            `json:"bandwidth,omitempty"`
 	DDNS                []wire.DDNSJob              `json:"ddns"`
 	Certificates        map[string]wire.Certificate `json:"certificates"`

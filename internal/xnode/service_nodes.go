@@ -43,7 +43,11 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	if err != nil {
 		return node, err
 	}
+	if err = s.prepareDDNSSettings(ctx, node.ID, &settings); err != nil {
+		return node, err
+	}
 	validation := wire.Config{Xray: json.RawMessage(`{"inbounds":[]}`), Users: []wire.User{}, Providers: global.Providers, Certificates: settings.Certificates, InboundCertificates: settings.InboundCertificates, DDNS: settings.DDNS, DNS: settings.DNS, Firewall: settings.Firewall}
+	validation.DDNS = ddnsJobsForNode(node.ID, settings, global.Providers)
 	if settings.DNS.Redirect {
 		raw, e := s.vault.Decrypt("xnode.config."+base.ID, base.DocumentCipher)
 		if e != nil {
@@ -54,7 +58,9 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	if err = validation.Validate(); err != nil {
 		return node, ErrInvalid
 	}
-	node.SettingsCipher, err = s.seal("xnode.node."+node.ID, settings)
+	stored := settings
+	stored.DDNSBindings = nil
+	node.SettingsCipher, err = s.seal("xnode.node."+node.ID, stored)
 	if err != nil {
 		return node, err
 	}
@@ -74,7 +80,7 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 			return node, err
 		}
 	}
-	if err = s.repo.SaveXNodeNode(ctx, node); err != nil {
+	if err = s.persistNodeDDNS(ctx, node, settings.DDNSBindings); err != nil {
 		return node, err
 	}
 	return s.repo.XNodeNode(ctx, node.ID)

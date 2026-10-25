@@ -1168,6 +1168,22 @@ CREATE TABLE xnode_daily_usage (
  PRIMARY KEY(proxy_user_id,node_id,period_id,date)
 );
 
+CREATE TABLE xnode_ddns_hosts (
+ node_id TEXT NOT NULL,job_id TEXT NOT NULL,
+ family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),
+ host_id TEXT NOT NULL UNIQUE,
+ PRIMARY KEY(node_id,job_id,family),
+ FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,
+ FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)
+);
+
+CREATE TABLE xnode_ddns_jobs (
+ node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,
+ job_id TEXT NOT NULL CHECK(length(job_id) BETWEEN 1 AND 128),
+ configured_by TEXT NOT NULL REFERENCES users(id),
+ PRIMARY KEY(node_id,job_id)
+);
+
 CREATE TABLE xnode_endpoints (
  id TEXT PRIMARY KEY, node_id TEXT NOT NULL REFERENCES xnode_nodes(id), inbound_tag TEXT NOT NULL,
  name TEXT NOT NULL, address TEXT NOT NULL, port INTEGER NOT NULL CHECK(port BETWEEN 1 AND 65535),
@@ -1609,6 +1625,8 @@ CREATE INDEX xnode_daily_usage_date_node_idx ON xnode_daily_usage(date,node_id);
 
 CREATE INDEX xnode_daily_usage_user_date_idx ON xnode_daily_usage(proxy_user_id,date,node_id,period_id);
 
+CREATE UNIQUE INDEX xnode_endpoint_ownership_idx ON xnode_endpoints(id,node_id);
+
 CREATE INDEX xnode_endpoints_node_idx ON xnode_endpoints(node_id,inbound_tag);
 
 CREATE UNIQUE INDEX xnode_firewall_active_prefix ON xnode_firewall_bans(prefix) WHERE released_version=0;
@@ -1666,6 +1684,18 @@ CREATE TRIGGER compile_admin_temporary_bans_update AFTER UPDATE ON admin_tempora
 
 CREATE TRIGGER compile_combo_whitelist_update AFTER UPDATE OF whitelist_ip_quota ON combos
  BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_hosts_delete AFTER DELETE ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_hosts_insert AFTER INSERT ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_hosts_update AFTER UPDATE ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_jobs_delete AFTER DELETE ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_jobs_insert AFTER INSERT ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
+
+CREATE TRIGGER compile_ddns_jobs_update AFTER UPDATE ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 
 CREATE TRIGGER compile_disabled_payg_delete AFTER DELETE ON user_disabled_payg_squads BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END;
 

@@ -1,5 +1,8 @@
 # Database migrations
 
+`100_xnode_ddns_bindings.sql` adds normalized administrator/job and per-family
+host references with same-node ownership and compile-revision invalidation.
+
 `099_catalog_topology_epoch.sql` reuses the existing authoritative revision for
 node name/country/provider/multiplier changes. Equal values, heartbeats and live
 agent revisions do not advance it. No metadata or telemetry copy is persisted.

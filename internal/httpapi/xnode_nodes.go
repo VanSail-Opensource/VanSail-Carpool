@@ -33,7 +33,7 @@ func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {
 	if id := chiURLParam(r, "id"); id != "" {
 		input.Node.ID = id
 	}
-	node, err := s.deps.XNode.SaveNode(r.Context(), input.Node, input.Settings)
+	node, err := s.deps.XNode.SaveNodeAs(r.Context(), input.Node, input.Settings, currentUser(r).ID)
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

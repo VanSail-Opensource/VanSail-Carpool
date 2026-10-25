@@ -25,6 +25,7 @@ const multiplierText = shallowRef('1')
 const multiplier = computed(() => nodeMultiplierSchema().safeParse(multiplierText.value))
 const settings = ref<XNodeSettings>({ ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } })
 const configurations = computed(() => props.configurations.map(value => ({ label: value.name, value: value.id })))
+const ddnsHosts = computed(() => props.endpoints.filter(host => host.nodeId === draft.id))
 const status = (id: string) => props.metrics?.nodes.find(value => value.nodeId === id)
 const inbounds = computed(() => {
   const document = props.configurations.find(item => item.id === draft.configId)?.document
@@ -88,7 +89,7 @@ async function enroll(node: XNode): Promise<void> {
             <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
             <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
           </div>
-          <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" @valid="settingsValid = $event" />
+          <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" @valid="settingsValid = $event" />
           <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
         </form>
       </template>

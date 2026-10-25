@@ -25,3 +25,19 @@ func (r *compileReads) XNodeSnippet(ctx context.Context, id string) (Snippet, er
 	}
 	return item, err
 }
+
+func (r *compileReads) XNodeDDNSBindings(ctx context.Context, id string) (map[string]DDNSHostBinding, error) {
+	if items, ok := r.ddnsBindings[id]; ok {
+		return items, nil
+	}
+	items := map[string]DDNSHostBinding{}
+	if source, ok := r.Repository.(ddnsBindingReader); ok {
+		var err error
+		items, err = source.XNodeDDNSBindings(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+	r.ddnsBindings[id] = items
+	return items, nil
+}

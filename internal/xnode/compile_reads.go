@@ -21,6 +21,7 @@ type compileReads struct {
 	identitiesLoaded bool
 	configurations   map[string]Configuration
 	snippets         map[string]Snippet
+	ddnsBindings     map[string]map[string]DDNSHostBinding
 	nodeByID         map[string]Node
 	users            map[string]model.User
 	byID             map[int64]Identity
@@ -38,6 +39,7 @@ func (s *Service) withCompileReads(node ...string) *Service {
 	}
 	repo := &compileReads{Repository: s.repo, nodeByID: map[string]Node{}, users: map[string]model.User{}, byID: map[int64]Identity{}, byUser: map[string]Identity{}, desired: map[string]*model.Purchase{}, purchases: map[string][]model.Purchase{}, periods: map[string]Period{}, disabled: map[string][]string{}, restricted: map[string]bool{}}
 	repo.configurations, repo.snippets = map[string]Configuration{}, map[string]Snippet{}
+	repo.ddnsBindings = map[string]map[string]DDNSHostBinding{}
 	if len(node) > 0 {
 		repo.nodeID = node[0]
 	}

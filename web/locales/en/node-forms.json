@@ -1,5 +1,17 @@
 {
   "nodeForms": {
+    "builtinDDNS": "Built-in",
+    "builtinDDNSHint": "Updates selected VanSail hosts when this node's IP changes. No public DNS records are created.",
+    "ddnsUpgradeHint": "Requires X-Node with built-in DDNS support.",
+    "ddnsHostIPv4": "IPv4 host",
+    "ddnsHostIPv6": "IPv6 host",
+    "ddnsHostNone": "No host binding",
+    "ddnsHostRequired": "Choose a host on this node",
+    "ddnsHostEmpty": "Create a host on this node before binding DDNS.",
+    "discoverIPv4": "Discover IPv4",
+    "discoverIPv6": "Discover IPv6",
+    "ddnsSourceHint": "Use an interface, or an HTTPS lookup URL for each enabled family.",
+    "ddnsDistinctHosts": "IPv4 and IPv6 need separate hosts.",
     "multiplierInvalid": "Enter 0 to 1000, with at most six fractional digits.",
     "legacySchedule": "Existing schedule: {value}",
     "convertSchedule": "Use hour interval",

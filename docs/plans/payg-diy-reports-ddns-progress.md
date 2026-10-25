@@ -36,10 +36,10 @@ and the applicable validation are complete, not merely that code was written.
 ## Reporting and performance
 
 - [x] 20 Isolate bounded report queues while preserving durable traffic order.
-- [ ] 21 Add negotiated compact telemetry and bounded report compression.
-- [ ] 22 Load Explore on entry and Combo resources on mode selection.
-- [ ] 23 Synchronize PAYG entrance animations with fullscreen scene completion.
-- [ ] 24 Add bounded revision-aware caching and remove redundant reconciliation work.
+- [x] 21 Add negotiated compact telemetry and bounded report compression.
+- [x] 22 Load Explore on entry and Combo resources on mode selection.
+- [x] 23 Synchronize PAYG entrance animations with fullscreen scene completion.
+- [x] 24 Add bounded revision-aware caching and remove redundant reconciliation work.
 
 ## DDNS
 
@@ -54,6 +54,21 @@ checks, and verified signed amd64/arm64 agent artifacts. Record browser evidence
 maintenance receipts, protocol compatibility and performance measurements below.
 
 ## Evidence
+
+- Item 25 implements normalized same-node IPv4/IPv6 bindings, atomic node saves,
+  generated API types, administrator attribution and negotiated legacy fallback.
+  Chrome checked 320px/390px dark reduced motion and desktop light/dark, long host
+  names, dual and single family modes, empty host inventory, invalid-source save
+  gating/recovery, retained renamed bindings, provider discovery failure/retry
+  and retained drafts after save errors. Built-in needs no zone request and
+  remains selectable during provider failures. Keyboard Escape closes host and
+  provider popups; no overflow or console warnings/errors remained. Typecheck,
+  targeted ESLint, Go vet and structure/localization checks passed. Hosted
+  SQLite/PostgreSQL acceptance is pending. Address redistribution follows in 26-27.
+
+- Items 21-24 passed combined panel run `40207019355` on `44e52eb9`, including
+  SQLite/PostgreSQL regressions, frontend checks and production image builds.
+  This terminal result supersedes their intermediate pending notes below.
 
 - Item 20 implementation isolates bounded report lanes in both repositories,
   retains one writer and adds hosted saturation/byte-budget/order regressions.

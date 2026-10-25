@@ -60,7 +60,10 @@ xnodeApi.snippets = async () => ({ items: [] })
 xnodeApi.groups = async () => ({ items: params.has('empty') ? [] : [{ id: 'group-one', name: 'Global group', enabled: true, bindings: nodes.map(node => ({ nodeId: node.id, inboundTag: 'paid' })) }] })
 const deletedEndpoints = new Set<string>()
 xnodeApi.deleteEndpoint = async id => { await check('delete-endpoint:' + id); if (params.has('delete-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); deletedEndpoints.add(id); trace.writes.push({ deleteEndpoint: id }) }
-xnodeApi.endpoints = async () => ({ items: params.has('empty') ? [] : nodes.filter(node => !deletedEndpoints.has(node.id)).map(node => ({ id: node.id, nodeId: node.id, inboundTag: 'paid', name: node.name, address: `${node.countryCode?.toLowerCase()}.proxy.example`, port: 443, enabled: true, hidden: false, overrides: {} })) })
+xnodeApi.endpoints = async () => ({ items: params.has('empty') || params.has('ddns-empty-hosts') ? [] : nodes.filter(node => !deletedEndpoints.has(node.id)).flatMap((node, index) => {
+  const host = { id: node.id, nodeId: node.id, inboundTag: 'paid', name: node.name, address: `${node.countryCode?.toLowerCase()}.proxy.example`, port: 443, enabled: true, hidden: false, overrides: {} }
+  return params.has('ddns') || params.has('builtin-ddns') ? [host, { ...host, id: index === 0 ? '33333333-3333-4333-8333-333333333333' : '44444444-4444-4444-8444-444444444444', name: params.has('long-hosts') ? 'VanSail International IPv6 Entry Host · Long Location and Carrier Name' : `${node.name} IPv6`, address: '2001:db8::7' }] : [host]
+}) })
 xnodeApi.saveGroup = async value => { await check('save-group'); trace.writes.push(JSON.parse(JSON.stringify(value))); return { id: value.id || 'fixture-group', name: value.name || '', enabled: value.enabled ?? true, bindings: value.bindings ?? [] } }
 xnodeApi.saveEndpoint = async value => { await check('save-endpoint'); trace.writes.push(JSON.parse(JSON.stringify(value))); return { id: value.id || 'fixture-endpoint', nodeId: value.nodeId || '', inboundTag: value.inboundTag || '', name: value.name || '', address: value.address || '', port: value.port || 443, enabled: value.enabled ?? true, hidden: value.hidden ?? false, overrides: value.overrides ?? {} } }
 let logReads = 0
@@ -124,12 +127,16 @@ if (params.has('responses')) {
   templateConfig.templates.push({ id: 'empty-response', name: 'Limited client response', format: 'empty-http', statusCode: 451 })
   templateConfig.userAgentRules = [{ pattern: 'Browser', action: 'browser', templateId: '' }, { pattern: 'Blocked', templateId: 'empty-response' }]
 }
-if (params.has('ddns')) {
+if (params.has('ddns') || params.has('builtin-ddns')) {
   global.providers = { cloudflare: { type: 'cloudflare', credentials: {} }, other: { type: 'duckdns', credentials: {} } }
   const originalNode = xnodeApi.node
   xnodeApi.node = async (id, signal) => {
     const value = await originalNode(id, signal)
     value.settings.ddns = [{ id: 'primary', provider: 'cloudflare', zone: 'saved.example', name: 'node', ttl_seconds: 300 }]
+    if (params.has('builtin-ddns')) {
+      value.settings.ddns = [{ id: 'primary', provider: 'builtin:panel', zone: '', name: '', ipv4: params.has('ipv6-only') ? '' : 'auto', ipv6: params.has('ipv4-only') ? '' : 'auto', interface: 'eth0', interval_seconds: 300 }]
+      value.settings.ddnsBindings = { primary: { ipv4HostId: params.has('ipv6-only') ? undefined : id, ipv6HostId: params.has('ipv4-only') ? undefined : id === nodes[0]?.id ? '33333333-3333-4333-8333-333333333333' : '44444444-4444-4444-8444-444444444444' } }
+    }
     return value
   }
 }

@@ -14,6 +14,11 @@ func (e *CapabilityError) Unwrap() error { return ErrUnavailable }
 
 func configurationCapabilities(config wire.Config, advertised []string) error {
 	required := []string{}
+	for _, job := range config.DDNS {
+		if job.Provider == wire.BuiltinDDNSProvider {
+			required = append(required, wire.BuiltinDDNSCapability, wire.DDNSChangesCapability)
+		}
+	}
 	for _, certificate := range config.Certificates {
 		if certificate.Config.CertMode == "file" && certificate.Config.Domain == "" {
 			required = append(required, "node_file_certificates_v1")

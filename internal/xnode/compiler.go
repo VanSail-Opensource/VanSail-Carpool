@@ -173,6 +173,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	}
 	config := wire.Config{Xray: nativeJSON, Users: users, Providers: global.Providers, Certificates: settings.Certificates, InboundCertificates: settings.InboundCertificates, DDNS: settings.DDNS, DNS: settings.DNS, Firewall: settings.Firewall, BlockedPorts: ports, AssetHashes: hashes, Updates: global.Updates, Telemetry: global.Telemetry, Torrent: global.Torrent, MemberOutbounds: memberTags}
 	config.BlockedDomains = global.BlockedDomains
+	config.DDNS = ddnsJobsForNode(nodeID, settings, global.Providers)
 	config.Firewall.SourceGeoIP, err = s.sourceGeoIP(ctx, global, settings.Firewall, nativeJSON)
 	if err != nil {
 		return config, err

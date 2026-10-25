@@ -66,6 +66,7 @@ func pruneAbandonedUsersTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, co
 		AND NOT EXISTS (SELECT 1 FROM payment_orders WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_identities WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_member_diy WHERE user_id=member.id)
+		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_jobs WHERE configured_by=member.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_firewall_exemptions WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM xnode_payg_minutes WHERE user_id=member.id)

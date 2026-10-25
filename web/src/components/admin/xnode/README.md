@@ -1,5 +1,13 @@
 # X-Node administration
 
+Built-in DDNS uses `XNodeDDNSHosts.vue` for separate IPv4/IPv6 host references,
+limited to the edited node's existing endpoints. The job editor keeps these
+references outside discovery settings, hides public-DNS fields for Built-in and
+preserves bindings across job renames. `ddnsForm.ts` reuses Zod and native URL
+validation to gate saves on distinct hosts and enabled discovery sources. Provider
+discovery remains cancellable and Built-in is available during failures. Copy is
+localized in the node-forms locale files; reduced motion uses native controls.
+
 `XNodeDDNSSettings.vue` edits the pinned agent's DDNS fields, including optional
 HTTPS IP lookup URLs and nonnegative TTL (new jobs default to 300 seconds).
 `XNodeDDNSJob.vue` owns one job's localized fields and removal action.

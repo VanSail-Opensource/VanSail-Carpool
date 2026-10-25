@@ -103,6 +103,7 @@
     "telegram_pm_read_status",
     "webhook_events",
     "xnode_customizations",
+    "xnode_ddns_jobs",
     "xnode_endpoints",
     "xnode_firewall_cursors",
     "xnode_firewall_exemptions",
@@ -122,6 +123,7 @@
     "purchase_addons",
     "purchase_rollovers",
     "renewal_batches",
+    "xnode_ddns_hosts",
     "xnode_periods",
     "affiliate_tier_awards",
     "ip_lookup_checks",
@@ -6881,6 +6883,65 @@
       ]
     },
     {
+      "name": "xnode_ddns_hosts",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "family",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "host_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_ddns_jobs",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "configured_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "xnode_endpoints",
       "columns": [
         {
@@ -8395,6 +8456,7 @@
     "users_inviter_created_idx",
     "xnode_daily_usage_date_node_idx",
     "xnode_daily_usage_user_date_idx",
+    "xnode_endpoint_ownership_idx",
     "xnode_endpoints_node_idx",
     "xnode_firewall_active_prefix",
     "xnode_firewall_active_source",
@@ -8418,6 +8480,12 @@
     "compile_admin_temporary_bans_insert",
     "compile_admin_temporary_bans_update",
     "compile_combo_whitelist_update",
+    "compile_ddns_hosts_delete",
+    "compile_ddns_hosts_insert",
+    "compile_ddns_hosts_update",
+    "compile_ddns_jobs_delete",
+    "compile_ddns_jobs_insert",
+    "compile_ddns_jobs_update",
     "compile_disabled_payg_delete",
     "compile_disabled_payg_insert",
     "compile_payg_account_insert",

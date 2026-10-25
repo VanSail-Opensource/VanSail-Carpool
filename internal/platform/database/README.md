@@ -1,5 +1,15 @@
 # Application store
 
+`xnode_ddns_bindings.go` commits node discovery settings and normalized job/host
+references in one transaction. Forward migrations 100/00012 enforce same-node
+host ownership, distinct family/job bindings and administrator audit references.
+Reference changes invalidate the existing compile revision. Maintenance protects
+the configuring user; bound hosts must be unbound before deletion or node moves.
+The regression fixture checks SQLite and hosted PostgreSQL atomic rollback,
+credential retention and owner retention. No discovery observations are stored
+in these binding tables. `xnode_ddns_bindings_test.go` exercises these constraints
+through the shared SQLite/PostgreSQL store factory.
+
 `catalog_topology_epoch_test.go` verifies native metadata changes advance the
 shared revision while equal values and live agent bookkeeping do not. It runs
 through both SQLite and the hosted PostgreSQL contract factory. Forward
@@ -735,6 +745,14 @@ backfill in hosted SQLite/PostgreSQL CI.
 `automatic_renewal_types.go` owns renewal quote contracts. `automatic_renewal_failure.go` retains existing failed-renewal settlement; PAYG empty renewals preserve rollover separately. `billing_renewal_quote.go` isolates future-term pricing from batch mutation.
 
 
+`user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices under the wallet lock. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
+
+`retention_imports_test.go` covers abandoned upload expiry and live settlement preservation. `retention_payg_test.go` covers independent batch commits, precise boundaries and unchanged accounting. `user_payg_preferences_test.go` covers default choices, master precedence, concurrent merges and delivered-traffic settlement. `admin_entitlement_validity_test.go` covers exclusive validity boundaries and pending settlement preservation.
+
+Terminal failed PAYG provisioning/recovery jobs share the three-day failed synchronization window and explicit-retry protection. Financial journal state remains independent.
+
+`xnode_payg_credit_window.go` and `xnode_payg_credit_window_test.go` use platform-neutral names so Go includes the rolling billing helpers and regressions on Linux as well as Windows.
+
 <!-- generated transaction retry map -->
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
@@ -855,6 +873,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_access_repair_retry_generated.go` wraps the transactional methods in `xnode_access_repair.go`.
 - `xnode_barriers_retry_generated.go` wraps the transactional methods in `xnode_barriers.go`.
 - `xnode_configurations_retry_generated.go` wraps the transactional methods in `xnode_configurations.go`.
+- `xnode_ddns_bindings_retry_generated.go` wraps the transactional methods in `xnode_ddns_bindings.go`.
 - `xnode_diy_billing_retry_generated.go` wraps the transactional methods in `xnode_diy_billing.go`.
 - `xnode_diy_reconcile_retry_generated.go` wraps the transactional methods in `xnode_diy_reconcile.go`.
 - `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.
@@ -873,11 +892,3 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
-
-`user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices under the wallet lock. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
-
-`retention_imports_test.go` covers abandoned upload expiry and live settlement preservation. `retention_payg_test.go` covers independent batch commits, precise boundaries and unchanged accounting. `user_payg_preferences_test.go` covers default choices, master precedence, concurrent merges and delivered-traffic settlement. `admin_entitlement_validity_test.go` covers exclusive validity boundaries and pending settlement preservation.
-
-Terminal failed PAYG provisioning/recovery jobs share the three-day failed synchronization window and explicit-retry protection. Financial journal state remains independent.
-
-`xnode_payg_credit_window.go` and `xnode_payg_credit_window_test.go` use platform-neutral names so Go includes the rolling billing helpers and regressions on Linux as well as Windows.

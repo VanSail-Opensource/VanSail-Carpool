@@ -99,7 +99,8 @@
     "096_payg_credit_windows.sql",
     "097_payg_preferences.sql",
     "098_payg_squad_state.sql",
-    "099_catalog_topology_epoch.sql"
+    "099_catalog_topology_epoch.sql",
+    "100_xnode_ddns_bindings.sql"
   ],
   "objects": [
     {
@@ -737,6 +738,18 @@
       "name": "xnode_daily_usage",
       "table": "xnode_daily_usage",
       "sql": "CREATE TABLE xnode_daily_usage (\n proxy_user_id INTEGER NOT NULL REFERENCES xnode_identities(proxy_user_id),\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id), period_id TEXT NOT NULL REFERENCES xnode_periods(id),\n date TEXT NOT NULL, upload_bytes INTEGER NOT NULL DEFAULT 0 CHECK(upload_bytes\u003e=0),\n download_bytes INTEGER NOT NULL DEFAULT 0 CHECK(download_bytes\u003e=0),\n weighted_bytes INTEGER NOT NULL DEFAULT 0 CHECK(weighted_bytes\u003e=0),\n weight_remainder INTEGER NOT NULL DEFAULT 0 CHECK(weight_remainder BETWEEN 0 AND 999999),\n PRIMARY KEY(proxy_user_id,node_id,period_id,date)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_ddns_hosts",
+      "table": "xnode_ddns_hosts",
+      "sql": "CREATE TABLE xnode_ddns_hosts (\n node_id TEXT NOT NULL,job_id TEXT NOT NULL,\n family TEXT NOT NULL CHECK(family IN ('ipv4','ipv6')),\n host_id TEXT NOT NULL UNIQUE,\n PRIMARY KEY(node_id,job_id,family),\n FOREIGN KEY(node_id,job_id) REFERENCES xnode_ddns_jobs(node_id,job_id) ON DELETE CASCADE,\n FOREIGN KEY(host_id,node_id) REFERENCES xnode_endpoints(id,node_id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_ddns_jobs",
+      "table": "xnode_ddns_jobs",
+      "sql": "CREATE TABLE xnode_ddns_jobs (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id) ON DELETE CASCADE,\n job_id TEXT NOT NULL CHECK(length(job_id) BETWEEN 1 AND 128),\n configured_by TEXT NOT NULL REFERENCES users(id),\n PRIMARY KEY(node_id,job_id)\n)"
     },
     {
       "type": "table",
@@ -1550,6 +1563,12 @@
     },
     {
       "type": "index",
+      "name": "xnode_endpoint_ownership_idx",
+      "table": "xnode_endpoints",
+      "sql": "CREATE UNIQUE INDEX xnode_endpoint_ownership_idx ON xnode_endpoints(id,node_id)"
+    },
+    {
+      "type": "index",
       "name": "xnode_endpoints_node_idx",
       "table": "xnode_endpoints",
       "sql": "CREATE INDEX xnode_endpoints_node_idx ON xnode_endpoints(node_id,inbound_tag)"
@@ -1673,6 +1692,42 @@
       "name": "compile_combo_whitelist_update",
       "table": "combos",
       "sql": "CREATE TRIGGER compile_combo_whitelist_update AFTER UPDATE OF whitelist_ip_quota ON combos\n BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_hosts_delete",
+      "table": "xnode_ddns_hosts",
+      "sql": "CREATE TRIGGER compile_ddns_hosts_delete AFTER DELETE ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_hosts_insert",
+      "table": "xnode_ddns_hosts",
+      "sql": "CREATE TRIGGER compile_ddns_hosts_insert AFTER INSERT ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_hosts_update",
+      "table": "xnode_ddns_hosts",
+      "sql": "CREATE TRIGGER compile_ddns_hosts_update AFTER UPDATE ON xnode_ddns_hosts BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_jobs_delete",
+      "table": "xnode_ddns_jobs",
+      "sql": "CREATE TRIGGER compile_ddns_jobs_delete AFTER DELETE ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_jobs_insert",
+      "table": "xnode_ddns_jobs",
+      "sql": "CREATE TRIGGER compile_ddns_jobs_insert AFTER INSERT ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
+    },
+    {
+      "type": "trigger",
+      "name": "compile_ddns_jobs_update",
+      "table": "xnode_ddns_jobs",
+      "sql": "CREATE TRIGGER compile_ddns_jobs_update AFTER UPDATE ON xnode_ddns_jobs BEGIN UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1; END"
     },
     {
       "type": "trigger",
@@ -7660,7 +7715,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 100,
+      "rows": 101,
       "columns": [
         {
           "name": "version",
@@ -8938,6 +8993,67 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_ddns_hosts",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "family",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "host_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_ddns_jobs",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "job_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "configured_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
           "primaryKey": 0
         }
       ]

@@ -1,5 +1,17 @@
 {
   "nodeForms": {
+    "builtinDDNS": "内置",
+    "builtinDDNSHint": "节点 IP 更改时更新所选 VanSail 主机地址，不会发布公共 DNS 记录。",
+    "ddnsUpgradeHint": "需要支持内置 DDNS 的 X-Node 版本。",
+    "ddnsHostIPv4": "IPv4 主机",
+    "ddnsHostIPv6": "IPv6 主机",
+    "ddnsHostNone": "不绑定主机",
+    "ddnsHostRequired": "请选择此节点上的主机",
+    "ddnsHostEmpty": "请先在此节点上创建主机，再绑定 DDNS。",
+    "discoverIPv4": "自动获取 IPv4",
+    "discoverIPv6": "自动获取 IPv6",
+    "ddnsSourceHint": "填写网卡名称，或为每个已启用的地址协议填写 HTTPS 查询地址。",
+    "ddnsDistinctHosts": "IPv4 和 IPv6 必须分别绑定不同主机。",
     "multiplierInvalid": "请输入 0 至 1000 的数值，最多保留六位小数。",
     "legacySchedule": "现有计划：{value}",
     "convertSchedule": "改用小时间隔",

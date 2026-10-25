@@ -17,6 +17,7 @@ type agentPeer struct {
 	paygOverlayKey        string       // syncMu; disposable authorization projection
 	publicIP              string
 	compactTelemetry      bool // immutable, negotiated upgrade header plus hello capability
+	ddnsChanges           bool // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string
 	protectedAt           time.Time

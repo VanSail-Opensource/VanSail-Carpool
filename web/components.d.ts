@@ -335,6 +335,7 @@ declare module 'vue' {
     XNodeCertificateSettings: typeof import('./src/components/admin/xnode/XNodeCertificateSettings.vue')['default']
     XNodeCommands: typeof import('./src/components/admin/xnode/XNodeCommands.vue')['default']
     XNodeConfigurations: typeof import('./src/components/admin/xnode/XNodeConfigurations.vue')['default']
+    XNodeDDNSHosts: typeof import('./src/components/admin/xnode/XNodeDDNSHosts.vue')['default']
     XNodeDDNSJob: typeof import('./src/components/admin/xnode/XNodeDDNSJob.vue')['default']
     XNodeDDNSSettings: typeof import('./src/components/admin/xnode/XNodeDDNSSettings.vue')['default']
     XNodeDDNSZone: typeof import('./src/components/admin/xnode/XNodeDDNSZone.vue')['default']
