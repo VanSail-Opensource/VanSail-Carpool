@@ -1,5 +1,8 @@
 # Database migrations
 
+`102_xnode_endpoint_epoch.sql` invalidates routing and bypass-reference caches on
+semantic endpoint changes, including removal of the last old-address reference.
+
 `101_xnode_ddns_changes.sql` persists bounded desired address mutation evidence,
 replay cursors and operation references, separately from disposable telemetry.
 

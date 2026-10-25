@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00014_xnode_endpoint_epoch.sql` mirrors SQLite 102 endpoint invalidation without
+invalidating on equal values or timestamp-only updates.
+
 `00013_xnode_ddns_changes.sql` mirrors SQLite 101 desired mutation/order state
 with exact text sequences and durable operation references.
 

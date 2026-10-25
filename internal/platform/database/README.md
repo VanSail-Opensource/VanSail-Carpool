@@ -1,5 +1,9 @@
 # Application store
 
+`xnode_endpoint_epoch_test.go` verifies endpoint insert, semantic edits and deletion
+invalidate routing/bypass references while equal values and timestamp-only writes
+do not. Forward migrations 102/00014 supply the missing endpoint epoch triggers.
+
 `xnode_ddns_changes.go` stores one desired mutation/replay cursor per node/job,
 with exact decimal uint64 sequence values and a durable operation reference.
 Node and compile-revision locks fence authentication/settings changes before

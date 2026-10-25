@@ -73,6 +73,8 @@ maintenance receipts, protocol compatibility and performance measurements below.
   after direct DDNS host writes; the transaction now advances it explicitly.
   The new socket fixture also needed the existing paid-traffic capabilities.
   Both failures are corrected; replacement hosted acceptance is pending.
+  Follow-up migrations 102/00014 also invalidate endpoint edits/deletion, so
+  removing the final old host reference refreshes bypass retention correctly.
 
 - Item 25 implements normalized same-node IPv4/IPv6 bindings, atomic node saves,
   generated API types, administrator attribution and negotiated legacy fallback.
