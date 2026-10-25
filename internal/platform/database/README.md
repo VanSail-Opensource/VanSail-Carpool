@@ -1,5 +1,9 @@
 # Application store
 
+`payg_squad_state_test.go` checks unavailable admission and compatibility with
+older clients omitting `paygState`. Squad merchandising stores only the durable
+administrator state; live health and wallet eligibility remain derived.
+
 `purchase_admission.go` shares exact-time automatic-renewal admission between
 catalog metadata, quotes and checkout. Manual purchase, renewal and preference
 changes serialize on the existing member balance row. A completed manual

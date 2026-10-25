@@ -27,9 +27,13 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 	if err != nil {
 		return telegrampm.ProfileFacts{}, err
 	}
-	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance, AccountName: user.AccountName()}
+	facts := telegrampm.ProfileFacts{OnboardingState: user.OnboardingState, Balance: balance}
 	if user.OnboardingState != "complete" {
 		return facts, nil
+	}
+	facts.PAYGTraffic, facts.PAYGSpent, err = r.paygProfileUsage(ctx, userID)
+	if err != nil {
+		return facts, err
 	}
 	active, _, err := r.store.ActiveAndQueuedPurchases(ctx, userID, time.Now().UTC())
 	if err != nil {

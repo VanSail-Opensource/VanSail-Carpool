@@ -1,5 +1,11 @@
 # Catalog components
 
+`PAYGStatusDot.vue` gives each squad an accessible semantic status marker;
+reduced-motion users receive a static dot. Hidden squads are filtered only from
+Explore cards and subscription output, while server totals include consumption
+and server authorization preserves existing connections.
+Card traffic/spending occupy opposite bottom corners; funding remains on Home.
+
 `CatalogBlocked.vue` presents the automatic-renewal prohibition for every member
 role without redirecting or blocking the PAYG mode switch. The catalog's optional
 `autoRenewalBlockedUntil` is refreshed on focus and expiry by

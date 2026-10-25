@@ -14,4 +14,5 @@ const saved = shallowRef<SquadProductWrite | null>(null)
 <style scoped>
 .payg-audit { max-width: 1150px; margin: auto; min-width: 0; padding: 12px; }
 .payg-audit__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 12px; }
+.payg-audit output { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>

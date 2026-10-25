@@ -16,7 +16,8 @@ import (
 type ProfileFacts struct {
 	OnboardingState string
 	Balance         model.Money
-	AccountName     string
+	PAYGTraffic     string
+	PAYGSpent       model.Money
 	ActiveCombo     *model.Purchase
 	SquadNames      []string
 	Rollover        *model.RolloverProjection
@@ -61,9 +62,11 @@ func Profile(item model.PMConversation, facts ProfileFacts, publicBaseURL, timez
 			balance = model.TXBMoney(0).Display
 		}
 		lines = append(lines, profileField("\U0001F4B0", localized(item.Locale, "Balance", "\u4f59\u989d"), balance))
-		if facts.AccountName != "" {
-			lines = append(lines, profileField("\U0001F464", localized(item.Locale, "Proxy username", "Proxy \u7528\u6237\u540d"), facts.AccountName))
+		paygSpent := facts.PAYGSpent.Display
+		if paygSpent == "" {
+			paygSpent = model.TXBMoney(0).Display
 		}
+		lines = append(lines, profileField("\U0001F4CA", localized(item.Locale, "PAYG (72h)", "PAYG（72小时）"), formatProfileDecimalBytes(facts.PAYGTraffic)+" / "+paygSpent))
 		if purchase := facts.ActiveCombo; purchase != nil {
 			lines = append(lines,
 				profileField("\U0001F4E6", localized(item.Locale, "Active combo", "\u5f53\u524d\u5957\u9910"), purchase.ComboName),
@@ -134,8 +137,19 @@ func profileDate(value time.Time, timezone string) string {
 }
 
 func formatProfileBytes(value int64) string {
+	return formatProfileByteAmount(float64(value))
+}
+
+func formatProfileDecimalBytes(value string) string {
+	amount, err := strconv.ParseFloat(value, 64)
+	if err != nil || amount < 0 {
+		amount = 0
+	}
+	return formatProfileByteAmount(amount)
+}
+
+func formatProfileByteAmount(amount float64) string {
 	units := []string{"B", "KiB", "MiB", "GiB", "TiB"}
-	amount := float64(value)
 	unit := 0
 	for amount >= 1024 && unit < len(units)-1 {
 		amount /= 1024

@@ -99,6 +99,9 @@ SquadProduct:
     - createdAt
     - updatedAt
   properties:
+    paygState:
+      type: string
+      enum: [normal, hidden, unavailable]
     billingMode:
       type: string
       enum: [combo, payg]
@@ -292,6 +295,9 @@ SquadProductWrite:
   additionalProperties: false
   required: [groupId, name, description, profile, priceTxbMinor, visible, activationRequired]
   properties:
+    paygState:
+      type: string
+      enum: [normal, hidden, unavailable]
     billingMode:
       type: string
       enum: [combo, payg]

@@ -1,5 +1,8 @@
 # Shared models
 
+- `payg.go` defines PAYG availability independently of catalog visibility. Hidden
+  squads retain access; unavailable squads suppress only PAYG authorization.
+
 - `purchase_addons.go` defines the server-priced active-term squad-addition quote payload.
 
 - `model.go` documents the dependency-free shared model package.

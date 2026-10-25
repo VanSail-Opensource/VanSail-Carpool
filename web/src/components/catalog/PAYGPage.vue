@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { paygApi } from '@/api/payg'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
@@ -12,6 +12,7 @@ import PAYGSquadCard from './PAYGSquadCard.vue'
 const { t } = useI18n()
 const preferences = usePreferencesStore()
 const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed')
+const squads = computed(() => data.value?.squads.filter(item => item.squad.paygState !== 'hidden') ?? [])
 const emit = defineEmits<{ ready: [value: boolean] }>()
 watch(loading, value => emit('ready', !value), { immediate: true })
 </script>
@@ -26,9 +27,9 @@ watch(loading, value => emit('ready', !value), { immediate: true })
     </div>
     <div v-if="loading" class="payg-page__grid" aria-busy="true"><SkeletonBlock v-for="index in 3" :key="index" height="9rem" /></div>
     <template v-else-if="data">
-      <p v-if="!data.squads.length" class="payg-page__empty">{{ t('payg.empty') }}</p>
+      <p v-if="!squads.length" class="payg-page__empty">{{ t('payg.empty') }}</p>
       <div v-else class="payg-page__grid">
-        <PAYGSquadCard v-for="(item, index) in data.squads" :key="item.squad.id" :item="item" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" />
+        <PAYGSquadCard v-for="(item, index) in squads" :key="item.squad.id" :item="item" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" />
       </div>
     </template>
   </section>

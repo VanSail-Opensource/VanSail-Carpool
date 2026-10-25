@@ -12,7 +12,6 @@ const { t } = useI18n()
   <div class="payg-summary" :aria-busy="loading">
     <div class="payg-summary__wallet">
       <div><span>{{ t('payg.balance') }}</span><strong v-if="data">{{ formatMemberMoney(data.balance) }}</strong><USkeleton v-else-if="loading" class="h-7 w-28" /><span v-else>{{ t('payg.status.unavailable') }}</span></div>
-      <UButton :to="{ path: '/home', query: { topUp: '1' } }" icon="i-ph-plus" color="neutral" variant="outline" :label="t('payg.addBalance')" data-haptic="navigate" />
     </div>
     <div class="payg-summary__window">
       <small>{{ t('payg.window') }}</small>

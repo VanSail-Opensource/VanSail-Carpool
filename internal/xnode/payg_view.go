@@ -92,7 +92,7 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 		if !choices.Allows(p.GroupID) {
 			status = "disabled"
 		}
-		if p.BillingMode == "payg" && choices.Allows(p.GroupID) && g.Enabled && !restricted {
+		if p.PAYGAvailable() && choices.Allows(p.GroupID) && g.Enabled && !restricted {
 			status = "sync_pending"
 			if covered := coverage[p.GroupID]; covered != "" {
 				status = covered

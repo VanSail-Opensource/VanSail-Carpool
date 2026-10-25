@@ -36,7 +36,7 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 	}
 	prices := map[string]int64{}
 	for _, p := range products {
-		if p.BillingMode == "payg" && choices.Allows(p.GroupID) {
+		if p.PAYGAvailable() && choices.Allows(p.GroupID) {
 			prices[p.GroupID] = p.PAYGPriceTXBMinor
 		}
 	}

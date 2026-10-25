@@ -22,7 +22,7 @@ func (s *Service) queueMissingPAYG(ctx context.Context, user string, products []
 	}
 	payg := map[string]bool{}
 	for _, p := range products {
-		payg[p.GroupID] = p.BillingMode == "payg"
+		payg[p.GroupID] = p.PAYGAvailable()
 	}
 	for _, g := range groups {
 		if !choices.Allows(g.ID) || !g.Enabled || !payg[g.ID] {

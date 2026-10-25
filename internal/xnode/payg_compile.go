@@ -25,7 +25,7 @@ func (s *Service) paygUsers(ctx context.Context, node Node, inbounds map[string]
 	}
 	payg := map[string]bool{}
 	for _, p := range products {
-		payg[p.GroupID] = p.BillingMode == "payg"
+		payg[p.GroupID] = p.PAYGAvailable()
 	}
 	groups, err := s.repo.XNodeGroups(ctx)
 	if err != nil {

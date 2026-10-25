@@ -25,9 +25,9 @@ func TestProfileShowsApplicableFactsAndOmittedCoupon(t *testing.T) {
 	used, allocated := int64(1<<30), int64(8<<30)
 	purchase := &model.Purchase{ComboName: "Core", ValidFrom: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), ValidUntil: time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC), AutoRenewEnabled: true, CouponDiscount: model.TXBMoney(2500)}
 	prediction := model.TXBMoney(1250)
-	card := Profile(item, ProfileFacts{OnboardingState: "complete", Balance: model.TXBMoney(10000), AccountName: "proxy_user", ActiveCombo: purchase,
+	card := Profile(item, ProfileFacts{OnboardingState: "complete", Balance: model.TXBMoney(10000), ActiveCombo: purchase,
 		SquadNames: []string{"Optional squad"}, Rollover: &model.RolloverProjection{PredictedRollover: &prediction}, UsedBytes: &used, AllocatedBytes: &allocated}, "https://panel.example", "UTC")
-	for _, want := range []string{"Balance", "proxy\\_user", "Core", "Optional squad", "2026\\-10\\-01", "Auto renew", "Rollover prediction", "1\\.00 GiB / 8\\.00 GiB"} {
+	for _, want := range []string{"Balance", "Core", "Optional squad", "2026\\-10\\-01", "Auto renew", "Rollover prediction", "1\\.00 GiB / 8\\.00 GiB"} {
 		if !strings.Contains(card.Text, want) {
 			t.Fatalf("profile card missing %q: %s", want, card.Text)
 		}
@@ -64,5 +64,19 @@ func TestBrowserProfileURLContainsNoAuthorizationMaterial(t *testing.T) {
 				t.Fatalf("profile URL=%q,want=%q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestProfileShowsPAYGUsageWithoutAnActiveCombo(t *testing.T) {
+	for _, locale := range []string{"en", "zh-CN"} {
+		item := model.PMConversation{ID: "payg-member", UserID: "42", TelegramID: 42, Locale: locale}
+		card := Profile(item, ProfileFacts{OnboardingState: "complete", Balance: model.TXBMoney(500),
+			PAYGTraffic: "1073741824", PAYGSpent: model.TXBMoney(125)}, "https://panel.example", "UTC")
+		if !strings.Contains(card.Text, "PAYG") || !strings.Contains(card.Text, "1\\.00 GiB") || !strings.Contains(card.Text, "1\\.25 TXB") {
+			t.Fatal("PAYG-only profile omitted accounting", locale, card.Text)
+		}
+		if strings.Contains(card.Text, "Proxy username") {
+			t.Fatal("duplicate identity displayed", card.Text)
+		}
 	}
 }

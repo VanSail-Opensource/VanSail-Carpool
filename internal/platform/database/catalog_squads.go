@@ -19,6 +19,17 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	uuid := strings.TrimSpace(input.GroupID)
+	if input.PAYGState == "" {
+		input.PAYGState = "normal"
+		if existing, err := s.SquadProductByGroupID(ctx, uuid); err == nil {
+			input.PAYGState = existing.PAYGState
+		} else if !errors.Is(err, ErrNotFound) {
+			return model.SquadProduct{}, err
+		}
+	}
+	if input.PAYGState != "normal" && input.PAYGState != "hidden" && input.PAYGState != "unavailable" {
+		return model.SquadProduct{}, ErrConflict
+	}
 	if input.BillingMode == "" {
 		input.BillingMode = "combo"
 	}
@@ -51,9 +62,9 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at,billing_mode=excluded.billing_mode,payg_price_minor=excluded.payg_price_minor`,
-		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now), input.BillingMode, input.PAYGPriceTXBMinor)
+	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor,payg_state)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at,billing_mode=excluded.billing_mode,payg_price_minor=excluded.payg_price_minor,payg_state=excluded.payg_state`,
+		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now), input.BillingMode, input.PAYGPriceTXBMinor, input.PAYGState)
 	if err != nil {
 		return model.SquadProduct{}, fmt.Errorf("save squad override: %w", err)
 	}

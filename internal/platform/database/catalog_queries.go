@@ -104,7 +104,7 @@ func intPointer(value sql.NullInt64) *int {
 	return &result
 }
 
-const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at,billing_mode,payg_price_minor FROM squad_product_overrides`
+const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at,billing_mode,payg_price_minor,payg_state FROM squad_product_overrides`
 
 func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var product model.SquadProduct
@@ -112,7 +112,7 @@ func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var created, updated string
 	var stockLimit sql.NullInt64
 	var profileJSON sql.NullString
-	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated, &product.BillingMode, &product.PAYGPriceTXBMinor); err != nil {
+	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated, &product.BillingMode, &product.PAYGPriceTXBMinor, &product.PAYGState); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.SquadProduct{}, ErrNotFound
 		}

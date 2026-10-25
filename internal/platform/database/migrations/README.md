@@ -1,5 +1,8 @@
 # Database migrations
 
+`098_payg_squad_state.sql` adds the administrator-owned normal/hidden/unavailable
+state without changing member preferences, credit, charges or Combo terms.
+
 `096_payg_credit_windows.sql` preserves paid history while adding prepaid
 remainder/charge-time state and bounded raw/unbilled report counters for exact
 rolling 72-hour thresholds. Existing remaining credit keeps its last charge's

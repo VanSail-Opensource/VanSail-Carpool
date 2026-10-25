@@ -97,7 +97,8 @@
     "094_delete_revoked_api_tokens.sql",
     "095_payg.sql",
     "096_payg_credit_windows.sql",
-    "097_payg_preferences.sql"
+    "097_payg_preferences.sql",
+    "098_payg_squad_state.sql"
   ],
   "objects": [
     {
@@ -608,7 +609,7 @@
       "type": "table",
       "name": "squad_product_overrides",
       "table": "squad_product_overrides",
-      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor\u003e=0 AND (billing_mode\u003c\u003e'payg' OR payg_price_minor\u003e0)))"
+      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor\u003e=0 AND (billing_mode\u003c\u003e'payg' OR payg_price_minor\u003e0)), payg_state TEXT NOT NULL DEFAULT 'normal'\n CHECK(payg_state IN ('normal','hidden','unavailable')))"
     },
     {
       "type": "table",
@@ -7652,7 +7653,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 98,
+      "rows": 99,
       "columns": [
         {
           "name": "version",
@@ -7845,6 +7846,13 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "payg_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'normal'",
           "primaryKey": 0
         }
       ]

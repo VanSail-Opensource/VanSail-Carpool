@@ -5813,6 +5813,13 @@
           "notNull": true,
           "default": "0",
           "primaryKey": 0
+        },
+        {
+          "name": "payg_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'normal'",
+          "primaryKey": 0
         }
       ]
     },

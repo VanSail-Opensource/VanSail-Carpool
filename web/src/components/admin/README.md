@@ -1,5 +1,10 @@
 # Admin components
 
+The squad editor exposes normal/hidden/unavailable PAYG state separately from
+Combo merchandising. Hidden affects Explore and subscription output without
+cutting existing connections; unavailable suspends
+PAYG authorization without changing Combo entitlements or accounting history.
+
 Administrative views render exclusively inside the independent browser console.
 The console owns navigation, identity, appearance, and the desktop workspace.
 Feature panels use Nuxt UI tables, focused side editors, tabs, and compact

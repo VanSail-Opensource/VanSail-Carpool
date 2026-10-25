@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00010_payg_squad_state.sql` adds the same administrator-owned availability state
+as SQLite migration 098. Existing products default to normal.
+
 `00008_payg_credit_windows.sql` applies SQLite migration 096's prepaid expiry
 state and rolling report windows with BIGINT counters and binary timestamp text.
 Existing charge evidence is retained. Downgrade refuses authoritative mutation.

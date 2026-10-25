@@ -991,7 +991,8 @@ CREATE TABLE squad_product_overrides (
 , stock_limit INTEGER
   CHECK (stock_limit IS NULL OR stock_limit >= 0), profile_json TEXT
   CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0
-  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor>=0 AND (billing_mode<>'payg' OR payg_price_minor>0)));
+  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor>=0 AND (billing_mode<>'payg' OR payg_price_minor>0)), payg_state TEXT NOT NULL DEFAULT 'normal'
+ CHECK(payg_state IN ('normal','hidden','unavailable')));
 
 CREATE TABLE statistics_snapshots (
   partition TEXT PRIMARY KEY CHECK (length(partition) BETWEEN 1 AND 80),

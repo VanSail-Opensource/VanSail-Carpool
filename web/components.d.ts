@@ -204,6 +204,7 @@ declare module 'vue' {
     OperationStatusNotice: typeof import('./src/components/common/OperationStatusNotice.vue')['default']
     PAYGPage: typeof import('./src/components/catalog/PAYGPage.vue')['default']
     PAYGSquadCard: typeof import('./src/components/catalog/PAYGSquadCard.vue')['default']
+    PAYGStatusDot: typeof import('./src/components/catalog/PAYGStatusDot.vue')['default']
     PAYGSummary: typeof import('./src/components/catalog/PAYGSummary.vue')['default']
     PaymentChannelStep: typeof import('./src/components/billing/PaymentChannelStep.vue')['default']
     PaymentCryptoChannelPicker: typeof import('./src/components/billing/PaymentCryptoChannelPicker.vue')['default']

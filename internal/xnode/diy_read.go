@@ -71,6 +71,11 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 	if user == "" {
 		return proxies, nil
 	}
+	var err error
+	proxies, err = s.visiblePAYGExports(ctx, proxies)
+	if err != nil {
+		return nil, err
+	}
 	if _, ok := s.repo.(diyRepository); !ok {
 		return proxies, nil
 	}

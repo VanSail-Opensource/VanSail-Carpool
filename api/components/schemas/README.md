@@ -2,6 +2,8 @@
 
 `schemas-02.yaml` includes nullable member-specific renewal admission metadata
 on Catalog. Its deadline is a UI projection; checkout revalidates the term.
+Squad read/write models also carry optional `paygState`, defaulting new overrides
+to normal; omitted values on older-client writes preserve administrator intent.
 
 `xnode-providers.yaml` defines the supported flag and public zone ID/name pairs
 for request-local administrator discovery. DDNS saves names, not Cloudflare IDs.

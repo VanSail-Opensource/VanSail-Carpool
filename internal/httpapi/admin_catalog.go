@@ -102,6 +102,7 @@ func (s *Server) adminSquadProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 type squadProductRequest struct {
+	PAYGState          string                `json:"paygState"`
 	BillingMode        string                `json:"billingMode"`
 	PAYGPriceTXBMinor  string                `json:"paygPriceTxbMinor"`
 	GroupID            string                `json:"groupId"`
@@ -146,7 +147,7 @@ func (s *Server) adminSaveSquadProduct(w http.ResponseWriter, r *http.Request, i
 		}
 	}
 	product, err := s.deps.Admin.SaveSquadProduct(r.Context(), currentUser(r).ID, database.SquadProductInput{ID: id,
-		BillingMode: request.BillingMode, PAYGPriceTXBMinor: paygPrice,
+		BillingMode: request.BillingMode, PAYGPriceTXBMinor: paygPrice, PAYGState: request.PAYGState,
 		GroupID: request.GroupID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
 		Profile: request.Profile, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
 		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode})

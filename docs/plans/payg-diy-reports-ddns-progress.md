@@ -13,7 +13,8 @@ and the applicable validation are complete, not merely that code was written.
 
 ## PAYG
 
-- [ ] 05 Add normal, hidden and unavailable administrator squad states.
+- [ ] 05 Add normal, hidden and unavailable administrator squad states; hidden
+  removes Explore/subscription entries without cutting existing connections.
 - [ ] 06 Replace status words with accessible semantic animated dots.
 - [ ] 07 Remove the PAYG Add balance button.
 - [ ] 08 Place traffic left and spending right at the card bottom.
@@ -65,3 +66,10 @@ maintenance receipts, protocol compatibility and performance measurements below.
   state at 390px and 1280px, 320px reduced motion, PAYG switching and Settings
   access, with no overflow or console warnings/errors. These are fixture checks;
   production maintenance and hosted regression acceptance remain open.
+- Authorized reproduction `a22257e7-3971-4d35-bae4-5b9af8eb7286` failed cleanup
+  after verified PostgreSQL backup `44a27654-9445-4fa6-be23-6f3a90e23940`.
+- PAYG changes passed static/type/lint/structure checks. Chrome exercised 320px,
+  390px and desktop cards, reduced motion, seven status reasons, hidden listing,
+  loading, empty, error/retry, admin state saving and mobile light appearance.
+  No unexpected console messages or layout overflow remained. Hosted acceptance
+  and the successful production maintenance rerun are still pending.

@@ -1,5 +1,11 @@
 # X-Node control plane
 
+`payg_squad_state_test.go` verifies hidden squads retain credentials and access,
+unavailable squads lose PAYG authorization, and normal restores the same period.
+`payg_export.go` removes hidden PAYG entries from refreshed subscriptions and
+host links before split-profile rendering. Server admission, routing references
+and active connections retain the same principal and credentials.
+
 PAYG billing ignores node multipliers and uses a 100 MiB rolling 72-hour raw
 traffic threshold. Prepaid remainder expires 72 hours after its charge; funds,
 credit expiry and readiness jointly govern volatile admission, with leases

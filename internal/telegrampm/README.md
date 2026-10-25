@@ -1,5 +1,10 @@
 # Qualified Telegram private messaging
 
+Profile cards show Telegram identity once and aggregate PAYG traffic/spending
+for the last 72 hours, independently of Combo ownership. All provider delivery
+continues through the existing durable Telegram executor. Profile regressions
+cover English/Chinese PAYG-only members and pre-onboarding privacy.
+
 This module routes ordinary bot messages to a configured forum and lets configured
 panel admins reply from its per-user topic. It reuses the provider-operation
 dispatcher, durable outbox and bounded Telegram executor. Inbound bodies and all files remain in Telegram. New outbound text/captions use

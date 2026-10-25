@@ -31,13 +31,14 @@ const profiles: SquadProduct['profile'][] = [
 ]
 const squad = (index: number): SquadProduct => ({
   id: `00000000-0000-4000-8000-00000000000${index}`, groupId: `00000000-0000-4000-8000-00000000000${index}`,
-  name: ['Tokyo Direct', 'Singapore Transit', 'Los Angeles', 'Frankfurt', 'Hong Kong International Transit', 'London'][index]!,
+  name: ['Tokyo Direct', 'Singapore Transit', 'Los Angeles', 'Frankfurt', 'Hong Kong International Transit', 'London', 'Amsterdam'][index]!,
+  paygState: params.has('hidden') && index === 0 ? 'hidden' : 'normal',
   description: '', profile: profiles[index] ?? null, billingMode: 'payg', paygPrice: money('125'), price: money('0'),
   visible: true, upstreamPresent: true, stockHeldByCurrentUser: false, stockLimit: 100, stockRemaining: 80,
   activationRequired: false, accessibleNodes: [{ uuid: '00000000-0000-4000-8000-000000000099', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1.5, providerName: null }],
   createdAt: stamp, updatedAt: stamp,
 })
-const statuses = ['available', 'insufficient_balance', 'combo_covered', 'queued_combo', 'unavailable', 'sync_pending'] as const
+const statuses = ['available', 'insufficient_balance', 'combo_covered', 'queued_combo', 'unavailable', 'sync_pending', 'disabled'] as const
 const haptics: string[] = []
 window.Telegram = { WebApp: { version: '9.0', HapticFeedback: { impactOccurred: value => haptics.push(value), notificationOccurred: value => haptics.push(value), selectionChanged: () => haptics.push('selection') } } } as unknown as typeof window.Telegram
 if (!admin) installHapticClickFeedback()

@@ -55,7 +55,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 	}
 	payg := map[string]bool{}
 	for _, p := range products {
-		payg[p.GroupID] = p.BillingMode == "payg"
+		payg[p.GroupID] = p.PAYGAvailable()
 	}
 	groups, err := s.repo.XNodeGroups(ctx)
 	if err != nil {

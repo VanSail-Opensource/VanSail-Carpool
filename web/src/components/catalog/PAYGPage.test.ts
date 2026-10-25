@@ -20,7 +20,7 @@ function mountPage() {
 }
 
 describe('PAYG live presentation', () => {
-  it('renders loading and empty states with one reporting window and a recharge action', async () => {
+  it('renders loading and empty states with one reporting window and no recharge action', async () => {
     vi.spyOn(paygApi, 'get').mockResolvedValue(view)
     const wrapper = mountPage()
     expect(wrapper.find('[aria-busy=true]').exists()).toBe(true)
@@ -31,7 +31,7 @@ describe('PAYG live presentation', () => {
     expect(wrapper.find('.payg-page__empty').exists()).toBe(true)
     expect(wrapper.find('a[href="/settings"]').exists()).toBe(false)
     expect(wrapper.text().match(/Last 72 hours/g)).toHaveLength(1)
-    expect(wrapper.get('a[href="/home?topUp=1"]').text()).toContain('Add balance')
+    expect(wrapper.find('a[href="/home?topUp=1"]').exists()).toBe(false)
     wrapper.unmount()
   })
 

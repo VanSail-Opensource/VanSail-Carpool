@@ -27,6 +27,7 @@ const emit = defineEmits<{
 const draft = reactive({
   billingMode: 'combo' as 'combo' | 'payg',
   paygPrice: '',
+  paygState: 'normal' as 'normal' | 'hidden' | 'unavailable',
   description: '',
   priceTxb: '',
   visible: false,
@@ -42,6 +43,7 @@ const { reducedMotion } = useMotionPreferences()
 watch(() => props.squad, (squad) => {
   Object.assign(draft, {
     billingMode: squad.billingMode ?? 'combo',
+    paygState: squad.paygState ?? 'normal',
     paygPrice: txbInputFromMinor(squad.paygPrice?.minor ?? '0'),
     description: squad.description,
     priceTxb: txbInputFromMinor(squad.price.minor),
@@ -66,6 +68,7 @@ function submit(): void {
   }
   emit('save', {
     billingMode: draft.billingMode,
+    paygState: draft.paygState,
     paygPriceTxbMinor: paygPriceTxbMinor ?? '0',
     groupId: props.squad.groupId,
     name: props.squad.name,
@@ -90,6 +93,7 @@ function submit(): void {
         <UFormField name="billingMode" :label="t('payg.billingMode')">
           <USelect v-model="draft.billingMode" :items="[{ label: t('payg.combo'), value: 'combo' }, { label: t('payg.title'), value: 'payg' }]" />
         </UFormField>
+        <UFormField v-if="draft.billingMode === 'payg'" :label="t('payg.adminState')"><USelect v-model="draft.paygState" :items="(['normal', 'hidden', 'unavailable'] as const).map(value => ({ value, label: t(`payg.adminStates.${value}`) }))" class="w-full" /></UFormField>
         <InlineNotice v-if="draft.billingMode === 'payg'">{{ t('payg.adminHint') }}</InlineNotice>
         <TxbAmountField v-if="draft.billingMode === 'payg'" id="squad-payg-price" v-model="draft.paygPrice" :label="t('payg.price')" min-minor="1" required />
         <TxbAmountField v-else id="squad-price" v-model="draft.priceTxb" :label="t('adminSquad.price')" min-minor="0" required />

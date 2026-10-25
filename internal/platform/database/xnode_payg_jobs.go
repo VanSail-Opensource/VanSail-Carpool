@@ -32,7 +32,7 @@ func (s *Store) retryAttempt_EnqueueXNodePAYGRepairs(ctx context.Context, now ti
 		return err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT u.id FROM users u JOIN squad_product_overrides o ON o.billing_mode='payg' JOIN xnode_groups g ON g.id=o.group_id AND g.enabled=1 JOIN xnode_group_bindings b ON b.group_id=g.id JOIN xnode_nodes n ON n.id=b.node_id AND n.enabled=1 WHERE u.onboarding_state='complete' AND COALESCE((SELECT payg_enabled FROM user_preferences WHERE user_id=u.id),1)=1 AND NOT EXISTS(SELECT 1 FROM user_disabled_payg_squads disabled WHERE disabled.user_id=u.id AND disabled.group_id=g.id) AND NOT EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.user_id=u.id AND a.group_id=g.id AND a.node_id=b.node_id) ORDER BY u.id LIMIT 64`)
+	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT u.id FROM users u JOIN squad_product_overrides o ON o.billing_mode='payg' AND o.payg_state<>'unavailable' JOIN xnode_groups g ON g.id=o.group_id AND g.enabled=1 JOIN xnode_group_bindings b ON b.group_id=g.id JOIN xnode_nodes n ON n.id=b.node_id AND n.enabled=1 WHERE u.onboarding_state='complete' AND COALESCE((SELECT payg_enabled FROM user_preferences WHERE user_id=u.id),1)=1 AND NOT EXISTS(SELECT 1 FROM user_disabled_payg_squads disabled WHERE disabled.user_id=u.id AND disabled.group_id=g.id) AND NOT EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.user_id=u.id AND a.group_id=g.id AND a.node_id=b.node_id) ORDER BY u.id LIMIT 64`)
 	if err != nil {
 		return err
 	}

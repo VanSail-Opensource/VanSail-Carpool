@@ -1,5 +1,9 @@
 # Application composition
 
+`pm_profile_payg.go` reads existing 72-hour PAYG minute summaries for PM cards
+before the optional Combo projection. It performs no provisioning or upstream
+requests and creates no duplicate accounting storage.
+
 Startup retires dormant `xnode_prepare_continuity` jobs before admission starts;
 native purchase compilation and ordinary activation preserve paid successors.
 

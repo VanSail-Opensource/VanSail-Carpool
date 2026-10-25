@@ -27,6 +27,12 @@
       "disabled": "Disabled"
     },
     "disabled": "PAYG is off.",
-    "comboBlocked": "Automatic renewal is enabled"
+    "comboBlocked": "Automatic renewal is enabled",
+    "adminState": "Availability",
+    "adminStates": {
+      "normal": "Normal",
+      "hidden": "Hidden",
+      "unavailable": "Unavailable"
+    }
   }
 }
