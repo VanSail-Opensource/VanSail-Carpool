@@ -39,6 +39,10 @@ parameters, aggregate/scalar distinctions and null equality in hosted CI.
 `contract.go` exposes the generated source contract and `source-schema.sha256`
 fingerprint to offline conversion. Migration `00005_cutover_state.sql` records
 inactive import/verification gates and makes source FKs transaction-deferrable.
+After every forward schema migration, regenerate the isolated inventory with
+`go run ./cmd/db-inventory`, then run
+`python scripts/postgresql_baseline.py --contract-only`. This updates the import
+fingerprint and verification manifest while preserving the immutable baseline.
 
 Original TEXT columns explicitly use PostgreSQL `C` collation. This preserves
 SQLite binary range/pagination behavior, including compact IPv4 subnet reuse,

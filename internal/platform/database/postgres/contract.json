@@ -8459,6 +8459,7 @@
     "compile_xnode_identities_delete",
     "compile_xnode_identities_insert",
     "compile_xnode_identities_update",
+    "compile_xnode_node_catalog_metadata",
     "compile_xnode_nodes_delete",
     "compile_xnode_nodes_insert",
     "compile_xnode_nodes_update",
