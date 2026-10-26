@@ -8,15 +8,17 @@ The POST command and member refund rules retain their existing contracts.
 The default is `roundHalfUp(netPaidMinor * max(allocated-used,0) / allocated)`.
 It reuses rollover's whole-term cadence allowance and nearest-cent helper, with
 the purchase's effective traffic and reset overrides. Observed multiplier-weighted
-per-node totals come from the existing strict queued X-Node snapshot adapter;
-current-reset counters, forecasts and rollover thresholds do not set the amount.
-The read does not quiesce access and does not persist upstream usage series.
-The provider statistics retain their documented inclusive daily granularity.
+traffic comes from native X-Node accounting; current-reset counters, forecasts
+and rollover thresholds do not set the amount. Started terms read by panel owner
+and exact purchase ID.
+This includes reset periods and reconciled imported history without relying on
+the user's legacy proxy-ID field or selecting an ambiguous date-range match.
+The read does not quiesce access or make an upstream call.
 
 Queued terms use zero observed usage and the full net debit. Started terms require
-a linked identity and verified node series; missing data or upstream failures
-produce no suggestion. The amount stays editable within the authoritative net
-debit cap. Zero defaults cannot be submitted without a positive manual amount.
+a native identity and verified purchase accounting; missing data or accounting
+errors produce no suggestion. The amount stays editable within the authoritative
+net debit cap. Zero defaults cannot be submitted without a positive manual amount.
 The existing required reason, idempotency, ledger credit and queued sync remain
 the settlement boundary; a quote does not automatically issue a refund.
 

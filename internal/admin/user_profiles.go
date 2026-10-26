@@ -63,10 +63,11 @@ type UserDetail struct {
 
 // UserWorkflows owns aggregate reads and durable administrator commands.
 type UserWorkflows struct {
-	repository  UserWorkflowRepository
-	importer    SquadImporter
-	refundUsage refundUsageSource
-	now         func() time.Time
+	repository          UserWorkflowRepository
+	importer            SquadImporter
+	refundUsage         refundUsageSource
+	refundPurchaseUsage purchaseRefundUsageSource
+	now                 func() time.Time
 }
 
 // NewUserWorkflows constructs the focused administrator workflow service.
@@ -74,6 +75,9 @@ func NewUserWorkflows(repository UserWorkflowRepository, importer SquadImporter)
 	s := &UserWorkflows{repository: repository, importer: importer, now: time.Now}
 	if source, ok := importer.(refundUsageSource); ok {
 		s.refundUsage = source
+	}
+	if source, ok := importer.(purchaseRefundUsageSource); ok {
+		s.refundPurchaseUsage = source
 	}
 	return s
 }

@@ -50,7 +50,7 @@ which rails are offered for that account. Balance adjustments create unique
 ledger references so repeated reasons remain separate audited operations.
 
 - `settings_part2.go` contains the remaining settings validation and persistence helpers.
-`user_refund_quote.go` derives an editable administrator refund default from the net debit and observed whole-term weighted traffic. `user_refund_quote_test.go` covers discounts, custom limits, reset periods, cent rounding, queued terms, outages and ownership.
+`user_refund_quote.go` derives an editable administrator refund default from the net debit and observed whole-term weighted traffic. Native snapshots are selected by panel owner and purchase ID; compatible legacy sources retain the ID-and-range fallback. `user_refund_quote_test.go` covers discounts, custom limits, reset periods, cent rounding, queued terms, outages and ownership.
 
 `turnstile_settings.go` and `turnstile_settings_test.go` require both keys before enabling, reject clearing an enabled site key, and use the existing encrypted secret registry. Setting writes serialize cross-key validation.
 

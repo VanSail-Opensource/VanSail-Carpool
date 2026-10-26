@@ -18,6 +18,10 @@ type refundUsageSource interface {
 	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (rollover.UsageSnapshot, error)
 }
 
+type purchaseRefundUsageSource interface {
+	PurchaseUsageSnapshotForRollover(context.Context, model.User, model.Purchase, time.Time) (rollover.UsageSnapshot, error)
+}
+
 // EntitlementRefundQuote is an editable suggestion, not a settlement command.
 type EntitlementRefundQuote struct {
 	PurchaseID            string       `json:"purchaseId"`
@@ -60,14 +64,18 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 	}
 	snapshot := rollover.UsageSnapshot{LimitBytes: p.TrafficLimitBytes, Strategy: p.ResetStrategy}
 	if p.Status != "queued" && !now.Before(p.ValidFrom) {
-		if user.ProxyUserID == nil || s.refundUsage == nil {
+		if s.refundPurchaseUsage == nil && (user.ProxyUserID == nil || s.refundUsage == nil) {
 			return unavailableRefundQuote(quote, "REFUND_USAGE_UNAVAILABLE"), nil
 		}
 		asOf := now
 		if asOf.After(p.ValidUntil) {
 			asOf = p.ValidUntil
 		}
-		snapshot, err = s.refundUsage.UsageSnapshotForRollover(ctx, *user.ProxyUserID, p.ValidFrom, asOf)
+		if s.refundPurchaseUsage != nil {
+			snapshot, err = s.refundPurchaseUsage.PurchaseUsageSnapshotForRollover(ctx, user, p, asOf)
+		} else {
+			snapshot, err = s.refundUsage.UsageSnapshotForRollover(ctx, *user.ProxyUserID, p.ValidFrom, asOf)
+		}
 		if err != nil {
 			return quote, fmt.Errorf("%w: %w", ErrRefundUsageUnavailable, err)
 		}
