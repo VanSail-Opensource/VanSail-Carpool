@@ -111,7 +111,8 @@ Internal `Proxy` attribution retains its published endpoint and billing principa
 `template_names.go` allocates sing-box tags and Mihomo/Stash names after client
 mapping and before expanding `SubscriptionNames`. PAYG principals sharing a
 published endpoint retain their separate credentials; duplicate mapped labels
-receive stable public proxy-ID suffixes. Template-owned names and built-in
+receive compact numeric suffixes, such as `Tokyo (2)`, assigned in public-ID
+order without exposing hashes. Template-owned names and built-in
 policies are reserved, and existing endpoint labels are preserved when unique.
 Only the ephemeral rendered document changes; inventory, routing, accounting
 and saved templates remain authoritative. Regression coverage lives in

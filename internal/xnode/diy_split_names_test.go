@@ -1,6 +1,7 @@
 package xnode
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
@@ -16,7 +17,7 @@ func TestSplitNamesRemainUniqueForReversePairsAndOrdinaryHosts(t *testing.T) {
 	for _, collision := range []bool{false, true} {
 		ordinary := []subscription.Proxy{fixture("v4", "Shared-V4"), fixture("v6", "Shared-V6")}
 		if collision {
-			ordinary = append(ordinary, fixture("other", "Shared-V4V6"), fixture("suffix", "Shared-V4V6 [forward]"))
+			ordinary = append(ordinary, fixture("other", "Shared-V4V6"), fixture("suffix", "Shared-V4V6 (2)"))
 		}
 		result := appendSplitProxies(profiles, ordinary)
 		if len(result) != len(ordinary)+2 {
@@ -29,10 +30,18 @@ func TestSplitNamesRemainUniqueForReversePairsAndOrdinaryHosts(t *testing.T) {
 		}
 		want := "Shared-V4V6"
 		if collision {
-			want += " [forward]-2"
+			want += " (3)"
 		}
 		if result[len(ordinary)].Name != want || result[len(ordinary)].ID != "split:forward" || result[len(ordinary)+1].ID != "split:reverse" {
 			t.Fatal("combined name or identity changed", result)
+		}
+		reversed := slices.Clone(profiles)
+		slices.Reverse(reversed)
+		again := appendSplitProxies(reversed, ordinary)
+		for index, proxy := range result {
+			if again[index].ID != proxy.ID || again[index].Name != proxy.Name {
+				t.Fatal("profile order changed export names")
+			}
 		}
 		for _, format := range []string{"xray", "clash", "stash"} {
 			if _, err := subscription.RenderTemplate(subscription.DefaultTemplate(format), result); err != nil {

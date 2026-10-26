@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/ghodss/yaml"
@@ -73,6 +74,22 @@ func TestTemplateNamesPreserveDuplicatePAYGCredentialsAndMappedSelectors(t *test
 					if refs[index] != names[proxy.Account["id"].(string)] || proxy.Name != "Tokyo" {
 						t.Fatal("selector mismatch or inventory label mutated")
 					}
+					if strings.Contains(names[proxy.Account["id"].(string)], proxy.Tag()[6:14]) {
+						t.Fatal("exported name contains a proxy hash")
+					}
+				}
+				base := "Tokyo"
+				if mapped {
+					base = "Mapped Tokyo"
+				}
+				for index, proxy := range proxies {
+					want := base
+					if index > 0 {
+						want = fmt.Sprintf("%s (%d)", base, index+1)
+					}
+					if names[proxy.Account["id"].(string)] != want {
+						t.Fatalf("name = %q, want %q", names[proxy.Account["id"].(string)], want)
+					}
 				}
 				reordered := slices.Clone(proxies)
 				slices.Reverse(reordered)
@@ -91,7 +108,7 @@ func TestTemplateNamesReservePoliciesGroupsAndExistingSuffixes(t *testing.T) {
 	for _, format := range []string{"sing-box", "clash", "stash"} {
 		t.Run(format, func(t *testing.T) {
 			first := templateProxy("payg-first", "Tokyo")
-			proxies := []Proxy{first, templateProxy("payg-second", "Tokyo"), templateProxy("ordinary", "Tokyo ["+first.Tag()[6:14]+"]"), templateProxy("selector", "proxy"), templateProxy("direct", "direct"), templateProxy("builtin", "DIRECT")}
+			proxies := []Proxy{first, templateProxy("payg-second", "Tokyo"), templateProxy("ordinary", "Tokyo (2)"), templateProxy("selector", "proxy"), templateProxy("direct", "direct"), templateProxy("builtin", "DIRECT")}
 			for index := range proxies {
 				proxies[index].Account = map[string]any{"id": fmt.Sprintf("550e8400-e29b-41d4-a716-%012d", index+1), "encryption": "none"}
 			}

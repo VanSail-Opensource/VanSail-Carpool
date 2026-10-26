@@ -1,5 +1,20 @@
 # X-Node control plane
 
+`subscription_usage.go` projects existing owner accounting into subscription
+metadata and the HTTP `Subscription-Userinfo` header. An effective combo retains
+its expiry and current matching period's usage/quota even when PAYG hosts are
+also exported. A prepared successor never inherits its predecessor's usage.
+Without a combo, PAYG info reports exact cumulative period usage and a total of
+that usage plus currently unexpired prepaid bytes across the owner's accounts;
+it has no subscription expiry. This is a prepaid snapshot, not a wallet-derived
+quota or an admission decision. Expired credit and old combo usage are excluded.
+No state is added or changed. A positive PAYG snapshot also preserves FlClash's
+info display, which requires `total > 0` in
+[its profile view](https://github.com/chen08209/FlClash/blob/main/lib/views/profiles/profiles.dart).
+`subscription_usage_test.go` covers combo, mixed and PAYG-only projections.
+Split-profile label collisions likewise use numeric suffixes in profile-ID
+order; exported host names never include generated profile IDs or hashes.
+
 `runtime_reads.go` selects optional bounded repository reads with compatibility
 fallbacks. PAYG connection observation reads only positive live connection IDs;
 lease overlays reread current funding candidates and remove missing PAYG periods

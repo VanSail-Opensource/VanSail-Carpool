@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -82,32 +81,12 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 	download.Path = "/api/v1/subscriptions/" + strings.TrimPrefix(download.Path, "/subscription/")
 	download.RawPath = ""
 	result.DownloadURL = download.String()
-	purchase, err := s.EffectivePurchase(ctx, identity.UserID)
-	if err != nil {
+	if err := s.subscriptionUsage(ctx, identity, &result); err != nil {
 		return result, err
-	}
-	if purchase != nil {
-		until := purchase.ValidUntil
-		result.ExpiresAt = &until
-		result.LimitBytes = strconv.FormatInt(purchase.TrafficLimitBytes, 10)
-	}
-	if identity.CurrentPeriodID != "" {
-		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-		if err != nil {
-			return result, err
-		}
-		result.UsedBytes = strconv.FormatInt(period.UsedBytes, 10)
 	}
 	proxies, incomplete, err := s.memberInventory(ctx, identity.UserID)
 	if err != nil {
 		return result, err
-	}
-	for _, proxy := range proxies {
-		if proxy.PrincipalID != 0 {
-			result.ExpiresAt = nil
-			result.LimitBytes = "0"
-			break
-		}
 	}
 	result.Active = len(proxies) > 0
 	result.Incomplete = incomplete

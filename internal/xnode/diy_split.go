@@ -100,19 +100,18 @@ func appendSplitProxies(profiles []SplitProfile, proxies []subscription.Proxy) [
 		byID[p.ID] = p
 		names[p.Name] = true
 	}
-	for _, profile := range profiles {
+	ordered := slices.Clone(profiles)
+	slices.SortFunc(ordered, func(a, b SplitProfile) int { return strings.Compare(a.ID, b.ID) })
+	for _, profile := range ordered {
 		combined, err := subscription.SplitProxy(profile.ID, profile.Mode, byID[profile.UploadEndpointID], byID[profile.DownloadEndpointID])
 		if err != nil {
 			continue // A stale combined projection never removes ordinary hosts.
 		}
 		// Reverse pairs share the same compact name. Preserve ordinary names
 		// and disambiguate only the colliding projection, without changing IDs.
-		if names[combined.Name] {
-			base := combined.Name + " [" + profile.ID + "]"
-			combined.Name = base
-			for n := 2; names[combined.Name]; n++ {
-				combined.Name = fmt.Sprintf("%s-%d", base, n)
-			}
+		base := combined.Name
+		for n := 2; names[combined.Name]; n++ {
+			combined.Name = fmt.Sprintf("%s (%d)", base, n)
 		}
 		names[combined.Name] = true
 		result = append(result, combined)

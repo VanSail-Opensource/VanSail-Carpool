@@ -3,11 +3,13 @@ package subscription
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 )
 
 // templateProxyNames allocates names after client mapping, retaining every
-// credential-bearing endpoint. Only colliding export labels receive a stable
-// public proxy-ID suffix; inventory labels and private billing IDs stay intact.
+// credential-bearing endpoint. Collisions receive numeric labels in public-ID
+// order; inventory labels and private billing IDs stay intact.
 func templateProxyNames(format string, root map[string]any, proxies []Proxy, values []any) ([]any, error) {
 	key, tag := "outbounds", "tag"
 	used := map[string]bool{}
@@ -35,20 +37,27 @@ func templateProxyNames(format string, root map[string]any, proxies []Proxy, val
 		}
 		counts[name]++
 	}
-	names := make([]any, 0, len(values))
-	for index, raw := range values {
-		item := raw.(map[string]any)
+	order := make([]int, len(values))
+	for index := range order {
+		order[index] = index
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return strings.Compare(proxies[a].ID, proxies[b].ID) })
+	names := make([]any, len(values))
+	for _, index := range order {
+		item := values[index].(map[string]any)
 		name := item[tag].(string)
-		if used[name] || counts[name] > 1 {
-			base := fmt.Sprintf("%s [%s]", name, proxies[index].Tag()[6:14])
-			name = base
-			for n := 2; used[name] || counts[name] > 0; n++ {
-				name = fmt.Sprintf("%s-%d", base, n)
+		if used[name] {
+			base := name
+			for n := 2; ; n++ {
+				name = fmt.Sprintf("%s (%d)", base, n)
+				if !used[name] && counts[name] == 0 {
+					break
+				}
 			}
 		}
 		item[tag] = name
 		used[name] = true
-		names = append(names, name)
+		names[index] = name
 	}
 	return names, nil
 }
