@@ -37,6 +37,10 @@ func (s *Store) XNodePAYGAccounts(ctx context.Context, user, node string) ([]xno
 		query += ` AND a.node_id=?`
 		args = append(args, node)
 	}
+	return s.xnodePAYGAccounts(ctx, query, args)
+}
+
+func (s *Store) xnodePAYGAccounts(ctx context.Context, query string, args []any) ([]xnode.PAYGAccount, error) {
 	rows, err := s.db.QueryContext(ctx, query+` ORDER BY a.user_id,a.proxy_user_id`, args...)
 	if err != nil {
 		return nil, err

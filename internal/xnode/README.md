@@ -1,5 +1,12 @@
 # X-Node control plane
 
+`runtime_reads.go` selects optional bounded repository reads with compatibility
+fallbacks. PAYG connection observation reads only positive live connection IDs;
+lease overlays reread current funding candidates and remove missing PAYG periods
+from authorization. Subscription inventory still contains unfunded accounts.
+`cadence.go` loads only resettable owners; `cadence_recovery.go` explicitly excludes
+PAYG from scheduled resets while retaining combo/service recovery and settlement.
+
 `ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
 upgrade-header and hello-capability negotiation. It validates authenticated agent
 ownership, canonical addresses, enabled families and the current configuration

@@ -10,7 +10,8 @@ import (
 
 type connector struct {
 	driver.Connector
-	metrics *transactionMetrics
+	metrics  *transactionMetrics
+	bindings *bindingCache
 }
 
 func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
@@ -18,12 +19,13 @@ func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &connection{Conn: conn, metrics: c.metrics}, nil
+	return &connection{Conn: conn, metrics: c.metrics, bindings: c.bindings}, nil
 }
 
 type connection struct {
 	driver.Conn
-	metrics *transactionMetrics
+	metrics  *transactionMetrics
+	bindings *bindingCache
 }
 
 func (c *connection) CheckNamedValue(value *driver.NamedValue) error {
@@ -36,7 +38,7 @@ func (c *connection) CheckNamedValue(value *driver.NamedValue) error {
 func (c *connection) Prepare(query string) (driver.Stmt, error) {
 	// Domain statements use context entry points; reject argument-less binding
 	// guesses during preparation. Authored PostgreSQL statements still work.
-	bound, err := Bind(query, nil)
+	bound, err := c.bind(query, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +58,7 @@ func (c *connection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver
 }
 
 func (c *connection) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	bound, err := Bind(query, args)
+	bound, err := c.bind(query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +66,7 @@ func (c *connection) ExecContext(ctx context.Context, query string, args []drive
 }
 
 func (c *connection) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	bound, err := Bind(query, args)
+	bound, err := c.bind(query, args)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +78,13 @@ func (c *connection) QueryContext(ctx context.Context, query string, args []driv
 }
 
 func (c *connection) Ping(ctx context.Context) error { return c.Conn.(driver.Pinger).Ping(ctx) }
+
+func (c *connection) bind(query string, args []driver.NamedValue) (string, error) {
+	if c.bindings == nil {
+		return Bind(query, args)
+	}
+	return c.bindings.bind(query, args)
+}
 func (c *connection) ResetSession(ctx context.Context) error {
 	return c.Conn.(driver.SessionResetter).ResetSession(ctx)
 }

@@ -24,7 +24,16 @@ func (m *Master) observePAYG(ctx context.Context, peers []*agentPeer, reportSeco
 		if !freshSnapshot(live, m.service.now(), reportSeconds) || !live.report.Synchronized {
 			continue
 		}
-		accounts, err := r.XNodePAYGAccounts(ctx, "", peer.nodeID)
+		connected := []int64{}
+		for id, count := range live.report.Users.Connections {
+			if count > 0 {
+				connected = append(connected, int64(id))
+			}
+		}
+		if len(connected) == 0 {
+			continue
+		}
+		accounts, err := connectedPAYGAccounts(ctx, r, peer.nodeID, connected)
 		if err != nil {
 			return err
 		}

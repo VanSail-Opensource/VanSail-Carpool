@@ -35,7 +35,7 @@ func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {
 	parsed.RuntimeParams["statement_timeout"] = strconv.FormatInt(cfg.StatementTimeout.Milliseconds(), 10)
 	parsed.RuntimeParams["lock_timeout"] = strconv.FormatInt(cfg.LockTimeout.Milliseconds(), 10)
 	parsed.RuntimeParams["idle_in_transaction_session_timeout"] = strconv.FormatInt(cfg.StatementTimeout.Milliseconds(), 10)
-	db := sql.OpenDB(connector{Connector: stdlib.GetConnector(*parsed), metrics: &transactionMetrics{}})
+	db := sql.OpenDB(connector{Connector: stdlib.GetConnector(*parsed), metrics: &transactionMetrics{}, bindings: &bindingCache{}})
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
 	db.SetConnMaxLifetime(cfg.ConnMaxLifetime)

@@ -1,5 +1,11 @@
 # Application store
 
+`xnode_runtime_reads.go` narrows reconciliation to current funding candidates,
+connected principals (128 IDs per query), and resettable period owners. It reuses
+the authoritative PAYG joins/scanner and existing indexes on both SQL backends.
+No balances, usage, admission decisions or duplicate state are persisted/cached;
+exact credit expiry and settlement remain in the X-Node service.
+
 `catalog_stock.go` owns bounded aggregate stock display;
 `purchase_squad_membership.go` shares ownership precedence with checkout.
 `catalog_stock_test.go` verifies snapshot/fallback behavior and stockless reads;

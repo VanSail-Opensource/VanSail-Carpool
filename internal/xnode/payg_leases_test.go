@@ -14,6 +14,7 @@ type paygLeaseRepository struct {
 	accounts     []PAYGAccount
 	enqueues     int
 	productReads int
+	accountReads int
 }
 
 func (r *paygLeaseRepository) XNodeIdentityByService(context.Context, string) (Identity, error) {
@@ -21,6 +22,7 @@ func (r *paygLeaseRepository) XNodeIdentityByService(context.Context, string) (I
 }
 
 func (r *paygLeaseRepository) XNodePAYGAccounts(context.Context, string, string) ([]PAYGAccount, error) {
+	r.accountReads++
 	return r.accounts, nil
 }
 func (r *paygLeaseRepository) XNodePAYGAccount(context.Context, int64) (PAYGAccount, error) {

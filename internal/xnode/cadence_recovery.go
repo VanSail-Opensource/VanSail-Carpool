@@ -10,7 +10,7 @@ import (
 // cadenceReady retries the gap between revoking a due period and atomically
 // publishing its successor. Earlier/manual closures and review stay untouched.
 func cadenceReady(period Period, now time.Time) bool {
-	if period.Strategy == "NO_RESET" || period.Status == "review" {
+	if period.Strategy == "NO_RESET" || period.Strategy == "PAYG" || period.Status == "review" {
 		return false
 	}
 	next := rollover.CadenceAdvance(period.StartedAt, period.Strategy)

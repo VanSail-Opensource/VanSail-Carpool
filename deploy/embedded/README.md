@@ -13,6 +13,22 @@ digest and the protected `deploy/postgres/secrets/application.env` containing
 the existing bot, origin, administrator and master-key configuration. Do not
 put database URLs in this file for embedded mode.
 
+Always bind both `/data` and `/var/lib/postgresql` to explicit persistent volumes,
+as this Compose file does. `/data` holds logical backups and the bounded disposable
+proxy inventory cache even when PostgreSQL holds the application database.
+An omitted mount creates an anonymous volume that can be abandoned on recreation;
+repeated deployments can leave several copies of the cache and backup history.
+To repair an existing deployment, inspect the current container mounts and declare
+the existing `/data` volume as an external Compose volume before recreating it.
+Do not replace it with an empty volume or prune volumes containing backups.
+
+Database size excludes WAL, proxy inventories, exports, old Docker volumes and
+images. Diagnose these separately with `docker system df`, container mount
+inspection and filesystem sizes. Remove only reviewed, unused disposable caches;
+preserve database volumes, migration evidence and logical exports. Old offline
+SQLite snapshots can be losslessly compressed after checking decompressed hashes.
+Never unlink PostgreSQL files or run a blanket volume prune as maintenance.
+
 `entrypoint.sh` runs under Tini, starts PostgreSQL before schema work, runs
 `db-schema migrate` with the migration role, then launches the restricted
 application role. Signals stop the application first, then perform a fast,
@@ -53,8 +69,10 @@ an initialized-but-fresh PostgreSQL application until import is verified.
 `tuning.sh` budgets for the combined container rather than a dedicated database:
 at 1 GiB, 128 MiB shared buffers, 256 MiB effective cache estimate, 2 MiB per sort,
 32 MiB maintenance, two 16 MiB autovacuum workers and 32 connections. Go derives
-a 384 MiB soft heap limit unless GOMEMLIMIT is explicitly supplied. The 8/4 app
+a 384 MiB soft heap limit unless GOMEMLIMIT is explicitly supplied. The 8/8 app
 pool leaves room for ownership/listener, migrations, backups and diagnostics.
+Keeping up to all eight application connections idle avoids repeated SCRAM
+authentication and backend-process creation during short reconciliation bursts.
 WAL compression, 10-minute spread checkpoints, 512 MiB WAL target, lock logging
 and pg_stat_statements are enabled. fsync, synchronous_commit and full_page_writes
 stay enabled. WAL size is a target, not a hard disk limit; alert on disk space

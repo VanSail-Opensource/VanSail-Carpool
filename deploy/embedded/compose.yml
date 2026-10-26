@@ -14,7 +14,7 @@ services:
       DATABASE_URL: ""
       DATABASE_URL_FILE: ""
       DB_MAX_OPEN_CONNS: "8"
-      DB_MAX_IDLE_CONNS: "4"
+      DB_MAX_IDLE_CONNS: "8"
       DATA_DIR: /data
     volumes:
       - application_data:/data

@@ -9,7 +9,7 @@ import (
 
 // ResetCadences advances paid quota periods without charging for scheduled resets.
 func (s *Service) ResetCadences(ctx context.Context) error {
-	identities, err := s.repo.XNodeIdentities(ctx)
+	identities, err := s.cadenceIdentities(ctx)
 	if err != nil {
 		return err
 	}

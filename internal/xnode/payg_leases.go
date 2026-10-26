@@ -41,11 +41,11 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	if !ok {
 		return config, nil
 	}
-	accounts, err := r.XNodePAYGAccounts(ctx, "", peer.nodeID)
+	accounts, err := fundedPAYGAccounts(ctx, r, peer.nodeID)
 	if err != nil {
 		return config, err
 	}
-	if len(accounts) == 0 {
+	if len(accounts) == 0 && !slices.ContainsFunc(config.Users, func(user wire.User) bool { return isPAYGPeriod(user.AccountingPeriod) }) {
 		return config, nil
 	}
 	now := m.service.now()
@@ -77,11 +77,11 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	_, _ = hash.Write([]byte(strconv.FormatInt(until.Unix(), 10)))
 	for _, u := range config.Users {
 		a, payg := byID[u.ID]
-		if !payg {
+		if !payg && !isPAYGPeriod(u.AccountingPeriod) {
 			users = append(users, u)
 			continue
 		}
-		if a.Disabled || !healthy || !ready || !a.Funded(now) {
+		if !payg || a.Disabled || !healthy || !ready || !a.Funded(now) {
 			continue
 		}
 		validUntil := until
