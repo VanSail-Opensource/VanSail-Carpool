@@ -45,8 +45,17 @@ func TestCourtesyCreditPreservesTerminalPaymentState(t *testing.T) {
 		t.Fatalf("ListLedger() = (%+v, %v), want one courtesy credit", entries, err)
 	}
 	events, err := store.ListAuditEvents(ctx, 10)
-	if err != nil || len(events) != 1 || events[0].Action != "payment.courtesy_credit" {
+	if err != nil {
 		t.Fatalf("ListAuditEvents() = (%+v, %v), want courtesy audit", events, err)
+	}
+	courtesyAudits := 0
+	for _, event := range events {
+		if event.Action == "payment.courtesy_credit" && event.TargetID == expired.ID {
+			courtesyAudits++
+		}
+	}
+	if courtesyAudits != 1 {
+		t.Fatalf("ListAuditEvents() = %+v, want exactly one courtesy audit for %s", events, expired.ID)
 	}
 	assertNotificationCounts(t, store, 1, 1)
 

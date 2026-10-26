@@ -89,7 +89,7 @@ func reapplyRecoveryMigration(t *testing.T, store *Store, name string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = store.DB().ExecContext(context.Background(), `UPDATE activity_draw_results SET reward_payload=json_set(reward_payload,'$.rolloverMinRemainingBps',9999) WHERE reward_kind='entitlement_grant'`); err != nil {
+	if _, err = store.DB().ExecContext(context.Background(), `UPDATE activity_draw_results SET reward_payload=json_set(reward_payload,'$.rolloverMinRemainingBps',9999) WHERE reward_kind='entitlement_grant' AND json_valid(reward_payload)`); err != nil {
 		t.Fatal(err)
 	}
 	script := strings.ReplaceAll(string(raw), "remna_sync_user", "xnode_sync_user")
