@@ -4,6 +4,8 @@
 (256 statements, 2 MiB of SQL). Keys include argument cast kinds; boolean
 normalization preserves authored PostgreSQL parameters. It never caches argument
 values or results. Oversized statements use the uncached, SQL-aware binder.
+`bind_cache_test.go` checks protected grammar, argument-type changes, bounded
+retention and concurrent reuse under hosted race checks.
 
 Schema version 16 permits multiple endpoint references per DDNS family while
 retaining global host uniqueness. Schema version 15 updates community-preference

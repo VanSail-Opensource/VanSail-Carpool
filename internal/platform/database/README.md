@@ -5,6 +5,8 @@ connected principals (128 IDs per query), and resettable period owners. It reuse
 the authoritative PAYG joins/scanner and existing indexes on both SQL backends.
 No balances, usage, admission decisions or duplicate state are persisted/cached;
 exact credit expiry and settlement remain in the X-Node service.
+`xnode_runtime_reads_test.go` checks wallet/credit changes, node isolation,
+bounded connection batches and retained cadence recovery on both backends.
 
 `catalog_stock.go` owns bounded aggregate stock display;
 `purchase_squad_membership.go` shares ownership precedence with checkout.

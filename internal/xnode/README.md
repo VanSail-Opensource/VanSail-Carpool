@@ -6,6 +6,8 @@ lease overlays reread current funding candidates and remove missing PAYG periods
 from authorization. Subscription inventory still contains unfunded accounts.
 `cadence.go` loads only resettable owners; `cadence_recovery.go` explicitly excludes
 PAYG from scheduled resets while retaining combo/service recovery and settlement.
+`runtime_reads_test.go` checks idle observation, PAYG reset exclusion and removal
+of unfunded PAYG authorization while preserving combo users.
 
 `ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
 upgrade-header and hello-capability negotiation. It validates authenticated agent
