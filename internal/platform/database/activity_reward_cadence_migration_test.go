@@ -89,6 +89,11 @@ func TestCustomCadenceRecoveryUsesAwardCoreAndPreservesExplicitOverrides(t *test
 					t.Fatal(err)
 				}
 			}
+			// Current rewards and renewal no longer write this retired field.
+			// Reconstruct the old award signature before replaying immutable SQL.
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET reward_rollover_min_remaining_bps=9999 WHERE id=? AND reward_renewal_price_minor IS NOT NULL`, purchase.ID); err != nil {
+				t.Fatal(err)
+			}
 			before, err := store.PurchaseByID(ctx, purchase.ID)
 			if err != nil {
 				t.Fatal(err)

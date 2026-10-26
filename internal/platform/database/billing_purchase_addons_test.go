@@ -91,7 +91,7 @@ func TestAddPurchaseAddonsDebitsOnceAndFeedsFutureTotals(t *testing.T) {
 	}
 }
 
-func TestPurchaseAddonsBlockQueuedTermsAndAllowOwnerHeldFullSquads(t *testing.T) {
+func TestPurchaseAddonsAllowQueuedTermsAndOwnerHeldFullSquads(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
@@ -113,7 +113,14 @@ func TestPurchaseAddonsBlockQueuedTermsAndAllowOwnerHeldFullSquads(t *testing.T)
 	if _, err := store.CreatePurchase(ctx, PurchaseInput{UserID: owner.ID, ComboID: combo.ID, AddonSquadIDs: []string{addon.ID}, IdempotencyKey: "owner-queued"}, now.Add(time.Hour)); err != nil {
 		t.Fatalf("CreatePurchase(owner queued full squad): %v", err)
 	}
-	if _, err := store.QuotePurchaseAddons(ctx, PurchaseAddonInput{UserID: owner.ID, PurchaseID: active.ID, AddonSquadIDs: []string{addon.ID}}, now.Add(time.Hour)); err != nil {
+	if _, err := store.QuotePurchaseAddons(ctx, PurchaseAddonInput{UserID: owner.ID, PurchaseID: active.ID, AddonSquadIDs: []string{addon.ID}}, now.Add(time.Hour)); !errors.Is(err, ErrSquadAlreadyAdded) {
+		t.Fatalf("QuotePurchaseAddons(duplicate) = %v, want ErrSquadAlreadyAdded", err)
+	}
+	liveAddon, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: "live-extra", Name: "live-extra", PriceTXBMinor: 200, Visible: true, UpstreamPresent: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.QuotePurchaseAddons(ctx, PurchaseAddonInput{UserID: owner.ID, PurchaseID: active.ID, AddonSquadIDs: []string{liveAddon.ID}}, now.Add(time.Hour)); err != nil {
 		t.Fatalf("QuotePurchaseAddons(queued) = %v, live addition should remain available", err)
 	}
 	other := createTestUser(t, store, 69_003)
