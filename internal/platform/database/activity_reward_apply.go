@@ -122,11 +122,11 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 			return comboErr
 		}
 		_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_traffic_limit_bytes=?,entitlement_squad_uuids=?,
-   entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=?,reward_rollover_min_remaining_bps=?,
+   entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=?,
    reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=?,entitlement_reset_strategy=?,updated_at=? WHERE id=?`, reward.ComboID, reward.TrafficLimitBytes, string(squads),
-			reward.RenewalPriceMinor, reward.RolloverMinRemainingBPS, reward.TrafficLimitBytes, combo.ResetStrategy, stamp(now), purchaseID)
+			reward.RenewalPriceMinor, reward.TrafficLimitBytes, combo.ResetStrategy, stamp(now), purchaseID)
 		if err == nil {
-			err = refreshPendingRolloverTx(ctx, tx, purchaseID, reward.TrafficLimitBytes, reward.ComboID, now)
+			err = nil
 		}
 	case activity.RewardSquadAccess:
 		for _, squad := range reward.SquadUUIDs {

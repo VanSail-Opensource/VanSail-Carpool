@@ -15,14 +15,6 @@ type automaticRenewalAddonSelectionRepository interface {
 	CommitAutoRenewalExcludingAddons(context.Context, string, []string, time.Time) (model.Purchase, error)
 }
 
-type automaticRenewalRolloverBalanceRepository interface {
-	CommitAutoRenewalWithRolloverBalance(context.Context, string, bool, time.Time) (model.Purchase, error)
-}
-
-type automaticRenewalRolloverBalanceAddonSelectionRepository interface {
-	CommitAutoRenewalExcludingAddonsWithRolloverBalance(context.Context, string, []string, bool, time.Time) (model.Purchase, error)
-}
-
 func (s *Service) automaticRenewalSelectionAt(ctx context.Context, user model.User, purchaseID string, now time.Time) (model.AutoRenewal, []string, error) {
 	repository, ok := s.repository.(automaticRenewalRepository)
 	if !ok || strings.TrimSpace(user.ID) == "" || strings.TrimSpace(purchaseID) == "" {
@@ -69,19 +61,13 @@ func (s *Service) automaticRenewalSelectionAt(ctx context.Context, user model.Us
 	return result, unavailable, nil
 }
 
-func (s *Service) commitAutomaticRenewal(ctx context.Context, repository automaticRenewalRepository, purchaseID string, unavailable []string, rolloverCountsTowardBalance bool, now time.Time) (model.Purchase, error) {
+func (s *Service) commitAutomaticRenewal(ctx context.Context, repository automaticRenewalRepository, purchaseID string, unavailable []string, now time.Time) (model.Purchase, error) {
 	if len(unavailable) == 0 {
-		if settlement, ok := repository.(automaticRenewalRolloverBalanceRepository); ok {
-			return settlement.CommitAutoRenewalWithRolloverBalance(ctx, purchaseID, rolloverCountsTowardBalance, now)
-		}
 		return repository.CommitAutoRenewal(ctx, purchaseID, now)
 	}
 	selection, ok := repository.(automaticRenewalAddonSelectionRepository)
 	if !ok {
 		return model.Purchase{}, errors.New("automatic renewal selection is unavailable")
-	}
-	if settlement, ok := selection.(automaticRenewalRolloverBalanceAddonSelectionRepository); ok {
-		return settlement.CommitAutoRenewalExcludingAddonsWithRolloverBalance(ctx, purchaseID, unavailable, rolloverCountsTowardBalance, now)
 	}
 	return selection.CommitAutoRenewalExcludingAddons(ctx, purchaseID, unavailable, now)
 }

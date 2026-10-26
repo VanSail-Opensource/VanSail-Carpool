@@ -61,7 +61,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `member_routes.go` mounts the member connection, reset automation, reset, refund, and operation resources.
 - `dashboard_usage.go` validates the authenticated member's UTC traffic range and serves the bounded per-node usage projection.
 - `statistics.go` serves the cached aggregate snapshot, on-demand shared
-- `rollover.go` serves the authenticated owner's on-demand active-purchase rollover projection, maps ownership, inactive-term, and upstream failures to stable API errors, and correlates unexpected provider failures with the request ID.
 - `billing_orders.go` creates, polls, and cancels member payment orders.
 - `automatic_renewal.go` serves the owner-only automatic-renewal status and toggle resource and logs unexpected provider failures with request, user, and purchase correlation; manual renewal routes are not public.
 - `onboarding.go` serves and administers localized onboarding content.
@@ -248,3 +247,16 @@ covers both delivery paths and status boundaries in hosted CI.
 `payg.go` exposes authenticated `GET /api/v1/payg` for the current onboarded member only, with private/no-store headers. The existing squad-product write contract accepts billing mode and integer per-GB pricing.
 
 `payg_test.go` verifies owner isolation even when another user ID is supplied in the query string and confirms no-store financial responses.
+
+- `pricing_policy.go`: Admin-only pricing routes, explicit policy saves and stable domain errors.
+- `pricing_views.go`: Bounded overview/data views and direct reasoned intervention/cancellation commands.
+- `pricing_history.go`: Original horizon/model-filtered history, version preconditions and provider inputs.
+- `pricing_renewal.go`: Read-only owned renewal information; no terms acceptance or owner mutation endpoint.
+- `pricing_export_auth.go`: Single-use expiring actor/browser/scope-bound authorization for sensitive analytical exports.
+- `pricing_export.go`: Signed direct streaming, bounded lifetime, cancellation, truncation failure and export audit.
+
+- `host_names.go`: Owner-authorized host display preference write handler.
+
+- `personal_forecast.go`: Member/admin analytical projections, behind their existing scopes.
+
+- `pricing_user_response.go`: Reuses canonical coupon response conversion, including decimal amounts and explicit nulls.

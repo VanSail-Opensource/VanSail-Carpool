@@ -77,7 +77,6 @@ func TestAddPurchaseAddonsDebitsOnceAndFeedsFutureTotals(t *testing.T) {
 		t.Fatal(err)
 	}
 	var adjustments, debits, syncJobs int
-	var rolloverPaid int64
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchase_addon_adjustments`).Scan(&adjustments); err != nil {
 		t.Fatal(err)
 	}
@@ -87,11 +86,8 @@ func TestAddPurchaseAddonsDebitsOnceAndFeedsFutureTotals(t *testing.T) {
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT net_paid_txb_minor FROM purchase_rollovers WHERE purchase_id=?`, purchase.ID).Scan(&rolloverPaid); err != nil {
-		t.Fatal(err)
-	}
-	if adjustments != 1 || debits != 1 || syncJobs != 1 || rolloverPaid != 1_151 {
-		t.Fatalf("addition effects adjustments=%d debits=%d syncJobs=%d rolloverPaid=%d", adjustments, debits, syncJobs, rolloverPaid)
+	if adjustments != 1 || debits != 1 || syncJobs != 1 {
+		t.Fatalf("addition effects adjustments=%d debits=%d syncJobs=%d", adjustments, debits, syncJobs)
 	}
 }
 
@@ -117,8 +113,8 @@ func TestPurchaseAddonsBlockQueuedTermsAndAllowOwnerHeldFullSquads(t *testing.T)
 	if _, err := store.CreatePurchase(ctx, PurchaseInput{UserID: owner.ID, ComboID: combo.ID, AddonSquadIDs: []string{addon.ID}, IdempotencyKey: "owner-queued"}, now.Add(time.Hour)); err != nil {
 		t.Fatalf("CreatePurchase(owner queued full squad): %v", err)
 	}
-	if _, err := store.QuotePurchaseAddons(ctx, PurchaseAddonInput{UserID: owner.ID, PurchaseID: active.ID, AddonSquadIDs: []string{addon.ID}}, now.Add(time.Hour)); !errors.Is(err, ErrQueuedPurchase) {
-		t.Fatalf("QuotePurchaseAddons(queued) = %v, want ErrQueuedPurchase", err)
+	if _, err := store.QuotePurchaseAddons(ctx, PurchaseAddonInput{UserID: owner.ID, PurchaseID: active.ID, AddonSquadIDs: []string{addon.ID}}, now.Add(time.Hour)); err != nil {
+		t.Fatalf("QuotePurchaseAddons(queued) = %v, live addition should remain available", err)
 	}
 	other := createTestUser(t, store, 69_003)
 	if _, err := store.AdjustBalance(ctx, other.ID, 2_000, "other-seed", "seed", now); err != nil {

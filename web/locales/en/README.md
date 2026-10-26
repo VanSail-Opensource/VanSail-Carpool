@@ -64,3 +64,13 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 `diy.json` contains DIY controls, errors and compatibility messages; `diy-fields.json` contains generated typed option labels.
 
 `payg.json` contains automatic PAYG pricing, eligibility, statistics and administrator conversion copy.
+
+- `pricing.json`: Product-level activation, calculated limits, automatic renewal notices, original-vintage diagnostics, administrative commands and export privacy/retention wording.
+
+- `charts.json`: Shared chart interaction labels.
+
+- `host-names.json`: Owner name editing and applied customization labels.
+
+- `predictions.json`: Forecast intervals, missing history and calibration copy.
+
+- `user-prices.json`: Expanded admin personal price analysis labels.

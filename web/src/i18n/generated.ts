@@ -1,3 +1,13 @@
+import enUserPrices from '../../locales/en/user-prices.json'
+import zhUserPrices from '../../locales/zh-CN/user-prices.json'
+import enHostNames from '../../locales/en/host-names.json'
+import zhHostNames from '../../locales/zh-CN/host-names.json'
+import enCharts from '../../locales/en/charts.json'
+import zhCharts from '../../locales/zh-CN/charts.json'
+import enPredictions from '../../locales/en/predictions.json'
+import zhPredictions from '../../locales/zh-CN/predictions.json'
+import enPricing from '../../locales/en/pricing.json'
+import zhPricing from '../../locales/zh-CN/pricing.json'
 import enPAYG from '../../locales/en/payg.json'
 import zhPAYG from '../../locales/zh-CN/payg.json'
 import enNativeMetrics from '../../locales/en/native-metrics.json'
@@ -84,6 +94,11 @@ import zhStatistics from '../../locales/zh-CN/statistics.json'
 import zhSettings from '../../locales/zh-CN/settings.json'
 
 const en = {
+ ...enUserPrices,
+  ...enPredictions,
+  ...enCharts,
+  ...enHostNames,
+  ...enPricing,
  ...enAPITokens,
  ...enPublicSubscription,
  ...enXNode,
@@ -96,6 +111,11 @@ const en = {
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enSquadProfile, ...enStatistics,
 }
 const zhCN: typeof en = {
+ ...zhUserPrices,
+  ...zhPredictions,
+  ...zhCharts,
+  ...zhHostNames,
+  ...zhPricing,
  ...zhAPITokens,
  ...zhPublicSubscription,
  ...zhXNode,

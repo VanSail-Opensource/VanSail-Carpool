@@ -299,6 +299,8 @@ jobs:
         run: |
           go test ./internal/xnode -run '^$' -bench BenchmarkXNodeSteadyState -benchtime=2s -benchmem -cpuprofile=xnode-cpu.pprof -o /tmp/xnode-profile.test > xnode-benchmark.txt
           cat xnode-benchmark.txt
+      - name: Measure bounded pricing calculations and cached reads
+        run: go test ./internal/pricing -run '^$' -bench '^BenchmarkPricing' -benchtime=1s -benchmem | tee pricing-benchmark.txt
       - name: Measure authoritative cache reads
         run: go test ./internal/xnode -run '^(TestCatalogTopologyRevisionIsolationAndBounds|TestCompileCacheInvalidatesEpochAndAccessBoundary)$' -count=1 -v | tee xnode-cache-reads.txt
       - uses: actions/upload-artifact@v7
@@ -308,3 +310,4 @@ jobs:
             xnode-cpu.pprof
             xnode-benchmark.txt
             xnode-cache-reads.txt
+            pricing-benchmark.txt

@@ -10,7 +10,7 @@ import (
 
 func TestRecoveryLeavesCustomCombosAwardedAfterCoreChangeUntouched(t *testing.T) {
 	t.Parallel()
-	ctx, store := context.Background(), newTestStore(t)
+	ctx, store := context.Background(), newHistoricalRewardStore(t)
 	now := time.Now().UTC().Add(-2 * time.Hour)
 	core := saveTestCombo(t, store, "Original core", 100, 30)
 	target := saveTestCombo(t, store, "New core", 200, 45)
@@ -34,7 +34,7 @@ func TestRecoveryLeavesCustomCombosAwardedAfterCoreChangeUntouched(t *testing.T)
 			if test.priorCustom {
 				playComboReward(t, store, user.ID, "older custom", activity.Reward{Kind: activity.RewardEntitlementGrant,
 					ComboID: core.ID, SquadUUIDs: []string{"older-award"}, RenewalPriceMinor: 63000,
-					TrafficLimitBytes: 800 << 30, RolloverMinRemainingBPS: 9999}, now.Add(time.Minute))
+					TrafficLimitBytes: 800 << 30}, now.Add(time.Minute))
 			}
 			changeAt := now.Add(2 * time.Minute)
 			playComboReward(t, store, user.ID, "core change", activity.Reward{Kind: activity.RewardCoreComboSwitch, ComboID: target.ID}, changeAt)
@@ -42,7 +42,7 @@ func TestRecoveryLeavesCustomCombosAwardedAfterCoreChangeUntouched(t *testing.T)
 			// exclude recovery, rather than an unrelated combo-ID mismatch.
 			playComboReward(t, store, user.ID, "latest custom", activity.Reward{Kind: activity.RewardEntitlementGrant,
 				ComboID: target.ID, SquadUUIDs: []string{"latest-award"}, RenewalPriceMinor: test.price,
-				TrafficLimitBytes: 300 << 30, RolloverMinRemainingBPS: 8000}, changeAt.Add(test.delay))
+				TrafficLimitBytes: 300 << 30}, changeAt.Add(test.delay))
 			if test.clearOverride {
 				// Even missing fields do not justify recovery from a core-change
 				// reward that predates the most recent custom award.

@@ -1,3 +1,7 @@
+# Historical custom Combo repair notes
+
+This document explains immutable pre-106 upgrade repairs. It is historical evidence, not a description of current operational credit tables or supported runtime APIs. SQLite 106/PostgreSQL 18 retire those tables and cancel unsettled credits without wallet changes. Current purchase/refund behavior is documented in `docs/modules/catalog-entitlements.md`. Historical tests explicitly recreate the old schema before replaying an old migration.
+
 # Custom combo and core-change rewards
 
 ## Responsibility and data flow
@@ -133,7 +137,7 @@ Tests run in hosted CI; local automated tests are prohibited by `AGENTS.md`.
 
 Rollover fixtures must create their row explicitly. Normal active purchases have
 no rollover row until expiry is enqueued. The fixtures assert that snapshot
-creation affects one row and use `MarkRolloverProcessing` for the processing
+creation affects one row and reconstruct the historical processing state for the processing
 state, so a missing row cannot silently turn a protection test into an eligible
 recovery case. Pending metadata refresh and processing-state preservation are
 checked separately.

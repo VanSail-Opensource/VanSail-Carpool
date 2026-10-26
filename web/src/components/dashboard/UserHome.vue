@@ -26,7 +26,6 @@ const reissueOrderId = computed(() => typeof route.query.reissue === 'string' &&
 const topUpRequested = computed(() => route.query.topUp === '1' && !reissueOrderId.value)
 watch(() => route.query.revoke, value => { if (value === '1') void router.replace({ path: '/subscription', query: { revoke: '1' } }) }, { immediate: true })
 watch(() => route.query.addSquads, value => { if (value === '1') void router.replace({ path: '/settings', query: { addSquads: '1' } }) }, { immediate: true })
-const catalogBlocked = computed(() => route.query.autoRenewBlocked === '1')
 const autoRenewalFailureMessage = computed(() => {
   const reason = dashboard.value?.autoRenewalFailure?.reason
   if (!reason) return null
@@ -88,7 +87,6 @@ function consumeReissueRequest(): void {
         />
         <div class="home-layout__columns">
           <div class="home-alerts">
-            <InlineNotice v-if="catalogBlocked" tone="warning">{{ $t('home.autoRenewalCatalogBlocked') }}</InlineNotice>
             <InlineNotice v-if="autoRenewalFailureMessage" tone="warning" :title="$t('home.autoRenewalFailureTitle')">{{ autoRenewalFailureMessage }}</InlineNotice>
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>

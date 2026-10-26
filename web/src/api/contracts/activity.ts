@@ -22,7 +22,6 @@ export interface Reward {
   squadUuids?: readonly string[]
   renewalPriceMinor?: number
   trafficLimitBytes?: number
-  rolloverMinRemainingBps?: number
   includeInRenewal?: boolean
   discountMode?: 'fixed' | 'percent'
 }

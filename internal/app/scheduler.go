@@ -107,7 +107,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 				a.logger.Error("entitlement transition scan failed", "error", err)
 			}
 			if err := a.outbox.Drain(ctx, 50); err != nil && !errors.Is(err, context.Canceled) {
-				a.logger.Error("rollover settlement drain failed", "error", err)
+				a.logger.Error("purchase expiry drain failed", "error", err)
 			}
 			if err := a.store.EnqueueDueEntitlementTransitions(ctx, now.UTC()); err != nil {
 				a.logger.Error("successor transition scan failed", "error", err)

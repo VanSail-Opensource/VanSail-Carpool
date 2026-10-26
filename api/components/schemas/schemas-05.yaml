@@ -206,7 +206,6 @@ Reward:
     squadUuids: { type: array, items: { type: string } }
     renewalPriceMinor: { type: integer, format: int64, minimum: 0 }
     trafficLimitBytes: { type: integer, format: int64, minimum: 1 }
-    rolloverMinRemainingBps: { type: integer, minimum: 0, maximum: 10000 }
     includeInRenewal: { type: boolean }
     discountMode: { type: string, enum: [fixed, percent] }
 

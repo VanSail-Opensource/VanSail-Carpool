@@ -5,28 +5,28 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
-	"time"
 )
 
 // ComboInput is the validated catalog representation persisted by an administrator.
 // SquadProductIDs contains Proxy internal-squad UUIDs; the historical field
 // name remains at the service boundary for source compatibility.
 type ComboInput struct {
-	WhitelistIPQuota        *int
-	IPLookupQuota           *int
-	ID                      string
-	Name                    string
-	Description             string
-	PriceTXBMinor           int64
-	ValidityDays            int
-	TrafficLimitBytes       int64
-	ResetStrategy           string
-	Active                  bool
-	SquadProductIDs         []string
-	RolloverMinRemainingBPS int
+	WhitelistIPQuota  *int
+	IPLookupQuota     *int
+	ID                string
+	Name              string
+	Description       string
+	PriceTXBMinor     int64
+	ValidityDays      int
+	TrafficLimitBytes int64
+	ResetStrategy     string
+	Active            bool
+	SquadProductIDs   []string
 }
 
 // SquadProductInput is the local merchandising override associated with a
@@ -89,14 +89,14 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 	}
 	var result sql.Result
 	if creating {
-		result, err = tx.ExecContext(ctx, `INSERT INTO combos(id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,rollover_min_remaining_bps,included_squad_uuids,created_at,updated_at)
-			VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, input.ID, input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays,
-			input.TrafficLimitBytes, input.ResetStrategy, boolInt(input.Active), input.RolloverMinRemainingBPS,
+		result, err = tx.ExecContext(ctx, `INSERT INTO combos(id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,included_squad_uuids,created_at,updated_at)
+			VALUES(?,?,?,?,?,?,?,?,?,?,?)`, input.ID, input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays,
+			input.TrafficLimitBytes, input.ResetStrategy, boolInt(input.Active),
 			string(encodedSquads), stamp(now), stamp(now))
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=?,description=?,price_txb_minor=?,validity_days=?,traffic_limit_bytes=?,reset_strategy=?,active=?,rollover_min_remaining_bps=?,included_squad_uuids=?,updated_at=? WHERE id=?`,
+		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=?,description=?,price_txb_minor=?,validity_days=?,traffic_limit_bytes=?,reset_strategy=?,active=?=?,included_squad_uuids=?,updated_at=? WHERE id=?`,
 			input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays, input.TrafficLimitBytes, input.ResetStrategy,
-			boolInt(input.Active), input.RolloverMinRemainingBPS, string(encodedSquads), stamp(now), input.ID)
+			boolInt(input.Active), string(encodedSquads), stamp(now), input.ID)
 	}
 	if err != nil {
 		return model.Combo{}, fmt.Errorf("save combo: %w", err)

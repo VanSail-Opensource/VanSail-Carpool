@@ -41,7 +41,7 @@
     "validFrom": "Valid from",
     "validUntil": "Valid until",
     "status": "Status",
-    "resetStrategy": "Rollover cadence",
+    "resetStrategy": "Reset cadence",
     "trafficLimit": "Traffic limit (bytes)",
     "squads": "Squads",
     "invalidDates": "The end must be later than the start.",

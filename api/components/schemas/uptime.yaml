@@ -41,6 +41,11 @@ SubscriptionHost:
   properties:
     uuid: { type: string }
     name: { type: string }
+    publishedName: { type: string }
+    nameOverride: { type: string }
+    priceLabel: { type: string }
+    customRoute: { type: boolean }
+    splitXhttp: { type: boolean }
     countryCodes: { type: array, items: { type: string } }
     squadUuids: { type: array, items: { type: string } }
     link: { type: [string, 'null'] }
@@ -69,3 +74,13 @@ MemberSubscription:
     squads:
       type: array
       items: { $ref: '../../openapi.yaml#/components/schemas/SubscriptionSquad' }
+HostNameCustomization:
+  type: object
+  additionalProperties: false
+  required: [hostId, name, nameOverride, publishedName, priceLabel]
+  properties:
+    hostId: { type: string }
+    name: { type: string }
+    nameOverride: { type: string }
+    publishedName: { type: string }
+    priceLabel: { type: string }

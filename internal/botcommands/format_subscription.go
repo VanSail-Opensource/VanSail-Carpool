@@ -8,22 +8,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-// RolloverState identifies the display outcome of the authoritative projection.
-type RolloverState string
-
-const (
-	RolloverPredicted   RolloverState = "predicted"
-	RolloverIneligible  RolloverState = "ineligible"
-	RolloverDisabled    RolloverState = "disabled"
-	RolloverUnavailable RolloverState = "unavailable"
-)
-
-// RolloverSummary carries localized state and an optional authoritative value.
-type RolloverSummary struct {
-	State  RolloverState
-	Amount *model.Money
-}
-
 // FormatSubscription renders current usage and a top-node distribution.
 func FormatSubscription(copy Copy, dashboard model.Dashboard, _ time.Time) string {
 	if dashboard.ActivePurchase == nil || dashboard.Statistics == nil {
@@ -48,8 +32,7 @@ func FormatSubscription(copy Copy, dashboard model.Dashboard, _ time.Time) strin
 	return Limit(strings.Join(lines, "\n"))
 }
 
-// FormatCombo renders the active purchase with localized rollover state.
-func FormatCombo(copy Copy, purchase *model.Purchase, squadNames []string, rollover RolloverSummary) string {
+func FormatCombo(copy Copy, purchase *model.Purchase, squadNames []string) string {
 	if purchase == nil {
 		return FormatNoSubscription(copy)
 	}
@@ -62,7 +45,6 @@ func FormatCombo(copy Copy, purchase *model.Purchase, squadNames []string, rollo
 		formatEmojiField("🛣️", copy.SquadsLabel, strings.Join(squadNames, ", ")),
 		formatEmojiField("📦", copy.TrafficLabel, formatBytes(purchase.TrafficLimitBytes)),
 		formatEmojiField("🔄", copy.ResetLabel, resetStrategyText(copy, purchase.ResetStrategy)),
-		formatEmojiField("♻️", copy.RolloverLabel, rolloverText(copy, rollover)),
 	}
 	return Limit(strings.Join(lines, "\n"))
 }
@@ -82,20 +64,4 @@ func resetStrategyText(copy Copy, strategy string) string {
 
 func formatEmojiField(icon, label, value string) string {
 	return icon + " *" + escapeMarkdownV2(label) + ":* " + escapeMarkdownV2(value)
-}
-
-func rolloverText(copy Copy, summary RolloverSummary) string {
-	switch summary.State {
-	case RolloverPredicted:
-		if summary.Amount != nil {
-			return copy.RolloverWill + " " + summary.Amount.Display
-		}
-		return copy.RolloverUnavailable
-	case RolloverIneligible:
-		return copy.RolloverWillNot
-	case RolloverDisabled:
-		return copy.RolloverCannot
-	default:
-		return copy.RolloverUnavailable
-	}
 }

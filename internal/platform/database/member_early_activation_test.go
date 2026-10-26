@@ -48,9 +48,6 @@ func TestEarlyActivationPreservesDurationsWithoutCredit(t *testing.T) {
 				}
 			}
 			balance := adminWorkflowBalance(t, store, user.ID)
-			if _, err := store.DB().ExecContext(ctx, `INSERT INTO purchase_rollovers(purchase_id,status,traffic_limit_bytes,minimum_remaining_bps,net_paid_txb_minor,created_at,updated_at) VALUES(?,'pending',?,0,?,?,?)`, current.ID, current.TrafficLimitBytes, current.PriceTXBMinor, stamp(now), stamp(now)); err != nil {
-				t.Fatal(err)
-			}
 			wrong := memberOperationInput(user.ID, later.ID, purchaseops.OperationEarlyActivation, "wrong-order")
 			if _, err := store.BeginEarlyActivation(ctx, wrong, current.ID, later.ID, now); !errors.Is(err, purchaseops.ErrIneligible) {
 				t.Fatalf("non-earliest error=%v", err)
@@ -72,9 +69,8 @@ func TestEarlyActivationPreservesDurationsWithoutCredit(t *testing.T) {
 			if err != nil || forfeited.Status != "cancelled" || forfeited.AutoRenewEnabled || !forfeited.ValidUntil.Equal(now) {
 				t.Fatalf("forfeited=%+v error=%v", forfeited, err)
 			}
-			rollover, err := store.RolloverByPurchase(ctx, current.ID)
-			if err != nil || rollover.Status != "zero" || rollover.CreditedTXBMinor != 0 || adminWorkflowBalance(t, store, user.ID) != balance {
-				t.Fatalf("rollover=%+v balance changed error=%v", rollover, err)
+			if adminWorkflowBalance(t, store, user.ID) != balance {
+				t.Fatal("early activation changed wallet")
 			}
 			replay, err := store.BeginEarlyActivation(ctx, input, current.ID, queued.ID, now)
 			if err != nil || replay.Receipt.ID != operation.Receipt.ID {

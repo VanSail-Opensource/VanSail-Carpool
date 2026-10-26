@@ -43,7 +43,6 @@ const entitlement: Purchase = {
   trafficLimitBytes: '107374182400',
   resetStrategy: 'MONTH_ROLLING',
   squadUuids: [],
-  rolloverMinRemainingBps: 0,
   createdAt: '2026-08-07T00:00:00Z',
   updatedAt: '2026-08-07T00:01:00Z',
 }

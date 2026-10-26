@@ -19,7 +19,7 @@ type purchaseAddonReplayRepository interface {
 }
 
 // QuoteAddons returns an owned active purchase's authoritative addition price.
-func (s *Service) QuoteAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string) (model.PurchaseAddonQuote, error) {
+func (s *Service) QuoteAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string, coupon ...string) (model.PurchaseAddonQuote, error) {
 	if user.OnboardingState != "complete" {
 		return model.PurchaseAddonQuote{}, errors.New("onboarding is incomplete")
 	}
@@ -30,16 +30,16 @@ func (s *Service) QuoteAddons(ctx context.Context, user model.User, purchaseID s
 	if !ok {
 		return model.PurchaseAddonQuote{}, errors.New("purchase add-ons are unavailable")
 	}
-	return repository.QuotePurchaseAddons(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, AddonSquadIDs: addonIDs}, s.now().UTC())
+	return repository.QuotePurchaseAddons(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, CouponGrantID: firstAddonCoupon(coupon), AddonSquadIDs: addonIDs}, s.now().UTC())
 }
 
 // AddAddons applies an owned active purchase's selected optional squads.
-func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string, activationCodes map[string]string, idempotencyKey string) (model.Purchase, error) {
+func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string, activationCodes map[string]string, idempotencyKey string, coupon ...string) (model.Purchase, error) {
 	if user.OnboardingState != "complete" {
 		return model.Purchase{}, errors.New("onboarding is incomplete")
 	}
 	if replay, ok := s.repository.(purchaseAddonReplayRepository); ok {
-		purchase, found, err := replay.PurchaseAddonReplay(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, AddonSquadIDs: addonIDs, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey})
+		purchase, found, err := replay.PurchaseAddonReplay(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, CouponGrantID: firstAddonCoupon(coupon), AddonSquadIDs: addonIDs, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey})
 		if found || err != nil {
 			return purchase, err
 		}
@@ -51,7 +51,7 @@ func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID str
 	if !ok {
 		return model.Purchase{}, errors.New("purchase add-ons are unavailable")
 	}
-	return repository.AddPurchaseAddons(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID,
+	return repository.AddPurchaseAddons(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, CouponGrantID: firstAddonCoupon(coupon),
 		AddonSquadIDs: addonIDs, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey}, s.now().UTC())
 }
 
@@ -82,4 +82,11 @@ func (s *Service) validateLiveAddons(ctx context.Context, addonIDs []string) err
 		}
 	}
 	return nil
+}
+
+func firstAddonCoupon(coupon []string) string {
+	if len(coupon) == 1 {
+		return strings.TrimSpace(coupon[0])
+	}
+	return ""
 }

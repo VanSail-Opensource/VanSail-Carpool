@@ -53,7 +53,7 @@ func TestRenewalRetainsStockAtCurrentDiscountedPrice(t *testing.T) {
 	if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 		t.Fatalf("SetAutoRenewal(on): %v", err)
 	}
-	recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 1_000, 0)
+
 	renewed, err := store.CommitAutoRenewal(ctx, source.ID, source.ValidUntil)
 	if err != nil || renewed.PriceTXBMinor != 1_530 || renewed.CouponDiscountTXBMinor != 170 || !renewed.RecurringDiscountAttached {
 		t.Fatalf("CommitAutoRenewal(held stock) = (%+v, %v)", renewed, err)

@@ -90,3 +90,7 @@ measurements/estimates. Traffic counters and probe credentials are never exposed
 `payg.yaml` defines owner-only PAYG summaries, reporting timestamps, availability states and decimal-string traffic/wallet values. Squad-product contracts carry optional billing fields for compatibility with existing clients.
 
 Member preferences expose default-on `paygEnabled` and a sparse `paygSquads` map; PATCH merges supplied squad flags. PAYG availability includes `disabled` without altering financial totals.
+
+- `pricing.yaml`: Typed fixed/default policies, calculated limits, original forecasts, interventions, provider costs and retained export scope.
+
+- `pricing-refinements.yaml`: Typed decisions, personal predictions, calibration and paginated user prices.

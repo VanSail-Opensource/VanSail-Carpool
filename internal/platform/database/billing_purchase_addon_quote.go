@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
@@ -22,8 +24,9 @@ var (
 )
 
 type pricedPurchaseAddon struct {
-	product model.SquadProduct
-	price   int64
+	product     model.SquadProduct
+	price       int64
+	fingerprint string
 }
 
 func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, []pricedPurchaseAddon, error) {
@@ -46,19 +49,6 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 			err = ErrConflict
 		}
 		return model.PurchaseAddonQuote{}, nil, err
-	}
-	var queued, rollover int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status='queued')`, input.UserID).Scan(&queued); err != nil {
-		return model.PurchaseAddonQuote{}, nil, fmt.Errorf("check queued purchase: %w", err)
-	}
-	if queued == 1 {
-		return model.PurchaseAddonQuote{}, nil, ErrQueuedPurchase
-	}
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchase_rollovers WHERE purchase_id=?)`, purchase.ID).Scan(&rollover); err != nil {
-		return model.PurchaseAddonQuote{}, nil, fmt.Errorf("check purchase rollover: %w", err)
-	}
-	if rollover == 1 {
-		return model.PurchaseAddonQuote{}, nil, ErrPurchaseNotActive
 	}
 	combo, err := comboByIDTx(ctx, tx, purchase.ComboID, false)
 	if err != nil {
@@ -97,6 +87,16 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 	priced := make([]pricedPurchaseAddon, 0, len(products))
 	total := int64(0)
 	for _, product := range products {
+		var resolveErr error
+		product.PriceTXBMinor, resolveErr = resolvePricingTx(ctx, tx, "addon", product.GroupID, product.PriceTXBMinor, now)
+		if resolveErr != nil {
+			return model.PurchaseAddonQuote{}, nil, resolveErr
+		}
+		personal, decision, resolveErr := personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, []string{product.GroupID}, now, false)
+		if resolveErr != nil {
+			return model.PurchaseAddonQuote{}, nil, resolveErr
+		}
+		product.PriceTXBMinor = personal
 		price, priceErr := proratedAddonPrice(product.PriceTXBMinor, remaining, original)
 		if priceErr != nil {
 			return model.PurchaseAddonQuote{}, nil, priceErr
@@ -105,13 +105,20 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 			return model.PurchaseAddonQuote{}, nil, errors.New("purchase add-on price exceeds integer range")
 		}
 		total += price
-		priced = append(priced, pricedPurchaseAddon{product: product, price: price})
+		priced = append(priced, pricedPurchaseAddon{product: product, price: price, fingerprint: decision.CouponFingerprint})
 	}
 	uuids := make([]string, 0, len(priced))
 	for _, addon := range priced {
 		uuids = append(uuids, addon.product.GroupID)
 	}
-	return model.PurchaseAddonQuote{PurchaseID: purchase.ID, PriceTXBMinor: total, Price: model.TXBMoney(total), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}, priced, nil
+	discount := coupons.Discount{GrossMinor: total, NetMinor: total}
+	if input.CouponGrantID != "" {
+		discount, err = quoteCouponGrantTx(ctx, tx, coupons.PurchaseContext{UserID: input.UserID, GrantID: input.CouponGrantID, ComboID: combo.ID, AddonSquadIDs: uuids, GrossPriceMinor: total}, now)
+		if err != nil {
+			return model.PurchaseAddonQuote{}, nil, err
+		}
+	}
+	return model.PurchaseAddonQuote{PurchaseID: purchase.ID, GrossPriceTXBMinor: total, DiscountTXBMinor: discount.DiscountMinor, GrossPrice: model.TXBMoney(total), Discount: model.TXBMoney(discount.DiscountMinor), PriceTXBMinor: discount.NetMinor, Price: model.TXBMoney(discount.NetMinor), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}, priced, nil
 }
 
 func purchaseAddonFactsTx(ctx context.Context, tx *sql.Tx, purchaseID string, existing map[string]struct{}) error {

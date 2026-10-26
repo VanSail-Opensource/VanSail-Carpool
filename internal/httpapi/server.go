@@ -4,6 +4,12 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"io/fs"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
@@ -28,11 +34,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"io/fs"
-	"log/slog"
-	"net/http"
-	"net/url"
-	"time"
 )
 
 const sessionCookie = "txc_session"
@@ -96,11 +97,12 @@ type Dependencies struct {
 
 // Server owns HTTP routing and transport-only validation.
 type Server struct {
-	deps             Dependencies
-	requests         *requestauth.Verifier
-	authLimiter      *authLimiter
-	router           http.Handler
-	adminTelegramIDs map[int64]struct{}
+	pricingExportAuth pricingExportAuthorization
+	deps              Dependencies
+	requests          *requestauth.Verifier
+	authLimiter       *authLimiter
+	router            http.Handler
+	adminTelegramIDs  map[int64]struct{}
 }
 
 // New constructs all public, authenticated, admin, and webhook routes.
@@ -171,6 +173,7 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Get("/api/v1/onboarding/content", server.onboardingContent)
 		authenticated.Get("/api/v1/dashboard", server.dashboard)
 		authenticated.Get("/api/v1/dashboard/node-usage", server.dashboardNodeUsage)
+		authenticated.Get("/api/v1/dashboard/predictions", server.personalForecast)
 		authenticated.Get("/api/v1/catalog", server.catalog)
 		authenticated.Post("/api/v1/purchases/quote", server.purchaseQuote)
 		authenticated.Post("/api/v1/purchases", server.purchase)
@@ -178,9 +181,9 @@ func New(deps Dependencies) (*Server, error) {
 		authenticated.Post("/api/v1/purchases/{id}/addons/quote", server.purchaseAddonQuote)
 		authenticated.Post("/api/v1/purchases/{id}/addons", server.purchaseAddons)
 		authenticated.Post("/api/v1/purchases/{id}/cancel", server.cancelQueuedPurchase)
-		authenticated.Get("/api/v1/purchases/{id}/rollover", server.rolloverProjection)
 		authenticated.Get("/api/v1/purchases/{id}/auto-renewal", server.automaticRenewal)
 		authenticated.Put("/api/v1/purchases/{id}/auto-renewal", server.updateAutomaticRenewal)
+		authenticated.Get("/api/v1/purchases/{id}/pricing", server.pricingRenewalInfo)
 		authenticated.Post("/api/v1/subscription/revoke", server.revokeSubscription)
 		server.mountMemberOperations(authenticated)
 		server.mountXNodeMembers(authenticated)
@@ -205,6 +208,8 @@ func New(deps Dependencies) (*Server, error) {
 				deps.DatabaseAdmin.Mount(adminRouter)
 			}
 			server.mountAdmin(adminRouter)
+			adminRouter.Get("/users/{id}/predictions", server.adminPersonalForecast)
+			adminRouter.Get("/users/{id}/prices", server.adminUserPrices)
 			server.mountXNodeAdmin(adminRouter)
 		})
 	})

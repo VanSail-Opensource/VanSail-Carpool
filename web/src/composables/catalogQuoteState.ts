@@ -1,7 +1,7 @@
-import { computed, readonly, shallowRef } from 'vue'
+import { computed, getCurrentInstance, onScopeDispose, readonly, shallowRef } from 'vue'
 
 import { normalizePurchaseQuote } from '@/api/catalog-normalization'
-import { api } from '@/api/client'
+import { ApiError, api } from '@/api/client'
 import type { PurchaseQuote } from '@/api/types'
 
 interface QuoteSelection {
@@ -13,6 +13,7 @@ interface QuoteSelection {
 interface CatalogQuoteOptions {
   selection: () => QuoteSelection | null
   fingerprint: () => string
+  onSuccess?: () => void
   onError: (caught: unknown) => void
 }
 
@@ -21,15 +22,22 @@ export function useCatalogQuote(options: CatalogQuoteOptions) {
   const quoteFingerprint = shallowRef<string | null>(null)
   const quoting = shallowRef(false)
   let requestVersion = 0
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+  let disposed = false
+  if (getCurrentInstance()) onScopeDispose(() => { disposed = true; if (retryTimer) clearTimeout(retryTimer); requestVersion++ })
 
   const quoteUsable = computed(() => quote.value !== null && quoteFingerprint.value === options.fingerprint())
 
   function clearQuote(): void {
+    if (retryTimer) clearTimeout(retryTimer)
+    retryTimer = undefined
     quote.value = null
     quoteFingerprint.value = null
   }
 
   async function refreshQuote(): Promise<boolean> {
+    if (disposed) return false
+    if (retryTimer) clearTimeout(retryTimer)
     const selection = options.selection()
     const fingerprint = options.fingerprint()
     const version = ++requestVersion
@@ -44,11 +52,13 @@ export function useCatalogQuote(options: CatalogQuoteOptions) {
       if (version !== requestVersion || options.fingerprint() !== fingerprint) return false
       quote.value = normalizePurchaseQuote(response)
       quoteFingerprint.value = fingerprint
+      options.onSuccess?.()
       return true
     } catch (caught) {
       if (version === requestVersion && options.fingerprint() === fingerprint) {
         clearQuote()
         options.onError(caught)
+        if (caught instanceof ApiError && caught.code === 'PRICING_DECISION_PENDING') retryTimer = setTimeout(() => { if (!disposed && options.fingerprint() === fingerprint) void refreshQuote() }, 5000)
       }
       return false
     } finally {

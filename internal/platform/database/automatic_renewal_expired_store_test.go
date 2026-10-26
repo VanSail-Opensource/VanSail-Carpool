@@ -28,10 +28,7 @@ func TestSetAutomaticRenewalAllowsSettledExpiredTerm(t *testing.T) {
 	if err := store.EnqueueDueEntitlementTransitions(ctx, purchase.ValidUntil); err != nil {
 		t.Fatalf("EnqueueDueEntitlementTransitions(): %v", err)
 	}
-	if err := store.MarkRolloverProcessing(ctx, purchase.ID, purchase.ValidUntil); err != nil {
-		t.Fatalf("MarkRolloverProcessing(): %v", err)
-	}
-	if _, err := store.FinalizeRollover(ctx, purchase.ID, 100, 100, "", purchase.ValidUntil); err != nil {
+	if err := store.ExpireDuePurchase(ctx, purchase.ID, purchase.ValidUntil); err != nil {
 		t.Fatalf("FinalizeRollover(): %v", err)
 	}
 	var kind string

@@ -14,10 +14,10 @@ func (s *Service) CatalogForUser(ctx context.Context, user model.User) (model.Ca
 	if err != nil {
 		return model.Catalog{}, err
 	}
-	if admission, ok := s.repository.(interface {
-		AutoRenewalBlockedUntil(context.Context, string, time.Time) (*time.Time, error)
+	if prices, ok := s.repository.(interface {
+		PersonalizePricingCatalog(context.Context, string, model.Catalog, time.Time) (model.Catalog, error)
 	}); ok {
-		catalog.AutoRenewalBlockedUntil, err = admission.AutoRenewalBlockedUntil(ctx, user.ID, s.now().UTC())
+		catalog, err = prices.PersonalizePricingCatalog(ctx, user.ID, catalog, s.now().UTC())
 		if err != nil {
 			return model.Catalog{}, err
 		}

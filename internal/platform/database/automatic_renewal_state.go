@@ -72,12 +72,8 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 	return ErrConflict
 }
 
-// DueAutoRenewals lists expired terms with a persisted rollover calculation.
 func (s *Store) DueAutoRenewals(ctx context.Context, now time.Time) ([]DueAutoRenewal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE auto_renew_enabled=1
-		AND valid_until<=? AND ((status IN ('active','activating')
-			AND EXISTS (SELECT 1 FROM purchase_rollovers rollover WHERE rollover.purchase_id=purchases.id AND rollover.status='calculated'))
-			OR (status='expired' AND EXISTS (SELECT 1 FROM purchase_rollovers rollover WHERE rollover.purchase_id=purchases.id AND rollover.status='zero')))
+	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE auto_renew_enabled=1 AND valid_until<=? AND status IN ('active','activating','expired')
 		AND NOT EXISTS (SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchases.id
 			AND successor.status IN ('queued','activating','active'))
 		ORDER BY valid_until,id`, stamp(now.UTC()))
@@ -94,21 +90,6 @@ func (s *Store) DueAutoRenewals(ctx context.Context, now time.Time) ([]DueAutoRe
 		result = append(result, item)
 	}
 	return result, rows.Err()
-}
-
-// RenewalAwaitingRollover reports whether a due term's rollover settlement has
-// not completed yet. An insufficient-balance renewal should then be retried
-// after the rollover credit instead of being permanently disabled.
-func (s *Store) RenewalAwaitingRollover(ctx context.Context, purchaseID string) (bool, error) {
-	var awaiting int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases purchase WHERE purchase.id=?
-		AND (purchase.status IN ('active','activating')
-			OR EXISTS (SELECT 1 FROM purchase_rollovers rollover WHERE rollover.purchase_id=purchase.id
-				AND rollover.status IN ('pending','processing'))))`, purchaseID).Scan(&awaiting)
-	if err != nil {
-		return false, fmt.Errorf("check pending rollover settlement: %w", err)
-	}
-	return awaiting == 1, nil
 }
 
 // MarkAutoRenewalFailed disables a due source without charging its owner.
@@ -133,7 +114,7 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	if err != nil {
 		return fmt.Errorf("load automatic renewal failure owner: %w", err)
 	}
-	settled, err := s.failCalculatedAutoRenewalTx(ctx, tx, purchaseID, userID, reason, now.UTC())
+	settled, err := s.failAutoRenewalTx(ctx, tx, purchaseID, userID, reason, now.UTC())
 	if err != nil {
 		return err
 	}

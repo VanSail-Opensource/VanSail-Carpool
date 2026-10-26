@@ -86,6 +86,10 @@ func (a *Application) Run(ctx context.Context) error {
 		a.runStatisticsScheduler(runCtx)
 	}()
 	notificationsDone := make(chan struct{})
+	pricingDone := make(chan struct{})
+	computeDone := make(chan struct{})
+	go func() { defer close(computeDone); a.runComputeLane(runCtx) }()
+	go func() { defer close(pricingDone); a.runPricingWorker(runCtx) }()
 	go func() {
 		defer close(notificationsDone)
 		a.runNotificationScheduler(runCtx)
@@ -111,6 +115,8 @@ func (a *Application) Run(ctx context.Context) error {
 		}
 	}
 	shutdownErr := a.shutdownRuntime(cancelRun, schedulerDone, statisticsDone, notificationsDone)
+	<-pricingDone
+	<-computeDone
 	connectivityErr := <-connectivityDone
 	if errors.Is(connectivityErr, context.Canceled) {
 		connectivityErr = nil

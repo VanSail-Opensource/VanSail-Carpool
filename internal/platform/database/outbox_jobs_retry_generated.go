@@ -7,9 +7,9 @@ import (
 	time "time"
 )
 
-func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool) (*model.OutboxJob, error) {
+func (s *Store) claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool, computeOnly ...bool) (*model.OutboxJob, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_claimOutboxJob(ctx, now, priorityOnly)
+		r0, r1 := s.retryAttempt_claimOutboxJob(ctx, now, priorityOnly, computeOnly...)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
 		}

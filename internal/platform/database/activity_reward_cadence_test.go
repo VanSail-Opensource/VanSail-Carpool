@@ -37,7 +37,7 @@ func TestCustomAwardCadenceSurvivesCoreChange(t *testing.T) {
 			target := saveCadenceCombo(t, store, "Target core", test.target)
 			user, purchase := createAdminWorkflowPurchase(t, store, int64(32100+index), core, now)
 			custom := activity.Reward{Kind: activity.RewardEntitlementGrant, ComboID: core.ID,
-				SquadUUIDs: []string{"awarded"}, RenewalPriceMinor: 500, TrafficLimitBytes: 500 << 30, RolloverMinRemainingBPS: 9999}
+				SquadUUIDs: []string{"awarded"}, RenewalPriceMinor: 500, TrafficLimitBytes: 500 << 30}
 			playComboReward(t, store, user.ID, "custom", custom, now)
 			if test.legacy || test.override != "" {
 				var override any

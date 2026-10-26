@@ -79,7 +79,7 @@ function selectCoupon(grantId: string | null): void {
           <span><strong>{{ grant.coupon.name }}</strong><small>{{ eligibleIds.includes(grant.id) ? couponEffect(grant) : $t('catalog.couponIneligible') }}</small></span>
           <UIcon v-if="couponGrantId === grant.id" name="i-ph-check-bold" />
         </UButton>
-        <UButton color="error" variant="ghost" square icon="i-ph-trash" :aria-label="$t('coupons.discardTitle', { name: grant.coupon.name })" data-haptic="open" @click="pendingDiscard = grant" />
+        <UButton v-if="discardCoupon" color="error" variant="ghost" square icon="i-ph-trash" :aria-label="$t('coupons.discardTitle', { name: grant.coupon.name })" data-haptic="open" @click="pendingDiscard = grant" />
       </div>
     </div>
     <p v-if="!hasEligibleCoupons" class="field-hint">{{ $t('catalog.noEligibleCoupons') }}</p>

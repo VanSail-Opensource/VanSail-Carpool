@@ -118,7 +118,7 @@ func TestPostgresRenewalRacesCancellation(t *testing.T) {
 	if err = s.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
-	recordAutomaticRollover(t, s, source.ID, source.ValidUntil, 1000, 0)
+
 	for _, err = range runTogether(func() error { _, e := s.CommitAutoRenewal(ctx, source.ID, source.ValidUntil); return e }, func() error { return s.SetAutoRenewal(ctx, user.ID, source.ID, false, source.ValidUntil) }) {
 		if err != nil && !errors.Is(err, ErrConflict) {
 			t.Fatal(err)

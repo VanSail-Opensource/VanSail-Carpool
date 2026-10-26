@@ -2,13 +2,14 @@ package httpapi
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/go-chi/chi/v5/middleware"
 	"io/fs"
 	"net/http"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type contextKey string
@@ -64,6 +65,9 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
+				if recovered == http.ErrAbortHandler {
+					panic(recovered)
+				}
 				s.deps.Logger.Error("HTTP panic", "request_id", middleware.GetReqID(r.Context()), "method", r.Method, "path", redactedRequestPath(r.URL.Path), "panic", recovered, "stack", string(debug.Stack()))
 				s.writeError(w, r, http.StatusInternalServerError, "INTERNAL", "The request could not be completed.")
 			}

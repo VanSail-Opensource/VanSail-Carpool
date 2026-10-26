@@ -3,6 +3,7 @@ import { computed, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { Purchase, SquadProduct } from '@/api/types'
+import CatalogCouponStep from '@/components/catalog/CatalogCouponStep.vue'
 import CatalogSquadStep from '@/components/catalog/CatalogSquadStep.vue'
 import SquadActivationDialog from '@/components/catalog/SquadActivationDialog.vue'
 import { useCatalogSquadPresentation } from '@/components/catalog/useCatalogSquadPresentation'
@@ -23,9 +24,10 @@ const emptyIncludedIds = computed<readonly string[]>(() => [])
 const comboId = computed<string | null>(() => props.active.comboId)
 const activeSquadUuids = computed(() => props.active.squadUuids)
 const {
+  couponGrants, selectedCouponGrantId, eligibleCoupons,
   selectedSquadIds, quote, purchase, loading, quoting, purchasing, needsBalance, error,
   visibleSquads, selectedSquads, activationSquads, reset, toggleSquad, load, refreshQuote, confirmPurchase,
-} = useSquadAddition({ purchaseId: () => props.active.id, activeSquadUuids: () => activeSquadUuids.value })
+} = useSquadAddition({ comboId: () => props.active.comboId, purchaseId: () => props.active.id, activeSquadUuids: () => activeSquadUuids.value })
 const { featuredIds, orderedIds } = useCatalogSquadPresentation(visibleSquads, emptyIncludedIds, comboId)
 
 watch([open, () => props.active.id], ([visible]) => {
@@ -92,7 +94,10 @@ function goHome(): void {
         <Transition name="squad-addition-step" :mode="reducedMotion ? undefined : 'out-in'" :css="!reducedMotion">
           <div :key="loading ? 'loading' : step">
             <USkeleton v-if="loading" class="h-48" />
-            <CatalogSquadStep v-else-if="step === 1" :squads="visibleSquads" :selected-ids="selectedSquadIds" :included-ids="emptyIncludedIds" :featured-ids="featuredIds" :ordered-ids="orderedIds" @toggle="toggleSquad" />
+            <template v-else-if="step === 1">
+              <CatalogSquadStep :squads="visibleSquads" :selected-ids="selectedSquadIds" :included-ids="emptyIncludedIds" :featured-ids="featuredIds" :ordered-ids="orderedIds" @toggle="toggleSquad" />
+              <CatalogCouponStep v-model:coupon-grant-id="selectedCouponGrantId" :coupons="couponGrants" :eligible-ids="eligibleCoupons.map(grant => grant.id)" :quoting="quoting" @redeemed="load()" />
+            </template>
             <SquadAdditionCheckout v-else :squads="selectedSquads" :quote="quote" :purchase="purchase" :quoting="quoting" :purchasing="purchasing || activationPrompting" :needs-balance="needsBalance" :error="error" @back="step = 1" @confirm="confirm" @home="goHome" />
           </div>
         </Transition>

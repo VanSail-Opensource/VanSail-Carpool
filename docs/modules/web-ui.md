@@ -57,13 +57,13 @@ Localization is embedded from matching domain shards under `locales/en/` and `lo
 
 ## Routes and state behavior
 
-Catalog checkout prompts for selected activation-required squads one at a time and sends the in-memory code map once with the purchase request. The group-message reward is a progress card showing message count, reward amount, and claimed/available state. Rollover detail renders forecast metrics with localized success, daily-reduction, and no-rollover states, including predicted rollover credit, maximum daily usage, or N/A when current usage already exceeds the allowable maximum.
+The active Combo keeps its flip card. Its reverse displays an interactive shadcn-vue/Unovis line chart for the last two completed accounting days and next five forecast days, with actual/predicted styling, intervals, keyboard/touch inspection, history coverage and calibration. PAYG-only members see personal predictions directly. Renewal controls remain available without a balance requirement.
 
 The canonical member routes are `/home`, `/catalog`, `/activity`, `/questionnaire`, `/emby`, and `/payment-result`. `/balance` is retained only as a compatibility redirect to Home's funding sheet, and `/games` redirects to `/activity`. Telegram route mode is selected before Vue Router construction from the native `TelegramWebviewProxy` bridge, launch parameters, WebApp data, platform, or Telegram user-agent signals; Telegram uses in-memory route history and strips launch-only parameters from the initial route, while regular browsers use HTML5 history. Failed lazy route imports receive one guarded reload attempt, while the server revalidates `index.html` and gives hashed assets immutable caching. The provider-return route is browser-public only for the signed return landing flow: Telegram verifies the owner-scoped durable order, while a regular browser receives only the capability-limited receipt projection. Only failed or expired Telegram orders may hand their ID to Home, which refetches it before presenting a replacement payment. The three expanded product areas are real data-backed routes; they no longer share a placeholder view.
 
 Home's traffic detail opens on demand, defaults to the latest seven inclusive UTC dates, lets the member choose a start and end date within 31 dates, and displays X-Node's top 20 returned nodes with daily byte totals. Beneath the unchanged traffic-limit meter, an unlabeled color-segmented bar previews the current top-node distribution; hover or keyboard focus previews a localized detail panel, while click/tap locks it until the same segment or Escape closes it. The bar joins usage UUIDs to the catalog's read-only enabled-node metadata for multipliers, and shows a neutral remainder when the returned top nodes do not cover all usage. The date-range request is independent of the cached home summary and preserves an explicit upstream-unavailable state.
 
-The active `Your ride` summary is an accessible flip card. Its summary button is independent from renewal and queued-cancellation controls; opening it fetches `/api/v1/purchases/{id}/rollover` fresh, shows loading/retry states, and presents actual usage, projected full-term usage, maximum usable traffic, predicted credit, maximum daily usage, or required total/daily reduction. The interaction uses transform/opacity motion with a reduced-motion state swap, keeps the back face inert while closed, and lets only the visible face determine the card height.
+The active Combo keeps its flip card. Its reverse displays an interactive shadcn-vue/Unovis line chart for the last two completed accounting days and next five forecast days, with actual/predicted styling, intervals, keyboard/touch inspection, history coverage and calibration. PAYG-only members see personal predictions directly. Renewal controls remain available without a balance requirement.
 
 Activity shows daily check-in, group-message reward progress/claimed state, enabled betting games, lucky draws, recent outcomes, exact stakes/fees, and resulting balance. It does not use streak pressure, near-miss animation, celebratory loops, or other manipulative gambling cues. Every financial action is disabled while pending and displays the server result.
 
@@ -75,21 +75,7 @@ Emby setup collects a write-only password, parental rating, and libraries before
 
 The payment sheet selects a canonical method ID in two stages: provider account tiles, then rail card controls. Create and cancel use caller-owned UUID idempotency keys, accept `202` operation receipts, and poll those receipts before presenting provider checkout state. Ambiguous transport failures retain the same key; `pending_review` stops automatic polling and shows a localized review state without replaying the mutation. Once creation succeeds, the sheet separately renders provider URL, QR payload, receiving address, actual crypto amount, and currency when supplied. Cancellation stops order polling, while a later authoritative `paid` projection still refreshes the balance exactly once. The browser return page renders a signed public receipt projection with amount, payment ID, provider, channel, status, and created/paid timestamps, without a Mini App navigation action.
 
-Catalog review is the final purchase step and includes authoritative validity,
-traffic/reset and rollover details, accessible-node count, add-ons, coupon
-effect, and total. A successful purchase replaces the flow with a localized
-confirmation summary containing the charged amount, discount, validity window,
-status, traffic limit, and reset cadence; its Home action is the only navigation
-out of that transient state. Combo/add-on/coupon selections and the current step
-are stored in user-scoped `sessionStorage` and cleared after successful purchase;
-progress is blocked when the quote has no accessible nodes. Home's ride summary
-uses a focused `UModal`/`USwitch` automatic-renewal control: it displays the
-authoritative gross/discount/net amount, charge date, next-cycle end, stable
-eligibility reason, and a centered green-or-red action. A member with automatic
-renewal enabled is redirected away from Catalog, with the server enforcing the
-same restriction. Usage also includes a responsive native SVG graph with a
-textual fallback, while Activity preserves a selected game's entered stake across
-refreshes and has no refresh button.
+The active Combo keeps its flip card. Its reverse displays an interactive shadcn-vue/Unovis line chart for the last two completed accounting days and next five forecast days, with actual/predicted styling, intervals, keyboard/touch inspection, history coverage and calibration. PAYG-only members see personal predictions directly. Renewal controls remain available without a balance requirement.
 
 ## Administration
 

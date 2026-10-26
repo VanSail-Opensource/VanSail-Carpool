@@ -59,7 +59,6 @@ type Service struct {
 	cacheMu      sync.RWMutex
 	cache        map[string]cachedDashboard
 	cacheBytes   int
-	settings     AutomaticRenewalSettings
 	connectivity *connectivity.Service
 }
 
@@ -77,9 +76,6 @@ func (s *Service) Purchase(ctx context.Context, user model.User, comboID string,
 func (s *Service) PurchaseWithCoupon(ctx context.Context, user model.User, comboID string, addonIDs []string, couponGrantID string, activationCodes map[string]string, idempotencyKey string) (model.Purchase, error) {
 	if user.OnboardingState != "complete" {
 		return model.Purchase{}, errors.New("onboarding is incomplete")
-	}
-	if err := s.ensureCatalogAvailable(ctx, user.ID); err != nil {
-		return model.Purchase{}, err
 	}
 	idempotencyKey = strings.TrimSpace(idempotencyKey)
 	if comboID == "" || len(addonIDs) > 100 || idempotencyKey == "" || len(idempotencyKey) > 128 {
@@ -102,9 +98,6 @@ func (s *Service) PurchaseWithCoupon(ctx context.Context, user model.User, combo
 func (s *Service) Quote(ctx context.Context, user model.User, comboID string, addonIDs []string, couponGrantID string) (model.PurchaseQuote, error) {
 	if user.OnboardingState != "complete" {
 		return model.PurchaseQuote{}, errors.New("onboarding is incomplete")
-	}
-	if err := s.ensureCatalogAvailable(ctx, user.ID); err != nil {
-		return model.PurchaseQuote{}, err
 	}
 	if comboID == "" || len(addonIDs) > 100 {
 		return model.PurchaseQuote{}, errors.New("invalid purchase selection")

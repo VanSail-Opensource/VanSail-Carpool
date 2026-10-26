@@ -202,7 +202,7 @@ Migrate by functional area, preserving the service layer's public interfaces.
 
 1. **Identity and settings:** users, sessions, encrypted settings, onboarding, Telegram identity aliases.
 2. **Financial:** balances, ledger entries, payment orders, provider callbacks, refunds, and settlement records.
-3. **Commerce:** products, combos, purchases, entitlements, renewals, coupons, and rollover.
+3. **Commerce:** products, combos, purchases, entitlements, renewals, coupons, and historical financial evidence.
 4. **X-Node:** nodes, identities, periods, traffic usage, report cursors, configuration, routing, and firewall state.
 5. **Durable work:** outbox, provider operations, compensation, notifications, and recovery workflows.
 6. **Supporting features:** activity, Emby, questionnaires, IP lookup, statistics, and maintenance.
@@ -447,7 +447,7 @@ Commands must be non-destructive by default and must never silently overwrite a 
 - [x] Preserve payment idempotency keys and provider event references.
 - [x] Preserve immutable ledger, audit, and refund histories.
 - [x] Preserve X-Node proxy IDs, accounting periods, journal cursors, multiplier remainders, and usage history.
-- [x] Preserve unfinished recovery, rollover, and migration metadata.
+- [x] Preserve unfinished accounting/recovery and migration metadata; forward retirement cancels unsettled unused-traffic credits without wallet changes.
 - [x] Preserve outbox payloads and retry attempts.
 - [x] Classify in-flight operations before resumption; do not blindly replay uncertain provider-side effects.
 - [x] Reset PostgreSQL identity sequences appropriately.

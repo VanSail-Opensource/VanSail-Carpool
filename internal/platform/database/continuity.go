@@ -37,7 +37,6 @@ func (s *Store) RetireContinuityJobs(ctx context.Context, now time.Time) error {
 }
 
 // ContinuityEntitlement returns the current term with the queued successor's
-// expiry. It remains available after the boundary until rollover changes the
 // lineage, so a retried provider extension cannot turn into an expiry gap.
 func (s *Store) ContinuityEntitlement(ctx context.Context, successorID string, _ time.Time) (*model.Purchase, error) {
 	var userID, status, validFromValue, validUntilValue string

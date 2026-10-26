@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
-	"time"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
 // PurchaseInput contains the server-selected catalog IDs for a checkout.
@@ -23,7 +25,8 @@ type PurchaseInput struct {
 
 // CreatePurchase atomically revalidates live pricing, debits TXB, stores only
 // transaction facts and selected paid add-ons, and queues Proxy sync.
-func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
+func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
+	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	fingerprint, err := normalizeAndFingerprintPurchase(&input)
 	if err != nil {
 		return model.Purchase{}, err
@@ -58,7 +61,7 @@ func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseI
 		return model.Purchase{}, fmt.Errorf("load purchase idempotency key: %w", loadErr)
 	}
 
-	quote, combo, addonRows, err := quotePurchaseTx(ctx, tx, input, now)
+	quote, combo, addonRows, err := s.quotePurchaseTx(ctx, tx, input, now)
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -75,6 +78,11 @@ func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseI
 	purchaseID, err := ids.New()
 	if err != nil {
 		return model.Purchase{}, err
+	}
+	if input.CouponGrantID == "" {
+		if err := reservePurchaseDiscountTx(ctx, tx, input.UserID, "combo", combo.ID, purchaseID, combo.PriceTXBMinor, moneyMinor(quote.PricingDecision.PersonalPrice), now); err != nil {
+			return model.Purchase{}, err
+		}
 	}
 	discount := coupons.Discount{GrossMinor: quote.GrossPriceTXBMinor, NetMinor: quote.GrossPriceTXBMinor}
 	if input.CouponGrantID != "" {
@@ -108,6 +116,10 @@ func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseI
 	if err := snapshotComboSquadsTx(ctx, tx, purchaseID, combo.IncludedSquads); err != nil {
 		return model.Purchase{}, err
 	}
+	contractGross := quote.GrossPriceTXBMinor
+	if input.CouponGrantID == "" {
+		contractGross += moneyMinor(quote.PricingDecision.PersonalPrice) - combo.PriceTXBMinor
+	}
 	if status == "activating" {
 		if err := applyPendingExtensionsToActivationTx(ctx, tx, purchaseID, now); err != nil {
 			return model.Purchase{}, fmt.Errorf("apply pending subscription extensions: %w", err)
@@ -118,13 +130,22 @@ func (s *Store) retryAttempt_CreatePurchase(ctx context.Context, input PurchaseI
 			return model.Purchase{}, fmt.Errorf("snapshot add-on squad: %w", err)
 		}
 	}
+	if err := snapshotPricingContractTx(ctx, tx, purchaseID, input.UserID, combo.ID, contractGross, now); err != nil {
+		return model.Purchase{}, err
+	}
 	if _, err := insertLedgerTx(ctx, tx, input.UserID, -netPrice, newBalance, "purchase_debit", purchaseID, combo.Name, now); err != nil {
+		return model.Purchase{}, err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE pricing_offers SET outcome=1,outcome_reason='',observed_at=?,purchase_id=? WHERE user_id=? AND product_type='combo' AND product_id=? AND price_minor=? AND outcome IS NULL AND json_extract(features_json,'$.couponFingerprint')=? AND exposed_at<=? AND expires_at>?`, pricingStamp(now), purchaseID, input.UserID, combo.ID, combo.PriceTXBMinor, quote.PricingDecision.CouponFingerprint, pricingStamp(now), pricingStamp(now)); err != nil {
 		return model.Purchase{}, err
 	}
 	if err := enqueuePurchaseTransitionTx(ctx, tx, purchaseID, status, validFrom, now); err != nil {
 		return model.Purchase{}, err
 	}
 	if status == "queued" {
+		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE user_id=? AND status IN ('active','activating') AND auto_renew_enabled=1`, stamp(now), input.UserID); err != nil {
+			return model.Purchase{}, err
+		}
 		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {
 			return model.Purchase{}, err
 		}

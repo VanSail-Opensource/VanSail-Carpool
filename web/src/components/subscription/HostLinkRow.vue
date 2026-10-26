@@ -4,11 +4,35 @@ import type { SubscriptionHost } from '@/api/subscription'
 import CountryFlag from '@/components/common/CountryFlag.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useClipboard } from '@/composables/useClipboard'
+import { subscriptionApi } from '@/api/subscription'
+import { localizedError } from '@/i18n'
 import { useI18n } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
 const props = defineProps<{ host: Readonly<SubscriptionHost> }>()
+const emit = defineEmits<{ saved: [] }>()
 const { t } = useI18n()
+const editOpen = shallowRef(false)
+const draft = shallowRef('')
+const saving = shallowRef(false)
+const saveError = shallowRef<string | null>(null)
+const preview = computed(() => (draft.value.trim() || props.host.publishedName || props.host.name).replaceAll('{price}', props.host.priceLabel || ''))
+function editName(): void {
+  draft.value = props.host.nameOverride || ''
+  saveError.value = null
+  editOpen.value = true
+}
+async function saveName(): Promise<void> {
+  if (saving.value) return
+  saving.value = true
+  saveError.value = null
+  try {
+    await subscriptionApi.saveHostName(props.host.uuid, draft.value)
+    emit('saved')
+    editOpen.value = false
+  } catch (error) { saveError.value = localizedError(error, 'hostNames.saveFailed') }
+  finally { saving.value = false }
+}
 const { copy, copied } = useClipboard()
 const open = shallowRef(false)
 const qr = shallowRef<string | null>(null)
@@ -33,13 +57,27 @@ async function copyLink(): Promise<void> { if (props.host.link) copyError.value 
 </script>
 
 <template>
-  <li class="host-link">
+  <li class="host-link" :class="{ 'host-link--custom': host.customRoute || host.splitXhttp }">
     <div class="host-link__row">
       <span class="host-link__flags"><CountryFlag v-for="country in flags" :key="country" :code="country" /></span>
-      <strong class="host-link__name">{{ host.name || host.uuid }}</strong>
+      <UButton class="host-link__name" color="neutral" variant="link" :aria-label="t('hostNames.edit', { name: host.name })" @click="editName">{{ host.name || host.uuid }}</UButton>
       <UButton color="neutral" variant="ghost" :icon="copied ? 'i-ph-check-bold' : 'i-ph-copy'" :disabled="!host.link" :aria-label="t(copied ? 'common.copied' : 'subscription.copyHost', { name: host.name })" data-haptic="copy" @click="copyLink" />
       <UButton color="neutral" variant="ghost" icon="i-ph-qr-code" :disabled="!host.link" :aria-label="t('subscription.qrHost', { name: host.name })" data-haptic="open" @click="open = true" />
     </div>
+    <div v-if="host.customRoute || host.splitXhttp" class="host-link__badges">
+      <UBadge v-if="host.customRoute" color="primary" variant="subtle">{{ t('hostNames.customRoute') }}</UBadge>
+      <UBadge v-if="host.splitXhttp" color="primary" variant="subtle">{{ t('hostNames.splitXhttp') }}</UBadge>
+    </div>
+    <UModal v-model:open="editOpen" :title="t('hostNames.title')" :description="t('hostNames.hint', { placeholder: '{price}' })" :dismissible="!saving">
+      <template #body>
+        <form class="host-link__editor" @submit.prevent="saveName">
+          <UFormField :label="t('hostNames.name')"><UInput v-model="draft" :maxlength="100" :placeholder="host.publishedName || host.name" class="w-full" /></UFormField>
+          <p>{{ t('hostNames.preview', { name: preview }) }}</p>
+          <InlineNotice v-if="saveError" tone="warning">{{ saveError }}</InlineNotice>
+          <UButton type="submit" :loading="saving" :label="t('common.save')" />
+        </form>
+      </template>
+    </UModal>
     <small v-if="!host.link">{{ linkError }}</small>
     <InlineNotice v-if="copyError" tone="warning">{{ t('subscription.copyFailed') }}</InlineNotice>
     <UModal v-model:open="open" :title="host.name || host.uuid" :description="t('subscription.qrHint')" close-icon="i-ph-x-bold">
@@ -56,6 +94,9 @@ async function copyLink(): Promise<void> { if (props.host.link) copyError.value 
 
 <style scoped>
 .host-link { display: grid; gap: 0.4rem; padding: 0.65rem 0; border-bottom: 1px solid var(--line); }
+.host-link--custom { border-inline-start: 2px solid var(--accent); padding-inline-start: .5rem; }
+.host-link__editor { display: grid; gap: 1rem; }
+.host-link__badges { display: flex; flex-wrap: wrap; gap: .4rem; }
 .host-link:last-child { border-bottom: 0; }
 .host-link__row { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
 .host-link__flags { display: flex; flex-wrap: wrap; gap: 0.15rem; max-width: 80px; flex-shrink: 0; }

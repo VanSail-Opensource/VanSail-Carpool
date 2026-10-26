@@ -21,7 +21,7 @@ func (reward Reward) validatePayload() error {
 		remaining.Range, remaining.ExtensionDays = nil, 0
 	case RewardEntitlementGrant:
 		remaining.ComboID, remaining.SquadUUIDs = "", nil
-		remaining.RenewalPriceMinor, remaining.TrafficLimitBytes, remaining.RolloverMinRemainingBPS = 0, 0, 0
+		remaining.RenewalPriceMinor, remaining.TrafficLimitBytes = 0, 0
 	case RewardSquadAccess:
 		remaining.SquadUUIDs = nil
 	case RewardCoreComboSwitch:
@@ -35,7 +35,7 @@ func (reward Reward) validatePayload() error {
 	}
 	if remaining.Range != nil || remaining.TXBDeltaMinor != 0 || remaining.CouponID != "" || remaining.ExtensionDays != 0 ||
 		remaining.ComboID != "" || len(remaining.SquadUUIDs) != 0 || remaining.RenewalPriceMinor != 0 ||
-		remaining.TrafficLimitBytes != 0 || remaining.RolloverMinRemainingBPS != 0 || remaining.IncludeInRenewal || remaining.DiscountMode != "" {
+		remaining.TrafficLimitBytes != 0 || remaining.IncludeInRenewal || remaining.DiscountMode != "" {
 		return fmt.Errorf("%w: fields do not belong to reward kind %q", ErrInvalidInput, reward.Kind)
 	}
 	return nil

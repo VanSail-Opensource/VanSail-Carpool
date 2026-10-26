@@ -116,8 +116,7 @@ func (s *Service) refreshRemote(ctx context.Context, now time.Time) (model.Remot
 	}
 	result := model.RemoteStatistics{WeeklyUserIncrease: digest.CreatedUsers,
 		MonthlyAverageUsageBPS: usage.monthlyAverageUsageBPS, MonthlyAverageUsage: float64(usage.monthlyAverageUsageBPS) / 100,
-		PredictedAverageRollover: usage.predictedAverageRollover,
-		TrafficDates:             append([]string(nil), traffic.Categories...), TrafficSeries: make([]model.NodeTrafficSeries, 0, len(traffic.Series))}
+		TrafficDates: append([]string(nil), traffic.Categories...), TrafficSeries: make([]model.NodeTrafficSeries, 0, len(traffic.Series))}
 	for _, series := range traffic.Series {
 		values := make([]string, 0, len(series.DailyBytes))
 		for _, value := range series.DailyBytes {

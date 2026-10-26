@@ -42,7 +42,6 @@
       "MONTH": "Monthly",
       "MONTH_ROLLING": "Rolling monthly"
     },
-    "rolloverMinimum": "Minimum remaining traffic, percent",
     "includedSquads": "Included live squads",
     "noSquads": "Refresh X-Node squads before assigning them.",
     "available": "Available to users",

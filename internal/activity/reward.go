@@ -29,19 +29,18 @@ const (
 
 // Reward is the typed payload applied by a lucky-draw prize.
 type Reward struct {
-	Kind                    RewardKind  `json:"kind"`
-	TXBDeltaMinor           int64       `json:"txbDeltaMinor,omitempty"`
-	CouponID                string      `json:"couponId,omitempty"`
-	ExtensionDays           int         `json:"extensionDays,omitempty"`
-	Range                   *ValueRange `json:"range,omitempty"`
-	ResolvedValue           *int64      `json:"resolvedValue,omitempty"`
-	ComboID                 string      `json:"comboId,omitempty"`
-	SquadUUIDs              []string    `json:"squadUuids,omitempty"`
-	RenewalPriceMinor       int64       `json:"renewalPriceMinor,omitempty"`
-	TrafficLimitBytes       int64       `json:"trafficLimitBytes,omitempty"`
-	RolloverMinRemainingBPS int         `json:"rolloverMinRemainingBps,omitempty"`
-	IncludeInRenewal        bool        `json:"includeInRenewal,omitempty"`
-	DiscountMode            string      `json:"discountMode,omitempty"`
+	Kind              RewardKind  `json:"kind"`
+	TXBDeltaMinor     int64       `json:"txbDeltaMinor,omitempty"`
+	CouponID          string      `json:"couponId,omitempty"`
+	ExtensionDays     int         `json:"extensionDays,omitempty"`
+	Range             *ValueRange `json:"range,omitempty"`
+	ResolvedValue     *int64      `json:"resolvedValue,omitempty"`
+	ComboID           string      `json:"comboId,omitempty"`
+	SquadUUIDs        []string    `json:"squadUuids,omitempty"`
+	RenewalPriceMinor int64       `json:"renewalPriceMinor,omitempty"`
+	TrafficLimitBytes int64       `json:"trafficLimitBytes,omitempty"`
+	IncludeInRenewal  bool        `json:"includeInRenewal,omitempty"`
+	DiscountMode      string      `json:"discountMode,omitempty"`
 }
 
 // Validate rejects ambiguous or unsafe reward payloads.
@@ -79,7 +78,7 @@ func (reward Reward) Validate() error {
 	case RewardEntitlementGrant:
 		if strings.TrimSpace(reward.ComboID) == "" || reward.RenewalPriceMinor < 0 || reward.RenewalPriceMinor > 10000000000 ||
 			reward.TrafficLimitBytes <= 0 || reward.TrafficLimitBytes > 1000000*(1<<30) ||
-			reward.RolloverMinRemainingBPS < 0 || reward.RolloverMinRemainingBPS > 10000 || !validRewardSquads(reward.SquadUUIDs, false) {
+			!validRewardSquads(reward.SquadUUIDs, false) {
 			return fmt.Errorf("%w: invalid custom entitlement", ErrInvalidInput)
 		}
 	case RewardSquadAccess:

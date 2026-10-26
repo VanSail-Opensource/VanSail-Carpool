@@ -1,0 +1,69 @@
+{
+  "post": {
+    "tags": [
+      "Pricing"
+    ],
+    "operationId": "streamPricingAnalyticalExport",
+    "summary": "streamPricingAnalyticalExport",
+    "responses": {
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "200": {
+        "description": "Read-only snapshot streamed as ZIP with manifest and compressed CSV/JSONL. One concurrent export, five-minute maximum snapshot, cancellation, no staged archive. User/financial scopes require a one-use browser grant.",
+        "content": {
+          "application/zip": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Current policy version, quote eligibility or resource safety prevents this operation."
+      },
+      "404": {
+        "description": "Pricing resource does not exist."
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "scope": {
+                "$ref": "../openapi.yaml#/components/schemas/PricingExportScope"
+              },
+              "authorizationToken": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

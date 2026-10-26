@@ -3,17 +3,17 @@ package admin
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/squadprofile"
-	"strings"
 )
 
 // SaveCombo validates a complete catalog item.
 func (s *Service) SaveCombo(ctx context.Context, actorID string, input database.ComboInput) (model.Combo, error) {
 	input.Name = strings.TrimSpace(input.Name)
-	if input.Name == "" || input.PriceTXBMinor < 0 || input.PriceTXBMinor > 1_000_000_000_000 || input.ValidityDays < 1 || input.ValidityDays > 3650 || input.TrafficLimitBytes <= 0 ||
-		input.RolloverMinRemainingBPS < 0 || input.RolloverMinRemainingBPS > 10_000 {
+	if input.Name == "" || input.PriceTXBMinor < 0 || input.PriceTXBMinor > 1_000_000_000_000 || input.ValidityDays < 1 || input.ValidityDays > 3650 || input.TrafficLimitBytes <= 0 {
 		return model.Combo{}, errors.New("invalid combo fields")
 	}
 	if input.ResetStrategy != "DAY" && input.ResetStrategy != "WEEK" && input.ResetStrategy != "MONTH_ROLLING" {

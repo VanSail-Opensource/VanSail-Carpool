@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"slices"
 	"testing"
 	"time"
@@ -42,43 +41,30 @@ func TestPAYGConversionPreservesPaidTermsAndFiltersRenewal(t *testing.T) {
 	}
 }
 
-func TestPAYGLastSquadExpiresWithRollover(t *testing.T) {
+func TestPAYGLastSquadExpiresWithoutCredit(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 	user := createTestUser(t, s, 80492)
 	combo := saveTestCombo(t, s, "Empty PAYG renewal", 100, 1, "converted")
-	if _, err := s.AdjustBalance(ctx, user.ID, 100, "seed", "seed", time.Now()); err != nil {
+	now := time.Now().UTC()
+	if _, err := s.AdjustBalance(ctx, user.ID, 100, "seed", "seed", now); err != nil {
 		t.Fatal(err)
 	}
-	p, err := s.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "active"}, time.Now())
+	p, err := s.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "active"}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.SaveSquadProduct(ctx, SquadProductInput{GroupID: "converted", UpstreamPresent: true, BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
 		t.Fatal(err)
 	}
-	if eligible, err := s.RolloverEligible(ctx, p.ID); err != nil || !eligible {
-		t.Fatal("empty renewal lost rollover eligibility", eligible, err)
-	}
-	if err = s.EnqueueDueEntitlementTransitions(ctx, p.ValidUntil); err != nil {
+	if err = s.ExpireDuePurchase(ctx, p.ID, p.ValidUntil); err != nil {
 		t.Fatal(err)
-	}
-	if err = s.MarkRolloverProcessing(ctx, p.ID, p.ValidUntil); err != nil {
-		t.Fatal(err)
-	}
-	summary := model.RolloverUsageSummary{AllocatedBytes: 1000, UsedBytes: 500, EligibleUnusedBytes: 500, AlgorithmVersion: "native-term-v1"}
-	result, err := s.RecordRolloverCalculation(ctx, p.ID, summary, p.ValidUntil)
-	if err != nil || result.Status != "credited" || result.CreditedTXBMinor != 50 || result.AlgorithmVersion != "native-term-v1" {
-		t.Fatal("empty renewal rollover", result, err)
 	}
 	after, err := s.PurchaseByID(ctx, p.ID)
 	if err != nil || after.Status != "expired" || after.AutoRenewEnabled {
 		t.Fatal(after, err)
 	}
-	if _, err = s.RecordRolloverCalculation(ctx, p.ID, summary, p.ValidUntil); err == nil {
-		t.Fatal("settled calculation was reopened")
-	}
-	if balance, err := s.Balance(ctx, user.ID); err != nil || balance.MinorInt64() != 50 {
-		t.Fatal(balance, err)
+	if balance, err := s.Balance(ctx, user.ID); err != nil || balance.MinorInt64() != 0 {
+		t.Fatal("expiry credited wallet", balance, err)
 	}
 }

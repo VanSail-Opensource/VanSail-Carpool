@@ -22,7 +22,7 @@ func TestFailedSynchronizationRetentionUsesFinalFailureAndKeepsFinancialWork(t *
 		{"recent-failure", "xnode_sync_user", "failed", now.Add(-failedSyncRetention + time.Nanosecond)},
 		{"pending", "xnode_apply_entitlement", "pending", now.Add(-8 * 24 * time.Hour)},
 		{"processing", "xnode_sync_user", "processing", now.Add(-8 * 24 * time.Hour)},
-		{"financial", "rollover_finalize", "failed", now.Add(-8 * 24 * time.Hour)},
+		{"financial", "purchase_expire", "failed", now.Add(-8 * 24 * time.Hour)},
 		{"raffle-financial", "draw_raffle_settle", "failed", now.Add(-8 * 24 * time.Hour)},
 	} {
 		if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?, ?,10,?,?,?)`, test.id, test.kind, `{"userId":"missing"}`, test.status, stamp(now), stamp(now.Add(-10*24*time.Hour)), stamp(test.failed)); err != nil {

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { motion } from 'motion-v'
+import { VisDonut, VisSingleContainer } from '@unovis/vue'
+import { Donut } from '@unovis/ts'
+import { ChartContainer } from '@/components/charts'
 
 import type { NamedShare } from '@/api/types'
-import { motionDurations } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import StatisticsChartDetail from './StatisticsChartDetail.vue'
-import { ringSegments } from './statisticsGeometry'
 import { chartSegments, formatStatisticNumber, formatStatisticPercent } from './statisticsFormat'
 import { useStatisticsChartSelection } from './useStatisticsChartSelection'
 
@@ -22,47 +21,18 @@ const segments = computed(() => chartSegments(props.items).map((segment) => ({
   ...segment,
   interactionId: segment.id,
 })))
-const rings = computed(() => ringSegments(segments.value))
-const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(segments)
-const { reducedMotion } = useMotionPreferences()
+const { activeItem, activate, deactivate, select, isSelected } = useStatisticsChartSelection(segments)
+const donutEvents = { [Donut.selectors.segment]: {
+ pointerenter: (d: { data: { interactionId: string } }) => activate(d.data.interactionId),
+ pointerleave: (d: { data: { interactionId: string } }) => deactivate(d.data.interactionId),
+ click: (d: { data: { interactionId: string } }) => select(d.data.interactionId),
+} }
 </script>
 
 <template>
   <div class="statistics-donut-layout" :class="{ 'statistics-donut-layout--legend-below': legendBelow }">
     <div class="statistics-donut">
-      <svg viewBox="0 0 120 120" role="group" :aria-label="chartLabel">
-        <title>{{ chartLabel }}</title>
-        <circle class="statistics-ring-track" cx="60" cy="60" r="47" pathLength="100" />
-        <motion.circle
-          v-for="ring in rings"
-          :key="ring.id"
-          class="statistics-ring-segment"
-          :class="['statistics-chart-segment', { 'statistics-chart-segment--muted': hasActive && !isActive(ring.interactionId) }]"
-          cx="60"
-          cy="60"
-          r="47"
-          pathLength="100"
-          :stroke="ring.color"
-          :initial="reducedMotion ? { opacity: 0, strokeDasharray: ring.dasharray, strokeDashoffset: ring.dashoffset } : { opacity: 0, strokeDasharray: '0 100' }"
-          :animate="{ opacity: 1, strokeDasharray: ring.dasharray, strokeDashoffset: ring.dashoffset }"
-          :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }"
-          role="button"
-          tabindex="0"
-          :aria-label="$t('statistics.chartSeries', { series: ring.label, segment: $t('statistics.chartPointValue', { value: formatStatisticNumber(ring.value), percent: formatStatisticPercent(ring.percentage) }) })"
-          :aria-pressed="isSelected(ring.interactionId)"
-          @pointerenter="activate(ring.interactionId)"
-          @pointerleave="deactivate(ring.interactionId)"
-          @focus="activate(ring.interactionId)"
-          @blur="deactivate(ring.interactionId)"
-          @click="select(ring.interactionId)"
-          @keydown.enter.prevent="select(ring.interactionId)"
-          @keydown.space.prevent="select(ring.interactionId)"
-        />
-      </svg>
-      <div class="statistics-donut__center" aria-hidden="true">
-        <strong>{{ centerValue }}</strong>
-        <span>{{ centerLabel }}</span>
-      </div>
+      <ChartContainer :config="{}" role="group" :aria-label="chartLabel"><VisSingleContainer :data="segments" :height="220" :duration="0"><VisDonut :events="donutEvents" :value="(d: typeof segments[number]) => Number(d.value)" :color="(d: typeof segments[number]) => d.color" :arc-width="24" :central-label="centerValue" :central-sub-label="centerLabel" :pad-angle=".015" /></VisSingleContainer></ChartContainer>
     </div>
     <ul v-if="segments.length" class="statistics-legend">
       <li
@@ -91,6 +61,6 @@ const { reducedMotion } = useMotionPreferences()
       :label="activeItem.label"
       :value="$t('statistics.chartPointValue', { value: formatStatisticNumber(activeItem.value), percent: formatStatisticPercent(activeItem.percentage) })"
     />
-    <p v-else class="statistics-empty">{{ $t('statistics.noData') }}</p>
+    <p v-else class="statistics-empty">{{ $t(segments.length ? 'charts.inspect' : 'statistics.noData') }}</p>
   </div>
 </template>

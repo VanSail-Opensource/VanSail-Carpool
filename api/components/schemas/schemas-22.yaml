@@ -30,10 +30,7 @@ NodeCompensationSquad:
 NodeCompensationEvent:
   type: object
   additionalProperties: false
-  required: [id, nodeUuid, nodeName, status, offlineObservedAt, recoveredObservedAt, observedDurationSeconds,
-    thresholdMinutes, multiplierBps, proposedExtensionMinutes, finalExtensionMinutes, capped, squads,
-    frozenRecipientCount, eligibleRecipientCount, skippedRecipientCount, reviewedBy, reviewedAt, reviewReason,
-    ineligibleReason, revision, operation]
+  required: [id, nodeUuid, nodeName, status, offlineObservedAt, recoveredObservedAt, observedDurationSeconds, thresholdMinutes, multiplierBps, proposedExtensionMinutes, finalExtensionMinutes, capped, squads, frozenRecipientCount, eligibleRecipientCount, skippedRecipientCount, reviewedBy, reviewedAt, reviewReason, ineligibleReason, revision, operation]
   properties:
     id: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     nodeUuid: { type: string, format: uuid }

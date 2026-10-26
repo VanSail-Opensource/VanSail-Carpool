@@ -13,7 +13,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
@@ -48,7 +47,7 @@ func TestNativeStatisticsNeverFallsBackToTheSourceProvider(t *testing.T) {
 	if value, err := provider.SquadNames(ctx); err != nil || len(value) != 0 {
 		t.Fatal(value, err)
 	}
-	if _, err := provider.UsageSnapshotForRollover(ctx, "legacy-identity", now.Add(-time.Hour), now); !errors.Is(err, rollover.ErrRemoteUserMissing) {
+	if _, err := provider.UsageSnapshot(ctx, "legacy-identity", now.Add(-time.Hour), now); !errors.Is(err, errors.New("account unavailable")) {
 		t.Fatal("source accounting reader consulted", err)
 	}
 }

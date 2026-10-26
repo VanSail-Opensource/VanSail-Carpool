@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 // cadenceReady retries the gap between revoking a due period and atomically
@@ -13,7 +13,7 @@ func cadenceReady(period Period, now time.Time) bool {
 	if period.Strategy == "NO_RESET" || period.Strategy == "PAYG" || period.Status == "review" {
 		return false
 	}
-	next := rollover.CadenceAdvance(period.StartedAt, period.Strategy)
+	next := usageaccounting.CadenceAdvance(period.StartedAt, period.Strategy)
 	if next.After(now) {
 		return false
 	}

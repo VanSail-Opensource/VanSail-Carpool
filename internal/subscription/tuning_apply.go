@@ -71,6 +71,14 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 		}
 	}
 	applyClientPolicy(format, result)
+	if p.ExportName {
+		switch format {
+		case "clash", "stash":
+			result["name"] = p.Name
+		case "sing-box":
+			result["tag"] = p.Name
+		}
+	}
 	return result, nil
 }
 

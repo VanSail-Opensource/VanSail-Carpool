@@ -23,6 +23,7 @@ type executor struct {
 	stopping       bool
 	active         sync.WaitGroup
 	normal, urgent chan struct{}
+	compute        chan struct{}
 }
 
 // Start enables four ordinary attempts and one reserved urgent attempt. The
@@ -40,7 +41,7 @@ func (w *Worker) Start(ctx context.Context, report func(error)) error {
 		return errors.New("outbox executor already started")
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	w.executor = &executor{worker: w, ctx: ctx, cancel: cancel, report: report, normal: make(chan struct{}, 4), urgent: make(chan struct{}, 1)}
+	w.executor = &executor{worker: w, ctx: ctx, cancel: cancel, report: report, normal: make(chan struct{}, 4), urgent: make(chan struct{}, 1), compute: make(chan struct{}, 16)}
 	return nil
 }
 
@@ -59,13 +60,16 @@ func (w *Worker) Shutdown() {
 	e.active.Wait()
 }
 
-func (e *executor) drain(ctx context.Context, limit int, claim func(context.Context, time.Time) (*model.OutboxJob, error), priority bool) error {
+func (e *executor) drain(ctx context.Context, limit int, claim func(context.Context, time.Time) (*model.OutboxJob, error), priority bool, computeOnly ...bool) error {
 	if limit <= 0 {
 		limit = 20
 	}
 	slots := e.normal
 	if priority {
 		slots = e.urgent
+	}
+	if len(computeOnly) > 0 && computeOnly[0] {
+		slots = e.compute
 	}
 	for range limit {
 		e.mu.Lock()

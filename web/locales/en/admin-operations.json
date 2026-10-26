@@ -65,7 +65,6 @@
       "activity_daily_reward_max_txb": "Maximum daily reward",
       "activity_group_message_threshold": "Group-message threshold",
       "activity_group_message_reward_txb": "Group-message reward",
-      "renewal_rollover_before_auto_renewal_enabled": "Apply rollover before automatic renewal",
       "captcha_turnstile_enabled": "Enable Cloudflare verification",
       "captcha_turnstile_site_key": "Turnstile site key",
       "captcha_turnstile_secret_key": "Turnstile secret key",
@@ -73,7 +72,6 @@
       "telegram_pm_group_chat_id": "PM forum group ID"
     },
     "settingHints": {
-      "renewal_rollover_before_auto_renewal_enabled": "When enabled, calculated rollover counts toward the balance required for automatic renewal. When disabled, the renewal price must be covered before rollover credit is applied.",
       "captcha_turnstile_enabled": "Challenge new users on their first panel visit. Both keys are required before enabling; admins retain configuration access.",
       "captcha_turnstile_site_key": "Cloudflare Turnstile site key configured to allow this panel hostname.",
       "captcha_turnstile_secret_key": "Server-only secret, encrypted at rest. Leave blank to keep the current key.",

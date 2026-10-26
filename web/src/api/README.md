@@ -55,8 +55,15 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 `adminAPITokens.ts` provides typed no-store browser management of administrator API credentials.
 
-- `openapiContract.test.ts` compile-checks reset automation, required squad-node groups, nullable provider fallback and predicted-rollover ownership.
 
 `firewall.ts` owns typed shared-ban reads and idempotent paid exact-IP exemptions. It preserves browser/member session separation through the existing request client.
 
 `payg.ts` reads owner-scoped PAYG availability and minute-aligned 72-hour totals through the shared signed transport. It uses generated OpenAPI types and keeps responses out of persistent caches.
+
+- `pricing.ts`: Typed product modes and read-only owned renewal information.
+- `pricingAnalysis.ts`: Bounded original forecasts, statistics, provider inputs and immediate administrator commands.
+- `pricingExports.ts`: Scope-bound sensitive-export authorization and cancellable direct ZIP streams.
+
+- `forecasts.ts`: Owner/admin forecast projection and cursor-paginated per-user pricing contracts.
+
+Generated API compatibility regression: `openapiContract.test.ts`.

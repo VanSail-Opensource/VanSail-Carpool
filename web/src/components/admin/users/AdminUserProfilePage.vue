@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, toRef, watch } from 'vue'
 
+import UserPricingAnalysis from '../pricing/UserPricingAnalysis.vue'
 import { usdtApi } from '@/api/usdt'
 import AdminPaymentCreditDialog from './AdminPaymentCreditDialog.vue'
 import { adminOperationsApi, type AdminEntitlement, type AdminEntitlementRefundRequest, type AdminUserDetail, type CourtesyCredit, type EntitlementEditRequest, type OperationReceipt, type OperationResolution } from '@/api/adminOperations'
@@ -29,9 +30,9 @@ const props = defineProps<{ userId: string }>()
 const emit = defineEmits<{ back: [] }>()
 const { t } = useI18n()
 const profile = useAdminUserProfile(toRef(props, 'userId'))
-const activeTab = shallowRef('entitlements')
 const tabs = computed(() => [
   { value: 'entitlements', label: t('adminUserProfile.entitlements') },
+  { value: 'pricing', label: t('userPrices.title') },
   { value: 'metrics', label: t('adminNative.title') },
   { value: 'history', label: t('adminUserProfile.records') },
   { value: 'account', label: t('adminUserProfile.actionsAndContext') },
@@ -164,6 +165,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
 <template>
   <section class="admin-panel admin-profile">
     <div class="admin-profile-toolbar">
+      <UButton color="neutral" variant="outline" :to="`/admin/users/${encodeURIComponent(userId)}/pricing`" :label="t('pricing.title')" />
       <UButton color="neutral" variant="ghost" icon="i-ph-arrow-left" :label="t('adminUserProfile.backToUsers')" @click="emit('back')" />
       <UButton color="neutral" variant="outline" icon="i-ph-arrow-clockwise" :label="t('common.refresh')" :loading="profile.loading.value" @click="refresh" />
     </div>
@@ -177,11 +179,12 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <template v-else-if="profile.detail.value">
       <AdminUserOverview :detail="profile.detail.value" />
       <AdminUserBalanceAdjustment :user-id="userId" @changed="refresh" />
-      <UTabs v-model="activeTab" class="admin-workspace-tabs" :items="tabs" variant="link" :content="false" />
-      <AdminUserEntitlements v-show="activeTab === 'entitlements'" :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
-      <AdminUserMetrics v-if="activeTab === 'metrics'" :user-id="userId" />
-      <AdminUserHistory v-show="activeTab === 'history'" :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
-      <div v-show="activeTab === 'account'" class="admin-workspace-grid">
+      <nav class="row-actions" :aria-label="t('pricing.navigation')"><UButton v-for="tab in tabs" :key="tab.value" :href="`#user-${tab.value}`" color="neutral" variant="ghost" :label="tab.label" /></nav>
+      <UserPricingAnalysis id="user-pricing" :key="userId" :user-id="userId" />
+      <AdminUserEntitlements id="user-entitlements" :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
+      <AdminUserMetrics id="user-metrics" :user-id="userId" />
+      <AdminUserHistory id="user-history" :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
+      <div id="user-account" class="admin-workspace-grid">
         <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
         <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
         <AdminUserAccountContext :detail="profile.detail.value" />

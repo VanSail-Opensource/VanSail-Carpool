@@ -49,6 +49,8 @@ PurchaseQuote:
   additionalProperties: false
   required: [comboId, comboName, grossPrice, discount, netPrice, effectiveAt, expiresAt, queued, addonSquadUuids, accessibleNodes]
   properties:
+    renewalDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
+    pricingDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     comboId: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     comboName: { type: string }
     grossPrice: { $ref: '../../openapi.yaml#/components/schemas/Money' }
@@ -70,6 +72,7 @@ PurchaseAddonRequest:
   additionalProperties: false
   required: [addonSquadProductIds]
   properties:
+    couponGrantId: {"type":"string","description":"Optional explicit wallet coupon applied once to the prorated addition."}
     addonSquadProductIds:
       type: array
       minItems: 1
@@ -88,6 +91,8 @@ PurchaseAddonQuote:
   additionalProperties: false
   required: [purchaseId, price, expiresAt, addonSquadUuids]
   properties:
+    discount: {"$ref":"../../openapi.yaml#/components/schemas/Money"}
+    grossPrice: {"$ref":"../../openapi.yaml#/components/schemas/Money"}
     purchaseId: { $ref: '../../openapi.yaml#/components/schemas/ID' }
     price: { $ref: '../../openapi.yaml#/components/schemas/Money' }
     expiresAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
@@ -156,7 +161,6 @@ Purchase:
     - trafficLimitBytes
     - resetStrategy
     - squadUuids
-    - rolloverMinRemainingBps
     - createdAt
     - updatedAt
     - autoRenewEnabled
@@ -191,10 +195,6 @@ Purchase:
       items:
         type: string
         format: uuid
-    rolloverMinRemainingBps:
-      type: integer
-      minimum: 0
-      maximum: 10000
     createdAt:
       $ref: '../../openapi.yaml#/components/schemas/Timestamp'
     updatedAt:

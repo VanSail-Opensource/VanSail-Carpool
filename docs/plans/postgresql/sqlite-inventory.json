@@ -104,7 +104,11 @@
     "101_xnode_ddns_changes.sql",
     "102_xnode_endpoint_epoch.sql",
     "103_paid_member_access.sql",
-    "104_xnode_ddns_multi_hosts.sql"
+    "104_xnode_ddns_multi_hosts.sql",
+    "105_pricing.sql",
+    "106_retire_rollover.sql",
+    "107_personal_pricing_decisions.sql",
+    "108_host_name_overrides.sql"
   ],
   "objects": [
     {
@@ -315,7 +319,7 @@
       "type": "table",
       "name": "combos",
       "table": "combos",
-      "sql": "CREATE TABLE combos (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL CHECK (price_txb_minor \u003e= 0),\n  validity_days INTEGER NOT NULL CHECK (validity_days BETWEEN 1 AND 3650),\n  traffic_limit_bytes INTEGER NOT NULL CHECK (traffic_limit_bytes \u003e 0),\n  active INTEGER NOT NULL DEFAULT 1,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, rollover_min_remaining_bps INTEGER NOT NULL DEFAULT 0\n  CHECK (rollover_min_remaining_bps BETWEEN 0 AND 10000), included_squad_uuids TEXT NOT NULL DEFAULT '[]'\n  CHECK (json_valid(included_squad_uuids) AND json_type(included_squad_uuids)='array'), reset_strategy TEXT NOT NULL DEFAULT 'MONTH_ROLLING'\n  CHECK (reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), ip_lookup_quota INTEGER CHECK(ip_lookup_quota IS NULL OR ip_lookup_quota BETWEEN 0 AND 1000000), whitelist_ip_quota INTEGER NOT NULL DEFAULT 5\n CHECK(whitelist_ip_quota BETWEEN 0 AND 1000))"
+      "sql": "CREATE TABLE combos (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL CHECK (price_txb_minor \u003e= 0),\n  validity_days INTEGER NOT NULL CHECK (validity_days BETWEEN 1 AND 3650),\n  traffic_limit_bytes INTEGER NOT NULL CHECK (traffic_limit_bytes \u003e 0),\n  active INTEGER NOT NULL DEFAULT 1,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, included_squad_uuids TEXT NOT NULL DEFAULT '[]'\n  CHECK (json_valid(included_squad_uuids) AND json_type(included_squad_uuids)='array'), reset_strategy TEXT NOT NULL DEFAULT 'MONTH_ROLLING'\n  CHECK (reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), ip_lookup_quota INTEGER CHECK(ip_lookup_quota IS NULL OR ip_lookup_quota BETWEEN 0 AND 1000000), whitelist_ip_quota INTEGER NOT NULL DEFAULT 5\n CHECK(whitelist_ip_quota BETWEEN 0 AND 1000))"
     },
     {
       "type": "table",
@@ -505,6 +509,132 @@
     },
     {
       "type": "table",
+      "name": "pricing_admin_overrides",
+      "table": "pricing_admin_overrides",
+      "sql": "CREATE TABLE pricing_admin_overrides (\n id TEXT PRIMARY KEY, scope_type TEXT NOT NULL, scope_id TEXT NOT NULL,\n command TEXT NOT NULL, reason TEXT NOT NULL, created_by TEXT NOT NULL,\n starts_at TEXT NOT NULL, expires_at TEXT NOT NULL,\n expected_version INTEGER NOT NULL, previous_json TEXT NOT NULL, proposed_json TEXT NOT NULL,\n status TEXT NOT NULL CHECK(status IN ('ACTIVE','CANCELLED','EXPIRED')),\n created_at TEXT NOT NULL, CHECK(expires_at\u003estarts_at)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_calibration_daily",
+      "table": "pricing_calibration_daily",
+      "sql": "CREATE TABLE pricing_calibration_daily (\n day TEXT NOT NULL, model_version TEXT NOT NULL, kind TEXT NOT NULL,\n bucket INTEGER NOT NULL CHECK(bucket BETWEEN 0 AND 9), samples INTEGER NOT NULL,\n probability_sum DOUBLE PRECISION NOT NULL, observed_sum INTEGER NOT NULL, brier_sum DOUBLE PRECISION NOT NULL,\n updated_at TEXT NOT NULL, PRIMARY KEY(day,model_version,kind,bucket)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_contracts",
+      "table": "pricing_contracts",
+      "sql": "CREATE TABLE pricing_contracts (\n id TEXT PRIMARY KEY, purchase_id TEXT NOT NULL REFERENCES purchases(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id),\n product_id TEXT NOT NULL, mode TEXT NOT NULL CHECK(mode IN ('FIXED','DYNAMIC')),\n contractual_price_minor INTEGER NOT NULL CHECK(contractual_price_minor\u003e=0),\n price_limit_minor INTEGER NOT NULL CHECK(price_limit_minor\u003e=0),\n max_change_bps INTEGER NOT NULL CHECK(max_change_bps BETWEEN 0 AND 10000),\n policy_version INTEGER NOT NULL, recorded_at TEXT NOT NULL,\n version INTEGER NOT NULL DEFAULT 1, source_purchase_id TEXT NOT NULL, addon_terms_json TEXT NOT NULL DEFAULT '[]',\n CHECK(price_limit_minor\u003e=contractual_price_minor), UNIQUE(purchase_id,version)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_cost_metadata",
+      "table": "pricing_cost_metadata",
+      "sql": "CREATE TABLE pricing_cost_metadata (\n node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor\u003e=0),\n cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),\n capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes\u003e0), effective_at TEXT NOT NULL,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_cost_versions",
+      "table": "pricing_cost_versions",
+      "sql": "CREATE TABLE pricing_cost_versions (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id), version INTEGER NOT NULL,\n cycle_cost_minor INTEGER NOT NULL, cycle_days INTEGER NOT NULL, capacity_bytes INTEGER NOT NULL,\n effective_at TEXT NOT NULL, recorded_at TEXT NOT NULL, actor_id TEXT NOT NULL, reason TEXT NOT NULL,\n actual_paid_minor INTEGER CHECK(actual_paid_minor\u003e=0), PRIMARY KEY(node_id,version)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_decisions",
+      "table": "pricing_decisions",
+      "sql": "CREATE TABLE pricing_decisions (\n id TEXT PRIMARY KEY, product_type TEXT NOT NULL, product_id TEXT NOT NULL,\n user_id TEXT, generated_at TEXT NOT NULL, policy_version INTEGER NOT NULL,\n model_version TEXT NOT NULL, reference_minor INTEGER NOT NULL, proposed_minor INTEGER NOT NULL,\n selected_minor INTEGER NOT NULL, state TEXT NOT NULL, trace_json TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_discount_spend",
+      "table": "pricing_discount_spend",
+      "sql": "CREATE TABLE pricing_discount_spend (\n override_id TEXT NOT NULL REFERENCES pricing_admin_overrides(id), reference_id TEXT NOT NULL,\n user_id TEXT NOT NULL REFERENCES users(id), discount_minor INTEGER NOT NULL CHECK(discount_minor\u003e=0),\n created_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'CONSUMED' CHECK(status IN ('RESERVED','CONSUMED','RELEASED')),\n PRIMARY KEY(override_id,reference_id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_features",
+      "table": "pricing_features",
+      "sql": "CREATE TABLE pricing_features (\n feature_key INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,\n day TEXT NOT NULL, watermark TEXT NOT NULL, coverage_bps INTEGER NOT NULL CHECK(coverage_bps BETWEEN 0 AND 10000),\n health_state TEXT NOT NULL, features_json TEXT NOT NULL, snapshot_hash TEXT NOT NULL,\n UNIQUE(entity_type,entity_id,day)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_forecast_actuals",
+      "table": "pricing_forecast_actuals",
+      "sql": "CREATE TABLE pricing_forecast_actuals (\n forecast_id INTEGER PRIMARY KEY REFERENCES pricing_forecast_values(forecast_id) ON DELETE CASCADE,\n actual DOUBLE PRECISION, status_code SMALLINT NOT NULL CHECK(status_code BETWEEN 0 AND 3),\n observed_until_ns INTEGER NOT NULL, evaluated_at_ns INTEGER NOT NULL,\n CHECK((status_code=0 AND actual IS NOT NULL) OR (status_code\u003c\u003e0 AND actual IS NULL))\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_forecast_batches",
+      "table": "pricing_forecast_batches",
+      "sql": "CREATE TABLE pricing_forecast_batches (\n batch_key INTEGER PRIMARY KEY AUTOINCREMENT,\n metric TEXT NOT NULL, generated_at TEXT NOT NULL, target_from TEXT NOT NULL,\n target_until TEXT NOT NULL, horizon_seconds INTEGER NOT NULL,\n model_version TEXT NOT NULL, health_state TEXT NOT NULL, calibration_status TEXT NOT NULL,\n CHECK(generated_at\u003c=target_from AND target_until\u003etarget_from),\n UNIQUE(metric,generated_at,target_from,target_until,horizon_seconds,model_version,health_state,calibration_status)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_forecast_entities",
+      "table": "pricing_forecast_entities",
+      "sql": "CREATE TABLE pricing_forecast_entities (\n entity_key INTEGER PRIMARY KEY AUTOINCREMENT, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,\n UNIQUE(entity_type,entity_id)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_forecast_values",
+      "table": "pricing_forecast_values",
+      "sql": "CREATE TABLE pricing_forecast_values (\n forecast_id INTEGER PRIMARY KEY,\n entity_key INTEGER NOT NULL REFERENCES pricing_forecast_entities(entity_key),\n batch_key INTEGER NOT NULL REFERENCES pricing_forecast_batches(batch_key),\n feature_key INTEGER NOT NULL REFERENCES pricing_features(feature_key),\n predicted_p10 DOUBLE PRECISION NOT NULL, predicted_p50 DOUBLE PRECISION NOT NULL, predicted_p90 DOUBLE PRECISION NOT NULL,\n predicted_mean DOUBLE PRECISION NOT NULL,\n data_coverage_bps INTEGER NOT NULL CHECK(data_coverage_bps BETWEEN 0 AND 10000),\n CHECK(predicted_p10\u003c=predicted_p50 AND predicted_p50\u003c=predicted_p90),\n UNIQUE(entity_key,batch_key)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_model_validation_daily",
+      "table": "pricing_model_validation_daily",
+      "sql": "CREATE TABLE pricing_model_validation_daily (\n day TEXT NOT NULL, model_version TEXT NOT NULL, metric TEXT NOT NULL,\n horizon_seconds INTEGER NOT NULL, samples INTEGER NOT NULL, metrics_json TEXT NOT NULL, updated_at_ns INTEGER NOT NULL,\n PRIMARY KEY(day,model_version,metric,horizon_seconds)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_model_versions",
+      "table": "pricing_model_versions",
+      "sql": "CREATE TABLE pricing_model_versions (\n id TEXT PRIMARY KEY, kind TEXT NOT NULL, created_at TEXT NOT NULL,\n calibration_status TEXT NOT NULL CHECK(calibration_status IN ('VALIDATED','UNVALIDATED','PRIOR_ONLY')),\n parameters_json TEXT NOT NULL, feature_definition_json TEXT NOT NULL,\n watermark TEXT NOT NULL, diagnostics_json TEXT NOT NULL, frozen INTEGER NOT NULL DEFAULT 0\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_offers",
+      "table": "pricing_offers",
+      "sql": "CREATE TABLE pricing_offers (\n id TEXT PRIMARY KEY, user_id TEXT NOT NULL, product_type TEXT NOT NULL, product_id TEXT NOT NULL,\n price_minor INTEGER NOT NULL, reference_minor INTEGER NOT NULL, exposed_at TEXT NOT NULL,\n expires_at TEXT NOT NULL, outcome INTEGER CHECK(outcome IN (0,1)), observed_at TEXT,\n purchase_id TEXT, model_version TEXT NOT NULL, predicted_probability DOUBLE PRECISION NOT NULL,\n features_json TEXT NOT NULL, outcome_reason TEXT NOT NULL DEFAULT '', UNIQUE(user_id,product_type,product_id,price_minor,exposed_at)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_operational_incidents",
+      "table": "pricing_operational_incidents",
+      "sql": "CREATE TABLE pricing_operational_incidents (\n id TEXT PRIMARY KEY, scope_type TEXT NOT NULL, scope_id TEXT NOT NULL,\n state TEXT NOT NULL, started_at TEXT NOT NULL, ended_at TEXT,\n reason TEXT NOT NULL, acknowledged_by TEXT, acknowledged_at TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_personal_decisions",
+      "table": "pricing_personal_decisions",
+      "sql": "CREATE TABLE pricing_personal_decisions (\n version TEXT PRIMARY KEY,\n user_id TEXT NOT NULL REFERENCES users(id),\n product_type TEXT NOT NULL CHECK (product_type IN ('combo','addon','payg')),\n product_id TEXT NOT NULL,\n context_key TEXT NOT NULL,\n policy_version INTEGER NOT NULL,\n public_minor INTEGER NOT NULL CHECK(public_minor\u003e=0),\n personal_minor INTEGER NOT NULL CHECK(personal_minor\u003e=0),\n net_minor INTEGER NOT NULL CHECK(net_minor\u003e=0),\n status TEXT NOT NULL CHECK(status IN ('ADJUSTED','UNCHANGED')),\n reason TEXT NOT NULL,\n model_version TEXT NOT NULL,\n probability REAL,\n calibration TEXT NOT NULL,\n generated_at TEXT NOT NULL,\n valid_until TEXT NOT NULL,\n coupon_json TEXT NOT NULL CHECK(json_valid(coupon_json))\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_product_settings",
+      "table": "pricing_product_settings",
+      "sql": "CREATE TABLE pricing_product_settings (\n product_type TEXT NOT NULL CHECK(product_type IN ('combo','payg','addon')),\n product_id TEXT NOT NULL,\n dynamic_enabled INTEGER NOT NULL DEFAULT 0 CHECK(dynamic_enabled IN (0,1)),\n purchase_pricing_mode TEXT NOT NULL DEFAULT 'FIXED' CHECK(purchase_pricing_mode IN ('FIXED','DYNAMIC')),\n renewal_pricing_mode TEXT NOT NULL DEFAULT 'FIXED' CHECK(renewal_pricing_mode IN ('FIXED','DYNAMIC')),\n personal_discounts_enabled INTEGER NOT NULL DEFAULT 0 CHECK(personal_discounts_enabled IN (0,1)),\n fixed_price_minor INTEGER NOT NULL CHECK(fixed_price_minor\u003e=0 AND fixed_price_minor\u003c=1000000000000),\n max_increase_bps INTEGER NOT NULL DEFAULT 0 CHECK(max_increase_bps BETWEEN 0 AND 10000),\n max_discount_bps INTEGER NOT NULL DEFAULT 0 CHECK(max_discount_bps BETWEEN 0 AND 10000),\n override_status TEXT NOT NULL DEFAULT 'NONE' CHECK(override_status IN ('NONE','FROZEN','MANUAL')),\n last_approved_price_version TEXT NOT NULL DEFAULT '',\n version INTEGER NOT NULL DEFAULT 1,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL,\n PRIMARY KEY(product_type,product_id),\n CHECK(dynamic_enabled=1 OR (purchase_pricing_mode='FIXED' AND renewal_pricing_mode='FIXED'))\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_published_prices",
+      "table": "pricing_published_prices",
+      "sql": "CREATE TABLE pricing_published_prices (\n id TEXT PRIMARY KEY, product_type TEXT NOT NULL, product_id TEXT NOT NULL,\n price_minor INTEGER NOT NULL CHECK(price_minor\u003e=0 AND price_minor\u003c=1000000000000),\n policy_version INTEGER NOT NULL, model_version TEXT NOT NULL,\n source TEXT NOT NULL CHECK(source IN ('FIXED','MANUAL','MODEL')),\n valid_from TEXT NOT NULL, valid_until TEXT NOT NULL, created_by TEXT NOT NULL,\n created_at TEXT NOT NULL, reason TEXT NOT NULL,\n CHECK(valid_until\u003evalid_from)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_renewal_quotes",
+      "table": "pricing_renewal_quotes",
+      "sql": "CREATE TABLE pricing_renewal_quotes (\n id TEXT PRIMARY KEY, purchase_id TEXT NOT NULL REFERENCES purchases(id) ON DELETE CASCADE, contract_id TEXT NOT NULL REFERENCES pricing_contracts(id) ON DELETE CASCADE,\n price_minor INTEGER NOT NULL CHECK(price_minor\u003e=0), policy_version INTEGER NOT NULL,\n contract_version INTEGER NOT NULL, state TEXT NOT NULL CHECK(state IN ('FORECASTED','PREPARED','NOTICE_PENDING','AUTHORIZED','READY_TO_SETTLE','SETTLED','DEFERRED_HEALTH','EXPIRED','CANCELLED')),\n generated_at TEXT NOT NULL, notice_at TEXT, authorized_at TEXT,\n settle_after TEXT NOT NULL, valid_until TEXT NOT NULL, settled_purchase_id TEXT,\n probability DOUBLE PRECISION NOT NULL, contribution DOUBLE PRECISION NOT NULL, health_state TEXT NOT NULL,\n model_version TEXT NOT NULL, trace_json TEXT NOT NULL, outcome_reason TEXT NOT NULL DEFAULT '',\n CHECK(valid_until\u003esettle_after)\n)"
+    },
+    {
+      "type": "table",
+      "name": "pricing_worker_watermark",
+      "table": "pricing_worker_watermark",
+      "sql": "CREATE TABLE pricing_worker_watermark (singleton INTEGER PRIMARY KEY CHECK(singleton=1),observed_at TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
       "name": "provider_operation_items",
       "table": "provider_operation_items",
       "sql": "CREATE TABLE provider_operation_items (\n  operation_id TEXT NOT NULL REFERENCES provider_operations(id) ON DELETE CASCADE,\n  item_key TEXT NOT NULL CHECK (length(item_key) BETWEEN 1 AND 160),\n  target_type TEXT NOT NULL CHECK (length(target_type) BETWEEN 1 AND 80),\n  target_id TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'queued'\n    CHECK (status IN ('queued','processing','succeeded','failed','compensated','pending_review')),\n  provider_reference TEXT NOT NULL DEFAULT '',\n  error_code TEXT NOT NULL DEFAULT '',\n  result_json TEXT NOT NULL DEFAULT '{}'\n    CHECK (json_valid(result_json) AND json_type(result_json)='object'),\n  attempt_started_at TEXT,\n  completed_at TEXT,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  PRIMARY KEY(operation_id,item_key)\n)"
@@ -541,15 +671,9 @@
     },
     {
       "type": "table",
-      "name": "purchase_rollovers",
-      "table": "purchase_rollovers",
-      "sql": "CREATE TABLE \"purchase_rollovers\" (\n  purchase_id TEXT PRIMARY KEY REFERENCES purchases(id) ON DELETE CASCADE,\n  status TEXT NOT NULL CHECK (status IN ('pending','processing','calculated','credited','zero','exception')),\n  traffic_limit_bytes INTEGER NOT NULL CHECK (traffic_limit_bytes \u003e= 0),\n  used_traffic_bytes INTEGER,\n  remaining_traffic_bytes INTEGER,\n  minimum_remaining_bps INTEGER NOT NULL CHECK (minimum_remaining_bps BETWEEN 0 AND 10000),\n  net_paid_txb_minor INTEGER NOT NULL CHECK (net_paid_txb_minor \u003e= 0),\n  credited_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (credited_txb_minor \u003e= 0),\n  exception_code TEXT NOT NULL DEFAULT '',\n  attempts INTEGER NOT NULL DEFAULT 0,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  completed_at TEXT,\n  allocated_traffic_bytes INTEGER,\n  eligible_unused_bytes INTEGER,\n  algorithm_version TEXT NOT NULL DEFAULT ''\n)"
-    },
-    {
-      "type": "table",
       "name": "purchases",
       "table": "purchases",
-      "sql": "CREATE TABLE purchases (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL REFERENCES users(id),\n  combo_id TEXT NOT NULL REFERENCES combos(id),\n  charged_txb_minor INTEGER NOT NULL CHECK (charged_txb_minor \u003e= 0),\n  valid_from TEXT NOT NULL,\n  valid_until TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('activating','active','queued','expired','cancelled','failed')),\n  traffic_reset_phase TEXT NOT NULL DEFAULT 'pending' CHECK (traffic_reset_phase IN ('pending','quiesced','reset')),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, coupon_grant_id TEXT REFERENCES coupon_grants(id), gross_price_txb_minor INTEGER CHECK (gross_price_txb_minor IS NULL OR gross_price_txb_minor \u003e= 0), coupon_discount_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (coupon_discount_txb_minor \u003e= 0), idempotency_key TEXT, request_fingerprint TEXT NOT NULL DEFAULT '', renewal_batch_id TEXT, renewal_index INTEGER, auto_renew_enabled INTEGER NOT NULL DEFAULT 0\n  CHECK (auto_renew_enabled IN (0,1)), auto_renew_failure_reason TEXT NOT NULL DEFAULT '', auto_renew_failed_at TEXT, recurring_discount_attached INTEGER NOT NULL DEFAULT 0\n  CHECK (recurring_discount_attached IN (0,1)), auto_renew_source_purchase_id TEXT\n  REFERENCES purchases(id), core_gross_txb_minor INTEGER NOT NULL DEFAULT 0\n  CHECK (core_gross_txb_minor \u003e= 0), entitlement_traffic_limit_bytes INTEGER\n  CHECK (entitlement_traffic_limit_bytes IS NULL OR entitlement_traffic_limit_bytes \u003e 0), entitlement_reset_strategy TEXT\n  CHECK (entitlement_reset_strategy IS NULL OR entitlement_reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), entitlement_squad_uuids TEXT\n  CHECK (entitlement_squad_uuids IS NULL OR (json_valid(entitlement_squad_uuids) AND json_type(entitlement_squad_uuids)='array')), entitlement_addon_squad_uuids TEXT\n  CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor \u003e= 0), reward_rollover_min_remaining_bps INTEGER CHECK (reward_rollover_min_remaining_bps IS NULL OR reward_rollover_min_remaining_bps BETWEEN 0 AND 10000), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER\n  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes \u003e 0), combo_squad_uuids TEXT)"
+      "sql": "CREATE TABLE purchases (\n  id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL REFERENCES users(id),\n  combo_id TEXT NOT NULL REFERENCES combos(id),\n  charged_txb_minor INTEGER NOT NULL CHECK (charged_txb_minor \u003e= 0),\n  valid_from TEXT NOT NULL,\n  valid_until TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('activating','active','queued','expired','cancelled','failed')),\n  traffic_reset_phase TEXT NOT NULL DEFAULT 'pending' CHECK (traffic_reset_phase IN ('pending','quiesced','reset')),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, coupon_grant_id TEXT REFERENCES coupon_grants(id), gross_price_txb_minor INTEGER CHECK (gross_price_txb_minor IS NULL OR gross_price_txb_minor \u003e= 0), coupon_discount_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (coupon_discount_txb_minor \u003e= 0), idempotency_key TEXT, request_fingerprint TEXT NOT NULL DEFAULT '', renewal_batch_id TEXT, renewal_index INTEGER, auto_renew_enabled INTEGER NOT NULL DEFAULT 0\n  CHECK (auto_renew_enabled IN (0,1)), auto_renew_failure_reason TEXT NOT NULL DEFAULT '', auto_renew_failed_at TEXT, recurring_discount_attached INTEGER NOT NULL DEFAULT 0\n  CHECK (recurring_discount_attached IN (0,1)), auto_renew_source_purchase_id TEXT\n  REFERENCES purchases(id), core_gross_txb_minor INTEGER NOT NULL DEFAULT 0\n  CHECK (core_gross_txb_minor \u003e= 0), entitlement_traffic_limit_bytes INTEGER\n  CHECK (entitlement_traffic_limit_bytes IS NULL OR entitlement_traffic_limit_bytes \u003e 0), entitlement_reset_strategy TEXT\n  CHECK (entitlement_reset_strategy IS NULL OR entitlement_reset_strategy IN ('DAY','WEEK','MONTH_ROLLING')), entitlement_squad_uuids TEXT\n  CHECK (entitlement_squad_uuids IS NULL OR (json_valid(entitlement_squad_uuids) AND json_type(entitlement_squad_uuids)='array')), entitlement_addon_squad_uuids TEXT\n  CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor \u003e= 0), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER\n  CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes \u003e 0), combo_squad_uuids TEXT)"
     },
     {
       "type": "table",
@@ -586,12 +710,6 @@
       "name": "restore_jobs",
       "table": "restore_jobs",
       "sql": "CREATE TABLE restore_jobs (\n  id TEXT PRIMARY KEY,\n  backup_run_id TEXT NOT NULL REFERENCES backup_runs(id),\n  actor_user_id TEXT REFERENCES users(id),\n  status TEXT NOT NULL CHECK (status IN ('staging','ready','applying','complete','failed','rolled_back')),\n  staged_path TEXT NOT NULL,\n  rescue_path TEXT NOT NULL,\n  source_sha256 TEXT NOT NULL,\n  error TEXT NOT NULL DEFAULT '',\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  completed_at TEXT\n, request_actor_id TEXT NOT NULL DEFAULT '', idempotency_key TEXT NOT NULL DEFAULT ''\n  CHECK (idempotency_key = '' OR length(idempotency_key) BETWEEN 1 AND 128), request_fingerprint TEXT NOT NULL DEFAULT ''\n  CHECK (request_fingerprint = '' OR length(request_fingerprint) BETWEEN 16 AND 128))"
-    },
-    {
-      "type": "table",
-      "name": "rollover_member_daily_rollups",
-      "table": "rollover_member_daily_rollups",
-      "sql": "CREATE TABLE rollover_member_daily_rollups (\n  local_date TEXT NOT NULL,\n  user_id TEXT NOT NULL,\n  settlement_count INTEGER NOT NULL DEFAULT 0 CHECK (settlement_count \u003e= 0),\n  credited_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (credited_txb_minor \u003e= 0),\n  allocated_traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK (allocated_traffic_bytes \u003e= 0),\n  used_traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK (used_traffic_bytes \u003e= 0),\n  updated_at TEXT NOT NULL,\n  PRIMARY KEY(local_date,user_id)\n)"
     },
     {
       "type": "table",
@@ -688,6 +806,12 @@
       "name": "user_disabled_squads",
       "table": "user_disabled_squads",
       "sql": "CREATE TABLE user_disabled_squads (\n user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n squad_uuid TEXT NOT NULL,\n PRIMARY KEY(user_id,squad_uuid)\n)"
+    },
+    {
+      "type": "table",
+      "name": "user_host_names",
+      "table": "user_host_names",
+      "sql": "CREATE TABLE user_host_names (\n user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n host_id TEXT NOT NULL CHECK(length(host_id) BETWEEN 1 AND 256),\n name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 100),\n PRIMARY KEY(user_id,host_id)\n)"
     },
     {
       "type": "table",
@@ -1291,6 +1415,90 @@
     },
     {
       "type": "index",
+      "name": "pricing_active_commands",
+      "table": "pricing_admin_overrides",
+      "sql": "CREATE INDEX pricing_active_commands ON pricing_admin_overrides(command,status,expires_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_contract_product",
+      "table": "pricing_contracts",
+      "sql": "CREATE INDEX pricing_contract_product ON pricing_contracts(product_id,recorded_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_contracts_user",
+      "table": "pricing_contracts",
+      "sql": "CREATE INDEX pricing_contracts_user ON pricing_contracts(user_id,purchase_id)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_decisions_product",
+      "table": "pricing_decisions",
+      "sql": "CREATE INDEX pricing_decisions_product ON pricing_decisions(product_type,product_id,generated_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_features_hash",
+      "table": "pricing_features",
+      "sql": "CREATE INDEX pricing_features_hash ON pricing_features(snapshot_hash,watermark)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_forecasts_target",
+      "table": "pricing_forecast_batches",
+      "sql": "CREATE INDEX pricing_forecasts_target ON pricing_forecast_batches(target_until,batch_key)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_incidents_scope",
+      "table": "pricing_operational_incidents",
+      "sql": "CREATE INDEX pricing_incidents_scope ON pricing_operational_incidents(scope_type,scope_id,started_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_offers_expiry",
+      "table": "pricing_offers",
+      "sql": "CREATE INDEX pricing_offers_expiry ON pricing_offers(expires_at,id)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_offers_observed",
+      "table": "pricing_offers",
+      "sql": "CREATE INDEX pricing_offers_observed ON pricing_offers(exposed_at,model_version)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_overrides_scope",
+      "table": "pricing_admin_overrides",
+      "sql": "CREATE INDEX pricing_overrides_scope ON pricing_admin_overrides(scope_type,scope_id,status,expires_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_personal_owner_idx",
+      "table": "pricing_personal_decisions",
+      "sql": "CREATE INDEX pricing_personal_owner_idx ON pricing_personal_decisions(user_id,product_type,product_id,generated_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_prices_product",
+      "table": "pricing_published_prices",
+      "sql": "CREATE INDEX pricing_prices_product ON pricing_published_prices(product_type,product_id,created_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_renewal_purchase",
+      "table": "pricing_renewal_quotes",
+      "sql": "CREATE INDEX pricing_renewal_purchase ON pricing_renewal_quotes(purchase_id,generated_at)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_values_feature",
+      "table": "pricing_forecast_values",
+      "sql": "CREATE INDEX pricing_values_feature ON pricing_forecast_values(feature_key)"
+    },
+    {
+      "type": "index",
       "name": "provider_operation_items_status_idx",
       "table": "provider_operation_items",
       "sql": "CREATE INDEX provider_operation_items_status_idx\n  ON provider_operation_items(operation_id,status,item_key)"
@@ -1336,12 +1544,6 @@
       "name": "purchase_history_tombstones_user_created_idx",
       "table": "purchase_history_tombstones",
       "sql": "CREATE INDEX purchase_history_tombstones_user_created_idx\n  ON purchase_history_tombstones(user_id,created_at DESC,purchase_id)"
-    },
-    {
-      "type": "index",
-      "name": "purchase_rollovers_status_idx",
-      "table": "purchase_rollovers",
-      "sql": "CREATE INDEX purchase_rollovers_status_idx ON purchase_rollovers(status,updated_at)"
     },
     {
       "type": "index",
@@ -1468,12 +1670,6 @@
       "name": "restore_jobs_request_key_idx",
       "table": "restore_jobs",
       "sql": "CREATE UNIQUE INDEX restore_jobs_request_key_idx\n  ON restore_jobs(request_actor_id,idempotency_key)\n  WHERE idempotency_key \u003c\u003e ''"
-    },
-    {
-      "type": "index",
-      "name": "rollover_member_daily_user_date_idx",
-      "table": "rollover_member_daily_rollups",
-      "sql": "CREATE INDEX rollover_member_daily_user_date_idx\n  ON rollover_member_daily_rollups(user_id,local_date)"
     },
     {
       "type": "index",
@@ -2152,6 +2348,78 @@
       "name": "preference_visibility_before_transition",
       "table": "purchases",
       "sql": "CREATE TRIGGER preference_visibility_before_transition\nBEFORE UPDATE OF status,valid_from,valid_until ON purchases\nBEGIN\n  UPDATE user_preferences SET show_activity=0\n  WHERE user_id=NEW.user_id\n    AND NOT EXISTS (SELECT 1 FROM xnode_payg_accounts WHERE user_id=NEW.user_id AND purchased_bytes\u003e0)\n    AND NOT EXISTS (\n    SELECT 1 FROM purchases WHERE user_id=NEW.user_id AND status='active'\n      AND julianday(valid_from)\u003c=julianday(NEW.updated_at)\n      AND julianday(valid_until)\u003ejulianday(NEW.updated_at)\n  );\nEND"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_contracts_immutable",
+      "table": "pricing_contracts",
+      "sql": "CREATE TRIGGER pricing_contracts_immutable BEFORE UPDATE ON pricing_contracts BEGIN SELECT RAISE(ABORT,'pricing basis snapshots are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_cost_versions_immutable",
+      "table": "pricing_cost_versions",
+      "sql": "CREATE TRIGGER pricing_cost_versions_immutable BEFORE UPDATE ON pricing_cost_versions BEGIN SELECT RAISE(ABORT,'original provider cost facts are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_feature_inputs_immutable",
+      "table": "pricing_features",
+      "sql": "CREATE TRIGGER pricing_feature_inputs_immutable BEFORE UPDATE ON pricing_features BEGIN SELECT RAISE(ABORT,'original pricing forecast inputs are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_forecast_batches_immutable",
+      "table": "pricing_forecast_batches",
+      "sql": "CREATE TRIGGER pricing_forecast_batches_immutable BEFORE UPDATE ON pricing_forecast_batches BEGIN SELECT RAISE(ABORT,'original pricing forecast batch metadata is immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_forecast_entities_immutable",
+      "table": "pricing_forecast_entities",
+      "sql": "CREATE TRIGGER pricing_forecast_entities_immutable BEFORE UPDATE ON pricing_forecast_entities BEGIN SELECT RAISE(ABORT,'original forecast entity is immutable'); END"
+    },
+    {
+      "type": "view",
+      "name": "pricing_forecast_evaluations",
+      "table": "pricing_forecast_evaluations",
+      "sql": "CREATE VIEW pricing_forecast_evaluations AS SELECT forecast_id,actual,CASE status_code WHEN 0 THEN 'COMPLETE' WHEN 1 THEN 'MISSING' WHEN 2 THEN 'CENSORED' ELSE 'INCOMPLETE' END AS status,observed_until_ns,evaluated_at_ns FROM pricing_forecast_actuals"
+    },
+    {
+      "type": "view",
+      "name": "pricing_forecast_vintages",
+      "table": "pricing_forecast_vintages",
+      "sql": "CREATE VIEW pricing_forecast_vintages AS\n SELECT v.forecast_id,e.entity_type,e.entity_id,b.metric,b.generated_at,b.target_from,b.target_until,b.horizon_seconds,\n v.predicted_p10,v.predicted_p50,v.predicted_p90,v.predicted_mean,b.model_version,\n f.watermark AS feature_watermark,f.snapshot_hash AS feature_snapshot_hash,v.data_coverage_bps,b.health_state,b.calibration_status\n FROM pricing_forecast_values v JOIN pricing_forecast_entities e ON e.entity_key=v.entity_key\n JOIN pricing_forecast_batches b ON b.batch_key=v.batch_key JOIN pricing_features f ON f.feature_key=v.feature_key"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_forecasts_immutable",
+      "table": "pricing_forecast_values",
+      "sql": "CREATE TRIGGER pricing_forecasts_immutable BEFORE UPDATE ON pricing_forecast_values BEGIN SELECT RAISE(ABORT,'original pricing forecasts are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_model_parameters_immutable",
+      "table": "pricing_model_versions",
+      "sql": "CREATE TRIGGER pricing_model_parameters_immutable BEFORE UPDATE OF kind,created_at,parameters_json,feature_definition_json,watermark,diagnostics_json,calibration_status ON pricing_model_versions BEGIN SELECT RAISE(ABORT,'original model parameters are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_offer_inputs_immutable",
+      "table": "pricing_offers",
+      "sql": "CREATE TRIGGER pricing_offer_inputs_immutable BEFORE UPDATE OF user_id,product_type,product_id,price_minor,reference_minor,exposed_at,expires_at,model_version,predicted_probability,features_json ON pricing_offers BEGIN SELECT RAISE(ABORT,'original price exposures are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_prices_immutable",
+      "table": "pricing_published_prices",
+      "sql": "CREATE TRIGGER pricing_prices_immutable BEFORE UPDATE ON pricing_published_prices BEGIN SELECT RAISE(ABORT,'published pricing facts are immutable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "pricing_quote_terms_immutable",
+      "table": "pricing_renewal_quotes",
+      "sql": "CREATE TRIGGER pricing_quote_terms_immutable BEFORE UPDATE OF price_minor,contract_id,policy_version,contract_version,generated_at,settle_after,valid_until,model_version,trace_json ON pricing_renewal_quotes BEGIN SELECT RAISE(ABORT,'renewal quote terms are immutable'); END"
     },
     {
       "type": "trigger",
@@ -3846,7 +4114,7 @@
     },
     {
       "name": "audit_events",
-      "rows": 0,
+      "rows": 1,
       "columns": [
         {
           "name": "id",
@@ -4233,13 +4501,6 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "rollover_min_remaining_bps",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
           "primaryKey": 0
         },
         {
@@ -6433,6 +6694,1609 @@
       ]
     },
     {
+      "name": "pricing_admin_overrides",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scope_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "command",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "starts_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expected_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proposed_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_calibration_daily",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "bucket",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 4
+        },
+        {
+          "name": "samples",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability_sum",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_sum",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "brier_sum",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_contracts",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contractual_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_limit_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "max_change_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "source_purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "addon_terms_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_cost_metadata",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "cycle_cost_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cycle_days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "effective_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_cost_versions",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "cycle_cost_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cycle_days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "effective_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actual_paid_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_decisions",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reference_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proposed_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "selected_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "trace_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_discount_spend",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "override_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "reference_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "discount_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'CONSUMED'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_features",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "feature_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "watermark",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coverage_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "snapshot_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_actuals",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "forecast_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actual",
+          "type": "DOUBLE PRECISION",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status_code",
+          "type": "SMALLINT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_until_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "evaluated_at_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_batches",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "batch_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "metric",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "horizon_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_entities",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "entity_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "entity_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_values",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "forecast_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "entity_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "batch_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "feature_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p10",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p50",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p90",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_mean",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "data_coverage_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_model_validation_daily",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "metric",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "horizon_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 4
+        },
+        {
+          "name": "samples",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "metrics_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_model_versions",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "parameters_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "feature_definition_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "watermark",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "diagnostics_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "frozen",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_offers",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reference_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "exposed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_probability",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_operational_incidents",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scope_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ended_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "acknowledged_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "acknowledged_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_personal_decisions",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "version",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "context_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "public_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "personal_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "net_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability",
+          "type": "REAL",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coupon_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_product_settings",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "dynamic_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_pricing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'FIXED'",
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_pricing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'FIXED'",
+          "primaryKey": 0
+        },
+        {
+          "name": "personal_discounts_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "fixed_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "max_increase_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "max_discount_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "override_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'NONE'",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_approved_price_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_published_prices",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_renewal_quotes",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contract_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contract_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "notice_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "authorized_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settle_after",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settled_purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contribution",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "trace_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_worker_watermark",
+      "rows": 1,
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "provider_operation_items",
       "rows": 0,
       "columns": [
@@ -6889,124 +8753,6 @@
       ]
     },
     {
-      "name": "purchase_rollovers",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "purchase_id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "traffic_limit_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "used_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "remaining_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "minimum_remaining_bps",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "net_paid_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "credited_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "exception_code",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "attempts",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "completed_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "allocated_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "eligible_unused_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "algorithm_version",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
       "name": "purchases",
       "rows": 0,
       "columns": [
@@ -7201,13 +8947,6 @@
         },
         {
           "name": "reward_renewal_price_minor",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "reward_rollover_min_remaining_bps",
           "type": "INTEGER",
           "notNull": false,
           "default": null,
@@ -7693,63 +9432,8 @@
       ]
     },
     {
-      "name": "rollover_member_daily_rollups",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "local_date",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "user_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 2
-        },
-        {
-          "name": "settlement_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "credited_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "allocated_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "used_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
       "name": "schema_migrations",
-      "rows": 105,
+      "rows": 109,
       "columns": [
         {
           "name": "version",
@@ -8449,6 +10133,33 @@
           "notNull": true,
           "default": null,
           "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "user_host_names",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "host_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },

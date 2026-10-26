@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -31,6 +32,14 @@ func (s *Service) Catalog(ctx context.Context) (model.Catalog, error) {
 	addons, err := s.repository.ListSquadProducts(ctx, false)
 	if err != nil {
 		return model.Catalog{}, err
+	}
+	if prices, ok := s.repository.(interface {
+		PriceCatalog(context.Context, []model.Combo, []model.SquadProduct, time.Time) ([]model.Combo, []model.SquadProduct, error)
+	}); ok {
+		combos, addons, err = prices.PriceCatalog(ctx, combos, addons, s.now().UTC())
+		if err != nil {
+			return model.Catalog{}, err
+		}
 	}
 	return s.hydrateLiveCatalog(ctx, combos, addons)
 }

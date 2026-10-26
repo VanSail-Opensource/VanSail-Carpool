@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LineChart from '@/components/charts/LineChart.vue'
 import { computed, onMounted, reactive, shallowRef } from 'vue'
 
 import type { AdminStatistics, StatisticsQuery } from '@/api/features'
@@ -14,7 +15,6 @@ const error = shallowRef<string | null>(null)
 const today = new Date().toISOString().slice(0, 10)
 const monthAgo = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10)
 const filters = reactive<Required<Pick<StatisticsQuery, 'from' | 'to' | 'bucket'>>>({ from: monthAgo, to: today, bucket: 'daily' })
-const maximumCount = computed(() => Math.max(1, ...(statistics.value?.series.map((point) => point.count) ?? [1])))
 const { t } = useI18n()
 const bucketItems = computed(() => [
   { value: 'daily', label: t('adminStatistics.daily') },
@@ -71,9 +71,7 @@ onMounted(() => void refresh())
         <div><dt>{{ t('adminStatistics.input') }}</dt><dd>{{ t('adminStatistics.txbValue', { value: txbInputFromMinor(statistics.inputTxbMinor) }) }}</dd></div><div><dt>{{ t('adminStatistics.output') }}</dt><dd>{{ t('adminStatistics.txbValue', { value: txbInputFromMinor(statistics.outputTxbMinor) }) }}</dd></div>
         <div><dt>{{ t('adminStatistics.net') }}</dt><dd>{{ t('adminStatistics.txbValue', { value: txbInputFromMinor(statistics.netTxbMinor) }) }}</dd></div><div><dt>{{ t('adminStatistics.discountAddons') }}</dt><dd>{{ t('adminStatistics.splitTxbValue', { first: txbInputFromMinor(statistics.discountTxbMinor), second: txbInputFromMinor(statistics.addonTxbMinor) }) }}</dd></div>
       </dl>
-      <div class="statistics-chart" role="img" :aria-label="t('adminStatistics.chartLabel', { bucket: t(`adminStatistics.${statistics.bucket}`), from: statistics.from, to: statistics.to })">
-        <span v-for="point in statistics.series" :key="point.periodStart" class="statistics-chart__bar" :style="{ height: `${Math.max(4, point.count / maximumCount * 100)}%` }" />
-      </div>
+      <LineChart :data="statistics.series.map((point, index) => ({ x: index, label: point.periodStart, count: point.count }))" :config="{ count: { label: t('adminStatistics.count'), color: 'var(--accent)' } }" :label="t('adminStatistics.chartLabel', { bucket: t(`adminStatistics.${statistics.bucket}`), from: statistics.from, to: statistics.to })" bar />
       <div class="statistics-table"><p>{{ t('adminStatistics.caption', { grouping: t(`adminStatistics.${statistics.bucket}`) }) }}</p><UTable class="admin-table" :data="tableData" :columns="tableColumns" /></div>
       <UTable v-if="statistics.distribution.length" class="admin-table" :data="statistics.distribution" :columns="[{ accessorKey: 'label', header: t('adminWorkspace.name') }, { accessorKey: 'count', header: t('adminStatistics.count') }]" />
     </div>

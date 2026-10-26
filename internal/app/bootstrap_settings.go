@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
@@ -32,7 +31,6 @@ func ensureBootstrapSettings(ctx context.Context, store *database.Store, vault *
 		"billing.bepusdt.ack": "ok", "billing.stars.enabled": "true",
 		"activity.timezone": "Asia/Shanghai", "activity.daily_reward_min_txb": "0", "activity.daily_reward_max_txb": "0",
 		"activity.group_message_threshold": "0", "activity.group_message_reward_txb": "0",
-		catalog.RolloverBeforeAutoRenewalSetting: "true",
 	}
 	for key, value := range defaults {
 		if _, err := store.GetSetting(ctx, key); errors.Is(err, database.ErrNotFound) {

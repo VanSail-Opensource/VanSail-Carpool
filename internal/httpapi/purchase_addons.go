@@ -9,6 +9,7 @@ import (
 )
 
 type purchaseAddonRequest struct {
+	CouponGrantID        string            `json:"couponGrantId"`
 	AddonSquadProductIDs []string          `json:"addonSquadProductIds"`
 	SquadActivationCodes map[string]string `json:"squadActivationCodes"`
 }
@@ -23,7 +24,7 @@ func (s *Server) purchaseAddonQuote(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "Select at least one optional squad.")
 		return
 	}
-	quote, err := s.deps.Catalog.QuoteAddons(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs)
+	quote, err := s.deps.Catalog.QuoteAddons(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs, request.CouponGrantID)
 	if err != nil {
 		s.writePurchaseAddonError(w, r, err)
 		return
@@ -45,7 +46,7 @@ func (s *Server) purchaseAddons(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	purchase, err := s.deps.Catalog.AddAddons(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs, request.SquadActivationCodes, idempotencyKey)
+	purchase, err := s.deps.Catalog.AddAddons(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs, request.SquadActivationCodes, idempotencyKey, request.CouponGrantID)
 	if err != nil {
 		s.writePurchaseAddonError(w, r, err)
 		return

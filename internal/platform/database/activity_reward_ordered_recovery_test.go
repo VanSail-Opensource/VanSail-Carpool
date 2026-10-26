@@ -12,7 +12,7 @@ const orderedCustomRecoveryMigration = "055_restore_ordered_custom_combo_rewards
 
 func TestOrderedCustomComboRecoveryFromSettledRaffleTickets(t *testing.T) {
 	t.Parallel()
-	ctx, store := context.Background(), newTestStore(t)
+	ctx, store := context.Background(), newHistoricalRewardStore(t)
 	now := time.Now().UTC().Add(-4 * time.Hour)
 	core := saveTestCombo(t, store, "Original core", 100, 30)
 	target, err := store.SaveCombo(ctx, ComboInput{Name: "New core", PriceTXBMinor: 80000, ValidityDays: 45,
@@ -21,7 +21,7 @@ func TestOrderedCustomComboRecoveryFromSettledRaffleTickets(t *testing.T) {
 		t.Fatal(err)
 	}
 	standard := activity.Reward{Kind: activity.RewardEntitlementGrant, ComboID: target.ID, SquadUUIDs: []string{"awarded"},
-		RenewalPriceMinor: 54000, TrafficLimitBytes: 500 << 30, RolloverMinRemainingBPS: 9999}
+		RenewalPriceMinor: 54000, TrafficLimitBytes: 500 << 30}
 	lite := standard
 	lite.RenewalPriceMinor, lite.TrafficLimitBytes = 36000, 300<<30
 	free := standard
@@ -58,7 +58,8 @@ func TestOrderedCustomComboRecoveryFromSettledRaffleTickets(t *testing.T) {
 			reproduceLegacyCoreRewards(t, store, purchase.ID, results)
 			switch test.name {
 			case "pending rollover metadata":
-				seedPendingRewardRollover(t, store, purchase.ID, now.Add(2*time.Hour))
+				seedHistoricalRewardSettlement(t, store, purchase.ID, now.Add(2*time.Hour), false)
+
 			case "administrator edit":
 				if err := store.AppendAudit(ctx, &user.ID, "entitlement.edit", "purchase", purchase.ID, "{}", now.Add(2*time.Hour)); err != nil {
 					t.Fatal(err)
@@ -99,12 +100,7 @@ func TestOrderedCustomComboRecoveryFromSettledRaffleTickets(t *testing.T) {
 					if err != nil || current.TrafficLimitBytes != test.current<<30 || len(current.SquadUUIDs) != 1 || current.SquadUUIDs[0] != "awarded" || !current.ValidUntil.Equal(purchase.ValidUntil) {
 						t.Fatalf("restored entitlement = (%+v, %v)", current, err)
 					}
-					if test.name == "pending rollover metadata" {
-						rollover, err := store.RolloverByPurchase(ctx, purchase.ID)
-						if err != nil || rollover.TrafficLimitBytes != test.current<<30 || rollover.MinimumRemainingBPS != 9999 {
-							t.Fatalf("restored rollover = (%+v, %v)", rollover, err)
-						}
-					}
+
 				}
 				var audits, jobs int
 				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE target_id=? AND action='activity.custom_combo_recovered'`, purchase.ID).Scan(&audits); err != nil {

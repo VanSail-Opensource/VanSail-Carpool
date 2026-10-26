@@ -2,12 +2,13 @@ package httpapi
 
 import (
 	"errors"
+	"net/http"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"net/http"
-	"time"
 )
 
 func (s *Server) continueOnboarding(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +88,9 @@ func (s *Server) catalog(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusInternalServerError, "CATALOG_UNAVAILABLE", "The catalog could not be loaded.")
 		return
 	}
+	if err := s.deps.Store.RecordPricingExposures(r.Context(), user.ID, snapshot, time.Now().UTC()); err != nil {
+		s.deps.Logger.Debug("pricing exposure unavailable", "error", err)
+	}
 	writeJSON(w, http.StatusOK, snapshot)
 }
 
@@ -112,8 +116,8 @@ func (s *Server) purchase(w http.ResponseWriter, r *http.Request) {
 	purchase, err := s.deps.Catalog.PurchaseWithCoupon(r.Context(), user, request.ComboID, request.AddonSquadProductIDs, request.CouponGrantID, request.SquadActivationCodes, idempotencyKey)
 	if err != nil {
 		switch {
-		case errors.Is(err, catalog.ErrAutoRenewalEnabled):
-			s.writeError(w, r, http.StatusConflict, "AUTO_RENEW_ENABLED", "Turn off automatic renewal before selecting a new combo.")
+		case errors.Is(err, database.ErrPricingDecisionPending), errors.Is(err, database.ErrPricingComputePending):
+			s.writeError(w, r, http.StatusConflict, "PRICING_DECISION_PENDING", "The price is being prepared. Please try again shortly.")
 		case errors.Is(err, catalog.ErrNoAccessibleNodes):
 			s.writeError(w, r, http.StatusConflict, "NO_ACCESSIBLE_NODES", "The selected catalog item has no accessible nodes.")
 		case errors.Is(err, database.ErrStockUnavailable):

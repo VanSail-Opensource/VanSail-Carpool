@@ -16,9 +16,21 @@
     "payment_callback_tombstones",
     "payment_profiles",
     "payment_status_rollups",
+    "pricing_admin_overrides",
+    "pricing_calibration_daily",
+    "pricing_decisions",
+    "pricing_features",
+    "pricing_forecast_batches",
+    "pricing_forecast_entities",
+    "pricing_model_validation_daily",
+    "pricing_model_versions",
+    "pricing_offers",
+    "pricing_operational_incidents",
+    "pricing_product_settings",
+    "pricing_published_prices",
+    "pricing_worker_watermark",
     "purchase_history_tombstones",
     "questionnaires",
-    "rollover_member_daily_rollups",
     "schema_migrations",
     "squad_product_overrides",
     "statistics_snapshots",
@@ -60,6 +72,9 @@
     "onboarding_content",
     "panel_entry_verification",
     "payment_orders",
+    "pricing_discount_spend",
+    "pricing_forecast_values",
+    "pricing_personal_decisions",
     "provider_operations",
     "questionnaire_imports",
     "questionnaire_participants",
@@ -68,6 +83,7 @@
     "txb_limits",
     "user_disabled_payg_squads",
     "user_disabled_squads",
+    "user_host_names",
     "user_notification_events",
     "user_preferences",
     "xnode_config_snippets",
@@ -93,6 +109,9 @@
     "emby_account_disabled_folders",
     "maintenance_runs",
     "node_compensation_events",
+    "pricing_cost_metadata",
+    "pricing_cost_versions",
+    "pricing_forecast_actuals",
     "provider_operation_items",
     "provider_operation_replays",
     "purchases",
@@ -120,14 +139,15 @@
     "node_compensation_event_recipients",
     "node_compensation_event_squads",
     "node_compensation_node_state",
+    "pricing_contracts",
     "purchase_addon_adjustments",
     "purchase_addons",
-    "purchase_rollovers",
     "renewal_batches",
     "xnode_ddns_hosts",
     "xnode_periods",
     "affiliate_tier_awards",
     "ip_lookup_checks",
+    "pricing_renewal_quotes",
     "xnode_daily_usage",
     "xnode_imported_usage",
     "xnode_metered_probes",
@@ -2156,13 +2176,6 @@
           "type": "TEXT",
           "notNull": true,
           "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "rollover_min_remaining_bps",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
           "primaryKey": 0
         },
         {
@@ -4325,6 +4338,1588 @@
       ]
     },
     {
+      "name": "pricing_admin_overrides",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scope_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "command",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "starts_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expected_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "previous_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proposed_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_calibration_daily",
+      "columns": [
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "bucket",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 4
+        },
+        {
+          "name": "samples",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability_sum",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_sum",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "brier_sum",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_contracts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contractual_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_limit_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "max_change_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "source_purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "addon_terms_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'[]'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_cost_metadata",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "cycle_cost_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cycle_days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "effective_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_cost_versions",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "cycle_cost_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "cycle_days",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_bytes",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "effective_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actor_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "actual_paid_minor",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_decisions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reference_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "proposed_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "selected_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "trace_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_discount_spend",
+      "columns": [
+        {
+          "name": "override_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "reference_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "discount_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'CONSUMED'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_features",
+      "columns": [
+        {
+          "name": "feature_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "watermark",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coverage_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "snapshot_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_actuals",
+      "columns": [
+        {
+          "name": "forecast_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "actual",
+          "type": "DOUBLE PRECISION",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status_code",
+          "type": "SMALLINT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_until_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "evaluated_at_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_batches",
+      "columns": [
+        {
+          "name": "batch_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "metric",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "target_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "horizon_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_entities",
+      "columns": [
+        {
+          "name": "entity_key",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "entity_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "entity_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_forecast_values",
+      "columns": [
+        {
+          "name": "forecast_id",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "entity_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "batch_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "feature_key",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p10",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p50",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_p90",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_mean",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "data_coverage_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_model_validation_daily",
+      "columns": [
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "metric",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "horizon_seconds",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 4
+        },
+        {
+          "name": "samples",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "metrics_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at_ns",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_model_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "parameters_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "feature_definition_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "watermark",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "diagnostics_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "frozen",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_offers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reference_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "exposed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "predicted_probability",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_operational_incidents",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "scope_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "ended_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "acknowledged_by",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "acknowledged_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_personal_decisions",
+      "columns": [
+        {
+          "name": "version",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "context_key",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "public_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "personal_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "net_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability",
+          "type": "REAL",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "calibration",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "coupon_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_product_settings",
+      "columns": [
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "dynamic_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "purchase_pricing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'FIXED'",
+          "primaryKey": 0
+        },
+        {
+          "name": "renewal_pricing_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'FIXED'",
+          "primaryKey": 0
+        },
+        {
+          "name": "personal_discounts_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "fixed_price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "max_increase_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "max_discount_bps",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "override_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'NONE'",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_approved_price_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1",
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_published_prices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "product_type",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "product_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_from",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_renewal_quotes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "purchase_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contract_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "price_minor",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contract_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "generated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "notice_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "authorized_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settle_after",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "settled_purchase_id",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "probability",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "contribution",
+          "type": "DOUBLE PRECISION",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_state",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "trace_json",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "outcome_reason",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "''",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "pricing_worker_watermark",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "INTEGER",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "observed_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "provider_operation_items",
       "columns": [
         {
@@ -4775,123 +6370,6 @@
       ]
     },
     {
-      "name": "purchase_rollovers",
-      "columns": [
-        {
-          "name": "purchase_id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "traffic_limit_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "used_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "remaining_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "minimum_remaining_bps",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "net_paid_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "credited_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "exception_code",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "attempts",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "completed_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "allocated_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "eligible_unused_bytes",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "algorithm_version",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
       "name": "purchases",
       "columns": [
         {
@@ -5085,13 +6563,6 @@
         },
         {
           "name": "reward_renewal_price_minor",
-          "type": "INTEGER",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "reward_rollover_min_remaining_bps",
           "type": "INTEGER",
           "notNull": false,
           "default": null,
@@ -5566,60 +7037,6 @@
           "type": "TEXT",
           "notNull": true,
           "default": "''",
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "rollover_member_daily_rollups",
-      "columns": [
-        {
-          "name": "local_date",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "user_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 2
-        },
-        {
-          "name": "settlement_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "credited_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "allocated_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "used_traffic_bytes",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": "0",
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
           "primaryKey": 0
         }
       ]
@@ -6310,6 +7727,32 @@
           "notNull": true,
           "default": null,
           "primaryKey": 2
+        }
+      ]
+    },
+    {
+      "name": "user_host_names",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "host_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },
@@ -8499,6 +9942,20 @@
     "payment_orders_method_created_idx",
     "payment_orders_user_created_idx",
     "payment_profiles_provider_idx",
+    "pricing_active_commands",
+    "pricing_contract_product",
+    "pricing_contracts_user",
+    "pricing_decisions_product",
+    "pricing_features_hash",
+    "pricing_forecasts_target",
+    "pricing_incidents_scope",
+    "pricing_offers_expiry",
+    "pricing_offers_observed",
+    "pricing_overrides_scope",
+    "pricing_personal_owner_idx",
+    "pricing_prices_product",
+    "pricing_renewal_purchase",
+    "pricing_values_feature",
     "provider_operation_items_status_idx",
     "provider_operation_replays_resolution_key_idx",
     "provider_operations_owner_created_idx",
@@ -8507,7 +9964,6 @@
     "purchase_addons_squad_idx",
     "purchase_history_tombstones_combo_created_idx",
     "purchase_history_tombstones_user_created_idx",
-    "purchase_rollovers_status_idx",
     "purchases_admin_page_idx",
     "purchases_admin_status_page_idx",
     "purchases_auto_renew_due_idx",
@@ -8529,7 +9985,6 @@
     "refunds_created_idx",
     "restore_jobs_created_idx",
     "restore_jobs_request_key_idx",
-    "rollover_member_daily_user_date_idx",
     "sessions_miniapp_user_unique_idx",
     "sessions_scope_expiry_idx",
     "sessions_user_id_idx",
@@ -8645,6 +10100,16 @@
     "preference_visibility_after_transition",
     "preference_visibility_before_purchase",
     "preference_visibility_before_transition",
+    "pricing_contracts_immutable",
+    "pricing_cost_versions_immutable",
+    "pricing_feature_inputs_immutable",
+    "pricing_forecast_batches_immutable",
+    "pricing_forecast_entities_immutable",
+    "pricing_forecasts_immutable",
+    "pricing_model_parameters_immutable",
+    "pricing_offer_inputs_immutable",
+    "pricing_prices_immutable",
+    "pricing_quote_terms_immutable",
     "provider_operation_items_open_host_guard",
     "retire_xnode_firewall_member",
     "usdt_terminal_evidence_immutable",

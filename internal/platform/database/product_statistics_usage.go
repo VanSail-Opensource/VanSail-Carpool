@@ -13,7 +13,7 @@ import (
 func (s *Store) ActiveMemberUsageForStatistics(ctx context.Context, now time.Time) ([]model.StatisticsUsageMember, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT purchases.id,purchases.user_id,purchases.charged_txb_minor,
 		purchases.valid_from,purchases.valid_until,purchases.auto_renew_enabled,
-		COALESCE(purchases.reward_rollover_min_remaining_bps,combos.rollover_min_remaining_bps),'xn:'||CAST(native.proxy_user_id AS TEXT)
+		'xn:'||CAST(native.proxy_user_id AS TEXT)
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id JOIN users member ON member.id=purchases.user_id
 		JOIN xnode_identities native ON native.user_id=member.id
 		WHERE member.role='user'
@@ -31,7 +31,7 @@ func (s *Store) ActiveMemberUsageForStatistics(ctx context.Context, now time.Tim
 		var validFrom, validUntil string
 		var autoRenew int
 		if err := rows.Scan(&item.Purchase.ID, &item.Purchase.UserID, &item.Purchase.PriceTXBMinor,
-			&validFrom, &validUntil, &autoRenew, &item.Purchase.RolloverMinRemainingBPS, &item.RemoteUserID); err != nil {
+			&validFrom, &validUntil, &autoRenew, &item.RemoteUserID); err != nil {
 			return nil, fmt.Errorf("scan active member usage: %w", err)
 		}
 		if _, exists := seen[item.Purchase.UserID]; exists {

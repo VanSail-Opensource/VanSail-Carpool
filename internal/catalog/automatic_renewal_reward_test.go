@@ -70,7 +70,7 @@ func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
 				ExpectedParticipation: 1, Prizes: []activity.PrizeInput{{Name: "Custom", ProbabilityBPS: 10_000,
 					Reward: activity.Reward{Kind: activity.RewardEntitlementGrant, ComboID: combo.ID,
 						SquadUUIDs: []string{"awarded"}, RenewalPriceMinor: test.price,
-						TrafficLimitBytes: test.trafficGiB << 30, RolloverMinRemainingBPS: 9_999}}}}, now)
+						TrafficLimitBytes: test.trafficGiB << 30}}}}, now)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -120,28 +120,20 @@ func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
 			if err := store.EnqueueDueEntitlementTransitions(ctx, source.ValidUntil); err != nil {
 				t.Fatal(err)
 			}
-			if err := store.MarkRolloverProcessing(ctx, source.ID, source.ValidUntil); err != nil {
-				t.Fatal(err)
-			}
-			if _, err := store.RecordRolloverCalculation(ctx, source.ID, model.RolloverUsageSummary{
-				AllocatedBytes: test.trafficGiB << 30, UsedBytes: test.trafficGiB << 30, AlgorithmVersion: "cadence-v3",
-			}, source.ValidUntil); err != nil {
-				t.Fatal(err)
-			}
 			for range 2 {
 				if err := service.ProcessDueAutoRenewals(ctx, source.ValidUntil); err != nil {
 					t.Fatal(err)
 				}
 			}
 			var successorID, squads, resetStrategy string
-			var price, traffic, threshold int64
+			var price, traffic int64
 			if err := db.QueryRowContext(ctx, `SELECT id,entitlement_squad_uuids,reward_renewal_price_minor,
-				entitlement_traffic_limit_bytes,reward_rollover_min_remaining_bps,entitlement_reset_strategy FROM purchases WHERE auto_renew_source_purchase_id=?`,
-				source.ID).Scan(&successorID, &squads, &price, &traffic, &threshold, &resetStrategy); err != nil {
+				entitlement_traffic_limit_bytes,entitlement_reset_strategy FROM purchases WHERE auto_renew_source_purchase_id=?`,
+				source.ID).Scan(&successorID, &squads, &price, &traffic, &resetStrategy); err != nil {
 				t.Fatal(err)
 			}
-			if squads != `["awarded"]` || price != test.price || traffic != test.trafficGiB<<30 || threshold != 9_999 {
-				t.Fatalf("successor reward = (%s, %d, %d, %d)", squads, price, traffic, threshold)
+			if squads != `["awarded"]` || price != test.price || traffic != test.trafficGiB<<30 {
+				t.Fatalf("successor reward = (%s, %d, %d)", squads, price, traffic)
 			}
 			if resetStrategy != "WEEK" {
 				t.Fatalf("successor reset strategy = %q, want the awarded weekly cadence", resetStrategy)

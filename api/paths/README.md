@@ -276,3 +276,25 @@ provides browser-only admin preset inventory and optimistic writes.
 `api-v1-xnode-diy.yaml` provides owner reads and atomic saves; `api-v1-xnode-diy-preview.yaml` validates both draft sections without persistence.
 
 `api-v1-payg.yaml` describes private authenticated PAYG reads; it exposes no purchase/enrollment switch or arbitrary member selector.
+
+## Pricing routes
+
+- `api-v1-admin-pricing-costs-id.yaml`: savePricingProviderCost; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-data.yaml`: getPricingAnalyticalRecords; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-exports-authorization.yaml`: authorizeSensitivePricingExport; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-exports.yaml`: streamPricingAnalyticalExport; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-history.yaml`: getOriginalPricingForecastHistory; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-interventions-id-cancel.yaml`: cancelPricingIntervention; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-interventions-version.yaml`: getPricingScopeVersion; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-interventions.yaml`: createPricingIntervention; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing-products-kind-id.yaml`: getPricingProductPolicy; existing signed administrator or owned member authorization applies.
+- `api-v1-admin-pricing.yaml`: getPricingDashboard; existing signed administrator or owned member authorization applies.
+- `api-v1-purchases-id-pricing.yaml`: getOwnedPricingRenewalInfo; existing signed administrator or owned member authorization applies.
+
+- `api-v1-admin-users-id-predictions.yaml`: Admin owner-specific forecasts.
+
+- `api-v1-admin-users-id-prices.yaml`: Explicitly paginated user product pricing.
+
+- `api-v1-dashboard-predictions.yaml`: Member personal predictions.
+
+- `api-v1-subscription-hosts-id-name.yaml`: Owner host-name write contract.

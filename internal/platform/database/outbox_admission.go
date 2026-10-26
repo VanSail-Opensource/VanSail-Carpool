@@ -10,7 +10,8 @@ import (
 
 // claimableOutboxTx skips occupied resources without holding a provider call or
 // mutating unrelated jobs. Resource keys are derived from existing durable facts.
-func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority bool) (*model.OutboxJob, error) {
+func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority bool, computeOnly ...bool) (*model.OutboxJob, error) {
+	isCompute := len(computeOnly) > 0 && computeOnly[0]
 	active, err := outboxBatchTx(ctx, tx, outboxSelect+` WHERE status='processing'`)
 	if err != nil {
 		return nil, err
@@ -30,11 +31,11 @@ func claimableOutboxTx(ctx context.Context, tx *sql.Tx, now time.Time, priority 
 		// The reserved claim path handles dynamic bans every second. Ordinary
 		// slots must prefer other work so a continuously replenished ban stream
 		// cannot consume every admission in both paths.
-		jobs, err := outboxBatchTx(ctx, tx, outboxSelect+` WHERE status='pending' AND available_at<=? AND (?=0 OR (`+priorityOutboxFilter+`))
+		jobs, err := outboxBatchTx(ctx, tx, outboxSelect+` WHERE status='pending' AND available_at<=? AND ((?=1 AND kind='pricing_compute') OR (?=0 AND kind<>'pricing_compute')) AND (?=0 OR (`+priorityOutboxFilter+`))
    AND (kind NOT IN ('ip_lookup_report_retry','ip_lookup_live_retry') OR (
     NOT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE status='processing')
     AND NOT EXISTS(SELECT 1 FROM outbox_jobs active WHERE active.kind IN ('ip_lookup_report_retry','ip_lookup_live_retry') AND active.status='processing')))
-   ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 1 ELSE 0 END,available_at,created_at,rowid LIMIT ? OFFSET ? /*pg:FOR UPDATE SKIP LOCKED*/`, stamp(now), boolInt(priority), batchSize, offset)
+   ORDER BY CASE WHEN `+priorityOutboxFilter+` THEN 1 ELSE 0 END,available_at,created_at,rowid LIMIT ? OFFSET ? /*pg:FOR UPDATE SKIP LOCKED*/`, stamp(now), boolInt(isCompute), boolInt(isCompute), boolInt(priority), batchSize, offset)
 		if err != nil {
 			return nil, err
 		}

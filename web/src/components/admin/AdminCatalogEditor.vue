@@ -11,6 +11,7 @@ import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useI18n } from '@/i18n'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { moneyFromTxbInput, trafficBytesFromInput, txbInputFromMinor } from '@/utils/format'
+import ProductPricingSettings from './pricing/ProductPricingSettings.vue'
 
 const props = defineProps<{ combo?: Combo; squads: readonly SquadProduct[]; busy: boolean; error?: string | null }>()
 const emit = defineEmits<{ cancel: []; save: [payload: Record<string, unknown>] }>()
@@ -20,7 +21,7 @@ const resetItems = computed(() => resetCadences.map((value) => ({ value, label: 
 const draft = reactive({
   whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
   resetStrategy: 'MONTH_ROLLING' as ResetCadence, squadProductIds: [] as string[],
-  rolloverMinRemainingPercent: 0, active: true,
+  active: true,
 })
 const trafficInvalid = ref(false)
 const invalid = ref(false)
@@ -31,7 +32,7 @@ const schema = z.object({
   validityDays: z.number().int().min(1).max(3650),
   ipLookupQuota: z.number().int().min(0).max(1000000).nullable(), whitelistIpQuota: z.number().int().min(0).max(1000),
   resetStrategy: z.enum(['DAY', 'WEEK', 'MONTH_ROLLING']), squadProductIds: z.array(z.string()),
-  rolloverMinRemainingBps: z.number().int().min(0).max(10000), active: z.boolean(),
+  active: z.boolean(),
 })
 const { reducedMotion, offset } = useMotionPreferences()
 
@@ -44,11 +45,10 @@ watch(() => props.combo, (combo) => {
     trafficLimitBytes: combo.trafficLimitBytes,
     resetStrategy: combo.resetStrategy,
     squadProductIds: combo.includedSquads.map((squad) => squad.id),
-    rolloverMinRemainingPercent: combo.rolloverMinRemainingBps / 100,
     active: combo.active,
   } : {
     whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
-    trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], rolloverMinRemainingPercent: 0, active: true,
+    trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], active: true,
   })
 }, { immediate: true })
 
@@ -61,7 +61,7 @@ function submit(): void {
     name: draft.name, description: draft.description, priceTxbMinor,
     whitelistIpQuota: draft.whitelistIpQuota, ipLookupQuota: draft.ipLookupQuota, validityDays: draft.validityDays, trafficLimitBytes,
     resetStrategy: draft.resetStrategy, squadProductIds: [...draft.squadProductIds],
-    rolloverMinRemainingBps: Math.round(draft.rolloverMinRemainingPercent * 100), active: draft.active,
+    active: draft.active,
   })
   invalid.value = !result.success
   if (!result.success) return
@@ -95,7 +95,6 @@ function setSquad(id: string, selected: boolean): void {
         <UFormField name="whitelist-quota" :label="t('diy.whitelist.comboQuota')"><UInputNumber v-model="draft.whitelistIpQuota" class="w-full" :min="0" :max="1000" :step="1" /></UFormField>
         <UFormField name="traffic-limit" :label="t('adminCatalogEditor.trafficLimit')" :hint="t('adminCatalogEditor.trafficLimitHint')" :error="trafficInvalid ? t('adminCatalogEditor.trafficLimitInvalid') : undefined" required><UInput v-model="draft.trafficLimitBytes" class="w-full" inputmode="text" required @blur="normalizeTrafficLimit" /></UFormField>
         <UFormField name="reset-cadence" :label="t('adminCatalogEditor.resetCadence')"><USelect v-model="draft.resetStrategy" class="w-full" :items="resetItems" /></UFormField>
-        <UFormField name="rollover-minimum" :label="t('adminCatalogEditor.rolloverMinimum')" required><UInput v-model.number="draft.rolloverMinRemainingPercent" class="w-full" type="number" :min="0" :max="100" :step="0.01" /></UFormField>
         <fieldset class="catalog-editor__wide squad-picker">
           <legend>{{ t('adminCatalogEditor.includedSquads') }}</legend>
           <motion.div layout class="squad-picker__items">
@@ -109,6 +108,7 @@ function setSquad(id: string, selected: boolean): void {
           </motion.div>
         </fieldset>
         <SwitchField id="combo-active" v-model="draft.active" class="catalog-editor__wide" :label="t('adminCatalogEditor.available')" :help="t('adminCatalogEditor.liveTermsHint')" />
+        <ProductPricingSettings v-if="combo" class="catalog-editor__wide" kind="combo" :product-id="combo.id" />
         <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminCatalogEditor.save')" />
       </form>
     </template>

@@ -3,9 +3,10 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"time"
 )
 
 func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, termCount int, excludedAddonIDs []string, now time.Time) (model.RenewalQuote, model.Combo, []model.SquadProduct, error) {
@@ -61,6 +62,19 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	for _, addon := range addons {
 		grossPerTerm += addon.PriceTXBMinor
 		addonIDs = append(addonIDs, addon.GroupID)
+	}
+	if !customPrice.Valid {
+		grossPerTerm, err = pricingRenewalGrossTx(ctx, tx, purchaseID, grossPerTerm, addons, now)
+		if err != nil {
+			return model.RenewalQuote{}, model.Combo{}, nil, err
+		}
+		combo.PriceTXBMinor = grossPerTerm
+		for _, addon := range addons {
+			combo.PriceTXBMinor -= addon.PriceTXBMinor
+		}
+		if combo.PriceTXBMinor < 0 {
+			return model.RenewalQuote{}, model.Combo{}, nil, ErrConflict
+		}
 	}
 	discount := coupons.Discount{GrossMinor: grossPerTerm, NetMinor: grossPerTerm}
 	if purchase.RecurringDiscountAttached {

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { motion } from 'motion-v'
+import { VisStackedBar, VisXYContainer } from '@unovis/vue'
+import { ChartContainer } from '@/components/charts'
 
 import type { CatalogNode, TopNode } from '@/api/types'
-import { motionDurations } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { getLocale, t } from '@/i18n'
 import { formatBytes } from '@/utils/format'
 import { selectionHaptic } from '@/utils/telegram'
@@ -24,7 +23,6 @@ const minimumSharePercent = 3n
 const hoveredKey = shallowRef<string | null>(null)
 const selectedKey = shallowRef<string | null>(null)
 const trackRef = shallowRef<globalThis.HTMLElement | null>(null)
-const { reducedMotion } = useMotionPreferences()
 
 export interface TrafficUsageSegment { key: string; name: string; countryCode: string; bytes: bigint; startBytes: bigint; widthBasis: bigint; color: string; bytesLabel: string; percentageLabel: string; multiplierLabel: string; isOther: boolean; ariaLabel: string }
 interface SourceNode { node: TopNode; index: number; bytes: bigint; calculatedBytes: bigint; multiplier: number | null }
@@ -155,16 +153,7 @@ function clearSelection(): void { selectedKey.value = null; hoveredKey.value = n
 <template>
   <div v-if="segments.length" class="traffic-usage-bar">
     <div ref="trackRef" class="traffic-usage-bar__track" role="group" :aria-label="$t('home.trafficBarLabel')" @click="selectAt" @pointermove="previewAt" @pointerleave="clearHover" @pointercancel="clearHover" @keydown.escape.stop.prevent="clearSelection">
-      <motion.span
-        v-for="segment in segments"
-        :key="'visual-' + segment.key"
-        class="traffic-usage-bar__visual"
-        :style="{ backgroundColor: segment.color }"
-        :initial="false"
-        :animate="{ width: Number(segment.widthBasis) / 100 + '%' }"
-        :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }"
-        aria-hidden="true"
-      />
+      <ChartContainer :config="{}" class="traffic-usage-bar__unovis"><VisXYContainer :data="[{ x: 0 }]" :height="44" :duration="0" :margin="{ top: 0, bottom: 0, left: 0, right: 0 }" :x-domain="[0, 100]" :y-domain="[-.5, .5]"><VisStackedBar :x="() => 0" :y="segments.map(segment => () => Number(segment.widthBasis) / 100)" :color="segments.map(segment => segment.color)" orientation="horizontal" :bar-width="44" :rounded-corners="false" /></VisXYContainer></ChartContainer>
       <UButton v-for="(segment, index) in segments" :key="segment.key" type="button" color="neutral" variant="ghost" class="traffic-usage-bar__segment" :class="{ 'traffic-usage-bar__segment--selected': selectedKey === segment.key, 'traffic-usage-bar__segment--first': index === 0, 'traffic-usage-bar__segment--last': index === segments.length - 1 }" :style="{ left: Number(segment.startBytes * scale / totalForBar) / 100 + '%', width: Number(segment.widthBasis) / 100 + '%' }" :aria-label="segment.ariaLabel" :aria-pressed="selectedKey === segment.key" @click.stop="toggleSelection(segment.key)" @focus="hoveredKey = segment.key" @blur="clearHover" />
     </div>
     <TrafficUsageBarDetails v-if="activeSegment" :key="activeSegment.key" :segment="activeSegment" />
@@ -173,6 +162,7 @@ function clearSelection(): void { selectedKey.value = null; hoveredKey.value = n
 <style scoped>
 .traffic-usage-bar { --traffic-node-1: var(--accent); --traffic-node-2: var(--accent-strong); --traffic-node-3: var(--success); --traffic-node-4: var(--warning); --traffic-node-5: var(--text-muted); --traffic-node-other: var(--line-strong); margin-top: 0.75rem; }
 .traffic-usage-bar__track { position: relative; display: flex; min-height: 44px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-raised); isolation: isolate; }
+.traffic-usage-bar__unovis { position: absolute; inset: 0; pointer-events: none; }
 .traffic-usage-bar__visual { display: block; min-width: 0; height: 100%; min-height: 44px; opacity: 0.82; }
 .traffic-usage-bar__segment { position: absolute; inset-block: 0; z-index: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
 .traffic-usage-bar__segment--first { border-start-start-radius: inherit; border-end-start-radius: inherit; }

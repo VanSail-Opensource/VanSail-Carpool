@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"math"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 // buyPAYGTx has no network work. Traffic reconciliation permits debt; an
@@ -15,12 +16,16 @@ func buyPAYGTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, blocks int
 	if blocks <= 0 {
 		return nil
 	}
-	if a.UnitPriceMinor <= 0 || blocks > math.MaxInt64/a.UnitPriceMinor || blocks > (math.MaxInt64-a.PurchasedBytes)/xnode.PAYGGB || blocks > (math.MaxInt64-a.CreditBytes)/xnode.PAYGGB {
+	public, unit, err := paygPricingTx(ctx, tx, a.UserID, a.GroupID, a.UnitPriceMinor, blocks, a.ProxyUserID, a.PurchasedBytes/xnode.PAYGGB, now)
+	if err != nil {
+		return err
+	}
+	a.UnitPriceMinor = public
+	if unit <= 0 || blocks > math.MaxInt64/unit || blocks > (math.MaxInt64-a.PurchasedBytes)/xnode.PAYGGB || blocks > (math.MaxInt64-a.CreditBytes)/xnode.PAYGGB {
 		return xnode.ErrInvalid
 	}
-	cost := blocks * a.UnitPriceMinor
+	cost := blocks * unit
 	var balance int64
-	var err error
 	if debt {
 		balance, err = adjustBalanceTx(ctx, tx, a.UserID, -cost, now)
 	} else {
@@ -34,7 +39,7 @@ func buyPAYGTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, blocks int
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_charges(ledger_id,proxy_user_id,first_block,blocks,unit_price_minor) VALUES(?,?,?,?,?)`, ledger, a.ProxyUserID, first, blocks, a.UnitPriceMinor); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_charges(ledger_id,proxy_user_id,first_block,blocks,unit_price_minor) VALUES(?,?,?,?,?)`, ledger, a.ProxyUserID, first, blocks, unit); err != nil {
 		return err
 	}
 	a.PurchasedBytes += blocks * xnode.PAYGGB

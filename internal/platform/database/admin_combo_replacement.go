@@ -59,7 +59,7 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_traffic_limit_bytes=NULL,
 		entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=?,
-		reward_renewal_price_minor=NULL,reward_rollover_min_remaining_bps=NULL,reward_traffic_renewal=1,
+		reward_renewal_price_minor=NULL,reward_traffic_renewal=1,
 		reward_renewal_traffic_limit_bytes=NULL,updated_at=?
 		WHERE id=? AND user_id=? AND status IN ('activating','active')`, input.ComboID, string(addons), stamp(now), purchase.ID, input.UserID)
 	if err != nil {

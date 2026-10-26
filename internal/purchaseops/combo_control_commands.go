@@ -2,9 +2,10 @@ package purchaseops
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"strconv"
 	"strings"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // SwitchSquad commits an owner-scoped preference with atomic last-squad validation.
@@ -40,7 +41,7 @@ func (s *Service) EarlyActivation(ctx context.Context, userID, queuedID string) 
 	return EarlyActivationQuote{CurrentID: active.ID, QueuedID: queued.ID, Eligible: !conflict, CurrentValidUntil: active.ValidUntil, NewValidFrom: now, NewValidUntil: now.Add(queued.ValidUntil.Sub(queued.ValidFrom))}, err
 }
 
-// ActivateEarly forfeits the current term without a refund or new rollover credit.
+// ActivateEarly forfeits the current term without a refund.
 func (s *Service) ActivateEarly(ctx context.Context, userID, currentID, queuedID, confirmation, key string) (model.OperationReceipt, error) {
 	confirmation = strings.TrimSpace(confirmation)
 	if confirmation != "ACTIVATE NEXT COMBO" && confirmation != "启用下一套餐" {

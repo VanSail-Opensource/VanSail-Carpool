@@ -2,12 +2,13 @@ package httpapi
 
 import (
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func (s *Server) purchaseQuote(w http.ResponseWriter, r *http.Request) {
@@ -28,8 +29,8 @@ func (s *Server) purchaseQuote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := http.StatusConflict
 		code := "QUOTE_FAILED"
-		if errors.Is(err, catalog.ErrAutoRenewalEnabled) {
-			code = "AUTO_RENEW_ENABLED"
+		if errors.Is(err, database.ErrPricingDecisionPending) || errors.Is(err, database.ErrPricingComputePending) {
+			code = "PRICING_DECISION_PENDING"
 		}
 		if errors.Is(err, catalog.ErrNoAccessibleNodes) {
 			code = "NO_ACCESSIBLE_NODES"

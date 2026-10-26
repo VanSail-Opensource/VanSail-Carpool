@@ -56,7 +56,7 @@ func TestRenewalsUseCurrentOptionalSquadPrices(t *testing.T) {
 					if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 						t.Fatal(err)
 					}
-					recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 1_000, 0)
+
 					successor, err := store.CommitAutoRenewal(ctx, source.ID, source.ValidUntil)
 					if err != nil {
 						t.Fatal(err)

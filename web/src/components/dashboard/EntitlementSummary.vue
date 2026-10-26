@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { useRouter } from 'vue-router'
 
 import type { Purchase } from '@/api/types'
 import { api } from '@/api/client'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import RolloverFlipCard from './RolloverFlipCard.vue'
+import PersonalPredictions from './PersonalPredictions.vue'
+import ForecastFlipCard from './ForecastFlipCard.vue'
 import PurchaseActions from './PurchaseActions.vue'
 import { formatDate } from '@/utils/format'
 import { localizedError } from '@/i18n'
@@ -24,7 +24,6 @@ const validity = usePurchaseValidity(() => [props.active, props.queued].filter(i
 const currentActive = computed(() => validity.current(props.active) ? props.active : null)
 const currentQueued = computed(() => [props.queued, props.active].find(item => item && validity.status(item) === 'queued'))
 
-const router = useRouter()
 const queuedCancelOpen = shallowRef(false)
 const queuedCancelBusy = shallowRef(false)
 const queuedCancelError = shallowRef<string | null>(null)
@@ -50,9 +49,6 @@ async function cancelQueued(): Promise<void> {
   }
 }
 
-function goToCatalog(): void {
-  void router.push('/catalog')
-}
 
 </script>
 
@@ -64,7 +60,7 @@ function goToCatalog(): void {
     </div>
 
     <div v-if="currentActive || currentQueued" class="home-ride__content">
-      <RolloverFlipCard v-if="currentActive" :active="currentActive" :squad-names="squadNames" />
+      <ForecastFlipCard v-if="currentActive" :active="currentActive" :squad-names="squadNames" />
       <div v-if="currentQueued" class="home-ride__queued">
         <div class="home-ride__queued-content">
           <span>
@@ -86,21 +82,7 @@ function goToCatalog(): void {
       <PurchaseActions v-if="currentActive" :purchase="currentActive" @changed="emit('autoRenewalChanged')" />
     </div>
 
-    <div v-else class="empty-inline">
-      <div>
-        <h3>{{ $t('dashboard.noActiveCombo') }}</h3>
-        <p>{{ $t('dashboard.choosePlan') }}</p>
-      </div>
-      <UButton
-        class="home-ride__catalog"
-        color="neutral"
-        variant="outline"
-        trailing-icon="i-ph-arrow-right"
-        :label="$t('catalog.viewCombos')"
-        data-haptic="navigate"
-        @click="goToCatalog"
-      />
-    </div>
+    <PersonalPredictions v-else />
   </section>
   <ConfirmDialog
     v-model:open="queuedCancelOpen"

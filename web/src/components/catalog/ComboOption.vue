@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LivePrice from '@/components/common/LivePrice.vue'
 import { AnimatePresence, motion } from 'motion-v'
 
 import type { Combo, Money } from '@/api/types'
@@ -53,10 +54,9 @@ function selectCombo(): void {
     <span class="combo-option__metrics">
       <span><UIcon name="i-ph-gauge" />{{ trafficTerm() }}</span>
       <span><UIcon name="i-ph-stack" />{{ $t('catalog.includedSquadCount', { count: combo.includedSquads.length }) }}</span>
-      <span><UIcon name="i-ph-chart-line-up" />{{ $t('catalog.rolloverThreshold', { threshold: (combo.rolloverMinRemainingBps / 100).toFixed(2) }) }}</span>
     </span>
     <span class="combo-option__price">
-      <strong>{{ formatMemberMoney(displayPrice ?? combo.price) }}</strong>
+      <strong>{{ formatMemberMoney(displayPrice ?? combo.price) }}</strong><LivePrice :decision="combo.pricingDecision" />
       <small>{{ $t('catalog.perDays', { count: combo.validityDays }) }}</small>
     </span>
   </UButton>

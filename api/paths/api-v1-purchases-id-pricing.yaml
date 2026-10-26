@@ -1,0 +1,81 @@
+{
+  "get": {
+    "tags": [
+      "Pricing"
+    ],
+    "operationId": "getOwnedPricingRenewalInfo",
+    "summary": "getOwnedPricingRenewalTerms",
+    "responses": {
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "200": {
+        "description": "Pricing result. Fixed products and binding financial terms remain authoritative.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "contract": {
+                  "oneOf": [
+                    {
+                      "$ref": "../openapi.yaml#/components/schemas/PricingContract"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quote": {
+                  "oneOf": [
+                    {
+                      "$ref": "../openapi.yaml#/components/schemas/PricingRenewalQuote"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "policy": {
+                  "$ref": "../openapi.yaml#/components/schemas/PricingPolicy"
+                },
+                "graceSeconds": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "contract",
+                "quote",
+                "policy",
+                "graceSeconds"
+              ]
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Current policy version, quote eligibility or resource safety prevents this operation."
+      },
+      "404": {
+        "description": "Pricing resource does not exist."
+      }
+    },
+    "parameters": [
+      {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ]
+  }
+}

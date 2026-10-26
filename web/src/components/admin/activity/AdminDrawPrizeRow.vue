@@ -138,12 +138,6 @@ function patch(field: keyof PrizeDraft, value: unknown): void {
             @update:model-value="patch('trafficLimitGiB', String($event))"
           />
         </UFormField>
-        <UFormField :label="t('adminDrawRedesign.rollover')" required>
-          <UInput
-            :model-value="prize.rollover" class="w-full" inputmode="decimal"
-            @update:model-value="patch('rollover', String($event))"
-          />
-        </UFormField>
       </template>
       <UFormField v-if="prize.kind === 'traffic_grant'" :label="t('adminDrawRedesign.includeRenewal')">
         <USwitch :model-value="prize.includeInRenewal" @update:model-value="patch('includeInRenewal', Boolean($event))" />

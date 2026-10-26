@@ -12,7 +12,6 @@ import type {
   Purchase,
   PurchaseQuote,
   AutoRenewal,
-  RolloverProjection,
   Session,
   SquadProduct,
   SquadProductWrite,
@@ -115,7 +114,6 @@ export const api = {
   cancelQueuedPurchase: (purchaseId: string) => request<Purchase>(`/api/v1/purchases/${encodeURIComponent(purchaseId)}/cancel`, {
     method: 'POST',
   }),
-  getPurchaseRollover: (purchaseId: string) => request<RolloverProjection>(`/api/v1/purchases/${encodeURIComponent(purchaseId)}/rollover`),
   getAutoRenewal: (purchaseId: string) => request<AutoRenewal>(`/api/v1/purchases/${encodeURIComponent(purchaseId)}/auto-renewal`),
   setAutoRenewal: (purchaseId: string, enabled: boolean) => request<AutoRenewal>(`/api/v1/purchases/${encodeURIComponent(purchaseId)}/auto-renewal`, {
     method: 'PUT', body: { enabled } satisfies AutoRenewalUpdate,

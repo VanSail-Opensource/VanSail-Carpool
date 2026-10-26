@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LivePrice from '@/components/common/LivePrice.vue'
 import type { PAYGSquad } from '@/api/payg'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
@@ -13,7 +14,7 @@ const { t } = useI18n()
 <template>
   <SquadPricingCard class="payg-squad" :squad="item.squad" :selected="false" :included="false" :featured="false" informational>
     <PAYGStatusDot :status="item.status" />
-    <template #price><div class="payg-squad__price"><strong>{{ formatMemberMoney(item.squad.paygPrice ?? item.squad.price) }}</strong><small>{{ t('payg.perGB') }}</small></div></template>
+    <template #price><div class="payg-squad__price"><strong>{{ formatMemberMoney(item.squad.paygPrice ?? item.squad.price) }}</strong><small>{{ t('payg.perGB') }}</small><LivePrice :decision="item.squad.pricingDecision" /></div></template>
     <footer class="payg-squad__footer">
       <div class="payg-squad__usage">
         <span><UIcon name="i-ph-arrows-down-up" aria-hidden="true" /><span class="sr-only">{{ t('payg.traffic') }} </span>{{ formatBytes(item.trafficBytes) }}</span>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LivePrice from '@/components/common/LivePrice.vue'
 import { computed } from 'vue'
 
 import type { SquadProduct } from '@/api/types'
@@ -88,7 +89,7 @@ function toggle(): void {
         </template>
       </SquadProfileSummary>
       <div v-if="!included" class="squad-card__price">
-        <slot name="price"><strong>{{ formatMemberMoney(squad.price) }}</strong></slot>
+        <slot name="price"><strong>{{ formatMemberMoney(squad.price) }}</strong><LivePrice :decision="squad.pricingDecision" /></slot>
       </div>
     </div>
 

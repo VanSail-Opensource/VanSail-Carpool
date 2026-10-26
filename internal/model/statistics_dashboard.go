@@ -26,12 +26,11 @@ type NodeTrafficSeries struct {
 
 // RemoteStatistics is the 30-minute Proxy aggregate partition.
 type RemoteStatistics struct {
-	WeeklyUserIncrease       int64               `json:"weeklyUserIncrease"`
-	MonthlyAverageUsageBPS   int                 `json:"-"`
-	MonthlyAverageUsage      float64             `json:"monthlyAverageUsagePercent"`
-	PredictedAverageRollover Money               `json:"predictedAverageRollover"`
-	TrafficDates             []string            `json:"trafficDates"`
-	TrafficSeries            []NodeTrafficSeries `json:"trafficSeries"`
+	WeeklyUserIncrease     int64               `json:"weeklyUserIncrease"`
+	MonthlyAverageUsageBPS int                 `json:"-"`
+	MonthlyAverageUsage    float64             `json:"monthlyAverageUsagePercent"`
+	TrafficDates           []string            `json:"trafficDates"`
+	TrafficSeries          []NodeTrafficSeries `json:"trafficSeries"`
 }
 
 // StatisticsUsageMember joins the current local entitlement to its upstream identity.

@@ -58,8 +58,8 @@ describe('catalog squad selection', () => {
       addons: [alpha, beta],
       nodes: [],
       combos: [
-        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [alpha], active: true, rolloverMinRemainingBps: 0, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
-        { id: 'combo-b', name: 'B', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [beta], active: true, rolloverMinRemainingBps: 0, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
+        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [alpha], active: true, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
+        { id: 'combo-b', name: 'B', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [beta], active: true, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
       ],
     } satisfies Catalog
     getCatalog.mockResolvedValue(catalog)
@@ -86,7 +86,7 @@ describe('catalog squad selection', () => {
       addons: [full],
       nodes: [],
       combos: [
-        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, rolloverMinRemainingBps: 0, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
+        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
       ],
     } satisfies Catalog
     getCatalog.mockResolvedValue(catalog)
@@ -108,7 +108,7 @@ describe('catalog squad selection', () => {
       addons: [addon],
       nodes: [],
       combos: [
-        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, rolloverMinRemainingBps: 0, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
+        { id: 'combo-a', name: 'A', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '1', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, createdAt: '2026-08-08T00:00:00Z', updatedAt: '2026-08-08T00:00:00Z' },
       ],
     } satisfies Catalog
     getCatalog.mockResolvedValue(catalog)

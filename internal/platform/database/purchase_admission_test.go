@@ -26,11 +26,9 @@ func TestAutomaticRenewalAdmissionEndsAtExactExpiry(t *testing.T) {
 	}
 	input := PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "manual-successor"}
 	before := source.ValidUntil.Add(-time.Nanosecond)
-	if _, err := store.QuotePurchase(ctx, input, before); !errors.Is(err, ErrAutoRenewalEnabled) {
-		t.Fatal("quote bypassed enabled current term", err)
-	}
-	if _, err := store.CreatePurchase(ctx, input, before); !errors.Is(err, ErrAutoRenewalEnabled) {
-		t.Fatal("transaction bypassed enabled current term", err)
+	q, err := store.QuotePurchase(ctx, input, before)
+	if err != nil || q.PricingDecision == nil || q.RenewalDecision == nil {
+		t.Fatal("terminal decisions should allow queued checkout", q, err)
 	}
 	if enabled, err := store.HasEnabledAutoRenewal(ctx, user.ID, source.ValidUntil); err != nil || enabled {
 		t.Fatal("expired source still blocked checkout", enabled, err)
@@ -39,7 +37,7 @@ func TestAutomaticRenewalAdmissionEndsAtExactExpiry(t *testing.T) {
 	if err != nil {
 		t.Fatal("manual purchase after expiry", err)
 	}
-	recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 1000, 0)
+
 	if _, err := store.CommitAutoRenewal(ctx, source.ID, source.ValidUntil); !errors.Is(err, ErrConflict) {
 		t.Fatal("late automatic renewal duplicated the manual successor", err)
 	}

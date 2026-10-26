@@ -1,124 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { motion } from 'motion-v'
-
 import type { StatisticsSnapshot } from '@/api/types'
-import { motionDurations } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import StatisticsChartDetail from './StatisticsChartDetail.vue'
-import { statisticsColors, formatShortStatisticDate, formatStatisticBytes, formatStatisticPercent, safeStatisticBytes, sumStatisticBytes } from './statisticsFormat'
-import { useStatisticsChartSelection } from './useStatisticsChartSelection'
-import { useStatisticsTrafficScrub } from './useStatisticsTrafficScrub'
-
+import LineChart from '@/components/charts/LineChart.vue'
+import { useI18n } from '@/i18n'
+import { formatBytes } from '@/utils/format'
+import { statisticsColors } from './statisticsFormat'
 const props = defineProps<{ remote: StatisticsSnapshot['remote'] }>()
-
-const legend = computed(() => props.remote.trafficSeries.map((series, index) => ({
-  id: series.uuid,
-  name: series.name,
-  color: statisticsColors[index % statisticsColors.length],
-  total: sumStatisticBytes(series.dailyBytes),
-})))
-
-const days = computed(() => {
-  const raw = props.remote.trafficDates.map((date, dayIndex) => {
-    const segments = props.remote.trafficSeries.map((series, seriesIndex) => ({
-      id: series.uuid,
-      interactionId: `${date}:${series.uuid}`,
-      name: series.name,
-      date,
-      color: statisticsColors[seriesIndex % statisticsColors.length],
-      value: safeStatisticBytes(series.dailyBytes[dayIndex] ?? '0'),
-    })).filter((segment) => segment.value > 0n)
-    return { date, segments, total: segments.reduce((sum, segment) => sum + segment.value, 0n) }
-  })
-  const maximum = raw.reduce((current, day) => day.total > current ? day.total : current, 0n)
-  return raw.map((day) => ({
-    ...day,
-    height: maximum === 0n ? 0 : Math.max(5, Number(day.total * 100n / maximum)),
-    segments: day.segments.map((segment) => ({
-      ...segment,
-      share: day.total === 0n ? 0 : Number(segment.value * 10_000n / day.total) / 100,
-    })),
-  }))
-})
-const hasTraffic = computed(() => days.value.some((day) => day.total > 0n))
-const trafficSegments = computed(() => days.value.flatMap((day) => day.segments))
-const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(trafficSegments)
-const { isScrubbing, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, onClick } = useStatisticsTrafficScrub({ activate, deactivate, select })
-const { reducedMotion } = useMotionPreferences()
+const { t } = useI18n()
+const config = computed(() => Object.fromEntries(props.remote.trafficSeries.map((series,index) => [`s${index}`, { label: series.name, color: statisticsColors[index % statisticsColors.length]! }])))
+const data = computed(() => props.remote.trafficDates.map((date,index) => ({ x: index, label: date, ...Object.fromEntries(props.remote.trafficSeries.map((series,i) => [`s${i}`, Number(series.dailyBytes[index] ?? '0')])) })))
+const hasTraffic = computed(() => props.remote.trafficSeries.some(series => series.dailyBytes.some(value => BigInt(value) > 0n)))
 </script>
-
-<template>
-  <section class="statistics-section">
-    <div class="statistics-section__heading"><h2>{{ $t('statistics.sevenDayTraffic') }}</h2></div>
-    <article v-if="hasTraffic" class="statistics-panel statistics-traffic">
-      <p id="statistics-traffic-touch-hint" class="statistics-traffic__touch-hint">{{ $t('statistics.trafficTouchHint') }}</p>
-      <div
-        ref="trafficPlot"
-        class="statistics-traffic__plot"
-        :class="{ 'statistics-traffic__plot--scrubbing': isScrubbing }"
-        role="group"
-        :aria-label="$t('statistics.trafficChartLabel')"
-        aria-describedby="statistics-traffic-touch-hint"
-        @pointerdown="onPointerDown"
-        @pointermove="onPointerMove"
-        @pointerup="onPointerUp"
-        @pointercancel="onPointerCancel"
-        @lostpointercapture="onPointerCancel"
-        @touchstart="onTouchStart"
-        @touchmove="onTouchMove"
-        @touchend="onTouchEnd"
-        @touchcancel="onTouchCancel"
-        @click.capture="onClick"
-      >
-        <div v-for="day in days" :key="day.date" class="statistics-traffic__day" data-statistics-traffic-day>
-          <div class="statistics-traffic__track">
-            <motion.div
-              class="statistics-traffic__stack"
-              :initial="false"
-              :animate="{ height: `${day.height}%` }"
-              :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }"
-            >
-              <UTooltip v-for="segment in day.segments" :key="segment.id" :content="{ side: 'top' }">
-                <span
-                  class="statistics-traffic__segment"
-                  :class="['statistics-chart-segment', { 'statistics-chart-segment--muted': hasActive && !isActive(segment.interactionId) }]"
-                  :style="{ backgroundColor: segment.color, flexBasis: `${segment.share}%` }"
-                  :aria-label="$t('statistics.trafficPoint', { node: segment.name, date: day.date, value: formatStatisticBytes(segment.value) })"
-                  :aria-pressed="isSelected(segment.interactionId)"
-                  role="button"
-                  tabindex="0"
-                  :data-statistics-traffic-id="segment.interactionId"
-                  @pointerenter="activate(segment.interactionId)"
-                  @pointerleave="deactivate(segment.interactionId)"
-                  @focus="activate(segment.interactionId)"
-                  @blur="deactivate(segment.interactionId)"
-                  @keydown.enter.prevent="select(segment.interactionId)"
-                  @keydown.space.prevent="select(segment.interactionId)"
-                />
-                <template #content>
-                  <div class="statistics-chart-tooltip"><strong>{{ segment.name }}</strong><span>{{ day.date }}</span><span>{{ formatStatisticBytes(segment.value) }}</span></div>
-                </template>
-              </UTooltip>
-            </motion.div>
-          </div>
-          <span>{{ formatShortStatisticDate(day.date) }}</span>
-        </div>
-      </div>
-      <StatisticsChartDetail
-        v-if="activeItem"
-        :color="activeItem.color"
-        :label="$t('statistics.chartSeries', { series: activeItem.name, segment: activeItem.date })"
-        :value="$t('statistics.chartPointValue', { value: formatStatisticBytes(activeItem.value), percent: formatStatisticPercent(activeItem.share) })"
-      />
-      <ul class="statistics-traffic__legend">
-        <li v-for="series in legend" :key="series.id">
-          <span class="statistics-legend__swatch" :style="{ backgroundColor: series.color }" />
-          <UTooltip :text="series.name"><span>{{ series.name }}</span></UTooltip>
-          <strong>{{ formatStatisticBytes(series.total) }}</strong>
-        </li>
-      </ul>
-    </article>
-    <div v-else class="statistics-empty statistics-empty--panel"><UIcon name="i-ph-chart-line" aria-hidden="true" /><span>{{ $t('statistics.noTraffic') }}</span></div>
-  </section>
-</template>
+<template><section class="statistics-section"><div class="statistics-section__heading"><h2>{{ t('statistics.sevenDayTraffic') }}</h2></div><article v-if="hasTraffic" class="statistics-panel"><LineChart :data="data" :config="config" :label="t('statistics.trafficChartLabel')" :format-value="formatBytes" :format-x="(x: number) => Number.isInteger(x) ? data[x]?.label.slice(5) || '' : ''" bar stacked /></article><div v-else class="statistics-empty statistics-empty--panel">{{ t('statistics.noTraffic') }}</div></section></template>

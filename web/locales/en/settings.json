@@ -7,7 +7,7 @@
       "activateTitle": "Activate queued combo early",
       "activate": "Activate",
       "activateHint": "Start your next combo and give up the remaining current access.",
-      "forfeitWarning": "Remaining time and traffic will be lost. No refund or rollover credit will be issued.",
+      "forfeitWarning": "Remaining time and traffic will be lost. No refund will be issued.",
       "forfeitUntil": "Current access ends early instead of {date}.",
       "newPeriod": "New period: {start} to {end}.",
       "confirmation": "ACTIVATE NEXT COMBO",

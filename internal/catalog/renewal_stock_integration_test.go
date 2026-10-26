@@ -70,14 +70,6 @@ func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 	if err := store.EnqueueDueEntitlementTransitions(ctx, source.ValidUntil); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.MarkRolloverProcessing(ctx, source.ID, source.ValidUntil); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.RecordRolloverCalculation(ctx, source.ID, model.RolloverUsageSummary{
-		AllocatedBytes: 1_000, UsedBytes: 1_000, AlgorithmVersion: "cadence-v3",
-	}, source.ValidUntil); err != nil {
-		t.Fatal(err)
-	}
 	if err := service.ProcessDueAutoRenewals(ctx, source.ValidUntil); err != nil {
 		t.Fatal(err)
 	}

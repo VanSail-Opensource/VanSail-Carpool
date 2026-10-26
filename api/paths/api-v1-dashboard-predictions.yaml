@@ -1,0 +1,32 @@
+{
+  "get": {
+    "tags": [
+      "Dashboard"
+    ],
+    "operationId": "getPersonalForecast",
+    "summary": "getPersonalForecast",
+    "description": "Two completed UTC accounting days and five complete future days. Empirical intervals, observed coverage and original-vintage calibration are distinct. Missing observations remain null.",
+    "parameters": [],
+    "responses": {
+      "200": {
+        "description": "Owner-specific analytical projection.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/PersonalForecast"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "404": {
+        "$ref": "../openapi.yaml#/components/responses/NotFound"
+      }
+    }
+  }
+}

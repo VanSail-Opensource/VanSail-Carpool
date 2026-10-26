@@ -26,6 +26,7 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
  LEFT JOIN xnode_identities i ON i.user_id=u.id
  LEFT JOIN xnode_periods a ON a.id=i.current_period_id
  WHERE u.onboarding_state='complete' AND (i.proxy_user_id IS NULL OR
+ i.credentials_cipher='' OR i.subscription_cipher='' OR COALESCE(LENGTH(i.subscription_hash),0)<>32 OR
  (p.id IS NOT NULL AND (a.id IS NULL OR a.purchase_id<>p.id OR a.status<>'open')
  AND i.access_disabled=0
  AND NOT EXISTS(SELECT 1 FROM admin_temporary_bans b WHERE b.user_id=u.id AND b.restored_at IS NULL)))

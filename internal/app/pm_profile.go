@@ -76,9 +76,5 @@ func (r pmProfileReader) PMProfileFacts(ctx context.Context, userID string) (tel
 			facts.AllocatedBytes, facts.UsedBytes = &allocated, &used
 		}
 	}
-	projection, projectionErr := r.catalog.RolloverProjection(ctx, user, purchase.ID)
-	if projectionErr == nil {
-		facts.Rollover = &projection
-	}
 	return facts, nil
 }

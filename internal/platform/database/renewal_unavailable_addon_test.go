@@ -31,7 +31,7 @@ func TestRenewalSelectionExcludesUnavailableAddons(t *testing.T) {
 				if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 					t.Fatalf("SetAutoRenewal(on): %v", err)
 				}
-				recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 1_000, 0)
+
 				purchase, renewErr := store.CommitAutoRenewalExcludingAddons(ctx, source.ID, []string{addon.ID}, source.ValidUntil)
 				if renewErr != nil {
 					t.Fatal(renewErr)

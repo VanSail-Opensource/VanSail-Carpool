@@ -1,0 +1,24 @@
+{
+  "predictions": {
+    "title": "您的用量预测",
+    "open": "查看用量预测",
+    "back": "返回当前套餐",
+    "period": "过去 2 个完整日 · 未来 5 个完整日 · UTC",
+    "actual": "实际用量",
+    "predicted": "预测用量",
+    "interval": "预测区间",
+    "intervalValue": "{value}% 名义区间",
+    "coverage": "已观测历史",
+    "coverageValue": "节点日覆盖率 {value}% · {days} 天",
+    "calibration": "校准",
+    "unvalidated": "尚未验证",
+    "calibrated": "{samples} 个已评估日的覆盖率为 {value}%",
+    "freshness": "计算时间",
+    "confidenceHint": "阴影表示预计用量的波动范围。历史覆盖率和实测校准是独立指标，不构成保证。空缺表示缺少观测数据。",
+    "pending": "正在计算新的预测。",
+    "stale": "这些预测需要刷新。",
+    "noHistory": "完整历史数据不足，暂时无法预测。",
+    "loadFailed": "无法加载预测。",
+    "validated": "已验证"
+  }
+}

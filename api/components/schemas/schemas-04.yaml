@@ -104,7 +104,6 @@ LedgerKind:
     - questionnaire_reward
     - emby_setup_debit
     - emby_setup_refund
-    - rollover_credit
     - payg_gb
 
 LedgerEntry:

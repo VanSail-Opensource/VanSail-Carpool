@@ -18,16 +18,12 @@ Member catalog responses project `autoRenewalBlockedUntil` without restricting
 browsing. Quotes and checkout share the store's exact current-term check, which
 ends at expiry and applies equally to administrators using member commerce.
 
-`rollover_native_test.go` verifies that projections use purchase-owned native accounting without a legacy account. Projection and settlement share `rollover.PurchaseSnapshot` and retain existing eligibility and financial calculations.
 
 This package builds the live catalog, validates purchase selections against current X-Node squads, and serves member purchase and dashboard workflows.
 
 - `service.go` defines repository/provider contracts and coordinates quotes, purchases, process-local dashboard caching, and subscription revocation without durable bearer storage.
 - `catalog.go` hydrates sparse local merchandising and typed squad profiles with live X-Node squad identities and one read-only node snapshot.
-- `automatic_renewal.go` owns member toggle/status projections, catalog blocking, calculated-rollover settlement, one-successor commits, failure notices, and the global policy for whether rollover counts toward the required renewal balance. It keeps provider access behind the existing queued adapter boundary.
-- `automatic_renewal_selection.go` removes paid squads unavailable from the live provider before automatic renewal is repriced and atomically settled against its calculated rollover, forwarding the global rollover-balance policy into the transactional store.
 - `automatic_renewal_test.go` covers catalog blocking and enablement eligibility without running provider calls.
-- `automatic_renewal_policy_test.go` covers the default, enabled, disabled, invalid, and unavailable global rollover-balance policy values.
 - `renewals.go` retains the internal legacy batch implementation only; manual renewal is no longer a public member flow.
 - `renewal_catalog.go` hydrates owned renewal selections independently of storefront visibility while verifying every retained squad against the queued live provider.
 - Automatic renewal hydrates the store plan's effective combo, including persisted full-squad overrides from draw rewards, instead of reloading the base combo's default squads. Missing awarded squads and disabled nodes still block renewal; the base combo must remain active.
@@ -45,11 +41,9 @@ This package builds the live catalog, validates purchase selections against curr
 - `node_selection.go` normalizes combo and add-on squad selection for quote node unioning.
 - `catalog_node_groups_test.go`, `nodes_test.go`, `node_projection_test.go`, and `node_selection_test.go` verify grouping, filtering, deterministic ordering, node/selection deduplication, quote reuse, and provider failure handling.
 - `usage.go` validates a member-selected UTC range and projects live, bounded per-node traffic through the optional queued provider reader.
-- `rollover.go` validates the active purchase owner and composes the fresh aggregate rollover projection through the optional queued usage-snapshot reader; it never stores provider series.
 - `service_test.go` verifies forwarding, validation errors, dashboard freshness, and subscription revocation behavior.
 - `live_catalog_test.go` verifies missing live squads are rejected during catalog hydration and purchase validation.
 - `usage_quote_test.go` verifies bounded node-usage ranges, quote selection validation, and purchase-history forwarding.
-- `rollover_test.go` verifies projection ownership, active-term validation, upstream identity requirements, and queued snapshot ranges.
 - `zero_coverage_test.go` covers queued-purchase cancellation, legacy renewal quote/commit flows, due automatic-renewal processing, and failure reasons.
 
 `subscription.go` authorizes an active local term and disabled-squad preferences before upstream subscription discovery. It rechecks ownership after the queued read, then asks the shared monitor to derive host/squad/home timelines. No user-facing GET creates or changes preferences.
@@ -61,10 +55,11 @@ This package builds the live catalog, validates purchase selections against curr
 
 `squad_additions_native_test.go` covers current native group validation and replay before live catalog reads. Add-ons use live group hydration; charged request keys retain their existing selection fingerprint and do not repeat activation-code checks or debits.
 
-PAYG conversion affects new quotes and future renewals, including custom squad overrides and add-ons. Purchased active/queued squads retain access. The native unified subscription source also supports PAYG-only members, while activeCombo continues to describe an actual combo. Wallet-funded PAYG is never treated as combo quota or rollover usage.
 # Stock display boundary
 
 Member catalog and add-squad displays load stock-enriched products. Dashboard
 labels and renewal mode checks use raw overrides, as do native inventory and
 compilation. Stock display failures cannot stall the node reconciliation loop;
 checkout continues using exact transactional admission.
+
+Automatic-renewal eligibility and preference selection independent of wallet sufficiency: `automatic_renewal.go`, `automatic_renewal_selection.go`.

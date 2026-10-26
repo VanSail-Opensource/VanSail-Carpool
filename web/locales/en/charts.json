@@ -1,0 +1,9 @@
+{
+  "charts": {
+    "previous": "Previous point",
+    "next": "Next point",
+    "inspect": "Touch or use arrow keys to inspect",
+    "lower": "Lower bound",
+    "upper": "Upper bound"
+  }
+}

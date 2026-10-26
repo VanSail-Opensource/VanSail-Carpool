@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { motion } from 'motion-v'
+import { VisDonut, VisSingleContainer } from '@unovis/vue'
+import { Donut } from '@unovis/ts'
+import { ChartContainer } from '@/components/charts'
 
 import type { NamedShare } from '@/api/types'
-import { motionDurations } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import { pieSlices } from './statisticsGeometry'
 import StatisticsChartDetail from './StatisticsChartDetail.vue'
 import { chartSegments, formatStatisticNumber, formatStatisticPercent } from './statisticsFormat'
 import { useStatisticsChartSelection } from './useStatisticsChartSelection'
@@ -20,59 +19,17 @@ const segments = computed(() => chartSegments(props.items).map((segment) => ({
   ...segment,
   interactionId: segment.id,
 })))
-const slices = computed(() => pieSlices(segments.value))
-const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(segments)
-const { reducedMotion } = useMotionPreferences()
+const { activeItem, activate, deactivate, select, isSelected } = useStatisticsChartSelection(segments)
+const donutEvents = { [Donut.selectors.segment]: {
+ pointerenter: (d: { data: { interactionId: string } }) => activate(d.data.interactionId),
+ pointerleave: (d: { data: { interactionId: string } }) => deactivate(d.data.interactionId),
+ click: (d: { data: { interactionId: string } }) => select(d.data.interactionId),
+} }
 </script>
 
 <template>
   <div class="statistics-pie-layout" :class="{ 'statistics-pie-layout--labels': sliceLabels }">
-    <svg
-      v-if="slices.length"
-      class="statistics-pie"
-      viewBox="0 0 200 200"
-      role="group"
-      :aria-label="chartLabel"
-    >
-      <title>{{ chartLabel }}</title>
-      <g>
-        <motion.path
-          v-for="slice in slices"
-          :key="slice.id"
-          class="statistics-chart-segment"
-          :class="{ 'statistics-chart-segment--muted': hasActive && !isActive(slice.interactionId) }"
-          :fill="slice.color"
-          :initial="{ opacity: 0 }"
-          :animate="{ opacity: 1, d: slice.path }"
-          :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, ease: 'easeOut' }"
-          role="button"
-          tabindex="0"
-          :aria-label="$t('statistics.chartSeries', { series: slice.label, segment: $t('statistics.chartPointValue', { value: formatStatisticNumber(slice.value), percent: formatStatisticPercent(slice.percentage) }) })"
-          :aria-pressed="isSelected(slice.interactionId)"
-          @pointerenter="activate(slice.interactionId)"
-          @pointerleave="deactivate(slice.interactionId)"
-          @focus="activate(slice.interactionId)"
-          @blur="deactivate(slice.interactionId)"
-          @click="select(slice.interactionId)"
-          @keydown.enter.prevent="select(slice.interactionId)"
-          @keydown.space.prevent="select(slice.interactionId)"
-        />
-        <template v-if="sliceLabels">
-          <template v-for="slice in slices" :key="`label-${slice.id}`">
-            <path v-if="slice.showLabel" class="statistics-pie__line" :d="slice.labelLine" aria-hidden="true" />
-            <text
-              v-if="slice.showLabel"
-              class="statistics-pie__label"
-              :x="slice.labelX"
-              :y="slice.labelY"
-              :text-anchor="slice.labelAnchor"
-              dominant-baseline="middle"
-              aria-hidden="true"
-            >{{ formatStatisticPercent(slice.percentage) }}</text>
-          </template>
-        </template>
-      </g>
-    </svg>
+    <ChartContainer v-if="segments.length" :config="{}" :aria-label="chartLabel"><VisSingleContainer :data="segments" :height="220" :duration="0"><VisDonut :value="(d: typeof segments[number]) => Number(d.value)" :color="(d: typeof segments[number]) => d.color" :arc-width="0" :events="donutEvents" /></VisSingleContainer></ChartContainer>
     <p v-else class="statistics-empty">{{ $t('statistics.noData') }}</p>
     <ul v-if="segments.length" class="statistics-legend">
       <li

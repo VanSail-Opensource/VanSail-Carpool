@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 const maxPAYGAgentClockOffset = 2 * time.Minute
@@ -50,7 +51,26 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	}
 	now := m.service.now()
 	byID := map[int]PAYGAccount{}
+	admissions := map[string]bool{}
 	for _, a := range accounts {
+		if !a.HasCredit(now) {
+			if admission, ok := r.(interface {
+				PricingPAYGAdmission(context.Context, string, string, time.Time) (bool, error)
+			}); ok {
+				safe, seen := admissions[a.GroupID]
+				if !seen {
+					var e error
+					safe, e = admission.PricingPAYGAdmission(ctx, a.GroupID, a.NodeID, now)
+					if e != nil {
+						return config, e
+					}
+					admissions[a.GroupID] = safe
+				}
+				if !safe {
+					a.Disabled = true
+				}
+			}
+		}
 		byID[int(a.ProxyUserID)] = a
 	}
 	m.mu.RLock()

@@ -44,6 +44,7 @@ function goToBalance(): void {
             <UIcon name="i-ph-receipt" aria-hidden="true" />
           </div>
           <div><span>{{ $t('catalog.optionalSquads') }}</span><strong>{{ squads.map((squad) => squad.name).join($t('home.squadSeparator')) }}</strong></div>
+          <div v-if="quote?.discount"><span>{{ $t('home.autoRenewalDiscount') }}</span><strong><DualCurrencyMoney :money="quote.discount" /></strong></div>
           <div v-if="quote"><span>{{ $t('home.squadAddition.validUntil') }}</span><strong>{{ formatDate(quote.expiresAt) }}</strong></div>
         </div>
         <aside class="squad-addition-checkout__aside" :aria-label="$t('home.squadAddition.proratedTotal')">

@@ -24,10 +24,7 @@ func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 	if err != nil || user.OnboardingState != "complete" {
 		return err
 	}
-	identity, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
-	if isMissing(err) {
-		identity, err = s.EnsureIdentity(ctx, user)
-	}
+	identity, err := s.EnsureIdentity(ctx, user)
 	if err != nil {
 		return err
 	}

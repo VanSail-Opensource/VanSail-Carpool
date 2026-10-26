@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -20,7 +21,7 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 			excluded[id] = struct{}{}
 		}
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,COALESCE(o.price_txb_minor,0)
+	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,CASE WHEN EXISTS(SELECT 1 FROM pricing_contracts c WHERE c.purchase_id=a.purchase_id) THEN a.charged_txb_minor ELSE COALESCE(o.price_txb_minor,0) END
 		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
 		WHERE a.purchase_id=? AND COALESCE(o.billing_mode,'combo')='combo' ORDER BY a.group_id`, purchaseID)
 	if err != nil {
@@ -40,5 +41,27 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 		}
 		addons = append(addons, addon)
 	}
-	return addons, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	contract, err := pricingContractTx(ctx, tx, purchaseID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	if err == nil {
+		accepted := map[string]int64{}
+		for _, term := range contract.Addons {
+			accepted[term.ID] = term.Price
+		}
+		for i := range addons {
+			if price, ok := accepted[addons[i].GroupID]; ok {
+				addons[i].PriceTXBMinor = price
+				addons[i].Price = model.TXBMoney(price)
+			}
+		}
+	}
+	return addons, nil
 }

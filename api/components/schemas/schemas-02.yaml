@@ -99,6 +99,7 @@ SquadProduct:
     - createdAt
     - updatedAt
   properties:
+    pricingDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     paygState:
       type: string
       enum: [normal, hidden, unavailable]
@@ -159,10 +160,10 @@ Combo:
     - resetStrategy
     - active
     - includedSquads
-    - rolloverMinRemainingBps
     - createdAt
     - updatedAt
   properties:
+    pricingDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
     whitelistIpQuota: {type: integer, minimum: 0, maximum: 1000}
     id:
@@ -188,11 +189,6 @@ Combo:
         $ref: '../../openapi.yaml#/components/schemas/SquadProduct'
     active:
       type: boolean
-    rolloverMinRemainingBps:
-      type: integer
-      minimum: 0
-      maximum: 10000
-      description: Remaining traffic must be strictly greater than this basis-point threshold.
     createdAt:
       $ref: '../../openapi.yaml#/components/schemas/Timestamp'
     updatedAt:
@@ -249,7 +245,6 @@ ComboWrite:
     - trafficLimitBytes
     - resetStrategy
     - active
-    - rolloverMinRemainingBps
   properties:
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
     whitelistIpQuota: {type: integer, minimum: 0, maximum: 1000}
@@ -285,11 +280,6 @@ ComboWrite:
         $ref: '../../openapi.yaml#/components/schemas/ID'
     active:
       type: boolean
-    rolloverMinRemainingBps:
-      type: integer
-      minimum: 0
-      maximum: 10000
-
 SquadProductWrite:
   type: object
   additionalProperties: false

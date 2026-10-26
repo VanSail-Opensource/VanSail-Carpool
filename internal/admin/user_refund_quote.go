@@ -4,22 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"strconv"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 // ErrRefundUsageUnavailable prevents a fabricated refund suggestion on outages.
 var ErrRefundUsageUnavailable = errors.New("refund traffic usage is unavailable")
 
 type refundUsageSource interface {
-	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (rollover.UsageSnapshot, error)
+	UsageSnapshot(context.Context, string, time.Time, time.Time) (usageaccounting.UsageSnapshot, error)
 }
 
 type purchaseRefundUsageSource interface {
-	PurchaseUsageSnapshotForRollover(context.Context, model.User, model.Purchase, time.Time) (rollover.UsageSnapshot, error)
+	PurchaseUsageSnapshot(context.Context, model.User, model.Purchase, time.Time) (usageaccounting.UsageSnapshot, error)
 }
 
 // EntitlementRefundQuote is an editable suggestion, not a settlement command.
@@ -62,7 +63,7 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 	if p.TrafficLimitBytes <= 0 || !p.ValidUntil.After(p.ValidFrom) || p.PriceTXBMinor < 0 || !validResetStrategy(p.ResetStrategy) {
 		return unavailableRefundQuote(quote, "REFUND_ALLOCATION_UNAVAILABLE"), nil
 	}
-	snapshot := rollover.UsageSnapshot{LimitBytes: p.TrafficLimitBytes, Strategy: p.ResetStrategy}
+	snapshot := usageaccounting.UsageSnapshot{LimitBytes: p.TrafficLimitBytes, Strategy: p.ResetStrategy}
 	if p.Status != "queued" && !now.Before(p.ValidFrom) {
 		if s.refundPurchaseUsage == nil && (user.ProxyUserID == nil || s.refundUsage == nil) {
 			return unavailableRefundQuote(quote, "REFUND_USAGE_UNAVAILABLE"), nil
@@ -72,9 +73,9 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 			asOf = p.ValidUntil
 		}
 		if s.refundPurchaseUsage != nil {
-			snapshot, err = s.refundPurchaseUsage.PurchaseUsageSnapshotForRollover(ctx, user, p, asOf)
+			snapshot, err = s.refundPurchaseUsage.PurchaseUsageSnapshot(ctx, user, p, asOf)
 		} else {
-			snapshot, err = s.refundUsage.UsageSnapshotForRollover(ctx, *user.ProxyUserID, p.ValidFrom, asOf)
+			snapshot, err = s.refundUsage.UsageSnapshot(ctx, *user.ProxyUserID, p.ValidFrom, asOf)
 		}
 		if err != nil {
 			return quote, fmt.Errorf("%w: %w", ErrRefundUsageUnavailable, err)
@@ -88,7 +89,7 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 			snapshot.LastResetAt = nil
 		}
 	}
-	allocated := rollover.CalculateUsage(p, 0, snapshot).AllocatedBytes
+	allocated := usageaccounting.CalculateUsage(p, snapshot).AllocatedBytes
 	if allocated <= 0 {
 		return unavailableRefundQuote(quote, "REFUND_ALLOCATION_UNAVAILABLE"), nil
 	}
@@ -97,7 +98,7 @@ func (s *UserWorkflows) RefundEntitlementQuote(ctx context.Context, userID, purc
 	if used < allocated {
 		remaining = allocated - used
 	}
-	refund := model.TXBMoney(rollover.CreditMinor(p.PriceTXBMinor, remaining, allocated))
+	refund := model.TXBMoney(usageaccounting.RefundMinor(p.PriceTXBMinor, remaining, allocated))
 	allocatedText, usedText := strconv.FormatInt(allocated, 10), strconv.FormatInt(used, 10)
 	quote.AllocatedTrafficBytes, quote.UsedTrafficBytes, quote.SuggestedRefund = &allocatedText, &usedText, &refund
 	return quote, nil

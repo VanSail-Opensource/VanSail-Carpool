@@ -36,18 +36,17 @@ type luckyDrawPrizePreview struct {
 }
 
 type activityRewardResponse struct {
-	Kind                    activity.RewardKind `json:"kind"`
-	TXBDeltaMinor           string              `json:"txbDeltaMinor,omitempty"`
-	CouponID                string              `json:"couponId,omitempty"`
-	ExtensionDays           int                 `json:"extensionDays,omitempty"`
-	ResolvedValue           *int64              `json:"resolvedValue,omitempty"`
-	ComboID                 string              `json:"comboId,omitempty"`
-	SquadUUIDs              []string            `json:"squadUuids,omitempty"`
-	RenewalPriceMinor       int64               `json:"renewalPriceMinor,omitempty"`
-	TrafficLimitBytes       int64               `json:"trafficLimitBytes,omitempty"`
-	RolloverMinRemainingBPS int                 `json:"rolloverMinRemainingBps,omitempty"`
-	IncludeInRenewal        bool                `json:"includeInRenewal,omitempty"`
-	DiscountMode            string              `json:"discountMode,omitempty"`
+	Kind              activity.RewardKind `json:"kind"`
+	TXBDeltaMinor     string              `json:"txbDeltaMinor,omitempty"`
+	CouponID          string              `json:"couponId,omitempty"`
+	ExtensionDays     int                 `json:"extensionDays,omitempty"`
+	ResolvedValue     *int64              `json:"resolvedValue,omitempty"`
+	ComboID           string              `json:"comboId,omitempty"`
+	SquadUUIDs        []string            `json:"squadUuids,omitempty"`
+	RenewalPriceMinor int64               `json:"renewalPriceMinor,omitempty"`
+	TrafficLimitBytes int64               `json:"trafficLimitBytes,omitempty"`
+	IncludeInRenewal  bool                `json:"includeInRenewal,omitempty"`
+	DiscountMode      string              `json:"discountMode,omitempty"`
 }
 
 type activityResultResponse struct {
@@ -97,7 +96,7 @@ func mapActivityReward(reward activity.Reward) activityRewardResponse {
 	result := activityRewardResponse{Kind: reward.Kind, CouponID: reward.CouponID, ExtensionDays: reward.ExtensionDays,
 		ResolvedValue: reward.ResolvedValue, ComboID: reward.ComboID, SquadUUIDs: reward.SquadUUIDs,
 		RenewalPriceMinor: reward.RenewalPriceMinor, TrafficLimitBytes: reward.TrafficLimitBytes,
-		RolloverMinRemainingBPS: reward.RolloverMinRemainingBPS, IncludeInRenewal: reward.IncludeInRenewal, DiscountMode: reward.DiscountMode}
+		IncludeInRenewal: reward.IncludeInRenewal, DiscountMode: reward.DiscountMode}
 	if reward.Kind == activity.RewardTXBDelta {
 		value := reward.TXBDeltaMinor
 		if reward.ResolvedValue != nil {

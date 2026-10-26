@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -23,6 +25,7 @@ func (s *Store) AutoRenewalPlanExcludingAddons(ctx context.Context, userID, purc
 }
 
 func (s *Store) retryAttempt_autoRenewalPlan(ctx context.Context, userID, purchaseID string, excludedAddonIDs []string, now time.Time) (AutoRenewalPlan, error) {
+	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("begin automatic renewal quote: %w", err)
@@ -43,13 +46,13 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	} else {
 		plan.NextCycleEndsAt = plan.ScheduledAt
 	}
-	var trafficLimit, renewalPrice, rolloverBPS, renewalTraffic sql.NullInt64
+	var trafficLimit, renewalPrice, renewalTraffic sql.NullInt64
 	var resetStrategy, squadUUIDs sql.NullString
 	var trafficRenewal int
 	if err = tx.QueryRowContext(ctx, `SELECT entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,
-		reward_renewal_price_minor,reward_rollover_min_remaining_bps,reward_traffic_renewal,
+		reward_renewal_price_minor,reward_traffic_renewal,
 		reward_renewal_traffic_limit_bytes FROM purchases WHERE id=?`, purchaseID).Scan(
-		&trafficLimit, &resetStrategy, &squadUUIDs, &renewalPrice, &rolloverBPS, &trafficRenewal, &renewalTraffic); err != nil {
+		&trafficLimit, &resetStrategy, &squadUUIDs, &renewalPrice, &trafficRenewal, &renewalTraffic); err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("load renewal entitlement overrides: %w", err)
 	}
 	if trafficRenewal == 0 {
@@ -72,20 +75,8 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		value := renewalPrice.Int64
 		plan.rewardRenewalPrice = &value
 	}
-	if rolloverBPS.Valid {
-		value := rolloverBPS.Int64
-		plan.rewardRolloverBPS = &value
-	}
 	if purchase.Status != "active" && purchase.Status != "activating" {
 		if purchase.Status != "expired" {
-			plan.IneligibleReason = AutoRenewalReasonPurchaseUnavailable
-			return plan, nil
-		}
-		var settled int
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchase_rollovers WHERE purchase_id=? AND status IN ('credited','zero'))`, purchaseID).Scan(&settled); err != nil {
-			return AutoRenewalPlan{}, fmt.Errorf("check settled rollover: %w", err)
-		}
-		if settled != 1 {
 			plan.IneligibleReason = AutoRenewalReasonPurchaseUnavailable
 			return plan, nil
 		}
@@ -150,6 +141,19 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	for _, addon := range addons {
 		plan.GrossMinor += addon.PriceTXBMinor
 		addonIDs = append(addonIDs, addon.GroupID)
+	}
+	if plan.rewardRenewalPrice == nil {
+		plan.GrossMinor, err = pricingRenewalGrossTx(ctx, tx, purchaseID, plan.GrossMinor, addons, now)
+		if err != nil {
+			return AutoRenewalPlan{}, err
+		}
+		plan.Combo.PriceTXBMinor = plan.GrossMinor
+		for _, addon := range addons {
+			plan.Combo.PriceTXBMinor -= addon.PriceTXBMinor
+		}
+		if plan.Combo.PriceTXBMinor < 0 {
+			return AutoRenewalPlan{}, ErrConflict
+		}
 	}
 	plan.NetMinor = plan.GrossMinor
 	discount := coupons.Discount{GrossMinor: plan.GrossMinor, NetMinor: plan.GrossMinor}

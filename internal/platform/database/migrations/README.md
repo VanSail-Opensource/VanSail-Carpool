@@ -229,3 +229,11 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 097 adds default-on PAYG access and sparse member/group opt-outs with narrow compile-revision triggers. Existing historical migrations remain unchanged.
 
 `097_payg_preferences.sql` adds the PAYG preference and sparse group opt-outs without changing historical migrations.
+
+- `105_pricing.sql`: Fixed-by-default optional pricing, immutable normalized analytical lineage, system renewal snapshots and notification-only commands; historical migrations stay unchanged.
+
+- `106_retire_rollover.sql`: Cancel unsettled credits without wallet changes and archive settled evidence before operational schema retirement.
+
+- `107_personal_pricing_decisions.sql`: Immutable terminal personalized decisions and funding outcome separation.
+
+- `108_host_name_overrides.sql`: Only authored owner-specific host display preferences.

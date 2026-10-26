@@ -36,6 +36,7 @@ func (lane *inboundLane) offer(message wire.Message) bool {
 type peerReceivers struct {
 	master    *Master
 	peer      *agentPeer
+	compute   *inboundLane
 	control   *inboundLane
 	traffic   *inboundLane
 	logs      *inboundLane
@@ -46,7 +47,7 @@ type peerReceivers struct {
 
 func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 	ctx, cancel := context.WithCancel(peer.ctx)
-	r := &peerReceivers{master: m, peer: peer, control: newInboundLane(64), traffic: newInboundLane(8), logs: newInboundLane(8), telemetry: make(chan wire.Message, 1), cancel: cancel}
+	r := &peerReceivers{master: m, peer: peer, compute: newInboundLane(24), control: newInboundLane(64), traffic: newInboundLane(8), logs: newInboundLane(8), telemetry: make(chan wire.Message, 1), cancel: cancel}
 	start := func(frames <-chan wire.Message, lane *inboundLane) {
 		r.wg.Add(1)
 		go func() {
@@ -69,6 +70,7 @@ func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 			}
 		}()
 	}
+	start(r.compute.frames, r.compute)
 	start(r.control.frames, r.control)
 	start(r.traffic.frames, r.traffic)
 	start(r.logs.frames, r.logs)
@@ -80,6 +82,13 @@ func (r *peerReceivers) stop() { r.cancel(); r.wg.Wait() }
 
 func (r *peerReceivers) offer(message wire.Message) error {
 	switch message.Type {
+	case "compute.claim", "compute.heartbeat", "compute.result", "compute.cancel":
+		if len(message.Data) > 96<<10 {
+			return ErrInvalid
+		}
+		if r.compute.offer(message) {
+			return nil
+		}
 	case "telemetry.report", "telemetry.compact":
 		select {
 		case <-r.telemetry:

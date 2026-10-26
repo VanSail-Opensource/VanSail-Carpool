@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"math"
 	"sort"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 // Balances precede periods in every PAYG transaction, including reports from
@@ -87,6 +89,7 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 }
 
 func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, node string, ids []int64, now time.Time) error {
+	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	if len(ids) == 0 {
 		return nil
 	}
@@ -126,9 +129,42 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 		if a.Disabled || a.HasCredit(now) {
 			continue
 		}
+		// Commit the future block offer before more service is delivered. Historical
+		// traffic reconciliation continues using this accepted account price.
+		price, priceErr := resolvePricingTx(ctx, tx, "payg", a.GroupID, a.UnitPriceMinor, now)
+		if priceErr != nil {
+			var code pricing.Code
+			if errors.As(priceErr, &code) {
+				continue
+			}
+			return priceErr
+		}
+		personal, e := personalPricingTx(ctx, tx, a.UserID, "payg", a.GroupID, price, 1, "", false, now)
+		if e != nil {
+			return e
+		}
+		if personal <= 0 || a.BalanceMinor < personal {
+			continue
+		}
+		a.UnitPriceMinor = price
+		if _, e = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET unit_price_minor=? WHERE proxy_user_id=?`, price, a.ProxyUserID); e != nil {
+			return e
+		}
+		if _, e = tx.ExecContext(ctx, "SAVEPOINT pricing_payg_offer"); e != nil {
+			return e
+		}
 		if e = settlePAYGWindowTx(ctx, tx, &a, now, false, now); errors.Is(e, ErrInsufficientBalance) {
+			if _, e = tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT pricing_payg_offer"); e != nil {
+				return e
+			}
+			if _, e = tx.ExecContext(ctx, "RELEASE SAVEPOINT pricing_payg_offer"); e != nil {
+				return e
+			}
 			continue
 		} else if e != nil {
+			return e
+		}
+		if _, e = tx.ExecContext(ctx, "RELEASE SAVEPOINT pricing_payg_offer"); e != nil {
 			return e
 		}
 	}

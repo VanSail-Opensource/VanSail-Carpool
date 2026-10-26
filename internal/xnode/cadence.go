@@ -3,8 +3,9 @@ package xnode
 import (
 	"context"
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 // ResetCadences advances paid quota periods without charging for scheduled resets.
@@ -33,7 +34,7 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	if !cadenceReady(period, s.now()) {
 		return nil
 	}
-	next := rollover.CadenceAdvance(period.StartedAt, period.Strategy)
+	next := usageaccounting.CadenceAdvance(period.StartedAt, period.Strategy)
 	if next.After(s.now()) {
 		return nil
 	}
@@ -64,12 +65,12 @@ func (s *Service) resetCadence(ctx context.Context, identity Identity) error {
 	if allowed, err := s.cadenceRecoveryAllowed(ctx, current, period); err != nil || !allowed {
 		return err
 	}
-	next = rollover.CadenceAdvance(period.StartedAt, period.Strategy)
+	next = usageaccounting.CadenceAdvance(period.StartedAt, period.Strategy)
 	if err = s.closePeriod(ctx, period, true); err != nil {
 		return err
 	}
-	for !rollover.CadenceAdvance(next, period.Strategy).After(s.now()) {
-		next = rollover.CadenceAdvance(next, period.Strategy)
+	for !usageaccounting.CadenceAdvance(next, period.Strategy).After(s.now()) {
+		next = usageaccounting.CadenceAdvance(next, period.Strategy)
 	}
 	return s.startPeriod(ctx, identity, *purchase, next)
 }

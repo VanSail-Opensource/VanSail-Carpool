@@ -2,81 +2,44 @@ package statistics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
-	"math/big"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
-type usageProjectionStatistics struct {
-	monthlyAverageUsageBPS   int
-	predictedAverageRollover model.Money
-}
+type usageProjectionStatistics struct{ monthlyAverageUsageBPS int }
 
 func (s *Service) usageProjectionStatistics(ctx context.Context, now time.Time) (usageProjectionStatistics, error) {
 	members, err := s.repository.ActiveMemberUsageForStatistics(ctx, now)
 	if err != nil {
-		return usageProjectionStatistics{}, fmt.Errorf("list active members for usage statistics: %w", err)
+		return usageProjectionStatistics{}, fmt.Errorf("list active member usage: %w", err)
 	}
-
-	var usageTotal float64
-	usageCount := 0
-	rolloverTotal := new(big.Int)
-	var rolloverCount int64
+	total := 0.0
+	count := 0
 	for _, member := range members {
-		purchase := member.Purchase
-		start := purchase.ValidFrom.UTC()
 		end := now
-		if end.After(purchase.ValidUntil) {
-			end = purchase.ValidUntil.UTC()
+		if end.After(member.Purchase.ValidUntil) {
+			end = member.Purchase.ValidUntil
 		}
-		if !end.After(start) {
+		if !end.After(member.Purchase.ValidFrom) {
 			continue
 		}
-		snapshot, snapshotErr := s.provider.UsageSnapshotForRollover(ctx, member.RemoteUserID, start, end)
-		if errors.Is(snapshotErr, rollover.ErrRemoteUserMissing) {
+		snapshot, err := s.provider.UsageSnapshot(ctx, member.RemoteUserID, member.Purchase.ValidFrom, end)
+		if err != nil || !snapshot.NodeSeriesAvailable {
 			continue
 		}
-		if snapshotErr != nil {
+		allocated := usageaccounting.CalculateUsage(member.Purchase, snapshot).AllocatedBytes
+		if allocated <= 0 || snapshot.WeightedUsedBytes < 0 {
 			continue
 		}
-		projection := rollover.ProjectUsage(purchase, purchase.RolloverMinRemainingBPS, snapshot, now)
-		if projection.Term == nil || projection.ActualUsedTrafficBytes == nil || projection.Term.AllocatedTrafficBytes <= 0 {
-			continue
-		}
-		ratio := float64(*projection.ActualUsedTrafficBytes) * 10000 / float64(projection.Term.AllocatedTrafficBytes)
-		if ratio < 0 || math.IsNaN(ratio) || math.IsInf(ratio, 0) {
-			continue
-		}
-		usageTotal += ratio
-		usageCount++
-		if !purchase.AutoRenewEnabled {
-			continue
-		}
-		rolloverCount++
-		if projection.PredictedRollover != nil {
-			rolloverTotal.Add(rolloverTotal, big.NewInt(projection.PredictedRollover.MinorInt64()))
-		}
+		total += float64(snapshot.WeightedUsedBytes) * 10000 / float64(allocated)
+		count++
 	}
-	result := usageProjectionStatistics{predictedAverageRollover: model.TXBMoney(roundedAverageMinor(rolloverTotal, rolloverCount))}
-	if usageCount > 0 {
-		result.monthlyAverageUsageBPS = int(math.Round(usageTotal / float64(usageCount)))
+	result := usageProjectionStatistics{}
+	if count > 0 {
+		result.monthlyAverageUsageBPS = int(math.Round(total / float64(count)))
 	}
 	return result, nil
-}
-
-func roundedAverageMinor(total *big.Int, count int64) int64 {
-	if total == nil || total.Sign() <= 0 || count <= 0 {
-		return 0
-	}
-	quotient, remainder := new(big.Int), new(big.Int)
-	quotient.QuoRem(total, big.NewInt(count), remainder)
-	if remainder.Cmp(big.NewInt((count+1)/2)) >= 0 {
-		quotient.Add(quotient, big.NewInt(1))
-	}
-	return quotient.Int64()
 }

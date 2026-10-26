@@ -11,7 +11,6 @@ import { clearCatalogDraft, writeCatalogDraft } from '@/composables/catalogDraft
 import { loadCatalogData } from '@/composables/catalogLoader'
 import { useCatalogQuote } from '@/composables/catalogQuoteState'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { useCatalogAdmission } from './useCatalogAdmission'
 export function useCatalog() {
   const sessionStore = useSessionStore()
   const catalog = shallowRef<Catalog | null>(null)
@@ -26,8 +25,6 @@ export function useCatalog() {
   const selectedCouponGrantId = shallowRef<string | null>(null)
   const couponDiscarding = shallowRef(false)
   const needsBalance = shallowRef(false)
-  const admission = useCatalogAdmission(catalog, load)
-  const autoRenewalBlocked = admission.blocked
   const purchaseIdempotencyKey = shallowRef<string | null>(null)
   const draftRestored = shallowRef(false)
   const latestLoad = createLatestRequest()
@@ -72,10 +69,10 @@ export function useCatalog() {
       couponGrantId: selectedCouponGrantId.value ?? undefined,
     } : null,
     fingerprint: () => purchaseFingerprint.value,
+    onSuccess: () => { error.value = null },
     onError: (caught) => {
-      if (blocksCatalog(caught)) return
       error.value = localizedError(caught, 'errors.quoteFailed')
-      notifyHaptic('error')
+      if (!(caught instanceof ApiError && caught.code === 'PRICING_DECISION_PENDING')) notifyHaptic('error')
     },
   })
   watch(purchaseFingerprint, () => {
@@ -89,7 +86,7 @@ export function useCatalog() {
     return fetchQuote()
   }
   async function load(): Promise<void> {
-    const applied = await loadCatalogData({ loading, error, catalog, balance, couponGrants, draftRestored, selectedComboId, selectedSquadIds, selectedCouponGrantId, userID: () => sessionStore.user?.id, onError: blocksCatalog, latest: latestLoad })
+    const applied = await loadCatalogData({ loading, error, catalog, balance, couponGrants, draftRestored, selectedComboId, selectedSquadIds, selectedCouponGrantId, userID: () => sessionStore.user?.id, latest: latestLoad })
     if (!applied) return
     couponGrants.value = couponGrants.value.filter((grant) => isCouponGrantAvailable(grant))
     if (!eligibleCoupons.value.some((grant) => grant.id === selectedCouponGrantId.value)) selectedCouponGrantId.value = null
@@ -110,11 +107,6 @@ export function useCatalog() {
     if (!eligibleCoupons.value.some((coupon) => coupon.id === selectedCouponGrantId.value)) selectedCouponGrantId.value = null
   }
   function paidAddonIsFull(id: string): boolean { return !includedSquadIds.value.includes(id) && visibleSquads.value.some((squad) => squad.id === id && squad.stockRemaining === 0 && !squad.stockHeldByCurrentUser) }
-  function blocksCatalog(caught: unknown): boolean {
-    if (!(caught instanceof ApiError) || caught.code !== 'AUTO_RENEW_ENABLED') return false
-    admission.reject()
-    return true
-  }
   async function discardCoupon(grantID: string): Promise<boolean> {
     if (couponDiscarding.value || !couponGrants.value.some((grant) => grant.id === grantID)) return false
     couponDiscarding.value = true
@@ -156,7 +148,6 @@ export function useCatalog() {
       await load()
       return true
     } catch (caught) {
-      if (blocksCatalog(caught)) return false
       if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
         needsBalance.value = true
         error.value = t('errors.purchaseBalance')
@@ -177,7 +168,6 @@ export function useCatalog() {
     quoting: readonly(quoting),
     error: readonly(error), purchase: readonly(purchase),
     quote: readonly(quote), quoteUsable,
-    autoRenewalBlocked: readonly(autoRenewalBlocked),
     selectedComboId,
     selectedSquadIds: readonly(selectedSquadIds),
     selectedCouponGrantId,

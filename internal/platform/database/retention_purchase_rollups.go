@@ -15,7 +15,6 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 		SELECT purchase.id FROM purchases purchase
 		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<?
 		AND NOT EXISTS (SELECT 1 FROM xnode_periods period WHERE period.purchase_id=purchase.id)
-		AND NOT EXISTS (SELECT 1 FROM purchase_rollovers rollover WHERE rollover.purchase_id=purchase.id AND rollover.status NOT IN ('credited','zero'))
 		AND NOT EXISTS (SELECT 1 FROM outbox_jobs job WHERE job.status IN ('pending','processing')
 			AND json_extract(job.payload,'$.purchaseId')=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM provider_operation_items item
@@ -44,9 +43,6 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	if err != nil {
 		return fmt.Errorf("preserve purchase tombstones: %w", err)
 	}
-	if err := rollupPurchaseTrafficTx(ctx, tx, now); err != nil {
-		return err
-	}
 	if _, err := tx.ExecContext(ctx, `UPDATE activity_extension_credits SET consumed_by_purchase_id=NULL
 		WHERE consumed_by_purchase_id IN (SELECT id FROM maintenance_purchase_candidates)`); err != nil {
 		return fmt.Errorf("detach consumed extension lineage: %w", err)
@@ -69,26 +65,6 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	counts["purchase_tombstones"] = counts["purchases"]
 	if _, err := tx.ExecContext(ctx, `DROP TABLE maintenance_purchase_candidates`); err != nil {
 		return fmt.Errorf("drop purchase cleanup set: %w", err)
-	}
-	return nil
-}
-
-func rollupPurchaseTrafficTx(ctx context.Context, tx *sql.Tx, now time.Time) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO rollover_member_daily_rollups(local_date,user_id,settlement_count,
-		credited_txb_minor,allocated_traffic_bytes,used_traffic_bytes,updated_at)
-		SELECT substr(rollover.completed_at,1,10),purchase.user_id,COUNT(*),
-			COALESCE(SUM(rollover.credited_txb_minor),0),COALESCE(SUM(rollover.allocated_traffic_bytes),0),
-			COALESCE(SUM(rollover.used_traffic_bytes),0),?
-		FROM purchase_rollovers rollover JOIN purchases purchase ON purchase.id=rollover.purchase_id
-		JOIN maintenance_purchase_candidates candidate ON candidate.id=rollover.purchase_id
-		WHERE rollover.status IN ('credited','zero') AND rollover.completed_at IS NOT NULL
-		GROUP BY substr(rollover.completed_at,1,10),purchase.user_id
-		ON CONFLICT(local_date,user_id) DO UPDATE SET settlement_count=rollover_member_daily_rollups.settlement_count+excluded.settlement_count,
-		credited_txb_minor=rollover_member_daily_rollups.credited_txb_minor+excluded.credited_txb_minor,
-		allocated_traffic_bytes=rollover_member_daily_rollups.allocated_traffic_bytes+excluded.allocated_traffic_bytes,
-		used_traffic_bytes=rollover_member_daily_rollups.used_traffic_bytes+excluded.used_traffic_bytes,updated_at=excluded.updated_at`, stamp(now))
-	if err != nil {
-		return fmt.Errorf("roll up purchase traffic: %w", err)
 	}
 	return nil
 }

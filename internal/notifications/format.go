@@ -136,21 +136,7 @@ func activationFields(copy copySet, facts map[string]string, location *time.Loca
 }
 
 func renewalFields(copy copySet, facts map[string]string, location *time.Location) ([]cardField, error) {
-	used, err := byteRatio(facts, FactUsed, FactAllocated)
-	if err != nil {
-		return nil, err
-	}
-	rollover := copy.values["unavailable"]
-	if facts[FactRolloverStatus] != "unavailable" {
-		rollover, err = money(facts[FactRollover])
-		if err != nil {
-			return nil, err
-		}
-	}
-	fields, err := requiredFields(copy, facts, pair("combo", FactCombo), debitPair("renewalDebit", FactRenewalDebit),
-		literalPair("usedAllocated", used), bytesPair("eligible", FactEligible), literalPair("rollover", rollover),
-		moneyPair("balance", FactBalance), datePair("validUntil", FactValidUntil, location))
-	return fields, err
+	return requiredFields(copy, facts, pair("combo", FactCombo), debitPair("renewalDebit", FactRenewalDebit), moneyPair("balance", FactBalance), datePair("validUntil", FactValidUntil, location))
 }
 
 func trafficFields(copy copySet, facts map[string]string) ([]cardField, error) {

@@ -15,7 +15,6 @@ const combo: Combo = {
   resetStrategy: 'MONTH_ROLLING',
   active: true,
   includedSquads: [],
-  rolloverMinRemainingBps: 0,
   createdAt: '2026-08-07T00:00:00Z',
   updatedAt: '2026-08-07T00:00:00Z',
 }

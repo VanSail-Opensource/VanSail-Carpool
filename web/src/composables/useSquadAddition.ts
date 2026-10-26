@@ -1,6 +1,8 @@
 import { restoreRef } from '@/api/cache/restore'
-import { computed, readonly, shallowRef } from 'vue'
+import { computed, readonly, shallowRef, watch } from 'vue'
 
+import { featuresApi, type CouponGrant } from '@/api/features'
+import { isCouponGrantAvailable } from '@/utils/coupons'
 import { ApiError, api } from '@/api/client'
 import type { Catalog, Purchase, SquadProduct } from '@/api/types'
 import { localizedError, t } from '@/i18n'
@@ -8,11 +10,14 @@ import { createUuid } from '@/utils/browserCompatibility'
 import { notifyHaptic } from '@/utils/telegram'
 
 interface SquadAdditionOptions {
+  comboId?: () => string
   purchaseId: () => string
   activeSquadUuids: () => readonly string[]
 }
 
 export function useSquadAddition(options: SquadAdditionOptions) {
+  const couponGrants = shallowRef<CouponGrant[]>([])
+  const selectedCouponGrantId = shallowRef<string | null>(null)
   const catalog = shallowRef<Catalog | null>(null)
   const selectedSquadIds = shallowRef<string[]>([])
   const quote = shallowRef<import('@/api/types').PurchaseAddonQuote | null>(null)
@@ -30,7 +35,16 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   ))
   const selectedSquads = computed(() => visibleSquads.value.filter((squad) => selectedSquadIds.value.includes(squad.id)))
   const activationSquads = computed(() => selectedSquads.value.filter((squad) => squad.activationRequired))
-  const fingerprint = computed(() => JSON.stringify([...selectedSquadIds.value].sort()))
+  const eligibleCoupons = computed(() => couponGrants.value.filter(grant => {
+    const coupon = grant.coupon
+    return isCouponGrantAvailable(grant) && (coupon.kind === 'purchase_once' || coupon.kind === 'purchase_recurring') && (
+      (!coupon.eligibleComboIds.length && !coupon.eligibleSquadIds.length) ||
+      (options.comboId && coupon.eligibleComboIds.includes(options.comboId())) ||
+      selectedSquads.value.some(squad => coupon.eligibleSquadIds.includes(squad.id) || coupon.eligibleSquadIds.includes(squad.groupId)))
+  }))
+  const fingerprint = computed(() => JSON.stringify([[...selectedSquadIds.value].sort(), selectedCouponGrantId.value]))
+  watch(selectedCouponGrantId, () => { clearQuote(); if (selectedSquadIds.value.length) void refreshQuote() })
+  watch(eligibleCoupons, values => { if (selectedCouponGrantId.value && !values.some(grant => grant.id === selectedCouponGrantId.value)) selectedCouponGrantId.value = null })
   const quoteUsable = computed(() => quote.value !== null && quoteFingerprint.value === fingerprint.value)
 
   function clearQuote(): void {
@@ -39,6 +53,7 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   }
 
   function reset(): void {
+    selectedCouponGrantId.value = null
     selectedSquadIds.value = []
     purchase.value = null
     error.value = null
@@ -64,7 +79,9 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     loading.value = !restoreRef('/api/v1/catalog', catalog)
     error.value = null
     try {
-      catalog.value = await api.getCatalog()
+      const [nextCatalog, wallet] = await Promise.all([api.getCatalog(), featuresApi.getCouponWallet().catch(() => null)])
+      catalog.value = nextCatalog
+      couponGrants.value = wallet?.items || []
       selectedSquadIds.value = selectedSquadIds.value.filter((id) => visibleSquads.value.some((squad) => squad.id === id))
       return true
     } catch (caught) {
@@ -83,7 +100,7 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     error.value = null
     needsBalance.value = false
     try {
-      const response = await api.quotePurchaseAddons(options.purchaseId(), selectedSquadIds.value)
+      const response = await api.quotePurchaseAddons(options.purchaseId(), selectedSquadIds.value, selectedCouponGrantId.value ?? undefined)
       if (selectedFingerprint !== fingerprint.value) return false
       quote.value = response
       quoteFingerprint.value = selectedFingerprint
@@ -104,9 +121,9 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     error.value = null
     needsBalance.value = false
     try {
-      const attemptFingerprint = JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), Object.entries(squadActivationCodes).sort(([a], [b]) => a.localeCompare(b))])
+      const attemptFingerprint = JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), selectedCouponGrantId.value, Object.entries(squadActivationCodes).sort(([a], [b]) => a.localeCompare(b))])
       if (pendingAttempt?.fingerprint !== attemptFingerprint) pendingAttempt = { fingerprint: attemptFingerprint, key: createUuid() }
-      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes)
+      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes, selectedCouponGrantId.value ?? undefined)
       pendingAttempt = undefined
       notifyHaptic('success')
       return true
@@ -125,6 +142,7 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   }
 
   return {
+    couponGrants: readonly(couponGrants), selectedCouponGrantId, eligibleCoupons,
     catalog: readonly(catalog), selectedSquadIds: readonly(selectedSquadIds), quote: readonly(quote), purchase: readonly(purchase),
     loading: readonly(loading), quoting: readonly(quoting), purchasing: readonly(purchasing), needsBalance: readonly(needsBalance), error: readonly(error),
     visibleSquads, selectedSquads, activationSquads, quoteUsable, reset, toggleSquad, load, refreshQuote, confirmPurchase,

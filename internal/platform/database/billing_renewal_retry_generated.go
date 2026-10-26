@@ -24,12 +24,3 @@ func (s *Store) RenewalQuoteExcludingAddons(ctx context.Context, userID, purchas
 		}
 	}
 }
-
-func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs []string, now time.Time) (model.RenewalBatch, error) {
-	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_renew(ctx, input, excludedAddonIDs, now)
-		if !s.retryTransaction(ctx, r1, retryIndex) {
-			return r0, r1
-		}
-	}
-}

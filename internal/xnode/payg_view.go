@@ -2,11 +2,12 @@ package xnode
 
 import (
 	"context"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"math"
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) {
@@ -34,6 +35,14 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	products, err := r.ListSquadProductOverrides(ctx, false)
 	if err != nil {
 		return out, err
+	}
+	if prices, ok := r.(interface {
+		PricePAYGSquads(context.Context, []model.SquadProduct, time.Time) ([]model.SquadProduct, error)
+	}); ok {
+		products, err = prices.PricePAYGSquads(ctx, products, s.now().UTC())
+		if err != nil {
+			return out, err
+		}
 	}
 	groups, err := s.repo.XNodeGroups(ctx)
 	if err != nil {
@@ -81,6 +90,16 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	total := new(big.Int)
 	spent := int64(0)
 	for _, p := range products {
+		if prices, ok := r.(interface {
+			PricingPAYGPersonalPrice(context.Context, string, string, int64, time.Time) (int64, error)
+		}); ok && p.BillingMode == "payg" {
+			p.PAYGPriceTXBMinor, err = prices.PricingPAYGPersonalPrice(ctx, user, p.GroupID, p.PAYGPriceTXBMinor, s.now().UTC())
+			if err != nil {
+				return out, err
+			}
+			money := model.TXBMoney(p.PAYGPriceTXBMinor)
+			p.PAYGPrice = &money
+		}
 		u := byGroup[p.GroupID]
 		if p.BillingMode != "payg" && u.TrafficBytes == 0 && u.SpentMinor == 0 {
 			continue

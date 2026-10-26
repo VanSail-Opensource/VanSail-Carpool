@@ -1,8 +1,6 @@
 # Composables
 
-- `useCatalogAdmission.ts` uses the existing purchase-validity boundary timer to
   refresh renewal admission on expiry/focus; authoritative catalog reloads clear
-  rejected checkout state. `useCatalogAdmission.test.ts` covers release and disposal.
 
 - `usePurchaseValidity.ts` owns a boundary timer and focus/visibility revalidation for member and browser-admin purchase displays. Consumers pass raw purchases and an optional error-handling refresh callback; the returned status/current helpers derive UI validity without changing settlement state. Timers/listeners are disposed with their consumer.
 - `usePurchaseValidity.test.ts` covers offline boundary expiry, focus refresh and timer/listener disposal in hosted CI.
@@ -42,7 +40,6 @@ separate. Action quotes and permission decisions still await the backend.
 - `useCoupons.ts` manages coupon-wallet redemption and server-confirmed grant discards.
 - `useCoupons.test.ts` covers confirmed and failed coupon-wallet discards.
 - `useDashboard.ts` loads dashboard summaries and provides disposal-safe bounded per-node UTC traffic state to its Home descendants.
-- `useRolloverDetail.ts` fetches fresh aggregate rollover details when the active Home ride opens, with cancellation-safe retry/reset state and localized errors.
 - `useEmby.ts` manages Emby setup and preferences.
 - `useImageZoom.ts` owns bounded focal-point pinch, pan, wheel, double-tap, button, interaction, and reset state for image canvases.
 - `useImageZoom.test.ts` covers zoom bounds, reset, and two-finger gesture state.
@@ -89,3 +86,5 @@ separate. Action quotes and permission decisions still await the backend.
 `useMetricSamples.test.ts` guards 300-point bounds, obsolete timestamp rejection, disposal and logout retirement.
 
 `useSquadAddition.test.ts` covers retained request keys after a lost purchase reply. `useSquadAddition.ts` keeps the same key for an unchanged purchase/selection/activation attempt until a confirmed response, using memory only.
+
+- `catalogQuotePending.test.ts`: Hosted regression for pending-price admission and cancelled obsolete retries.

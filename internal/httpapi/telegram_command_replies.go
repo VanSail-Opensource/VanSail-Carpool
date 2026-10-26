@@ -26,7 +26,7 @@ func (s *Server) telegramComboReply(ctx context.Context, user model.User, copy b
 	}
 	purchase := dashboard.ActivePurchase
 	names := s.telegramSquadNames(ctx, purchase.SquadUUIDs)
-	return botcommands.FormatCombo(copy, purchase, names, s.telegramRolloverState(ctx, user, *purchase, formatMoney))
+	return botcommands.FormatCombo(copy, purchase, names)
 }
 
 func (s *Server) telegramSquadNames(ctx context.Context, squadUUIDs []string) []string {
@@ -52,34 +52,6 @@ func (s *Server) telegramSquadNames(ctx context.Context, squadUUIDs []string) []
 		}
 	}
 	return result
-}
-
-func (s *Server) telegramRolloverState(ctx context.Context, user model.User, purchase model.Purchase, formatMoney func(model.Money) model.Money) botcommands.RolloverSummary {
-	if !purchase.AutoRenewEnabled {
-		return botcommands.RolloverSummary{State: botcommands.RolloverDisabled}
-	}
-	projection, err := s.deps.Catalog.RolloverProjection(ctx, user, purchase.ID)
-	if err != nil {
-		return botcommands.RolloverSummary{State: botcommands.RolloverUnavailable}
-	}
-	if projection.WarningCode != nil {
-		if *projection.WarningCode == "AUTO_RENEWAL_DISABLED" {
-			return botcommands.RolloverSummary{State: botcommands.RolloverDisabled}
-		}
-		return botcommands.RolloverSummary{State: botcommands.RolloverUnavailable}
-	}
-	if projection.PredictedRollover == nil {
-		return botcommands.RolloverSummary{State: botcommands.RolloverIneligible}
-	}
-	minor, err := strconv.ParseInt(projection.PredictedRollover.Minor, 10, 64)
-	if err != nil {
-		return botcommands.RolloverSummary{State: botcommands.RolloverUnavailable}
-	}
-	if minor > 0 {
-		amount := formatMoney(*projection.PredictedRollover)
-		return botcommands.RolloverSummary{State: botcommands.RolloverPredicted, Amount: &amount}
-	}
-	return botcommands.RolloverSummary{State: botcommands.RolloverIneligible}
 }
 
 func (s *Server) telegramDisplayFormatter(ctx context.Context, user model.User) func(model.Money) model.Money {

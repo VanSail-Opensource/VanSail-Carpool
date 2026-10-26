@@ -5,6 +5,7 @@ import (
 )
 
 func (s *Server) mountAdmin(router chi.Router) {
+	s.mountPricing(router)
 	router.Get("/statistics", s.statisticsSnapshot)
 	router.Get("/statistics/nodes", s.statisticsNodes)
 	router.Get("/api-tokens", s.adminAPITokens)

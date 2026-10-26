@@ -1,0 +1,12 @@
+{
+  "hostNames": {
+    "edit": "Edit {name}",
+    "title": "Host name",
+    "hint": "Use {placeholder} for the current rate. Leave empty to restore the published name.",
+    "name": "Name",
+    "preview": "Preview: {name}",
+    "saveFailed": "The host name could not be saved.",
+    "customRoute": "Custom route",
+    "splitXhttp": "Split XHTTP"
+  }
+}

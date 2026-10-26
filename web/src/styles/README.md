@@ -18,7 +18,6 @@
 - `home-01.css` styles the wrapping balance/action row, paired Home language/currency controls, 44px Home actions, narrow-phone subscription layout, Nuxt UI usage-progress detail, and traffic surfaces.
 - `home-02.css` styles traffic details, ride facts, and Around TX links on Home.
 - `home-03.css` styles the compact renewal term slider and separated quote total/date block.
-- `home-04.css` styles the accessible Your ride rollover flip card, its concise current-term detail, size-safe face swap, and reduced-motion fallback.
 - `home-05.css` keeps Home's card stream and alerts in the same single-column order on phones and desktop, with shrinkable grid tracks for long ride names.
 - `connections-01.css` styles the connections page heading, node/IP rows, empty states, and selected connection confirmation detail.
 - `connections-02.css` styles the stable connection scan visualization, progress presentation, tablet split layout, and reduced-motion fallback.
@@ -57,3 +56,5 @@ perpetual loaders, skeletons, radar, and particles.
 ## Admin layout
 
 - `admin-08.css` owns the shared admin row geometry and final responsive heading/card refinements. It is imported after the earlier admin and responsive layers so section-specific row variants can correct their actual content tracks.
+
+Active Combo flip-card layout and its prediction reverse: `home-04.css`.

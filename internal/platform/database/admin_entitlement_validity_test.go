@@ -33,8 +33,13 @@ func TestAdminEntitlementFiltersUseDisplayValidityWithoutSettling(t *testing.T) 
 				tc.raw, stamp(tc.from), stamp(tc.until), purchase.ID); err != nil {
 				t.Fatal(err)
 			}
-			seedPendingRewardRollover(t, store, purchase.ID, now)
+
 			before := adminWorkflowBalance(t, store, user.ID)
+			defer func() {
+				if adminWorkflowBalance(t, store, user.ID) != before {
+					t.Error("display changed balance")
+				}
+			}()
 			for _, filter := range []string{"active", "activating", "queued", "expired", "cancelled", "failed"} {
 				items, _, err := store.listAdminPurchasesPageAt(ctx, "", purchase.ID, filter, 25, now)
 				if err != nil {
@@ -47,10 +52,6 @@ func TestAdminEntitlementFiltersUseDisplayValidityWithoutSettling(t *testing.T) 
 					t.Fatalf("raw status changed: %+v", items[0])
 				}
 			}
-			rollover, err := store.RolloverByPurchase(ctx, purchase.ID)
-			if err != nil || rollover.Status != "pending" || before != adminWorkflowBalance(t, store, user.ID) {
-				t.Fatalf("display read modified settlement: %+v, %v", rollover, err)
-			}
 		})
 	}
 }
@@ -61,7 +62,7 @@ func TestAdminValidityReadsPreservePendingPredecessorAndPaidSuccessor(t *testing
 	now := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
 	combo := saveTestCombo(t, store, "successor-validity", 100, 30)
 	user, predecessor := createAdminWorkflowPurchase(t, store, 82_100, combo, now.AddDate(0, 0, -31))
-	seedPendingRewardRollover(t, store, predecessor.ID, now)
+
 	successor, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "paid-successor"}, now)
 	if err != nil {
 		t.Fatal(err)
@@ -78,9 +79,5 @@ func TestAdminValidityReadsPreservePendingPredecessorAndPaidSuccessor(t *testing
 	old, err := store.PurchaseByID(ctx, predecessor.ID)
 	if err != nil || old.Status != "active" {
 		t.Fatalf("pending predecessor was rewritten: %+v, %v", old, err)
-	}
-	rollover, err := store.RolloverByPurchase(ctx, predecessor.ID)
-	if err != nil || rollover.Status != "pending" {
-		t.Fatalf("pending settlement was changed: %+v, %v", rollover, err)
 	}
 }

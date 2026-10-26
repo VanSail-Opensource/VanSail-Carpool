@@ -17,6 +17,7 @@ func normalizeAndFingerprintPurchaseAddons(input *PurchaseAddonInput) (string, e
 	}
 	input.UserID = strings.TrimSpace(input.UserID)
 	input.PurchaseID = strings.TrimSpace(input.PurchaseID)
+	input.CouponGrantID = strings.TrimSpace(input.CouponGrantID)
 	input.IdempotencyKey = strings.TrimSpace(input.IdempotencyKey)
 	if input.UserID == "" || input.PurchaseID == "" || input.IdempotencyKey == "" || len(input.IdempotencyKey) > 128 {
 		return "", errors.New("purchase, user, and idempotency key are required")
@@ -41,11 +42,12 @@ func normalizeAndFingerprintPurchaseAddons(input *PurchaseAddonInput) (string, e
 		activationIDs = append(activationIDs, strings.TrimSpace(squadID))
 	}
 	payload, err := json.Marshal(struct {
+		CouponGrantID string   `json:"couponGrantId,omitempty"`
 		Version       int      `json:"version"`
 		PurchaseID    string   `json:"purchaseId"`
 		AddonSquadIDs []string `json:"addonSquadIds"`
 		ActivationIDs []string `json:"activationIds"`
-	}{Version: 1, PurchaseID: input.PurchaseID, AddonSquadIDs: input.AddonSquadIDs, ActivationIDs: uniqueSorted(activationIDs)})
+	}{CouponGrantID: input.CouponGrantID, Version: 1, PurchaseID: input.PurchaseID, AddonSquadIDs: input.AddonSquadIDs, ActivationIDs: uniqueSorted(activationIDs)})
 	if err != nil {
 		return "", fmt.Errorf("encode purchase add-on fingerprint: %w", err)
 	}

@@ -45,8 +45,6 @@ export type Purchase = DeepReadonly<components['schemas']['Purchase']>
 export type PurchaseAddonQuote = DeepReadonly<components['schemas']['PurchaseAddonQuote']>
 export type AutoRenewal = DeepReadonly<components['schemas']['AutoRenewal']>
 export type AutoRenewalFailure = DeepReadonly<components['schemas']['AutoRenewalFailure']>
-export type RolloverWindow = DeepReadonly<components['schemas']['RolloverWindow']>
-export type RolloverProjection = DeepReadonly<components['schemas']['RolloverProjection']>
 export interface PurchaseQuote {
   comboId: string
   comboName: string

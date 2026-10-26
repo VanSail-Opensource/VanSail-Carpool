@@ -67,7 +67,6 @@ supplies reference-only repositories/senders. `worker_delivery_test.go` covers
 execution-time moderation, success replay and definitive topic recovery;
 `worker_recovery_test.go` covers ambiguous phases, safe rate-limit retries and
 wrong-thread repair rejection. `profile_card_test.go` covers onboarding hiding,
-optional coupon details, traffic, rollover, and the browser deep link. No local
 automated suites are required or run.
 
 ## Administrator attribution and pending content

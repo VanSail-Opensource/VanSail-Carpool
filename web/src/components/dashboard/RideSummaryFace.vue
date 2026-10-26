@@ -9,7 +9,7 @@ const props = defineProps<{
   active: Purchase
   squadNames?: readonly string[]
 }>()
-const emit = defineEmits<{ openRollover: [] }>()
+const emit = defineEmits<{ openPredictions: [] }>()
 
 const { t } = useI18n()
 const resetLabel = computed(() => t(`home.reset.${props.active.resetStrategy}`))
@@ -30,9 +30,9 @@ const resetLabel = computed(() => t(`home.reset.${props.active.resetStrategy}`))
         color="neutral"
         variant="ghost"
         icon="i-ph-arrows-clockwise"
-        :aria-label="$t('home.rolloverOpen')"
+        :aria-label="$t('predictions.open')"
         data-haptic="open"
-        @click="emit('openRollover')"
+        @click="emit('openPredictions')"
       />
     </div>
     <dl class="home-ride__metrics">
@@ -49,7 +49,7 @@ const resetLabel = computed(() => t(`home.reset.${props.active.resetStrategy}`))
         <dd>{{ formatDate(active.validUntil) }}</dd>
       </div>
     </dl>
-    <span class="home-ride__flip-hint">{{ $t('home.rolloverOpen') }}</span>
+    <span class="home-ride__flip-hint">{{ $t('predictions.open') }}</span>
   </div>
 </template>
 

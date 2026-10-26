@@ -13,7 +13,6 @@ const snapshot: StatisticsSnapshot = {
   remote: {
     weeklyUserIncrease: 0,
     monthlyAverageUsagePercent: 0,
-    predictedAverageRollover: zeroMoney,
     trafficDates: [],
     trafficSeries: [],
   },

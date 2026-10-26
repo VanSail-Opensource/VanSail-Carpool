@@ -109,4 +109,12 @@ func TestDIYRepairsPAYGInventoryWithPositiveSubGBBalance(t *testing.T) {
 	if err != nil || len(exported) != 3 || exported[2].ID != "split:payg-split" || exported[2].PrincipalID != proxies[0].PrincipalID {
 		t.Fatal("PAYG split lost owner credentials during export", exported, err)
 	}
+	if !exported[2].SplitXHTTP {
+		t.Fatal("split metadata missing")
+	}
+	savedName, err := f.service.SaveOwnedHostName(ctx, f.user.ID, exported[2].ID, "Split {price}")
+	if err != nil || savedName.Name != "Split 1.00 TXB/GB" {
+		t.Fatal("PAYG label", savedName, err)
+	}
+
 }

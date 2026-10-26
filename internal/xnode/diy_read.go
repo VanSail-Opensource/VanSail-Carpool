@@ -69,7 +69,7 @@ func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
 // transit peers, monitoring identities and connectivity probes use untuned data.
 func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies []subscription.Proxy) ([]subscription.Proxy, error) {
 	if user == "" {
-		return proxies, nil
+		return s.presentHosts(ctx, user, proxies)
 	}
 	var err error
 	proxies, err = s.visiblePAYGExports(ctx, proxies)
@@ -77,7 +77,7 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 		return nil, err
 	}
 	if _, ok := s.repo.(diyRepository); !ok {
-		return proxies, nil
+		return s.presentHosts(ctx, user, proxies)
 	}
 	_, settings, err := s.readDIYSettings(ctx, user)
 	if err != nil {
@@ -91,5 +91,9 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 	for index := range result {
 		result[index].Tuning = &overrides
 	}
-	return appendSplitProxies(settings.SplitProfiles, result), nil
+	result, err = s.annotateHostRoutes(ctx, user, result)
+	if err != nil {
+		return nil, err
+	}
+	return s.presentHosts(ctx, user, appendSplitProxies(settings.SplitProfiles, result))
 }

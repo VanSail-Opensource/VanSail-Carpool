@@ -36,7 +36,7 @@ function purchase(id: string, from: string, until: string): Purchase {
   return { id, comboId: id, comboName: id === 'current' ? 'Standard' : 'Weekend', price: money, grossPrice: money,
     couponDiscount: { currency: 'TXB', minor: '0', display: '0.00 TXB' }, couponGrantId: null, validFrom: from, validUntil: until,
     status: 'active', autoRenewEnabled: false, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING',
-    squadUuids: squads.map(s => s.uuid), rolloverMinRemainingBps: 8500, createdAt: at(-5 * day), updatedAt: at(0) }
+    squadUuids: squads.map(s => s.uuid), createdAt: at(-5 * day), updatedAt: at(0) }
 }
 const active = purchase('current', at(-5 * day), at(25 * day))
 const queued = { ...purchase('queued', at(25 * day), at(32 * day)), status: 'queued' as const }

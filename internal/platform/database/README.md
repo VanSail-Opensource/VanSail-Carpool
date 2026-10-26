@@ -215,7 +215,6 @@ paths that would otherwise share a truncated URI filename, including subtest pat
 Native traffic aggregation streams indexed node/day groups with checked integer
 sums. Backup-gated native retention prunes only expired access and superseded
 acknowledged rate boundaries; native purchase/refund evidence and unsettled
-rollovers remain protected. See [accounting retention](../../../docs/modules/native-accounting-retention.md).
 
 `xnode_*.go` implements authoritative node/profile/group/endpoint configuration,
 encrypted identity references, periods and immutable
@@ -260,10 +259,8 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `activity_draw_replay_security_test.go` covers cross-draw conflicts, member isolation, reserved keys, and unchanged balances/randomness on replay.
 - `activity_draw_list.go` lists member-safe instant draws and admin definitions; `activity_draw_reservations.go` reconciles active raffle loss holds when reward ranges change.
 - `activity_reward_apply.go` applies resolved balance, coupon, purchase, traffic, and squad effects and queues provider synchronization.
-- `activity_reward_combo.go` applies core-change prizes while retaining existing custom squads, renewal price, current/renewal traffic and rollover terms, including a zero-price custom renewal. Ordinary core changes adopt the target defaults. Pending rollover metadata is refreshed in the same transaction; provider synchronization stays in the existing outbox path.
 - `activity_reward_combo_test.go` covers reward ordering and traffic lifetimes. `activity_reward_combo_migration_test.go` covers restoration, ambiguity exclusions, audit/sync deduplication and unchanged member balances/renewal switches. `CUSTOM_COMBO_RECOVERY.md` documents the repair boundaries and deployment checks.
 - `activity_reward_combo_order_test.go` verifies that recovery leaves later custom awards untouched, including same-time settlements, zero-price awards and multiple custom prizes. An older core change cannot justify recovering a newer custom award whose overrides are missing.
-- `activity_reward_ordered_recovery_test.go` and `activity_reward_recovery_fixture_test.go` exercise migration 055 with real raffle settlement/ticket ordering and reconstructed legacy states, including multiple custom prizes, temporary/recurring traffic, missing links, pending rollovers and preservation of newer awards.
 - `activity_reward_cadence_test.go` and `activity_reward_cadence_migration_test.go` cover cadence snapshots, legacy inheritance, ordinary core defaults, later custom awards and migration 056 recovery across automatic-renewal ancestry. Custom cadence uses the existing purchase override and is synchronized through the normal outbox.
 - `activity_reward_traffic.go` tracks current-term and renewal traffic separately so recurring rewards cannot preserve temporary gains or losses. Eligibility and settlement reject deductions that would exhaust either allowance. `activity_reward_traffic_test.go` covers mixed reward ordering and renewal coverage.
 - `activity_raffle_entries.go` sells deduplicated seats; `activity_raffle_settle.go` refunds expired eligibility or assigns fixed stock atomically and accepts retries after a refund reopened the raffle.
@@ -290,7 +287,6 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `outbox_jobs_part2.go` continues the focused implementation from its original package module.
 - `questionnaire_queries_part2.go` continues the focused implementation from its original package module.
 - `questionnaires_part2.go` continues the focused implementation from its original package module.
-- `rollover_part2.go` continues the focused implementation from its original package module.
 - `statistics_part2.go` continues the focused implementation from its original package module.
 - `store_part2.go` continues the focused implementation from its original package module.
 
@@ -307,7 +303,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 ## Production files
 
 - `billing_purchase_addon_fingerprint.go`, `billing_purchase_addon_quote.go`, and `billing_purchase_addons.go` validate, price, replay-protect, debit, record, and queue active-term squad additions in one transaction.
-- `billing_purchase_addons_test.go` covers rounding/caps, replay-safe debits, rollover and renewal totals, queued blocking, and full-squad owner selection.
   repair, and atomic full refunds plus username restart on identity conflict.
   preserved account facts, and the localized conflict receipt.
 
@@ -333,9 +328,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `renewal_stock_price_test.go` covers current recurring-discount quotes and debits while an existing member retains a seat in a squad closed to new sales.
 - `squad_stock_retention_test.go` covers held reservations after stock-limit reductions, new-member rejection, and seat release after expiry or cancellation.
 - `automatic_renewal_plan.go`, `automatic_renewal_coupon.go`, `automatic_renewal_state.go`, and `automatic_renewal_commit.go` — automatic-renewal current pricing, attached-coupon policy, owner state/failure records, and atomic one-successor debits.
-- Renewal plans project persisted full-squad overrides into `Combo.IncludedSquads` for live validation. Custom reward prices, traffic and rollover settings remain on the purchase and carry into successors; the base combo supplies renewal cadence. Existing awards need no data migration.
-- `automatic_renewal_rollover.go` settles a calculated rollover and automatic renewal in one transaction, including a caller-supplied policy for whether rollover counts toward sufficient funds, insufficient-funds expiry, and explicit later re-enable handling.
-- `automatic_renewal_rollover_test.go` covers atomic rollover-funded renewal and the policy path that excludes rollover from the required balance.
 - `billing_purchase_helpers.go` — distinct-member stock checks that retain existing seats, purchase fingerprints, catalog row loaders, and balance debit helpers.
 - `billing_ledger.go` — balances, audited adjustments, deductions, and ledger reads.
 - `ledger_page.go` — stable cursor-based ledger pagination.
@@ -363,9 +355,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `affiliate_config_test.go` covers immutable version increments and stale-write conflicts.
 - `notification_events.go` owns semantic event deduplication and atomic outbox
   release, including provider-completion timestamps; `notification_scans.go` owns 48-hour and reset-period eligibility.
-- `notification_purchases.go` snapshots expiration, immediate and queued activation, and automatic-renewal rollover outcomes.
 - `notification_new_events.go` and `notification_operation_events.go` snapshot scheduled charges, add-on activation, cancellations, renewal failures, and terminal member operation receipts with stable event keys.
-- `billing_quote.go` owns read-only purchase quoting; `automatic_renewal_calculation.go` owns pure rollover-credit and renewal-funds calculations.
 - `notification_new_events_test.go` and `notification_refund_events_test.go` cover queued charges, terminal-only reset/refund messages, and renewal-failure suppression of generic expiry.
 - `store_catalog_renewal_test.go` and `store_outbox_test.go` keep catalog and outbox regression coverage in focused files.
 - `notification_receipts_test.go` covers activation and payment receipt snapshots.
@@ -447,12 +437,10 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `maintenance_runs.go` acquires the configured local-day maintenance lease, supports forced same-day history rows, and records backup-gated cleanup completion.
 - `administration_records.go` — audit events, administrator user lists, and backup
   run records.
-- `rollover.go`, `rollover_calculation.go`, and `automatic_renewal_rollover.go` persist a calculated rollover before atomically crediting, debiting, expiring, and activating an automatic renewal.
 - `payment_profiles.go` — provider-account profile masking, protected deletion, and encrypted credential persistence.
 - `retention.go` — bounded cleanup of aged operational records.
 - `retention_activity_rollups.go`, `retention_payment_rollups.go`, and
   `retention_purchase_rollups.go` preserve compact activity, payment, purchase,
-  and per-member rollover facts before pruning.
 - `retention_compaction.go` coordinates all backup-gated cleanup writes in one transaction.
 - `retention_native.go` prunes aged native accounting maintenance rows without removing purchase-wide financial evidence or rollback dependencies.
 - `retention_operations.go` fails stale open provider operations after 24 hours, resolves linked local state, and removes processed receipts plus their queue records.
@@ -493,7 +481,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `coupon_features_test.go` — coupon redemption and purchase discounts.
 - `questionnaire_features_test.go` — questionnaire CSV analysis and settlement.
 - `emby_test.go` — Emby setup, provisioning, retry, and refund atomicity.
-- `rollover_test.go` — rollover transitions and calculations.
 - `release1_commerce_migration_test.go` covers rolling-month conversion, immutable pricing backfill, and new release-one persistence tables.
 - `retention_test.go` — retained operational-record cleanup behavior.
 - `retention_native_test.go` covers bounded native accounting maintenance retention and preservation of settlement evidence.
@@ -554,7 +541,6 @@ attached-coupon policy and a unique source-successor link.
 `telegram_pm_commands_test.go`, `telegram_pm_permissions_test.go`, `telegram_pm_topics_test.go` and `telegram_pm_retention_test.go` cover concurrent replay, normalized flags across destinations, unauthorized mutation, serialized topic/card phases, safe recovery, retention boundaries and foreign keys in hosted CI.
 `telegram_pm_reads_test.go` covers reply-inferred read state. `admin_balance_reference_test.go` covers stable-reference replay without duplicate ledger or audit effects.
 
-`retention_node_events.go` expires every node-down event status seven days after creation, detaches node-state references and cascades frozen details. Already approved purchase extensions and queued `node_compensation` operation targets remain independently executable; a continuing outage starts a fresh window on the next complete provider sample. `retention_sync_jobs.go` removes terminal failed outbound synchronization/delivery jobs after three days from final failure (`updated_at`), while preserving active work and explicit queued retries. It reconciles linked purchase, provisioning, scan and PM certainty state without financial writes. Local rollover, raffle and questionnaire settlement lanes retain their existing recovery paths. `retention_timestamps.go` uses indexed candidates and parsed instants for exact fractional-second boundaries. Counts flow through the existing backup-gated maintenance report. `retention_node_events_test.go` and `retention_sync_jobs_test.go` cover creation/failure boundaries, all event statuses, fresh outages, approved extensions, independent sync, financial ownership, PM uncertainty, explicit retries and foreign keys in hosted CI.
 
 `connectivity_attempts.go`, `connectivity_queries.go`, `connectivity_scan.go` and `connectivity_retention.go` implement the `connectivity.Repository` interface against one indexed diagnostic-attempt table. A probe inserts its identity and running state before execution, then seals a sanitized terminal result with a conditional transition. Host UUID is nullable for setup failures; resolved proxy configurations, host metadata and credentials are never persisted. Latest results are derived by host and configuration hash, while history uses the shared filter-bound timestamp cursor with a default page of 50 and a maximum of 200. Fixed-width UTC nanosecond timestamps provide exact indexed ordering and retention comparisons. Every read excludes attempts at or before `now-24h`, independently of pruning. Checker startup interrupts unfinished attempts without changing their start, and its independent five-minute cleanup calls the pruning method even while scheduling is disabled. Mutations use the existing store write lock and context-aware SQLite calls; the storage module performs no external API calls. The connectivity lifecycle, queries, retention and concurrency tests cover terminal immutability, nullable setup results, sanitized codes, restart recovery, pagination, configuration separation and exact fractional-second expiry in hosted CI.
 
@@ -657,9 +643,7 @@ indexes live in a separate disposable cache outside this schema and its backups.
 
 `admin_user_provider_commands.go`, `admin_user_ban_state.go` and `admin_user_audit.go` own manual restrictions, expiry restoration and audit records.
 
-`native_rollover_version_test.go` preserves native accounting provenance through calculation and atomic renewal. `legacy_controls_retirement_test.go` verifies that upgrade retirement disables executable relink/host jobs while retaining receipts.
 
-Native rollover calculations retain `native-term-v1` through the renewal transaction; old calculated records continue through the existing whole-term normalization. No settled financial records are rewritten.
 
 - `xnode_compile_version.go`: Reads a small transactional compile revision and the next purchase access boundary.
 
@@ -785,7 +769,6 @@ duplicate wakes, live leases, terminal receipts and retained DIY result evidence
 
 ## Automatic PAYG
 
-`payg_catalog.go` filters future sales and snapshots base squad references only when the filtered set differs while preserving full custom overrides and editable add-ons. `payg_rollover.go` settles reconciled rollover when conversion removes the last eligible renewal squad. Existing paid terms do not filter against live billing mode. `payg_commerce_test.go` covers grandfathered terms and empty-renewal settlement.
 
 `xnode_payg_accounts.go` stores immutable member/squad/node attribution, its native period and atomic accounting participant reference. `xnode_payg_billing.go` appends exact GB block charges to the existing wallet ledger with immutable rate evidence. `xnode_payg_traffic.go` integrates raw usage and debits with contiguous traffic-journal commits; balances precede periods in its lock order. Connection purchases require funds, while delayed traffic may create wallet debt. PAYG never consumes combo quota or node multipliers. A GB is purchased for pending usage only when the rolling 72-hour raw window reaches 104,857,600 bytes (100 MiB) on that member/squad/node; idle connections and wallet funding cannot charge a first block. Unbilled bytes in that window count toward the purchased GB. Remaining credit expires 72 hours after its charge.
 
@@ -801,7 +784,6 @@ backfill in hosted SQLite/PostgreSQL CI.
 
 `xnode_payg_billing_test.go` and `xnode_payg_concurrency_test.go` cover automatic GB boundaries, replay, price changes, debt, failed batches, simultaneous nodes and bounded statistics in hosted SQLite/PostgreSQL CI. Local automated suites remain prohibited.
 
-`automatic_renewal_types.go` owns renewal quote contracts. `automatic_renewal_failure.go` retains existing failed-renewal settlement; PAYG empty renewals preserve rollover separately. `billing_renewal_quote.go` isolates future-term pricing from batch mutation.
 
 
 `user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices under the wallet lock. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
@@ -811,6 +793,27 @@ backfill in hosted SQLite/PostgreSQL CI.
 Terminal failed PAYG provisioning/recovery jobs share the three-day failed synchronization window and explicit-retry protection. Financial journal state remains independent.
 
 `xnode_payg_credit_window.go` and `xnode_payg_credit_window_test.go` use platform-neutral names so Go includes the rolling billing helpers and regressions on Linux as well as Windows.
+
+
+## Compute and personal pricing entry points
+
+Numerical calculations use immutable wallet-independent snapshots and the durable compute lane. Master transactions alone publish prices and settle money. Coupon cohorts and decision versions fence future checkout; live add-ons remain available. Native prepaid credit bases and historical refund/ledger facts are immutable. Owner names persist only authored display overrides.
+
+Purchase, renewal, reward and native accounting lifecycle: `activity_reward_combo.go`, `automatic_renewal_failure.go`, `automatic_renewal_settlement.go`, `automatic_renewal_types.go`, `billing_renewal_quote.go`, `notification_purchases.go`, `payg_catalog.go`, `payg_empty_renewal.go`.
+
+Hosted upgrade, accounting, admission and idempotency regressions: `activity_reward_ordered_recovery_test.go`, `activity_reward_recovery_fixture_test.go`, `billing_purchase_addons_test.go`, `historical_reward_fixture_test.go`, `legacy_controls_retirement_test.go`, `payg_commerce_test.go`, `pricing_admission_test.go`, `pricing_compute_test.go`, `pricing_export_test.go`, `pricing_financial_test.go`, `pricing_forecast_test.go`, `pricing_live_coupon_test.go`, `pricing_policy_test.go`, `pricing_storage_test.go`, `retention_node_events_test.go`, `retention_sync_jobs_test.go`, `rollover_retirement_test.go`.
+
+Owner display preferences and prospective PAYG labels: `host_names.go`.
+
+Immutable analytical inputs, forecast vintages and measured calibration: `pricing_actuals.go`, `pricing_calibration.go`, `pricing_forecast_id.go`, `pricing_forecasts.go`, `pricing_history.go`, `pricing_models.go`, `pricing_personal_forecast.go`, `pricing_product_forecasts.go`, `pricing_user_actual.go`, `pricing_user_features.go`, `pricing_user_forecasts.go`.
+
+Versioned pricing preparation, queued kernels, applicability and publication: `pricing_addon_basis.go`, `pricing_addon_prepare.go`, `pricing_cache.go`, `pricing_catalog.go`, `pricing_change_notice.go`, `pricing_commands.go`, `pricing_compute_kernels.go`, `pricing_contract_snapshot.go`, `pricing_contracts.go`, `pricing_coupon_inputs.go`, `pricing_discounts.go`, `pricing_evaluation.go`, `pricing_fixed_renewal.go`, `pricing_funding_outcome.go`, `pricing_grant_scopes.go`, `pricing_incident_notice.go`, `pricing_incidents.go`, `pricing_offer_inputs.go`, `pricing_offers.go`, `pricing_optimization_inputs.go`, `pricing_override_activate.go`, `pricing_override_validation.go`, `pricing_payg_schedule.go`, `pricing_personal.go`, `pricing_personal_reads.go`, `pricing_personal_snapshot.go`, `pricing_publication_freeze.go`, `pricing_receipts.go`, `pricing_resolve.go`, `pricing_revenue_batch.go`, `pricing_scope_version.go`, `pricing_summary.go`, `pricing_time.go`, `pricing_user_offers.go`, `pricing_validation_gate.go`, `pricing_views.go`.
+
+Bounded, scoped analytical exports and redaction: `pricing_export_redaction.go`, `pricing_export_relations.go`, `pricing_export_rows.go`, `pricing_export_scope.go`.
+
+Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_renewal_economics.go`, `pricing_renewal_model.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
+
+Bounded retention of settled or summarized operational records: `retention_node_events.go`, `retention_sync_jobs.go`, `retention_timestamps.go`.
 
 <!-- generated transaction retry map -->
 
@@ -839,7 +842,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `affiliate_referrals_retry_generated.go` wraps the transactional methods in `affiliate_referrals.go`.
 - `api_token_writes_retry_generated.go` wraps the transactional methods in `api_token_writes.go`.
 - `automatic_renewal_plan_retry_generated.go` wraps the transactional methods in `automatic_renewal_plan.go`.
-- `automatic_renewal_rollover_retry_generated.go` wraps the transactional methods in `automatic_renewal_rollover.go`.
 - `automatic_renewal_state_retry_generated.go` wraps the transactional methods in `automatic_renewal_state.go`.
 - `automatic_traffic_reset_retry_generated.go` wraps the transactional methods in `automatic_traffic_reset.go`.
 - `billing_bounds_retry_generated.go` wraps the transactional methods in `billing_bounds.go`.
@@ -874,6 +876,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `emby_provisioning_part2_retry_generated.go` wraps the transactional methods in `emby_provisioning_part2.go`.
 - `emby_provisioning_retry_generated.go` wraps the transactional methods in `emby_provisioning.go`.
 - `emby_setup_retry_generated.go` wraps the transactional methods in `emby_setup.go`.
+- `host_pricing_retry_generated.go` wraps the transactional methods in `host_pricing.go`.
 - `ip_lookup_cache_retry_generated.go` wraps the transactional methods in `ip_lookup_cache.go`.
 - `ip_lookup_commands_retry_generated.go` wraps the transactional methods in `ip_lookup_commands.go`.
 - `ip_lookup_completion_retry_generated.go` wraps the transactional methods in `ip_lookup_completion.go`.
@@ -902,10 +905,31 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `payment_operations_retry_generated.go` wraps the transactional methods in `payment_operations.go`.
 - `payment_profiles_retry_generated.go` wraps the transactional methods in `payment_profiles.go`.
 - `payment_refund_resolution_retry_generated.go` wraps the transactional methods in `payment_refund_resolution.go`.
+- `pricing_compute_retry_generated.go` wraps the transactional methods in `pricing_compute.go`.
+- `pricing_costs_retry_generated.go` wraps the transactional methods in `pricing_costs.go`.
+- `pricing_export_retry_generated.go` wraps the transactional methods in `pricing_export.go`.
+- `pricing_feature_snapshot_retry_generated.go` wraps the transactional methods in `pricing_feature_snapshot.go`.
+- `pricing_forecast_storage_retry_generated.go` wraps the transactional methods in `pricing_forecast_storage.go`.
+- `pricing_health_retry_generated.go` wraps the transactional methods in `pricing_health.go`.
+- `pricing_member_catalog_retry_generated.go` wraps the transactional methods in `pricing_member_catalog.go`.
+- `pricing_offer_coupons_retry_generated.go` wraps the transactional methods in `pricing_offer_coupons.go`.
+- `pricing_optimization_retry_generated.go` wraps the transactional methods in `pricing_optimization.go`.
+- `pricing_optimization_snapshot_retry_generated.go` wraps the transactional methods in `pricing_optimization_snapshot.go`.
+- `pricing_override_cancel_retry_generated.go` wraps the transactional methods in `pricing_override_cancel.go`.
+- `pricing_overrides_retry_generated.go` wraps the transactional methods in `pricing_overrides.go`.
+- `pricing_payg_offers_retry_generated.go` wraps the transactional methods in `pricing_payg_offers.go`.
+- `pricing_personal_calibration_retry_generated.go` wraps the transactional methods in `pricing_personal_calibration.go`.
+- `pricing_policy_retry_generated.go` wraps the transactional methods in `pricing_policy.go`.
+- `pricing_purchase_prepare_retry_generated.go` wraps the transactional methods in `pricing_purchase_prepare.go`.
+- `pricing_renewal_quotes_retry_generated.go` wraps the transactional methods in `pricing_renewal_quotes.go`.
+- `pricing_retention_retry_generated.go` wraps the transactional methods in `pricing_retention.go`.
+- `pricing_unchanged_product_retry_generated.go` wraps the transactional methods in `pricing_unchanged_product.go`.
+- `pricing_worker_state_retry_generated.go` wraps the transactional methods in `pricing_worker_state.go`.
 - `provider_operation_lifecycle_retry_generated.go` wraps the transactional methods in `provider_operation_lifecycle.go`.
 - `provider_operation_notification_completion_retry_generated.go` wraps the transactional methods in `provider_operation_notification_completion.go`.
 - `provider_operations_retry_generated.go` wraps the transactional methods in `provider_operations.go`.
 - `proxy_provisioning_backlog_retry_generated.go` wraps the transactional methods in `proxy_provisioning_backlog.go`.
+- `purchase_expiry_retry_generated.go` wraps the transactional methods in `purchase_expiry.go`.
 - `purchase_sync_retry_generated.go` wraps the transactional methods in `purchase_sync.go`.
 - `questionnaire_imports_retry_generated.go` wraps the transactional methods in `questionnaire_imports.go`.
 - `questionnaire_operations_retry_generated.go` wraps the transactional methods in `questionnaire_operations.go`.
@@ -916,8 +940,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
 - `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
 - `retired_detector_retry_generated.go` wraps the transactional methods in `retired_detector.go`.
-- `rollover_calculation_retry_generated.go` wraps the transactional methods in `rollover_calculation.go`.
-- `rollover_retry_generated.go` wraps the transactional methods in `rollover.go`.
 - `store_part2_retry_generated.go` wraps the transactional methods in `store_part2.go`.
 - `store_retry_generated.go` wraps the transactional methods in `store.go`.
 - `telegram_boost_receipts_retry_generated.go` wraps the transactional methods in `telegram_boost_receipts.go`.

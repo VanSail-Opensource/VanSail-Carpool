@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 // Digest is the remote range growth summary.
@@ -44,7 +44,7 @@ type Node struct {
 type Provider interface {
 	Digest(context.Context, time.Time, time.Time) (Digest, error)
 	Traffic(context.Context, time.Time, time.Time) (Traffic, error)
-	UsageSnapshotForRollover(context.Context, string, time.Time, time.Time) (rollover.UsageSnapshot, error)
+	UsageSnapshot(context.Context, string, time.Time, time.Time) (usageaccounting.UsageSnapshot, error)
 	Nodes(context.Context) ([]Node, error)
 }
 

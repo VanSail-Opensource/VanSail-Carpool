@@ -42,7 +42,6 @@
       "WEEK": "每周",
       "MONTH": "每月"
     },
-    "rolloverMinimum": "结转所需最低剩余流量百分比",
     "includedSquads": "包含的实时节点组",
     "noSquads": "分配前请先刷新 X-Node 节点组。",
     "available": "向用户开放",

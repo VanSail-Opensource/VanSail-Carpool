@@ -23,7 +23,6 @@
     "averageSpend": "用户平均消费",
     "spendRange": "用户消费范围",
     "valueRange": "{minimum} 至 {maximum}",
-    "predictedAverageRollover": "预计平均流量结转",
     "averageCheckIn": "平均签到奖励",
     "groupMessages": "群消息数",
     "optionalSquads": "平均可选区组数",

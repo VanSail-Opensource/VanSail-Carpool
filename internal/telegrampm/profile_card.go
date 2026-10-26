@@ -20,7 +20,6 @@ type ProfileFacts struct {
 	PAYGSpent       model.Money
 	ActiveCombo     *model.Purchase
 	SquadNames      []string
-	Rollover        *model.RolloverProjection
 	UsedBytes       *int64
 	AllocatedBytes  *int64
 }
@@ -83,15 +82,7 @@ func Profile(item model.PMConversation, facts ProfileFacts, publicBaseURL, timez
 				traffic := formatProfileBytes(*facts.UsedBytes) + " / " + formatProfileBytes(*facts.AllocatedBytes)
 				lines = append(lines, profileField("\U0001F4CA", localized(item.Locale, "Used / total traffic", "\u5df2\u7528 / \u603b\u6d41\u91cf"), traffic))
 			}
-			if !purchase.AutoRenewEnabled {
-				lines = append(lines, profileField("\u267B\uFE0F", localized(item.Locale, "Rollover", "\u7ed3\u8f6c\u9884\u6d4b"), localized(item.Locale, "Disabled", "\u672a\u542f\u7528")))
-			} else if facts.Rollover != nil {
-				value := localized(item.Locale, "Temporarily unavailable", "\u6682\u4e0d\u53ef\u7528")
-				if facts.Rollover.PredictedRollover != nil {
-					value = facts.Rollover.PredictedRollover.Display
-				}
-				lines = append(lines, profileField("\u267B\uFE0F", localized(item.Locale, "Rollover prediction", "\u7ed3\u8f6c\u9884\u6d4b"), value))
-			}
+
 		}
 		lines = append(lines, profileField("\u2699\uFE0F", localized(item.Locale, "PM status", "\u79c1\u4fe1\u72b6\u6001"), state))
 	}

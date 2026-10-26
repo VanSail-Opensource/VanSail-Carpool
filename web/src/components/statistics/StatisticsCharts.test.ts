@@ -1,3 +1,4 @@
+import { VisDonut } from '@unovis/vue'
 import { mount } from '@vue/test-utils'
 import { h } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -16,7 +17,7 @@ const shares = [
   { id: 'queued', label: 'Queued', value: 1 },
 ]
 
-describe('statistics SVG charts', () => {
+describe('statistical chart interaction contracts', () => {
   afterEach(() => vi.clearAllMocks())
 
   it('renders an interactive donut with exact-value selection details', async () => {
@@ -24,10 +25,10 @@ describe('statistics SVG charts', () => {
       props: { items: shares, centerLabel: 'Members', centerValue: '4', chartLabel: 'Member split' },
     })
 
-    expect(wrapper.find('svg[role="group"]').attributes('aria-label')).toBe('Member split')
-    const segments = wrapper.findAll('.statistics-ring-segment')
+    expect(wrapper.find('[role="group"]').attributes('aria-label')).toBe('Member split')
+    const segments = wrapper.findAll('.statistics-legend li')
     expect(segments).toHaveLength(2)
-    expect(wrapper.find('.statistics-donut__center').text()).toContain('4')
+    expect((wrapper.findComponent(VisDonut).props() as { centralLabel: string }).centralLabel).toBe('4')
     expect(wrapper.find('.statistics-chart-detail').text()).toContain('Active3 / 75%')
 
     await segments[1]?.trigger('focus')
@@ -40,14 +41,11 @@ describe('statistics SVG charts', () => {
     expect(wrapper.html()).not.toContain('conic-gradient')
   })
 
-  it('renders outside labels for the DB4 pie and a complete label list', () => {
+  it('keeps the full pie legend accessible', () => {
     const wrapper = mount(StatisticsPie, {
       props: { items: shares, chartLabel: 'Subscription states', sliceLabels: true },
     })
 
-    expect(wrapper.findAll('.statistics-pie > g > path:not(.statistics-pie__line)')).toHaveLength(2)
-    expect(wrapper.findAll('.statistics-pie .statistics-chart-segment[tabindex="0"]')).toHaveLength(2)
-    expect(wrapper.findAll('.statistics-pie__label')).toHaveLength(2)
     expect(wrapper.findAll('.statistics-legend li')).toHaveLength(2)
   })
 
@@ -67,15 +65,12 @@ describe('statistics SVG charts', () => {
       global: { stubs: { UTabs: true, UIcon: true } },
       slots: { default: () => h(StatisticsDistribution, { database }) },
     })
-    const segments = wrapper.findAll('.statistics-distribution__segment')
-
-    expect(segments).toHaveLength(2)
-    expect(Number(segments[0]?.attributes('width'))).toBeCloseTo(66.667, 2)
-    expect(Number(segments[1]?.attributes('x'))).toBeCloseTo(66.667, 2)
-    expect(segments.reduce((total, segment) => total + Number(segment.attributes('width')), 0)).toBeCloseTo(100)
-
-    await segments[1]?.trigger('focus')
-    expect(wrapper.find('.statistics-chart-detail').text()).toContain('Squad A: Combo B')
-    expect(wrapper.find('.statistics-chart-detail').text()).toContain('1 / 33.3%')
+    const chart = wrapper.findComponent({ name: 'LineChart' })
+    const point = chart.props('data')[0]
+    expect(point.label).toBe('Squad A')
+    expect(point['combo-a']).toBeCloseTo(66.667, 2)
+    expect(point['combo-b']).toBeCloseTo(33.333, 2)
+    await chart.findAll('button').at(-1)?.trigger('click')
+    expect(chart.text()).toContain('Combo B: 33.3%')
   })
 })

@@ -49,3 +49,11 @@ accounting barriers and logical backup age. It duplicates no authoritative rows.
 `00015_paid_member_access.sql` updates preference transition functions to retain
 paid PAYG access and backfills Show Around TX for existing commerce spenders.
 The existing columns and immutable financial records remain unchanged.
+
+- `00017_pricing.sql`: Forward PostgreSQL pricing schema corresponding to SQLite migration 105, including immutable fact triggers and compact physical forecast/actual tables.
+
+- `00018_retire_rollover.sql`: Cancel unsettled credits without wallet changes and archive settled evidence before operational schema retirement.
+
+- `00019_personal_pricing_decisions.sql`: Immutable terminal personalized decisions and funding outcome separation.
+
+- `00020_host_name_overrides.sql`: Only authored owner-specific host display preferences.

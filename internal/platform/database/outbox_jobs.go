@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func (s *Store) ClaimOutboxJob(ctx context.Context, now time.Time) (*model.OutboxJob, error) {
@@ -19,9 +20,13 @@ func (s *Store) ClaimPriorityOutboxJob(ctx context.Context, now time.Time) (*mod
 	return s.claimOutboxJob(ctx, now, true)
 }
 
+func (s *Store) ClaimComputeOutboxJob(ctx context.Context, now time.Time) (*model.OutboxJob, error) {
+	return s.claimOutboxJob(ctx, now, false, true)
+}
+
 const priorityOutboxFilter = `kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic'`
 
-func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool) (*model.OutboxJob, error) {
+func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool, computeOnly ...bool) (*model.OutboxJob, error) {
 	if !IsPostgres(s.db) {
 		s.writeMu.Lock()
 		defer s.writeMu.Unlock()
@@ -40,7 +45,7 @@ func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, 
 			return nil, err
 		}
 	}
-	job, err := claimableOutboxTx(ctx, tx, now, priorityOnly)
+	job, err := claimableOutboxTx(ctx, tx, now, priorityOnly, computeOnly...)
 	if err != nil || job == nil {
 		return nil, err
 	}

@@ -7,7 +7,6 @@
 
 - `model.go` documents the dependency-free shared model package.
 - `identity.go` defines Telegram identity and local user representations, including the private account-wide automatic-reset flag.
-- `commerce.go` defines catalog products with required live accessible-node groups, typed squad-profile projections, purchase, entitlement, legacy renewal, quote, rollover, and money payloads.
 - `commerce_foundation.go` defines the global Add TXB bounds returned to members and administrators.
 - `commerce_renewals.go` retains legacy internal renewal transport types separately from the automatic-renewal contract.
 - `automatic_renewal.go` defines the owner-facing automatic-renewal state, current one-cycle price, and dashboard failure notice.
@@ -26,3 +25,11 @@ The `Statistics` projection in `analytics.go` carries nullable upstream `lastTra
 `telegram_pm_content.go` defines stable expired/invalid pending-content errors; PMRelayInput carries transient JSON excluded from serialized fingerprints and outbox data.
 
 `SquadProduct` carries optional billing mode and an exact per-GB TXB price without changing existing combo price fields. PAYG public billing models live beside the native service; all money and traffic transports retain decimal strings.
+
+- `personal_forecast.go`: Typed complete-day predictions with exact-byte strings, observed coverage and measured calibration.
+
+- `pricing_decision.go`: Immutable terminal or pending personalized price decision contract.
+
+- `user_pricing.go`: Paginated user-specific price, coupon, and renewal projections.
+
+Canonical catalog, purchase and monetary contracts: `commerce.go`.

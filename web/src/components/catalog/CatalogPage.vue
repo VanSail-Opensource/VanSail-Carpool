@@ -12,7 +12,6 @@ import { motionDurations } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useSessionStore } from '@/stores/session'
 import CatalogCheckout from './CatalogCheckout.vue'
-import CatalogBlocked from './CatalogBlocked.vue'
 import CatalogConfirmation from './CatalogConfirmation.vue'
 import CatalogCouponStep from './CatalogCouponStep.vue'
 import CatalogFlowControls from './CatalogFlowControls.vue'
@@ -41,7 +40,6 @@ const {
   purchase,
   quote,
   quoteUsable,
-  autoRenewalBlocked,
   selectedComboId,
   selectedSquadIds,
   selectedCouponGrantId,
@@ -169,8 +167,7 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
 
 <template>
   <div :class="[embedded ? '' : 'page', 'page--catalog']">
-    <CatalogBlocked v-if="autoRenewalBlocked" />
-    <template v-else-if="purchase">
+    <template v-if="purchase">
       <CatalogConfirmation :purchase="purchase" @home="goHome" />
     </template>
 

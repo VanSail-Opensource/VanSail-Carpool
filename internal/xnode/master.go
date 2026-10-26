@@ -3,16 +3,18 @@ package xnode
 import (
 	"context"
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
-	"github.com/gorilla/websocket"
 	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"github.com/gorilla/websocket"
 )
 
 type Master struct {
+	compute                  *computePool
 	trafficMetrics           trafficObservations
 	protectedReleaseDigest   string
 	managedNodeIPs           map[string][]string
@@ -44,6 +46,7 @@ type Master struct {
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {
 	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}}
+	m.compute = newComputePool(m)
 	service.master = m
 	m.stateWake = make(chan struct{}, 1)
 	m.firewallWake = make(chan struct{}, 1)
@@ -56,6 +59,8 @@ func (m *Master) Start(ctx context.Context) error {
 		return ErrConflict
 	}
 	m.ctx, m.cancel = context.WithCancel(ctx)
+	m.wg.Add(1)
+	go m.compute.run(m.ctx)
 	m.wg.Add(1)
 	go m.run()
 	if _, ok := m.service.repo.(firewallRepository); ok {

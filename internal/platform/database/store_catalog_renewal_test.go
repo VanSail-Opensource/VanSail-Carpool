@@ -95,7 +95,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 		t.Fatalf("EnqueueDueEntitlementTransitions(retry): %v", err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='rollover_finalize' AND payload=?`, `{"purchaseId":"`+first.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='purchase_expire' AND payload=?`, `{"purchaseId":"`+first.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count rollover jobs: %v", err)
 	}
 	if count != 1 {
@@ -107,10 +107,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 	if count != 0 {
 		t.Fatalf("renewal activated before rollover: count = %d", count)
 	}
-	if err := store.MarkRolloverProcessing(ctx, first.ID, first.ValidUntil); err != nil {
-		t.Fatalf("MarkRolloverProcessing(): %v", err)
-	}
-	if _, err := store.FinalizeRollover(ctx, first.ID, 1000, 500, "", first.ValidUntil); err != nil {
+	if err := store.ExpireDuePurchase(ctx, first.ID, first.ValidUntil); err != nil {
 		t.Fatalf("FinalizeRollover(): %v", err)
 	}
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {

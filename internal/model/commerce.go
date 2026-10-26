@@ -15,6 +15,7 @@ type Money struct {
 
 // SquadProduct enriches an upstream Proxy internal squad with customer-facing catalog data.
 type SquadProduct struct {
+	PricingDecision        *PricingDecision      `json:"pricingDecision,omitempty"`
 	PAYGState              string                `json:"paygState,omitempty"`
 	BillingMode            string                `json:"billingMode,omitempty"`
 	PAYGPriceTXBMinor      int64                 `json:"-"`
@@ -39,22 +40,22 @@ type SquadProduct struct {
 
 // Combo is a time-limited traffic entitlement and its included squads.
 type Combo struct {
-	WhitelistIPQuota        int            `json:"whitelistIpQuota"`
-	IPLookupQuota           *int           `json:"ipLookupQuota"`
-	ID                      string         `json:"id"`
-	Name                    string         `json:"name"`
-	Description             string         `json:"description"`
-	PriceTXBMinor           int64          `json:"-"`
-	Price                   Money          `json:"price"`
-	ValidityDays            int            `json:"validityDays"`
-	TrafficLimitBytes       int64          `json:"-"`
-	TrafficLimit            string         `json:"trafficLimitBytes"`
-	ResetStrategy           string         `json:"resetStrategy"`
-	Active                  bool           `json:"active"`
-	IncludedSquads          []SquadProduct `json:"includedSquads"`
-	RolloverMinRemainingBPS int            `json:"rolloverMinRemainingBps"`
-	CreatedAt               time.Time      `json:"createdAt"`
-	UpdatedAt               time.Time      `json:"updatedAt"`
+	PricingDecision   *PricingDecision `json:"pricingDecision,omitempty"`
+	WhitelistIPQuota  int              `json:"whitelistIpQuota"`
+	IPLookupQuota     *int             `json:"ipLookupQuota"`
+	ID                string           `json:"id"`
+	Name              string           `json:"name"`
+	Description       string           `json:"description"`
+	PriceTXBMinor     int64            `json:"-"`
+	Price             Money            `json:"price"`
+	ValidityDays      int              `json:"validityDays"`
+	TrafficLimitBytes int64            `json:"-"`
+	TrafficLimit      string           `json:"trafficLimitBytes"`
+	ResetStrategy     string           `json:"resetStrategy"`
+	Active            bool             `json:"active"`
+	IncludedSquads    []SquadProduct   `json:"includedSquads"`
+	CreatedAt         time.Time        `json:"createdAt"`
+	UpdatedAt         time.Time        `json:"updatedAt"`
 }
 
 // Purchase represents an active, queued, or historical combo term.
@@ -80,71 +81,8 @@ type Purchase struct {
 	TrafficLimit              string    `json:"trafficLimitBytes"`
 	ResetStrategy             string    `json:"resetStrategy"`
 	SquadUUIDs                []string  `json:"squadUuids"`
-	RolloverMinRemainingBPS   int       `json:"rolloverMinRemainingBps"`
 	CreatedAt                 time.Time `json:"createdAt"`
 	UpdatedAt                 time.Time `json:"updatedAt"`
-}
-
-// PurchaseRollover is the durable expiry settlement for one paid term.
-type PurchaseRollover struct {
-	PurchaseID          string     `json:"purchaseId"`
-	Status              string     `json:"status"`
-	TrafficLimitBytes   int64      `json:"trafficLimitBytes"`
-	AllocatedBytes      *int64     `json:"allocatedTrafficBytes"`
-	UsedTrafficBytes    *int64     `json:"usedTrafficBytes"`
-	EligibleUnusedBytes *int64     `json:"eligibleUnusedBytes"`
-	RemainingBytes      *int64     `json:"remainingTrafficBytes"`
-	MinimumRemainingBPS int        `json:"minimumRemainingBps"`
-	NetPaidTXBMinor     int64      `json:"-"`
-	CreditedTXBMinor    int64      `json:"-"`
-	ExceptionCode       string     `json:"exceptionCode"`
-	Attempts            int        `json:"attempts"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           time.Time  `json:"updatedAt"`
-	CompletedAt         *time.Time `json:"completedAt"`
-	AlgorithmVersion    string     `json:"algorithmVersion"`
-}
-
-// RolloverUsageSummary is the bounded settlement aggregate retained in SQLite.
-// AllocatedBytes and UsedBytes cover every included cadence interval, while
-// EligibleUnusedBytes includes only intervals strictly above the threshold.
-type RolloverUsageSummary struct {
-	AllocatedBytes      int64
-	UsedBytes           int64
-	EligibleUnusedBytes int64
-	AlgorithmVersion    string
-}
-
-// RolloverProjection is a live, aggregate-only view of the current term's
-// possible rollover credit. It is never persisted and never contains raw
-// provider usage series.
-type RolloverProjection struct {
-	PurchaseID                  string          `json:"purchaseId"`
-	Paid                        Money           `json:"paid"`
-	AutoRenewalEnabled          bool            `json:"autoRenewalEnabled"`
-	WarningCode                 *string         `json:"warningCode"`
-	ActualUsedTrafficBytes      *int64          `json:"actualUsedTrafficBytes,string"`
-	ProjectedFullTermUsageBytes *int64          `json:"projectedFullTermUsageBytes,string"`
-	MaximumAllowableUsageBytes  *int64          `json:"maximumAllowableUsageBytes,string"`
-	MaximumDailyUsageBytes      *int64          `json:"maximumDailyUsageBytes,string"`
-	PredictedRollover           *Money          `json:"predictedRollover"`
-	RequiredReductionBytes      *int64          `json:"requiredReductionBytes,string"`
-	RequiredDailyReductionBytes *int64          `json:"requiredDailyReductionBytes,string"`
-	MinimumRemainingBPS         int             `json:"minimumRemainingBps"`
-	Term                        *RolloverWindow `json:"term"`
-	LastResetPeriod             *RolloverWindow `json:"lastResetPeriod"`
-	FetchedAt                   time.Time       `json:"fetchedAt"`
-}
-
-// RolloverWindow describes one aggregate cadence window used by a projection.
-type RolloverWindow struct {
-	Start                 time.Time `json:"start"`
-	End                   time.Time `json:"end"`
-	AllocatedTrafficBytes int64     `json:"allocatedTrafficBytes,string"`
-	UsedTrafficBytes      int64     `json:"usedTrafficBytes,string"`
-	RemainingTrafficBytes int64     `json:"remainingTrafficBytes,string"`
-	EligibleUnusedBytes   int64     `json:"eligibleUnusedBytes,string"`
-	Rollover              Money     `json:"rollover"`
 }
 
 // CatalogNode is the display-only node identity and multiplier metadata used
@@ -169,17 +107,19 @@ type Catalog struct {
 
 // PurchaseQuote is a server-priced, non-mutating checkout preview.
 type PurchaseQuote struct {
-	ComboID            string      `json:"comboId"`
-	ComboName          string      `json:"comboName"`
-	GrossPriceTXBMinor int64       `json:"-"`
-	DiscountTXBMinor   int64       `json:"-"`
-	NetPriceTXBMinor   int64       `json:"-"`
-	GrossPrice         Money       `json:"grossPrice"`
-	Discount           Money       `json:"discount"`
-	NetPrice           Money       `json:"netPrice"`
-	EffectiveAt        time.Time   `json:"effectiveAt"`
-	ExpiresAt          time.Time   `json:"expiresAt"`
-	Queued             bool        `json:"queued"`
-	AddonSquadUUIDs    []string    `json:"addonSquadUuids"`
-	AccessibleNodes    []ProxyNode `json:"accessibleNodes"`
+	PricingDecision    *PricingDecision `json:"pricingDecision,omitempty"`
+	RenewalDecision    *PricingDecision `json:"renewalDecision,omitempty"`
+	ComboID            string           `json:"comboId"`
+	ComboName          string           `json:"comboName"`
+	GrossPriceTXBMinor int64            `json:"-"`
+	DiscountTXBMinor   int64            `json:"-"`
+	NetPriceTXBMinor   int64            `json:"-"`
+	GrossPrice         Money            `json:"grossPrice"`
+	Discount           Money            `json:"discount"`
+	NetPrice           Money            `json:"netPrice"`
+	EffectiveAt        time.Time        `json:"effectiveAt"`
+	ExpiresAt          time.Time        `json:"expiresAt"`
+	Queued             bool             `json:"queued"`
+	AddonSquadUUIDs    []string         `json:"addonSquadUuids"`
+	AccessibleNodes    []ProxyNode      `json:"accessibleNodes"`
 }

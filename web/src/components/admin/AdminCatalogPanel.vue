@@ -8,7 +8,7 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
 import { useAdminSection } from '@/composables/useAdminSection'
 import { useI18n } from '@/i18n'
-import { formatBytes, formatMoney } from '@/utils/format'
+import { formatBytes, formatMoney, txbInputFromMinor } from '@/utils/format'
 import AdminCatalogEditor from './AdminCatalogEditor.vue'
 import AdminSectionState from './AdminSectionState.vue'
 import AdminSquadEditor from './AdminSquadEditor.vue'
@@ -23,6 +23,13 @@ const statisticsTarget = shallowRef<{ kind: 'combo' | 'squad'; id: string; title
 const { t } = useI18n()
 const activeTab = shallowRef('combos')
 const tabs = computed(() => [{ value: 'combos', label: t('adminNav.catalog') }, { value: 'squads', label: t('adminCatalog.squads') }])
+function squadState(squad: SquadProduct): string {
+ if (!squad.upstreamPresent) return 'missing'
+ if (!squad.visible) return 'hidden'
+ if (squad.billingMode === 'payg' && squad.paygState && squad.paygState !== 'normal') return 'unavailable'
+ if (squad.billingMode !== 'payg' && squad.stockRemaining === 0) return 'unavailable'
+ return 'normal'
+}
 const columns = computed(() => [{ id: 'name', header: t('adminWorkspace.name') }, { id: 'terms', header: t('adminWorkspace.details') }, { id: 'price', header: t('adminWorkspace.price') }, { id: 'status', header: t('adminWorkspace.status') }, { id: 'actions', header: t('adminWorkspace.actions') }])
 
 function loadStatistics(query: StatisticsQuery): Promise<AdminStatistics> {
@@ -79,8 +86,8 @@ async function saveSquad(payload: SquadProductWrite): Promise<void> {
         <UTable class="admin-table" :data="squads.items.value" :columns="columns">
           <template #name-cell="{ row }"><div class="admin-cell"><strong>{{ row.original.name }}</strong><code>{{ row.original.groupId }}</code></div></template>
           <template #terms-cell="{ row }"><SquadProfileSummary :profile="row.original.profile" :description="row.original.description" compact /></template>
-          <template #price-cell="{ row }">{{ formatMoney(row.original.price) }}</template>
-          <template #status-cell="{ row }"><StatusBadge :tone="row.original.upstreamPresent && row.original.visible ? 'success' : 'neutral'" :label="t(row.original.upstreamPresent && row.original.visible ? 'adminCatalog.available' : 'adminCatalog.hidden')" /></template>
+          <template #price-cell="{ row }"><div class="admin-cell"><span>{{ t(row.original.billingMode === 'payg' ? 'pricing.catalogPayg' : 'pricing.catalogCombo') }}</span><strong>{{ row.original.billingMode === 'payg' ? `${txbInputFromMinor(row.original.paygPrice?.minor ?? row.original.price.minor)} TXB/GB` : formatMoney(row.original.price) }}</strong></div></template>
+          <template #status-cell="{ row }"><StatusBadge :tone="squadState(row.original) === 'normal' ? 'success' : 'neutral'" :label="t(`pricing.catalogStates.${squadState(row.original)}`)" /></template>
           <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminCatalog.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'squad', id: row.original.id, title: t('adminCatalog.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminCatalog.editNamed', { name: row.original.name })" @click="editingSquad = row.original" /></div></template>
           <template #empty>{{ t('adminCatalog.noSquads') }}</template>
         </UTable>

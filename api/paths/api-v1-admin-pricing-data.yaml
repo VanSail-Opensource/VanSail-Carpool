@@ -1,0 +1,127 @@
+{
+  "get": {
+    "tags": [
+      "Pricing"
+    ],
+    "operationId": "getPricingAnalyticalRecords",
+    "summary": "getPricingAnalyticalRecords",
+    "responses": {
+      "200": {
+        "description": "Pricing result. Fixed products and binding financial terms remain authoritative.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../openapi.yaml#/components/schemas/PricingRecord"
+                  }
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "truncated": {
+                  "type": "boolean"
+                },
+                "nextCursor": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "items",
+                "limit",
+                "truncated"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "404": {
+        "description": "Pricing resource does not exist."
+      },
+      "409": {
+        "description": "Current policy version, quote eligibility or resource safety prevents this operation."
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "dataset",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "user",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "node",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "product",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "from",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "until",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "cursor",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ]
+  }
+}

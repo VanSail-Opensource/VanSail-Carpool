@@ -6,10 +6,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 type Proxy struct {
+	PublishedName       string               `json:"-"`
+	NameOverride        string               `json:"-"`
+	PriceLabel          string               `json:"-"`
+	ExportName          bool                 `json:"-"`
+	CustomRoute         bool                 `json:"-"`
+	SplitXHTTP          bool                 `json:"-"`
 	PublishedEndpointID string               `json:"-"`
 	PrincipalID         int64                `json:"-"`
 	ID                  string               `json:"id"`

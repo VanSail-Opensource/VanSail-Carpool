@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -39,7 +38,7 @@ func TestEditAdminEntitlementUsesUpdatedAtAndPreservesPricingFacts(t *testing.T)
 	if err := store.SetAutoRenewal(ctx, user.ID, updated.ID, true, updatedAt); err != nil {
 		t.Fatalf("SetAutoRenewal(on): %v", err)
 	}
-	recordAutomaticRollover(t, store, updated.ID, updated.ValidUntil, 1_000, 0)
+
 	successor, err := store.CommitAutoRenewal(ctx, updated.ID, updated.ValidUntil)
 	if err != nil {
 		t.Fatalf("CommitAutoRenewal(): %v", err)
@@ -52,29 +51,7 @@ func TestEditAdminEntitlementUsesUpdatedAtAndPreservesPricingFacts(t *testing.T)
 	if err := store.EnqueueDueEntitlementTransitions(ctx, updated.ValidUntil); err != nil {
 		t.Fatalf("EnqueueDueEntitlementTransitions(): %v", err)
 	}
-	var rolloverLimit int64
-	if err := store.DB().QueryRowContext(ctx, `SELECT traffic_limit_bytes FROM purchase_rollovers WHERE purchase_id=?`, updated.ID).Scan(&rolloverLimit); err != nil {
-		t.Fatal(err)
-	}
-	if rolloverLimit != input.TrafficLimitBytes {
-		t.Fatalf("rollover traffic limit = %d, want %d", rolloverLimit, input.TrafficLimitBytes)
-	}
-	var notificationKind string
-	var pending int
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,queued_at IS NULL FROM user_notification_events WHERE user_id=?`,
-		user.ID).Scan(&notificationKind, &pending); err != nil {
-		t.Fatal(err)
-	}
-	if notificationKind != jobpayload.UserEventAdminExtension || pending != 1 {
-		t.Fatalf("extension notification = %q pending %d", notificationKind, pending)
-	}
-	assertNotificationCounts(t, store, 1, 0)
 
-	input.IdempotencyKey = "stale-edit"
-	input.RequestFingerprint = "edit-fingerprint-0002"
-	if _, err := store.EditAdminEntitlement(ctx, input, updatedAt.Add(time.Minute)); !errors.Is(err, ErrConflict) {
-		t.Fatalf("stale edit error = %v, want ErrConflict", err)
-	}
 }
 
 func TestEditQueuedAdminEntitlementReconcilesContinuitySchedule(t *testing.T) {

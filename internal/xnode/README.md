@@ -267,7 +267,6 @@ Hosted cache/metadata regressions complement agent TCP/UDP/mux continuity and
 work-count regressions. See the agent's `docs/hot-reload.md` for action consumers,
 forced-reload semantics and conservative fallback boundaries.
 
-`rollover_purchase.go` resolves panel ownership and selects periods by explicit purchase ID for projection and settlement. All resets remain in that purchase; quiescence does not implicitly select the current identity period. Existing dated APIs remain compatible; `rollover_usage.go` supplies their common calculation.
 
 `Service` owns authoritative configurations, ordered snippets, node settings,
 access groups, endpoints, identities and accounting periods. `Master` accepts
@@ -361,7 +360,6 @@ administrator document and rejection of unrelated native-core errors.
 
 - `access_window.go`: Entry points: `EffectivePurchase`.
 
-- `account_statistics.go`: Entry points: `MemberOperationState`, `Statistics`, `UsageSnapshotForRollover`, `Usage`.
 
 - `cadence.go`: Entry points: `ResetCadences`, `ResumeAccounting`, `RunAccounting`.
 
@@ -429,7 +427,6 @@ administrator document and rejection of unrelated native-core errors.
 - `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.
 - `capabilities.go` checks the exact capabilities required by compiled state, including native utility listeners with no paid users. `capabilities_test.go` covers utility and streamed-country negotiation boundaries.
 - `binding_config.go` accepts group and subscription bindings only for managed proxy inbounds. Native utility listeners cannot become member endpoints.
-- `rollover_usage.go` selects purchase-owned accounting periods and combines native and imported source history. `rollover_usage_test.go` covers successor isolation, pending journals, exclusive date boundaries and overflow rejection.
 
 `endpoint_group_policy.go` intersects paid/enabled groups with administrator endpoint filters and preserved legacy host ACLs, including previously imported endpoints. `endpoint_group_policy_test.go` checks owner subscription and routing-template visibility for allowed, excluded, empty and unknown policies.
 
@@ -821,3 +818,45 @@ PAYG member opt-outs apply to provisioning, inventory/DIY, native compilation, l
 PAYG compilation returns before reading products/topology when a node has no
 accounts. PAYG provisioning, inventory, export and display use stockless local
 overrides; derived catalog capacity never enters the reconciliation deadline.
+
+## Negotiated compute pool
+
+`compute_pool.go` exposes `Master.Compute(ctx, task, accept)`; `compute_batch.go`
+coalesces compatible versioned inputs for 100 ms, at most 64 tasks / 256 KiB.
+The ordinary command writer and durable accounting acknowledgements retain their
+existing paths. `compute_award.go` uses bounded concurrent announcements, atomic
+first-claim awards and one reservation per connection through durable acceptance.
+`compute_collect.go` assembles bounded low-priority zstd chunks outside socket
+readers. Attempt hashes, connection identity, deadlines and renewable leases fence
+stale results; disconnects and failed attempts reannounce work. Accepted numerical
+receipts are idempotent and disposable transport buffers remain memory-only.
+
+CPU pressure selects remote execution after two five-second samples at 90 percent;
+30 seconds below 75 percent restores one bounded local worker. Old agents remain
+usable and are excluded from compute awards. Nodes receive numerical inputs and
+opaque hashes only. Financial policy, coupon authorization and SQL access stay on
+the master. Protocol details are documented in the pinned agent compute reference.
+
+- `accounting_purchase.go`: Closes native purchase periods without revoking a paid successor.
+
+- `accounting_usage.go`: Projects native/historical usage into generic accounting.
+
+- `compute_fixture_test.go`: Hosted negotiated transport fixture.
+
+- `compute_pool_test.go`: Hosted batching, reservation and disconnect reassignment regressions.
+
+- `compute_receive.go`: Bounded compressed result assembly outside socket readers.
+
+- `compute_remote.go`: Attempts, leases, announcements and connection fencing.
+
+- `host_metadata.go`: Current per-principal rate/multiplier and explicit applied routing metadata.
+
+- `host_names.go`: Owner-scoped names and {price} interpolation at the export boundary.
+
+- `host_names_test.go`: Hosted owner isolation and export consistency regressions.
+
+- `subscription_repair_test.go`: Hosted repair regression preserving valid identity and accounting.
+
+Native usage and immutable refund evidence; historical regression name retained: `account_statistics.go`, `rollover_usage_test.go`.
+
+- `compute_validation_test.go`: Hosted concurrent claim, stale connection/attempt, malformed chunk and decompression-limit regressions.

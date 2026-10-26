@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
 )
 
 func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
@@ -33,10 +31,6 @@ func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
 	if _, err := store.CommitAutoRenewal(ctx, source.ID, tooEarly); !errors.Is(err, ErrConflict) {
 		t.Fatalf("CommitAutoRenewal(early) = %v, want ErrConflict", err)
 	}
-	if due, err := store.DueAutoRenewals(ctx, source.ValidUntil); err != nil || len(due) != 0 {
-		t.Fatalf("DueAutoRenewals(before calculation) = (%v, %v)", due, err)
-	}
-	recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 500, 500)
 	if due, err := store.DueAutoRenewals(ctx, source.ValidUntil); err != nil || len(due) != 1 || due[0].PurchaseID != source.ID {
 		t.Fatalf("DueAutoRenewals(calculated) = (%v, %v)", due, err)
 	}
@@ -51,15 +45,6 @@ func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
 	}
 	if err := store.MarkPurchaseSyncResult(ctx, successor.ID, true, source.ValidUntil); err != nil {
 		t.Fatal(err)
-	}
-	var kind, used, eligible string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,json_extract(payload_json,'$.facts.usedBytes'),
-		json_extract(payload_json,'$.facts.eligibleBytes') FROM user_notification_events WHERE event_key=?`,
-		"auto-renewal:"+successor.ID).Scan(&kind, &used, &eligible); err != nil {
-		t.Fatal(err)
-	}
-	if kind != jobpayload.UserEventAutoRenewal || used != "500" || eligible != "500" {
-		t.Fatalf("automatic renewal notification = %q used %q eligible %q", kind, used, eligible)
 	}
 	assertNotificationCounts(t, store, 1, 1)
 }
@@ -84,7 +69,7 @@ func TestAutomaticRenewalDefaultsToggleAndSuccessorIdempotency(t *testing.T) {
 	if err := store.SetAutoRenewal(ctx, user.ID, first.ID, true, now); err != nil {
 		t.Fatalf("SetAutoRenewal(on): %v", err)
 	}
-	recordAutomaticRollover(t, store, first.ID, first.ValidUntil, 1_000, 0)
+
 	successor, err := store.CommitAutoRenewal(ctx, first.ID, first.ValidUntil)
 	if err != nil || successor.Status != "activating" || !successor.AutoRenewEnabled || successor.CoreGrossTXBMinor != combo.PriceTXBMinor {
 		t.Fatalf("CommitAutoRenewal() = (%+v, %v)", successor, err)
@@ -137,7 +122,7 @@ func TestAutomaticRenewalFailureDisablesWithoutCharging(t *testing.T) {
 	if err := store.SetAutoRenewal(ctx, user.ID, source.ID, true, now); err != nil {
 		t.Fatalf("SetAutoRenewal(on): %v", err)
 	}
-	recordAutomaticRollover(t, store, source.ID, source.ValidUntil, 1_000, 0)
+
 	if _, err := store.CommitAutoRenewal(ctx, source.ID, source.ValidUntil); !errors.Is(err, ErrInsufficientBalance) {
 		t.Fatalf("CommitAutoRenewal(insufficient) = %v, want ErrInsufficientBalance", err)
 	}
@@ -158,51 +143,5 @@ func TestAutomaticRenewalFailureDisablesWithoutCharging(t *testing.T) {
 	if err := store.EnqueueDueEntitlementTransitions(ctx, source.ValidUntil); err != nil {
 		t.Fatalf("EnqueueDueEntitlementTransitions(): %v", err)
 	}
-	var rollovers int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchase_rollovers WHERE purchase_id=?`, source.ID).Scan(&rollovers); err != nil {
-		t.Fatal(err)
-	}
-	if rollovers != 1 {
-		t.Fatalf("rollovers after failure = %d, want 1", rollovers)
-	}
-}
 
-func TestRenewalAwaitingRolloverTracksSettlement(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	store := newTestStore(t)
-	user := createTestUser(t, store, 48_004)
-	combo := saveTestCombo(t, store, "rollover-awaiting", 100, 30)
-	now := time.Date(2026, 8, 14, 12, 0, 0, 0, time.UTC)
-	if _, err := store.AdjustBalance(ctx, user.ID, 100, "awaiting-seed", "seed", now); err != nil {
-		t.Fatal(err)
-	}
-	source, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "awaiting-source"}, now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if awaiting, err := store.RenewalAwaitingRollover(ctx, source.ID); err != nil || !awaiting {
-		t.Fatalf("RenewalAwaitingRollover(active) = (%t, %v), want true", awaiting, err)
-	}
-	if awaiting, err := store.RenewalAwaitingRollover(ctx, "missing-purchase"); err != nil || awaiting {
-		t.Fatalf("RenewalAwaitingRollover(unknown) = (%t, %v), want false", awaiting, err)
-	}
-	if err := store.EnqueueDueEntitlementTransitions(ctx, source.ValidUntil); err != nil {
-		t.Fatalf("EnqueueDueEntitlementTransitions(): %v", err)
-	}
-	if awaiting, err := store.RenewalAwaitingRollover(ctx, source.ID); err != nil || !awaiting {
-		t.Fatalf("RenewalAwaitingRollover(pending) = (%t, %v), want true", awaiting, err)
-	}
-	if err := store.MarkRolloverProcessing(ctx, source.ID, source.ValidUntil); err != nil {
-		t.Fatal(err)
-	}
-	if awaiting, err := store.RenewalAwaitingRollover(ctx, source.ID); err != nil || !awaiting {
-		t.Fatalf("RenewalAwaitingRollover(processing) = (%t, %v), want true", awaiting, err)
-	}
-	if _, err := store.FinalizeRollover(ctx, source.ID, 100*1024*1024, 0, "", source.ValidUntil); err != nil {
-		t.Fatal(err)
-	}
-	if awaiting, err := store.RenewalAwaitingRollover(ctx, source.ID); err != nil || awaiting {
-		t.Fatalf("RenewalAwaitingRollover(settled) = (%t, %v), want false", awaiting, err)
-	}
 }

@@ -41,11 +41,10 @@ StatisticsSnapshot:
     remote:
       type: object
       additionalProperties: false
-      required: [weeklyUserIncrease, monthlyAverageUsagePercent, predictedAverageRollover, trafficDates, trafficSeries]
+      required: [weeklyUserIncrease, monthlyAverageUsagePercent, trafficDates, trafficSeries]
       properties:
         weeklyUserIncrease: { type: integer }
         monthlyAverageUsagePercent: { type: number }
-        predictedAverageRollover: { $ref: '../../openapi.yaml#/components/schemas/Money' }
         trafficDates: { type: array, items: { type: string, format: date } }
         trafficSeries: { type: array, items: { $ref: '../../openapi.yaml#/components/schemas/NodeTrafficSeries' } }
     database:

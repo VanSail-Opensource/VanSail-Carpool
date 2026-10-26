@@ -57,6 +57,5 @@ func applyDrawTrafficTx(ctx context.Context, tx *sql.Tx, purchaseID string, traf
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE purchase_rollovers SET traffic_limit_bytes=?,updated_at=? WHERE purchase_id=? AND status='pending'`, next, stamp(now), purchaseID)
-	return err
+	return nil
 }

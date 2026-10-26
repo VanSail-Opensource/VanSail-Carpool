@@ -107,6 +107,8 @@ func appendSplitProxies(profiles []SplitProfile, proxies []subscription.Proxy) [
 		if err != nil {
 			continue // A stale combined projection never removes ordinary hosts.
 		}
+		combined.SplitXHTTP = true
+		combined.CustomRoute = byID[profile.UploadEndpointID].CustomRoute
 		// Reverse pairs share the same compact name. Preserve ordinary names
 		// and disambiguate only the colliding projection, without changing IDs.
 		base := combined.Name

@@ -2,14 +2,16 @@ package xnode
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/gorilla/websocket"
-	"sync"
-	"time"
 )
 
 type agentPeer struct {
+	computePool           bool         // immutable, negotiated protocol extension
 	trafficRetry          trafficRetry // mu; bounded retries for an unchanged rejected journal head
 	paygRecoveryAt        time.Time    // mu; bounded recovery requeue after interrupted attempts
 	paygReady             bool         // mu; true only after a committed journal barrier

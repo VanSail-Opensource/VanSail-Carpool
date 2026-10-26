@@ -21,3 +21,5 @@
 - `AdminIPLookupView.vue` composes the standalone administrator IP Lookup settings feature.
 
 `DIYView.vue` is the thin authenticated `/settings/diy` member entry point.
+
+- `AdminPricingView.vue`: Thin browser-only route entry composing the modular pricing workspace.

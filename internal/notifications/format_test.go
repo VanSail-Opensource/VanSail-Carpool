@@ -19,8 +19,8 @@ func TestFormatNotificationCards(t *testing.T) {
 	}{
 		{name: "English renewal", payload: notificationFixture(jobpayload.UserEventAutoRenewal, "en", map[string]string{
 			FactCombo: "Pro_[1]", FactRenewalDebit: "-1250", FactUsed: "1024", FactAllocated: "2048",
-			FactEligible: "1024", FactRollover: "250", FactBalance: "5000", FactValidUntil: "2026-09-20T00:00:00Z",
-		}), contains: []string{"♻️ *Auto\\-renewed*", "*Combo:* Pro\\_\\[1\\]", "*Renewal charge:* 12\\.50 TXB", "*Rollover:* 2\\.50 TXB"}},
+			"eligibleBytes": "1024", "rolloverMinor": "250", FactBalance: "5000", FactValidUntil: "2026-09-20T00:00:00Z",
+		}), contains: []string{"♻️ *Auto\\-renewed*", "*Combo:* Pro\\_\\[1\\]", "*Renewal charge:* 12\\.50 TXB"}},
 		{name: "Chinese extension", payload: notificationFixture(jobpayload.UserEventAdminExtension, "zh-CN", map[string]string{
 			FactAddedSeconds: "86400", FactPreviousExpiry: "2026-08-20T00:00:00Z", FactNewExpiry: "2026-08-21T00:00:00Z",
 			FactReason: "补偿_[确认]!", FactTime: "2026-08-20T01:00:00Z",
@@ -92,20 +92,6 @@ func TestFormatUsesExactOrderedLocalizedCards(t *testing.T) {
 	}
 }
 
-func TestFormatShowsUnavailableRollover(t *testing.T) {
-	payload := notificationFixture(jobpayload.UserEventAutoRenewal, "en", map[string]string{
-		FactCombo: "Pro", FactRenewalDebit: "-1250", FactUsed: "0", FactAllocated: "0", FactEligible: "0",
-		FactRollover: "0", FactRolloverStatus: "unavailable", FactBalance: "5000", FactValidUntil: "2026-09-20T00:00:00Z",
-	})
-	message, err := Format(payload, time.UTC)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(message, "*Rollover:* Unavailable") {
-		t.Fatalf("Format() = %q", message)
-	}
-}
-
 func TestFormatHonorsTelegramBoundary(t *testing.T) {
 	payload := notificationFixture(jobpayload.UserEventExpiration, "en", map[string]string{
 		FactCombo: strings.Repeat("x", 5000), FactExpired: "2026-08-20T00:00:00Z",
@@ -160,7 +146,7 @@ func factsForKind(kind string) map[string]string {
 		return map[string]string{FactCombo: "Pro", FactCharge: "100", FactTrafficLimit: "1024", FactReset: "DAY", FactValidUntil: when}
 	case jobpayload.UserEventAutoRenewal:
 		return map[string]string{FactCombo: "Pro", FactRenewalDebit: "-100", FactUsed: "0", FactAllocated: "1024",
-			FactEligible: "1024", FactRollover: "100", FactBalance: "200", FactValidUntil: when}
+			"eligibleBytes": "1024", "rolloverMinor": "100", FactBalance: "200", FactValidUntil: when}
 	case jobpayload.UserEventTrafficThreshold:
 		return map[string]string{FactCombo: "Pro", FactUsed: "901", FactTrafficLimit: "1000", FactRemaining: "99", FactReset: "DAY"}
 	case jobpayload.UserEventPaymentCredited:

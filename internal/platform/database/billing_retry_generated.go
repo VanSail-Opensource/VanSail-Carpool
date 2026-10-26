@@ -7,9 +7,9 @@ import (
 	time "time"
 )
 
-func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
+func (s *Store) createPurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_CreatePurchase(ctx, input, now)
+		r0, r1 := s.retryAttempt_createPurchase(ctx, input, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
 		}

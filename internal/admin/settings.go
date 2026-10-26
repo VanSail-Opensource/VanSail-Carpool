@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
-	"strings"
-	"sync"
 )
 
 type SettingDefinition struct {
@@ -54,7 +54,6 @@ var settingDefinitions = map[string]SettingDefinition{
 	"activity.daily_reward_max_txb":          {Validate: validateNonnegativeTXB},
 	"activity.group_message_threshold":       {Validate: validateNonnegativeInteger},
 	"activity.group_message_reward_txb":      {Validate: validateNonnegativeTXB},
-	catalog.RolloverBeforeAutoRenewalSetting: {Default: "true", Validate: validateBoolean},
 }
 
 // SettingsRepository stores encrypted or plain values without interpreting them.

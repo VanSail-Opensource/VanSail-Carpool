@@ -7,18 +7,18 @@ import (
 	time "time"
 )
 
-func (s *Store) QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, error) {
+func (s *Store) quotePurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_QuotePurchaseAddons(ctx, input, now)
+		r0, r1 := s.retryAttempt_quotePurchaseAddons(ctx, input, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
 		}
 	}
 }
 
-func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
+func (s *Store) addPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1 := s.retryAttempt_AddPurchaseAddons(ctx, input, now)
+		r0, r1 := s.retryAttempt_addPurchaseAddons(ctx, input, now)
 		if !s.retryTransaction(ctx, r1, retryIndex) {
 			return r0, r1
 		}

@@ -1,0 +1,29 @@
+{
+  "userPrices": {
+    "title": "Personal pricing and forecasts",
+    "hint": "All catalog products are available below through pagination. Pending values are provisional; checkout revalidates decisions, coupons, and settlement funds.",
+    "status": "Decision",
+    "statuses": {
+      "PENDING": "Pending",
+      "STALE": "Stale",
+      "FAILED": "Failed",
+      "ADJUSTED": "Adjusted",
+      "UNCHANGED": "Unchanged"
+    },
+    "probability": "Response / renewal probability",
+    "validUntil": "Valid until",
+    "version": "Decision version",
+    "fixedPrice": "Fixed reference",
+    "publicPrice": "Public base",
+    "personalPrice": "Personal base",
+    "campaignPrice": "Campaign price",
+    "netPrice": "After best applicable coupon",
+    "coupons": "Applicable coupons",
+    "noCoupons": "No applicable coupons",
+    "couponTerms": "{kind} · {mode}: {value} · cap: {cap} · expires: {expires}",
+    "scope": "Combos: {combos} · Squads: {squads}",
+    "all": "Unrestricted",
+    "loaded": "{count} products loaded",
+    "loadMore": "Load next products"
+  }
+}

@@ -25,6 +25,8 @@ func projectMemberSubscription(proxies []subscription.Proxy, monitored map[strin
 			continue
 		}
 		host := connectivity.SubscriptionHost{UUID: proxy.ID, Name: proxy.Name, CountryCodes: proxy.Countries, SquadUUIDs: groups, Timeline: connectivity.UnknownTimeline(now)}
+		host.PublishedName, host.NameOverride, host.PriceLabel = proxy.PublishedName, proxy.NameOverride, proxy.PriceLabel
+		host.CustomRoute, host.SplitXHTTP = proxy.CustomRoute, proxy.SplitXHTTP
 		if links {
 			link, err := proxy.NativeLink()
 			if err != nil {

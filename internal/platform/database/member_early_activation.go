@@ -47,13 +47,6 @@ func (s *Store) retryAttempt_BeginEarlyActivation(ctx context.Context, input pro
 	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',valid_until=?,auto_renew_enabled=0,updated_at=? WHERE id=? AND status='active'`, stamp(now), stamp(now), currentID); err != nil {
 		return providerops.Operation{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE purchase_rollovers SET status='zero',credited_txb_minor=0,exception_code='COMBO_FORFEITED',updated_at=?
- WHERE purchase_id=? AND status IN ('pending','processing','calculated')`, stamp(now), currentID); err != nil {
-		return providerops.Operation{}, err
-	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind='rollover_finalize' AND json_extract(payload,'$.purchaseId')=? AND status<>'processing'`, currentID); err != nil {
-		return providerops.Operation{}, err
-	}
 	if err := shiftRefundQueueTx(ctx, tx, input.OwnerUserID, queued.ValidFrom, now.Sub(queued.ValidFrom), now); err != nil {
 		return providerops.Operation{}, err
 	}

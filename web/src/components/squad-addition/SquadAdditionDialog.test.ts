@@ -33,7 +33,6 @@ const active = {
   trafficLimitBytes: '1073741824',
   resetStrategy: 'MONTH_ROLLING',
   squadUuids: [],
-  rolloverMinRemainingBps: 0,
   createdAt: '2026-08-24T00:00:00Z',
   updatedAt: '2026-08-24T00:00:00Z',
 } as Purchase

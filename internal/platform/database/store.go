@@ -12,6 +12,7 @@ import (
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
 var (
@@ -26,24 +27,29 @@ var (
 
 // Store implements persistent repositories on top of SQLite.
 type Store struct {
-	diyCleanupCursor    string
-	firewallDetectionMu sync.Mutex
-	firewallWindows     map[string]firewallDetectionWindow
-	firewallSweepMu     sync.Mutex
-	firewallSweepCursor string // protected by firewallSweepMu; bounded operational pruning
-	firewallRetentionAt time.Time
-	pmContentCipher     pmContentCipher
-	db                  *sql.DB
-	logger              *slog.Logger
-	writeMu             sync.Mutex
-	randomMu            sync.Mutex
-	groupFactsMu        sync.Mutex
-	groupFacts          map[groupMessageFactKey]groupMessageFact
+	pricingExposureCache *pricing.AnalysisCache
+	pricingCache         *pricing.AnalysisCache
+	pricingExportSlot    chan struct{}
+	pricingComputeSlot   chan struct{}
+	pricingHealth        *pricing.HealthRegistry
+	diyCleanupCursor     string
+	firewallDetectionMu  sync.Mutex
+	firewallWindows      map[string]firewallDetectionWindow
+	firewallSweepMu      sync.Mutex
+	firewallSweepCursor  string // protected by firewallSweepMu; bounded operational pruning
+	firewallRetentionAt  time.Time
+	pmContentCipher      pmContentCipher
+	db                   *sql.DB
+	logger               *slog.Logger
+	writeMu              sync.Mutex
+	randomMu             sync.Mutex
+	groupFactsMu         sync.Mutex
+	groupFacts           map[groupMessageFactKey]groupMessageFact
 }
 
 // NewStore creates an application store.
 func NewStore(db *sql.DB) *Store {
-	return &Store{db: db, groupFacts: make(map[groupMessageFactKey]groupMessageFact)}
+	return &Store{pricingExposureCache: pricing.NewExposureCache(), pricingCache: pricing.NewAnalysisCache(), db: db, groupFacts: make(map[groupMessageFactKey]groupMessageFact), pricingHealth: pricing.NewHealthRegistry(), pricingExportSlot: make(chan struct{}, 1), pricingComputeSlot: make(chan struct{}, 1)}
 }
 
 // UpsertTelegramUser creates or refreshes a user from validated Telegram data.

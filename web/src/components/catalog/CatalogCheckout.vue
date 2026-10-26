@@ -94,10 +94,6 @@ function goToBalance(): void { void router.push({ path: '/home', query: { topUp:
             <span>{{ $t('catalog.term') }}</span>
             <strong>{{ $t('catalog.termSummary', { days: combo.validityDays, reset: $t(`home.reset.${combo.resetStrategy}`) }) }}</strong>
           </div>
-          <div class="catalog-checkout__line">
-            <span>{{ $t('catalog.rollover') }}</span>
-            <strong>{{ $t('catalog.rolloverSummary', { threshold: (combo.rolloverMinRemainingBps / 100).toFixed(2) }) }}</strong>
-          </div>
         </div>
       </div>
       <aside class="catalog-checkout__aside" :aria-label="$t('catalog.serverTotal')">

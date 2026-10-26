@@ -14,6 +14,9 @@ func outboxResourcesTx(ctx context.Context, tx *sql.Tx, job model.OutboxJob) ([]
 	var payload map[string]json.RawMessage
 	_ = json.Unmarshal([]byte(job.Payload), &payload) // Invalid jobs still reach their typed handler.
 	value := func(key string) string { var s string; _ = json.Unmarshal(payload[key], &s); return s }
+	if job.Kind == "pricing_compute" {
+		return []string{"compute:" + value("inputId")}, nil
+	}
 	keys := []string{}
 	add := func(kind, id string) {
 		if id != "" {

@@ -1,0 +1,29 @@
+{
+  "userPrices": {
+    "title": "个人定价与预测",
+    "hint": "可通过下方分页查看所有商品。待计算价格仅供参考；结账时会重新核验决策、优惠券和付款余额。",
+    "status": "决策",
+    "statuses": {
+      "PENDING": "待计算",
+      "STALE": "已过期",
+      "FAILED": "失败",
+      "ADJUSTED": "已调整",
+      "UNCHANGED": "保持原价"
+    },
+    "probability": "响应 / 续费概率",
+    "validUntil": "有效期至",
+    "version": "决策版本",
+    "fixedPrice": "固定参考价",
+    "publicPrice": "公开基础价",
+    "personalPrice": "个人基础价",
+    "campaignPrice": "活动价",
+    "netPrice": "最佳适用优惠券后的价格",
+    "coupons": "适用优惠券",
+    "noCoupons": "无适用优惠券",
+    "couponTerms": "{kind} · {mode}：{value} · 上限：{cap} · 到期：{expires}",
+    "scope": "套餐：{combos} · 小队：{squads}",
+    "all": "不限范围",
+    "loaded": "已加载 {count} 个商品",
+    "loadMore": "加载下一页商品"
+  }
+}

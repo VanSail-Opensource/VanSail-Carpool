@@ -10,7 +10,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
-func TestCheckoutOperationsBlockWhileAutomaticRenewalIsEnabled(t *testing.T) {
+func TestCheckoutOperationsDelegatePricingWhileAutomaticRenewalIsEnabled(t *testing.T) {
 	t.Parallel()
 	repository := &automaticRenewalCatalogRepository{catalogRepository: &catalogRepository{
 		combos: []model.Combo{{ID: "combo"}},
@@ -21,11 +21,11 @@ func TestCheckoutOperationsBlockWhileAutomaticRenewalIsEnabled(t *testing.T) {
 	if snapshot, err := service.CatalogForUser(context.Background(), user); err != nil || len(snapshot.Combos) != 1 || len(snapshot.Addons) != 1 {
 		t.Fatalf("CatalogForUser() = (%+v, %v), want displayable catalog", snapshot, err)
 	}
-	if _, err := service.Quote(context.Background(), user, "combo", nil, ""); !errors.Is(err, ErrAutoRenewalEnabled) {
-		t.Fatalf("Quote() error = %v, want ErrAutoRenewalEnabled", err)
+	if _, err := service.Quote(context.Background(), user, "combo", nil, ""); errors.Is(err, ErrAutoRenewalEnabled) {
+		t.Fatalf("Quote() error = %v, blanket renewal lock must not apply", err)
 	}
-	if _, err := service.Purchase(context.Background(), user, "combo", nil, "purchase-key"); !errors.Is(err, ErrAutoRenewalEnabled) {
-		t.Fatalf("Purchase() error = %v, want ErrAutoRenewalEnabled", err)
+	if _, err := service.Purchase(context.Background(), user, "combo", nil, "purchase-key"); errors.Is(err, ErrAutoRenewalEnabled) {
+		t.Fatalf("Purchase() error = %v, blanket renewal lock must not apply", err)
 	}
 }
 

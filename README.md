@@ -120,7 +120,7 @@ Payment redirects are navigation only. TXB is credited exclusively after a verif
 ## Operations and recovery
 
 - `/healthz` proves HTTP and local SQLite liveness. `/readyz` also checks required dashboard setup readiness.
-- A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, rollover finalization, questionnaire settlement, Emby provisioning, and daily online backups.
+- A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, purchase accounting closure and compute jobs, questionnaire settlement, Emby provisioning, and daily online backups.
 - Verified backups are written atomically under `/data/backups`; completed files older than seven days are removed. Failed backup attempts remain visible to the admin and never publish a partial database file.
 - An administrator can download a verified backup. Restore accepts only a stored snapshot, creates a rescue backup, verifies integrity and migration compatibility, stages an adjacent copy, records a marker, returns `202`, and exits gracefully. Startup performs the atomic pre-open swap, rolls back a failed swap, records the result, and requires clients to reauthenticate.
 - Logs are structured. Bot tokens, provider secrets, encrypted setting plaintext, session cookies, Telegram raw `initData`, and X-Node subscription URLs must never appear in logs or audit details.
@@ -140,3 +140,7 @@ The image also embeds PostgreSQL 18 server and pgBackRest. The selected opt-in
 budget and persistent PostgreSQL storage. Existing SQLite installations must
 complete the verified offline migration before changing the authoritative backend.
 The product and executable names change without relocating persistent data.
+
+## Adaptive pricing
+
+Pricing remains fixed unless an administrator enables a product. Purchase, renewal and campaign modes are independent. Enabled renewals apply automatically with notifications; no owner terms approval or second administrator is required. Calculated bounds, health/capacity gates, original forecast history and retained-data exports are documented in [the pricing module](internal/pricing/README.md). Delivery evidence and empirical rollout gates are tracked in [BAPO 5.1](docs/plans/bapo-5.1-progress.md).

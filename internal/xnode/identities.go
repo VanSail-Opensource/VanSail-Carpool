@@ -3,9 +3,10 @@ package xnode
 import (
 	"context"
 	"crypto/sha256"
+	"strconv"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
-	"strconv"
 )
 
 func (s *Service) Identity(ctx context.Context, id string) (Identity, error) {
@@ -37,23 +38,33 @@ func (s *Service) EnsureIdentity(ctx context.Context, user model.User) (Identity
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	existing, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
-	if err == nil {
+	if err == nil && existing.SubscriptionCipher != "" && len(existing.SubscriptionHash) == sha256.Size && existing.CredentialsCipher != "" {
 		return existing, nil
 	}
-	if !isMissing(err) {
+	if err != nil && !isMissing(err) {
 		return Identity{}, err
 	}
-	credentials, err := NewCredentials()
-	if err != nil {
-		return Identity{}, err
+	identity := existing
+	if isMissing(err) {
+		identity = Identity{UserID: user.ID}
 	}
-	identity := Identity{UserID: user.ID}
-	identity.CredentialsCipher, err = sealCredentials(s.vault, identity, credentials)
-	if err != nil {
-		return identity, err
+	if identity.UserID != user.ID || identity.ServiceName != "" {
+		return Identity{}, ErrConflict
 	}
-	if err = s.newSubscription(&identity); err != nil {
-		return identity, err
+	if identity.CredentialsCipher == "" {
+		credentials, e := NewCredentials()
+		if e != nil {
+			return Identity{}, e
+		}
+		identity.CredentialsCipher, err = sealCredentials(s.vault, identity, credentials)
+		if err != nil {
+			return identity, err
+		}
+	}
+	if identity.SubscriptionCipher == "" || len(identity.SubscriptionHash) != sha256.Size {
+		if err = s.newSubscription(&identity); err != nil {
+			return identity, err
+		}
 	}
 	return s.repo.SaveXNodeIdentity(ctx, identity)
 }

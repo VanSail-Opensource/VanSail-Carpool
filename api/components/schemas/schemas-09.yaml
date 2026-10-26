@@ -198,7 +198,6 @@ AdminEntitlement:
     - trafficLimitBytes
     - resetStrategy
     - squadUuids
-    - rolloverMinRemainingBps
     - createdAt
     - updatedAt
   properties:
@@ -234,10 +233,6 @@ AdminEntitlement:
       items:
         type: string
         format: uuid
-    rolloverMinRemainingBps:
-      type: integer
-      minimum: 0
-      maximum: 10000
     createdAt:
       $ref: '../../openapi.yaml#/components/schemas/Timestamp'
     updatedAt:

@@ -17,7 +17,6 @@ export interface PrizeDraft {
   squadUuids: string[]
   renewalPrice: string
   trafficLimitGiB: string
-  rollover: string
   includeInRenewal: boolean
   discountMode: 'fixed' | 'percent'
 }
@@ -40,7 +39,7 @@ export function blankPrize(): PrizeDraft {
     id: '', clientId: createUuid(), name: '', probability: '100.00', stock: '1', kind: 'none',
     rangeMin: '1', rangeMax: '10', distribution: 'uniform', positiveChance: '50.00',
     comboId: '', squadUuids: [], renewalPrice: '1.00', trafficLimitGiB: '1',
-    rollover: '0', includeInRenewal: false, discountMode: 'fixed',
+    includeInRenewal: false, discountMode: 'fixed',
   }
 }
 
@@ -77,7 +76,6 @@ function prizeFromSaved(prize: LuckyDrawPrize): PrizeDraft {
   draft.squadUuids = [...(prize.reward.squadUuids ?? [])]
   draft.renewalPrice = txbInputFromMinor(String(prize.reward.renewalPriceMinor ?? 100))
   draft.trafficLimitGiB = String((prize.reward.trafficLimitBytes ?? (2 ** 30)) / (2 ** 30))
-  draft.rollover = String((prize.reward.rolloverMinRemainingBps ?? 0) / 100)
   draft.includeInRenewal = prize.reward.includeInRenewal ?? false
   draft.discountMode = prize.reward.discountMode ?? 'fixed'
   return draft
@@ -94,12 +92,9 @@ function rewardFromDraft(prize: PrizeDraft): Reward | null {
   if (prize.kind === 'entitlement_grant') {
     const renewalPriceMinor = moneyFromTxbInput(prize.renewalPrice)
     const gib = Number(prize.trafficLimitGiB)
-    const rollover = scaled(prize.rollover, 100)
-    if (!prize.comboId || renewalPriceMinor === '' || !Number.isSafeInteger(gib) || gib <= 0 || gib > 1000000
-      || rollover === null || rollover < 0 || rollover > 10000) return null
+    if (!prize.comboId || renewalPriceMinor === '' || !Number.isSafeInteger(gib) || gib <= 0 || gib > 1000000) return null
     return { kind: prize.kind, comboId: prize.comboId, squadUuids: prize.squadUuids,
-      renewalPriceMinor: Number(renewalPriceMinor), trafficLimitBytes: gib * 2 ** 30,
-      rolloverMinRemainingBps: rollover }
+      renewalPriceMinor: Number(renewalPriceMinor), trafficLimitBytes: gib * 2 ** 30 }
   }
   if (prize.kind === 'squad_access') return prize.squadUuids.length ? { kind: prize.kind, squadUuids: prize.squadUuids } : null
   if (prize.kind === 'core_combo_switch') return prize.comboId ? { kind: prize.kind, comboId: prize.comboId } : null

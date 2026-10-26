@@ -21,11 +21,6 @@ func TestGroupCommandFormattersUseSelectedCurrency(t *testing.T) {
 	if !strings.Contains(checkIn, "\\+0\\.50 USD") || !strings.Contains(checkIn, "1\\.25 CNY") || strings.Contains(checkIn, "TXB") {
 		t.Fatalf("FormatCheckInWithMoney() = %q", checkIn)
 	}
-	rollover := RolloverSummary{State: RolloverPredicted, Amount: &usd}
-	combo := FormatCombo(copy, markdownPurchase(), nil, rollover)
-	if !strings.Contains(combo, "0\\.50 USD") || strings.Contains(combo, "TXB") {
-		t.Fatalf("FormatCombo() = %q", combo)
-	}
 	deduct := FormatDeductSucceeded(copy, cny)
 	if !strings.Contains(deduct, "1\\.25 CNY") || strings.Contains(deduct, "TXB") {
 		t.Fatalf("FormatDeductSucceeded() = %q", deduct)

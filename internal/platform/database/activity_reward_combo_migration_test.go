@@ -14,7 +14,7 @@ const customComboRecoveryMigration = "054_restore_custom_combo_after_core_reward
 
 func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 	t.Parallel()
-	ctx, store := context.Background(), newTestStore(t)
+	ctx, store := context.Background(), newHistoricalRewardStore(t)
 	now := time.Now().UTC().Add(-2 * time.Hour)
 	core := saveTestCombo(t, store, "Original core", 100, 30)
 	target := saveTestCombo(t, store, "New core", 200, 45)
@@ -48,7 +48,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 			t.Fatal(err)
 		}
 		reward := activity.Reward{Kind: activity.RewardEntitlementGrant, ComboID: core.ID, SquadUUIDs: []string{"awarded"},
-			RenewalPriceMinor: test.price, TrafficLimitBytes: 500 << 30, RolloverMinRemainingBPS: 9999}
+			RenewalPriceMinor: test.price, TrafficLimitBytes: 500 << 30}
 		grant := playComboReward(t, store, user.ID, "custom", reward, now.Add(time.Minute))
 		test.resultID = grant.ID
 		if test.name == "ambiguous custom prizes" {
@@ -76,7 +76,8 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 		}
 		switch test.name {
 		case "pending rollover metadata":
-			seedPendingRewardRollover(t, store, purchase.ID, changeAt)
+			seedHistoricalRewardSettlement(t, store, purchase.ID, changeAt, false)
+
 		case "zero price and existing sync":
 			if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,available_at,created_at,updated_at)
 				VALUES(?,'xnode_sync_user',?,'pending',?,?,?)`, "existing-sync", fmt.Sprintf(`{"userId":%q}`, user.ID), stamp(now), stamp(now), stamp(now)); err != nil {
@@ -99,10 +100,8 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 				t.Fatal(err)
 			}
 		case "rollover in progress":
-			seedPendingRewardRollover(t, store, purchase.ID, changeAt)
-			if err := store.MarkRolloverProcessing(ctx, purchase.ID, changeAt); err != nil {
-				t.Fatal(err)
-			}
+			seedHistoricalRewardSettlement(t, store, purchase.ID, changeAt, true)
+
 		case "malformed historical reward":
 			if _, err := store.DB().ExecContext(ctx, `UPDATE activity_draw_results SET reward_payload='invalid' WHERE id=?`, grant.ID); err != nil {
 				t.Fatal(err)
@@ -150,7 +149,7 @@ func TestCustomComboRecoveryRequiresUnambiguousRewardEvidence(t *testing.T) {
 					if test.recover && (state != "pending" || limit != 500<<30 || minimum != 9999) {
 						t.Fatalf("recovered pending rollover = (%s, %d, %d)", state, limit, minimum)
 					}
-					if !test.recover && (state != "processing" || limit != target.TrafficLimitBytes || minimum != int64(target.RolloverMinRemainingBPS)) {
+					if !test.recover && (state != "processing" || limit != target.TrafficLimitBytes || minimum != 0) {
 						t.Fatalf("processing rollover was modified = (%s, %d, %d)", state, limit, minimum)
 					}
 				}

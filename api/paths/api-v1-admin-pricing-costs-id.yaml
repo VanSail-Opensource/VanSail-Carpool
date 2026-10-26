@@ -1,0 +1,60 @@
+{
+  "put": {
+    "tags": [
+      "Pricing"
+    ],
+    "operationId": "savePricingProviderCost",
+    "summary": "savePricingProviderCost",
+    "responses": {
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "204": {
+        "description": "Applied and audited."
+      },
+      "409": {
+        "description": "Current policy version, quote eligibility or resource safety prevents this operation."
+      },
+      "404": {
+        "description": "Pricing resource does not exist."
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "parameters": [
+      {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/PricingCost"
+          }
+        }
+      }
+    }
+  }
+}

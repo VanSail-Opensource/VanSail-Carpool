@@ -1,0 +1,84 @@
+{
+  "post": {
+    "tags": [
+      "Pricing"
+    ],
+    "operationId": "authorizeSensitivePricingExport",
+    "summary": "authorizeSensitivePricingExport",
+    "responses": {
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "200": {
+        "description": "Pricing result. Fixed products and binding financial terms remain authoritative.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": {
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "token",
+                "expiresAt"
+              ]
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Current policy version, quote eligibility or resource safety prevents this operation."
+      },
+      "404": {
+        "description": "Pricing resource does not exist."
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "scope": {
+                "$ref": "../openapi.yaml#/components/schemas/PricingExportScope"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "authorize": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "required": [
+              "scope",
+              "reason",
+              "authorize"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

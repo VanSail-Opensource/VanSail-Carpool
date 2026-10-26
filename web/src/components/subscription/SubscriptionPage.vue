@@ -52,7 +52,7 @@ function consumeRevoke(): void {
       <SubscriptionFormats :key="subscription.subscriptionUrl ?? ''" />
       <section class="section-block">
         <div class="section-heading"><h2>{{ t('subscription.hosts') }}</h2></div>
-        <ul v-if="subscription.hosts.length" class="subscription-page__hosts"><HostLinkRow v-for="host in subscription.hosts" :key="host.uuid" :host="host" /></ul>
+        <ul v-if="subscription.hosts.length" class="subscription-page__hosts"><HostLinkRow v-for="host in subscription.hosts" :key="host.uuid" :host="host" @saved="refresh()" /></ul>
         <p v-else class="subscription-page__empty">{{ t('subscription.noHosts') }}</p>
       </section>
       <section v-if="subscription.activeCombo && subscription.summary.monitoringEnabled" class="section-block">

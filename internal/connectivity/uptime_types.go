@@ -27,6 +27,11 @@ type UptimeSummary struct {
 
 // SubscriptionHost contains only this member's native import link and metadata.
 type SubscriptionHost struct {
+	PublishedName string         `json:"publishedName"`
+	NameOverride  string         `json:"nameOverride"`
+	PriceLabel    string         `json:"priceLabel"`
+	CustomRoute   bool           `json:"customRoute"`
+	SplitXHTTP    bool           `json:"splitXhttp"`
 	UUID          string         `json:"uuid"`
 	Name          string         `json:"name"`
 	CountryCodes  []string       `json:"countryCodes"`

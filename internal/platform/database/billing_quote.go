@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
@@ -13,6 +15,10 @@ import (
 // QuotePurchase performs the same catalog, coupon, and effective-date checks as
 // checkout without changing balances, coupon grants, or entitlement state.
 func (s *Store) retryAttempt_QuotePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.PurchaseQuote, error) {
+	if err := s.PreparePurchasePricing(ctx, input, now); err != nil {
+		return model.PurchaseQuote{}, err
+	}
+	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	input.IdempotencyKey = "quote"
 	if _, err := normalizeAndFingerprintPurchase(&input); err != nil {
 		return model.PurchaseQuote{}, err
@@ -22,19 +28,16 @@ func (s *Store) retryAttempt_QuotePurchase(ctx context.Context, input PurchaseIn
 		return model.PurchaseQuote{}, fmt.Errorf("begin purchase quote: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	quote, _, _, err := quotePurchaseTx(ctx, tx, input, now.UTC())
+	quote, _, _, err := s.quotePurchaseTx(ctx, tx, input, now.UTC())
 	return quote, err
 }
 
-func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now time.Time) (model.PurchaseQuote, model.Combo, []model.SquadProduct, error) {
-	until, err := renewalBlockedUntil(ctx, tx, input.UserID, now)
+func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now time.Time) (model.PurchaseQuote, model.Combo, []model.SquadProduct, error) {
+	combo, err := comboByIDTx(ctx, tx, input.ComboID, true)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
-	if until != nil {
-		return model.PurchaseQuote{}, model.Combo{}, nil, ErrAutoRenewalEnabled
-	}
-	combo, err := comboByIDTx(ctx, tx, input.ComboID, true)
+	combo.PriceTXBMinor, err = resolvePricingTx(ctx, tx, "combo", combo.ID, combo.PriceTXBMinor, now)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
@@ -60,6 +63,14 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 		if _, included := includedUUIDs[product.GroupID]; included {
 			continue
 		}
+		product.PriceTXBMinor, loadErr = resolvePricingTx(ctx, tx, "addon", product.GroupID, product.PriceTXBMinor, now)
+		if loadErr != nil {
+			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
+		}
+		product.PriceTXBMinor, _, loadErr = personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, []string{product.GroupID}, now, false)
+		if loadErr != nil {
+			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
+		}
 		includedUUIDs[product.GroupID] = struct{}{}
 		addonRows = append(addonRows, product)
 		addonPrice += product.PriceTXBMinor
@@ -74,11 +85,29 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 	if err := checkSquadStockTx(ctx, tx, selectedSquads, input.UserID); err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
-	grossMinor := combo.PriceTXBMinor + addonPrice
 	validFrom, err := nextPurchaseStartTx(ctx, tx, input.UserID, now)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
+	var renewalDecision *model.PricingDecision
+	if validFrom.After(now) {
+		renewalDecision, err = s.queuedRenewalDecisionTx(ctx, tx, input.UserID, now)
+		if err != nil {
+			return model.PurchaseQuote{}, model.Combo{}, nil, err
+		}
+	}
+	personalPrice, decision, err := personalProductPriceTx(ctx, tx, input.UserID, "combo", combo.ID, combo.ID, selectedSquads, now, validFrom.After(now))
+	if err != nil {
+		return model.PurchaseQuote{}, model.Combo{}, nil, err
+	}
+	combo.PriceTXBMinor = personalPrice
+	if input.CouponGrantID == "" {
+		combo.PriceTXBMinor, err = personalPricingTx(ctx, tx, input.UserID, "combo", combo.ID, combo.PriceTXBMinor, 1, "", false, now)
+		if err != nil {
+			return model.PurchaseQuote{}, model.Combo{}, nil, err
+		}
+	}
+	grossMinor := combo.PriceTXBMinor + addonPrice
 	discount := coupons.Discount{GrossMinor: grossMinor, NetMinor: grossMinor}
 	addonUUIDs := make([]string, 0, len(addonRows))
 	for _, addon := range addonRows {
@@ -94,6 +123,7 @@ func quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now t
 		}
 	}
 	return model.PurchaseQuote{
+		PricingDecision: decision, RenewalDecision: renewalDecision,
 		ComboID: combo.ID, ComboName: combo.Name,
 		GrossPriceTXBMinor: grossMinor, DiscountTXBMinor: discount.DiscountMinor, NetPriceTXBMinor: discount.NetMinor,
 		GrossPrice: model.TXBMoney(grossMinor), Discount: model.TXBMoney(discount.DiscountMinor), NetPrice: model.TXBMoney(discount.NetMinor),

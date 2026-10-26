@@ -28,11 +28,11 @@ func applyDrawCoreComboTx(ctx context.Context, tx *sql.Tx, purchaseID, comboID s
 	} else {
 		traffic = combo.TrafficLimitBytes
 		_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_traffic_limit_bytes=NULL,
-			entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=NULL,reward_rollover_min_remaining_bps=NULL,
+			entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=NULL,
 			reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=NULL,updated_at=? WHERE id=?`, comboID, stamp(now), purchaseID)
 	}
 	if err != nil {
 		return fmt.Errorf("apply core-change reward: %w", err)
 	}
-	return refreshPendingRolloverTx(ctx, tx, purchaseID, traffic, comboID, now)
+	return nil
 }

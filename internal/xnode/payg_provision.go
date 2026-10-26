@@ -3,8 +3,9 @@ package xnode
 import (
 	"context"
 	"encoding/json"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"strings"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 func isPAYGIdentity(i Identity) bool { return strings.HasPrefix(i.ServiceName, paygPrefix) }
@@ -82,7 +83,18 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 		}
 	}
 	if s.master != nil {
+		// Provisioning can add the first account during this operation. Synchronize
+		// the committed inventory, rather than the pre-provisioning snapshot.
+		accounts, err = r.XNodePAYGAccounts(ctx, user.ID, "")
+		if err != nil {
+			return err
+		}
+		requested := map[string]bool{}
 		for _, account := range accounts {
+			if requested[account.NodeID] {
+				continue
+			}
+			requested[account.NodeID] = true
 			s.master.mu.RLock()
 			peer := s.master.peers[account.NodeID]
 			s.master.mu.RUnlock()

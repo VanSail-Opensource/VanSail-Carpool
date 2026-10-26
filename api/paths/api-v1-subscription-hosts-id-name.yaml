@@ -1,0 +1,27 @@
+put:
+  tags: [Subscription]
+  operationId: saveOwnedHostName
+  summary: Set the owner's display name for an accessible host
+  description: Empty input restores the published name. Supports the {price} placeholder. Display preferences never modify stable host identifiers or server configurations.
+  parameters:
+    - { name: id, in: path, required: true, schema: { type: string, maxLength: 256 } }
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          additionalProperties: false
+          required: [name]
+          properties:
+            name: { type: string, maxLength: 100 }
+  responses:
+    '200':
+      description: Saved display preference
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/HostNameCustomization' }
+    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }

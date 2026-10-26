@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 func TestRefreshRemoteUsesCreatedUsersAndRolloverTermUsage(t *testing.T) {
@@ -21,7 +21,7 @@ func TestRefreshRemoteUsesCreatedUsersAndRolloverTermUsage(t *testing.T) {
 	firstUsed, secondUsed := int64(250), int64(750)
 	provider := &statisticsProviderStub{
 		digest: Digest{CreatedUsers: 9, ExpiredUsers: 4},
-		snapshots: map[string]rollover.UsageSnapshot{
+		snapshots: map[string]usageaccounting.UsageSnapshot{
 			firstID:  {LimitBytes: 1_000, Strategy: "NO_RESET", WeightedUsedBytes: firstUsed, NodeSeriesAvailable: true},
 			secondID: {LimitBytes: 1_000, Strategy: "NO_RESET", WeightedUsedBytes: secondUsed, NodeSeriesAvailable: true},
 		},
@@ -32,9 +32,6 @@ func TestRefreshRemoteUsesCreatedUsersAndRolloverTermUsage(t *testing.T) {
 	}
 	if remote.WeeklyUserIncrease != 9 || remote.MonthlyAverageUsageBPS != 5_000 || remote.MonthlyAverageUsage != 50 {
 		t.Fatalf("remote statistics = %+v", remote)
-	}
-	if remote.PredictedAverageRollover.Minor != "125" {
-		t.Fatalf("predicted average rollover = %s, want 125 including one valid zero projection", remote.PredictedAverageRollover.Minor)
 	}
 	if !provider.starts[firstID].Equal(now.AddDate(0, 0, -10)) || !provider.starts[secondID].Equal(now.AddDate(0, 0, -40)) {
 		t.Fatalf("usage starts = %+v", provider.starts)
@@ -66,8 +63,8 @@ func TestRefreshRemoteSkipsMembersWithoutUsableProviderIdentity(t *testing.T) {
 		{Purchase: model.Purchase{ID: "usable", UserID: "user-3", ValidFrom: now.AddDate(0, 0, -10), ValidUntil: now.AddDate(0, 0, 10)}, RemoteUserID: remoteID},
 	}}
 	provider := &statisticsProviderStub{
-		snapshots:   map[string]rollover.UsageSnapshot{remoteID: {LimitBytes: 1_000, Strategy: "NO_RESET", WeightedUsedBytes: used, NodeSeriesAvailable: true}},
-		usageErrors: map[string]error{"missing": rollover.ErrRemoteUserMissing},
+		snapshots:   map[string]usageaccounting.UsageSnapshot{remoteID: {LimitBytes: 1_000, Strategy: "NO_RESET", WeightedUsedBytes: used, NodeSeriesAvailable: true}},
+		usageErrors: map[string]error{"missing": errors.New("account unavailable")},
 	}
 	remote, err := NewService(repository, provider).refreshRemote(context.Background(), now)
 	if err != nil || remote.MonthlyAverageUsageBPS != 2_500 {
@@ -94,7 +91,7 @@ func (r *statisticsRepositoryStub) SaveStatisticsPartition(context.Context, stri
 
 type statisticsProviderStub struct {
 	digest      Digest
-	snapshots   map[string]rollover.UsageSnapshot
+	snapshots   map[string]usageaccounting.UsageSnapshot
 	usageErrors map[string]error
 	starts      map[string]time.Time
 	nodes       []Node
@@ -106,13 +103,13 @@ func (p *statisticsProviderStub) Digest(context.Context, time.Time, time.Time) (
 func (p *statisticsProviderStub) Traffic(context.Context, time.Time, time.Time) (Traffic, error) {
 	return Traffic{}, nil
 }
-func (p *statisticsProviderStub) UsageSnapshotForRollover(_ context.Context, id string, start, _ time.Time) (rollover.UsageSnapshot, error) {
+func (p *statisticsProviderStub) UsageSnapshot(_ context.Context, id string, start, _ time.Time) (usageaccounting.UsageSnapshot, error) {
 	if p.starts == nil {
 		p.starts = make(map[string]time.Time)
 	}
 	p.starts[id] = start
 	if err := p.usageErrors[id]; err != nil {
-		return rollover.UsageSnapshot{}, err
+		return usageaccounting.UsageSnapshot{}, err
 	}
 	return p.snapshots[id], nil
 }

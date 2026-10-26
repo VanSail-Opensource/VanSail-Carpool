@@ -60,6 +60,11 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		raw.Close()
 		t.Fatal("old schema was accepted without upgrade")
 	}
+	if _, err = provider.UpTo(ctx, 17); err != nil {
+		raw.Close()
+		t.Fatal(err)
+	}
+	seedRetirementUpgrade(t, ctx, raw)
 	if err = raw.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +74,7 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
+	verifyRetirementUpgrade(t, ctx, db)
 	if err = VerifySchema(ctx, db); err != nil {
 		t.Fatal(err)
 	}

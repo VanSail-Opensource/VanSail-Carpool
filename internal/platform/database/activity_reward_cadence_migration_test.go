@@ -12,7 +12,7 @@ const customCadenceMigration = "056_restore_custom_combo_reset_cadence.sql"
 
 func TestCustomCadenceRecoveryUsesAwardCoreAndPreservesExplicitOverrides(t *testing.T) {
 	t.Parallel()
-	ctx, store := context.Background(), newTestStore(t)
+	ctx, store := context.Background(), newHistoricalRewardStore(t)
 	for index, test := range []struct {
 		name, want string
 		recover    bool
@@ -37,7 +37,7 @@ func TestCustomCadenceRecoveryUsesAwardCoreAndPreservesExplicitOverrides(t *test
 			monthly := saveCadenceCombo(t, store, "Later award core", "MONTH_ROLLING")
 			user, purchase := createAdminWorkflowPurchase(t, store, int64(32120+index), core, now)
 			custom := activity.Reward{Kind: activity.RewardEntitlementGrant, ComboID: core.ID, SquadUUIDs: []string{"awarded"},
-				RenewalPriceMinor: 500, TrafficLimitBytes: 500 << 30, RolloverMinRemainingBPS: 9999}
+				RenewalPriceMinor: 500, TrafficLimitBytes: 500 << 30}
 			change := activity.Reward{Kind: activity.RewardCoreComboSwitch, ComboID: target.ID}
 			if test.name == "terms restored by 055" || test.name == "later custom in same raffle" {
 				later := custom
@@ -70,7 +70,7 @@ func TestCustomCadenceRecoveryUsesAwardCoreAndPreservesExplicitOverrides(t *test
 				if err := store.SetAutoRenewal(ctx, user.ID, purchase.ID, true, now); err != nil {
 					t.Fatal(err)
 				}
-				recordAutomaticRollover(t, store, purchase.ID, purchase.ValidUntil, 1000, 0)
+
 				var err error
 				purchase, err = store.CommitAutoRenewal(ctx, purchase.ID, purchase.ValidUntil)
 				if err != nil {

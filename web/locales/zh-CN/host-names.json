@@ -1,0 +1,12 @@
+{
+  "hostNames": {
+    "edit": "编辑 {name}",
+    "title": "节点名称",
+    "hint": "使用 {placeholder} 显示当前费率。留空可恢复发布名称。",
+    "name": "名称",
+    "preview": "预览：{name}",
+    "saveFailed": "无法保存节点名称。",
+    "customRoute": "自定义路由",
+    "splitXhttp": "分离 XHTTP"
+  }
+}

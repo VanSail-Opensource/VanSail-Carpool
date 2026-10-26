@@ -26,7 +26,6 @@ const combo = {
   resetStrategy: 'MONTH_ROLLING' as const,
   includedSquads: [],
   active: true,
-  rolloverMinRemainingBps: 0,
   createdAt: '2026-08-08T00:00:00Z',
   updatedAt: '2026-08-08T00:00:00Z',
 }
@@ -131,7 +130,7 @@ describe('CatalogPage quote restoration', () => {
     expect(refreshQuote).not.toHaveBeenCalled()
     expect(wrapper.find('[data-test="catalog-confirmation"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="catalog-flow-progress"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -191,13 +190,13 @@ describe('CatalogPage quote restoration', () => {
     wrapper.unmount()
   })
 
-  it('keeps blocked members in Combo mode without redirecting', async () => {
+  it('keeps the catalog browsable with an old renewal preference projection', async () => {
     const { autoRenewalBlocked, router, wrapper } = await mountPage(null, 1)
     autoRenewalBlocked.value = true
     await nextTick()
     expect(router.currentRoute.value.path).toBe('/catalog')
-    expect(wrapper.findComponent({ name: 'CatalogBlocked' }).exists()).toBe(true)
-    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CatalogBlocked' }).exists()).toBe(false)
+    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(true)
     wrapper.unmount()
   })
 })

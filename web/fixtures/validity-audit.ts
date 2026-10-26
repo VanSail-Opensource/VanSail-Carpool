@@ -28,7 +28,7 @@ const items: AdminEntitlement[] = statuses.map((status, index) => ({
   validFrom: iso(index === 1 ? 3_600_000 : -86_400_000),
   validUntil: iso(index === 1 ? 86_400_000 : index === 0 && params.has('boundary') ? 15_000 : -1000),
   autoRenewEnabled: false, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING',
-  squadUuids: [], rolloverMinRemainingBps: 0, createdAt: iso(-86_400_000), updatedAt: iso(-86_400_000),
+  squadUuids: [], createdAt: iso(-86_400_000), updatedAt: iso(-86_400_000),
 }))
 const calls: string[] = []
 Object.assign(window, { validityAuditCalls: calls })

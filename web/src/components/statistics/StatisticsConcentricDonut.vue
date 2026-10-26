@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { motion } from 'motion-v'
+import { VisDonut, VisSingleContainer } from '@unovis/vue'
+import { Donut } from '@unovis/ts'
+import { ChartContainer } from '@/components/charts'
 
 import type { NamedShare } from '@/api/types'
-import { motionDurations } from '@/composables/motionPresets'
-import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import { ringSegments } from './statisticsGeometry'
 import StatisticsChartDetail from './StatisticsChartDetail.vue'
 import { chartSegments, formatStatisticNumber, formatStatisticPercent } from './statisticsFormat'
 import { useStatisticsChartSelection } from './useStatisticsChartSelection'
@@ -36,57 +35,19 @@ const chartRings = computed(() => props.rings.map((ring) => ({
 })))
 const hasSegments = computed(() => chartRings.value.some((ring) => ring.segments.length > 0))
 const allSegments = computed(() => chartRings.value.flatMap((ring) => ring.segments))
-const { activeItem, hasActive, activate, deactivate, select, isActive, isSelected } = useStatisticsChartSelection(allSegments)
-const { reducedMotion } = useMotionPreferences()
-const ringRadius = (index: number) => 50 - index * (18 / Math.max(1, chartRings.value.length - 1))
+const { activeItem, activate, deactivate, select, isSelected } = useStatisticsChartSelection(allSegments)
 const manyRings = computed(() => chartRings.value.length > 2)
+const donutEvents = { [Donut.selectors.segment]: {
+ pointerenter: (d: { data: { interactionId: string } }) => activate(d.data.interactionId),
+ pointerleave: (d: { data: { interactionId: string } }) => deactivate(d.data.interactionId),
+ click: (d: { data: { interactionId: string } }) => select(d.data.interactionId),
+} }
 </script>
 
 <template>
   <div v-if="hasSegments" class="statistics-concentric-layout">
     <div class="statistics-concentric-rings" :class="{ 'statistics-concentric-rings--many': manyRings }">
-      <svg viewBox="0 0 120 120" role="group" :aria-label="chartLabel">
-        <title>{{ chartLabel }}</title>
-        <template v-for="(ring, index) in chartRings" :key="ring.id">
-          <motion.circle
-            class="statistics-ring-track"
-            :class="index === 0 ? 'statistics-concentric-ring--outer' : 'statistics-concentric-ring--inner'"
-            cx="60"
-            cy="60"
-            :r="ringRadius(index)"
-            pathLength="100"
-          />
-          <motion.circle
-            v-for="segment in ringSegments(ring.segments)"
-            :key="segment.interactionId"
-            class="statistics-ring-segment"
-            :class="[
-              'statistics-chart-segment',
-              index === 0 ? 'statistics-concentric-ring--outer' : 'statistics-concentric-ring--inner',
-              { 'statistics-chart-segment--muted': hasActive && !isActive(segment.interactionId) },
-            ]"
-            cx="60"
-            cy="60"
-            :r="ringRadius(index)"
-            pathLength="100"
-            :stroke="segment.color"
-            :initial="reducedMotion ? { opacity: 0, strokeDasharray: segment.dasharray, strokeDashoffset: segment.dashoffset } : { opacity: 0, strokeDasharray: '0 100' }"
-            :animate="{ opacity: 1, strokeDasharray: segment.dasharray, strokeDashoffset: segment.dashoffset }"
-            :transition="{ duration: reducedMotion ? 0.08 : motionDurations.data, delay: reducedMotion ? 0 : index * 0.03, ease: 'easeOut' }"
-            role="button"
-            tabindex="0"
-            :aria-label="$t('statistics.chartSeries', { series: segment.ringLabel, segment: $t('statistics.chartSeries', { series: segment.label, segment: $t('statistics.chartPointValue', { value: formatStatisticNumber(segment.value), percent: formatStatisticPercent(segment.percentage) }) }) })"
-            :aria-pressed="isSelected(segment.interactionId)"
-            @pointerenter="activate(segment.interactionId)"
-            @pointerleave="deactivate(segment.interactionId)"
-            @focus="activate(segment.interactionId)"
-            @blur="deactivate(segment.interactionId)"
-            @click="select(segment.interactionId)"
-            @keydown.enter.prevent="select(segment.interactionId)"
-            @keydown.space.prevent="select(segment.interactionId)"
-          />
-        </template>
-      </svg>
+      <ChartContainer :config="{}" class="concentric-unovis" :aria-label="chartLabel"><div v-for="(ring, index) in chartRings" :key="ring.id" class="concentric-unovis__ring"><VisSingleContainer :data="ring.segments" :height="240" :duration="0"><VisDonut :events="donutEvents" :value="(d: typeof ring.segments[number]) => Number(d.value)" :color="(d: typeof ring.segments[number]) => d.color" :radius="104 - index * (40 / Math.max(1, chartRings.length - 1))" :arc-width="Math.min(22, 48 / chartRings.length)" :pad-angle=".01" :angle-range="[0, Math.PI * 2 * ((ring.weight ?? 100) / 100)]" /></VisSingleContainer></div></ChartContainer>
       <UIcon v-if="centerIcon" class="statistics-concentric__icon" :name="centerIcon" aria-hidden="true" />
       <div v-else class="statistics-concentric__center" aria-hidden="true">
         <strong>{{ centerValue }}</strong>
@@ -127,3 +88,10 @@ const manyRings = computed(() => chartRings.value.length > 2)
     />
   </div>
 </template>
+
+<style scoped>
+.statistics-concentric-rings { position: relative; width: 240px; max-width: 100%; min-height: 240px; display: block; }
+.statistics-concentric__center, .statistics-concentric__icon { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 30%; }
+.concentric-unovis { position: relative; height: 240px; }.concentric-unovis__ring { position: absolute; inset: 0; pointer-events: none; }
+.concentric-unovis__ring :deep(.vis-donut-segment) { pointer-events: auto; }
+</style>

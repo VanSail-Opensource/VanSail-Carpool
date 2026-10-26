@@ -1,0 +1,54 @@
+{
+  "get": {
+    "tags": [
+      "Admin"
+    ],
+    "operationId": "getAdminUserPrices",
+    "summary": "getAdminUserPrices",
+    "description": "Bounded user product prices with explicit cursor pagination. Coupon net prices are individual-product estimates; checkout revalidates the complete basket.",
+    "parameters": [
+      {
+        "$ref": "../openapi.yaml#/components/parameters/ResourceID"
+      },
+      {
+        "in": "query",
+        "name": "cursor",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Owner-specific analytical projection.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/UserPricePage"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "404": {
+        "$ref": "../openapi.yaml#/components/responses/NotFound"
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ]
+  }
+}

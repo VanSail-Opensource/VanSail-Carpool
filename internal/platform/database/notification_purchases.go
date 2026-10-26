@@ -74,30 +74,13 @@ func (s *Store) insertActivationNotificationTx(ctx context.Context, tx *sql.Tx, 
 	return err
 }
 
-func (s *Store) insertAutoRenewalNotificationTx(ctx context.Context, tx *sql.Tx, purchaseID, sourceID, userID, combo, validUntil string,
-	debit int64, now time.Time) error {
-	var allocated, used, eligible sql.NullInt64
-	var credit, balance int64
-	var status, exception string
-	if err := tx.QueryRowContext(ctx, `SELECT status,allocated_traffic_bytes,used_traffic_bytes,eligible_unused_bytes,
-		credited_txb_minor,exception_code FROM purchase_rollovers WHERE purchase_id=?`, sourceID).Scan(
-		&status, &allocated, &used, &eligible, &credit, &exception); err != nil {
-		return err
-	}
+func (s *Store) insertAutoRenewalNotificationTx(ctx context.Context, tx *sql.Tx, purchaseID, sourceID, userID, combo, validUntil string, debit int64, now time.Time) error {
+	var balance int64
 	if err := tx.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, userID).Scan(&balance); err != nil {
 		return err
 	}
-	facts := map[string]string{
-		notifications.FactCombo: combo, notifications.FactRenewalDebit: strconv.FormatInt(-debit, 10),
-		notifications.FactUsed: strconv.FormatInt(used.Int64, 10), notifications.FactAllocated: strconv.FormatInt(allocated.Int64, 10),
-		notifications.FactEligible: strconv.FormatInt(eligible.Int64, 10), notifications.FactRollover: strconv.FormatInt(credit, 10),
-		notifications.FactBalance: strconv.FormatInt(balance, 10), notifications.FactValidUntil: validUntil,
-	}
-	if exception != "" || !allocated.Valid || !used.Valid || !eligible.Valid || status == "exception" {
-		facts[notifications.FactRolloverStatus] = "unavailable"
-	}
-	_, err := s.insertUserNotificationTx(ctx, tx, "auto-renewal:"+purchaseID, userID,
-		jobpayload.UserEventAutoRenewal, "", facts, now)
+	facts := map[string]string{notifications.FactCombo: combo, notifications.FactRenewalDebit: strconv.FormatInt(-debit, 10), notifications.FactBalance: strconv.FormatInt(balance, 10), notifications.FactValidUntil: validUntil}
+	_, err := s.insertUserNotificationTx(ctx, tx, "auto-renewal:"+purchaseID, userID, jobpayload.UserEventAutoRenewal, "", facts, now)
 	return err
 }
 

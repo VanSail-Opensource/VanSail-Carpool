@@ -3,21 +3,22 @@ package admin
 import (
 	"context"
 	"errors"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 )
 
 type refundUsageStub struct {
-	snapshot rollover.UsageSnapshot
+	snapshot usageaccounting.UsageSnapshot
 	err      error
 	calls    int
 	end      time.Time
 }
 
-func (r *refundUsageStub) UsageSnapshotForRollover(_ context.Context, _ string, _ time.Time, end time.Time) (rollover.UsageSnapshot, error) {
+func (r *refundUsageStub) UsageSnapshot(_ context.Context, _ string, _ time.Time, end time.Time) (usageaccounting.UsageSnapshot, error) {
 	r.calls++
 	r.end = end
 	return r.snapshot, r.err
@@ -26,9 +27,9 @@ func (r *refundUsageStub) UsageSnapshotForRollover(_ context.Context, _ string, 
 func refundQuoteFixture(paid, limit, used int64, strategy string, days int) (*UserWorkflows, *refundUsageStub) {
 	start := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	remoteID := "1"
-	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user", ProxyUserID: &remoteID}, purchases: []model.Purchase{{ID: "purchase", UserID: "user", Status: "active", PriceTXBMinor: paid, GrossPriceTXBMinor: 10000, TrafficLimitBytes: limit, ResetStrategy: strategy, RolloverMinRemainingBPS: 8500, ValidFrom: start, ValidUntil: start.AddDate(0, 0, days)}}}
+	repository := &userWorkflowRepositoryStub{user: model.User{ID: "user", ProxyUserID: &remoteID}, purchases: []model.Purchase{{ID: "purchase", UserID: "user", Status: "active", PriceTXBMinor: paid, GrossPriceTXBMinor: 10000, TrafficLimitBytes: limit, ResetStrategy: strategy, ValidFrom: start, ValidUntil: start.AddDate(0, 0, days)}}}
 	current := int64(999999)
-	source := &refundUsageStub{snapshot: rollover.UsageSnapshot{LimitBytes: 1, Strategy: "DAY", WeightedUsedBytes: used, NodeSeriesAvailable: true, CurrentUsedBytes: &current}}
+	source := &refundUsageStub{snapshot: usageaccounting.UsageSnapshot{LimitBytes: 1, Strategy: "DAY", WeightedUsedBytes: used, NodeSeriesAvailable: true, CurrentUsedBytes: &current}}
 	s := NewUserWorkflows(repository, nil)
 	s.refundUsage = source
 	s.now = func() time.Time { return start.Add(6 * 24 * time.Hour) }

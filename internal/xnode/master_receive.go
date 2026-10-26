@@ -11,6 +11,8 @@ import (
 
 func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Message) error {
 	switch message.Type {
+	case "compute.claim", "compute.heartbeat", "compute.result", "compute.cancel":
+		return m.receiveCompute(ctx, peer, message)
 	case "state.request":
 		m.requestSync(peer)
 		return nil

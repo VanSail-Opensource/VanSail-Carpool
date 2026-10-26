@@ -1,8 +1,9 @@
 package database
 
 import (
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 const (
@@ -31,6 +32,5 @@ type AutoRenewalPlan struct {
 	resetStrategyOverride *string
 	squadUUIDsOverride    *string
 	rewardRenewalPrice    *int64
-	rewardRolloverBPS     *int64
 	rewardTrafficRenewal  bool
 }

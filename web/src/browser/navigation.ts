@@ -8,6 +8,7 @@ export const adminGroups = [
     { value: 'onboarding', labelKey: 'adminNav.onboarding', icon: 'i-ph-user-plus-bold' },
   ] },
   { labelKey: 'adminNav.commerce', sections: [
+    { value: 'pricing', labelKey: 'pricing.title', icon: 'i-ph-chart-line-bold' },
     { value: 'catalog', labelKey: 'adminNav.catalog', icon: 'i-ph-package-bold' },
     { value: 'coupons', labelKey: 'adminNav.coupons', icon: 'i-ph-ticket-bold' },
     { value: 'usdt', labelKey: 'adminUsdt.title', icon: 'i-ph-currency-circle-dollar-bold' },

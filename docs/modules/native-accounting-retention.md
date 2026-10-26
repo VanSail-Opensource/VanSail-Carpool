@@ -12,7 +12,7 @@ multiplier boundaries below acknowledged report cursors. The current boundary,
 future boundaries, report cursors, period participation and exact usage remain.
 
 Purchase compaction excludes every native period reference and any unsettled
-rollover. This preserves refund evidence, unfinished journals and settled native
+purchase lifecycle. This preserves refund evidence, unfinished journals and settled native
 purchase identity while allowing existing legacy financial rollups to continue.
 No live observations or duplicate upstream dataset are persisted. Hosted cases
 in `retention_native_test.go` cover accounting preservation and precise aggregation.

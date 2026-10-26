@@ -26,7 +26,6 @@ leases. The pump is cancelled/joined with the scheduler before storage closes.
 `scheduler_admission_test.go` verifies ordinary member work starts without a
 scheduled drain, with cancellation and executor shutdown joined in hosted CI.
 
-`xnode_rollover.go` resolves native rollover through panel ownership and explicit purchase references, retaining frozen imported usage in purchase-owned settlement.
 
 `xnode_scan_test.go` exercises real native scan nonce allocation with a panel identity and no legacy account. Both adapter scan entry points allocate the minimum accepted 128-bit nonce.
 
@@ -71,16 +70,13 @@ stopped.
 - `payment_refund_adapter.go` reconciles ambiguous Telegram Stars refunds from authoritative transaction history.
 - `application_lifecycle.go` starts and stops provider queues, the scheduler, HTTP serving, and database resources in dependency order.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
-- `bootstrap_settings.go` persists startup defaults, including the automatic-renewal rollover-balance policy, and creates the encrypted provider settings required at first startup.
 - `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
 - `adapters.go` implements Telegram identity/membership and payment-provider bridges used by domain services.
-- `node_multiplier_cache.go` owns the copied five-minute node-multiplier cache shared by queued X-Node projections and rollover usage mapping.
 - `node_multiplier_cache_test.go` covers cache expiry at the five-minute boundary.
   the narrow traffic-threshold projection.
   live counts and byte rates are rounded into the integer public contract.
 - `maintenance_operation_test.go` covers successful, failed, and active-lease maintenance receipts.
 - `emby_adapter.go` implements queued Emby client creation, account operations, policy updates, and metadata lookups.
-- `scheduler.go` runs prompt temporary-ban restoration, automatic due-renewal revalidation before entitlement transitions, plus recurring outbox, rollover, backup, and maintenance work until application cancellation; verified-backup retention warnings are logged separately from completed cleanup.
 - `notification_scheduler.go` runs the bounded startup and five-minute reminder
   and traffic scan independently from the outbox drain.
 - `statistics_scheduler.go` schedules the 30-minute statistics refresh, startup
@@ -106,7 +102,6 @@ stopped.
 
 Turnstile uses an independent bounded provider queue in `provider_queues.go`, with the same lifecycle and executor as other providers. Composition injects the panel public hostname into accounts.FirstEntry and the verifier.
 
-`pm_forum_validation.go` performs bounded, queued getChat/getMe/getChatMember preflight. `telegram_queue_pm.go` exposes factory callbacks so PM rechecks eligibility and flags after queue waits. `pm_profile.go` builds ephemeral card facts from admin profiles and queued refund/rollover projections. `pm_workflows.go` registers relay/profile/repair provider kinds and localized refusal notices through the existing outbox.
 
 `xnode_member_subscription.go` derives owner-scoped member hosts from native access and current group preferences. Configuration and links remain transient, and DIY tuning attaches only to owner exports.
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
@@ -123,7 +118,6 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_connectivity.go`: Entry points: `Resolve`, `Validate`, `Load`.
 
-- `xnode_entitlements.go`: Entry points: `ApplyEntitlement`, `RemoveEntitlement`, `ResetTraffic`, `QuiesceForRollover`.
 
 - `xnode_member_subscription.go`: Entry points: `LoadMemberSubscription`.
 
@@ -136,7 +130,6 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `xnode_statistics.go`: Entry points: `Digest`, `Traffic`, `Nodes`.
 
 - `native_statistics.go`: Entry points: `nativeStatisticsProvider.Digest`,
-  `Traffic`, `Nodes`, `SquadNames`, `UsageSnapshotForRollover`. Native accounting
   drives aggregate partitions. Statistics read only X-Node activity, and nodes
   without native ownership or fresh connected telemetry show unavailable. Agent
   transport liveness remains independent of accounting settlement in Master.Metrics.
@@ -192,3 +185,23 @@ PAYG-only identities use the same owner-scoped export path without a Combo gate.
 PAYG jobs use the existing durable outbox and master executor. Startup and 30-second scans provision missing member/squad/node references in bounded batches. Connection scans and IP controls resolve every internal PAYG principal back to the authenticated member; source IP observations stay memory-only.
 
 `retention.go` runs bounded PAYG expiry independently at startup and each transition tick, reporting counts and failures without coupling deletion to account repairs.
+
+- `pricing_worker.go`: Single joined 20-second worker, three-second shared work budget, rotating bounded batches and pressure/storage gates.
+- `pricing_health.go`: Reuse authenticated X-Node CPU/memory semantics and independent connectivity without raw telemetry SQL.
+- `pricing_notice.go`: Queued model requests and nonblocking renewal price notifications.
+- `pricing_health_notice.go`: Queued administrator incident notifications containing sanitized facts.
+- `pricing_change_notice.go`: Notify administrators after direct audited pricing edits and material campaigns; no approval stage.
+
+- `compute_pressure.go`: Transient five-second CPU observer with pressure hysteresis.
+
+- `compute_pressure_test.go`: Hosted pressure-transition regression.
+
+- `pricing_compute.go`: Connects durable numerical jobs to negotiated master/local execution without blocking the observer.
+
+- `pricing_model_actions.go`: Schedules bounded pricing model work.
+
+- `purchase_expiry.go`: Purchase expiry and successor lifecycle orchestration.
+
+- `xnode_accounting.go`: Adapts exact native periods and historical usage into purchase accounting.
+
+Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `node_multiplier_cache.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.

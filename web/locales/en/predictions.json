@@ -1,0 +1,24 @@
+{
+  "predictions": {
+    "title": "Your usage outlook",
+    "open": "View usage predictions",
+    "back": "Back to your ride",
+    "period": "Last 2 completed days · next 5 complete days · UTC",
+    "actual": "Actual usage",
+    "predicted": "Predicted usage",
+    "interval": "Forecast interval",
+    "intervalValue": "{value}% nominal interval",
+    "coverage": "Observed history",
+    "coverageValue": "{value}% node-day coverage · {days} days",
+    "calibration": "Calibration",
+    "unvalidated": "Not validated yet",
+    "calibrated": "{value}% coverage over {samples} evaluated days",
+    "freshness": "Calculated",
+    "confidenceHint": "The band describes expected usage variation. History coverage and measured calibration are separate measures, not a guarantee. Gaps mean unavailable observations.",
+    "pending": "New predictions are being calculated.",
+    "stale": "These predictions need a refresh.",
+    "noHistory": "There is not enough complete history for a prediction yet.",
+    "loadFailed": "Predictions could not be loaded.",
+    "validated": "Validated"
+  }
+}

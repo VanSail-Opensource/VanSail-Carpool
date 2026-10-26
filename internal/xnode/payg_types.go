@@ -2,9 +2,10 @@ package xnode
 
 import (
 	"context"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
-	"time"
 )
 
 const PAYGJob = "xnode_payg_reconcile"
@@ -15,6 +16,7 @@ const PAYGWindow = 72 * time.Hour
 const paygPrefix = "member-payg-"
 
 type PAYGAccount struct {
+	PersonalPricing                                         bool `json:"-"`
 	Disabled                                                bool
 	ProxyUserID                                             int64
 	UserID, GroupID, NodeID, PeriodID                       string

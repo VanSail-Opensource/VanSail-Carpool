@@ -12,6 +12,7 @@ import { useI18n } from '@/i18n'
 import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 import AdminSquadProfileEditor from './squad-profile/AdminSquadProfileEditor.vue'
 import { editableProfile } from './squad-profile/profileForm'
+import ProductPricingSettings from './pricing/ProductPricingSettings.vue'
 
 const props = defineProps<{
   squad: SquadProduct
@@ -102,6 +103,7 @@ function submit(): void {
         <SwitchField v-if="draft.billingMode === 'combo'" id="squad-activation-required" v-model="draft.activationRequired" :label="t('adminSquad.activationRequired')" :help="t('adminSquad.activationRequiredHint')" />
         <motion.div v-if="draft.billingMode === 'combo' && draft.activationRequired" layout :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.18, ease: 'easeOut' }"><UFormField name="squad-activation-code" :label="t('adminSquad.activationCode')" :hint="t('adminSquad.activationCodeHint')" required><UInput v-model="draft.activationCode" type="password" autocomplete="new-password" inputmode="text" /></UFormField></motion.div>
         <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminSquad.saveSquad')" />
+        <ProductPricingSettings class="catalog-editor__wide" :kind="squad.billingMode === 'payg' ? 'payg' : 'addon'" :product-id="squad.groupId" />
       </UForm>
     </template>
   </USlideover>

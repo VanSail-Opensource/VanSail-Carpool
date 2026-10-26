@@ -6,11 +6,8 @@ Explore cards and subscription output, while server totals include consumption
 and server authorization preserves existing connections.
 Card traffic/spending occupy opposite bottom corners; funding remains on Home.
 
-`CatalogBlocked.vue` presents the automatic-renewal prohibition for every member
 role without redirecting or blocking the PAYG mode switch. The catalog's optional
 `autoRenewalBlockedUntil` is refreshed on focus and expiry by
-`useCatalogAdmission.ts`; quotes and transactional checkout enforce the same
-time window. `useCatalogAdmission.test.ts` covers expiry and authoritative refresh.
 
 `PAYGSummary.vue` centers the 72-hour label and traffic/spending metrics on one
 row, with contained wrapping when available width is insufficient.
@@ -31,7 +28,6 @@ between squads with different profile content; mobile keeps a single column.
 - `CatalogFlowProgress.vue` and `CatalogFlowControls.vue` present the current step and navigation controls; completed catalog steps use a Motion-presence check indicator, the active marker uses a shared layout ID, and the Back control uses local layout/presence. The compact progress rail fits narrow phones without forced horizontal expansion, and controls stay in normal document flow.
 - `catalogFlowProgress.ts` contains the pure completed-step icon rule used by the progress component.
 - `CatalogFlowProgress.test.ts` verifies one-based catalog steps map to the stepper index and completed steps use check indicators.
-- `CatalogComboPricingTable.vue` lays core combos out as responsive selectable cards, preserving Markdown descriptions and server-projected values while combining traffic with reset cadence, presenting the price period as `per N days`, showing the included-squad count, and shortening rollover eligibility copy. `ComboOption.vue` is the focused option primitive covered by its existing values and selection test; its selected check uses local Motion presence. Core-combo selection uses the configured display currency directly.
 - `catalogSquadPresentation.ts` orders selectable add-ons independently inside each squad type, uses aggregate global composition before a combo is selected, moves Included and Full squads not already held by the current user to the end of their type, and returns every tied positive leader per type. `catalogSquadPresentation.test.ts` covers selected-combo ordering, global fallback, type-local leaders, exclusions, and missing data.
 - `CatalogCouponStep.vue` selects an eligible wallet coupon or redeems a new code while its Continue action waits for a quote matching the current selection.
 - `CatalogConfirmation.vue` presents the localized post-purchase summary, uses a short one-shot Motion confirmation reveal with a reduced-motion opacity fallback, and emits the Home navigation action.
@@ -90,3 +86,5 @@ an auto-margin footer. The status marker stays fixed; synchronized opacity and
 ring animations provide blink/ripple feedback without vertical movement.
 Reduced-motion preferences disable both animations. Status labels remain
 localized and available to keyboard and screen-reader users.
+
+Selectable core Combo presentation with price and traffic terms: `CatalogComboPricingTable.vue`, `ComboOption.vue`.

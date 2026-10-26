@@ -139,6 +139,13 @@ export async function requestBlob(path: string, options: RequestOptions = {}): P
   return response.blob()
 }
 
+// Streaming consumers own cancellation and can pipe directly to a browser file.
+export async function requestStream(path: string, options: RequestOptions = {}): Promise<Response> {
+  const response = await send(path, options)
+  if (!response.ok) throw await responseError(response)
+  return response
+}
+
 // Streaming reads share the ordinary session, signatures and safe error handling.
 export async function requestResponse(path: string, options: RequestOptions = {}): Promise<Response> {
   const response = await send(path, { ...options, cache: 'no-store' })

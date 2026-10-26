@@ -1,25 +1,5 @@
 {
   "home": {
-    "rolloverForecast": "Rollover forecast",
-    "rolloverForecastCredit": "Predicted rollover credit",
-    "rolloverMaximumDailyUsage": "Maximum daily usage",
-    "rolloverNotAvailable": "N/A",
-    "rolloverStatus": {
-      "willGet": "You will get a rollover",
-      "dailyReduction": "Daily usage reduction needed",
-      "couldNotGet": "You could not get a rollover"
-    },
-    "rolloverProjected": "Projected full-term usage",
-    "rolloverMaximumUsage": "Maximum usage for rollover",
-    "rolloverWarning": {
-      "AUTO_RENEWAL_DISABLED": "Automatic renewal is off, so no provider usage was requested and rollover is settled at zero."
-    },
-    "rolloverOpen": "View rollover details",
-    "rolloverBack": "Back to your ride",
-    "rolloverTitle": "Rollover detail",
-    "rolloverLoading": "Loading live rollover details.",
-    "rolloverRetry": "Retry",
-    "rolloverUsed": "Used traffic",
     "currentTerm": "Current term",
     "noNodeUsage": "No per-node traffic is available for this range.",
     "trafficStart": "Start date",

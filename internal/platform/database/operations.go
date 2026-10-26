@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"strings"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 func insertOutboxTx(ctx context.Context, tx *sql.Tx, kind, payload string, availableAt, now time.Time) error {
@@ -80,18 +81,10 @@ func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Contex
 		return err
 	}
 	_ = rows.Close()
+
 	for _, item := range expired {
-		result, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO purchase_rollovers(purchase_id,status,traffic_limit_bytes,minimum_remaining_bps,net_paid_txb_minor,created_at,updated_at)
-			SELECT p.id,'pending',COALESCE(p.entitlement_traffic_limit_bytes,c.traffic_limit_bytes),
-				COALESCE(p.reward_rollover_min_remaining_bps,c.rollover_min_remaining_bps),p.charged_txb_minor,?,?
-			FROM purchases p JOIN combos c ON c.id=p.combo_id WHERE p.id=?`, stamp(now), stamp(now), item.purchaseID)
-		if err != nil {
+		if err := insertOutboxTx(ctx, tx, "purchase_expire", `{"purchaseId":"`+item.purchaseID+`"}`, now, now); err != nil {
 			return err
-		}
-		if affected, _ := result.RowsAffected(); affected == 1 {
-			if err := insertOutboxTx(ctx, tx, "rollover_finalize", `{"purchaseId":"`+item.purchaseID+`"}`, now, now); err != nil {
-				return err
-			}
 		}
 	}
 	// Queued terms that were never activated have no upstream traffic to settle.

@@ -19,3 +19,5 @@ native executor limits still bound actual execution. It is not a separate queue.
 `claim.go` chooses durable generation-aware completion/renewal when supported,
 while retaining legacy test adapters. PostgreSQL claims serialize only resource
 admission, lock candidates with SKIP LOCKED, then release locks before providers.
+
+- `compute.go`: Independent compute execution lane using the existing durable job infrastructure.

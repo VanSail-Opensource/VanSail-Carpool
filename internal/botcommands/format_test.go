@@ -64,41 +64,11 @@ func TestFormatCheckInComparisonStates(t *testing.T) {
 	}
 }
 
-func TestFormatComboRolloverStates(t *testing.T) {
-	t.Parallel()
-	amount := model.TXBMoney(1_234)
-	for _, language := range []Language{English, Chinese} {
-		copy := Text(language)
-		tests := []struct {
-			name    string
-			summary RolloverSummary
-			want    string
-		}{
-			{name: "predicted", summary: RolloverSummary{State: RolloverPredicted, Amount: &amount}, want: copy.RolloverWill + " " + amount.Display},
-			{name: "ineligible", summary: RolloverSummary{State: RolloverIneligible}, want: copy.RolloverWillNot},
-			{name: "disabled", summary: RolloverSummary{State: RolloverDisabled}, want: copy.RolloverCannot},
-			{name: "unavailable", summary: RolloverSummary{State: RolloverUnavailable}, want: copy.RolloverUnavailable},
-			{name: "missing predicted amount", summary: RolloverSummary{State: RolloverPredicted}, want: copy.RolloverUnavailable},
-		}
-		for _, test := range tests {
-			t.Run(string(language)+"/"+test.name, func(t *testing.T) {
-				got := FormatCombo(copy, markdownPurchase(), []string{"US"}, test.summary)
-				if !strings.Contains(got, "♻️ *"+escapeMarkdownV2(copy.RolloverLabel)+":* "+escapeMarkdownV2(test.want)) {
-					t.Errorf("FormatCombo() = %q, want rollover %q", got, test.want)
-				}
-				if !strings.Contains(got, escapeMarkdownV2(copy.ResetMonthly)) {
-					t.Errorf("FormatCombo() = %q, want localized cadence", got)
-				}
-			})
-		}
-	}
-}
-
 func TestFormattersEscapeMarkdownV2DynamicValues(t *testing.T) {
 	t.Parallel()
 	copy := Text(English)
 	replies := []string{
-		FormatCombo(copy, markdownPurchase(), []string{markdownValue}, RolloverSummary{State: RolloverIneligible}),
+		FormatCombo(copy, markdownPurchase(), []string{markdownValue}),
 		FormatSubscription(copy, markdownDashboard(), time.Now().UTC()),
 		FormatWelcome(copy, 12345, markdownValue),
 	}

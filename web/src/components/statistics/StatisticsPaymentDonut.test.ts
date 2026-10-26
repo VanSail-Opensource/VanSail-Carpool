@@ -1,3 +1,4 @@
+import { VisDonut } from '@unovis/vue'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
@@ -14,10 +15,8 @@ describe('StatisticsPaymentDonut', () => {
       global: { stubs: { UIcon: true } },
     })
 
-    expect(wrapper.find('svg[role="group"]').exists()).toBe(true)
-    expect(wrapper.findAll('.statistics-concentric-ring--outer.statistics-ring-segment')).toHaveLength(1)
-    expect(wrapper.findAll('.statistics-concentric-ring--inner.statistics-ring-segment')).toHaveLength(1)
-    expect(wrapper.find('.statistics-concentric__center').text()).toContain('4')
+    expect(wrapper.find('[aria-label]').exists()).toBe(true)
+    expect(wrapper.findAllComponents(VisDonut)).toHaveLength(2)
     expect(wrapper.find('.statistics-concentric__center').text()).toContain('Payment states')
     expect(wrapper.text()).toContain('Paid75%')
     expect(wrapper.text()).toContain('Expired25%')

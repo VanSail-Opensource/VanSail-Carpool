@@ -7,7 +7,7 @@
       "activateTitle": "提前启用排队套餐",
       "activate": "启用",
       "activateHint": "开始下一套餐并放弃当前套餐的剩余权益。",
-      "forfeitWarning": "剩余时间和流量将作废，不退款，也不产生流量结转抵扣。",
+      "forfeitWarning": "剩余时间和流量将作废，不予退款。",
       "forfeitUntil": "当前权益将提前结束，原到期时间为 {date}。",
       "newPeriod": "新套餐周期：{start} 至 {end}。",
       "confirmation": "启用下一套餐",

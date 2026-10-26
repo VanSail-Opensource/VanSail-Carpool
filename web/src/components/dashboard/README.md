@@ -4,17 +4,14 @@ Purchase actions retain automatic renewal and eligible refunds. Member manual
 traffic reset, its control and dialog are removed; automatic reset settings use
 the strict >95% five-minute scanner threshold and normal balance-backed pricing.
 
-Add squads lives in Settings. The ride faces display ownership and rollover
 facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
-- `EntitlementSummary.vue` relays the active ride's visible 44px Add squad action to the mobile-safe two-step `squad-addition` dialog and accepts the desktop sidebar's Home query action. `RideSummaryFace.vue` keeps its bold, filled green treatment beside the combo name while `RolloverFlipCard.vue` retains the independent rollover action.
 
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries already carry node labels/country/multipliers. Home no longer fetches the full Explore catalog or persists duplicate squad data.
 - `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription & uptime for the active URL and Connections/Revoke actions on both mobile and desktop. Home replaces this block with the gated summary from the subscription module and forwards legacy Revoke query links.
 
 `UsagePanel.vue` also displays upstream `lastTrafficResetAt` in the existing localized date/time format, with a null fallback and the existing stale-snapshot disclosure. `UsagePanel.test.ts` covers timestamp presence and absence alongside cached-data warnings.
-- `UsagePanel.vue` uses Nuxt UI `UProgress`, a single percentage summary, and one used/remaining detail pair for the current-term limit, and always renders unmultiplied traffic in `TrafficUsageBar.vue`. Nodes below 5% are grouped into the other-traffic segment, and the former sparkline/detail popover is not rendered. `TrafficUsageBar.vue` keeps labels hidden until hover, focus, or activation, then exposes node name, country, multiplier, bytes, and share through `TrafficUsageBarDetails.vue`. `TrafficUsageBarDetails.vue` is the focused, motion-owned semantic detail surface; it has no selection state of its own. `TrafficUsageDetails.vue` and `TrafficNodeChart.vue` remain the Telegram-viewport-bounded, date-filtered detail building blocks for future dashboard entry points. `EntitlementSummary.vue` composes the active ride, purchase operations, and owner-only queued cancellation. `PurchaseActions.vue` keeps automatic renewal available alongside any eligible warning-colored Refund action and owns first-term refund quote confirmation and receipt presentation. `TrafficResetAutomationControl.vue` is the controlled account-wide `USwitch`, reused on Settings and saved immediately using the automatic scanner policy. `AutoRenewalControl.vue` owns the localized one-cycle quote, eligibility notice, and `UModal`/`USwitch` toggle surface. `RolloverFlipCard.vue` owns an accessible, size-safe face transition, `RideSummaryFace.vue` centers every current-plan fact, and `RolloverDetailFace.vue` presents localized rollover status plus predicted credit, maximum daily usage, or N/A. `useRolloverDetail.ts` owns on-demand loading, retry, reset, and localized errors.
 - `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links and renders the section only for an opted-in entrance preference and a server-confirmed valid combo; the desktop sidebar carries the same gated entry points.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
@@ -31,3 +28,10 @@ The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members wit
 
 `memberActivity.ts` and `memberActivity.test.ts` project native observation status and expiry. `MemberLiveMetrics.vue` emits fresh activity from its existing poll, retires stale rates and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge.
 `useDashboard` and `EntitlementSummary.vue` revalidate cached purchases at validity boundaries and on visibility/focus refresh. Expired predecessors disappear immediately while successor discovery refreshes quietly; display state never changes settlement records.
+
+
+- `ForecastFlipCard.vue`: Keeps the active Combo face transition and isolates the interactive prediction reverse.
+
+- `PersonalPredictions.vue`: Loads last two complete accounting days and next five forecast days, exposing intervals, history coverage, calibration, freshness and missing data separately.
+
+Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageBar.vue`, `TrafficUsageBarDetails.vue`, `TrafficUsageDetails.vue`.

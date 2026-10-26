@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	stats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usageaccounting"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
@@ -69,15 +69,15 @@ func (a nativeStatisticsProvider) SquadNames(ctx context.Context) (map[string]st
 	return result, nil
 }
 
-func (a nativeStatisticsProvider) UsageSnapshotForRollover(ctx context.Context, id string, from, to time.Time) (rollover.UsageSnapshot, error) {
+func (a nativeStatisticsProvider) UsageSnapshot(ctx context.Context, id string, from, to time.Time) (usageaccounting.UsageSnapshot, error) {
 	// The statistics repository supplies native proxy IDs whenever available.
 	var ok bool
 	id, ok = strings.CutPrefix(id, "xn:")
 	if !ok {
-		return rollover.UsageSnapshot{}, rollover.ErrRemoteUserMissing
+		return usageaccounting.UsageSnapshot{}, xnode.ErrNotFound
 	}
 	if _, err := strconv.ParseInt(id, 10, 53); err != nil {
-		return rollover.UsageSnapshot{}, rollover.ErrRemoteUserMissing
+		return usageaccounting.UsageSnapshot{}, xnode.ErrNotFound
 	}
-	return a.native.UsageSnapshotForRollover(ctx, id, from, to)
+	return a.native.UsageSnapshot(ctx, id, from, to)
 }

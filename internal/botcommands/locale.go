@@ -42,11 +42,6 @@ type Copy struct {
 	ResetDaily            string
 	ResetWeekly           string
 	ResetMonthly          string
-	RolloverLabel         string
-	RolloverWill          string
-	RolloverWillNot       string
-	RolloverCannot        string
-	RolloverUnavailable   string
 	SignInReward          string
 	SignInAbove           string
 	SignInBelow           string
@@ -82,15 +77,13 @@ func Text(language Language) Copy {
 
 func englishCopy() Copy {
 	return Copy{
-		Descriptions: []Description{{Sub, "Show subscription usage"}, {Balance, "Show your TXB balance"}, {SignIn, "Claim today's check-in"}, {Start, "Open VanSail Carpool"}, {MyCombo, "Show combo and rollover details"}},
+		Descriptions: []Description{{Sub, "Show subscription usage"}, {Balance, "Show your TXB balance"}, {SignIn, "Claim today's check-in"}, {Start, "Open VanSail Carpool"}, {MyCombo, "Show combo details"}},
 		Start:        "Press Open VanSail Carpool to use the app. For help, send a message directly here after opening the panel and completing entry verification.", WelcomePrefix: "👋 Welcome ", WelcomeSuffix: " to VanSail Carpool!", MemberLabel: "new member",
 		UnknownTitle: "Command unavailable", Unknown: "This command is not available.",
 		UnavailableTitle: "Temporarily unavailable", Unavailable: "The requested information is temporarily unavailable.",
 		NoSubscriptionTitle: "Subscription", NoSubscription: "No active subscription.", SubscriptionTitle: "My subscription", ComboTitle: "My combo", DeductTitle: "Balance deduction",
 		StatusLabel: "Status", AmountLabel: "Amount", BalanceLabel: "Balance",
 		ComboLabel: "Combo", SquadsLabel: "Squads", TrafficLabel: "Traffic", ResetLabel: "Reset",
-		ResetDaily: "Daily", ResetWeekly: "Weekly", ResetMonthly: "Rolling monthly", RolloverLabel: "Rollover",
-		RolloverWill: "Expected", RolloverWillNot: "Not expected", RolloverCannot: "Unavailable because auto-renewal is disabled", RolloverUnavailable: "Temporarily unavailable",
 		SignInReward: "Check-in reward", SignInAbove: "🎉 Congratulations! Your reward is above the average check-in reward.",
 		SignInBelow: "🌱 Your reward is below the average check-in reward. Better luck tomorrow!", SignInEqual: "✨ Your reward matches the average check-in reward.",
 		SignInNeutral: "✨ Check-in successful!", SignInAlready: "✅ You have already checked in today.",
@@ -109,8 +102,6 @@ func chineseCopy() Copy {
 		NoSubscriptionTitle: "订阅", NoSubscription: "当前没有生效中的订阅。", SubscriptionTitle: "我的订阅", ComboTitle: "我的套餐", DeductTitle: "余额扣减",
 		StatusLabel: "状态", AmountLabel: "金额", BalanceLabel: "余额",
 		ComboLabel: "套餐", SquadsLabel: "线路组", TrafficLabel: "流量", ResetLabel: "重置",
-		ResetDaily: "每日", ResetWeekly: "每周", ResetMonthly: "滚动月度", RolloverLabel: "结转",
-		RolloverWill: "预计", RolloverWillNot: "预计无法获得", RolloverCannot: "未启用自动续费，无法获得", RolloverUnavailable: "暂不可用",
 		SignInReward: "签到奖励", SignInAbove: "🎉 恭喜！本次奖励高于平均签到奖励。", SignInBelow: "🌱 本次奖励低于平均签到奖励，明天继续加油。",
 		SignInEqual: "✨ 本次奖励正好达到平均签到奖励。", SignInNeutral: "✨ 签到成功！", SignInAlready: "✅ 今日已签到。",
 		GroupBoostRequired:    "签到被拒绝：你尚未为群组助力。至少保持一次有效助力后才能获得活动奖励。",

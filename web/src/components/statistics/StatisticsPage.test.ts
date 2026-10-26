@@ -22,7 +22,7 @@ const nodes: StatisticsNodesSnapshot = { generatedAt: '2026-08-19T12:00:00Z', st
 const money = { currency: 'TXB', minor: '0', display: '0.00 TXB' } as const
 const statistics: StatisticsSnapshot = {
   generatedAt: '2026-08-19T12:00:00Z', remoteGeneratedAt: '2026-08-19T12:00:00Z', databaseGeneratedAt: '2026-08-19T12:00:00Z', stalePartitions: [],
-  remote: { weeklyUserIncrease: 0, monthlyAverageUsagePercent: 0, predictedAverageRollover: money, trafficDates: [], trafficSeries: [] },
+  remote: { weeklyUserIncrease: 0, monthlyAverageUsagePercent: 0, trafficDates: [], trafficSeries: [] },
   database: { newUserConversionPercent: 0, averageSpend: money, spendMinimum: money, spendMaximum: money, subscriptionStates: [], averageCheckInReward: money, comboShares: [], groupMessagesTotal: 0, averageOptionalSquads: 0, paymentStatuses: [], databaseBytes: '0', squadByCombo: [], comboBySquad: [] },
 }
 

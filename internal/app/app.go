@@ -33,7 +33,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/rollover"
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/webui"
@@ -125,7 +124,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, provider, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
 	catalogService := catalog.NewService(store, provider, 2*time.Minute)
 	catalogService.SetConnectivity(connectivityService)
-	catalogService.SetAutomaticRenewalSettings(settings)
 	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL)
 	billingService.SetBuiltinUSDT(usdtService)
 	activityService := newActivityService(store, settings, queuedTelegramClient)
@@ -141,7 +139,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	adminService := admin.NewService(store, settings, provider, backupService, paymentBridge)
 	adminUserWorkflows := admin.NewUserWorkflows(store, provider)
 	entitlementWorker := entitlements.NewWorker(store, provider, provider)
-	rolloverWorker := rollover.NewService(store, provider)
 	outboxWorker := outbox.NewWorker(store)
 	paymentAnnouncementWorker := billing.NewPaymentAnnouncementWorker(settings, queuedTelegramClient)
 	affiliateNotificationWorker := affiliates.NewNotificationWorker(queuedTelegramClient, store)
@@ -191,8 +188,20 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	statisticsService := productstats.NewService(store, nativeStatisticsProvider{proxyProvider: provider})
 	compensationService := compensation.NewService(store, provider)
-	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, rolloverWorker, embyService,
+	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, xnodeService, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {
+		return cleanup(err)
+	}
+	if err := registerPricingChangeNotice(outboxWorker, queuedTelegramClient, cfg.AdminTelegramIDs); err != nil {
+		return cleanup(err)
+	}
+	if err := registerPricingCompute(outboxWorker, store, xnodeMaster); err != nil {
+		return cleanup(err)
+	}
+	if err := registerPricingModelActions(outboxWorker, store); err != nil {
+		return cleanup(err)
+	}
+	if err := registerPricingHealthNotice(outboxWorker, store, queuedTelegramClient, cfg.AdminTelegramIDs); err != nil {
 		return cleanup(err)
 	}
 	if err := registerLuckyDrawOutboxHandlers(outboxWorker, store, activityService, queuedTelegramClient, settings, logger); err != nil {
