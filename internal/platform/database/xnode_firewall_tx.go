@@ -74,6 +74,18 @@ func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, gene
 	if err != nil {
 		return err
 	}
+	return expireFirewallSnapshot(ctx, tx, table, key, generation, ordinal, participants, expired, nil)
+}
+
+// A sweep shares one immutable audience from its serializable transaction.
+// Ordinary agent events still read that audience after checking their generation.
+func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generation string, ordinal uint32, participants, expired []byte, active *roaring.Bitmap) error {
+	field := "prefix"
+	if table == "xnode_firewall_sources" {
+		field = "id"
+	} else if table != "xnode_firewall_bans" {
+		return errors.New("invalid firewall table")
+	}
 	p, err := firewallBitmap(participants)
 	if err != nil {
 		return err
@@ -88,13 +100,15 @@ func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, gene
 	if ordinal != 0 {
 		e.Add(ordinal)
 	}
-	activeRaw, err := firewallAudience(ctx, tx)
-	if err != nil {
-		return err
-	}
-	active, err := firewallBitmap(activeRaw)
-	if err != nil {
-		return err
+	if active == nil {
+		activeRaw, err := firewallAudience(ctx, tx)
+		if err != nil {
+			return err
+		}
+		active, err = firewallBitmap(activeRaw)
+		if err != nil {
+			return err
+		}
 	}
 	before := e.GetCardinality()
 	e.Or(roaring.AndNot(p, active))

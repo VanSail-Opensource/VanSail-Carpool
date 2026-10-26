@@ -58,7 +58,13 @@ func (s *Store) ReconcileFirewallSources(ctx context.Context, allowed []string, 
 	})
 }
 func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
-	return s.firewallWrite(ctx, func(tx *sql.Tx) error {
+	s.firewallSweepMu.Lock()
+	defer s.firewallSweepMu.Unlock()
+	cursor := s.firewallSweepCursor
+	prune := s.firewallRetentionAt.IsZero() || now.Before(s.firewallRetentionAt) || now.Sub(s.firewallRetentionAt) >= time.Minute
+	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
+		// Retry the same page if this transaction loses a serialization race.
+		s.firewallSweepCursor = cursor
 		var count int
 		if err := s.sweepRetiredFirewallTx(ctx, tx); err != nil {
 			return err
@@ -77,11 +83,19 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 		}
 		// Retain immutable paid grants. Operational history exceeds the five-minute
 		// snapshot lifetime; lagging nodes receive a full snapshot after seven days.
-		for _, table := range []string{"xnode_firewall_bans", "xnode_firewall_sources"} {
-			if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND released_at<?`, stamp(now.Add(-7*24*time.Hour))); err != nil {
-				return err
+		if prune {
+			for _, table := range []string{"xnode_firewall_bans", "xnode_firewall_sources"} {
+				if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND released_at<?`, stamp(now.Add(-7*24*time.Hour))); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
 	})
+	if err != nil {
+		s.firewallSweepCursor = cursor
+	} else if prune {
+		s.firewallRetentionAt = now
+	}
+	return err
 }

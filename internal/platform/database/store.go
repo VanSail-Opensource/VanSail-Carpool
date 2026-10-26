@@ -29,7 +29,9 @@ type Store struct {
 	diyCleanupCursor    string
 	firewallDetectionMu sync.Mutex
 	firewallWindows     map[string]firewallDetectionWindow
-	firewallSweepCursor string // protected by writeMu; bounded operational pruning
+	firewallSweepMu     sync.Mutex
+	firewallSweepCursor string // protected by firewallSweepMu; bounded operational pruning
+	firewallRetentionAt time.Time
 	pmContentCipher     pmContentCipher
 	db                  *sql.DB
 	logger              *slog.Logger

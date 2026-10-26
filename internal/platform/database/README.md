@@ -1,5 +1,14 @@
 # Application store
 
+Firewall sweeps reuse one active-member bitmap and the bounded page's participant
+snapshots within the same serializable transaction. `xnode_firewall_tx.go` shares
+the expiry calculation with ordinary agent events. `xnode_firewall_sources.go`
+serializes sweeps, restores the page cursor on transaction failure/retry, and
+prunes seven-day operational history at most once per minute. Active expiries
+still run on every sweep; paid exemption evidence is retained.
+`xnode_firewall_sweep_test.go` verifies shared-audience isolation, immediate
+retirement between cleanup intervals and bounded history pruning on both stores.
+
 `xnode_runtime_reads.go` narrows reconciliation to current funding candidates,
 connected principals (128 IDs per query), and resettable period owners. It reuses
 the authoritative PAYG joins/scanner and existing indexes on both SQL backends.
