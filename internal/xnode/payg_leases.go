@@ -5,13 +5,25 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 )
+
+const maxPAYGAgentClockOffset = 2 * time.Minute
+
+func paygLeaseUntil(now time.Time, live liveSnapshot) time.Time {
+	base := now
+	offset := live.report.Time.Sub(live.receivedAt)
+	if offset > 0 && offset <= maxPAYGAgentClockOffset {
+		base = base.Add(offset)
+	}
+	return time.Unix(base.Unix()/20*20+60, 0).UTC()
+}
 
 func paygCapabilities(caps []string) bool {
 	for _, capability := range []string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "measured_user_rates", "authorization_expiry", "member_outbound_guards"} {
@@ -36,6 +48,7 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	if len(accounts) == 0 {
 		return config, nil
 	}
+	now := m.service.now()
 	byID := map[int]PAYGAccount{}
 	for _, a := range accounts {
 		byID[int(a.ProxyUserID)] = a
@@ -45,20 +58,20 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 	m.mu.RUnlock()
 	peer.mu.Lock()
 	ready := peer.paygReady
-	queued := peer.paygRecoveryQueued && m.service.now().Sub(peer.paygRecoveryAt) < 30*time.Second
+	queued := peer.paygRecoveryQueued && now.Sub(peer.paygRecoveryAt) < 30*time.Second
 	peer.mu.Unlock()
-	healthy := paygCapabilities(caps) && freshSnapshot(live, m.service.now(), config.Telemetry.ReportSeconds) && live.report.Ready && live.report.Synchronized
+	healthy := paygCapabilities(caps) && freshSnapshot(live, now, config.Telemetry.ReportSeconds) && live.report.Ready && live.report.Synchronized
 	if healthy && !ready && !queued {
 		raw, _ := json.Marshal(map[string]string{"nodeId": peer.nodeID, "bootId": peer.bootID})
-		if err = r.EnqueueOutbox(ctx, PAYGRecoveryJob, string(raw), m.service.now()); err != nil {
+		if err = r.EnqueueOutbox(ctx, PAYGRecoveryJob, string(raw), now); err != nil {
 			return config, err
 		}
 		peer.mu.Lock()
 		peer.paygRecoveryQueued = true
-		peer.paygRecoveryAt = m.service.now()
+		peer.paygRecoveryAt = now
 		peer.mu.Unlock()
 	}
-	until := time.Unix(m.service.now().Unix()/20*20+60, 0).UTC()
+	until := paygLeaseUntil(now, live)
 	users := make([]wire.User, 0, len(config.Users))
 	hash := sha256.New()
 	_, _ = hash.Write([]byte(strconv.FormatInt(until.Unix(), 10)))
@@ -68,11 +81,11 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 			users = append(users, u)
 			continue
 		}
-		if a.Disabled || !healthy || !ready || !a.Funded(m.service.now()) {
+		if a.Disabled || !healthy || !ready || !a.Funded(now) {
 			continue
 		}
 		validUntil := until
-		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(m.service.now()) && a.CreditStartedAt.Add(PAYGWindow).Before(validUntil) {
+		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) && a.CreditStartedAt.Add(PAYGWindow).Before(validUntil) {
 			validUntil = a.CreditStartedAt.Add(PAYGWindow)
 		}
 		u.ValidUntil = &validUntil

@@ -18,10 +18,20 @@
     "reasons": {
       "account_disabled": "Account access is restricted.",
       "authorization_expired": "Your subscription has expired.",
+      "expired": "Access for a node has expired; new connections there are blocked.",
+      "ineligible": "This account is not eligible to connect to a node.",
+      "storage_backpressure": "A node has paused new connections while it protects traffic records.",
+      "agent_capacity": "A node has reached its connection capacity.",
       "quota_exceeded": "Traffic allowance exhausted.",
       "global_connection_limit": "Connection limit reached. Existing streams remain active.",
       "block_new": "New connections are temporarily blocked.",
-      "unknown": "Access is limited by node policy."
+      "source_not_whitelisted": "This connection source is not allowed by the node.",
+      "torrent_ban": "New connections are blocked by a temporary abuse restriction.",
+      "connection_limit": "The node connection limit has been reached.",
+      "active_ip_limit": "The active IP address limit has been reached.",
+      "ip_temp_block": "This network address is temporarily blocked.",
+      "blocked_port": "This destination port is blocked.",
+      "unknown": "A node reported an unrecognized access restriction."
     }
   }
 }

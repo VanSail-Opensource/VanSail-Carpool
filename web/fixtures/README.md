@@ -78,7 +78,7 @@ These files are for local visual audits. The production Vite build starts from t
 - The same fixture's `operation` mode exercises simultaneous operation receipts,
   polling errors and retry controls; `reduced` constructs reduced-motion preference.
 
-`SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render real Home, Subscription & uptime, and connectivity-admin components using constructed owner-specific data. Query flags `mode=home|admin`, `slow`, `empty`, `inactive`, `unknown`, `error` and `noreset` cover loading, gaps, absent ownership, errors and timestamp absence. The audit has no production API traffic; `__subscriptionAudit` exposes read/revoke/save counts and `__subscriptionAuditLocale` switches languages for Chrome DevTools MCP checks.
+`SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render real Home, Subscription & uptime, and connectivity-admin components using constructed owner-specific data. Query flags `mode=home|admin`, `slow`, `empty`, `inactive`, `unknown`, `policy-expired`, `error` and `noreset` cover loading, gaps, absent ownership, an expired node-policy reason, errors and timestamp absence. The audit has no production API traffic; `__subscriptionAudit` exposes read/revoke/save counts and `__subscriptionAuditLocale` switches languages for Chrome DevTools MCP checks.
 
 - `IPLookupAudit.vue` mounts actual member/admin IP Lookup components inside the existing app shell.
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.

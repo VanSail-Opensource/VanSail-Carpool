@@ -18,10 +18,20 @@
     "reasons": {
       "account_disabled": "账户访问受限。",
       "authorization_expired": "订阅已到期。",
+      "expired": "某个节点的访问权限已到期，无法在该节点建立新连接。",
+      "ineligible": "此账户无权连接该节点。",
+      "storage_backpressure": "节点正在保护流量记录，已暂停新连接。",
+      "agent_capacity": "节点已达到连接容量上限。",
       "quota_exceeded": "流量额度已用尽。",
       "global_connection_limit": "已达到连接数上限，现有连接仍可使用。",
       "block_new": "暂时禁止新连接。",
-      "unknown": "节点策略限制了访问。"
+      "source_not_whitelisted": "此连接来源不在节点允许范围内。",
+      "torrent_ban": "临时滥用限制已阻止新连接。",
+      "connection_limit": "节点连接数已达到上限。",
+      "active_ip_limit": "活跃 IP 地址数已达到上限。",
+      "ip_temp_block": "此网络地址暂时被封锁。",
+      "blocked_port": "此目标端口已被封锁。",
+      "unknown": "节点报告了无法识别的访问限制。"
     }
   }
 }

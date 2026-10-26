@@ -25,7 +25,7 @@ xnodeMemberApi.previewRouting = async () => ({ paths: [], trace: null })
 xnodeMemberApi.metrics = async () => {
   if (params.has('metrics-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 1200))
-  return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: false, incomplete: params.has('unknown'), reasons: [], fetchedAt: new Date().toISOString() }
+  return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: params.has('policy-expired'), incomplete: params.has('unknown'), reasons: params.has('policy-expired') ? [{ nodeId: 'hdnl', reason: 'expired', scope: 'new_connection' }] : [], fetchedAt: new Date().toISOString() }
 }
 if (params.has('telegram')) Object.assign(window, { Telegram: { WebApp: { platform: 'ios', version: '9.0', initData: '', initDataUnsafe: {}, BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} } } } })
 const state = { reads: 0, summaryReads: 0, revocations: 0, saves: 0, checks: 0, resolves: [] as string[], savedConfig: null as unknown, failure: params.has('error') }
