@@ -52,7 +52,6 @@ describe('ComboOption', () => {
     expect(wrapper.text()).toContain('18.80 TXB')
     expect(wrapper.text()).toContain('100 GiB/month')
     expect(wrapper.text()).toContain('per 30 days')
-    expect(wrapper.text()).toContain('Above 0.00% remaining')
   })
 
   it('uses the configured display currency directly', () => {

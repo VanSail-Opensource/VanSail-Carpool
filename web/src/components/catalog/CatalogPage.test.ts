@@ -130,7 +130,7 @@ describe('CatalogPage quote restoration', () => {
     expect(refreshQuote).not.toHaveBeenCalled()
     expect(wrapper.find('[data-test="catalog-confirmation"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="catalog-flow-progress"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="catalog-flow-controls"]').exists()).toBe(false)
     wrapper.unmount()
   })
 

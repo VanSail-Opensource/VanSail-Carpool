@@ -47,7 +47,7 @@ func TestNativeStatisticsNeverFallsBackToTheSourceProvider(t *testing.T) {
 	if value, err := provider.SquadNames(ctx); err != nil || len(value) != 0 {
 		t.Fatal(value, err)
 	}
-	if _, err := provider.UsageSnapshot(ctx, "legacy-identity", now.Add(-time.Hour), now); !errors.Is(err, errors.New("account unavailable")) {
+	if _, err := provider.UsageSnapshot(ctx, "legacy-identity", now.Add(-time.Hour), now); !errors.Is(err, xnode.ErrNotFound) {
 		t.Fatal("source accounting reader consulted", err)
 	}
 }

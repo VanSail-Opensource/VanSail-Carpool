@@ -12,7 +12,7 @@ No state is added or changed. A positive PAYG snapshot also preserves FlClash's
 info display, which requires `total > 0` in
 [its profile view](https://github.com/chen08209/FlClash/blob/main/lib/views/profiles/profiles.dart).
 `subscription_usage_test.go` covers combo, mixed and PAYG-only projections.
-Split-profile label collisions likewise use numeric suffixes in profile-ID
+`endpoint_clients.go` retains published names without appending endpoint IDs; native tags remain derived from stable IDs. Split-profile label collisions likewise use numeric suffixes in profile-ID
 order; exported host names never include generated profile IDs or hashes.
 
 `runtime_reads.go` selects optional bounded repository reads with compatibility
@@ -685,7 +685,7 @@ legacy routing APIs. `diy_test.go` covers concurrent same-key retries, encryptio
 inheritance, export isolation and pinned-parser output. Saved settings are local;
 combined receipts continue through the existing routing deployment guarantees.
 `diy_split.go` derives split names from current host labels and reserves ordinary
-names first. Collisions, including reversed IPv4/IPv6 pairs, receive a profile-ID
+names first. Collisions, including reversed IPv4/IPv6 pairs, receive a numeric
 suffix only in the export; saved endpoint/profile references stay unchanged.
 `diy_split_names_test.go` covers reversed pairs, ordinary-host collisions and
 successful Xray/Mihomo/Stash template rendering with unique names in hosted CI.

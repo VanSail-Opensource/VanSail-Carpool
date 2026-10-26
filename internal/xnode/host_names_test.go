@@ -23,6 +23,9 @@ func TestOwnedHostNamesKeepCredentialsAndRestorePublishedName(t *testing.T) {
 		t.Fatal(proxies, err)
 	}
 	before := proxies[0]
+	if before.Name != endpoint.Name {
+		t.Fatal("published host name includes generated identity", before.Name)
+	}
 	saved, err := f.service.SaveOwnedHostName(ctx, f.user.ID, endpoint.ID, "My {price}")
 	if err != nil || saved.Name != "My 1.0x" {
 		t.Fatal(saved, err)

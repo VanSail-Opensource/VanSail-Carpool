@@ -41,7 +41,7 @@ Application activation requires a new empty installation or an unchanged verifie
 import. Production cutover additionally requires the operator acceptance gates.
 
 `open.go` owns connections and schema policy. `schema.go` checks the generated
-`contract.json` catalog manifest. `schema_test.go` exercises fresh/reapplied
+`contract.json` catalog manifest, including SQLite `REAL` and explicit `DOUBLE PRECISION` forecast columns mapped to PostgreSQL double precision. `schema_test.go` exercises fresh/reapplied
 migrations, immutable histories, exact timestamps and future-version refusal in
 hosted PostgreSQL. `tokens.go`, `bind.go` and `connector.go` provide the SQL-aware
 legacy binding boundary while retaining `database/sql` repository contracts.

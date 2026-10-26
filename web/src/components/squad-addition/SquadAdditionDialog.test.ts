@@ -40,6 +40,7 @@ const active = {
 function mountDialog() {
   squadAdditionMock.useSquadAddition.mockReturnValue({
     selectedSquadIds: shallowRef(['squad-1']), quote: shallowRef(null), purchase: shallowRef(null),
+    couponGrants: shallowRef([]), selectedCouponGrantId: shallowRef(null), eligibleCoupons: shallowRef([]),
     loading: shallowRef(false), quoting: shallowRef(false), purchasing: shallowRef(false),
     needsBalance: shallowRef(false), error: shallowRef(null), visibleSquads: shallowRef([]),
     selectedSquads: shallowRef([]), activationSquads: shallowRef([]), reset: vi.fn(),
@@ -53,6 +54,7 @@ function mountDialog() {
       stubs: {
         Modal: { template: '<div><slot name="body" /><slot name="footer" /></div>' },
         CatalogSquadStep: true,
+        CatalogCouponStep: true,
         SquadAdditionCheckout: true,
         SquadActivationDialog: true,
       },
