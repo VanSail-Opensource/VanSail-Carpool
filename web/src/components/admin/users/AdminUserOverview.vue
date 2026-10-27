@@ -5,7 +5,7 @@ import type { AdminUserDetail } from '@/api/adminOperations'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
-import { adminUserName } from './adminUserFormat'
+import { adminUserName, hasPositiveBalance } from './adminUserFormat'
 
 const props = defineProps<{ detail: AdminUserDetail }>()
 const { t } = useI18n()
@@ -15,6 +15,10 @@ const identity = computed(() => props.detail.user.telegramUsername
   : props.detail.user.displayName || props.detail.user.telegramId)
 const synchronizationTone = computed(() => props.detail.synchronization.status === 'synchronized'
   ? 'success' : props.detail.synchronization.status === 'failed' ? 'danger' : 'warning')
+const synchronizationLabel = computed(() => props.detail.synchronization.status === 'not_provisioned'
+  && hasPositiveBalance(props.detail.balance.minor)
+  ? 'adminUserProfile.sync.payg_funded'
+  : `adminUserProfile.sync.${props.detail.synchronization.status}`)
 </script>
 
 <template>
@@ -22,7 +26,7 @@ const synchronizationTone = computed(() => props.detail.synchronization.status =
     <header class="profile-overview__identity">
       <UAvatar :text="adminUserName(detail).slice(0, 2).toUpperCase()" size="lg" />
       <div><h2>{{ adminUserName(detail) }}</h2><p>{{ identity }}</p></div>
-      <StatusBadge :tone="synchronizationTone" :label="t(`adminUserProfile.sync.${detail.synchronization.status}`)" />
+      <StatusBadge :tone="synchronizationTone" :label="t(synchronizationLabel)" />
     </header>
     <dl class="profile-overview__facts">
       <div><dt>{{ t('adminUserProfile.balance') }}</dt><dd>{{ formatMoney(detail.balance) }}</dd></div>

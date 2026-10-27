@@ -18,7 +18,7 @@
     "validity": "{from} 至 {to}",
     "noActiveCombo": "没有活跃套餐",
     "noActiveComboHint": "该成员目前没有活跃权益。",
-    "sync": { "synchronized": "已同步", "pending": "等待同步", "failed": "同步失败", "not_provisioned": "未配置" },
+    "sync": { "synchronized": "已同步", "pending": "等待同步", "failed": "同步失败", "not_provisioned": "未配置", "payg_funded": "PAYG 余额可用" },
     "loading": "正在加载成员资料",
     "unavailable": "资料不可用",
     "unavailableHint": "无法加载聚合资料，请刷新后重试。",

@@ -1,5 +1,9 @@
 import type { AdminEntitlement, AdminUserDetail } from '@/api/adminOperations'
 
+export function hasPositiveBalance(minor: string): boolean {
+  return /^\d+$/.test(minor) && BigInt(minor) > 0n
+}
+
 export function adminUserName(detail: AdminUserDetail): string {
   return detail.user.displayName || detail.user.telegramId
 }

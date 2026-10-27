@@ -13,6 +13,7 @@ import { formatDate, formatMoney } from '@/utils/format'
 import AdminSectionState from './AdminSectionState.vue'
 import AdminBulkExtensionDialog from './users/AdminBulkExtensionDialog.vue'
 import AdminUserSearchFilters, { type AdminUserSearchFiltersValue } from './users/AdminUserSearchFilters.vue'
+import { hasPositiveBalance } from './users/adminUserFormat'
 
 const { items, nextCursor, loading, error, load, loadMore } = useAdminSection<AdminUserSummary>('users')
 const { t } = useI18n()
@@ -101,7 +102,7 @@ function bulkQueued(receipt: OperationReceipt): void {
         <template #member-cell="{ row }"><UButton color="neutral" variant="link" :label="displayName(row.original)" @click="openProfile(row.original)" /></template>
         <template #identity-cell="{ row }"><div class="admin-cell"><span>{{ row.original.user.displayName || row.original.user.telegramId }}</span><code>{{ row.original.user.id }}</code></div></template>
         <template #balance-cell="{ row }">{{ formatMoney(row.original.balance) }}</template>
-        <template #status-cell="{ row }"><StatusBadge :tone="row.original.synchronization.status === 'synchronized' ? 'success' : 'warning'" :label="t(row.original.synchronization.status === 'synchronized' ? 'adminUsers.synchronized' : 'adminUsers.notProvisioned')" /></template>
+        <template #status-cell="{ row }"><StatusBadge :tone="row.original.synchronization.status === 'synchronized' ? 'success' : 'warning'" :label="t(row.original.synchronization.status === 'synchronized' ? 'adminUsers.synchronized' : hasPositiveBalance(row.original.balance.minor) ? 'adminUsers.paygFunded' : 'adminUsers.notProvisioned')" /></template>
         <template #created-cell="{ row }">{{ formatDate(row.original.createdAt) }}</template>
         <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton size="sm" color="neutral" variant="ghost" icon="i-ph-user-focus" :aria-label="t('adminUserProfile.open')" @click="openProfile(row.original)" /></div></template>
         <template #empty><div class="empty-inline"><h3>{{ t('adminUsers.none') }}</h3><p>{{ t('adminUsers.noneHint') }}</p></div></template>

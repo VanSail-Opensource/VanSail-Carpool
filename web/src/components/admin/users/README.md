@@ -17,7 +17,7 @@
 - `AdminUserProfilePage.vue` composes the aggregate user workflow and its focused dialogs.
 - `AdminUserIPBlocks.test.ts` verifies that administrator profiles expose unblock without a block control.
 - `AdminUserProviderActions.vue` emits the queued provider receipt to the profile shell before its reload.
-- `adminUserFormat.ts` owns profile-specific status tones and date conversion helpers.
+- `adminUserFormat.ts` owns profile-specific formatting, status tones, date conversion, and exact positive-balance checks used to present wallet-funded PAYG status.
 - `useAdminUserProfile.ts` loads the aggregate and serializes idempotent profile mutations with conflict handling.
 - Profile summaries and entitlement badges derive current validity at time boundaries and on focus/visibility refresh. Advanced edits and explicit manual refunds retain the raw lifecycle status; presentation never settles accounting or rewrites a purchase.
 - Table cells and native overlays keep the profile stable during mutation review.

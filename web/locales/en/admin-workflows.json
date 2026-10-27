@@ -18,7 +18,7 @@
     "validity": "{from} to {to}",
     "noActiveCombo": "No active combo",
     "noActiveComboHint": "This member has no currently active entitlement.",
-    "sync": { "synchronized": "Synchronized", "pending": "Sync pending", "failed": "Sync failed", "not_provisioned": "Not provisioned" },
+    "sync": { "synchronized": "Synchronized", "pending": "Sync pending", "failed": "Sync failed", "not_provisioned": "Not provisioned", "payg_funded": "PAYG funded" },
     "loading": "Loading member profile",
     "unavailable": "Profile unavailable",
     "unavailableHint": "The aggregate profile could not be loaded. Refresh and try again.",

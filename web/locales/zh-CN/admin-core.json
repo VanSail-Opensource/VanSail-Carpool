@@ -31,6 +31,7 @@
     "meta": "{identity} · 加入于 {date}",
     "synchronized": "已同步",
     "notProvisioned": "未开通",
+    "paygFunded": "PAYG 余额可用",
     "adjust": "调整",
     "adjustNamed": "调整 {name}",
     "adjustHint": "输入 TXB 金额和审计原因。",
