@@ -1,5 +1,9 @@
 # Database migrations
 
+`109_xnode_period_aliases.sql` is retained for compatibility with its published
+predecessor; the current unmatched-traffic policy does not use these mappings.
+PostgreSQL migration 00022 has the same constraints.
+
 `104_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
 family while preserving global host uniqueness and compile invalidation.
 
@@ -238,4 +242,4 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 
 - `108_host_name_overrides.sql`: Only authored owner-specific host display preferences.
 
-- `109_pricing_read_indexes.sql`: Adds only exposure-window and entity-day lookup indexes; historical financial facts are unchanged.
+- `110_pricing_read_indexes.sql`: Adds only exposure-window and entity-day lookup indexes; historical financial facts are unchanged.

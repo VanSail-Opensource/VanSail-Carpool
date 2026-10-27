@@ -99,12 +99,16 @@ func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
 			}
 			err := store.RecordXNodeTraffic(ctx, "node", "agent", 1, "alias-evidence", report)
 			accepted := scenario == "tracked-node"
-			if (err == nil) != accepted {
-				t.Fatalf("accepted = %v, error = %v", accepted, err)
+			if err != nil {
+				t.Fatalf("report was not settled: %v", err)
 			}
 			sequence, err := store.XNodeReportSequence(ctx, "agent")
-			if err != nil || (sequence == 1) != accepted {
+			if err != nil || sequence != 1 {
 				t.Fatalf("journal cursor = %d, %v", sequence, err)
+			}
+			var audits int
+			if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='xnode_traffic_discard'`).Scan(&audits); err != nil || (audits == 0) != accepted {
+				t.Fatalf("discard audit=%d accepted=%v error=%v", audits, accepted, err)
 			}
 			value, err := store.XNodePeriod(ctx, period.ID)
 			want := int64(0)

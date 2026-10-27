@@ -1,5 +1,11 @@
 # PostgreSQL migration history
 
+`00023_period_aliases_source_marker.sql` records SQLite migration 109 in the
+source inventory after its equivalent PostgreSQL schema has been applied.
+
+`00022_xnode_period_aliases.sql` retains the node-scoped reference map introduced
+by SQLite migration 109 for schema compatibility; traffic discard does not use it.
+
 `00016_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
 family while retaining the unique host constraint.
 
@@ -61,4 +67,4 @@ The existing columns and immutable financial records remain unchanged.
 - `00021_pricing_active_commands.sql`: Adds the command/status/expiry lookup index
   required by the existing source schema contract without rewriting migration 00017.
 
-- `00022_pricing_read_indexes.sql`: Paired PostgreSQL exposure-window/entity-day indexes with authoritative downgrade refusal.
+- `00024_pricing_read_indexes.sql`: Paired PostgreSQL exposure-window/entity-day indexes with authoritative downgrade refusal.

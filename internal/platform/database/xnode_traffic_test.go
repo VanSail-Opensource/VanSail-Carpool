@@ -59,25 +59,33 @@ func TestXNodeTrafficCommitsOnceWithExactMultiplierCarry(t *testing.T) {
 	}
 }
 
-func TestXNodeTrafficRejectsPeriodOwnerMismatchAndSequenceGaps(t *testing.T) {
+func TestXNodeTrafficDiscardsMismatchAndCountsFutureReports(t *testing.T) {
 	store, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	at := time.Now().UTC()
-	report := wire.TrafficReport{ID: "agent:2", Traffic: wire.Traffic{int(identity.ProxyUserID): {4, 0}}, Samples: []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 4}}}
-	if err := store.RecordXNodeTraffic(ctx, "node", "agent", 2, "digest", report); err == nil {
-		t.Fatal("sequence gap accepted")
-	}
-	report.ID = "agent:1"
+	report := wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{int(identity.ProxyUserID): {4, 0}}, Samples: []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 4}}}
 	report.Samples[0].UserID++
-	if err := store.RecordXNodeTraffic(ctx, "node", "agent", 1, "digest", report); err == nil {
-		t.Fatal("foreign period charged")
+	if err := store.RecordXNodeTraffic(ctx, "node", "agent", 1, "first", report); err != nil {
+		t.Fatal(err)
+	}
+	report.ID, report.Samples[0].UserID = "agent:2", int(identity.ProxyUserID)
+	if err := store.RecordXNodeTraffic(ctx, "node", "agent", 2, "second", report); err != nil {
+		t.Fatal(err)
+	}
+	report.ID = "agent:4"
+	if err := store.RecordXNodeTraffic(ctx, "node", "agent", 4, "fourth", report); err != nil {
+		t.Fatal(err)
 	}
 	sequence, err := store.XNodeReportSequence(ctx, "agent")
-	if err != nil || sequence != 0 {
-		t.Fatal("failed transaction acknowledged traffic")
+	if err != nil || sequence != 4 {
+		t.Fatal("future traffic did not advance", sequence, err)
 	}
 	value, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 0 {
-		t.Fatal("failed transaction changed counters")
+	if err != nil || value.UsedBytes != 10 {
+		t.Fatal("unmatched report charged or valid traffic lost", value, err)
+	}
+	var audits int
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='xnode_traffic_discard'`).Scan(&audits); err != nil || audits != 2 {
+		t.Fatal("missing mismatch or gap audit", audits, err)
 	}
 }

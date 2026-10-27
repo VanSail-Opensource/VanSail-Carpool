@@ -2,12 +2,10 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
@@ -39,22 +37,28 @@ func TestXNodeRateRacesJournalWithoutRepricingCommittedUsage(t *testing.T) {
 	}
 }
 
-func TestXNodeMissingReferencesDoNotAdvanceCursor(t *testing.T) {
-	s, identity, _ := xnodeTrafficFixture(t)
-	ctx := context.Background()
-	at := time.Now().UTC()
-	for _, item := range []struct {
-		report wire.TrafficReport
-		want   error
-	}{
-		{wire.TrafficReport{ID: "agent:1", Samples: []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: "absent", From: at, Through: at, UploadBytes: 1}}}, xnode.ErrTrafficPeriodMissing},
-		{wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{999999: {1, 0}}}, xnode.ErrTrafficIdentityMissing},
-	} {
-		if err := s.RecordXNodeTraffic(ctx, "node", "agent", 1, "digest", item.report); !errors.Is(err, item.want) {
-			t.Fatalf("got %v, want %v", err, item.want)
-		}
-		if sequence, err := s.XNodeReportSequence(ctx, "agent"); err != nil || sequence != 0 {
-			t.Fatal("missing evidence advanced cursor", err)
-		}
+func TestXNodeMissingReferencesAreAuditedAndAdvanceCursor(t *testing.T) {
+	for _, scenario := range []string{"period", "identity"} {
+		t.Run(scenario, func(t *testing.T) {
+			s, identity, _ := xnodeTrafficFixture(t)
+			ctx := context.Background()
+			at := time.Now().UTC()
+			report := wire.TrafficReport{ID: "agent:1"}
+			if scenario == "period" {
+				report.Samples = []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: "absent", From: at, Through: at, UploadBytes: 1}}
+			} else {
+				report.Traffic = wire.Traffic{999999: {1, 0}}
+			}
+			if err := s.RecordXNodeTraffic(ctx, "node", "agent", 1, "digest", report); err != nil {
+				t.Fatal(err)
+			}
+			if sequence, err := s.XNodeReportSequence(ctx, "agent"); err != nil || sequence != 1 {
+				t.Fatal("missing evidence blocked cursor", sequence, err)
+			}
+			var audits int
+			if err := s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='xnode_traffic_discard'`).Scan(&audits); err != nil || audits != 1 {
+				t.Fatal("discard was not audited", audits, err)
+			}
+		})
 	}
 }

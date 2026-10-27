@@ -21,7 +21,7 @@ import (
 var migrations embed.FS
 
 // SchemaVersion is the newest PostgreSQL schema understood by this binary.
-const SchemaVersion int64 = 22
+const SchemaVersion int64 = 24
 
 // Open opens exactly the configured PostgreSQL backend and enforces schema policy.
 func Open(ctx context.Context, cfg config.DatabaseConfig) (*sql.DB, error) {

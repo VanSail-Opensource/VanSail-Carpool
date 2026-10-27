@@ -60,20 +60,24 @@ func TestMeteredProbeSamplesDeduplicateAndCarryMultiplier(t *testing.T) {
 	}
 }
 
-func TestMeteredProbeMissingPeriodAndWrongTargetRejectWithoutAcknowledgment(t *testing.T) {
+func TestMeteredProbeMissingPeriodAndWrongTargetAreDiscarded(t *testing.T) {
 	store, owner, period := xnodeTrafficFixture(t)
 	p := meteredProbeFixture(t, store, owner, period, "invalid")
 	report := wire.TrafficReport{ID: "agent:1", Traffic: wire.Traffic{int(p.ProxyUserID): {8, 0}}}
-	if err := store.RecordXNodeTraffic(context.Background(), "node", "agent", 1, "digest", report); err == nil {
-		t.Fatal("unperioded metered traffic accepted")
+	if err := store.RecordXNodeTraffic(context.Background(), "node", "agent", 1, "digest", report); err != nil {
+		t.Fatal("unperioded traffic discard failed", err)
 	}
 	p.PeriodID = "not-owned"
-	if err := recordProbeSample(t, store, p, 1, 8); err == nil {
-		t.Fatal("foreign period accepted")
+	if err := recordProbeSample(t, store, p, 2, 8); err != nil {
+		t.Fatal("foreign period discard failed", err)
 	}
 	sequence, err := store.XNodeReportSequence(context.Background(), "agent")
-	if err != nil || sequence != 0 {
-		t.Fatal("invalid report acknowledged", sequence, err)
+	if err != nil || sequence != 2 {
+		t.Fatal("discard did not advance", sequence, err)
+	}
+	value, err := store.XNodePeriod(context.Background(), period.ID)
+	if err != nil || value.UsedBytes != 0 {
+		t.Fatal("discard charged unmatched traffic", value, err)
 	}
 }
 
@@ -114,8 +118,12 @@ func TestMeteredProbeOriginSurvivesResetRenewalAndRefundSettlement(t *testing.T)
 			if err := store.SaveXNodePeriod(ctx, period); err != nil {
 				t.Fatal(err)
 			}
-			if err := recordProbeSample(t, store, p, 2, 1); err == nil {
-				t.Fatal("settled financial period mutated")
+			if err := recordProbeSample(t, store, p, 2, 1); err != nil {
+				t.Fatal("settled traffic discard failed", err)
+			}
+			old, err = store.XNodePeriod(ctx, period.ID)
+			if err != nil || old.UsedBytes != 15 {
+				t.Fatal("settled financial period mutated", old, err)
 			}
 			p.ProxyUserID++
 			if err := store.SaveXNodeMeteredProbe(ctx, p); err == nil {

@@ -13,7 +13,7 @@ const (
 	ErrTrafficAgentMismatch trafficConflict = "XNODE_TRAFFIC_AGENT_MISMATCH"
 	// ErrTrafficDigestMismatch rejects a changed report at the committed cursor.
 	ErrTrafficDigestMismatch trafficConflict = "XNODE_TRAFFIC_DIGEST_MISMATCH"
-	// ErrTrafficSequenceGap requires missing journal entries before new traffic.
+	// ErrTrafficSequenceGap identifies a missing journal range.
 	ErrTrafficSequenceGap trafficConflict = "XNODE_TRAFFIC_SEQUENCE_GAP"
 	// ErrTrafficSampleMissing rejects billable totals without period evidence.
 	ErrTrafficSampleMissing trafficConflict = "XNODE_TRAFFIC_SAMPLE_MISSING"
@@ -21,7 +21,7 @@ const (
 	ErrTrafficPeriodSettled trafficConflict = "XNODE_TRAFFIC_PERIOD_SETTLED"
 	// ErrTrafficOwnerMismatch rejects samples without period ownership evidence.
 	ErrTrafficOwnerMismatch trafficConflict = "XNODE_TRAFFIC_OWNER_MISMATCH"
-	// Missing journal references must never be skipped or acknowledged.
+	// Missing references identify batches eligible for audited discard.
 	ErrTrafficPeriodMissing     trafficConflict = "XNODE_TRAFFIC_PERIOD_MISSING"
 	ErrTrafficPAYGPeriodMissing trafficConflict = "XNODE_TRAFFIC_PAYG_PERIOD_MISSING"
 	ErrTrafficIdentityMissing   trafficConflict = "XNODE_TRAFFIC_IDENTITY_MISSING"
@@ -45,3 +45,11 @@ func (e trafficSequenceGap) Unwrap() error { return ErrTrafficSequenceGap }
 func NewTrafficSequenceGap(received, expected uint64) error {
 	return trafficSequenceGap{received: received, expected: expected}
 }
+
+type trafficPeriodMissing struct{ period string }
+
+func (e trafficPeriodMissing) Error() string { return ErrTrafficPeriodMissing.Error() }
+func (e trafficPeriodMissing) Unwrap() error { return ErrTrafficPeriodMissing }
+
+// NewTrafficPeriodMissing identifies a validated period reference, never a payload.
+func NewTrafficPeriodMissing(period string) error { return trafficPeriodMissing{period: period} }
