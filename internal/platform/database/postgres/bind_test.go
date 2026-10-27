@@ -16,6 +16,7 @@ func TestSQLAwareBinding(t *testing.T) {
 		{"aggregate", "SELECT MAX(id),MAX(MAX(id),1),MIN(1,2) FROM t", "SELECT MAX(id),GREATEST(MAX(id),1),LEAST(1,2) FROM t", nil},
 		{"null-equality", "SELECT 1 WHERE value IS ? AND other IS NOT NULL", "SELECT 1 WHERE value IS NOT DISTINCT FROM $1 AND other IS NOT NULL", []driver.NamedValue{{Ordinal: 1, Value: nil}}},
 		{"authored", "SELECT $1::text", "SELECT $1::text", []driver.NamedValue{{Ordinal: 1, Value: "literal ?"}}},
+		{"placeholder-concat", "SELECT ?||':'||?", "SELECT $1||':'||$2", []driver.NamedValue{{Ordinal: 1, Value: "a"}, {Ordinal: 2, Value: "b"}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := Bind(tc.query, tc.args)

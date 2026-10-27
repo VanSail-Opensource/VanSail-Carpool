@@ -42,7 +42,9 @@ func Bind(query string, args []driver.NamedValue) (string, error) {
 			continue
 		}
 		if t.raw == "?" {
-			if i+1 < len(tokens) && (tokens[i+1].raw == "|" || tokens[i+1].raw == "&") {
+			// A placeholder followed by SQL concatenation is not the ?| JSON operator.
+			concat := i+2 < len(tokens) && tokens[i+1].raw == "|" && tokens[i+2].raw == "|"
+			if i+1 < len(tokens) && !concat && (tokens[i+1].raw == "|" || tokens[i+1].raw == "&") {
 				return "", fmt.Errorf("use authored PostgreSQL parameters for JSON operators")
 			}
 			parameter++
