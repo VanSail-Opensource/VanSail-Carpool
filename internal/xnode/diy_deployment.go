@@ -42,6 +42,10 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 			ids = append(ids, id)
 		}
 		slices.Sort(ids)
+		identity, err := s.repo.XNodeIdentityByUser(ctx, operation.OwnerUserID)
+		if err != nil {
+			return err
+		}
 		if err = syncDeploymentNodes(ctx, s.master, ids); err != nil {
 			return fmt.Errorf("whitelist: %w", err)
 		}
@@ -59,7 +63,7 @@ func (s *Service) runDIYOperation(ctx context.Context, operation providerops.Ope
 			settings.Whitelist.IPs = settings.Whitelist.IPs[:min(len(settings.Whitelist.IPs), quota)]
 			pending := []string{}
 			for _, id := range ids {
-				if !s.master.whitelistApplied(id, operation.OwnerUserID, settings.Whitelist) {
+				if !s.master.whitelistApplied(id, identity.ProxyUserID, settings.Whitelist) {
 					pending = append(pending, id)
 				}
 			}

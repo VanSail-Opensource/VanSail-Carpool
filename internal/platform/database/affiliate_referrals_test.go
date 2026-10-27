@@ -21,6 +21,10 @@ func TestAffiliateInviterFreezesUntilAuthentication(t *testing.T) {
 	if _, accepted, err := store.AcceptAffiliateReferral(ctx, 803, 801, time.Now().UTC()); err != nil || !accepted {
 		t.Fatalf("valid inviter accepted/error = %v/%v", accepted, err)
 	}
+	stub, err := store.UserByTelegramID(ctx, 803)
+	if err != nil || stub.ID != "803" || !stub.NewUser {
+		t.Fatalf("referral stub identity = %#v, %v", stub, err)
+	}
 	if _, accepted, err := store.AcceptAffiliateReferral(ctx, 803, 802, time.Now().UTC()); err != nil || accepted {
 		t.Fatalf("replacement inviter accepted/error = %v/%v", accepted, err)
 	}
@@ -28,7 +32,7 @@ func TestAffiliateInviterFreezesUntilAuthentication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if user.NewUser || user.NotificationLocale != affiliates.LocaleChinese || user.InviterID == nil || *user.InviterID != 801 {
+	if user.ID != "803" || user.NewUser || user.NotificationLocale != affiliates.LocaleChinese || user.InviterID == nil || *user.InviterID != 801 {
 		t.Fatalf("authenticated referral user = %#v", user)
 	}
 	if _, accepted, err := store.AcceptAffiliateReferral(ctx, 803, 802, time.Now().UTC()); err != nil || accepted {

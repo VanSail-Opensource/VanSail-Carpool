@@ -27,6 +27,16 @@ type identityRekey struct {
 // complete before workers start; ciphertext and all references commit together.
 func (s *Store) MigrateTelegramIdentities(ctx context.Context, vault *secret.Vault, backupBase ...string) (result error) {
 	if IsPostgres(s.db) {
+		// Activation verifies the imported source before making it active. Once
+		// active, historical application-created IDs must remain stable: they can
+		// own encrypted documents and immutable accounting records.
+		var phase string
+		if err := s.db.QueryRowContext(ctx, `SELECT phase FROM vansail_migration_state WHERE singleton=1`).Scan(&phase); err != nil {
+			return err
+		}
+		if phase == "active" {
+			return nil
+		}
 		var invalid bool
 		err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id<>CAST(telegram_id AS TEXT))`).Scan(&invalid)
 		if err != nil {

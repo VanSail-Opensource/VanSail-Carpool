@@ -5,15 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 // AcceptAffiliateReferral freezes a valid inviter on a private /start stub.
 func (s *Store) retryAttempt_AcceptAffiliateReferral(ctx context.Context, inviteeTelegramID, inviterTelegramID int64, now time.Time) (string, bool, error) {
-	if inviteeTelegramID <= 0 || inviterTelegramID <= 0 || inviteeTelegramID == inviterTelegramID {
+	if inviteeTelegramID <= 0 || inviteeTelegramID >= 1<<52 || inviterTelegramID <= 0 || inviteeTelegramID == inviterTelegramID {
 		return "", false, affiliates.ErrInvalidInput
 	}
 	if !IsPostgres(s.db) {
@@ -36,10 +36,7 @@ func (s *Store) retryAttempt_AcceptAffiliateReferral(ctx context.Context, invite
 	if err != nil {
 		return "", false, err
 	}
-	stubID, err := ids.New()
-	if err != nil {
-		return "", false, err
-	}
+	stubID := strconv.FormatInt(inviteeTelegramID, 10)
 	result, err := tx.ExecContext(ctx, `INSERT INTO users(id,telegram_id,new_user,inviter_id,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
 		VALUES(?,?,1,?,'en',1,?,?) ON CONFLICT(telegram_id) DO UPDATE SET inviter_id=excluded.inviter_id,updated_at=excluded.updated_at
 		WHERE users.new_user=1 AND users.inviter_id IS NULL`, stubID, inviteeTelegramID, inviterTelegramID, stamp(now), stamp(now))

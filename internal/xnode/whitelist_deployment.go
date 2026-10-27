@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"slices"
-	"strconv"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -40,9 +39,8 @@ func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revis
 	m.whitelistStates[peer.nodeID] = state
 }
 
-func (m *Master) whitelistApplied(node, user string, desired WhitelistPolicy) bool {
-	id, err := strconv.ParseInt(user, 10, 64)
-	if err != nil {
+func (m *Master) whitelistApplied(node string, id int64, desired WhitelistPolicy) bool {
+	if id <= 0 || id >= 1<<53 {
 		return false
 	}
 	m.mu.RLock()

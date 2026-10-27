@@ -209,6 +209,11 @@ without admitting new detections. Valid reserved/shared-space IP observations
 are skipped under master public-IP policy; malformed addresses remain errors.
 `xnode_firewall_journal_test.go` covers replay and mixed public/reserved batches.
 
+Referral stubs use the decimal Telegram ID as their user ID, including before
+authentication, so new referrals preserve the post-migration identity invariant.
+PostgreSQL source identities are checked during import; once activation has
+completed, startup preserves any subsequently created noncanonical IDs and their
+associated encrypted and accounting records rather than rekeying them in place.
 `telegram_identity_migration.go` owns the atomic vault-aware startup rekey and
 private backup. `telegram_identity_references.go` converts FK and explicit owner
 references through disjoint temporary keys. `telegram_identity_cipher.go` reseals

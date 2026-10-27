@@ -106,8 +106,12 @@ func (s *Service) ownedWhitelist(ctx context.Context, user string, policy Whitel
 		view.Phase = "inactive"
 		return view, nil
 	}
+	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
+	if err != nil && !isMissing(err) {
+		return view, err
+	}
 	for node := range nodes {
-		if s.master == nil || !s.master.whitelistApplied(node, user, view.WhitelistPolicy) {
+		if s.master == nil || !s.master.whitelistApplied(node, identity.ProxyUserID, view.WhitelistPolicy) {
 			view.PendingNodes = append(view.PendingNodes, node)
 		}
 	}
