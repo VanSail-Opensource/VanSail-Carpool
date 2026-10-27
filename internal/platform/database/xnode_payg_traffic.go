@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
@@ -19,26 +20,39 @@ func lockPAYGOwnersTx(ctx context.Context, tx *sql.Tx, node string, ids map[int6
 	if len(ids) == 0 {
 		return nil
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT proxy_user_id,user_id FROM xnode_payg_accounts WHERE node_id=? ORDER BY user_id`, node)
-	if err != nil {
-		return err
+	selected := make([]int64, 0, len(ids))
+	for id, include := range ids {
+		if include {
+			selected = append(selected, id)
+		}
 	}
+	sort.Slice(selected, func(i, j int) bool { return selected[i] < selected[j] })
 	users := map[string]bool{}
-	for rows.Next() {
-		var id int64
-		var user string
-		if err = rows.Scan(&id, &user); err != nil {
-			rows.Close()
+	for start := 0; start < len(selected); start += 128 {
+		batch := selected[start:min(start+128, len(selected))]
+		args := make([]any, 1, len(batch)+1)
+		args[0] = node
+		for _, id := range batch {
+			args = append(args, id)
+		}
+		query := `SELECT user_id FROM xnode_payg_accounts WHERE node_id=? AND proxy_user_id IN (` + strings.TrimSuffix(strings.Repeat("?,", len(batch)), ",") + `)`
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
 			return err
 		}
-		if ids[id] {
+		for rows.Next() {
+			var user string
+			if err = rows.Scan(&user); err != nil {
+				rows.Close()
+				return err
+			}
 			users[user] = true
 		}
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return err
+		}
 	}
 	ordered := []string{}
 	for user := range users {
@@ -46,7 +60,7 @@ func lockPAYGOwnersTx(ctx context.Context, tx *sql.Tx, node string, ids map[int6
 	}
 	sort.Strings(ordered)
 	for _, user := range ordered {
-		if _, err = balanceTx(ctx, tx, user); err != nil {
+		if _, err := balanceTx(ctx, tx, user); err != nil {
 			return err
 		}
 	}

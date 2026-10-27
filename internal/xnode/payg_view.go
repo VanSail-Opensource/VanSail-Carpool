@@ -87,6 +87,14 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	} else if !isMissing(e) {
 		return out, e
 	}
+	reportSeconds := 0
+	if s.master != nil {
+		global, e := s.Global(ctx)
+		if e != nil {
+			return out, e
+		}
+		reportSeconds = global.Telemetry.ReportSeconds
+	}
 	total := new(big.Int)
 	spent := int64(0)
 	for _, p := range products {
@@ -127,7 +135,7 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 					}
 					funded := a.Funded(s.now())
 					available = available || funded
-					if funded && s.master != nil && s.master.paygNodeReady(a.NodeID) {
+					if funded && s.master != nil && s.master.paygNodeReady(a.NodeID, reportSeconds) {
 						healthy = true
 					}
 				}
@@ -155,7 +163,7 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	return out, err
 }
 
-func (m *Master) paygNodeReady(node string) bool {
+func (m *Master) paygNodeReady(node string, reportSeconds int) bool {
 	m.mu.RLock()
 	peer := m.peers[node]
 	live := m.live[node]
@@ -166,5 +174,5 @@ func (m *Master) paygNodeReady(node string) bool {
 	peer.mu.Lock()
 	ready := peer.paygReady
 	peer.mu.Unlock()
-	return ready && freshSnapshot(live, m.service.now(), 5) && live.report.Ready && live.report.Synchronized
+	return ready && freshSnapshot(live, m.service.now(), reportSeconds) && live.report.Ready && live.report.Synchronized
 }

@@ -60,3 +60,19 @@ func TestFreshSnapshotsExpireAndMissingCountsAreNotMerged(t *testing.T) {
 		t.Fatal("authoritative empty snapshot rejected")
 	}
 }
+
+func TestPAYGReadinessUsesConfiguredReportInterval(t *testing.T) {
+	now := time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)
+	service := NewService(nil, nil, nil, nil, nil)
+	service.now = func() time.Time { return now }
+	master := NewMaster(service, nil)
+	master.peers["node"] = &agentPeer{paygReady: true}
+	master.live["node"] = liveSnapshot{receivedAt: now.Add(-30 * time.Second), report: wire.TelemetryReport{Ready: true, Synchronized: true}}
+	if !master.paygNodeReady("node", 20) || master.paygNodeReady("node", 5) {
+		t.Fatal("PAYG readiness did not use the configured telemetry window")
+	}
+	master.peers["node"].paygReady = false
+	if master.paygNodeReady("node", 20) {
+		t.Fatal("unrecovered PAYG node became ready")
+	}
+}

@@ -26,6 +26,9 @@ No balances, usage, admission decisions or duplicate state are persisted/cached;
 exact credit expiry and settlement remain in the X-Node service.
 `xnode_runtime_reads_test.go` checks wallet/credit changes, node isolation,
 bounded connection batches and retained cadence recovery on both backends.
+`lockPAYGOwnersTx` selects report or observation principals in bounded batches
+before locking owners in stable order. Atomic journal and financial writes keep
+their existing isolation and retry rules.
 
 `catalog_stock.go` owns bounded aggregate stock display;
 `purchase_squad_membership.go` shares ownership precedence with checkout.

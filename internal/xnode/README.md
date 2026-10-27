@@ -101,6 +101,8 @@ hold accounting blocked while requiring fresh telemetry and command delivery.
 
 `payg_squad_state_test.go` verifies hidden squads retain credentials and access,
 unavailable squads lose PAYG authorization, and normal restores the same period.
+Member PAYG status uses the configured telemetry reporting window, matching the
+master's admission check, and still requires the committed recovery barrier.
 `payg_export.go` removes hidden PAYG entries from refreshed subscriptions and
 host links before split-profile rendering. Server admission, routing references
 and active connections retain the same principal and credentials.
