@@ -97,6 +97,8 @@ changes serialize on the existing member balance row. A completed manual
 successor prevents a delayed automatic renewal from charging again.
 `purchase_admission_test.go` checks exact expiry, quote/transaction enforcement,
 checkout replay and a delayed renewal after a manual successor.
+`automatic_renewal_superseded_test.go` covers stale renewal preferences and
+failure notices when a later paid term is already queued.
 
 Maintenance preserves provider receipts referenced by native routing plans and
 metered probes, including terminal receipts. These links are required desired
