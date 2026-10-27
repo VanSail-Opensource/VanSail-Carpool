@@ -45,9 +45,10 @@ window.fetch = async (input, init) => {
   if (url.pathname.endsWith('/prices')) return new Response(JSON.stringify(userPrices(params,url.searchParams.get('cursor'))), { headers: { 'Content-Type':'application/json' } })
   let value: unknown = policy
   if (url.pathname.endsWith('/admin/combos')) value={items:[]}
+  else if (url.pathname.endsWith('/admin/xnode/nodes')) value = { items: [{ id: 'node-tokyo', name: 'Tokyo', enabled: true, configId: 'config', multiplier: 1 }, { id: 'node-frankfurt', name: 'Frankfurt', enabled: true, configId: 'config', multiplier: 1 }] }
   else if (url.pathname.endsWith('/admin/squad-products')) value={items:['normal','hidden','unavailable','missing'].map((status,index)=>({id:`s${index}`,groupId:`g${index}`,name:`PAYG ${status}`,description:'',profile:null,billingMode:'payg',paygState:status==='missing'?'normal':status,price:{currency:'TXB',minor:'0',display:'0.00 TXB'},paygPrice:{currency:'TXB',minor:'50',display:'0.50 TXB'},visible:status!=='hidden',upstreamPresent:status!=='missing',stockLimit:null,stockRemaining:null,stockHeldByCurrentUser:false,activationRequired:false,accessibleNodes:[],createdAt:now.toISOString(),updatedAt:now.toISOString()}))}
   else if (url.pathname.endsWith('/pricing/health')) value = { health: params.has('empty') ? [] : health, observedAt: now.toISOString() }
-  else if (url.pathname.endsWith('/admin/pricing')) value = { products: params.has('empty') ? [] : [{ id: 'combo:audit-combo', productType: 'combo', productId: 'audit-combo', name: 'Tokyo monthly', fixedPriceMinor: '1000', policy }, { id: 'payg:audit-payg', productType: 'payg', productId: 'audit-payg', name: 'Frankfurt PAYG', fixedPriceMinor: '150', policy: { ...policy, productType: 'payg', productId: 'audit-payg', dynamicEnabled: true, purchasePricingMode: 'DYNAMIC' } }], nextCursor: '', health: params.has('empty') ? [] : health, storage: { pricingBytes: '15360000', databaseBytes: '314572800', pricingBudgetBytes: '734003200', databaseTargetBytes: '3000000000', pressure: false }, datasets: [], summary: { netRevenueMinor: '238000', recordedCostMinor: null, recordedMarginMinor: null, forecastRevenueMinor: '8300', forecastMarginMinor: null, pendingJobs: 2, failedJobs: 0, interventions30: 3, dynamicProducts: 1 } }
+  else if (url.pathname.endsWith('/admin/pricing')) value = { products: params.has('empty') ? [] : [{ id: 'combo:audit-combo', productType: 'combo', productId: 'audit-combo', name: 'Tokyo monthly', fixedPriceMinor: '1000', policy }, { id: 'payg:audit-payg', productType: 'payg', productId: 'audit-payg', name: 'Frankfurt PAYG', fixedPriceMinor: '150', policy: { ...policy, productType: 'payg', productId: 'audit-payg', dynamicEnabled: true, purchasePricingMode: 'DYNAMIC' } }], nextCursor: '', health: params.has('empty') ? [] : health, storage: { pricingBytes: '15360000', databaseBytes: '314572800', pricingBudgetBytes: '734003200', databaseTargetBytes: '3000000000', pressure: false }, datasets: [], summary: { netRevenueMinor: '238000', recordedCostMinor: null, recordedMarginMinor: null, forecastRevenueMinor: '8300', forecastMarginMinor: null, costNodes: 0, totalNodes: 3, providerPaymentRecords: 0, pendingJobs: 2, failedJobs: 0, interventions30: 3, dynamicProducts: 1 } }
   else if (url.pathname.endsWith('/pricing/data')) {
     const dataset = url.searchParams.get('dataset')
     const data: Record<string, unknown[]> = {
@@ -87,6 +88,7 @@ window.fetch = async (input, init) => {
   return new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } })
 }
 const router = createRouter({ history: createMemoryHistory(), routes: [
+  { path: '/admin/xnode', component: PricingAudit },
   { path: '/admin/pricing', component: PricingAudit, meta: { pricingMode: 'overview' } },
   { path: '/admin/pricing/operations', component: PricingAudit, meta: { pricingMode: 'operations' } },
   { path: '/admin/pricing/exports', component: PricingAudit, meta: { pricingMode: 'exports' } },

@@ -20,7 +20,9 @@ func (s *Store) PersonalForecast(ctx context.Context, user string, now time.Time
 
 func (s *Store) personalForecast(ctx context.Context, user string, now time.Time) (model.PersonalForecast, error) {
 	day := now.UTC().Truncate(24 * time.Hour)
-	out := model.PersonalForecast{Days: []model.ForecastDay{}, Timezone: "UTC", Status: "MISSING", Stale: true, Confidence: model.ForecastConfidence{Calibration: "PRIOR_ONLY", NominalIntervalBPS: 8000}}
+	// Missing history is not a stale prediction. Mark stale only after finding a
+	// forecast vintage whose generation time predates the current UTC day.
+	out := model.PersonalForecast{Days: []model.ForecastDay{}, Timezone: "UTC", Status: "MISSING", Confidence: model.ForecastConfidence{Calibration: "PRIOR_ONLY", NominalIntervalBPS: 8000}}
 	for offset := -2; offset <= 5; offset++ {
 		if offset == 0 {
 			continue
@@ -39,7 +41,7 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 			out.Days[i].Status = "OBSERVED"
 		}
 	}
-	err := s.pricingUserFeatures(ctx, user, now)
+	err := s.preparePersonalForecastFeatures(ctx, user, now)
 	if errors.Is(err, ErrPricingComputePending) {
 		out.Status = "PENDING"
 		out.RefreshPending = true
@@ -120,4 +122,22 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 		return out, err
 	}
 	return out, nil
+}
+
+// Interactive reads share the worker's bounded analytical admission. Completed
+// daily features need no slot; a busy worker leaves the refresh pending.
+func (s *Store) preparePersonalForecastFeatures(ctx context.Context, user string, now time.Time) error {
+	var exists bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='user' AND entity_id=? AND day=?)`, user, now.UTC().Format(time.DateOnly)).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	release, err := s.acquirePricingCompute()
+	if err != nil {
+		return ErrPricingComputePending
+	}
+	defer release()
+	return s.pricingUserFeatures(ctx, user, now)
 }

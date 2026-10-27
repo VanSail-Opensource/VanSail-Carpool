@@ -51,5 +51,8 @@ type trafficPeriodMissing struct{ period string }
 func (e trafficPeriodMissing) Error() string { return ErrTrafficPeriodMissing.Error() }
 func (e trafficPeriodMissing) Unwrap() error { return ErrTrafficPeriodMissing }
 
+// MissingTrafficPeriod exposes the reference for bounded, validated auditing.
+func (e trafficPeriodMissing) MissingTrafficPeriod() string { return e.period }
+
 // NewTrafficPeriodMissing identifies a validated period reference, never a payload.
 func NewTrafficPeriodMissing(period string) error { return trafficPeriodMissing{period: period} }

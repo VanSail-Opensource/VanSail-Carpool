@@ -142,6 +142,8 @@ requests remain compatible. Completed idempotency receipts resolve first.
 Analytical caches and request-local policy/coupon batches never authorize debit.
 Pricing workers have independent stage deadlines. The health endpoint reads only
 memory; deferred datasets use opaque cursors bound to dataset and filter scope.
+The independent compute lane polls at 500 ms to reduce idle lease scans while
+retaining bounded batches and keeping traffic acknowledgments on their own lane.
 
 - `strategy.go`: Strategy v4 observed-price support and stable selection within 95% of the best positive contribution; ties prefer retention then lower price.
 - `strategy_test.go`: Hosted single-probability, stability and supported-range regressions.

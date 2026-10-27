@@ -76,7 +76,7 @@ function display(value: number): string { return metric.value === 'traffic_bytes
     <p v-if="loading" role="status">{{ t('common.loading') }}</p>
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <template v-else-if="forecasts.length">
-      <MetricLineChart :samples="samples" :forecasts="predictions" :show-band="band" :events="events" :label="t('pricing.history')" :unit="metric === 'traffic_bytes' ? 'bytes' : 'money'" connect-missing />
+      <MetricLineChart :samples="samples" :forecasts="predictions" :show-band="band" :events="events" :label="t('pricing.history')" :forecast-label="t('pricing.prediction')" :unit="metric === 'traffic_bytes' ? 'bytes' : 'money'" connect-missing />
       <dl v-if="metrics?.samples" class="pricing-history__metrics">
         <div><dt>{{ t('pricing.mae') }}</dt><dd>{{ display(metrics.mae) }}</dd></div>
         <div><dt>{{ t('pricing.wape') }}</dt><dd>{{ metrics.wape === null ? t('pricing.undefined') : `${(metrics.wape * 100).toFixed(1)}%` }}</dd></div>

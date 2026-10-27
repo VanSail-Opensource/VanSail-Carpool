@@ -6,14 +6,14 @@ import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
 const { t } = useI18n()
 const route = useRoute()
-const draft = reactive({ from: String(route.query.from ?? ''), until: String(route.query.until ?? ''), users: String(route.query.users ?? ''), nodes: String(route.query.nodes ?? ''), products: String(route.query.products ?? ''), category: '', format: 'jsonl' as 'csv' | 'jsonl', includeUsers: false, includeFinancial: false, pseudonymize: true, reason: '', authorize: false })
+const draft = reactive({ from: String(route.query.from ?? ''), until: String(route.query.until ?? ''), users: String(route.query.users ?? ''), nodes: String(route.query.nodes ?? ''), products: String(route.query.products ?? ''), category: 'all', format: 'jsonl' as 'csv' | 'jsonl', includeUsers: false, includeFinancial: false, pseudonymize: true, reason: '', authorize: false })
 const busy = shallowRef(false)
 const error = shallowRef('')
 const completed = shallowRef(false)
 let controller: globalThis.AbortController | null = null
 onScopeDispose(() => controller?.abort())
 const sensitive = computed(() => draft.includeUsers || draft.includeFinancial || draft.users.trim() !== '')
-const categories = computed(() => ['', 'raw', 'features', 'forecasts', 'pricing', 'operations', 'validation'].map(value => ({ value, label: t(`pricing.exportCategories.${value || 'all'}`) })))
+const categories = computed(() => ['all', 'raw', 'features', 'forecasts', 'pricing', 'operations', 'validation'].map(value => ({ value, label: t(`pricing.exportCategories.${value}`) })))
 const enabled = computed(() => !busy.value && (!sensitive.value || draft.authorize && draft.reason.trim() !== ''))
 const ids = (value: string) => value.split(',').map(id => id.trim()).filter(Boolean)
 async function download(): Promise<void> {
@@ -26,7 +26,7 @@ async function download(): Promise<void> {
     // The native picker must run in the click gesture, before authorization I/O.
     const picker = (globalThis as typeof globalThis & { showSaveFilePicker?: (options: { suggestedName: string }) => Promise<globalThis.FileSystemFileHandle> }).showSaveFilePicker
     const handle = picker ? await picker({ suggestedName: 'bapo-export.zip' }) : null
-    const scope: PricingExportScope = { users: ids(draft.users), nodes: ids(draft.nodes), products: ids(draft.products), category: draft.category, format: draft.format, includeUsers: draft.includeUsers, includeFinancial: draft.includeFinancial, pseudonymize: draft.pseudonymize }
+    const scope: PricingExportScope = { users: ids(draft.users), nodes: ids(draft.nodes), products: ids(draft.products), category: draft.category === 'all' ? '' : draft.category, format: draft.format, includeUsers: draft.includeUsers, includeFinancial: draft.includeFinancial, pseudonymize: draft.pseudonymize }
     if (draft.from) scope.from = `${draft.from}T00:00:00Z`
     if (draft.until) scope.until = `${draft.until}T00:00:00Z`
     const token = sensitive.value ? (await pricingExportsApi.authorize(scope, draft.reason.trim(), controller.signal)).token : ''

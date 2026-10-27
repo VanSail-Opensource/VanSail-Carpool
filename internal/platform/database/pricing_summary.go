@@ -20,7 +20,9 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=? AND created_at<? AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
 		return nil, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0),COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE effective_at>=? AND effective_at<?`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
+	// Actual payments have a recording time, not a separate payment date. The
+	// metadata effective date describes the rate and may be much older.
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0),COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE recorded_at>=? AND recorded_at<?`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
 		return nil, err
 	}
 	var cost, margin any

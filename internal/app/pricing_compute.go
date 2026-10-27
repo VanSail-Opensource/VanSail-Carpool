@@ -34,7 +34,9 @@ func registerPricingCompute(worker *outbox.Worker, store *database.Store, master
 }
 
 func (a *Application) runComputeLane(ctx context.Context) {
-	tick := time.NewTicker(100 * time.Millisecond)
+	// Analytics tolerate subsecond admission; avoid ten empty database lease
+	// scans per second while still admitting bounded batches independently.
+	tick := time.NewTicker(500 * time.Millisecond)
 	defer tick.Stop()
 	pressureCtx, stopPressure := context.WithCancel(ctx)
 	pressureDone := make(chan struct{})

@@ -10,6 +10,11 @@ const fields = ['netRevenueMinor', 'recordedCostMinor', 'recordedMarginMinor', '
   <section class="pricing-summary">
     <dl><div v-for="field in fields" :key="field"><dt>{{ t(`pricing.summaryLabels.${field}`) }}</dt><dd>{{ pricingMoney(value[field]) }}</dd></div></dl>
     <p>{{ t('pricing.financeScope') }}</p>
+    <p v-if="typeof value.costNodes === 'number' && typeof value.totalNodes === 'number' && value.costNodes < value.totalNodes">
+      {{ t('pricing.costCoverage', { configured: value.costNodes, total: value.totalNodes }) }}
+      <UButton to="/admin/xnode" variant="link" color="neutral" :label="t('pricing.configureCosts')" />
+    </p>
+    <p v-if="value.providerPaymentRecords === 0">{{ t('pricing.noProviderPayments') }}</p>
     <p>{{ t('pricing.workerSummary', { pending: String(value.pendingJobs ?? 0), failed: String(value.failedJobs ?? 0), changes: String(value.interventions30 ?? 0), dynamic: String(value.dynamicProducts ?? 0) }) }}</p>
   </section>
 </template>

@@ -41,7 +41,7 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	}
 	if sequence <= previous {
 		if sequence == previous && digest != previousDigest {
-			if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, "digest_mismatch", true, report); err != nil {
+			if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, "digest_mismatch", "", true, report); err != nil {
 				return err
 			}
 		}
@@ -53,6 +53,11 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	}
 	err = applyXNodeTrafficTx(ctx, tx, nodeID, agent, sequence, multiplier, report)
 	reason := discardedTrafficReason(err)
+	var missing interface{ MissingTrafficPeriod() string }
+	missingPeriod := ""
+	if errors.As(err, &missing) {
+		missingPeriod = missing.MissingTrafficPeriod()
+	}
 	discarded := reason != ""
 	if err != nil && reason == "" {
 		return err
@@ -69,7 +74,7 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 		if reason == "" {
 			reason = "sequence_gap"
 		}
-		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, reason, discarded, report); err != nil {
+		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, reason, missingPeriod, discarded, report); err != nil {
 			return err
 		}
 	}

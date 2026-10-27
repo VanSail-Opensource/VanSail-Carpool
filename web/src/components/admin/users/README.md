@@ -23,7 +23,9 @@
 - Table cells and native overlays keep the profile stable during mutation review.
 `useAdminRefundQuote.ts` loads server refund suggestions without overwriting manual edits or changed entitlement contexts. `useAdminRefundQuote.test.ts` covers defaults, failed loads, retries and stale responses.
 
-The profile separates entitlement, history, and account workspaces.
+The profile uses accessible tabs for entitlement, pricing, metrics, history, and
+account workspaces. Only the selected workspace mounts its data-heavy content;
+the tab list scrolls horizontally when necessary on small screens.
 `AdminUserOverview.vue` supplies independent browser identity and metric geometry;
 it does not rely on Mini App styles. Native browser navigation opens PM topics.
 Provider, refund, audited resolution, coupon, and PM repair failures stay visible

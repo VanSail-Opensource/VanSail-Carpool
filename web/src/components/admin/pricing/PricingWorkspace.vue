@@ -12,7 +12,6 @@ import PricingOperations from './PricingOperations.vue'
 import PricingExports from './PricingExports.vue'
 import PricingInterventionForm from './PricingInterventionForm.vue'
 import PricingInterventions from './PricingInterventions.vue'
-import PricingCostEditor from './PricingCostEditor.vue'
 import PricingSummary from './PricingSummary.vue'
 import PricingCalibration from './PricingCalibration.vue'
 import PricingDataset from './PricingDataset.vue'
@@ -53,10 +52,10 @@ function changed() { refresh.value++; void state.load() }
       <ProductPricingSettings v-if="mode === 'product'" :key="product" :kind="productKind" :product-id="productId" />
       <UserPricingAnalysis v-if="mode === 'user'" :key="user" :user-id="user" />
       <PricingOperations v-if="mode === 'operations'" :health="state.health.value" />
-      <details v-if="mode !== 'operations'" @toggle="toggled('history',$event)"><summary>{{ t('pricing.history') }}</summary><PricingHistorySection v-if="open.history" :key="`${product}:${user}`" :mode="mode" :product="product" :user="user" :health="state.health.value" /></details>
+      <details v-if="mode !== 'operations'" @toggle="toggled('history',$event)"><summary>{{ t('pricing.history') }}</summary><PricingHistorySection v-if="open.history" :key="`${product}:${user}`" :mode="mode" :product="product" :user="user" :health="state.health.value" :products="state.dashboard.value?.products ?? []" /></details>
       <details @toggle="toggled('calibration',$event)"><summary>{{ t('pricing.calibration') }}</summary><PricingDataset v-if="open.calibration" name="validation/calibration" :product="product" :user="user"><template #default="{ items }"><PricingCalibration :items="items" /></template></PricingDataset></details>
       <details @toggle="toggled('diagnostics',$event)"><summary>{{ t('pricing.modelDiagnostics') }}</summary><PricingDiagnostics v-if="open.diagnostics" :key="refresh" :mode="mode" :product="product" :user="user" /></details>
-      <details v-if="mode === 'operations'" @toggle="toggled('costs',$event)"><summary>{{ t('pricing.providerCosts') }}</summary><div v-if="open.costs" :key="refresh" class="pricing-workspace__sections"><PricingCostEditor @changed="changed" /><PricingDataset name="pricing/provider_costs" :title="t('pricing.providerCosts')" :fields="['node_id','cycle_cost_minor','cycle_days','capacity_bytes','effective_at','version']" /><PricingDataset name="forecasts/renewal_predictions" :title="t('pricing.deferredRenewals')" :fields="['purchase_id','user_id','price_minor','state','settle_after','valid_until']" /></div></details>
+      <details v-if="mode === 'operations'" @toggle="toggled('renewals',$event)"><summary>{{ t('pricing.deferredRenewals') }}</summary><PricingDataset v-if="open.renewals" :key="refresh" name="forecasts/renewal_predictions" :title="t('pricing.deferredRenewals')" :fields="['purchase_id','user_id','price_minor','state','settle_after','valid_until']" /></details>
       <details @toggle="toggled('interventions',$event)"><summary>{{ t('pricing.interventions') }}</summary><div v-if="open.interventions" :key="refresh" class="pricing-workspace__sections"><PricingInterventionForm :scope-type="scopeType" :scope-id="scopeId" @changed="changed" /><PricingDataset name="operations/admin_overrides" :product="product" :user="user"><template #default="{ items }"><PricingInterventions :items="items" @changed="changed" /></template></PricingDataset><PricingDataset name="operations/health_incidents" :product="product" :user="user" :title="t('pricing.incidents')" :fields="['scope_id','state','started_at','ended_at','reason','acknowledged_by']" /></div></details>
     </template>
   </section>

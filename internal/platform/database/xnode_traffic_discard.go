@@ -37,7 +37,7 @@ func discardedTrafficReason(err error) string {
 
 // An audit record and the real report cursor are committed atomically. Retried
 // frames reuse the same audit ID; no missing sequence or digest is fabricated.
-func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent string, sequence, previous uint64, digest, reason string, discarded bool, report wire.TrafficReport) error {
+func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent string, sequence, previous uint64, digest, reason, missingPeriod string, discarded bool, report wire.TrafficReport) error {
 	detail := map[string]any{
 		"nodeId": node, "agentId": agent, "sequence": strconv.FormatUint(sequence, 10),
 		"previousSequence": strconv.FormatUint(previous, 10), "reason": reason,
@@ -46,6 +46,9 @@ func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent strin
 	if sequence > previous+1 {
 		detail["missingFrom"] = strconv.FormatUint(previous+1, 10)
 		detail["missingThrough"] = strconv.FormatUint(sequence-1, 10)
+	}
+	if missingPeriod != "" && wire.ValidName(missingPeriod) {
+		detail["missingPeriod"] = missingPeriod
 	}
 	raw, err := json.Marshal(detail)
 	if err != nil {

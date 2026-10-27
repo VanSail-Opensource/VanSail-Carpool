@@ -11,7 +11,8 @@ and stacked mobile controls. No Telegram controls or initialization are imported
   existing product editors. Calculated bounds are read-only; no approval step.
 - `PricingProducts.vue` renders paginated product modes and detail links.
 - `PricingSummary.vue` separates recorded commerce results/provider payments
-  from next-day unvalidated forecasts and unavailable cost information.
+  from next-day unvalidated forecasts, explains missing node cost coverage and
+  provider payment evidence, and links to the existing cost controls.
 - `PricingHistory.vue` reads original immutable vintages, one model/lead band,
   actual/forecast/interval toggles, events, provider/calendar dates and scoped export.
   Daily history connects unavailable points visually without filling actuals or intervals.
@@ -21,14 +22,16 @@ and stacked mobile controls. No Telegram controls or initialization are imported
   frequency buckets for one model, using sample-weighted sums.
 - `PricingOperations.vue` shows memory-only CPU/memory series and health. Missing
   telemetry is unavailable, never a zero-load observation.
-- `PricingCostEditor.vue` records versioned provider costs/capacity and optional
-  actual provider payments, with an audit reason.
+- Provider cost editing is in the X-Node node settings, using the same versioned
+  pricing API; analytical datasets remain available to exports and diagnostics.
 - `PricingInterventionForm.vue` sends typed, scoped, versioned, expiring commands.
 - `PricingInterventions.vue` shows the timeline and reasoned cancellation. Edits
   and material discounts take effect directly and send queued notifications.
 - `PricingRecordList.vue` displays bounded read-only traces and source facts.
 - `PricingExports.vue` streams ZIP data through the native file picker, offers
   typed CSV/JSONL, cancellation, scope filters and sensitive-export authorization.
+  Its all-category selector uses a nonempty UI value and sends the API's empty
+  category only when constructing the export scope.
 
 Public interfaces live in `api/pricing.ts`, `api/pricingAnalysis.ts` and
 `api/pricingExports.ts`; labels live in both `pricing` locale domains. Analytical
@@ -44,6 +47,8 @@ read-only notice; dynamic pricing requires no terms approval.
 - `PricingDataset.vue`: Progressively renders one disclosed dataset with retry, visible truncation and cursor pagination.
 - `PricingDiagnostics.vue`: Mounts independent response, model and decision panels only after disclosure.
 - `PricingHistorySection.vue`: Loads original forecasts and event overlays on demand; diagnostic failures leave forecasts visible.
+  The overview can switch between node traffic and the displayed product page's
+  revenue forecasts without combining different forecast models or horizons.
 - `usePricingDataset.ts`: Owns scoped cursor requests, cancellation, late-response rejection and retained successful pages.
 - `usePricingWorkspace.test.ts`: Hosted regressions for route request budgets and obsolete polling.
 

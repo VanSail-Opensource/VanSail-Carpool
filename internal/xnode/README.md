@@ -142,6 +142,8 @@ operator policy, then commits the actual received cursor before ACK. A valid
 report after a gap still counts; no missing bytes are invented. Invalid frames,
 agent mismatches and storage failures remain unacknowledged. `master_traffic_test.go`
 covers retry bounds, command delivery and safe diagnostics in hosted CI.
+`master_traffic_discard_socket_test.go` checks that a discarded missing-period
+report and its replay receive matching acknowledgments before the next sequence.
 
 Firewall reconciliation retains per-node execution and durable receipts. Its
 database queue projects only lagging banks, avoiding fleet delivery work for

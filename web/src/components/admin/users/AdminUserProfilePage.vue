@@ -31,11 +31,11 @@ const emit = defineEmits<{ back: [] }>()
 const { t } = useI18n()
 const profile = useAdminUserProfile(toRef(props, 'userId'))
 const tabs = computed(() => [
-  { value: 'entitlements', label: t('adminUserProfile.entitlements') },
-  { value: 'pricing', label: t('userPrices.title') },
-  { value: 'metrics', label: t('adminNative.title') },
-  { value: 'history', label: t('adminUserProfile.records') },
-  { value: 'account', label: t('adminUserProfile.actionsAndContext') },
+  { value: 'entitlements', slot: 'entitlements' as const, label: t('adminUserProfile.entitlements') },
+  { value: 'pricing', slot: 'pricing' as const, label: t('userPrices.title') },
+  { value: 'metrics', slot: 'metrics' as const, label: t('adminNative.title') },
+  { value: 'history', slot: 'history' as const, label: t('adminUserProfile.records') },
+  { value: 'account', slot: 'account' as const, label: t('adminUserProfile.actionsAndContext') },
 ])
 const editing = shallowRef<AdminEntitlement | null>(null)
 const refunding = shallowRef<AdminEntitlement | null>(null)
@@ -179,18 +179,21 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <template v-else-if="profile.detail.value">
       <AdminUserOverview :detail="profile.detail.value" />
       <AdminUserBalanceAdjustment :user-id="userId" @changed="refresh" />
-      <nav class="row-actions" :aria-label="t('pricing.navigation')"><UButton v-for="tab in tabs" :key="tab.value" :href="`#user-${tab.value}`" color="neutral" variant="ghost" :label="tab.label" /></nav>
-      <UserPricingAnalysis id="user-pricing" :key="userId" :user-id="userId" />
-      <AdminUserEntitlements id="user-entitlements" :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" />
-      <AdminUserMetrics id="user-metrics" :user-id="userId" />
-      <AdminUserHistory id="user-history" :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" />
-      <div id="user-account" class="admin-workspace-grid">
-        <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
-        <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
-        <AdminUserAccountContext :detail="profile.detail.value" />
-        <AdminUserPM :conversation="profile.detail.value.pmConversation" @changed="refresh" />
-        <AdminUserIPBlocks :items="profile.detail.value.ipBlocks" :busy="busy" @unblock="openIPUnblock" />
-      </div>
+      <UTabs :items="tabs" default-value="entitlements" color="neutral" variant="link" class="min-w-0 w-full" :ui="{ list: 'overflow-x-auto', trigger: 'shrink-0' }">
+        <template #entitlements><AdminUserEntitlements :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" /></template>
+        <template #pricing><UserPricingAnalysis :key="userId" :user-id="userId" /></template>
+        <template #metrics><AdminUserMetrics :user-id="userId" /></template>
+        <template #history><AdminUserHistory :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" /></template>
+        <template #account>
+          <div class="admin-workspace-grid">
+            <AdminUserProviderActions :user-id="userId" :detail="profile.detail.value" @changed="refresh" @queued="queueOperation" />
+            <AdminUserCouponActions :user-id="userId" :grants="profile.detail.value.couponWallet" @changed="refresh" />
+            <AdminUserAccountContext :detail="profile.detail.value" />
+            <AdminUserPM :conversation="profile.detail.value.pmConversation" @changed="refresh" />
+            <AdminUserIPBlocks :items="profile.detail.value.ipBlocks" :busy="busy" @unblock="openIPUnblock" />
+          </div>
+        </template>
+      </UTabs>
     </template>
     <div v-else class="empty-inline"><div><h3>{{ t('adminUserProfile.unavailable') }}</h3><p>{{ t('adminUserProfile.unavailableHint') }}</p></div></div>
 
@@ -202,3 +205,6 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <ConnectionUnblockDialog :open="unblockingIP !== null" :block="unblockingIP" :receipt="unblockOperation.receipt.value" :busy="profile.busyAction.value?.startsWith('unblock-ip:')" :checking="unblockOperation.checking.value" :error="profile.error.value ?? unblockOperation.error.value" @update:open="!$event && (unblockingIP = null)" @confirm="unblockIP" @refresh="unblockOperation.refresh" />
   </section>
 </template>
+<style scoped>
+.admin-profile { grid-template-columns: minmax(0, 1fr); }
+</style>

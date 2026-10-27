@@ -3,6 +3,7 @@ import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
 import { xnodeApi, type XNode, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
+import XNodePricingCostSettings from './XNodePricingCostSettings.vue'
 import XNodeCommands from './XNodeCommands.vue'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { nodeMultiplierSchema } from './nodeFormOptions'
@@ -79,19 +80,22 @@ async function enroll(node: XNode): Promise<void> {
       <template #body>
         <UProgress v-if="loading" />
         <div v-else-if="!loaded" class="grid gap-3"><UAlert color="warning" :title="error ?? t('xnode.loadFailed')" /><UButton class="justify-self-start" variant="outline" color="neutral" :label="t('common.tryAgain')" @click="retryLoad" /></div>
-        <form v-else class="xnode-form" @submit.prevent="save">
-          <UAlert v-if="saveError" color="warning" :title="saveError" />
-          <div class="xnode-fields">
-            <UFormField :label="t('common.name')"><UInput v-model="draft.name" required class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.country')"><UInput v-model="draft.countryCode" maxlength="2" class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.provider')"><UInput v-model="draft.providerName" class="w-full" /></UFormField>
-            <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
-            <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
-          </div>
-          <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" @valid="settingsValid = $event" />
-          <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
-        </form>
+        <template v-else>
+          <form class="xnode-form" @submit.prevent="save">
+            <UAlert v-if="saveError" color="warning" :title="saveError" />
+            <div class="xnode-fields">
+              <UFormField :label="t('common.name')"><UInput v-model="draft.name" required class="w-full" /></UFormField>
+              <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>
+              <UFormField :label="t('xnode.country')"><UInput v-model="draft.countryCode" maxlength="2" class="w-full" /></UFormField>
+              <UFormField :label="t('xnode.provider')"><UInput v-model="draft.providerName" class="w-full" /></UFormField>
+              <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
+              <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
+            </div>
+            <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" @valid="settingsValid = $event" />
+            <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
+          </form>
+          <XNodePricingCostSettings v-if="draft.id" :key="draft.id" :node-id="draft.id" />
+        </template>
       </template>
     </UModal>
     <UModal :open="!!commanding" :title="t('nodeAdmin.command')" @update:open="!$event && (commanding = null)"><template #body><XNodeCommands v-if="commanding" :key="commanding.id" :node-id="commanding.id" :endpoints="endpoints" /></template></UModal>

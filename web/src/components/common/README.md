@@ -16,7 +16,9 @@
 
 `JsonDocumentField.vue` is the shared localized JSON field. External value changes reset invalid drafts; parsed edits emit update/validity events. It owns no node or administrator state.
 
-`MetricLineChart.vue` renders bounded native SVG rate, count, byte-total and percentage series with localized captions and a fixed 0-100 percentage scale.
+`MetricLineChart.vue` renders bounded rate, count, byte-total, money and percentage
+series with localized captions. Callers can supply a forecast label appropriate
+to their metric; the default remains the usage forecast label.
 
 - `LivePrice.vue`: Compact localized indicator beside an applicable dynamic amount.
 

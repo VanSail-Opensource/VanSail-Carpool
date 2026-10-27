@@ -4,7 +4,7 @@ import type { MetricSample } from '@/composables/useMetricSamples'
 import LineChart from '@/components/charts/LineChart.vue'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
-const props = defineProps<{ samples: readonly MetricSample[]; label: string; unit?: 'bytes' | 'percent' | 'count' | 'money'; forecasts?: readonly { at: number; value: number; low: number; high: number }[]; events?: readonly { at: number; label: string }[]; showBand?: boolean; connectMissing?: boolean }>()
+const props = defineProps<{ samples: readonly MetricSample[]; label: string; forecastLabel?: string; unit?: 'bytes' | 'percent' | 'count' | 'money'; forecasts?: readonly { at: number; value: number; low: number; high: number }[]; events?: readonly { at: number; label: string }[]; showBand?: boolean; connectMissing?: boolean }>()
 const { t, locale } = useI18n()
 const data = computed(() => {
  const rows = new Map<number, { x: number; label: string; actual?: number; predicted?: number; low?: number; high?: number }>()
@@ -12,7 +12,7 @@ const data = computed(() => {
  for (const p of props.forecasts || []) rows.set(p.at, { ...rows.get(p.at), x: p.at, label: new Date(p.at).toLocaleString(locale.value), predicted: p.value, low: p.low, high: p.high })
  return [...rows.values()].sort((a,b) => a.x-b.x)
 })
-const config = computed(() => ({ actual: { label: props.label, color: 'var(--accent)' }, ...(props.forecasts?.length ? { predicted: { label: t('predictions.predicted'), color: 'var(--text-muted)', dashed: true } } : {}) }))
+const config = computed(() => ({ actual: { label: props.label, color: 'var(--accent)' }, ...(props.forecasts?.length ? { predicted: { label: props.forecastLabel ?? t('predictions.predicted'), color: 'var(--text-muted)', dashed: true } } : {}) }))
 function formatTime(at: number): string {
  const span = (data.value.at(-1)?.x ?? 0) - (data.value[0]?.x ?? 0)
  return new Intl.DateTimeFormat(locale.value, span >= 86400000 ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { hour: '2-digit', minute: '2-digit' }).format(at)

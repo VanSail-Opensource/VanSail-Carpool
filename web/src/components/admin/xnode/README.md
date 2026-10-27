@@ -27,6 +27,10 @@ policy, configurations/snippets, access groups/endpoints and live metrics.
 polling. `XNodeNodes.vue` edits one assigned profile and node utilities and exposes
 write-only enrollment tokens. `XNodeOperationalSettings.vue` composes DNS/firewall
 with `XNodeDDNSSettings.vue` and `XNodeCertificateSettings.vue`.
+`XNodePricingCostSettings.vue` loads the edited node's existing cost and capacity
+metadata, and saves versioned changes and optional payments separately with an
+audit reason. Failed metadata reads block saving until retried. These settings are
+panel-owned and are not part of the agent configuration.
 
 `XNodeGlobalSettings.vue` edits fleet policy and shared DNS providers.
 `XNodeConfigurations.vue` handles one base per node, ordered shared snippets,

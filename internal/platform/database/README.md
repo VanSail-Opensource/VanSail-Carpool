@@ -1,10 +1,17 @@
 # Application store
 
 `pricing_daily_actual_test.go` verifies daily traffic actuals and missing windows for pricing forecasts.
+`pricing_personal_freshness_test.go` distinguishes missing and pending history
+from an actually stale forecast vintage. Interactive personal forecast refreshes
+share the worker's bounded compute admission and reuse completed daily features.
+`pricing_summary_payment_test.go` verifies that declared provider payments use
+their recording time, independently of the effective date of cost metadata.
 
 `xnode_traffic_discard.go` records user-authorized unmatched traffic exceptions.
 Reference conflicts roll back the entire report before the real report cursor
 and an audit record commit. Gaps are audited while valid reports still count.
+Missing-period exceptions retain the validated period reference in the audit so
+an operator can diagnose a recurring agent journal without retaining traffic payloads.
 Agent identity, malformed input, storage failures and accounting durability remain
 mandatory; no fabricated traffic is charged. Duplicate exceptions are idempotent.
 `xnode_traffic_discard_test.go` covers full-batch rollback, audit replay and
