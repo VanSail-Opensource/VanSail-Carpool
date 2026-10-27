@@ -21,6 +21,7 @@ type renewalPriceSnapshot struct {
 	Observation         pricing.ResponseObservation
 	Coupon              *coupons.Coupon
 	Model, Health, Hash string
+	CostEvidence        string
 	Cost, Relationships float64
 	Validated           bool
 	Support             *pricing.PriceSupport
@@ -75,6 +76,10 @@ func (s *Store) renewalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, c renewa
 	nodes = uniqueSorted(nodes)
 	if s.pricingHealth.Safe(nodes, now) {
 		in.Health = "HEALTHY"
+	}
+	in.CostEvidence, err = pricingCostEvidenceTx(ctx, tx, nodes, now)
+	if err != nil {
+		return in, err
 	}
 	var complete bool
 	in.Cost, in.Relationships, complete, err = pricingRenewalEconomicsTx(ctx, tx, c.UserID, c.ProductID, c.PurchaseID, nodes, now)

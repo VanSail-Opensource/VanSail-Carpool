@@ -17,10 +17,23 @@ type PricingCost struct {
 	EffectiveAt time.Time `json:"effectiveAt"`
 	Version     int64     `json:"version"`
 	Reason      string    `json:"reason"`
+	ChargeMode  string    `json:"chargeMode,omitempty"`
+	HourlyRate  int64     `json:"hourlyRateMicros,string,omitempty"`
+	TrafficRate int64     `json:"trafficRateMicros,string,omitempty"`
+	Unlimited   bool      `json:"capacityUnlimited,omitempty"`
 	ActualPaid  *int64    `json:"actualPaidMinor,string,omitempty"`
 }
 
 func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, c PricingCost, now time.Time) error {
+	if c.ChargeMode == "" {
+		c.ChargeMode = "cycle"
+	}
+	if c.ChargeMode != "cycle" && c.ChargeMode != "hourly" || c.HourlyRate < 0 || c.HourlyRate > pricing.MaxPrice*10000 || c.TrafficRate < 0 || c.TrafficRate > pricing.MaxPrice*10000 || (c.ChargeMode == "cycle" && (c.HourlyRate != 0 || c.TrafficRate != 0)) {
+		return ErrConflict
+	}
+	if c.Unlimited && c.Capacity == 0 {
+		c.Capacity = 1
+	}
 	if c.ActualPaid != nil && (*c.ActualPaid < 0 || *c.ActualPaid > pricing.MaxPrice) {
 		return ErrConflict
 	}
@@ -41,9 +54,9 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	}
 	var result sql.Result
 	if c.Version == 0 {
-		result, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at,version) VALUES(?,?,?,?,?,?,?,1) ON CONFLICT(node_id) DO NOTHING`, c.NodeID, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now))
+		result, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at,version,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES(?,?,?,?,?,?,?,1,?,?,?,?) ON CONFLICT(node_id) DO NOTHING`, c.NodeID, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited))
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE pricing_cost_metadata SET cycle_cost_minor=?,cycle_days=?,capacity_bytes=?,effective_at=?,updated_by=?,updated_at=?,version=version+1 WHERE node_id=? AND version=?`, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.NodeID, c.Version)
+		result, err = tx.ExecContext(ctx, `UPDATE pricing_cost_metadata SET cycle_cost_minor=?,cycle_days=?,capacity_bytes=?,effective_at=?,updated_by=?,updated_at=?,version=version+1,charge_mode=?,hourly_rate_micros=?,traffic_rate_micros=?,capacity_unlimited=? WHERE node_id=? AND version=?`, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited), c.NodeID, c.Version)
 	}
 	if err != nil {
 		return err
@@ -56,7 +69,7 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	if err = pricingAuditTx(ctx, tx, actor, "cost.save", c.NodeID, c.Reason, c, now); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_versions(node_id,version,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,recorded_at,actor_id,reason,actual_paid_minor) VALUES(?,?,?,?,?,?,?,?,?,?)`, c.NodeID, c.Version+1, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), pricingStamp(now), actor, c.Reason, c.ActualPaid); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_versions(node_id,version,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,recorded_at,actor_id,reason,actual_paid_minor,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, c.NodeID, c.Version+1, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), pricingStamp(now), actor, c.Reason, c.ActualPaid, c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited)); err != nil {
 		return err
 	}
 	if err = pricingChangeNoticeTx(ctx, tx, actor, "COST", c.NodeID, c.Reason, now); err != nil {

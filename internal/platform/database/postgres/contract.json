@@ -4656,6 +4656,34 @@
           "notNull": true,
           "default": "1",
           "primaryKey": 0
+        },
+        {
+          "name": "charge_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'cycle'",
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_unlimited",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
         }
       ]
     },
@@ -4730,6 +4758,34 @@
           "type": "INTEGER",
           "notNull": false,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charge_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'cycle'",
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_unlimited",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
           "primaryKey": 0
         }
       ]

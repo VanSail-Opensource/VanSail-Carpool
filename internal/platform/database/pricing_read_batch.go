@@ -92,7 +92,7 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		enabled = enabled || p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
 	}
 	if enabled {
-		rows, err = tx.QueryContext(ctx, `SELECT product_type,product_id,trace_json FROM (SELECT product_type,product_id,trace_json,ROW_NUMBER() OVER(PARTITION BY product_type,product_id ORDER BY generated_at DESC,id DESC) AS ordinal FROM pricing_decisions WHERE state='PUBLISHED' AND generated_at>=?) latest WHERE ordinal=1 LIMIT 4097`, pricingStamp(now.Add(-24*time.Hour)))
+		rows, err = tx.QueryContext(ctx, `SELECT product_type,product_id,trace_json FROM (SELECT d.product_type,d.product_id,d.trace_json,ROW_NUMBER() OVER(PARTITION BY d.product_type,d.product_id ORDER BY d.generated_at DESC,d.id DESC) AS ordinal FROM pricing_decisions d JOIN pricing_product_settings p ON p.product_type=d.product_type AND p.product_id=d.product_id AND p.version=d.policy_version WHERE d.state='PUBLISHED' AND d.generated_at>=?) latest WHERE ordinal=1 LIMIT 4097`, pricingStamp(now.Add(-24*time.Hour)))
 		if err != nil {
 			return ctx, err
 		}

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 	"time"
 
@@ -87,5 +88,20 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 	}
 	if _, err = read(); !errors.Is(err, pricing.CapacityUnsafe) {
 		t.Fatal("unsafe fulfilling node accepted", err)
+	}
+	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET charge_mode='hourly',hourly_rate_micros=1234,traffic_rate_micros=250000,capacity_unlimited=1,version=2`); err != nil {
+		t.Fatal(err)
+	}
+	got, err = read()
+	if err != nil || !got.CapacityUnbounded || !got.CapacitySafe() || math.Abs(got.CostMinor-202.9616) > 0.000001 || got.CostEvidence != "node:2;" {
+		t.Fatalf("unlimited hourly inputs: %#v, %v", got, err)
+	}
+	cost, known, total, complete, err := s.pricingNextDayCosts(ctx, now)
+	if err != nil || !complete || known != 1 || total != 1 || math.Abs(cost-202.9616) > 0.000001 {
+		t.Fatalf("daily cost %v %d/%d %t %v", cost, known, total, complete, err)
+	}
+	_, _, _, complete, err = s.pricingNextDayCosts(ctx, now.Add(49*time.Hour))
+	if err != nil || complete {
+		t.Fatalf("missing forecast must make cost unavailable: %t %v", complete, err)
 	}
 }

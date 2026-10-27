@@ -35,7 +35,7 @@ func NumericalCandidates(in OptimizationInputs) []compute.CandidateInput {
 func SelectCandidates(in OptimizationInputs, values []compute.Candidate) (PriceCandidate, []PriceCandidate, error) {
 	best := PriceCandidate{Price: in.Current, Contribution: math.Inf(-1)}
 	curve := make([]PriceCandidate, 0, len(values))
-	safe := in.CapacityGB > in.CommittedGB && in.DemandGB >= 0 && in.DemandGB <= in.CapacityGB-in.CommittedGB && in.CostMinor >= 0
+	safe := in.CapacitySafe()
 	for _, c := range values {
 		p := PriceCandidate{Price: c.Price, Probability: c.Probability, Revenue: c.Revenue, Contribution: c.Contribution, Eligible: safe && in.Model.Validated && in.ForecastValidated && c.Contribution >= 0 && (in.Support == nil || in.Support.Allows(c.Price, in.Policy.FixedPrice, false))}
 		curve = append(curve, p)

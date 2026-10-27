@@ -162,3 +162,5 @@ remains overhead. Forecast selection fixes model, calendar window, lead and
 freshness; each fulfilling node must pass independently. Total forecast demand
 and overlapping paid commitments reserve their maximum, rather than their sum.
 These are analytical estimates, not debits or guarantees of causal elasticity.
+
+Provider metadata supports a fixed cycle or a 24-hour hourly rate plus upload-and-download usage per GiB. Rates are integer millionths of TXB. Unlimited nodes have no traffic-quota constraint; finite nodes are checked separately. Next-day cost uses the original p90 forecast, native usage attribution, and leaves unattributed traffic as overhead. Missing required forecast evidence makes estimates unavailable. Recorded payments and historical cost versions are independent immutable facts.

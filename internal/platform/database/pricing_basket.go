@@ -69,7 +69,7 @@ func pricingBasketTx(ctx context.Context, tx *sql.Tx, in *personalPriceInput, co
 				err = sql.ErrNoRows
 			}
 		} else {
-			err = tx.QueryRowContext(ctx, `SELECT trace_json FROM pricing_decisions WHERE product_type||':'||product_id=? AND state='PUBLISHED' AND generated_at>=? ORDER BY generated_at DESC,id DESC LIMIT 1`, key, pricingStamp(now.Add(-24*time.Hour))).Scan(&raw)
+			err = tx.QueryRowContext(ctx, `SELECT d.trace_json FROM pricing_decisions d JOIN pricing_product_settings p ON p.product_type=d.product_type AND p.product_id=d.product_id AND p.version=d.policy_version WHERE d.product_type||':'||d.product_id=? AND d.state='PUBLISHED' AND d.generated_at>=? ORDER BY d.generated_at DESC,d.id DESC LIMIT 1`, key, pricingStamp(now.Add(-24*time.Hour))).Scan(&raw)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			in.CostsComplete = false

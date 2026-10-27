@@ -110,7 +110,8 @@
     "107_personal_pricing_decisions.sql",
     "108_host_name_overrides.sql",
     "109_xnode_period_aliases.sql",
-    "110_pricing_read_indexes.sql"
+    "110_pricing_read_indexes.sql",
+    "111_provider_cost_models.sql"
   ],
   "objects": [
     {
@@ -531,13 +532,13 @@
       "type": "table",
       "name": "pricing_cost_metadata",
       "table": "pricing_cost_metadata",
-      "sql": "CREATE TABLE pricing_cost_metadata (\n node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor\u003e=0),\n cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),\n capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes\u003e0), effective_at TEXT NOT NULL,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1\n)"
+      "sql": "CREATE TABLE pricing_cost_metadata (\n node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor\u003e=0),\n cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),\n capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes\u003e0), effective_at TEXT NOT NULL,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1\n, charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')), hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros\u003e=0), traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros\u003e=0), capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)))"
     },
     {
       "type": "table",
       "name": "pricing_cost_versions",
       "table": "pricing_cost_versions",
-      "sql": "CREATE TABLE pricing_cost_versions (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id), version INTEGER NOT NULL,\n cycle_cost_minor INTEGER NOT NULL, cycle_days INTEGER NOT NULL, capacity_bytes INTEGER NOT NULL,\n effective_at TEXT NOT NULL, recorded_at TEXT NOT NULL, actor_id TEXT NOT NULL, reason TEXT NOT NULL,\n actual_paid_minor INTEGER CHECK(actual_paid_minor\u003e=0), PRIMARY KEY(node_id,version)\n)"
+      "sql": "CREATE TABLE pricing_cost_versions (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id), version INTEGER NOT NULL,\n cycle_cost_minor INTEGER NOT NULL, cycle_days INTEGER NOT NULL, capacity_bytes INTEGER NOT NULL,\n effective_at TEXT NOT NULL, recorded_at TEXT NOT NULL, actor_id TEXT NOT NULL, reason TEXT NOT NULL,\n actual_paid_minor INTEGER CHECK(actual_paid_minor\u003e=0), charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')), hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros\u003e=0), traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros\u003e=0), capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)), PRIMARY KEY(node_id,version)\n)"
     },
     {
       "type": "table",
@@ -7035,6 +7036,34 @@
           "notNull": true,
           "default": "1",
           "primaryKey": 0
+        },
+        {
+          "name": "charge_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'cycle'",
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_unlimited",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
         }
       ]
     },
@@ -7110,6 +7139,34 @@
           "type": "INTEGER",
           "notNull": false,
           "default": null,
+          "primaryKey": 0
+        },
+        {
+          "name": "charge_mode",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'cycle'",
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "traffic_rate_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "capacity_unlimited",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
           "primaryKey": 0
         }
       ]
@@ -9453,7 +9510,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 111,
+      "rows": 112,
       "columns": [
         {
           "name": "version",

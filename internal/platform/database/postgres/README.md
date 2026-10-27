@@ -83,3 +83,5 @@ PAYG upgrade 00007 adds only required durable financial attribution and bounded 
 After a forward migration, refresh the isolated SQLite inventory and run `python scripts/postgresql_baseline.py --contract-only` to update import/schema verification metadata while preserving the immutable baseline and prior Goose migrations.
 
 `retirement_upgrade_test.go` seeds unsettled and settled historical credits at Goose 17 inside the existing isolated hosted upgrade rehearsal. It verifies unchanged wallet, ledger and purchase facts, archived settled/daily evidence and cancelled calculation/notice jobs after migration through the application connector.
+
+Schema version 25 adds provider rate and unlimited-capacity metadata without changing historical records; the source contract and fingerprint reflect the matching SQLite migration 111.

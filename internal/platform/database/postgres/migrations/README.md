@@ -68,3 +68,5 @@ The existing columns and immutable financial records remain unchanged.
   required by the existing source schema contract without rewriting migration 00017.
 
 - `00024_pricing_read_indexes.sql`: Paired PostgreSQL exposure-window/entity-day indexes with authoritative downgrade refusal.
+
+`00025_provider_cost_models.sql` adds the versioned provider charge model and capacity mode, corresponding to SQLite migration 111.

@@ -118,7 +118,7 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 		return err
 	}
 	// New accounting, costs or capacity invalidate an obsolete numerical snapshot.
-	if current.DemandGB != in.DemandGB || current.SalesUnits != in.SalesUnits || current.CostMinor != in.CostMinor || current.CapacityGB != in.CapacityGB || current.CommittedGB != in.CommittedGB || current.ForecastValidated != in.ForecastValidated {
+	if current.DemandGB != in.DemandGB || current.SalesUnits != in.SalesUnits || current.CostMinor != in.CostMinor || current.CapacityGB != in.CapacityGB || current.CommittedGB != in.CommittedGB || current.ForecastValidated != in.ForecastValidated || current.CapacityUnbounded != in.CapacityUnbounded || current.CostEvidence != in.CostEvidence {
 		return pricing.VersionConflict
 	}
 	p.MaxIncreaseBPS, p.MaxDiscountBPS = pricing.CandidateLimits(fixed, best, candidates)
@@ -130,7 +130,7 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 	if optErr != nil {
 		reason = optErr.Error()
 	}
-	trace, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "reason": reason, "calculationComplete": true, "candidates": candidates, "demandGB": in.DemandGB, "dailyCostMinor": in.CostMinor, "capacityGB": in.CapacityGB, "committedGB": in.CommittedGB, "salesUnits": in.SalesUnits, "modelValidated": in.Model.Validated, "forecastValidated": in.ForecastValidated, "automaticMaxIncreaseBps": p.MaxIncreaseBPS, "automaticMaxDiscountBps": p.MaxDiscountBPS, "experimentationEnabled": false})
+	trace, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "reason": reason, "calculationComplete": true, "candidates": candidates, "demandGB": in.DemandGB, "dailyCostMinor": in.CostMinor, "capacityGB": in.CapacityGB, "capacityUnbounded": in.CapacityUnbounded, "costEvidence": in.CostEvidence, "committedGB": in.CommittedGB, "salesUnits": in.SalesUnits, "modelValidated": in.Model.Validated, "forecastValidated": in.ForecastValidated, "automaticMaxIncreaseBps": p.MaxIncreaseBPS, "automaticMaxDiscountBps": p.MaxDiscountBPS, "experimentationEnabled": false})
 	if err != nil {
 		return err
 	}

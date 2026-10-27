@@ -14,6 +14,8 @@ type OptimizationInputs struct {
 	CapacityGB         float64
 	CommittedGB        float64
 	Model              ResponseModel
+	CapacityUnbounded  bool
+	CostEvidence       string
 	ForecastValidated  bool
 	DiscountAuthorized bool
 	Support            *PriceSupport
@@ -30,7 +32,7 @@ type PriceCandidate struct {
 // Optimize produces an explainable bounded candidate curve. Capacity pressure
 // rejects new admissions; it is never repaired by inventing a scarcity price.
 func Optimize(in OptimizationInputs) (PriceCandidate, []PriceCandidate, error) {
-	if in.DemandGB < 0 || in.CostMinor < 0 || in.CapacityGB <= in.CommittedGB || in.DemandGB > in.CapacityGB-in.CommittedGB {
+	if !in.CapacitySafe() {
 		return PriceCandidate{}, nil, CapacityUnsafe
 	}
 	best := PriceCandidate{Price: in.Current, Contribution: math.Inf(-1)}
@@ -72,4 +74,9 @@ func Optimize(in OptimizationInputs) (PriceCandidate, []PriceCandidate, error) {
 		return PriceCandidate{Price: in.Current}, out, ModelUnvalidated
 	}
 	return best, out, nil
+}
+
+// CapacitySafe checks finite-node capacity without fabricating a quota for unlimited nodes.
+func (in OptimizationInputs) CapacitySafe() bool {
+	return in.DemandGB >= 0 && in.CostMinor >= 0 && (in.CapacityUnbounded || (in.CapacityGB > in.CommittedGB && in.DemandGB <= in.CapacityGB-in.CommittedGB))
 }

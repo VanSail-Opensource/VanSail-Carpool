@@ -120,3 +120,5 @@ backend always disables the rule in effective node and detection policies.
 `XNodeCommands.vue` defaults to normal material-rechecking reload and exposes
 an explicit forced recovery checkbox. Both use the existing durable command
 receipt and capability validation; no additional confirmation flow is added.
+
+Provider cost settings support fixed cycles or hourly plus per-GiB rates, and finite or unlimited traffic. Rate inputs use six decimal places; recorded payments remain separate from estimated rates.

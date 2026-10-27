@@ -206,3 +206,5 @@ PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. Cat
 `pricing-audit.html`, `pricing-audit.ts` and `PricingAudit.vue` mount real pricing policy, workspace and read-only member notice components with constructed data. Query flags select `view=policy|overview|product|user|operations|exports|member`, `empty`, `error`, `slow`, `save-error` and `zh`. No production credentials, member records or external services are used.
 
 `PricingAudit.vue`, `pricing-audit.ts` and `pricing-audit.html` mount the real pricing/member components with deterministic API fixtures. `pricing-data.ts` supplies owner forecasts and paginated prices, including evaluated-but-unvalidated coverage. `ChartsAudit.vue` exercises line, interval, stacked, usage-bar and donut composition in both appearance modes. These fixtures support Chrome DevTools inspection and never write to production.
+
+The X-Node audit fixture accepts `cost-hourly`, `cost-unlimited`, `cost-slow`, `cost-error`, and `cost-save-error` for provider metadata states.

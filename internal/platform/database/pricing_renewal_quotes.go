@@ -157,7 +157,7 @@ func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewal
 	if best.Price != c.Price {
 		status = "ADJUSTED"
 	}
-	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon, "observation": in.Observation, "expectedProviderCostMinor": in.Cost})
+	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon, "observation": in.Observation, "costEvidence": in.CostEvidence, "expectedProviderCostMinor": in.Cost})
 	if err != nil {
 		return renewal.Quote{}, err
 	}

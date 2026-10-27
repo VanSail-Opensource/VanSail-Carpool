@@ -27,12 +27,13 @@ const nodes: XNode[] = params.has('empty') ? [] : [
 ]
 pricingAnalysisApi.data = async (_dataset, query, signal) => {
   trace.calls.push('node-cost:' + String(query?.node))
+  if (params.has('cost-slow')) await new Promise(resolve => setTimeout(resolve, 2000))
   if (params.has('cost-error')) throw new ApiError(503, { code: 'PRICING_UNAVAILABLE', message: '' })
   if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
-  const item = { node_id: nodes[0]?.id ?? '', cycle_cost_minor: '30000', cycle_days: '30', capacity_bytes: '3000000000000', effective_at: stamp, version: '1' }
+  const item = { node_id: nodes[0]?.id ?? '', cycle_cost_minor: '30000', cycle_days: '30', capacity_bytes: '3000000000000', effective_at: stamp, version: '1', charge_mode: params.has('cost-hourly') ? 'hourly' : 'cycle', hourly_rate_micros: '1234', traffic_rate_micros: '250000', capacity_unlimited: params.has('cost-unlimited') ? '1' : '0' }
   return { items: query?.node === item.node_id ? [item] : [], truncated: false, nextCursor: '' }
 }
-pricingAnalysisApi.cost = async body => { trace.writes.push({ pricingCost: structuredClone(body) }) }
+pricingAnalysisApi.cost = async body => { if (params.has('cost-save-error')) throw new ApiError(503, { code: 'PRICING_UNAVAILABLE', message: '' }); trace.writes.push({ pricingCost: structuredClone(body) }) }
 const configurations: XNodeConfiguration[] = params.has('empty') ? [] : [{ id: 'shared', name: 'Shared configuration', revision: 1, snippetIds: [], document: { inbounds: [{ tag: 'paid', port: 443, protocol: 'vless', settings: { decryption: 'none' } }], outbounds: [{ tag: 'direct', protocol: 'freedom' }, { UserOutbound: {} }], routing: { rules: [{ UserRouting: {} }] } } }]
 let global: XNodeGlobal = { geodataIntervalHours: params.has('legacy-schedule') ? undefined : 24, geodataCron: params.has('legacy-schedule') ? '0 * * * *' : '', sourceGeoIp: { enabled: false, selectors: ['geoip:cn'] }, blockedDomains: [], connectionLimit: 0, blockedPorts: '', torrent: { enabled: false }, telemetry: { sample_seconds: 1, report_seconds: 5, include_active_ips: false }, updates: { enabled: false }, providers: {} }
 let latest: OperationReceipt | null = null
