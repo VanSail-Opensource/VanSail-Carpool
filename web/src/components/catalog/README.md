@@ -44,8 +44,7 @@ Coupon purchase discounts are described as price reductions, including recurring
 discounts, rather than as balance additions.
 Combo, squad, and coupon feedback is emitted only when the selection changes; step navigation is soft and purchase confirmation is rigid.
 
-`comboDisplayPrice.ts` adds selected paid squads while excluding included squads, using integer minor units and the account price-display preference.
-`comboDisplayPrice.test.ts` covers included/free/duplicate squads and integer precision.
+Combo and squad selection cards show entitlements without prices; checkout displays the authoritative server quote. PAYG cards retain their separate per-GiB price slot.
 
 `CatalogSquadStep.vue` composes `SquadSelector.vue`, `SquadPricingTable.vue` and `SquadPricingCard.vue` for localized ordering and selection. Profile facts render independently of accessible nodes. `SquadPricingCard.test.ts` covers profile types, empty node lists, missing profiles and hidden node names.
 

@@ -5,11 +5,13 @@ import { CurveType } from '@unovis/ts'
 import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, ChartLegendContent, componentToString } from './index'
 import type { ChartConfig, ChartDatum } from './index'
 import { useI18n } from '@/i18n'
-const props = withDefaults(defineProps<{ data: readonly ChartDatum[]; config: ChartConfig; label: string; formatValue?: (value: number) => string; formatX?: (value: number) => string; band?: { low: string; high: string; color: string }; height?: number; bar?: boolean; stacked?: boolean; legend?: boolean }>(), { height: 200, legend: true, formatValue: undefined, formatX: undefined, band: undefined })
+import { bridgeSeries } from './bridge'
+const props = withDefaults(defineProps<{ data: readonly ChartDatum[]; config: ChartConfig; label: string; formatValue?: (value: number) => string; formatX?: (value: number) => string; band?: { low: string; high: string; color: string }; height?: number; bar?: boolean; stacked?: boolean; legend?: boolean; connectMissing?: boolean; bridge?: { from: string; to: string; color: string } }>(), { height: 200, legend: true, formatValue: undefined, formatX: undefined, band: undefined, bridge: undefined })
 const { t } = useI18n()
 const selected = shallowRef<number | undefined>()
 const forceX = shallowRef<number | undefined>()
 const rows = computed(() => [...props.data])
+const bridgeRows = computed(() => props.bridge ? bridgeSeries(rows.value, props.bridge.from, props.bridge.to) : [])
 const bandSegments = computed(() => {
  const groups: ChartDatum[][] = []
  let current: ChartDatum[] = []
@@ -23,7 +25,7 @@ const bandSegments = computed(() => {
 const accessors = computed(() => Object.keys(props.config).map(key => (d: ChartDatum) => Number(d[key] ?? NaN)))
 const point = computed(() => selected.value === undefined ? undefined : rows.value[selected.value])
 const tooltipConfig = computed(() => ({ ...props.config, ...(props.band ? { [props.band.low]: { label: t('charts.lower'), color: props.band.color }, [props.band.high]: { label: t('charts.upper'), color: props.band.color } } : {}) }))
-const tooltip = computed(() => componentToString(tooltipConfig.value, ChartTooltipContent, { labelFormatter: (x: number | Date) => rows.value.find(row => row.x === Number(x))?.label || props.formatX?.(Number(x)) || String(x), valueFormatter: props.formatValue }))
+const tooltip = computed(() => componentToString(tooltipConfig.value, ChartTooltipContent, { labelFormatter: (x: number | Date) => rows.value.find(row => row.x === Number(x))?.label || props.formatX?.(Number(x)) || String(x), valueFormatter: props.formatValue, missingLabel: props.connectMissing ? t('common.notAvailable') : undefined }))
 function inspect(index: number): void {
   if (!rows.value.length) return
   selected.value = Math.max(0, Math.min(rows.value.length - 1, index))
@@ -52,7 +54,7 @@ watch(() => props.data, () => { selected.value = undefined; forceX.value = undef
       <VisXYContainer :height="height" :duration="0" :y-domain="[0, undefined]" :margin="{ left: 8, right: 8, top: 8, bottom: 0 }">
         <VisArea v-for="(segment, index) in bandSegments" :key="index" :data="segment" :x="x" :y="(d: ChartDatum) => Number(d[band!.high]) - Number(d[band!.low])" :baseline="(d: ChartDatum) => Number(d[band!.low] ?? NaN)" :color="band!.color" :opacity=".12" :curve-type="CurveType.Linear" />
         <component :is="stacked ? VisStackedBar : VisGroupedBar" v-if="bar" :data="rows" :x="x" :y="accessors" :color="Object.values(config).map(item => item.color)" />
-        <template v-if="!bar"><VisLine v-for="(item, key, index) in config" :key="key" :data="rows" :x="x" :y="accessors[index]!" :color="item.color" :line-dash-array="item.dashed ? [5, 4] : undefined" :curve-type="CurveType.Linear" :fallback-value="undefined" /></template>
+        <template v-if="!bar"><VisLine v-for="(item, key, index) in config" :key="key" :data="rows" :x="x" :y="accessors[index]!" :color="item.color" :line-dash-array="item.dashed ? [5, 4] : undefined" :curve-type="CurveType.Linear" :fallback-value="undefined" :interpolate-missing-data="connectMissing" /><VisLine v-if="bridgeRows.length" :data="bridgeRows" :x="x" :y="(d: ChartDatum) => Number(d.bridgeValue)" :color="bridge!.color" :line-dash-array="[5, 4]" :curve-type="CurveType.Linear" /></template>
         <VisAxis type="x" :num-ticks="Math.min(5, rows.length)" :tick-format="(n: number) => formatX?.(n) || rows.find(row => row.x === n)?.label || ''" :grid-line="false" />
         <VisAxis type="y" :num-ticks="3" :tick-format="formatValue" :domain-line="false" :tick-line="false" />
         <ChartTooltip />

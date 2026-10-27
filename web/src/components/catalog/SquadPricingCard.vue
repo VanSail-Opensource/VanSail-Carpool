@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import LivePrice from '@/components/common/LivePrice.vue'
 import { computed } from 'vue'
 
 import type { SquadProduct } from '@/api/types'
 import SquadProfileFacts from '@/components/squad-profile/SquadProfileFacts.vue'
 import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
-import { formatMemberMoney } from '@/utils/displayCurrency'
 import { selectionHaptic } from '@/utils/telegram'
 
 const props = defineProps<{
@@ -88,8 +86,8 @@ function toggle(): void {
           <UBadge v-else-if="!informational && !included" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" :color="remainingBadge.color" variant="solid" :icon="remainingBadge.icon" :aria-label="`${$t('catalog.remaining')} ${remainingBadge.label}`" />
         </template>
       </SquadProfileSummary>
-      <div v-if="!included" class="squad-card__price">
-        <slot name="price"><strong>{{ formatMemberMoney(squad.price) }}</strong><LivePrice :decision="squad.pricingDecision" /></slot>
+      <div v-if="!included && $slots.price" class="squad-card__price">
+        <slot name="price" />
       </div>
     </div>
 

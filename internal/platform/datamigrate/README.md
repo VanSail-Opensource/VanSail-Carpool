@@ -33,6 +33,8 @@ with secured pre-backup evidence without changing activation state.
 
 `activate.go` admits only a genuinely fresh baseline or a still-identical verified
 import before application bootstrap writes, under the dedicated ownership lock.
+The baseline includes the rollover retirement migration's aggregate audit event,
+even when there were no historical rollovers.
 An imported but unverified target refuses application startup.
 
 `rollback_test.go` forces a mid-copy PostgreSQL constraint failure and checks

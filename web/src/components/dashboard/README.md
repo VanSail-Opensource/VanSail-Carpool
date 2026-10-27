@@ -32,6 +32,6 @@ The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members wit
 
 - `ForecastFlipCard.vue`: Keeps the active Combo face transition and isolates the interactive prediction reverse.
 
-- `PersonalPredictions.vue`: Loads last two complete accounting days and next five forecast days, exposing intervals, history coverage, calibration, freshness and missing data separately.
+- `PersonalPredictions.vue`: Loads last two complete UTC accounting days and next five daily forecast windows, exposing intervals, history coverage, calibration, freshness and missing data separately. Dashed connectors bridge unavailable days and the historical-to-forecast transition without creating observations.
 
 Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageBar.vue`, `TrafficUsageBarDetails.vue`, `TrafficUsageDetails.vue`.

@@ -14,6 +14,7 @@ and stacked mobile controls. No Telegram controls or initialization are imported
   from next-day unvalidated forecasts and unavailable cost information.
 - `PricingHistory.vue` reads original immutable vintages, one model/lead band,
   actual/forecast/interval toggles, events, provider/calendar dates and scoped export.
+  Daily history connects unavailable points visually without filling actuals or intervals.
 - `PricingResponseCurve.vue` renders stored candidate probabilities and contribution
   with an accessible table; prior results are explicitly diagnostic.
 - `PricingCalibration.vue` groups original probability forecasts into observed

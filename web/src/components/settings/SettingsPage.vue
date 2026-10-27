@@ -43,7 +43,6 @@ onMounted(() => void preferences.refresh())
         <SettingsSwitchRow :label="$t('settings.showAroundTx')" :enabled="preferences.value.showAroundTx" :disabled="preferences.saving" @update="preferences.save({ showAroundTx: $event })" />
         <SettingsSwitchRow :label="$t('settings.showActivity')" :enabled="preferences.value.showActivity" :disabled="preferences.saving" @update="preferences.save({ showActivity: $event })" />
       </template>
-      <SettingsSwitchRow :label="$t('settings.includeNodePrices')" :description="$t('settings.includeNodePricesHint')" :enabled="preferences.includeNodePrices" :disabled="!preferences.value || preferences.saving" @update="preferences.save({ includeNodePrices: $event })" />
       <div class="settings-selectors"><LanguageControl show-label /><CurrencyControl show-label /></div>
     </section>
     <section class="settings-section">

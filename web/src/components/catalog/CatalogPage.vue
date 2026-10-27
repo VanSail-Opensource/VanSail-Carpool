@@ -211,7 +211,6 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
                 v-if="visibleCombos.length"
                 :combos="visibleCombos"
                 :selected-id="selectedComboId"
-                :selected-squads="selectedSquads"
                 @select="selectCombo"
               />
 

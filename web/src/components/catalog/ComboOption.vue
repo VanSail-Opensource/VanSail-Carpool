@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import LivePrice from '@/components/common/LivePrice.vue'
 import { AnimatePresence, motion } from 'motion-v'
 
-import type { Combo, Money } from '@/api/types'
+import type { Combo } from '@/api/types'
 import MarkdownContent from '@/components/common/MarkdownContent.vue'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
-import { formatMemberMoney } from '@/utils/displayCurrency'
 import { selectionHaptic } from '@/utils/telegram'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
 const props = defineProps<{
   combo: Combo
   selected: boolean
-  displayPrice?: Money
 }>()
 
 const emit = defineEmits<{ select: [id: string] }>()
@@ -55,10 +52,7 @@ function selectCombo(): void {
       <span><UIcon name="i-ph-gauge" />{{ trafficTerm() }}</span>
       <span><UIcon name="i-ph-stack" />{{ $t('catalog.includedSquadCount', { count: combo.includedSquads.length }) }}</span>
     </span>
-    <span class="combo-option__price">
-      <strong>{{ formatMemberMoney(displayPrice ?? combo.price) }}</strong><LivePrice :decision="combo.pricingDecision" />
-      <small>{{ $t('catalog.perDays', { count: combo.validityDays }) }}</small>
-    </span>
+    <span class="combo-option__price"><small>{{ $t('catalog.perDays', { count: combo.validityDays }) }}</small></span>
   </UButton>
 </template>
 

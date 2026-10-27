@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import type { Combo, SquadProduct } from '@/api/types'
-import { usePreferencesStore } from '@/stores/preferences'
-import { comboDisplayPrice } from './comboDisplayPrice'
+import type { Combo } from '@/api/types'
 import ComboOption from './ComboOption.vue'
 
 const props = defineProps<{
   combos: readonly Combo[]
   selectedId: string | null
-  selectedSquads?: readonly SquadProduct[]
 }>()
 
 const emit = defineEmits<{ select: [id: string] }>()
-const preferences = usePreferencesStore()
 </script>
 
 <template>
@@ -22,7 +18,6 @@ const preferences = usePreferencesStore()
         :key="combo.id"
         :combo="combo"
         :selected="combo.id === props.selectedId"
-        :display-price="comboDisplayPrice(combo, props.selectedSquads ?? [], preferences.includeNodePrices)"
         @select="emit('select', $event)"
       />
     </div>

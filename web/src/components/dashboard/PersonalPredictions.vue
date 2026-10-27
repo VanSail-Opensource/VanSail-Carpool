@@ -10,7 +10,15 @@ const props = defineProps<{ userId?: string; back?: boolean }>()
 const emit = defineEmits<{ back: [] }>()
 const { t } = useI18n()
 const { value: forecast, loading, error, refresh } = useSubscriptionData(signal => props.userId ? forecastApi.user(props.userId, signal) : forecastApi.personal(signal), 15_000, 'predictions.loadFailed', value => value?.refreshPending || value?.renewalDecision?.status === 'PENDING' ? 15_000 : (Math.floor(Date.now() / 86400000) + 1) * 86400000 - Date.now())
-const data = computed(() => (forecast.value?.days || []).map(day => ({ x: Date.parse(day.date), label: day.date, actual: day.actualBytes === null ? undefined : Number(day.actualBytes), predicted: day.predictedBytes === null ? undefined : Number(day.predictedBytes), low: day.lowerBytes === null ? undefined : Number(day.lowerBytes), high: day.upperBytes === null ? undefined : Number(day.upperBytes) })))
+const data = computed(() => {
+  const days = (forecast.value?.days || []).map(day => ({ x: Date.parse(day.date), label: day.date, actual: day.actualBytes === null ? undefined : Number(day.actualBytes), predicted: day.predictedBytes === null ? undefined : Number(day.predictedBytes), low: day.lowerBytes === null ? undefined : Number(day.lowerBytes), high: day.upperBytes === null ? undefined : Number(day.upperBytes) }))
+  const byDay = new Map(days.map(day => [day.x, day]))
+  const start = days[0]?.x, end = days.at(-1)?.x
+  if (start === undefined || end === undefined) return days
+  const rows = []
+  for (let at = start; at <= end && rows.length < 30; at += 86400000) rows.push(byDay.get(at) ?? { x: at, label: new Date(at).toISOString().slice(0, 10), actual: undefined, predicted: undefined, low: undefined, high: undefined })
+  return rows
+})
 const config = computed(() => ({ actual: { label: t('predictions.actual'), color: 'var(--accent)' }, predicted: { label: t('predictions.predicted'), color: 'var(--text-muted)', dashed: true } }))
 const hasData = computed(() => data.value.some(day => day.actual !== undefined || day.predicted !== undefined))
 const futureDays = computed(() => (forecast.value?.days ?? []).slice(2).map((day, i) => ({ ...day, lead: forecast.value?.confidence.byLead?.find(item => item.leadDays === i + 1) })))
@@ -25,7 +33,7 @@ const amount = (value: string | null) => value === null ? t('common.notAvailable
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton color="neutral" variant="link" :label="t('common.tryAgain')" @click="refresh()" /></InlineNotice>
     <template v-if="forecast">
       <InlineNotice v-if="forecast.stale || forecast.refreshPending" tone="warning">{{ t(forecast.stale ? 'predictions.stale' : 'predictions.pending') }}</InlineNotice>
-      <LineChart v-if="hasData" :data="data" :config="config" :label="t('predictions.title')" :format-value="formatBytes" :band="{ low: 'low', high: 'high', color: 'var(--accent)' }" :format-x="(x: number) => formatAccountingDay(new Date(x).toISOString())" />
+      <LineChart v-if="hasData" :data="data" :config="config" :label="t('predictions.title')" :format-value="formatBytes" :band="{ low: 'low', high: 'high', color: 'var(--accent)' }" :bridge="{ from: 'actual', to: 'predicted', color: 'var(--text-muted)' }" connect-missing :format-x="(x: number) => formatAccountingDay(new Date(x).toISOString())" />
       <p v-else>{{ t('predictions.noHistory') }}</p>
       <dl>
         <div><dt>{{ t('predictions.interval') }}</dt><dd>{{ t('predictions.intervalValue', { value: forecast.confidence.nominalIntervalBps / 100 }) }}</dd></div>

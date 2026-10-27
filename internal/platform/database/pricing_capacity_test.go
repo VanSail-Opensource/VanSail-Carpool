@@ -51,10 +51,12 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 		if i == 3 {
 			f.GeneratedAt = now.Add(-72 * time.Hour)
 		}
-		f.Watermark = f.GeneratedAt
-		f.SnapshotHash = f.ID
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'node','node',?,?,10000,'HEALTHY','{}',?)`, f.ID, f.GeneratedAt.Format(time.DateOnly), pricingStamp(f.Watermark), f.ID); err != nil {
-			t.Fatal(err)
+		if i >= 2 {
+			f.Watermark = f.GeneratedAt
+			f.SnapshotHash = f.ID
+			if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'node','node',?,?,10000,'HEALTHY','{}',?)`, f.ID, f.GeneratedAt.Format(time.DateOnly), pricingStamp(f.Watermark), f.ID); err != nil {
+				t.Fatal(err)
+			}
 		}
 		if err := s.SavePricingForecast(ctx, f); err != nil {
 			t.Fatal(f.ID, err)

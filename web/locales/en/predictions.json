@@ -3,7 +3,7 @@
     "title": "Your usage outlook",
     "open": "View usage predictions",
     "back": "Back to your ride",
-    "period": "Last 2 completed days · next 5 complete days · UTC",
+    "period": "Daily traffic · Last 2 completed days · next 5 complete days · UTC",
     "actual": "Actual usage",
     "predicted": "Predicted usage",
     "interval": "Forecast interval",

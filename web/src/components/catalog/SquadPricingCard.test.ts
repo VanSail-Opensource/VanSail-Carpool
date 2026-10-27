@@ -11,6 +11,13 @@ const squad: SquadProduct = {
 }
 
 describe('member squad profile cards', () => {
+  it('hides combo squad prices but allows the separate PAYG price slot', () => {
+    const props = { squad, selected: false, included: false, featured: false }
+    const combo = mount(SquadPricingCard, { props })
+    expect(combo.text()).not.toContain('1.25 TXB')
+    const payg = mount(SquadPricingCard, { props: { ...props, informational: true }, slots: { price: 'PAYG rate' } })
+    expect(payg.text()).toContain('PAYG rate')
+  })
   it.each([false, true])('keeps carrier facts without exposing node names (PAYG=%s)', informational => {
     const wrapper = mount(SquadPricingCard, { props: {
       squad: { ...squad, profile: { type: 'international_network', portMbps: 1000, countryCode: 'JP', upstreamCarriers: ['KDDI', 'NTT'] } },
