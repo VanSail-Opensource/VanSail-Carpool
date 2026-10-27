@@ -1,5 +1,8 @@
 # Database migrations
 
+`109_xnode_period_aliases.sql` stores proven node-scoped historical accounting
+references. PostgreSQL migration 00022 has the same constraints.
+
 `104_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
 family while preserving global host uniqueness and compile invalidation.
 

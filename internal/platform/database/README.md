@@ -1,5 +1,10 @@
 # Application store
 
+`xnode_period_aliases.go` resolves only explicitly reconciled, node-scoped
+historical period IDs before accounting locks. A mapping requires the canonical
+owner; original report bytes/digests, cursor fencing, and settled-period checks
+remain authoritative. `xnode_period_aliases_test.go` covers replay and rejection.
+
 Firewall sweeps reuse one active-member bitmap and the bounded page's participant
 snapshots within the same serializable transaction. `xnode_firewall_tx.go` shares
 the expiry calculation with ordinary agent events. `xnode_firewall_sources.go`

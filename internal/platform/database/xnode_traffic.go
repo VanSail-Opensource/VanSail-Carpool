@@ -48,6 +48,12 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	if sequence != previous+1 {
 		return xnode.NewTrafficSequenceGap(sequence, previous+1)
 	}
+	// Resolve only explicitly reconciled references. The report and its digest
+	// stay untouched, including when the enclosing transaction is retried.
+	samples, err := resolveTrafficPeriodsTx(ctx, tx, nodeID, report.Samples)
+	if err != nil {
+		return err
+	}
 	var priced int64
 	err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id=? AND from_sequence<=? ORDER BY from_sequence DESC LIMIT 1`, agent, sequence).Scan(&priced)
 	if err == nil {
@@ -57,14 +63,14 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	}
 	sampled := map[int]bool{}
 	paygIDs := map[int64]bool{}
-	for _, sample := range report.Samples {
+	for _, sample := range samples {
 		paygIDs[int64(sample.UserID)] = true
 	}
 	if err = lockPAYGOwnersTx(ctx, tx, nodeID, paygIDs); err != nil {
 		return err
 	}
 	periods := map[string]bool{}
-	for _, sample := range report.Samples {
+	for _, sample := range samples {
 		periods[sample.AccountingPeriod] = true
 	}
 	ordered := make([]string, 0, len(periods))
@@ -76,12 +82,12 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 		var locked string
 		if err = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=? /*pg:FOR UPDATE*/`, period).Scan(&locked); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return xnode.ErrTrafficPeriodMissing
+				return xnode.NewTrafficPeriodMissing(period)
 			}
 			return err
 		}
 	}
-	for _, sample := range report.Samples {
+	for _, sample := range samples {
 		sampled[sample.UserID] = true
 		if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
 			return e

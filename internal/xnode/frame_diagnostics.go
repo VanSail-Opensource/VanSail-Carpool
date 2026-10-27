@@ -16,6 +16,10 @@ func frameErrorDetails(err error) []any {
 	if errors.As(err, &gap) {
 		fields = append(fields, "received_sequence", gap.received, "expected_sequence", gap.expected)
 	}
+	var period trafficPeriodMissing
+	if errors.As(err, &period) {
+		fields = append(fields, "missing_period_id", period.period)
+	}
 	return fields
 }
 

@@ -1493,6 +1493,14 @@ CREATE TABLE xnode_payg_windows (
  PRIMARY KEY(proxy_user_id,through)
 );
 
+CREATE TABLE xnode_period_aliases (
+ node_id TEXT NOT NULL REFERENCES xnode_nodes(id),
+ historical_period_id TEXT NOT NULL,
+ canonical_period_id TEXT NOT NULL REFERENCES xnode_periods(id),
+ PRIMARY KEY(node_id,historical_period_id),
+ CHECK(historical_period_id <> canonical_period_id)
+);
+
 CREATE TABLE xnode_period_nodes (
  period_id TEXT NOT NULL REFERENCES xnode_periods(id), node_id TEXT NOT NULL REFERENCES xnode_nodes(id),
  flushed_sequence INTEGER, PRIMARY KEY(period_id,node_id)

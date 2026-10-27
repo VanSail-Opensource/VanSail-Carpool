@@ -152,6 +152,7 @@
     "xnode_imported_usage",
     "xnode_metered_probes",
     "xnode_payg_accounts",
+    "xnode_period_aliases",
     "xnode_period_nodes",
     "xnode_payg_charges",
     "xnode_payg_windows"
@@ -9578,6 +9579,32 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_period_aliases",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "historical_period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "canonical_period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
           "primaryKey": 0
         }
       ]

@@ -108,7 +108,8 @@
     "105_pricing.sql",
     "106_retire_rollover.sql",
     "107_personal_pricing_decisions.sql",
-    "108_host_name_overrides.sql"
+    "108_host_name_overrides.sql",
+    "109_xnode_period_aliases.sql"
   ],
   "objects": [
     {
@@ -1004,6 +1005,12 @@
       "name": "xnode_payg_windows",
       "table": "xnode_payg_windows",
       "sql": "CREATE TABLE xnode_payg_windows (\n proxy_user_id INTEGER NOT NULL REFERENCES xnode_payg_accounts(proxy_user_id),\n through TEXT NOT NULL,\n traffic_bytes INTEGER NOT NULL DEFAULT 0 CHECK(traffic_bytes\u003e=0),\n unbilled_bytes INTEGER NOT NULL DEFAULT 0 CHECK(unbilled_bytes\u003e=0 AND unbilled_bytes\u003c=traffic_bytes),\n PRIMARY KEY(proxy_user_id,through)\n)"
+    },
+    {
+      "type": "table",
+      "name": "xnode_period_aliases",
+      "table": "xnode_period_aliases",
+      "sql": "CREATE TABLE xnode_period_aliases (\n node_id TEXT NOT NULL REFERENCES xnode_nodes(id),\n historical_period_id TEXT NOT NULL,\n canonical_period_id TEXT NOT NULL REFERENCES xnode_periods(id),\n PRIMARY KEY(node_id,historical_period_id),\n CHECK(historical_period_id \u003c\u003e canonical_period_id)\n)"
     },
     {
       "type": "table",
@@ -9433,7 +9440,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 109,
+      "rows": 110,
       "columns": [
         {
           "name": "version",
@@ -12017,6 +12024,33 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_period_aliases",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "historical_period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "canonical_period_id",
+          "type": "TEXT",
+          "notNull": true,
+          "default": null,
           "primaryKey": 0
         }
       ]

@@ -45,3 +45,11 @@ func (e trafficSequenceGap) Unwrap() error { return ErrTrafficSequenceGap }
 func NewTrafficSequenceGap(received, expected uint64) error {
 	return trafficSequenceGap{received: received, expected: expected}
 }
+
+type trafficPeriodMissing struct{ period string }
+
+func (e trafficPeriodMissing) Error() string { return ErrTrafficPeriodMissing.Error() }
+func (e trafficPeriodMissing) Unwrap() error { return ErrTrafficPeriodMissing }
+
+// NewTrafficPeriodMissing identifies a validated period reference, never a payload.
+func NewTrafficPeriodMissing(period string) error { return trafficPeriodMissing{period: period} }
