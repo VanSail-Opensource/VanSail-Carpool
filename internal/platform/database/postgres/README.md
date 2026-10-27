@@ -7,6 +7,10 @@ values or results. Oversized statements use the uncached, SQL-aware binder.
 `bind_cache_test.go` checks protected grammar, argument-type changes, bounded
 retention and concurrent reuse under hosted race checks.
 
+Schema version 21 adds `pricing_active_commands` to match the existing SQLite
+schema contract. It supports active pricing-command lookups and repairs fresh
+and upgraded PostgreSQL startup without changing historical migrations or data.
+
 Schema version 16 permits multiple endpoint references per DDNS family while
 retaining global host uniqueness. Schema version 15 updates community-preference
 transition functions and backfills Show Around TX for existing combo/PAYG

@@ -317,7 +317,8 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `settings.go` — encrypted-or-plain application setting records.
 - `onboarding.go` — versioned onboarding content, agreement contracts, and
   onboarding completion.
-- `catalog.go` — combo inputs and transactional combo writes.
+- `catalog.go` — combo inputs and transactional combo writes. Combo updates bind
+  each field once, including the active flag, on both SQLite and PostgreSQL.
 - `catalog_queries.go` — combo reads, scans, and normalized squad UUID lists.
 - `catalog_squads.go` — sparse local merchandising and normalized profile overrides for upstream squads.
 - `billing.go` — purchase normalization, quotes, creation, pricing, and debit helpers.
@@ -482,7 +483,9 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `questionnaire_features_test.go` — questionnaire CSV analysis and settlement.
 - `emby_test.go` — Emby setup, provisioning, retry, and refund atomicity.
 - `release1_commerce_migration_test.go` covers rolling-month conversion, immutable pricing backfill, and new release-one persistence tables.
-- `retention_test.go` — retained operational-record cleanup behavior.
+- `retention_test.go` — retained operational-record cleanup behavior. Audit
+  retention counts include migration-created history and inspect fixture events
+  separately without deleting historical evidence.
 - `retention_native_test.go` covers bounded native accounting maintenance retention and preservation of settlement evidence.
 - `outbox_priority_dispatch_test.go` covers reserved priority dispatch, one-second coalescing and ordinary-job ordering.
 - `maintenance_runs_test.go` covers local-day locking, forced same-day history, and backup-gated maintenance state.

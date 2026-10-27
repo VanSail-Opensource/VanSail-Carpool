@@ -13,6 +13,10 @@ func TestAuditRetentionKeepsAllEvents(t *testing.T) {
 	t.Parallel()
 	store := newTestStore(t)
 	ctx := context.Background()
+	var initialCount int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events`).Scan(&initialCount); err != nil {
+		t.Fatalf("count initial audit events: %v", err)
+	}
 	base := time.Date(2026, 8, 8, 0, 0, 0, 0, time.UTC)
 	for index := 0; index < 205; index++ {
 		if err := store.AppendAudit(ctx, nil, "test", "record", fmt.Sprintf("%03d", index), `{}`, base.Add(time.Duration(index)*time.Second)); err != nil {
@@ -23,11 +27,11 @@ func TestAuditRetentionKeepsAllEvents(t *testing.T) {
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events`).Scan(&count); err != nil {
 		t.Fatalf("count audit events: %v", err)
 	}
-	if count != 205 {
-		t.Fatalf("audit count = %d, want 205", count)
+	if count != initialCount+205 {
+		t.Fatalf("audit count = %d, want %d", count, initialCount+205)
 	}
 	var oldestTarget string
-	if err := store.DB().QueryRowContext(ctx, `SELECT target_id FROM audit_events ORDER BY created_at LIMIT 1`).Scan(&oldestTarget); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT target_id FROM audit_events WHERE action='test' AND target_type='record' ORDER BY created_at LIMIT 1`).Scan(&oldestTarget); err != nil {
 		t.Fatalf("oldest audit event: %v", err)
 	}
 	if oldestTarget != "000" {

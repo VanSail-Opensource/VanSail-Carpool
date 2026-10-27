@@ -94,7 +94,7 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 			input.TrafficLimitBytes, input.ResetStrategy, boolInt(input.Active),
 			string(encodedSquads), stamp(now), stamp(now))
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=?,description=?,price_txb_minor=?,validity_days=?,traffic_limit_bytes=?,reset_strategy=?,active=?=?,included_squad_uuids=?,updated_at=? WHERE id=?`,
+		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=?,description=?,price_txb_minor=?,validity_days=?,traffic_limit_bytes=?,reset_strategy=?,active=?,included_squad_uuids=?,updated_at=? WHERE id=?`,
 			input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays, input.TrafficLimitBytes, input.ResetStrategy,
 			boolInt(input.Active), string(encodedSquads), stamp(now), input.ID)
 	}

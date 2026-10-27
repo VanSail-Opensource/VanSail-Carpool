@@ -57,3 +57,6 @@ The existing columns and immutable financial records remain unchanged.
 - `00019_personal_pricing_decisions.sql`: Immutable terminal personalized decisions and funding outcome separation.
 
 - `00020_host_name_overrides.sql`: Only authored owner-specific host display preferences.
+
+- `00021_pricing_active_commands.sql`: Adds the command/status/expiry lookup index
+  required by the existing source schema contract without rewriting migration 00017.
