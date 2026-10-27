@@ -1,9 +1,12 @@
 # Application store
 
-`xnode_period_aliases.go` resolves only explicitly reconciled, node-scoped
-historical period IDs before accounting locks. A mapping requires the canonical
-owner; original report bytes/digests, cursor fencing, and settled-period checks
-remain authoritative. `xnode_period_aliases_test.go` covers replay and rejection.
+`xnode_traffic_discard.go` records user-authorized unmatched traffic exceptions.
+Reference conflicts roll back the entire report before the real report cursor
+and an audit record commit. Gaps are audited while valid reports still count.
+Agent identity, malformed input, storage failures and accounting durability remain
+mandatory; no fabricated traffic is charged. Duplicate exceptions are idempotent.
+`xnode_traffic_discard_test.go` covers full-batch rollback, audit replay and
+the next valid journal report on both supported stores.
 
 Firewall sweeps reuse one active-member bitmap and the bounded page's participant
 snapshots within the same serializable transaction. `xnode_firewall_tx.go` shares
@@ -43,8 +46,8 @@ added only when measured plans justify them, never to mask repeated queries.
 `xnode_cursor.go` provides the shared transaction cursor lock for journal commits
 and multiplier changes. Both paths retain SERIALIZABLE whole-operation retries
 and SQLite write serialization; rates begin at the next uncommitted sequence.
-Missing period/identity references reject the entire report with fixed diagnostic
-codes, sequence and sample count, without logging credentials or report payloads.
+Missing period/identity references discard the entire report with a fixed audit
+reason and sequence, without storing credentials or report payloads.
 
 `xnode_endpoint_epoch_test.go` verifies endpoint insert, semantic edits and deletion
 invalidate routing/bypass references while equal values and timestamp-only writes
@@ -170,11 +173,11 @@ snapshot-upgrade failures from unrelated autocommit writers; the existing busy
 timeout applies at acquisition. Explicit read-only transactions keep concurrent
 WAL snapshots. `database_lock_test.go` covers both paths with separate connections.
 
-Traffic ingestion returns specific `xnode.ErrTraffic*` conflicts while preserving
-`errors.Is(err, xnode.ErrConflict)`. Rejections never advance a cursor or charge
-usage. A post-migration sequence gap requires reconciliation with the retained
-final SQLite source; skipping the cursor loses already acknowledged accounting.
-`xnode_traffic_conflicts_test.go` covers those diagnostic and atomicity contracts.
+Traffic ingestion discards whole reports with explicit unmatched-accounting
+conflicts, recording an audit event atomically with the actual report cursor.
+Gaps are recorded without inventing missing usage; valid subsequent reports are
+accounted normally. Agent identity, invalid frames and storage failures remain
+rejections. `xnode_traffic_conflicts_test.go` covers these atomicity contracts.
 
 `xnode_firewall_queue.go` projects lagging dynamic/source banks onto the existing
 durable outbox. Periodic reconciliation preserves pending retry deadlines and
@@ -618,7 +621,7 @@ IP lookup resumes and report repair read current saved settings. `ip_lookup_curr
 `xnode_endpoints.go` Stores subscription endpoints and encrypted client overrides.
 `xnode_identities.go` Stores stable proxy IDs and encrypted credential/token references.
 `xnode_periods.go` Stores accounting periods and reads exact byte aggregates.
-`xnode_traffic.go` Commits contiguous reports exactly once with transactional weighted-byte carry.
+`xnode_traffic.go` commits actual report cursors and valid weighted usage, or an audited discard.
 `xnode_customizations.go` Stores owner/node customization revisions and encrypted inputs.
 `xnode_rates.go` Commits multiplier boundaries after accounting barriers.
 `xnode_restrictions.go` Projects existing manual access restrictions.

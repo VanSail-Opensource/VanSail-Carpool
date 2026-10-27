@@ -10,27 +10,24 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-func TestXNodeTrafficConflictsIdentifyFailedFenceWithoutAccountingMutation(t *testing.T) {
+func TestXNodeTrafficConflictsAreAuditedWithoutAccountingMutation(t *testing.T) {
 	for _, scenario := range []string{"agent", "gap", "digest", "aggregate", "closed", "owner"} {
 		t.Run(scenario, func(t *testing.T) {
 			s, identity, period := xnodeTrafficFixture(t)
 			ctx := context.Background()
 			agent, sequence, digest := "agent", uint64(1), "new"
-			var want error
 			report := wire.TrafficReport{ID: "agent:1"}
 			switch scenario {
 			case "agent":
-				agent, report.ID, want = "foreign", "foreign:1", xnode.ErrTrafficAgentMismatch
+				agent, report.ID = "foreign", "foreign:1"
 			case "gap":
-				sequence, report.ID, want = 2, "agent:2", xnode.ErrTrafficSequenceGap
+				sequence, report.ID = 2, "agent:2"
 			case "digest":
 				if err := s.RecordXNodeTraffic(ctx, "node", agent, sequence, "old", report); err != nil {
 					t.Fatal(err)
 				}
-				want = xnode.ErrTrafficDigestMismatch
 			case "aggregate":
 				report.Traffic = wire.Traffic{int(identity.ProxyUserID): {1, 0}}
-				want = xnode.ErrTrafficSampleMissing
 			case "closed", "owner":
 				at := time.Now().UTC()
 				report.Samples = []wire.TrafficSample{{UserID: int(identity.ProxyUserID), AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 1}}
@@ -39,22 +36,38 @@ func TestXNodeTrafficConflictsIdentifyFailedFenceWithoutAccountingMutation(t *te
 					if err := s.SaveXNodePeriod(ctx, period); err != nil {
 						t.Fatal(err)
 					}
-					want = xnode.ErrTrafficPeriodSettled
 				} else {
 					report.Samples[0].UserID++
-					want = xnode.ErrTrafficOwnerMismatch
 				}
 			}
-			if err := s.RecordXNodeTraffic(ctx, "node", agent, sequence, digest, report); !errors.Is(err, want) || !errors.Is(err, xnode.ErrConflict) {
-				t.Fatalf("conflict=%v, want=%v", err, want)
+			err := s.RecordXNodeTraffic(ctx, "node", agent, sequence, digest, report)
+			if scenario == "agent" {
+				if !errors.Is(err, xnode.ErrTrafficAgentMismatch) {
+					t.Fatalf("foreign agent accepted: %v", err)
+				}
+			} else if err != nil {
+				t.Fatalf("discard failed: %v", err)
 			}
-			cursor, err := s.XNodeReportSequence(ctx, agent)
-			if err != nil || (scenario != "digest" && cursor != 0) || (scenario == "digest" && cursor != 1) {
-				t.Fatal("conflict advanced cursor", cursor, err)
+			if scenario == "digest" {
+				if err := s.RecordXNodeTraffic(ctx, "node", agent, sequence, digest, report); err != nil {
+					t.Fatalf("duplicate discard failed: %v", err)
+				}
+			}
+			cursor, err := s.XNodeReportSequence(ctx, "agent")
+			wantCursor := sequence
+			if scenario == "agent" {
+				wantCursor = 0
+			}
+			if err != nil || cursor != wantCursor {
+				t.Fatal("wrong cursor", cursor, err)
 			}
 			value, err := s.XNodePeriod(ctx, period.ID)
 			if err != nil || value.UsedBytes != 0 {
 				t.Fatal("conflict changed usage", value, err)
+			}
+			var audits int
+			if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='xnode_traffic_discard'`).Scan(&audits); err != nil || (audits == 0) != (scenario == "agent") {
+				t.Fatal("wrong audit count", audits, err)
 			}
 		})
 	}

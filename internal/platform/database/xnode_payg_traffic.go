@@ -61,7 +61,10 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 	if err != nil {
 		return true, err
 	}
-	if node != a.NodeID || sample.AccountingPeriod != a.PeriodID || sample.From.IsZero() || sample.Through.Before(sample.From) || sample.Through.After(time.Now().Add(5*time.Minute)) || sample.UploadBytes > math.MaxInt64 || sample.DownloadBytes > math.MaxInt64-sample.UploadBytes {
+	if node != a.NodeID || sample.AccountingPeriod != a.PeriodID {
+		return true, xnode.ErrTrafficOwnerMismatch
+	}
+	if sample.From.IsZero() || sample.Through.Before(sample.From) || sample.Through.After(time.Now().Add(5*time.Minute)) || sample.UploadBytes > math.MaxInt64 || sample.DownloadBytes > math.MaxInt64-sample.UploadBytes {
 		return true, xnode.ErrInvalid
 	}
 	var status string

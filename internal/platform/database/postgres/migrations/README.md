@@ -1,7 +1,7 @@
 # PostgreSQL migration history
 
-`00022_xnode_period_aliases.sql` adds the node-scoped accounting reference map
-also introduced by SQLite migration 109.
+`00022_xnode_period_aliases.sql` retains the node-scoped reference map introduced
+by SQLite migration 109 for schema compatibility; traffic discard does not use it.
 
 `00016_xnode_ddns_multi_hosts.sql` permits multiple host references per DDNS
 family while retaining the unique host constraint.

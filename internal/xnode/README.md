@@ -134,13 +134,12 @@ An unchanged rejected head backs off from one to 30 seconds using one in-memory
 fingerprint per peer; telemetry and command results continue immediately.
 Suppressed reports receive no ACK. Changed frames are checked immediately, and
 successful commit/ACK clears the delay. Pending PAYG recovery remains coalesced.
-`traffic_errors.go` supplies fixed rejection codes for sequence gaps, digest,
-enrollment, missing samples, ownership and settled-period conflicts. The existing
-`ErrConflict` contract is retained; payloads and storage errors are never logged.
-Sequence-gap warnings include numeric received/expected positions for migration
-reconciliation, without advancing or fabricating any durable cursor.
-`master_traffic_test.go` covers replay work bounds, command-result delivery and
-safe conflict diagnostics in hosted CI; accounting fences remain unchanged.
+`traffic_errors.go` supplies fixed diagnostics for accounting conflicts. The
+store audits and discards unmatched reports and missing ranges by explicit
+operator policy, then commits the actual received cursor before ACK. A valid
+report after a gap still counts; no missing bytes are invented. Invalid frames,
+agent mismatches and storage failures remain unacknowledged. `master_traffic_test.go`
+covers retry bounds, command delivery and safe diagnostics in hosted CI.
 
 Firewall reconciliation retains per-node execution and durable receipts. Its
 database queue projects only lagging banks, avoiding fleet delivery work for
