@@ -17,6 +17,9 @@ func (s *Store) PricingUserPricePage(ctx context.Context, user, cursor string, n
 		return out, err
 	}
 	products, next, err := s.PricingProducts(ctx, cursor)
+	if err == nil {
+		ctx, err = s.pricingReadContext(ctx, user, now)
+	}
 	if err != nil {
 		return out, err
 	}

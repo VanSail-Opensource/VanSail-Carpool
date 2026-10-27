@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Store) TrainPricingRenewalResponse(ctx context.Context, product string, now time.Time) error {
-	id := "renewal-response:" + product + ":coupons-v3:" + now.Format("2006-01-02")
+	id := "renewal-response:" + product + ":" + pricing.StrategyVersion + ":" + now.UTC().Format("2006-01-02")
 	if revision, ok := ctx.Value(pricingModelRevisionKey{}).(string); ok {
 		id += ":" + revision
 	}
@@ -23,7 +23,7 @@ func (s *Store) TrainPricingRenewalResponse(ctx context.Context, product string,
 	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_model_versions WHERE id=?)`, id).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT q.price_minor,c.contractual_price_minor,q.state,q.trace_json FROM pricing_renewal_quotes q JOIN pricing_contracts c ON c.id=q.contract_id JOIN purchases p ON p.id=q.purchase_id WHERE c.product_id=? AND q.authorized_at IS NOT NULL AND q.health_state='HEALTHY' AND q.outcome_reason<>'INSUFFICIENT_FUNDS' AND p.reward_renewal_price_minor IS NULL AND q.state<>'CANCELLED' AND (q.state='SETTLED' OR q.valid_until<=?) AND NOT EXISTS(SELECT 1 FROM pricing_operational_incidents i WHERE i.started_at<q.valid_until AND (i.ended_at IS NULL OR i.ended_at>q.settle_after)) AND NOT EXISTS(SELECT 1 FROM pricing_contracts newer WHERE newer.purchase_id=c.purchase_id AND newer.version>c.version AND newer.recorded_at<q.valid_until) ORDER BY q.generated_at DESC LIMIT 2048`, product, pricingStamp(now))
+	rows, err := s.db.QueryContext(ctx, `SELECT q.price_minor,c.contractual_price_minor,q.state,q.trace_json FROM pricing_renewal_quotes q JOIN pricing_contracts c ON c.id=q.contract_id JOIN purchases p ON p.id=q.purchase_id WHERE c.product_id=? AND q.authorized_at IS NOT NULL AND q.health_state='HEALTHY' AND q.outcome_reason<>'INSUFFICIENT_FUNDS' AND p.reward_renewal_price_minor IS NULL AND q.state<>'CANCELLED' AND (q.state='SETTLED' OR q.valid_until<=?) AND json_extract(q.trace_json,'$.strategyVersion')=? AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes newer WHERE newer.purchase_id=q.purchase_id AND newer.authorized_at IS NOT NULL AND newer.state<>'CANCELLED' AND (newer.generated_at>q.generated_at OR newer.generated_at=q.generated_at AND newer.id>q.id)) AND NOT EXISTS(SELECT 1 FROM pricing_operational_incidents i WHERE i.started_at<q.valid_until AND (i.ended_at IS NULL OR i.ended_at>q.settle_after)) AND NOT EXISTS(SELECT 1 FROM pricing_contracts newer WHERE newer.purchase_id=c.purchase_id AND newer.version>c.version AND newer.recorded_at<q.valid_until) ORDER BY q.generated_at DESC,q.id DESC LIMIT 2048`, product, pricingStamp(now), pricing.StrategyVersion)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,10 @@ func (s *Store) TrainPricingRenewalResponse(ctx context.Context, product string,
 	if m.Validated {
 		status = "VALIDATED"
 	}
-	diagnostics, _ := json.Marshal(map[string]any{"model": m, "couponSamples": couponSamples})
+	diagnostics, err := json.Marshal(map[string]any{"model": m, "couponSamples": couponSamples, "support": pricingResponseSupport(samples), "strategyVersion": pricing.StrategyVersion})
+	if err != nil {
+		return err
+	}
 	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, id, "renewal:"+product, pricingStamp(now), status, string(raw), `{"source":"authorized completed renewal quotes; incident and superseded windows excluded","features":["intercept","logPrice/contractPrice","activity","renewals","couponPresent","couponDiscount"],"holdout":"chronological 20 percent"}`, pricingStamp(now), string(diagnostics))
 	return err
 }
@@ -95,7 +98,7 @@ func (s *Store) TrainPricingRenewalResponse(ctx context.Context, product string,
 func pricingRenewalModelTx(ctx context.Context, tx *sql.Tx, product string, now time.Time) (pricing.ResponseModel, string, error) {
 	var m pricing.ResponseModel
 	var id, raw string
-	err := tx.QueryRowContext(ctx, `SELECT id,parameters_json FROM pricing_model_versions WHERE kind=? AND id LIKE '%:coupons-v3:%' AND created_at<=? AND frozen=0 ORDER BY created_at DESC LIMIT 1`, "renewal:"+product, pricingStamp(now)).Scan(&id, &raw)
+	err := tx.QueryRowContext(ctx, `SELECT id,parameters_json FROM pricing_model_versions WHERE kind=? AND id LIKE ? AND created_at<=? AND frozen=0 ORDER BY created_at DESC,id DESC LIMIT 1`, "renewal:"+product, "%:"+pricing.StrategyVersion+":%", pricingStamp(now)).Scan(&id, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return m, "renewal-prior-v1", nil
 	}

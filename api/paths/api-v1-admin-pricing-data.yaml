@@ -97,7 +97,8 @@
         "required": false,
         "schema": {
           "type": "string"
-        }
+        },
+        "description": "Typed product key such as combo:ID, addon:ID or payg:ID; bare legacy IDs remain supported."
       },
       {
         "in": "query",

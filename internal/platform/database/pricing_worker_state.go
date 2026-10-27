@@ -76,6 +76,7 @@ func (s *Store) PricingOptimizationBatch(ctx context.Context, now time.Time, cur
 		return cursor, err
 	}
 	for _, i := range items {
+		cursor = i.kind + ":" + i.id
 		if i.kind == "combo" {
 			if err = s.TrainPricingRenewalResponse(ctx, i.id, now); err != nil {
 				if errors.Is(err, ErrPricingComputePending) {

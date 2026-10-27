@@ -1,7 +1,7 @@
 {
   "userPrices": {
     "title": "个人定价与预测",
-    "hint": "可通过下方分页查看所有商品。待计算价格仅供参考；结账时会重新核验决策、优惠券和付款余额。",
+    "hint": "估算仅对整单使用一次持有的最优适用优惠券。结算时展示所选优惠券和最终应付金额。待计算或过期的估算不视为可用价格。",
     "status": "决策",
     "statuses": {
       "PENDING": "待计算",
@@ -17,7 +17,7 @@
     "publicPrice": "公开基础价",
     "personalPrice": "个人基础价",
     "campaignPrice": "活动价",
-    "netPrice": "最佳适用优惠券后的价格",
+    "netPrice": "持有最优优惠券估算",
     "coupons": "适用优惠券",
     "noCoupons": "无适用优惠券",
     "couponTerms": "{kind} · {mode}：{value} · 上限：{cap} · 到期：{expires}",

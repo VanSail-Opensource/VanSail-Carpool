@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
 // A refusal is terminal evidence, unlike an unfinished numerical calculation.
@@ -42,7 +43,7 @@ func (s *Store) retryAttempt_recordUnchangedProduct(ctx context.Context, kind, p
 	if err != nil {
 		return err
 	}
-	raw, err := json.Marshal(map[string]any{"status": "UNCHANGED", "reason": reason, "calculationComplete": true})
+	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "status": "UNCHANGED", "reason": reason, "calculationComplete": true})
 	if err != nil {
 		return err
 	}

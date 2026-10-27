@@ -111,3 +111,49 @@ after their outbox references disappear; pending or failed references are retain
 - `candidates.go`: Pure numerical candidate preparation and selection shared with versioned kernels.
 
 Evaluated personal total vintages retain 60 days; per-user/node one-day vintages retain 30 days. Node/product forecasts retain 90 days. Cleanup requires the daily validation summary before removal; measured calibration aggregates retain one year. This keeps five personal lead bands inside the representative storage budget rather than multiplying all per-node records by five. Financial and purchase evidence is unaffected.
+
+
+## Balanced pricing audit revision
+
+The panel strategy `balanced-coupons-v4` uses the pinned numerical v1 protocol.
+Expected fulfillment cost is probability-weighted before passing it to that
+kernel; renewal relationship value is weighted exactly once. Positive candidate
+scores retain the 95 percent envelope, then prefer the smallest gross-price move.
+Gross-price support comes only from the training partition; holdout and coupon
+sample gates remain separate. New models use distinct member/day outcomes and
+latest completed renewal attempts. Old models and original financial facts stay
+immutable.
+
+Native period/node usage shares provider burden among fulfilling products;
+unattributed usage and missing relationships remain visible unallocated overhead.
+The public capacity snapshot uses fresh original next-day one-day forecasts,
+checks every machine and reserves the larger of forecast consumption and paid
+commitments. PAYG sales quantities use the authoritative 1 GiB block constant.
+Coupon ownership remains a pricing feature. Candidate coupon savings apply once
+to the complete prospective basket, independently of the grant selected at debit.
+
+Interactive purchase and live-addition previews return a scoped `quoteVersion`
+and `quoteValidUntil`. The existing commerce transaction recomputes these facts
+before any mutation. Dynamic requests need the reviewed version; fixed legacy
+requests remain compatible. Completed idempotency receipts resolve first.
+Analytical caches and request-local policy/coupon batches never authorize debit.
+Pricing workers have independent stage deadlines. The health endpoint reads only
+memory; deferred datasets use opaque cursors bound to dataset and filter scope.
+
+- `strategy.go`: Strategy v4 observed-price support and stable selection within 95% of the best positive contribution; ties prefer retention then lower price.
+- `strategy_test.go`: Hosted single-probability, stability and supported-range regressions.
+
+Strategy `balanced-coupons-v4` separates revised evidence from all historical
+models and decisions. Contribution is probability times conditional net receipts
+less attributable fulfillment cost; the pinned v1 numerical kernel receives the
+probability-weighted cost once. PAYG analytical quantities use the same GiB block
+as billing; exact integer money/bytes remain authoritative. Supported price ranges
+and coupon cohorts gate every adjustment, alongside chronological holdout and
+calibration. Missing evidence completes unchanged; unavailable numerical work
+remains pending in the existing outbox/compute lane.
+
+Machine costs use normalized native usage shares. Unattributable service traffic
+remains overhead. Forecast selection fixes model, calendar window, lead and
+freshness; each fulfilling node must pass independently. Total forecast demand
+and overlapping paid commitments reserve their maximum, rather than their sum.
+These are analytical estimates, not debits or guarantees of causal elasticity.

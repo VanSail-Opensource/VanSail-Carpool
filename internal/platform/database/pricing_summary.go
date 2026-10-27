@@ -59,5 +59,9 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=?`, pricingStamp(from)).Scan(&discount); err != nil {
 		return nil, err
 	}
-	return map[string]any{"from": from, "until": now, "netRevenueMinor": fmt.Sprint(revenue), "recordedCostMinor": cost, "recordedMarginMinor": margin, "providerPaymentRecords": costCount, "forecastRevenueMinor": forecastRevenue, "forecastMarginMinor": forecastMargin, "forecastCalibration": "UNVALIDATED", "costNodes": knownNodes, "totalNodes": totalNodes, "dynamicProducts": dynamic, "configuredProducts": configured, "pendingJobs": pending, "failedJobs": failed, "interventions30": interventions, "manualDiscountMinor30": fmt.Sprint(discount)}, nil
+	overhead, err := s.pricingUnallocatedOverhead(ctx, now)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"unallocatedDailyCostMinor": overhead, "from": from, "until": now, "netRevenueMinor": fmt.Sprint(revenue), "recordedCostMinor": cost, "recordedMarginMinor": margin, "providerPaymentRecords": costCount, "forecastRevenueMinor": forecastRevenue, "forecastMarginMinor": forecastMargin, "forecastCalibration": "UNVALIDATED", "costNodes": knownNodes, "totalNodes": totalNodes, "dynamicProducts": dynamic, "configuredProducts": configured, "pendingJobs": pending, "failedJobs": failed, "interventions30": interventions, "manualDiscountMinor30": fmt.Sprint(discount)}, nil
 }

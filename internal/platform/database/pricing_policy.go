@@ -40,19 +40,16 @@ func pricingReference(ctx context.Context, q pricingReader, kind, id string) (in
 }
 
 func loadPricingPolicy(ctx context.Context, q pricingReader, kind, id string, fixed int64) (pricing.Policy, error) {
-	p := pricing.DefaultPolicy(kind, id, fixed)
-	var enabled, personal int
-	var updated string
-	err := q.QueryRowContext(ctx, pricingPolicySelect+` WHERE product_type=? AND product_id=?`, kind, id).Scan(&p.ProductType, &p.ProductID, &enabled, &p.PurchaseMode, &p.RenewalMode, &personal, &p.FixedPrice, &p.MaxIncreaseBPS, &p.MaxDiscountBPS, &p.OverrideStatus, &p.LastApprovedVersion, &p.Version, &p.UpdatedBy, &updated)
+	if batch, ok := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch); ok {
+		if p, found := batch.Policies[kind+":"+id]; found {
+			return p, nil
+		}
+		return pricing.DefaultPolicy(kind, id, fixed), nil
+	}
+	p, err := scanPricingPolicy(q.QueryRowContext(ctx, pricingPolicySelect+` WHERE product_type=? AND product_id=?`, kind, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return pricing.DefaultPolicy(kind, id, fixed), nil
 	}
-	if err != nil {
-		return p, err
-	}
-	p.DynamicEnabled = enabled == 1
-	p.PersonalDiscounts = personal == 1
-	p.UpdatedAt, err = parseStamp(updated)
 	return p, err
 }
 

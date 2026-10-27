@@ -62,7 +62,7 @@ export function useCatalog() {
     [...selectedSquadIds.value].sort(),
     selectedCouponGrantId.value,
   ]))
-  const { quote, quoting, quoteUsable, clearQuote, refreshQuote: fetchQuote } = useCatalogQuote({
+  const { quote, quoting, quoteUsable, quoteStatus, clearQuote, refreshQuote: fetchQuote } = useCatalogQuote({
     selection: () => selectedCombo.value ? {
       comboId: selectedCombo.value.id,
       squadProductIds: [...selectedSquadIds.value],
@@ -127,7 +127,7 @@ export function useCatalog() {
   }
   async function confirmPurchase(squadActivationCodes: Record<string, string> = {}): Promise<boolean> {
     if (!selectedCombo.value || purchase.value || purchasing.value) return false
-    if ((!quote.value || !quoteUsable.value) && !(await refreshQuote())) return false
+    if (!quoteUsable.value && !purchaseIdempotencyKey.value) { await refreshQuote(); return false }
     purchasing.value = true
     error.value = null
     needsBalance.value = false
@@ -139,6 +139,7 @@ export function useCatalog() {
         selectedCouponGrantId.value ?? undefined,
         purchaseIdempotencyKey.value,
         squadActivationCodes,
+        quote.value?.quoteVersion,
       )
       notifyHaptic('success')
       purchaseIdempotencyKey.value = null
@@ -148,7 +149,9 @@ export function useCatalog() {
       await load()
       return true
     } catch (caught) {
-      if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
+      if (caught instanceof ApiError && caught.code === 'PRICING_QUOTE_CHANGED') {
+        clearQuote(); await fetchQuote(); error.value = t('pricing.quoteChanged')
+      } else if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
         needsBalance.value = true
         error.value = t('errors.purchaseBalance')
       } else {
@@ -165,7 +168,7 @@ export function useCatalog() {
   return {
     catalog: readonly(catalog), balance: readonly(balance),
     loading: readonly(loading), purchasing: readonly(purchasing),
-    quoting: readonly(quoting),
+    quoting: readonly(quoting), quoteStatus,
     error: readonly(error), purchase: readonly(purchase),
     quote: readonly(quote), quoteUsable,
     selectedComboId,

@@ -237,3 +237,5 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 - `107_personal_pricing_decisions.sql`: Immutable terminal personalized decisions and funding outcome separation.
 
 - `108_host_name_overrides.sql`: Only authored owner-specific host display preferences.
+
+- `109_pricing_read_indexes.sql`: Adds only exposure-window and entity-day lookup indexes; historical financial facts are unchanged.

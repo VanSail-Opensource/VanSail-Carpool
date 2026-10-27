@@ -134,6 +134,8 @@ describe('catalog squad selection', () => {
     const state = scope.run(() => useCatalog())!
     await state.load()
     state.toggleSquad(addon.id)
+    await nextTick()
+    await state.refreshQuote()
     expect(await state.confirmPurchase()).toBe(false)
     expect(await state.confirmPurchase()).toBe(true)
     await nextTick()

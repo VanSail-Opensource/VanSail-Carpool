@@ -73,13 +73,24 @@ func (s *Service) Purchase(ctx context.Context, user model.User, comboID string,
 }
 
 // PurchaseWithCoupon applies at most one explicitly selected wallet grant.
-func (s *Service) PurchaseWithCoupon(ctx context.Context, user model.User, comboID string, addonIDs []string, couponGrantID string, activationCodes map[string]string, idempotencyKey string) (model.Purchase, error) {
+func (s *Service) PurchaseWithCoupon(ctx context.Context, user model.User, comboID string, addonIDs []string, couponGrantID string, activationCodes map[string]string, idempotencyKey string, quoteVersion ...string) (model.Purchase, error) {
 	if user.OnboardingState != "complete" {
 		return model.Purchase{}, errors.New("onboarding is incomplete")
 	}
 	idempotencyKey = strings.TrimSpace(idempotencyKey)
 	if comboID == "" || len(addonIDs) > 100 || idempotencyKey == "" || len(idempotencyKey) > 128 {
 		return model.Purchase{}, errors.New("invalid purchase selection")
+	}
+	input := database.PurchaseInput{UserID: user.ID, ComboID: comboID, AddonSquadIDs: addonIDs, CouponGrantID: couponGrantID, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey}
+	if len(quoteVersion) > 0 {
+		input.QuoteVersion = quoteVersion[0]
+	}
+	if replay, ok := s.repository.(interface {
+		PurchaseReplay(context.Context, database.PurchaseInput) (model.Purchase, bool, error)
+	}); ok {
+		if p, found, e := replay.PurchaseReplay(ctx, input); found || e != nil {
+			return p, e
+		}
 	}
 	catalog, err := s.validateLiveSelection(ctx, comboID, addonIDs)
 	if err != nil {
@@ -89,8 +100,7 @@ func (s *Service) PurchaseWithCoupon(ctx context.Context, user model.User, combo
 	if len(nodes) == 0 {
 		return model.Purchase{}, ErrNoAccessibleNodes
 	}
-	return s.repository.CreatePurchase(ctx, database.PurchaseInput{UserID: user.ID, ComboID: comboID, AddonSquadIDs: addonIDs,
-		CouponGrantID: couponGrantID, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey}, s.now().UTC())
+	return s.repository.CreatePurchase(ctx, input, s.now().UTC())
 }
 
 // Quote returns the authoritative price and entitlement start time without

@@ -2,18 +2,19 @@
 import type { components } from '@/api/generated'
 import type { DeepReadonly } from '@/api/types'
 import { useI18n } from '@/i18n'
-import { formatDate } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
+import { pricingLabel } from '@/utils/pricingDisplay'
 defineProps<{ decision: DeepReadonly<components['schemas']['PricingDecision']> }>()
 const { t } = useI18n()
 </script>
 <template>
   <dl class="decision-facts">
     <div><dt>{{ t('userPrices.status') }}</dt><dd>{{ t(`userPrices.statuses.${decision.status}`) }}</dd></div>
-    <div><dt>{{ t('pricing.reason') }}</dt><dd><code>{{ decision.reason }}</code></dd></div>
+    <div><dt>{{ t('pricing.reason') }}</dt><dd>{{ pricingLabel('reasons', decision.reason) }}</dd></div>
     <div><dt>{{ t('userPrices.probability') }}</dt><dd>{{ decision.probability === undefined ? t('common.notAvailable') : `${(decision.probability * 100).toFixed(1)}%` }}</dd></div>
-    <div><dt>{{ t('predictions.calibration') }}</dt><dd>{{ decision.calibration || t('predictions.unvalidated') }}</dd></div>
-    <div><dt>{{ t('predictions.freshness') }}</dt><dd>{{ formatDate(decision.generatedAt) }}</dd></div>
-    <div><dt>{{ t('userPrices.validUntil') }}</dt><dd>{{ formatDate(decision.validUntil) }}</dd></div>
+    <div><dt>{{ t('predictions.calibration') }}</dt><dd>{{ pricingLabel('states', decision.calibration) }}</dd></div>
+    <div><dt>{{ t('predictions.freshness') }}</dt><dd>{{ formatDateTime(decision.generatedAt) }}</dd></div>
+    <div><dt>{{ t('userPrices.validUntil') }}</dt><dd>{{ formatDateTime(decision.validUntil) }}</dd></div>
     <div><dt>{{ t('userPrices.version') }}</dt><dd><code>{{ decision.version }}</code></dd></div>
     <div><dt>{{ t('pricing.modelVersion') }}</dt><dd><code>{{ decision.modelVersion || t('common.notAvailable') }}</code></dd></div>
   </dl>

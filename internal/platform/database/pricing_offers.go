@@ -94,7 +94,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 	id := hex.EncodeToString(h[:])
 	_, err = s.pricingCache.Load(ctx, "exposure:"+id, time.Hour, func() ([]byte, error) {
 		var enabled int
-		if e := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=? AND product_id=? AND dynamic_enabled=1)`, kind, product).Scan(&enabled); e != nil {
+		if e := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=? AND product_id=? AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC')`, kind, product).Scan(&enabled); e != nil {
 			return nil, e
 		}
 		if enabled == 0 {
@@ -129,7 +129,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 				return nil, e
 			}
 		}
-		feature, e := json.Marshal(map[string]any{"logPrice": observation.LogPrice, "activity": observation.Activity, "renewals": observation.Renewals, "couponFingerprint": cohort, "couponPresent": observation.CouponPresent, "couponDiscount": observation.CouponDiscount, "complete": complete, "watermark": watermark})
+		feature, e := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "logPrice": observation.LogPrice, "activity": observation.Activity, "renewals": observation.Renewals, "couponFingerprint": cohort, "couponPresent": observation.CouponPresent, "couponDiscount": observation.CouponDiscount, "complete": complete, "watermark": watermark})
 		if e != nil {
 			return nil, e
 		}

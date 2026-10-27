@@ -33,6 +33,8 @@ func (s *Store) retryAttempt_QuotePurchase(ctx context.Context, input PurchaseIn
 }
 
 func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseInput, now time.Time) (model.PurchaseQuote, model.Combo, []model.SquadProduct, error) {
+	ctx = pricingFreshContext(ctx)
+	ctx = purchasePricingContext(ctx)
 	combo, err := comboByIDTx(ctx, tx, input.ComboID, true)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
@@ -67,7 +69,7 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 		if loadErr != nil {
 			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
 		}
-		product.PriceTXBMinor, _, loadErr = personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, []string{product.GroupID}, now, false)
+		product.PriceTXBMinor, product.PricingDecision, loadErr = personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, pricingPurchaseSquads(combo, input.AddonSquadIDs), now, false)
 		if loadErr != nil {
 			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
 		}
@@ -122,11 +124,15 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 			return model.PurchaseQuote{}, model.Combo{}, nil, err
 		}
 	}
-	return model.PurchaseQuote{
+	quote := model.PurchaseQuote{
 		PricingDecision: decision, RenewalDecision: renewalDecision,
 		ComboID: combo.ID, ComboName: combo.Name,
 		GrossPriceTXBMinor: grossMinor, DiscountTXBMinor: discount.DiscountMinor, NetPriceTXBMinor: discount.NetMinor,
 		GrossPrice: model.TXBMoney(grossMinor), Discount: model.TXBMoney(discount.DiscountMinor), NetPrice: model.TXBMoney(discount.NetMinor),
 		EffectiveAt: validFrom, ExpiresAt: validFrom.AddDate(0, 0, combo.ValidityDays), Queued: validFrom.After(now), AddonSquadUUIDs: addonUUIDs,
-	}, combo, addonRows, nil
+	}
+	if _, err = bindPurchaseQuoteTx(ctx, tx, input, &quote, addonRows, now); err != nil {
+		return model.PurchaseQuote{}, model.Combo{}, nil, err
+	}
+	return quote, combo, addonRows, nil
 }

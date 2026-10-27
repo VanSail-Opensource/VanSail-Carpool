@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
-func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product string, nodes []string) (float64, float64, bool, error) {
+func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product, purchase string, nodes []string, now time.Time) (float64, float64, bool, error) {
 	var raw string
 	var coverage int
-	err := tx.QueryRowContext(ctx, `SELECT features_json,coverage_bps FROM pricing_features WHERE entity_type='user' AND entity_id=? ORDER BY day DESC LIMIT 1`, user).Scan(&raw, &coverage)
+	err := tx.QueryRowContext(ctx, `SELECT features_json,coverage_bps FROM pricing_features WHERE entity_type='user' AND entity_id=? AND watermark>=? AND watermark<=? ORDER BY day DESC LIMIT 1`, user, pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now)).Scan(&raw, &coverage)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, 0, false, nil
 	}
@@ -30,19 +31,39 @@ func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product st
 	}
 	cost := 0.0
 	complete := coverage >= 8000
-	for _, node := range nodes {
-		var cycleCost, capacity float64
-		if err = tx.QueryRowContext(ctx, `SELECT cycle_cost_minor,capacity_bytes FROM pricing_cost_metadata WHERE node_id=?`, node).Scan(&cycleCost, &capacity); errors.Is(err, sql.ErrNoRows) {
-			complete = false
-			continue
-		} else if err != nil {
+	day := now.UTC().Truncate(24 * time.Hour)
+	rows, err := tx.QueryContext(ctx, `WITH usage AS (SELECT u.node_id,SUM(u.upload_bytes+u.download_bytes) AS total,SUM(CASE WHEN t.purchase_id=? THEN u.upload_bytes+u.download_bytes ELSE 0 END) AS owned FROM xnode_daily_usage u LEFT JOIN xnode_periods t ON t.id=u.period_id WHERE u.date>=? AND u.date<? GROUP BY u.node_id) SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,u.total,u.owned FROM pricing_cost_metadata c LEFT JOIN usage u ON u.node_id=c.node_id WHERE c.effective_at<=? ORDER BY c.node_id LIMIT 4097`, purchase, day.AddDate(0, 0, -30).Format(time.DateOnly), day.Format(time.DateOnly), pricingStamp(now))
+	if err != nil {
+		return 0, 0, false, err
+	}
+	defer rows.Close()
+	type evidence struct {
+		cost, cycle  float64
+		total, owned sql.NullFloat64
+	}
+	all := map[string]evidence{}
+	for rows.Next() {
+		var node string
+		var e evidence
+		if err = rows.Scan(&node, &e.cost, &e.cycle, &e.total, &e.owned); err != nil {
 			return 0, 0, false, err
 		}
-		if capacity <= 0 {
+		if len(all) >= 4096 {
+			return 0, 0, false, ErrConflict
+		}
+		all[node] = e
+	}
+	if err = rows.Err(); err != nil {
+		return 0, 0, false, err
+	}
+	for _, node := range nodes {
+		e, ok := all[node]
+		if !ok || e.cycle <= 0 || !e.total.Valid || e.total.Float64 <= 0 || !e.owned.Valid || e.owned.Float64 <= 0 {
 			complete = false
 			continue
 		}
-		cost += feature.PerNode[node] / 7 * float64(days) * cycleCost / capacity
+		cost += e.cost / e.cycle * float64(days) * min(1, e.owned.Float64/e.total.Float64)
 	}
+
 	return cost, float64(min(feature.Renewals, 3)), complete, nil
 }

@@ -298,3 +298,5 @@ provides browser-only admin preset inventory and optimistic writes.
 - `api-v1-dashboard-predictions.yaml`: Member personal predictions.
 
 - `api-v1-subscription-hosts-id-name.yaml`: Owner host-name write contract.
+
+- `api-v1-admin-pricing-health.yaml`: Lightweight authorized node-health projection for foreground administrative polling.

@@ -46,6 +46,10 @@ export type PurchaseAddonQuote = DeepReadonly<components['schemas']['PurchaseAdd
 export type AutoRenewal = DeepReadonly<components['schemas']['AutoRenewal']>
 export type AutoRenewalFailure = DeepReadonly<components['schemas']['AutoRenewalFailure']>
 export interface PurchaseQuote {
+  quoteVersion?: string
+  quoteValidUntil?: string
+  pricingDecision?: components["schemas"]["PricingDecision"]
+  renewalDecision?: components["schemas"]["PricingDecision"]
   comboId: string
   comboName: string
   grossPrice: Money

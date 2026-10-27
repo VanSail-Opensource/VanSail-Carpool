@@ -35,6 +35,11 @@ func (s *Service) QuoteAddons(ctx context.Context, user model.User, purchaseID s
 
 // AddAddons applies an owned active purchase's selected optional squads.
 func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID string, addonIDs []string, activationCodes map[string]string, idempotencyKey string, coupon ...string) (model.Purchase, error) {
+	return s.AddAddonsWithQuote(ctx, user, purchaseID, addonIDs, activationCodes, idempotencyKey, "", coupon...)
+}
+
+// AddAddonsWithQuote requires the reviewed amount for dynamically priced additions.
+func (s *Service) AddAddonsWithQuote(ctx context.Context, user model.User, purchaseID string, addonIDs []string, activationCodes map[string]string, idempotencyKey, quoteVersion string, coupon ...string) (model.Purchase, error) {
 	if user.OnboardingState != "complete" {
 		return model.Purchase{}, errors.New("onboarding is incomplete")
 	}
@@ -51,7 +56,7 @@ func (s *Service) AddAddons(ctx context.Context, user model.User, purchaseID str
 	if !ok {
 		return model.Purchase{}, errors.New("purchase add-ons are unavailable")
 	}
-	return repository.AddPurchaseAddons(ctx, database.PurchaseAddonInput{UserID: user.ID, PurchaseID: purchaseID, CouponGrantID: firstAddonCoupon(coupon),
+	return repository.AddPurchaseAddons(ctx, database.PurchaseAddonInput{QuoteVersion: quoteVersion, UserID: user.ID, PurchaseID: purchaseID, CouponGrantID: firstAddonCoupon(coupon),
 		AddonSquadIDs: addonIDs, SquadActivationCodes: activationCodes, IdempotencyKey: idempotencyKey}, s.now().UTC())
 }
 

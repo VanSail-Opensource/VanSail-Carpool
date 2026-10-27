@@ -80,6 +80,12 @@ export function formatDateTime(value?: RFC3339): string {
   }).format(new Date(value))
 }
 
+export function formatAccountingDay(value: string): string {
+  const date = Date.parse(value)
+  if (!Number.isFinite(date)) return t('common.notAvailable')
+  return new Intl.DateTimeFormat(getLocale(), { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(date)
+}
+
 export function moneyFromTxbInput(value: string): string {
   const normalized = value.trim()
   if (!/^\d+(?:\.\d{0,2})?$/.test(normalized)) return ''

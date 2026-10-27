@@ -17,6 +17,7 @@ import (
 
 // PurchaseAddonInput contains a requested active-term squad addition.
 type PurchaseAddonInput struct {
+	QuoteVersion         string
 	CouponGrantID        string
 	UserID               string
 	PurchaseID           string
@@ -43,6 +44,7 @@ func (s *Store) retryAttempt_quotePurchaseAddons(ctx context.Context, input Purc
 
 // AddPurchaseAddons atomically debits the price, records squads, and queues reconciliation.
 func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
+	ctx = pricingFreshContext(ctx)
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	fingerprint, err := normalizeAndFingerprintPurchaseAddons(&input)
 	if err != nil {
@@ -83,6 +85,11 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	if err != nil {
 		return model.Purchase{}, err
 	}
+
+	if versionErr := validateReviewedQuote(input.QuoteVersion, quote.QuoteVersion, quote.RequiresQuoteVersion); versionErr != nil {
+		return model.Purchase{}, versionErr
+	}
+
 	products := make([]model.SquadProduct, 0, len(addons))
 	for _, addon := range addons {
 		products = append(products, addon.product)

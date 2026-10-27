@@ -125,7 +125,13 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 	} else {
 		addIDs(column(d.User), s.Users, "user")
 		addIDs(column(d.Node), s.Nodes, "node")
-		addIDs(column(d.Product), s.Products, "product")
+		if len(s.Products) > 0 {
+			condition, bindings := pricingTypedProductScope(d, s.Products)
+			if condition != "" {
+				conditions = append(conditions, condition)
+				args = append(args, bindings...)
+			}
+		}
 	}
 	if d.Date != "" && !d.Shared {
 		var from, until any = pricingStamp(s.From), pricingStamp(s.Until)

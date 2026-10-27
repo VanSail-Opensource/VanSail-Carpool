@@ -11,6 +11,9 @@ import (
 )
 
 func pricingExposureInputs(ctx context.Context, q pricingReader, user string, now time.Time) (pricing.ResponseObservation, int, string, error) {
+	if batch, ok := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch); ok && batch.User == user {
+		return batch.Observation, batch.FeatureComplete, batch.Watermark, nil
+	}
 	var raw, watermark string
 	err := q.QueryRowContext(ctx, `SELECT features_json,watermark FROM pricing_features WHERE entity_type='user' AND entity_id=? AND watermark<=? AND watermark>=? ORDER BY day DESC LIMIT 1`, user, pricingStamp(now), pricingStamp(now.Add(-48*time.Hour))).Scan(&raw, &watermark)
 	if errors.Is(err, sql.ErrNoRows) {

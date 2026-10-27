@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { PricingHealth } from '@/api/pricingAnalysis'
 import MetricLineChart from '@/components/common/MetricLineChart.vue'
 import { useMetricSamples } from '@/composables/useMetricSamples'
@@ -7,9 +7,12 @@ import { useI18n } from '@/i18n'
 const props = defineProps<{ health: PricingHealth[] }>()
 const { t } = useI18n()
 const samples = useMetricSamples()
-watch(() => props.health, nodes => {
+const selected = shallowRef('')
+watch(() => props.health, nodes => { if (!nodes.some(node => node.nodeId === selected.value)) selected.value = nodes[0]?.nodeId ?? '' }, { immediate: true })
+const selectedNode = computed(() => props.health.find(node => node.nodeId === selected.value))
+watch(selectedNode, node => {
   const values: Record<string, number> = {}
-  for (const node of nodes) { if (node.state !== 'TELEMETRY_STALE') { values[`${node.nodeId}:cpu`] = node.cpu; values[`${node.nodeId}:memory`] = node.memory } }
+  if (node && node.state !== 'TELEMETRY_STALE') { values[`${node.nodeId}:cpu`] = node.cpu; values[`${node.nodeId}:memory`] = node.memory }
   samples.append(Date.now(), values)
 }, { immediate: true })
 const columns = computed(() => [{ accessorKey: 'nodeId', header: t('pricing.node') }, { id: 'state', header: t('adminWorkspace.status') }, { id: 'cpu', header: t('pricing.cpu') }, { id: 'memory', header: t('pricing.memory') }])
@@ -24,7 +27,8 @@ const columns = computed(() => [{ accessorKey: 'nodeId', header: t('pricing.node
       <template #memory-cell="{ row }">{{ row.original.state === 'TELEMETRY_STALE' ? t('common.notAvailable') : `${row.original.memory.toFixed(1)}%` }}</template>
       <template #empty>{{ t('pricing.noNodes') }}</template>
     </UTable>
-    <section v-for="node in health" :key="node.nodeId"><h3>{{ node.nodeId }}</h3><div class="pricing-operations__charts"><MetricLineChart :samples="samples.series.value[`${node.nodeId}:cpu`] ?? []" :label="t('pricing.cpu')" unit="percent" /><MetricLineChart :samples="samples.series.value[`${node.nodeId}:memory`] ?? []" :label="t('pricing.memory')" unit="percent" /></div></section>
+    <UFormField v-if="health.length" :label="t('pricing.node')"><USelect v-model="selected" :items="health.map(node => ({ value: node.nodeId, label: node.nodeId }))" class="w-full max-w-sm" /></UFormField>
+    <section v-if="selectedNode" :key="selected"><div class="pricing-operations__charts"><MetricLineChart :samples="samples.series.value[`${selected}:cpu`] ?? []" :label="t('pricing.cpu')" unit="percent" /><MetricLineChart :samples="samples.series.value[`${selected}:memory`] ?? []" :label="t('pricing.memory')" unit="percent" /></div></section>
   </section>
 </template>
 <style scoped>

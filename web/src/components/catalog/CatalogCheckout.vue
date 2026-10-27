@@ -14,6 +14,7 @@ const props = defineProps<{
   squads: readonly SquadProduct[]
   coupon: CouponGrant | null
   quote: DeepReadonly<PurchaseQuote> | null
+  quoteReady?: boolean
   quoting: boolean
   error?: string | null
   purchasing: boolean
@@ -71,13 +72,18 @@ function goToBalance(): void { void router.push({ path: '/home', query: { topUp:
         </div>
         <div class="catalog-checkout__details">
           <div v-if="quote" class="catalog-checkout__line">
-            <span>{{ $t('catalog.basePrice') }}</span>
+            <span>{{ $t('pricing.personalGross') }}</span>
             <strong>{{ formatCatalogMoney(quote.grossPrice) }}</strong>
           </div>
           <div v-if="quote" class="catalog-checkout__line">
             <span>{{ $t('catalog.couponSavings') }}</span>
             <strong>{{ formatCatalogMoney(quote.discount) }}</strong>
           </div>
+          <details v-if="quote?.pricingDecision?.dynamicEnabled">
+            <summary>{{ $t('pricing.bestOwnedEstimate') }}</summary>
+            <p>{{ formatCatalogMoney(quote.pricingDecision.netPrice) }}</p>
+            <small>{{ $t('pricing.estimateHint') }}</small>
+          </details>
           <div v-if="quote" class="catalog-checkout__line">
             <span>{{ $t('catalog.validity') }}</span>
             <strong>{{ formatDate(quote.effectiveAt) }} {{ $t('common.rangeSeparator') }} {{ formatDate(quote.expiresAt) }}</strong>
@@ -107,7 +113,7 @@ function goToBalance(): void { void router.push({ path: '/home', query: { topUp:
     <USkeleton v-if="quoting" class="h-16" />
     <div class="catalog-checkout__actions">
       <UButton v-if="needsBalance" block trailing-icon="i-ph-plus" :label="$t('catalog.addBalance')" data-haptic="navigate" @click="goToBalance" />
-      <UButton v-else block class="catalog-checkout__confirm" :disabled="purchasing || !quote || quote.accessibleNodes.length === 0" :loading="purchasing" :label="purchasing ? $t('catalog.confirming') : $t('catalog.confirmPurchase')" data-haptic="confirm" @click="emit('confirm')" />
+      <UButton v-else block class="catalog-checkout__confirm" :disabled="purchasing || quoteReady === false || !quote || quote.accessibleNodes.length === 0" :loading="purchasing" :label="purchasing ? $t('catalog.confirming') : $t('catalog.confirmPurchase')" data-haptic="confirm" @click="emit('confirm')" />
     </div>
   </section>
 </template>

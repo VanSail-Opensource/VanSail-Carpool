@@ -26,6 +26,7 @@ PurchaseRequest:
   additionalProperties: false
   required: [comboId, addonSquadProductIds]
   properties:
+    quoteVersion: { type: string, maxLength: 64, description: Opaque reviewed basket version; required when committing dynamic prices. }
     comboId:
       $ref: '../../openapi.yaml#/components/schemas/ID'
     addonSquadProductIds:
@@ -49,6 +50,8 @@ PurchaseQuote:
   additionalProperties: false
   required: [comboId, comboName, grossPrice, discount, netPrice, effectiveAt, expiresAt, queued, addonSquadUuids, accessibleNodes]
   properties:
+    quoteVersion: { type: string, maxLength: 64, description: Opaque reviewed basket version; required when committing dynamic prices. }
+    quoteValidUntil: { type: string, format: date-time, description: Quote validity; distinct from entitlement expiry. }
     renewalDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     pricingDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     comboId: { $ref: '../../openapi.yaml#/components/schemas/ID' }
@@ -72,6 +75,7 @@ PurchaseAddonRequest:
   additionalProperties: false
   required: [addonSquadProductIds]
   properties:
+    quoteVersion: { type: string, maxLength: 64, description: Opaque reviewed basket version; required when committing dynamic prices. }
     couponGrantId: {"type":"string","description":"Optional explicit wallet coupon applied once to the prorated addition."}
     addonSquadProductIds:
       type: array
@@ -91,6 +95,8 @@ PurchaseAddonQuote:
   additionalProperties: false
   required: [purchaseId, price, expiresAt, addonSquadUuids]
   properties:
+    quoteVersion: { type: string, maxLength: 64, description: Opaque reviewed basket version; required when committing dynamic prices. }
+    quoteValidUntil: { type: string, format: date-time, description: Quote validity; distinct from entitlement expiry. }
     discount: {"$ref":"../../openapi.yaml#/components/schemas/Money"}
     grossPrice: {"$ref":"../../openapi.yaml#/components/schemas/Money"}
     purchaseId: { $ref: '../../openapi.yaml#/components/schemas/ID' }

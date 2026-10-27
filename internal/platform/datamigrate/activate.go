@@ -77,5 +77,5 @@ func Activate(ctx context.Context, target *sql.DB, key []byte) error {
 
 func bootstrapCounts() (map[string]int64, error) {
 	versions, err := database.MigrationVersions()
-	return map[string]int64{"affiliate_config_current": 1, "affiliate_config_versions": 1, "affiliate_tiers": 1, "node_compensation_config": 1, "onboarding_content": 2, "payment_profiles": 2, "schema_migrations": int64(len(versions)), "txb_limits": 1, "xnode_compile_revision": 1, "xnode_firewall_clock": 1}, err
+	return map[string]int64{"affiliate_config_current": 1, "affiliate_config_versions": 1, "affiliate_tiers": 1, "node_compensation_config": 1, "onboarding_content": 2, "payment_profiles": 2, "pricing_worker_watermark": 1, "schema_migrations": int64(len(versions)), "txb_limits": 1, "xnode_compile_revision": 1, "xnode_firewall_clock": 1}, err
 }

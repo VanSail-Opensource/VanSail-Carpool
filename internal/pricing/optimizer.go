@@ -16,6 +16,7 @@ type OptimizationInputs struct {
 	Model              ResponseModel
 	ForecastValidated  bool
 	DiscountAuthorized bool
+	Support            *PriceSupport
 }
 
 type PriceCandidate struct {
@@ -54,8 +55,9 @@ func Optimize(in OptimizationInputs) (PriceCandidate, []PriceCandidate, error) {
 		logPrice := math.Log(float64(max(1, price)) / float64(max(1, in.Policy.FixedPrice)))
 		prob := in.Model.Predict(ResponseObservation{LogPrice: logPrice})
 		revenue := float64(price) * in.SalesUnits * prob
-		eligible := revenue >= in.CostMinor && in.Model.Validated && in.ForecastValidated
-		c := PriceCandidate{Price: price, Probability: prob, Revenue: revenue, Contribution: revenue - in.CostMinor, Eligible: eligible}
+		contribution := prob * (float64(price)*in.SalesUnits - in.CostMinor)
+		eligible := contribution >= 0 && in.Model.Validated && in.ForecastValidated && (in.Support == nil || in.Support.Allows(price, in.Policy.FixedPrice, false))
+		c := PriceCandidate{Price: price, Probability: prob, Revenue: revenue, Contribution: contribution, Eligible: eligible}
 		out = append(out, c)
 		if eligible && c.Contribution > best.Contribution {
 			best = c
@@ -63,6 +65,11 @@ func Optimize(in OptimizationInputs) (PriceCandidate, []PriceCandidate, error) {
 	}
 	if math.IsInf(best.Contribution, -1) {
 		return best, out, ModelUnvalidated
+	}
+	if stable, ok := StableCandidate(in.Current, out); ok {
+		best = stable
+	} else {
+		return PriceCandidate{Price: in.Current}, out, ModelUnvalidated
 	}
 	return best, out, nil
 }

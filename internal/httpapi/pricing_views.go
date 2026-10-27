@@ -58,7 +58,7 @@ func (s *Server) pricingData(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadRequest, "PRICING_INVALID_REQUEST", "Unknown pricing dataset.")
 		return
 	}
-	scope := database.PricingExportScope{IncludeUsers: true, IncludeFinancial: true}
+	scope := database.PricingExportScope{IncludeUsers: true, IncludeFinancial: true, Format: "jsonl"}
 	if value := r.URL.Query().Get("user"); value != "" {
 		scope.Users = []string{value}
 	}
@@ -84,12 +84,16 @@ func (s *Server) pricingData(w http.ResponseWriter, r *http.Request) {
 		}
 		scope.Until = at
 	}
-	items, err := s.deps.Store.ReadPricingDataset(r.Context(), name, scope, 500)
+	if err := scope.Validate(); err != nil {
+		s.pricingError(w, r, err)
+		return
+	}
+	page, err := s.deps.Store.ReadPricingDatasetPage(r.Context(), name, scope, 100, r.URL.Query().Get("cursor"))
 	if err != nil {
 		s.pricingError(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": items, "limit": 500, "truncated": len(items) == 500})
+	writeJSON(w, http.StatusOK, page)
 }
 
 func (s *Server) pricingIntervention(w http.ResponseWriter, r *http.Request) {
@@ -119,4 +123,9 @@ func (s *Server) pricingCancelIntervention(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// pricingHealth reads memory-only projections and never loads analytical datasets.
+func (s *Server) pricingHealth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"health": s.deps.Store.PricingHealth().Snapshot(time.Now().UTC()), "observedAt": time.Now().UTC()})
 }

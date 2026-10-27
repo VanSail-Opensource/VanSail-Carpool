@@ -1,7 +1,7 @@
 {
   "userPrices": {
     "title": "Personal pricing and forecasts",
-    "hint": "All catalog products are available below through pagination. Pending values are provisional; checkout revalidates decisions, coupons, and settlement funds.",
+    "hint": "The coupon estimate uses the best eligible owned coupon once. Checkout shows the selected coupon and authoritative final charge. Pending or stale estimates are unavailable.",
     "status": "Decision",
     "statuses": {
       "PENDING": "Pending",
@@ -17,7 +17,7 @@
     "publicPrice": "Public base",
     "personalPrice": "Personal base",
     "campaignPrice": "Campaign price",
-    "netPrice": "After best applicable coupon",
+    "netPrice": "Best owned coupon estimate",
     "coupons": "Applicable coupons",
     "noCoupons": "No applicable coupons",
     "couponTerms": "{kind} · {mode}: {value} · cap: {cap} · expires: {expires}",

@@ -60,3 +60,5 @@ The existing columns and immutable financial records remain unchanged.
 
 - `00021_pricing_active_commands.sql`: Adds the command/status/expiry lookup index
   required by the existing source schema contract without rewriting migration 00017.
+
+- `00022_pricing_read_indexes.sql`: Paired PostgreSQL exposure-window/entity-day indexes with authoritative downgrade refusal.

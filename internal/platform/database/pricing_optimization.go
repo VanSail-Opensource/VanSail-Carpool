@@ -16,6 +16,7 @@ var errPricingPublicationRefused = errors.New("publication operationally refused
 // PricingOptimizeProduct gates publication on evidence, capacity, health, costs
 // and the current policy version. Every candidate remains exportable in its trace.
 func (s *Store) PricingOptimizeProduct(ctx context.Context, kind, product string, now time.Time) error {
+	ctx = pricingFreshContext(ctx)
 	release, slotErr := s.acquirePricingCompute()
 	if slotErr != nil {
 		return slotErr
@@ -36,6 +37,13 @@ func (s *Store) PricingOptimizeProduct(ctx context.Context, kind, product string
 	}
 	if !in.Policy.DynamicEnabled {
 		return nil
+	}
+	in.Support, err = pricingModelSupportTx(ctx, s.db, model)
+	if err != nil {
+		return err
+	}
+	if !m.Validated || in.Support.Samples < 200 {
+		return s.recordUnchangedProduct(ctx, kind, product, model, "MODEL_UNVALIDATED", now)
 	}
 	result, err := s.PricingCalculate(ctx, compute.Task{Kind: "candidate_eval_v1", Model: m, Candidates: pricing.NumericalCandidates(in)})
 	if err != nil {
@@ -97,6 +105,14 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 	if p.Version != in.Policy.Version {
 		return pricing.VersionConflict
 	}
+	// A frozen or superseded evidence model cannot authorize publication.
+	support, err := pricingModelSupportTx(ctx, tx, model)
+	if err != nil {
+		return err
+	}
+	if support.Samples < 200 {
+		return errPricingPublicationRefused
+	}
 	current, err := pricingOptimizationInputsTx(ctx, tx, p, in.Model, now)
 	if err != nil {
 		return err
@@ -114,7 +130,7 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 	if optErr != nil {
 		reason = optErr.Error()
 	}
-	trace, err := json.Marshal(map[string]any{"reason": reason, "calculationComplete": true, "candidates": candidates, "demandGB": in.DemandGB, "dailyCostMinor": in.CostMinor, "capacityGB": in.CapacityGB, "committedGB": in.CommittedGB, "salesUnits": in.SalesUnits, "modelValidated": in.Model.Validated, "forecastValidated": in.ForecastValidated, "automaticMaxIncreaseBps": p.MaxIncreaseBPS, "automaticMaxDiscountBps": p.MaxDiscountBPS, "experimentationEnabled": false})
+	trace, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "reason": reason, "calculationComplete": true, "candidates": candidates, "demandGB": in.DemandGB, "dailyCostMinor": in.CostMinor, "capacityGB": in.CapacityGB, "committedGB": in.CommittedGB, "salesUnits": in.SalesUnits, "modelValidated": in.Model.Validated, "forecastValidated": in.ForecastValidated, "automaticMaxIncreaseBps": p.MaxIncreaseBPS, "automaticMaxDiscountBps": p.MaxDiscountBPS, "experimentationEnabled": false})
 	if err != nil {
 		return err
 	}

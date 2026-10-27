@@ -1686,6 +1686,8 @@ CREATE INDEX pricing_contracts_user ON pricing_contracts(user_id,purchase_id);
 
 CREATE INDEX pricing_decisions_product ON pricing_decisions(product_type,product_id,generated_at);
 
+CREATE INDEX pricing_features_entity_day ON pricing_features(entity_type,entity_id,day DESC);
+
 CREATE INDEX pricing_features_hash ON pricing_features(snapshot_hash,watermark);
 
 CREATE INDEX pricing_forecasts_target ON pricing_forecast_batches(target_until,batch_key);
@@ -1695,6 +1697,8 @@ CREATE INDEX pricing_incidents_scope ON pricing_operational_incidents(scope_type
 CREATE INDEX pricing_offers_expiry ON pricing_offers(expires_at,id);
 
 CREATE INDEX pricing_offers_observed ON pricing_offers(exposed_at,model_version);
+
+CREATE INDEX pricing_offers_product_window ON pricing_offers(product_type,product_id,exposed_at DESC,id DESC);
 
 CREATE INDEX pricing_overrides_scope ON pricing_admin_overrides(scope_type,scope_id,status,expires_at);
 

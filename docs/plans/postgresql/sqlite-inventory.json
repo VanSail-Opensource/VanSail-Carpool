@@ -108,7 +108,8 @@
     "105_pricing.sql",
     "106_retire_rollover.sql",
     "107_personal_pricing_decisions.sql",
-    "108_host_name_overrides.sql"
+    "108_host_name_overrides.sql",
+    "109_pricing_read_indexes.sql"
   ],
   "objects": [
     {
@@ -1439,6 +1440,12 @@
     },
     {
       "type": "index",
+      "name": "pricing_features_entity_day",
+      "table": "pricing_features",
+      "sql": "CREATE INDEX pricing_features_entity_day ON pricing_features(entity_type,entity_id,day DESC)"
+    },
+    {
+      "type": "index",
       "name": "pricing_features_hash",
       "table": "pricing_features",
       "sql": "CREATE INDEX pricing_features_hash ON pricing_features(snapshot_hash,watermark)"
@@ -1466,6 +1473,12 @@
       "name": "pricing_offers_observed",
       "table": "pricing_offers",
       "sql": "CREATE INDEX pricing_offers_observed ON pricing_offers(exposed_at,model_version)"
+    },
+    {
+      "type": "index",
+      "name": "pricing_offers_product_window",
+      "table": "pricing_offers",
+      "sql": "CREATE INDEX pricing_offers_product_window ON pricing_offers(product_type,product_id,exposed_at DESC,id DESC)"
     },
     {
       "type": "index",
@@ -9433,7 +9446,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 109,
+      "rows": 110,
       "columns": [
         {
           "name": "version",

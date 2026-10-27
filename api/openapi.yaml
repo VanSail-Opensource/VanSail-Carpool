@@ -14,6 +14,7 @@ paths:
   /api/v1/admin/pricing/interventions: { $ref: "./paths/api-v1-admin-pricing-interventions.yaml" }
   /api/v1/admin/pricing/interventions/version: { $ref: "./paths/api-v1-admin-pricing-interventions-version.yaml" }
   /api/v1/admin/pricing/history: { $ref: "./paths/api-v1-admin-pricing-history.yaml" }
+  /api/v1/admin/pricing/health: { $ref: "./paths/api-v1-admin-pricing-health.yaml" }
   /api/v1/admin/pricing/data: { $ref: "./paths/api-v1-admin-pricing-data.yaml" }
   /api/v1/admin/pricing/products/{kind}/{id}: { $ref: "./paths/api-v1-admin-pricing-products-kind-id.yaml" }
   /api/v1/admin/pricing: { $ref: "./paths/api-v1-admin-pricing.yaml" }
@@ -345,5 +346,4 @@ components:
     DatabaseCompatibilityUpdate: {"$ref":"./components/schemas/schemas-11.yaml#/DatabaseCompatibilityUpdate"}, DatabaseMutationReview: {"$ref":"./components/schemas/schemas-11.yaml#/DatabaseMutationReview"}, DatabaseMutationResult: {"$ref":"./components/schemas/schemas-11.yaml#/DatabaseMutationResult"},
     RestoreRequest: {"$ref":"./components/schemas/schemas-11.yaml#/RestoreRequest"}, RestoreOperation: {"$ref":"./components/schemas/schemas-11.yaml#/RestoreOperation"}, BackupRun: {"$ref":"./components/schemas/schemas-11.yaml#/BackupRun"},
     JobStatus: {"$ref":"./components/schemas/schemas-11.yaml#/JobStatus"}, Job: {"$ref":"./components/schemas/schemas-11.yaml#/Job"}, JobPage: {"$ref":"./components/schemas/schemas-11.yaml#/JobPage"},
-    AuditEvent: {"$ref":"./components/schemas/schemas-12.yaml#/AuditEvent"}, AuditPage: {"$ref":"./components/schemas/schemas-12.yaml#/AuditPage"}, TelegramUpdate: {"$ref":"./components/schemas/schemas-12.yaml#/TelegramUpdate"},
-    FlexibleDecimal: {"$ref":"./components/schemas/schemas-12.yaml#/FlexibleDecimal"}, BEPusdtNotification: {"$ref":"./components/schemas/schemas-12.yaml#/BEPusdtNotification"}, BEPusdtUnsignedNotification: {"$ref":"./components/schemas/schemas-12.yaml#/BEPusdtUnsignedNotification"}, HealthStatus: {"$ref":"./components/schemas/schemas-12.yaml#/HealthStatus"}, RuntimeReadiness: {"$ref":"./components/schemas/schemas-12.yaml#/RuntimeReadiness"} }
+    AuditEvent: {"$ref":"./components/schemas/schemas-12.yaml#/AuditEvent"}, AuditPage: {"$ref":"./components/schemas/schemas-12.yaml#/AuditPage"}, TelegramUpdate: {"$ref":"./components/schemas/schemas-12.yaml#/TelegramUpdate"}, FlexibleDecimal: {"$ref":"./components/schemas/schemas-12.yaml#/FlexibleDecimal"}, BEPusdtNotification: {"$ref":"./components/schemas/schemas-12.yaml#/BEPusdtNotification"}, BEPusdtUnsignedNotification: {"$ref":"./components/schemas/schemas-12.yaml#/BEPusdtUnsignedNotification"}, HealthStatus: {"$ref":"./components/schemas/schemas-12.yaml#/HealthStatus"}, RuntimeReadiness: {"$ref":"./components/schemas/schemas-12.yaml#/RuntimeReadiness"} }

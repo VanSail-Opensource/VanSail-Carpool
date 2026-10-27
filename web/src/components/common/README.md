@@ -19,3 +19,5 @@
 `MetricLineChart.vue` renders bounded native SVG rate, count, byte-total and percentage series with localized captions and a fixed 0-100 percentage scale.
 
 - `LivePrice.vue`: Compact localized indicator beside an applicable dynamic amount.
+
+- `PricingQuoteNotice.vue`: Localized calculating, delayed, stale and unavailable quote states, manual retry and precise validity.

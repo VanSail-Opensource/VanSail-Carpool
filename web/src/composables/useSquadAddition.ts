@@ -1,3 +1,4 @@
+import { usePricingQuote } from './usePricingQuote'
 import { restoreRef } from '@/api/cache/restore'
 import { computed, readonly, shallowRef, watch } from 'vue'
 
@@ -20,11 +21,8 @@ export function useSquadAddition(options: SquadAdditionOptions) {
   const selectedCouponGrantId = shallowRef<string | null>(null)
   const catalog = shallowRef<Catalog | null>(null)
   const selectedSquadIds = shallowRef<string[]>([])
-  const quote = shallowRef<import('@/api/types').PurchaseAddonQuote | null>(null)
-  const quoteFingerprint = shallowRef<string | null>(null)
   const purchase = shallowRef<Purchase | null>(null)
   const loading = shallowRef(false)
-  const quoting = shallowRef(false)
   const purchasing = shallowRef(false)
   const needsBalance = shallowRef(false)
   const error = shallowRef<string | null>(null)
@@ -42,15 +40,16 @@ export function useSquadAddition(options: SquadAdditionOptions) {
       (options.comboId && coupon.eligibleComboIds.includes(options.comboId())) ||
       selectedSquads.value.some(squad => coupon.eligibleSquadIds.includes(squad.id) || coupon.eligibleSquadIds.includes(squad.groupId)))
   }))
-  const fingerprint = computed(() => JSON.stringify([[...selectedSquadIds.value].sort(), selectedCouponGrantId.value]))
+  const fingerprint = computed(() => JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), selectedCouponGrantId.value]))
   watch(selectedCouponGrantId, () => { clearQuote(); if (selectedSquadIds.value.length) void refreshQuote() })
   watch(eligibleCoupons, values => { if (selectedCouponGrantId.value && !values.some(grant => grant.id === selectedCouponGrantId.value)) selectedCouponGrantId.value = null })
-  const quoteUsable = computed(() => quote.value !== null && quoteFingerprint.value === fingerprint.value)
-
-  function clearQuote(): void {
-    quote.value = null
-    quoteFingerprint.value = null
-  }
+  const { quote, quoting, quoteUsable, quoteStatus, clearQuote, refreshQuote } = usePricingQuote({
+    selection: () => selectedSquadIds.value.length ? { purchaseId: options.purchaseId(), squads: [...selectedSquadIds.value], coupon: selectedCouponGrantId.value ?? undefined } : null,
+    fingerprint: () => fingerprint.value,
+    request: (selection, signal) => api.quotePurchaseAddons(selection.purchaseId, selection.squads, selection.coupon, signal),
+    onSuccess: () => { error.value = null; needsBalance.value = false },
+    onError: caught => { error.value = localizedError(caught, 'errors.quoteFailed'); if (!(caught instanceof ApiError && caught.code === 'PRICING_DECISION_PENDING')) notifyHaptic('error') },
+  })
 
   function reset(): void {
     selectedCouponGrantId.value = null
@@ -93,42 +92,23 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     }
   }
 
-  async function refreshQuote(): Promise<boolean> {
-    if (!selectedSquadIds.value.length) return false
-    const selectedFingerprint = fingerprint.value
-    quoting.value = true
-    error.value = null
-    needsBalance.value = false
-    try {
-      const response = await api.quotePurchaseAddons(options.purchaseId(), selectedSquadIds.value, selectedCouponGrantId.value ?? undefined)
-      if (selectedFingerprint !== fingerprint.value) return false
-      quote.value = response
-      quoteFingerprint.value = selectedFingerprint
-      return true
-    } catch (caught) {
-      if (selectedFingerprint === fingerprint.value) error.value = localizedError(caught, 'errors.quoteFailed')
-      notifyHaptic('error')
-      return false
-    } finally {
-      quoting.value = false
-    }
-  }
-
   async function confirmPurchase(squadActivationCodes: Record<string, string>): Promise<boolean> {
     if (purchasing.value || !selectedSquadIds.value.length) return false
-    if (!quoteUsable.value && !(await refreshQuote())) return false
+    if (!quoteUsable.value && !pendingAttempt) { await refreshQuote(); return false }
     purchasing.value = true
     error.value = null
     needsBalance.value = false
     try {
       const attemptFingerprint = JSON.stringify([options.purchaseId(), [...selectedSquadIds.value].sort(), selectedCouponGrantId.value, Object.entries(squadActivationCodes).sort(([a], [b]) => a.localeCompare(b))])
       if (pendingAttempt?.fingerprint !== attemptFingerprint) pendingAttempt = { fingerprint: attemptFingerprint, key: createUuid() }
-      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes, selectedCouponGrantId.value ?? undefined)
+      purchase.value = await api.addPurchaseAddons(options.purchaseId(), selectedSquadIds.value, pendingAttempt.key, squadActivationCodes, selectedCouponGrantId.value ?? undefined, quote.value?.quoteVersion)
       pendingAttempt = undefined
       notifyHaptic('success')
       return true
     } catch (caught) {
-      if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
+      if (caught instanceof ApiError && caught.code === 'PRICING_QUOTE_CHANGED') {
+        clearQuote(); await refreshQuote(); error.value = t('pricing.quoteChanged')
+      } else if (caught instanceof ApiError && caught.code === 'INSUFFICIENT_BALANCE') {
         needsBalance.value = true
         error.value = t('errors.purchaseBalance')
       } else {
@@ -145,6 +125,6 @@ export function useSquadAddition(options: SquadAdditionOptions) {
     couponGrants: readonly(couponGrants), selectedCouponGrantId, eligibleCoupons,
     catalog: readonly(catalog), selectedSquadIds: readonly(selectedSquadIds), quote: readonly(quote), purchase: readonly(purchase),
     loading: readonly(loading), quoting: readonly(quoting), purchasing: readonly(purchasing), needsBalance: readonly(needsBalance), error: readonly(error),
-    visibleSquads, selectedSquads, activationSquads, quoteUsable, reset, toggleSquad, load, refreshQuote, confirmPurchase,
+    visibleSquads, selectedSquads, activationSquads, quoteUsable, quoteStatus, reset, toggleSquad, load, refreshQuote, confirmPurchase,
   }
 }

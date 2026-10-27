@@ -96,18 +96,19 @@ export const api = {
   getStatistics: (signal?: AbortSignal) => request<StatisticsSnapshot>('/api/v1/admin/statistics', { cache: 'no-store', signal }),
   getStatisticsNodes: (signal?: AbortSignal) => request<StatisticsNodesSnapshot>('/api/v1/admin/statistics/nodes', { cache: 'no-store', signal }),
   getCatalog: () => request<Catalog>('/api/v1/catalog'),
-  createPurchase: (comboId: string, squadProductIds: string[], couponGrantId: string | undefined, idempotencyKey: string, squadActivationCodes: Record<string, string> = {}) => request<Purchase>('/api/v1/purchases', {
+  createPurchase: (comboId: string, squadProductIds: string[], couponGrantId: string | undefined, idempotencyKey: string, squadActivationCodes: Record<string, string> = {}, quoteVersion?: string) => request<Purchase>('/api/v1/purchases', {
     method: 'POST',
     headers: { 'Idempotency-Key': idempotencyKey },
     body: {
       comboId,
+      ...(quoteVersion ? { quoteVersion } : {}),
       addonSquadProductIds: squadProductIds,
       ...(couponGrantId ? { couponGrantId } : {}),
       ...(Object.keys(squadActivationCodes).length > 0 ? { squadActivationCodes } : {}),
     } as PurchaseRequest & { couponGrantId?: string },
   }),
-  quotePurchase: (comboId: string, squadProductIds: string[], couponGrantId?: string) => request<PurchaseQuote>('/api/v1/purchases/quote', {
-    method: 'POST',
+  quotePurchase: (comboId: string, squadProductIds: string[], couponGrantId?: string, signal?: AbortSignal) => request<PurchaseQuote>('/api/v1/purchases/quote', {
+    method: 'POST', signal,
     body: { comboId, addonSquadProductIds: squadProductIds, couponGrantId },
   }),
   getPurchases: () => request<Paginated<Purchase>>('/api/v1/purchases'),

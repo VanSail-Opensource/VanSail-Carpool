@@ -12,12 +12,22 @@ type ForecastDay struct {
 }
 
 type ForecastConfidence struct {
-	Calibration               string   `json:"calibration"`
-	Samples                   int      `json:"samples"`
-	ObservedDays              int      `json:"observedDays"`
-	ObservedCoverageBPS       int64    `json:"observedCoverageBps"`
-	NominalIntervalBPS        int64    `json:"nominalIntervalBps"`
-	EvaluatedIntervalCoverage *float64 `json:"evaluatedIntervalCoverage"`
+	ByLead                    []ForecastLeadConfidence `json:"byLead,omitempty"`
+	Calibration               string                   `json:"calibration"`
+	Samples                   int                      `json:"samples"`
+	ObservedDays              int                      `json:"observedDays"`
+	ObservedCoverageBPS       int64                    `json:"observedCoverageBps"`
+	NominalIntervalBPS        int64                    `json:"nominalIntervalBps"`
+	EvaluatedIntervalCoverage *float64                 `json:"evaluatedIntervalCoverage"`
+}
+
+// ForecastLeadConfidence evaluates original vintages for one calendar lead only.
+type ForecastLeadConfidence struct {
+	LeadDays         int      `json:"leadDays"`
+	Samples          int      `json:"samples"`
+	Calibration      string   `json:"calibration"`
+	IntervalCoverage *float64 `json:"intervalCoverage"`
+	WAPE             *float64 `json:"wape"`
 }
 
 type PersonalForecast struct {

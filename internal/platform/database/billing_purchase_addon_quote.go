@@ -92,10 +92,11 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		if resolveErr != nil {
 			return model.PurchaseAddonQuote{}, nil, resolveErr
 		}
-		personal, decision, resolveErr := personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, []string{product.GroupID}, now, false)
+		personal, decision, resolveErr := personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, input.AddonSquadIDs, now, false)
 		if resolveErr != nil {
 			return model.PurchaseAddonQuote{}, nil, resolveErr
 		}
+		product.PricingDecision = decision
 		product.PriceTXBMinor = personal
 		price, priceErr := proratedAddonPrice(product.PriceTXBMinor, remaining, original)
 		if priceErr != nil {
@@ -118,7 +119,11 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 			return model.PurchaseAddonQuote{}, nil, err
 		}
 	}
-	return model.PurchaseAddonQuote{PurchaseID: purchase.ID, GrossPriceTXBMinor: total, DiscountTXBMinor: discount.DiscountMinor, GrossPrice: model.TXBMoney(total), Discount: model.TXBMoney(discount.DiscountMinor), PriceTXBMinor: discount.NetMinor, Price: model.TXBMoney(discount.NetMinor), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}, priced, nil
+	quote := model.PurchaseAddonQuote{PurchaseID: purchase.ID, GrossPriceTXBMinor: total, DiscountTXBMinor: discount.DiscountMinor, GrossPrice: model.TXBMoney(total), Discount: model.TXBMoney(discount.DiscountMinor), PriceTXBMinor: discount.NetMinor, Price: model.TXBMoney(discount.NetMinor), ExpiresAt: purchase.ValidUntil, AddonSquadUUIDs: uuids}
+	if _, err = bindAddonQuoteTx(ctx, tx, input, &quote, priced, now); err != nil {
+		return model.PurchaseAddonQuote{}, nil, err
+	}
+	return quote, priced, nil
 }
 
 func purchaseAddonFactsTx(ctx context.Context, tx *sql.Tx, purchaseID string, existing map[string]struct{}) error {

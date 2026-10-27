@@ -11,6 +11,19 @@ import (
 
 // PersonalizePricingCatalog shows owner decisions without wallet-based eligibility.
 func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c model.Catalog, now time.Time) (model.Catalog, error) {
+	var err error
+	ctx, err = s.pricingReadContext(ctx, user, now)
+	if err != nil {
+		return c, err
+	}
+	batch := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch)
+	enabled := false
+	for _, p := range batch.Policies {
+		enabled = enabled || p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
+	}
+	if !enabled {
+		return c, nil
+	}
 	for i := range c.Combos {
 		p := &c.Combos[i]
 		squads := []string{}
@@ -26,7 +39,7 @@ func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c mo
 		p.Price = model.TXBMoney(p.PriceTXBMinor)
 	}
 	var current string
-	err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
+	err = s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return c, err
 	}

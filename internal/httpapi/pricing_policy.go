@@ -12,6 +12,7 @@ import (
 
 func (s *Server) mountPricing(router chi.Router) {
 	router.Get("/pricing", s.pricingDashboard)
+	router.Get("/pricing/health", s.pricingHealth)
 	router.Get("/pricing/data", s.pricingData)
 	router.Get("/pricing/history", s.pricingHistory)
 	router.Get("/pricing/interventions/version", s.pricingScopeVersion)

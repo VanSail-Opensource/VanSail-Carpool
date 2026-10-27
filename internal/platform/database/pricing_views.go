@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
 // ReadPricingDataset exposes a bounded administrative view of the export registry.
@@ -17,62 +14,8 @@ func (s *Store) ReadPricingDataset(ctx context.Context, name string, scope Prici
 	return pricingCached(ctx, s, "dataset:"+string(key), 20*time.Second, func() ([]map[string]any, error) { return s.readPricingDataset(ctx, name, scope, limit) })
 }
 func (s *Store) readPricingDataset(ctx context.Context, name string, scope PricingExportScope, limit int) ([]map[string]any, error) {
-	if limit < 1 || limit > 500 {
-		limit = 100
-	}
-	var source *pricing.Dataset
-	for _, d := range pricing.Datasets() {
-		if d.Name == name {
-			v := d
-			source = &v
-			break
-		}
-	}
-	if source == nil {
-		return nil, ErrNotFound
-	}
-	query, args := pricingDatasetQuery(*source, scope)
-	if source.Date != "" {
-		parts := strings.Split(source.Date, ".")
-		query += ` ORDER BY export_rows.` + parts[len(parts)-1] + ` DESC,1 DESC`
-	} else {
-		query += ` ORDER BY 1 DESC`
-	}
-	query += ` LIMIT ?`
-	args = append(args, limit)
-	rows, err := s.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	out := []map[string]any{}
-	for rows.Next() {
-		values := make([]any, len(columns))
-		pointers := make([]any, len(columns))
-		for i := range values {
-			pointers[i] = &values[i]
-		}
-		if err = rows.Scan(pointers...); err != nil {
-			return nil, err
-		}
-		record := map[string]any{}
-		for i, c := range columns {
-			switch n := values[i].(type) {
-			case int64:
-				record[c] = strconv.FormatInt(n, 10)
-			case []byte:
-				record[c] = string(n)
-			default:
-				record[c] = n
-			}
-		}
-		out = append(out, record)
-	}
-	return out, rows.Err()
+	page, err := s.pricingDatasetPage(ctx, name, scope, limit, "")
+	return page.Items, err
 }
 
 // PricingProducts includes fixed products without persisting redundant settings.
@@ -117,6 +60,11 @@ func (s *Store) pricingProducts(ctx context.Context, cursor string) ([]map[strin
 		p := products[99]
 		next = p.kind + ":" + p.id
 	}
+	ctx, err = s.pricingReadContext(ctx, "", time.Now().UTC())
+	if err != nil {
+		return nil, "", err
+	}
+
 	out := []map[string]any{}
 	for _, p := range products {
 		policy, e := loadPricingPolicy(ctx, s.db, p.kind, p.id, p.price)
@@ -124,6 +72,9 @@ func (s *Store) pricingProducts(ctx context.Context, cursor string) ([]map[strin
 			return nil, "", e
 		}
 		out = append(out, map[string]any{"id": p.kind + ":" + p.id, "productType": p.kind, "productId": p.id, "name": p.name, "fixedPriceMinor": strconv.FormatInt(p.price, 10), "policy": policy})
+	}
+	if err = s.pricingProductReadiness(ctx, out, time.Now().UTC()); err != nil {
+		return nil, "", err
 	}
 	return out, next, nil
 }

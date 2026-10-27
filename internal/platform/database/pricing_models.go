@@ -14,7 +14,7 @@ import (
 // TrainPricingResponse fits genuine closed exposures and stores an immutable
 // model with chronological holdout diagnostics and exact source watermarks.
 func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, now time.Time) (pricing.ResponseModel, string, error) {
-	id := "response:" + kind + ":" + product + ":coupons-v3:" + now.UTC().Format("2006-01-02")
+	id := "response:" + kind + ":" + product + ":" + pricing.StrategyVersion + ":" + now.UTC().Format("2006-01-02")
 	if revision, ok := ctx.Value(pricingModelRevisionKey{}).(string); ok {
 		id += ":" + revision
 	}
@@ -28,7 +28,7 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return pricing.ResponseModel{}, id, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT features_json,outcome FROM pricing_offers WHERE product_type=? AND product_id=? AND outcome IS NOT NULL AND outcome_reason<>'INSUFFICIENT_FUNDS' AND json_extract(features_json,'$.couponFingerprint') IS NOT NULL AND CAST(json_extract(features_json,'$.complete') AS INTEGER)=1 AND NOT EXISTS(SELECT 1 FROM purchases p WHERE p.id=pricing_offers.purchase_id AND p.reward_renewal_price_minor IS NOT NULL) AND expires_at<=? AND exposed_at>=? ORDER BY exposed_at DESC,id DESC LIMIT 2048`, kind, product, pricingStamp(now), pricingStamp(now.AddDate(0, 0, -60)))
+	rows, err := s.db.QueryContext(ctx, `SELECT features_json,outcome FROM (SELECT features_json,outcome,exposed_at,id,ROW_NUMBER() OVER(PARTITION BY user_id,SUBSTR(exposed_at,1,10) ORDER BY exposed_at DESC,id DESC) AS exposure_rank FROM pricing_offers WHERE product_type=? AND product_id=? AND outcome IS NOT NULL AND outcome_reason<>'INSUFFICIENT_FUNDS' AND json_extract(features_json,'$.strategyVersion')=? AND CAST(json_extract(features_json,'$.complete') AS INTEGER)=1 AND NOT EXISTS(SELECT 1 FROM purchases p WHERE p.id=pricing_offers.purchase_id AND p.reward_renewal_price_minor IS NOT NULL) AND expires_at<=? AND exposed_at>=?) closed WHERE exposure_rank=1 ORDER BY exposed_at DESC,id DESC LIMIT 2048`, kind, product, pricing.StrategyVersion, pricingStamp(now), pricingStamp(now.AddDate(0, 0, -60)))
 	if err != nil {
 		return pricing.ResponseModel{}, "", err
 	}
@@ -78,7 +78,10 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	if m.Validated {
 		status = "VALIDATED"
 	}
-	diagnostics, _ := json.Marshal(map[string]any{"model": m, "couponSamples": couponSamples})
+	diagnostics, err := json.Marshal(map[string]any{"model": m, "couponSamples": couponSamples, "support": pricingResponseSupport(samples), "strategyVersion": pricing.StrategyVersion})
+	if err != nil {
+		return m, id, err
+	}
 	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, id, "response:"+kind+":"+product, pricingStamp(now), status, string(raw), `{"features":["intercept","logPrice/reference","activity","renewals","couponPresent","couponDiscount"],"fit":"regularized logistic","validation":"chronological holdout; minimum 200 samples; price variation; Brier improvement; bias below 0.1; nonpositive price slope"}`, pricingStamp(now), string(diagnostics))
 	return m, id, err
 }

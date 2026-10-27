@@ -107,19 +107,22 @@ type Catalog struct {
 
 // PurchaseQuote is a server-priced, non-mutating checkout preview.
 type PurchaseQuote struct {
-	PricingDecision    *PricingDecision `json:"pricingDecision,omitempty"`
-	RenewalDecision    *PricingDecision `json:"renewalDecision,omitempty"`
-	ComboID            string           `json:"comboId"`
-	ComboName          string           `json:"comboName"`
-	GrossPriceTXBMinor int64            `json:"-"`
-	DiscountTXBMinor   int64            `json:"-"`
-	NetPriceTXBMinor   int64            `json:"-"`
-	GrossPrice         Money            `json:"grossPrice"`
-	Discount           Money            `json:"discount"`
-	NetPrice           Money            `json:"netPrice"`
-	EffectiveAt        time.Time        `json:"effectiveAt"`
-	ExpiresAt          time.Time        `json:"expiresAt"`
-	Queued             bool             `json:"queued"`
-	AddonSquadUUIDs    []string         `json:"addonSquadUuids"`
-	AccessibleNodes    []ProxyNode      `json:"accessibleNodes"`
+	RequiresQuoteVersion bool             `json:"-"`
+	QuoteVersion         string           `json:"quoteVersion"`
+	QuoteValidUntil      time.Time        `json:"quoteValidUntil"`
+	PricingDecision      *PricingDecision `json:"pricingDecision,omitempty"`
+	RenewalDecision      *PricingDecision `json:"renewalDecision,omitempty"`
+	ComboID              string           `json:"comboId"`
+	ComboName            string           `json:"comboName"`
+	GrossPriceTXBMinor   int64            `json:"-"`
+	DiscountTXBMinor     int64            `json:"-"`
+	NetPriceTXBMinor     int64            `json:"-"`
+	GrossPrice           Money            `json:"grossPrice"`
+	Discount             Money            `json:"discount"`
+	NetPrice             Money            `json:"netPrice"`
+	EffectiveAt          time.Time        `json:"effectiveAt"`
+	ExpiresAt            time.Time        `json:"expiresAt"`
+	Queued               bool             `json:"queued"`
+	AddonSquadUUIDs      []string         `json:"addonSquadUuids"`
+	AccessibleNodes      []ProxyNode      `json:"accessibleNodes"`
 }

@@ -67,3 +67,5 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `forecasts.ts`: Owner/admin forecast projection and cursor-paginated per-user pricing contracts.
 
 Generated API compatibility regression: `openapiContract.test.ts`.
+
+- `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.

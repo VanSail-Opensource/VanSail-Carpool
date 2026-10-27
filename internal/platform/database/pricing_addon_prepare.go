@@ -14,7 +14,7 @@ func (s *Store) prepareAddonPricing(ctx context.Context, input PurchaseAddonInpu
 		return err
 	}
 	for _, id := range uniqueSorted(input.AddonSquadIDs) {
-		if _, err := s.PreparePersonalPricing(ctx, input.UserID, "addon", id, combo, []string{id}, now); err != nil {
+		if _, err := s.PreparePersonalPricing(ctx, input.UserID, "addon", id, combo, input.AddonSquadIDs, now); err != nil {
 			return err
 		}
 	}

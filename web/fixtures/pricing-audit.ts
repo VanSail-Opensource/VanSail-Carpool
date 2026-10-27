@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { installPricingCheckout } from './pricing-checkout'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { setExperience } from '@/utils/experience'
@@ -11,7 +12,7 @@ import PricingAudit from './PricingAudit.vue'
 import '@/styles/main.css'
 import '@/browser/styles.css'
 
-setExperience(new URLSearchParams(location.search).get('view') === 'member' ? 'miniapp' : 'browser')
+setExperience(new URLSearchParams(location.search).get('view') === 'member' || new URLSearchParams(location.search).get('view') === 'checkout' ? 'miniapp' : 'browser')
 initializeBrowserTheme()
 const params = new URLSearchParams(location.search)
 if (params.has('light')) setBrowserTheme('light')
@@ -35,6 +36,8 @@ Object.assign(window, { pricingAuditCalls: calls })
 if (view === 'member') policy = { ...policy, dynamicEnabled: true, renewalPricingMode: 'DYNAMIC', version: 1 }
 window.fetch = async (input, init) => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.origin)
+  ;(window as unknown as { pricingAuditQueries: string[] }).pricingAuditQueries ??= []
+  ;(window as unknown as { pricingAuditQueries: string[] }).pricingAuditQueries.push(url.pathname + url.search)
   calls.push(`${init?.method ?? 'GET'} ${url.pathname}`)
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 2500))
   if (params.has('error') || init?.method === 'PUT' && params.has('save-error')) return new Response(JSON.stringify({ code: 'PRICING_PRICE_VERSION_CONFLICT', message: 'Conflict' }), { status: 409, headers: { 'Content-Type': 'application/json' } })
@@ -43,6 +46,7 @@ window.fetch = async (input, init) => {
   let value: unknown = policy
   if (url.pathname.endsWith('/admin/combos')) value={items:[]}
   else if (url.pathname.endsWith('/admin/squad-products')) value={items:['normal','hidden','unavailable','missing'].map((status,index)=>({id:`s${index}`,groupId:`g${index}`,name:`PAYG ${status}`,description:'',profile:null,billingMode:'payg',paygState:status==='missing'?'normal':status,price:{currency:'TXB',minor:'0',display:'0.00 TXB'},paygPrice:{currency:'TXB',minor:'50',display:'0.50 TXB'},visible:status!=='hidden',upstreamPresent:status!=='missing',stockLimit:null,stockRemaining:null,stockHeldByCurrentUser:false,activationRequired:false,accessibleNodes:[],createdAt:now.toISOString(),updatedAt:now.toISOString()}))}
+  else if (url.pathname.endsWith('/pricing/health')) value = { health: params.has('empty') ? [] : health, observedAt: now.toISOString() }
   else if (url.pathname.endsWith('/admin/pricing')) value = { products: params.has('empty') ? [] : [{ id: 'combo:audit-combo', productType: 'combo', productId: 'audit-combo', name: 'Tokyo monthly', fixedPriceMinor: '1000', policy }, { id: 'payg:audit-payg', productType: 'payg', productId: 'audit-payg', name: 'Frankfurt PAYG', fixedPriceMinor: '150', policy: { ...policy, productType: 'payg', productId: 'audit-payg', dynamicEnabled: true, purchasePricingMode: 'DYNAMIC' } }], nextCursor: '', health: params.has('empty') ? [] : health, storage: { pricingBytes: '15360000', databaseBytes: '314572800', pricingBudgetBytes: '734003200', databaseTargetBytes: '3000000000', pressure: false }, datasets: [], summary: { netRevenueMinor: '238000', recordedCostMinor: null, recordedMarginMinor: null, forecastRevenueMinor: '8300', forecastMarginMinor: null, pendingJobs: 2, failedJobs: 0, interventions30: 3, dynamicProducts: 1 } }
   else if (url.pathname.endsWith('/pricing/data')) {
     const dataset = url.searchParams.get('dataset')
@@ -58,7 +62,7 @@ window.fetch = async (input, init) => {
       'pricing/published_prices': [{ id: 'price-audit', price_minor: '1000', source: 'FIXED', model_version: 'fixed-v1', policy_version: '1', created_at: now.toISOString(), valid_until: new Date(Date.now() + 86400000).toISOString() }],
       'forecasts/renewal_predictions': [{ id: 'quote-audit', purchase_id: 'purchase-audit', user_id: '99101', price_minor: '1000', probability: 0.5, contribution: 300, state: 'DEFERRED_HEALTH', health_state: 'OVERLOADED', generated_at: now.toISOString(), settle_after: now.toISOString(), valid_until: new Date(Date.now() + 86400000).toISOString(), trace_json: '{"calibrationStatus":"PRIOR_ONLY","priceLimitMinor":"1100"}' }],
     }
-    value = { items: params.has('empty') ? [] : data[dataset ?? ''] ?? [], truncated: false }
+    value = { items: params.has('empty') ? [] : data[dataset ?? ''] ?? [], limit: 100, truncated: params.has('pages') && !url.searchParams.get('cursor'), nextCursor: params.has('pages') && !url.searchParams.get('cursor') ? 'fixture-next' : '' }
   } else if (url.pathname.endsWith('/pricing/history')) {
     const monetary = url.searchParams.get('metric') === 'gross_revenue_minor'
     const factor = monetary ? 100 : 1073741824
@@ -90,6 +94,7 @@ const router = createRouter({ history: createMemoryHistory(), routes: [
   { path: '/admin/users/:userId/pricing', component: PricingAudit, meta: { pricingMode: 'user' } },
 ] })
 await router.push(view === 'product' ? '/admin/pricing/products/combo:audit-combo' : view === 'user' ? '/admin/users/99101/pricing' : view === 'operations' || view === 'exports' ? `/admin/pricing/${view}` : '/admin/pricing')
+if (view === 'checkout') installPricingCheckout(params)
 const app=createApp(PricingAudit, { view }).use(createPinia()).use(router).use(ui)
 app.config.globalProperties.$t=t
 app.mount('#app')

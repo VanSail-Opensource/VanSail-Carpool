@@ -12,6 +12,15 @@ import (
 // Eligibility uses the same rules as checkout. Attached recurring renewal
 // coupons retain their contractual applicability in the renewal path.
 func pricingCouponsTx(ctx context.Context, tx *sql.Tx, user, combo string, squads []string, now time.Time) ([]coupons.Grant, error) {
+	if batch, ok := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch); ok && batch.User == user {
+		grants := []coupons.Grant{}
+		for _, g := range batch.Grants {
+			if couponAvailable(g.Coupon, now) == nil && g.Coupon.EligibleFor(combo, squads) {
+				grants = append(grants, g)
+			}
+		}
+		return grants, nil
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT id FROM coupon_grants WHERE user_id=? AND status='active' AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) ORDER BY id`, user)
 	if err != nil {
 		return nil, err

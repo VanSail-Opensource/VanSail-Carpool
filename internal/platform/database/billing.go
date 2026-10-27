@@ -15,6 +15,7 @@ import (
 
 // PurchaseInput contains the server-selected catalog IDs for a checkout.
 type PurchaseInput struct {
+	QuoteVersion         string
 	UserID               string
 	ComboID              string
 	AddonSquadIDs        []string
@@ -26,6 +27,7 @@ type PurchaseInput struct {
 // CreatePurchase atomically revalidates live pricing, debits TXB, stores only
 // transaction facts and selected paid add-ons, and queues Proxy sync.
 func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
+	ctx = pricingFreshContext(ctx)
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	fingerprint, err := normalizeAndFingerprintPurchase(&input)
 	if err != nil {
@@ -65,6 +67,11 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if err != nil {
 		return model.Purchase{}, err
 	}
+
+	if versionErr := validateReviewedQuote(input.QuoteVersion, quote.QuoteVersion, quote.RequiresQuoteVersion); versionErr != nil {
+		return model.Purchase{}, versionErr
+	}
+
 	if err := validateSquadActivationCodesTx(ctx, tx, combo, addonRows, input.SquadActivationCodes); err != nil {
 		return model.Purchase{}, err
 	}

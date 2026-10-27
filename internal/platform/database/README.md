@@ -818,6 +818,19 @@ Renewal contracts, numerical snapshots, coupon economics and settlement: `pricin
 
 Bounded retention of settled or summarized operational records: `retention_node_events.go`, `retention_sync_jobs.go`, `retention_timestamps.go`.
 
+- `pricing_attribution.go`: Normalizes machine native usage between fulfilling products; preserves unallocated overhead.
+- `pricing_basket.go`: Complete prospective basket and best eligible owned coupon, applied once for estimates.
+- `pricing_dataset_page.go`: Opaque, scope-bound keyset pagination with visible truncation.
+- `pricing_dataset_page_test.go`: Hosted cursor ties, scope binding and typed product isolation.
+- `pricing_fixed_personal.go`: Fixed decisions without numerical work or redundant persisted snapshots.
+- `pricing_model_support.go`: Immutable strategy-specific observed price and coupon-cohort ranges.
+- `pricing_product_readiness.go`: Batched publication readiness for administration; no settlement authorization.
+- `pricing_purchase_replay.go`: Successful purchase receipt before mutable catalog and quote validation.
+- `pricing_quote_version.go`: Authoritative basket, evidence, coupon/campaign, exact totals, validity and renewal digest.
+- `pricing_quote_version_test.go`: Hosted stale review, expiry and replay regression.
+- `pricing_scope_products.go`: Typed combo/addon/PAYG scope in analytical reads and exports.
+- `pricing_strategy_test.go`: Hosted shared-cost conservation and basket coupon-cap regression.
+
 <!-- generated transaction retry map -->
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
@@ -918,12 +931,14 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_offer_coupons_retry_generated.go` wraps the transactional methods in `pricing_offer_coupons.go`.
 - `pricing_optimization_retry_generated.go` wraps the transactional methods in `pricing_optimization.go`.
 - `pricing_optimization_snapshot_retry_generated.go` wraps the transactional methods in `pricing_optimization_snapshot.go`.
+- `pricing_overhead_retry_generated.go` wraps the transactional methods in `pricing_overhead.go`.
 - `pricing_override_cancel_retry_generated.go` wraps the transactional methods in `pricing_override_cancel.go`.
 - `pricing_overrides_retry_generated.go` wraps the transactional methods in `pricing_overrides.go`.
 - `pricing_payg_offers_retry_generated.go` wraps the transactional methods in `pricing_payg_offers.go`.
 - `pricing_personal_calibration_retry_generated.go` wraps the transactional methods in `pricing_personal_calibration.go`.
 - `pricing_policy_retry_generated.go` wraps the transactional methods in `pricing_policy.go`.
 - `pricing_purchase_prepare_retry_generated.go` wraps the transactional methods in `pricing_purchase_prepare.go`.
+- `pricing_read_batch_retry_generated.go` wraps the transactional methods in `pricing_read_batch.go`.
 - `pricing_renewal_quotes_retry_generated.go` wraps the transactional methods in `pricing_renewal_quotes.go`.
 - `pricing_retention_retry_generated.go` wraps the transactional methods in `pricing_retention.go`.
 - `pricing_unchanged_product_retry_generated.go` wraps the transactional methods in `pricing_unchanged_product.go`.
@@ -978,3 +993,9 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
+
+- `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
+- `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
+- `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
+- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
+- `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.

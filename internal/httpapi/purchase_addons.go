@@ -9,6 +9,7 @@ import (
 )
 
 type purchaseAddonRequest struct {
+	QuoteVersion         string            `json:"quoteVersion"`
 	CouponGrantID        string            `json:"couponGrantId"`
 	AddonSquadProductIDs []string          `json:"addonSquadProductIds"`
 	SquadActivationCodes map[string]string `json:"squadActivationCodes"`
@@ -46,7 +47,7 @@ func (s *Server) purchaseAddons(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	purchase, err := s.deps.Catalog.AddAddons(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs, request.SquadActivationCodes, idempotencyKey, request.CouponGrantID)
+	purchase, err := s.deps.Catalog.AddAddonsWithQuote(r.Context(), user, chi.URLParam(r, "id"), request.AddonSquadProductIDs, request.SquadActivationCodes, idempotencyKey, request.QuoteVersion, request.CouponGrantID)
 	if err != nil {
 		s.writePurchaseAddonError(w, r, err)
 		return
@@ -56,6 +57,10 @@ func (s *Server) purchaseAddons(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) writePurchaseAddonError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, database.ErrPricingQuoteChanged):
+		s.writeError(w, r, http.StatusConflict, "PRICING_QUOTE_CHANGED", "The price changed. Review the refreshed total before confirming.")
+	case errors.Is(err, database.ErrPricingDecisionPending), errors.Is(err, database.ErrPricingComputePending):
+		s.writeError(w, r, http.StatusConflict, "PRICING_DECISION_PENDING", "The price is being prepared.")
 	case errors.Is(err, database.ErrAddonEntitlementOverride):
 		s.writeError(w, r, http.StatusConflict, "SQUAD_ADDITION_OVERRIDDEN", "An administrator has overridden this ride's squads. Contact an administrator before adding squads.")
 	case errors.Is(err, database.ErrConflict):

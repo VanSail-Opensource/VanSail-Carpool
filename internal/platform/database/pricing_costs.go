@@ -62,6 +62,11 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	if err = pricingChangeNoticeTx(ctx, tx, actor, "COST", c.NodeID, c.Reason, now); err != nil {
 		return err
 	}
+	// Invalidate future analytical offers for products fulfilled by this machine.
+	// Historical publications, charges and contracts remain immutable.
+	if _, err = tx.ExecContext(ctx, `UPDATE pricing_product_settings SET version=version+1,updated_at=?,updated_by=? WHERE dynamic_enabled=1 AND ((product_type IN ('addon','payg') AND EXISTS(SELECT 1 FROM xnode_group_bindings b WHERE b.group_id=pricing_product_settings.product_id AND b.node_id=?)) OR (product_type='combo' AND EXISTS(SELECT 1 FROM combos c JOIN json_each(c.included_squad_uuids) j ON 1=1 JOIN xnode_group_bindings b ON b.group_id=j.value WHERE c.id=pricing_product_settings.product_id AND b.node_id=?)))`, pricingStamp(now), actor, c.NodeID, c.NodeID); err != nil {
+		return err
+	}
 	if err = tx.Commit(); err == nil {
 		s.pricingCache.Clear()
 		s.pricingExposureCache.Clear()

@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import type { PricingRecord } from '@/api/pricingAnalysis'
 import { useI18n } from '@/i18n'
+import { pricingLabel, pricingMoney } from '@/utils/pricingDisplay'
 defineProps<{ title: string; items: PricingRecord[]; fields?: string[] }>()
 const { t } = useI18n()
+function display(field: string, value: PricingRecord[string]) {
+  if (value === null || value === undefined) return t('common.notAvailable')
+  if (field.endsWith('_minor')) return pricingMoney(value)
+  if (['state', 'status', 'health_state', 'calibration_status'].includes(field)) return pricingLabel('states', value)
+  if (field === 'reason') return pricingLabel('reasons', value)
+  return value
+}
 </script>
 <template>
   <section class="pricing-records">
@@ -10,7 +18,7 @@ const { t } = useI18n()
     <p v-if="!items.length" class="text-muted">{{ t('pricing.emptyRecords') }}</p>
     <div v-else class="pricing-records__scroll">
       <dl v-for="(item, index) in items" :key="String(item.id ?? item.forecast_id ?? index)" class="pricing-records__row">
-        <template v-for="field in fields ?? Object.keys(item)" :key="field"><dt>{{ t(`pricing.fields.${field}`) === `pricing.fields.${field}` ? field : t(`pricing.fields.${field}`) }}</dt><dd><section v-if="field.endsWith('_json')"><h3>{{ t('pricing.calculationTrace') }}</h3><pre>{{ item[field] }}</pre></section><template v-else>{{ item[field] ?? t('common.notAvailable') }}</template></dd></template>
+        <template v-for="field in fields ?? Object.keys(item)" :key="field"><dt>{{ t(`pricing.fields.${field}`) === `pricing.fields.${field}` ? field : t(`pricing.fields.${field}`) }}</dt><dd><details v-if="field.endsWith('_json')"><summary>{{ t('pricing.calculationTrace') }}</summary><pre>{{ item[field] }}</pre></details><template v-else>{{ display(field, item[field]) }}</template></dd></template>
       </dl>
     </div>
   </section>

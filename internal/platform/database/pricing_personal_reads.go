@@ -37,6 +37,11 @@ func personalProductPriceTx(ctx context.Context, tx *sql.Tx, user, kind, product
 	if err != nil {
 		return 0, nil, err
 	}
+	if fixedPersonalPricing(in) {
+		d := fixedPersonalDecision(in, now)
+		return in.Public, &d, nil
+	}
+	required = required || (in.Policy.DynamicEnabled && in.Policy.PurchaseMode == "DYNAMIC")
 	if in.Unavailable != "" || required && in.GlobalPending {
 		return 0, nil, ErrPricingDecisionPending
 	}
@@ -51,6 +56,7 @@ func personalProductPriceTx(ctx context.Context, tx *sql.Tx, user, kind, product
 		return 0, nil, err
 	}
 	d.DynamicEnabled = in.Policy.DynamicEnabled
+	setPricingBasket(&d, in)
 	return moneyMinor(d.PersonalPrice), &d, nil
 }
 

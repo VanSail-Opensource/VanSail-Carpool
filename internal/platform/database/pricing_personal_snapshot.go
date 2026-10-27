@@ -24,6 +24,10 @@ type personalPriceInput struct {
 	Observation                                                 pricing.ResponseObservation
 	Coupons                                                     []coupons.Grant
 	Until                                                       time.Time
+	Support                                                     *pricing.PriceSupport
+	BasketOther                                                 int64
+	BasketCost                                                  float64
+	CostsComplete                                               bool
 }
 
 func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, product, combo string, squads []string, now time.Time) (personalPriceInput, error) {
@@ -37,6 +41,16 @@ func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, produc
 		return in, err
 	}
 	in.Public = fixed
+	if fixedPersonalPricing(in) {
+		if batch, ok := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch); ok && batch.User == user && kind != "payg" {
+			in.Coupons, err = pricingCouponsTx(ctx, tx, user, combo, squads, now)
+			if err != nil {
+				return in, err
+			}
+		}
+		err = fixedPersonalSnapshot(&in, combo, squads, now)
+		return in, err
+	}
 	if in.Policy.DynamicEnabled && in.Policy.PurchaseMode == "DYNAMIC" {
 		price, e := approvedPricingTx(ctx, tx, in.Policy, fixed, now)
 		if e == nil {
@@ -81,7 +95,7 @@ func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, produc
 	if err != nil {
 		return in, err
 	}
-	err = tx.QueryRowContext(ctx, `SELECT id,parameters_json,calibration_status,diagnostics_json FROM pricing_model_versions WHERE kind=? AND id LIKE '%:coupons-v3:%' AND frozen=0 AND created_at<=? ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, pricingStamp(now)).Scan(&in.ModelID, &raw, &in.Calibration, &diagnostics)
+	err = tx.QueryRowContext(ctx, `SELECT id,parameters_json,calibration_status,diagnostics_json FROM pricing_model_versions WHERE kind=? AND id LIKE ? AND frozen=0 AND created_at<=? ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, "%:"+pricing.StrategyVersion+":%", pricingStamp(now)).Scan(&in.ModelID, &raw, &in.Calibration, &diagnostics)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return in, err
 	}
@@ -99,11 +113,18 @@ func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, produc
 			return in, err
 		}
 	}
-	scope, _ := json.Marshal([]any{combo, uniqueSorted(squads)})
+	in.Support, err = pricingModelSupportTx(ctx, tx, in.ModelID)
+	if err != nil {
+		return in, err
+	}
+	if err = pricingBasketTx(ctx, tx, &in, combo, squads, now); err != nil {
+		return in, err
+	}
+	scope, _ := json.Marshal([]any{combo, uniqueSorted(squads), in.BasketOther})
 	in.Context = compute.Digest(scope)
 	// Only immutable decision evidence is stored. Coupon definitions, limits,
 	// expiry, grant use counts and source watermarks all invalidate stale offers.
-	evidence, err := json.Marshal([]any{compute.Version, user, kind, product, in.Context, in.Policy, in.Public, in.ModelID, in.Coupons, watermark, now.UTC().Truncate(func() time.Duration {
+	evidence, err := json.Marshal([]any{pricing.StrategyVersion, compute.Version, user, kind, product, in.Context, in.Policy, in.Public, in.ModelID, in.Coupons, in.BasketCost, in.CostsComplete, watermark, now.UTC().Truncate(func() time.Duration {
 		if kind == "payg" {
 			return time.Minute
 		}

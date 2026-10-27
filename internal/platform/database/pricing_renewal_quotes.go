@@ -15,6 +15,7 @@ import (
 // PreparePricingRenewal never holds a write transaction while numerical work is
 // queued. Fixed prices and refused adjustments produce terminal unchanged quotes.
 func (s *Store) PreparePricingRenewal(ctx context.Context, purchase string, now time.Time) (renewal.Quote, error) {
+	ctx = pricingFreshContext(ctx)
 	var product string
 	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=?`, purchase).Scan(&product); err != nil {
 		return renewal.Quote{}, err
@@ -135,7 +136,7 @@ func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewal
 				return renewal.Quote{}, e
 			}
 			best.Price = personal + addonBasis
-			best.Contribution = float64(best.Price) - in.Cost
+			best.Contribution = best.Probability * (float64(best.Price) - in.Cost)
 		}
 	}
 	calibration := "PRIOR_ONLY"
@@ -156,7 +157,7 @@ func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewal
 	if best.Price != c.Price {
 		status = "ADJUSTED"
 	}
-	raw, err := json.Marshal(map[string]any{"snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon, "observation": in.Observation, "expectedProviderCostMinor": in.Cost})
+	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon, "observation": in.Observation, "expectedProviderCostMinor": in.Cost})
 	if err != nil {
 		return renewal.Quote{}, err
 	}

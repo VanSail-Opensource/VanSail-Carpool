@@ -23,6 +23,7 @@ type renewalPriceSnapshot struct {
 	Model, Health, Hash string
 	Cost, Relationships float64
 	Validated           bool
+	Support             *pricing.PriceSupport
 }
 
 func (s *Store) renewalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, c renewal.Contract, now time.Time) (renewalPriceSnapshot, error) {
@@ -56,15 +57,27 @@ func (s *Store) renewalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, c renewa
 	if err != nil {
 		return in, err
 	}
+	in.Support, err = pricingModelSupportTx(ctx, tx, in.Model)
+	if err != nil {
+		return in, err
+	}
 	nodes, err := pricingNodesTx(ctx, tx, "combo", c.ProductID)
 	if err != nil {
 		return in, err
 	}
+	for _, addon := range c.Addons {
+		extra, e := pricingNodesTx(ctx, tx, "addon", addon.ID)
+		if e != nil {
+			return in, e
+		}
+		nodes = append(nodes, extra...)
+	}
+	nodes = uniqueSorted(nodes)
 	if s.pricingHealth.Safe(nodes, now) {
 		in.Health = "HEALTHY"
 	}
 	var complete bool
-	in.Cost, in.Relationships, complete, err = pricingRenewalEconomicsTx(ctx, tx, c.UserID, c.ProductID, nodes)
+	in.Cost, in.Relationships, complete, err = pricingRenewalEconomicsTx(ctx, tx, c.UserID, c.ProductID, c.PurchaseID, nodes, now)
 	if err != nil {
 		return in, err
 	}

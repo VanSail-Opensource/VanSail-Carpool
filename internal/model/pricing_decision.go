@@ -12,6 +12,7 @@ type PricingDecision struct {
 	PublicPrice       Money     `json:"publicPrice"`
 	PersonalPrice     Money     `json:"personalPrice"`
 	NetPrice          Money     `json:"netPrice"`
+	BasketGrossPrice  *Money    `json:"basketGrossPrice,omitempty"`
 	Probability       *float64  `json:"probability,omitempty"`
 	ModelVersion      string    `json:"modelVersion"`
 	Calibration       string    `json:"calibration"`

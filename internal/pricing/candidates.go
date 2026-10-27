@@ -11,8 +11,13 @@ import (
 func NumericalCandidates(in OptimizationInputs) []compute.CandidateInput {
 	rows := make([]compute.CandidateInput, 0, 101)
 	seen := map[int64]bool{}
+	currentStep := int64(math.Round(float64(in.Current) * 50 / float64(max(1, in.Policy.FixedPrice))))
+	currentStep = max(0, min(100, currentStep))
 	for step := int64(0); step <= 100; step++ {
 		price := min(MaxPrice, in.Policy.FixedPrice*2*step/100)
+		if step == currentStep {
+			price = in.Current
+		}
 		if in.Policy.ProductType == "payg" {
 			price = max(1, price)
 		}
@@ -20,7 +25,9 @@ func NumericalCandidates(in OptimizationInputs) []compute.CandidateInput {
 			continue
 		}
 		seen[price] = true
-		rows = append(rows, compute.CandidateInput{Price: price, NetPrice: price, Units: in.SalesUnits, Cost: in.CostMinor, Features: ResponseObservation{LogPrice: math.Log(float64(max(1, price)) / float64(max(1, in.Policy.FixedPrice)))}})
+		x := ResponseObservation{LogPrice: math.Log(float64(max(1, price)) / float64(max(1, in.Policy.FixedPrice)))}
+		// v1 subtracts Cost after expected receipts: provide expected fulfillment cost.
+		rows = append(rows, compute.CandidateInput{Price: price, NetPrice: price, Units: in.SalesUnits, Cost: in.Model.Predict(x) * in.CostMinor, Features: x})
 	}
 	return rows
 }
@@ -30,7 +37,7 @@ func SelectCandidates(in OptimizationInputs, values []compute.Candidate) (PriceC
 	curve := make([]PriceCandidate, 0, len(values))
 	safe := in.CapacityGB > in.CommittedGB && in.DemandGB >= 0 && in.DemandGB <= in.CapacityGB-in.CommittedGB && in.CostMinor >= 0
 	for _, c := range values {
-		p := PriceCandidate{Price: c.Price, Probability: c.Probability, Revenue: c.Revenue, Contribution: c.Contribution, Eligible: safe && in.Model.Validated && in.ForecastValidated && c.Revenue >= in.CostMinor}
+		p := PriceCandidate{Price: c.Price, Probability: c.Probability, Revenue: c.Revenue, Contribution: c.Contribution, Eligible: safe && in.Model.Validated && in.ForecastValidated && c.Contribution >= 0 && (in.Support == nil || in.Support.Allows(c.Price, in.Policy.FixedPrice, false))}
 		curve = append(curve, p)
 		if p.Eligible && p.Contribution > best.Contribution {
 			best = p
@@ -42,6 +49,11 @@ func SelectCandidates(in OptimizationInputs, values []compute.Candidate) (PriceC
 	if math.IsInf(best.Contribution, -1) {
 		return PriceCandidate{Price: in.Current}, curve, ModelUnvalidated
 	}
+	if stable, ok := StableCandidate(in.Current, curve); ok {
+		best = stable
+	} else {
+		return PriceCandidate{Price: in.Current}, curve, ModelUnvalidated
+	}
 	return best, curve, nil
 }
 
@@ -49,9 +61,18 @@ func CandidateLimits(reference int64, best PriceCandidate, curve []PriceCandidat
 	if reference <= 0 {
 		return 0, 0
 	}
+	peak := 0.0
+	for _, c := range curve {
+		if c.Eligible {
+			peak = max(peak, c.Contribution)
+		}
+	}
+	if peak <= 0 {
+		return 0, 0
+	}
 	low, high := best.Price, best.Price
 	for _, c := range curve {
-		if c.Eligible && c.Contribution >= best.Contribution*.95 {
+		if c.Eligible && c.Contribution >= peak*.95 {
 			low, high = min(low, c.Price), max(high, c.Price)
 		}
 	}

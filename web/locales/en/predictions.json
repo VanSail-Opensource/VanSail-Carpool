@@ -19,6 +19,8 @@
     "stale": "These predictions need a refresh.",
     "noHistory": "There is not enough complete history for a prediction yet.",
     "loadFailed": "Predictions could not be loaded.",
-    "validated": "Validated"
+    "validated": "Validated",
+    "leadHint": "Each date is validated independently against its original forecast lead.",
+    "leadSamples": "{count} completed outcomes"
   }
 }

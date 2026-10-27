@@ -88,3 +88,7 @@ separate. Action quotes and permission decisions still await the backend.
 `useSquadAddition.test.ts` covers retained request keys after a lost purchase reply. `useSquadAddition.ts` keeps the same key for an unchanged purchase/selection/activation attempt until a confirmed response, using memory only.
 
 - `catalogQuotePending.test.ts`: Hosted regression for pending-price admission and cancelled obsolete retries.
+
+- `usePricingQuote.ts`: Version-bound checkout preview lifecycle: request cancellation, bounded two-minute backoff, hidden-page pause and expiry; successful idempotency replay remains independent.
+
+- `usePricingQuote.test.ts`: Hosted regression for bounded pending retries, hidden-page pause, stale totals, obsolete responses and disposal.

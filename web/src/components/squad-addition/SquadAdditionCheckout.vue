@@ -10,6 +10,7 @@ defineProps<{
   squads: readonly SquadProduct[]
   quote: DeepReadonly<PurchaseAddonQuote> | null
   purchase: DeepReadonly<Purchase> | null
+  quoteReady?: boolean
   quoting: boolean
   purchasing: boolean
   needsBalance: boolean
@@ -44,6 +45,7 @@ function goToBalance(): void {
             <UIcon name="i-ph-receipt" aria-hidden="true" />
           </div>
           <div><span>{{ $t('catalog.optionalSquads') }}</span><strong>{{ squads.map((squad) => squad.name).join($t('home.squadSeparator')) }}</strong></div>
+          <div v-if="quote?.grossPrice"><span>{{ $t('pricing.personalGross') }}</span><strong><DualCurrencyMoney :money="quote.grossPrice" /></strong></div>
           <div v-if="quote?.discount"><span>{{ $t('home.autoRenewalDiscount') }}</span><strong><DualCurrencyMoney :money="quote.discount" /></strong></div>
           <div v-if="quote"><span>{{ $t('home.squadAddition.validUntil') }}</span><strong>{{ formatDate(quote.expiresAt) }}</strong></div>
         </div>
@@ -59,7 +61,7 @@ function goToBalance(): void {
       <USkeleton v-if="quoting" class="h-16" />
       <div class="squad-addition-checkout__actions">
         <UButton v-if="needsBalance" block trailing-icon="i-ph-plus" :label="$t('catalog.addBalance')" data-haptic="navigate" @click="goToBalance" />
-        <UButton v-else block :disabled="purchasing || !quote" :loading="purchasing" trailing-icon="i-ph-check" :label="purchasing ? $t('catalog.confirming') : $t('home.squadAddition.confirm')" data-haptic="confirm" @click="emit('confirm')" />
+        <UButton v-else block :disabled="purchasing || quoteReady === false || !quote" :loading="purchasing" trailing-icon="i-ph-check" :label="purchasing ? $t('catalog.confirming') : $t('home.squadAddition.confirm')" data-haptic="confirm" @click="emit('confirm')" />
       </div>
     </template>
   </section>

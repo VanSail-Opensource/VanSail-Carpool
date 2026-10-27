@@ -13,6 +13,7 @@ describe('squad addition delivery', () => {
     const controller = useSquadAddition({ purchaseId: () => 'purchase', activeSquadUuids: () => [] })
     await controller.load()
     controller.toggleSquad('squad')
+    await controller.refreshQuote()
     expect(await controller.confirmPurchase({})).toBe(false)
     expect(await controller.confirmPurchase({})).toBe(true)
     expect(add).toHaveBeenCalledTimes(2)

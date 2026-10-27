@@ -6,79 +6,108 @@ import (
 	"time"
 )
 
-// A single discretionary worker is joined on shutdown. Accounting and native
-// traffic acknowledgment never wait for it or share its execution budget.
+// Each independent stage owns a deadline. Busy renewal/PAYG work cannot exhaust
+// the feature/reconciliation budgets. Accounting has its existing independent lane.
 func (a *Application) runPricingWorker(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
+	cursors := [4]string{}
 	stage := 0
-	nodeCursor, userCursor, productCursor := "", "", ""
-	lastCleanup := time.Time{}
-	revenueCursor := ""
 	modelsRegistered := false
+	lastCleanup := time.Time{}
+	renewalStart := 0
+	paygCursor := ""
+	run := func(budget time.Duration, work func(context.Context) error) {
+		bounded, cancel := context.WithTimeout(ctx, budget)
+		defer cancel()
+		if err := work(bounded); err != nil && !errors.Is(err, context.Canceled) {
+			a.logger.Debug("pricing stage deferred", "error", err)
+		}
+	}
 	for {
 		now := time.Now().UTC()
-		work, cancel := context.WithTimeout(ctx, 3*time.Second)
-		if err := a.observePricingHealth(work, now); err != nil && !errors.Is(err, context.Canceled) {
-			a.logger.Warn("pricing health unavailable", "error", err)
-		} else if err == nil {
-			if err = a.store.ObservePricingWorker(work, now); err != nil {
-				a.logger.Warn("pricing observation watermark unavailable", "error", err)
+		run(time.Second, func(work context.Context) error {
+			if err := a.observePricingHealth(work, now); err != nil {
+				return err
 			}
-		}
-		ids, err := a.store.DuePricingRenewals(work, now)
-		if err == nil {
-			for _, id := range ids {
-				if _, err = a.store.PreparePricingRenewal(work, id, now); err != nil {
-					a.logger.Warn("pricing renewal preparation deferred", "purchase", id, "error", err)
+			return a.store.ObservePricingWorker(work, now)
+		})
+		// Renewal and PAYG preparation receive budgets independent of analytics.
+		run(750*time.Millisecond, func(work context.Context) error {
+			ids, err := a.store.DuePricingRenewals(work, now)
+			if err != nil {
+				return err
+			}
+			if len(ids) > 0 {
+				renewalStart %= len(ids)
+			}
+			start := renewalStart
+			for offset := range ids {
+				id := ids[(start+offset)%len(ids)]
+				renewalStart = (start + offset + 1) % len(ids)
+				if _, err = a.store.PreparePricingRenewal(work, id, now); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+					a.logger.Debug("pricing renewal deferred", "purchase", id, "error", err)
 				}
 				if work.Err() != nil {
-					break
+					return work.Err()
 				}
 			}
+			return nil
+		})
+		run(750*time.Millisecond, func(work context.Context) error {
+			storage, err := a.store.PricingStorage(work)
+			if err != nil {
+				return err
+			}
+			if storage["pressure"] != false {
+				return nil
+			}
+			paygCursor, err = a.store.PricingPAYGBatchAfter(work, now, paygCursor)
+			return err
+		})
+		current := stage % 4
+		stage++
+		run(1500*time.Millisecond, func(work context.Context) error {
+			storage, err := a.store.PricingStorage(work)
+			if err != nil {
+				return err
+			}
+			if storage["pressure"] != false {
+				return nil
+			}
+			if !modelsRegistered {
+				if err = a.store.RegisterPricingModels(work, now); err != nil {
+					return err
+				}
+				modelsRegistered = true
+			}
+			switch current {
+			case 0:
+				cursors[0], err = a.store.PricingFeatureBatch(work, now, cursors[0])
+			case 1:
+				cursors[1], err = a.store.PricingUserFeatureBatch(work, now, cursors[1])
+			case 2:
+				cursors[2], err = a.store.PricingOptimizationBatch(work, now, cursors[2])
+			case 3:
+				cursors[3], err = a.store.PricingRevenueForecastBatch(work, now, cursors[3])
+			}
+			return err
+		})
+		run(750*time.Millisecond, func(work context.Context) error {
+			if err := a.store.ClosePricingOffers(work, now); err != nil {
+				return err
+			}
+			return a.store.ReconcilePricingForecasts(work, now)
+		})
+		if now.Sub(lastCleanup) > time.Hour {
+			run(time.Second, func(work context.Context) error {
+				_, err := a.store.PricingCleanup(work, now)
+				if err == nil {
+					lastCleanup = now
+				}
+				return err
+			})
 		}
-		if work.Err() == nil {
-			storage, e := a.store.PricingStorage(work)
-			if e == nil && storage["pressure"] == false {
-				if e = a.store.PricingPAYGBatch(work, now); e != nil {
-					a.logger.Debug("PAYG calculation deferred", "error", e)
-				}
-				if !modelsRegistered {
-					e = a.store.RegisterPricingModels(work, now)
-					modelsRegistered = e == nil
-				}
-				if e == nil {
-					switch stage % 4 {
-					case 0:
-						nodeCursor, e = a.store.PricingFeatureBatch(work, now, nodeCursor)
-					case 1:
-						userCursor, e = a.store.PricingUserFeatureBatch(work, now, userCursor)
-					case 2:
-						productCursor, e = a.store.PricingOptimizationBatch(work, now, productCursor)
-					case 3:
-						revenueCursor, e = a.store.PricingRevenueForecastBatch(work, now, revenueCursor)
-					}
-					stage++
-				}
-				if e != nil {
-					a.logger.Debug("pricing analytics deferred", "error", e)
-				}
-			}
-			if e = a.store.ClosePricingOffers(work, now); e == nil {
-				e = a.store.ReconcilePricingForecasts(work, now)
-			}
-			if e != nil {
-				a.logger.Debug("pricing reconciliation deferred", "error", e)
-			}
-		}
-		if now.Sub(lastCleanup) > time.Hour && work.Err() == nil {
-			if _, e := a.store.PricingCleanup(work, now); e == nil {
-				lastCleanup = now
-			} else {
-				a.logger.Debug("pricing cleanup deferred", "error", e)
-			}
-		}
-		cancel()
 		select {
 		case <-ctx.Done():
 			return

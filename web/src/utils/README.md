@@ -33,3 +33,5 @@
 `turnstile.ts` loads the official explicit-render script once, exposes only documented render/reset/remove contracts, bounds loading time and allows a fresh retry after provider failure.
 
 `adminSettingWrites.ts` saves disable toggles before clearing configuration, then keys/destinations before enabling, shared by Turnstile and PM.
+
+- `pricingDisplay.ts`: Exact minor-unit money display through the existing currency preference and localized pricing states/reasons.

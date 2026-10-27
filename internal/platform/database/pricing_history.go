@@ -31,7 +31,7 @@ func (s *Store) PricingHistory(ctx context.Context, filter PricingHistoryFilter,
 	return r.Items, r.Metrics, err
 }
 func (s *Store) pricingHistory(ctx context.Context, filter PricingHistoryFilter, now time.Time) ([]pricing.Forecast, pricing.Validation, error) {
-	if filter.EntityID == "" || len(filter.EntityID) > 256 || (filter.EntityType != "node" && filter.EntityType != "user" && filter.EntityType != "user_node" && filter.EntityType != "product") || (filter.Horizon != 86400 && filter.Horizon != 604800) {
+	if filter.EntityID == "" || len(filter.EntityID) > 256 || (filter.EntityType != "node" && filter.EntityType != "user" && filter.EntityType != "user_node" && filter.EntityType != "product") || (filter.Horizon != 604800 && (filter.Horizon < 86400 || filter.Horizon > 432000 || filter.Horizon%86400 != 0)) {
 		return nil, pricing.Validation{}, ErrConflict
 	}
 	conditions := []string{"f.entity_type=?", "f.entity_id=?", "f.metric=?", "f.horizon_seconds>?", "f.horizon_seconds<=?"}

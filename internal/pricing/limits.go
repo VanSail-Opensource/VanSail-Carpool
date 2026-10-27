@@ -15,12 +15,5 @@ func OptimalLimits(in OptimizationInputs) (increase, discount int64) {
 	if err != nil || best.Contribution <= 0 {
 		return 0, 0
 	}
-	low, high := best.Price, best.Price
-	for _, c := range curve {
-		if c.Eligible && c.Contribution >= best.Contribution*.95 {
-			low, high = min(low, c.Price), max(high, c.Price)
-		}
-	}
-	reference := in.Policy.FixedPrice
-	return max(0, (high-reference)*Scale/reference), max(0, (reference-low)*Scale/reference)
+	return CandidateLimits(in.Policy.FixedPrice, best, curve)
 }

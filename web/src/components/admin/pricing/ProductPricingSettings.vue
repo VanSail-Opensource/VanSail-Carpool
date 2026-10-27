@@ -4,6 +4,7 @@ import { pricingApi, type PricingPolicy } from '@/api/pricing'
 import SwitchField from '@/components/common/SwitchField.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
+import { pricingMoney } from '@/utils/pricingDisplay'
 
 const props = defineProps<{ kind: 'combo' | 'payg' | 'addon'; productId: string }>()
 const { t } = useI18n()
@@ -28,7 +29,7 @@ watch(() => [props.kind, props.productId], async (_, __, onCleanup) => {
   loading.value = true
   policy.value = null
   error.value = ''
-  try { policy.value = await pricingApi.policy(props.kind, props.productId, controller.signal) }
+  try { const result = await pricingApi.policy(props.kind, props.productId, controller.signal); if (!controller.signal.aborted) policy.value = result }
   catch { if (!controller.signal.aborted) error.value = t('pricing.loadError') }
   finally { if (!controller.signal.aborted) loading.value = false }
 }, { immediate: true })
@@ -54,7 +55,7 @@ async function save(): Promise<void> {
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <InlineNotice v-if="saved" tone="success">{{ t('pricing.saved') }}</InlineNotice>
     <template v-if="policy">
-      <p>{{ t('pricing.reference', { amount: Number(policy.fixedPriceMinor) / 100 }) }}</p>
+      <p>{{ t('pricing.reference', { amount: pricingMoney(policy.fixedPriceMinor) }) }}</p>
       <SwitchField :id="`pricing-purchase-${productId}`" v-model="purchase" :label="t('pricing.purchaseDynamic')" />
       <SwitchField v-if="kind === 'combo'" :id="`pricing-renewal-${productId}`" v-model="renewal" :label="t('pricing.renewalDynamic')" :help="t('pricing.legacyProtected')" />
       <SwitchField :id="`pricing-discounts-${productId}`" v-model="discounts" :label="t('pricing.discounts')" />

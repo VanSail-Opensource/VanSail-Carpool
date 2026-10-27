@@ -13,6 +13,7 @@ import (
 // PreparePurchasePricing gathers numerical work before commerce takes a write
 // lock. Pending work never changes a renewal preference or reserves a coupon.
 func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input PurchaseInput, now time.Time) error {
+	ctx = purchasePricingContext(ctx)
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return err
@@ -32,16 +33,20 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
+	ctx, err = s.pricingReadContext(ctx, input.UserID, now)
+	if err != nil {
+		return err
+	}
 	if _, err = s.PreparePersonalPricing(ctx, input.UserID, "combo", c.ID, c.ID, squads, now); err != nil {
 		return err
 	}
 	for _, id := range uniqueSorted(input.AddonSquadIDs) {
-		if _, err = s.PreparePersonalPricing(ctx, input.UserID, "addon", id, c.ID, []string{id}, now); err != nil {
+		if _, err = s.PreparePersonalPricing(ctx, input.UserID, "addon", id, c.ID, squads, now); err != nil {
 			return err
 		}
 	}
 	if current != "" {
-		err = s.prepareOwnedPricingRenewal(ctx, input.UserID, current, now)
+		err = s.prepareOwnedPricingRenewal(pricingFreshContext(ctx), input.UserID, current, now)
 	}
 	return err
 }

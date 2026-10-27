@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
+import PricingQuoteNotice from '@/components/common/PricingQuoteNotice.vue'
 import { useRouter } from 'vue-router'
 
 import type { Purchase, SquadProduct } from '@/api/types'
@@ -26,12 +27,13 @@ const activeSquadUuids = computed(() => props.active.squadUuids)
 const {
   couponGrants, selectedCouponGrantId, eligibleCoupons,
   selectedSquadIds, quote, purchase, loading, quoting, purchasing, needsBalance, error,
-  visibleSquads, selectedSquads, activationSquads, reset, toggleSquad, load, refreshQuote, confirmPurchase,
+  visibleSquads, selectedSquads, activationSquads, quoteUsable, quoteStatus, reset, toggleSquad, load, refreshQuote, confirmPurchase,
 } = useSquadAddition({ comboId: () => props.active.comboId, purchaseId: () => props.active.id, activeSquadUuids: () => activeSquadUuids.value })
 const { featuredIds, orderedIds } = useCatalogSquadPresentation(visibleSquads, emptyIncludedIds, comboId)
 
 watch([open, () => props.active.id], ([visible]) => {
   if (!visible) {
+    reset()
     if (activationResolver) resolveActivation(null)
     return
   }
@@ -98,9 +100,10 @@ function goHome(): void {
               <CatalogSquadStep :squads="visibleSquads" :selected-ids="selectedSquadIds" :included-ids="emptyIncludedIds" :featured-ids="featuredIds" :ordered-ids="orderedIds" @toggle="toggleSquad" />
               <CatalogCouponStep v-model:coupon-grant-id="selectedCouponGrantId" :coupons="couponGrants" :eligible-ids="eligibleCoupons.map(grant => grant.id)" :quoting="quoting" @redeemed="load()" />
             </template>
-            <SquadAdditionCheckout v-else :squads="selectedSquads" :quote="quote" :purchase="purchase" :quoting="quoting" :purchasing="purchasing || activationPrompting" :needs-balance="needsBalance" :error="error" @back="step = 1" @confirm="confirm" @home="goHome" />
+            <SquadAdditionCheckout v-else :squads="selectedSquads" :quote="quote" :quote-ready="quoteUsable" :purchase="purchase" :quoting="quoting" :purchasing="purchasing || activationPrompting" :needs-balance="needsBalance" :error="error" @back="step = 1" @confirm="confirm" @home="goHome" />
           </div>
         </Transition>
+        <PricingQuoteNotice :state="quoteStatus" :valid-until="quote?.quoteValidUntil" @retry="refreshQuote()" />
         <UAlert v-if="step === 1 && error" color="warning" variant="soft" icon="i-ph-warning-circle" :description="error" />
       </div>
     </template>

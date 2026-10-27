@@ -39,3 +39,22 @@ read-only notice; dynamic pricing requires no terms approval.
 - `UserPricingAnalysis.vue`: Embeds all owner-specific product bases, coupon terms and forecasts directly on the user page.
 
 - `useUserPrices.ts`: Cancels obsolete reads and appends explicit bounded pages without silently dropping products.
+
+- `PricingDataset.vue`: Progressively renders one disclosed dataset with retry, visible truncation and cursor pagination.
+- `PricingDiagnostics.vue`: Mounts independent response, model and decision panels only after disclosure.
+- `PricingHistorySection.vue`: Loads original forecasts and event overlays on demand; diagnostic failures leave forecasts visible.
+- `usePricingDataset.ts`: Owns scoped cursor requests, cancellation, late-response rejection and retained successful pages.
+- `usePricingWorkspace.test.ts`: Hosted regressions for route request budgets and obsolete polling.
+
+The overview starts with one dashboard read, operations with one memory-only
+health read, product with one policy read, and member analysis with two reads.
+Optional native disclosures own their data lifetimes and independently retry.
+Only foreground health is polled; completed daily forecasts refresh on focus,
+UTC rollover or explicit refresh. Each lead retains its own calibration.
+Only the selected node mounts operational charts. Dataset cursors preserve typed
+product scope and show additional retained pages explicitly.
+
+Checkout keeps the selected basket on a quote-version conflict and requires the
+existing confirm control to submit the newly displayed total. Calculations retry
+with bounded backoff, pause while hidden and expose manual retry after two
+minutes. No analytical cache authorizes money, coupon consumption or preferences.

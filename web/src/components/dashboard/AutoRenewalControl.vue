@@ -3,6 +3,7 @@ import { computed, shallowRef, watch } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
 
 import { pricingApi } from '@/api/pricing'
+import type { PricingRenewalInfo } from '@/api/pricing'
 import type { Purchase } from '@/api/types'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useAutoRenewal } from '@/composables/useAutoRenewal'
@@ -16,7 +17,8 @@ const props = defineProps<{ purchase: Purchase }>()
 const emit = defineEmits<{ changed: [] }>()
 
 const open = shallowRef(false)
-const livePrice = shallowRef(false)
+const pricingInfo = shallowRef<PricingRenewalInfo | null>(null)
+const pricingState = computed(() => !pricingInfo.value?.quote ? 'calculating' : Date.parse(pricingInfo.value.quote.validUntil) <= Date.now() ? 'stale' : 'ready')
 const switchValue = shallowRef(props.purchase.autoRenewEnabled)
 const { renewal, loading, updating, error, enabled, canEnable, ineligibleReason, reset, load, setEnabled } = useAutoRenewal(
   () => props.purchase.id,
@@ -34,7 +36,7 @@ watch(open, (next) => {
   if (next) {
     void load()
     const id = props.purchase.id
-    void pricingApi.renewalInfo(id).then(info => { if (props.purchase.id === id) livePrice.value = info.policy.dynamicEnabled && info.policy.renewalPricingMode === 'DYNAMIC' }).catch(() => { livePrice.value = false })
+    void pricingApi.renewalInfo(id).then(info => { if (props.purchase.id === id) pricingInfo.value = info }).catch(() => { if (props.purchase.id === id) pricingInfo.value = null })
   }
 })
 watch(renewal, (next) => {
@@ -42,7 +44,7 @@ watch(renewal, (next) => {
 })
 watch(() => props.purchase.id, () => {
   reset()
-  livePrice.value = false
+  pricingInfo.value = null
   switchValue.value = props.purchase.autoRenewEnabled
   if (open.value) void load()
 })
@@ -79,7 +81,7 @@ async function updateRenewal(next: boolean): Promise<void> {
             <dl class="auto-renewal-control__quote">
               <div><dt>{{ $t('home.autoRenewalGross') }}</dt><dd>{{ formatMemberMoney(renewal.grossPrice) }}</dd></div>
               <div><dt>{{ $t('home.autoRenewalDiscount') }}</dt><dd>{{ formatMemberMoney(renewal.discount) }}</dd></div>
-              <div><dt>{{ $t('home.autoRenewalPrice') }} <small v-if="livePrice">{{ $t('pricing.livePrice') }}</small></dt><dd>{{ formatMemberMoney(renewal.netPrice) }}</dd></div>
+              <div><dt>{{ $t('home.autoRenewalPrice') }} <small v-if="pricingInfo?.policy.dynamicEnabled && pricingInfo.policy.renewalPricingMode === 'DYNAMIC'">{{ $t(`pricing.priceStates.${pricingState}`) }}</small></dt><dd>{{ pricingInfo?.policy.dynamicEnabled && pricingInfo.policy.renewalPricingMode === 'DYNAMIC' && pricingState !== 'ready' ? $t('common.notAvailable') : formatMemberMoney(renewal.netPrice) }}</dd></div>
               <div><dt>{{ $t('home.autoRenewalChargeDate') }}</dt><dd>{{ formatDate(renewal.scheduledAt) }}</dd></div>
               <div><dt>{{ $t('home.autoRenewalNextCycleDate') }}</dt><dd>{{ formatDate(renewal.nextCycleEndsAt) }}</dd></div>
             </dl>

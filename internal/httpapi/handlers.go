@@ -100,6 +100,7 @@ func (s *Server) purchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request struct {
+		QuoteVersion         string            `json:"quoteVersion"`
 		ComboID              string            `json:"comboId"`
 		AddonSquadProductIDs []string          `json:"addonSquadProductIds"`
 		CouponGrantID        string            `json:"couponGrantId"`
@@ -113,9 +114,11 @@ func (s *Server) purchase(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	purchase, err := s.deps.Catalog.PurchaseWithCoupon(r.Context(), user, request.ComboID, request.AddonSquadProductIDs, request.CouponGrantID, request.SquadActivationCodes, idempotencyKey)
+	purchase, err := s.deps.Catalog.PurchaseWithCoupon(r.Context(), user, request.ComboID, request.AddonSquadProductIDs, request.CouponGrantID, request.SquadActivationCodes, idempotencyKey, request.QuoteVersion)
 	if err != nil {
 		switch {
+		case errors.Is(err, database.ErrPricingQuoteChanged):
+			s.writeError(w, r, http.StatusConflict, "PRICING_QUOTE_CHANGED", "The price changed. Review the refreshed total before confirming.")
 		case errors.Is(err, database.ErrPricingDecisionPending), errors.Is(err, database.ErrPricingComputePending):
 			s.writeError(w, r, http.StatusConflict, "PRICING_DECISION_PENDING", "The price is being prepared. Please try again shortly.")
 		case errors.Is(err, catalog.ErrNoAccessibleNodes):

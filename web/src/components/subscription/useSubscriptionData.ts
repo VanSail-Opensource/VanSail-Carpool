@@ -3,7 +3,7 @@ import { localizedError } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
 // Live member data is never restored from persistent rendering snapshots.
-export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise<T>, interval = 60_000, errorKey = 'subscription.loadFailed') {
+export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise<T>, interval = 60_000, errorKey = 'subscription.loadFailed', nextInterval?: (value: T | null) => number) {
   const value = shallowRef<T | null>(null)
   const loading = shallowRef(true)
   const refreshing = shallowRef(false)
@@ -15,7 +15,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
 
   function schedule(): void {
     if (timer) clearTimeout(timer)
-    if (!disposed && !document.hidden) timer = setTimeout(() => void refresh(), Math.max(1000, interval))
+    if (!disposed && !document.hidden) timer = setTimeout(() => void refresh(), Math.max(1000, nextInterval ? nextInterval(value.value as T | null) : interval))
   }
 
   async function refresh(clear = false): Promise<void> {
@@ -44,12 +44,14 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
   }
 
   function visibilityChanged(): void {
-    if (document.hidden) { if (timer) clearTimeout(timer) }
+    if (document.hidden) { if (timer) clearTimeout(timer); controller?.abort(); latest.begin(); refreshing.value = false }
     else void refresh()
   }
+  function focused(): void { if (!document.hidden) void refresh() }
 
   onMounted(() => {
     document.addEventListener('visibilitychange', visibilityChanged)
+    window.addEventListener('focus', focused)
     void refresh()
   })
   onScopeDispose(() => {
@@ -58,6 +60,7 @@ export function useSubscriptionData<T>(fetcher: (signal: AbortSignal) => Promise
     controller?.abort()
     if (timer) clearTimeout(timer)
     document.removeEventListener('visibilitychange', visibilityChanged)
+    window.removeEventListener('focus', focused)
     value.value = null
   })
   return { value: readonly(value), loading: readonly(loading), refreshing: readonly(refreshing), error: readonly(error), hasData: computed(() => value.value != null), refresh }

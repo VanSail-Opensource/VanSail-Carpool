@@ -19,6 +19,8 @@
     "stale": "这些预测需要刷新。",
     "noHistory": "完整历史数据不足，暂时无法预测。",
     "loadFailed": "无法加载预测。",
-    "validated": "已验证"
+    "validated": "已验证",
+    "leadHint": "每个日期按其原始预测提前量独立验证。",
+    "leadSamples": "{count} 个已完成结果"
   }
 }

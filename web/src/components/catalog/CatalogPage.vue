@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { AnimatePresence, motion } from 'motion-v'
 
 import type { SquadProduct } from '@/api/types'
+import PricingQuoteNotice from '@/components/common/PricingQuoteNotice.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useCatalog } from '@/composables/useCatalog'
@@ -40,6 +41,7 @@ const {
   purchase,
   quote,
   quoteUsable,
+  quoteStatus,
   selectedComboId,
   selectedSquadIds,
   selectedCouponGrantId,
@@ -255,6 +257,7 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
               :squads="selectedSquads"
               :coupon="selectedCoupon"
               :quote="quote"
+              :quote-ready="quoteUsable"
               :quoting="quoting"
               :error="error"
               :purchasing="purchasing || activationPrompting"
@@ -265,6 +268,7 @@ async function handleCouponRedeemed(grantId: string | null): Promise<void> {
           </motion.section>
         </AnimatePresence>
 
+        <PricingQuoteNotice :state="quoteStatus" :valid-until="quote?.quoteValidUntil" @retry="refreshQuote()" />
         <CatalogFlowControls
           v-if="activeStep < 4"
           :show-back="activeStep > 1"
