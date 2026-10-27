@@ -114,6 +114,31 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	if err != nil {
 		return fmt.Errorf("load automatic renewal failure owner: %w", err)
 	}
+	if err = lockMemberPurchaseTx(ctx, tx, userID); err != nil {
+		return err
+	}
+	if _, found, err := automaticRenewalSuccessorIDTx(ctx, tx, purchaseID); err != nil {
+		return err
+	} else if found {
+		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE id=? AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
+			return err
+		}
+		return tx.Commit()
+	}
+	// An older term can retain a stale preference after a later purchase has
+	// already taken over. Retire that preference without reporting a failure.
+	var superseded int
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id
+		WHERE old.id=? AND next.id<>old.id AND next.status IN ('queued','activating','active')
+		AND next.valid_until>old.valid_until)`, purchaseID).Scan(&superseded); err != nil {
+		return err
+	}
+	if superseded == 1 {
+		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE id=? AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
+			return err
+		}
+		return tx.Commit()
+	}
 	settled, err := s.failAutoRenewalTx(ctx, tx, purchaseID, userID, reason, now.UTC())
 	if err != nil {
 		return err
@@ -142,8 +167,11 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 func (s *Store) AutoRenewalFailure(ctx context.Context, userID string) (*model.AutoRenewalFailure, error) {
 	var failure model.AutoRenewalFailure
 	var failedAt sql.NullString
-	err := s.db.QueryRowContext(ctx, `SELECT id,auto_renew_failure_reason,auto_renew_failed_at FROM purchases
-		WHERE user_id=? AND auto_renew_failure_reason<>'' AND auto_renew_failed_at IS NOT NULL ORDER BY auto_renew_failed_at DESC LIMIT 1`, userID).Scan(&failure.PurchaseID, &failure.Reason, &failedAt)
+	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.auto_renew_failure_reason,p.auto_renew_failed_at FROM purchases p
+		WHERE p.user_id=? AND p.auto_renew_failure_reason<>'' AND p.auto_renew_failed_at IS NOT NULL
+		AND NOT EXISTS (SELECT 1 FROM purchases next WHERE next.user_id=p.user_id AND next.id<>p.id
+			AND next.status IN ('queued','activating','active') AND next.valid_until>p.valid_until)
+		ORDER BY p.auto_renew_failed_at DESC LIMIT 1`, userID).Scan(&failure.PurchaseID, &failure.Reason, &failedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

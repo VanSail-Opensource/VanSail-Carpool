@@ -12,6 +12,7 @@ type Observation struct {
 	NodeID                                                               string
 	At                                                                   time.Time
 	ReportedAt                                                           time.Time
+	ReceivedAt                                                           time.Time
 	Connected, Ready, Synchronized, Stale, ProbeUnavailable, Maintenance bool
 	CPU, Memory                                                          float64
 	Complete                                                             bool
@@ -27,6 +28,7 @@ type Health struct {
 	Memory                                               float64   `json:"memory"`
 	Since                                                time.Time `json:"since"`
 	warningAt, criticalAt, peakAt, offlineAt, recoveryAt time.Time
+	receivedAt                                           time.Time
 	highSamples                                          int
 }
 
@@ -55,6 +57,14 @@ func (r *HealthRegistry) ApplicationPressured(now time.Time) bool {
 
 func NewHealthRegistry() *HealthRegistry {
 	return &HealthRegistry{nodes: map[string]Health{}, capacityUnsafeUntil: map[string]time.Time{}}
+}
+
+// Remove forgets disabled nodes without admitting them as healthy.
+func (r *HealthRegistry) Remove(node string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.nodes, node)
+	delete(r.capacityUnsafeUntil, node)
 }
 
 func persistent(start *time.Time, active bool, now time.Time, duration time.Duration) bool {
@@ -94,11 +104,12 @@ func (r *HealthRegistry) Observe(o Observation) Health {
 	h.At = o.At
 	h.ReportedAt = o.ReportedAt
 	state := "HEALTHY"
-	sampleAt := o.ReportedAt
+	sampleAt := o.ReceivedAt
 	if sampleAt.IsZero() {
-		sampleAt = o.At
+		sampleAt = o.ReportedAt
 	}
-	if !o.ReportedAt.Equal(old.ReportedAt) {
+	h.receivedAt = sampleAt
+	if !sampleAt.Equal(old.receivedAt) {
 		if o.CPU >= 85 || o.Memory >= 92 {
 			h.highSamples++
 		} else {
@@ -114,7 +125,7 @@ func (r *HealthRegistry) Observe(o Observation) Health {
 		state = "MAINTENANCE"
 	case offline:
 		state = "OFFLINE"
-	case o.Stale || o.ReportedAt.IsZero() || o.At.Sub(o.ReportedAt) > time.Minute:
+	case o.Stale || sampleAt.IsZero() || o.At.Sub(sampleAt) > time.Minute:
 		state = "TELEMETRY_STALE"
 	case critical || peak:
 		state = "OVERLOADED"

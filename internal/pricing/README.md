@@ -30,6 +30,9 @@ budgeted campaigns take precedence over this inferred envelope and notify admins
   MAE, median error, WAPE, signed bias, interval coverage/width and pinball loss.
 - `health.go`: authenticated mean per-core CPU, EWMA, persistence, independent
   outage evidence, freshness and recovery hysteresis. Live samples stay in memory.
+  Freshness and sustained-sample timing use the panel's authenticated receipt clock,
+  independent of the agent clock; disabled nodes are removed from the registry.
+  Serious incident notices wait one minute and are suppressed if already resolved.
 - `cache.go`: bounded analytical/exposure caches, shared concurrent work,
   generation invalidation and constant-time FIFO eviction. Cached results never
   authorize financial settlement. Policy edits invalidate affected projections.

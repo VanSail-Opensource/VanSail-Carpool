@@ -8,6 +8,8 @@ import (
 )
 
 type NodeMetrics struct {
+	Enabled                bool                `json:"-"`
+	ReceivedAt             time.Time           `json:"-"`
 	Available              bool                `json:"available"`
 	Firewall               *wire.FirewallState `json:"firewall,omitempty"`
 	NodeID                 string              `json:"nodeId"`

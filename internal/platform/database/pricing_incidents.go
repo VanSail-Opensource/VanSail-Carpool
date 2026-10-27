@@ -54,7 +54,7 @@ func (s *Store) RecordPricingHealth(ctx context.Context, h pricing.Health) error
 			if e != nil {
 				return e
 			}
-			if e = insertOutboxTx(ctx, tx, "pricing_health_notice", string(raw), h.At, h.At); e != nil {
+			if e = insertOutboxTx(ctx, tx, "pricing_health_notice", string(raw), h.At.Add(time.Minute), h.At); e != nil {
 				return e
 			}
 		}

@@ -299,13 +299,13 @@ func TestProcessDueAutoRenewalsAndFailureReasons(t *testing.T) {
 
 	repository = dueAutoRenewalRepositoryForPlan(eligibleAutoRenewalPlan())
 	repository.planErr = errors.New("plan failure")
-	if err := newCatalogServiceForTest(repository, renewalTestRemote()).ProcessDueAutoRenewals(ctx, now); err != nil || len(repository.failed) != 1 || repository.failed[0].reason != database.AutoRenewalReasonUnavailable {
+	if err := newCatalogServiceForTest(repository, renewalTestRemote()).ProcessDueAutoRenewals(ctx, now); !errors.Is(err, repository.planErr) || len(repository.failed) != 0 {
 		t.Fatalf("ProcessDueAutoRenewals(plan failure) = %v, failures=%v", err, repository.failed)
 	}
 
 	repository = dueAutoRenewalRepositoryForPlan(eligibleAutoRenewalPlan())
 	repository.commitErr = errors.New("commit failure")
-	if err := newCatalogServiceForTest(repository, renewalTestRemote()).ProcessDueAutoRenewals(ctx, now); err != nil || len(repository.failed) != 1 || repository.failed[0].reason != database.AutoRenewalReasonUnavailable {
+	if err := newCatalogServiceForTest(repository, renewalTestRemote()).ProcessDueAutoRenewals(ctx, now); !errors.Is(err, repository.commitErr) || len(repository.failed) != 0 {
 		t.Fatalf("ProcessDueAutoRenewals(commit failure) = %v, failures=%v", err, repository.failed)
 	}
 

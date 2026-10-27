@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -77,6 +78,7 @@ func (s *Service) ProcessDueAutoRenewals(ctx context.Context, now time.Time) err
 	if err != nil {
 		return err
 	}
+	var processingErr error
 	for _, candidate := range candidates {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -105,12 +107,19 @@ func (s *Service) ProcessDueAutoRenewals(ctx context.Context, now time.Time) err
 				continue
 			}
 		}
+		// Only known business outcomes can terminate a renewal. A database,
+		// transport or cancellation error is not evidence that it failed.
+		if statusErr != nil && !errors.Is(statusErr, database.ErrInsufficientBalance) &&
+			!database.IsPricingRenewalDeferral(statusErr) && !errors.Is(statusErr, database.ErrStockUnavailable) {
+			processingErr = errors.Join(processingErr, fmt.Errorf("automatic renewal %s: %w", candidate.PurchaseID, statusErr))
+			continue
+		}
 		reason := autoRenewalFailureReason(status, statusErr)
 		if err := repository.MarkAutoRenewalFailed(ctx, candidate.PurchaseID, reason, now.UTC()); err != nil {
 			return err
 		}
 	}
-	return nil
+	return processingErr
 }
 
 func autoRenewalFromPlan(plan database.AutoRenewalPlan) model.AutoRenewal {

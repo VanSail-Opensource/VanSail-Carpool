@@ -34,7 +34,7 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		// Only fresh, enabled native agents contribute to activity totals.
 		// Disconnected and disabled agents retain their transport metadata.
 		fresh := node.Enabled && connected && freshSnapshot(snapshot, now, global.Telemetry.ReportSeconds)
-		item := NodeMetrics{NodeID: node.ID, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: []json.RawMessage{}}
+		item := NodeMetrics{NodeID: node.ID, Enabled: node.Enabled, ReceivedAt: snapshot.receivedAt, Connected: connected, Ready: snapshot.report.Ready, Synchronized: snapshot.report.Synchronized && snapshot.firewallPending == "", Stale: !fresh, Version: snapshot.hello.Version, XrayVersion: snapshot.hello.XrayVersion, Capabilities: append([]string{}, snapshot.hello.Capabilities...), Machine: json.RawMessage(`{}`), Certificates: json.RawMessage(`{}`), Logs: []json.RawMessage{}}
 		if len(summary) == 0 || !summary[0] {
 			item.Logs = append(item.Logs, snapshot.logs...)
 		}

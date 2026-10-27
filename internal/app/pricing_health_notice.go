@@ -17,9 +17,12 @@ func registerPricingHealthNotice(worker *outbox.Worker, store *database.Store, s
 		if err != nil {
 			return err
 		}
-		node, state, reason, err := store.PricingIncidentNotice(ctx, id)
+		node, state, reason, active, err := store.PricingIncidentNotice(ctx, id)
 		if err != nil {
 			return err
+		}
+		if !active {
+			return nil
 		}
 		message := telegramformat.Escape(fmt.Sprintf("Pricing health incident / 定价健康事件\n%s\n%s\n%s\nDynamic publication and new admissions require healthy telemetry. Existing accounting and paid entitlements are preserved. / 动态发布及新增准入需要健康遥测，现有计费和已购权益保持有效。", node, state, reason))
 		for _, admin := range admins {

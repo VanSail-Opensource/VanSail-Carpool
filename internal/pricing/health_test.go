@@ -50,3 +50,21 @@ func TestRepeatedCPUSampleCannotProveSustainedOverload(t *testing.T) {
 		}
 	}
 }
+
+func TestHealthUsesReceiptTimeDespiteAgentClockSkew(t *testing.T) {
+	start := time.Date(2026, 10, 27, 0, 0, 0, 0, time.UTC)
+	for _, skew := range []time.Duration{-4 * time.Minute, 2 * time.Minute} {
+		r := NewHealthRegistry()
+		for i := 0; i < 4; i++ {
+			at := start.Add(time.Duration(i) * 30 * time.Second)
+			h := r.Observe(Observation{NodeID: "node", At: at, ReceivedAt: at, ReportedAt: at.Add(skew), CPU: 100, Memory: 20, Connected: true, Ready: true, Synchronized: true, Complete: true})
+			if i == 0 && h.State != "HEALTHY" || i == 3 && h.State != "OVERLOADED" {
+				t.Fatalf("skew %v observation %d: %+v", skew, i, h)
+			}
+		}
+		r.Remove("node")
+		if r.Safe([]string{"node"}, start.Add(90*time.Second)) || len(r.Snapshot(start)) != 0 {
+			t.Fatal("removed node remained available")
+		}
+	}
+}
