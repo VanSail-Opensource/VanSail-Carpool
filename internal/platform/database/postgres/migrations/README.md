@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00023_period_aliases_source_marker.sql` records SQLite migration 109 in the
+source inventory after its equivalent PostgreSQL schema has been applied.
+
 `00022_xnode_period_aliases.sql` retains the node-scoped reference map introduced
 by SQLite migration 109 for schema compatibility; traffic discard does not use it.
 
