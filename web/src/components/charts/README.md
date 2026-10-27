@@ -7,6 +7,7 @@ Quantitative charts use the official [shadcn-vue chart composition](https://www.
 - `ChartTooltipContent.vue` formats escaped Vue text. `tooltip.ts` serializes and immediately releases detached trees; no owner data is globally cached.
 - `ChartLegendContent.vue` displays series labels and solid/dashed styles.
 - `LineChart.vue` composes Unovis lines, axes, intervals and crosshairs. Missing values break lines by default; callers may opt into gap connectors and a dashed bridge between series without changing inspection values or intervals. Touch selection, arrow/Home/End keys and visible previous/next controls expose the same values. Callers retain exact integer evidence and provide display conversions only.
+- `bridge.ts` selects the last observed and first subsequent forecast points for the visual connector; `bridge.test.ts` covers missing and overlapping points.
 
 Extension points are numerical series, localized labels, value formatters and optional intervals. These components never fetch data, calculate prices or persist telemetry.
 

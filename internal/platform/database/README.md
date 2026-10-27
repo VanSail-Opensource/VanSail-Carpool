@@ -1,5 +1,7 @@
 # Application store
 
+`pricing_daily_actual_test.go` verifies daily traffic actuals and missing windows for pricing forecasts.
+
 `xnode_traffic_discard.go` records user-authorized unmatched traffic exceptions.
 Reference conflicts roll back the entire report before the real report cursor
 and an audit record commit. Gaps are audited while valid reports still count.
