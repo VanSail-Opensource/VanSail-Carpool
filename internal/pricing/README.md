@@ -147,6 +147,7 @@ retaining bounded batches and keeping traffic acknowledgments on their own lane.
 
 - `strategy.go`: Strategy v4 observed-price support and stable selection within 95% of the best positive contribution; ties prefer retention then lower price.
 - `strategy_test.go`: Hosted single-probability, stability and supported-range regressions.
+- `capacity_models_test.go`: Hosted checks for finite and unlimited capacity and invalid costs.
 
 Strategy `balanced-coupons-v4` separates revised evidence from all historical
 models and decisions. Contribution is probability times conditional net receipts
@@ -162,5 +163,12 @@ remains overhead. Forecast selection fixes model, calendar window, lead and
 freshness; each fulfilling node must pass independently. Total forecast demand
 and overlapping paid commitments reserve their maximum, rather than their sum.
 These are analytical estimates, not debits or guarantees of causal elasticity.
+
+Personal forecast reads retain a still-future older vintage when the newest
+feature snapshot has no complete total observations. The original generation
+time and stale status remain visible; missing traffic is not converted to zero.
+Combos with no included proxy groups have no node health admission requirement;
+configured groups with no healthy nodes still fail closed. This does not waive
+the separate cost and model evidence required to publish an optimized price.
 
 Provider metadata supports a fixed cycle or a 24-hour hourly rate plus upload-and-download usage per GiB. Rates are integer millionths of TXB. Unlimited nodes have no traffic-quota constraint; finite nodes are checked separately. Next-day cost uses the original p90 forecast, native usage attribution, and leaves unattributed traffic as overhead. Missing required forecast evidence makes estimates unavailable. Recorded payments and historical cost versions are independent immutable facts.

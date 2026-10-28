@@ -49,7 +49,10 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 		return out, err
 	}
 	var at, raw string
-	err = s.db.QueryRowContext(ctx, `SELECT watermark,features_json FROM pricing_features WHERE entity_type='user' AND entity_id=? ORDER BY watermark DESC LIMIT 1`, user).Scan(&at, &raw)
+	// A newer snapshot can legitimately have no complete total observations.
+	// Keep an older, still relevant vintage visible rather than hiding it behind
+	// that empty snapshot; its original generation time marks it as stale.
+	err = s.db.QueryRowContext(ctx, `SELECT f.watermark,f.features_json FROM pricing_features f WHERE f.entity_type='user' AND f.entity_id=? ORDER BY CASE WHEN EXISTS(SELECT 1 FROM pricing_forecast_vintages v WHERE v.entity_type='user' AND v.entity_id=f.entity_id AND v.metric='traffic_bytes' AND v.model_version='empirical-user-total-v1' AND v.generated_at=f.watermark AND v.target_from>=? AND v.target_from<?) THEN 0 ELSE 1 END,f.watermark DESC LIMIT 1`, user, pricingStamp(day.AddDate(0, 0, 1)), pricingStamp(day.AddDate(0, 0, 6))).Scan(&at, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return out, nil
 	}

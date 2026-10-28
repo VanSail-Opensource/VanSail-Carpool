@@ -46,6 +46,12 @@ func TestPersonalForecastOldVintageRemainsStale(t *testing.T) {
 	if err = store.SavePricingForecast(ctx, forecast); err != nil {
 		t.Fatal(err)
 	}
+	// A later feature with no complete total observations must not hide a
+	// still-future vintage from the previous day.
+	_, err = store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'user',?,?,?,0,'UNKNOWN','{}','empty-feature')`, "empty-user-feature", user.ID, day.Format(time.DateOnly), pricingStamp(now))
+	if err != nil {
+		t.Fatal(err)
+	}
 	out, err := store.personalForecast(ctx, user.ID, now)
 	if err != nil || !out.Stale || out.Status != "STALE" {
 		t.Fatalf("old forecast: %+v, %v", out, err)

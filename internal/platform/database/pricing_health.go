@@ -60,6 +60,17 @@ func pricingHealthAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, 
 	if err != nil {
 		return err
 	}
+	if kind == "combo" && len(nodes) == 0 {
+		// A combo without proxy groups has no node telemetry to gate. Do not
+		// extend this exception to configured groups with missing/disabled nodes.
+		var noProxyGroups bool
+		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos c WHERE c.id=? AND NOT EXISTS(SELECT 1 FROM json_each(c.included_squad_uuids)))`, id).Scan(&noProxyGroups); err != nil {
+			return err
+		}
+		if noProxyGroups {
+			return nil
+		}
+	}
 	if !pricing.ContextHealth(ctx).Safe(nodes, now) {
 		return pricing.CapacityUnsafe
 	}

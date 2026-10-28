@@ -7,7 +7,31 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
+
+func TestPricingAdmissionDistinguishesNoProxyGroupsFromMissingNodes(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	combo := saveTestCombo(t, s, "no-proxy", 100, 30)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if err = pricingHealthAdmissionTx(ctx, tx, "combo", combo.ID, time.Now()); err != nil {
+		t.Fatalf("combo without proxy groups: %v", err)
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["missing-group"]' WHERE id=?`, combo.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err = pricingHealthAdmissionTx(ctx, tx, "combo", combo.ID, time.Now()); !errors.Is(err, pricing.CapacityUnsafe) {
+		t.Fatalf("missing node should remain unsafe: %v", err)
+	}
+	if err = pricingHealthAdmissionTx(ctx, tx, "combo", "missing-combo", time.Now()); !errors.Is(err, pricing.CapacityUnsafe) {
+		t.Fatalf("missing combo should remain unsafe: %v", err)
+	}
+}
 
 func TestQueuedPricingDecisionsPreserveRenewalOnFailureAndDisableOnSuccess(t *testing.T) {
 	s := newTestStore(t)

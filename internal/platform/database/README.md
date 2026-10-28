@@ -1028,3 +1028,5 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
 
 Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
+
+- `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.

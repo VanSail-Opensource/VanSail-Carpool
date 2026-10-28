@@ -243,3 +243,5 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 - `108_host_name_overrides.sql`: Only authored owner-specific host display preferences.
 
 - `110_pricing_read_indexes.sql`: Adds only exposure-window and entity-day lookup indexes; historical financial facts are unchanged.
+
+- `111_provider_cost_models.sql`: Adds hourly and per-GiB rates and unlimited-capacity flags to current and versioned provider costs.
