@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, watch } from 'vue'
+import { computed, nextTick, onMounted, onScopeDispose, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/i18n'
 import BrowserPreferences from './BrowserPreferences.vue'
 import { useBrowserSession } from './session'
@@ -15,6 +15,32 @@ watch([member, miniAppUrl], ([user, url]) => {
   if (user && url) redirectTimer = globalThis.setTimeout(() => globalThis.location.replace(url), 2000)
 }, { immediate: true })
 onScopeDispose(() => { if (redirectTimer) globalThis.clearTimeout(redirectTimer) })
+let cleanupReveals = () => {}
+function installReveals() {
+  cleanupReveals()
+  const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)')
+  const animations: globalThis.Animation[] = []
+  if (!globalThis.IntersectionObserver) return
+  const observer = new globalThis.IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      observer.unobserve(entry.target)
+      if (!reduced.matches && entry.boundingClientRect.top >= globalThis.innerHeight) {
+        const offset = entry.target.classList.contains('landing-services') ? 'translateX(-12px)' : 'translateY(12px)'
+        animations.push(entry.target.animate([{ transform: offset }, { transform: 'none' }], { duration: 600, easing: 'ease-out' }))
+      }
+    }
+  }, { rootMargin: '0px 0px 96px 0px' })
+  globalThis.document.querySelectorAll('.landing-services, .browser-how').forEach(element => {
+    if (element.getBoundingClientRect().top >= globalThis.innerHeight) observer.observe(element)
+  })
+  const stop = () => { observer.disconnect(); animations.forEach(animation => animation.cancel()) }
+  reduced.addEventListener('change', stop)
+  cleanupReveals = () => { stop(); reduced.removeEventListener('change', stop) }
+}
+onMounted(installReveals)
+watch(member, () => { void nextTick(installReveals) })
+onUnmounted(() => cleanupReveals())
 </script>
 
 <template>
@@ -32,6 +58,7 @@ onScopeDispose(() => { if (redirectTimer) globalThis.clearTimeout(redirectTimer)
       </section>
       <template v-else>
         <section class="browser-hero">
+          <div class="landing-display" aria-hidden="true"><img src="/landing/hero-connectivity.png" alt="" /><span>VanSail</span></div>
           <div class="browser-hero-copy">
             <p class="browser-intro">{{ t('browser.landing.eyebrow') }}</p>
             <h1>{{ t('browser.landing.title') }}</h1>
@@ -45,6 +72,9 @@ onScopeDispose(() => { if (redirectTimer) globalThis.clearTimeout(redirectTimer)
             </UAlert>
             <p class="browser-entry-hint">{{ t('browser.accessInstructions') }}</p>
           </div>
+        </section>
+        <section class="landing-services" :aria-label="t('browser.landing.services')">
+          <img class="landing-service-image" src="/landing/service-overview.png" alt="" loading="lazy" />
           <aside class="browser-service-map" :aria-label="t('browser.landing.services')">
             <div class="browser-service-map-header"><UIcon name="i-ph-circles-three-plus-bold" /><span>{{ t('browser.landing.services') }}</span></div>
             <div class="browser-service"><UIcon name="i-ph-globe-bold" /><div><strong>{{ t('browser.landing.connectivity') }}</strong><span>{{ t('browser.landing.connectivityHint') }}</span></div></div>
@@ -55,12 +85,13 @@ onScopeDispose(() => { if (redirectTimer) globalThis.clearTimeout(redirectTimer)
         </section>
         <section class="browser-how" :aria-label="t('browser.landing.how')">
           <h2>{{ t('browser.landing.how') }}</h2>
+          <img class="landing-how-image" src="/landing/membership-management.png" alt="" loading="lazy" />
           <div class="browser-how-row"><UIcon name="i-ph-package-bold" /><strong>{{ t('browser.landing.plans') }}</strong><p>{{ t('browser.landing.plansHint') }}</p></div>
           <div class="browser-how-row"><UIcon name="i-ph-wallet-bold" /><strong>{{ t('browser.landing.wallet') }}</strong><p>{{ t('browser.landing.walletHint') }}</p></div>
           <div class="browser-how-row"><UIcon name="i-ph-arrows-clockwise-bold" /><strong>{{ t('browser.landing.renewals') }}</strong><p>{{ t('browser.landing.renewalsHint') }}</p></div>
         </section>
       </template>
     </main>
-    <footer class="browser-landing-footer"><span>{{ t('app.name') }}</span><span>{{ t('browser.landing.footer') }}</span></footer>
+    <footer class="browser-landing-footer"><img src="/landing/footer-connectivity.png" alt="" loading="lazy" /><span>{{ t('app.name') }}</span><span>{{ t('browser.landing.footer') }}</span></footer>
   </div>
 </template>

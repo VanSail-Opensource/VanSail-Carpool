@@ -23,7 +23,7 @@ the Telegram SDK or load member shell/theme assets.
   Text-control sizing excludes hidden fields; button sizing applies to actions
   and comboboxes, leaving switch/checkbox roles and Nuxt UI internals untouched.
   Rules use the experience root so portalled dialogs follow the same policy.
-- `landing.css` owns public entrance presentation.
+- `landing.css` owns the responsive public entrance, service overview, and membership presentation. `BrowserLanding.vue` retains the existing session and redirect flow and cleans up its one-time motion observers. The editorial images in `web/public/landing` are generated illustrative imagery, not customer evidence.
 
 Browser cookies/signatures have their own scope. Snapshots include experience
 and identity. No global member/admin preload runs here. Mutations retain audited
