@@ -47,6 +47,7 @@
       "dark": "Dark"
     },
     "landing": {
+      "brandShort": "VanSail",
       "eyebrow": "Shared services, managed together",
       "title": "Your subscriptions. One place.",
       "description": "Manage shared subscriptions, renewals, and streaming access through Telegram.",

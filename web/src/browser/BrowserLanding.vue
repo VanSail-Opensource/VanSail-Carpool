@@ -58,7 +58,7 @@ onUnmounted(() => cleanupReveals())
       </section>
       <template v-else>
         <section class="browser-hero">
-          <div class="landing-display" aria-hidden="true"><img src="/landing/hero-connectivity.png" alt="" /><span>VanSail</span></div>
+          <div class="landing-display" aria-hidden="true"><img src="/landing/hero-connectivity.png" alt="" /><span>{{ t('browser.landing.brandShort') }}</span></div>
           <div class="browser-hero-copy">
             <p class="browser-intro">{{ t('browser.landing.eyebrow') }}</p>
             <h1>{{ t('browser.landing.title') }}</h1>

@@ -47,6 +47,7 @@
       "dark": "深色"
     },
     "landing": {
+      "brandShort": "VanSail",
       "eyebrow": "共享服务，统一管理",
       "title": "你的订阅，尽在一处。",
       "description": "通过 Telegram 管理共享订阅、续费及流媒体访问。",
