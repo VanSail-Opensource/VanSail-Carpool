@@ -5,6 +5,14 @@
 @import "../styles/statistics-02.css";
 @import "../components/admin/workspace.css";
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme {
   --font-sans: "Geist", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
@@ -24,6 +32,7 @@
   --text-faint: #657386;
   --line: #e2e7ed;
   --line-strong: #c7d2df;
+  --control-border: #5f6a77;
   --accent: #365f87;
   --accent-strong: #284b70;
   --accent-ink: #fff;
@@ -63,6 +72,7 @@
   --text-faint: #94a3b7;
   --line: #303c4b;
   --line-strong: #495b71;
+  --control-border: #7c8795;
   --accent: #b1cbe5;
   --accent-strong: #c9ddf0;
   --accent-ink: #183049;
@@ -82,6 +92,10 @@ html[data-experience="browser"] h1, html[data-experience="browser"] h2, html[dat
 html[data-experience="browser"] :is(input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]), textarea):not([hidden]):not([aria-hidden="true"]) { max-width: 100%; }
 .browser-console { background: var(--canvas); }
 .browser-console button, .browser-console button span { white-space: nowrap; }
+.browser-console :is(button, [role="tab"], nav a, .browser-wordmark) { min-height: 44px; }
+.browser-console :is(button, [role="tab"]) { min-width: 44px; }
+.browser-console nav a[aria-current="page"] { color: var(--accent); }
+.browser-console nav a[aria-current="page"]::before { background: var(--accent-soft); }
 .browser-sidebar-header { height: 72px; padding: 18px; border-bottom: 1px solid var(--line); }
 .browser-sidebar-body { padding: 16px 12px; }
 .browser-sidebar-footer { padding: 12px; border-top: 1px solid var(--line); }
@@ -100,6 +114,13 @@ html[data-experience="browser"] :is(input:not([type]), input:is([type="text"], [
 .browser-workspace main { min-width: 0; width: 100%; }
 .browser-workspace .page, .browser-workspace .page--admin { max-width: none; padding: 0; width: 100%; margin: 0; }
 .browser-console .admin-panel { min-width: 0; }
+.browser-console .admin-panel__heading { border-bottom: 1px solid var(--line); }
+.browser-console .admin-section { padding-block: 24px; }
+.browser-console :is(input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]), textarea, select, [role="combobox"]):not([hidden]):not([aria-hidden="true"]) { border-color: var(--control-border); }
+@media (prefers-reduced-motion: no-preference) {
+  .browser-workspace .admin-panel__heading { animation: browser-workspace-enter 500ms cubic-bezier(.23, 1, .32, 1) both; }
+  @keyframes browser-workspace-enter { from { transform: translateY(8px); } to { transform: translateY(0); } }
+}
 .browser-console .admin-panel__heading, .browser-console .admin-subsection-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
 .browser-console .admin-panel__heading h2 { margin: 0; font-size: 24px; }
 .browser-console .admin-panel__heading p, .browser-console .admin-subsection-heading p { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; }
@@ -125,8 +146,8 @@ html[data-experience="browser"] .money, html[data-experience="browser"] code { f
 .browser-access p, .browser-member p { margin: 0; color: var(--text-muted); max-width: 440px; }
 .browser-access-icon { width: 48px; height: 48px; color: var(--accent); }
 @media (min-width: 1024px) {
-  html[data-experience="browser"] :is(button:not([role]), button[role="button"], input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]), [role="combobox"]):not([hidden]):not([aria-hidden="true"]) { min-height: 36px; }
-  html[data-experience="browser"] :is(button:not([role]), button[role="button"]):not([hidden]):not([aria-hidden="true"]) { min-width: 32px; }
+  html[data-experience="browser"] :is(button:not([role]), button[role="button"], input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]), [role="combobox"]):not([hidden]):not([aria-hidden="true"]) { min-height: 44px; }
+  html[data-experience="browser"] :is(button:not([role]), button[role="button"]):not([hidden]):not([aria-hidden="true"]) { min-width: 44px; }
 }
 @media (max-width: 767px) {
   .browser-workspace { padding: 20px 14px; }

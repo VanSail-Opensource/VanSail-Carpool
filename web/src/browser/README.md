@@ -19,6 +19,8 @@ the Telegram SDK or load member shell/theme assets.
   stable renewal, expiry without discarding editor identity, scoped cache
   isolation, logout revocation, and one-use exchange in hosted CI.
 - `theme.ts` persists system/light/dark choice and observes system changes.
+- `workspaceMotion.ts` observes section headings once and cancels owned motion
+  when the console unmounts or reduced motion is enabled. Content remains visible.
 - `styles.css` owns semantic tokens and workspace rules.
   Text-control sizing excludes hidden fields; button sizing applies to actions
   and comboboxes, leaving switch/checkbox roles and Nuxt UI internals untouched.

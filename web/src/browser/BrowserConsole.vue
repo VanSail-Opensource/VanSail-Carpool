@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { localizedError, useI18n } from '@/i18n'
 import { useSessionStore } from '@/stores/session'
 import { useBrowserSession } from './session'
 import { adminGroups, consoleNavigation } from './navigation'
 import BrowserPreferences from './BrowserPreferences.vue'
+import { installWorkspaceMotion } from './workspaceMotion'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,9 @@ const section = computed(() => String(route.params.section || route.meta.adminSe
 const group = computed(() => adminGroups.find(value => value.sections.some(item => item.value === section.value)))
 const pageTitle = computed(() => t(group.value?.sections.find(item => item.value === section.value)?.labelKey ?? 'browser.console'))
 const mainContent = useTemplateRef<globalThis.HTMLElement>('mainContent')
+let cleanupMotion: (() => void) | undefined
+onMounted(() => { if (mainContent.value && globalThis.IntersectionObserver) cleanupMotion = installWorkspaceMotion(mainContent.value) })
+onUnmounted(() => cleanupMotion?.())
 watch(() => route.fullPath, () => { void nextTick(() => {
   mainContent.value?.parentElement?.scrollTo({ top: 0, left: 0 })
   if (!mainContent.value?.closest('[aria-hidden="true"], [inert]')) mainContent.value?.focus({ preventScroll: true })
