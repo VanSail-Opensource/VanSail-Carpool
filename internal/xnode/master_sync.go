@@ -52,9 +52,6 @@ func (m *Master) reconcile(ctx context.Context) error {
 	}
 	m.globalBlocks = blocks
 	m.mu.Unlock()
-	if err := m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds); err != nil {
-		return err
-	}
 	for _, peer := range peers {
 		peer.mu.Lock()
 		force := peer.forceSync
@@ -78,7 +75,9 @@ func (m *Master) reconcile(ctx context.Context) error {
 			}
 		}
 	}
-	return nil
+	// Renew authorization before connection observations can consume the deadline
+	// or fail. Delivered traffic settles independently in the journal transaction.
+	return m.observePAYG(ctx, peers, global.Telemetry.ReportSeconds)
 }
 
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {

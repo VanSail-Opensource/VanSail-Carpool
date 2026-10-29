@@ -1,5 +1,10 @@
 # Application store
 
+`pricing_readiness_test.go` verifies that published price validity survives the
+calculation cadence and that expired publications become unavailable. Product
+readiness exposes the calculation reason without changing settlement admission.
+Unlimited provider capacity still requires demand, cost and health evidence.
+
 `pricing_daily_actual_test.go` verifies daily traffic actuals and missing windows for pricing forecasts.
 `pricing_personal_freshness_test.go` distinguishes missing and pending history
 from an actually stale forecast vintage. Interactive personal forecast refreshes

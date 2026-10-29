@@ -1,5 +1,15 @@
 # X-Node control plane
 
+PAYG GiB purchases retain the same principal, credentials and accounting period.
+`master_sync.go` renews node authorization before connection observation work;
+an observation error cannot skip that pass. Journal settlement remains atomic
+and independent. `payg_leases.go` applies the bounded authenticated clock offset
+to both renewable leases and prepaid expiry caps. No upstream protocol changes
+or persisted connection state are required. Hosted continuity regressions cover
+the byte boundary, prepaid clock cap and observation failure ordering.
+`payg_continuity_test.go` covers funded authorization across GiB credit boundaries,
+the bounded agent-clock prepaid cap and synchronization before observation errors.
+
 `subscription_usage.go` projects existing owner accounting into subscription
 metadata and the HTTP `Subscription-Userinfo` header. An effective combo retains
 its expiry and current matching period's usage/quota even when PAYG hosts are

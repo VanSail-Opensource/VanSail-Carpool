@@ -5,11 +5,16 @@ inherit its saved/system appearance and desktop layout with contained tables
 and stacked mobile controls. No Telegram controls or initialization are imported.
 
 - `PricingWorkspace.vue` composes overview/product/user/operations/export routes.
-- `usePricingWorkspace.ts` cancels obsolete loads, limits parallel reads to three,
+- `usePricingWorkspace.ts` cancels obsolete loads,
   and refreshes live dashboard health without polling every analytical dataset.
+  Overview product readiness refreshes every minute and when visibility returns;
+  health retains its short foreground polling interval.
 - `ProductPricingSettings.vue` integrates explicit audited mode saves into the
   existing product editors. Calculated bounds are read-only; no approval step.
 - `PricingProducts.vue` renders paginated product modes and detail links.
+  Search and mode filters apply to the loaded page, retain stable row IDs and show
+  a localized filtered count. The table discloses calculation reasons and retires
+  an expired displayed price without making a commerce decision.
 - `PricingSummary.vue` separates recorded commerce results/provider payments
   from next-day unvalidated forecasts, explains missing node cost coverage and
   provider payment evidence, and links to the existing cost controls.
@@ -55,7 +60,7 @@ read-only notice; dynamic pricing requires no terms approval.
 The overview starts with one dashboard read, operations with one memory-only
 health read, product with one policy read, and member analysis with two reads.
 Optional native disclosures own their data lifetimes and independently retry.
-Only foreground health is polled; completed daily forecasts refresh on focus,
+Foreground health and minute-level overview readiness are polled; completed daily forecasts refresh on focus,
 UTC rollover or explicit refresh. Each lead retains its own calibration.
 Only the selected node mounts operational charts. Dataset cursors preserve typed
 product scope and show additional retained pages explicitly.

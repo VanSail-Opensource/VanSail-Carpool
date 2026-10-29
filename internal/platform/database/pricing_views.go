@@ -32,7 +32,7 @@ func (s *Store) PricingProducts(ctx context.Context, cursor string) ([]map[strin
 	return page.Items, page.Next, err
 }
 func (s *Store) pricingProducts(ctx context.Context, cursor string) ([]map[string]any, string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT kind,id,name,price FROM (SELECT 'combo' AS kind,id,name,price_txb_minor AS price FROM combos UNION ALL SELECT CASE WHEN billing_mode='payg' THEN 'payg' ELSE 'addon' END AS kind,group_id AS id,group_id AS name,CASE WHEN billing_mode='payg' THEN payg_price_minor ELSE price_txb_minor END AS price FROM squad_product_overrides) p WHERE kind||':'||id>? ORDER BY kind,id LIMIT 101`, cursor)
+	rows, err := s.db.QueryContext(ctx, `SELECT kind,id,name,price FROM (SELECT 'combo' AS kind,id,name,price_txb_minor AS price FROM combos UNION ALL SELECT CASE WHEN billing_mode='payg' THEN 'payg' ELSE 'addon' END AS kind,o.group_id AS id,COALESCE(NULLIF(g.name,''),o.group_id) AS name,CASE WHEN o.billing_mode='payg' THEN o.payg_price_minor ELSE o.price_txb_minor END AS price FROM squad_product_overrides o LEFT JOIN xnode_groups g ON g.id=o.group_id) p WHERE kind||':'||id>? ORDER BY kind,id LIMIT 101`, cursor)
 	if err != nil {
 		return nil, "", err
 	}

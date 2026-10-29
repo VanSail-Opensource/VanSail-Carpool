@@ -9,6 +9,8 @@ the Telegram SDK or load member shell/theme assets.
   preserves mounted editors while login opens in another tab.
 - `router.ts` owns browser history, protected routes, aliases, and payment returns.
 - `BrowserConsole.vue` composes dashboard navigation and route content.
+  Breadcrumbs identify the active page; the centered workspace stays readable
+  on wide displays, with wrapping action rows and contained tables on phones.
 - `navigation.ts` groups every admin section, including IP Lookup and USDT.
 - `BrowserPreferences.vue` provides independent locale and appearance controls.
 - `BrowserLanding.vue` explains services, directs administrators to Mini App access links, and forwards members.

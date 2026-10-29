@@ -1,5 +1,11 @@
 {
   "pricing": {
+    "products": "产品定价",
+    "productCount": "本页显示 {shown} / {total} 个产品",
+    "searchProducts": "搜索名称或 ID",
+    "filterProducts": "定价模式",
+    "noMatchingProducts": "没有符合筛选条件的产品。",
+    "filters": { "all": "全部产品", "dynamic": "已启用动态定价", "fixed": "仅固定定价" },
     "title": "定价",
     "settings": "定价策略",
     "fixedDefault": "产品默认固定价格，由管理员保存动态策略后生效。启用续费定价后会自动应用于未来续费。",

@@ -62,7 +62,7 @@ func pricingOptimizationInputsTx(ctx context.Context, tx *sql.Tx, p pricing.Poli
 	finite := 0
 	for _, node := range nodes {
 		n, ok := machines[node]
-		if !ok || n.days <= 0 || n.capacity <= 0 {
+		if !ok || n.days <= 0 || (n.unlimited == 0 && n.capacity <= 0) {
 			return in, pricing.ModelUnavailable
 		}
 		if !n.demand.Valid {

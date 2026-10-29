@@ -91,9 +91,8 @@ html[data-experience="browser"] :focus-visible { outline: 2px solid var(--accent
 html[data-experience="browser"] h1, html[data-experience="browser"] h2, html[data-experience="browser"] h3 { font-weight: 600; letter-spacing: -.025em; line-height: 1.3; }
 html[data-experience="browser"] :is(input:not([type]), input:is([type="text"], [type="search"], [type="email"], [type="url"], [type="tel"], [type="password"], [type="number"], [type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]), textarea):not([hidden]):not([aria-hidden="true"]) { max-width: 100%; }
 .browser-console { background: var(--canvas); }
-.browser-console button, .browser-console button span { white-space: nowrap; }
-.browser-console :is(button, [role="tab"], nav a, .browser-wordmark) { min-height: 44px; }
-.browser-console :is(button, [role="tab"]) { min-width: 44px; }
+.browser-console :is(button:not([role]), button[role="button"], [role="tab"], nav a, .browser-wordmark) { min-height: 44px; }
+.browser-console :is(button:not([role]), button[role="button"], [role="tab"]) { min-width: 44px; }
 .browser-console nav a[aria-current="page"] { color: var(--accent); }
 .browser-console nav a[aria-current="page"]::before { background: var(--accent-soft); }
 .browser-sidebar-header { height: 72px; padding: 18px; border-bottom: 1px solid var(--line); }
@@ -111,7 +110,7 @@ html[data-experience="browser"] :is(input:not([type]), input:is([type="text"], [
 .browser-navbar { height: 56px; background: var(--surface); padding-inline: 20px; }
 .browser-preferences { display: flex; align-items: center; gap: 4px; }
 .browser-workspace { padding: 24px; }
-.browser-workspace main { min-width: 0; width: 100%; }
+.browser-workspace main { min-width: 0; width: 100%; max-width: 1600px; margin-inline: auto; }
 .browser-workspace .page, .browser-workspace .page--admin { max-width: none; padding: 0; width: 100%; margin: 0; }
 .browser-console .admin-panel { min-width: 0; }
 .browser-console .admin-panel__heading { border-bottom: 1px solid var(--line); }
@@ -122,12 +121,12 @@ html[data-experience="browser"] :is(input:not([type]), input:is([type="text"], [
   @keyframes browser-workspace-enter { from { transform: translateY(8px); } to { transform: translateY(0); } }
 }
 .browser-console .admin-panel__heading, .browser-console .admin-subsection-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
-.browser-console .admin-panel__heading h2 { margin: 0; font-size: 24px; }
+.browser-console .admin-panel__heading h2 { margin: 0; font-size: 21px; }
 .browser-console .admin-panel__heading p, .browser-console .admin-subsection-heading p { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; }
 .browser-console .admin-subsection-heading { margin-block: 24px 16px; }
 .browser-console .admin-subsection-heading h3 { margin: 0; font-size: 17px; }
 .browser-console .button-row, html[data-experience="browser"] .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-html[data-experience="browser"] .row-actions { justify-content: flex-end; flex-wrap: nowrap; }
+html[data-experience="browser"] .row-actions { justify-content: flex-end; }
 .browser-console .admin-loading { display: grid; gap: 12px; padding-block: 24px; }
 .browser-console .empty-inline { padding: 40px 20px; text-align: center; color: var(--text-muted); }
 .browser-console .empty-inline h3 { color: var(--text); font-size: 16px; }

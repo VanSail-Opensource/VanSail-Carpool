@@ -9,6 +9,7 @@ export function usePricingWorkspace(_product: MaybeRefOrGetter<string>, _user: M
  const error = shallowRef('')
  const cursor = shallowRef('')
  let generation = 0
+ let dashboardAt = 0
  let controller: AbortController | undefined
  let poll: AbortController | undefined
  let timer: ReturnType<typeof setTimeout> | undefined
@@ -17,6 +18,7 @@ export function usePricingWorkspace(_product: MaybeRefOrGetter<string>, _user: M
  async function refreshHealth() {
   poll?.abort()
   if (document.hidden || !live()) return
+  if (toValue(mode) === 'overview' && Date.now() - dashboardAt >= 60_000) { await load(); return }
   const abort = new AbortController(); poll = abort
   const version = generation
   try { const result = await pricingAnalysisApi.health(abort.signal); if (!abort.signal.aborted && version === generation) { health.value = result.health; error.value = '' } }
@@ -34,7 +36,7 @@ export function usePricingWorkspace(_product: MaybeRefOrGetter<string>, _user: M
   try {
    if (toValue(mode) === 'overview') {
     const result = await pricingAnalysisApi.dashboard(cursor.value, abort.signal)
-    if (!abort.signal.aborted && version === generation) { dashboard.value = result; health.value = result.health }
+    if (!abort.signal.aborted && version === generation) { dashboard.value = result; health.value = result.health; dashboardAt = Date.now() }
    } else {
     const result = await pricingAnalysisApi.health(abort.signal)
     if (!abort.signal.aborted && version === generation) health.value = result.health
@@ -43,7 +45,7 @@ export function usePricingWorkspace(_product: MaybeRefOrGetter<string>, _user: M
   finally { if (!abort.signal.aborted && version === generation) { loading.value = false; schedule() } }
  }
  watch(() => [toValue(mode), cursor.value], () => { dashboard.value = null; health.value = []; void load() }, { immediate: true })
- function visibility() { if (document.hidden) { if (timer) clearTimeout(timer); poll?.abort() } else void refreshHealth() }
+ function visibility() { if (document.hidden) { if (timer) clearTimeout(timer); poll?.abort() } else if (toValue(mode) === 'overview') void load(); else void refreshHealth() }
  document.addEventListener('visibilitychange', visibility)
  onScopeDispose(() => { generation++; controller?.abort(); poll?.abort(); if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', visibility) })
  return { dashboard, health, loading, error, cursor, load, nextCursor: computed(() => dashboard.value?.nextCursor ?? '') }

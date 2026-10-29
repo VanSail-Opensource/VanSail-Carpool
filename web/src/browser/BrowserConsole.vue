@@ -25,7 +25,7 @@ watch(() => route.fullPath, () => { void nextTick(() => {
   mainContent.value?.parentElement?.scrollTo({ top: 0, left: 0 })
   if (!mainContent.value?.closest('[aria-hidden="true"], [inert]')) mainContent.value?.focus({ preventScroll: true })
 }) })
-const breadcrumbs = computed(() => [{ label: t('browser.console'), to: '/admin/settings' }, { label: t(group.value?.labelKey ?? 'adminNav.system') }])
+const breadcrumbs = computed(() => [{ label: t('browser.console'), to: '/admin/settings' }, { label: pageTitle.value }])
 const name = computed(() => identity.user?.firstName || identity.user?.telegramUsername || t('browser.administrator'))
 async function logout(): Promise<void> {
   try { await session.logout(); await router.replace('/') }

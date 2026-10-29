@@ -1,5 +1,11 @@
 {
   "pricing": {
+    "products": "Products",
+    "productCount": "{shown} of {total} products on this page",
+    "searchProducts": "Search name or ID",
+    "filterProducts": "Pricing mode",
+    "noMatchingProducts": "No products match these filters.",
+    "filters": { "all": "All products", "dynamic": "Dynamic enabled", "fixed": "Fixed only" },
     "title": "Pricing",
     "settings": "Pricing policy",
     "fixedDefault": "Products stay fixed until an administrator saves a dynamic policy. Enabling renewal pricing applies automatically to future renewals.",

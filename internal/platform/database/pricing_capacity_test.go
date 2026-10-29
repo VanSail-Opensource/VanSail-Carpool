@@ -89,7 +89,7 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 	if _, err = read(); !errors.Is(err, pricing.CapacityUnsafe) {
 		t.Fatal("unsafe fulfilling node accepted", err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET charge_mode='hourly',hourly_rate_micros=1234,traffic_rate_micros=250000,capacity_unlimited=1,version=2`); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET charge_mode='hourly',hourly_rate_micros=1234,traffic_rate_micros=250000,capacity_unlimited=1,capacity_bytes=0,version=2`); err != nil {
 		t.Fatal(err)
 	}
 	got, err = read()

@@ -44,8 +44,8 @@ function changed() { refresh.value++; void state.load() }
       <USkeleton v-if="state.loading.value && !state.dashboard.value && mode === 'overview'" class="h-48" />
       <template v-if="mode === 'overview' && state.dashboard.value">
         <InlineNotice v-if="state.dashboard.value.storage.pressure" tone="warning">{{ t('pricing.storagePressure') }}</InlineNotice>
-        <PricingProducts :products="state.dashboard.value.products" />
         <PricingSummary v-if="state.dashboard.value.summary" :value="state.dashboard.value.summary" />
+        <PricingProducts :products="state.dashboard.value.products" />
         <div class="row-actions"><UButton v-if="state.cursor.value" color="neutral" variant="outline" :label="t('pricing.firstPage')" @click="state.cursor.value = ''" /><UButton v-if="state.nextCursor.value" color="neutral" variant="outline" :label="t('pricing.nextPage')" @click="state.cursor.value = state.nextCursor.value" /></div>
         <small class="text-muted">{{ t('pricing.storage') }}: {{ formatBytes(state.dashboard.value.storage.pricingBytes) }} / {{ formatBytes(state.dashboard.value.storage.pricingBudgetBytes) }} · {{ t('pricing.databaseStorage') }}: {{ formatBytes(state.dashboard.value.storage.databaseBytes) }}</small>
       </template>

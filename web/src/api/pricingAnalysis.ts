@@ -2,7 +2,7 @@ import { pricingRead } from './pricingReads'
 import { request, type QueryValue } from './http'
 import type { PricingPolicy } from './pricing'
 
-export interface PricingProduct { id: string; productType: 'combo' | 'addon' | 'payg'; productId: string; name: string; fixedPriceMinor: string; currentPriceMinor?: string | null; pricingStatus?: string; calculatedAt?: string; currentPriceValidUntil?: string; policy: PricingPolicy }
+export interface PricingProduct { id: string; productType: 'combo' | 'addon' | 'payg'; productId: string; name: string; fixedPriceMinor: string; currentPriceMinor?: string | null; pricingStatus?: string; pricingReason?: string; calculatedAt?: string; currentPriceValidUntil?: string; policy: PricingPolicy }
 export interface PricingHealth { nodeId: string; state: string; at: string; reportedAt: string; cpu: number; memory: number; since: string }
 export interface PricingDashboard { products: PricingProduct[]; nextCursor: string; health: PricingHealth[]; storage: { pricingBytes: string; databaseBytes: string; pricingBudgetBytes: string; databaseTargetBytes: string; pressure: boolean }; datasets: string[]; summary?: PricingRecord }
 export type PricingRecord = Record<string, string | number | boolean | null>

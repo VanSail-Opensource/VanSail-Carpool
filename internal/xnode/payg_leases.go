@@ -18,12 +18,16 @@ import (
 const maxPAYGAgentClockOffset = 2 * time.Minute
 
 func paygLeaseUntil(now time.Time, live liveSnapshot) time.Time {
-	base := now
+	base := paygAgentTime(now, live)
+	return time.Unix(base.Unix()/20*20+60, 0).UTC()
+}
+
+func paygAgentTime(at time.Time, live liveSnapshot) time.Time {
 	offset := live.report.Time.Sub(live.receivedAt)
 	if offset > 0 && offset <= maxPAYGAgentClockOffset {
-		base = base.Add(offset)
+		return at.Add(offset)
 	}
-	return time.Unix(base.Unix()/20*20+60, 0).UTC()
+	return at
 }
 
 func paygCapabilities(caps []string) bool {
@@ -105,8 +109,9 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 			continue
 		}
 		validUntil := until
-		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) && a.CreditStartedAt.Add(PAYGWindow).Before(validUntil) {
-			validUntil = a.CreditStartedAt.Add(PAYGWindow)
+		creditUntil := paygAgentTime(a.CreditStartedAt.Add(PAYGWindow), live)
+		if a.BalanceMinor < a.UnitPriceMinor && a.HasCredit(now) && creditUntil.Before(validUntil) {
+			validUntil = creditUntil
 		}
 		u.ValidUntil = &validUntil
 		_, _ = hash.Write([]byte("/" + strconv.Itoa(u.ID) + "@" + validUntil.Format(time.RFC3339Nano)))
