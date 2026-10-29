@@ -1,6 +1,9 @@
 {
   "memberNodes": {
     "live": "实时用量",
+    "connectionCounts": "{active} / {total}",
+    "connectionsLabel": "{active} 个有流量活动的连接 / {total} 个已建立连接",
+    "connectionsHint": "有流量活动的连接 / 已建立连接总数。连接限制仅计算有流量活动的连接。",
     "noFormats": "当前没有可用的订阅格式。",
     "routing": "路由",
     "routingHint": "请先保存出站，再保存引用出站标签的规则。服务器会强制限定为当前账户。",

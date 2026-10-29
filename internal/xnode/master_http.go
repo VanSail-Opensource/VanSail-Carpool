@@ -45,8 +45,12 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	compactOffer := r.Header.Get(wire.TelemetryFormatHeader) == wire.CompactTelemetryFormat
+	openConnectionsOffer := r.Header.Get(wire.OpenConnectionsHeader) == wire.OpenConnectionsFormat
 	ddnsOffer := r.Header.Get(wire.DDNSChangesHeader) == wire.DDNSChangesFormat
 	responseHeaders := http.Header{}
+	if openConnectionsOffer {
+		responseHeaders.Set(wire.OpenConnectionsHeader, wire.OpenConnectionsFormat)
+	}
 	if compactOffer {
 		responseHeaders.Set(wire.TelemetryFormatHeader, wire.CompactTelemetryFormat)
 	}
@@ -90,6 +94,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	peer := &agentPeer{nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
 	peer.computePool = r.Header.Get(wire.ComputePoolHeader) == wire.ComputePoolFormat && containsCapability(hello.Capabilities, wire.ComputePoolCapability)
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
+	peer.openConnections = openConnectionsOffer && containsCapability(hello.Capabilities, wire.OpenConnectionsCapability)
 	peer.ddnsChanges = ddnsOffer && containsCapability(hello.Capabilities, wire.DDNSChangesCapability)
 	if err = m.refreshDDNSProtection(ctx); err != nil {
 		return

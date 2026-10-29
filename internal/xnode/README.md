@@ -1,5 +1,20 @@
 # X-Node control plane
 
+`member_metrics.go` projects owner/principal-scoped sampled and total client
+connections from fresh memory-only telemetry. `master_http.go` negotiates
+`open_connections_v1` through the upgrade header plus hello capability. The
+additive `totalConnections` API field is a nullable decimal string: all scoped
+nodes must provide fresh negotiated totals. Any observed open flow means online;
+offline requires complete fresh totals of zero. Legacy positive traffic remains
+online evidence, but legacy idle reports cannot establish offline. Expiry/error
+handling still retires stale status. Connection enforcement in `master_sync.go`
+and the agent continues using sampled `connections`; no accounting, authorization,
+queue or persistence contracts change. `member_activity_test.go` covers these
+status and compatibility boundaries in hosted CI.
+`member_connections_test.go` checks idle presence, exact totals, legacy/stale
+unknowns, residual-rate behavior and invalid counters. The socket fixtures in
+`master_report_frames_test.go` check negotiated totals and snapshot replacement.
+
 PAYG GiB purchases retain the same principal, credentials and accounting period.
 `master_sync.go` renews node authorization before connection observation work;
 an observation error cannot skip that pass. Journal settlement remains atomic

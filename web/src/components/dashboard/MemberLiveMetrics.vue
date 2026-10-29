@@ -26,6 +26,7 @@ const reasons = computed(() => [...new Set(value.value?.reasons.map(item => {
   return t(key) === key ? t('memberNodes.reasons.unknown') : t(key)
 }) ?? [])])
 const rate = (bytes: number) => t('statistics.perSecond', { value: formatBytes(Number.isFinite(bytes) ? bytes : 0) })
+const connectionCounts = computed(() => ({ active: value.value?.connections ?? 0, total: value.value?.totalConnections ?? t('common.notAvailable') }))
 </script>
 
 <template>
@@ -33,7 +34,11 @@ const rate = (bytes: number) => t('statistics.perSecond', { value: formatBytes(N
     <div class="section-heading"><h2>{{ t('memberNodes.live') }}</h2><UButton variant="ghost" color="neutral" icon="i-ph-arrow-clockwise" :loading="loading" :aria-label="t('common.refresh')" @click="refresh()" /></div>
     <p v-if="loading && !value" class="text-muted">{{ t('common.loading') }}</p>
     <template v-if="value && activity !== 'unavailable'">
-      <dl class="grid grid-cols-3 gap-3 text-sm"><div><dt class="text-muted">{{ t('xnode.connections') }}</dt><dd>{{ value.connections }}</dd></div><div><dt class="text-muted">{{ t('xnode.upload') }}</dt><dd>{{ rate(value.uploadBytesPerSecond) }}</dd></div><div><dt class="text-muted">{{ t('xnode.download') }}</dt><dd>{{ rate(value.downloadBytesPerSecond) }}</dd></div></dl>
+      <dl class="grid grid-cols-3 gap-3 text-sm">
+        <div :title="t('memberNodes.connectionsHint')"><dt class="text-muted">{{ t('xnode.connections') }}</dt><dd class="tabular-nums" :aria-label="t('memberNodes.connectionsLabel', connectionCounts)">{{ t('memberNodes.connectionCounts', connectionCounts) }}</dd></div>
+        <div><dt class="text-muted">{{ t('xnode.upload') }}</dt><dd>{{ rate(value.uploadBytesPerSecond) }}</dd></div>
+        <div><dt class="text-muted">{{ t('xnode.download') }}</dt><dd>{{ rate(value.downloadBytesPerSecond) }}</dd></div>
+      </dl>
       <p v-for="reason in reasons" :key="reason" class="text-sm text-warning mt-2">{{ reason }}</p>
       <p v-if="value.incomplete" class="text-xs text-muted mt-2">{{ t('memberNodes.incomplete') }}</p>
     </template>

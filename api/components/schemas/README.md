@@ -1,5 +1,9 @@
 # Schema shards
 
+`xnode.yaml` and `xnode-profile.yaml` expose nullable decimal-string
+`totalConnections` for all open client flows. Existing `connections` remains the
+traffic-active limit count; unavailable total coverage is never encoded as zero.
+
 `schemas-02.yaml` includes nullable member-specific renewal admission metadata
 on Catalog. Its deadline is a UI projection; checkout revalidates the term.
 Squad read/write models also carry optional `paygState`, defaulting new overrides

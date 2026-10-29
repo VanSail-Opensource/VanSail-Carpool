@@ -11,9 +11,12 @@ import (
 func TestNativeActivityDistinguishesIdleFromUnavailable(t *testing.T) {
 	for _, mode := range []string{"online", "offline", "stale", "unsupported", "disabled"} {
 		master, now := profileMetricMaster(t, "native")
+		master.peers["node"].openConnections = true
 		snapshot := master.live["node"]
+		snapshot.report.Users.TotalConnections = map[int]int{1: 2}
 		if mode == "offline" {
 			snapshot.report.Users.Connections = nil
+			snapshot.report.Users.TotalConnections = nil
 			snapshot.report.Users.Rates = nil
 		}
 		if mode == "stale" {

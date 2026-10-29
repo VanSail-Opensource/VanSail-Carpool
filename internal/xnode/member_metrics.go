@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -20,6 +21,8 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 	}
 	result := UserMetrics{ActivityStatus: "unavailable", Reasons: reasons, Limited: len(reasons) > 0, FetchedAt: m.service.now()}
 	var offlineExpiry, onlineExpiry time.Time
+	var totalConnections int64
+	totalsAvailable := len(nodes) > 0
 	id := int(identity.ProxyUserID)
 	principals, err := m.service.MemberPrincipals(ctx, userID, "")
 	if err != nil {
@@ -31,17 +34,28 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 		snapshot := m.live[nodeID]
 		if !nodes[nodeID] || m.peers[nodeID] == nil || !activityAvailable(snapshot, result.FetchedAt, global.Telemetry.ReportSeconds) {
 			result.Incomplete = true
+			totalsAvailable = false
 			continue
+		}
+		hasTotals := m.peers[nodeID].openConnections
+		if !hasTotals {
+			totalsAvailable = false
 		}
 		for _, principal := range principals {
 			id := int(principal)
 			result.Connections += int64(snapshot.report.Users.Connections[id])
 			rate := snapshot.report.Users.Rates[id]
+			online := snapshot.report.Users.Connections[id] > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0
+			if hasTotals {
+				count := snapshot.report.Users.TotalConnections[id]
+				totalConnections += int64(count)
+				online = count > 0
+			}
 			expires := snapshot.receivedAt.Add(reportWindow(global.Telemetry.ReportSeconds))
 			if offlineExpiry.IsZero() || expires.Before(offlineExpiry) {
 				offlineExpiry = expires
 			}
-			if snapshot.report.Users.Connections[id] > 0 || rate.UploadBytesPerSecond > 0 || rate.DownloadBytesPerSecond > 0 {
+			if online {
 				if expires.After(onlineExpiry) {
 					onlineExpiry = expires
 				}
@@ -61,8 +75,12 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 	}
 	if !onlineExpiry.IsZero() {
 		result.ActivityStatus, result.ActivityExpiresAt = "online", &onlineExpiry
-	} else if !result.Incomplete && !offlineExpiry.IsZero() {
+	} else if totalsAvailable && !result.Incomplete && !offlineExpiry.IsZero() {
 		result.ActivityStatus, result.ActivityExpiresAt = "offline", &offlineExpiry
+	}
+	if totalsAvailable {
+		count := strconv.FormatInt(totalConnections, 10)
+		result.TotalConnections = &count
 	}
 	if m.globalBlocks[id] {
 		result.Limited = true

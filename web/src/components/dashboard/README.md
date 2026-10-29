@@ -26,6 +26,13 @@ The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members wit
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
 
+Its Connections value is traffic-active / total open client flows. The localized
+accessible label and native tooltip explain the counts and the unchanged
+traffic-active limit. Total counts are decimal strings; missing totals from older
+or unavailable agents remain unknown. `memberActivity.ts` projects the server's
+expiring status: a fresh open flow is online even with zero sampled activity;
+offline requires complete fresh coverage reporting no open flows.
+
 `memberActivity.ts` and `memberActivity.test.ts` project native observation status and expiry. `MemberLiveMetrics.vue` emits fresh activity from its existing poll, retires stale rates and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge.
 `useDashboard` and `EntitlementSummary.vue` revalidate cached purchases at validity boundaries and on visibility/focus refresh. Expired predecessors disappear immediately while successor discovery refreshes quietly; display state never changes settlement records.
 

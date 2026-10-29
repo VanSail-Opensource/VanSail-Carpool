@@ -136,12 +136,14 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 }
 
 func validMetrics(metrics wire.UserMetrics) bool {
-	var total int64
-	for id, count := range metrics.Connections {
-		if id <= 0 || count < 0 || int64(count) > math.MaxInt64-total {
-			return false
+	for _, counts := range []map[int]int{metrics.Connections, metrics.TotalConnections} {
+		var total int64
+		for id, count := range counts {
+			if id <= 0 || count < 0 || int64(count) > math.MaxInt64-total {
+				return false
+			}
+			total += int64(count)
 		}
-		total += int64(count)
 	}
 	for id, rate := range metrics.Rates {
 		if id <= 0 || rate.SampleSeconds <= 0 || rate.UploadBytesPerSecond < 0 || rate.DownloadBytesPerSecond < 0 || math.IsNaN(rate.UploadBytesPerSecond) || math.IsNaN(rate.DownloadBytesPerSecond) || math.IsInf(rate.UploadBytesPerSecond, 0) || math.IsInf(rate.DownloadBytesPerSecond, 0) {

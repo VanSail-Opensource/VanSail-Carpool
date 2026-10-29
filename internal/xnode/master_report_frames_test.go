@@ -40,7 +40,8 @@ func TestMixedReportFormatsNegotiateAndReplaceSnapshots(t *testing.T) {
 			caps := []string{}
 			if modern {
 				headers.Set(wire.TelemetryFormatHeader, wire.CompactTelemetryFormat)
-				caps = append(caps, wire.CompactTelemetryCapability)
+				headers.Set(wire.OpenConnectionsHeader, wire.OpenConnectionsFormat)
+				caps = append(caps, wire.CompactTelemetryCapability, wire.OpenConnectionsCapability)
 			}
 			dialer := websocket.Dialer{EnableCompression: modern, Subprotocols: []string{"x-node.v1"}}
 			socket, response, err := dialer.Dial("ws"+strings.TrimPrefix(server.URL, "http"), headers)
@@ -48,6 +49,9 @@ func TestMixedReportFormatsNegotiateAndReplaceSnapshots(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer socket.Close()
+			if got := response.Header.Get(wire.OpenConnectionsHeader); (got == wire.OpenConnectionsFormat) != modern {
+				t.Fatal("open connection negotiation changed", got)
+			}
 			if got := response.Header.Get(wire.TelemetryFormatHeader); (got == wire.CompactTelemetryFormat) != modern {
 				t.Fatal("format negotiation changed", got)
 			}
@@ -55,6 +59,9 @@ func TestMixedReportFormatsNegotiateAndReplaceSnapshots(t *testing.T) {
 				t.Fatal(err)
 			}
 			report := wire.TelemetryReport{AgentID: strings.Repeat("1", 32), BootID: strings.Repeat("2", 32), Time: time.Now().UTC(), Ready: true, Users: wire.UserMetrics{Connections: map[int]int{5: 3}}}
+			if modern {
+				report.Users.TotalConnections = map[int]int{5: 8}
+			}
 			send := func(value wire.TelemetryReport) {
 				t.Helper()
 				message := wire.New("telemetry.report", "", 0, value)
@@ -83,10 +90,13 @@ func TestMixedReportFormatsNegotiateAndReplaceSnapshots(t *testing.T) {
 			}
 			send(report)
 			first := wait(func(snapshot liveSnapshot) bool { return snapshot.report.Users.Connections[5] == 3 })
+			if modern && first.report.Users.TotalConnections[5] != 8 {
+				t.Fatal("total observations lost", first.report.Users)
+			}
 			report.Users = wire.UserMetrics{}
 			send(report)
 			wait(func(snapshot liveSnapshot) bool {
-				return snapshot.receivedAt.After(first.receivedAt) && len(snapshot.report.Users.Connections) == 0
+				return snapshot.receivedAt.After(first.receivedAt) && len(snapshot.report.Users.Connections) == 0 && len(snapshot.report.Users.TotalConnections) == 0
 			})
 		})
 	}

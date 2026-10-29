@@ -34,6 +34,7 @@ type UserMetrics struct {
 	ActivityStatus         string      `json:"activityStatus"`
 	ActivityExpiresAt      *time.Time  `json:"activityExpiresAt"`
 	Connections            int64       `json:"connections"`
+	TotalConnections       *string     `json:"totalConnections"`
 	UploadBytesPerSecond   float64     `json:"uploadBytesPerSecond"`
 	DownloadBytesPerSecond float64     `json:"downloadBytesPerSecond"`
 	Incomplete             bool        `json:"incomplete"`

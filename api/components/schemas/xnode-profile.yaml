@@ -32,6 +32,7 @@ XNodeProfileMetrics:
     activityStatus: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityStatus' }
     activityExpiresAt: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityExpiresAt' }
     connections: { type: integer, minimum: 0 }
+    totalConnections: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/totalConnections' }
     uploadBytesPerSecond: { type: number, minimum: 0 }
     downloadBytesPerSecond: { type: number, minimum: 0 }
     incomplete: { type: boolean }

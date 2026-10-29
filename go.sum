@@ -6,6 +6,8 @@ github.com/RoaringBitmap/roaring/v2 v2.30.0 h1:1sD4xsCenNd9n/gOWaExCWanP9WTyiNuq
 github.com/RoaringBitmap/roaring/v2 v2.30.0/go.mod h1:BZufmFbox589n3j5eOmyTaLSGXbRLc2LmQvjKjzSEGU=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261026171030-c310c8f6cfcc h1:MjdnAZRlZa5tGEKlMXBQ2++M/vam2zks3O2eEEh6pnU=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261026171030-c310c8f6cfcc/go.mod h1:JJEgvbWPDiGxvvOGKmcFn7t+K0fPoKiftVyq9ilNLQY=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261029094208-292c7a261c24 h1:7X5eFjMGyg9NQZsyXFJF3+ROxTCWox2f+Tie/gysAfY=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261029094208-292c7a261c24/go.mod h1:JJEgvbWPDiGxvvOGKmcFn7t+K0fPoKiftVyq9ilNLQY=
 github.com/andybalholm/brotli v1.2.6 h1:ftYnfj6usCp+UGV5kSJ3+chpMQgU+gJf/AxsUQ52REI=
 github.com/andybalholm/brotli v1.2.6/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e h1:5mgtR5gwIgBKMiGI1QdXldZZ+SNor06Nbu1wCBulQBg=

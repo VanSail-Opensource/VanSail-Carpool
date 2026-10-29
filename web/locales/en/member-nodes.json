@@ -1,6 +1,9 @@
 {
   "memberNodes": {
     "live": "Live usage",
+    "connectionCounts": "{active} / {total}",
+    "connectionsLabel": "{active} traffic-active connections / {total} open connections",
+    "connectionsHint": "Traffic-active / total open connections. Only traffic-active connections count toward the limit.",
     "noFormats": "No subscription formats are currently available.",
     "routing": "Routing",
     "routingHint": "Save outbounds first, then rules that use their tags. Your account scope is enforced by the server.",
