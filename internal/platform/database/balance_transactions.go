@@ -30,7 +30,7 @@ func checkedBalanceAddition(current, delta int64) (int64, error) {
 }
 
 func setBalanceTx(ctx context.Context, tx *sql.Tx, userID string, current, next int64, now time.Time) error {
-	result, err := tx.ExecContext(ctx, `UPDATE balances SET txb_minor=?,updated_at=? WHERE user_id=? AND txb_minor=?`, next, stamp(now), userID, current)
+	result, err := tx.ExecContext(ctx, `UPDATE balances SET txb_minor=?,updated_at=? WHERE user_id=? AND txb_minor=? AND NOT EXISTS(SELECT 1 FROM users WHERE id=balances.user_id AND account_status='purged')`, next, stamp(now), userID, current)
 	if err != nil {
 		return fmt.Errorf("change TXB balance: %w", err)
 	}

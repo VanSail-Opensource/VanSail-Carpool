@@ -108,11 +108,6 @@ func (s *Store) retryAttempt_PublishOnboarding(ctx context.Context, kind string,
 		if _, err := tx.ExecContext(ctx, `UPDATE onboarding_content SET published_json=draft_json,published_revision=published_revision+1,published_at=?,updated_by=? WHERE kind=? AND draft_revision=?`, stamp(now), actorID, kind, expectedDraftRevision); err != nil {
 			return onboarding.Bundle{}, err
 		}
-		if kind == onboarding.KindAgreements {
-			if _, err := tx.ExecContext(ctx, `UPDATE users SET onboarding_state='agreement',updated_at=? WHERE onboarding_state='complete'`, stamp(now)); err != nil {
-				return onboarding.Bundle{}, err
-			}
-		}
 	}
 	if err := tx.Commit(); err != nil {
 		return onboarding.Bundle{}, err

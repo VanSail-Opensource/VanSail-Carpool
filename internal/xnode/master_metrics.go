@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"math/big"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -27,6 +28,8 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		return MetricsSummary{}, err
 	}
 	result := MetricsSummary{Nodes: []NodeMetrics{}, TotalNodes: len(nodes), FetchedAt: now}
+	var openTotal big.Int
+	openComplete, openNodes := true, 0
 	m.mu.RLock()
 	for _, node := range nodes {
 		snapshot := m.live[node.ID]
@@ -39,6 +42,20 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 			item.Logs = append(item.Logs, snapshot.logs...)
 		}
 		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
+		if node.Enabled {
+			openNodes++
+			if item.Available && m.peers[node.ID].openConnections {
+				var count big.Int
+				for _, value := range snapshot.report.Users.TotalConnections {
+					count.Add(&count, big.NewInt(int64(value)))
+				}
+				value := count.String()
+				item.TotalConnections = &value
+				openTotal.Add(&openTotal, &count)
+			} else {
+				openComplete = false
+			}
+		}
 		item.Firewall = snapshot.firewall
 		if fresh {
 			at := snapshot.report.Time
@@ -56,12 +73,17 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 			result.OnlineNodes++
 		}
 		if item.Available {
-			seenMembers := map[string]bool{}
-			for id, count := range snapshot.report.Users.Connections {
+			for _, count := range snapshot.report.Users.Connections {
 				item.ActiveConnections += int64(count)
-				if owner := paid[id]; count > 0 && owner != "" && !seenMembers[owner] {
-					seenMembers[owner] = true
-					item.UsersOnline++
+			}
+			item.UsersOnlineAvailable = item.TotalConnections != nil
+			if item.UsersOnlineAvailable {
+				seenMembers := map[string]bool{}
+				for id, count := range snapshot.report.Users.TotalConnections {
+					if owner := paid[id]; count > 0 && owner != "" && !seenMembers[owner] {
+						seenMembers[owner] = true
+						item.UsersOnline++
+					}
 				}
 			}
 			for _, rate := range snapshot.report.Users.Rates {
@@ -75,6 +97,10 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		result.Nodes = append(result.Nodes, item)
 	}
 	m.mu.RUnlock()
+	if openComplete && openNodes > 0 {
+		value := openTotal.String()
+		result.TotalConnections = &value
+	}
 	for index := range result.Nodes {
 		result.Nodes[index].Machine = BrowserMetricNumbers(result.Nodes[index].Machine)
 	}

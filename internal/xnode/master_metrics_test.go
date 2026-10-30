@@ -13,6 +13,12 @@ import (
 
 type availabilityRepository struct{ Repository }
 
+type connectedMemberRepository struct{ availabilityRepository }
+
+func (connectedMemberRepository) XNodePrincipalOwners(context.Context) (map[int]string, error) {
+	return map[int]string{1: "member", 2: "member", 3: "other"}, nil
+}
+
 func (availabilityRepository) XNodeNodes(context.Context) ([]Node, error) {
 	return []Node{{ID: "node", Enabled: true}}, nil
 }
@@ -74,5 +80,61 @@ func TestPAYGReadinessUsesConfiguredReportInterval(t *testing.T) {
 	master.peers["node"].paygReady = false
 	if master.paygNodeReady("node", 20) {
 		t.Fatal("unrecovered PAYG node became ready")
+	}
+}
+
+func TestFleetOpenConnectionsRequireFreshNegotiatedCoverage(t *testing.T) {
+	for _, test := range []struct {
+		name              string
+		negotiated, stale bool
+		want              string
+	}{
+		{"open includes idle", true, false, "9223372036854775814"},
+		{"legacy", false, false, ""},
+		{"stale", true, true, ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			service := NewService(availabilityRepository{}, cacheTestSettings{}, nil, nil, nil)
+			master := NewMaster(service, nil)
+			master.peers["node"] = &agentPeer{openConnections: test.negotiated}
+			at := time.Now()
+			if test.stale {
+				at = at.Add(-time.Minute)
+			}
+			master.live["node"] = liveSnapshot{receivedAt: at,
+				hello: wire.AgentHello{Capabilities: []string{"sampled_activity_v1"}},
+				report: wire.TelemetryReport{Ready: true, Synchronized: true,
+					Users: wire.UserMetrics{Connections: map[int]int{1: 2}, TotalConnections: map[int]int{1: 9223372036854775807, 2: 7}}}}
+			got, err := master.Metrics(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.want == "" {
+				if got.TotalConnections != nil || got.Nodes[0].TotalConnections != nil {
+					t.Fatal("fabricated total", got)
+				}
+			} else if got.TotalConnections == nil || *got.TotalConnections != test.want || got.Nodes[0].TotalConnections == nil || *got.Nodes[0].TotalConnections != test.want || got.ActiveConnections != 2 {
+				t.Fatal("open and sampled counters were conflated", got)
+			}
+		})
+	}
+}
+
+func TestNodeOnlineMembersDeduplicatePaidAndPAYGOpenFlows(t *testing.T) {
+	service := NewService(connectedMemberRepository{}, cacheTestSettings{}, nil, nil, nil)
+	master := NewMaster(service, nil)
+	master.peers["node"] = &agentPeer{openConnections: true}
+	master.live["node"] = liveSnapshot{receivedAt: time.Now(),
+		hello: wire.AgentHello{Capabilities: []string{"sampled_activity_v1"}},
+		report: wire.TelemetryReport{Ready: true, Synchronized: true,
+			Users: wire.UserMetrics{Connections: map[int]int{3: 1}, TotalConnections: map[int]int{1: 2, 2: 3, 3: 0, 99: 7}}}}
+	got, err := master.Metrics(context.Background())
+	if err != nil || got.Nodes[0].UsersOnline != 1 || !got.Nodes[0].UsersOnlineAvailable {
+		t.Fatal("idle members were missed or paid/PAYG/service identities double-counted", got, err)
+	}
+	master.peers["node"].openConnections = false
+	got, err = master.Metrics(context.Background())
+	if err != nil || got.Nodes[0].UsersOnlineAvailable {
+		t.Fatal("legacy count claimed complete", got, err)
 	}
 }

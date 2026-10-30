@@ -92,10 +92,16 @@ type NodeSettings struct {
 }
 
 type Group struct {
-	ID       string         `json:"id"`
-	Name     string         `json:"name"`
-	Enabled  bool           `json:"enabled"`
-	Bindings []GroupBinding `json:"bindings"`
+	MemberCount *int           `json:"memberCount,omitempty"`
+	CanDelete   bool           `json:"canDelete"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Enabled     bool           `json:"enabled"`
+	Bindings    []GroupBinding `json:"bindings"`
+}
+type GroupUsage struct {
+	Members           int
+	PendingAccounting bool
 }
 type GroupBinding struct {
 	GroupID    string `json:"groupId"`

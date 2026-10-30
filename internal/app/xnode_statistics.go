@@ -81,7 +81,7 @@ func (a proxyProvider) Nodes(ctx context.Context) ([]stats.Node, error) {
 			current.UploadBytesPerSecond = 0
 			current.DownloadBytesPerSecond = 0
 		}
-		out = append(out, stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: node.Multiplier, Online: !current.Stale && current.Ready && node.Enabled, UsersOnline: current.UsersOnline, RXBytesPerSecond: roundedNonNegativeInt64(current.DownloadBytesPerSecond), TXBytesPerSecond: roundedNonNegativeInt64(current.UploadBytesPerSecond), XrayVersion: current.XrayVersion})
+		out = append(out, stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: node.Multiplier, Online: !current.Stale && current.Ready && node.Enabled, UsersOnline: current.UsersOnline, UsersOnlineAvailable: owned && current.UsersOnlineAvailable, RXBytesPerSecond: roundedNonNegativeInt64(current.DownloadBytesPerSecond), TXBytesPerSecond: roundedNonNegativeInt64(current.UploadBytesPerSecond), XrayVersion: current.XrayVersion})
 	}
 	return out, nil
 }

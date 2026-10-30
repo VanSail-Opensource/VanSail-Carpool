@@ -4,7 +4,7 @@
 
 Administration is available only to a valid Telegram session whose Telegram ID appears in the comma-separated `ADMIN_TELEGRAM_ID` environment list. The environment variable is the authorization source; request data, usernames, handles, and mutable database roles cannot grant access. Any configured administrator may configure a greenfield deployment before completing ordinary member onboarding.
 
-All operations live below `/api/v1/admin`. The Vue router lazy-groups existing URLs into commerce, community, accounts, and system navigation without breaking bookmarks. Domain-specific endpoints remain preferred for settings, catalog, users, balances, entitlements, payments/refunds, Activity, coupons, questionnaires, Emby, backups, outbox jobs, and audits. A separate schema-aware editor exists for exceptional recovery work; it exposes no raw SQL.
+All operations live below `/api/v1/admin`. The Vue router lazy-groups existing URLs into commerce, community, accounts, and system navigation without breaking bookmarks. Domain-specific endpoints remain preferred for settings, catalog, users, balances, entitlements, payments/refunds, Activity, coupons, Emby, backups, outbox jobs, and audits. A separate schema-aware editor exists for exceptional recovery work; it exposes no raw SQL.
 
 Private-message administration is part of each user profile. Actual replies remain in the configured Telegram forum topic; the profile owns moderation, delivery history, read evidence, and repair navigation. The legacy `/admin/pm` URL redirects to the user directory.
 
@@ -37,7 +37,7 @@ Readiness checks required settings, enabled-provider completeness, and at least 
 - PM-topic `/refund`, `/addtxb <value>`, and `/deducttxb <value>` target only that topic's user. Refunds use the live verified remaining-traffic quote; balance adjustments use Telegram update references, immutable ledger entries, and administrator audit metadata.
 - Entitlement cancellation and payment refund append durable compensating commands; they never mutate provider state first and hope persistence follows.
 - A terminal failed/expired payment may receive one locally funded courtesy credit only with a 3-500 byte reason. Its ledger entry, dedicated idempotency record, and audit event commit together; it never changes the original order to provider-paid or calls a provider.
-- Activity games/draws, coupons, questionnaires/imports, and Emby retries use their module services so validation, transactions, and idempotency remain centralized.
+- Activity games/draws, coupons/imports, and Emby retries use their module services so validation, transactions, and idempotency remain centralized.
 - Job retry is allowed only for an eligible failed job and cannot change kind or typed payload. Successful jobs are removed at completion; pending, failed, and legacy done jobs may be deleted, while processing jobs return `409`.
 - Every audit insertion transactionally retains the newest 200 events. Sensitive values are redacted before persistence.
 

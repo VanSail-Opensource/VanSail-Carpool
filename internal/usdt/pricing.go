@@ -7,11 +7,7 @@ import (
 	"time"
 )
 
-// Rate and Expiry provide the server-owned pricing snapshot to billing.
-func (s *Service) Rate(ctx context.Context) (string, error) {
-	c, err := s.config(ctx)
-	return c.Rate, err
-}
+// Expiry provides the server-owned quote window to billing.
 func (s *Service) Expiry(ctx context.Context) (time.Duration, error) {
 	c, err := s.config(ctx)
 	return time.Duration(c.ExpiryMinutes) * time.Minute, err

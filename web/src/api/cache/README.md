@@ -25,7 +25,6 @@ when it completes, without navigation or a document reload.
 ## Coverage and boundaries
 
 Member preload covers Home and its default node-usage range, balance,
-statistics, activity, affiliates and referral page 1, questionnaires,
 Emby, IP blocks, reset automation, community membership, and localized
 onboarding content. The browser console loads each section on demand and never
 runs the member preload. Filters, pagination, details and administrator resources

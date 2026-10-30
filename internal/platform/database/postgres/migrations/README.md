@@ -1,5 +1,8 @@
 # PostgreSQL migration history
 
+`00027_agreement_continuity.sql` mirrors SQLite 113 and restores prior accepted
+members without changing their recorded consent or first-time onboarding.
+
 `00023_period_aliases_source_marker.sql` records SQLite migration 109 in the
 source inventory after its equivalent PostgreSQL schema has been applied.
 
@@ -72,3 +75,12 @@ The existing columns and immutable financial records remain unchanged.
 `00025_provider_cost_models.sql` adds the versioned provider charge model and capacity mode, corresponding to SQLite migration 111.
 
 `00026_unlimited_zero_capacity.sql` permits zero finite capacity when the current provider-cost row is marked unlimited.
+
+Migration 114 / PostgreSQL 00028 retires questionnaires. It archives settled
+reward evidence in audit_events, fails pending receipts with FEATURE_RETIRED,
+removes retired jobs, and drops operational tables without changing wallets or
+ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
+
+`00028_retire_questionnaires.sql` mirrors SQLite 114 and archives financial evidence before removing operational tables.
+
+`00029_account_lifecycle.sql` mirrors SQLite 115, including database guards for new purchases, payments, sessions and onboarding completion.

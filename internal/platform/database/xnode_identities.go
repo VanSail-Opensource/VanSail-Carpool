@@ -52,6 +52,15 @@ func (s *Store) XNodeIdentityBySubscription(ctx context.Context, hash []byte) (x
 func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xnode.Identity, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
+	if item.UserID != "" {
+		var active bool
+		if err := s.db.QueryRowContext(ctx, `SELECT account_status='active' FROM users WHERE id=?`, item.UserID).Scan(&active); err != nil {
+			return item, err
+		}
+		if !active {
+			return item, ErrAccountUnavailable
+		}
+	}
 	if item.ProxyUserID == 0 {
 		// Member IDs are Telegram IDs. Non-member services use a disjoint range.
 		var next int64
@@ -79,7 +88,7 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 		item.ProxyUserID = next
 		return item, err
 	}
-	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id WHERE xnode_identities.user_id IS excluded.user_id AND xnode_identities.service_name IS excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id,access_disabled=CASE WHEN xnode_identities.credentials_cipher='' THEN excluded.access_disabled ELSE xnode_identities.access_disabled END WHERE xnode_identities.user_id IS excluded.user_id AND xnode_identities.service_name IS excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 	if err != nil {
 		return item, err
 	}

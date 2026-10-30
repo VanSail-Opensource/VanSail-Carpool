@@ -12,7 +12,6 @@ import (
 // BuiltinUSDT supplies local availability and pricing without a provider profile.
 type BuiltinUSDT interface {
 	Methods(context.Context) ([]model.PaymentMethod, error)
-	Rate(context.Context) (string, error)
 	Expiry(context.Context) (time.Duration, error)
 }
 

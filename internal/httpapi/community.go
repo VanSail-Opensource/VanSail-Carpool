@@ -15,9 +15,6 @@ func (s *Server) mountCommunity(router chi.Router) {
 	router.Get("/api/v1/coupons/wallet", s.couponWallet)
 	router.Delete("/api/v1/coupons/wallet/{id}", s.couponDiscard)
 	router.Post("/api/v1/coupons/redeem", s.couponRedeem)
-	router.Get("/api/v1/questionnaires/active", s.activeQuestionnaire)
-	router.Get("/api/v1/questionnaires/history", s.questionnaireHistory)
-	router.Post("/api/v1/questionnaires/{id}/participation", s.questionnaireParticipate)
 }
 
 func (s *Server) mountCommunityAdmin(router chi.Router) {
@@ -39,14 +36,4 @@ func (s *Server) mountCommunityAdmin(router chi.Router) {
 	router.Post("/coupons", s.adminCreateCoupon)
 	router.Put("/coupons/{id}", s.adminUpdateCoupon)
 	router.Delete("/coupons/{id}", s.adminDeactivateCoupon)
-	router.Get("/questionnaires", s.adminQuestionnaires)
-	router.Post("/questionnaires", s.adminCreateQuestionnaire)
-	router.Put("/questionnaires/{id}", s.adminUpdateQuestionnaire)
-	router.Delete("/questionnaires/{id}", s.adminDeleteQuestionnaire)
-	router.Post("/questionnaires/{id}/close", s.adminCloseQuestionnaire)
-	router.Post("/questionnaires/{id}/activate", s.adminActivateQuestionnaire)
-	router.Post("/questionnaires/{id}/imports", s.adminUploadQuestionnaireCSV)
-	router.Get("/questionnaires/{id}/imports/{importID}", s.adminQuestionnaireImport)
-	router.Post("/questionnaires/{id}/imports/{importID}/analyze", s.adminAnalyzeQuestionnaireCSV)
-	router.Post("/questionnaires/{id}/imports/{importID}/settle", s.adminSettleQuestionnaireCSV)
 }

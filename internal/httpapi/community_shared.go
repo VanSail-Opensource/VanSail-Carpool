@@ -13,7 +13,6 @@ const (
 	groupMessageThresholdSetting = "activity.group_message_threshold"
 	groupMessageRewardSetting    = "activity.group_message_reward_txb"
 	defaultActivityTimezone      = "Asia/Shanghai"
-	maxQuestionnaireCSV          = int64(5 << 20)
 	maxMultipartOverhead         = int64(256 << 10)
 )
 

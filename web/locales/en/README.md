@@ -11,14 +11,12 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `admin-draw.json` contains the redesigned draw editor, forecast, and reward-result copy.
 - `admin-catalog.json` contains catalog, squad, and coupon administration copy.
 - `admin-compensation.json` contains reviewed node-outage compensation copy.
-- `admin-community.json` contains questionnaire administration and import copy.
 - `admin-core.json` contains admin navigation, users, and Emby copy.
 - `admin-onboarding.json` contains visual onboarding-editor copy.
 - `admin-data.json` contains database editor and backup-management copy.
 - `admin-operations.json` contains settings, audit, payment, and entitlement copy.
 - `admin-workflows.json` contains aggregate user profiles, bulk extensions, operation resolution, and backup-upload copy.
 - `commerce.json` contains funding, payment, catalog, and checkout copy.
-- `community.json` contains coupon and questionnaire participation copy.
 - `connections.json` contains member scan, block, expiry, and unblock copy.
 - `core.json` contains application, navigation, status, and shared action copy.
 - `home.json` contains member Home traffic, UTC range, term, and reset labels.
@@ -74,3 +72,9 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `predictions.json`: Forecast intervals, missing history and calibration copy.
 
 - `user-prices.json`: Expanded admin personal price analysis labels.
+
+`admin-community.json` provides coupon administration strings. `community.json` provides coupon wallet and redemption copy.
+
+`admin-usdt.json` explains retired-account transfers awaiting review.
+
+`xnode.json` provides the accessible group deletion action.

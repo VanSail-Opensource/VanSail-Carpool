@@ -8,3 +8,5 @@
 - `redirect_test.go` verifies provider redirects cannot receive the API token or password body.
 - `doc.go` documents the package boundary.
 - `client_part2.go` contains response decoding, error classification, and domain mapping.
+
+`delete.go` implements documented DELETE /Users/{Id}; the queued adapter treats a confirmed 404 as an already completed deletion. Other failures retain cleanup for retry.

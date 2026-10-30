@@ -12,7 +12,6 @@ import (
 func testConfig() Config {
 	c := DefaultConfig()
 	c.Enabled = true
-	c.Rate = "10"
 	c.Concurrency = 1
 	for i := range c.Networks {
 		if c.Networks[i].Network == "ethereum" {
@@ -22,6 +21,22 @@ func testConfig() Config {
 		}
 	}
 	return c
+}
+
+func TestLegacyPrivateRateIsDiscarded(t *testing.T) {
+	raw, err := json.Marshal(testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := strings.TrimSuffix(string(raw), "}") + `,"rate":"1e99"}`
+	config, err := DecodeConfig(legacy)
+	if err != nil {
+		t.Fatal("legacy rate prevented collector startup", err)
+	}
+	saved, err := json.Marshal(config)
+	if err != nil || strings.Contains(string(saved), `"rate"`) {
+		t.Fatal("legacy rate survived save", string(saved), err)
+	}
 }
 func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 	t.Parallel()
@@ -46,7 +61,7 @@ func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 			t.Fatalf("pinned token %s invalid: %v", spec.Network, err)
 		}
 	}
-	for _, mutate := range []func(*Config){func(c *Config) { c.Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "https://rpc.example/\r\nX-Injected: true" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Rate = "1e3" }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
+	for _, mutate := range []func(*Config){func(c *Config) { c.Concurrency = 9 }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "file:///etc/passwd" }, func(c *Config) { c.Networks[1].Endpoints[0].RPCURL = "https://rpc.example/\r\nX-Injected: true" }, func(c *Config) { c.Networks[1].Addresses = append(c.Networks[1].Addresses, c.Networks[1].Addresses[0]) }, func(c *Config) { c.Networks[1].Endpoints[0].APIKey = "key\r\ninjected" }} {
 		invalid := testConfig()
 		mutate(&invalid)
 		if err := ValidateConfig(&invalid); err == nil {
@@ -109,9 +124,6 @@ func TestUSDTMethodsAndIssuedQuotesSurviveSettingChanges(t *testing.T) {
 	copy, err := service.Create(ctx, "order", "usdt.erc20", "1.000")
 	if err != nil || copy != q {
 		t.Fatalf("issued quote changed=%+v %v", copy, err)
-	}
-	if rate, err := service.Rate(ctx); err != nil || rate != "10" {
-		t.Fatal(rate, err)
 	}
 	if expiry, err := service.Expiry(ctx); err != nil || expiry != 30*time.Minute {
 		t.Fatal(expiry, err)

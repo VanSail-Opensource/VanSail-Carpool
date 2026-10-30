@@ -41,6 +41,13 @@ func createProviderOperationTx(ctx context.Context, tx *sql.Tx, input providerop
 
 // Local preference receipts preserve replay compatibility without an outbox job.
 func createProviderOperationStateTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time, completed bool) (providerops.Operation, bool, error) {
+	var unavailable bool
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE (id=? OR id=?) AND account_status<>'active')`, input.ActorUserID, input.OwnerUserID).Scan(&unavailable); err != nil {
+		return providerops.Operation{}, false, err
+	}
+	if unavailable {
+		return providerops.Operation{}, false, ErrAccountUnavailable
+	}
 	input, err := providerops.NormalizeCreate(input)
 	if err != nil {
 		return providerops.Operation{}, false, err

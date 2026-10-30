@@ -205,7 +205,7 @@ Migrate by functional area, preserving the service layer's public interfaces.
 3. **Commerce:** products, combos, purchases, entitlements, renewals, coupons, and historical financial evidence.
 4. **X-Node:** nodes, identities, periods, traffic usage, report cursors, configuration, routing, and firewall state.
 5. **Durable work:** outbox, provider operations, compensation, notifications, and recovery workflows.
-6. **Supporting features:** activity, Emby, questionnaires, IP lookup, statistics, and maintenance.
+6. **Supporting features:** activity, Emby, IP lookup, statistics, and maintenance.
 7. **Administration:** table metadata, cursor pagination, mutation reviews, audit, and emergency operations.
 
 ### Special treatment: database administration

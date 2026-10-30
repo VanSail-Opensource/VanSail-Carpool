@@ -83,6 +83,14 @@ func (d *Dispatcher) HandleOutbox(ctx context.Context, job model.OutboxJob) erro
 	if Terminal(Status(operation.Receipt.Status)) {
 		return nil
 	}
+	if gate, ok := d.repository.(interface {
+		AccountOperationPermitted(context.Context, string) (bool, error)
+	}); ok {
+		allowed, err := gate.AccountOperationPermitted(ctx, operationID)
+		if err != nil || !allowed {
+			return err
+		}
+	}
 	d.mu.RLock()
 	handler := d.handlers[operation.Receipt.Kind]
 	d.mu.RUnlock()

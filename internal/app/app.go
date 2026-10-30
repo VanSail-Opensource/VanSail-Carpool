@@ -32,7 +32,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/databaseadmin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/webui"
@@ -128,7 +127,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	billingService.SetBuiltinUSDT(usdtService)
 	activityService := newActivityService(store, settings, queuedTelegramClient)
 	couponService := coupons.NewService(store, nil)
-	questionnaireService := questionnaires.NewService(store, questionnaires.CryptoCodeGenerator{}, nil)
 	embyPrice := embySetupPrice(settings)
 	embySecrets := emby.NewSecretBox(vault)
 	embyService := emby.NewService(store, newEmbyAdapter(settings, upstreams.emby), embyPrice, embySecrets)
@@ -177,7 +175,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerComboControlHandlers(operationDispatcher, store, entitlementWorker, catalogService.InvalidateDashboard); err != nil {
 		return cleanup(err)
 	}
-	if err := registerMutationOperationHandlers(operationDispatcher, catalogService, embyOperations, questionnaireService, adminService); err != nil {
+	if err := registerMutationOperationHandlers(operationDispatcher, catalogService, embyOperations, adminService); err != nil {
 		return cleanup(err)
 	}
 	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, maintenanceDatabasePath(cfg), logger); err != nil {
@@ -187,6 +185,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	statisticsService := productstats.NewService(store, nativeStatisticsProvider{proxyProvider: provider})
+	if err := registerAccountPurge(outboxWorker, store, xnodeService, newEmbyAdapter(settings, upstreams.emby)); err != nil {
+		return cleanup(err)
+	}
 	compensationService := compensation.NewService(store, provider)
 	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, xnodeService, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {
@@ -258,7 +259,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		Accounts:     accountsService, Catalog: catalogService, Connections: memberServices.connections,
 		ConnectionDrops: memberServices.drops, PurchaseOperations: memberServices.purchases, Statistics: statisticsService,
 		Billing: billingService, Activity: activityService,
-		Coupons: couponService, Questionnaires: questionnaireService, Emby: embyService,
+		Coupons: couponService, Emby: embyService,
 		EmbyOperations: embyOperations, EmbyPrice: embyPrice,
 		Admin: adminService, AdminUsers: adminUserWorkflows, Compensation: compensationService, Settings: settings, DatabaseAdmin: databaseAdminHTTP,
 		PaymentProfiles: paymentProfiles,

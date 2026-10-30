@@ -31,21 +31,6 @@
     "empty": "No coupons yet",
     "emptyHint": "Redeemed and awarded coupons appear here."
   },
-  "questionnaire": {
-    "title": "Questionnaire",
-    "none": "No active questionnaire",
-    "noneHint": "The next questionnaire will appear here.",
-    "reward": "Reward {amount} TXB",
-    "validationCode": "Validation code",
-    "codeCopied": "Code copied",
-    "copyCode": "Copy code",
-    "codeHint": "Use this code in the questionnaire form.",
-    "closes": "Closes {date}",
-    "noClose": "No closing date",
-    "preparing": "Preparing code",
-    "openAgain": "Open questionnaire",
-    "getCode": "Get code"
-  },
   "community": {
     "title": "Community",
     "subtitle": "Chat with members. Get official updates.",

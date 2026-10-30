@@ -78,17 +78,6 @@ func reactivateOutboxJobTx(ctx context.Context, tx *sql.Tx, jobID, kind string, 
 			return err
 		}
 	}
-	if kind == "questionnaire_settlement" {
-		result, err := tx.ExecContext(ctx, `UPDATE questionnaire_imports SET status='queued',last_error='',updated_at=?
-			WHERE status='failed' AND id=(SELECT json_extract(payload,'$.importId') FROM outbox_jobs WHERE id=?)`,
-			stamp(now), jobID)
-		if err != nil {
-			return err
-		}
-		if affected, _ := result.RowsAffected(); affected != 1 {
-			return ErrConflict
-		}
-	}
 	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,last_error='',
 		available_at=?,updated_at=? WHERE id=? AND status='failed'`, stamp(now), stamp(now), jobID)
 	if isUniqueViolation(err) {

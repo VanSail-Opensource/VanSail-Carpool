@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("record not found")
+	ErrAccountUnavailable = errors.New("account is unavailable")
+	ErrNotFound           = errors.New("record not found")
 	// ErrConflict indicates that a uniqueness or state transition invariant was violated.
 	ErrConflict = errors.New("record conflicts with current state")
 	// ErrInsufficientBalance indicates that a debit would make an account negative.
@@ -58,6 +59,9 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	defer s.writeMu.Unlock()
 
 	now := time.Now().UTC()
+	if err := s.resumeAccountAuthentication(ctx, profile.ID, now); err != nil {
+		return model.User{}, false, err
+	}
 	role := "user"
 	if isAdmin {
 		role = "admin"
@@ -74,7 +78,8 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	_, err := s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
 		VALUES(?,?,?,?,?,?,0,?,1,?,?) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
 		telegram_last_name=excluded.telegram_last_name,telegram_username=excluded.telegram_username,
-		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at`,
+		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at
+		WHERE users.account_status='active' AND users.bot_blocked=0`,
 		userID, profile.ID, profile.FirstName, profile.LastName, profile.Username, role, locale, stamp(now), stamp(now))
 	if err != nil {
 		return model.User{}, false, fmt.Errorf("upsert Telegram user: %w", err)
@@ -82,6 +87,9 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	user, err := s.UserByTelegramID(ctx, profile.ID)
 	if err != nil {
 		return model.User{}, false, err
+	}
+	if user.AccountStatus != "active" || user.BotBlocked {
+		return model.User{}, false, ErrAccountUnavailable
 	}
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING`, user.ID, 0, stamp(now)); err != nil {
 		return model.User{}, false, fmt.Errorf("initialize balance: %w", err)
@@ -108,7 +116,8 @@ func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.U
 const userColumns = `users.id,users.telegram_id,users.telegram_first_name,users.telegram_last_name,users.telegram_username,
 	users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
 	users.accepted_agreement_revision,users.proxy_user_id,users.recovery_reason,users.new_user,users.inviter_id,
-	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at`
+	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at,
+	users.account_status,users.account_generation,users.bot_blocked`
 
 const userSelect = `SELECT ` + userColumns + ` FROM users`
 
@@ -127,7 +136,8 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 	var createdAt, updatedAt string
 	destinations := []any{&user.ID, &user.TelegramID, &user.TelegramFirstName, &user.TelegramLastName, &user.TelegramUsername,
 		&user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &proxyID, &recoveryReason,
-		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &autoTrafficReset, &createdAt, &updatedAt}
+		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &autoTrafficReset, &createdAt, &updatedAt,
+		&user.AccountStatus, &user.AccountGeneration, &user.BotBlocked}
 	destinations = append(destinations, extra...)
 	if err := row.Scan(destinations...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -190,7 +200,7 @@ func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byt
 
 // UserBySession returns the owner of a non-expired session.
 func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='miniapp' AND sessions.expires_at>?`, tokenHash, stamp(now)))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='miniapp' AND sessions.expires_at>? AND users.account_status='active' AND users.bot_blocked=0`, tokenHash, stamp(now)))
 }
 
 // DeleteExpiredSessions removes stale session rows.

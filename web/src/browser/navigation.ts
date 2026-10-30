@@ -4,7 +4,6 @@ export const adminGroups = [
   { labelKey: 'adminNav.accounts', sections: [
     { value: 'users', labelKey: 'adminNav.users', icon: 'i-ph-users-bold' },
     { value: 'affiliates', labelKey: 'adminNav.affiliates', icon: 'i-ph-handshake-bold' },
-    { value: 'questionnaires', labelKey: 'adminNav.questionnaires', icon: 'i-ph-list-checks-bold' },
     { value: 'onboarding', labelKey: 'adminNav.onboarding', icon: 'i-ph-user-plus-bold' },
   ] },
   { labelKey: 'adminNav.commerce', sections: [

@@ -24,7 +24,9 @@ type NodeMetrics struct {
 	Machine                json.RawMessage     `json:"machine"`
 	Certificates           json.RawMessage     `json:"certificates"`
 	ActiveConnections      int64               `json:"activeConnections"`
+	TotalConnections       *string             `json:"totalConnections"`
 	UsersOnline            int64               `json:"usersOnline"`
+	UsersOnlineAvailable   bool                `json:"usersOnlineAvailable"`
 	UploadBytesPerSecond   float64             `json:"uploadBytesPerSecond"`
 	DownloadBytesPerSecond float64             `json:"downloadBytesPerSecond"`
 	Logs                   []json.RawMessage   `json:"logs"`
@@ -52,6 +54,7 @@ type MetricsSummary struct {
 	OnlineNodes            int           `json:"onlineNodes"`
 	TotalNodes             int           `json:"totalNodes"`
 	ActiveConnections      int64         `json:"activeConnections"`
+	TotalConnections       *string       `json:"totalConnections"`
 	UploadBytesPerSecond   float64       `json:"uploadBytesPerSecond"`
 	DownloadBytesPerSecond float64       `json:"downloadBytesPerSecond"`
 	FetchedAt              time.Time     `json:"fetchedAt"`

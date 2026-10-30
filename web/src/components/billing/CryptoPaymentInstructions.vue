@@ -30,6 +30,7 @@ function copyAddress(): void {
     <div class="payment-amount">
       <span>{{ t('payment.exactAmount') }}</span>
       <strong>{{ order.actualCryptoAmount }} {{ order.actualCryptoCurrency }}</strong>
+      <small v-if="order.provider === 'builtin_usdt'">{{ t('cryptoPayment.gasFeeHint') }}</small>
       <UButton color="neutral" variant="ghost" :icon="amountClipboard.copied.value ? 'i-ph-check-bold' : 'i-ph-copy'" :label="t('cryptoPayment.copyAmount')" @click="order.actualCryptoAmount && amountClipboard.copy(order.actualCryptoAmount)" />
       <small>{{ paymentChannelLabel(order.providerRail, order.providerRail) }}</small>
       <small>{{ t('cryptoPayment.networkHint') }}</small>

@@ -14,7 +14,6 @@ These documents describe the implemented module boundaries. They are maintenance
 | TXB ledger, top-ups, and refunds | [billing-payments.md](billing-payments.md) |
 | Games, daily check-ins, group-message rewards, and lucky draws | [activity.md](activity.md) |
 | Coupon definitions, wallet grants, and purchase discounts | [coupons.md](coupons.md) |
-| Questionnaire participation and CSV settlement | [questionnaires.md](questionnaires.md) |
 | Emby account setup and restricted policy management | [emby.md](emby.md) |
 | Telegram, X-Node, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
 | Retired detector upgrade | [detector-retirement.md](detector-retirement.md) |
@@ -55,7 +54,6 @@ These READMEs describe the direct files in each implementation package:
 | Onboarding content | [internal/onboarding/README.md](../../internal/onboarding/README.md) |
 | Outbox payload helpers | [internal/outbox/README.md](../../internal/outbox/README.md) |
 | Provider operation contracts | [internal/providerops/README.md](../../internal/providerops/README.md) |
-| Questionnaires | [internal/questionnaires/README.md](../../internal/questionnaires/README.md) |
 | Purchase rollover | [internal/rollover/README.md](../../internal/rollover/README.md) |
 | Embedded web UI | [internal/webui/README.md](../../internal/webui/README.md) |
 | Provider integrations boundary | [internal/integrations/README.md](../../internal/integrations/README.md) |
@@ -88,8 +86,10 @@ Cross-module rules:
 - SQLite is the source of truth for identity, money, purchases, callback deduplication, and pending work. Provider redirects and browser events are never authoritative.
 - IDs are opaque strings, timestamps are RFC3339 UTC strings, TXB uses integer hundredths, provider decimals use fixed-decimal parsing, and traffic byte counts never pass through floating point.
 - Secret and bearer values are redacted at the logging boundary. Sensitive dashboard settings are AES-256-GCM encrypted and write-only through the API.
-- Domain APIs treat ledger entries, refunds, webhook receipts, Activity results, questionnaire awards, rollover results, and audit events as immutable; corrections use compensating records. The explicitly warned break-glass database editor can bypass domain hooks only after diff review, typed confirmation, rescue backup, and audit.
 - Production frontend and backend code is limited to 200 physical lines per file; tests, generated clients, migrations, API documents, and embedded build output are exempt. Every split implementation file is indexed by its package README.
 - Telegram WebApp lifecycle is initialized before Vue Router construction, waits for delayed WebApp context, synchronizes safe areas and theme colors, and gives the most recent visible overlay ownership of native BackButton navigation.
 `user-settings.md` documents preference ownership, notification delivery, Telegram tags and constructed browser evidence.
 `admin-refund-defaults.md` describes live traffic-based administrator suggestions, manual overrides and browser evidence.
+
+Domain ledger, refund, payment, activity, and audit evidence remains immutable.
+Retired feature migrations archive financial attribution before dropping operational data.

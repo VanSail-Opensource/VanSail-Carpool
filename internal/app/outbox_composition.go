@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
@@ -60,12 +59,5 @@ func registerCoreOutboxHandlers(worker *outbox.Worker, store *database.Store, en
 	})); err != nil {
 		return err
 	}
-	return worker.Register("questionnaire_settlement", outbox.HandlerFunc(func(ctx context.Context, job model.OutboxJob) error {
-		importID, err := jobpayload.TargetID(job, "importId")
-		if err != nil {
-			return err
-		}
-		_, err = store.SettleQuestionnaireImport(ctx, importID, time.Now().UTC())
-		return err
-	}))
+	return nil
 }

@@ -108,6 +108,7 @@
     "group": "Access group",
     "noGroups": "No access groups created.",
     "groupBindings": "Node and inbound bindings",
+    "deleteGroup": "Delete {name}",
     "deleteEndpoint": "Delete endpoint {name}",
     "noEndpoints": "No subscription endpoints.",
     "viewLogs": "View logs for {name}",

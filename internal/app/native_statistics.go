@@ -49,6 +49,7 @@ func (a nativeStatisticsProvider) Nodes(ctx context.Context) ([]stats.Node, erro
 		item := stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: node.Multiplier, Online: available, XrayVersion: current.XrayVersion}
 		if available {
 			item.UsersOnline = current.UsersOnline
+			item.UsersOnlineAvailable = current.UsersOnlineAvailable
 			item.RXBytesPerSecond = roundedNonNegativeInt64(current.DownloadBytesPerSecond)
 			item.TXBytesPerSecond = roundedNonNegativeInt64(current.UploadBytesPerSecond)
 		}

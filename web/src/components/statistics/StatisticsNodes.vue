@@ -56,7 +56,7 @@ const rate = (node: StatisticsNodesSnapshot['nodes'][number], value: string) => 
           <dl>
             <div>
               <dt><UTooltip :text="$t('statistics.usersOnline')"><span class="statistics-node__metric-icon" role="img" :aria-label="$t('statistics.usersOnline')"><UIcon name="i-ph-users" aria-hidden="true" /></span></UTooltip></dt>
-              <dd>{{ available(node) ? formatStatisticNumber(node.usersOnline) : $t('common.notAvailable') }}</dd>
+              <dd>{{ available(node) && node.usersOnlineAvailable ? formatStatisticNumber(node.usersOnline) : $t('common.notAvailable') }}</dd>
             </div>
             <div>
               <dt><UTooltip :text="$t('statistics.downloadRate')"><span class="statistics-node__metric-icon" role="img" :aria-label="$t('statistics.downloadRate')"><UIcon name="i-ph-arrow-down" aria-hidden="true" /></span></UTooltip></dt>

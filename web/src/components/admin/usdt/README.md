@@ -21,7 +21,7 @@ remain shared billing components. Composables guard stale responses after unmoun
 - `configForm.test.ts` ? Hosted contract checks for masked credentials, protocols and concurrency bounds.
 - `configForm.ts` ? Typed defaults and localized Zod validation using existing UUID utilities.
 - `USDTEndpointEditor.vue` ? Write-only URLs/credentials and WS configuration.
-- `USDTGeneralSettings.vue` ? Provider enablement, exact TXB/USDT rate, payment window and shared concurrency.
+- `USDTGeneralSettings.vue` ? Provider enablement, payment window and shared concurrency.
 - `USDTNetworkSettings.vue` ? Receiving address pools and ordered server entries.
 - `USDTReview.vue` ? Paginated verified transfer review table and evidence side panel.
 - `USDTReviewItem.vue` ? Verified evidence and permanent audited dismissal input.
@@ -39,3 +39,5 @@ Loads abort on replacement/disposal, generations guard responses, and failed loa
 disable Save until retry succeeds. All transport retains shared request signing.
 
 `useUSDTAdmin.test.ts` covers aborted/superseded loads, disabled writes after failed loads, successful retry and disposal guards in hosted CI.
+
+Token orders share the USD billing rate. This module has no separate rate control.

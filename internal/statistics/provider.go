@@ -30,15 +30,16 @@ type Traffic struct {
 
 // Node joins stable node metadata with live system rates.
 type Node struct {
-	UUID             string
-	Name             string
-	CountryCode      string
-	Online           bool
-	UsersOnline      int64
-	RXBytesPerSecond int64
-	TXBytesPerSecond int64
-	XrayVersion      string
-	Multiplier       float64
+	UUID                 string
+	Name                 string
+	CountryCode          string
+	Online               bool
+	UsersOnline          int64
+	UsersOnlineAvailable bool
+	RXBytesPerSecond     int64
+	TXBytesPerSecond     int64
+	XrayVersion          string
+	Multiplier           float64
 }
 
 type Provider interface {

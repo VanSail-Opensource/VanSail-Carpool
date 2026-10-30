@@ -108,6 +108,7 @@
     "group": "访问组",
     "noGroups": "尚未创建访问组。",
     "groupBindings": "节点与入站绑定",
+    "deleteGroup": "删除 {name}",
     "deleteEndpoint": "删除订阅端点 {name}",
     "noEndpoints": "暂无订阅端点。",
     "viewLogs": "查看 {name} 的日志",

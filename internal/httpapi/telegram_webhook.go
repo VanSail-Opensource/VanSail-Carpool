@@ -34,6 +34,10 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update is invalid.")
 		return
 	}
+	if err := s.processTelegramBotStatus(r.Context(), update); err != nil {
+		s.writeError(w, r, http.StatusServiceUnavailable, "ACCOUNT_CLEANUP_PENDING", "Account cleanup could not be queued.")
+		return
+	}
 	if update.ChatJoinRequest != nil && update.ChatJoinRequest.InviteLink != nil {
 		join := update.ChatJoinRequest
 		expiresAt := time.Unix(join.InviteLink.ExpireDate, 0).UTC()

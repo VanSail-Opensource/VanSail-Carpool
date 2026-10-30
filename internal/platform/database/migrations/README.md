@@ -1,5 +1,8 @@
 # Database migrations
 
+`113_agreement_continuity.sql` restores previously accepted members who were
+returned to agreement onboarding, preserving their acceptance timestamps/revisions.
+
 `109_xnode_period_aliases.sql` is retained for compatibility with its published
 predecessor; the current unmatched-traffic policy does not use these mappings.
 PostgreSQL migration 00022 has the same constraints.
@@ -89,8 +92,6 @@ file instead.
 
 - `001_initial.sql` — core users, sessions, catalog, purchases, ledger, settings,
   outbox, audit, backup, and onboarding schema.
-- `002_activity_coupons_questionnaires.sql` — community activity, coupon, and
-  questionnaire aggregates.
 - `003_emby.sql` — Emby account and provisioning saga tables.
 - `004_platform_payments_rollover_restore.sql` — expanded payment, rollover, and
   restore lifecycle records.
@@ -104,8 +105,6 @@ file instead.
   values while retaining the nullable column for backup/restore schema compatibility.
 - `011_minimize_payment_payloads.sql` — clears terminal provider display payloads
   that are not required for settlement.
-- `012_minimize_questionnaire_imports.sql` — removes settled CSV payloads and
-  aligns exhausted questionnaire jobs with the retry lifecycle.
 - `013_coupon_discards_and_courtesy_credits.sql` — adds durable wallet-discard
   evidence and exactly-once terminal-payment courtesy-credit records.
 - `014_goal_completion.sql` adds optional squad stock, renewal batches, bounded
@@ -136,7 +135,6 @@ file instead.
 - `028_connection_ip_blocks.sql` stores only active encrypted node-scoped IP
   blocks and their scheduled three-day cleanup references.
 - `029_security_and_history_indexes.sql` bounds each user to one current session
-  and indexes stable administrative inventories plus questionnaire history.
 - `034_abuse_qps_detector.sql` adds encrypted node credentials, privacy-safe QPS samples, detector state, incidents, delivery records, and temporary-ban restoration facts.
 - `035_abuse_warning_cooldown.sql` adds the revisioned administrator warning-record cooldown.
 - `036_purchase_addon_adjustments.sql` records idempotent, prorated active-term squad additions without duplicating user or provider data.
@@ -247,3 +245,12 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 - `111_provider_cost_models.sql`: Adds hourly and per-GiB rates and unlimited-capacity flags to current and versioned provider costs.
 
 - `112_unlimited_zero_capacity.sql`: Allows an unlimited provider cost to store zero finite capacity; finite capacity remains positive.
+
+Migration 114 / PostgreSQL 00028 retires questionnaires. It archives settled
+reward evidence in audit_events, fails pending receipts with FEATURE_RETIRED,
+removes retired jobs, and drops operational tables without changing wallets or
+ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
+
+Historical `002_activity_coupons_questionnaires.sql` and `012_minimize_questionnaire_imports.sql` remain immutable. `114_retire_questionnaires.sql` removes the retired operational feature after preserving financial evidence.
+
+`115_account_lifecycle.sql` adds only durable account lifecycle/generation and authenticated block ordering/cutoff fields. Native telemetry remains memory-only. New commerce, sessions and onboarding completion cannot race a pending purge.

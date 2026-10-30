@@ -11,7 +11,7 @@ export function memberResources(session: Session, locale: string): PreloadResour
   start.setUTCDate(start.getUTCDate() - 6)
   return [
     ...['dashboard', 'balance', 'activity',
-      'affiliates', 'questionnaires/active', 'emby/account',
+      'affiliates', 'emby/account',
       'subscription/ip-blocks', 'me/traffic-reset-automation',
       'community/membership/check'].map(path => ({ path: `/api/v1/${path}` })),
     { path: '/api/v1/affiliates/referrals', options: { query: { page: 1 } } },

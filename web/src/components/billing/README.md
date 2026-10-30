@@ -1,5 +1,8 @@
 # Billing components
 
+Built-in stablecoin instructions place the localized gas-fee notice beside the
+exact amount: network fees are additional and must not reduce the received amount.
+
 - `BalancePaymentSheet.vue` resumes valid pending orders before provider selection and drives coupon funding plus the durable provider-operation lifecycle from Home.
 - `BalancePaymentConfiguration.vue` is the billing flow entrypoint. It keeps provider selection, channel selection, coupon redemption, and order actions coordinated without changing the payment API contract.
 - `PaymentProviderStep.vue` renders the first Add TXB step, choosing one stable provider-account profile or the coupon funding source.

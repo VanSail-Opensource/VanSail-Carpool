@@ -21,11 +21,9 @@ export function configSchema() {
   const id = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/, invalid)
   const endpoint = z.object({ id, rpcUrl: z.string(), wsUrl: z.string(), indexerUrl: z.string(), apiKey: z.string().max(4096), useWs: z.boolean(), rpcConfigured: z.boolean(), wsConfigured: z.boolean(), indexerConfigured: z.boolean(), keyConfigured: z.boolean(), host: z.string() })
   return z.object({ mode: z.enum(['usdt', 'usdc', 'both']).default('usdt'), enabled: z.boolean(), name: z.string().trim().min(1, invalid).max(64),
-    rate: z.string().refine(value => value === '' || (/^\d{1,18}(\.\d{1,12})?$/.test(value) && Number(value) > 0), invalid),
     expiryMinutes: z.number().int().min(5).max(120), concurrency: z.number().int().min(1).max(8),
     networks: z.array(z.object({ network: z.enum(Object.keys(networkRails) as [USDTNetworkID, ...USDTNetworkID[]]), enabled: z.boolean(), currencies: z.array(z.enum(['USDT', 'USDC'])).max(2).nullable().optional(), addresses: z.array(z.string()).max(128), endpoints: z.array(endpoint).max(8) })).max(10),
   }).superRefine((value, ctx) => {
-    if (value.enabled && !value.rate) ctx.addIssue({ code: 'custom', path: ['rate'], message: invalid })
     value.networks.forEach((network, index) => {
       if (network.currencies && (new Set(network.currencies).size !== network.currencies.length || network.currencies.some(currency => !networkCurrencies(network.network).includes(currency)))) ctx.addIssue({ code: 'custom', path: ['networks', index, 'currencies'], message: invalid })
       if (network.enabled && (!network.addresses.length || !network.endpoints.length)) ctx.addIssue({ code: 'custom', path: ['networks', index], message: invalid })

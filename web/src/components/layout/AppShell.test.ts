@@ -50,7 +50,6 @@ describe('AppShell accessibility', () => {
         { path: '/catalog', component: { template: '<div />' } },
         { path: '/balance', component: { template: '<div />' } },
         { path: '/activity', component: { template: '<div />' } },
-        { path: '/questionnaire', component: { template: '<div />' } },
         { path: '/emby', component: { template: '<div />' } },
         { path: '/settings/admin-access', component: { template: '<div />' } },
       ],

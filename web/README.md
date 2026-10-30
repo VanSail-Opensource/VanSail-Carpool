@@ -53,12 +53,10 @@ Each source folder has its own `README.md` file map. Start with [the source map]
 - Provider/rail selection, exact payment instructions, QR/address rendering, cancellation, and authoritative settlement polling.
 - Provider redirects land on `/payment-result`, which verifies durable payment state: paid orders show the green confirmation, while failed or expired orders offer an owner-verified replacement handoff to Home.
 - Daily check-in, group-message progress, betting games, lucky draws, and bounded outcome history.
-- Coupon wallet/redeem flow, active questionnaire participation, and durable validation codes.
 - Emby account setup, retry, password change, parental rating, and library preferences.
 
 ## Administration
 
-The live admin routes cover settings, catalog/squads, activity, coupons, questionnaires/CSV settlement, onboarding content, users, Emby accounts, entitlements, payments/refunds, backups/restore, the reviewed database editor, and audit history. Nuxt UI provides forms, selects, tables, modals, drawers, alerts, badges, and loading states; Motion owns local list presence, layout, selection, and workflow feedback.
 
 Financial and destructive operations retain text labels, busy states, explicit reasons, confirmations, and localized failures. The database editor never sends raw SQL: it uses typed filters, cursors, optimistic hashes, server diff review, rescue backup, and typed confirmation.
 

@@ -50,7 +50,7 @@ func (s *Server) xnodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]string{"masterUrl": url, "token": token})
 }
 func (s *Server) xnodeGroups(w http.ResponseWriter, r *http.Request) {
-	items, err := s.deps.XNode.Groups(r.Context())
+	items, err := s.deps.XNode.AdminGroups(r.Context())
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return

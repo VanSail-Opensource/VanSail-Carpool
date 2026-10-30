@@ -77,6 +77,19 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
 	}
+	retired, err := accountOrderRetiredTx(ctx, tx, order.UserID, order.CreatedAt)
+	if err != nil {
+		return model.PaymentOrder{}, false, err
+	}
+	if retired && order.PaidAt == nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE usdt_transfers SET status='review',order_id=?,reason='ACCOUNT_PURGED' WHERE id=?`, order.ID, id); err != nil {
+			return model.PaymentOrder{}, false, err
+		}
+		if err = tx.Commit(); err != nil {
+			return model.PaymentOrder{}, false, err
+		}
+		return order, false, nil
+	}
 	credited, err := courtesyCreditExistsTx(ctx, tx, order.ID)
 	if err != nil {
 		return model.PaymentOrder{}, false, err

@@ -20,7 +20,7 @@ const router = createRouter({
     { path: '/admin/users/:userId/pricing', component: () => import('@/views/AdminPricingView.vue'), meta: { console: true, adminSection: 'pricing', pricingMode: 'user' } },
     { path: '/admin/users/:userId', name: 'admin-user', component: () => import('@/views/AdminUserView.vue'), meta: { console: true, adminSection: 'users' } },
     { path: '/admin/ip-lookup', name: 'admin-ip-lookup', component: () => import('@/views/AdminIPLookupView.vue'), meta: { console: true, adminSection: 'ip-lookup' } },
-    { path: '/admin/:section(settings|statistics|api-access|xnode|usdt|host-connectivity|catalog|activity|affiliates|coupons|questionnaires|onboarding|users|compensation|backups|database|audit)', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { console: true } },
+    { path: '/admin/:section(settings|statistics|api-access|xnode|usdt|host-connectivity|catalog|activity|affiliates|coupons|onboarding|users|compensation|backups|database|audit)', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { console: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

@@ -21,7 +21,6 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `client.ts` exposes typed member and administrator API operations, including idempotent payment, subscription-revoke, refund, outbox-retry, and manual-maintenance commands, connection scans, renewal batches, payment profiles, dashboard usage, and cached product statistics.
 - `client.test.ts` covers client request behavior.
 - `compensation.ts` owns revisioned configuration, cursor history, and idempotent approve/dismiss requests.
-- `features.ts` exposes feature-specific endpoints and contract types, including durable Emby and questionnaire commands, the browser-safe payment-return receipt projection, and member coupon soft-discard.
 - `features.test.ts` verifies feature request construction.
 - `generated.ts` contains the compact generated OpenAPI contract.
 - `http.ts` provides authenticated HTTP and error handling primitives and records eligible responses through the session cache.
@@ -69,3 +68,7 @@ commands. Its mutable state and quotes always bypass response snapshots.
 Generated API compatibility regression: `openapiContract.test.ts`.
 
 - `pricingReads.ts`: Bounds concurrent optional analytical dataset reads to three, with abortable admission; commerce requests keep their independent transport.
+
+`features.ts` owns typed activity, coupon, Emby, affiliate, onboarding, and administration requests.
+
+`xnode.ts` exposes group deletion and derived admin eligibility without caching membership.

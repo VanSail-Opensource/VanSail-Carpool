@@ -26,7 +26,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 	productstats "github.com/VanSail-Opensource/VanSail-Carpool/internal/statistics"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/telegrampm"
@@ -72,7 +71,6 @@ type Dependencies struct {
 	Billing            *billing.Service
 	Activity           *activity.Service
 	Coupons            *coupons.Service
-	Questionnaires     *questionnaires.Service
 	Emby               *emby.Service
 	EmbyOperations     *emby.OperationService
 	EmbyPrice          emby.PriceSource
@@ -107,7 +105,7 @@ type Server struct {
 
 // New constructs all public, authenticated, admin, and webhook routes.
 func New(deps Dependencies) (*Server, error) {
-	if deps.Accounts == nil || deps.Catalog == nil || deps.Connections == nil || deps.ConnectionDrops == nil || deps.PurchaseOperations == nil || deps.Statistics == nil || deps.Billing == nil || deps.Activity == nil || deps.Coupons == nil || deps.Questionnaires == nil || deps.Emby == nil || deps.EmbyOperations == nil || deps.EmbyPrice == nil || deps.Admin == nil || deps.AdminUsers == nil || deps.Compensation == nil || deps.Settings == nil || deps.PaymentProfiles == nil || deps.Store == nil || deps.Affiliates == nil || deps.Telegram == nil || deps.Webhooks == nil || deps.PublicURL == nil || deps.Logger == nil || len(deps.AdminTelegramIDs) == 0 {
+	if deps.Accounts == nil || deps.Catalog == nil || deps.Connections == nil || deps.ConnectionDrops == nil || deps.PurchaseOperations == nil || deps.Statistics == nil || deps.Billing == nil || deps.Activity == nil || deps.Coupons == nil || deps.Emby == nil || deps.EmbyOperations == nil || deps.EmbyPrice == nil || deps.Admin == nil || deps.AdminUsers == nil || deps.Compensation == nil || deps.Settings == nil || deps.PaymentProfiles == nil || deps.Store == nil || deps.Affiliates == nil || deps.Telegram == nil || deps.Webhooks == nil || deps.PublicURL == nil || deps.Logger == nil || len(deps.AdminTelegramIDs) == 0 {
 		return nil, errors.New("HTTP API dependencies are incomplete")
 	}
 	adminTelegramIDs := make(map[int64]struct{}, len(deps.AdminTelegramIDs))

@@ -30,7 +30,6 @@
     "pricing_published_prices",
     "pricing_worker_watermark",
     "purchase_history_tombstones",
-    "questionnaires",
     "schema_migrations",
     "squad_product_overrides",
     "statistics_snapshots",
@@ -76,8 +75,6 @@
     "pricing_forecast_values",
     "pricing_personal_decisions",
     "provider_operations",
-    "questionnaire_imports",
-    "questionnaire_participants",
     "sessions",
     "settings",
     "txb_limits",
@@ -6649,238 +6646,6 @@
       ]
     },
     {
-      "name": "questionnaire_imports",
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "questionnaire_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "raw_csv",
-          "type": "BLOB",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "delimiter",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "headers_json",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "sample_rows_json",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "data_row_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "malformed_row_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "code_column",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "analysis_json",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "report_json",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "idempotency_key",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "last_error",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "questionnaire_participants",
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "questionnaire_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "user_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "validation_code",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "awarded_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "questionnaires",
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "title",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "description",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "form_url",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "reward_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "closes_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
       "name": "refunds",
       "columns": [
         {
@@ -8118,6 +7883,48 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "account_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'active'",
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_blocked",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_event_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_update_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "-1",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_purged_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
           "primaryKey": 0
         }
       ]
@@ -10059,13 +9866,6 @@
     "purchases_user_status_idx",
     "purchases_xnode_from_idx",
     "purchases_xnode_until_idx",
-    "questionnaire_imports_status_idx",
-    "questionnaire_participants_lookup_idx",
-    "questionnaire_participants_questionnaire_awarded_idx",
-    "questionnaire_participants_user_history_idx",
-    "questionnaires_active_closes_idx",
-    "questionnaires_created_idx",
-    "questionnaires_single_active_idx",
     "refunds_admin_status_page_idx",
     "refunds_created_idx",
     "restore_jobs_created_idx",
@@ -10103,6 +9903,10 @@
     "xnode_service_bindings_expiry_idx"
   ],
   "triggers": [
+    "account_onboarding_update",
+    "account_payment_insert",
+    "account_purchase_insert",
+    "account_session_insert",
     "affiliate_config_versions_no_delete",
     "affiliate_config_versions_no_update",
     "affiliate_tiers_no_delete",

@@ -39,13 +39,11 @@
   column-gap: 1rem;
 }
 
-.admin-list-row--activity-game,
-.admin-list-row--questionnaire {
+.admin-list-row--activity-game {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.admin-list-row--activity-game > .row-actions,
-.admin-list-row--questionnaire > .row-actions {
+.admin-list-row--activity-game > .row-actions {
   grid-column: 2;
 }
 
@@ -91,8 +89,7 @@
     grid-template-columns: auto minmax(0, 1fr) max-content max-content auto;
   }
 
-  .admin-list-row--activity-game,
-  .admin-list-row--questionnaire {
+  .admin-list-row--activity-game {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 

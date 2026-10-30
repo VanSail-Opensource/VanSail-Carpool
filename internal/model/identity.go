@@ -30,6 +30,9 @@ type TelegramProfile struct {
 
 // User is a VanSail Carpool account.
 type User struct {
+	AccountStatus           string     `json:"-"`
+	AccountGeneration       int64      `json:"-"`
+	BotBlocked              bool       `json:"-"`
 	ID                      string     `json:"id"`
 	TelegramID              int64      `json:"telegramId"`
 	TelegramFirstName       string     `json:"firstName"`

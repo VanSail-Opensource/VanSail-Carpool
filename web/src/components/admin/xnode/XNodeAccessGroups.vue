@@ -7,6 +7,7 @@ import XNodeEndpointOptions from './XNodeEndpointOptions.vue'
 import { nodeInboundItems } from './nodeFormOptions'
 
 const props = defineProps<{ groups: XNodeGroup[]; endpoints: XNodeEndpoint[]; nodes: XNode[]; configurations: XNodeConfiguration[]; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
+const emit = defineEmits<{ refresh: [] }>()
 const { t } = useI18n()
 const groupOpen = shallowRef(false)
 const endpointOpen = shallowRef(false)
@@ -21,13 +22,14 @@ function editEndpoint(item?: XNodeEndpoint): void { Object.assign(endpoint, { id
 async function saveGroup(): Promise<void> { if (bindingValid.value && await props.perform(() => xnodeApi.saveGroup({ ...group, bindings: bindings.value }))) groupOpen.value = false }
 async function saveEndpoint(): Promise<void> { if (await props.perform(() => xnodeApi.saveEndpoint(endpoint))) endpointOpen.value = false }
 async function deleteEndpoint(item: XNodeEndpoint): Promise<void> { await props.perform(() => xnodeApi.deleteEndpoint(item.id)) }
+async function deleteGroup(item: XNodeGroup): Promise<void> { if (item.canDelete && item.memberCount === 0 && !await props.perform(() => xnodeApi.deleteGroup(item.id))) emit('refresh') }
 </script>
 
 <template>
   <div class="grid gap-5">
     <div class="flex justify-end gap-2"><UButton icon="i-ph-plus-bold" :label="t('xnode.addGroup')" @click="editGroup()" /><UButton color="neutral" variant="outline" icon="i-ph-globe-bold" :disabled="!nodes.length" :label="t('xnode.addEndpoint')" @click="editEndpoint()" /></div>
     <p v-if="!groups.length" class="text-muted">{{ t('xnode.noGroups') }}</p>
-    <div v-for="item in groups" :key="item.id" class="resource-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ item.bindings.length }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editGroup(item)" /></div>
+    <div v-for="item in groups" :key="item.id" class="resource-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ item.bindings.length }}</span><div class="flex gap-1"><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="busy" :aria-label="t('common.edit')" @click="editGroup(item)" /><UButton v-if="item.canDelete && item.memberCount === 0" variant="ghost" color="error" icon="i-ph-trash-bold" :disabled="busy" :aria-label="t('xnode.deleteGroup', { name: item.name })" @click="deleteGroup(item)" /></div></div>
     <h3>{{ t('xnode.endpoints') }}</h3>
     <p v-if="!endpoints.length" class="text-muted">{{ t('xnode.noEndpoints') }}</p>
     <div v-for="item in endpoints" :key="item.id" class="resource-row"><div><strong>{{ item.name }}</strong><div class="text-xs text-muted break-all">{{ item.address }}:{{ item.port }} · {{ item.inboundTag }}</div></div><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="busy" :aria-label="t('common.edit')" @click="editEndpoint(item)" /><UButton variant="ghost" color="error" icon="i-ph-trash-bold" :disabled="busy" :aria-label="t('xnode.deleteEndpoint', { name: item.name })" @click="deleteEndpoint(item)" /></div>

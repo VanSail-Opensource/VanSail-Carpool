@@ -44,7 +44,7 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 		return nil, nil, err
 	}
 	query := `SELECT ` + userColumns + `,COALESCE(balances.txb_minor,0) FROM users
-		LEFT JOIN balances ON balances.user_id=users.id WHERE 1=1`
+		LEFT JOIN balances ON balances.user_id=users.id WHERE users.account_status='active'`
 	args := make([]any, 0, 20)
 	if filter.Search != "" {
 		pattern := "%" + escapeLike(filter.Search) + "%"

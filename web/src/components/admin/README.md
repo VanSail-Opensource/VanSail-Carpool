@@ -42,7 +42,6 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminOnboardingPanel.vue` loads, saves, and publishes visual onboarding drafts.
 - `onboarding/` contains bilingual content indexes with focused editors and text previews.
 - `AdminPaymentProfiles.vue` lists and edits masked provider accounts, keeps BEPUSDT channels discovery-owned, deletes profiles through a protected confirmation, and contributes remaining drafts to the parent settings save.
-- `AdminQuestionnairesPanel.vue` manages questionnaire lifecycles.
 - `AdminReasonDialog.vue` collects audited reasons and keeps action failures visible in the dialog.
 - `AdminSectionState.vue` renders loading and error states.
 - `AdminSettingsPanel.vue` composes runtime, payment, and activity tabs while preserving one coordinated Save action for runtime/payment/activity drafts; payment interventions stay scoped to individual user histories.

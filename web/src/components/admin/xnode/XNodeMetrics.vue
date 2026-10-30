@@ -34,7 +34,7 @@ watch(() => props.metrics, value => {
 
 <template>
   <div class="grid gap-5">
-    <div v-if="metrics" class="metrics-summary"><div><small>{{ t('xnode.onlineNodes') }}</small><strong>{{ metrics.onlineNodes }} / {{ metrics.totalNodes }}</strong></div><div><small>{{ t('xnode.connections') }}</small><strong>{{ metrics.activeConnections }}</strong></div><div><small>{{ t('xnode.upload') }}</small><strong>{{ rate(metrics.uploadBytesPerSecond) }}</strong></div><div><small>{{ t('xnode.download') }}</small><strong>{{ rate(metrics.downloadBytesPerSecond) }}</strong></div></div>
+    <div v-if="metrics" class="metrics-summary"><div><small>{{ t('xnode.onlineNodes') }}</small><strong>{{ metrics.onlineNodes }} / {{ metrics.totalNodes }}</strong></div><div><small>{{ t('xnode.connections') }}</small><strong>{{ metrics.totalConnections ?? t('common.notAvailable') }}</strong></div><div><small>{{ t('xnode.upload') }}</small><strong>{{ rate(metrics.uploadBytesPerSecond) }}</strong></div><div><small>{{ t('xnode.download') }}</small><strong>{{ rate(metrics.downloadBytesPerSecond) }}</strong></div></div>
     <p v-if="!liveNodes.length" class="text-muted">{{ t('xnode.noMetrics') }}</p>
     <XNodeMetricRow v-for="node in liveNodes" :key="node.nodeId" :node="node" :name="names.get(node.nodeId) ?? node.nodeId" :cpu="series[`${node.nodeId}:cpu`] ?? []" :memory="series[`${node.nodeId}:memory`] ?? []" @logs="viewLogs(node)" />
     <XNodeLogs v-if="logging" v-model:open="logsOpen" :node-id="logging.id" :name="logging.name" />

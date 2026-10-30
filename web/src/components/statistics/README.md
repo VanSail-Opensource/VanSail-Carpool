@@ -1,5 +1,8 @@
 # Statistics components
 
+Node user counts require usersOnlineAvailable as well as fresh node activity.
+Unknown counts display unavailable while independently known traffic rates remain visible.
+
 
 - `StatisticsPage.vue` is the thin page orchestrator for loading, stale, empty, and partial-error states, with separate Overview, Nodes, Seven-day traffic, Distributions, and Squad composition tabs. Overview also contains both source-freshness panels.
 - `StatisticsFreshness.vue` exposes the X-Node and database snapshot timestamps as independent Overview panels with separate stale state.

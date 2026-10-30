@@ -65,6 +65,7 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	seedRetirementUpgrade(t, ctx, raw)
+	seedCommunityRetirement(t, ctx, raw)
 	if err = raw.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +76,7 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	}
 	defer db.Close()
 	verifyRetirementUpgrade(t, ctx, db)
+	verifyCommunityRetirement(t, ctx, db)
 	if err = VerifySchema(ctx, db); err != nil {
 		t.Fatal(err)
 	}

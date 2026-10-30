@@ -63,11 +63,5 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 	if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status=?,last_error=?,available_at=?,updated_at=? WHERE id=?`, status, message, stamp(now.Add(delay)), stamp(now), jobID); err != nil {
 		return err
 	}
-	if status == "failed" {
-		if _, err := tx.ExecContext(ctx, `UPDATE questionnaire_imports SET status='failed',last_error=?,updated_at=?
-			WHERE status IN ('queued','processing') AND id=(SELECT json_extract(payload,'$.importId') FROM outbox_jobs WHERE id=? AND kind='questionnaire_settlement')`, message, stamp(now), jobID); err != nil {
-			return err
-		}
-	}
 	return tx.Commit()
 }

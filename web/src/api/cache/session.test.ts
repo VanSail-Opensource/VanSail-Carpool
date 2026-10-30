@@ -15,9 +15,9 @@ describe('session response snapshots', () => {
   })
 
   it('retains empty and null responses without treating them as misses', () => {
-    writeResponseCache('questionnaire', null, cacheGeneration())
+    writeResponseCache('empty-resource', null, cacheGeneration())
     writeResponseCache('records', { items: [] }, cacheGeneration())
-    expect(readResponseCache('questionnaire')).toBeNull()
+    expect(readResponseCache('empty-resource')).toBeNull()
     expect(readResponseCache('records')).toEqual({ items: [] })
     expect(readResponseCache('missing')).toBeUndefined()
   })

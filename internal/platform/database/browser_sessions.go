@@ -23,7 +23,7 @@ func (s *Store) CreateBrowserSession(ctx context.Context, hash []byte, userID st
 
 // BrowserSession returns the owner and actual expiry of a live browser-scoped session.
 func (s *Store) BrowserSession(ctx context.Context, hash []byte, now time.Time) (model.User, time.Time, error) {
-	user, err := scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='browser' AND sessions.expires_at>?`, hash, stamp(now)))
+	user, err := scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='browser' AND sessions.expires_at>? AND users.account_status='active' AND users.bot_blocked=0`, hash, stamp(now)))
 	if err != nil {
 		return model.User{}, time.Time{}, err
 	}

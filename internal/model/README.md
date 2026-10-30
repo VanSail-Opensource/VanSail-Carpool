@@ -33,3 +33,5 @@ The `Statistics` projection in `analytics.go` carries nullable upstream `lastTra
 - `user_pricing.go`: Paginated user-specific price, coupon, and renewal projections.
 
 Canonical catalog, purchase and monetary contracts: `commerce.go`.
+
+`account_lifecycle.go` defines the private generation-fenced purge target. Lifecycle status/generation/block flags in User are internal and never serialized to browsers.

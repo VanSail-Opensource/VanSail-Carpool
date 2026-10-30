@@ -8,7 +8,6 @@ const props = defineProps<{ hasValidCombo: boolean }>()
 
 const items = [
   { to: '/affiliates', labelKey: 'affiliates.title', noteKey: 'affiliates.dashboardNote', icon: 'i-ph-users-three' },
-  { to: '/questionnaire', labelKey: 'nav.questionnaire', noteKey: 'dashboard.questionnaireNote', icon: 'i-ph-list-checks' },
   { to: '/community', labelKey: 'community.title', noteKey: 'community.subtitle', icon: 'i-ph-users-three' },
   { to: '/emby', labelKey: 'nav.emby', noteKey: 'dashboard.embyNote', icon: 'i-ph-monitor-play' },
 ]

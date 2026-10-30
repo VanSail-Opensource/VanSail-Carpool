@@ -88,7 +88,7 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 		}
 		return true, err
 	}
-	if status != "open" {
+	if status != "open" && status != "closing" {
 		return true, xnode.ErrTrafficPeriodSettled
 	}
 	bytes := int64(sample.UploadBytes + sample.DownloadBytes)
@@ -99,8 +99,12 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 	if err = recordPAYGWindowTx(ctx, tx, &a, sample.Through, bytes, time.Now().UTC()); err != nil {
 		return true, err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=? AND status='open'`, a.UsedBytes, a.PeriodID); err != nil {
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=? AND status IN ('open','closing')`, a.UsedBytes, a.PeriodID)
+	if err != nil {
 		return true, err
+	}
+	if count, err := result.RowsAffected(); err != nil || count != 1 {
+		return true, xnode.ErrTrafficPeriodSettled
 	}
 	return true, recordPAYGMinuteTx(ctx, tx, a.UserID, a.GroupID, sample.Through, bytes, 0)
 }

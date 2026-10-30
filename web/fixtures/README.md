@@ -1,5 +1,22 @@
 # Constructed browser fixtures
 
+`onboarding-admin-audit.ts` / `.html` mount the actual bilingual admin content
+editor with constructed publication receipts. `slow`, `error`, `publish-error`,
+and `zh` cover load/publication states; `__agreementAdminAudit.publishes` counts
+publications without touching members or sending messages.
+
+`StablecoinAudit.vue`, `stablecoin-audit.ts`, and `stablecoin-audit.html` mount
+the built-in token settings without chain calls. `slow`, `error`, `save-error`,
+and `zh` exercise localized load/save states; `__stablecoinAudit.writes` records
+configuration writes and verifies that no independent rate is submitted.
+`payment` displays real built-in payment instructions; `usdc`, `expired`, and
+`external` check the fee notice across tokens, expiry, and provider scope.
+
+X-Node `open-metrics` shows an exact large open-flow count; `zero-metrics` shows
+zero and the default remains unknown. `node-statistics` mounts the real node
+statistics section via `NodeStatisticsAudit.vue`; combine `unknown-metrics`,
+`stale-metrics`, `offline`, `slow`, `empty`, and `zero-metrics` for count states.
+
 PAYG `deferred` exposes an Explore entry action; `window.paygAuditCalls` and
 resource timings show that PAYG/Combo imports and reads start on selection.
 Combine with `slow=1800`, `empty`, `combo-empty`, `error` or `combo-error` for
@@ -208,3 +225,5 @@ PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. Cat
 `PricingAudit.vue`, `pricing-audit.ts` and `pricing-audit.html` mount the real pricing/member components with deterministic API fixtures. `pricing-data.ts` supplies owner forecasts and paginated prices, including evaluated-but-unvalidated coverage. `ChartsAudit.vue` exercises line, interval, stacked, usage-bar and donut composition in both appearance modes. These fixtures support Chrome DevTools inspection and never write to production.
 
 The X-Node audit fixture accepts `cost-hourly`, `cost-unlimited`, `cost-slow`, `cost-error`, and `cost-save-error` for provider metadata states.
+
+The X-Node fixture accepts group-deletion, group-delete-error, empty, slow and error to inspect occupied/free/unknown/service groups, stale conflicts and disabled mutation controls. stablecoin-audit accepts purged-review to inspect the localized account review reason.

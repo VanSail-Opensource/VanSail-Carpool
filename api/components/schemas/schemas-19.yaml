@@ -85,6 +85,7 @@ StatisticsNode:
     countryCode: { type: string }
     online: { type: boolean }
     usersOnline: { type: integer, minimum: 0 }
+    usersOnlineAvailable: { type: boolean, description: 'Distinct connected members are known only from fresh negotiated open-connection telemetry.' }
     rxBytesPerSec: { type: string, pattern: '^\d+$' }
     txBytesPerSec: { type: string, pattern: '^\d+$' }
     xrayVersion: { type: string }

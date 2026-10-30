@@ -10,7 +10,7 @@
     "draftRevision": "Draft revision {revision}",
     "publishedRevision": "Published revision {revision}",
     "welcomeHint": "Keep message IDs in order; reading time is calculated when the app displays each message.",
-    "agreementHint": "Changes to published agreements require members to give consent again.",
+    "agreementHint": "New members accept the latest published agreements. Existing acceptances remain valid.",
     "saveDraft": "Save draft",
     "publishing": "Publishing",
     "publish": "Publish",

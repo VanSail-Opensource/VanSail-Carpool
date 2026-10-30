@@ -53,6 +53,14 @@ func (s *Service) ReconcilePAYG(ctx context.Context, job model.OutboxJob) error 
 	}
 	known := map[string]bool{}
 	for _, a := range accounts {
+		if user.AccountGeneration > 0 && prices[a.GroupID] > 0 {
+			s.mu.Lock()
+			err = s.reopenPurgedPAYG(ctx, a, prices[a.GroupID])
+			s.mu.Unlock()
+			if err != nil {
+				return err
+			}
+		}
 		known[a.GroupID+"\x00"+a.NodeID] = true
 	}
 	groups, err := s.repo.XNodeGroups(ctx)

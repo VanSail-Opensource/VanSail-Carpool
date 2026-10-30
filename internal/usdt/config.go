@@ -10,7 +10,6 @@ import (
 )
 
 var identifier = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
-var positiveRate = regexp.MustCompile(`^[0-9]{1,18}(\.[0-9]{1,12})?$`)
 
 // DecodeConfig validates encrypted settings with the same rules as the admin write.
 func DecodeConfig(raw string) (Config, error) {
@@ -21,8 +20,15 @@ func DecodeConfig(raw string) (Config, error) {
 	if json.Unmarshal([]byte(raw), &fields) != nil {
 		return Config{}, ErrConfiguration
 	}
+	// Old encrypted configurations carry a private rate. Billing now owns the
+	// shared USD rate; discard this legacy field without weakening other checks.
+	delete(fields, "rate")
+	encoded, err := json.Marshal(fields)
+	if err != nil {
+		return Config{}, ErrConfiguration
+	}
 	var c Config
-	d := json.NewDecoder(bytes.NewBufferString(raw))
+	d := json.NewDecoder(bytes.NewReader(encoded))
 	d.DisallowUnknownFields()
 	if d.Decode(&c) != nil || d.Decode(new(any)) != io.EOF {
 		return Config{}, ErrConfiguration
@@ -57,12 +63,6 @@ func ValidateConfig(c *Config) error {
 		return ErrConfiguration
 	}
 	c.LegacyGroups = nil
-	if c.Rate != "" && (!positiveRate.MatchString(c.Rate) || strings.Trim(c.Rate, "0.") == "") {
-		return ErrConfiguration
-	}
-	if c.Enabled && c.Rate == "" {
-		return ErrConfiguration
-	}
 	seen := map[string]bool{}
 	endpointIDs := map[string]bool{}
 	for i := range c.Networks {

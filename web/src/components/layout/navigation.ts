@@ -45,7 +45,6 @@ export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showArou
         ...(showIPLookup ? [{ label: t('ipLookup.title'), to: '/ip-lookup', icon: 'i-ph-globe-hemisphere-west' }] : []),
         ...(showAroundTX ? [
         { label: t('affiliates.title'), to: '/affiliates', icon: 'i-ph-users-three' },
-        { label: t('nav.questionnaire'), to: '/questionnaire', icon: 'i-ph-list-checks' },
         { label: t('community.title'), to: '/community', icon: 'i-ph-users-three' },
         { label: t('nav.emby'), to: '/emby', icon: 'i-ph-monitor-play' },
         ] : []),

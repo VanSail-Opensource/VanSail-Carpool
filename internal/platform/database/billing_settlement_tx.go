@@ -60,6 +60,16 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 	if order.Status == "paid" || order.Status == "refunded" {
 		return order, false, nil
 	}
+	retired, err := accountOrderRetiredTx(ctx, tx, order.UserID, order.CreatedAt)
+	if err != nil {
+		return model.PaymentOrder{}, false, err
+	}
+	if retired {
+		if err := archivePurgedPaymentTx(ctx, tx, order, provider, dedupeKey, payloadHash, tradeID, chargeID, eventID, now); err != nil {
+			return model.PaymentOrder{}, false, err
+		}
+		return order, false, nil
+	}
 	if order.Status != "pending" && order.Status != "creating" && order.Status != "expired" && order.Status != "cancelled" && !(provider == "builtin_usdt" && order.Status == "failed") {
 		return model.PaymentOrder{}, false, ErrConflict
 	}

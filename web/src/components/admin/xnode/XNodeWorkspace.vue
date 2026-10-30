@@ -32,7 +32,7 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
       <XNodeSubscriptionTemplates v-else-if="tab === 'templates'" />
       <XNodeRoutingTemplates v-else-if="tab === 'routing'" />
       <XNodeConfigurations v-else-if="tab === 'configurations'" :configurations="workspace.configurations.value" :snippets="workspace.snippets.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
-      <XNodeAccessGroups v-else-if="tab === 'groups'" :configurations="workspace.configurations.value" :save-error="workspace.actionError.value" :groups="workspace.groups.value" :endpoints="workspace.endpoints.value" :nodes="workspace.nodes.value" :busy="workspace.busy.value" :perform="workspace.perform" />
+      <XNodeAccessGroups v-else-if="tab === 'groups'" :configurations="workspace.configurations.value" :save-error="workspace.actionError.value" :groups="workspace.groups.value" :endpoints="workspace.endpoints.value" :nodes="workspace.nodes.value" :busy="workspace.busy.value" :perform="workspace.perform" @refresh="workspace.load" />
       <XNodeMetrics v-else-if="tab === 'metrics'" :metrics="workspace.metrics.value" :nodes="workspace.nodes.value" />
     </AdminSectionState>
   </section>

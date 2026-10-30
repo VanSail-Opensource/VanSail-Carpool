@@ -22,7 +22,7 @@ type WebhookConfig struct {
 
 // DefaultAllowedUpdates returns the update kinds required by onboarding and Stars payments.
 func DefaultAllowedUpdates() []string {
-	return []string{"message", "chat_member", "chat_join_request", "pre_checkout_query", "chat_boost", "callback_query"}
+	return []string{"message", "chat_member", "my_chat_member", "chat_join_request", "pre_checkout_query", "chat_boost", "callback_query"}
 }
 
 // VerifyWebhookSecret compares a received webhook header with the configured secret in constant time.

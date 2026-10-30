@@ -18,7 +18,7 @@ const synchronizationJobPredicate = `(job.kind IN ('xnode_apply_entitlement','xn
 	'draw_raffle_reply','draw_raffle_complete','draw_raffle_private','draw_instant_announcement','draw_raffle_price_notice')
 	OR (job.kind='provider_operation' AND NOT EXISTS(SELECT 1 FROM provider_operations operation
 		WHERE operation.id=json_extract(job.payload,'$.operationId')
-		AND operation.kind IN ('questionnaire_settlement','outbox_retry','database_maintenance'))))`
+		AND operation.kind IN ('outbox_retry','database_maintenance'))))`
 
 func pruneFailedSynchronizationJobsTx(ctx context.Context, tx *sql.Tx, now time.Time, counts map[string]int64) error {
 	if _, err := tx.ExecContext(ctx, `CREATE TEMP TABLE maintenance_failed_sync_jobs(id TEXT PRIMARY KEY,kind TEXT,payload TEXT)`); err != nil {

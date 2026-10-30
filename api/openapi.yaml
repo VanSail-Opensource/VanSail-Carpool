@@ -111,9 +111,6 @@ paths:
   /api/v1/coupons/wallet: { $ref: './paths/api-v1-coupons-wallet.yaml' }
   /api/v1/coupons/wallet/{id}: { $ref: './paths/api-v1-coupons-wallet-id.yaml' }
   /api/v1/coupons/redeem: { $ref: './paths/api-v1-coupons-redeem.yaml' }
-  /api/v1/questionnaires/active: { $ref: './paths/api-v1-questionnaires-active.yaml' }
-  /api/v1/questionnaires/history: { $ref: './paths/api-v1-questionnaires-history.yaml' }
-  /api/v1/questionnaires/{id}/participation: { $ref: './paths/api-v1-questionnaires-id-participation.yaml' }
   /api/v1/admin/activity-settings: { $ref: './paths/api-v1-admin-activity-settings.yaml' }
   /api/v1/admin/affiliates: { $ref: './paths/api-v1-admin-affiliates.yaml' }
   /api/v1/admin/activity-games: { $ref: './paths/api-v1-admin-activity-games.yaml' }
@@ -126,14 +123,6 @@ paths:
   /api/v1/admin/lucky-draw/{id}/forecast: { $ref: './paths/api-v1-admin-lucky-draw-id-forecast.yaml' }
   /api/v1/admin/coupons: { $ref: './paths/api-v1-admin-coupons.yaml' }
   /api/v1/admin/coupons/{id}: { $ref: './paths/api-v1-admin-coupons-id.yaml' }
-  /api/v1/admin/questionnaires: { $ref: './paths/api-v1-admin-questionnaires.yaml' }
-  /api/v1/admin/questionnaires/{id}: { $ref: './paths/api-v1-admin-questionnaires-id.yaml' }
-  /api/v1/admin/questionnaires/{id}/close: { $ref: './paths/api-v1-admin-questionnaires-id-close.yaml' }
-  /api/v1/admin/questionnaires/{id}/activate: { $ref: './paths/api-v1-admin-questionnaires-id-activate.yaml' }
-  /api/v1/admin/questionnaires/{id}/imports: { $ref: './paths/api-v1-admin-questionnaires-id-imports.yaml' }
-  /api/v1/admin/questionnaires/{id}/imports/{importID}: { $ref: './paths/api-v1-admin-questionnaires-id-imports-importid.yaml' }
-  /api/v1/admin/questionnaires/{id}/imports/{importID}/analyze: { $ref: './paths/api-v1-admin-questionnaires-id-imports-importid-analyze.yaml' }
-  /api/v1/admin/questionnaires/{id}/imports/{importID}/settle: { $ref: './paths/api-v1-admin-questionnaires-id-imports-importid-settle.yaml' }
   /api/v1/admin/emby-accounts: { $ref: './paths/api-v1-admin-emby-accounts.yaml' }
   /api/v1/admin/emby-accounts/{id}/retry: { $ref: './paths/api-v1-admin-emby-accounts-id-retry.yaml' }
   /api/v1/admin/settings: { $ref: './paths/api-v1-admin-settings.yaml' }
@@ -325,12 +314,7 @@ components:
     LuckyDrawForecast: {"$ref":"./components/schemas/schemas-06.yaml#/LuckyDrawForecast"}, CouponKind: {"$ref":"./components/schemas/schemas-06.yaml#/CouponKind"}, CouponDiscountMode: {"$ref":"./components/schemas/schemas-06.yaml#/CouponDiscountMode"},
     Coupon: {"$ref":"./components/schemas/schemas-07.yaml#/Coupon"}, CouponWrite: {"$ref":"./components/schemas/schemas-07.yaml#/CouponWrite"}, CouponList: {"$ref":"./components/schemas/schemas-07.yaml#/CouponList"},
     CouponGrant: {"$ref":"./components/schemas/schemas-07.yaml#/CouponGrant"}, CouponGrantList: {"$ref":"./components/schemas/schemas-07.yaml#/CouponGrantList"}, CouponRedeemRequest: {"$ref":"./components/schemas/schemas-07.yaml#/CouponRedeemRequest"},
-    CouponRedemption: {"$ref":"./components/schemas/schemas-07.yaml#/CouponRedemption"}, QuestionnaireStatus: {"$ref":"./components/schemas/schemas-07.yaml#/QuestionnaireStatus"}, Questionnaire: {"$ref":"./components/schemas/schemas-07.yaml#/Questionnaire"},
-    QuestionnaireWrite: {"$ref":"./components/schemas/schemas-07.yaml#/QuestionnaireWrite"}, QuestionnaireList: {"$ref":"./components/schemas/schemas-07.yaml#/QuestionnaireList"}, QuestionnaireParticipation: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireParticipation"},
-    ActiveQuestionnaire: {"$ref":"./components/schemas/schemas-08.yaml#/ActiveQuestionnaire"}, QuestionnaireHistoryItem: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireHistoryItem"}, QuestionnaireHistoryList: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireHistoryList"},
-    QuestionnaireImportStatus: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireImportStatus"}, QuestionnaireImportAnalysis: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireImportAnalysis"}, QuestionnaireImportPreview: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireImportPreview"},
-    QuestionnaireImportAnalyzeRequest: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireImportAnalyzeRequest"}, QuestionnaireSettlementReport: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireSettlementReport"}, QuestionnaireImportState: {"$ref":"./components/schemas/schemas-08.yaml#/QuestionnaireImportState"},
-    EmbyRating: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyRating"}, EmbyLibrary: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyLibrary"}, EmbyAccount: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyAccount"},
+    CouponRedemption: {"$ref":"./components/schemas/schemas-07.yaml#/CouponRedemption"}, EmbyRating: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyRating"}, EmbyLibrary: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyLibrary"}, EmbyAccount: {"$ref":"./components/schemas/schemas-08.yaml#/EmbyAccount"},
     EmbyOverview: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyOverview"}, EmbyPreferencesRequest: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyPreferencesRequest"}, EmbySetupRequest: {"$ref":"./components/schemas/schemas-09.yaml#/EmbySetupRequest"},
     EmbyPasswordRequest: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyPasswordRequest"}, EmbyAccountList: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyAccountList"}, AdminSetting: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSetting"},
     AdminSettingCreate: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSettingCreate"}, AdminSettingUpdate: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSettingUpdate"}, AdminUserSummary: {"$ref":"./components/schemas/schemas-09.yaml#/AdminUserSummary"},

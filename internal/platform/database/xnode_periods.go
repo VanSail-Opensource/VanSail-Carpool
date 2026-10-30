@@ -57,7 +57,7 @@ func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Per
 	if item.LastResetAt != nil {
 		reset = stamp(*item.LastResetAt)
 	}
-	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS excluded.purchase_id`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
+	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS excluded.purchase_id AND NOT (xnode_periods.status IN ('closing','closed','review') AND excluded.status='open')`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
 	if err != nil {
 		return err
 	}

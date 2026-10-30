@@ -115,11 +115,6 @@ func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) 
 	if status == "processing" {
 		return ErrConflict
 	}
-	if kind == "questionnaire_settlement" && status != "done" {
-		if err := abandonQuestionnaireJobTx(ctx, tx, jobID, time.Now().UTC()); err != nil {
-			return err
-		}
-	}
 	result, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=? AND status<>'processing'`, jobID)
 	if err != nil {
 		return fmt.Errorf("delete outbox job: %w", err)
@@ -131,29 +126,3 @@ func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) 
 	}
 	return tx.Commit()
 }
-
-func abandonQuestionnaireJobTx(ctx context.Context, tx *sql.Tx, jobID string, now time.Time) error {
-	var importID, questionnaireID, status string
-	err := tx.QueryRowContext(ctx, `SELECT qi.id,qi.questionnaire_id,qi.status FROM questionnaire_imports qi
-		JOIN outbox_jobs job ON job.id=? AND job.kind='questionnaire_settlement' AND qi.id=json_extract(job.payload,'$.importId')`, jobID).
-		Scan(&importID, &questionnaireID, &status)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if status == "processing" {
-		return ErrConflict
-	}
-	if status == "settled" {
-		return nil
-	}
-	if _, err := tx.ExecContext(ctx, `UPDATE questionnaires SET status='closed',updated_at=? WHERE id=? AND status='settling'`, stamp(now), questionnaireID); err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM questionnaire_imports WHERE id=? AND status<>'processing'`, importID)
-	return err
-}
-
-// RecoverOutbox returns leases abandoned by a crashed process to the pending queue.

@@ -47,6 +47,7 @@ export const xnodeApi = {
   snippets: (signal?: AbortSignal) => request<{ items: XNodeSnippet[] }>(`${root}/snippets`, { cache: 'no-store', signal }),
   saveSnippet: (body: Partial<XNodeSnippet>) => request<XNodeSnippet>(`${root}/snippets${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   groups: (signal?: AbortSignal) => request<{ items: XNodeGroup[] }>(`${root}/groups`, { cache: 'no-store', signal }),
+  deleteGroup: (id: string) => request<void>(`${root}/groups/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' }),
   saveGroup: (body: Partial<XNodeGroup>) => request<XNodeGroup>(`${root}/groups${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   endpoints: (signal?: AbortSignal) => request<{ items: XNodeEndpoint[] }>(`${root}/endpoints`, { cache: 'no-store', signal }),
 	deleteEndpoint: (id: string) => request<void>(`${root}/endpoints/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' }),

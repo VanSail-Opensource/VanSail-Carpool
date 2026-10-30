@@ -1042,47 +1042,6 @@ CREATE TABLE purchases (
   CHECK (entitlement_addon_squad_uuids IS NULL OR (json_valid(entitlement_addon_squad_uuids) AND json_type(entitlement_addon_squad_uuids)='array')), reward_renewal_price_minor INTEGER CHECK (reward_renewal_price_minor IS NULL OR reward_renewal_price_minor >= 0), reward_traffic_renewal INTEGER NOT NULL DEFAULT 1 CHECK (reward_traffic_renewal IN (0,1)), reward_renewal_traffic_limit_bytes INTEGER
   CHECK (reward_renewal_traffic_limit_bytes IS NULL OR reward_renewal_traffic_limit_bytes > 0), combo_squad_uuids TEXT);
 
-CREATE TABLE questionnaire_imports (
-  id TEXT PRIMARY KEY,
-  questionnaire_id TEXT NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
-  status TEXT NOT NULL CHECK (status IN ('preview','queued','processing','settled','failed')),
-  raw_csv BLOB NOT NULL,
-  delimiter TEXT NOT NULL CHECK (length(delimiter) = 1),
-  headers_json TEXT NOT NULL,
-  sample_rows_json TEXT NOT NULL,
-  data_row_count INTEGER NOT NULL CHECK (data_row_count >= 0),
-  malformed_row_count INTEGER NOT NULL CHECK (malformed_row_count >= 0),
-  code_column TEXT,
-  analysis_json TEXT,
-  report_json TEXT,
-  idempotency_key TEXT NOT NULL,
-  last_error TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  UNIQUE(questionnaire_id, idempotency_key)
-);
-
-CREATE TABLE questionnaire_participants (
-  id TEXT PRIMARY KEY,
-  questionnaire_id TEXT NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  validation_code TEXT NOT NULL UNIQUE,
-  awarded_at TEXT,
-  created_at TEXT NOT NULL,
-  UNIQUE(questionnaire_id, user_id)
-);
-
-CREATE TABLE questionnaires (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL DEFAULT '',
-  form_url TEXT NOT NULL,
-  reward_txb_minor INTEGER NOT NULL CHECK (reward_txb_minor >= 0),
-  status TEXT NOT NULL CHECK (status IN ('draft','active','closed','settling','settled')),
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-, closes_at TEXT);
-
 CREATE TABLE refunds (
   id TEXT PRIMARY KEY,
   payment_order_id TEXT NOT NULL UNIQUE REFERENCES payment_orders(id),
@@ -1289,7 +1248,7 @@ CREATE TABLE "users" (
   updated_at TEXT NOT NULL
 , recovery_reason TEXT NOT NULL DEFAULT '', accepted_agreement_revision INTEGER NOT NULL DEFAULT 0, new_user INTEGER NOT NULL DEFAULT 0 CHECK (new_user IN (0,1)), inviter_id INTEGER REFERENCES users(telegram_id), notification_locale TEXT NOT NULL DEFAULT 'en' CHECK (notification_locale IN ('en','zh-CN')), auto_traffic_reset_enabled INTEGER NOT NULL DEFAULT 1
   CHECK (auto_traffic_reset_enabled IN (0,1)), display_currency TEXT NOT NULL DEFAULT 'TXB'
-  CHECK (display_currency IN ('TXB','CNY','USD')), pm_blocked INTEGER NOT NULL DEFAULT 0 CHECK (pm_blocked IN (0,1)), pm_muted INTEGER NOT NULL DEFAULT 0 CHECK (pm_muted IN (0,1)));
+  CHECK (display_currency IN ('TXB','CNY','USD')), pm_blocked INTEGER NOT NULL DEFAULT 0 CHECK (pm_blocked IN (0,1)), pm_muted INTEGER NOT NULL DEFAULT 0 CHECK (pm_muted IN (0,1)), account_status TEXT NOT NULL DEFAULT 'active' CHECK(account_status IN ('active','purging','purged')), account_generation INTEGER NOT NULL DEFAULT 0 CHECK(account_generation>=0), bot_blocked INTEGER NOT NULL DEFAULT 0 CHECK(bot_blocked IN (0,1)), bot_event_at INTEGER NOT NULL DEFAULT 0, bot_update_id INTEGER NOT NULL DEFAULT -1, last_purged_at TEXT);
 
 CREATE TABLE webhook_events (
   id TEXT PRIMARY KEY,
@@ -1772,22 +1731,6 @@ CREATE INDEX purchases_xnode_from_idx ON purchases(valid_from);
 
 CREATE INDEX purchases_xnode_until_idx ON purchases(valid_until);
 
-CREATE INDEX questionnaire_imports_status_idx ON questionnaire_imports(status, created_at);
-
-CREATE INDEX questionnaire_participants_lookup_idx ON questionnaire_participants(questionnaire_id, validation_code);
-
-CREATE INDEX questionnaire_participants_questionnaire_awarded_idx
-  ON questionnaire_participants(questionnaire_id,awarded_at);
-
-CREATE INDEX questionnaire_participants_user_history_idx
-  ON questionnaire_participants(user_id,created_at DESC,id DESC);
-
-CREATE INDEX questionnaires_active_closes_idx ON questionnaires(status, closes_at);
-
-CREATE INDEX questionnaires_created_idx ON questionnaires(created_at DESC);
-
-CREATE UNIQUE INDEX questionnaires_single_active_idx ON questionnaires((1)) WHERE status='active';
-
 CREATE INDEX refunds_admin_status_page_idx ON refunds(status,created_at DESC,id DESC);
 
 CREATE INDEX refunds_created_idx ON refunds(created_at DESC);
@@ -1864,6 +1807,22 @@ CREATE INDEX xnode_periods_purchase_idx ON xnode_periods(purchase_id);
 CREATE INDEX xnode_periods_user_idx ON xnode_periods(proxy_user_id,started_at);
 
 CREATE INDEX xnode_service_bindings_expiry_idx ON xnode_service_bindings(valid_until);
+
+CREATE TRIGGER account_onboarding_update BEFORE UPDATE OF onboarding_state ON users
+WHEN NEW.onboarding_state='complete' AND NEW.account_status<>'active'
+BEGIN SELECT RAISE(ABORT,'account is unavailable'); END;
+
+CREATE TRIGGER account_payment_insert BEFORE INSERT ON payment_orders
+WHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND account_status<>'active')
+BEGIN SELECT RAISE(ABORT,'account is unavailable'); END;
+
+CREATE TRIGGER account_purchase_insert BEFORE INSERT ON purchases
+WHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND account_status<>'active')
+BEGIN SELECT RAISE(ABORT,'account is unavailable'); END;
+
+CREATE TRIGGER account_session_insert BEFORE INSERT ON sessions
+WHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND (account_status<>'active' OR bot_blocked=1))
+BEGIN SELECT RAISE(ABORT,'account is unavailable'); END;
 
 CREATE TRIGGER affiliate_config_versions_no_delete BEFORE DELETE ON affiliate_config_versions BEGIN SELECT RAISE(ABORT,'affiliate config history is immutable'); END;
 

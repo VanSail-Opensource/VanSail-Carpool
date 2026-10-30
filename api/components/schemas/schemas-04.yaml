@@ -87,6 +87,7 @@ LedgerKind:
   type: string
   enum:
     - payment_credit
+    - account_closure
     - payment_courtesy_credit
     - payment_reversal
     - purchase_debit

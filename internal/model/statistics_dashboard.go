@@ -68,15 +68,16 @@ type ProductStatisticsSnapshot struct {
 
 // StatisticsNode joins the live metrics and node contracts.
 type StatisticsNode struct {
-	UUID             string  `json:"uuid"`
-	Name             string  `json:"name"`
-	CountryCode      string  `json:"countryCode"`
-	Online           bool    `json:"online"`
-	UsersOnline      int64   `json:"usersOnline"`
-	RXBytesPerSecond int64   `json:"rxBytesPerSec,string"`
-	TXBytesPerSecond int64   `json:"txBytesPerSec,string"`
-	XrayVersion      string  `json:"xrayVersion"`
-	Multiplier       float64 `json:"multiplier"`
+	UUID                 string  `json:"uuid"`
+	Name                 string  `json:"name"`
+	CountryCode          string  `json:"countryCode"`
+	Online               bool    `json:"online"`
+	UsersOnline          int64   `json:"usersOnline"`
+	UsersOnlineAvailable bool    `json:"usersOnlineAvailable"`
+	RXBytesPerSecond     int64   `json:"rxBytesPerSec,string"`
+	TXBytesPerSecond     int64   `json:"txBytesPerSec,string"`
+	XrayVersion          string  `json:"xrayVersion"`
+	Multiplier           float64 `json:"multiplier"`
 }
 
 // StatisticsNodesSnapshot is the shared on-demand ten-second cache.

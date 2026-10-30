@@ -20,7 +20,7 @@ func (s *Service) NamedServices(ctx context.Context) ([]NamedService, error) {
 	}
 	items := []NamedService{}
 	for _, identity := range identities {
-		if identity.UserID != "" {
+		if identity.MemberOwnerID() != "" {
 			continue
 		}
 		access, err := s.ServiceAccess(ctx, identity)

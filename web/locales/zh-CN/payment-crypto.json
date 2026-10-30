@@ -1,5 +1,6 @@
 {
   "cryptoPayment": {
+    "gasFeeHint": "所示金额不含网络（Gas）手续费。请另付手续费，确保收款地址实收金额与所示金额完全一致。",
     "copyAmount": "复制准确金额",
     "networkHint": "请在所选网络上转账，并使用准确金额。",
     "builtinHint": "转账经链上验证后，TXB 将自动到账。超时转账需要管理员审核。",

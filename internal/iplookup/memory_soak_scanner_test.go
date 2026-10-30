@@ -60,7 +60,6 @@ func startSoakScanners(t *testing.T, server *httptest.Server) (*soakRepository, 
 	t.Helper()
 	cfg := usdt.DefaultConfig()
 	cfg.Enabled = true
-	cfg.Rate = "1"
 	cfg.Concurrency = 8
 	cfg.Networks = nil
 	for _, spec := range usdt.Registry {

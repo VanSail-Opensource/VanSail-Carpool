@@ -62,9 +62,6 @@ separate. Action quotes and permission decisions still await the backend.
 - `useDurableCommand.ts` retains stable UUID keys for ambiguous command retries, invalidates disposed submissions, and delegates accepted receipt polling to `useOperationReceipt.ts`.
 - `usePurchaseOperations.ts` owns authoritative first-term refund quotes, conflict refresh, mutation idempotency and receipt state. Automatic resets remain an account setting; no member manual-reset command is exposed.
 - `usePurchaseOperations.test.ts` covers quote conflict refresh, idempotency reuse, server-owned refund eligibility, and immediate automation persistence.
-- `useQuestionnaireImport.ts` previews and settles questionnaire imports with reset-safe mutation and polling generations.
-- `useQuestionnaireImport.test.ts` covers import analysis and settlement.
-- `useQuestionnaires.ts` manages member questionnaire participation.
 - `useNodeCompensation.ts` coordinates revisioned policy, filtered cursor history, and stable-key reviewed outage commands.
 - `useNodeCompensation.test.ts` covers idempotency-key reuse after an ambiguous review failure.
 - `useStatistics.ts` independently loads the 30-minute aggregate snapshot and

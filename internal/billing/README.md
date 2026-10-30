@@ -1,4 +1,8 @@
 # Billing package
+
+New built-in USDT and USDC orders use billing.rate.txb_per_usd, as external
+stablecoin orders do. Order rates remain immutable snapshots; missing USD rates
+prevent new orders without interrupting existing chain quote monitoring.
 - `events_part2.go` continues the focused implementation from its original package module.
 
 Payment-method discovery, exact decimal arithmetic, checkout creation, provider event validation, and settlement live here.

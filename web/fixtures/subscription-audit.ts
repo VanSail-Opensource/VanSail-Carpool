@@ -93,6 +93,7 @@ const router = shell ? (await import('@/router')).default : createRouter({ histo
   { path: '/subscription', name: 'subscription', component: SubscriptionAudit },
   { path: '/connections', component: SubscriptionAudit },
   { path: '/catalog', component: SubscriptionAudit },
+  { path: '/:pathMatch(.*)*', component: SubscriptionAudit },
 ] })
 if (shell) await router.replace(mode === 'home' ? '/home' : '/subscription')
 app.use(router); app.use(ui)

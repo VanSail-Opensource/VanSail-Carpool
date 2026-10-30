@@ -112,7 +112,10 @@
     "109_xnode_period_aliases.sql",
     "110_pricing_read_indexes.sql",
     "111_provider_cost_models.sql",
-    "112_unlimited_zero_capacity.sql"
+    "112_unlimited_zero_capacity.sql",
+    "113_agreement_continuity.sql",
+    "114_retire_questionnaires.sql",
+    "115_account_lifecycle.sql"
   ],
   "objects": [
     {
@@ -681,24 +684,6 @@
     },
     {
       "type": "table",
-      "name": "questionnaire_imports",
-      "table": "questionnaire_imports",
-      "sql": "CREATE TABLE questionnaire_imports (\n  id TEXT PRIMARY KEY,\n  questionnaire_id TEXT NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,\n  status TEXT NOT NULL CHECK (status IN ('preview','queued','processing','settled','failed')),\n  raw_csv BLOB NOT NULL,\n  delimiter TEXT NOT NULL CHECK (length(delimiter) = 1),\n  headers_json TEXT NOT NULL,\n  sample_rows_json TEXT NOT NULL,\n  data_row_count INTEGER NOT NULL CHECK (data_row_count \u003e= 0),\n  malformed_row_count INTEGER NOT NULL CHECK (malformed_row_count \u003e= 0),\n  code_column TEXT,\n  analysis_json TEXT,\n  report_json TEXT,\n  idempotency_key TEXT NOT NULL,\n  last_error TEXT NOT NULL DEFAULT '',\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL,\n  UNIQUE(questionnaire_id, idempotency_key)\n)"
-    },
-    {
-      "type": "table",
-      "name": "questionnaire_participants",
-      "table": "questionnaire_participants",
-      "sql": "CREATE TABLE questionnaire_participants (\n  id TEXT PRIMARY KEY,\n  questionnaire_id TEXT NOT NULL REFERENCES questionnaires(id) ON DELETE CASCADE,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  validation_code TEXT NOT NULL UNIQUE,\n  awarded_at TEXT,\n  created_at TEXT NOT NULL,\n  UNIQUE(questionnaire_id, user_id)\n)"
-    },
-    {
-      "type": "table",
-      "name": "questionnaires",
-      "table": "questionnaires",
-      "sql": "CREATE TABLE questionnaires (\n  id TEXT PRIMARY KEY,\n  title TEXT NOT NULL,\n  description TEXT NOT NULL DEFAULT '',\n  form_url TEXT NOT NULL,\n  reward_txb_minor INTEGER NOT NULL CHECK (reward_txb_minor \u003e= 0),\n  status TEXT NOT NULL CHECK (status IN ('draft','active','closed','settling','settled')),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, closes_at TEXT)"
-    },
-    {
-      "type": "table",
       "name": "refunds",
       "table": "refunds",
       "sql": "CREATE TABLE refunds (\n  id TEXT PRIMARY KEY,\n  payment_order_id TEXT NOT NULL UNIQUE REFERENCES payment_orders(id),\n  actor_user_id TEXT REFERENCES users(id),\n  txb_minor INTEGER NOT NULL CHECK (txb_minor \u003e 0),\n  reason TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('completed')),\n  created_at TEXT NOT NULL\n)"
@@ -833,7 +818,7 @@
       "type": "table",
       "name": "users",
       "table": "users",
-      "sql": "CREATE TABLE \"users\" (\n  id TEXT PRIMARY KEY,\n  telegram_id INTEGER NOT NULL UNIQUE,\n  telegram_first_name TEXT NOT NULL DEFAULT '',\n  telegram_last_name TEXT NOT NULL DEFAULT '',\n  telegram_username TEXT NOT NULL DEFAULT '',\n  \n  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),\n  onboarding_state TEXT NOT NULL DEFAULT 'intro' CHECK (onboarding_state IN ('intro','membership','username','agreement','complete')),\n  group_joined INTEGER NOT NULL DEFAULT 0,\n  channel_joined INTEGER NOT NULL DEFAULT 0,\n  policy_accepted_at TEXT,\n  proxy_user_id TEXT UNIQUE,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, recovery_reason TEXT NOT NULL DEFAULT '', accepted_agreement_revision INTEGER NOT NULL DEFAULT 0, new_user INTEGER NOT NULL DEFAULT 0 CHECK (new_user IN (0,1)), inviter_id INTEGER REFERENCES users(telegram_id), notification_locale TEXT NOT NULL DEFAULT 'en' CHECK (notification_locale IN ('en','zh-CN')), auto_traffic_reset_enabled INTEGER NOT NULL DEFAULT 1\n  CHECK (auto_traffic_reset_enabled IN (0,1)), display_currency TEXT NOT NULL DEFAULT 'TXB'\n  CHECK (display_currency IN ('TXB','CNY','USD')), pm_blocked INTEGER NOT NULL DEFAULT 0 CHECK (pm_blocked IN (0,1)), pm_muted INTEGER NOT NULL DEFAULT 0 CHECK (pm_muted IN (0,1)))"
+      "sql": "CREATE TABLE \"users\" (\n  id TEXT PRIMARY KEY,\n  telegram_id INTEGER NOT NULL UNIQUE,\n  telegram_first_name TEXT NOT NULL DEFAULT '',\n  telegram_last_name TEXT NOT NULL DEFAULT '',\n  telegram_username TEXT NOT NULL DEFAULT '',\n  \n  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),\n  onboarding_state TEXT NOT NULL DEFAULT 'intro' CHECK (onboarding_state IN ('intro','membership','username','agreement','complete')),\n  group_joined INTEGER NOT NULL DEFAULT 0,\n  channel_joined INTEGER NOT NULL DEFAULT 0,\n  policy_accepted_at TEXT,\n  proxy_user_id TEXT UNIQUE,\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, recovery_reason TEXT NOT NULL DEFAULT '', accepted_agreement_revision INTEGER NOT NULL DEFAULT 0, new_user INTEGER NOT NULL DEFAULT 0 CHECK (new_user IN (0,1)), inviter_id INTEGER REFERENCES users(telegram_id), notification_locale TEXT NOT NULL DEFAULT 'en' CHECK (notification_locale IN ('en','zh-CN')), auto_traffic_reset_enabled INTEGER NOT NULL DEFAULT 1\n  CHECK (auto_traffic_reset_enabled IN (0,1)), display_currency TEXT NOT NULL DEFAULT 'TXB'\n  CHECK (display_currency IN ('TXB','CNY','USD')), pm_blocked INTEGER NOT NULL DEFAULT 0 CHECK (pm_blocked IN (0,1)), pm_muted INTEGER NOT NULL DEFAULT 0 CHECK (pm_muted IN (0,1)), account_status TEXT NOT NULL DEFAULT 'active' CHECK(account_status IN ('active','purging','purged')), account_generation INTEGER NOT NULL DEFAULT 0 CHECK(account_generation\u003e=0), bot_blocked INTEGER NOT NULL DEFAULT 0 CHECK(bot_blocked IN (0,1)), bot_event_at INTEGER NOT NULL DEFAULT 0, bot_update_id INTEGER NOT NULL DEFAULT -1, last_purged_at TEXT)"
     },
     {
       "type": "table",
@@ -1629,48 +1614,6 @@
     },
     {
       "type": "index",
-      "name": "questionnaire_imports_status_idx",
-      "table": "questionnaire_imports",
-      "sql": "CREATE INDEX questionnaire_imports_status_idx ON questionnaire_imports(status, created_at)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaire_participants_lookup_idx",
-      "table": "questionnaire_participants",
-      "sql": "CREATE INDEX questionnaire_participants_lookup_idx ON questionnaire_participants(questionnaire_id, validation_code)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaire_participants_questionnaire_awarded_idx",
-      "table": "questionnaire_participants",
-      "sql": "CREATE INDEX questionnaire_participants_questionnaire_awarded_idx\n  ON questionnaire_participants(questionnaire_id,awarded_at)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaire_participants_user_history_idx",
-      "table": "questionnaire_participants",
-      "sql": "CREATE INDEX questionnaire_participants_user_history_idx\n  ON questionnaire_participants(user_id,created_at DESC,id DESC)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaires_active_closes_idx",
-      "table": "questionnaires",
-      "sql": "CREATE INDEX questionnaires_active_closes_idx ON questionnaires(status, closes_at)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaires_created_idx",
-      "table": "questionnaires",
-      "sql": "CREATE INDEX questionnaires_created_idx ON questionnaires(created_at DESC)"
-    },
-    {
-      "type": "index",
-      "name": "questionnaires_single_active_idx",
-      "table": "questionnaires",
-      "sql": "CREATE UNIQUE INDEX questionnaires_single_active_idx ON questionnaires((1)) WHERE status='active'"
-    },
-    {
-      "type": "index",
       "name": "refunds_admin_status_page_idx",
       "table": "refunds",
       "sql": "CREATE INDEX refunds_admin_status_page_idx ON refunds(status,created_at DESC,id DESC)"
@@ -1878,6 +1821,30 @@
       "name": "xnode_service_bindings_expiry_idx",
       "table": "xnode_service_bindings",
       "sql": "CREATE INDEX xnode_service_bindings_expiry_idx ON xnode_service_bindings(valid_until)"
+    },
+    {
+      "type": "trigger",
+      "name": "account_onboarding_update",
+      "table": "users",
+      "sql": "CREATE TRIGGER account_onboarding_update BEFORE UPDATE OF onboarding_state ON users\nWHEN NEW.onboarding_state='complete' AND NEW.account_status\u003c\u003e'active'\nBEGIN SELECT RAISE(ABORT,'account is unavailable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "account_payment_insert",
+      "table": "payment_orders",
+      "sql": "CREATE TRIGGER account_payment_insert BEFORE INSERT ON payment_orders\nWHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND account_status\u003c\u003e'active')\nBEGIN SELECT RAISE(ABORT,'account is unavailable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "account_purchase_insert",
+      "table": "purchases",
+      "sql": "CREATE TRIGGER account_purchase_insert BEFORE INSERT ON purchases\nWHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND account_status\u003c\u003e'active')\nBEGIN SELECT RAISE(ABORT,'account is unavailable'); END"
+    },
+    {
+      "type": "trigger",
+      "name": "account_session_insert",
+      "table": "sessions",
+      "sql": "CREATE TRIGGER account_session_insert BEFORE INSERT ON sessions\nWHEN EXISTS(SELECT 1 FROM users WHERE id=NEW.user_id AND (account_status\u003c\u003e'active' OR bot_blocked=1))\nBEGIN SELECT RAISE(ABORT,'account is unavailable'); END"
     },
     {
       "type": "trigger",
@@ -9054,241 +9021,6 @@
       ]
     },
     {
-      "name": "questionnaire_imports",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "questionnaire_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "raw_csv",
-          "type": "BLOB",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "delimiter",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "headers_json",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "sample_rows_json",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "data_row_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "malformed_row_count",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "code_column",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "analysis_json",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "report_json",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "idempotency_key",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "last_error",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "questionnaire_participants",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "questionnaire_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "user_id",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "validation_code",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "awarded_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "questionnaires",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "id",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "title",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "description",
-          "type": "TEXT",
-          "notNull": true,
-          "default": "''",
-          "primaryKey": 0
-        },
-        {
-          "name": "form_url",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "reward_txb_minor",
-          "type": "INTEGER",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "created_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "updated_at",
-          "type": "TEXT",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "closes_at",
-          "type": "TEXT",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
       "name": "refunds",
       "rows": 0,
       "columns": [
@@ -9511,7 +9243,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 113,
+      "rows": 116,
       "columns": [
         {
           "name": "version",
@@ -10549,6 +10281,48 @@
           "type": "INTEGER",
           "notNull": true,
           "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "account_status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'active'",
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_blocked",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_event_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_update_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "-1",
+          "primaryKey": 0
+        },
+        {
+          "name": "last_purged_at",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
           "primaryKey": 0
         }
       ]

@@ -1,5 +1,9 @@
 # X-Node control plane
 
+Admin fleet metrics sum negotiated open connections with overflow-safe decimal
+arithmetic. Disabled nodes are excluded; an enabled unavailable or legacy node
+makes the fleet total unknown. These memory-only counters never affect limits.
+
 `member_metrics.go` projects owner/principal-scoped sampled and total client
 connections from fresh memory-only telemetry. `master_http.go` negotiates
 `open_connections_v1` through the upgrade header plus hello capability. The
@@ -888,3 +892,7 @@ the master. Protocol details are documented in the pinned agent compute referenc
 Native usage and immutable refund evidence; historical regression name retained: `account_statistics.go`, `rollover_usage_test.go`.
 
 - `compute_validation_test.go`: Hosted concurrent claim, stale connection/attempt, malformed chunk and decompression-limit regressions.
+
+`account_purge.go` closes every owner paid/PAYG period through the existing synchronization/flush barriers. Offline or review periods remain pending. `account_rejoin.go` rotates purged PAYG credentials and starts an empty period while keeping charge numbering and historical periods immutable. Closing PAYG periods accept final acknowledged journal tails; settled periods reject further traffic.
+
+`group_deletion.go` enriches admin group reads and protects unexpired encrypted service assignments. `group_deletion_endpoints.go` removes group references from encrypted endpoint options while preserving empty allow lists; its ciphertext updates commit with deletion. `group_deletion_test.go` and `group_deletion_endpoints_test.go` cover services and deny-all behavior. Named services exclude member PAYG identities, including purged tombstones.

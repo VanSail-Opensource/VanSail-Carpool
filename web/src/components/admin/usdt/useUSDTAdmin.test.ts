@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ config: vi.fn(), status: vi.fn(), review: vi.f
 vi.mock('@/api/usdt', () => ({ usdtApi: mocks }))
 import { useUSDTAdmin } from './useUSDTAdmin'
 
-const config: USDTConfig = { mode: 'both', enabled: false, name: 'VanSail', rate: '', expiryMinutes: 30, concurrency: 1, networks: [] }
+const config: USDTConfig = { mode: 'both', enabled: false, name: 'VanSail', expiryMinutes: 30, concurrency: 1, networks: [] }
 function fixture() {
   let state!: ReturnType<typeof useUSDTAdmin>
   const wrapper = mount(defineComponent({ setup() { state = useUSDTAdmin(); return () => null } }))

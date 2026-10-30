@@ -17,7 +17,7 @@ func (s *Service) ensurePAYGAccount(ctx context.Context, user, group, node strin
 	}
 	for _, a := range accounts {
 		if a.GroupID == group {
-			return nil
+			return s.reopenPurgedPAYG(ctx, a, price)
 		}
 	}
 	hash := sha256.Sum256([]byte(user + "\x00" + group + "\x00" + node))

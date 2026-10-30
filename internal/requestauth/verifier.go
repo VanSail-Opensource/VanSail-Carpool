@@ -16,8 +16,7 @@ import (
 
 const (
 	defaultWindow = 5 * time.Minute
-	// The envelope must cover the API's valid 5 MiB questionnaire CSV plus
-	// multipart framing. Format-specific handlers retain their tighter limits.
+	// Bound signed request bodies; format-specific handlers apply tighter limits.
 	defaultMaxBody   = int64(6 << 20)
 	defaultMaxNonces = 512
 	masterKeyBytes   = 32

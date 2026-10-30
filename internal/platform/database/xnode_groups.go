@@ -75,14 +75,9 @@ func (s *Store) retryAttempt_SaveXNodeGroup(ctx context.Context, item xnode.Grou
 	return tx.Commit()
 }
 func (s *Store) DeleteXNodeGroup(ctx context.Context, id string) error {
-	var used int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos,json_each(combos.included_squad_uuids) selected WHERE selected.value=? UNION SELECT 1 FROM purchase_squads WHERE group_id=?)`, id, id).Scan(&used)
+	version, _, err := s.XNodeCompileVersion(ctx, time.Now().UTC())
 	if err != nil {
 		return err
 	}
-	if used != 0 {
-		return xnode.ErrConflict
-	}
-	_, err = s.db.ExecContext(ctx, `DELETE FROM xnode_groups WHERE id=?`, id)
-	return err
+	return s.DeleteXNodeGroupAtVersion(ctx, id, version, nil)
 }

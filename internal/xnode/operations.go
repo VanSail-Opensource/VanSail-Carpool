@@ -195,9 +195,6 @@ func (s *Service) DeleteNode(ctx context.Context, id string) error {
 	}
 	return s.repo.DeleteXNodeNode(ctx, id)
 }
-func (s *Service) DeleteGroup(ctx context.Context, id string) error {
-	return s.repo.DeleteXNodeGroup(ctx, id)
-}
 func (s *Service) DeleteEndpoint(ctx context.Context, id string) error {
 	return s.repo.DeleteXNodeEndpoint(ctx, id)
 }

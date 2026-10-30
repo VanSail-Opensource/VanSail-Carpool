@@ -35,6 +35,9 @@ func (s *Service) UserByTelegramID(ctx context.Context, id int64) (model.User, e
 // EnsureIdentity allocates credentials only for an explicitly provisioned panel account.
 // The presence of an identity never grants admission; paid access is checked on compilation.
 func (s *Service) EnsureIdentity(ctx context.Context, user model.User) (Identity, error) {
+	if user.BotBlocked || user.AccountStatus != "" && user.AccountStatus != "active" {
+		return Identity{}, ErrConflict
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	existing, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
@@ -52,6 +55,9 @@ func (s *Service) EnsureIdentity(ctx context.Context, user model.User) (Identity
 		return Identity{}, ErrConflict
 	}
 	if identity.CredentialsCipher == "" {
+		if user.AccountGeneration > 0 {
+			identity.AccessDisabled = false
+		}
 		credentials, e := NewCredentials()
 		if e != nil {
 			return Identity{}, e

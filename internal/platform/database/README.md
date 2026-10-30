@@ -1,5 +1,10 @@
 # Application store
 
+Agreement publication updates content only. Migration 113 / PostgreSQL 00027
+restores previously accepted members to complete without rewriting their original
+acceptance evidence. First-time acceptance still validates the latest revision.
+`agreement_continuity_test.go` covers publication and upgrade continuity.
+
 `pricing_readiness_test.go` verifies that published price validity survives the
 calculation cadence and that expired publications become unavailable. Product
 readiness exposes the calculation reason without changing settlement admission.
@@ -317,8 +322,6 @@ Private draw coupons (`admin_visible=0`) can only be used through awarded wallet
 - `coupons_part3.go` continues the focused implementation from its original package module.
 - `emby_provisioning_part2.go` continues the focused implementation from its original package module.
 - `outbox_jobs_part2.go` continues the focused implementation from its original package module.
-- `questionnaire_queries_part2.go` continues the focused implementation from its original package module.
-- `questionnaires_part2.go` continues the focused implementation from its original package module.
 - `statistics_part2.go` continues the focused implementation from its original package module.
 - `store_part2.go` continues the focused implementation from its original package module.
 
@@ -330,7 +333,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 
 - `activity_draws_part2.go`, `activity_extensions_part2.go`, and `activity_part2.go` continue activity persistence.
 - `billing_payments_part2.go`, `coupons_part2.go`, and `coupons_part3.go` continue billing and coupon persistence.
-- `emby_provisioning_part2.go`, `outbox_jobs_part2.go`, `questionnaires_part2.go`, `statistics_part2.go`, and `store_part2.go` continue their focused repositories.
 
 ## Production files
 
@@ -417,11 +419,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `activity_queries.go` — game, bet, check-in, draw, and result scanners.
 - `activity_extensions.go` — durable subscription-extension credits and activation
   application.
-- `questionnaires.go` — questionnaire definitions, active selection, participants,
   and participation history.
-- `questionnaire_imports.go` — CSV import creation and analysis.
-- `questionnaire_settlement.go` — durable settlement queueing and award application.
-- `questionnaire_queries.go` — questionnaire/import state and scan helpers.
 - `emby.go` — Emby setup debit/outbox creation and account reads.
 - `emby_provisioning.go` — retryable provisioning-saga state transitions, refund,
   preferences, and account touch operations.
@@ -433,7 +431,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `outbox_jobs.go` — outbox claim, completion, retry, deletion, recovery, listing,
   scanning, and persisted-error sanitization.
 - `purchase_sync.go` — entitlement synchronization and traffic-reset phase state.
-- `questionnaire_operations.go` atomically confirms an import with its provider-operation receipt.
 - `emby_setup.go` owns the shared atomic setup debit, sealed state, and optional legacy outbox transaction.
 - `emby_operations.go` atomically binds setup and reviewed retry state to one provider-operation job.
 - `outbox_retry_operations.go` atomically reactivates a target job and completes its retry receipt.
@@ -512,7 +509,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `activity_group_reward_test.go` — group-message counting and rewards.
 - `activity_test_helpers_test.go` — shared activity random source.
 - `coupon_features_test.go` — coupon redemption and purchase discounts.
-- `questionnaire_features_test.go` — questionnaire CSV analysis and settlement.
 - `emby_test.go` — Emby setup, provisioning, retry, and refund atomicity.
 - `release1_commerce_migration_test.go` covers rolling-month conversion, immutable pricing backfill, and new release-one persistence tables.
 - `retention_test.go` — retained operational-record cleanup behavior. Audit
@@ -863,6 +859,21 @@ Bounded retention of settled or summarized operational records: `retention_node_
 - `pricing_scope_products.go`: Typed combo/addon/PAYG scope in analytical reads and exports.
 - `pricing_strategy_test.go`: Hosted shared-cost conservation and basket coupon-cap regression.
 
+- `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
+- `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
+- `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
+- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
+- `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
+
+Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
+
+- `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
+
+
+Blocked-account lifecycle: `account_block.go` consumes ordered private bot events and revokes admission; `account_purge_queries.go` resumes durable generations and permits fresh authentication only after an unblock. `account_purge.go` closes balances with compensating ledger entries after all native periods close. `account_purge_credit.go` archives forfeited prepaid quantities, and `account_purge_material.go` removes personal material while preserving financial facts. `account_fences.go` rejects stale receipts; `account_payment_review.go` archives late payments for review. `account_rejoin_payg.go` atomically rotates PAYG credentials without changing historical charges. `account_lifecycle_test.go` and `account_native_lifecycle_test.go` cover ordering, administrators, closure, late payments, final traffic, and fresh rejoining.
+
+Access-group deletion: `xnode_group_usage.go` derives distinct current/queued paid and funded PAYG members from the shared entitlement snapshots. `xnode_group_delete.go` serializes with pricing publication and checks the compile revision plus membership inside one transaction; `xnode_group_delete_retry_generated.go` retries serialization failures. `xnode_group_catalog.go` freezes legacy purchase fallbacks before removing live combo references. Historical prices, offers, contracts, charges, identities, and usage remain evidence; live policies, personal quote caches, preferences, and product interventions are removed or retired. Dormant unfunded PAYG tuples remain for late accounting and cannot recreate catalog products. `xnode_group_delete_test.go` covers occupied and dormant groups, exact credit expiry, stale revisions, history and pricing isolation.
+
 <!-- generated transaction retry map -->
 
 Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE
@@ -870,6 +881,9 @@ Generated adapters repeat complete rolled-back PostgreSQL operations for SQLSTAT
 The generator excludes methods that access SQL outside their transaction or own
 mutable in-memory batches. Provider requests remain outside every transaction.
 
+- `account_block_retry_generated.go` wraps the transactional methods in `account_block.go`.
+- `account_purge_retry_generated.go` wraps the transactional methods in `account_purge.go`.
+- `account_rejoin_payg_retry_generated.go` wraps the transactional methods in `account_rejoin_payg.go`.
 - `activity_draws_part2_retry_generated.go` wraps the transactional methods in `activity_draws_part2.go`.
 - `activity_draws_retry_generated.go` wraps the transactional methods in `activity_draws.go`.
 - `activity_history_part2_retry_generated.go` wraps the transactional methods in `activity_history_part2.go`.
@@ -981,11 +995,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `proxy_provisioning_backlog_retry_generated.go` wraps the transactional methods in `proxy_provisioning_backlog.go`.
 - `purchase_expiry_retry_generated.go` wraps the transactional methods in `purchase_expiry.go`.
 - `purchase_sync_retry_generated.go` wraps the transactional methods in `purchase_sync.go`.
-- `questionnaire_imports_retry_generated.go` wraps the transactional methods in `questionnaire_imports.go`.
-- `questionnaire_operations_retry_generated.go` wraps the transactional methods in `questionnaire_operations.go`.
-- `questionnaire_settlement_retry_generated.go` wraps the transactional methods in `questionnaire_settlement.go`.
-- `questionnaires_part2_retry_generated.go` wraps the transactional methods in `questionnaires_part2.go`.
-- `questionnaires_retry_generated.go` wraps the transactional methods in `questionnaires.go`.
 - `retention_compaction_retry_generated.go` wraps the transactional methods in `retention_compaction.go`.
 - `retention_payg_retry_generated.go` wraps the transactional methods in `retention_payg.go`.
 - `retention_retry_generated.go` wraps the transactional methods in `retention.go`.
@@ -1012,6 +1021,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_diy_retry_generated.go` wraps the transactional methods in `xnode_diy.go`.
 - `xnode_firewall_policy_retry_generated.go` wraps the transactional methods in `xnode_firewall_policy.go`.
 - `xnode_firewall_tx_retry_generated.go` wraps the transactional methods in `xnode_firewall_tx.go`.
+- `xnode_group_delete_retry_generated.go` wraps the transactional methods in `xnode_group_delete.go`.
 - `xnode_groups_retry_generated.go` wraps the transactional methods in `xnode_groups.go`.
 - `xnode_metered_probes_retry_generated.go` wraps the transactional methods in `xnode_metered_probes.go`.
 - `xnode_named_services_retry_generated.go` wraps the transactional methods in `xnode_named_services.go`.
@@ -1025,13 +1035,3 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
-
-- `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
-- `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
-- `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
-- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
-- `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
-
-Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
-
-- `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.

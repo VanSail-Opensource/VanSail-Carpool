@@ -1,5 +1,9 @@
 # PostgreSQL persistence
 
+`community_retirement_upgrade_test.go` seeds old questionnaire rewards, imports,
+and pending work in the isolated forward-upgrade rehearsal. It verifies archived
+evidence, unchanged financial records, terminal receipts, and removed tables/jobs.
+
 `bind_cache.go` shares a bounded FIFO of translated SQL grammar across one pool
 (256 statements, 2 MiB of SQL). Keys include argument cast kinds; boolean
 normalization preserves authored PostgreSQL parameters. It never caches argument
@@ -88,3 +92,5 @@ After a forward migration, refresh the isolated SQLite inventory and run `python
 `retirement_upgrade_test.go` seeds unsettled and settled historical credits at Goose 17 inside the existing isolated hosted upgrade rehearsal. It verifies unchanged wallet, ledger and purchase facts, archived settled/daily evidence and cancelled calculation/notice jobs after migration through the application connector.
 
 Schema version 25 adds provider rate and unlimited-capacity metadata without changing historical records; the source contract and fingerprint reflect the matching SQLite migration 111.
+
+Schema version 29 records account lifecycle and authenticated Telegram block ordering. Minimal non-login account subjects retain immutable FK-backed accounting after purge; operational profile/credential data is removed.

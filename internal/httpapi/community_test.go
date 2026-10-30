@@ -15,7 +15,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func TestParseMinorString(t *testing.T) {
@@ -199,60 +198,6 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	}
 	if updated.PercentCapMinor != nil || updated.ExpiresAt != nil || updated.GlobalUseLimit != nil || updated.PerUserUseLimit != nil {
 		t.Fatalf("cleared fields were not persisted: %+v", updated)
-	}
-}
-
-func TestQuestionnaireClosesAtRequestAndResponseMapping(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	now := time.Date(2026, 8, 8, 12, 0, 0, 0, time.UTC)
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "questionnaire-close.sqlite"))
-	if err != nil {
-		t.Fatalf("database.Open(): %v", err)
-	}
-	t.Cleanup(func() { _ = db.Close() })
-	service := questionnaires.NewService(database.NewStore(db), nil, func() time.Time { return now })
-	closesAt := time.Date(2026, 8, 9, 0, 0, 0, 0, time.UTC)
-	created, err := service.Save(ctx, questionnaires.QuestionnaireInput{Title: "Timed", FormURL: "https://forms.gle/abcdefgh",
-		Status: questionnaires.StatusDraft, ClosesAt: &closesAt})
-	if err != nil {
-		t.Fatalf("Save(create): %v", err)
-	}
-	server := &Server{deps: Dependencies{Questionnaires: service}}
-
-	var omitted questionnaireRequest
-	if err := json.Unmarshal([]byte(`{"title":"Keep close"}`), &omitted); err != nil {
-		t.Fatal(err)
-	}
-	if omitted.ClosesAt.Set {
-		t.Fatal("omitted closesAt was marked as set")
-	}
-	preserved, err := server.questionnaireInput(ctx, created.ID, omitted)
-	if err != nil || preserved.ClosesAt == nil || !preserved.ClosesAt.Equal(closesAt) {
-		t.Fatalf("omitted closesAt merge = (%+v, %v)", preserved.ClosesAt, err)
-	}
-	var cleared questionnaireRequest
-	if err := json.Unmarshal([]byte(`{"closesAt":null}`), &cleared); err != nil {
-		t.Fatal(err)
-	}
-	if !cleared.ClosesAt.Set || cleared.ClosesAt.Value != nil {
-		t.Fatalf("null closesAt = %+v", cleared.ClosesAt)
-	}
-	clearedInput, err := server.questionnaireInput(ctx, created.ID, cleared)
-	if err != nil || clearedInput.ClosesAt != nil {
-		t.Fatalf("cleared closesAt merge = (%+v, %v)", clearedInput.ClosesAt, err)
-	}
-	response := mapQuestionnaire(questionnaires.Questionnaire{
-		QuestionnaireInput: questionnaires.QuestionnaireInput{ID: "questionnaire-1", ClosesAt: &closesAt},
-		ParticipantCount:   7,
-		RewardedCount:      3,
-	})
-	if response.ClosesAt == nil || !response.ClosesAt.Equal(closesAt) {
-		t.Fatalf("response closesAt = %v", response.ClosesAt)
-	}
-	if response.ParticipantCount != 7 || response.RewardedCount != 3 {
-		t.Fatalf("response counters = (%d, %d), want (7, 3)", response.ParticipantCount, response.RewardedCount)
 	}
 }
 

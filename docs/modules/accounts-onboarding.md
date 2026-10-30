@@ -21,7 +21,7 @@ Public operations are `POST /api/v1/auth/telegram`, `GET /api/v1/me`, and the `/
 
 Every authentication of a completed linked member rechecks the exact X-Node user ID. A confirmed provider 404 clears the stale link and queues repair only when an unexpired paid combo exists. Timeouts, transport failures, and 5xx responses leave the local account unchanged and still permit Telegram authentication; provider-backed operations report their own temporary failure.
 
-Confirmed-missing repair preserves the completed onboarding state, accepted agreements, username, TXB balance and ledger, purchases, Activity results, Questionnaire history, and Emby linkage. The queued worker reconciles exact username and Telegram ID before recreating or adopting a remote identity and reapplying current access.
+Confirmed-missing repair preserves the completed onboarding state, accepted agreements, username, TXB balance and ledger, purchases, Activity results history, and Emby linkage. The queued worker reconciles exact username and Telegram ID before recreating or adopting a remote identity and reapplying current access.
 
 If the username now belongs to another Telegram identity, one transaction cancels and fully refunds all unexpired current and queued paid combos, clears the unusable username, and sets `recoveryReason=proxy_identity_conflict` with `onboardingState=username`. The member chooses a new username and accepts the current agreement before buying again; previous balance and history remain.
 
@@ -39,5 +39,5 @@ Invite creation/approval failures leave local membership false. Signature rotati
 - Repository tests race two members for one username and assert one reservation.
 - Telegram fake-server tests cover invite expiry, wrong-user requests, duplicate join events, partial membership, and canonical recheck.
 - X-Node tests cover the exact initial payload, `A019`, timeout-after-create reconciliation, ambiguous matches, linked-user 404 recovery, and 5xx/timeout no-mutation behavior.
-- Recovery integration tests assert identity, balance, ledger, purchase, Activity, Questionnaire, and Emby records remain attached to the same local user.
+- Recovery integration tests assert identity, balance, ledger, purchase, Activity, and Emby records remain attached to the same local user.
 - Handler tests verify cookie flags, session expiry, resumable transitions, recovery reason, temporary upstream mapping, administrator bootstrap, and redacted logs.

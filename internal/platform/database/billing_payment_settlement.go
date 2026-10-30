@@ -53,11 +53,14 @@ func (s *Store) retryAttempt_SettlePayment(ctx context.Context, provider, dedupe
 	}
 	defer func() { _ = tx.Rollback() }()
 	order, changed, err := s.settlePaymentTx(ctx, tx, provider, dedupeKey, payloadHash, orderID, tradeID, chargeID, now)
-	if err != nil || !changed {
+	if err != nil {
 		return order, changed, err
 	}
 	if err := tx.Commit(); err != nil {
 		return model.PaymentOrder{}, false, err
+	}
+	if !changed {
+		return order, false, nil
 	}
 	settled, err := s.PaymentOrderByID(ctx, orderID)
 	return settled, true, err

@@ -29,7 +29,6 @@ const router = createRouter({
     { path: '/activity', name: 'activity', component: () => import('@/views/ActivityView.vue') },
     { path: '/games', redirect: '/activity' },
     { path: '/affiliates', name: 'affiliates', component: () => import('@/views/AffiliatesView.vue') },
-    { path: '/questionnaire', name: 'questionnaire', component: () => import('@/views/QuestionnaireView.vue') },
     { path: '/community', name: 'community', component: () => import('@/views/CommunityView.vue') },
     { path: '/emby', name: 'emby', component: () => import('@/views/EmbyView.vue') },
     { path: '/ip-lookup', name: 'ip-lookup', component: () => import('@/views/IPLookupView.vue') },

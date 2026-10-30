@@ -10,7 +10,7 @@
     "draftRevision": "草稿版本 {revision}",
     "publishedRevision": "发布版本 {revision}",
     "welcomeHint": "请保持消息 ID 的顺序；应用展示消息时会计算阅读时长。",
-    "agreementHint": "已发布协议的变更会要求成员再次同意。",
+    "agreementHint": "新成员需同意最新发布的协议。已有成员的同意记录继续有效，无需再次确认。",
     "saveDraft": "保存草稿",
     "publishing": "正在发布",
     "publish": "发布",

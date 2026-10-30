@@ -17,7 +17,7 @@ describe('initial page preload inventory', () => {
     const paths = resources.map(resource => resource.path)
     expect(paths).toEqual(expect.arrayContaining([
       '/api/v1/dashboard', '/api/v1/activity',
-      '/api/v1/affiliates', '/api/v1/emby/account', '/api/v1/questionnaires/active',
+      '/api/v1/affiliates', '/api/v1/emby/account',
       '/api/v1/subscription/ip-blocks',
     ]))
     expect(paths.some(path => path.includes('/admin/') || path.includes('/statistics'))).toBe(false)

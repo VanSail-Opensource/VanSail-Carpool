@@ -67,7 +67,17 @@ xnodeApi.saveNode = async (node, settings) => {
 }
 xnodeApi.configurations = async () => ({ items: structuredClone(configurations) })
 xnodeApi.snippets = async () => ({ items: [] })
-xnodeApi.groups = async () => ({ items: params.has('empty') ? [] : [{ id: 'group-one', name: 'Global group', enabled: true, bindings: nodes.map(node => ({ nodeId: node.id, inboundTag: 'paid' })) }] })
+const deletedGroups = new Set<string>()
+let groupConflict = false
+xnodeApi.groups = async () => ({ items: params.has('empty') ? [] : [
+  { id: 'group-one', name: 'Global group', enabled: true, memberCount: 3, canDelete: false, bindings: nodes.map(node => ({ nodeId: node.id, inboundTag: 'paid' })) },
+  ...(params.has('group-deletion') ? [
+    { id: 'empty-group', name: 'Unused group', enabled: true, memberCount: groupConflict ? 1 : 0, canDelete: !groupConflict, bindings: [] },
+    { id: 'service-group', name: 'Service assignment', enabled: true, memberCount: 0, canDelete: false, bindings: [] },
+    { id: 'unknown-group', name: 'Unknown membership', enabled: true, bindings: [] },
+  ] : []),
+].filter(group => !deletedGroups.has(group.id)) })
+xnodeApi.deleteGroup = async id => { await check('delete-group:' + id); if (params.has('group-delete-error')) { groupConflict = true; throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }) }; deletedGroups.add(id); trace.writes.push({ deleteGroup: id }) }
 const deletedEndpoints = new Set<string>()
 xnodeApi.deleteEndpoint = async id => { await check('delete-endpoint:' + id); if (params.has('delete-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); deletedEndpoints.add(id); trace.writes.push({ deleteEndpoint: id }) }
 xnodeApi.endpoints = async () => ({ items: params.has('empty') || params.has('ddns-empty-hosts') ? [] : nodes.filter(node => !deletedEndpoints.has(node.id)).flatMap((node, index) => {
@@ -86,7 +96,7 @@ xnodeApi.logs = async id => {
 xnodeApi.metrics = async () => {
   await check('metrics')
   const count = nodes.length ? 1 : 0
-  return { nodes: params.has('empty') ? [] : nodes.map((node, i) => ({ nodeId: node.id, available: i === 0 && !params.has('metrics-unavailable'), connected: i === 0, ready: i === 0 && !params.has('not-ready'), synchronized: i === 0 && !params.has('unsynchronized'), stale: i !== 0 || params.has('stale-metrics'), version: 'v1.0.2', xrayVersion: '26.10.10', capabilities: ['traffic_periods_v1', 'traffic_period_barriers_v1'], reportedAt: stamp, machine: { ...(params.has('large-metrics') ? { cpu_info: Array.from({ length: 64 }, (_, cpu) => ({ cpu, flags: Array.from({ length: 100 }, (_, flag) => `flag_${flag}`) })) } : {}), cpu_usage: [12, 18], memory: { total: '8589934592', used: '2147483648' }, host: { hostname: node.name, platform: 'debian', platformVersion: '13' }, errors: {} }, certificates: {}, activeConnections: i === 0 ? 8 : 0, usersOnline: i === 0 ? 2 : 0, uploadBytesPerSecond: i === 0 ? 250000 : 0, downloadBytesPerSecond: i === 0 ? 1500000 : 0, logs: [] })), onlineNodes: count, totalNodes: nodes.length, activeConnections: count ? 8 : 0, uploadBytesPerSecond: count ? 250000 : 0, downloadBytesPerSecond: count ? 1500000 : 0, fetchedAt: stamp }
+  return { nodes: params.has('empty') ? [] : nodes.map((node, i) => ({ nodeId: node.id, available: i === 0 && !params.has('metrics-unavailable'), connected: i === 0, ready: i === 0 && !params.has('not-ready'), synchronized: i === 0 && !params.has('unsynchronized'), stale: i !== 0 || params.has('stale-metrics'), version: 'v1.0.2', xrayVersion: '26.10.10', capabilities: ['traffic_periods_v1', 'traffic_period_barriers_v1'], reportedAt: stamp, machine: { ...(params.has('large-metrics') ? { cpu_info: Array.from({ length: 64 }, (_, cpu) => ({ cpu, flags: Array.from({ length: 100 }, (_, flag) => `flag_${flag}`) })) } : {}), cpu_usage: [12, 18], memory: { total: '8589934592', used: '2147483648' }, host: { hostname: node.name, platform: 'debian', platformVersion: '13' }, errors: {} }, certificates: {}, activeConnections: i === 0 ? 8 : 0, usersOnline: i === 0 ? 2 : 0, uploadBytesPerSecond: i === 0 ? 250000 : 0, downloadBytesPerSecond: i === 0 ? 1500000 : 0, logs: [] })), totalConnections: params.has('open-metrics') ? (params.has('zero-metrics') ? '0' : '9007199254741001') : null, onlineNodes: count, totalNodes: nodes.length, activeConnections: count ? 8 : 0, uploadBytesPerSecond: count ? 250000 : 0, downloadBytesPerSecond: count ? 1500000 : 0, fetchedAt: stamp }
 }
 
 let templateConfig: SubscriptionTemplateConfig = { revision: 1, templates: params.has('empty') ? [] : [

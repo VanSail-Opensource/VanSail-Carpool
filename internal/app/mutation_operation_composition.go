@@ -7,11 +7,10 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func registerMutationOperationHandlers(dispatcher *providerops.Dispatcher, catalogService *catalog.Service,
-	embyOperations *emby.OperationService, questionnaireService *questionnaires.Service, adminService *admin.Service) error {
+	embyOperations *emby.OperationService, adminService *admin.Service) error {
 	adminWorker, err := admin.NewMutationWorker(adminService)
 	if err != nil {
 		return err
@@ -25,7 +24,6 @@ func registerMutationOperationHandlers(dispatcher *providerops.Dispatcher, catal
 		{providerops.KindEmbyPreferences, embyOperations},
 		{providerops.KindEmbyPassword, embyOperations},
 		{providerops.KindEmbyProvisionRetry, embyOperations},
-		{providerops.KindQuestionnaireSettlement, questionnaireService},
 		{providerops.KindOutboxRetry, adminWorker},
 		{providerops.KindPaymentRefund, adminWorker},
 	}

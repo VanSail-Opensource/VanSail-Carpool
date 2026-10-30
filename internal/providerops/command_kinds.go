@@ -11,8 +11,6 @@ const (
 	KindEmbyPassword = "emby_password"
 	// KindEmbyProvisionRetry resumes one explicitly reviewed provisioning attempt.
 	KindEmbyProvisionRetry = "emby_provision_retry"
-	// KindQuestionnaireSettlement applies one analyzed reward import.
-	KindQuestionnaireSettlement = "questionnaire_settlement"
 	// KindOutboxRetry makes one failed local job eligible again.
 	KindOutboxRetry = "outbox_retry"
 	// KindPaymentRefund reverses one provider-funded balance credit.

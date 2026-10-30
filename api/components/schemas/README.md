@@ -31,8 +31,6 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 - `schemas-04.yaml`: `StatisticSlice`, `AdminStatistics`, `Dashboard`, `LedgerKind`, `LedgerEntry`, `PageInfo`, `LedgerPage`, `PaymentMethodID`, `PaymentOrderMethodID`, `PaymentProvider`, `PaymentStatus`, `PaymentOrderRequest`
 - `schemas-05.yaml`: `PaymentOrder`, activity games, instant-only member `LuckyDraw` previews, typed draw reward fields, and resolved `ActivityResult`
 - `schemas-06.yaml`: `GroupMessageRewardStatus`, `ActivityOverview`, activity requests/settings, mode-specific `LuckyDrawPrize` and `LuckyDrawWrite`, `LuckyDrawAdmin`, `LuckyDrawForecast`, and coupon kinds
-- `schemas-07.yaml`: `Coupon`, `CouponWrite`, `CouponList`, `CouponGrant`, `CouponGrantList`, `CouponRedeemRequest`, `CouponRedemption`, `QuestionnaireStatus`, `Questionnaire`, `QuestionnaireWrite`, `QuestionnaireList`
-- `schemas-08.yaml`: `QuestionnaireParticipation`, `ActiveQuestionnaire`, `QuestionnaireHistoryItem`, `QuestionnaireHistoryList`, `QuestionnaireImportStatus`, `QuestionnaireImportAnalysis`, `QuestionnaireImportPreview`, `QuestionnaireImportAnalyzeRequest`, `QuestionnaireSettlementReport`, `QuestionnaireImportState`, `EmbyRating`, `EmbyLibrary`, `EmbyAccount`
 - `schemas-09.yaml`: `EmbyOverview`, `EmbyPreferencesRequest`, `EmbySetupRequest`, `EmbyPasswordRequest`, `EmbyAccountList`, `AdminSetting`, `AdminSettingCreate`, `AdminSettingUpdate`, `AdminUserSummary`, `AdminUserPage`, `BalanceAdjustmentRequest`, `ReasonRequest`, `EntitlementPage`, `AdminEntitlement`
 - `schemas-10.yaml`: `PaymentReturnStatus`, `PaymentPage`, `AdminPaymentOrder`, `RefundRequest`, `Refund`, `RefundPage`, `DatabaseColumn`, `DatabaseTable`, `DatabaseTableList`, `DatabaseBlobValue`, `DatabaseValue`, `DatabaseKey`, `DatabaseValues`, `DatabaseRow`, `DatabaseRowPage`, `DatabaseFilterOperator`
 - `schemas-11.yaml`: `DatabaseFilter`, `DatabaseQueryRequest`, `DatabaseMutationAction`, `DatabaseMutationReviewRequest`, `DatabaseMutationApplyRequest`, `DatabaseCompatibilityUpdate`, `DatabaseMutationReview`, `DatabaseMutationResult`, `RestoreRequest`, `RestoreOperation`, `BackupRun`, `JobStatus`, `Job`, `JobPage`
@@ -98,3 +96,7 @@ Member preferences expose default-on `paygEnabled` and a sparse `paygSquads` map
 - `pricing.yaml`: Typed fixed/default policies, calculated limits, original forecasts, interventions, provider costs and retained export scope.
 
 - `pricing-refinements.yaml`: Typed decisions, personal predictions, calibration and paginated user prices.
+
+`schemas-07.yaml` owns coupons and wallet grants; `schemas-08.yaml` owns Emby account shapes.
+
+XNodeGroup includes optional read-only memberCount/canDelete eligibility on administration reads.

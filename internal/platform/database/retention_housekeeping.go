@@ -59,7 +59,7 @@ func pruneAbandonedUsersTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, co
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_user_candidates(id,telegram_id)
 		SELECT member.id,member.telegram_id FROM users member
-		WHERE member.role='user' AND member.onboarding_state='intro' AND member.created_at<?
+		WHERE member.role='user' AND member.account_status='active' AND member.onboarding_state='intro' AND member.created_at<?
 		AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM ledger_entries WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM purchases WHERE user_id=member.id)

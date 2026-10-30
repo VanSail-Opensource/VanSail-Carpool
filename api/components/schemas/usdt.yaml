@@ -30,12 +30,11 @@ USDTNetworkConfig:
 USDTConfig:
   type: object
   additionalProperties: false
-  required: [enabled, name, rate, expiryMinutes, concurrency, networks]
+  required: [enabled, name, expiryMinutes, concurrency, networks]
   properties:
     enabled: { type: boolean }
     name: { type: string, minLength: 1, maxLength: 64 }
     mode: { type: string, enum: [usdt, usdc, both], default: usdt, deprecated: true, description: 'Legacy default for networks missing currencies. Explicit network currencies are authoritative. Endpoints, addresses and concurrency are shared.' }
-    rate: { type: string, description: 'Exact TXB per token; required while enabled.' }
     expiryMinutes: { type: integer, minimum: 5, maximum: 120, default: 30 }
     concurrency: { type: integer, minimum: 1, maximum: 8, description: 'One shared cap across all RPC, indexer, probe, reconnect and WebSocket requests.' }
     networks: { type: array, maxItems: 10, items: { $ref: '#/USDTNetworkConfig' } }

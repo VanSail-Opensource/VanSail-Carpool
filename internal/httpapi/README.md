@@ -72,7 +72,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 
 ## Community features
 
-- `community.go` registers member Community, Activity, coupon, and questionnaire routes.
 - `community_membership.go` maps canonical Telegram membership checks and strict one-space invite eligibility to stable Community transport errors.
 - `community_shared.go` defines shared community settings and nullable JSON request fields.
 - `community_helpers.go` contains idempotency, bounded multipart, decimal, collection, and error helpers.
@@ -83,10 +82,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `activity_types_test.go` checks member-safe prize previews and draw receipt identity mapping.
 - `coupons_member.go` serves wallet, soft-discard, and redemption behavior plus coupon response mapping.
 - `coupons_admin.go` serves coupon creation, updates, deactivation, and partial-input merging.
-- `questionnaire_types.go` maps questionnaire, participation, import, and settlement responses.
-- `questionnaire_member.go` serves active questionnaire, history, and participation behavior.
-- `questionnaire_admin.go` serves questionnaire lifecycle and editable-input behavior.
-- `questionnaire_imports.go` serves bounded CSV upload, analysis, settlement, and import lookup.
 
 ## Administrator features
 
@@ -260,3 +255,9 @@ covers both delivery paths and status boundaries in hosted CI.
 - `personal_forecast.go`: Member/admin analytical projections, behind their existing scopes.
 
 - `pricing_user_response.go`: Reuses canonical coupon response conversion, including decimal amounts and explicit nulls.
+
+`community.go` mounts the retained membership, activity, and coupon routes.
+
+`telegram_bot_status.go` handles only authenticated private-chat my_chat_member block/unblock transitions. It protects configured/stored administrators, uses the private chat ID as the member ID, and durably enqueues cleanup before acknowledging. Group membership events do not purge members.
+
+Admin group GET includes derived memberCount/canDelete; DELETE rechecks server eligibility and returns 409 when membership or the catalog changed.

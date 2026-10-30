@@ -1,5 +1,9 @@
 # Product statistics
 
+Node user counts are distinct members with open connections, including idle
+flows. Paid and PAYG principals are deduplicated by owner. The separate
+usersOnlineAvailable flag preserves unknown counts for legacy or stale agents.
+
 - `provider.go` defines the narrow queue-backed X-Node metrics and host contracts.
 - `service.go` refreshes remote/database partitions independently and returns contract-safe array snapshots; `partitions.go` persists and restores last-good values.
 - `snapshot_test.go` verifies public snapshots serialize every required array as an array instead of `null`.

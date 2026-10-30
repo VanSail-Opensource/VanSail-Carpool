@@ -28,7 +28,6 @@ type Config struct {
 	Enabled       bool                     `json:"enabled"`
 	Name          string                   `json:"name"`
 	Mode          string                   `json:"mode"`
-	Rate          string                   `json:"rate"`
 	ExpiryMinutes int                      `json:"expiryMinutes"`
 	Concurrency   int                      `json:"concurrency"`
 	Networks      []NetworkConfig          `json:"networks"`

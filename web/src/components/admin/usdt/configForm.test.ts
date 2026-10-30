@@ -3,7 +3,7 @@ import type { USDTConfig } from '@/api/usdt'
 import { configSchema, newEndpoint, normalizeCurrencies } from './configForm'
 
 function config(): USDTConfig {
-  return { mode: 'usdt', enabled: true, name: 'USDT', rate: '10', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
+  return { mode: 'usdt', enabled: true, name: 'USDT', expiryMinutes: 30, concurrency: 1, networks: [{ network: 'ethereum', enabled: true, addresses: ['0x1111111111111111111111111111111111111111'], endpoints: [{ ...newEndpoint(), rpcUrl: 'wss://rpc.example/ws', useWs: true }] }] }
 }
 
 describe('USDT configuration contracts', () => {
@@ -27,7 +27,6 @@ describe('USDT configuration contracts', () => {
   })
   it('rejects unsupported protocols and unsafe values', () => {
     for (const mutate of [
-      (value: USDTConfig) => { value.rate = '1e4' },
       (value: USDTConfig) => { value.networks[0]!.endpoints[0]!.rpcUrl = 'file:///private' },
       (value: USDTConfig) => { value.networks[0]!.addresses = [] },
       (value: USDTConfig) => { value.concurrency = 9 },

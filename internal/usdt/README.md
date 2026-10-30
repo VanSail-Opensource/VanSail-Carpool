@@ -1,6 +1,10 @@
 # Built-in USDT and USDC collection
 
-`Service.Start` runs inside the existing application lifecycle. `Methods`, `Rate`
+New token orders use the shared billing USD rate. Legacy encrypted rate fields
+are ignored and removed on save; collectors and issued quotes remain independent
+of rate availability. Stored order rate snapshots never change.
+
+`Service.Start` runs inside the existing application lifecycle. `Methods`
 and `Expiry` supply billing with local configuration/readiness; `Create` reserves
 an address/amount fingerprint through SQLite. Every external call enters
 `upstreamqueue` through `Executor`, including probes, reconnects and WS commands.
@@ -25,7 +29,7 @@ actor, reason, time and audit evidence; dismissed and credited evidence is immut
 Each network has an authoritative `currencies` list containing `USDT`, `USDC`,
 both where registered, or an explicit empty list. Missing/null lists inherit legacy
 `mode: usdt | usdc | both` (missing mode defaults to USDT) and become explicit on save. Endpoints, addresses,
-rate, expiry and the shared FIFO concurrency cap remain unchanged. Scanners and
+expiry and the shared FIFO concurrency cap remain unchanged. Scanners and
 readiness use token rails; cursors persist network plus native contract identity.
 Issued quotes keep their token watchers through network/token switch changes. Transfer IDs remain
 network/transaction/event hashes, and permanent quote fingerprints are untouched.
@@ -86,7 +90,7 @@ run in hosted CI.
 - `executor.go` ? One shared upstreamqueue with a global concurrent-request limit.
 - `lifecycle.go` ? Context-owned reconciliation, status and durable receipt recovery.
 - `monitor.go` ? Shared network scans, bounded catch-up, endpoint priority and WS coalescing.
-- `pricing.go` ? Local payment availability, TXB rate and immutable quote creation.
+- `pricing.go` ? Local payment availability and immutable quote creation.
 - `probe.go` ? Queued administrative mainnet and token-capability probes.
 - `registry.go` ? Pinned mainnet USDT contracts, chain identities, decimals and disabled defaults.
 - `response.go` ? Bounded document decoding and typed RPC/GraphQL envelope fields.

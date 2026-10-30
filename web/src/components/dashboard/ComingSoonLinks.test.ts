@@ -19,7 +19,7 @@ describe('ComingSoonLinks navigation', () => {
     const wrapper = mount(ComingSoonLinks, { props: { hasValidCombo: true }, global: { plugins: [pinia, router] } })
     const launchURL = window.location.href
     const actions = wrapper.findAll('.home-around__link')
-    const destinations = ['/affiliates', '/questionnaire', '/community', '/emby']
+    const destinations = ['/affiliates', '/community', '/emby']
 
     expect(actions).toHaveLength(destinations.length)
     for (const [index, destination] of destinations.entries()) {

@@ -1,5 +1,9 @@
 # X-Node administration
 
+The Metrics connection summary displays total open flows, including idle flows.
+Unknown or incomplete negotiated coverage displays unavailable; active counts
+remain available in the API for admission limits.
+
 Built-in DDNS uses `XNodeDDNSHosts.vue` for separate IPv4/IPv6 multi-host references,
 limited to the edited node's existing endpoints. Each endpoint can be assigned to
 only one family/job. External-provider bindings remain single-host. The job editor
@@ -122,3 +126,5 @@ an explicit forced recovery checkbox. Both use the existing durable command
 receipt and capability validation; no additional confirmation flow is added.
 
 Provider cost settings support fixed cycles or hourly plus per-GiB rates, and finite or unlimited traffic. Rate inputs use six decimal places; recorded payments remain separate from estimated rates.
+
+Access groups show a localized delete action only with known zero members and server-confirmed eligibility. Mutations disable controls, reload on success, and refresh eligibility after conflicts. Group deletion reuses the workspace error state.

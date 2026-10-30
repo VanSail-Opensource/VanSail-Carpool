@@ -11,7 +11,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/questionnaires"
 )
 
 func (s *Server) requireIdempotencyKey(w http.ResponseWriter, r *http.Request) (string, bool) {
@@ -151,7 +150,7 @@ func (s *Server) communityFailure(w http.ResponseWriter, r *http.Request, err er
 		status, code, message = http.StatusConflict, "INSUFFICIENT_BALANCE", "Your TXB balance is too low for this action."
 	case errors.Is(err, database.ErrConflict):
 		status, code, message = http.StatusConflict, "CONFLICT", "The request conflicts with the current state. Refresh and retry."
-	case errors.Is(err, activity.ErrInvalidInput), errors.Is(err, coupons.ErrInvalidInput), errors.Is(err, questionnaires.ErrInvalidInput):
+	case errors.Is(err, activity.ErrInvalidInput), errors.Is(err, coupons.ErrInvalidInput):
 		status, code, message = http.StatusUnprocessableEntity, "INVALID_REQUEST", "One or more request fields are invalid."
 	}
 	s.writeError(w, r, status, code, message)

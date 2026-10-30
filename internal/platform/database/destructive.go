@@ -69,33 +69,6 @@ func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now
 	})
 }
 
-// DeleteQuestionnaire rejects processing imports/jobs, removes non-processing
-// settlement jobs, imports and participants, and leaves awarded balances intact.
-func (s *Store) DeleteQuestionnaire(ctx context.Context, actorID, questionnaireID string, now time.Time) error {
-	return s.deleteFeature(ctx, actorID, "questionnaire.delete", "questionnaire", questionnaireID, now, func(tx *sql.Tx) error {
-		if err := requireRowTx(ctx, tx, `SELECT 1 FROM questionnaires WHERE id=?`, questionnaireID); err != nil {
-			return err
-		}
-		var processing int
-		if err := tx.QueryRowContext(ctx, `SELECT
-			(SELECT COUNT(*) FROM questionnaire_imports WHERE questionnaire_id=? AND status='processing') +
-			(SELECT COUNT(*) FROM outbox_jobs WHERE kind='questionnaire_settlement' AND status='processing' AND json_extract(payload,'$.importId') IN (SELECT id FROM questionnaire_imports WHERE questionnaire_id=?))`, questionnaireID, questionnaireID).Scan(&processing); err != nil {
-			return err
-		}
-		if processing > 0 {
-			return ErrConflict
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind='questionnaire_settlement' AND status<>'processing' AND json_extract(payload,'$.importId') IN (SELECT id FROM questionnaire_imports WHERE questionnaire_id=?)`, questionnaireID); err != nil {
-			return err
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM ledger_entries WHERE kind='questionnaire_reward' AND reference_id IN (SELECT id FROM questionnaire_participants WHERE questionnaire_id=?)`, questionnaireID); err != nil {
-			return err
-		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM questionnaires WHERE id=?`, questionnaireID)
-		return err
-	})
-}
-
 func (s *Store) retryAttempt_deleteFeature(ctx context.Context, actorID, action, targetType, targetID string, now time.Time, mutate func(*sql.Tx) error) error {
 	if !IsPostgres(s.db) {
 		s.writeMu.Lock()

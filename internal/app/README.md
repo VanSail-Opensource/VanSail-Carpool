@@ -64,7 +64,6 @@ stopped.
 - `admin_user_outbox.go` schedules due manual temporary-ban restoration through the shared provider-operation lane.
 - `payment_operations.go` registers durable payment create and cancellation handlers on that dispatcher.
 - `payment_profile_manager.go` probes BEPUSDT profiles at startup and after saves, publishes process-local discovered rails, and reports disabled profiles in each Telegram administrator's locale when available.
-- `mutation_operation_composition.go` registers subscription, Emby, questionnaire, retry, and refund command handlers.
 - `maintenance_operation.go` registers the durable admin maintenance command with bounded execution, receipt completion, retries, lease-aware recovery, and structured failure diagnostics.
 - `maintenance_runner.go` shares the full backup-gated database and migration-snapshot cleanup flow between the scheduler and manual command worker.
 - `payment_refund_adapter.go` reconciles ambiguous Telegram Stars refunds from authoritative transaction history.
@@ -205,3 +204,7 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 - `xnode_accounting.go`: Adapts exact native periods and historical usage into purchase accounting.
 
 Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `node_multiplier_cache.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.
+
+`mutation_operation_composition.go` registers the shared subscription, Emby, retry, and refund workers.
+
+`account_purge.go` registers the existing outbox purge worker and the queued Emby DELETE adapter. The scheduler resumes incomplete cleanup after restart/retry exhaustion. No upstream call bypasses upstreamqueue.

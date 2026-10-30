@@ -17,7 +17,7 @@ VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB bal
 - Server-priced combos, optional X-Node internal squads, renewals, queued plan changes, and a transactional TXB ledger.
 - EZPay, BEPusdt, and Telegram Stars top-ups with signed, idempotent callback processing.
 - Queue-first X-Node and Emby access, subscription rotation, traffic statistics, and persistent synchronization jobs.
-- Multiple Activity games, daily check-ins, weighted lucky draws, coupon wallets, and one-active questionnaire CSV settlement.
+- Multiple Activity games, daily check-ins, weighted lucky draws, and coupon wallets.
 - Durable Emby account setup, encrypted temporary credentials, server-enforced restricted policies, and compensating refunds.
 - Audited administration for settings, catalog, users, adjustments, entitlements, refunds, schema-aware database editing, backups, staged restore, and failed jobs.
 - Daily verified SQLite backups with seven-day retention, authenticated download, and pre-open atomic restore recovery.
@@ -120,7 +120,7 @@ Payment redirects are navigation only. TXB is credited exclusively after a verif
 ## Operations and recovery
 
 - `/healthz` proves HTTP and local SQLite liveness. `/readyz` also checks required dashboard setup readiness.
-- A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, purchase accounting closure and compute jobs, questionnaire settlement, Emby provisioning, and daily online backups.
+- A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, purchase accounting closure and compute jobs, Emby provisioning, and daily online backups.
 - Verified backups are written atomically under `/data/backups`; completed files older than seven days are removed. Failed backup attempts remain visible to the admin and never publish a partial database file.
 - An administrator can download a verified backup. Restore accepts only a stored snapshot, creates a rescue backup, verifies integrity and migration compatibility, stages an adjacent copy, records a marker, returns `202`, and exits gracefully. Startup performs the atomic pre-open swap, rolls back a failed swap, records the result, and requires clients to reauthenticate.
 - Logs are structured. Bot tokens, provider secrets, encrypted setting plaintext, session cookies, Telegram raw `initData`, and X-Node subscription URLs must never appear in logs or audit details.
