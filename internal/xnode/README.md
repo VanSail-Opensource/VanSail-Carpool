@@ -898,3 +898,5 @@ Access repair uses `access_repair.go` and `access_recovery_test.go` to reload cu
 `master_sync_workers_test.go` verifies bounded fleet execution. `master_controls.go` retains monotonic volatile control updates. `command_operation.go` owns receipt attempts, definite busy deferrals and terminal outcome persistence.
 
 `access_repair_fences_test.go` checks refund ownership, scheduler exclusion and stale-pointer rejection against the real store.
+
+`reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
