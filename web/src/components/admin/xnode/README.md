@@ -113,6 +113,9 @@ fencing, cursor history and exact-generation unban receipts. `XNodeFirewall.vue`
 keeps pending delivery visible and reloads the current search after acknowledged
 success; retrying a read does not create another release. Existing positive-hour
 administrator grants remain a separate form with unchanged behavior.
+`FirewallFilterGroup.vue` builds bounded nested AND/OR expressions and
+`FirewallFilterCondition.vue` edits localized IP, rule, status, time and hit
+conditions. Report-only records remain in memory for their detection window.
 
 `XNodeGlobalDetection.vue` adapts fleet rules to the existing rules table.
 `XNodeFirewallRules.vue` keeps node enable/probe switches separate from the global

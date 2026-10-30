@@ -155,6 +155,8 @@ declare module 'vue' {
     EmbySetupPanel: typeof import('./src/components/emby/EmbySetupPanel.vue')['default']
     EntitlementSummary: typeof import('./src/components/dashboard/EntitlementSummary.vue')['default']
     FirewallExemption: typeof import('./src/components/connections/FirewallExemption.vue')['default']
+    FirewallFilterCondition: typeof import('./src/components/admin/xnode/FirewallFilterCondition.vue')['default']
+    FirewallFilterGroup: typeof import('./src/components/admin/xnode/FirewallFilterGroup.vue')['default']
     ForecastFlipCard: typeof import('./src/components/dashboard/ForecastFlipCard.vue')['default']
     GiftPresenter: typeof import('./src/components/activity/draw/presenters/GiftPresenter.vue')['default']
     GridPresenter: typeof import('./src/components/activity/draw/presenters/GridPresenter.vue')['default']

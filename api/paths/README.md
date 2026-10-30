@@ -1,5 +1,8 @@
 # Path item shards
 
+`api-v1-admin-xnode-firewall-records-search.yaml` describes the read-only,
+authenticated active-report and ban search endpoint.
+
 `api-v1-onboarding-continue.yaml` advances authenticated members directly to
 published agreements without accepting or reserving an assigned username.
 

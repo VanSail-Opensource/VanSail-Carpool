@@ -26,6 +26,21 @@ func (s *Server) xnodeFirewallBans(w http.ResponseWriter, r *http.Request) {
 	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, page)
 }
+
+func (s *Server) xnodeFirewallRecords(w http.ResponseWriter, r *http.Request) {
+	var request xnode.FirewallRecordSearch
+	if err := decodeJSON(w, r, &request); err != nil {
+		s.xnodeError(w, r, xnode.ErrInvalid)
+		return
+	}
+	page, err := s.deps.XNode.SearchFirewallRecords(r.Context(), request)
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	privateSubscriptionHeaders(w)
+	writeJSON(w, http.StatusOK, page)
+}
 func (s *Server) xnodeFirewallQuote(w http.ResponseWriter, r *http.Request) {
 	quote, err := s.deps.XNode.OwnedFirewallQuote(r.Context(), currentUser(r).ID)
 	if err != nil {

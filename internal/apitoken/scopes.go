@@ -51,6 +51,9 @@ func (p Principal) AllowsRequest(method, path string) bool {
 		return false
 	}
 	write := method != http.MethodGet && method != http.MethodHead
+	if method == http.MethodPost && resource == "xnode/firewall/records/search" {
+		write = false
+	}
 	if strings.HasPrefix(resource, "operations/") && !write {
 		return p.Allows("admin", false) || p.Allows("xnode", false)
 	}

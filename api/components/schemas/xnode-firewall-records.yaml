@@ -1,0 +1,41 @@
+XNodeFirewallFilter:
+  type: object
+  additionalProperties: false
+  properties:
+    op: { type: string, enum: [and, or] }
+    children: { type: array, maxItems: 64, items: { $ref: '#/XNodeFirewallFilter' } }
+    field: { type: string, enum: [ip, rule, status, hits, detectedAt] }
+    value: { type: string, maxLength: 128 }
+    from: { type: string, format: date-time }
+    to: { type: string, format: date-time }
+XNodeFirewallRecordSearch:
+  type: object
+  additionalProperties: false
+  required: [filter, limit]
+  properties:
+    filter: { $ref: '#/XNodeFirewallFilter' }
+    cursor: { type: string, maxLength: 512 }
+    limit: { type: integer, minimum: 1, maximum: 100 }
+XNodeFirewallRecord:
+  type: object
+  additionalProperties: false
+  required: [id, ip, prefix, rule, count, detectedAt, banned]
+  properties:
+    id: { type: string }
+    ip: { type: string }
+    prefix: { type: string }
+    rule: { type: string }
+    count: { type: string, pattern: '^[0-9]+$' }
+    detectedAt: { type: string, format: date-time }
+    banned: { type: boolean }
+    generation: { type: string }
+    until: { type: string, format: date-time }
+    windowUntil: { type: string, format: date-time }
+    pendingNodes: { type: integer, minimum: 0 }
+XNodeFirewallRecordPage:
+  type: object
+  additionalProperties: false
+  required: [items]
+  properties:
+    items: { type: array, items: { $ref: '#/XNodeFirewallRecord' } }
+    nextCursor: { type: string }

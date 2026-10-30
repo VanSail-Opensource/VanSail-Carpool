@@ -1,5 +1,9 @@
 # X-Node control plane
 
+`firewall_records.go` defines the read-only active-record search contract.
+`firewall_filter.go` compiles bounded nested AND/OR predicates; its hosted
+`firewall_filter_test.go` covers matching and expression limits.
+
 Admin fleet metrics sum negotiated open connections with overflow-safe decimal
 arithmetic. Disabled nodes are excluded; an enabled unavailable or legacy node
 makes the fleet total unknown. These memory-only counters never affect limits.

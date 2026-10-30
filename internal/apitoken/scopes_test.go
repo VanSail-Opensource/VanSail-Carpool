@@ -24,6 +24,10 @@ func TestScopedControlSeparatesMigrationCommerceAndCredentials(t *testing.T) {
 	if p.AllowsRequest("POST", "/api/v1/admin/api-tokens") || p.AllowsRequest("DELETE", "/api/v1/admin/api-tokens/owned") {
 		t.Fatal("bearer can manage credential endpoints")
 	}
+	p.Item.Scopes = []string{"xnode:read"}
+	if !p.AllowsRequest("POST", "/api/v1/admin/xnode/firewall/records/search") || p.AllowsRequest("POST", "/api/v1/admin/xnode/firewall/exemptions") {
+		t.Fatal("read-only firewall search scope permits a mutation or denies search")
+	}
 	for _, scopes := range [][]string{nil, {"admin:root"}, {"admin:write", "admin:write"}} {
 		if _, err := normalizeScopes(scopes); err == nil {
 			t.Fatalf("invalid scopes accepted: %v", scopes)

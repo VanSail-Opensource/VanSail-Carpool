@@ -1,5 +1,8 @@
 # Schema shards
 
+`xnode-firewall-records.yaml` describes nested firewall filters, active reports,
+master-authorized bans and filter-bound paginated search results.
+
 `xnode.yaml` and `xnode-profile.yaml` expose nullable decimal-string
 `totalConnections` for all open client flows. Existing `connections` remains the
 traffic-active limit count; unavailable total coverage is never encoded as zero.

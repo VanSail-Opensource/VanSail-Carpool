@@ -1,0 +1,19 @@
+post:
+  operationId: searchXNodeFirewallRecords
+  tags: [Administration]
+  summary: Search active firewall reports and master-authorized bans
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/XNodeFirewallRecordSearch' }
+  responses:
+    '200':
+      description: Filtered active firewall records
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/XNodeFirewallRecordPage' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

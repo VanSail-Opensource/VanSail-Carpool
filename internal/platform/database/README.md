@@ -1058,3 +1058,8 @@ new callback keys for terminal payments are compacted without another credit.
 `billing_payment_test.go` covers both paths and rejects cross-order/charge reuse.
 Group-deletion regression checks compare historical squad membership as a set,
 preserving paid evidence independently of catalog serialization order.
+
+`xnode_firewall_records.go` merges bounded volatile detection windows with active
+master bans; matching bans suppress overlapping reports. `xnode_firewall_record_heap.go`
+keeps pagination memory bounded and binds cursors to the filter. The hosted
+`xnode_firewall_records_test.go` covers pagination and report/ban transitions.
