@@ -95,22 +95,22 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 	}
 	config, err := m.cachedConfiguration(ctx, peer, force)
 	if err != nil {
-		return err
+		return syncFailure("compile", err)
 	}
 	config, ready, err := m.prepareCountryForPeer(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("assets", err)
 	}
 	if !ready {
 		return nil
 	}
 	config, err = m.overlayPAYG(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("access", err)
 	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("wire", err)
 	}
 	if ready, err = m.ddnsRouteProtectionReady(ctx, peer, prepared, hello.Capabilities); err != nil || !ready {
 		return err
@@ -127,7 +127,7 @@ func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool
 		return nil
 	}
 	if same && !force {
-		return m.syncControls(ctx, peer, controls, oldControls)
+		return syncFailure("controls", m.syncControls(ctx, peer, controls, oldControls))
 	}
 	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, previous)
 	if err != nil {

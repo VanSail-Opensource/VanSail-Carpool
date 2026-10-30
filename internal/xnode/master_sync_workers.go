@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"sync"
@@ -70,7 +71,26 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 			peer.mu.Unlock()
 		}
 		if m.logger != nil {
-			m.logger.Debug("node synchronization deferred", "node_id", peer.nodeID, "stage", "synchronization", "error_code", safeFrameErrorCode(err), "cause", frameErrorCause(err), "duration_ms", time.Since(started).Milliseconds())
+			stage := "synchronization"
+			var failure *synchronizationFailure
+			if errors.As(err, &failure) {
+				stage = failure.stage
+			}
+			m.logger.Debug("node synchronization deferred", "node_id", peer.nodeID, "stage", stage, "error_code", safeFrameErrorCode(err), "cause", frameErrorCause(err), "duration_ms", time.Since(started).Milliseconds())
 		}
 	}
+}
+
+type synchronizationFailure struct {
+	stage string
+	cause error
+}
+
+func (e *synchronizationFailure) Error() string { return "X-Node " + e.stage + " pending" }
+func (e *synchronizationFailure) Unwrap() error { return e.cause }
+func syncFailure(stage string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &synchronizationFailure{stage, err}
 }
