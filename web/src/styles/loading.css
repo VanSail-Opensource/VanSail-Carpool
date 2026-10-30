@@ -1,0 +1,26 @@
+.loading-track {
+  inline-size: min(12rem, 100%);
+  block-size: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.loading-track::after {
+  content: "";
+  display: block;
+  inline-size: 40%;
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: loading-travel 1000ms ease-in-out infinite;
+}
+
+@keyframes loading-travel {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-track::after { animation: none; transform: translateX(75%); }
+}

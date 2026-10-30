@@ -60,7 +60,7 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
       <RouterView v-if="browserPublic" v-slot="{ Component, route: currentRoute }">
         <component :is="Component" :key="currentRoute.fullPath" />
       </RouterView>
-      <SessionEntrance v-else :status="sessionStore.status">
+      <SessionEntrance v-else :status="sessionStore.status" :authenticated="sessionStore.isAuthenticated" :route-ready="route.matched.length > 0 || sessionStore.session?.captcha?.required === true">
         <AuthGate
           v-if="sessionStore.status === 'error'"
           :message="sessionStore.error ?? $t('auth.authenticationFailed')"

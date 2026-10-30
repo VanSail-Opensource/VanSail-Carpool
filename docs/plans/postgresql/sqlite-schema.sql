@@ -772,12 +772,17 @@ CREATE TABLE pricing_contracts (
  CHECK(price_limit_minor>=contractual_price_minor), UNIQUE(purchase_id,version)
 );
 
-CREATE TABLE pricing_cost_metadata (
+CREATE TABLE "pricing_cost_metadata" (
  node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor>=0),
  cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),
- capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes>0), effective_at TEXT NOT NULL,
- updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1
-, charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')), hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros>=0), traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros>=0), capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)));
+ capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes>=0), effective_at TEXT NOT NULL,
+ updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
+ charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')),
+ hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros>=0),
+ traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros>=0),
+ capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)),
+ CHECK(capacity_bytes>0 OR capacity_unlimited=1)
+);
 
 CREATE TABLE pricing_cost_versions (
  node_id TEXT NOT NULL REFERENCES xnode_nodes(id), version INTEGER NOT NULL,

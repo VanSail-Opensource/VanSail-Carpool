@@ -1,6 +1,6 @@
 # Visual system
 
-- `page-transitions.css` provides the clipped route viewport while Motion owns the keyed outgoing/incoming handoff: local horizontal movement on phones and local vertical movement on wide screens. Reduced motion removes translation and retains a short opacity change.
+- `page-transitions.css` provides the clipped route viewport while Motion owns the keyed outgoing/incoming handoff: local horizontal movement on phones and local vertical movement on wide screens. Reduced motion presents the destination immediately without translation or fading.
 
 `main.css` is the ordered entry point for these cascade layers:
 
@@ -12,7 +12,9 @@
 - `onboarding-01.css` styles onboarding structure and progress.
 - `onboarding-02.css` styles onboarding forms and agreements.
 - `onboarding-03.css` styles onboarding completion and supporting states.
-- `session-01.css` owns the responsive loading wordmark, outline-to-fill letter reveal, Chinese-to-English replacement, and continuous loading keyframes. `SessionEntrance.vue` owns the keyed Motion handoff and `useLoadingSequence.ts` coordinates its 1.2-second introduction.
+- `session-01.css` owns the responsive loading wordmark, bounded 500ms lettering, 450ms Chinese-to-English handoff, and interruptible 160ms cover fade. Readiness never waits for the lettering.
+- `fonts.css` declares self-hosted variable Geist and Noto Sans SC with nonblocking swap. Both experience roots import font resources independently of their theme rules; technical monospace roles retain their own stack.
+- `loading.css` provides the shared 192px indeterminate track using each root's accent tokens, with a static reduced-motion state.
 - `dashboard-01.css` styles dashboard summaries and account details.
 - `dashboard-02.css` styles dashboard lists, actions, and secondary states.
 - `home-01.css` styles the wrapping balance/action row, paired Home language/currency controls, 44px Home actions, narrow-phone subscription layout, Nuxt UI usage-progress detail, and traffic surfaces.

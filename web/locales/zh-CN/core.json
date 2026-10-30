@@ -36,6 +36,8 @@
     "tryAgain": "重试",
     "securingRide": "正在保护你的行程",
     "loadingPrefix": "TX",
+    "loadingAccount": "正在加载你的账户。",
+    "loadingAccountSlow": "仍在加载你的账户。",
     "loadingOriginal": "流量拼车",
     "loadingReplacement": "Carpool",
     "authenticationFailed": "身份验证未完成。",

@@ -20,12 +20,12 @@ export function installWorkspaceMotion(root: HTMLElement): () => void {
     root.querySelectorAll('.admin-section > h3, .admin-section > h4').forEach(element => {
       if (seen.has(element)) return
       seen.add(element)
-      if (element.getBoundingClientRect().top >= window.innerHeight) observer.observe(element)
+      if (!reduced.matches && !document.hidden && element.getBoundingClientRect().top >= window.innerHeight) observer.observe(element)
     })
   }
   const mutations = new MutationObserver(scan)
   const cancel = () => { animations.forEach(animation => animation.cancel()); animations.clear() }
-  const onPreference = () => { if (reduced.matches) cancel() }
+  const onPreference = () => { if (reduced.matches) { observer.disconnect(); cancel() } }
   reduced.addEventListener('change', onPreference)
   mutations.observe(root, { childList: true, subtree: true })
   scan()

@@ -245,3 +245,5 @@ Whitelist lists remain inside the encrypted DIY document, not a mirrored table.
 - `110_pricing_read_indexes.sql`: Adds only exposure-window and entity-day lookup indexes; historical financial facts are unchanged.
 
 - `111_provider_cost_models.sql`: Adds hourly and per-GiB rates and unlimited-capacity flags to current and versioned provider costs.
+
+- `112_unlimited_zero_capacity.sql`: Allows an unlimited provider cost to store zero finite capacity; finite capacity remains positive.

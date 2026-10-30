@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { localizedError, useI18n } from '@/i18n'
 import { useBrowserSession } from './session'
 import BrowserPreferences from './BrowserPreferences.vue'
+import BrowserLoading from './BrowserLoading.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -19,12 +20,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="browser-access">
-    <BrowserPreferences />
-    <UIcon name="i-ph-shield-check-bold" class="browser-access-icon" />
-    <h1>{{ error ? t('browser.linkExpired') : t('browser.signingIn') }}</h1>
-    <p>{{ error ?? t('browser.signingInHint') }}</p>
+  <BrowserLoading :status="t('browser.signingIn')" :error="error" :failure-title="t('browser.linkExpired')">
+    <template #preferences><BrowserPreferences /></template>
     <UButton v-if="error" to="/" color="neutral" variant="outline" :label="t('browser.backToEntrance')" />
-    <UProgress v-else class="w-48" :aria-label="t('browser.signingIn')" />
-  </main>
+  </BrowserLoading>
 </template>

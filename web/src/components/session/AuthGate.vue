@@ -16,14 +16,14 @@ const { reducedMotion, offset } = useMotionPreferences()
 <template>
   <motion.main
     class="auth-screen"
-    :initial="reducedMotion ? { opacity: 0 } : { opacity: 0, y: offset(4) }"
+    :initial="reducedMotion ? { opacity: 1 } : { opacity: 0, y: offset(4) }"
     :animate="{ opacity: 1, y: 0 }"
-    :transition="{ duration: reducedMotion ? 0.08 : motionDurations.fast, ease: 'easeOut' }"
+    :transition="{ duration: reducedMotion ? 0 : motionDurations.fast, ease: 'easeOut' }"
   >
     <div class="auth-screen__copy">
       <p class="eyebrow">{{ $t('auth.telegramAccess') }}</p>
       <h1>{{ authRequestFailed ? $t('auth.authenticationFailed') : $t('auth.openInTelegram') }}</h1>
-      <p>{{ message }}</p>
+      <p v-if="message !== (authRequestFailed ? $t('auth.authenticationFailed') : $t('auth.openInTelegram'))">{{ message }}</p>
     </div>
     <UButton
       :label="$t('auth.tryAgain')"

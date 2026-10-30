@@ -111,7 +111,8 @@
     "108_host_name_overrides.sql",
     "109_xnode_period_aliases.sql",
     "110_pricing_read_indexes.sql",
-    "111_provider_cost_models.sql"
+    "111_provider_cost_models.sql",
+    "112_unlimited_zero_capacity.sql"
   ],
   "objects": [
     {
@@ -532,7 +533,7 @@
       "type": "table",
       "name": "pricing_cost_metadata",
       "table": "pricing_cost_metadata",
-      "sql": "CREATE TABLE pricing_cost_metadata (\n node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor\u003e=0),\n cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),\n capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes\u003e0), effective_at TEXT NOT NULL,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1\n, charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')), hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros\u003e=0), traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros\u003e=0), capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)))"
+      "sql": "CREATE TABLE \"pricing_cost_metadata\" (\n node_id TEXT PRIMARY KEY REFERENCES xnode_nodes(id), cycle_cost_minor INTEGER NOT NULL CHECK(cycle_cost_minor\u003e=0),\n cycle_days INTEGER NOT NULL CHECK(cycle_days BETWEEN 1 AND 366),\n capacity_bytes INTEGER NOT NULL CHECK(capacity_bytes\u003e=0), effective_at TEXT NOT NULL,\n updated_by TEXT NOT NULL, updated_at TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,\n charge_mode TEXT NOT NULL DEFAULT 'cycle' CHECK(charge_mode IN ('cycle','hourly')),\n hourly_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(hourly_rate_micros\u003e=0),\n traffic_rate_micros INTEGER NOT NULL DEFAULT 0 CHECK(traffic_rate_micros\u003e=0),\n capacity_unlimited INTEGER NOT NULL DEFAULT 0 CHECK(capacity_unlimited IN (0,1)),\n CHECK(capacity_bytes\u003e0 OR capacity_unlimited=1)\n)"
     },
     {
       "type": "table",
@@ -9510,7 +9511,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 112,
+      "rows": 113,
       "columns": [
         {
           "name": "version",

@@ -31,13 +31,10 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	if c.ChargeMode != "cycle" && c.ChargeMode != "hourly" || c.HourlyRate < 0 || c.HourlyRate > pricing.MaxPrice*10000 || c.TrafficRate < 0 || c.TrafficRate > pricing.MaxPrice*10000 || (c.ChargeMode == "cycle" && (c.HourlyRate != 0 || c.TrafficRate != 0)) {
 		return ErrConflict
 	}
-	if c.Unlimited && c.Capacity == 0 {
-		c.Capacity = 1
-	}
 	if c.ActualPaid != nil && (*c.ActualPaid < 0 || *c.ActualPaid > pricing.MaxPrice) {
 		return ErrConflict
 	}
-	if c.Cost < 0 || c.Cost > pricing.MaxPrice || c.CycleDays < 1 || c.CycleDays > 366 || c.Capacity <= 0 || c.Reason == "" || len(c.Reason) > 1000 || c.EffectiveAt.IsZero() || c.EffectiveAt.After(now) {
+	if c.Cost < 0 || c.Cost > pricing.MaxPrice || c.CycleDays < 1 || c.CycleDays > 366 || c.Capacity < 0 || c.Capacity == 0 && !c.Unlimited || c.Reason == "" || len(c.Reason) > 1000 || c.EffectiveAt.IsZero() || c.EffectiveAt.After(now) {
 		return ErrConflict
 	}
 	if !IsPostgres(s.db) {

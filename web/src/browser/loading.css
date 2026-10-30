@@ -1,0 +1,41 @@
+.browser-entry {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-block-size: 100dvh;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: var(--canvas);
+  color: var(--text);
+  text-align: center;
+}
+.browser-entry--preferences { padding-block: max(88px, env(safe-area-inset-top)) max(88px, env(safe-area-inset-bottom)); }
+.browser-entry__preferences { position: absolute; inset-block-start: max(24px, env(safe-area-inset-top)); inset-inline-end: max(24px, env(safe-area-inset-right)); }
+.browser-entry__content { display: flex; flex-direction: column; align-items: center; inline-size: min(90vw, 100%); min-inline-size: 0; }
+html[data-experience="browser"] .browser-entry__identity {
+  max-inline-size: 100%;
+  margin: 0;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -.055em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.browser-entry__status { max-inline-size: 440px; margin-block-start: 24px; color: var(--text-muted); }
+.browser-entry__status p { margin: 0; overflow-wrap: anywhere; }
+.browser-entry__status p + p { margin-block-start: 8px; }
+.browser-entry__failure { color: var(--text); font-weight: 500; }
+.browser-entry .loading-track { margin-block-start: 16px; }
+.browser-entry__actions { margin-block-start: 24px; }
+.browser-entry :is(button, [role="combobox"], a) { min-block-size: 44px; min-inline-size: 44px; }
+.browser-entry--animate .browser-entry__identity { animation: browser-identity-enter 500ms cubic-bezier(.23, 1, .32, 1) both; }
+.browser-entry--animate .browser-entry__status { animation: browser-status-enter 500ms 80ms ease-out both; }
+.browser-startup-leave-active { position: fixed; inset: 0; z-index: 90; pointer-events: none; transition: opacity 160ms ease-out; }
+.browser-startup-leave-active *, .browser-startup-leave-active *::after { animation: none !important; }
+.browser-startup-leave-to { opacity: 0; }
+@keyframes browser-identity-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes browser-status-enter { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .browser-entry *, .browser-entry *::after { animation: none !important; }
+  .browser-startup-leave-active { transition: none; }
+}

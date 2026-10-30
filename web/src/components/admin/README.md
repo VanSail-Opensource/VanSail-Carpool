@@ -64,3 +64,5 @@ admin endpoint for both credits and deductions.
 Combo editing accepts the API-supported empty description and zero price. Its Zod submission schema enforces exact decimal money/traffic bounds, validity and quotas, with visible localized feedback for invalid drafts. Busy or failed saves retain the draft.
 
 `AdminSquadEditor.vue` edits automatic PAYG mode and exact positive per-GB pricing alongside the existing Combo fields. Stock, visibility and activation-code controls apply to Combo; conversion preserves existing paid terms and excludes future renewals. Browser editor state and theme remain independent of Mini App initialization.
+
+`AdminSectionState.vue` keeps successful slot content mounted through background refresh and errors, announces one loading status, and reserves three 5rem placeholders only before first content. `AdminSectionState.test.ts` covers draft retention, retry, and successful empty results.

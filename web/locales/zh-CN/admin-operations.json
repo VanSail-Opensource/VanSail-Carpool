@@ -147,6 +147,7 @@
     "cancelEntitlement": "取消权益"
   },
   "adminSection": {
+    "loadingContent": "正在加载内容。",
     "unavailable": "此分区暂时不可用。",
     "retry": "重试"
   }

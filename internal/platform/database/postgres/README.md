@@ -11,6 +11,9 @@ Schema version 21 adds `pricing_active_commands` to match the existing SQLite
 schema contract. It supports active pricing-command lookups and repairs fresh
 and upgraded PostgreSQL startup without changing historical migrations or data.
 
+Schema version 26 permits zero finite capacity when provider capacity is marked
+unlimited, matching the SQLite pricing contract.
+
 Schema version 16 permits multiple endpoint references per DDNS family while
 retaining global host uniqueness. Schema version 15 updates community-preference
 transition functions and backfills Show Around TX for existing combo/PAYG

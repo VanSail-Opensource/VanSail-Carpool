@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AnimatePresence, motion } from 'motion-v'
 
@@ -39,17 +39,18 @@ const greetingName = computed(() => t('nav.fullscreenGreeting', {
   name: sessionStore.user?.firstName?.trim() || t('nav.memberFallback'),
 }))
 const greetingUsername = computed(() => sessionStore.user?.telegramUsername?.trim() || '')
+const firstPage = shallowRef(true)
 const pageMotion = computed(() => {
-  const distance = offset(14)
-  const axis = transition.wide.value ? 'y' : 'x'
+  const distance = offset(firstPage.value ? 8 : 14)
+  const axis = firstPage.value || transition.wide.value ? 'y' : 'x'
   const direction = transition.direction.value === 'backward' ? -1 : 1
   const enter = { opacity: reducedMotion.value ? 0 : 0.75, [axis]: direction * distance }
   const exit = { opacity: 0, [axis]: direction * -distance }
   return {
-    initial: reducedMotion.value ? { opacity: 0 } : enter,
+    initial: reducedMotion.value ? { opacity: 1, x: 0, y: 0 } : enter,
     animate: { opacity: 1, [axis]: 0 },
-    exit: reducedMotion.value ? { opacity: 0 } : exit,
-    transition: { duration: reducedMotion.value ? 0.08 : motionDurations.normal, ease: 'easeOut' as const },
+    exit: reducedMotion.value ? { opacity: 1 } : exit,
+    transition: { duration: reducedMotion.value ? 0 : firstPage.value ? 0.5 : motionDurations.normal, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] },
   }
 })
 
@@ -81,6 +82,7 @@ useTelegramBackButton(showBackButton, goBack)
 
 watch(() => route.path, (_next, previous) => {
   if (!previous) return
+  firstPage.value = false
   void refreshCommunityAccess()
   void refreshIPLookupAvailability()
   void preferences.refresh()
@@ -113,7 +115,7 @@ watch(() => route.path, (_next, previous) => {
       </UDashboardSidebar>
 
       <div class="app-route-viewport">
-        <AnimatePresence :initial="false" mode="sync">
+        <AnimatePresence :initial="!reducedMotion" mode="sync">
           <motion.div
             :key="route.fullPath"
             ref="appContent"

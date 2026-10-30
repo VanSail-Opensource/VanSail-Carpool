@@ -1,5 +1,5 @@
 @theme {
-  --font-sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   --color-ink: #0b0d0c;
   --color-panel: #121512;
@@ -72,14 +72,6 @@
   --ui-text-dimmed: var(--text-faint);
   --ui-primary: var(--accent);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-:lang(en) {
-  font-family: "Geist", "Helvetica Neue", Arial, sans-serif;
-}
-
-:lang(zh-CN) {
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 * {

@@ -147,6 +147,7 @@
     "cancelEntitlement": "Cancel entitlement"
   },
   "adminSection": {
+    "loadingContent": "Loading content.",
     "unavailable": "This section is unavailable.",
     "retry": "Retry"
   }

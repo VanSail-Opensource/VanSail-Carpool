@@ -4,17 +4,12 @@
 @import "../styles/statistics-01.css";
 @import "../styles/statistics-02.css";
 @import "../components/admin/workspace.css";
-
-@font-face {
-  font-family: "Geist";
-  src: url("/fonts/Geist-latin.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-}
+@import "../styles/fonts.css";
+@import "../styles/loading.css";
+@import "./loading.css";
 
 @theme {
-  --font-sans: "Geist", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 

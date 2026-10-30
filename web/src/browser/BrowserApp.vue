@@ -1,19 +1,35 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide } from 'vue'
+import { computed, onMounted, onUnmounted, provide, shallowRef, watch } from 'vue'
 import { en, zh_cn } from '@nuxt/ui/locale'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/i18n'
 import { adminOperationsApi } from '@/api/adminOperations'
 import { operationReceiptLoaderKey } from '@/composables/operationReceiptLoader'
 import BrowserConsole from './BrowserConsole.vue'
 import { useBrowserSession } from './session'
+import BrowserLoading from './BrowserLoading.vue'
+import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
 const route = useRoute()
+const router = useRouter()
+const startupTarget = globalThis.location.pathname + globalThis.location.search + globalThis.location.hash
+const { reducedMotion } = useMotionPreferences()
 provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)
 const session = useBrowserSession()
 const { t, locale } = useI18n()
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
-function refresh(): void { if (globalThis.document.visibilityState === 'visible') void session.bootstrap(true).then(() => session.renew()) }
+const accessLeaving = shallowRef(false)
+watch(() => route.name, (_next, previous) => { accessLeaving.value = previous === 'browser-access' })
+async function retryStartup(): Promise<void> {
+  if (session.loading) return
+  await session.bootstrap(true)
+  if (!session.error) await router.replace(startupTarget)
+}
+function refresh(): void {
+  if (globalThis.document.visibilityState !== 'visible') return
+  if (!route.matched.length) { void retryStartup(); return }
+  void session.bootstrap(true).then(() => session.renew())
+}
 function expired(): void { void session.bootstrap(true) }
 let timer: ReturnType<typeof globalThis.setInterval> | undefined
 onMounted(() => {
@@ -32,9 +48,17 @@ onUnmounted(() => {
 
 <template>
   <UApp :locale="uiLocale" :toaster="{ position: 'bottom-right' }">
-    <div v-if="!route.matched.length" class="browser-access" role="status"><USkeleton class="h-8 w-48" /><UProgress class="w-48" :aria-label="t('browser.signingIn')" /></div>
-    <BrowserConsole v-else-if="route.meta.console"><RouterView /></BrowserConsole>
-    <RouterView v-else />
+    <Transition name="browser-startup" :css="!reducedMotion" @before-leave="element => element.setAttribute('inert', '')">
+      <BrowserLoading v-if="!route.matched.length" :error="session.error">
+        <UButton :label="t('common.tryAgain')" :disabled="session.loading" @click="retryStartup" />
+      </BrowserLoading>
+    </Transition>
+    <RouterView v-slot="{ Component }">
+      <BrowserConsole v-if="route.meta.console"><component :is="Component" /></BrowserConsole>
+      <Transition name="browser-startup" :css="!reducedMotion && accessLeaving" @before-leave="element => element.setAttribute('inert', '')">
+        <component :is="Component" v-if="Component && !route.meta.console" />
+      </Transition>
+    </RouterView>
     <UModal :open="session.expired && route.meta.console === true" :dismissible="false" :close="false" :title="t('browser.sessionExpired')" :description="t('browser.sessionExpiredHint')" :ui="{ overlay: 'z-[100]', content: 'z-[101]' }">
       <template v-if="session.error" #body><UAlert color="warning" variant="soft" :title="session.error" /></template>
       <template #footer>

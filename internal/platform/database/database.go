@@ -20,6 +20,8 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
+const unlimitedCapacityMigration = "112_unlimited_zero_capacity.sql"
+
 // Open creates the data directory, opens SQLite, and applies pending migrations.
 func Open(ctx context.Context, path string) (*sql.DB, error) {
 	return openSQLite(ctx, path, true)
@@ -121,7 +123,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", entry.Name(), err)
 		}
-		if entry.Name() == usdtMigration || entry.Name() == zeroMultiplierMigration {
+		if entry.Name() == usdtMigration || entry.Name() == zeroMultiplierMigration || entry.Name() == unlimitedCapacityMigration {
 			if err := migrateReferencedTables(ctx, db, script, entry.Name()); err != nil {
 				return fmt.Errorf("apply table migration %s: %w", entry.Name(), err)
 			}

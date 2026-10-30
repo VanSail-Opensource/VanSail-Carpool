@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./fonts.css";
+@import "./loading.css";
 
 @import "./foundation-01.css";
 @import "./foundation-02.css";

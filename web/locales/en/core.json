@@ -36,6 +36,8 @@
     "tryAgain": "Try again",
     "securingRide": "Securing your ride",
     "loadingPrefix": "TX",
+    "loadingAccount": "Loading your account.",
+    "loadingAccountSlow": "Still loading your account.",
     "loadingOriginal": "流量拼车",
     "loadingReplacement": "Carpool",
     "authenticationFailed": "Authentication could not be completed.",

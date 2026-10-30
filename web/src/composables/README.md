@@ -92,3 +92,5 @@ separate. Action quotes and permission decisions still await the backend.
 - `usePricingQuote.ts`: Version-bound checkout preview lifecycle: request cancellation, bounded two-minute backoff, hidden-page pause and expiry; successful idempotency replay remains independent.
 
 - `usePricingQuote.test.ts`: Hosted regression for bounded pending retries, hidden-page pause, stale totals, obsolete responses and disposal.
+
+- `usePendingStatus.ts` replaces one live status after five seconds of pending work; Vue watcher cleanup cancels its timer. It never controls readiness or requests.
