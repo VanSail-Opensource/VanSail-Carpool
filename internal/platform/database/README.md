@@ -1037,3 +1037,7 @@ Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL).
 - `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
 
 `xnode_access_restore.go` implements serializable, conditional access-pointer restoration with entitlement, operation, restriction and allowance fences. `xnode_access_repair.go` excludes settled/ambiguous/operation-owned recovery candidates. Outbox busy deferrals retain a sanitized reason and accept a bounded `RetryDelay` without consuming delivery attempts.
+
+`xnode_compile_members.go` batches users, purchase ownership, periods and access preferences into one disposable compilation scope. Existing scan functions and purchase ownership CTEs define its contract. `xnode_observed_owners.go` resolves observed owners plus idle sibling principals using existing indexes. `xnode_command_defer.go` conditionally releases a definitely rejected command attempt; `xnode_command_defer_test.go` protects replay and attempt fencing.
+
+`xnode_compile_benchmark_test.go` compares individual and batched reads over the same synthetic member set in hosted CI, including query count and allocations.

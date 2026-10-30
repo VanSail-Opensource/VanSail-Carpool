@@ -43,10 +43,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		if message.Type == "error" {
 			if pending := peer.pending[message.ID]; pending != nil {
 				commandError = true
-				select {
-				case pending <- message:
-				default:
-				}
+				offerCommandFrame(pending, message)
 			}
 		}
 		// Command failures and superseded activation results do not invalidate
@@ -90,14 +87,8 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		return m.receiveDDNSChanges(ctx, peer, message)
 	case "command.accepted", "command.result":
 		peer.mu.Lock()
-		pending := peer.pending[message.ID]
+		offerCommandFrame(peer.pending[message.ID], message)
 		peer.mu.Unlock()
-		if pending != nil {
-			select {
-			case pending <- message:
-			default:
-			}
-		}
 		return nil
 	case "logs.report":
 		var report struct {

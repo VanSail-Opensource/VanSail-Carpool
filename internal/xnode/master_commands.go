@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
@@ -10,7 +11,7 @@ import (
 )
 
 // Command waits outside the outbound queue so results cannot block traffic acknowledgments.
-func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any) (json.RawMessage, error) {
+func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any) (result json.RawMessage, commandErr error) {
 	m.mu.RLock()
 	peer := m.peers[nodeID]
 	m.mu.RUnlock()
@@ -33,6 +34,19 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	if !known {
 		return nil, ErrInvalid
 	}
+	startedAt := time.Now()
+	defer func() {
+		if m.logger != nil {
+			outcome := "completed"
+			var failure *CommandError
+			if errors.As(commandErr, &failure) {
+				outcome = string(failure.Outcome)
+			} else if commandErr != nil {
+				outcome = "error"
+			}
+			m.logger.Debug("native command finished", "node_id", nodeID, "command", name, "outcome", outcome, "duration_ms", time.Since(startedAt).Milliseconds())
+		}
+	}()
 	pending := make(chan wire.Message, 4)
 	peer.mu.Lock()
 	if peer.pending[id] != nil {

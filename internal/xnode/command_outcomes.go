@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -67,6 +68,12 @@ func waitCommand(ctx context.Context, peer *agentPeer, pending <-chan wire.Messa
 			if message.Type == "error" {
 				if accepted {
 					return nil, &CommandError{CommandUncertain, ErrUnavailable}
+				}
+				var rejection struct {
+					Error string `json:"error"`
+				}
+				if wire.Decode(message.Data, &rejection) == nil && rejection.Error == "utility workers are busy" {
+					return nil, &CommandError{CommandRejected, outbox.ErrBusy}
 				}
 				return nil, &CommandError{CommandRejected, ErrUnavailable}
 			}

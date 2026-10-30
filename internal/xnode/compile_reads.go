@@ -79,6 +79,9 @@ func (r *compileReads) XNodeIdentities(ctx context.Context) ([]Identity, error) 
 		items, err = r.Repository.XNodeIdentities(ctx)
 	}
 	if err == nil {
+		if err = r.preloadMembers(ctx, items); err != nil {
+			return nil, err
+		}
 		r.identities, r.identitiesLoaded = items, true
 		for _, item := range items {
 			r.byID[item.ProxyUserID] = item
@@ -145,6 +148,16 @@ func (r *compileReads) ListPurchases(ctx context.Context, id string) ([]model.Pu
 func (r *compileReads) DesiredEntitlement(ctx context.Context, id string, now time.Time) (*model.Purchase, error) {
 	if item, ok := r.desired[id]; ok {
 		return item, nil
+	}
+	if purchases, ok := r.purchases[id]; ok {
+		for _, purchase := range purchases {
+			if (purchase.Status == "active" || purchase.Status == "activating") && !purchase.ValidFrom.After(now) && purchase.ValidUntil.After(now) {
+				r.desired[id] = &purchase
+				return &purchase, nil
+			}
+		}
+		r.desired[id] = nil
+		return nil, nil
 	}
 	item, err := r.Repository.DesiredEntitlement(ctx, id, now)
 	if err == nil {

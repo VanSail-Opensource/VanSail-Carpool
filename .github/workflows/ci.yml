@@ -305,6 +305,8 @@ jobs:
         run: go test ./internal/pricing -run '^$' -bench '^BenchmarkPricing' -benchtime=1s -benchmem | tee pricing-benchmark.txt
       - name: Measure authoritative cache reads
         run: go test ./internal/xnode -run '^(TestCatalogTopologyRevisionIsolationAndBounds|TestCompileCacheInvalidatesEpochAndAccessBoundary)$' -count=1 -v | tee xnode-cache-reads.txt
+      - name: Compare member compilation reads
+        run: go test ./internal/platform/database -run '^$' -bench '^BenchmarkXNodeCompileMemberReads$' -benchtime=20x -benchmem | tee xnode-member-reads.txt
       - uses: actions/upload-artifact@v7
         with:
           name: xnode-cpu-profile
@@ -312,4 +314,5 @@ jobs:
             xnode-cpu.pprof
             xnode-benchmark.txt
             xnode-cache-reads.txt
+              xnode-member-reads.txt
             pricing-benchmark.txt
