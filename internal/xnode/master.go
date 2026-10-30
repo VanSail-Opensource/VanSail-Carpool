@@ -5,15 +5,13 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"github.com/gorilla/websocket"
 )
 
 type Master struct {
+	syncCursor               int
 	compute                  *computePool
 	trafficMetrics           trafficObservations
 	protectedReleaseDigest   string
@@ -145,31 +143,3 @@ func (m *Master) requestSync(peer *agentPeer) {
 
 // Wait joins database-dependent controller tasks after Shutdown cancels them.
 func (m *Master) Wait() { m.wg.Wait() }
-func (peer *agentPeer) send(ctx context.Context, message wire.Message) error {
-	_, err := peer.sendTracked(ctx, message)
-	return err
-}
-func (peer *agentPeer) sendTracked(ctx context.Context, message wire.Message) (bool, error) {
-	// 0 is queued, 1 may have written, 2 was abandoned before any write.
-	var state atomic.Int32
-	err := upstreamqueue.Execute(ctx, peer.queue, func(callCtx context.Context) error {
-		if callCtx.Err() != nil {
-			return callCtx.Err()
-		}
-		deadline := time.Now().Add(10 * time.Second)
-		if value, ok := callCtx.Deadline(); ok && value.Before(deadline) {
-			deadline = value
-		}
-		if err := peer.socket.SetWriteDeadline(deadline); err != nil {
-			return err
-		}
-		if !state.CompareAndSwap(0, 1) {
-			return context.Canceled
-		}
-		return peer.socket.WriteJSON(message)
-	})
-	if err != nil {
-		state.CompareAndSwap(0, 2)
-	}
-	return state.Load() == 1, err
-}

@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 )
 
 type agentPeer struct {
+	logger                *slog.Logger
 	computePool           bool         // immutable, negotiated protocol extension
 	trafficRetry          trafficRetry // mu; bounded retries for an unchanged rejected journal head
 	paygRecoveryAt        time.Time    // mu; bounded recovery requeue after interrupted attempts

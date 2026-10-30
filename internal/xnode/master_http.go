@@ -91,7 +91,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer queue.Shutdown(context.Background())
-	peer := &agentPeer{nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
+	peer := &agentPeer{logger: m.logger, nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}, pong: make(chan string, 8)}
 	peer.computePool = r.Header.Get(wire.ComputePoolHeader) == wire.ComputePoolFormat && containsCapability(hello.Capabilities, wire.ComputePoolCapability)
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
 	peer.openConnections = openConnectionsOffer && containsCapability(hello.Capabilities, wire.OpenConnectionsCapability)

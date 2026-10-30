@@ -12,7 +12,7 @@ import (
 
 func DefaultGlobal() GlobalConfig {
 	hours := 24
-	return GlobalConfig{FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 5}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
+	return GlobalConfig{FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
 }
 
 func DecodeGlobal(raw string) (GlobalConfig, error) {
@@ -20,9 +20,15 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	if strings.TrimSpace(raw) == "" {
 		return config, nil
 	}
+	// Existing saved documents that omitted the interval retain their historical
+	// five-second effective default. Only a newly created configuration uses two.
+	config.Telemetry.ReportSeconds = 5
 	config.GeodataIntervalHours = nil // Saved legacy cron/disabled schedules require explicit conversion.
 	if err := wire.Decode([]byte(raw), &config); err != nil {
 		return config, ErrInvalid
+	}
+	if config.Telemetry.ReportSeconds == 0 {
+		config.Telemetry.ReportSeconds = 5
 	}
 	if err := ValidateGlobal(config); err != nil {
 		return config, err

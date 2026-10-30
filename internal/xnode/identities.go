@@ -40,6 +40,10 @@ func (s *Service) EnsureIdentity(ctx context.Context, user model.User) (Identity
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.ensureIdentity(ctx, user)
+}
+
+func (s *Service) ensureIdentity(ctx context.Context, user model.User) (Identity, error) {
 	existing, err := s.repo.XNodeIdentityByUser(ctx, user.ID)
 	if err == nil && existing.SubscriptionCipher != "" && len(existing.SubscriptionHash) == sha256.Size && existing.CredentialsCipher != "" {
 		return existing, nil

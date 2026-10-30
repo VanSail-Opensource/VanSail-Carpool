@@ -19,15 +19,35 @@ func (m *Master) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	paid, err := m.service.principalOwners(ctx)
-	if err != nil {
-		return err
-	}
 	native, err := m.service.nativeAvailability(ctx)
 	if err != nil {
 		return err
 	}
 	now := m.service.now()
+	paid := map[int]string{}
+	if global.ConnectionLimit > 0 {
+		observed := map[int]bool{}
+		m.mu.RLock()
+		for id := range m.peers {
+			snapshot := m.live[id]
+			if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
+				for user, count := range snapshot.report.Users.Connections {
+					if count > 0 {
+						observed[user] = true
+					}
+				}
+			}
+		}
+		m.mu.RUnlock()
+		ids := make([]int, 0, len(observed))
+		for id := range observed {
+			ids = append(ids, id)
+		}
+		paid, err = m.service.observedPrincipalOwners(ctx, ids)
+		if err != nil {
+			return err
+		}
+	}
 	m.mu.Lock()
 	totals := map[string]int64{}
 	peers := []*agentPeer{}
@@ -52,28 +72,8 @@ func (m *Master) reconcile(ctx context.Context) error {
 	}
 	m.globalBlocks = blocks
 	m.mu.Unlock()
-	for _, peer := range peers {
-		peer.mu.Lock()
-		force := peer.forceSync
-		peer.forceSync = false
-		peer.mu.Unlock()
-		if force {
-			if repo, ok := m.service.routingRepository(); ok {
-				if err = repo.WakeXNodeRouting(ctx, now); err != nil {
-					return err
-				}
-			}
-		}
-		if err = m.syncNode(ctx, peer, force); err != nil {
-			if force {
-				peer.mu.Lock()
-				peer.forceSync = true
-				peer.mu.Unlock()
-			}
-			if ctx.Err() != nil {
-				return err
-			}
-		}
+	if err = m.syncPeers(ctx, peers, now); err != nil {
+		return err
 	}
 	// Renew authorization before connection observations can consume the deadline
 	// or fail. Delivered traffic settles independently in the journal transaction.
@@ -83,6 +83,10 @@ func (m *Master) reconcile(ctx context.Context) error {
 func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) error {
 	peer.syncMu.Lock()
 	defer peer.syncMu.Unlock()
+	return m.syncNodeLocked(ctx, peer, force)
+}
+
+func (m *Master) syncNodeLocked(ctx context.Context, peer *agentPeer, force bool) error {
 	m.mu.RLock()
 	hello := m.live[peer.nodeID].hello
 	m.mu.RUnlock()
@@ -91,22 +95,22 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 	}
 	config, err := m.cachedConfiguration(ctx, peer, force)
 	if err != nil {
-		return err
+		return syncFailure("compile", err)
 	}
 	config, ready, err := m.prepareCountryForPeer(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("assets", err)
 	}
 	if !ready {
 		return nil
 	}
 	config, err = m.overlayPAYG(ctx, peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("access", err)
 	}
 	prepared, err := preparePeerWire(peer, config, hello.Capabilities)
 	if err != nil {
-		return err
+		return syncFailure("wire", err)
 	}
 	if ready, err = m.ddnsRouteProtectionReady(ctx, peer, prepared, hello.Capabilities); err != nil || !ready {
 		return err
@@ -123,7 +127,7 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 		return nil
 	}
 	if same && !force {
-		return m.syncControls(ctx, peer, controls, oldControls)
+		return syncFailure("controls", m.syncControls(ctx, peer, controls, oldControls))
 	}
 	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, previous)
 	if err != nil {
@@ -164,38 +168,6 @@ func (m *Master) syncNode(ctx context.Context, peer *agentPeer, force bool) erro
 			m.live[peer.nodeID] = snapshot
 		}
 		m.mu.Unlock()
-	}
-	return nil
-}
-
-func (m *Master) syncControls(ctx context.Context, peer *agentPeer, current, previous map[int]bool) error {
-	users := []wire.UserControl{}
-	for id, blocked := range current {
-		if old, ok := previous[id]; !ok || old != blocked {
-			users = append(users, wire.UserControl{ID: id, BlockNew: blocked})
-		}
-	}
-	if len(users) == 0 {
-		return nil
-	}
-	peer.mu.Lock()
-	base := peer.revision
-	peer.mu.Unlock()
-	revision, err := m.service.repo.AdvanceXNodeRevision(ctx, peer.nodeID, base)
-	if err != nil {
-		return err
-	}
-	message := wire.New("user.controls", "", revision, wire.UserControls{Users: users})
-	message.BaseRevision = base
-	peer.mu.Lock()
-	peer.revision = revision
-	peer.lastControls = current
-	peer.mu.Unlock()
-	if err = peer.send(ctx, message); err != nil {
-		peer.mu.Lock()
-		peer.digest = ""
-		peer.mu.Unlock()
-		return err
 	}
 	return nil
 }

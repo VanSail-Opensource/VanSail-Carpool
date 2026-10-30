@@ -1035,3 +1035,19 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_plans_retry_generated.go` wraps the transactional methods in `xnode_routing_plans.go`.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
+
+- `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
+- `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
+- `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
+- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
+- `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
+
+Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
+
+- `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
+
+`xnode_access_restore.go` implements serializable, conditional access-pointer restoration with entitlement, operation, restriction and allowance fences. `xnode_access_repair.go` excludes settled/ambiguous/operation-owned recovery candidates. Outbox busy deferrals retain a sanitized reason and accept a bounded `RetryDelay` without consuming delivery attempts.
+
+`xnode_compile_members.go` batches users, purchase ownership, periods and access preferences into one disposable compilation scope. Existing scan functions and purchase ownership CTEs define its contract. `xnode_observed_owners.go` resolves observed owners plus idle sibling principals using existing indexes. `xnode_command_defer.go` conditionally releases a definitely rejected command attempt; `xnode_command_defer_test.go` protects replay and attempt fencing.
+
+`xnode_compile_benchmark_test.go` compares individual and batched reads over the same synthetic member set in hosted CI, including query count and allocations.

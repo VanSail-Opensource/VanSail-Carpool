@@ -21,14 +21,17 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
 	}
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT u.id FROM users u
- LEFT JOIN purchases p ON p.user_id=u.id AND p.status IN ('active','activating')
- AND julianday(p.valid_from)<=julianday(?) AND julianday(p.valid_until)>julianday(?)
+ LEFT JOIN purchases p ON p.id=(SELECT current.id FROM purchases current WHERE current.user_id=u.id AND current.status IN ('active','activating') AND julianday(current.valid_from)<=julianday(?) AND julianday(current.valid_until)>julianday(?) ORDER BY current.valid_from DESC LIMIT 1)
  LEFT JOIN xnode_identities i ON i.user_id=u.id
  LEFT JOIN xnode_periods a ON a.id=i.current_period_id
  WHERE u.onboarding_state='complete' AND (i.proxy_user_id IS NULL OR
  i.credentials_cipher='' OR i.subscription_cipher='' OR COALESCE(LENGTH(i.subscription_hash),0)<>32 OR
  (p.id IS NOT NULL AND (a.id IS NULL OR a.purchase_id<>p.id OR a.status<>'open')
  AND i.access_disabled=0
+ AND (NOT EXISTS(SELECT 1 FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id)
+ OR (SELECT COUNT(*) FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id AND h.status='open')=1
+ OR (a.purchase_id=p.id AND a.status='closing'))
+ AND (SELECT COUNT(*) FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id AND h.status='open')<2
  AND NOT EXISTS(SELECT 1 FROM admin_temporary_bans b WHERE b.user_id=u.id AND b.restored_at IS NULL)))
  ORDER BY u.id LIMIT 128`, stamp(now), stamp(now))
 	if err != nil {
@@ -49,6 +52,13 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
 		return err
 	}
 	for _, id := range users {
+		blocked, err := comboControlConflictFrom(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			continue
+		}
 		raw, err := json.Marshal(map[string]string{"userId": id})
 		if err != nil {
 			return err

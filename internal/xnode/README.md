@@ -896,3 +896,15 @@ Native usage and immutable refund evidence; historical regression name retained:
 `account_purge.go` closes every owner paid/PAYG period through the existing synchronization/flush barriers. Offline or review periods remain pending. `account_rejoin.go` rotates purged PAYG credentials and starts an empty period while keeping charge numbering and historical periods immutable. Closing PAYG periods accept final acknowledged journal tails; settled periods reject further traffic.
 
 `group_deletion.go` enriches admin group reads and protects unexpired encrypted service assignments. `group_deletion_endpoints.go` removes group references from encrypted endpoint options while preserving empty allow lists; its ciphertext updates commit with deletion. `group_deletion_test.go` and `group_deletion_endpoints_test.go` cover services and deny-all behavior. Named services exclude member PAYG identities, including purged tombstones.
+
+Access repair uses `access_repair.go` and `access_recovery_test.go` to reload current entitlement state under the service mutex, retry stale state three times, and defer operation ownership without exhausting retries. `ensureIdentity` shares that lock; new allowances use the same transactional entitlement fence. `RepairXNodeAccessPeriod` atomically restores a unique open allowance or resumes the current closing allowance; settled/review records and usage counters remain unchanged.
+
+`compile_members.go` preloads disposable member inputs for one compilation. `compile_members_integration_test.go` checks equivalence and fresh usage. `master_sync_workers.go` rotates two bounded workers, skips occupied peer locks and joins before the next pass; its hosted test verifies capacity and cancellation. `command_notifications.go` coalesces acceptance frames and retains terminal results, covered by `command_notifications_test.go`. Definite utility-busy errors defer the receipt without consuming an execution attempt. Saved telemetry intervals remain unchanged; new defaults report every two seconds.
+
+`master_send.go` retains the single outbound queue and safe queue/write timing. `master_commands.go` records command class, delivery outcome and elapsed time at debug level without exposing arguments or results.
+
+`master_sync_workers_test.go` verifies bounded fleet execution. `master_controls.go` retains monotonic volatile control updates. `command_operation.go` owns receipt attempts, definite busy deferrals and terminal outcome persistence.
+
+`access_repair_fences_test.go` checks refund ownership, scheduler exclusion and stale-pointer rejection against the real store.
+
+`reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
