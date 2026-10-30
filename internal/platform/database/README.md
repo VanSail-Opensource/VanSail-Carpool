@@ -1035,3 +1035,5 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
 
 - `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
+
+`xnode_access_restore.go` implements serializable, conditional access-pointer restoration with entitlement, operation, restriction and allowance fences. `xnode_access_repair.go` excludes settled/ambiguous/operation-owned recovery candidates. Outbox busy deferrals retain a sanitized reason and accept a bounded `RetryDelay` without consuming delivery attempts.

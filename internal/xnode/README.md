@@ -888,3 +888,5 @@ the master. Protocol details are documented in the pinned agent compute referenc
 Native usage and immutable refund evidence; historical regression name retained: `account_statistics.go`, `rollover_usage_test.go`.
 
 - `compute_validation_test.go`: Hosted concurrent claim, stale connection/attempt, malformed chunk and decompression-limit regressions.
+
+Access repair uses `access_repair.go` and `access_recovery_test.go` to reload current entitlement state under the service mutex, retry stale state three times, and defer operation ownership without exhausting retries. `ensureIdentity` and `applyPurchase` share that lock. `RepairXNodeAccessPeriod` atomically restores a unique open allowance or resumes the current closing allowance; settled/review records and usage counters remain unchanged.

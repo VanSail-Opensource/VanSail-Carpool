@@ -12,6 +12,10 @@ import (
 func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, strategy string, expires time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.applyPurchase(ctx, id, limit, strategy, expires)
+}
+
+func (s *Service) applyPurchase(ctx context.Context, id string, limit int64, strategy string, expires time.Time) error {
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
 		return err

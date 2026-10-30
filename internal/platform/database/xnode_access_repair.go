@@ -29,6 +29,10 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
  i.credentials_cipher='' OR i.subscription_cipher='' OR COALESCE(LENGTH(i.subscription_hash),0)<>32 OR
  (p.id IS NOT NULL AND (a.id IS NULL OR a.purchase_id<>p.id OR a.status<>'open')
  AND i.access_disabled=0
+ AND (NOT EXISTS(SELECT 1 FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id)
+ OR (SELECT COUNT(*) FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id AND h.status='open')=1
+ OR (a.purchase_id=p.id AND a.status='closing'))
+ AND (SELECT COUNT(*) FROM xnode_periods h WHERE h.proxy_user_id=i.proxy_user_id AND h.purchase_id=p.id AND h.status='open')<2
  AND NOT EXISTS(SELECT 1 FROM admin_temporary_bans b WHERE b.user_id=u.id AND b.restored_at IS NULL)))
  ORDER BY u.id LIMIT 128`, stamp(now), stamp(now))
 	if err != nil {
@@ -49,6 +53,13 @@ func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now 
 		return err
 	}
 	for _, id := range users {
+		blocked, err := comboControlConflictFrom(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			continue
+		}
 		raw, err := json.Marshal(map[string]string{"userId": id})
 		if err != nil {
 			return err
