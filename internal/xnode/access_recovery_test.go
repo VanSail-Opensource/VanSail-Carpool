@@ -61,7 +61,7 @@ type changingAccessRepository struct {
 func (r *changingAccessRepository) ComboControlConflict(context.Context, string) (bool, error) {
 	return r.blocked, nil
 }
-func (r *changingAccessRepository) RepairXNodeAccessPeriod(context.Context, xnode.Identity, model.Purchase, xnode.Period, time.Time) error {
+func (r *changingAccessRepository) RepairXNodeAccessPeriod(context.Context, xnode.Identity, model.Purchase, xnode.Period, time.Time, bool) error {
 	r.attempts++
 	if r.change != nil {
 		r.change()

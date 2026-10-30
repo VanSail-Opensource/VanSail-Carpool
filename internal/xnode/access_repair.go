@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 )
 
@@ -20,7 +20,7 @@ var ErrAccessAmbiguous = errors.New("XNODE_ACCESS_ALLOWANCE_AMBIGUOUS")
 
 type accessRepairRepository interface {
 	ComboControlConflict(context.Context, string) (bool, error)
-	RepairXNodeAccessPeriod(context.Context, Identity, model.Purchase, Period, time.Time) error
+	RepairXNodeAccessPeriod(context.Context, Identity, model.Purchase, Period, time.Time, bool) error
 }
 
 // RepairAccess runs only in the shared durable outbox, never in compilation or
@@ -111,13 +111,33 @@ func (s *Service) repairAccess(ctx context.Context, userID string) error {
 	if open != nil {
 		// Earlier resets can already be settled. Restore only the existing open
 		// period pointer and retain its counters and all historical evidence.
-		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *open, s.now())
+		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *open, s.now(), false)
 	}
 	if closing != nil {
-		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *closing, s.now())
+		return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, *closing, s.now(), false)
 	}
 	if found {
 		return ErrAccessAccountingPending
 	}
-	return s.applyPurchase(ctx, strconv.FormatInt(identity.ProxyUserID, 10), purchase.TrafficLimitBytes, purchase.ResetStrategy, purchase.ValidUntil)
+	if identity.CurrentPeriodID != "" {
+		old, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+		if err != nil {
+			return err
+		}
+		if old.Status == "open" || old.Status == "closing" {
+			if err = s.closePeriod(ctx, old, true); err != nil {
+				return err
+			}
+		}
+	}
+	if err = s.normalizePurchaseSquads(ctx, identity, *purchase); err != nil {
+		return err
+	}
+	id, err := ids.New()
+	if err != nil {
+		return err
+	}
+	at := s.now().UTC()
+	period := Period{ID: id, ProxyUserID: identity.ProxyUserID, PurchaseID: purchase.ID, StartedAt: at, LastResetAt: &at, LimitBytes: purchase.TrafficLimitBytes, Strategy: purchase.ResetStrategy, Status: "open"}
+	return r.RepairXNodeAccessPeriod(ctx, identity, *purchase, period, at, true)
 }

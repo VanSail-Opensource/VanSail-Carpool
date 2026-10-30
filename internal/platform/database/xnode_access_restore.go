@@ -10,18 +10,18 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-// RepairXNodeAccessPeriod restores only an existing unsettled allowance. The
+// RepairXNodeAccessPeriod restores an unsettled allowance or creates its missing initial period. The
 // serializable transaction fences entitlement/operation changes and pointer races.
-func (s *Store) RepairXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time) error {
+func (s *Store) RepairXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time, create bool) error {
 	for attempt := 0; ; attempt++ {
-		err := s.restoreXNodeAccessPeriod(ctx, identity, purchase, period, at)
+		err := s.restoreXNodeAccessPeriod(ctx, identity, purchase, period, at, create)
 		if !s.retryTransaction(ctx, err, attempt) {
 			return err
 		}
 	}
 }
 
-func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time) error {
+func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time, create bool) error {
 	if !IsPostgres(s.db) {
 		s.writeMu.Lock()
 		defer s.writeMu.Unlock()
@@ -63,7 +63,12 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 	if !eligible {
 		return xnode.ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=? AND proxy_user_id=? AND purchase_id=? AND status=?`, period.ID, identity.ProxyUserID, purchase.ID, period.Status)
+	var result sql.Result
+	if create {
+		result, err = tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,limit_bytes,strategy,last_reset_at,status) SELECT ?,?,?,?,?,?,?,'open' WHERE NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=? AND purchase_id=?)`, period.ID, identity.ProxyUserID, purchase.ID, stamp(at), purchase.TrafficLimitBytes, purchase.ResetStrategy, stamp(at), identity.ProxyUserID, purchase.ID)
+	} else {
+		result, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=? AND proxy_user_id=? AND purchase_id=? AND status=?`, period.ID, identity.ProxyUserID, purchase.ID, period.Status)
+	}
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,6 @@ func BenchmarkXNodeCompileMemberReads(b *testing.B) {
 	}
 	b.Run("Individual", func(b *testing.B) {
 		b.ReportAllocs()
-		b.ReportMetric(float64(4*len(ids)), "queries/op")
 		for b.Loop() {
 			for _, id := range ids {
 				if _, err = s.UserByID(ctx, id); err != nil {
@@ -44,14 +43,15 @@ func BenchmarkXNodeCompileMemberReads(b *testing.B) {
 				}
 			}
 		}
+		b.ReportMetric(float64(4*len(ids)), "queries/op")
 	})
 	b.Run("Batched", func(b *testing.B) {
 		b.ReportAllocs()
-		b.ReportMetric(6, "queries/op")
 		for b.Loop() {
 			if _, err = s.XNodeCompileMembers(ctx, ids); err != nil {
 				b.Fatal(err)
 			}
 		}
+		b.ReportMetric(6, "queries/op")
 	})
 }
