@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // PaymentCallbackReplay reports whether a verified provider callback was
@@ -23,4 +24,15 @@ func (s *Store) PaymentCallbackReplay(ctx context.Context, provider, dedupeKey, 
 		return false, ErrConflict
 	}
 	return true, nil
+}
+
+// compactPaymentCallbackTx replaces a transient claim with its replay evidence.
+func compactPaymentCallbackTx(ctx context.Context, tx *sql.Tx, provider, dedupeKey, orderID, payloadHash, eventID string, now time.Time) error {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO payment_callback_tombstones(provider,dedupe_key,order_id,
+		payload_hash,received_at,processed_at) VALUES(?,?,?,?,?,?)`, provider, dedupeKey, orderID,
+		payloadHash, stamp(now), stamp(now)); err != nil {
+		return fmt.Errorf("preserve payment callback tombstone: %w", err)
+	}
+	_, err := tx.ExecContext(ctx, `DELETE FROM webhook_events WHERE id=?`, eventID)
+	return err
 }

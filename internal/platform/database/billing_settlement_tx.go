@@ -16,13 +16,17 @@ import (
 // settlePaymentTx shares the existing ledger path with atomic on-chain transfer claims.
 func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedupeKey, payloadHash, orderID, tradeID, chargeID string, now time.Time) (model.PaymentOrder, bool, error) {
 	var existingOrderID string
-	err := tx.QueryRowContext(ctx, `SELECT order_id FROM webhook_events WHERE provider=? AND dedupe_key=?`, provider, dedupeKey).Scan(&existingOrderID)
+	err := tx.QueryRowContext(ctx, `SELECT order_id FROM webhook_events WHERE provider=? AND dedupe_key=?
+		UNION ALL SELECT order_id FROM payment_callback_tombstones WHERE provider=? AND dedupe_key=?`, provider, dedupeKey, provider, dedupeKey).Scan(&existingOrderID)
 	if err == nil {
 		if existingOrderID != orderID {
 			return model.PaymentOrder{}, false, ErrConflict
 		}
 		order, loadErr := paymentOrderTx(ctx, tx, orderID)
 		if loadErr == nil && order.ProviderTradeID != nil && tradeID != "" && *order.ProviderTradeID != tradeID {
+			return model.PaymentOrder{}, false, ErrConflict
+		}
+		if loadErr == nil && order.ProviderChargeID != nil && chargeID != "" && *order.ProviderChargeID != chargeID {
 			return model.PaymentOrder{}, false, ErrConflict
 		}
 		return order, false, loadErr
@@ -58,7 +62,7 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 		return model.PaymentOrder{}, false, ErrConflict
 	}
 	if order.Status == "paid" || order.Status == "refunded" {
-		return order, false, nil
+		return order, false, compactPaymentCallbackTx(ctx, tx, provider, dedupeKey, order.ID, payloadHash, eventID, now)
 	}
 	retired, err := accountOrderRetiredTx(ctx, tx, order.UserID, order.CreatedAt)
 	if err != nil {
@@ -111,14 +115,7 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 		}, now); err != nil {
 		return model.PaymentOrder{}, false, fmt.Errorf("queue payment receipt: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO payment_callback_tombstones(provider,dedupe_key,order_id,
-		payload_hash,received_at,processed_at) VALUES(?,?,?,?,?,?)`, provider, dedupeKey, order.ID,
-		payloadHash, stamp(now), stamp(now)); err != nil {
-		return model.PaymentOrder{}, false, fmt.Errorf("preserve payment callback tombstone: %w", err)
-	}
-	// The webhook row is only a transient concurrency claim. The compact
-	// callback tombstone remains after terminal payment detail is pruned.
-	if _, err := tx.ExecContext(ctx, `DELETE FROM webhook_events WHERE id=?`, eventID); err != nil {
+	if err := compactPaymentCallbackTx(ctx, tx, provider, dedupeKey, order.ID, payloadHash, eventID, now); err != nil {
 		return model.PaymentOrder{}, false, err
 	}
 	return order, true, nil

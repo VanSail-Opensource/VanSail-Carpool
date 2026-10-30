@@ -94,3 +94,6 @@ After a forward migration, refresh the isolated SQLite inventory and run `python
 Schema version 25 adds provider rate and unlimited-capacity metadata without changing historical records; the source contract and fingerprint reflect the matching SQLite migration 111.
 
 Schema version 29 records account lifecycle and authenticated Telegram block ordering. Minimal non-login account subjects retain immutable FK-backed accounting after purge; operational profile/credential data is removed.
+
+Schema version 30 repairs binary collation on `users.last_purged_at` for fresh and
+upgraded databases. It preserves timestamp values and the immutable migration history.

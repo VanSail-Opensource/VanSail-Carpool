@@ -1051,3 +1051,10 @@ Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL).
 `xnode_compile_members.go` batches users, purchase ownership, periods and access preferences into one disposable compilation scope. Existing scan functions and purchase ownership CTEs define its contract. `xnode_observed_owners.go` resolves observed owners plus idle sibling principals using existing indexes. `xnode_command_defer.go` conditionally releases a definitely rejected command attempt; `xnode_command_defer_test.go` protects replay and attempt fencing.
 
 `xnode_compile_benchmark_test.go` compares individual and batched reads over the same synthetic member set in hosted CI, including query count and allocations.
+
+Payment settlement checks compact callback tombstones inside the settlement
+transaction before claiming a webhook. Replays retain order/trade/charge binding;
+new callback keys for terminal payments are compacted without another credit.
+`billing_payment_test.go` covers both paths and rejects cross-order/charge reuse.
+Group-deletion regression checks compare historical squad membership as a set,
+preserving paid evidence independently of catalog serialization order.

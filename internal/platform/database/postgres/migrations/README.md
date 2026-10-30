@@ -84,3 +84,6 @@ ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
 `00028_retire_questionnaires.sql` mirrors SQLite 114 and archives financial evidence before removing operational tables.
 
 `00029_account_lifecycle.sql` mirrors SQLite 115, including database guards for new purchases, payments, sessions and onboarding completion.
+
+`00030_account_timestamp_collation.sql` restores the required C collation on the
+account purge timestamp without changing its stored evidence or prior migrations.

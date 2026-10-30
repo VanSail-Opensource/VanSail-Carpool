@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -60,8 +62,16 @@ func TestGroupDeletionRemovesLiveCatalogAndPreservesPaidHistory(t *testing.T) {
 	if err = s.DB().QueryRowContext(ctx, `SELECT included_squad_uuids FROM combos WHERE id=?`, c.ID).Scan(&live); err != nil || live != `["retained"]` {
 		t.Fatal(live, err)
 	}
-	if err = s.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=?`, p.ID).Scan(&snapshot); err != nil || snapshot != `["retired","retained"]` {
+	if err = s.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=?`, p.ID).Scan(&snapshot); err != nil {
 		t.Fatal("legacy entitlement changed", snapshot, err)
+	}
+	var groups []string
+	if err = json.Unmarshal([]byte(snapshot), &groups); err != nil {
+		t.Fatal("decode historical groups", err)
+	}
+	slices.Sort(groups)
+	if !slices.Equal(groups, []string{"retained", "retired"}) {
+		t.Fatal("legacy entitlement changed", groups)
 	}
 	var prices, ledger int
 	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_product_settings WHERE product_id='retained'`).Scan(&prices); err != nil || prices != 1 {

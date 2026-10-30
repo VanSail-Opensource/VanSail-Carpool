@@ -50,6 +50,14 @@ func TestSettlePaymentCreditsExactlyOnce(t *testing.T) {
 	if replayed, applied, err = store.SettlePayment(ctx, "ezpay", "event-1", "different-payload", order.ID, "trade-1", "charge-1", now.Add(2*time.Minute)); err != nil || applied || replayed.Status != "paid" {
 		t.Fatalf("metadata-varied replay = (status %q, applied %t, error %v), want (paid, false, nil)", replayed.Status, applied, err)
 	}
+	for _, event := range []string{"event-1", "event-2"} {
+		if _, _, err := store.SettlePayment(ctx, "ezpay", event, "payload-a", order.ID, "trade-1", "wrong-charge", now); !errors.Is(err, ErrConflict) {
+			t.Fatalf("charge-varied replay %s error = %v, want ErrConflict", event, err)
+		}
+	}
+	if _, applied, err = store.SettlePayment(ctx, "ezpay", "event-2", "payload-a", order.ID, "trade-1", "charge-1", now); err != nil || applied {
+		t.Fatalf("second callback = (applied %t, error %v), want (false, nil)", applied, err)
+	}
 	otherOrder := createTestPaymentOrder(t, store, user.ID, "ezpay", 2_500, now.Add(3*time.Minute))
 	if _, _, err := store.SettlePayment(ctx, "ezpay", "event-1", "payload-a", otherOrder.ID, "trade-1", "charge-1", now.Add(4*time.Minute)); !errors.Is(err, ErrConflict) {
 		t.Fatalf("cross-order replay error = %v, want ErrConflict", err)
@@ -88,7 +96,7 @@ func TestSettlePaymentCreditsExactlyOnce(t *testing.T) {
 		t.Fatalf("payment announcement jobs = %d, error %v", announcementCount, err)
 	}
 	assertRowCount(t, store, "webhook_events", 0)
-	assertRowCount(t, store, "payment_callback_tombstones", 1)
+	assertRowCount(t, store, "payment_callback_tombstones", 2)
 }
 
 func TestSettlePaymentOverflowRollsBackWebhookAndCredit(t *testing.T) {
