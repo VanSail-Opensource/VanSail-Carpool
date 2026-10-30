@@ -94,12 +94,15 @@ func TestRecoveryDoesNotResetClosedOrExhaustedPurchase(t *testing.T) {
 				t.Fatal(err)
 			}
 			err = f.service.RepairAccess(ctx, model.OutboxJob{Payload: `{"userId":"` + f.user.ID + `"}`})
-			if state == "closed" && !errors.Is(err, xnode.ErrConflict) {
-				t.Fatalf("settled period reopened: %v", err)
+			if state == "closed" && !errors.Is(err, xnode.ErrAccessAccountingPending) {
+				t.Fatalf("settled repair lost its accounting reason: %v", err)
 			}
 			periods, err := f.store.XNodePeriods(ctx, identity.ProxyUserID)
 			if err != nil || len(periods) != 1 {
 				t.Fatalf("new allowance created: %+v %v", periods, err)
+			}
+			if state == "closed" && periods[0].Status != "closed" {
+				t.Fatal("settled period reopened")
 			}
 			config, err := f.service.Compile(ctx, f.node.ID)
 			if err != nil || len(config.Users) != 0 {
