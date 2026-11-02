@@ -54,7 +54,7 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
 	// A replay must remain available after its original decision expires.
 	var exists int
-	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND idempotency_key=$2))::bigint", input.UserID, input.IdempotencyKey).Scan(&exists)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND idempotency_key=$2))::integer", input.UserID, input.IdempotencyKey).Scan(&exists)
 	if err != nil {
 		return model.Purchase{}, err
 	}

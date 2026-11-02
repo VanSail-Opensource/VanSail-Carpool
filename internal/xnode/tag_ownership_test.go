@@ -29,7 +29,7 @@ func TestInactiveMemberTagsStayReservedAcrossNumericNamespaces(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET username='bob-alice',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = f.store.UserByID(ctx, user.ID)

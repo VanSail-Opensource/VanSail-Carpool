@@ -14,7 +14,7 @@ import (
 // PricingMaintenance reads explicit bounded administrative maintenance declarations.
 func (s *Store) PricingMaintenance(ctx context.Context, node string, now time.Time) (bool, error) {
 	var yes int
-	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='MAINTENANCE' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND (scope_type='global' OR (scope_type IN ('node','machine') AND scope_id=$3))))::bigint", pricingStamp(now), pricingStamp(now), node).Scan(&yes)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='MAINTENANCE' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND (scope_type='global' OR (scope_type IN ('node','machine') AND scope_id=$3))))::integer", pricingStamp(now), pricingStamp(now), node).Scan(&yes)
 	return yes == 1, err
 }
 

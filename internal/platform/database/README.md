@@ -449,12 +449,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_bulk_query.go`, `admin_bulk_shift.go`, and `admin_bulk_extension.go` preview inclusive-OR active targets, deduplicate users, shift active and queued terms to the minute, and create one durable bulk job.
 - `compensation_config.go`, `compensation_observation.go`, `compensation_events.go`, `compensation_review.go`, `compensation_notification.go`, and `compensation_dismiss.go` persist revisioned outage policy, node observations, frozen snapshots, cursor-safe projections, atomic reviewed extensions, and provider-gated compensation detail cards.
 - `automatic_renewal_plan.go` and `automatic_renewal_commit.go` preserve explicit administrator entitlement overrides and edited term lengths when creating a successor.
-- `migrations/035_abuse_warning_cooldown.sql` persists the policy-controlled abuse record cooldown under its original column name for compatibility.
-- `migrations/038_durable_abuse_processing.sql` adds the bounded streak policy, normalized pending events, 30-minute rollups, emitted-state compatibility, compact incident facts, and punishment completion evidence.
-- `migrations/039_abuse_record_retention_and_ip_bans.sql` adds configurable record retention support and resumable IP-ban scan state.
-- `migrations/040_admin_user_provider_commands.sql` adds durable manual temporary-ban state.
-- `migrations/041_admin_coupon_discard_commands.sql` binds administrative coupon discards to idempotency keys.
-- `migrations/042_community_membership.sql` moves legacy membership onboarding users to username or agreement without changing their Telegram facts.
 - `community_membership_test.go` covers legacy mapping, membership-fact persistence, and strict active-window boundaries.
 - `compensation_observation_test.go` covers persisted/missing nodes, snapshotted policy, disabled precedence, and repeated outages.
 - `compensation_review_test.go` covers inactive skips, exact minute shifts, notifications, operation linkage, stale reviews, replay, and dismissal.
@@ -539,7 +533,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 
 `payment_profiles_test.go` covers independent provider-account persistence and stable-ID lookup.
 
-The `migrations/` directory contains the ordered embedded schema history. New
+The `postgres/migrations/` directory contains the ordered native PostgreSQL history. New
 schema changes must be additive migrations; deployed migration files are immutable.
 
 Migration `015_payment_provider_profiles.sql` consolidates the temporary

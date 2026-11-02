@@ -4,19 +4,22 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
 // Live control receipts survive transient-job retention while their owned term
 // still needs exact-state synchronization. Superseded or forfeited terms cannot resume.
-const liveComboControlPredicate = `operation.kind IN ('member_squad_switch','member_early_activation') AND EXISTS(
+func liveComboControlPredicate(first int) string {
+	return fmt.Sprintf(`operation.kind IN ('member_squad_switch','member_early_activation') AND EXISTS(
 	SELECT 1 FROM provider_operation_items item JOIN purchases purchase ON purchase.id=item.target_id
 	WHERE item.operation_id=operation.id AND item.target_type='purchase' AND purchase.user_id=operation.owner_user_id
-	AND purchase.valid_from<=$1 AND purchase.valid_until>$2 AND
+	AND purchase.valid_from<=$%d AND purchase.valid_until>$%d AND
 	((operation.kind='member_squad_switch' AND purchase.status='active') OR
 	 (operation.kind='member_early_activation' AND purchase.status IN ('active','activating','failed')))
 	AND NOT EXISTS(SELECT 1 FROM purchases other WHERE other.user_id=purchase.user_id AND other.id<>purchase.id
-		AND other.status IN ('active','activating') AND other.valid_from<=$3 AND other.valid_until>$4))`
+		AND other.status IN ('active','activating') AND other.valid_from<=$%d AND other.valid_until>$%d))`, first, first+1, first+2, first+3)
+}
 
 func recoverComboControlJobTx(ctx context.Context, tx *sql.Tx, jobID string, now time.Time) error {
 	var operationID string
@@ -56,7 +59,7 @@ func recoverComboControlJobTx(ctx context.Context, tx *sql.Tx, jobID string, now
 func preserveComboControlRecoveryTx(ctx context.Context, tx *sql.Tx, now time.Time) error {
 	rows, err := tx.QueryContext(ctx, `SELECT job.id,job.payload FROM maintenance_failed_sync_jobs job JOIN provider_operations operation
 		ON operation.id=(CASE ((job.payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (job.payload)::jsonb #>> '{operationId}' END) WHERE job.kind='provider_operation'
-		AND operation.status IN ('failed','pending_review') AND `+liveComboControlPredicate,
+		AND operation.status IN ('failed','pending_review') AND `+liveComboControlPredicate(1),
 		stamp(now), stamp(now), stamp(now), stamp(now))
 	if err != nil {
 		return err

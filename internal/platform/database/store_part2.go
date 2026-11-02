@@ -31,7 +31,7 @@ func (s *Store) retryAttempt_QueueProxyRepair(ctx context.Context, userID, missi
 	}
 	if affected == 1 {
 		var purchased int
-		if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::bigint", userID, stamp(now)).Scan(&purchased); err != nil {
+		if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::integer", userID, stamp(now)).Scan(&purchased); err != nil {
 			return model.User{}, err
 		}
 		if purchased == 1 {

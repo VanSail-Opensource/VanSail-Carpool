@@ -16,7 +16,7 @@ import (
 func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, excludedAddonIDs []string, now time.Time) (model.Purchase, error) {
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	var replay int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE auto_renew_source_purchase_id=$1))::bigint", purchaseID).Scan(&replay); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE auto_renew_source_purchase_id=$1))::integer", purchaseID).Scan(&replay); err != nil {
 		return model.Purchase{}, err
 	}
 	if replay == 0 {

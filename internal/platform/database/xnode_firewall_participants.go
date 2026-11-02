@@ -40,7 +40,7 @@ func (s *Store) JoinFirewallParticipants(ctx context.Context, node string, bans 
 			if err != nil {
 				return err
 			}
-			_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET participants=$1 WHERE `+field+`=$1 AND generation=$2`, raw, key, gen)
+			_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET participants=$1 WHERE `+field+`=$2 AND generation=$3`, raw, key, gen)
 			return err
 		}
 		for _, b := range bans {

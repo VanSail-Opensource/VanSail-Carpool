@@ -129,7 +129,7 @@ func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generat
 			}
 		}
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET expired=$1,released_version=$2,released_at=CASE WHEN $3>0 THEN $4 ELSE released_at END WHERE `+field+`=$1 AND generation=$2`, raw, released, released, stamp(time.Now().UTC()), key, generation)
+	_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET expired=$1,released_version=$2,released_at=CASE WHEN $3>0 THEN $4 ELSE released_at END WHERE `+field+`=$5 AND generation=$6`, raw, released, released, stamp(time.Now().UTC()), key, generation)
 	if err != nil {
 		return fmt.Errorf("record firewall expiry: %w", err)
 	}

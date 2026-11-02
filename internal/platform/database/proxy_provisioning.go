@@ -9,7 +9,7 @@ import (
 // HasProvisionablePurchase limits remote creation to paid, unexpired access.
 func (s *Store) HasProvisionablePurchase(ctx context.Context, userID string, now time.Time) (bool, error) {
 	var exists int
-	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND valid_until>$2))::bigint", userID, stamp(now)).Scan(&exists)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND valid_until>$2))::integer", userID, stamp(now)).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("check provisionable purchase: %w", err)
 	}

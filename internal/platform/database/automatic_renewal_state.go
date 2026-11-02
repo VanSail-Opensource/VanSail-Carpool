@@ -57,7 +57,7 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 		return nil
 	}
 	var exists int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::bigint", purchaseID, userID).Scan(&exists); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::integer", purchaseID, userID).Scan(&exists); err != nil {
 		return fmt.Errorf("find automatic renewal purchase: %w", err)
 	}
 	if err := tx.Rollback(); err != nil {
@@ -122,7 +122,7 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	// An older term can retain a stale preference after a later purchase has
 	// already taken over. Retire that preference without reporting a failure.
 	var superseded int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id\n\t\tWHERE old.id=$1 AND next.id<>old.id AND next.status IN ('queued','activating','active')\n\t\tAND next.valid_until>old.valid_until))::bigint", purchaseID).Scan(&superseded); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id\n\t\tWHERE old.id=$1 AND next.id<>old.id AND next.status IN ('queued','activating','active')\n\t\tAND next.valid_until>old.valid_until))::integer", purchaseID).Scan(&superseded); err != nil {
 		return err
 	}
 	if superseded == 1 {

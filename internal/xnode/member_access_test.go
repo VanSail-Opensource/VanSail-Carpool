@@ -15,7 +15,7 @@ import (
 func TestPaidMemberWithoutPanelUsernameHasHostsAndAdmission(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
-	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET username=NULL WHERE id=$1`, f.user.ID); err != nil {
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET telegram_username='' WHERE id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Paid host", Address: "proxy.example", Port: 443, Enabled: true}); err != nil {

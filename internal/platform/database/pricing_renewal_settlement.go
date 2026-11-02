@@ -71,7 +71,7 @@ func validatePricingRenewalSettlementTx(ctx context.Context, tx *sql.Tx, purchas
 		return err
 	}
 	var held int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='HOLD_RENEWAL' AND scope_type='purchase' AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::bigint", purchase, pricingStamp(now), pricingStamp(now)).Scan(&held); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='HOLD_RENEWAL' AND scope_type='purchase' AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::integer", purchase, pricingStamp(now), pricingStamp(now)).Scan(&held); err != nil {
 		return err
 	}
 	if held != 0 {

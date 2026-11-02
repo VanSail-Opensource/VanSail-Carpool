@@ -39,3 +39,5 @@ objects and verifies idempotence. `retirement_upgrade_test.go` and
 `community_retirement_upgrade_test.go` seed and verify retained historical
 accounting/reward evidence. `runtime_test.go` checks ownership and notifications.
 No local automated suites are permitted by repository policy.
+
+Native scalar flag projections use PostgreSQL boolean-to-integer casts explicitly; Go integer consumers do not depend on connector row coercion. Fixture users use existing Telegram identity columns and never recreate retired username fields.

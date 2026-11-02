@@ -14,7 +14,7 @@ import (
 func (s *Store) PriceCatalog(ctx context.Context, combos []model.Combo, products []model.SquadProduct, now time.Time) ([]model.Combo, []model.SquadProduct, error) {
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	var active int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_product_settings WHERE dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC') OR EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND status='ACTIVE' AND expires_at>$1))::bigint", pricingStamp(now)).Scan(&active); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_product_settings WHERE dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC') OR EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND status='ACTIVE' AND expires_at>$1))::integer", pricingStamp(now)).Scan(&active); err != nil {
 		return nil, nil, err
 	}
 	if active == 0 {
@@ -26,7 +26,7 @@ func (s *Store) PriceCatalog(ctx context.Context, combos []model.Combo, products
 	}
 	defer tx.Rollback()
 	var paused int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2))::bigint", pricingStamp(now), pricingStamp(now)).Scan(&paused); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2))::integer", pricingStamp(now), pricingStamp(now)).Scan(&paused); err != nil {
 		return nil, nil, err
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT product_type||':'||product_id FROM pricing_product_settings WHERE dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC'`)

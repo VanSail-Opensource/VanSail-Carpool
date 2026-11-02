@@ -67,7 +67,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	if counts["provider_operation_jobs"], err = deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE kind='provider_operation'
 		AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END) IN (SELECT id FROM provider_operations operation
 			WHERE status IN ('succeeded','failed','compensated') AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
-			AND NOT (status='failed' AND (`+liveComboControlPredicate+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
+			AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune provider operation jobs: %w", err)
 	}
 	// Keep terminal operations that durable domain records still use as their
@@ -75,7 +75,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	if counts["provider_operations"], err = deleteCount(ctx, tx, `DELETE FROM provider_operations AS operation
 		WHERE status IN ('succeeded','failed','compensated')
 		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
-		AND NOT (status='failed' AND (`+liveComboControlPredicate+`))
+		AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`))
 		AND NOT EXISTS (SELECT 1 FROM admin_temporary_bans ban
 			WHERE ban.ban_operation_id=operation.id OR ban.unban_operation_id=operation.id)
 		AND NOT EXISTS (SELECT 1 FROM node_compensation_events event

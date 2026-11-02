@@ -119,7 +119,7 @@ func controlFixture(t *testing.T, paid bool) fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.ExecContext(ctx, `UPDATE users SET username='alice',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
+	if _, err = db.ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = store.UserByID(ctx, user.ID)

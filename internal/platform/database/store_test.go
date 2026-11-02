@@ -39,7 +39,7 @@ func TestQueueProxyRepairPreservesCompletedSignup(t *testing.T) {
 	store := newTestStore(t)
 	user := createTestUser(t, store, 20005)
 	now := time.Date(2026, 8, 8, 12, 0, 0, 0, time.UTC)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='river',onboarding_state='complete',group_joined=1,channel_joined=1,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',group_joined=1,channel_joined=1,
 		policy_accepted_at=$1,proxy_user_id='remote-user' WHERE id=$2`, stamp(now), user.ID); err != nil {
 		t.Fatal(err)
 	}

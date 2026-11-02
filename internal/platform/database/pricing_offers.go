@@ -94,7 +94,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 	id := hex.EncodeToString(h[:])
 	_, err = s.pricingCache.Load(ctx, "exposure:"+id, time.Hour, func() ([]byte, error) {
 		var enabled int
-		if e := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=$1 AND product_id=$2 AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC'))::bigint", kind, product).Scan(&enabled); e != nil {
+		if e := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=$1 AND product_id=$2 AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC'))::integer", kind, product).Scan(&enabled); e != nil {
 			return nil, e
 		}
 		if enabled == 0 {

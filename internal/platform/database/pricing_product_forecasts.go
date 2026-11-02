@@ -16,7 +16,7 @@ func (s *Store) PricingProductForecasts(ctx context.Context, kind, id string, no
 	day := now.UTC().Truncate(24 * time.Hour)
 	entity := kind + ":" + id
 	var exists int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='product' AND entity_id=$1 AND day=$2))::bigint", entity, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='product' AND entity_id=$1 AND day=$2))::integer", entity, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
 	query := `SELECT SUBSTR(l.created_at,1,10),-SUM(l.delta_txb_minor)` + pricingComboReceiptJoins + ` WHERE ` + pricingComboReceiptScope + ` AND l.created_at>=$1 AND l.created_at<$2 GROUP BY SUBSTR(l.created_at,1,10)`

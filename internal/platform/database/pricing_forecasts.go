@@ -100,7 +100,7 @@ func (s *Store) PricingFeatureBatch(ctx context.Context, now time.Time, cursor s
 func (s *Store) pricingNodeForecast(ctx context.Context, node string, now time.Time) error {
 	day := now.UTC().Truncate(24 * time.Hour)
 	var exists int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='node' AND entity_id=$1 AND day=$2))::bigint", node, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='node' AND entity_id=$1 AND day=$2))::integer", node, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
 	// Existing raw accounting is the only traffic source. Missing dates are never

@@ -82,7 +82,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		}
 	}
 	var queued int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND id<>$2 AND valid_until>$3))::bigint", userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND id<>$2 AND valid_until>$3))::integer", userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("check queued purchase: %w", err)
 	}
 	if queued == 1 {

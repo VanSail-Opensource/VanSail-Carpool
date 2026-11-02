@@ -30,7 +30,7 @@ func (s *Store) QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInpu
 
 func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
 	var exists int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchase_addon_adjustments WHERE purchase_id=$1 AND idempotency_key=$2))::bigint", input.PurchaseID, input.IdempotencyKey).Scan(&exists); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchase_addon_adjustments WHERE purchase_id=$1 AND idempotency_key=$2))::integer", input.PurchaseID, input.IdempotencyKey).Scan(&exists); err != nil {
 		return model.Purchase{}, err
 	}
 	if exists == 0 {

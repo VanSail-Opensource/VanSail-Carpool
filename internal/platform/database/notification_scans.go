@@ -93,7 +93,7 @@ func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Con
 		anchor = stamp(lastReset.UTC())
 	}
 	var alreadyQueued int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM user_notification_events\n\t\tWHERE event_key ILIKE $1 AND created_at>=$2))::bigint", "traffic-90:"+purchaseID+":%", anchor).Scan(&alreadyQueued); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM user_notification_events\n\t\tWHERE event_key ILIKE $1 AND created_at>=$2))::integer", "traffic-90:"+purchaseID+":%", anchor).Scan(&alreadyQueued); err != nil {
 		return false, err
 	}
 	if alreadyQueued == 1 {

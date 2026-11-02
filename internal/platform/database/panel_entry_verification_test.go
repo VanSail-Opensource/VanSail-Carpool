@@ -30,7 +30,7 @@ func TestPanelEntryVerificationAndOnboardingCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	check(true)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='verified',onboarding_state='agreement' WHERE id=$1`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='agreement' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	revision, ids, err := store.CurrentAgreementContract(ctx)

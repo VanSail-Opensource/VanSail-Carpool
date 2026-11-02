@@ -66,7 +66,7 @@ These READMEs describe the direct files in each implementation package:
 | Backups and restore | [internal/platform/backup/README.md](../../internal/platform/backup/README.md) |
 | Runtime configuration | [internal/platform/config/README.md](../../internal/platform/config/README.md) |
 | Database | [internal/platform/database/README.md](../../internal/platform/database/README.md) |
-| Database migrations | [internal/platform/database/migrations/README.md](../../internal/platform/database/migrations/README.md) |
+| Database migrations | [internal/platform/database/postgres/migrations/README.md](../../internal/platform/database/postgres/migrations/README.md) |
 | Reviewed database administration | [internal/platform/databaseadmin/README.md](../../internal/platform/databaseadmin/README.md) |
 | Identifier generation | [internal/platform/ids/README.md](../../internal/platform/ids/README.md) |
 | Durable outbox worker | [internal/platform/outbox/README.md](../../internal/platform/outbox/README.md) |

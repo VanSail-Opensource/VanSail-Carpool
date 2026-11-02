@@ -45,6 +45,10 @@ func TestPostgresBaseline(t *testing.T) {
 			t.Fatal("native JSON contract missing", err)
 		}
 	}
+	var present int
+	if err = db.QueryRowContext(ctx, `SELECT (EXISTS(SELECT 1))::integer`).Scan(&present); err != nil || present != 1 {
+		t.Fatal("native scalar flag transport changed", err)
+	}
 	var timestamp string
 	if err = db.QueryRowContext(ctx, `SELECT $1::text`, "2026-10-24T01:02:03.123456789Z").Scan(&timestamp); err != nil || timestamp != "2026-10-24T01:02:03.123456789Z" {
 		t.Fatal("timestamp evidence changed", err)

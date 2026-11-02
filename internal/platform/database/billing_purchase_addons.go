@@ -58,7 +58,7 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	}
 	defer func() { _ = tx.Rollback() }()
 	var owned int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::bigint", input.PurchaseID, input.UserID).Scan(&owned); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::integer", input.PurchaseID, input.UserID).Scan(&owned); err != nil {
 		return model.Purchase{}, fmt.Errorf("verify purchase ownership: %w", err)
 	}
 	if owned == 0 {

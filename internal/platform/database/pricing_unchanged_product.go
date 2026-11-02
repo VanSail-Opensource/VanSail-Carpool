@@ -26,7 +26,7 @@ func (s *Store) retryAttempt_recordUnchangedProduct(ctx context.Context, kind, p
 		return err
 	}
 	var exists int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_decisions WHERE product_type=$1 AND product_id=$2 AND policy_version=$3 AND generated_at>=$4))::bigint", kind, product, p.Version, pricingStamp(now.UTC().Truncate(time.Minute))).Scan(&exists); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_decisions WHERE product_type=$1 AND product_id=$2 AND policy_version=$3 AND generated_at>=$4))::integer", kind, product, p.Version, pricingStamp(now.UTC().Truncate(time.Minute))).Scan(&exists); err != nil {
 		return err
 	}
 	if exists != 0 {

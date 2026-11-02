@@ -160,7 +160,7 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 		return model.User{}, err
 	}
 	var purchased int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::bigint", userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::integer", userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
 		return model.User{}, err
 	}
 	if purchased == 1 {

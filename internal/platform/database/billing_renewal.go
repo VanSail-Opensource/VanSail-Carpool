@@ -64,7 +64,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		return model.RenewalBatch{}, ErrConflict
 	}
 	var replay int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM renewal_batches WHERE user_id=$1 AND idempotency_key=$2))::bigint", input.UserID, input.IdempotencyKey).Scan(&replay); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM renewal_batches WHERE user_id=$1 AND idempotency_key=$2))::integer", input.UserID, input.IdempotencyKey).Scan(&replay); err != nil {
 		return model.RenewalBatch{}, err
 	}
 	if replay == 0 {

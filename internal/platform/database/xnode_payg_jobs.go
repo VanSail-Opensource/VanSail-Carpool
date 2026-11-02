@@ -14,7 +14,7 @@ func enqueuePAYGUserTx(ctx context.Context, tx *sql.Tx, user string, now time.Ti
 		return err
 	}
 	var enabled int
-	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM squad_product_overrides WHERE billing_mode='payg') OR EXISTS(SELECT 1 FROM xnode_payg_accounts WHERE user_id=$1))::bigint", user).Scan(&enabled); err != nil || enabled == 0 {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM squad_product_overrides WHERE billing_mode='payg') OR EXISTS(SELECT 1 FROM xnode_payg_accounts WHERE user_id=$1))::integer", user).Scan(&enabled); err != nil || enabled == 0 {
 		return err
 	}
 	return insertOutboxTx(ctx, tx, xnode.PAYGJob, string(raw), now, now)

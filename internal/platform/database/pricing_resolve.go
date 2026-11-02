@@ -65,7 +65,7 @@ func pricingAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, now ti
 
 func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, now time.Time) error {
 	var blocked int
-	err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND command='PAUSE_ADMISSIONS' AND (scope_type='global' OR (scope_type='product' AND scope_id=$3))))::bigint", pricingStamp(now), pricingStamp(now), kind+":"+id).Scan(&blocked)
+	err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND command='PAUSE_ADMISSIONS' AND (scope_type='global' OR (scope_type='product' AND scope_id=$3))))::integer", pricingStamp(now), pricingStamp(now), kind+":"+id).Scan(&blocked)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string
 		return pricing.CapacityUnsafe
 	}
 	var nodeRules int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2))::bigint", pricingStamp(now), pricingStamp(now)).Scan(&nodeRules); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2))::integer", pricingStamp(now), pricingStamp(now)).Scan(&nodeRules); err != nil {
 		return err
 	}
 	if nodeRules != 0 {
@@ -82,7 +82,7 @@ func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string
 			return err
 		}
 		for _, node := range nodes {
-			if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::bigint", node, pricingStamp(now), pricingStamp(now)).Scan(&blocked); err != nil {
+			if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::integer", node, pricingStamp(now), pricingStamp(now)).Scan(&blocked); err != nil {
 				return err
 			}
 			if blocked != 0 {

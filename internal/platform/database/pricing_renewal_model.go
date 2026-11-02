@@ -20,7 +20,7 @@ func (s *Store) TrainPricingRenewalResponse(ctx context.Context, product string,
 		id += ":" + revision
 	}
 	var exists int
-	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_model_versions WHERE id=$1))::bigint", id).Scan(&exists); err != nil || exists == 1 {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_model_versions WHERE id=$1))::integer", id).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT q.price_minor,c.contractual_price_minor,q.state,q.trace_json FROM pricing_renewal_quotes q JOIN pricing_contracts c ON c.id=q.contract_id JOIN purchases p ON p.id=q.purchase_id WHERE c.product_id=$1 AND q.authorized_at IS NOT NULL AND q.health_state='HEALTHY' AND q.outcome_reason<>'INSUFFICIENT_FUNDS' AND p.reward_renewal_price_minor IS NULL AND q.state<>'CANCELLED' AND (q.state='SETTLED' OR q.valid_until<=$2) AND (CASE ((q.trace_json)::jsonb #> '{strategyVersion}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (q.trace_json)::jsonb #>> '{strategyVersion}' END)=$3 AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes newer WHERE newer.purchase_id=q.purchase_id AND newer.authorized_at IS NOT NULL AND newer.state<>'CANCELLED' AND (newer.generated_at>q.generated_at OR newer.generated_at=q.generated_at AND newer.id>q.id)) AND NOT EXISTS(SELECT 1 FROM pricing_operational_incidents i WHERE i.started_at<q.valid_until AND (i.ended_at IS NULL OR i.ended_at>q.settle_after)) AND NOT EXISTS(SELECT 1 FROM pricing_contracts newer WHERE newer.purchase_id=c.purchase_id AND newer.version>c.version AND newer.recorded_at<q.valid_until) ORDER BY q.generated_at DESC,q.id DESC LIMIT 2048`, product, pricingStamp(now), pricing.StrategyVersion)

@@ -47,7 +47,7 @@ func newNativePurchaseFixture(t *testing.T) nativePurchaseFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `UPDATE users SET username='nativepurchase',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
+	if _, err := db.ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = store.UserByID(ctx, user.ID)

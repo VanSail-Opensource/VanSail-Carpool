@@ -49,7 +49,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 	}
 
 	var subscribed int
-	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(\n\t\tSELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3\n\t))::bigint", userID, stamp(now), stamp(now)).Scan(&subscribed); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(\n\t\tSELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3\n\t))::integer", userID, stamp(now), stamp(now)).Scan(&subscribed); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("check group-message subscription: %w", err)
 	}
 	counted := subscribed == 1 && boostCount > 0
