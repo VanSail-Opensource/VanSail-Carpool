@@ -27,6 +27,9 @@ func TestPAYGSquadOptOutRemovesInventoryAndCompilation(t *testing.T) {
 	if err != nil || len(view.Squads) != 1 || view.Squads[0].Status != "disabled" {
 		t.Fatal(view, err)
 	}
+	if _, err := f.store.AdjustBalance(ctx, f.user.ID, 1, "payg-preference-funding", "test", time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := f.store.UpdateUserPreferences(ctx, f.user.ID, preferences.Patch{PAYGSquads: map[string]bool{f.group.ID: true}}, time.Now()); err != nil {
 		t.Fatal(err)
 	}

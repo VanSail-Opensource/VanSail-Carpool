@@ -24,6 +24,7 @@ type SquadProduct struct {
 	GroupID                string                `json:"groupId"`
 	Name                   string                `json:"name"`
 	Description            string                `json:"description"`
+	Features               squadprofile.Features `json:"features"`
 	Profile                *squadprofile.Profile `json:"profile"`
 	PriceTXBMinor          int64                 `json:"-"`
 	Price                  Money                 `json:"price"`

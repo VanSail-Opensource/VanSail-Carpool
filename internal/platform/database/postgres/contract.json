@@ -7062,6 +7062,13 @@
           "notNull": true,
           "default": "'normal'",
           "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
+          "primaryKey": 0
         }
       ]
     },

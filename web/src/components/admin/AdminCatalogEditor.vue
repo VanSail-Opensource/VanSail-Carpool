@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { AnimatePresence, motion } from 'motion-v'
 
 import type { Combo, ResetCadence, SquadProduct } from '@/api/types'
-import MarkdownEditorField from '@/components/common/MarkdownEditorField.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import SwitchField from '@/components/common/SwitchField.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
@@ -88,7 +87,7 @@ function setSquad(id: string, selected: boolean): void {
       <InlineNotice v-if="error || invalid" tone="warning">{{ error ?? t('adminCatalogEditor.invalidFields') }}</InlineNotice>
       <form class="admin-editor-form" @submit.prevent="submit">
         <UFormField name="combo-name" :label="t('adminCatalogEditor.name')" required><UInput v-model.trim="draft.name" class="w-full" :maxlength="80" required /></UFormField>
-        <MarkdownEditorField v-model="draft.description" class="catalog-editor__wide" :label="t('adminCatalogEditor.description')" :placeholder="t('adminCatalogEditor.descriptionPlaceholder')" :maxlength="1000" />
+        <UFormField name="description" class="catalog-editor__wide" :label="t('adminCatalogEditor.description')"><UTextarea v-model="draft.description" class="w-full" :placeholder="t('adminCatalogEditor.descriptionPlaceholder')" :maxlength="1000" autoresize /></UFormField>
         <TxbAmountField id="combo-price" v-model="draft.priceTxb" :label="t('adminCatalogEditor.price')" min-minor="0" max-minor="1000000000000" required />
         <UFormField name="validity-days" :label="t('adminCatalogEditor.validityDays')" required><UInput v-model.number="draft.validityDays" class="w-full" type="number" :min="1" :max="3650" required /></UFormField>
         <UFormField name="ip-lookup-quota" :label="t('ipLookup.quotaHeading')" :hint="t('ipLookup.quotaHelp')"><UInputNumber v-model="draft.ipLookupQuota" class="w-full" :min="0" :max="1000000" :step="1" /></UFormField>

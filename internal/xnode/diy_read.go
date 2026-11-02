@@ -72,7 +72,7 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 		return s.presentHosts(ctx, user, proxies)
 	}
 	var err error
-	proxies, err = s.visiblePAYGExports(ctx, proxies)
+	proxies, err = s.visiblePAYGExports(ctx, user, proxies)
 	if err != nil {
 		return nil, err
 	}

@@ -7,17 +7,22 @@ import { usePreferencesStore } from '@/stores/preferences'
 import SettingsSwitchRow from './SettingsSwitchRow.vue'
 
 const preferences = usePreferencesStore()
-const { value, loading, error, refresh } = useSubscriptionData(paygApi.get, 60_000, 'payg.loadFailed')
+const { value, loading, refreshing, error, refresh } = useSubscriptionData(paygApi.get, 60_000, 'payg.loadFailed')
 const squads = computed(() => value.value?.squads.filter(item => item.squad.billingMode === 'payg') ?? [])
 const enabled = computed(() => preferences.value?.paygEnabled ?? true)
+const balanceMinor = computed(() => value.value?.balance.minor)
+const balanceKnown = computed(() => balanceMinor.value != null && /^-?\d+$/.test(balanceMinor.value))
+const balancePositive = computed(() => balanceKnown.value && BigInt(balanceMinor.value!) > 0n)
+const controlsDisabled = computed(() => !preferences.value || preferences.saving || refreshing.value || !!error.value || !balancePositive.value)
 </script>
 
 <template>
   <div class="settings-payg">
     <h3>{{ $t('payg.title') }}</h3>
-    <SettingsSwitchRow :label="$t('settings.payg.enabled')" :description="$t('settings.payg.hint')" :enabled="enabled" :disabled="!preferences.value || preferences.saving" :saving="preferences.pendingKey === 'paygEnabled'" @update="preferences.save({ paygEnabled: $event })" />
+    <SettingsSwitchRow :label="$t('settings.payg.enabled')" :description="$t('settings.payg.hint')" :enabled="enabled" :disabled="controlsDisabled" :saving="preferences.pendingKey === 'paygEnabled'" @update="preferences.save({ paygEnabled: $event })" />
+    <InlineNotice v-if="balanceKnown && !balancePositive && !error" tone="warning">{{ $t('settings.payg.balanceRequired') }}</InlineNotice>
     <USkeleton v-if="loading" class="h-12" />
-    <SettingsSwitchRow v-for="item in squads" :key="item.squad.groupId" :label="item.squad.name" :enabled="preferences.value?.paygSquads[item.squad.groupId] ?? true" :disabled="!enabled || !preferences.value || preferences.saving" @update="preferences.save({ paygSquads: { [item.squad.groupId]: $event } })" />
+    <SettingsSwitchRow v-for="item in squads" :key="item.squad.groupId" :label="item.squad.name" :enabled="preferences.value?.paygSquads[item.squad.groupId] ?? true" :disabled="!enabled || controlsDisabled" @update="preferences.save({ paygSquads: { [item.squad.groupId]: $event } })" />
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton variant="link" :label="$t('common.tryAgain')" data-haptic="retry" @click="refresh()" /></InlineNotice>
   </div>
 </template>

@@ -58,3 +58,26 @@ func TestPreferenceTransportOwnsPrincipalAndRejectsClientIdentity(t *testing.T) 
 		t.Fatalf("rejected input mutated preferences: %+v %v", stored, err)
 	}
 }
+
+func TestPreferenceTransportRejectsPAYGActivationWithoutBalance(t *testing.T) {
+	ctx := context.Background()
+	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "payg-prefs.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	store := database.NewStore(db)
+	user, _, err := store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 55702, FirstName: "Lin"}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.OnboardingState = "complete"
+	server := &Server{deps: Dependencies{Store: store}}
+	base := communityRequest(http.MethodPatch, "/api/v1/me/preferences", user)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/me/preferences", strings.NewReader(`{"paygEnabled":true}`)).WithContext(base.Context())
+	response := httptest.NewRecorder()
+	server.updateUserPreferences(response, request)
+	if response.Code != http.StatusConflict || !strings.Contains(response.Body.String(), "INSUFFICIENT_BALANCE") {
+		t.Fatalf("activation=%d %s", response.Code, response.Body.String())
+	}
+}

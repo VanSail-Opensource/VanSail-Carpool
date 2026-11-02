@@ -36,6 +36,10 @@ func (s *Server) updateUserPreferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	value, err := s.deps.Store.UpdateUserPreferences(r.Context(), user.ID, patch, time.Now().UTC())
+	if errors.Is(err, database.ErrInsufficientBalance) {
+		s.writeError(w, r, http.StatusConflict, "INSUFFICIENT_BALANCE", "A positive balance is required to enable PAYG.")
+		return
+	}
 	if errors.Is(err, database.ErrNotFound) {
 		s.writeError(w, r, 400, "INVALID_PREFERENCES", "Choose an available PAYG squad.")
 		return

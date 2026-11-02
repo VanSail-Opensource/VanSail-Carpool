@@ -18,6 +18,13 @@ func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any)
 	if peer == nil {
 		return nil, &CommandError{CommandUndelivered, ErrUnavailable}
 	}
+	return m.commandPeer(ctx, peer, id, name, args)
+}
+
+// commandPeer pins a command to the peer whose operation created it. Its
+// cancellation fences replacement connections and their transaction state.
+func (m *Master) commandPeer(ctx context.Context, peer *agentPeer, id, name string, args any) (result json.RawMessage, commandErr error) {
+	nodeID := peer.nodeID
 	if id == "" {
 		var err error
 		id, err = ids.New()

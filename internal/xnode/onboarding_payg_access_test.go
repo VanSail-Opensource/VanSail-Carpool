@@ -11,7 +11,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-func TestNewUnfundedMemberGetsPAYGSubscriptionThroughOnboardingQueue(t *testing.T) {
+func TestNewUnfundedMemberGetsPAYGInventoryThroughOnboardingQueue(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -78,7 +78,11 @@ func TestNewUnfundedMemberGetsPAYGSubscriptionThroughOnboardingQueue(t *testing.
 	}
 	proxies, err := f.service.MemberProxies(ctx, user.ID)
 	if err != nil || len(proxies) != 1 || proxies[0].PrincipalID != accounts[0].ProxyUserID {
-		t.Fatal("unfunded PAYG links missing or wrong owner", proxies, err)
+		t.Fatal("unfunded PAYG inventory missing or wrong owner", proxies, err)
+	}
+	exported, err := f.service.ExportProxiesForUser(ctx, user.ID, proxies)
+	if err != nil || len(exported) != 0 {
+		t.Fatal("unfunded PAYG remained in subscription export", exported, err)
 	}
 	if purchases, err := f.store.ListPurchases(ctx, user.ID); err != nil || len(purchases) != 0 {
 		t.Fatal("PAYG requires or creates a combo", purchases, err)

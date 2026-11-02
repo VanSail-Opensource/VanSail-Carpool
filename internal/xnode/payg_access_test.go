@@ -26,7 +26,7 @@ func provisionPAYGFixture(t *testing.T, f fixture) {
 	}
 }
 
-func TestPAYGSubscriptionRetainedWithoutWalletAndOwnerBanStillApplies(t *testing.T) {
+func TestPAYGInventoryRetainedWithoutWalletAndOwnerBanStillApplies(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	provisionPAYGFixture(t, f)
@@ -36,7 +36,11 @@ func TestPAYGSubscriptionRetainedWithoutWalletAndOwnerBanStillApplies(t *testing
 	}
 	metadata, err := f.service.OwnedSubscription(ctx, f.user.ID)
 	if err != nil || !metadata.Active {
-		t.Fatal("unfunded PAYG removed from subscription", metadata, err)
+		t.Fatal("unfunded PAYG removed from inventory metadata", metadata, err)
+	}
+	exported, err := f.service.ExportProxiesForUser(ctx, f.user.ID, proxies)
+	if err != nil || len(exported) != 0 {
+		t.Fatal("unfunded PAYG remained in subscription export", exported, err)
 	}
 	accounts, err := f.store.XNodePAYGAccounts(ctx, f.user.ID, f.node.ID)
 	if err != nil || len(accounts) != 1 {
@@ -48,6 +52,10 @@ func TestPAYGSubscriptionRetainedWithoutWalletAndOwnerBanStillApplies(t *testing
 	}
 	if _, err = f.store.AdjustBalance(ctx, f.user.ID, 100, "fund", "fund", time.Now()); err != nil {
 		t.Fatal(err)
+	}
+	exported, err = f.service.ExportProxiesForUser(ctx, f.user.ID, proxies)
+	if err != nil || len(exported) != 1 {
+		t.Fatal("funded PAYG not restored to subscription export", exported, err)
 	}
 	if err = f.store.SetXNodeAccessDisabled(ctx, f.identity.ProxyUserID, true); err != nil {
 		t.Fatal(err)

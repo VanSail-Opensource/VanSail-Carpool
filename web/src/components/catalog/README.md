@@ -80,10 +80,19 @@ cover data arriving before scene completion; Chrome samples verify CSS timing.
 Mode changes emit exactly one selection haptic; tapping the active mode is silent. PAYG recharge and retry controls use the existing delegated semantic feedback. Informational PAYG cards remain non-interactive.
 # PAYG squad presentation
 
-PAYG cards stretch within each grid row and place usage at the bottom left with
-an auto-margin footer. The status marker stays fixed; synchronized opacity and
+PAYG cards use content-sized masonry columns on desktop and a single column on
+mobile. Traffic and spending remain in the footer. The status marker stays fixed; synchronized opacity and
 ring animations provide blink/ripple feedback without vertical movement.
 Reduced-motion preferences disable both animations. Status labels remain
 localized and available to keyboard and screen-reader users.
 
+`SquadFeatures.vue` displays administrator-authored features in their saved order
+for both billing modes, using the shared allowlisted icon map; empty lists add no
+section. Member cards omit the legacy Markdown description and feature count;
+the stored description remains in the API and database. Combo cards retain
+full-card keyboard selection, stock and visibility guards.
+`SquadPricingCard.test.ts` covers feature ordering and empty lists.
+
 Selectable core Combo presentation with price and traffic terms: `CatalogComboPricingTable.vue`, `ComboOption.vue`.
+
+Combo descriptions are plain escaped text with preserved line breaks. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.

@@ -81,6 +81,17 @@ SquadProfile:
       china_optimized: '../../openapi.yaml#/components/schemas/ChinaOptimizedSquadProfile'
       international_network: '../../openapi.yaml#/components/schemas/InternationalNetworkSquadProfile'
 
+SquadFeature:
+  type: object
+  additionalProperties: false
+  required: [icon, title]
+  properties:
+    icon:
+      type: string
+      enum: [route, globe, lightning, shield, sparkle, house, broadcast, clock, stack, gauge, server, arrows-clockwise]
+    title: {type: string, minLength: 1, maxLength: 80}
+    detail: {type: string, maxLength: 160}
+
 SquadProduct:
   type: object
   additionalProperties: false
@@ -117,6 +128,10 @@ SquadProduct:
       type: string
     description:
       type: string
+    features:
+      type: array
+      maxItems: 12
+      items: { $ref: '../../openapi.yaml#/components/schemas/SquadFeature' }
     profile:
       oneOf:
         - $ref: '../../openapi.yaml#/components/schemas/SquadProfile'
@@ -303,6 +318,11 @@ SquadProductWrite:
     description:
       type: string
       maxLength: 1000
+    features:
+      type: array
+      maxItems: 12
+      description: Omit to preserve the current list; an empty array clears it.
+      items: { $ref: '../../openapi.yaml#/components/schemas/SquadFeature' }
     profile:
       $ref: '../../openapi.yaml#/components/schemas/SquadProfile'
     priceTxbMinor:

@@ -39,12 +39,36 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	if uuid == "" || !input.UpstreamPresent {
 		return model.SquadProduct{}, ErrNotFound
 	}
+	var featuresJSON any
+	if input.Features != nil {
+		features, normalizeErr := squadprofile.NormalizeFeatures(input.Features)
+		if normalizeErr != nil {
+			return model.SquadProduct{}, normalizeErr
+		}
+		encoded, marshalErr := json.Marshal(features)
+		if marshalErr != nil {
+			return model.SquadProduct{}, fmt.Errorf("encode squad features: %w", marshalErr)
+		}
+		featuresJSON = string(encoded)
+	}
 	now := time.Now().UTC()
-	if input.BillingMode == "combo" && input.PAYGPriceTXBMinor == 0 && strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
-		if _, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE group_id=?`, uuid); err != nil {
+	if input.BillingMode == "combo" && input.PAYGPriceTXBMinor == 0 && strings.TrimSpace(input.Description) == "" && input.PriceTXBMinor == 0 && !input.Visible && input.StockLimit == nil && input.Profile == nil && len(input.Features) == 0 && !input.ActivationRequired && strings.TrimSpace(input.ActivationCode) == "" {
+		result, err := s.db.ExecContext(ctx, `DELETE FROM squad_product_overrides WHERE group_id=? AND (?=1 OR features_json IS NULL OR features_json='[]')`, uuid, boolInt(input.Features != nil))
+		if err != nil {
 			return model.SquadProduct{}, fmt.Errorf("remove default squad override: %w", err)
 		}
-		return virtualSquad(input, now), nil
+		deleted, err := result.RowsAffected()
+		if err != nil {
+			return model.SquadProduct{}, err
+		}
+		if deleted != 0 {
+			return virtualSquad(input, now), nil
+		}
+		if _, err = s.SquadProductByGroupID(ctx, uuid); errors.Is(err, ErrNotFound) {
+			return virtualSquad(input, now), nil
+		} else if err != nil {
+			return model.SquadProduct{}, err
+		}
 	}
 	var profileJSON any
 	if input.Profile != nil {
@@ -62,9 +86,9 @@ func (s *Store) SaveSquadProduct(ctx context.Context, input SquadProductInput) (
 	if err != nil {
 		return model.SquadProduct{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor,payg_state)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at,billing_mode=excluded.billing_mode,payg_price_minor=excluded.payg_price_minor,payg_state=excluded.payg_state`,
-		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now), input.BillingMode, input.PAYGPriceTXBMinor, input.PAYGState)
+	_, err = s.db.ExecContext(ctx, `INSERT INTO squad_product_overrides(group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,activation_code_hash,created_at,updated_at,billing_mode,payg_price_minor,payg_state,features_json)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(group_id) DO UPDATE SET description=excluded.description,profile_json=excluded.profile_json,price_txb_minor=excluded.price_txb_minor,visible=excluded.visible,stock_limit=excluded.stock_limit,activation_required=excluded.activation_required,activation_code_hash=excluded.activation_code_hash,updated_at=excluded.updated_at,billing_mode=excluded.billing_mode,payg_price_minor=excluded.payg_price_minor,payg_state=excluded.payg_state,features_json=COALESCE(excluded.features_json,squad_product_overrides.features_json)`,
+		uuid, strings.TrimSpace(input.Description), profileJSON, input.PriceTXBMinor, boolInt(input.Visible), input.StockLimit, boolInt(input.ActivationRequired), hash, stamp(now), stamp(now), input.BillingMode, input.PAYGPriceTXBMinor, input.PAYGState, featuresJSON)
 	if err != nil {
 		return model.SquadProduct{}, fmt.Errorf("save squad override: %w", err)
 	}

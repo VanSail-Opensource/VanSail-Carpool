@@ -564,6 +564,8 @@ attached-coupon policy and a unique source-successor link.
 `user_preferences.go` merges nine persisted preference flags atomically, projects active-combo eligibility and resolves legacy referral delivery recipients.
 `user_preferences_test.go` covers defaults, partial merges, account isolation, eligibility loss and referral attribution.
 
+`squad_features_test.go` covers ordered feature persistence, old-client omitted writes, explicit clearing, and bounded validated input.
+
 `telegram_boost_receipts.go` and `telegram_boost_receipts_test.go` atomically deduplicate group/boost IDs with their outbox work, including concurrent and changed updates. No boost count is mirrored.
 
 `panel_entry_verification.go` and `panel_entry_verification_test.go` persist only Telegram ID and a boolean. Panel visits initialize the row, verification or a disabled challenge qualifies it, and onboarding removes it in the same transaction as agreement acceptance.
@@ -817,7 +819,7 @@ backfill in hosted SQLite/PostgreSQL CI.
 
 
 
-`user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices under the wallet lock. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
+`user_payg_preferences.go` reads sparse squad opt-outs and merges validated group choices. Explicit activation checks for a positive wallet balance under the wallet lock; other preference changes do not lock it. Preference changes and PAYG reconciliation enqueue atomically; compile triggers and account projections prevent stale leases and connection purchases. Delayed journal traffic still settles independently of access.
 
 `retention_imports_test.go` covers abandoned upload expiry and live settlement preservation. `retention_payg_test.go` covers independent batch commits, precise boundaries and unchanged accounting. `user_payg_preferences_test.go` covers default choices, master precedence, concurrent merges and delivered-traffic settlement. `admin_entitlement_validity_test.go` covers exclusive validity boundaries and pending settlement preservation.
 

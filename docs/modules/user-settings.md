@@ -49,6 +49,7 @@ Telegram persistence disabled without a runtime warning.
 Regression cases are authored for hosted CI. No local automated suite was run.
 
 PAYG settings add a master switch and independent per-squad opt-outs, all default on. Existing prepaid credit retains its original expiry. Saving queues native reconciliation atomically and does not change paid Combo entitlement. Disabled admission cannot trigger connection purchases; delivered traffic remains accountable.
+The preferences API rejects explicit PAYG activation when the locked wallet balance is zero or negative with HTTP 409 `INSUFFICIENT_BALANCE`; disabling and unrelated changes remain available. Existing saved choices and prepaid credit are preserved.
 
 ## Browser evidence, 2026-10-25
 

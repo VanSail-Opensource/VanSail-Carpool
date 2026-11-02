@@ -115,7 +115,8 @@
     "112_unlimited_zero_capacity.sql",
     "113_agreement_continuity.sql",
     "114_retire_questionnaires.sql",
-    "115_account_lifecycle.sql"
+    "115_account_lifecycle.sql",
+    "116_squad_features.sql"
   ],
   "objects": [
     {
@@ -722,7 +723,7 @@
       "type": "table",
       "name": "squad_product_overrides",
       "table": "squad_product_overrides",
-      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor\u003e=0 AND (billing_mode\u003c\u003e'payg' OR payg_price_minor\u003e0)), payg_state TEXT NOT NULL DEFAULT 'normal'\n CHECK(payg_state IN ('normal','hidden','unavailable')))"
+      "sql": "CREATE TABLE squad_product_overrides (\n  group_id TEXT PRIMARY KEY,\n  description TEXT NOT NULL DEFAULT '',\n  price_txb_minor INTEGER NOT NULL DEFAULT 0 CHECK (price_txb_minor \u003e= 0),\n  visible INTEGER NOT NULL DEFAULT 0 CHECK (visible IN (0,1)),\n  created_at TEXT NOT NULL,\n  updated_at TEXT NOT NULL\n, stock_limit INTEGER\n  CHECK (stock_limit IS NULL OR stock_limit \u003e= 0), profile_json TEXT\n  CHECK (profile_json IS NULL OR json_valid(profile_json)), activation_required INTEGER NOT NULL DEFAULT 0\n  CHECK (activation_required IN (0,1)), activation_code_hash TEXT, billing_mode TEXT NOT NULL DEFAULT 'combo' CHECK(billing_mode IN ('combo','payg')), payg_price_minor INTEGER NOT NULL DEFAULT 0 CHECK(payg_price_minor\u003e=0 AND (billing_mode\u003c\u003e'payg' OR payg_price_minor\u003e0)), payg_state TEXT NOT NULL DEFAULT 'normal'\n CHECK(payg_state IN ('normal','hidden','unavailable')), features_json TEXT)"
     },
     {
       "type": "table",
@@ -9243,7 +9244,7 @@
     },
     {
       "name": "schema_migrations",
-      "rows": 116,
+      "rows": 117,
       "columns": [
         {
           "name": "version",
@@ -9443,6 +9444,13 @@
           "type": "TEXT",
           "notNull": true,
           "default": "'normal'",
+          "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "TEXT",
+          "notNull": false,
+          "default": null,
           "primaryKey": 0
         }
       ]

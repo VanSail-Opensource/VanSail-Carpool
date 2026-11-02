@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, shallowRef, watch } from 'vue'
+import { computed, onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import { xnodeMemberApi } from '@/api/xnodeMember'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
-import { memberActivity, type ActivityStatus } from './memberActivity'
+import { activityDeadline, memberActivity, type ActivityStatus } from './memberActivity'
 
 const emit = defineEmits<{ activity: [value: ActivityStatus] }>()
 
 const { t } = useI18n()
-const { value, loading, error, refresh } = useSubscriptionData(xnodeMemberApi.metrics, 5000, 'xnode.loadFailed')
-const now = shallowRef(Date.now())
+const { value: observation, loading, error, refresh } = useSubscriptionData(async (signal) => {
+  const startedAt = globalThis.performance.now()
+  const metrics = await xnodeMemberApi.metrics(signal)
+  return { metrics, deadline: activityDeadline(metrics, startedAt) }
+}, 5000, 'xnode.loadFailed')
+const value = computed(() => observation.value?.metrics ?? null)
+const now = shallowRef(globalThis.performance.now())
+const invalidated = shallowRef(false)
 let expiryTimer: ReturnType<typeof globalThis.setTimeout> | undefined
-const activity = computed(() => memberActivity(value.value, error.value, now.value))
-watch([value, error], () => {
+const activity = computed(() => invalidated.value ? 'unavailable' : memberActivity(value.value, error.value, now.value, observation.value?.deadline ?? NaN))
+watch(observation, next => { if (next) invalidated.value = false })
+watch([observation, error], ([next]) => {
   if (expiryTimer) globalThis.clearTimeout(expiryTimer)
-  now.value = Date.now()
-  const delay = Date.parse(value.value?.activityExpiresAt ?? '') - now.value
-  if (!error.value && Number.isFinite(delay) && delay > 0) expiryTimer = globalThis.setTimeout(() => { now.value = Date.now() }, delay)
+  now.value = globalThis.performance.now()
+  const delay = (next?.deadline ?? NaN) - now.value
+  if (!error.value && Number.isFinite(delay) && delay > 0) expiryTimer = globalThis.setTimeout(() => { now.value = globalThis.performance.now() }, Math.ceil(delay))
 }, { immediate: true })
 watch(activity, status => emit('activity', status), { immediate: true })
-onScopeDispose(() => { if (expiryTimer) globalThis.clearTimeout(expiryTimer); emit('activity', 'unavailable') })
+function invalidateActivity(): void { invalidated.value = true }
+onMounted(() => {
+  globalThis.document.addEventListener('visibilitychange', invalidateActivity)
+  globalThis.window.addEventListener('focus', invalidateActivity)
+})
+onScopeDispose(() => {
+  globalThis.document.removeEventListener('visibilitychange', invalidateActivity)
+  globalThis.window.removeEventListener('focus', invalidateActivity)
+  if (expiryTimer) globalThis.clearTimeout(expiryTimer)
+  emit('activity', 'unavailable')
+})
 const reasons = computed(() => [...new Set(value.value?.reasons.map(item => {
   const key = `memberNodes.reasons.${item.reason}`
   return t(key) === key ? t('memberNodes.reasons.unknown') : t(key)

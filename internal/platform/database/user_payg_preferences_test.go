@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -9,6 +11,43 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
+
+func TestPAYGPreferenceActivationRequiresPositiveBalance(t *testing.T) {
+	for _, balance := range []int64{-1, 0, 1} {
+		t.Run(fmt.Sprintf("balance_%d", balance), func(t *testing.T) {
+			s, owner, _, account := paygBillingFixture(t)
+			ctx, now := context.Background(), time.Now()
+			if err := s.SaveXNodeGroup(ctx, xnode.Group{ID: account.GroupID, Name: "PAYG", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			off, on := false, true
+			if _, err := s.UpdateUserPreferences(ctx, owner.UserID, preferences.Patch{PAYGEnabled: &off, PAYGSquads: map[string]bool{account.GroupID: false}}, now); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.AdjustBalance(ctx, owner.UserID, balance-1000, "payg-balance-gate", "test", now); err != nil {
+				t.Fatal(err)
+			}
+			for _, patch := range []preferences.Patch{
+				{PAYGEnabled: &on, IncludeNodePrices: &off},
+				{PAYGSquads: map[string]bool{account.GroupID: true}, IncludeNodePrices: &off},
+			} {
+				_, err := s.UpdateUserPreferences(ctx, owner.UserID, patch, now)
+				if balance <= 0 && !errors.Is(err, ErrInsufficientBalance) || balance > 0 && err != nil {
+					t.Fatalf("balance %d: got %v", balance, err)
+				}
+			}
+			if balance <= 0 {
+				p, err := s.UserPreferenceSnapshot(ctx, owner.UserID, now)
+				if err != nil || p.PAYGEnabled || p.PAYGSquads[account.GroupID] || !p.IncludeNodePrices {
+					t.Fatalf("rejected patch changed preferences: %+v %v", p, err)
+				}
+				if _, err = s.UpdateUserPreferences(ctx, owner.UserID, preferences.Patch{PAYGEnabled: &off, IncludeNodePrices: &off}, now); err != nil {
+					t.Fatalf("disabling or unrelated preferences failed: %v", err)
+				}
+			}
+		})
+	}
+}
 
 func TestPAYGPreferencesPreserveSquadChoicesAcrossMasterSwitch(t *testing.T) {
 	s, owner, _, account := paygBillingFixture(t)

@@ -105,15 +105,15 @@ func intPointer(value sql.NullInt64) *int {
 	return &result
 }
 
-const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at,billing_mode,payg_price_minor,payg_state FROM squad_product_overrides`
+const squadSelect = `SELECT group_id,description,profile_json,price_txb_minor,visible,stock_limit,activation_required,created_at,updated_at,billing_mode,payg_price_minor,payg_state,features_json FROM squad_product_overrides`
 
 func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	var product model.SquadProduct
 	var visible, activationRequired int
 	var created, updated string
 	var stockLimit sql.NullInt64
-	var profileJSON sql.NullString
-	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated, &product.BillingMode, &product.PAYGPriceTXBMinor, &product.PAYGState); err != nil {
+	var profileJSON, featuresJSON sql.NullString
+	if err := row.Scan(&product.GroupID, &product.Description, &profileJSON, &product.PriceTXBMinor, &visible, &stockLimit, &activationRequired, &created, &updated, &product.BillingMode, &product.PAYGPriceTXBMinor, &product.PAYGState, &featuresJSON); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.SquadProduct{}, ErrNotFound
 		}
@@ -128,6 +128,12 @@ func scanSquad(row rowScanner) (model.SquadProduct, error) {
 	paygPrice := model.TXBMoney(product.PAYGPriceTXBMinor)
 	product.PAYGPrice = &paygPrice
 	product.AccessibleNodes = []model.CatalogNode{}
+	product.Features = squadprofile.Features{}
+	if featuresJSON.Valid && featuresJSON.String != "" {
+		if err := json.Unmarshal([]byte(featuresJSON.String), &product.Features); err != nil {
+			return model.SquadProduct{}, fmt.Errorf("decode squad features: %w", err)
+		}
+	}
 	var err error
 	product.Profile, err = squadprofile.ParseJSON(profileJSON.String)
 	if err != nil {

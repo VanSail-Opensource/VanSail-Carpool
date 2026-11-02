@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
@@ -12,6 +13,9 @@ func TestPAYGAdminStatesPreserveIdentityAndOnlyUnavailableRevokes(t *testing.T) 
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	provisionPAYGFixture(t, f)
+	if _, err := f.store.AdjustBalance(ctx, f.user.ID, 1, "squad-state-funding", "test", time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	accounts, err := f.store.XNodePAYGAccounts(ctx, f.user.ID, "")
 	if err != nil || len(accounts) == 0 {
 		t.Fatal(accounts, err)

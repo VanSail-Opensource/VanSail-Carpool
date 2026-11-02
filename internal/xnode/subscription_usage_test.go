@@ -48,6 +48,9 @@ func TestSubscriptionInfoPreservesComboAndPrepaidPAYGSnapshots(t *testing.T) {
 			}
 			if tc.payg {
 				provisionPAYGFixture(t, f)
+				if _, err := f.store.AdjustBalance(ctx, f.user.ID, 1, "usage-subscription-funding", "test", time.Now()); err != nil {
+					t.Fatal(err)
+				}
 				group, err := f.service.SaveGroup(ctx, xnode.Group{Name: "Extra PAYG", Enabled: true, Bindings: []xnode.GroupBinding{{NodeID: f.node.ID, InboundTag: "paid"}}})
 				if err != nil {
 					t.Fatal(err)

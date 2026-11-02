@@ -14,9 +14,16 @@ static/dynamic mode, and free-form detailed location. The other two types store
 carrier details, nullable unlimited-or-Mbps port speed, and an ISO alpha-2
 country code. International profiles also require at least one upstream carrier.
 
-The existing local `description` column remains additional Markdown. Generated
+The existing local `description` column and API field retain historical description text;
+squad summaries no longer display it. Generated
 facts are projected from the typed profile at runtime, so localized labels are
 not duplicated in SQLite or the API payload.
+
+Administrators may add an ordered list of up to 12 features with an allowlisted
+icon, title, and optional detail. The feature copy is local merchandising, shared
+by PAYG and Combo cards. Omitted feature fields on older writes preserve the
+list; an explicit empty list clears it. Existing records return an empty array.
+SQLite migration 116 and PostgreSQL migration 00031 add only this local data.
 
 ## Boundaries and failure behavior
 

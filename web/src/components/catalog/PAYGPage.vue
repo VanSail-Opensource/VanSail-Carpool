@@ -43,6 +43,10 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 .payg-page__error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .payg-page__grid--content > * { animation: payg-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
 .payg-page--waiting .payg-page__grid--content > * { animation-play-state: paused; }
+@media (min-width: 900px) {
+  .payg-page__grid--content { display: block; column-width: 20rem; column-gap: .65rem; }
+  .payg-page__grid--content > * { display: flex; width: 100%; margin-bottom: .65rem; break-inside: avoid; }
+}
 @keyframes payg-component { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .payg-page__grid > * { animation: none; } }
 </style>

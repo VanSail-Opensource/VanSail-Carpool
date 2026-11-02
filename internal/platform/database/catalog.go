@@ -39,6 +39,7 @@ type SquadProductInput struct {
 	GroupID            string
 	Name               string
 	Description        string
+	Features           squadprofile.Features
 	Profile            *squadprofile.Profile
 	PriceTXBMinor      int64
 	Visible            bool

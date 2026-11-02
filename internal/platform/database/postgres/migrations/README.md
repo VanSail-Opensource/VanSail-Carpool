@@ -87,3 +87,5 @@ ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
 
 `00030_account_timestamp_collation.sql` restores the required C collation on the
 account purge timestamp without changing its stored evidence or prior migrations.
+
+`00031_squad_features.sql` mirrors SQLite 116 for local squad merchandising features.

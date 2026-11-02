@@ -107,6 +107,7 @@ type squadProductRequest struct {
 	GroupID            string                `json:"groupId"`
 	Name               string                `json:"name"`
 	Description        string                `json:"description"`
+	Features           squadprofile.Features `json:"features"`
 	Profile            *squadprofile.Profile `json:"profile"`
 	PriceTXBMinor      string                `json:"priceTxbMinor"`
 	Visible            bool                  `json:"visible"`
@@ -148,7 +149,7 @@ func (s *Server) adminSaveSquadProduct(w http.ResponseWriter, r *http.Request, i
 	product, err := s.deps.Admin.SaveSquadProduct(r.Context(), currentUser(r).ID, database.SquadProductInput{ID: id,
 		BillingMode: request.BillingMode, PAYGPriceTXBMinor: paygPrice, PAYGState: request.PAYGState,
 		GroupID: request.GroupID, Name: request.Name, Description: request.Description, PriceTXBMinor: price,
-		Profile: request.Profile, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
+		Profile: request.Profile, Features: request.Features, Visible: request.Visible, UpstreamPresent: true, StockLimit: request.StockLimit,
 		ActivationRequired: request.ActivationRequired, ActivationCode: request.ActivationCode})
 	if err != nil {
 		s.adminFailure(w, r, err)

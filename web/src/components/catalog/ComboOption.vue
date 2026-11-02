@@ -2,7 +2,6 @@
 import { AnimatePresence, motion } from 'motion-v'
 
 import type { Combo } from '@/api/types'
-import MarkdownContent from '@/components/common/MarkdownContent.vue'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
 import { selectionHaptic } from '@/utils/telegram'
@@ -47,7 +46,7 @@ function selectCombo(): void {
         <motion.span v-if="selected" key="selected" class="selection-mark" :initial="reducedMotion ? false : { opacity: 0, scale: 0.84 }" :animate="{ opacity: 1, scale: 1 }" :exit="{ opacity: 0 }" :transition="{ duration: reducedMotion ? 0.08 : 0.14, ease: 'easeOut' }"><UIcon name="i-ph-check-bold" /></motion.span>
       </AnimatePresence>
     </span>
-    <MarkdownContent class="combo-option__description" :source="combo.description" compact />
+    <span v-if="combo.description" class="combo-option__description">{{ combo.description }}</span>
     <span class="combo-option__metrics">
       <span><UIcon name="i-ph-gauge" />{{ trafficTerm() }}</span>
       <span><UIcon name="i-ph-stack" />{{ $t('catalog.includedSquadCount', { count: combo.includedSquads.length }) }}</span>
@@ -57,6 +56,7 @@ function selectCombo(): void {
 </template>
 
 <style scoped>
+.combo-option__description { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (min-width: 900px) {
   .combo-option { gap: 0.6rem; padding: 0.85rem; }
 }

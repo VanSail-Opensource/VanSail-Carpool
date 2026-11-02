@@ -254,3 +254,5 @@ ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
 Historical `002_activity_coupons_questionnaires.sql` and `012_minimize_questionnaire_imports.sql` remain immutable. `114_retire_questionnaires.sql` removes the retired operational feature after preserving financial evidence.
 
 `115_account_lifecycle.sql` adds only durable account lifecycle/generation and authenticated block ordering/cutoff fields. Native telemetry remains memory-only. New commerce, sessions and onboarding completion cannot race a pending purge.
+
+`116_squad_features.sql` adds nullable administrator-authored ordered feature data to squad merchandising; null preserves existing records and reads as an empty list.

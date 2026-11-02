@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 
 import type { SquadProfile } from '@/api/types'
-import MarkdownContent from '@/components/common/MarkdownContent.vue'
 import { useI18n } from '@/i18n'
 import { profileTypeMeta } from './profile'
 import SquadProfileFacts from './SquadProfileFacts.vue'
@@ -10,11 +9,10 @@ import SquadProfileFacts from './SquadProfileFacts.vue'
 const props = withDefaults(defineProps<{
   name?: string
   profile: SquadProfile | null
-  description?: string
   compact?: boolean
   showFacts?: boolean
   presentation?: 'default' | 'member'
-}>(), { name: '', description: '', compact: false, showFacts: true, presentation: 'default' })
+}>(), { name: '', compact: false, showFacts: true, presentation: 'default' })
 
 defineSlots<{ facts?: () => unknown, namePrefix?: () => unknown, nameTags?: () => unknown, headingMeta?: () => unknown }>()
 
@@ -57,7 +55,6 @@ const memberProfileText = computed(() => {
       <SquadProfileFacts :profile="profile" :presentation="presentation" />
       <slot name="facts" />
     </div>
-    <MarkdownContent v-if="description" class="squad-profile-summary__description" :source="description" compact />
   </div>
 </template>
 
@@ -83,6 +80,5 @@ const memberProfileText = computed(() => {
 .squad-profile-summary--member .squad-profile-summary__name-row--with-tags .squad-profile-summary__name-copy strong { overflow: hidden; overflow-wrap: normal; text-overflow: ellipsis; white-space: nowrap; }
 .squad-profile-summary--member .squad-profile-summary__name-row--with-tags .squad-profile-summary__name-tags { flex: 0 0 auto; flex-wrap: nowrap; }
 .squad-profile-summary--member .squad-profile-summary__heading-copy span { color: var(--squad-profile-tone); font-size: 0.66rem; font-weight: 700; }
-.squad-profile-summary--member .squad-profile-summary__description { color: var(--text-muted); }
 .squad-profile-summary--member.squad-profile-summary--compact { gap: 0.45rem; }
 </style>

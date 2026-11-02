@@ -460,7 +460,7 @@ administrator document and rejection of unrelated native-core errors.
 - `tag_ownership.go` reserves stored member tags, including inactive users, against administrator/shared outbounds and other owners.
 - `tag_ownership_test.go` covers decimal owner namespaces, including inactive and expired members whose historical display names overlap.
 
-- `master_firewall.go` requires liveness and a successful transaction confirmation before reporting applied operational state.
+- `master_firewall.go` routes liveness pongs by firewall transaction and retries confirmation for a bounded interval. If a confirmation response is lost, authenticated status for the same confirmed transaction resolves it. Pending, rolled-back, unknown, or mismatched status never clears the guard. `master_firewall_test.go` covers pong isolation and confirmation fencing.
 - `capabilities.go` checks the exact capabilities required by compiled state, including native utility listeners with no paid users. `capabilities_test.go` covers utility and streamed-country negotiation boundaries.
 - `binding_config.go` accepts group and subscription bindings only for managed proxy inbounds. Native utility listeners cannot become member endpoints.
 
@@ -838,9 +838,9 @@ authorization; idle provisioning must preserve the wallet and prepaid counters.
 
 `payg_compile.go` compiles owner restrictions and exact inbound bindings. `payg_leases.go` overlays 60-second authorization expiry in 20-second intervals without native recompilation. It adjusts the lease timestamp by fresh authenticated agent clock offset, capped at two minutes, so bounded node clock drift does not expire every lease immediately. Reconnection first withdraws PAYG and commits a traffic-flush barrier through a deferred outbox operation. Missing capabilities, stale telemetry and journal failures stop new leases. `payg_observe.go` consumes memory-only connection observations for settlement of pending traffic only when at least 100 MiB (104,857,600 bytes) was metered in the rolling 72-hour window on that member/squad/node. Initial funds, idle connections and sub-threshold probes never prepay; exact raw totals survive reconnects; only unbilled bytes inside the rolling window count toward a newly purchased GB. The unchanged agent can overrun between reports; authoritative delayed usage may debit the wallet below zero.
 
-`payg_inventory.go` separates owner subscription inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Existing subscriptions retain PAYG entries while unfunded. Unused prepaid bytes remain scoped to their original node and survive reconnects until 72 hours after their original charge.
+`payg_inventory.go` separates owner inventory from financial admission and maps internal principals to their member for controls, metrics and routing. `payg_export.go` excludes PAYG entries from newly generated subscriptions when the current wallet balance is nonpositive; Combo entries remain available even on shared endpoints. This export filter does not revoke existing credentials or change saved preferences or prepaid credit. `payg_view.go` projects squad status, exact raw bytes and wallet spend over the last 72 completed hours, with a minute-aligned asOf. Unused prepaid bytes remain scoped to their original node and survive reconnects until 72 hours after their original charge.
 
-`payg_owners.go` shares member ownership across activity counters without reading credentials each reconciliation. `payg_leases_test.go` verifies lease-only refresh, stale/unsupported/debt admission and whitelist gating; `payg_access_test.go` covers paid combo precedence, retained unfunded subscriptions and parent disablement. These regressions run only in hosted CI.
+`payg_owners.go` shares member ownership across activity counters without reading credentials each reconciliation. `payg_leases_test.go` verifies lease-only refresh, stale/unsupported/debt admission and whitelist gating; `payg_access_test.go` covers paid combo precedence, retained unfunded inventory and parent disablement. `payg_subscription_test.go` covers balance-gated exports and shared Combo/PAYG endpoints. These regressions run only in hosted CI.
 
 `master_peer.go` contains per-socket transport, synchronization and ephemeral PAYG lease state; the master retains ownership of peer lifetimes and the existing execution queues. Existing oversized application/catalog composition files retain their established boundaries; added PAYG behavior lives in focused modules.
 
@@ -912,3 +912,5 @@ Access repair uses `access_repair.go` and `access_recovery_test.go` to reload cu
 `access_repair_fences_test.go` checks refund ownership, scheduler exclusion and stale-pointer rejection against the real store.
 
 `reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
+
+`master_firewall_socket_test.go` exercises dropped liveness pongs and lost confirmation replies over an authenticated socket, preserving the transaction guard until confirmed.

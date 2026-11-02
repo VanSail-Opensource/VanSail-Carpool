@@ -33,7 +33,7 @@ or unavailable agents remain unknown. `memberActivity.ts` projects the server's
 expiring status: a fresh open flow is online even with zero sampled activity;
 offline requires complete fresh coverage reporting no open flows.
 
-`memberActivity.ts` and `memberActivity.test.ts` project native observation status and expiry. `MemberLiveMetrics.vue` emits fresh activity from its existing poll, retires stale rates and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge.
+`memberActivity.ts` projects native observation status using the server-relative lifetime from `fetchedAt` to `activityExpiresAt`, measured from request start with the browser's monotonic clock. Network time only shortens freshness; focus and visibility changes invalidate the prior observation until a new poll succeeds. `MemberLiveMetrics.vue` emits fresh activity, retires stale rates, and clears status on errors/unmount. `UserHome.vue` passes that status to `UsagePanel.vue`; the legacy onlineAt field no longer controls the native badge. `memberActivity.test.ts` and `MemberLiveMetrics.test.ts` cover expiry, failed or invalid timestamps, slow responses, and visibility invalidation.
 `useDashboard` and `EntitlementSummary.vue` revalidate cached purchases at validity boundaries and on visibility/focus refresh. Expired predecessors disappear immediately while successor discovery refreshes quietly; display state never changes settlement records.
 
 

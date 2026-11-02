@@ -45,7 +45,8 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminReasonDialog.vue` collects audited reasons and keeps action failures visible in the dialog.
 - `AdminSectionState.vue` renders loading and error states.
 - `AdminSettingsPanel.vue` composes runtime, payment, and activity tabs while preserving one coordinated Save action for runtime/payment/activity drafts; payment interventions stay scoped to individual user histories.
-- `AdminSquadEditor.vue` edits sparse squad overrides; node access remains a live X-Node projection.
+- `AdminSquadEditor.vue` edits sparse squad overrides and ordered member-facing features, carrying existing legacy descriptions through saves without displaying or editing them; node access remains a live X-Node projection.
+- `AdminSquadEditor.test.ts` covers description preservation and omitted versus explicitly cleared feature lists.
 - `admin/squad-profile/` contains the typed Broadband, China Optimized, and International Network profile editor modules.
 - `AdminStatisticsPanel.vue` presents resource statistics with contained table scrolling and exact server-calculated figures.
 - `AdminUsersPanel.vue` searches users with responsive state/combo/squad facets and adjusts balances.

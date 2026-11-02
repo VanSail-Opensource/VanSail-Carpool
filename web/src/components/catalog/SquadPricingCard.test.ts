@@ -11,6 +11,35 @@ const squad: SquadProduct = {
 }
 
 describe('member squad profile cards', () => {
+  it.each([false, true])('renders configured features in order for Combo and PAYG (PAYG=%s)', informational => {
+    const wrapper = mount(SquadPricingCard, { props: {
+      squad: { ...squad, features: [
+        { icon: 'route', title: 'Low latency', detail: 'Regional transit' },
+        { icon: 'shield', title: 'Private routing' },
+      ] }, selected: false, included: false, featured: false, informational,
+    } })
+    const items = wrapper.findAll('.squad-features li')
+    expect(items).toHaveLength(2)
+    expect(items[0]?.text()).toContain('Low latency')
+    expect(items[0]?.text()).toContain('Regional transit')
+    expect(items[1]?.text()).toContain('Private routing')
+    expect(wrapper.get('.squad-features__heading').findAll('span')).toHaveLength(1)
+  })
+
+  it('omits the feature section when none are configured', () => {
+    const wrapper = mount(SquadPricingCard, { props: { squad, selected: false, included: false, featured: false } })
+    expect(wrapper.find('.squad-features').exists()).toBe(false)
+  })
+
+  it.each([false, true])('does not render the legacy description in member cards (PAYG=%s)', informational => {
+    const wrapper = mount(SquadPricingCard, { props: {
+      squad: { ...squad, description: '[Network details](https://example.com/network)' },
+      selected: false, included: false, featured: false, informational,
+    } })
+    expect(wrapper.text()).not.toContain('Network details')
+    expect(wrapper.find('a[href="https://example.com/network"]').exists()).toBe(false)
+  })
+
   it('hides combo squad prices but allows the separate PAYG price slot', () => {
     const props = { squad, selected: false, included: false, featured: false }
     const combo = mount(SquadPricingCard, { props })

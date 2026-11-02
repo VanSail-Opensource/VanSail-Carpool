@@ -9,6 +9,18 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 )
 
+func enablesPAYG(patch preferences.Patch) bool {
+	if patch.PAYGEnabled != nil && *patch.PAYGEnabled {
+		return true
+	}
+	for _, enabled := range patch.PAYGSquads {
+		if enabled {
+			return true
+		}
+	}
+	return false
+}
+
 func paygSquadPreferencesFrom(ctx context.Context, reader squadPreferenceReader, user string) (map[string]bool, error) {
 	rows, err := reader.QueryContext(ctx, `SELECT group_id FROM user_disabled_payg_squads WHERE user_id=? ORDER BY group_id`, user)
 	if err != nil {

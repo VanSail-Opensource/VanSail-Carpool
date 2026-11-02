@@ -53,8 +53,14 @@ func (s *Store) retryAttempt_UpdateUserPreferences(ctx context.Context, userID s
 		return preferences.Snapshot{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := balanceTx(ctx, tx, userID); err != nil {
-		return preferences.Snapshot{}, err
+	if enablesPAYG(patch) {
+		balance, err := balanceTx(ctx, tx, userID)
+		if err != nil {
+			return preferences.Snapshot{}, err
+		}
+		if balance <= 0 {
+			return preferences.Snapshot{}, ErrInsufficientBalance
+		}
 	}
 	p, err := scanPreferences(tx.QueryRowContext(ctx, preferenceSelect, userID))
 	if err != nil {

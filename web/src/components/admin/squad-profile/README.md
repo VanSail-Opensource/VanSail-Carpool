@@ -8,6 +8,10 @@
 - `SquadPortField.vue` provides the shared Mbps and unlimited-port control.
 - `profileForm.ts` maps API profiles to the compact editor draft and back.
 - `profileForm.test.ts` checks type-specific mapping, unlimited ports, and required fields.
+- `AdminSquadFeaturesEditor.vue` edits the ordered, optional features with icon previews and move controls; `featureForm.ts` validates Unicode character limits and normalizes text for the squad product API.
+- `AdminSquadFeaturesEditor.test.ts` covers feature order and removal. `featureForm.test.ts` covers Unicode limits and normalized payloads in hosted CI.
 
 The editor emits only a complete typed profile. Incomplete drafts remain local
 to the form and cannot be submitted to the admin API.
+Saves omit untouched feature lists to preserve concurrent updates; an explicitly
+edited empty list clears the saved features.

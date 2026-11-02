@@ -58,7 +58,8 @@
     },
     "payg": {
       "enabled": "Enable PAYG",
-      "hint": "Off stops PAYG access and new credit purchases. Existing credit keeps its normal expiry."
+      "hint": "Off stops PAYG access and new credit purchases. Existing credit keeps its normal expiry.",
+      "balanceRequired": "Add balance to use PAYG controls and include PAYG in your subscription. Your saved choices and existing credit are kept."
     }
   }
 }

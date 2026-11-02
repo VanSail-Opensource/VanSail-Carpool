@@ -16,3 +16,4 @@ events fail category resolution so new producers must explicitly choose a catego
 `delivery_test.go` verifies category isolation for all current events.
 
 PAYG access defaults on. The master flag is an account choice; the snapshot adds a sparse `paygSquads` opt-out map (missing means enabled). PATCH merges supplied squad entries and enabling removes the stored opt-out. Combo controls remain independent.
+Explicitly enabling PAYG or a PAYG squad requires a strictly positive current wallet balance, checked under the balance lock in the preference transaction. A rejected patch leaves all choices unchanged. Disabling remains allowed and prepaid credit is untouched.

@@ -11,9 +11,8 @@ import InternationalNetworkProfileFields from './InternationalNetworkProfileFiel
 import { draftFromProfile, profileFromDraft, validationKey, type ProfileDraft } from './profileForm'
 
 const props = withDefaults(defineProps<{
-  description?: string
   showValidation?: boolean
-}>(), { description: '', showValidation: false })
+}>(), { showValidation: false })
 const profile = defineModel<SquadProfileWrite | null>('profile', { required: true })
 const { t } = useI18n()
 const draft = reactive<ProfileDraft>(draftFromProfile(profile.value))
@@ -65,7 +64,7 @@ function applyDraft(value: ProfileDraft): void {
     </UAlert>
     <div class="squad-profile-editor__preview">
       <span>{{ t('squadProfile.preview') }}</span>
-      <SquadProfileSummary :profile="profile" :description="props.description" compact />
+      <SquadProfileSummary :profile="profile" compact />
     </div>
   </section>
 </template>
