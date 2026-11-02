@@ -13,7 +13,7 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_payment_candidates(id)
 		SELECT payment.id FROM payment_orders payment
-		WHERE payment.updated_at<? AND (payment.status IN ('paid','expired','failed','refunded') OR payment.cancelled_at IS NOT NULL)
+		WHERE payment.updated_at<$1 AND (payment.status IN ('paid','expired','failed','refunded') OR payment.cancelled_at IS NOT NULL)
 		AND NOT EXISTS (
 			SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
 			WHERE item.target_type='payment' AND item.target_id=payment.id
@@ -30,7 +30,7 @@ func compactPaymentsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, c
 		SELECT substr(payment.updated_at,1,10),payment.provider,
 			CASE WHEN payment.status='refunded' THEN 'refunded' WHEN payment.status='paid' THEN 'paid'
 				WHEN payment.cancelled_at IS NOT NULL THEN 'cancelled' ELSE payment.status END,
-			COUNT(*),COALESCE(SUM(payment.txb_minor),0),?
+			COUNT(*),COALESCE(SUM(payment.txb_minor),0),$1
 		FROM payment_orders payment JOIN maintenance_payment_candidates candidate ON candidate.id=payment.id
 		GROUP BY substr(payment.updated_at,1,10),payment.provider,
 			CASE WHEN payment.status='refunded' THEN 'refunded' WHEN payment.status='paid' THEN 'paid'

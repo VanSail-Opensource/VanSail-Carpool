@@ -36,13 +36,13 @@ only after database compatibility and migration verification gates pass.
 
 Configuration validates pool bounds and positive duration deadlines. Defaults:
 8 open / 4 idle connections, 30m lifetime, 10s connect, 30s statement, 5s lock.
-`DB_MIGRATE_ON_START` defaults to true for legacy SQLite and false for PostgreSQL.
+`DB_MIGRATE_ON_START` defaults to false. `DB_DRIVER` defaults to postgres.
 Database failures must stop startup; they must never select the other backend.
 
 References: [official image](https://hub.docker.com/_/postgres),
 [PostgreSQL authentication](https://www.postgresql.org/docs/18/auth-password.html).
 
 The explicit application overlay is `compose.application.yml`; follow
-[cutover and rehearsal](cutover.md) before starting it. The private exporter
+[startup and schema policy](../../docs/postgresql-migration.md) before starting it. The private exporter
 overlay, aggregate queries, Prometheus rules and physical-backup metrics are
 documented in [monitoring](monitoring.md). Preserve the existing `/data` volume.

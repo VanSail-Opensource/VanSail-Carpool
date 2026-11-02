@@ -22,7 +22,7 @@ func TestPricingAdmissionDistinguishesNoProxyGroupsFromMissingNodes(t *testing.T
 	if err = pricingHealthAdmissionTx(ctx, tx, "combo", combo.ID, time.Now()); err != nil {
 		t.Fatalf("combo without proxy groups: %v", err)
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["missing-group"]' WHERE id=?`, combo.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["missing-group"]' WHERE id=$1`, combo.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err = pricingHealthAdmissionTx(ctx, tx, "combo", combo.ID, time.Now()); !errors.Is(err, pricing.CapacityUnsafe) {
@@ -65,7 +65,7 @@ func TestQueuedPricingDecisionsPreserveRenewalOnFailureAndDisableOnSuccess(t *te
 		t.Fatal("failed checkout disabled renewal", current, err)
 	}
 	var contracts int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_contracts WHERE purchase_id=?`, source.ID).Scan(&contracts); err != nil || contracts != 0 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_contracts WHERE purchase_id=$1`, source.ID).Scan(&contracts); err != nil || contracts != 0 {
 		t.Fatal("fixed decision froze legacy settlement", contracts, err)
 	}
 	if _, err = s.AdjustBalance(ctx, u.ID, 500, "decision-funding", "seed", now); err != nil {
@@ -84,7 +84,7 @@ func TestQueuedPricingDecisionsPreserveRenewalOnFailureAndDisableOnSuccess(t *te
 		t.Fatal("replay charged twice", replay, err)
 	}
 	var debits int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=? AND kind='purchase_debit'`, future.ID).Scan(&debits); err != nil || debits != 1 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=$1 AND kind='purchase_debit'`, future.ID).Scan(&debits); err != nil || debits != 1 {
 		t.Fatal(debits, err)
 	}
 }
@@ -135,7 +135,7 @@ func TestFutureCheckoutRequiresBothCurrentAndSelectedDecision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='CANCELLED' WHERE purchase_id=?`, source.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='CANCELLED' WHERE purchase_id=$1`, source.ID); err != nil {
 		tx.Rollback()
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestFutureCheckoutRequiresBothCurrentAndSelectedDecision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tx.ExecContext(ctx, `DELETE FROM pricing_personal_decisions WHERE version=?`, q.PricingDecision.Version); err != nil {
+	if _, err = tx.ExecContext(ctx, `DELETE FROM pricing_personal_decisions WHERE version=$1`, q.PricingDecision.Version); err != nil {
 		tx.Rollback()
 		t.Fatal(err)
 	}

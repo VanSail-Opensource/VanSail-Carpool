@@ -11,10 +11,7 @@ import (
 
 // MarkPurchaseSyncResult advances an activating purchase after upstream work.
 func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchaseID string, success bool, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -26,7 +23,7 @@ func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchas
 		status = "active"
 		predicate = "status IN ('activating','failed')"
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status=?,updated_at=? WHERE id=? AND `+predicate, status, stamp(now), purchaseID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status=$1,updated_at=$2 WHERE id=$3 AND `+predicate, status, stamp(now), purchaseID)
 	if err != nil {
 		return err
 	}
@@ -35,8 +32,8 @@ func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchas
 		return err
 	}
 	if success && affected == 1 {
-		if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO ip_lookup_allowances(purchase_id,total)
-			SELECT purchases.id,COALESCE(combos.ip_lookup_quota,0) FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=?`, purchaseID); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT   INTO ip_lookup_allowances(purchase_id,total)
+			SELECT purchases.id,COALESCE(combos.ip_lookup_quota,0) FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1 ON CONFLICT DO NOTHING `, purchaseID); err != nil {
 			return err
 		}
 		if err := s.insertActivationNotificationTx(ctx, tx, purchaseID, now); err != nil {
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_MarkPurchaseSyncResult(ctx context.Context, purchas
 // PurchaseTrafficResetPhase returns the durable phase of a new-term reset.
 func (s *Store) PurchaseTrafficResetPhase(ctx context.Context, purchaseID string) (string, error) {
 	var phase string
-	err := s.db.QueryRowContext(ctx, `SELECT traffic_reset_phase FROM purchases WHERE id=?`, purchaseID).Scan(&phase)
+	err := s.db.QueryRowContext(ctx, `SELECT traffic_reset_phase FROM purchases WHERE id=$1`, purchaseID).Scan(&phase)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
@@ -66,8 +63,8 @@ func (s *Store) AdvancePurchaseTrafficReset(ctx context.Context, purchaseID, fro
 	if !valid {
 		return ErrConflict
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE purchases SET traffic_reset_phase=?,updated_at=?
-		WHERE id=? AND status IN ('activating','failed') AND traffic_reset_phase=?`, to, stamp(now), purchaseID, from)
+	result, err := s.db.ExecContext(ctx, `UPDATE purchases SET traffic_reset_phase=$1,updated_at=$2
+		WHERE id=$3 AND status IN ('activating','failed') AND traffic_reset_phase=$4`, to, stamp(now), purchaseID, from)
 	if err != nil {
 		return fmt.Errorf("advance purchase traffic reset: %w", err)
 	}
@@ -90,12 +87,12 @@ func (s *Store) AdvancePurchaseTrafficReset(ctx context.Context, purchaseID, fro
 
 // UserForPurchase returns the local user owning a purchase.
 func (s *Store) UserForPurchase(ctx context.Context, purchaseID string) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN purchases ON purchases.user_id=users.id WHERE purchases.id=?`, purchaseID))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN purchases ON purchases.user_id=users.id WHERE purchases.id=$1`, purchaseID))
 }
 
 // DesiredEntitlement returns the currently effective purchase, if any.
 func (s *Store) DesiredEntitlement(ctx context.Context, userID string, now time.Time) (*model.Purchase, error) {
-	purchase, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=? AND purchases.status IN ('activating','active') AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)))
+	purchase, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 AND purchases.status IN ('activating','active') AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}

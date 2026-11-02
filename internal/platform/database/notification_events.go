@@ -21,7 +21,7 @@ func (s *Store) insertUserNotificationTx(ctx context.Context, tx *sql.Tx, eventK
 	}
 	var chatID int64
 	var locale string
-	if err := tx.QueryRowContext(ctx, `SELECT telegram_id,notification_locale FROM users WHERE id=?`, userID).Scan(&chatID, &locale); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT telegram_id,notification_locale FROM users WHERE id=$1`, userID).Scan(&chatID, &locale); err != nil {
 		return false, fmt.Errorf("load notification recipient: %w", err)
 	}
 	payload, err := jobpayload.EncodeUserNotification(jobpayload.UserNotification{
@@ -35,8 +35,8 @@ func (s *Store) insertUserNotificationTx(ctx context.Context, tx *sql.Tx, eventK
 	if gateKey == "" {
 		queuedAt = stamp(now)
 	}
-	result, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO user_notification_events
-		(event_key,user_id,source_kind,source_id,kind,payload_json,gate_key,queued_at,created_at) VALUES(?,?,?,?,?,?,?,?,?)`,
+	result, err := tx.ExecContext(ctx, `INSERT   INTO user_notification_events
+		(event_key,user_id,source_kind,source_id,kind,payload_json,gate_key,queued_at,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING `,
 		eventKey, userID, sourceKind, sourceID, kind, payload, gateKey, queuedAt, stamp(now))
 	if err != nil {
 		return false, fmt.Errorf("insert user notification event: %w", err)
@@ -65,7 +65,7 @@ func (s *Store) insertUserNotificationTx(ctx context.Context, tx *sql.Tx, eventK
 
 func (s *Store) releaseNotificationGateTx(ctx context.Context, tx *sql.Tx, gateKey string, now time.Time) (int, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT event_key,payload_json FROM user_notification_events
-		WHERE gate_key=? AND queued_at IS NULL ORDER BY created_at,event_key`, gateKey)
+		WHERE gate_key=$1 AND queued_at IS NULL ORDER BY created_at,event_key`, gateKey)
 	if err != nil {
 		return 0, fmt.Errorf("list gated notifications: %w", err)
 	}
@@ -92,8 +92,8 @@ func (s *Store) releaseNotificationGateTx(ctx context.Context, tx *sql.Tx, gateK
 		if err := insertOutboxTx(ctx, tx, jobpayload.UserNotificationKind, payload, now, now); err != nil {
 			return 0, err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE user_notification_events SET queued_at=?
-			WHERE event_key=? AND queued_at IS NULL`, stamp(now), item.eventKey); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE user_notification_events SET queued_at=$1
+			WHERE event_key=$2 AND queued_at IS NULL`, stamp(now), item.eventKey); err != nil {
 			return 0, err
 		}
 	}
@@ -121,10 +121,7 @@ func notificationPayloadForRelease(encoded string, now time.Time) (string, error
 
 // ReleaseUserSyncNotifications queues events after an exact user-state sync.
 func (s *Store) retryAttempt_ReleaseUserSyncNotifications(ctx context.Context, userID string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

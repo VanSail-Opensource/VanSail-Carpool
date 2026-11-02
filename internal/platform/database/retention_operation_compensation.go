@@ -73,7 +73,7 @@ func compensateStaleEmbySetupsTx(ctx context.Context, tx *sql.Tx, now time.Time)
 		}
 	}
 	_, err = tx.ExecContext(ctx, `UPDATE emby_accounts SET status='failed',password_ciphertext='',password_context='',
-		pending_preferences_json='{}',last_error='maintenance timeout',refunded_at=?,updated_at=?
+		pending_preferences_json='{}',last_error='maintenance timeout',refunded_at=$1,updated_at=$2
 		WHERE user_id IN (SELECT operation.owner_user_id FROM maintenance_operation_candidates candidate
 			JOIN provider_operations operation ON operation.id=candidate.id AND operation.kind='emby_setup')
 		AND status IN ('queued','provisioning','pending_review') AND refunded_at IS NULL`, stamp(now), stamp(now))

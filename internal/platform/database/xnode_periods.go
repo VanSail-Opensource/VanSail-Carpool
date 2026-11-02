@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Store) XNodePeriod(ctx context.Context, id string) (xnode.Period, error) {
-	return scanXNodePeriod(s.db.QueryRowContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE id=?`, id))
+	return scanXNodePeriod(s.db.QueryRowContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE id=$1`, id))
 }
 
 const xnodePeriodColumns = "id,proxy_user_id,COALESCE(purchase_id,''),started_at,ended_at,limit_bytes,strategy,last_reset_at,used_bytes,status"
@@ -47,10 +47,7 @@ func scanXNodePeriod(row rowScanner) (xnode.Period, error) {
 	return item, nil
 }
 func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Period) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -63,7 +60,7 @@ func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Per
 	if item.LastResetAt != nil {
 		reset = stamp(*item.LastResetAt)
 	}
-	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS excluded.purchase_id AND NOT (xnode_periods.status IN ('closing','closed','review') AND excluded.status='open')`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
+	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS NOT DISTINCT FROM excluded.purchase_id AND NOT (xnode_periods.status IN ('closing','closed','review') AND excluded.status='open')`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
 	if err != nil {
 		return err
 	}
@@ -75,7 +72,7 @@ func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Per
 		return xnode.ErrConflict
 	}
 	if item.Status == "open" {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=? WHERE proxy_user_id=?`, item.ID, item.ProxyUserID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=$1 WHERE proxy_user_id=$2`, item.ID, item.ProxyUserID); err != nil {
 			return err
 		}
 	}
@@ -83,7 +80,7 @@ func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Per
 }
 
 func (s *Store) XNodeUsage(ctx context.Context, id int64, from, to time.Time) ([]xnode.DailyUsage, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes FROM xnode_daily_usage WHERE proxy_user_id=? AND date>=? AND date<=? ORDER BY date,node_id,period_id`, id, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
+	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes FROM xnode_daily_usage WHERE proxy_user_id=$1 AND date>=$2 AND date<=$3 ORDER BY date,node_id,period_id`, id, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +98,7 @@ func (s *Store) XNodeUsage(ctx context.Context, id int64, from, to time.Time) ([
 
 func (s *Store) XNodeReportSequence(ctx context.Context, agent string) (uint64, error) {
 	var sequence uint64
-	err := s.db.QueryRowContext(ctx, `SELECT last_sequence FROM xnode_report_cursors WHERE agent_id=?`, agent).Scan(&sequence)
+	err := s.db.QueryRowContext(ctx, `SELECT last_sequence FROM xnode_report_cursors WHERE agent_id=$1`, agent).Scan(&sequence)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
@@ -112,7 +109,7 @@ func (s *Store) XNodeClosingPeriods(ctx context.Context, limit int) ([]xnode.Per
 	if limit < 1 || limit > 128 {
 		return nil, xnode.ErrInvalid
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE status='closing' ORDER BY ended_at,id LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE status='closing' ORDER BY ended_at,id LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

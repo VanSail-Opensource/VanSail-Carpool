@@ -22,14 +22,14 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 		return activity.ErrInvalidInput
 	}
 	var purchaseID, validUntilRaw string
-	err := tx.QueryRowContext(ctx, `SELECT id,valid_until FROM purchases WHERE user_id=? AND status IN ('activating','active') AND valid_from<=? AND valid_until>?
+	err := tx.QueryRowContext(ctx, `SELECT id,valid_until FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3
 		ORDER BY valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)).Scan(&purchaseID, &validUntilRaw)
 	if errors.Is(err, sql.ErrNoRows) {
 		creditID, idErr := ids.New()
 		if idErr != nil {
 			return idErr
 		}
-		_, insertErr := tx.ExecContext(ctx, `INSERT INTO activity_extension_credits(id,user_id,days,hours,source_type,source_id,created_at) VALUES(?,?,?,?,?,?,?)`,
+		_, insertErr := tx.ExecContext(ctx, `INSERT INTO activity_extension_credits(id,user_id,days,hours,source_type,source_id,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`,
 			creditID, userID, (hours+23)/24, hours, sourceType, sourceID, stamp(now))
 		return insertErr
 	}
@@ -44,10 +44,10 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=?,updated_at=? WHERE id=?`, stamp(shiftedUntil), stamp(now), purchaseID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=$1,updated_at=$2 WHERE id=$3`, stamp(shiftedUntil), stamp(now), purchaseID); err != nil {
 		return err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases WHERE user_id=? AND status='queued' AND valid_from>=? ORDER BY valid_from`, userID, validUntilRaw)
+	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases WHERE user_id=$1 AND status='queued' AND valid_from>=$2 ORDER BY valid_from`, userID, validUntilRaw)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 		if shiftErr != nil {
 			return shiftErr
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=?,valid_until=?,updated_at=? WHERE id=?`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id); err != nil {
 			return err
 		}
 	}
@@ -95,7 +95,7 @@ func applySubscriptionExtensionHoursTx(ctx context.Context, tx *sql.Tx, userID s
 // early because an older queued term remains the member's next activation.
 
 func consumePendingExtensionsTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, now time.Time) (int, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT id,COALESCE(hours,days*24) FROM activity_extension_credits WHERE user_id=? AND consumed_at IS NULL ORDER BY created_at,id`, userID)
+	rows, err := tx.QueryContext(ctx, `SELECT id,COALESCE(hours,days*24) FROM activity_extension_credits WHERE user_id=$1 AND consumed_at IS NULL ORDER BY created_at,id`, userID)
 	if err != nil {
 		return 0, err
 	}
@@ -121,7 +121,7 @@ func consumePendingExtensionsTx(ctx context.Context, tx *sql.Tx, userID, purchas
 	}
 	_ = rows.Close()
 	for _, creditID := range idsToConsume {
-		if _, err := tx.ExecContext(ctx, `UPDATE activity_extension_credits SET consumed_at=?,consumed_by_purchase_id=? WHERE id=? AND consumed_at IS NULL`, stamp(now), purchaseID, creditID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE activity_extension_credits SET consumed_at=$1,consumed_by_purchase_id=$2 WHERE id=$3 AND consumed_at IS NULL`, stamp(now), purchaseID, creditID); err != nil {
 			return 0, err
 		}
 	}

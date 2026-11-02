@@ -109,7 +109,7 @@ func (r *workerRepository) ClaimOutboxJob(context.Context, time.Time) (*model.Ou
 	return job, nil
 }
 
-func (r *workerRepository) CompleteOutboxJob(_ context.Context, _ string, _ int, jobErr error, _ time.Time) error {
+func (r *workerRepository) CompleteOutboxClaim(_ context.Context, _ model.OutboxJob, jobErr error, _ time.Time) error {
 	r.completions = append(r.completions, jobErr)
 	return nil
 }

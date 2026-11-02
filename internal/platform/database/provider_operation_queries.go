@@ -18,20 +18,20 @@ const providerOperationSelect = `SELECT id,actor_user_id,owner_user_id,kind,idem
 
 // ProviderOperationByID returns internal operation metadata for a worker.
 func (s *Store) ProviderOperationByID(ctx context.Context, operationID string) (providerops.Operation, error) {
-	return scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
+	return scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 }
 
 // ProviderOperationForOwner returns a member-safe receipt scoped to its owner.
 func (s *Store) ProviderOperationForOwner(ctx context.Context, operationID, ownerID string) (model.OperationReceipt, error) {
 	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+
-		` WHERE id=? AND owner_user_id=?`, operationID, ownerID))
+		` WHERE id=$1 AND owner_user_id=$2`, operationID, ownerID))
 	return operation.Receipt, err
 }
 
 // ProviderOperationForPrincipal returns a safe receipt to its actor or owner.
 func (s *Store) ProviderOperationForPrincipal(ctx context.Context, operationID, userID string) (model.OperationReceipt, error) {
 	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+
-		` WHERE id=? AND (actor_user_id=? OR owner_user_id=?)`, operationID, userID, userID))
+		` WHERE id=$1 AND (actor_user_id=$2 OR owner_user_id=$3)`, operationID, userID, userID))
 	return operation.Receipt, err
 }
 
@@ -41,7 +41,7 @@ func (s *Store) ListProviderOperationsForOwner(ctx context.Context, ownerID stri
 		limit = 50
 	}
 	rows, err := s.db.QueryContext(ctx, providerOperationSelect+
-		` WHERE owner_user_id=? ORDER BY created_at DESC,id DESC LIMIT ?`, ownerID, limit)
+		` WHERE owner_user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, ownerID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list provider operations: %w", err)
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, termCount int, excludedAddonIDs []string, now time.Time) (model.RenewalQuote, model.Combo, []model.SquadProduct, error) {
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, purchaseID, userID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID))
 	if err != nil {
 		return model.RenewalQuote{}, model.Combo{}, nil, err
 	}
@@ -30,7 +30,7 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 		return model.RenewalQuote{}, model.Combo{}, nil, err
 	}
 	var customPrice sql.NullInt64
-	if err = tx.QueryRowContext(ctx, `SELECT reward_renewal_price_minor FROM purchases WHERE id=?`, purchaseID).Scan(&customPrice); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT reward_renewal_price_minor FROM purchases WHERE id=$1`, purchaseID).Scan(&customPrice); err != nil {
 		return model.RenewalQuote{}, model.Combo{}, nil, err
 	}
 	if customPrice.Valid {

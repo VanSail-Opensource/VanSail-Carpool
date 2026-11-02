@@ -55,6 +55,6 @@ func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent strin
 		return err
 	}
 	key := sha256.Sum256([]byte(node + "\n" + agent + "\n" + strconv.FormatUint(sequence, 10) + "\n" + digest))
-	_, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES(?,NULL,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, "traffic-discard-"+hex.EncodeToString(key[:]), "xnode_traffic_discard", "xnode_node", node, string(raw), stamp(time.Now().UTC()))
+	_, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,NULL,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING`, "traffic-discard-"+hex.EncodeToString(key[:]), "xnode_traffic_discard", "xnode_node", node, string(raw), stamp(time.Now().UTC()))
 	return err
 }

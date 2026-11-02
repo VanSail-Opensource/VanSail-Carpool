@@ -14,7 +14,7 @@ import (
 // period closure requires every probe barrier before financial settlement.
 func attributeProbeSample(ctx context.Context, tx *sql.Tx, node string, owner int64, sample *wire.TrafficSample) error {
 	var allowed bool
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_metered_probes WHERE proxy_user_id=? AND period_id=? AND node_id=?)`, sample.UserID, sample.AccountingPeriod, node).Scan(&allowed); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_metered_probes WHERE proxy_user_id=$1 AND period_id=$2 AND node_id=$3)`, sample.UserID, sample.AccountingPeriod, node).Scan(&allowed); err != nil {
 		return err
 	}
 	if !allowed {

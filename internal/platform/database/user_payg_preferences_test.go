@@ -83,7 +83,7 @@ func TestPAYGOptOutBlocksConnectionPurchaseButSettlesDeliveredTraffic(t *testing
 	if _, err := s.UpdateUserPreferences(ctx, owner.UserID, preferences.Patch{PAYGEnabled: &off}, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES(?,?,?,?)`, account.ProxyUserID, paygWindowStamp(now), xnode.PAYGStartBytes, xnode.PAYGStartBytes); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES($1,$2,$3,$4)`, account.ProxyUserID, paygWindowStamp(now), xnode.PAYGStartBytes, xnode.PAYGStartBytes); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.ObserveXNodePAYGConnections(ctx, account.NodeID, []int64{account.ProxyUserID}, now); err != nil {

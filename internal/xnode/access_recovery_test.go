@@ -22,7 +22,7 @@ func TestAccessRepairResumesOnlyUnsettledPeriod(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET status=?,used_bytes=12345,ended_at=? WHERE id=?`, status, time.Now().UTC().Format(time.RFC3339Nano), identity.CurrentPeriodID)
+			_, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET status=$1,used_bytes=12345,ended_at=$2 WHERE id=$3`, status, time.Now().UTC().Format(time.RFC3339Nano), identity.CurrentPeriodID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +76,7 @@ func TestAccessRepairReloadsAfterConflictAndDefersContention(t *testing.T) {
 			r := &changingAccessRepository{Repository: f.store}
 			if cancel {
 				r.change = func() {
-					if _, err := f.store.DB().Exec(`UPDATE purchases SET status='cancelled' WHERE user_id=?`, f.user.ID); err != nil {
+					if _, err := f.store.DB().Exec(`UPDATE purchases SET status='cancelled' WHERE user_id=$1`, f.user.ID); err != nil {
 						t.Fatal(err)
 					}
 				}

@@ -16,7 +16,7 @@ func TestOnlineReplayBacklogDoesNotBlockPaidSuccessor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=?`, identity.CurrentPeriodID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=$1`, identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(f.master)

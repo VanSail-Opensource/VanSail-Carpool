@@ -16,7 +16,7 @@ func (s *Store) EnqueueDIYReconcile(ctx context.Context, now time.Time) error {
 		return err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT user_id FROM xnode_member_diy WHERE user_id>? ORDER BY user_id LIMIT 128`, s.diyCleanupCursor)
+	rows, err := tx.QueryContext(ctx, `SELECT user_id FROM xnode_member_diy WHERE user_id>$1 ORDER BY user_id LIMIT 128`, s.diyCleanupCursor)
 	if err != nil {
 		return err
 	}
@@ -52,16 +52,13 @@ func (s *Store) EnqueueDIYReconcile(ctx context.Context, now time.Time) error {
 }
 
 func (s *Store) retryAttempt_SaveSystemDIY(ctx context.Context, doc xnode.DIYDocument) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_member_diy SET revision=revision+1,cipher=? WHERE user_id=? AND revision=? AND revision<9007199254740991`, doc.Cipher, doc.UserID, doc.Revision)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_member_diy SET revision=revision+1,cipher=$1 WHERE user_id=$2 AND revision=$3 AND revision<9007199254740991`, doc.Cipher, doc.UserID, doc.Revision)
 	if err != nil {
 		return err
 	}

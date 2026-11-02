@@ -44,10 +44,7 @@ func firewallAudience(ctx context.Context, tx *sql.Tx) ([]byte, error) {
 	return b.ToBytes()
 }
 func (s *Store) retryAttempt_firewallWrite(ctx context.Context, fn func(*sql.Tx) error) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -67,7 +64,7 @@ func expireFirewallParticipant(ctx context.Context, tx *sql.Tx, table, key, gene
 		field = "id"
 	}
 	var participants, expired []byte
-	err := tx.QueryRowContext(ctx, `SELECT participants,expired FROM `+table+` WHERE `+field+`=? AND generation=? AND released_version=0`, key, generation).Scan(&participants, &expired)
+	err := tx.QueryRowContext(ctx, `SELECT participants,expired FROM `+table+` WHERE `+field+`=$1 AND generation=$2 AND released_version=0`, key, generation).Scan(&participants, &expired)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -127,12 +124,12 @@ func expireFirewallSnapshot(ctx context.Context, tx *sql.Tx, table, key, generat
 			return err
 		}
 		if table == "xnode_firewall_sources" {
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=? WHERE singleton=1`, released); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=$1 WHERE singleton=1`, released); err != nil {
 				return err
 			}
 		}
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET expired=?,released_version=?,released_at=CASE WHEN ?>0 THEN ? ELSE released_at END WHERE `+field+`=? AND generation=?`, raw, released, released, stamp(time.Now().UTC()), key, generation)
+	_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET expired=$1,released_version=$2,released_at=CASE WHEN $3>0 THEN $4 ELSE released_at END WHERE `+field+`=$1 AND generation=$2`, raw, released, released, stamp(time.Now().UTC()), key, generation)
 	if err != nil {
 		return fmt.Errorf("record firewall expiry: %w", err)
 	}

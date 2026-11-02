@@ -18,10 +18,7 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 {
 		return coupons.RedemptionResult{}, coupons.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -85,7 +82,7 @@ func (s *Store) retryAttempt_RedeemCoupon(ctx context.Context, userID, code, ide
 		return coupons.RedemptionResult{}, coupons.ErrInvalidInput
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO coupon_redemptions(id,coupon_id,grant_id,user_id,balance_delta_minor,balance_after_minor,idempotency_key,created_at)
-		VALUES(?,?,?,?,?,?,?,?)`, redemptionID, coupon.ID, nullableStringValue(grantID), userID, delta, balance, idempotencyKey, stamp(now))
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, redemptionID, coupon.ID, nullableStringValue(grantID), userID, delta, balance, idempotencyKey, stamp(now))
 	if err != nil {
 		return coupons.RedemptionResult{}, fmt.Errorf("record coupon redemption: %w", err)
 	}
@@ -101,10 +98,7 @@ func (s *Store) retryAttempt_GrantCoupon(ctx context.Context, userID, couponID, 
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(couponID) == "" || strings.TrimSpace(sourceType) == "" || strings.TrimSpace(sourceID) == "" {
 		return coupons.Grant{}, coupons.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return coupons.Grant{}, err
@@ -130,13 +124,13 @@ func (s *Store) retryAttempt_GrantCoupon(ctx context.Context, userID, couponID, 
 // ListCouponGrants returns currently usable purchase-discount grants.
 
 func (s *Store) ListCouponGrants(ctx context.Context, userID string, now time.Time) ([]coupons.Grant, error) {
-	if _, err := s.db.ExecContext(ctx, `UPDATE coupon_grants SET status='expired' WHERE user_id=? AND status='active'
-		AND coupon_id IN (SELECT id FROM coupon_definitions WHERE expires_at IS NOT NULL AND expires_at<=?)
+	if _, err := s.db.ExecContext(ctx, `UPDATE coupon_grants SET status='expired' WHERE user_id=$1 AND status='active'
+		AND coupon_id IN (SELECT id FROM coupon_definitions WHERE expires_at IS NOT NULL AND expires_at<=$2)
 		AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE coupon_grant_discards.grant_id=coupon_grants.id)`, userID, stamp(now)); err != nil {
 		return nil, fmt.Errorf("expire coupon grants: %w", err)
 	}
-	rows, err := s.db.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=? AND coupon_grants.status='active'
-		AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>?)
+	rows, err := s.db.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.status='active'
+		AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>$2)
 		AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE coupon_grant_discards.grant_id=coupon_grants.id)
 		AND `+authorizedCouponGrant+` ORDER BY coupon_grants.created_at DESC`, userID, stamp(now))
 	if err != nil {

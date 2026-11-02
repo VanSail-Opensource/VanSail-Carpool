@@ -13,10 +13,7 @@ import (
 
 // SettleRaffle distributes the stock in one atomic transaction or reopens after refunds.
 func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng activity.RandomSource, now time.Time) (activity.RaffleSettlement, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return activity.RaffleSettlement{}, err
@@ -69,7 +66,7 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 		}
 	}
 	if refunded {
-		if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='open',updated_at=? WHERE id=?`, stamp(now), id); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='open',updated_at=$1 WHERE id=$2`, stamp(now), id); err != nil {
 			return activity.RaffleSettlement{}, err
 		}
 		payload, _ := json.Marshal(map[string]any{"drawId": id})
@@ -134,7 +131,7 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO activity_draw_results
    (id,user_id,draw_id,prize_id,prize_name,fee_minor,reward_kind,reward_payload,balance_after_minor,
-   configuration_snapshot,idempotency_key,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+   configuration_snapshot,idempotency_key,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
 			resultID, ticket.UserID, id, prize.ID, prize.Name, ticket.Fee, resolved.Kind, string(payload), balance, string(snapshot), "raffle:"+ticket.ID, stamp(now))
 		if err != nil {
 			return activity.RaffleSettlement{}, fmt.Errorf("record raffle reward: %w", err)
@@ -143,10 +140,10 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 		if err != nil {
 			return activity.RaffleSettlement{}, err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE activity_draw_results SET balance_after_minor=? WHERE id=?`, balance, resultID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE activity_draw_results SET balance_after_minor=$1 WHERE id=$2`, balance, resultID); err != nil {
 			return activity.RaffleSettlement{}, err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET status='settled',prize_id=?,result_id=?,updated_at=? WHERE id=?`,
+		if _, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET status='settled',prize_id=$1,result_id=$2,updated_at=$3 WHERE id=$4`,
 			prize.ID, resultID, stamp(now), ticket.ID); err != nil {
 			return activity.RaffleSettlement{}, err
 		}
@@ -168,7 +165,7 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 			result.NonWinners = append(result.NonWinners, userID)
 		}
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='completed',updated_at=? WHERE id=?`, stamp(now), id); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='completed',updated_at=$1 WHERE id=$2`, stamp(now), id); err != nil {
 		return activity.RaffleSettlement{}, err
 	}
 	payload, _ := json.Marshal(map[string]any{"drawId": id})

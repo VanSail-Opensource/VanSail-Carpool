@@ -23,10 +23,10 @@ func standaloneFixture(t *testing.T, limit, used int64, strategy string) (fixtur
 	if identity.ProxyUserID < 1<<52 || identity.ProxyUserID >= 1<<53 {
 		t.Fatal("invalid service namespace", identity.ProxyUserID)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `INSERT INTO xnode_imported_usage(proxy_user_id,period_id,used_bytes,lifetime_bytes,synced_at) VALUES(?,?,?,?,?)`, identity.ProxyUserID, identity.CurrentPeriodID, used, 10000, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `INSERT INTO xnode_imported_usage(proxy_user_id,period_id,used_bytes,lifetime_bytes,synced_at) VALUES($1,$2,$3,$4,$5)`, identity.ProxyUserID, identity.CurrentPeriodID, used, 10000, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, used, identity.CurrentPeriodID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2`, used, identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
 	return f, identity, access

@@ -30,7 +30,7 @@ func TestPanelEntryVerificationAndOnboardingCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	check(true)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='verified',onboarding_state='agreement' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='verified',onboarding_state='agreement' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	revision, ids, err := store.CurrentAgreementContract(ctx)
@@ -41,13 +41,13 @@ func TestPanelEntryVerificationAndOnboardingCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM panel_entry_verification WHERE telegram_id=?`, user.TelegramID).Scan(&count); err != nil || count != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM panel_entry_verification WHERE telegram_id=$1`, user.TelegramID).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("rows=%d, %v", count, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='agreement' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='agreement' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET policy_accepted_at=NULL WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET policy_accepted_at=NULL WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.RegisterPanelEntry(ctx, user.TelegramID, true); err != nil {
@@ -82,7 +82,7 @@ func TestDisabledCaptchaQualifiesOnlyAuthenticatedPanelEntry(t *testing.T) {
 		t.Fatal("unrecognized identity qualified")
 	}
 	var columns int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('panel_entry_verification')`).Scan(&columns); err != nil || columns != 2 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pg_attribute WHERE attrelid=to_regclass('panel_entry_verification') AND attnum>0 AND NOT attisdropped`).Scan(&columns); err != nil || columns != 2 {
 		t.Fatalf("columns=%d,%v", columns, err)
 	}
 }

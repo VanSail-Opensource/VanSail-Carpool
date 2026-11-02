@@ -13,8 +13,8 @@ func outboxRetryDelayTx(ctx context.Context, tx *sql.Tx, jobID string, attempts 
 	var kind, operationKind string
 	err := tx.QueryRowContext(ctx, `SELECT j.kind,COALESCE(o.kind,'') FROM outbox_jobs j
 		LEFT JOIN provider_operations o ON j.kind='provider_operation'
-		AND o.id=json_extract(CASE WHEN json_valid(j.payload) THEN j.payload ELSE '{}' END,'$.operationId')
-		WHERE j.id=?`, jobID).Scan(&kind, &operationKind)
+		AND o.id=(CASE ((CASE WHEN COALESCE((j.payload) IS JSON,false) THEN j.payload ELSE '{}' END)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (CASE WHEN COALESCE((j.payload) IS JSON,false) THEN j.payload ELSE '{}' END)::jsonb #>> '{operationId}' END)
+		WHERE j.id=$1`, jobID).Scan(&kind, &operationKind)
 	if err != nil {
 		return 0, err
 	}

@@ -62,7 +62,7 @@ func TestPostgresConcurrentBusyCompletionAndHeartbeats(t *testing.T) {
 	for _, old := range jobs {
 		var status string
 		var attempts int
-		if err := s.db.QueryRowContext(ctx, `SELECT status,attempts FROM outbox_jobs WHERE id=?`, old.ID).Scan(&status, &attempts); err != nil || status != "pending" || attempts != 0 {
+		if err := s.db.QueryRowContext(ctx, `SELECT status,attempts FROM outbox_jobs WHERE id=$1`, old.ID).Scan(&status, &attempts); err != nil || status != "pending" || attempts != 0 {
 			t.Fatalf("busy job = %s %d %v", status, attempts, err)
 		}
 	}

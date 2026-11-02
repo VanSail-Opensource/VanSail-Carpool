@@ -16,7 +16,7 @@ import (
 func checkSquadStockTx(ctx context.Context, tx *sql.Tx, squadUUIDs []string, holderUserID ...string) error {
 	for _, squadUUID := range squadUUIDs {
 		var limit sql.NullInt64
-		if err := tx.QueryRowContext(ctx, `SELECT stock_limit FROM squad_product_overrides WHERE group_id=?`, squadUUID).Scan(&limit); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT stock_limit FROM squad_product_overrides WHERE group_id=$1`, squadUUID).Scan(&limit); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				continue
 			}
@@ -33,8 +33,8 @@ func checkSquadStockTx(ctx context.Context, tx *sql.Tx, squadUUIDs []string, hol
 		if err := tx.QueryRowContext(ctx, `WITH selected_purchases AS (
             SELECT `+purchaseSquadColumns+` FROM purchases WHERE status IN ('activating','active','queued')
         ), `+purchaseSquadMembershipCTE+`
-        SELECT COUNT(DISTINCT user_id),COALESCE(MAX(CASE WHEN user_id=? THEN 1 ELSE 0 END),0)
-        FROM owned_squads WHERE group_id=?`, holderID, squadUUID).Scan(&reservations, &heldByUser); err != nil {
+        SELECT COUNT(DISTINCT user_id),COALESCE(MAX(CASE WHEN user_id=$1 THEN 1 ELSE 0 END),0)
+        FROM owned_squads WHERE group_id=$2`, holderID, squadUUID).Scan(&reservations, &heldByUser); err != nil {
 			return fmt.Errorf("count squad reservations: %w", err)
 		}
 		// Capacity counts distinct members. Continuing an existing reservation
@@ -52,7 +52,7 @@ func checkSquadStockTx(ctx context.Context, tx *sql.Tx, squadUUIDs []string, hol
 func nextPurchaseStartTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (time.Time, error) {
 	validFrom := now
 	var latestEnd string
-	err := tx.QueryRowContext(ctx, `SELECT valid_until FROM purchases WHERE user_id=? AND status IN ('activating','active','queued') ORDER BY valid_until DESC LIMIT 1`, userID).Scan(&latestEnd)
+	err := tx.QueryRowContext(ctx, `SELECT valid_until FROM purchases WHERE user_id=$1 AND status IN ('activating','active','queued') ORDER BY valid_until DESC LIMIT 1`, userID).Scan(&latestEnd)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return time.Time{}, fmt.Errorf("find current entitlement: %w", err)
 	}
@@ -104,7 +104,7 @@ func normalizeAndFingerprintPurchase(input *PurchaseInput) (string, error) {
 }
 
 func comboByIDTx(ctx context.Context, tx *sql.Tx, id string, activeOnly bool) (model.Combo, error) {
-	query := comboSelect + ` WHERE id=?`
+	query := comboSelect + ` WHERE id=$1`
 	if activeOnly {
 		query += ` AND active=1`
 	}
@@ -112,7 +112,7 @@ func comboByIDTx(ctx context.Context, tx *sql.Tx, id string, activeOnly bool) (m
 }
 
 func squadByIDTx(ctx context.Context, tx *sql.Tx, id string, requireVisible bool) (model.SquadProduct, error) {
-	query := squadSelect + ` WHERE group_id=?`
+	query := squadSelect + ` WHERE group_id=$1`
 	if requireVisible {
 		query += ` AND visible=1`
 	}

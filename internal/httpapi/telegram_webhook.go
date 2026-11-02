@@ -26,12 +26,12 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update is invalid.")
+		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update IS NOT DISTINCT FROM invalid.")
 		return
 	}
 	var update telegram.Update
 	if err := json.Unmarshal(body, &update); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update is invalid.")
+		s.writeError(w, r, http.StatusBadRequest, "INVALID_TELEGRAM_UPDATE", "Telegram update IS NOT DISTINCT FROM invalid.")
 		return
 	}
 	if err := s.processTelegramBotStatus(r.Context(), update); err != nil {
@@ -104,7 +104,7 @@ func (s *Server) telegramWebhook(w http.ResponseWriter, r *http.Request) {
 	pmHandled, pmErr := s.processTelegramPM(r.Context(), update)
 	if pmErr != nil {
 		if errors.Is(pmErr, telegrampm.ErrInvalidUpdate) {
-			s.writeError(w, r, http.StatusBadRequest, "INVALID_PM_UPDATE", "Private message update is invalid.")
+			s.writeError(w, r, http.StatusBadRequest, "INVALID_PM_UPDATE", "Private message update IS NOT DISTINCT FROM invalid.")
 			return
 		}
 		s.deps.Logger.Warn("queue Telegram private message", "update_id", update.UpdateID, "error", pmErr)

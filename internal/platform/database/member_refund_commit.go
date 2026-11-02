@@ -12,16 +12,13 @@ import (
 
 // FinalizeMemberRefund credits the original net debit and activates an independent successor atomically.
 func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operationID, purchaseID string, now time.Time) (purchaseops.RefundResult, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err != nil || operation.Receipt.Status != "processing" || operation.OwnerUserID == "" {
 		return purchaseops.RefundResult{}, ErrConflict
 	}
@@ -37,8 +34,8 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 		"member_refund_credit", operationID, "first-term purchase refund", now); err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',auto_renew_enabled=0,updated_at=?
-		WHERE id=? AND user_id=? AND status='active'`, stamp(now), purchaseID, operation.OwnerUserID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',auto_renew_enabled=0,updated_at=$1
+		WHERE id=$2 AND user_id=$3 AND status='active'`, stamp(now), purchaseID, operation.OwnerUserID)
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
@@ -53,12 +50,12 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',result_json=?,completed_at=?,updated_at=?
-		WHERE operation_id=? AND item_key='purchase' AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',result_json=$1,completed_at=$2,updated_at=$3
+		WHERE operation_id=$4 AND item_key='purchase' AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID); err != nil {
 		return purchaseops.RefundResult{}, err
 	}
-	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',result_json=?,completed_at=?,updated_at=?
-		WHERE id=? AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID)
+	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',result_json=$1,completed_at=$2,updated_at=$3
+		WHERE id=$4 AND status='processing'`, string(resultJSON), stamp(now), stamp(now), operationID)
 	if err != nil {
 		return purchaseops.RefundResult{}, err
 	}
@@ -81,7 +78,7 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 
 func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, now time.Time) (string, error) {
 	var id, fromRaw string
-	err := tx.QueryRowContext(ctx, `SELECT id,valid_from FROM purchases WHERE user_id=? AND status='queued'
+	err := tx.QueryRowContext(ctx, `SELECT id,valid_from FROM purchases WHERE user_id=$1 AND status='queued'
 		AND auto_renew_source_purchase_id IS NULL ORDER BY valid_from,created_at LIMIT 1`, userID).Scan(&id, &fromRaw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
@@ -96,8 +93,8 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 	if err := shiftRefundQueueTx(ctx, tx, userID, from, now.Sub(from), now); err != nil {
 		return "", err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=?
-		WHERE id=? AND status='queued'`, stamp(now), id)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=$1
+		WHERE id=$2 AND status='queued'`, stamp(now), id)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +109,7 @@ func activateRefundSuccessorTx(ctx context.Context, tx *sql.Tx, userID string, n
 
 func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFrom time.Time, shift time.Duration, now time.Time) error {
 	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-  WHERE user_id=? AND status='queued' AND valid_from>=? ORDER BY valid_from,created_at,id`, userID, stamp(firstFrom))
+  WHERE user_id=$1 AND status='queued' AND valid_from>=$2 ORDER BY valid_from,created_at,id`, userID, stamp(firstFrom))
 	if err != nil {
 		return err
 	}
@@ -138,7 +135,7 @@ func shiftRefundQueueTx(ctx context.Context, tx *sql.Tx, userID string, firstFro
 		if err != nil || !until.After(from) {
 			return ErrConflict
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET valid_from=?,valid_until=?,updated_at=? WHERE id=? AND status='queued'`,
+		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4 AND status='queued'`,
 			stamp(from.Add(shift)), stamp(until.Add(shift)), stamp(now), term.id); err != nil {
 			return err
 		}

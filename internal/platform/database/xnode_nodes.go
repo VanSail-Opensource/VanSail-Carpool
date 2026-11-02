@@ -12,7 +12,7 @@ import (
 
 const xnodeNodeSelect = `SELECT id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,token_hash,COALESCE(agent_id,''),desired_revision,accepted_revision,applied_revision,created_at,updated_at FROM xnode_nodes`
 
-const saveXNodeNodeSQL = `INSERT INTO xnode_nodes(id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,country_code=excluded.country_code,provider_name=excluded.provider_name,multiplier_fp=excluded.multiplier_fp,enabled=excluded.enabled,config_id=excluded.config_id,settings_cipher=excluded.settings_cipher,updated_at=excluded.updated_at`
+const saveXNodeNodeSQL = `INSERT INTO xnode_nodes(id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,country_code=excluded.country_code,provider_name=excluded.provider_name,multiplier_fp=excluded.multiplier_fp,enabled=excluded.enabled,config_id=excluded.config_id,settings_cipher=excluded.settings_cipher,updated_at=excluded.updated_at`
 
 func xnodeNodeArgs(node xnode.Node) []any {
 	return []any{node.ID, node.Name, node.CountryCode, node.ProviderName, node.MultiplierFP, boolInt(node.Enabled), node.ConfigID, node.SettingsCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC())}
@@ -55,10 +55,10 @@ func (s *Store) XNodeNodes(ctx context.Context) ([]xnode.Node, error) {
 	return out, rows.Err()
 }
 func (s *Store) XNodeNode(ctx context.Context, id string) (xnode.Node, error) {
-	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE id=?`, id))
+	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE id=$1`, id))
 }
 func (s *Store) XNodeNodeByToken(ctx context.Context, hash []byte) (xnode.Node, error) {
-	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE token_hash=?`, hash))
+	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE token_hash=$1`, hash))
 }
 
 func (s *Store) SaveXNodeNode(ctx context.Context, node xnode.Node) error {
@@ -68,24 +68,21 @@ func (s *Store) SaveXNodeNode(ctx context.Context, node xnode.Node) error {
 	return err
 }
 func (s *Store) DeleteXNodeNode(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM xnode_nodes WHERE id=? AND enabled=0`, id)
+	_, err := s.db.ExecContext(ctx, `DELETE FROM xnode_nodes WHERE id=$1 AND enabled=0`, id)
 	return err
 }
 func (s *Store) RotateXNodeToken(ctx context.Context, id string, hash []byte) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=?,updated_at=? WHERE id=?`, hash, stamp(time.Now().UTC()), id)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3`, hash, stamp(time.Now().UTC()), id)
 	return err
 }
 func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent string) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=? WHERE id=? AND (agent_id IS NULL OR agent_id=?)`, agent, id, agent)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=$1 WHERE id=$2 AND (agent_id IS NULL OR agent_id=$3)`, agent, id, agent)
 	if err != nil {
 		return err
 	}
@@ -96,7 +93,7 @@ func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent strin
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) SELECT ?,1,multiplier_fp FROM xnode_nodes WHERE id=?`, agent, id); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT   INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) SELECT $1,1,multiplier_fp FROM xnode_nodes WHERE id=$2 ON CONFLICT DO NOTHING `, agent, id); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -108,7 +105,7 @@ func (s *Store) AdvanceXNodeRevision(ctx context.Context, id string, observed ui
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	var revision uint64
-	err := s.db.QueryRowContext(ctx, `UPDATE xnode_nodes SET desired_revision=MAX(desired_revision,?)+1 WHERE id=? AND desired_revision<? RETURNING desired_revision`, observed, id, int64(math.MaxInt64)).Scan(&revision)
+	err := s.db.QueryRowContext(ctx, `UPDATE xnode_nodes SET desired_revision=GREATEST(desired_revision,$1)+1 WHERE id=$2 AND desired_revision<$3 RETURNING desired_revision`, observed, id, int64(math.MaxInt64)).Scan(&revision)
 	return revision, err
 }
 func (s *Store) AcknowledgeXNodeState(ctx context.Context, id string, revision uint64, applied bool) error {
@@ -116,6 +113,6 @@ func (s *Store) AcknowledgeXNodeState(ctx context.Context, id string, revision u
 	if applied {
 		column = "applied_revision"
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET `+column+`=MAX(`+column+`,?) WHERE id=? AND desired_revision>=?`, revision, id, revision)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET `+column+`=MAX(`+column+`,$1) WHERE id=$2 AND desired_revision>=$3`, revision, id, revision)
 	return err
 }

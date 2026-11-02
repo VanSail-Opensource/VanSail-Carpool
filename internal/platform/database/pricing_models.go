@@ -19,7 +19,7 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 		id += ":" + revision
 	}
 	var existing string
-	if err := s.db.QueryRowContext(ctx, `SELECT parameters_json FROM pricing_model_versions WHERE id=?`, id).Scan(&existing); err == nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT parameters_json FROM pricing_model_versions WHERE id=$1`, id).Scan(&existing); err == nil {
 		var m pricing.ResponseModel
 		if err = json.Unmarshal([]byte(existing), &m); err != nil {
 			return m, id, err
@@ -28,7 +28,7 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return pricing.ResponseModel{}, id, err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT features_json,outcome FROM (SELECT features_json,outcome,exposed_at,id,ROW_NUMBER() OVER(PARTITION BY user_id,SUBSTR(exposed_at,1,10) ORDER BY exposed_at DESC,id DESC) AS exposure_rank FROM pricing_offers WHERE product_type=? AND product_id=? AND outcome IS NOT NULL AND outcome_reason<>'INSUFFICIENT_FUNDS' AND json_extract(features_json,'$.strategyVersion')=? AND CAST(json_extract(features_json,'$.complete') AS INTEGER)=1 AND NOT EXISTS(SELECT 1 FROM purchases p WHERE p.id=pricing_offers.purchase_id AND p.reward_renewal_price_minor IS NOT NULL) AND expires_at<=? AND exposed_at>=?) closed WHERE exposure_rank=1 ORDER BY exposed_at DESC,id DESC LIMIT 2048`, kind, product, pricing.StrategyVersion, pricingStamp(now), pricingStamp(now.AddDate(0, 0, -60)))
+	rows, err := s.db.QueryContext(ctx, `SELECT features_json,outcome FROM (SELECT features_json,outcome,exposed_at,id,ROW_NUMBER() OVER(PARTITION BY user_id,SUBSTR(exposed_at,1,10) ORDER BY exposed_at DESC,id DESC) AS exposure_rank FROM pricing_offers WHERE product_type=$1 AND product_id=$2 AND outcome IS NOT NULL AND outcome_reason<>'INSUFFICIENT_FUNDS' AND (CASE ((features_json)::jsonb #> '{strategyVersion}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (features_json)::jsonb #>> '{strategyVersion}' END)=$3 AND CAST((CASE ((features_json)::jsonb #> '{complete}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (features_json)::jsonb #>> '{complete}' END) AS BIGINT)=1 AND NOT EXISTS(SELECT 1 FROM purchases p WHERE p.id=pricing_offers.purchase_id AND p.reward_renewal_price_minor IS NOT NULL) AND expires_at<=$4 AND exposed_at>=$5) closed WHERE exposure_rank=1 ORDER BY exposed_at DESC,id DESC LIMIT 2048`, kind, product, pricing.StrategyVersion, pricingStamp(now), pricingStamp(now.AddDate(0, 0, -60)))
 	if err != nil {
 		return pricing.ResponseModel{}, "", err
 	}
@@ -82,6 +82,6 @@ func (s *Store) TrainPricingResponse(ctx context.Context, kind, product string, 
 	if err != nil {
 		return m, id, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, id, "response:"+kind+":"+product, pricingStamp(now), status, string(raw), `{"features":["intercept","logPrice/reference","activity","renewals","couponPresent","couponDiscount"],"fit":"regularized logistic","validation":"chronological holdout; minimum 200 samples; price variation; Brier improvement; bias below 0.1; nonpositive price slope"}`, pricingStamp(now), string(diagnostics))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO NOTHING`, id, "response:"+kind+":"+product, pricingStamp(now), status, string(raw), `{"features":["intercept","logPrice/reference","activity","renewals","couponPresent","couponDiscount"],"fit":"regularized logistic","validation":"chronological holdout; minimum 200 samples; price variation; Brier improvement; bias below 0.1; nonpositive price slope"}`, pricingStamp(now), string(diagnostics))
 	return m, id, err
 }

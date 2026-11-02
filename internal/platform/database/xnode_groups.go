@@ -51,24 +51,21 @@ func (s *Store) XNodeGroups(ctx context.Context) ([]xnode.Group, error) {
 	return out, bindings.Err()
 }
 func (s *Store) retryAttempt_SaveXNodeGroup(ctx context.Context, item xnode.Group) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_groups(id,name,enabled,created_at,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,enabled=excluded.enabled,updated_at=excluded.updated_at`, item.ID, item.Name, boolInt(item.Enabled), stamp(time.Now().UTC()), stamp(time.Now().UTC()))
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_groups(id,name,enabled,created_at,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO UPDATE SET name=excluded.name,enabled=excluded.enabled,updated_at=excluded.updated_at`, item.ID, item.Name, boolInt(item.Enabled), stamp(time.Now().UTC()), stamp(time.Now().UTC()))
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_group_bindings WHERE group_id=?`, item.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_group_bindings WHERE group_id=$1`, item.ID); err != nil {
 		return err
 	}
 	for _, binding := range item.Bindings {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_group_bindings(group_id,node_id,inbound_tag) VALUES(?,?,?)`, item.ID, binding.NodeID, binding.InboundTag); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_group_bindings(group_id,node_id,inbound_tag) VALUES($1,$2,$3)`, item.ID, binding.NodeID, binding.InboundTag); err != nil {
 			return err
 		}
 	}

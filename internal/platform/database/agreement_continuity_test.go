@@ -19,7 +19,7 @@ func TestAgreementPublicationPreservesAcceptedMembers(t *testing.T) {
 		t.Fatal(err)
 	}
 	accepted := time.Now().UTC().Add(-time.Hour)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=?,accepted_agreement_revision=? WHERE id=?`, stamp(accepted), bundle.PublishedRevision, existing.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=$1,accepted_agreement_revision=$2 WHERE id=$3`, stamp(accepted), bundle.PublishedRevision, existing.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.BeginAgreement(ctx, newcomer.ID); err != nil {
@@ -62,34 +62,5 @@ func TestAgreementPublicationPreservesAcceptedMembers(t *testing.T) {
 	}
 	if _, err := store.CompleteOnboardingRevision(ctx, newcomer.ID, revision, ids, time.Now()); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestAgreementContinuityMigrationRestoresOnlyPriorAcceptance(t *testing.T) {
-	ctx, store := context.Background(), newTestStore(t)
-	accepted := createTestUser(t, store, 31933)
-	newcomer := createTestUser(t, store, 31934)
-	for _, id := range []string{accepted.ID, newcomer.ID} {
-		if err := store.BeginAgreement(ctx, id); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET accepted_agreement_revision=1 WHERE id=?`, accepted.ID); err != nil {
-		t.Fatal(err)
-	}
-	script, err := migrations.ReadFile("migrations/113_agreement_continuity.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for range 2 {
-		if _, err := store.DB().ExecContext(ctx, string(script)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	for id, state := range map[string]string{accepted.ID: "complete", newcomer.ID: "agreement"} {
-		got, err := store.UserByID(ctx, id)
-		if err != nil || got.OnboardingState != state {
-			t.Fatal(got, err)
-		}
 	}
 }

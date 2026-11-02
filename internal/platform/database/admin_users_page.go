@@ -48,15 +48,11 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 	args := make([]any, 0, 20)
 	if filter.Search != "" {
 		pattern := "%" + escapeLike(filter.Search) + "%"
-		query += ` AND (users.telegram_first_name LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR users.telegram_last_name LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR users.telegram_username LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR CAST(users.telegram_id AS TEXT) LIKE ? ESCAPE '\'
-			OR users.id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(users.proxy_user_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE)`
+		query += fmt.Sprintf(" AND (users.telegram_first_name ILIKE $%d ESCAPE '\\' \n\t\t\tOR users.telegram_last_name ILIKE $%d ESCAPE '\\' \n\t\t\tOR users.telegram_username ILIKE $%d ESCAPE '\\' \n\t\t\tOR CAST(users.telegram_id AS TEXT) ILIKE $%d ESCAPE '\\'\n\t\t\tOR users.id ILIKE $%d ESCAPE '\\' \n\t\t\tOR COALESCE(users.proxy_user_id,'') ILIKE $%d ESCAPE '\\' )", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5, len(args)+6)
+
 		args = append(args, pattern, pattern, pattern, pattern, pattern, pattern)
 	}
-	if clause, clauseArgs := adminUserFacetClause(filter, time.Now().UTC()); clause != "" {
+	if clause, clauseArgs := adminUserFacetClause(filter, time.Now().UTC(), len(args)+1); clause != "" {
 		query += " AND (" + clause + ")"
 		args = append(args, clauseArgs...)
 	}
@@ -65,10 +61,12 @@ func (s *Store) ListAdminUsersPage(ctx context.Context, cursor string, filter Ad
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (users.created_at<? OR (users.created_at=? AND users.id<?))`
+		query += fmt.Sprintf(" AND (users.created_at<$%d OR (users.created_at=$%d AND users.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY users.created_at DESC,users.id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY users.created_at DESC,users.id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -148,10 +146,14 @@ func adminUserFilterFingerprint(filter AdminUserSearchFilter) (string, error) {
 	return pageFilterFingerprint(string(payload)), nil
 }
 
-func adminUserFacetClause(filter AdminUserSearchFilter, now time.Time) (string, []any) {
+func adminUserFacetClause(filter AdminUserSearchFilter, now time.Time, first ...int) (string, []any) {
+	start := 1
+	if len(first) > 0 {
+		start = first[0]
+	}
 	conditions := make([]string, 0, 3)
 	args := make([]any, 0, 8+len(filter.ComboIDs)+2*len(filter.SquadUUIDs))
-	active := `purchases.status IN ('active','activating') AND purchases.valid_from<=? AND purchases.valid_until>?`
+	active := fmt.Sprintf(`purchases.status IN ('active','activating') AND purchases.valid_from<=$%d AND purchases.valid_until>$%d`, start, start+1)
 	if filter.State == "active" {
 		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND `+active+`)`)
 		args = append(args, stamp(now), stamp(now))
@@ -160,19 +162,20 @@ func adminUserFacetClause(filter AdminUserSearchFilter, now time.Time) (string, 
 		args = append(args, stamp(now), stamp(now))
 	}
 	if len(filter.ComboIDs) > 0 {
-		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND purchases.combo_id IN (`+placeholders(len(filter.ComboIDs))+`))`)
+		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND purchases.combo_id IN (`+placeholders(len(filter.ComboIDs), start+len(args))+`))`)
 		for _, id := range filter.ComboIDs {
 			args = append(args, id)
 		}
 	}
 	if len(filter.SquadUUIDs) > 0 {
-		marks := placeholders(len(filter.SquadUUIDs))
+		marks := placeholders(len(filter.SquadUUIDs), start+len(args))
+		secondMarks := placeholders(len(filter.SquadUUIDs), start+len(args)+len(filter.SquadUUIDs))
 		conditions = append(conditions, `EXISTS (SELECT 1 FROM purchases WHERE purchases.user_id=users.id AND (
 			(purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL AND EXISTS (
 				SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND lower(group_id) IN (`+marks+`))) OR
-			EXISTS (SELECT 1 FROM json_each(CASE WHEN purchases.entitlement_squad_uuids IS NOT NULL THEN purchases.entitlement_squad_uuids
-				WHEN purchases.entitlement_addon_squad_uuids IS NOT NULL THEN purchases.entitlement_addon_squad_uuids ELSE '[]' END)
-				WHERE lower(value) IN (`+marks+`))))`)
+			EXISTS (SELECT 1 FROM jsonb_array_elements_text((CASE WHEN purchases.entitlement_squad_uuids IS NOT NULL THEN purchases.entitlement_squad_uuids
+				WHEN purchases.entitlement_addon_squad_uuids IS NOT NULL THEN purchases.entitlement_addon_squad_uuids ELSE '[]' END)::jsonb)
+				WHERE lower(value) IN (`+secondMarks+`))))`)
 		for _, id := range filter.SquadUUIDs {
 			args = append(args, id)
 		}

@@ -74,7 +74,7 @@ func TestDDNSAcknowledgmentStagesBypassBeforeFreeRoutingRedistribution(t *testin
 		t.Fatal(states, err)
 	}
 	var operations int
-	if err = f.store.DB().QueryRowContext(ctx, `SELECT count(*) FROM provider_operations WHERE kind=?`, xnode.DDNSOperationKind).Scan(&operations); err != nil || operations != 1 {
+	if err = f.store.DB().QueryRowContext(ctx, `SELECT count(*) FROM provider_operations WHERE kind=$1`, xnode.DDNSOperationKind).Scan(&operations); err != nil || operations != 1 {
 		t.Fatal("duplicate charged/queued twice", operations, err)
 	}
 	a.mu.Lock()

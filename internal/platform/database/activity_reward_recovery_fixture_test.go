@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"strings"
+
 	"testing"
 	"time"
 
@@ -17,7 +17,7 @@ func (recoveryIdentityRandom) Int63n(bound int64) (int64, error) { return bound 
 func settleRecoveryRaffle(t *testing.T, store *Store, userID string, chatID int64, now time.Time, rewards []activity.Reward) []activity.DrawResult {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=?`, userID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, userID); err != nil {
 		t.Fatal(err)
 	}
 	prizes := make([]activity.PrizeInput, 0, len(rewards))
@@ -59,9 +59,9 @@ func reproduceLegacyCoreRewards(t *testing.T, store *Store, purchaseID string, r
 	defer func() { _ = tx.Rollback() }()
 	for _, result := range results {
 		if result.Reward.Kind == activity.RewardCoreComboSwitch {
-			_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_squad_uuids=NULL,
+			_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=$1,entitlement_squad_uuids=NULL,
 				entitlement_addon_squad_uuids=NULL,entitlement_traffic_limit_bytes=NULL,reward_renewal_price_minor=NULL,
-				reward_rollover_min_remaining_bps=NULL,reward_renewal_traffic_limit_bytes=NULL,reward_traffic_renewal=1 WHERE id=?`, result.Reward.ComboID, purchaseID)
+				reward_rollover_min_remaining_bps=NULL,reward_renewal_traffic_limit_bytes=NULL,reward_traffic_renewal=1 WHERE id=$2`, result.Reward.ComboID, purchaseID)
 		} else {
 			value := int64(0)
 			if result.Reward.ResolvedValue != nil {
@@ -70,7 +70,7 @@ func reproduceLegacyCoreRewards(t *testing.T, store *Store, purchaseID string, r
 			err = applyDrawEntitlementTx(ctx, tx, result.UserID, result.ID, result.Reward, value, result.CreatedAt)
 			if err == nil && result.Reward.Kind == activity.RewardEntitlementGrant {
 				// Legacy custom awards inherited cadence rather than snapshotting it.
-				_, err = tx.ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy=NULL WHERE id=?`, purchaseID)
+				_, err = tx.ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy=NULL WHERE id=$1`, purchaseID)
 			}
 		}
 		if err != nil {
@@ -83,17 +83,3 @@ func reproduceLegacyCoreRewards(t *testing.T, store *Store, purchaseID string, r
 }
 
 // Historical repair intent is replayed against the current native schema.
-func reapplyRecoveryMigration(t *testing.T, store *Store, name string) {
-	t.Helper()
-	raw, err := migrations.ReadFile("migrations/" + name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = store.DB().ExecContext(context.Background(), `UPDATE activity_draw_results SET reward_payload=json_set(reward_payload,'$.rolloverMinRemainingBps',9999) WHERE reward_kind='entitlement_grant' AND json_valid(reward_payload)`); err != nil {
-		t.Fatal(err)
-	}
-	script := strings.ReplaceAll(string(raw), "remna_sync_user", "xnode_sync_user")
-	if _, err = store.DB().ExecContext(context.Background(), script); err != nil {
-		t.Fatal(err)
-	}
-}

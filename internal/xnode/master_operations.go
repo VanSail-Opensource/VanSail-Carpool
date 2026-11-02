@@ -9,12 +9,12 @@ import (
 )
 
 type operationLeaseRepository interface {
-	RenewOutboxJob(context.Context, string, int, time.Time) (bool, error)
-	CompleteOutboxJob(context.Context, string, int, error, time.Time) error
+	RenewOutboxClaim(context.Context, model.OutboxJob, time.Time) (bool, error)
+	CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error
 }
 
 // DeferOperation releases the durable claim loop while a long command awaits
-// the agent. Frames still use the existing send queue. Leases remain in SQLite,
+// the agent. Frames use the existing send queue. Claims remain in PostgreSQL,
 // heartbeat during the wait, and recover normally after a process restart.
 func (m *Master) DeferOperation(job model.OutboxJob, execute func(context.Context) error) error {
 	return m.deferOperation(job, 5*time.Minute, execute)

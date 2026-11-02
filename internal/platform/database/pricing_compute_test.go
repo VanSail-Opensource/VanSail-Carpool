@@ -65,7 +65,7 @@ func TestPricingComputeUsesIndependentClaimsAndDurableIdempotentReceipts(t *test
 		t.Fatal("accepted receipt not reused", result, err)
 	}
 	var count int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_features WHERE entity_type='compute_result' AND entity_id=?`, recovered.ID).Scan(&count); err != nil || count != 1 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_features WHERE entity_type='compute_result' AND entity_id=$1`, recovered.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatal("duplicate result published", count, err)
 	}
 }

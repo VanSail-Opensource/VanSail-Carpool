@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Store) RecoverOutbox(ctx context.Context, staleBefore, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=?,last_error='worker interrupted',updated_at=? /*pg:advance-claim*/ WHERE status='processing' AND updated_at<?`, stamp(now), stamp(now), stamp(staleBefore))
+	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',available_at=$1,last_error='worker interrupted',updated_at=$2 ,claim_generation=claim_generation+1 WHERE status='processing' AND updated_at<$3`, stamp(now), stamp(now), stamp(staleBefore))
 	if err != nil {
 		return fmt.Errorf("recover outbox leases: %w", err)
 	}
@@ -23,7 +23,7 @@ func (s *Store) ListOutboxJobs(ctx context.Context, limit int) ([]model.OutboxJo
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, outboxSelect+` ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, outboxSelect+` ORDER BY created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *Store) ListOutboxJobs(ctx context.Context, limit int) ([]model.OutboxJo
 	return jobs, rows.Err()
 }
 
-const outboxSelect = `SELECT id,kind,payload,status,attempts,available_at,last_error,created_at,updated_at,/*pg:claim-generation*/0 FROM outbox_jobs`
+const outboxSelect = `SELECT id,kind,payload,status,attempts,available_at,last_error,created_at,updated_at,claim_generation FROM outbox_jobs`
 
 func scanOutbox(row rowScanner) (model.OutboxJob, error) {
 	var job model.OutboxJob

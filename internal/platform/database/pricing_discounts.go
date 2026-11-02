@@ -23,7 +23,7 @@ func personalPricingTx(ctx context.Context, tx *sql.Tx, user, kind, product stri
 		return public, nil
 	}
 	var id, raw string
-	err = tx.QueryRowContext(ctx, `SELECT id,proposed_json FROM pricing_admin_overrides WHERE scope_type='user_product' AND scope_id=? AND command='PERSONAL_DISCOUNT' AND status='ACTIVE' AND starts_at<=? AND expires_at>? ORDER BY created_at DESC LIMIT 1`, user+":"+kind+":"+product, pricingStamp(now), pricingStamp(now)).Scan(&id, &raw)
+	err = tx.QueryRowContext(ctx, `SELECT id,proposed_json FROM pricing_admin_overrides WHERE scope_type='user_product' AND scope_id=$1 AND command='PERSONAL_DISCOUNT' AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3 ORDER BY created_at DESC LIMIT 1`, user+":"+kind+":"+product, pricingStamp(now), pricingStamp(now)).Scan(&id, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return public, nil
 	}
@@ -47,12 +47,12 @@ func personalPricingTx(ctx context.Context, tx *sql.Tx, user, kind, product stri
 	}
 	if reserve {
 		var locked string
-		if err = tx.QueryRowContext(ctx, `SELECT id FROM pricing_admin_overrides WHERE id=? /*pg:FOR UPDATE*/`, id).Scan(&locked); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT id FROM pricing_admin_overrides WHERE id=$1 FOR UPDATE`, id).Scan(&locked); err != nil {
 			return 0, err
 		}
 	}
 	var spent int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE override_id=? AND status IN ('RESERVED','CONSUMED')`, id).Scan(&spent); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE override_id=$1 AND status IN ('RESERVED','CONSUMED')`, id).Scan(&spent); err != nil {
 		return 0, err
 	}
 	amount := discount * blocks
@@ -64,7 +64,7 @@ func personalPricingTx(ctx context.Context, tx *sql.Tx, user, kind, product stri
 		if strings.HasPrefix(reference, "renewal:") {
 			status = "RESERVED"
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_discount_spend(override_id,reference_id,user_id,discount_minor,created_at,status) VALUES(?,?,?,?,?,?)`, id, reference, user, amount, pricingStamp(now), status)
+		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_discount_spend(override_id,reference_id,user_id,discount_minor,created_at,status) VALUES($1,$2,$3,$4,$5,$6)`, id, reference, user, amount, pricingStamp(now), status)
 		if err != nil {
 			return 0, err
 		}

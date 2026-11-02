@@ -1,13 +1,18 @@
 package database
 
 import (
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"strings"
 )
 
 // Typed keys preserve product identity even when a Combo and squad share an ID.
 // Bare legacy IDs keep their documented cross-type matching behavior.
-func pricingTypedProductScope(d pricing.Dataset, values []string) (string, []any) {
+func pricingTypedProductScope(d pricing.Dataset, values []string, first ...int) (string, []any) {
+	start := 1
+	if len(first) > 0 {
+		start = first[0]
+	}
 	conditions := []string{}
 	args := []any{}
 	for _, value := range values {
@@ -23,7 +28,9 @@ func pricingTypedProductScope(d pricing.Dataset, values []string) (string, []any
 			column := strings.Split(d.Product, ".")
 			columnName := column[len(column)-1]
 			if kind != "" && strings.Contains(d.Query, "product_type") {
-				conditions = append(conditions, "(export_rows.product_type=? AND export_rows."+columnName+"=?)")
+				conditions = append(conditions, fmt.Sprintf("(export_rows.product_type=$%d AND export_rows.", start+len(args))+
+					columnName+fmt.Sprintf("=$%d)", start+len(args)+1),
+				)
 				args = append(args, kind, id)
 			} else {
 				expected := "combo"
@@ -33,7 +40,7 @@ func pricingTypedProductScope(d pricing.Dataset, values []string) (string, []any
 				if kind != "" && kind != expected {
 					continue
 				}
-				conditions = append(conditions, "export_rows."+columnName+"=?")
+				conditions = append(conditions, "export_rows."+columnName+fmt.Sprintf("=$%d", start+len(args)))
 				args = append(args, id)
 			}
 		} else if d.Name == "operations/admin_overrides" {
@@ -42,7 +49,7 @@ func pricingTypedProductScope(d pricing.Dataset, values []string) (string, []any
 				conditions = append(conditions, "export_rows.scope_type='global'")
 				continue
 			}
-			conditions = append(conditions, "(export_rows.scope_type='global' OR export_rows.scope_type='product' AND export_rows.scope_id=? OR export_rows.scope_type='user_product' AND SUBSTR(export_rows.scope_id,LENGTH(export_rows.scope_id)-LENGTH(?))=':'||?)")
+			conditions = append(conditions, fmt.Sprintf("(export_rows.scope_type='global' OR export_rows.scope_type='product' AND export_rows.scope_id=$%d OR export_rows.scope_type='user_product' AND SUBSTR(export_rows.scope_id,LENGTH(export_rows.scope_id)-LENGTH($%d))=':'||$%d)", start+len(args), start+len(args)+1, start+len(args)+2))
 			args = append(args, typed, typed, typed)
 		} else if d.Name == "forecasts/model_versions" || strings.HasPrefix(d.Name, "validation/") {
 			if kind == "" {
@@ -52,10 +59,10 @@ func pricingTypedProductScope(d pricing.Dataset, values []string) (string, []any
 				}
 				continue
 			}
-			modelQuery := "(m.kind=?"
+			modelQuery := fmt.Sprintf("(m.kind=$%d", start+len(args))
 			bindings := []any{"response:" + kind + ":" + id}
 			if kind == "combo" {
-				modelQuery += " OR m.kind=?"
+				modelQuery += fmt.Sprintf(" OR m.kind=$%d", start+len(args)+1)
 				bindings = append(bindings, "renewal:"+id)
 			}
 			modelQuery += ")"

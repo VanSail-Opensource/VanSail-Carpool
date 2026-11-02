@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -19,14 +20,14 @@ func (s *Store) PreviewAdminBulkExtension(ctx context.Context, filter AdminBulkE
 }
 
 func adminBulkTargets(ctx context.Context, queryer adminBulkQueryer, filter AdminBulkExtensionFilter, now time.Time) ([]adminBulkTarget, AdminBulkExtensionPreview, error) {
-	clause, args, err := adminBulkMatchClause(filter)
+	clause, args, err := adminBulkMatchClause(filter, 3)
 	if err != nil {
 		return nil, AdminBulkExtensionPreview{}, err
 	}
 	queryArgs := []any{stamp(now), stamp(now)}
 	queryArgs = append(queryArgs, args...)
 	rows, err := queryer.QueryContext(ctx, `SELECT purchases.id,purchases.user_id FROM purchases
-		WHERE purchases.status='active' AND purchases.valid_from<=? AND purchases.valid_until>? AND (`+clause+`)
+		WHERE purchases.status='active' AND purchases.valid_from<=$1 AND purchases.valid_until>$2 AND (`+clause+`)
 		ORDER BY purchases.user_id,purchases.valid_until,purchases.id`, queryArgs...)
 	if err != nil {
 		return nil, AdminBulkExtensionPreview{}, err
@@ -58,26 +59,31 @@ func adminBulkTargets(ctx context.Context, queryer adminBulkQueryer, filter Admi
 	return targets, AdminBulkExtensionPreview{MatchedUsers: len(targets), ActivePurchases: activeCount, QueuedSuccessors: queued}, nil
 }
 
-func adminBulkMatchClause(filter AdminBulkExtensionFilter) (string, []any, error) {
+func adminBulkMatchClause(filter AdminBulkExtensionFilter, first ...int) (string, []any, error) {
+	start := 1
+	if len(first) > 0 {
+		start = first[0]
+	}
 	conditions := make([]string, 0, 3)
 	args := make([]any, 0, len(filter.ComboIDs)+2*len(filter.AddonSquadUUIDs))
 	if len(filter.ComboIDs) > 0 {
-		conditions = append(conditions, `purchases.combo_id IN (`+placeholders(len(filter.ComboIDs))+`)`)
+		conditions = append(conditions, `purchases.combo_id IN (`+placeholders(len(filter.ComboIDs), start+len(args))+`)`)
 		for _, id := range filter.ComboIDs {
 			args = append(args, id)
 		}
 	}
 	if len(filter.AddonSquadUUIDs) > 0 {
-		marks := placeholders(len(filter.AddonSquadUUIDs))
+		marks := placeholders(len(filter.AddonSquadUUIDs), start+len(args))
 		conditions = append(conditions, `(purchases.entitlement_squad_uuids IS NULL AND purchases.entitlement_addon_squad_uuids IS NULL
 			AND EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=purchases.id AND group_id IN (`+marks+`)))`)
 		for _, id := range filter.AddonSquadUUIDs {
 			args = append(args, id)
 		}
-		conditions = append(conditions, `EXISTS (SELECT 1 FROM json_each(CASE
+		marks = placeholders(len(filter.AddonSquadUUIDs), start+len(args))
+		conditions = append(conditions, `EXISTS (SELECT 1 FROM jsonb_array_elements_text((CASE
 			WHEN purchases.entitlement_squad_uuids IS NOT NULL THEN purchases.entitlement_squad_uuids
 			WHEN purchases.entitlement_addon_squad_uuids IS NOT NULL THEN purchases.entitlement_addon_squad_uuids
-			ELSE '[]' END) WHERE value IN (`+marks+`))`)
+			ELSE '[]' END)::jsonb) WHERE value IN (`+marks+`))`)
 		for _, id := range filter.AddonSquadUUIDs {
 			args = append(args, id)
 		}
@@ -104,4 +110,14 @@ func countQueuedForTargets(ctx context.Context, queryer adminBulkQueryer, target
 	return count, nil
 }
 
-func placeholders(count int) string { return strings.TrimSuffix(strings.Repeat("?,", count), ",") }
+func placeholders(count int, first ...int) string {
+	start := 1
+	if len(first) > 0 {
+		start = first[0]
+	}
+	values := make([]string, count)
+	for i := range values {
+		values[i] = fmt.Sprintf("$%d", start+i)
+	}
+	return strings.Join(values, ",")
+}

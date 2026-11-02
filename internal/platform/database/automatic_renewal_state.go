@@ -25,10 +25,7 @@ func (s *Store) HasEnabledAutoRenewal(ctx context.Context, userID string, now ti
 // SetAutoRenewal stores the member's explicit choice for an active, activating,
 // or settled expired source term. Callers must validate eligibility first.
 func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchaseID string, enabled bool, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin automatic renewal update: %w", err)
@@ -37,9 +34,9 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 	if err := lockMemberPurchaseTx(ctx, tx, userID); err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=?,auto_renew_failure_reason=CASE WHEN ?=1 THEN '' ELSE auto_renew_failure_reason END,
-		auto_renew_failed_at=CASE WHEN ?=1 THEN NULL ELSE auto_renew_failed_at END,updated_at=?
-		WHERE id=? AND user_id=? AND status IN ('active','activating','expired')`, boolInt(enabled), boolInt(enabled), boolInt(enabled), stamp(now), purchaseID, userID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=$1,auto_renew_failure_reason=CASE WHEN $2=1 THEN '' ELSE auto_renew_failure_reason END,
+		auto_renew_failed_at=CASE WHEN $3=1 THEN NULL ELSE auto_renew_failed_at END,updated_at=$4
+		WHERE id=$5 AND user_id=$6 AND status IN ('active','activating','expired')`, boolInt(enabled), boolInt(enabled), boolInt(enabled), stamp(now), purchaseID, userID)
 	if err != nil {
 		return fmt.Errorf("set automatic renewal: %w", err)
 	}
@@ -49,8 +46,8 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 	}
 	if affected == 1 {
 		if !enabled {
-			if _, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=?
-				WHERE auto_renew_source_purchase_id=? AND status='queued'`, stamp(now), purchaseID); err != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=$1
+				WHERE auto_renew_source_purchase_id=$2 AND status='queued'`, stamp(now), purchaseID); err != nil {
 				return fmt.Errorf("disable queued automatic renewal successor: %w", err)
 			}
 		}
@@ -60,7 +57,7 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 		return nil
 	}
 	var exists int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE id=? AND user_id=?)`, purchaseID, userID).Scan(&exists); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::bigint", purchaseID, userID).Scan(&exists); err != nil {
 		return fmt.Errorf("find automatic renewal purchase: %w", err)
 	}
 	if err := tx.Rollback(); err != nil {
@@ -73,7 +70,7 @@ func (s *Store) retryAttempt_SetAutoRenewal(ctx context.Context, userID, purchas
 }
 
 func (s *Store) DueAutoRenewals(ctx context.Context, now time.Time) ([]DueAutoRenewal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE auto_renew_enabled=1 AND valid_until<=? AND status IN ('active','activating','expired')
+	rows, err := s.db.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE auto_renew_enabled=1 AND valid_until<=$1 AND status IN ('active','activating','expired')
 		AND NOT EXISTS (SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchases.id
 			AND successor.status IN ('queued','activating','active'))
 		ORDER BY valid_until,id`, stamp(now.UTC()))
@@ -97,17 +94,14 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	if reason == "" {
 		return ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin automatic renewal failure: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 	var userID string
-	err = tx.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=?`, purchaseID).Scan(&userID)
+	err = tx.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=$1`, purchaseID).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -120,7 +114,7 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	if _, found, err := automaticRenewalSuccessorIDTx(ctx, tx, purchaseID); err != nil {
 		return err
 	} else if found {
-		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE id=? AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=$1 WHERE id=$2 AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
 			return err
 		}
 		return tx.Commit()
@@ -128,13 +122,11 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 	// An older term can retain a stale preference after a later purchase has
 	// already taken over. Retire that preference without reporting a failure.
 	var superseded int
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id
-		WHERE old.id=? AND next.id<>old.id AND next.status IN ('queued','activating','active')
-		AND next.valid_until>old.valid_until)`, purchaseID).Scan(&superseded); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases old JOIN purchases next ON next.user_id=old.user_id\n\t\tWHERE old.id=$1 AND next.id<>old.id AND next.status IN ('queued','activating','active')\n\t\tAND next.valid_until>old.valid_until))::bigint", purchaseID).Scan(&superseded); err != nil {
 		return err
 	}
 	if superseded == 1 {
-		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE id=? AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=$1 WHERE id=$2 AND auto_renew_enabled=1`, stamp(now), purchaseID); err != nil {
 			return err
 		}
 		return tx.Commit()
@@ -144,8 +136,8 @@ func (s *Store) retryAttempt_MarkAutoRenewalFailed(ctx context.Context, purchase
 		return err
 	}
 	if !settled {
-		result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,auto_renew_failure_reason=?,auto_renew_failed_at=?,updated_at=?
-			WHERE id=? AND auto_renew_enabled=1 AND status IN ('active','activating','expired') AND valid_until<=?`, reason, stamp(now), stamp(now), purchaseID, stamp(now.UTC()))
+		result, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,auto_renew_failure_reason=$1,auto_renew_failed_at=$2,updated_at=$3
+			WHERE id=$4 AND auto_renew_enabled=1 AND status IN ('active','activating','expired') AND valid_until<=$5`, reason, stamp(now), stamp(now), purchaseID, stamp(now.UTC()))
 		if err != nil {
 			return fmt.Errorf("record automatic renewal failure: %w", err)
 		}
@@ -168,7 +160,7 @@ func (s *Store) AutoRenewalFailure(ctx context.Context, userID string) (*model.A
 	var failure model.AutoRenewalFailure
 	var failedAt sql.NullString
 	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.auto_renew_failure_reason,p.auto_renew_failed_at FROM purchases p
-		WHERE p.user_id=? AND p.auto_renew_failure_reason<>'' AND p.auto_renew_failed_at IS NOT NULL
+		WHERE p.user_id=$1 AND p.auto_renew_failure_reason<>'' AND p.auto_renew_failed_at IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM purchases next WHERE next.user_id=p.user_id AND next.id<>p.id
 			AND next.status IN ('queued','activating','active') AND next.valid_until>p.valid_until)
 		ORDER BY p.auto_renew_failed_at DESC LIMIT 1`, userID).Scan(&failure.PurchaseID, &failure.Reason, &failedAt)

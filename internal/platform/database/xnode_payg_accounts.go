@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
@@ -25,18 +26,20 @@ func scanPAYG(row rowScanner) (xnode.PAYGAccount, error) {
 }
 
 func (s *Store) XNodePAYGAccount(ctx context.Context, id int64) (xnode.PAYGAccount, error) {
-	return scanPAYG(s.db.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=?`, id))
+	return scanPAYG(s.db.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1`, id))
 }
 
 func (s *Store) XNodePAYGAccounts(ctx context.Context, user, node string) ([]xnode.PAYGAccount, error) {
 	query := paygSelect + ` WHERE 1=1`
 	args := []any{}
 	if user != "" {
-		query += ` AND a.user_id=?`
+		query += fmt.Sprintf(" AND a.user_id=$%d", len(args)+1)
+
 		args = append(args, user)
 	}
 	if node != "" {
-		query += ` AND a.node_id=?`
+		query += fmt.Sprintf(" AND a.node_id=$%d", len(args)+1)
+
 		args = append(args, node)
 	}
 	return s.xnodePAYGAccounts(ctx, query, args)
@@ -66,20 +69,17 @@ func (s *Store) xnodePAYGAccounts(ctx context.Context, query string, args []any)
 }
 
 func (s *Store) retryAttempt_SaveXNodePAYGAccount(ctx context.Context, a xnode.PAYGAccount) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_accounts(proxy_user_id,user_id,group_id,node_id,period_id,unit_price_minor) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,group_id,node_id) DO NOTHING`, a.ProxyUserID, a.UserID, a.GroupID, a.NodeID, a.PeriodID, a.UnitPriceMinor)
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_accounts(proxy_user_id,user_id,group_id,node_id,period_id,unit_price_minor) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,group_id,node_id) DO NOTHING`, a.ProxyUserID, a.UserID, a.GroupID, a.NodeID, a.PeriodID, a.UnitPriceMinor)
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES(?,?) ON CONFLICT(period_id,node_id) DO NOTHING`, a.PeriodID, a.NodeID); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES($1,$2) ON CONFLICT(period_id,node_id) DO NOTHING`, a.PeriodID, a.NodeID); err != nil {
 		return err
 	}
 	return tx.Commit()

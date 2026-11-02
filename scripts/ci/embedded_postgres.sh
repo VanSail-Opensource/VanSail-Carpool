@@ -8,13 +8,10 @@ container="vansail-embedded-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 data="${container}-data"
 pgdata="${container}-postgres"
 repository="${container}-backup"
-guard="${container}-guard"
-guarddata="${container}-guard-data"
 cleanup() {
   docker logs --tail 100 "$container" || true
-  docker logs --tail 30 "$guard" 2>/dev/null || true
-  docker rm -f "$container" "$guard" || true
-  docker volume rm "$data" "$pgdata" "$repository" "$guarddata" || true
+  docker rm -f "$container" || true
+  docker volume rm "$data" "$pgdata" "$repository" || true
 }
 trap cleanup EXIT
 docker volume create "$data"
@@ -56,7 +53,7 @@ healthy
   AND current_setting('full_page_writes')='on'
   AND current_setting('archive_mode')='on'
   AND current_setting('listen_addresses')='127.0.0.1'") == t ]]
-[[ $(sql "SELECT phase FROM vansail_migration_state") == active ]]
+[[ $(sql "SELECT max(version_id) FROM goose_db_version WHERE is_applied") == 32 ]]
 [[ $(sql "SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole FROM pg_roles WHERE rolname='vansail_app'") == t ]]
 [[ $(sql "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='balances'::regclass") == vansail_migration ]]
 docker logs "$container" > "$RUNNER_TEMP/embedded-startup.log" 2>&1
@@ -102,30 +99,16 @@ for attempt in $(seq 1 15); do
 done
 [[ $(docker inspect -f '{{.State.Running}}' "$container") == false ]]
 [[ $(docker inspect -f '{{.State.ExitCode}}' "$container") != 0 ]]
-# An offline-initialized empty database must not bypass the SQLite source guard.
-docker volume create "$guarddata"
-start_guard() {
-  docker run -d --name "$guard" --network none --memory 1g --memory-swap 1g \
-    --read-only --cap-drop ALL --security-opt no-new-privileges:true \
-    -v "$data:/data" -v "$guarddata:/var/lib/postgresql" \
-    -e PG_EMBEDDED=true -e DB_DRIVER=postgres "$image" "$@"
-}
-start_guard postgres-only
-for attempt in $(seq 1 30); do
-  if docker exec "$guard" test -s /var/lib/postgresql/credentials/migration_url; then break; fi
-  sleep 1
+# Boot must fail without PostgreSQL or with any retired driver selection.
+for mode in missing retired; do
+  driver=postgres
+  [[ $mode == retired ]] && driver=sqlite
+  status=0
+  docker run --rm --network none --read-only --entrypoint vansail-carpool \
+    -e DB_DRIVER="$driver" "$image" serve > "$RUNNER_TEMP/embedded-${mode}.log" 2>&1 || status=$?
+  [[ $status != 0 ]]
 done
-docker exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url "$guard" db-schema migrate
-docker exec "$guard" sh -ec 'set -C; printf synthetic-legacy-source > /data/tx-carpool.db'
-docker stop -t 75 "$guard"
-docker rm "$guard"
-start_guard serve
-for attempt in $(seq 1 30); do
-  [[ $(docker inspect -f '{{.State.Running}}' "$guard") == false ]] && break
-  sleep 1
-done
-[[ $(docker inspect -f '{{.State.Running}}' "$guard") == false ]]
-[[ $(docker inspect -f '{{.State.ExitCode}}' "$guard") != 0 ]]
-docker logs "$guard" > "$RUNNER_TEMP/embedded-guard.log" 2>&1
-grep -q 'Existing SQLite requires verified import' "$RUNNER_TEMP/embedded-guard.log"
+grep -q 'DATABASE_URL' "$RUNNER_TEMP/embedded-missing.log"
+grep -q 'DB_DRIVER must be postgres' "$RUNNER_TEMP/embedded-retired.log"
+
 echo 'Verified 1 GiB embedded PostgreSQL startup, tuning, persistence, encrypted recovery, signals and failure supervision.'

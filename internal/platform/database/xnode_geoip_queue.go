@@ -17,7 +17,7 @@ func (s *Store) QueueXNodeGeoIP(ctx context.Context, node string) error {
 			return err
 		}
 		now := time.Now().UTC()
-		if _, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind=? AND payload=? AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=$1,updated_at=$2 WHERE kind=$3 AND payload=$4 AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
 			return err
 		}
 		return insertOutboxTx(ctx, tx, xnode.FirewallJob, string(raw), now, now)

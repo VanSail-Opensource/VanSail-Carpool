@@ -18,23 +18,20 @@ func (s *Store) retryAttempt_DismissUSDTTransfer(ctx context.Context, id, actor,
 	if actor == "" || len(reason) < 3 || len(reason) > 500 {
 		return false, usdt.ErrConfiguration
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var role string
-	if err := tx.QueryRowContext(ctx, "SELECT role FROM users WHERE id=?", actor).Scan(&role); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT role FROM users WHERE id=$1", actor).Scan(&role); err != nil {
 		return false, err
 	}
 	if role != "admin" {
 		return false, usdt.ErrConflict
 	}
-	t, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=?", id))
+	t, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=$1", id))
 	if err != nil {
 		return false, err
 	}
@@ -45,7 +42,7 @@ func (s *Store) retryAttempt_DismissUSDTTransfer(ctx context.Context, id, actor,
 		return false, usdt.ErrConflict
 	}
 	now := time.Now().UTC()
-	if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='dismissed',dismissed_by=?,dismissed_reason=?,dismissed_at=? WHERE id=? AND status='review'", actor, reason, stamp(now), id); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='dismissed',dismissed_by=$1,dismissed_reason=$2,dismissed_at=$3 WHERE id=$4 AND status='review'", actor, reason, stamp(now), id); err != nil {
 		return false, err
 	}
 	detail, err := json.Marshal(map[string]string{"transferId": id, "network": t.Network, "token": t.Token, "txHash": t.TxHash, "eventId": t.EventID, "reason": reason})
@@ -74,7 +71,7 @@ func (s *Store) retryAttempt_USDTMatchingEvidence(ctx context.Context, orderID s
 		return result, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=?", orderID))
+	q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=$1", orderID))
 	if err != nil {
 		return result, err
 	}
@@ -102,10 +99,10 @@ func (s *Store) retryAttempt_USDTMatchingEvidence(ctx context.Context, orderID s
 		minimum.SetInt64(0)
 	}
 	lower := minimum.String()
-	rows, err := tx.QueryContext(ctx, usdtTransferSelect+` WHERE network=? AND token=? AND recipient=? AND status IN ('review','ready')
-	 AND occurred_at>=?
-	 AND (length(atomic_amount)>length(?) OR (length(atomic_amount)=length(?) AND atomic_amount>=?))
-	 AND (length(atomic_amount)<length(?) OR (length(atomic_amount)=length(?) AND atomic_amount<=?))
+	rows, err := tx.QueryContext(ctx, usdtTransferSelect+` WHERE network=$1 AND token=$2 AND recipient=$3 AND status IN ('review','ready')
+	 AND occurred_at>=$4
+	 AND (length(atomic_amount)>length($5) OR (length(atomic_amount)=length($6) AND atomic_amount>=$7))
+	 AND (length(atomic_amount)<length($8) OR (length(atomic_amount)=length($9) AND atomic_amount<=$10))
 	 ORDER BY occurred_at DESC,id LIMIT 100`, q.Network, q.Token, q.Recipient, stamp(order.CreatedAt), lower, lower, lower, q.AtomicAmount, q.AtomicAmount, q.AtomicAmount)
 	if err != nil {
 		return result, err

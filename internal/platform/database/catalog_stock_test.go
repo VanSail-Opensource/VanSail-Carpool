@@ -25,7 +25,7 @@ func TestCatalogStockUsesEntitlementSnapshots(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["live"]' WHERE id=?`, combo.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["live"]' WHERE id=$1`, combo.ID); err != nil {
 		t.Fatal(err)
 	}
 	for _, item := range []struct {
@@ -36,7 +36,7 @@ func TestCatalogStockUsesEntitlementSnapshots(t *testing.T) {
 		{nil, `["snapshot"]`, `["addon-snapshot"]`, "snapshot"},
 		{nil, nil, nil, "live"},
 	} {
-		if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=?,combo_squad_uuids=?,entitlement_addon_squad_uuids=? WHERE id=?`, item.full, item.combo, item.addons, p.ID); err != nil {
+		if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=$1,combo_squad_uuids=$2,entitlement_addon_squad_uuids=$3 WHERE id=$4`, item.full, item.combo, item.addons, p.ID); err != nil {
 			t.Fatal(err)
 		}
 		counts, err := s.squadStockCounts(ctx)
@@ -71,7 +71,7 @@ func TestCatalogStockUsesEntitlementSnapshots(t *testing.T) {
 			t.Fatal("remaining stock missing")
 		}
 	}
-	if IsPostgres(s.db) {
+	{
 		explainStockPlan(t, s, p.ID)
 	}
 }

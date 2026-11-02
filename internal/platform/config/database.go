@@ -27,27 +27,20 @@ type DatabaseConfig struct {
 func LoadDatabase() (DatabaseConfig, error) { return loadDatabase() }
 
 func loadDatabase() (DatabaseConfig, error) {
-	cfg := DatabaseConfig{Driver: strings.ToLower(envDefault("DB_DRIVER", "sqlite"))}
-	if cfg.Driver != "sqlite" && cfg.Driver != "postgres" {
-		return cfg, fmt.Errorf("DB_DRIVER must be sqlite or postgres")
+	cfg := DatabaseConfig{Driver: strings.ToLower(envDefault("DB_DRIVER", "postgres"))}
+	if cfg.Driver != "postgres" {
+		return cfg, fmt.Errorf("DB_DRIVER must be postgres")
 	}
 	var err error
 	cfg.URL, err = databaseSecret()
 	if err != nil {
 		return cfg, err
 	}
-	if cfg.Driver == "postgres" {
-		parsed, parseErr := url.Parse(cfg.URL)
-		if parseErr != nil || parsed == nil || (parsed.Scheme != "postgres" && parsed.Scheme != "postgresql") || parsed.Hostname() == "" || strings.Trim(parsed.Path, "/") == "" || parsed.Fragment != "" {
-			return cfg, fmt.Errorf("DATABASE_URL must be a PostgreSQL URL with host and database")
-		}
-	} else if cfg.URL != "" {
-		return cfg, fmt.Errorf("DATABASE_URL requires explicit DB_DRIVER=postgres")
+	parsed, parseErr := url.Parse(cfg.URL)
+	if parseErr != nil || parsed == nil || (parsed.Scheme != "postgres" && parsed.Scheme != "postgresql") || parsed.Hostname() == "" || strings.Trim(parsed.Path, "/") == "" || parsed.Fragment != "" {
+		return cfg, fmt.Errorf("configure DATABASE_URL or DATABASE_URL_FILE for PostgreSQL; embedded deployments must enable PG_EMBEDDED")
 	}
 	defaultOpen := 8
-	if cfg.Driver == "sqlite" {
-		defaultOpen = 4
-	}
 	cfg.MaxOpenConns, err = databaseInt("DB_MAX_OPEN_CONNS", defaultOpen, 1, 128)
 	if err != nil {
 		return cfg, err
@@ -75,8 +68,8 @@ func loadDatabase() (DatabaseConfig, error) {
 	if cfg.LockTimeout > cfg.StatementTimeout {
 		return cfg, fmt.Errorf("DB_LOCK_TIMEOUT must not exceed DB_STATEMENT_TIMEOUT")
 	}
-	// Preserve historical SQLite startup behavior. PostgreSQL migration is opt-in.
-	cfg.MigrateOnStart = cfg.Driver == "sqlite"
+	// Schema changes use the migration role; application startup verifies the version.
+	cfg.MigrateOnStart = false
 	if raw := strings.TrimSpace(os.Getenv("DB_MIGRATE_ON_START")); raw != "" {
 		cfg.MigrateOnStart, err = strconv.ParseBool(raw)
 		if err != nil {

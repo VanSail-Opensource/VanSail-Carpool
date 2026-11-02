@@ -19,17 +19,14 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 	if token == "" || chatID == 0 || messageID <= 0 {
 		return activity.RaffleEntry{}, false, nil
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return activity.RaffleEntry{}, false, err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var replayDraw, replayUser string
-	err = tx.QueryRowContext(ctx, `SELECT draw_id,user_id FROM activity_raffle_tickets WHERE chat_id=? AND message_id=?`, chatID, messageID).Scan(&replayDraw, &replayUser)
+	err = tx.QueryRowContext(ctx, `SELECT draw_id,user_id FROM activity_raffle_tickets WHERE chat_id=$1 AND message_id=$2`, chatID, messageID).Scan(&replayDraw, &replayUser)
 	if err == nil {
 		if replayUser != userID {
 			return activity.RaffleEntry{}, true, ErrConflict
@@ -46,7 +43,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		column = "command"
 	}
 	var drawID string
-	query := `SELECT id FROM activity_lucky_draws WHERE kind='raffle' AND status='open' AND group_chat_id=? AND lower(` + column + `)=? LIMIT 1`
+	query := `SELECT id FROM activity_lucky_draws WHERE kind='raffle' AND status='open' AND group_chat_id=$1 AND lower(` + column + `)=$1 LIMIT 1`
 	err = tx.QueryRowContext(ctx, query, chatID, token).Scan(&drawID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return activity.RaffleEntry{}, false, nil
@@ -59,7 +56,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		return activity.RaffleEntry{}, true, err
 	}
 	var onboarding string
-	if err = tx.QueryRowContext(ctx, `SELECT onboarding_state FROM users WHERE id=?`, userID).Scan(&onboarding); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT onboarding_state FROM users WHERE id=$1`, userID).Scan(&onboarding); err != nil {
 		return activity.RaffleEntry{}, true, err
 	}
 	if onboarding != "complete" {
@@ -73,7 +70,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		return activity.RaffleEntry{}, true, err
 	}
 	var existingSeats int
-	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=? AND user_id=? AND status='active'`,
+	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=$1 AND user_id=$2 AND status='active'`,
 		drawID, userID).Scan(&existingSeats); err != nil {
 		return activity.RaffleEntry{}, true, err
 	}
@@ -110,7 +107,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO activity_raffle_tickets
 		(id,draw_id,user_id,chat_id,message_id,fee_minor,reserve_minor,configuration_revision,status,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,'active',?,?)`, ticketID, drawID, userID, chatID, messageID, draw.FeeMinor, reserve, draw.Revision, stamp(now), stamp(now))
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active',$9,$10)`, ticketID, drawID, userID, chatID, messageID, draw.FeeMinor, reserve, draw.Revision, stamp(now), stamp(now))
 	if err != nil {
 		return activity.RaffleEntry{}, true, err
 	}
@@ -127,7 +124,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		return activity.RaffleEntry{}, true, err
 	}
 	if receipt.Seats == draw.Threshold {
-		result, updateErr := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling',updated_at=? WHERE id=? AND status='open'`, stamp(now), drawID)
+		result, updateErr := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling',updated_at=$1 WHERE id=$2 AND status='open'`, stamp(now), drawID)
 		if updateErr != nil {
 			return activity.RaffleEntry{}, true, updateErr
 		}
@@ -167,8 +164,8 @@ func raffleToken(text string) (string, bool) {
 func raffleEntryReceiptTx(ctx context.Context, tx *sql.Tx, drawID, userID string, fee int64) (activity.RaffleEntry, error) {
 	receipt := activity.RaffleEntry{DrawID: drawID, UserID: userID, FeeMinor: fee}
 	err := tx.QueryRowContext(ctx, `SELECT threshold,
-		(SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=? AND status IN ('active','settled')),
-		(SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=? AND user_id=? AND status IN ('active','settled'))
-  FROM activity_lucky_draws WHERE id=?`, drawID, drawID, userID, drawID).Scan(&receipt.Threshold, &receipt.Seats, &receipt.UserSeats)
+		(SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=$1 AND status IN ('active','settled')),
+		(SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=$2 AND user_id=$3 AND status IN ('active','settled'))
+  FROM activity_lucky_draws WHERE id=$4`, drawID, drawID, userID, drawID).Scan(&receipt.Threshold, &receipt.Seats, &receipt.UserSeats)
 	return receipt, err
 }

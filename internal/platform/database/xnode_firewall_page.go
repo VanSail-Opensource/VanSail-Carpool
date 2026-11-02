@@ -18,11 +18,11 @@ func (s *Store) FirewallPage(ctx context.Context, after, target uint64, full boo
 	}
 	result := wire.FirewallUpdate{Version: target}
 	rows, err := s.db.QueryContext(ctx, `SELECT key,kind,prefix,generation,until_at,refresh_seconds,released FROM (
- SELECT 'b:'||generation AS key,'ban' AS kind,prefix,generation,until_at,refresh_seconds,released_version AS released FROM xnode_firewall_bans WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (?<>0 OR issued_version>?)
- UNION ALL SELECT 'e:'||id,'exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE issued_version<=? AND (released_version=0 OR released_version>?) AND (?<>0 OR issued_version>?)
- UNION ALL SELECT 'r:'||generation,'remove',prefix,generation,until_at,0,released_version FROM xnode_firewall_bans WHERE ?=0 AND released_version>? AND released_version<=? AND NOT EXISTS(SELECT 1 FROM xnode_firewall_bans newer WHERE newer.prefix=xnode_firewall_bans.prefix AND newer.issued_version<=? AND (newer.released_version=0 OR newer.released_version>?))
- UNION ALL SELECT 'x:'||id,'remove_exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE ?=0 AND released_version>? AND released_version<=? AND NOT EXISTS(SELECT 1 FROM xnode_firewall_exemptions newer WHERE newer.ip=xnode_firewall_exemptions.ip AND newer.issued_version<=? AND (newer.released_version=0 OR newer.released_version>?))
- ) WHERE key>? ORDER BY key LIMIT ?`, target, target, boolInt(full), after, target, target, boolInt(full), after, boolInt(full), after, target, target, target, boolInt(full), after, target, target, target, cursor, limit)
+ SELECT 'b:'||generation AS key,'ban' AS kind,prefix,generation,until_at,refresh_seconds,released_version AS released FROM xnode_firewall_bans WHERE issued_version<=$1 AND (released_version=0 OR released_version>$2) AND ($3<>0 OR issued_version>$4)
+ UNION ALL SELECT 'e:'||id,'exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE issued_version<=$5 AND (released_version=0 OR released_version>$6) AND ($7<>0 OR issued_version>$8)
+ UNION ALL SELECT 'r:'||generation,'remove',prefix,generation,until_at,0,released_version FROM xnode_firewall_bans WHERE $9=0 AND released_version>$10 AND released_version<=$11 AND NOT EXISTS(SELECT 1 FROM xnode_firewall_bans newer WHERE newer.prefix=xnode_firewall_bans.prefix AND newer.issued_version<=$12 AND (newer.released_version=0 OR newer.released_version>$13))
+ UNION ALL SELECT 'x:'||id,'remove_exemption',ip,id,until_at,0,released_version FROM xnode_firewall_exemptions WHERE $14=0 AND released_version>$15 AND released_version<=$16 AND NOT EXISTS(SELECT 1 FROM xnode_firewall_exemptions newer WHERE newer.ip=xnode_firewall_exemptions.ip AND newer.issued_version<=$17 AND (newer.released_version=0 OR newer.released_version>$18))
+ ) WHERE key>$19 ORDER BY key LIMIT $20`, target, target, boolInt(full), after, target, target, boolInt(full), after, boolInt(full), after, target, target, target, boolInt(full), after, target, target, target, cursor, limit)
 	if err != nil {
 		return result, "", err
 	}
@@ -57,7 +57,7 @@ func (s *Store) FirewallBans(ctx context.Context, limit int) ([]xnode.FirewallBa
 	if limit < 1 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 ORDER BY detected_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 ORDER BY detected_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (s *Store) FirewallPrefixes(ctx context.Context, visit func([]string) error
 	if err != nil {
 		return err
 	}
-	rows, err = s.db.QueryContext(ctx, `SELECT ip FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at>?`, stamp(time.Now().UTC()))
+	rows, err = s.db.QueryContext(ctx, `SELECT ip FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at>$1`, stamp(time.Now().UTC()))
 	if err != nil {
 		return err
 	}

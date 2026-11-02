@@ -69,7 +69,7 @@ func chargeDIYTx(ctx context.Context, tx *sql.Tx, user, operation string, quote 
 		return xnode.ErrDIYBillingUnavailable
 	}
 	if fresh.UseQuota {
-		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+1 WHERE purchase_id=? AND used<total`, fresh.PurchaseID)
+		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+1 WHERE purchase_id=$1 AND used<total`, fresh.PurchaseID)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (s *Store) ReplayXNodeDIYResult(ctx context.Context, user, key, fingerprint
 		return result, found, err
 	}
 	var raw string
-	if err = s.db.QueryRowContext(ctx, `SELECT result_json FROM provider_operations WHERE id=?`, receipt.ID).Scan(&raw); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT result_json FROM provider_operations WHERE id=$1`, receipt.ID).Scan(&raw); err != nil {
 		return result, false, err
 	}
 	var metadata struct {

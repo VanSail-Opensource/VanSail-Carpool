@@ -17,7 +17,7 @@ func TestNativeOnlyResetRetainsPurchaseWideRefundEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=7 WHERE id=?`, identity.CurrentPeriodID); err != nil {
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=7 WHERE id=$1`, identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
 	receipt := f.resetReceipt(t)

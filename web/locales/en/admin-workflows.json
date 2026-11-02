@@ -18,7 +18,13 @@
     "validity": "{from} to {to}",
     "noActiveCombo": "No active combo",
     "noActiveComboHint": "This member has no currently active entitlement.",
-    "sync": { "synchronized": "Synchronized", "pending": "Sync pending", "failed": "Sync failed", "not_provisioned": "Not provisioned", "payg_funded": "PAYG funded" },
+    "sync": {
+      "synchronized": "Synchronized",
+      "pending": "Sync pending",
+      "failed": "Sync failed",
+      "not_provisioned": "Not provisioned",
+      "payg_funded": "PAYG funded"
+    },
     "loading": "Loading member profile",
     "unavailable": "Profile unavailable",
     "unavailableHint": "The aggregate profile could not be loaded. Refresh and try again.",
@@ -31,8 +37,19 @@
     "entitlements": "Entitlements",
     "entitlementsHint": "Active and queued access, add-ons, and immutable pricing evidence.",
     "entitlementFacts": "{traffic} traffic / {cadence} / {squads} squads",
-    "entitlementStatus": { "activating": "Activating", "active": "Active", "queued": "Queued", "expired": "Expired", "cancelled": "Cancelled", "failed": "Failed" },
-    "cadence": { "DAY": "Daily", "WEEK": "Weekly", "MONTH_ROLLING": "Rolling monthly" },
+    "entitlementStatus": {
+      "activating": "Activating",
+      "active": "Active",
+      "queued": "Queued",
+      "expired": "Expired",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    },
+    "cadence": {
+      "DAY": "Daily",
+      "WEEK": "Weekly",
+      "MONTH_ROLLING": "Rolling monthly"
+    },
     "edit": "Edit entitlement",
     "refund": "Refund",
     "noEntitlements": "No entitlements",
@@ -56,10 +73,24 @@
     "recordsHint": "Payments, refunds, Emby accounts, and open provider operations.",
     "emby": "Emby accounts",
     "embyFacts": "{libraries} disabled libraries / updated {date}",
-    "embyStatus": { "queued": "Queued", "provisioning": "Provisioning", "active": "Active", "failed": "Failed", "pending_review": "Pending review" },
+    "embyStatus": {
+      "queued": "Queued",
+      "provisioning": "Provisioning",
+      "active": "Active",
+      "failed": "Failed",
+      "pending_review": "Pending review"
+    },
     "noEmby": "No Emby accounts",
     "payments": "Payments",
-    "paymentStatus": { "creating": "Creating", "pending": "Pending", "paid": "Paid", "expired": "Expired", "failed": "Failed", "refunded": "Refunded", "cancelled": "Cancelled" },
+    "paymentStatus": {
+      "creating": "Creating",
+      "pending": "Pending",
+      "paid": "Paid",
+      "expired": "Expired",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "cancelled": "Cancelled"
+    },
     "noPayments": "No payments",
     "refundPayment": "Refund payment",
     "refundPaymentTitle": "Refund this payment?",
@@ -74,7 +105,15 @@
     "refunds": "Refunds",
     "noRefunds": "No refunds",
     "openOperations": "Open operations",
-    "operationStatus": { "queued": "Queued", "processing": "Processing", "succeeded": "Succeeded", "failed": "Failed", "compensated": "Compensated", "pending_review": "Pending review", "partial": "Partial" },
+    "operationStatus": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "compensated": "Compensated",
+      "pending_review": "Pending review",
+      "partial": "Partial"
+    },
     "noOpenOperations": "No open operations",
     "resolve": "Resolve",
     "resolveTitle": "Record operation resolution",
@@ -86,7 +125,12 @@
     "ipBlocks": "Active IP blocks",
     "ipBlocksHint": "Node-scoped three-day blocks created by this member. Administrators can only unblock them.",
     "ipBlockExpiry": "Expires {date}",
-    "ipBlockStatus": { "blocking": "Blocking", "active": "Active", "unblocking": "Unblocking", "pending_review": "Pending review" },
+    "ipBlockStatus": {
+      "blocking": "Blocking",
+      "active": "Active",
+      "unblocking": "Unblocking",
+      "pending_review": "Pending review"
+    },
     "unblockIP": "Unblock IP",
     "noIPBlocks": "This member has no active IP blocks.",
     "accountContext": "Account context",
@@ -100,7 +144,10 @@
     "noCoupons": "No active coupons",
     "affiliateHistory": "Affiliate history",
     "noAffiliateHistory": "No referral history",
-    "affiliateStatus": { "successful": "Successful", "pending": "Pending" },
+    "affiliateStatus": {
+      "successful": "Successful",
+      "pending": "Pending"
+    },
     "refundAmount": "Refund amount",
     "connectionControls": "Connection controls",
     "connectionControlsHint": "Queue remote access changes and inspect transient active connections.",
@@ -126,7 +173,11 @@
     "addons": "Optional squads",
     "amount": "Extension amount",
     "unit": "Unit",
-    "units": { "minutes": "Minutes", "hours": "Hours", "days": "Days" },
+    "units": {
+      "minutes": "Minutes",
+      "hours": "Hours",
+      "days": "Days"
+    },
     "preview": "Preview",
     "previewing": "Previewing",
     "members": "members",
@@ -136,20 +187,5 @@
     "optionsFailed": "Bulk-extension options could not be loaded.",
     "previewFailed": "The bulk-extension preview could not be created.",
     "createFailed": "The bulk extension could not be queued."
-  },
-  "backupUpload": {
-    "title": "Upload a backup",
-    "copy": "Stream a SQLite backup for isolated validation before it enters staged restore.",
-    "choose": "Choose SQLite file",
-    "chooseHint": "Up to 2 GiB. The file is hashed and checked before publication.",
-    "selected": "Selected {name} ({size})",
-    "sha256": "Expected SHA-256",
-    "optional": "Optional",
-    "invalidHash": "Use exactly 64 hexadecimal characters.",
-    "upload": "Upload backup",
-    "uploading": "Uploading backup",
-    "complete": "Backup validated",
-    "completeHint": "Backup run {id} is ready for the existing staged restore flow.",
-    "failed": "Backup upload could not be completed."
   }
 }

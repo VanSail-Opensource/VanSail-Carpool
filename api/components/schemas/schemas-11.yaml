@@ -148,40 +148,6 @@ DatabaseMutationResult:
     rescueBackupId:
       $ref: '../../openapi.yaml#/components/schemas/ID'
 
-RestoreRequest:
-  type: object
-  additionalProperties: false
-  required: [reason, confirmation]
-  properties:
-    reason:
-      type: string
-      minLength: 4
-      maxLength: 500
-    confirmation:
-      type: string
-      minLength: 1
-      description: Exact `RESTORE <filename>` phrase shown during review.
-
-RestoreOperation:
-  type: object
-  additionalProperties: false
-  required: [id, backupId, status, createdAt, updatedAt]
-  properties:
-    id:
-      $ref: '../../openapi.yaml#/components/schemas/ID'
-    backupId:
-      $ref: '../../openapi.yaml#/components/schemas/ID'
-    status:
-      type: string
-      enum: [staging, restarting, complete, failed]
-    error:
-      type: string
-      description: Redacted recovery guidance; present only for failed restores.
-    createdAt:
-      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
-    updatedAt:
-      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
-
 BackupRun:
   type: object
   additionalProperties: false

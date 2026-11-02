@@ -25,7 +25,7 @@ var ErrBusy = errors.New("outbox executor capacity is occupied")
 // Repository leases and completes durable jobs.
 type Repository interface {
 	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)
-	CompleteOutboxJob(context.Context, string, int, error, time.Time) error
+	CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error
 }
 
 // Handler performs one idempotent job attempt.

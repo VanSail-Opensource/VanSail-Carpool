@@ -12,17 +12,14 @@ import (
 
 // BeginProviderOperationAttempt durably marks the attempt before provider mutation.
 func (s *Store) retryAttempt_BeginProviderOperationAttempt(ctx context.Context, operationID string, now time.Time) (providerops.Operation, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("begin provider attempt: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='processing',attempts=attempts+1,
-		attempt_started_at=?,updated_at=? WHERE id=? AND (status='queued' OR (status='processing' AND kind IN('xnode_command','xnode_routing','xnode_route_speedtest','xnode_diy','xnode_ddns_update')))`, stamp(now), stamp(now), operationID)
+		attempt_started_at=$1,updated_at=$2 WHERE id=$3 AND (status='queued' OR (status='processing' AND kind IN('xnode_command','xnode_routing','xnode_route_speedtest','xnode_diy','xnode_ddns_update')))`, stamp(now), stamp(now), operationID)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("mark provider attempt: %w", err)
 	}
@@ -31,7 +28,7 @@ func (s *Store) retryAttempt_BeginProviderOperationAttempt(ctx context.Context, 
 	} else if affected != 1 {
 		return providerops.Operation{}, ErrConflict
 	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err != nil {
 		return providerops.Operation{}, err
 	}
@@ -62,19 +59,26 @@ func (s *Store) retryAttempt_completeProviderOperation(ctx context.Context, oper
 	}
 	completion.ProviderReference = strings.TrimSpace(completion.ProviderReference)
 	completion.ErrorCode = operationCode(completion.ErrorCode)
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("begin provider completion: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,
-		result_json=CASE WHEN kind='xnode_diy' THEN json_patch(result_json,?) ELSE ? END,completed_at=?,updated_at=? WHERE id=? AND ((status='processing' AND attempt_started_at IS NOT NULL)
-		OR (status='queued' AND ?='failed')) AND (CAST(? AS INTEGER) IS NULL OR attempts=?)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
-		resultJSON, resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
+	var kind, existingResult string
+	if err := tx.QueryRowContext(ctx, `SELECT kind,result_json FROM provider_operations WHERE id=$1 FOR UPDATE`, operationID).Scan(&kind, &existingResult); err != nil {
+		return providerops.Operation{}, fmt.Errorf("lock provider completion: %w", err)
+	}
+	if kind == "xnode_diy" {
+		resultJSON, err = mergeProviderResult(existingResult, resultJSON)
+		if err != nil {
+			return providerops.Operation{}, err
+		}
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,provider_reference=$2,error_code=$3,
+		result_json=$4,completed_at=$5,updated_at=$6 WHERE id=$7 AND ((status='processing' AND attempt_started_at IS NOT NULL)
+		OR (status='queued' AND $8='failed')) AND (CAST($9 AS BIGINT) IS NULL OR attempts=$10)`, completion.Status, completion.ProviderReference, completion.ErrorCode,
+		resultJSON, stamp(now), stamp(now), operationID, completion.Status, attempt, attempt)
 	if err != nil {
 		return providerops.Operation{}, fmt.Errorf("complete provider operation: %w", err)
 	}
@@ -83,7 +87,7 @@ func (s *Store) retryAttempt_completeProviderOperation(ctx context.Context, oper
 	} else if affected != 1 {
 		return providerops.Operation{}, ErrConflict
 	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err != nil {
 		return providerops.Operation{}, err
 	}
@@ -94,8 +98,8 @@ func (s *Store) retryAttempt_completeProviderOperation(ctx context.Context, oper
 	}
 	if operation.Receipt.Kind == providerops.KindTelegramPMRelay {
 		// Unsent repair waiters remain resumable until the bounded payload expires.
-		if _, err := tx.ExecContext(ctx, `UPDATE telegram_pm_payloads SET encrypted_payload='' WHERE operation_id=? AND
-			(?<>'pending_review' OR NOT EXISTS(SELECT 1 FROM provider_operation_items WHERE operation_id=? AND item_key='relay' AND status='queued'))`, operationID, completion.Status, operationID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE telegram_pm_payloads SET encrypted_payload='' WHERE operation_id=$1 AND
+			($2<>'pending_review' OR NOT EXISTS(SELECT 1 FROM provider_operation_items WHERE operation_id=$3 AND item_key='relay' AND status='queued'))`, operationID, completion.Status, operationID); err != nil {
 			return providerops.Operation{}, err
 		}
 	}

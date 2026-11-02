@@ -28,7 +28,7 @@ func TestGroupMessageRewardCountsEligibleMessagesAndReplaysAtomically(t *testing
 	if err != nil {
 		t.Fatalf("CreatePurchase(): %v", err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=?,valid_until=? WHERE id=?`, stamp(now.Add(-time.Hour)), stamp(now.Add(24*time.Hour)), purchase.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=$1,valid_until=$2 WHERE id=$3`, stamp(now.Add(-time.Hour)), stamp(now.Add(24*time.Hour)), purchase.ID); err != nil {
 		t.Fatalf("activate test purchase: %v", err)
 	}
 
@@ -53,7 +53,7 @@ func TestGroupMessageRewardCountsEligibleMessagesAndReplaysAtomically(t *testing
 		t.Fatalf("reward balance = (%+v, %v), want 125", balance, err)
 	}
 	var rewardLedgerCount int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='activity_group_message_reward'`, user.ID).Scan(&rewardLedgerCount); err != nil || rewardLedgerCount != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='activity_group_message_reward'`, user.ID).Scan(&rewardLedgerCount); err != nil || rewardLedgerCount != 1 {
 		t.Fatalf("reward ledger count = (%d, %v), want 1", rewardLedgerCount, err)
 	}
 	assertNotificationCounts(t, store, 1, 1)

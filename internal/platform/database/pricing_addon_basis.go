@@ -17,7 +17,7 @@ func pricingAddonTerms(addons []model.SquadProduct) []renewal.AddonTerm {
 }
 
 func paidPricingAddonTermsTx(ctx context.Context, tx *sql.Tx, purchase string) ([]renewal.AddonTerm, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT group_id,charged_txb_minor FROM purchase_addons WHERE purchase_id=? ORDER BY group_id`, purchase)
+	rows, err := tx.QueryContext(ctx, `SELECT group_id,charged_txb_minor FROM purchase_addons WHERE purchase_id=$1 ORDER BY group_id`, purchase)
 	if err != nil {
 		return nil, err
 	}

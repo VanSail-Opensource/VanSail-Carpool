@@ -62,10 +62,7 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 	if input.WhitelistIPQuota != nil && (*input.WhitelistIPQuota < 0 || *input.WhitelistIPQuota > 1000) {
 		return model.Combo{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	creating := input.ID == ""
 	if creating {
 		var err error
@@ -91,11 +88,11 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 	var result sql.Result
 	if creating {
 		result, err = tx.ExecContext(ctx, `INSERT INTO combos(id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,included_squad_uuids,created_at,updated_at)
-			VALUES(?,?,?,?,?,?,?,?,?,?,?)`, input.ID, input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays,
+			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, input.ID, input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays,
 			input.TrafficLimitBytes, input.ResetStrategy, boolInt(input.Active),
 			string(encodedSquads), stamp(now), stamp(now))
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=?,description=?,price_txb_minor=?,validity_days=?,traffic_limit_bytes=?,reset_strategy=?,active=?,included_squad_uuids=?,updated_at=? WHERE id=?`,
+		result, err = tx.ExecContext(ctx, `UPDATE combos SET name=$1,description=$2,price_txb_minor=$3,validity_days=$4,traffic_limit_bytes=$5,reset_strategy=$6,active=$7,included_squad_uuids=$8,updated_at=$9 WHERE id=$10`,
 			input.Name, input.Description, input.PriceTXBMinor, input.ValidityDays, input.TrafficLimitBytes, input.ResetStrategy,
 			boolInt(input.Active), string(encodedSquads), stamp(now), input.ID)
 	}
@@ -108,17 +105,17 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 		return model.Combo{}, ErrNotFound
 	}
 	if creating && input.IPLookupQuota != nil {
-		if _, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=? WHERE id=?`, *input.IPLookupQuota, input.ID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=$1 WHERE id=$2`, *input.IPLookupQuota, input.ID); err != nil {
 			return model.Combo{}, err
 		}
 	}
 	if input.WhitelistIPQuota != nil {
-		if _, err := tx.ExecContext(ctx, `UPDATE combos SET whitelist_ip_quota=? WHERE id=?`, *input.WhitelistIPQuota, input.ID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE combos SET whitelist_ip_quota=$1 WHERE id=$2`, *input.WhitelistIPQuota, input.ID); err != nil {
 			return model.Combo{}, err
 		}
 	}
 	if !creating {
-		rows, queryErr := tx.QueryContext(ctx, `SELECT DISTINCT user_id FROM purchases WHERE combo_id=? AND status IN ('activating','active','queued')`, input.ID)
+		rows, queryErr := tx.QueryContext(ctx, `SELECT DISTINCT user_id FROM purchases WHERE combo_id=$1 AND status IN ('activating','active','queued')`, input.ID)
 		if queryErr != nil {
 			return model.Combo{}, fmt.Errorf("list combo users for resync: %w", queryErr)
 		}
@@ -154,7 +151,7 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 
 // DeleteCombo hides a combo without invalidating purchases that reference it.
 func (s *Store) DeleteCombo(ctx context.Context, comboID string) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE combos SET active=0,updated_at=? WHERE id=?`, stamp(time.Now().UTC()), comboID)
+	result, err := s.db.ExecContext(ctx, `UPDATE combos SET active=0,updated_at=$1 WHERE id=$2`, stamp(time.Now().UTC()), comboID)
 	if err != nil {
 		return fmt.Errorf("hide combo: %w", err)
 	}

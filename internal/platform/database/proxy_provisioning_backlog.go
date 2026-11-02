@@ -8,10 +8,7 @@ import (
 
 // EnqueueUnlinkedPaidUsers repairs paid members left without a provider link.
 func (s *Store) retryAttempt_EnqueueUnlinkedPaidUsers(ctx context.Context, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin unlinked purchase scan: %w", err)
@@ -20,7 +17,7 @@ func (s *Store) retryAttempt_EnqueueUnlinkedPaidUsers(ctx context.Context, now t
 	rows, err := tx.QueryContext(ctx, `SELECT users.id FROM users WHERE users.onboarding_state='complete'
 		AND users.proxy_user_id IS NULL
 		AND EXISTS(SELECT 1 FROM purchases WHERE purchases.user_id=users.id
-			AND purchases.status IN ('active','activating','queued') AND purchases.valid_until>?)`, stamp(now))
+			AND purchases.status IN ('active','activating','queued') AND purchases.valid_until>$1)`, stamp(now))
 	if err != nil {
 		return fmt.Errorf("scan unlinked paid users: %w", err)
 	}

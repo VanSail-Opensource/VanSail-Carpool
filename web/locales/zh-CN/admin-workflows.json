@@ -18,7 +18,13 @@
     "validity": "{from} 至 {to}",
     "noActiveCombo": "没有活跃套餐",
     "noActiveComboHint": "该成员目前没有活跃权益。",
-    "sync": { "synchronized": "已同步", "pending": "等待同步", "failed": "同步失败", "not_provisioned": "未配置", "payg_funded": "PAYG 余额可用" },
+    "sync": {
+      "synchronized": "已同步",
+      "pending": "等待同步",
+      "failed": "同步失败",
+      "not_provisioned": "未配置",
+      "payg_funded": "PAYG 余额可用"
+    },
     "loading": "正在加载成员资料",
     "unavailable": "资料不可用",
     "unavailableHint": "无法加载聚合资料，请刷新后重试。",
@@ -31,8 +37,19 @@
     "entitlements": "权益",
     "entitlementsHint": "活跃和排队中的访问、附加项及不可变价格依据。",
     "entitlementFacts": "{traffic} 流量 / {cadence} / {squads} 个节点组",
-    "entitlementStatus": { "activating": "激活中", "active": "活跃", "queued": "排队中", "expired": "已过期", "cancelled": "已取消", "failed": "失败" },
-    "cadence": { "DAY": "每日", "WEEK": "每周", "MONTH_ROLLING": "滚动月度" },
+    "entitlementStatus": {
+      "activating": "激活中",
+      "active": "活跃",
+      "queued": "排队中",
+      "expired": "已过期",
+      "cancelled": "已取消",
+      "failed": "失败"
+    },
+    "cadence": {
+      "DAY": "每日",
+      "WEEK": "每周",
+      "MONTH_ROLLING": "滚动月度"
+    },
     "edit": "编辑权益",
     "refund": "退款",
     "noEntitlements": "没有权益",
@@ -56,10 +73,24 @@
     "recordsHint": "支付、退款、Emby 账号和开放的上游操作。",
     "emby": "Emby 账号",
     "embyFacts": "{libraries} 个禁用媒体库 / 更新于 {date}",
-    "embyStatus": { "queued": "排队中", "provisioning": "配置中", "active": "活跃", "failed": "失败", "pending_review": "等待审核" },
+    "embyStatus": {
+      "queued": "排队中",
+      "provisioning": "配置中",
+      "active": "活跃",
+      "failed": "失败",
+      "pending_review": "等待审核"
+    },
     "noEmby": "没有 Emby 账号",
     "payments": "支付",
-    "paymentStatus": { "creating": "创建中", "pending": "等待中", "paid": "已支付", "expired": "已过期", "failed": "失败", "refunded": "已退款", "cancelled": "已取消" },
+    "paymentStatus": {
+      "creating": "创建中",
+      "pending": "等待中",
+      "paid": "已支付",
+      "expired": "已过期",
+      "failed": "失败",
+      "refunded": "已退款",
+      "cancelled": "已取消"
+    },
     "noPayments": "没有支付记录",
     "refundPayment": "退款",
     "refundPaymentTitle": "退款此支付？",
@@ -74,7 +105,15 @@
     "refunds": "退款",
     "noRefunds": "没有退款记录",
     "openOperations": "开放操作",
-    "operationStatus": { "queued": "排队中", "processing": "处理中", "succeeded": "成功", "failed": "失败", "compensated": "已补偿", "pending_review": "待审核", "partial": "部分完成" },
+    "operationStatus": {
+      "queued": "排队中",
+      "processing": "处理中",
+      "succeeded": "成功",
+      "failed": "失败",
+      "compensated": "已补偿",
+      "pending_review": "待审核",
+      "partial": "部分完成"
+    },
     "noOpenOperations": "没有开放操作",
     "resolve": "解决",
     "resolveTitle": "记录操作解决结果",
@@ -86,7 +125,12 @@
     "ipBlocks": "活跃 IP 封禁",
     "ipBlocksHint": "此成员创建的节点级三天封禁。管理员只能解除封禁。",
     "ipBlockExpiry": "到期时间：{date}",
-    "ipBlockStatus": { "blocking": "正在封禁", "active": "生效中", "unblocking": "正在解除", "pending_review": "等待审核" },
+    "ipBlockStatus": {
+      "blocking": "正在封禁",
+      "active": "生效中",
+      "unblocking": "正在解除",
+      "pending_review": "等待审核"
+    },
     "unblockIP": "解除 IP 封禁",
     "noIPBlocks": "此成员没有活跃 IP 封禁。",
     "accountContext": "账户上下文",
@@ -100,7 +144,10 @@
     "noCoupons": "没有有效优惠券",
     "affiliateHistory": "推广历史",
     "noAffiliateHistory": "没有推广历史",
-    "affiliateStatus": { "successful": "已结算", "pending": "待处理" },
+    "affiliateStatus": {
+      "successful": "已结算",
+      "pending": "待处理"
+    },
     "refundAmount": "退款金额",
     "connectionControls": "连接控制",
     "connectionControlsHint": "排队远程访问变更，并查看短暂的活跃连接。",
@@ -135,21 +182,10 @@
     "createFailed": "无法将批量延长加入队列。",
     "amount": "延长时长",
     "unit": "单位",
-    "units": { "minutes": "分钟", "hours": "小时", "days": "天" }
-  },
-  "backupUpload": {
-    "title": "上传备份",
-    "copy": "流式上传 SQLite 备份，在进入暂存恢复前进行隔离验证。",
-    "choose": "选择 SQLite 文件",
-    "chooseHint": "上限 2 GiB。文件会先计算哈希并完成检查。",
-    "selected": "已选择 {name}（{size}）",
-    "sha256": "预期 SHA-256",
-    "optional": "可选",
-    "invalidHash": "请输入正好 64 个十六进制字符。",
-    "upload": "上传备份",
-    "uploading": "正在上传备份",
-    "complete": "备份已验证",
-    "completeHint": "备份运行 {id} 已准备好进入现有暂存恢复流程。",
-    "failed": "备份上传无法完成。"
+    "units": {
+      "minutes": "分钟",
+      "hours": "小时",
+      "days": "天"
+    }
   }
 }

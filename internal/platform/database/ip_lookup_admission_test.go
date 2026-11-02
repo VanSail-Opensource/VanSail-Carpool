@@ -140,7 +140,7 @@ func TestIPLookupRepairsYieldToFreshChecksWithoutBurningAttempts(t *testing.T) {
 				t.Fatalf("repair admitted during fresh work: %+v %v", job, err)
 			}
 			var attempts int
-			if err := store.DB().QueryRowContext(ctx, `SELECT attempts FROM outbox_jobs WHERE kind=?`, kind).Scan(&attempts); err != nil || attempts != 0 {
+			if err := store.DB().QueryRowContext(ctx, `SELECT attempts FROM outbox_jobs WHERE kind=$1`, kind).Scan(&attempts); err != nil || attempts != 0 {
 				t.Fatalf("waiting burned attempt: %d %v", attempts, err)
 			}
 		})

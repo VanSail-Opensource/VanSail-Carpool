@@ -11,29 +11,29 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	counts map[string]int64) error {
 	var err error
 	if counts["user_notification_events"], err = deleteCount(ctx, tx, `DELETE FROM user_notification_events
-		WHERE queued_at IS NOT NULL AND queued_at<?`, stamp(now.Add(-3*24*time.Hour))); err != nil {
+		WHERE queued_at IS NOT NULL AND queued_at<$1`, stamp(now.Add(-3*24*time.Hour))); err != nil {
 		return fmt.Errorf("prune completed user notifications: %w", err)
 	}
-	if counts["sessions"], err = deleteCount(ctx, tx, `DELETE FROM sessions WHERE expires_at<=?
-		OR user_id IN (SELECT id FROM users WHERE role='user' AND onboarding_state='intro' AND created_at<?
+	if counts["sessions"], err = deleteCount(ctx, tx, `DELETE FROM sessions WHERE expires_at<=$1
+		OR user_id IN (SELECT id FROM users WHERE role='user' AND onboarding_state='intro' AND created_at<$2
 			AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=users.id))
 		OR (scope='miniapp' AND EXISTS (SELECT 1 FROM sessions newer WHERE newer.user_id=sessions.user_id AND newer.scope='miniapp'
 			AND (newer.created_at>sessions.created_at OR (newer.created_at=sessions.created_at AND newer.token_hash>sessions.token_hash))))`,
 		stamp(now), stamp(cutoff24Hours)); err != nil {
 		return fmt.Errorf("prune stale sessions: %w", err)
 	}
-	if counts["browser_access_links"], err = deleteCount(ctx, tx, `DELETE FROM browser_access_links WHERE expires_at<=?`, stamp(now)); err != nil {
+	if counts["browser_access_links"], err = deleteCount(ctx, tx, `DELETE FROM browser_access_links WHERE expires_at<=$1`, stamp(now)); err != nil {
 		return fmt.Errorf("prune browser access links: %w", err)
 	}
 	if counts["database_admin_reviews"], err = deleteCount(ctx, tx, `DELETE FROM database_admin_reviews WHERE consumed_at IS NOT NULL`); err != nil {
 		return fmt.Errorf("prune expired database reviews: %w", err)
 	}
-	reviews, err := expiredTimestampIDsTx(ctx, tx, `SELECT id,expires_at FROM database_admin_reviews WHERE expires_at<?`, now)
+	reviews, err := expiredTimestampIDsTx(ctx, tx, `SELECT id,expires_at FROM database_admin_reviews WHERE expires_at<$1`, now)
 	if err != nil {
 		return err
 	}
 	for _, id := range reviews {
-		count, err := deleteCount(ctx, tx, `DELETE FROM database_admin_reviews WHERE id=?`, id)
+		count, err := deleteCount(ctx, tx, `DELETE FROM database_admin_reviews WHERE id=$1`, id)
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func pruneHousekeepingTx(ctx context.Context, tx *sql.Tx, cutoff7Days, cutoff24H
 	if err := pruneAbandonedUsersTx(ctx, tx, cutoff24Hours, counts); err != nil {
 		return err
 	}
-	if counts["maintenance_runs"], err = deleteCount(ctx, tx, `DELETE FROM maintenance_runs WHERE started_at<?`,
+	if counts["maintenance_runs"], err = deleteCount(ctx, tx, `DELETE FROM maintenance_runs WHERE started_at<$1`,
 		stamp(cutoff7Days)); err != nil {
 		return fmt.Errorf("prune maintenance runs: %w", err)
 	}
@@ -59,7 +59,7 @@ func pruneAbandonedUsersTx(ctx context.Context, tx *sql.Tx, cutoff time.Time, co
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_user_candidates(id,telegram_id)
 		SELECT member.id,member.telegram_id FROM users member
-		WHERE member.role='user' AND member.account_status='active' AND member.onboarding_state='intro' AND member.created_at<?
+		WHERE member.role='user' AND member.account_status='active' AND member.onboarding_state='intro' AND member.created_at<$1
 		AND NOT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM ledger_entries WHERE user_id=member.id)
 		AND NOT EXISTS (SELECT 1 FROM purchases WHERE user_id=member.id)

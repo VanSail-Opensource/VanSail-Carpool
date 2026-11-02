@@ -29,7 +29,7 @@ func TestMemberRefundNoticesFollowFinalOutcome(t *testing.T) {
 				t.Fatal(err)
 			}
 			var count int
-			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=?`, operation.Receipt.ID).Scan(&count); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=$1`, operation.Receipt.ID).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
 			if test.want == "" && count != 0 {
@@ -52,7 +52,7 @@ func TestMemberRefundSuccessQueuesReceiptOnce(t *testing.T) {
 	}
 	assertEventKind(t, store, "member-refund-completed:"+operation.Receipt.ID, jobpayload.UserEventMemberRefundCompleted)
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=?`, operation.Receipt.ID).Scan(&count); err != nil || count != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=$1`, operation.Receipt.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("refund receipt count = %d, %v", count, err)
 	}
 }

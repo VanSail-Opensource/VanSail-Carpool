@@ -87,7 +87,7 @@ func TestCompactAndPrunePreservesCourtesyCreditEvidence(t *testing.T) {
 	if _, err := store.CourtesyCreditPayment(ctx, admin.ID, order.ID, "provider support confirmed failure", creditedAt); err != nil {
 		t.Fatalf("CourtesyCreditPayment(): %v", err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET updated_at=? WHERE id=?`, stamp(creditedAt), order.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET updated_at=$1 WHERE id=$2`, stamp(creditedAt), order.ID); err != nil {
 		t.Fatalf("age payment order: %v", err)
 	}
 
@@ -103,7 +103,7 @@ func TestCompactAndPrunePreservesCourtesyCreditEvidence(t *testing.T) {
 		t.Fatalf("PaymentOrderByID() = %v, want preserved courtesy-credit evidence", err)
 	}
 	var credits int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM courtesy_credits WHERE payment_order_id=?`, order.ID).Scan(&credits); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM courtesy_credits WHERE payment_order_id=$1`, order.ID).Scan(&credits); err != nil {
 		t.Fatalf("count courtesy credits: %v", err)
 	}
 	if credits != 1 {

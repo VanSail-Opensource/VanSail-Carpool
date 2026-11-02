@@ -50,10 +50,7 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -61,14 +58,14 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	}
 	defer func() { _ = tx.Rollback() }()
 	var owned int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE id=? AND user_id=?)`, input.PurchaseID, input.UserID).Scan(&owned); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE id=$1 AND user_id=$2))::bigint", input.PurchaseID, input.UserID).Scan(&owned); err != nil {
 		return model.Purchase{}, fmt.Errorf("verify purchase ownership: %w", err)
 	}
 	if owned == 0 {
 		return model.Purchase{}, ErrNotFound
 	}
 	var existingFingerprint string
-	err = tx.QueryRowContext(ctx, `SELECT request_fingerprint FROM purchase_addon_adjustments WHERE purchase_id=? AND idempotency_key=?`, input.PurchaseID, input.IdempotencyKey).Scan(&existingFingerprint)
+	err = tx.QueryRowContext(ctx, `SELECT request_fingerprint FROM purchase_addon_adjustments WHERE purchase_id=$1 AND idempotency_key=$2`, input.PurchaseID, input.IdempotencyKey).Scan(&existingFingerprint)
 	if err == nil {
 		if existingFingerprint != fingerprint {
 			return model.Purchase{}, ErrConflict
@@ -103,7 +100,7 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	}
 	if input.CouponGrantID != "" {
 		var combo string
-		if err = tx.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=?`, input.PurchaseID).Scan(&combo); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=$1`, input.PurchaseID).Scan(&combo); err != nil {
 			return model.Purchase{}, err
 		}
 		discount, e := applyPurchaseCouponTx(ctx, tx, coupons.PurchaseContext{UserID: input.UserID, GrantID: input.CouponGrantID, ComboID: combo, AddonSquadIDs: quote.AddonSquadUUIDs, GrossPriceMinor: quote.GrossPriceTXBMinor}, adjustmentID, now)
@@ -118,16 +115,16 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addon_adjustments(id,purchase_id,idempotency_key,request_fingerprint,charged_txb_minor,created_at) VALUES(?,?,?,?,?,?)`, adjustmentID, input.PurchaseID, input.IdempotencyKey, fingerprint, quote.PriceTXBMinor, stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addon_adjustments(id,purchase_id,idempotency_key,request_fingerprint,charged_txb_minor,created_at) VALUES($1,$2,$3,$4,$5,$6)`, adjustmentID, input.PurchaseID, input.IdempotencyKey, fingerprint, quote.PriceTXBMinor, stamp(now)); err != nil {
 		return model.Purchase{}, fmt.Errorf("record purchase add-on adjustment: %w", err)
 	}
 	for _, a := range addons {
-		if _, err = tx.ExecContext(ctx, `UPDATE pricing_offers SET outcome=1,outcome_reason='',observed_at=?,purchase_id=? WHERE user_id=? AND product_type='addon' AND product_id=? AND price_minor=? AND outcome IS NULL AND json_extract(features_json,'$.couponFingerprint')=? AND expires_at>?`, pricingStamp(now), adjustmentID, input.UserID, a.product.GroupID, a.product.PriceTXBMinor, a.fingerprint, pricingStamp(now)); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE pricing_offers SET outcome=1,outcome_reason='',observed_at=$1,purchase_id=$2 WHERE user_id=$3 AND product_type='addon' AND product_id=$4 AND price_minor=$5 AND outcome IS NULL AND (CASE ((features_json)::jsonb #> '{couponFingerprint}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (features_json)::jsonb #>> '{couponFingerprint}' END)=$6 AND expires_at>$7`, pricingStamp(now), adjustmentID, input.UserID, a.product.GroupID, a.product.PriceTXBMinor, a.fingerprint, pricingStamp(now)); err != nil {
 			return model.Purchase{}, err
 		}
 	}
 	for _, addon := range addons {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, input.PurchaseID, addon.product.GroupID, addon.price); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES($1,$2,$3)`, input.PurchaseID, addon.product.GroupID, addon.price); err != nil {
 			if isUniqueConstraint(err) {
 				return model.Purchase{}, ErrSquadAlreadyAdded
 			}
@@ -137,7 +134,7 @@ func (s *Store) retryAttempt_addPurchaseAddons(ctx context.Context, input Purcha
 	if err := invalidatePricingRenewalBasketTx(ctx, tx, input.PurchaseID); err != nil {
 		return model.Purchase{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET charged_txb_minor=charged_txb_minor+?,gross_price_txb_minor=gross_price_txb_minor+?,coupon_discount_txb_minor=coupon_discount_txb_minor+?,updated_at=? WHERE id=? AND user_id=?`, quote.PriceTXBMinor, quote.GrossPriceTXBMinor, quote.DiscountTXBMinor, stamp(now), input.PurchaseID, input.UserID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET charged_txb_minor=charged_txb_minor+$1,gross_price_txb_minor=gross_price_txb_minor+$2,coupon_discount_txb_minor=coupon_discount_txb_minor+$3,updated_at=$4 WHERE id=$5 AND user_id=$6`, quote.PriceTXBMinor, quote.GrossPriceTXBMinor, quote.DiscountTXBMinor, stamp(now), input.PurchaseID, input.UserID); err != nil {
 		return model.Purchase{}, fmt.Errorf("update purchase add-on totals: %w", err)
 	}
 	if _, err := insertLedgerTx(ctx, tx, input.UserID, -quote.PriceTXBMinor, newBalance, "purchase_addon_debit", adjustmentID, "purchase squad addition", now); err != nil {

@@ -11,17 +11,14 @@ import (
 // EnqueueXNodeAccessRepairs coalesces missing member credentials and paid-access
 // recovery into the existing outbox. Quota exhaustion never triggers recovery.
 func (s *Store) retryAttempt_EnqueueXNodeAccessRepairs(ctx context.Context, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `SELECT DISTINCT u.id FROM users u
- LEFT JOIN purchases p ON p.id=(SELECT current.id FROM purchases current WHERE current.user_id=u.id AND current.status IN ('active','activating') AND julianday(current.valid_from)<=julianday(?) AND julianday(current.valid_until)>julianday(?) ORDER BY current.valid_from DESC LIMIT 1)
+ LEFT JOIN purchases p ON p.id=(SELECT current.id FROM purchases current WHERE current.user_id=u.id AND current.status IN ('active','activating') AND vansail_timestamp(current.valid_from)<=vansail_timestamp($1) AND vansail_timestamp(current.valid_until)>vansail_timestamp($2) ORDER BY current.valid_from DESC LIMIT 1)
  LEFT JOIN xnode_identities i ON i.user_id=u.id
  LEFT JOIN xnode_periods a ON a.id=i.current_period_id
  WHERE u.onboarding_state='complete' AND (i.proxy_user_id IS NULL OR

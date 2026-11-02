@@ -9,12 +9,9 @@ import (
 )
 
 // Hosted PostgreSQL measures real heaps, indexes and TOAST. No local benchmark
-// is run; SQLite skips this backend-specific footprint acceptance gate.
+// is run; all fixture storage remains isolated to hosted CI.
 func TestPricingPostgresRepresentativeStorageBudget(t *testing.T) {
 	s := newTestStore(t)
-	if !IsPostgres(s.db) {
-		t.Skip("PostgreSQL physical footprint gate")
-	}
 	ctx := context.Background()
 	stats := map[string]any{}
 	for i := 0; i < 6; i++ {

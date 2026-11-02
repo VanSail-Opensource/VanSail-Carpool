@@ -10,20 +10,7 @@ import (
 )
 
 func (s *Service) decodePublicKey(schema tableSchema, key map[string]string) ([]any, error) {
-	if schema.UsesRowID {
-		if len(key) != 1 {
-			return nil, fmt.Errorf("%w: rowid key shape differs", ErrInvalidValue)
-		}
-		value, ok := key["_rowid_"]
-		if !ok {
-			return nil, fmt.Errorf("%w: rowid key is required", ErrInvalidValue)
-		}
-		parsed, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("%w: rowid must be a decimal integer", ErrInvalidValue)
-		}
-		return []any{parsed}, nil
-	}
+
 	if len(key) != len(schema.KeyColumns) {
 		return nil, fmt.Errorf("%w: primary key shape differs", ErrInvalidValue)
 	}
@@ -53,29 +40,28 @@ func (s *Service) decodePublicKey(schema tableSchema, key map[string]string) ([]
 }
 
 func parseKeyValue(column schemaColumn, encoded string) (any, error) {
-	switch column.Affinity {
-	case affinityInteger:
+	switch column.Family {
+	case storageFamilyInteger:
 		value, err := strconv.ParseInt(encoded, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("%w: key %s must be a decimal integer", ErrInvalidValue, column.Name)
 		}
 		return value, nil
-	case affinityReal:
+	case storageFamilyReal:
 		value, err := strconv.ParseFloat(encoded, 64)
 		if err != nil {
 			return nil, fmt.Errorf("%w: key %s must be numeric", ErrInvalidValue, column.Name)
 		}
 		return value, nil
-	case affinityNumeric:
+	case storageFamilyNumeric:
 		// Keep NUMERIC keys as validated decimal text. Binding them as float64
-		// would round exact 64-bit SQLite integers above 2^53 and could duplicate
-		// cursor pages or address the wrong record. SQLite applies the column's
-		// NUMERIC affinity to this bound text for comparison.
+		// would round values above 2^53. PostgreSQL infers NUMERIC from the
+		// comparison column and receives the exact validated decimal text.
 		if !decimalPattern.MatchString(encoded) {
 			return nil, fmt.Errorf("%w: key %s must be numeric", ErrInvalidValue, column.Name)
 		}
 		return encoded, nil
-	case affinityBlob:
+	case storageFamilyBlob:
 		value, err := base64.StdEncoding.DecodeString(encoded)
 		if err != nil {
 			return nil, fmt.Errorf("%w: key %s must be base64", ErrInvalidValue, column.Name)
@@ -90,21 +76,15 @@ func keyContext(table, column string) string { return "databaseadmin:key:" + tab
 
 func (s *Service) encodeCursor(schema tableSchema, raw []any) (string, error) {
 	values := make([]string, 0, len(raw))
-	if schema.UsesRowID {
-		value, err := canonicalKeyValue(schemaColumn{Column: Column{Name: "_rowid_"}, Affinity: affinityInteger}, raw[0])
+
+	for index, column := range schema.KeyColumns {
+		value, err := canonicalKeyValue(column, raw[index])
 		if err != nil {
 			return "", err
 		}
 		values = append(values, value)
-	} else {
-		for index, column := range schema.KeyColumns {
-			value, err := canonicalKeyValue(column, raw[index])
-			if err != nil {
-				return "", err
-			}
-			values = append(values, value)
-		}
 	}
+
 	encoded, err := json.Marshal(values)
 	if err != nil {
 		return "", fmt.Errorf("encode record cursor: %w", err)
@@ -142,20 +122,12 @@ func (s *Service) decodeCursor(schema tableSchema, cursor string) ([]any, error)
 		return nil, err
 	}
 	expected := len(schema.KeyColumns)
-	if schema.UsesRowID {
-		expected = 1
-	}
+
 	if len(values) != expected {
 		return nil, errors.New("cursor key shape differs")
 	}
 	parsed := make([]any, 0, expected)
-	if schema.UsesRowID {
-		value, err := strconv.ParseInt(values[0], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		return []any{value}, nil
-	}
+
 	for index, column := range schema.KeyColumns {
 		value, err := parseKeyValue(column, values[index])
 		if err != nil {
@@ -164,11 +136,4 @@ func (s *Service) decodeCursor(schema tableSchema, cursor string) ([]any, error)
 		parsed = append(parsed, value)
 	}
 	return parsed, nil
-}
-
-func boolInt(value bool) int {
-	if value {
-		return 1
-	}
-	return 0
 }

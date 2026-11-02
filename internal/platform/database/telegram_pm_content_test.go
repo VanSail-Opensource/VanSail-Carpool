@@ -24,7 +24,7 @@ func pendingPMContent(t *testing.T) (*Store, *secret.Vault, model.OperationRecei
 	store.ConfigurePMContentVault(vault)
 	member := pmMember(t, store, 39120)
 	admin := createTestUser(t, store, 39121)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	input := model.PMRelayInput{ActorUserID: admin.ID, UserID: member.ID, UpdateID: 100, ChatID: -100123, SourceChatID: -100123, SourceMessageID: 45, Content: []byte(`{"mode":"text","text":"private pending message","footer":"By @casey_ops"}`)}
@@ -42,7 +42,7 @@ func TestPendingPMContentEncryptedBoundAndRemovedOnSettlement(t *testing.T) {
 	store, vault, receipt, now := pendingPMContent(t)
 	ctx := context.Background()
 	var ciphertext, payload string
-	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=?`, receipt.ID).Scan(&ciphertext); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=$1`, receipt.ID).Scan(&ciphertext); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(ciphertext, "private pending message") {
@@ -70,7 +70,7 @@ func TestPendingPMContentEncryptedBoundAndRemovedOnSettlement(t *testing.T) {
 	if _, found, err := store.PMRelayContent(ctx, receipt.ID, now); !found || !errors.Is(err, model.ErrPMContentExpired) {
 		t.Fatal("settled content can downgrade to a legacy unattributed copy")
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=?`, receipt.ID).Scan(&ciphertext); err != nil || ciphertext != "" {
+	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=$1`, receipt.ID).Scan(&ciphertext); err != nil || ciphertext != "" {
 		t.Fatal("settled ciphertext retained")
 	}
 }
@@ -95,7 +95,7 @@ func TestPMContentExpiryLeavesExplicitMarkerForUnsentRepair(t *testing.T) {
 		t.Fatal(err)
 	}
 	var ciphertext string
-	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=?`, receipt.ID).Scan(&ciphertext); err != nil || ciphertext != "" {
+	if err := store.DB().QueryRowContext(ctx, `SELECT encrypted_payload FROM telegram_pm_payloads WHERE operation_id=$1`, receipt.ID).Scan(&ciphertext); err != nil || ciphertext != "" {
 		t.Fatal("abandoned ciphertext not erased")
 	}
 	if _, found, err := store.PMRelayContent(ctx, receipt.ID, expires); !found || !errors.Is(err, model.ErrPMContentExpired) {

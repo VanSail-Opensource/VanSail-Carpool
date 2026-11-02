@@ -36,7 +36,7 @@ func TestAutomaticRenewalAttachedCouponUsesLatestDiscountOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	past := stamp(now.Add(-time.Hour))
-	if _, err := store.DB().ExecContext(ctx, `UPDATE coupon_definitions SET active=0,kind='balance_add',discount_mode='fixed',value_minor_or_bps=30,expires_at=? WHERE id=?`, past, coupon.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE coupon_definitions SET active=0,kind='balance_add',discount_mode='fixed',value_minor_or_bps=30,expires_at=$1 WHERE id=$2`, past, coupon.ID); err != nil {
 		t.Fatal(err)
 	}
 	plan, err := store.AutoRenewalPlan(ctx, user.ID, source.ID, now.Add(time.Hour))
@@ -100,7 +100,7 @@ func TestLegacyRenewalUsesPersistedRecurringAttachment(t *testing.T) {
 	if err != nil || !source.RecurringDiscountAttached {
 		t.Fatalf("CreatePurchase() = (%+v, %v), want recurring attachment", source, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE coupon_definitions SET active=0,kind='purchase_once',value_minor_or_bps=30 WHERE id=?`, coupon.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE coupon_definitions SET active=0,kind='purchase_once',value_minor_or_bps=30 WHERE id=$1`, coupon.ID); err != nil {
 		t.Fatal(err)
 	}
 	quote, err := store.RenewalQuote(ctx, user.ID, source.ID, 1, now.Add(time.Hour))

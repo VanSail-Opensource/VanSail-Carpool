@@ -35,7 +35,7 @@ func TestOnboardedMemberGetsStableSubscriptionWithoutPurchase(t *testing.T) {
 		t.Fatal(err)
 	}
 	var queued int
-	if err := f.store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.userId')=?`, job.Kind, user.ID).Scan(&queued); err != nil || queued != 1 {
+	if err := f.store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$2`, job.Kind, user.ID).Scan(&queued); err != nil || queued != 1 {
 		t.Fatal("onboarding did not queue credentials", queued, err)
 	}
 	var link string

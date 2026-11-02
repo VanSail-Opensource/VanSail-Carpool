@@ -16,7 +16,7 @@ const embyAccountSelect = `SELECT id,user_id,base_username,remote_user_id,remote
 // EmbyBaseUsername returns the user's immutable local Proxy username.
 func (s *Store) EmbyBaseUsername(ctx context.Context, userID string) (string, error) {
 	var username string
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT base_username FROM emby_accounts WHERE user_id=users.id),CAST(telegram_id AS TEXT)) FROM users WHERE id=?`, userID).Scan(&username)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE((SELECT base_username FROM emby_accounts WHERE user_id=users.id),CAST(telegram_id AS TEXT)) FROM users WHERE id=$1`, userID).Scan(&username)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
@@ -28,7 +28,7 @@ func (s *Store) EmbyBaseUsername(ctx context.Context, userID string) (string, er
 
 // EmbyAccountForUser returns the safe account view for a local user.
 func (s *Store) EmbyAccountForUser(ctx context.Context, userID string) (domain.Account, error) {
-	record, err := scanEmbyProvisioning(s.db.QueryRowContext(ctx, embyAccountSelect+` WHERE user_id=?`, userID))
+	record, err := scanEmbyProvisioning(s.db.QueryRowContext(ctx, embyAccountSelect+` WHERE user_id=$1`, userID))
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -41,7 +41,7 @@ func (s *Store) ListEmbyAccounts(ctx context.Context, limit int) ([]domain.Accou
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, embyAccountSelect+` ORDER BY updated_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, embyAccountSelect+` ORDER BY updated_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list Emby accounts: %w", err)
 	}
@@ -63,7 +63,7 @@ func (s *Store) ListEmbyAccounts(ctx context.Context, limit int) ([]domain.Accou
 
 // EmbyProvisioningByID returns one server-only durable provisioning record.
 func (s *Store) EmbyProvisioningByID(ctx context.Context, accountID string) (domain.ProvisioningRecord, error) {
-	record, err := scanEmbyProvisioning(s.db.QueryRowContext(ctx, embyAccountSelect+` WHERE id=?`, accountID))
+	record, err := scanEmbyProvisioning(s.db.QueryRowContext(ctx, embyAccountSelect+` WHERE id=$1`, accountID))
 	if err != nil {
 		return domain.ProvisioningRecord{}, err
 	}

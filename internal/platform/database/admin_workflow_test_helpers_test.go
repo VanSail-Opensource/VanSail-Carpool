@@ -30,7 +30,7 @@ func createAdminWorkflowPurchase(t *testing.T, store *Store, telegramID int64, c
 func activateAdminWorkflowPurchase(t *testing.T, store *Store, purchaseID string, now time.Time) model.Purchase {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=?,valid_until=?,updated_at=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4`,
 		stamp(now.Add(-time.Hour)), stamp(now.Add(30*24*time.Hour)), stamp(now), purchaseID); err != nil {
 		t.Fatalf("activate purchase: %v", err)
 	}
@@ -58,7 +58,7 @@ func adminWorkflowLedgerCount(t *testing.T, store *Store, userID, kind string) i
 	t.Helper()
 	var count int
 	if err := store.DB().QueryRowContext(context.Background(),
-		`SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind=?`, userID, kind).Scan(&count); err != nil {
+		`SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind=$2`, userID, kind).Scan(&count); err != nil {
 		t.Fatalf("count %s ledger entries: %v", kind, err)
 	}
 	return count

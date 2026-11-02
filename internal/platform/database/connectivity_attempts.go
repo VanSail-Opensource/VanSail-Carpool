@@ -36,7 +36,7 @@ func (s *Store) BeginConnectivityAttempt(ctx context.Context, attempt connectivi
 	defer s.writeMu.Unlock()
 	result, err := s.db.ExecContext(ctx, `INSERT INTO host_connectivity_attempts
 		(id,run_id,host_uuid,config_hash,proxy_user_id,trigger,started_at,status)
-		VALUES(?,?,?,?,?,?,?,'running') ON CONFLICT(id) DO NOTHING`, attempt.ID, attempt.RunID,
+		VALUES($1,$2,$3,$4,$5,$6,$7,'running') ON CONFLICT(id) DO NOTHING`, attempt.ID, attempt.RunID,
 		hostUUID, attempt.ConfigHash, attempt.ProxyUserID, attempt.Trigger, connectivityStamp(attempt.StartedAt))
 	if err != nil {
 		return fmt.Errorf("begin connectivity attempt: %w", err)
@@ -52,8 +52,8 @@ func (s *Store) FinishConnectivityAttempt(ctx context.Context, id string, outcom
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	at := connectivityStamp(now)
-	result, err := s.db.ExecContext(ctx, `UPDATE host_connectivity_attempts SET finished_at=?,status=?,
-		latency_ms=?,http_status=?,error_code=? WHERE id=? AND status='running' AND started_at<=?`,
+	result, err := s.db.ExecContext(ctx, `UPDATE host_connectivity_attempts SET finished_at=$1,status=$2,
+		latency_ms=$3,http_status=$4,error_code=$5 WHERE id=$6 AND status='running' AND started_at<=$7`,
 		at, outcome.Status, outcome.LatencyMS, outcome.HTTPStatus, outcome.ErrorCode, id, at)
 	if err != nil {
 		return fmt.Errorf("finish connectivity attempt: %w", err)

@@ -15,7 +15,7 @@ func drawRenewalTrafficTx(ctx context.Context, tx *sql.Tx, purchaseID string) (s
 	var base int64
 	err := tx.QueryRowContext(ctx, `SELECT CASE WHEN p.reward_traffic_renewal=0 THEN p.reward_renewal_traffic_limit_bytes
 		ELSE p.entitlement_traffic_limit_bytes END,c.traffic_limit_bytes
-		FROM purchases p JOIN combos c ON c.id=p.combo_id WHERE p.id=?`, purchaseID).Scan(&override, &base)
+		FROM purchases p JOIN combos c ON c.id=p.combo_id WHERE p.id=$1`, purchaseID).Scan(&override, &base)
 	if override.Valid {
 		base = override.Int64
 	}
@@ -51,8 +51,8 @@ func applyDrawTrafficTx(ctx context.Context, tx *sql.Tx, purchaseID string, traf
 	}
 	// A recurring reward changes only the renewal base, never promotes earlier
 	// one-term traffic gains or losses into future terms.
-	_, err = tx.ExecContext(ctx, `UPDATE purchases SET entitlement_traffic_limit_bytes=?,reward_traffic_renewal=?,
-		reward_renewal_traffic_limit_bytes=?,updated_at=? WHERE id=?`,
+	_, err = tx.ExecContext(ctx, `UPDATE purchases SET entitlement_traffic_limit_bytes=$1,reward_traffic_renewal=$2,
+		reward_renewal_traffic_limit_bytes=$3,updated_at=$4 WHERE id=$5`,
 		next, boolInt(includeInRenewal && next == renewalBase), renewalOverride, stamp(now), purchaseID)
 	if err != nil {
 		return err

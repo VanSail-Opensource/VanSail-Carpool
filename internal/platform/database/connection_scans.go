@@ -23,17 +23,14 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 		return providerops.ConnectionScan{}, false, ErrConflict
 	}
 	now = now.UTC()
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.ConnectionScan{}, false, fmt.Errorf("begin connection scan: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 	existing, loadErr := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+
-		` WHERE user_id=? AND idempotency_key=?`, input.UserID, input.IdempotencyKey))
+		` WHERE user_id=$1 AND idempotency_key=$2`, input.UserID, input.IdempotencyKey))
 	if loadErr == nil {
 		if existing.RequestFingerprint != input.RequestFingerprint {
 			return providerops.ConnectionScan{}, false, ErrConflict
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO connection_scans(id,user_id,idempotency_key,request_fingerprint,
 		provider_job_id,status,progress_percent,created_at,updated_at,expires_at)
-		VALUES(?,?,?,?,?,'queued',0,?,?,?)`, scanID, input.UserID, input.IdempotencyKey,
+		VALUES($1,$2,$3,$4,$5,'queued',0,$6,$7,$8)`, scanID, input.UserID, input.IdempotencyKey,
 		input.RequestFingerprint, input.ProviderJobID, stamp(now), stamp(now), stamp(input.ExpiresAt))
 	if err != nil {
 		return providerops.ConnectionScan{}, false, fmt.Errorf("insert connection scan: %w", err)
@@ -61,7 +58,7 @@ func (s *Store) retryAttempt_CreateConnectionScan(ctx context.Context, input pro
 	if err := insertOutboxTx(ctx, tx, "connection_scan_request", string(payload), now, now); err != nil {
 		return providerops.ConnectionScan{}, false, err
 	}
-	scan, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=?`, scanID))
+	scan, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
 	if err != nil {
 		return providerops.ConnectionScan{}, false, err
 	}
@@ -78,11 +75,11 @@ func (s *Store) CreateOrReplayConnectionScan(ctx context.Context, input provider
 
 // ConnectionScanByID returns metadata for a worker.
 func (s *Store) ConnectionScanByID(ctx context.Context, scanID string) (providerops.ConnectionScan, error) {
-	return scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+` WHERE id=?`, scanID))
+	return scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
 }
 
 // ConnectionScanForUser returns an owner-scoped scan without raw result data.
 func (s *Store) ConnectionScanForUser(ctx context.Context, scanID, userID string) (providerops.ConnectionScan, error) {
 	return scanConnectionScan(s.db.QueryRowContext(ctx, connectionScanSelect+
-		` WHERE id=? AND user_id=?`, scanID, userID))
+		` WHERE id=$1 AND user_id=$2`, scanID, userID))
 }

@@ -12,20 +12,17 @@ const pendingXNodeDesiredOperations = `SELECT p.operation_id FROM xnode_routing_
 // A reconnect is new external evidence after bounded queue retries. Resume the
 // same durable operation rather than creating a competing retry scheduler.
 func (s *Store) retryAttempt_WakeXNodeRouting(ctx context.Context, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind='provider_operation' AND (status='failed' OR status='pending' AND attempts>0) AND json_extract(payload,'$.operationId') IN(`+pendingXNodeDesiredOperations+`)`, stamp(now), stamp(now))
+	_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=$1,updated_at=$2 WHERE kind='provider_operation' AND (status='failed' OR status='pending' AND attempts>0) AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END) IN(`+pendingXNodeDesiredOperations+`)`, stamp(now), stamp(now))
 	if err != nil {
 		return err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT desired.operation_id FROM (`+pendingXNodeDesiredOperations+`) desired WHERE NOT EXISTS(SELECT 1 FROM outbox_jobs j WHERE j.kind='provider_operation' AND json_extract(j.payload,'$.operationId')=desired.operation_id)`)
+	rows, err := tx.QueryContext(ctx, `SELECT desired.operation_id FROM (`+pendingXNodeDesiredOperations+`) desired WHERE NOT EXISTS(SELECT 1 FROM outbox_jobs j WHERE j.kind='provider_operation' AND (CASE ((j.payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (j.payload)::jsonb #>> '{operationId}' END)=desired.operation_id)`)
 	if err != nil {
 		return err
 	}

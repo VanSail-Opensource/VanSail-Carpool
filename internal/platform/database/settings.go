@@ -18,7 +18,7 @@ type Setting struct {
 
 // PutSetting inserts or replaces a dashboard-managed setting.
 func (s *Store) PutSetting(ctx context.Context, key, value string, encrypted bool, actorID *string) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by) VALUES(?,?,?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=excluded.encrypted,updated_at=excluded.updated_at,updated_by=excluded.updated_by`, key, value, boolInt(encrypted), stamp(time.Now().UTC()), actorID)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=excluded.encrypted,updated_at=excluded.updated_at,updated_by=excluded.updated_by`, key, value, boolInt(encrypted), stamp(time.Now().UTC()), actorID)
 	if err != nil {
 		return fmt.Errorf("put setting %q: %w", key, err)
 	}
@@ -30,7 +30,7 @@ func (s *Store) GetSetting(ctx context.Context, key string) (Setting, error) {
 	var setting Setting
 	var encrypted int
 	var updated string
-	err := s.db.QueryRowContext(ctx, `SELECT key,value,encrypted,updated_at FROM settings WHERE key=?`, key).Scan(&setting.Key, &setting.Value, &encrypted, &updated)
+	err := s.db.QueryRowContext(ctx, `SELECT key,value,encrypted,updated_at FROM settings WHERE key=$1`, key).Scan(&setting.Key, &setting.Value, &encrypted, &updated)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Setting{}, ErrNotFound

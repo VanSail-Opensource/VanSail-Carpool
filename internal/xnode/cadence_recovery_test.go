@@ -31,7 +31,7 @@ func TestCadenceRecoversInterruptedSuccessorWithoutRewritingUsage(t *testing.T) 
 					t.Fatal(err)
 				}
 			}
-			if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET started_at=?,last_reset_at=?,ended_at=?,strategy='DAY',status=?,used_bytes=12345 WHERE id=?`, started.Format(time.RFC3339Nano), started.Format(time.RFC3339Nano), ended.Format(time.RFC3339Nano), status, identity.CurrentPeriodID); err != nil {
+			if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET started_at=$1,last_reset_at=$2,ended_at=$3,strategy='DAY',status=$4,used_bytes=12345 WHERE id=$5`, started.Format(time.RFC3339Nano), started.Format(time.RFC3339Nano), ended.Format(time.RFC3339Nano), status, identity.CurrentPeriodID); err != nil {
 				t.Fatal(err)
 			}
 			if err = f.service.ResetCadences(ctx); err != nil {

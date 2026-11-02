@@ -2,17 +2,18 @@ package catalog
 
 import (
 	"context"
-	"path/filepath"
+
 	"testing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "renewal-stock.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +80,7 @@ func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 	}
 	var successorID string
 	var successors int
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(MAX(id),'') FROM purchases WHERE auto_renew_source_purchase_id=?`, source.ID).Scan(&successors, &successorID); err != nil {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(MAX(id),'') FROM purchases WHERE auto_renew_source_purchase_id=$1`, source.ID).Scan(&successors, &successorID); err != nil {
 		t.Fatal(err)
 	}
 	if successors != 1 {
@@ -93,7 +94,7 @@ func TestAutomaticRenewalEnablesAndChargesRepricedHeldSquad(t *testing.T) {
 		t.Fatalf("Balance() = (%+v, %v), want one current-price debit", balance, err)
 	}
 	var debitCount int
-	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='automatic_renewal'`, user.ID).Scan(&debitCount); err != nil || debitCount != 1 {
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='automatic_renewal'`, user.ID).Scan(&debitCount); err != nil || debitCount != 1 {
 		t.Fatalf("renewal debits = %d, %v", debitCount, err)
 	}
 }

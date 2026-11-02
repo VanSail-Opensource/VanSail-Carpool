@@ -14,14 +14,14 @@ import (
 // PricingMaintenance reads explicit bounded administrative maintenance declarations.
 func (s *Store) PricingMaintenance(ctx context.Context, node string, now time.Time) (bool, error) {
 	var yes int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='MAINTENANCE' AND status='ACTIVE' AND starts_at<=? AND expires_at>? AND (scope_type='global' OR (scope_type IN ('node','machine') AND scope_id=?)))`, pricingStamp(now), pricingStamp(now), node).Scan(&yes)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='MAINTENANCE' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND (scope_type='global' OR (scope_type IN ('node','machine') AND scope_id=$3))))::bigint", pricingStamp(now), pricingStamp(now), node).Scan(&yes)
 	return yes == 1, err
 }
 
 // RecordPricingHealth retains incident transitions, never machine samples or live rates.
 func (s *Store) RecordPricingHealth(ctx context.Context, h pricing.Health) error {
 	var id, state string
-	err := s.db.QueryRowContext(ctx, `SELECT id,state FROM pricing_operational_incidents WHERE scope_type='node' AND scope_id=? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1`, h.NodeID).Scan(&id, &state)
+	err := s.db.QueryRowContext(ctx, `SELECT id,state FROM pricing_operational_incidents WHERE scope_type='node' AND scope_id=$1 AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1`, h.NodeID).Scan(&id, &state)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -36,7 +36,7 @@ func (s *Store) RecordPricingHealth(ctx context.Context, h pricing.Health) error
 	}
 	defer tx.Rollback()
 	if id != "" {
-		if _, err = tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET ended_at=? WHERE id=? AND ended_at IS NULL`, pricingStamp(h.At), id); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET ended_at=$1 WHERE id=$2 AND ended_at IS NULL`, pricingStamp(h.At), id); err != nil {
 			return err
 		}
 	}
@@ -45,7 +45,7 @@ func (s *Store) RecordPricingHealth(ctx context.Context, h pricing.Health) error
 		if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_operational_incidents(id,scope_type,scope_id,state,started_at,reason) VALUES(?,'node',?,?,?,?)`, id, h.NodeID, h.State, pricingStamp(h.At), "authenticated telemetry health transition")
+		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_operational_incidents(id,scope_type,scope_id,state,started_at,reason) VALUES($1,'node',$2,$3,$4,$5)`, id, h.NodeID, h.State, pricingStamp(h.At), "authenticated telemetry health transition")
 		if err != nil {
 			return err
 		}

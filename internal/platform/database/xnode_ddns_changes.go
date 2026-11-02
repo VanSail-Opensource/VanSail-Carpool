@@ -60,16 +60,13 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 	if in.Change.Validate() != nil || in.Operation.Kind != xnode.DDNSOperationKind || in.Operation.ActorUserID != in.Binding.ConfiguredBy {
 		return false, xnode.ErrInvalid
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	defer tx.Rollback()
-	node, err := scanXNodeNode(tx.QueryRowContext(ctx, xnodeNodeSelect+` WHERE id=? /*pg:FOR UPDATE*/`, in.Node.ID))
+	node, err := scanXNodeNode(tx.QueryRowContext(ctx, xnodeNodeSelect+` WHERE id=$1 FOR UPDATE`, in.Node.ID))
 	if err != nil {
 		return false, err
 	}
@@ -77,21 +74,21 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 		return false, xnode.ErrConflict
 	}
 	var version int64
-	if err = tx.QueryRowContext(ctx, `SELECT revision FROM xnode_compile_revision WHERE singleton=1 /*pg:FOR UPDATE*/`).Scan(&version); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT revision FROM xnode_compile_revision WHERE singleton=1 FOR UPDATE`).Scan(&version); err != nil {
 		return false, err
 	}
 	if version != in.Version {
 		return false, xnode.ErrConflict
 	}
 	var actor string
-	err = tx.QueryRowContext(ctx, `SELECT configured_by FROM xnode_ddns_jobs WHERE node_id=? AND job_id=?`, node.ID, in.Change.JobID).Scan(&actor)
+	err = tx.QueryRowContext(ctx, `SELECT configured_by FROM xnode_ddns_jobs WHERE node_id=$1 AND job_id=$2`, node.ID, in.Change.JobID).Scan(&actor)
 	if err != nil {
 		return false, err
 	}
 	if actor != in.Binding.ConfiguredBy {
 		return false, xnode.ErrConflict
 	}
-	prior, err := scanDDNSChange(tx.QueryRowContext(ctx, ddnsChangeSelect+` WHERE node_id=? AND job_id=?`, node.ID, in.Change.JobID))
+	prior, err := scanDDNSChange(tx.QueryRowContext(ctx, ddnsChangeSelect+` WHERE node_id=$1 AND job_id=$2`, node.ID, in.Change.JobID))
 	if err != nil && !errors.Is(err, xnode.ErrNotFound) {
 		return false, err
 	}
@@ -109,7 +106,7 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 			ips = append(ips, ip)
 		}
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT e.address FROM xnode_endpoints e JOIN xnode_ddns_hosts h ON e.id=h.host_id WHERE h.node_id=? AND h.job_id=?`, node.ID, in.Change.JobID)
+	rows, err := tx.QueryContext(ctx, `SELECT e.address FROM xnode_endpoints e JOIN xnode_ddns_hosts h ON e.id=h.host_id WHERE h.node_id=$1 AND h.job_id=$2`, node.ID, in.Change.JobID)
 	if err != nil {
 		return false, err
 	}
@@ -143,7 +140,7 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 	}
 	c := in.Change
 	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_ddns_changes(node_id,job_id,agent_id,event_id,generation,sequence,ipv4,ipv6,observed_at,previous_ips,operation_id,phase)
- VALUES(?,?,?,?,?,?,?,?,?,?,?,'staging') ON CONFLICT(node_id,job_id) DO UPDATE SET agent_id=excluded.agent_id,event_id=excluded.event_id,generation=excluded.generation,sequence=excluded.sequence,ipv4=excluded.ipv4,ipv6=excluded.ipv6,observed_at=excluded.observed_at,previous_ips=excluded.previous_ips,operation_id=excluded.operation_id,phase='staging'`, node.ID, c.JobID, node.AgentID, c.ID, c.Generation, strconv.FormatUint(c.Sequence, 10), c.IPv4, c.IPv6, stamp(c.ObservedAt), string(previous), op.Receipt.ID)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'staging') ON CONFLICT(node_id,job_id) DO UPDATE SET agent_id=excluded.agent_id,event_id=excluded.event_id,generation=excluded.generation,sequence=excluded.sequence,ipv4=excluded.ipv4,ipv6=excluded.ipv6,observed_at=excluded.observed_at,previous_ips=excluded.previous_ips,operation_id=excluded.operation_id,phase='staging'`, node.ID, c.JobID, node.AgentID, c.ID, c.Generation, strconv.FormatUint(c.Sequence, 10), c.IPv4, c.IPv6, stamp(c.ObservedAt), string(previous), op.Receipt.ID)
 	if err != nil {
 		return false, err
 	}

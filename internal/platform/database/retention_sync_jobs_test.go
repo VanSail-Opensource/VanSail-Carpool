@@ -25,7 +25,7 @@ func TestFailedSynchronizationRetentionUsesFinalFailureAndKeepsFinancialWork(t *
 		{"financial", "purchase_expire", "failed", now.Add(-8 * 24 * time.Hour)},
 		{"raffle-financial", "draw_raffle_settle", "failed", now.Add(-8 * 24 * time.Hour)},
 	} {
-		if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?, ?,10,?,?,?)`, test.id, test.kind, `{"userId":"missing"}`, test.status, stamp(now), stamp(now.Add(-10*24*time.Hour)), stamp(test.failed)); err != nil {
+		if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES($1,$2,$3, $4,10,$5,$6,$7)`, test.id, test.kind, `{"userId":"missing"}`, test.status, stamp(now), stamp(now.Add(-10*24*time.Hour)), stamp(test.failed)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -56,10 +56,10 @@ func TestFailedSyncCleanupKeepsPurchaseMoneyAndProtectsQueuedManualRetry(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=? WHERE kind='xnode_apply_entitlement' AND json_extract(payload,'$.purchaseId')=?`, stamp(now.Add(-failedSyncRetention)), purchase.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=$1 WHERE kind='xnode_apply_entitlement' AND (CASE ((payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{purchaseId}' END)=$2`, stamp(now.Add(-failedSyncRetention)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES('retry-target','xnode_sync_user','{"userId":"missing"}','failed',10,?,?,?)`, stamp(now), stamp(now.Add(-8*24*time.Hour)), stamp(now.Add(-failedSyncRetention))); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES('retry-target','xnode_sync_user','{"userId":"missing"}','failed',10,$1,$2,$3)`, stamp(now), stamp(now.Add(-8*24*time.Hour)), stamp(now.Add(-failedSyncRetention))); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor.ID, Kind: providerops.KindOutboxRetry, IdempotencyKey: "retained-retry", RequestFingerprint: "retained-retry-fingerprint", Items: []providerops.ItemInput{{Key: "job", TargetType: "outbox_job", TargetID: "retry-target"}}}, now); err != nil {
@@ -113,7 +113,7 @@ func TestFailedPMJobExpiryKeepsUncertainTopicAndNeverAttemptedRelay(t *testing.T
 	if claimed, err := store.ClaimPMTopic(ctx, id, receipt.ID, now); err != nil || !claimed {
 		t.Fatalf("claim=%v,%v", claimed, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=? WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, stamp(now.Add(-failedSyncRetention)), receipt.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=$1 WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$2`, stamp(now.Add(-failedSyncRetention)), receipt.ID); err != nil {
 		t.Fatal(err)
 	}
 	counts, err := store.CompactAndPrune(ctx, now.Add(-7*24*time.Hour), now.Add(-24*time.Hour), now)

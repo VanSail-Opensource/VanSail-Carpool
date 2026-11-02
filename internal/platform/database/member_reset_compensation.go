@@ -16,16 +16,13 @@ import (
 
 // CompensateTrafficReset credits one failed reset debit and closes its receipt atomically.
 func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operationID, errorCode string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, operationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err != nil {
 		return err
 	}
@@ -38,7 +35,7 @@ func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operati
 	var userID string
 	var debit int64
 	err = tx.QueryRowContext(ctx, `SELECT user_id,delta_txb_minor FROM ledger_entries
-		WHERE kind='traffic_reset_debit' AND reference_id=?`, operationID).Scan(&userID, &debit)
+		WHERE kind='traffic_reset_debit' AND reference_id=$1`, operationID).Scan(&userID, &debit)
 	if err != nil {
 		return fmt.Errorf("load traffic reset debit: %w", err)
 	}
@@ -46,7 +43,7 @@ func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operati
 		return errors.New("traffic reset debit is invalid")
 	}
 	var existing string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM ledger_entries WHERE kind='traffic_reset_compensation' AND reference_id=?`, operationID).Scan(&existing)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM ledger_entries WHERE kind='traffic_reset_compensation' AND reference_id=$1`, operationID).Scan(&existing)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -60,12 +57,12 @@ func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operati
 		}
 	}
 	code := operationCode(errorCode)
-	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='compensated',error_code=?,result_json='{}',
-		completed_at=?,updated_at=? WHERE operation_id=? AND status='processing'`, code, stamp(now), stamp(now), operationID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='compensated',error_code=$1,result_json='{}',
+		completed_at=$2,updated_at=$3 WHERE operation_id=$4 AND status='processing'`, code, stamp(now), stamp(now), operationID); err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='compensated',error_code=?,result_json='{}',
-		completed_at=?,updated_at=? WHERE id=? AND status='processing'`, code, stamp(now), stamp(now), operationID)
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='compensated',error_code=$1,result_json='{}',
+		completed_at=$2,updated_at=$3 WHERE id=$4 AND status='processing'`, code, stamp(now), stamp(now), operationID)
 	if err != nil {
 		return err
 	}
@@ -76,7 +73,7 @@ func (s *Store) retryAttempt_CompensateTrafficReset(ctx context.Context, operati
 		var combo string
 		if err := tx.QueryRowContext(ctx, `SELECT combos.name FROM provider_operation_items item
 			JOIN purchases ON purchases.id=item.target_id JOIN combos ON combos.id=purchases.combo_id
-			WHERE item.operation_id=? AND item.item_key='purchase'`, operationID).Scan(&combo); err != nil {
+			WHERE item.operation_id=$1 AND item.item_key='purchase'`, operationID).Scan(&combo); err != nil {
 			return err
 		}
 		balance, err := balanceTx(ctx, tx, userID)

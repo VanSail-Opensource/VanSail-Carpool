@@ -1,4 +1,20 @@
-# PostgreSQL migration history
+# Forward PostgreSQL migrations
+
+Migrations 00001 through 00031 are immutable applied history. They remain embedded
+so both fresh installations and populated PostgreSQL upgrades follow one ordered
+chain. Do not rewrite old scripts or remove historical accounting/audit tables.
+
+`00032_native_postgresql.sql` replaces dependent JSON CHECK constraints, expression
+indexes and paid-access trigger functions before dropping compatibility functions.
+It preserves stored values, ciphertext, text collation and exact timestamp text.
+Drops deliberately omit CASCADE so an unexpected live dependency aborts migration.
+
+Add numbered forward migrations, update SchemaVersion and the native contract,
+and extend hosted fresh/upgrade/recovery checks for future changes. Downgrades
+refuse execution. Only the migration role owns schema changes; the app uses DML.
+
+## Applied history
+
 
 `00027_agreement_continuity.sql` mirrors SQLite 113 and restores prior accepted
 members without changing their recorded consent or first-time onboarding.
@@ -35,11 +51,6 @@ Existing charge evidence is retained. Downgrade refuses authoritative mutation.
 compatibility functions. `00002_baseline.sql` creates the final post-startup
 schema, bootstrap defaults, constraints, indexes and invariant triggers.
 `00003_domain_ordering.sql` gives cache and FIFO records declared ordering keys.
-
-The parent package embeds these forward-only Goose migrations. New changes use
-new numbers; every downgrade refuses authoritative-data mutation. Original SQLite
-migrations remain separate and immutable. The baseline is reproducible from the
-isolated schema inventory and the reviewed generator, never from production data.
 
 `00004_outbox_fencing.sql` adds monotonic claims, transactional wake-up hints and
 a sequence for the disjoint X-Node service-ID range.

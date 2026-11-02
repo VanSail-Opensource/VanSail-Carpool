@@ -52,7 +52,7 @@ func TestActivityBetAtomicOutcomeAndReplay(t *testing.T) {
 				t.Fatalf("Balance() = (%s, %v), want %s", balance.Minor, err, test.wantBalance)
 			}
 			var ledgerCount int
-			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=?`, played.ID).Scan(&ledgerCount); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=$1`, played.ID).Scan(&ledgerCount); err != nil {
 				t.Fatalf("count bet ledger: %v", err)
 			}
 			if ledgerCount != test.wantLedger {

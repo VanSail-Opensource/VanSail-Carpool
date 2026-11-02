@@ -41,13 +41,13 @@ func TestAdminCouponGrantAndDiscardAreIdempotentAndHistorical(t *testing.T) {
 		t.Fatalf("wallet after discard = (%+v, %v)", wallet, err)
 	}
 	var discards, commands, audits int
-	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_grant_discards WHERE grant_id=?`, first.ID).Scan(&discards); err != nil {
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_grant_discards WHERE grant_id=$1`, first.ID).Scan(&discards); err != nil {
 		t.Fatal(err)
 	}
-	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_coupon_discard_commands WHERE grant_id=?`, first.ID).Scan(&commands); err != nil {
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_coupon_discard_commands WHERE grant_id=$1`, first.ID).Scan(&commands); err != nil {
 		t.Fatal(err)
 	}
-	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='coupon.discard' AND target_id=?`, first.ID).Scan(&audits); err != nil {
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='coupon.discard' AND target_id=$1`, first.ID).Scan(&audits); err != nil {
 		t.Fatal(err)
 	}
 	if discards != 1 || commands != 1 || audits != 1 {

@@ -13,13 +13,6 @@ func (s *Server) requireSignedRequest(next http.Handler) http.Handler {
 			s.authenticateAPIToken(w, r, next)
 			return
 		}
-		if isStreamingBackupUpload(r) {
-			if !s.authorizeStreamingBackupUpload(w, r) {
-				return
-			}
-			next.ServeHTTP(w, r)
-			return
-		}
 		sessionName, keyName := requestCookieNames(r)
 		session, sessionErr := r.Cookie(sessionName)
 		clientKey, keyErr := r.Cookie(keyName)

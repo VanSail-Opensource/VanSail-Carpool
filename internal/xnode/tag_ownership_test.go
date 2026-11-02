@@ -22,14 +22,14 @@ func TestInactiveMemberTagsStayReservedAcrossNumericNamespaces(t *testing.T) {
 	if err != nil || len(purchases) != 1 {
 		t.Fatal("fixture purchase missing")
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE user_id=?`, f.user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE user_id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 99102, FirstName: "Second"}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET username='bob-alice',onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET username='bob-alice',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = f.store.UserByID(ctx, user.ID)

@@ -22,7 +22,7 @@ func enablesPAYG(patch preferences.Patch) bool {
 }
 
 func paygSquadPreferencesFrom(ctx context.Context, reader squadPreferenceReader, user string) (map[string]bool, error) {
-	rows, err := reader.QueryContext(ctx, `SELECT group_id FROM user_disabled_payg_squads WHERE user_id=? ORDER BY group_id`, user)
+	rows, err := reader.QueryContext(ctx, `SELECT group_id FROM user_disabled_payg_squads WHERE user_id=$1 ORDER BY group_id`, user)
 	if err != nil {
 		return nil, err
 	}
@@ -56,17 +56,17 @@ func savePAYGPreferencesTx(ctx context.Context, tx *sql.Tx, user string, patch p
 	sort.Strings(groups)
 	for _, group := range groups {
 		var valid bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM squad_product_overrides o JOIN xnode_groups g ON g.id=o.group_id WHERE o.group_id=? AND o.billing_mode='payg')`, group).Scan(&valid); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM squad_product_overrides o JOIN xnode_groups g ON g.id=o.group_id WHERE o.group_id=$1 AND o.billing_mode='payg')`, group).Scan(&valid); err != nil {
 			return nil, err
 		}
 		if !valid {
 			return nil, ErrNotFound
 		}
 		if patch.PAYGSquads[group] {
-			if _, err := tx.ExecContext(ctx, `DELETE FROM user_disabled_payg_squads WHERE user_id=? AND group_id=?`, user, group); err != nil {
+			if _, err := tx.ExecContext(ctx, `DELETE FROM user_disabled_payg_squads WHERE user_id=$1 AND group_id=$2`, user, group); err != nil {
 				return nil, err
 			}
-		} else if _, err := tx.ExecContext(ctx, `INSERT INTO user_disabled_payg_squads(user_id,group_id) VALUES(?,?) ON CONFLICT(user_id,group_id) DO NOTHING`, user, group); err != nil {
+		} else if _, err := tx.ExecContext(ctx, `INSERT INTO user_disabled_payg_squads(user_id,group_id) VALUES($1,$2) ON CONFLICT(user_id,group_id) DO NOTHING`, user, group); err != nil {
 			return nil, err
 		}
 	}

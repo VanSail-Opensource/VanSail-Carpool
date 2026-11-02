@@ -65,7 +65,7 @@ func TestBrowserSessionDeviceAndScopeIsolation(t *testing.T) {
 func TestBrowserSessionMaintenanceKeepsConcurrentDevices(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 80302)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
@@ -83,7 +83,7 @@ func TestBrowserSessionMaintenanceKeepsConcurrentDevices(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM sessions WHERE user_id=?`, user.ID).Scan(&count); err != nil || count != 3 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM sessions WHERE user_id=$1`, user.ID).Scan(&count); err != nil || count != 3 {
 		t.Fatalf("retained sessions=%d,err=%v", count, err)
 	}
 }

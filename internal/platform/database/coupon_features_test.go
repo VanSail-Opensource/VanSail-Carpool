@@ -127,10 +127,10 @@ func TestCouponGrantDiscardPreservesHistory(t *testing.T) {
 		t.Fatalf("QuotePurchaseCoupon(discarded) = %v, want conflict", err)
 	}
 	var discards, redemptions int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_grant_discards WHERE grant_id=?`, redeemed.Grant.ID).Scan(&discards); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_grant_discards WHERE grant_id=$1`, redeemed.Grant.ID).Scan(&discards); err != nil {
 		t.Fatalf("count coupon discards: %v", err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_redemptions WHERE grant_id=?`, redeemed.Grant.ID).Scan(&redemptions); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_redemptions WHERE grant_id=$1`, redeemed.Grant.ID).Scan(&redemptions); err != nil {
 		t.Fatalf("count coupon redemptions: %v", err)
 	}
 	if discards != 1 || redemptions != 1 {

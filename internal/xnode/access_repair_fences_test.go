@@ -41,7 +41,7 @@ func TestRepairAndSchedulerRespectRefundOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err = f.store.DB().QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`, xnode.AccessRepairJob).Scan(&count); err != nil || count != 0 {
+	if err = f.store.DB().QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`, xnode.AccessRepairJob).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("blocked repair enqueued: %d %v", count, err)
 	}
 	after, err := f.store.XNodePeriod(ctx, period.ID)

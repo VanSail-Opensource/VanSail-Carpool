@@ -44,7 +44,7 @@ func TestCustomAwardCadenceSurvivesCoreChange(t *testing.T) {
 				if test.override != "" {
 					override = test.override
 				}
-				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy=? WHERE id=?`, override, purchase.ID); err != nil {
+				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy=$1 WHERE id=$2`, override, purchase.ID); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -75,7 +75,7 @@ func TestOrdinaryCoreChangeUsesTargetResetCadence(t *testing.T) {
 	core := saveCadenceCombo(t, store, "Original", "DAY")
 	target := saveCadenceCombo(t, store, "Target", "WEEK")
 	user, purchase := createAdminWorkflowPurchase(t, store, 32110, core, now)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy='MONTH_ROLLING' WHERE id=?`, purchase.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_reset_strategy='MONTH_ROLLING' WHERE id=$1`, purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	playComboReward(t, store, user.ID, "core", activity.Reward{Kind: activity.RewardCoreComboSwitch, ComboID: target.ID}, now)

@@ -20,10 +20,7 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 	if _, err := time.Parse(time.DateOnly, localDate); err != nil || leaseOwner == "" || !leaseUntil.After(now) {
 		return "", false, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", false, fmt.Errorf("begin maintenance claim: %w", err)
@@ -31,7 +28,7 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 	defer func() { _ = tx.Rollback() }()
 	var activeID string
 	err = tx.QueryRowContext(ctx, `SELECT id FROM maintenance_runs
-		WHERE status='running' AND lease_expires_at>?
+		WHERE status='running' AND lease_expires_at>$1
 		ORDER BY started_at DESC,id DESC LIMIT 1`, stamp(now)).Scan(&activeID)
 	if err == nil {
 		if commitErr := tx.Commit(); commitErr != nil {
@@ -45,7 +42,7 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 	if !force {
 		var completedID string
 		err = tx.QueryRowContext(ctx, `SELECT id FROM maintenance_runs
-			WHERE local_date=? AND status='succeeded'
+			WHERE local_date=$1 AND status='succeeded'
 			ORDER BY completed_at DESC,id DESC LIMIT 1`, localDate).Scan(&completedID)
 		if err == nil {
 			if commitErr := tx.Commit(); commitErr != nil {
@@ -58,7 +55,7 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 		}
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE maintenance_runs SET status='failed',error_code='MAINTENANCE_LEASE_EXPIRED',
-		lease_expires_at=?,updated_at=?,completed_at=? WHERE status='running' AND lease_expires_at<=?`,
+		lease_expires_at=$1,updated_at=$2,completed_at=$3 WHERE status='running' AND lease_expires_at<=$4`,
 		stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return "", false, fmt.Errorf("expire maintenance claims: %w", err)
 	}
@@ -67,7 +64,7 @@ func (s *Store) retryAttempt_ClaimMaintenanceRun(ctx context.Context, localDate,
 		return "", false, err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO maintenance_runs(id,local_date,status,lease_owner,
-		lease_expires_at,started_at,updated_at) VALUES(?,?,'running',?,?,?,?)`, runID, localDate,
+		lease_expires_at,started_at,updated_at) VALUES($1,$2,'running',$3,$4,$5,$6)`, runID, localDate,
 		leaseOwner, stamp(leaseUntil), stamp(now), stamp(now)); err != nil {
 		return "", false, fmt.Errorf("insert maintenance claim: %w", err)
 	}
@@ -97,8 +94,8 @@ func (s *Store) CompleteMaintenanceRun(ctx context.Context, runID, backupRunID s
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE maintenance_runs SET status=?,backup_run_id=?,cleanup_counts_json=?,
-		error_code=?,lease_expires_at=?,updated_at=?,completed_at=? WHERE id=? AND status='running'`, status,
+	result, err := s.db.ExecContext(ctx, `UPDATE maintenance_runs SET status=$1,backup_run_id=$2,cleanup_counts_json=$3,
+		error_code=$4,lease_expires_at=$5,updated_at=$6,completed_at=$7 WHERE id=$8 AND status='running'`, status,
 		nullIfEmpty(backupRunID), string(payload), errorCode, stamp(now), stamp(now), stamp(now), runID)
 	if err != nil {
 		return fmt.Errorf("complete maintenance run: %w", err)

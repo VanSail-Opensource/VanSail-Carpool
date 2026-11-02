@@ -15,12 +15,9 @@ import (
 // Business transactions retain their serializable default and retry policy.
 func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID string, attempts int, generation int64, jobErr error, now time.Time) error {
 	var options *sql.TxOptions
-	if IsPostgres(s.db) {
-		options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-	} else {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
+	options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+
 	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return err
@@ -29,17 +26,17 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 	var currentAttempts int
 	var currentStatus string
 	var currentGeneration int64
-	if err = tx.QueryRowContext(ctx, `SELECT attempts,status,/*pg:claim-generation*/0 FROM outbox_jobs WHERE id=? /*pg:FOR UPDATE*/`, jobID).Scan(&currentAttempts, &currentStatus, &currentGeneration); errors.Is(err, sql.ErrNoRows) {
+	if err = tx.QueryRowContext(ctx, `SELECT attempts,status,claim_generation FROM outbox_jobs WHERE id=$1 FOR UPDATE`, jobID).Scan(&currentAttempts, &currentStatus, &currentGeneration); errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return err
 	}
 	// An older asynchronous attempt cannot remove or overwrite a recovered lease.
-	if currentAttempts != attempts || currentStatus != "processing" || (IsPostgres(s.db) && currentGeneration != generation) {
+	if currentAttempts != attempts || currentStatus != "processing" || currentGeneration != generation {
 		return nil
 	}
 	if jobErr == nil {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=?`, jobID); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=$1`, jobID); err != nil {
 			return fmt.Errorf("remove completed outbox job: %w", err)
 		}
 		return tx.Commit()
@@ -50,7 +47,7 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 		if errors.As(jobErr, &deferred) {
 			delay = min(time.Minute, max(time.Second, deferred.RetryDelay()))
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=MAX(0,attempts-1),last_error=?,available_at=?,updated_at=? WHERE id=?`, sanitizeError(jobErr), stamp(now.Add(delay)), stamp(now), jobID)
+		_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=GREATEST(0,attempts-1),last_error=$1,available_at=$2,updated_at=$3 WHERE id=$4`, sanitizeError(jobErr), stamp(now.Add(delay)), stamp(now), jobID)
 		if err != nil {
 			return err
 		}
@@ -65,7 +62,7 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 		return err
 	}
 	message := sanitizeError(jobErr)
-	if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status=?,last_error=?,available_at=?,updated_at=? WHERE id=?`, status, message, stamp(now.Add(delay)), stamp(now), jobID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status=$1,last_error=$2,available_at=$3,updated_at=$4 WHERE id=$5`, status, message, stamp(now.Add(delay)), stamp(now), jobID); err != nil {
 		return err
 	}
 	return tx.Commit()

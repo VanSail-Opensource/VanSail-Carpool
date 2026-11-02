@@ -1,21 +1,21 @@
 name: remna-user-panel
 
 # Selected 1 GiB embedded PostgreSQL deployment: deploy/embedded/compose.yml.
-# Existing SQLite installations must complete the offline cutover gates first.
 # Optional, isolated PostgreSQL 18 infrastructure and protected-secret setup:
 # deploy/postgres/compose.yml and deploy/postgres/README.md.
-# Keep SQLite until the explicit migration and verification gates pass.
 
 services:
   vansail-carpool:
     image: ghcr.io/txyyddss/remna-user-panel:latest
     hostname: vansail-carpool
     restart: unless-stopped
-    stop_grace_period: 30s
+    stop_grace_period: 90s
     mem_limit: 1g
     memswap_limit: 1g
 
     environment:
+      PG_EMBEDDED: "true"
+      DB_DRIVER: postgres
       PORT: 8080
       DATA_DIR: /data
       TZ: ${TZ:-UTC}
@@ -30,12 +30,13 @@ services:
 
     volumes:
       - tx-carpool-data:/data
+      - vansail-postgres-data:/var/lib/postgresql
 
     healthcheck:
       test: ["CMD", "/usr/local/bin/vansail-carpool", "healthcheck", "--url", "http://127.0.0.1:8080/healthz"]
       interval: 30s
       timeout: 5s
-      start_period: 10s
+      start_period: 120s
       retries: 3
 
     read_only: true
@@ -53,3 +54,6 @@ services:
 volumes:
   tx-carpool-data:
     name: tx-carpool-data
+
+  vansail-postgres-data:
+    name: vansail-postgres-data

@@ -12,7 +12,7 @@ func comboSquadsTx(ctx context.Context, tx *sql.Tx, squads []model.SquadProduct)
 	out := make([]model.SquadProduct, 0, len(squads))
 	for _, squad := range squads {
 		var mode string
-		err := tx.QueryRowContext(ctx, `SELECT billing_mode FROM squad_product_overrides WHERE group_id=?`, squad.GroupID).Scan(&mode)
+		err := tx.QueryRowContext(ctx, `SELECT billing_mode FROM squad_product_overrides WHERE group_id=$1`, squad.GroupID).Scan(&mode)
 		if err != nil && err != sql.ErrNoRows {
 			return nil, err
 		}
@@ -35,13 +35,13 @@ func squadJSON(squads []model.SquadProduct) string {
 // snapshotComboSquadsTx retains a base-only snapshot: ordinary add-ons remain
 // editable and custom full-entitlement overrides retain their existing meaning.
 func snapshotComboSquadsTx(ctx context.Context, tx *sql.Tx, purchase string, squads []model.SquadProduct) error {
-	_, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_squad_uuids=CASE WHEN (SELECT included_squad_uuids FROM combos WHERE combos.id=purchases.combo_id)=? THEN NULL ELSE ? END WHERE id=?`, squadJSON(squads), squadJSON(squads), purchase)
+	_, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_squad_uuids=CASE WHEN (SELECT included_squad_uuids FROM combos WHERE combos.id=purchases.combo_id)=$1 THEN NULL ELSE $2 END WHERE id=$3`, squadJSON(squads), squadJSON(squads), purchase)
 	return err
 }
 
 func renewalComboTx(ctx context.Context, tx *sql.Tx, purchase string, combo model.Combo) (model.Combo, error) {
 	var custom sql.NullString
-	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids FROM purchases WHERE id=?`, purchase).Scan(&custom); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids FROM purchases WHERE id=$1`, purchase).Scan(&custom); err != nil {
 		return combo, err
 	}
 	if custom.Valid {

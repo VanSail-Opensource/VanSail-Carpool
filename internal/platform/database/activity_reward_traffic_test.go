@@ -30,7 +30,7 @@ func TestDrawTrafficKeepsTemporaryAndRenewalAllowancesSeparate(t *testing.T) {
 				t.Fatal(err)
 			}
 			combo := saveTestCombo(t, store, "Traffic term", 100, 30)
-			if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET traffic_limit_bytes=? WHERE id=?`, 100*(1<<30), combo.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET traffic_limit_bytes=$1 WHERE id=$2`, 100*(1<<30), combo.ID); err != nil {
 				t.Fatal(err)
 			}
 			purchase, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "purchase"}, now)
@@ -56,7 +56,7 @@ func TestDrawTrafficKeepsTemporaryAndRenewalAllowancesSeparate(t *testing.T) {
 				}
 			}
 			var current int64
-			if err = store.DB().QueryRowContext(ctx, `SELECT entitlement_traffic_limit_bytes FROM purchases WHERE id=?`, purchase.ID).Scan(&current); err != nil {
+			if err = store.DB().QueryRowContext(ctx, `SELECT entitlement_traffic_limit_bytes FROM purchases WHERE id=$1`, purchase.ID).Scan(&current); err != nil {
 				t.Fatal(err)
 			}
 			plan, err := store.autoRenewalPlan(ctx, user.ID, purchase.ID, nil, now)
@@ -83,7 +83,7 @@ func TestDrawTrafficRejectsLossBeyondRenewalAllowance(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The current term has a temporary 10 GiB allowance; renewal remains 100 MiB.
-	if _, err = store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_traffic_limit_bytes=?,reward_traffic_renewal=0 WHERE id=?`, 10*(1<<30), purchase.ID); err != nil {
+	if _, err = store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_traffic_limit_bytes=$1,reward_traffic_renewal=0 WHERE id=$2`, 10*(1<<30), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	reward := activity.Reward{Kind: activity.RewardTrafficGrant, IncludeInRenewal: true,

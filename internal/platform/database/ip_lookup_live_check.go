@@ -35,7 +35,7 @@ func (s *Store) ipLookupCheckLive(ctx context.Context, check *iplookup.Check, ra
 		return nil
 	}
 	var snapshot string
-	if err := s.db.QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=?`, stage.SnapshotID).Scan(&snapshot); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=$1`, stage.SnapshotID).Scan(&snapshot); err != nil {
 		return err
 	}
 	details, err := decodeIPDetails(snapshot, stage.SnapshotID, check.RequestedIP, "none")

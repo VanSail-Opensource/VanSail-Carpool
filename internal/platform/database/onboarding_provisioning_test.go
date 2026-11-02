@@ -33,7 +33,7 @@ func TestOnboardingQueuesCredentialsWithoutComboPurchase(t *testing.T) {
 			}
 			for kind, want := range map[string]int{xnode.AccessRepairJob: 1, xnode.PAYGJob: boolInt(payg), "xnode_sync_user": 0} {
 				var count int
-				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.userId')=? AND status='pending'`, kind, user.ID).Scan(&count); err != nil || count != want {
+				if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$2 AND status='pending'`, kind, user.ID).Scan(&count); err != nil || count != want {
 					t.Fatalf("%s jobs = %d, want %d: %v", kind, count, want, err)
 				}
 			}
@@ -50,7 +50,7 @@ func TestAccessRepairBackfillsOnlyCompletedMembersWithoutPurchases(t *testing.T)
 	ctx, store := context.Background(), newTestStore(t)
 	completed := createTestUser(t, store, 31921)
 	incomplete := createTestUser(t, store, 31922)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=?`, completed.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, completed.ID); err != nil {
 		t.Fatal(err)
 	}
 	for range 2 {
@@ -60,7 +60,7 @@ func TestAccessRepairBackfillsOnlyCompletedMembersWithoutPurchases(t *testing.T)
 	}
 	for user, want := range map[string]int{completed.ID: 1, incomplete.ID: 0} {
 		var count int
-		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.userId')=? AND status='pending'`, xnode.AccessRepairJob, user).Scan(&count); err != nil || count != want {
+		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$2 AND status='pending'`, xnode.AccessRepairJob, user).Scan(&count); err != nil || count != want {
 			t.Fatalf("member %s repair jobs = %d, want %d: %v", user, count, want, err)
 		}
 	}

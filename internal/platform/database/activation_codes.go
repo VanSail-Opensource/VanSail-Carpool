@@ -64,7 +64,7 @@ func validateSquadActivationCodesTx(ctx context.Context, tx *sql.Tx, combo model
 func activationRecordTx(ctx context.Context, tx *sql.Tx, uuid string) (string, bool, error) {
 	var required int
 	var hash sql.NullString
-	err := tx.QueryRowContext(ctx, `SELECT activation_required,activation_code_hash FROM squad_product_overrides WHERE group_id=?`, uuid).Scan(&required, &hash)
+	err := tx.QueryRowContext(ctx, `SELECT activation_required,activation_code_hash FROM squad_product_overrides WHERE group_id=$1`, uuid).Scan(&required, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}

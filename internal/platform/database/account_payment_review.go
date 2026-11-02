@@ -14,12 +14,12 @@ func archivePurgedPaymentTx(ctx context.Context, tx *sql.Tx, order model.Payment
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES(?,NULL,'payment.purged_account_review','payment',?,?,?) ON CONFLICT(id) DO NOTHING`, "purged-payment:"+order.ID, order.ID, string(detail), stamp(now)); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,NULL,'payment.purged_account_review','payment',$2,$3,$4) ON CONFLICT(id) DO NOTHING`, "purged-payment:"+order.ID, order.ID, string(detail), stamp(now)); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO payment_callback_tombstones(provider,dedupe_key,order_id,payload_hash,received_at,processed_at) VALUES(?,?,?,?,?,?) ON CONFLICT(provider,dedupe_key) DO NOTHING`, provider, dedupe, order.ID, payloadHash, stamp(now), stamp(now)); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO payment_callback_tombstones(provider,dedupe_key,order_id,payload_hash,received_at,processed_at) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(provider,dedupe_key) DO NOTHING`, provider, dedupe, order.ID, payloadHash, stamp(now), stamp(now)); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `DELETE FROM webhook_events WHERE id=?`, event)
+	_, err = tx.ExecContext(ctx, `DELETE FROM webhook_events WHERE id=$1`, event)
 	return err
 }

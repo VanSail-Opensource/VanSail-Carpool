@@ -25,7 +25,7 @@ func TestPurchaseAddonOverrideRejectsWithoutFinancialWrites(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=?,entitlement_addon_squad_uuids=? WHERE id=?`, override.core, override.addon, purchase.ID); err != nil {
+			if _, err = store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=$1,entitlement_addon_squad_uuids=$2 WHERE id=$3`, override.core, override.addon, purchase.ID); err != nil {
 				t.Fatal(err)
 			}
 			before := addonFinancialState(t, store, user.ID)
@@ -46,7 +46,7 @@ func TestPurchaseAddonOverrideRejectsWithoutFinancialWrites(t *testing.T) {
 func addonFinancialState(t *testing.T, store *Store, userID string) [4]int64 {
 	t.Helper()
 	var result [4]int64
-	for i, query := range []string{`SELECT txb_minor FROM balances WHERE user_id=?`, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=?`, `SELECT COUNT(*) FROM purchase_addon_adjustments WHERE purchase_id IN (SELECT id FROM purchases WHERE user_id=?)`, `SELECT COUNT(*) FROM purchase_addons WHERE purchase_id IN (SELECT id FROM purchases WHERE user_id=?)`} {
+	for i, query := range []string{`SELECT txb_minor FROM balances WHERE user_id=$1`, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1`, `SELECT COUNT(*) FROM purchase_addon_adjustments WHERE purchase_id IN (SELECT id FROM purchases WHERE user_id=$1)`, `SELECT COUNT(*) FROM purchase_addons WHERE purchase_id IN (SELECT id FROM purchases WHERE user_id=$1)`} {
 		if err := store.DB().QueryRow(query, userID).Scan(&result[i]); err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +76,7 @@ func TestPurchaseAddonDuplicateAndChargedReplaySurviveOverride(t *testing.T) {
 	if _, err := store.AddPurchaseAddons(ctx, input, now); !errors.Is(err, ErrSquadAlreadyAdded) {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().Exec(`UPDATE purchases SET entitlement_addon_squad_uuids='[]' WHERE id=?`, purchase.ID); err != nil {
+	if _, err := store.DB().Exec(`UPDATE purchases SET entitlement_addon_squad_uuids='[]' WHERE id=$1`, purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	input.IdempotencyKey = "paid"

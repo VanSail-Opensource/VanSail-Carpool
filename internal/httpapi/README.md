@@ -67,8 +67,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `emby.go` serves member and administrator Emby account projections.
 - `emby_commands.go` validates durable member setup/update and administrator retry commands.
 - `database_admin.go` exposes guarded database inspection, backup download, restore, and streamed-upload transports.
-- `backup_upload.go` parses one bounded multipart SQLite stream and publishes it only after hash and schema verification.
-- `request_stream_upload.go` recognizes the exact streamed-upload route while retaining origin, session, administrator, and idempotency enforcement.
 
 ## Community features
 
@@ -261,3 +259,5 @@ covers both delivery paths and status boundaries in hosted CI.
 `telegram_bot_status.go` handles only authenticated private-chat my_chat_member block/unblock transitions. It protects configured/stored administrators, uses the private chat ID as the member ID, and durably enqueues cleanup before acknowledging. Group membership events do not purge members.
 
 Admin group GET includes derived memberCount/canDelete; DELETE rechecks server eligibility and returns 409 when membership or the catalog changed.
+
+`request_origin.go` validates browser same-origin requests and normalized default ports; no file-upload signature exception remains.

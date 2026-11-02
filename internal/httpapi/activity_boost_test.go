@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http/httptest"
-	"path/filepath"
+
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +17,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 func TestActivityBoostErrors(t *testing.T) {
@@ -59,7 +60,7 @@ func (*boostReplyCapture) AnswerPreCheckoutQuery(context.Context, string, bool, 
 
 func TestHTTPAndTelegramCheckInRefuseButOrdinaryMessagesStaySilent(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "boost.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}

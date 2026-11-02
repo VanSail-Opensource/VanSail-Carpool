@@ -40,7 +40,6 @@ func TestExplicitMemoryLimitRemainsAuthoritative(t *testing.T) {
 	old := debug.SetMemoryLimit(42 << 20)
 	t.Cleanup(func() { debug.SetMemoryLimit(old) })
 	t.Setenv("GOMEMLIMIT", "64MiB")
-	t.Setenv("SQLITE_TMPDIR", "")
 	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
 		t.Setenv(name, os.Getenv(name))
 	}
@@ -54,7 +53,7 @@ func TestExplicitMemoryLimitRemainsAuthoritative(t *testing.T) {
 
 func TestProcessScratchUnderDataDirectory(t *testing.T) {
 	data := t.TempDir()
-	for _, name := range []string{"TMPDIR", "TMP", "TEMP", "SQLITE_TMPDIR"} {
+	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
 		t.Setenv(name, "")
 	}
 	t.Setenv("GOMEMLIMIT", "off")
@@ -63,7 +62,7 @@ func TestProcessScratchUnderDataDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := filepath.Join(data, "tmp")
-	for _, name := range []string{"TMPDIR", "TMP", "TEMP", "SQLITE_TMPDIR"} {
+	for _, name := range []string{"TMPDIR", "TMP", "TEMP"} {
 		if got := os.Getenv(name); got != want {
 			t.Fatalf("%s=%q, want %q", name, got, want)
 		}
@@ -77,7 +76,7 @@ func TestProcessScratchUnderDataDirectory(t *testing.T) {
 	if filepath.Dir(f.Name()) != want {
 		t.Fatal("process temporary file escaped DATA_DIR/tmp")
 	}
-	for _, name := range []string{"TMP", "TEMP", "SQLITE_TMPDIR"} {
+	for _, name := range []string{"TMP", "TEMP"} {
 		t.Setenv(name, data)
 	}
 	t.Setenv("TMPDIR", "/read-only-root")
@@ -87,7 +86,7 @@ func TestProcessScratchUnderDataDirectory(t *testing.T) {
 	if os.Getenv("TMPDIR") != want {
 		t.Fatal("process scratch did not replace TMPDIR")
 	}
-	for _, name := range []string{"TMP", "TEMP", "SQLITE_TMPDIR"} {
+	for _, name := range []string{"TMP", "TEMP"} {
 		if os.Getenv(name) != data {
 			t.Fatal("explicit override lost", name)
 		}

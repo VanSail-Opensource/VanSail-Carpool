@@ -9,17 +9,14 @@ import (
 )
 
 func (s *Store) retryAttempt_DiscardCouponGrant(ctx context.Context, userID, grantID string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin coupon discard: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 	var existingGrantID string
-	err = tx.QueryRowContext(ctx, `SELECT grant_id FROM coupon_grant_discards WHERE grant_id=? AND user_id=?`, grantID, userID).Scan(&existingGrantID)
+	err = tx.QueryRowContext(ctx, `SELECT grant_id FROM coupon_grant_discards WHERE grant_id=$1 AND user_id=$2`, grantID, userID).Scan(&existingGrantID)
 	if err == nil {
 		return nil
 	}
@@ -27,7 +24,7 @@ func (s *Store) retryAttempt_DiscardCouponGrant(ctx context.Context, userID, gra
 		return fmt.Errorf("load coupon discard: %w", err)
 	}
 	var status string
-	err = tx.QueryRowContext(ctx, `SELECT status FROM coupon_grants WHERE id=? AND user_id=?`, grantID, userID).Scan(&status)
+	err = tx.QueryRowContext(ctx, `SELECT status FROM coupon_grants WHERE id=$1 AND user_id=$2`, grantID, userID).Scan(&status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -37,7 +34,7 @@ func (s *Store) retryAttempt_DiscardCouponGrant(ctx context.Context, userID, gra
 	if status != "active" {
 		return ErrConflict
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO coupon_grant_discards(grant_id,user_id,discarded_at) VALUES(?,?,?)`, grantID, userID, stamp(now.UTC())); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO coupon_grant_discards(grant_id,user_id,discarded_at) VALUES($1,$2,$3)`, grantID, userID, stamp(now.UTC())); err != nil {
 		if isUniqueConstraint(err) {
 			return nil
 		}

@@ -24,10 +24,10 @@ func TestPurchaseCompactionRetainsNativeRefundAndUnsettledEvidence(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=? WHERE id=?`, stamp(old), purchase.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE id=$2`, stamp(old), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=?,status='closing',used_bytes=77 WHERE id=?`, purchase.ID, period.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=$1,status='closing',used_bytes=77 WHERE id=$2`, purchase.ID, period.ID); err != nil {
 		t.Fatal(err)
 	}
 	// Isolate the native accounting fence from the separate pending-job fence.
@@ -59,11 +59,11 @@ func TestNativeRetentionKeepsUnacknowledgedRateBoundaries(t *testing.T) {
 	s, _, _ := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES('agent','node',10,'fixture',?)`, stamp(now)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES('agent','node',10,'fixture',$1)`, stamp(now)); err != nil {
 		t.Fatal(err)
 	}
 	for _, sequence := range []int{5, 11, 12} {
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES('agent',?,1000000)`, sequence); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES('agent',$1,1000000)`, sequence); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -99,11 +99,11 @@ func TestFleetUsageAggregatesPeriodsAndLegacyWithExactIntegers(t *testing.T) {
 		if index > 0 {
 			upload = 7
 		}
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes) VALUES(?,'node',?,?,?,2,3)`, identity.ProxyUserID, id, now.Format(time.DateOnly), upload); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes) VALUES($1,'node',$2,$3,$4,2,3)`, identity.ProxyUserID, id, now.Format(time.DateOnly), upload); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_imported_history(proxy_user_id,node_id,date,raw_bytes,weighted_bytes) VALUES(?,'node',?,11,13)`, identity.ProxyUserID, now.Format(time.DateOnly)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_imported_history(proxy_user_id,node_id,date,raw_bytes,weighted_bytes) VALUES($1,'node',$2,11,13)`, identity.ProxyUserID, now.Format(time.DateOnly)); err != nil {
 		t.Fatal(err)
 	}
 	usage, err := s.XNodeFleetUsage(ctx, now, now)

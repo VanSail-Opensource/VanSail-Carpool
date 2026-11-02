@@ -8,7 +8,8 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,7 @@ import (
 
 func TestPreferenceTransportOwnsPrincipalAndRejectsClientIdentity(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "prefs.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +62,7 @@ func TestPreferenceTransportOwnsPrincipalAndRejectsClientIdentity(t *testing.T) 
 
 func TestPreferenceTransportRejectsPAYGActivationWithoutBalance(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "payg-prefs.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -13,7 +13,7 @@ func (s *Store) XNodeImportedUsage(ctx context.Context, id int64) (xnode.Importe
 	var result xnode.ImportedUsage
 	var reset sql.NullString
 	var at string
-	err := s.db.QueryRowContext(ctx, `SELECT proxy_user_id,COALESCE(period_id,''),used_bytes,lifetime_bytes,last_reset_at,synced_at FROM xnode_imported_usage WHERE proxy_user_id=?`, id).Scan(&result.ProxyUserID, &result.PeriodID, &result.UsedBytes, &result.LifetimeBytes, &reset, &at)
+	err := s.db.QueryRowContext(ctx, `SELECT proxy_user_id,COALESCE(period_id,''),used_bytes,lifetime_bytes,last_reset_at,synced_at FROM xnode_imported_usage WHERE proxy_user_id=$1`, id).Scan(&result.ProxyUserID, &result.PeriodID, &result.UsedBytes, &result.LifetimeBytes, &reset, &at)
 	if errors.Is(err, sql.ErrNoRows) {
 		return result, xnode.ErrNotFound
 	}

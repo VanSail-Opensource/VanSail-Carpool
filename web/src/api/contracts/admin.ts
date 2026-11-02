@@ -1,4 +1,3 @@
-import type { RFC3339 } from '../types'
 
 export interface DatabaseColumn {
   name: string
@@ -13,7 +12,6 @@ export interface DatabaseTable {
   name: string
   columns: DatabaseColumn[]
   highRisk: boolean
-  supportsRowId: boolean
   warning: string
 }
 
@@ -145,13 +143,4 @@ export interface DatabaseMutationResult {
   row?: DatabaseRow
   deleted: boolean
   rescueBackupId: string
-}
-
-export interface RestoreOperation {
-  id: string
-  backupId: string
-  status: 'staging' | 'restarting' | 'complete' | 'failed'
-  error?: string
-  createdAt: RFC3339
-  updatedAt: RFC3339
 }

@@ -20,15 +20,12 @@ func (s *Store) retryAttempt_claimDailyActivity(ctx context.Context, userID, loc
 	if _, err := time.Parse(time.DateOnly, localDate); err != nil || now.In(location).Format(time.DateOnly) != localDate {
 		return activity.DailyCheckIn{}, activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	var options *sql.TxOptions
-	if IsPostgres(s.db) {
-		options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-	}
+
+	options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+
 	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return activity.DailyCheckIn{}, err
@@ -36,11 +33,11 @@ func (s *Store) retryAttempt_claimDailyActivity(ctx context.Context, userID, loc
 	defer func() { _ = tx.Rollback() }()
 	// Under READ COMMITTED, a waiting claimant sees the winner's receipt before
 	// sampling. The balance lock also preserves debit/credit atomicity.
-	if IsPostgres(s.db) {
-		if _, err = balanceTx(ctx, tx, userID); err != nil {
-			return activity.DailyCheckIn{}, err
-		}
+
+	if _, err = balanceTx(ctx, tx, userID); err != nil {
+		return activity.DailyCheckIn{}, err
 	}
+
 	if existing, loadErr := dailyCheckInByDateTx(ctx, tx, userID, localDate); loadErr == nil {
 		existing.AlreadyClaimed = true
 		return existing, nil
@@ -70,7 +67,7 @@ func (s *Store) retryAttempt_claimDailyActivity(ctx context.Context, userID, loc
 	if err != nil {
 		return activity.DailyCheckIn{}, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO activity_daily_checkins(id,user_id,local_date,timezone,reward_minor,balance_after_minor,created_at) VALUES(?,?,?,?,?,?,?)`,
+	_, err = tx.ExecContext(ctx, `INSERT INTO activity_daily_checkins(id,user_id,local_date,timezone,reward_minor,balance_after_minor,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`,
 		checkInID, userID, localDate, timezone, rewardMinor, balance, stamp(now))
 	if err != nil {
 		return activity.DailyCheckIn{}, fmt.Errorf("record daily activity: %w", err)

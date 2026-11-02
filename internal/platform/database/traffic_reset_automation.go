@@ -14,7 +14,7 @@ import (
 func (s *Store) TrafficResetAutomation(ctx context.Context, userID string) (model.TrafficResetAutomation, error) {
 	var enabled int
 	var updated string
-	err := s.db.QueryRowContext(ctx, `SELECT auto_traffic_reset_enabled,updated_at FROM users WHERE id=?`, userID).Scan(&enabled, &updated)
+	err := s.db.QueryRowContext(ctx, `SELECT auto_traffic_reset_enabled,updated_at FROM users WHERE id=$1`, userID).Scan(&enabled, &updated)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.TrafficResetAutomation{}, ErrNotFound
 	}
@@ -32,7 +32,7 @@ func (s *Store) TrafficResetAutomation(ctx context.Context, userID string) (mode
 func (s *Store) SetTrafficResetAutomation(ctx context.Context, userID string, enabled bool, now time.Time) (model.TrafficResetAutomation, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE users SET auto_traffic_reset_enabled=?,updated_at=? WHERE id=?`, boolInt(enabled), stamp(now), userID)
+	result, err := s.db.ExecContext(ctx, `UPDATE users SET auto_traffic_reset_enabled=$1,updated_at=$2 WHERE id=$3`, boolInt(enabled), stamp(now), userID)
 	if err != nil {
 		return model.TrafficResetAutomation{}, fmt.Errorf("save traffic reset automation: %w", err)
 	}

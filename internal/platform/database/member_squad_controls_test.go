@@ -42,7 +42,7 @@ func TestSquadSwitchPreservesOwnershipAndLastEnabled(t *testing.T) {
 		t.Fatal("local preference waited for a worker")
 	}
 	var queued int
-	if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, operation.Receipt.ID).Scan(&queued); err != nil || queued != 0 {
+	if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, operation.Receipt.ID).Scan(&queued); err != nil || queued != 0 {
 		t.Fatal("squad preference created a provider job", queued, err)
 	}
 	completeComboControlFixture(t, store, operation, now)
@@ -96,10 +96,10 @@ func TestSquadPreferencesCarryAndRestoreStableFirst(t *testing.T) {
 	t.Parallel()
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 49003)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id='49003' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id='49003' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES(?,'squad-a'),(?,'squad-b')`, user.ID, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES($1,'squad-a'),($2,'squad-b')`, user.ID, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	enabled, err := store.EnabledSquadsForRemote(ctx, "49003", []string{"squad-b", "squad-a"})

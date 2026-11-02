@@ -14,16 +14,13 @@ import (
 
 // RefundAdminEntitlement atomically credits one cancellation and queues exact sync.
 func (s *Store) retryAttempt_RefundAdminEntitlement(ctx context.Context, input AdminEntitlementRefundInput, now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, input.PurchaseID, input.UserID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, input.PurchaseID, input.UserID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -44,8 +41,8 @@ func (s *Store) retryAttempt_RefundAdminEntitlement(ctx context.Context, input A
 	if purchase.Status == "cancelled" || purchase.Status == "expired" || purchase.Status == "failed" {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=?
-		WHERE id=? AND user_id=? AND status IN ('activating','active','queued')`, stamp(now), input.PurchaseID, input.UserID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1
+		WHERE id=$2 AND user_id=$3 AND status IN ('activating','active','queued')`, stamp(now), input.PurchaseID, input.UserID)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}

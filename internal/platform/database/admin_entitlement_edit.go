@@ -14,16 +14,13 @@ import (
 
 // EditAdminEntitlement atomically replaces mutable fields, audits, and queues sync.
 func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input AdminEntitlementEditInput, now time.Time) (model.Purchase, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, input.PurchaseID, input.UserID))
+	before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, input.PurchaseID, input.UserID))
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 		return model.Purchase{}, ErrConflict
 	}
 	var comboExists int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM combos WHERE id=?`, input.ComboID).Scan(&comboExists); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM combos WHERE id=$1`, input.ComboID).Scan(&comboExists); err != nil {
 		return model.Purchase{}, err
 	}
 	if comboExists != 1 {
@@ -59,9 +56,9 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,valid_from=?,valid_until=?,status=?,
-		entitlement_traffic_limit_bytes=?,entitlement_reset_strategy=?,entitlement_squad_uuids=?,updated_at=?
-		WHERE id=? AND user_id=? AND updated_at=?`, input.ComboID, stamp(input.ValidFrom), stamp(input.ValidUntil), input.Status,
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=$1,valid_from=$2,valid_until=$3,status=$4,
+		entitlement_traffic_limit_bytes=$5,entitlement_reset_strategy=$6,entitlement_squad_uuids=$7,updated_at=$8
+		WHERE id=$9 AND user_id=$10 AND updated_at=$11`, input.ComboID, stamp(input.ValidFrom), stamp(input.ValidUntil), input.Status,
 		input.TrafficLimitBytes, input.ResetStrategy, string(squads), stamp(now), input.PurchaseID, input.UserID, stamp(before.UpdatedAt))
 	if err != nil {
 		return model.Purchase{}, fmt.Errorf("edit entitlement: %w", err)
@@ -82,7 +79,7 @@ func (s *Store) retryAttempt_EditAdminEntitlement(ctx context.Context, input Adm
 		return model.Purchase{}, err
 	}
 	var newComboName string
-	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=?`, input.ComboID).Scan(&newComboName); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=$1`, input.ComboID).Scan(&newComboName); err != nil {
 		return model.Purchase{}, err
 	}
 	kind, facts := adminEntitlementEditNotification(before, input, newComboName, now)

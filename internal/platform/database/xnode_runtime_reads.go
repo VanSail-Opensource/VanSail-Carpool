@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -10,7 +9,7 @@ import (
 // XNodePAYGFundedAccounts reads current funding candidates, never cached balances.
 // Expiry stays in Go to preserve exact nanosecond timestamps on both backends.
 func (s *Store) XNodePAYGFundedAccounts(ctx context.Context, node string) ([]xnode.PAYGAccount, error) {
-	return s.xnodePAYGAccounts(ctx, paygSelect+` WHERE a.node_id=? AND b.txb_minor>=0
+	return s.xnodePAYGAccounts(ctx, paygSelect+` WHERE a.node_id=$1 AND b.txb_minor>=0
 	 AND (b.txb_minor>=COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) OR a.credit_bytes>0 OR pricing.dynamic_enabled=1 AND pricing.personal_discounts_enabled=1)`, []any{node})
 }
 
@@ -25,7 +24,7 @@ func (s *Store) XNodePAYGConnectedAccounts(ctx context.Context, node string, ids
 		for _, id := range batch {
 			args = append(args, id)
 		}
-		query := paygSelect + ` WHERE a.node_id=? AND a.proxy_user_id IN (` + strings.TrimSuffix(strings.Repeat("?,", len(batch)), ",") + `)`
+		query := paygSelect + ` WHERE a.node_id=$1 AND a.proxy_user_id IN (` + placeholders(len(batch), 2) + `)`
 		items, err := s.xnodePAYGAccounts(ctx, query, args)
 		if err != nil {
 			return nil, err

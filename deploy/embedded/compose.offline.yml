@@ -1,4 +1,4 @@
-# Temporary database-only mode for conversion/recovery; no Go workers or HTTP.
+# Temporary database-only mode for maintenance/recovery; no Go workers or HTTP.
 services:
   application:
     command: [postgres-only]

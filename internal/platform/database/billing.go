@@ -33,10 +33,7 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -47,7 +44,7 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 		return model.Purchase{}, err
 	}
 	var existingID, existingFingerprint string
-	loadErr := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=? AND idempotency_key=?`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
+	loadErr := tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=$1 AND idempotency_key=$2`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
 	if loadErr == nil {
 		if existingFingerprint != fingerprint {
 			return model.Purchase{}, ErrConflict
@@ -115,7 +112,7 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 		couponGrantID = input.CouponGrantID
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,recurring_discount_attached,idempotency_key,request_fingerprint,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, purchaseID, input.UserID, combo.ID, netPrice, stamp(validFrom), stamp(validUntil), status,
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`, purchaseID, input.UserID, combo.ID, netPrice, stamp(validFrom), stamp(validUntil), status,
 		couponGrantID, quote.GrossPriceTXBMinor, combo.PriceTXBMinor, discount.DiscountMinor, 0, boolInt(discount.Recurring), input.IdempotencyKey, fingerprint, stamp(now), stamp(now))
 	if err != nil {
 		return model.Purchase{}, fmt.Errorf("insert purchase: %w", err)
@@ -133,7 +130,7 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 		}
 	}
 	for _, product := range addonRows {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, purchaseID, product.GroupID, product.PriceTXBMinor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES($1,$2,$3)`, purchaseID, product.GroupID, product.PriceTXBMinor); err != nil {
 			return model.Purchase{}, fmt.Errorf("snapshot add-on squad: %w", err)
 		}
 	}
@@ -143,14 +140,14 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if _, err := insertLedgerTx(ctx, tx, input.UserID, -netPrice, newBalance, "purchase_debit", purchaseID, combo.Name, now); err != nil {
 		return model.Purchase{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE pricing_offers SET outcome=1,outcome_reason='',observed_at=?,purchase_id=? WHERE user_id=? AND product_type='combo' AND product_id=? AND price_minor=? AND outcome IS NULL AND json_extract(features_json,'$.couponFingerprint')=? AND exposed_at<=? AND expires_at>?`, pricingStamp(now), purchaseID, input.UserID, combo.ID, combo.PriceTXBMinor, quote.PricingDecision.CouponFingerprint, pricingStamp(now), pricingStamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE pricing_offers SET outcome=1,outcome_reason='',observed_at=$1,purchase_id=$2 WHERE user_id=$3 AND product_type='combo' AND product_id=$4 AND price_minor=$5 AND outcome IS NULL AND (CASE ((features_json)::jsonb #> '{couponFingerprint}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (features_json)::jsonb #>> '{couponFingerprint}' END)=$6 AND exposed_at<=$7 AND expires_at>$8`, pricingStamp(now), purchaseID, input.UserID, combo.ID, combo.PriceTXBMinor, quote.PricingDecision.CouponFingerprint, pricingStamp(now), pricingStamp(now)); err != nil {
 		return model.Purchase{}, err
 	}
 	if err := enqueuePurchaseTransitionTx(ctx, tx, purchaseID, status, validFrom, now); err != nil {
 		return model.Purchase{}, err
 	}
 	if status == "queued" {
-		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=? WHERE user_id=? AND status IN ('active','activating') AND auto_renew_enabled=1`, stamp(now), input.UserID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=0,updated_at=$1 WHERE user_id=$2 AND status IN ('active','activating') AND auto_renew_enabled=1`, stamp(now), input.UserID); err != nil {
 			return model.Purchase{}, err
 		}
 		if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+input.UserID+`"}`, now, now); err != nil {

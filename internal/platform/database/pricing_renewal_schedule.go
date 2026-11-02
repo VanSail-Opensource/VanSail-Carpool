@@ -11,7 +11,7 @@ import (
 
 // DuePricingRenewals bounds preparation work to contracts with sufficient notice.
 func (s *Store) DuePricingRenewals(ctx context.Context, now time.Time) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id FROM purchases p JOIN pricing_product_settings policy ON policy.product_type='combo' AND policy.product_id=p.combo_id WHERE policy.dynamic_enabled=1 AND policy.renewal_pricing_mode='DYNAMIC' AND p.status IN ('active','activating','queued') AND p.valid_until<=? AND p.valid_until>? AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes q WHERE q.purchase_id=p.id AND q.state NOT IN ('CANCELLED','EXPIRED')) ORDER BY p.valid_until,p.id LIMIT 32`, pricingStamp(now.Add(7*24*time.Hour)), pricingStamp(now.Add(-72*time.Hour)))
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id FROM purchases p JOIN pricing_product_settings policy ON policy.product_type='combo' AND policy.product_id=p.combo_id WHERE policy.dynamic_enabled=1 AND policy.renewal_pricing_mode='DYNAMIC' AND p.status IN ('active','activating','queued') AND p.valid_until<=$1 AND p.valid_until>$2 AND NOT EXISTS(SELECT 1 FROM pricing_renewal_quotes q WHERE q.purchase_id=p.id AND q.state NOT IN ('CANCELLED','EXPIRED')) ORDER BY p.valid_until,p.id LIMIT 32`, pricingStamp(now.Add(7*24*time.Hour)), pricingStamp(now.Add(-72*time.Hour)))
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (s *Store) DuePricingRenewals(ctx context.Context, now time.Time) ([]string
 // It grants no additional access and never extends an entitlement.
 func (s *Store) DeferPricingRenewal(ctx context.Context, purchase string, now time.Time) (bool, error) {
 	var mode, until string
-	err := s.db.QueryRowContext(ctx, `SELECT c.mode,p.valid_until FROM purchases p JOIN pricing_contracts c ON c.purchase_id=p.id WHERE p.id=? ORDER BY c.version DESC LIMIT 1`, purchase).Scan(&mode, &until)
+	err := s.db.QueryRowContext(ctx, `SELECT c.mode,p.valid_until FROM purchases p JOIN pricing_contracts c ON c.purchase_id=p.id WHERE p.id=$1 ORDER BY c.version DESC LIMIT 1`, purchase).Scan(&mode, &until)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -45,7 +45,7 @@ func (s *Store) DeferPricingRenewal(ctx context.Context, purchase string, now ti
 	if mode != "DYNAMIC" || !now.Before(due.Add(72*time.Hour)) {
 		return false, nil
 	}
-	_, err = s.db.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='DEFERRED_HEALTH' WHERE purchase_id=? AND state IN ('AUTHORIZED','READY_TO_SETTLE')`, purchase)
+	_, err = s.db.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='DEFERRED_HEALTH' WHERE purchase_id=$1 AND state IN ('AUTHORIZED','READY_TO_SETTLE')`, purchase)
 	return true, err
 }
 

@@ -38,10 +38,10 @@ func TestFailedEarlyActivationCanResumeAfterAdminRetryOrArtifactRetention(t *tes
 				t.Fatal("upstream failure ignored")
 			}
 			var jobID string
-			if err := store.DB().QueryRowContext(ctx, `SELECT id FROM outbox_jobs WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, operation.Receipt.ID).Scan(&jobID); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT id FROM outbox_jobs WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, operation.Receipt.ID).Scan(&jobID); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=? WHERE id=?`, stamp(now.Add(-3*24*time.Hour)), jobID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,updated_at=$1 WHERE id=$2`, stamp(now.Add(-3*24*time.Hour)), jobID); err != nil {
 				t.Fatal(err)
 			}
 			before, err := store.Balance(ctx, user.ID)
@@ -101,28 +101,28 @@ func TestComboControlRecoveryCannotRestoreExpiredCancelledOrSupersededAccess(t *
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET status='failed' WHERE id=?`, operation.Receipt.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET status='failed' WHERE id=$1`, operation.Receipt.ID); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='failed' WHERE id=?`, queued.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='failed' WHERE id=$1`, queued.ID); err != nil {
 				t.Fatal(err)
 			}
 			switch mode {
 			case "expired":
-				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=? WHERE id=?`, stamp(now), queued.ID)
+				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(now), queued.ID)
 			case "cancelled":
-				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET status='cancelled' WHERE id=?`, queued.ID)
+				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET status='cancelled' WHERE id=$1`, queued.ID)
 			case "superseded":
-				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_until=? WHERE id=?`, stamp(now.Add(24*time.Hour)), current.ID)
+				_, err = store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_until=$1 WHERE id=$2`, stamp(now.Add(24*time.Hour)), current.ID)
 			}
 			if err != nil {
 				t.Fatal(err)
 			}
 			var jobID string
-			if err := store.DB().QueryRowContext(ctx, `SELECT id FROM outbox_jobs WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, operation.Receipt.ID).Scan(&jobID); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT id FROM outbox_jobs WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, operation.Receipt.ID).Scan(&jobID); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed' WHERE id=?`, jobID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed' WHERE id=$1`, jobID); err != nil {
 				t.Fatal(err)
 			}
 			if err := store.RetryOutboxJob(ctx, jobID, now); err != nil {

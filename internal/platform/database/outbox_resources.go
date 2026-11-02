@@ -35,7 +35,7 @@ func outboxResourcesTx(ctx context.Context, tx *sql.Tx, job model.OutboxJob) ([]
 		}
 		add(field, id)
 		var user string
-		err := tx.QueryRowContext(ctx, `SELECT user_id FROM `+table+` WHERE id=?`, id).Scan(&user)
+		err := tx.QueryRowContext(ctx, `SELECT user_id FROM `+table+` WHERE id=$1`, id).Scan(&user)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
@@ -48,8 +48,8 @@ func outboxResourcesTx(ctx context.Context, tx *sql.Tx, job model.OutboxJob) ([]
 	}
 	if id := value("operationId"); id != "" {
 		add("operation", id)
-		rows, err := tx.QueryContext(ctx, `SELECT 'user',owner_user_id FROM provider_operations WHERE id=? AND owner_user_id IS NOT NULL
-   UNION ALL SELECT target_type,target_id FROM provider_operation_items WHERE operation_id=?`, id, id)
+		rows, err := tx.QueryContext(ctx, `SELECT 'user',owner_user_id FROM provider_operations WHERE id=$1 AND owner_user_id IS NOT NULL
+   UNION ALL SELECT target_type,target_id FROM provider_operation_items WHERE operation_id=$2`, id, id)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +75,7 @@ func outboxResourcesTx(ctx context.Context, tx *sql.Tx, job model.OutboxJob) ([]
 			case "xnode":
 				add("node", t.id)
 			case "purchase", "emby_account", "xnode_user":
-				query := map[string]string{"purchase": "SELECT user_id FROM purchases WHERE id=?", "emby_account": "SELECT user_id FROM emby_accounts WHERE id=?", "xnode_user": "SELECT user_id FROM xnode_identities WHERE proxy_user_id=?"}[t.kind]
+				query := map[string]string{"purchase": "SELECT user_id FROM purchases WHERE id=$1", "emby_account": "SELECT user_id FROM emby_accounts WHERE id=$1", "xnode_user": "SELECT user_id FROM xnode_identities WHERE proxy_user_id=$1"}[t.kind]
 				var user sql.NullString // Standalone native identities have no member owner.
 				err := tx.QueryRowContext(ctx, query, t.id).Scan(&user)
 				if err != nil && !errors.Is(err, sql.ErrNoRows) {

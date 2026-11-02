@@ -12,7 +12,7 @@ import (
 
 // ListConnectionIPBlocksForUser returns active encrypted rows in expiry order.
 func (s *Store) ListConnectionIPBlocksForUser(ctx context.Context, userID string) ([]connections.IPBlockRecord, error) {
-	rows, err := s.db.QueryContext(ctx, ipBlockSelect+` WHERE user_id=? ORDER BY expires_at,id`, userID)
+	rows, err := s.db.QueryContext(ctx, ipBlockSelect+` WHERE user_id=$1 ORDER BY expires_at,id`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +31,7 @@ func (s *Store) ListConnectionIPBlocksForUser(ctx context.Context, userID string
 // BeginConnectionIPUnblock atomically marks the row and queues the command.
 func (s *Store) retryAttempt_BeginConnectionIPUnblock(ctx context.Context, blockID, ownerID string,
 	command providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err
@@ -48,7 +45,7 @@ func (s *Store) retryAttempt_BeginConnectionIPUnblock(ctx context.Context, block
 		return operation, true, tx.Commit()
 	}
 	var existing sql.NullString
-	if err := tx.QueryRowContext(ctx, `SELECT unblock_operation_id FROM connection_ip_blocks WHERE id=? AND user_id=?`,
+	if err := tx.QueryRowContext(ctx, `SELECT unblock_operation_id FROM connection_ip_blocks WHERE id=$1 AND user_id=$2`,
 		blockID, ownerID).Scan(&existing); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return providerops.Operation{}, false, ErrNotFound
@@ -58,8 +55,8 @@ func (s *Store) retryAttempt_BeginConnectionIPUnblock(ctx context.Context, block
 	if existing.Valid {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status='unblocking',unblock_operation_id=?,updated_at=?
-		WHERE id=? AND user_id=? AND unblock_operation_id IS NULL`, operation.Receipt.ID, stamp(now), blockID, ownerID)
+	result, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status='unblocking',unblock_operation_id=$1,updated_at=$2
+		WHERE id=$3 AND user_id=$4 AND unblock_operation_id IS NULL`, operation.Receipt.ID, stamp(now), blockID, ownerID)
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}

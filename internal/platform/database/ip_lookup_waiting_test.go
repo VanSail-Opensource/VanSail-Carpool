@@ -10,7 +10,7 @@ func TestIPLookupQueuedWaitSurvivesReceiptRetention(t *testing.T) {
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 0)
 	op := submitIP(t, service, user, "long-wait", false)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=? WHERE id=?`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=$1 WHERE id=$2`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := store.DB().BeginTx(ctx, nil)

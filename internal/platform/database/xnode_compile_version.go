@@ -12,8 +12,8 @@ func (s *Store) XNodeCompileVersion(ctx context.Context, now time.Time) (int64, 
 	var revision int64
 	var boundary sql.NullString
 	err := s.db.QueryRowContext(ctx, `SELECT revision,(SELECT MIN(boundary) FROM (
-	 SELECT MIN(valid_from) AS boundary FROM purchases WHERE valid_from>?
-	 UNION ALL SELECT MIN(valid_until) FROM purchases WHERE valid_until>?
+	 SELECT MIN(valid_from) AS boundary FROM purchases WHERE valid_from>$1
+	 UNION ALL SELECT MIN(valid_until) FROM purchases WHERE valid_until>$2
 	)) FROM xnode_compile_revision WHERE singleton=1`, stamp(now), stamp(now)).Scan(&revision, &boundary)
 	if err != nil || !boundary.Valid {
 		return revision, time.Time{}, err

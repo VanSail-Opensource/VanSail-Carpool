@@ -3,7 +3,7 @@ package database
 import "context"
 
 func (s *Store) HostNameOverrides(ctx context.Context, user string) (map[string]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT host_id,name FROM user_host_names WHERE user_id=?`, user)
+	rows, err := s.db.QueryContext(ctx, `SELECT host_id,name FROM user_host_names WHERE user_id=$1`, user)
 	if err != nil {
 		return nil, err
 	}
@@ -21,9 +21,9 @@ func (s *Store) HostNameOverrides(ctx context.Context, user string) (map[string]
 
 func (s *Store) SaveHostNameOverride(ctx context.Context, user, host, name string) error {
 	if name == "" {
-		_, err := s.db.ExecContext(ctx, `DELETE FROM user_host_names WHERE user_id=? AND host_id=?`, user, host)
+		_, err := s.db.ExecContext(ctx, `DELETE FROM user_host_names WHERE user_id=$1 AND host_id=$2`, user, host)
 		return err
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO user_host_names(user_id,host_id,name) VALUES(?,?,?) ON CONFLICT(user_id,host_id) DO UPDATE SET name=excluded.name`, user, host, name)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO user_host_names(user_id,host_id,name) VALUES($1,$2,$3) ON CONFLICT(user_id,host_id) DO UPDATE SET name=excluded.name`, user, host, name)
 	return err
 }

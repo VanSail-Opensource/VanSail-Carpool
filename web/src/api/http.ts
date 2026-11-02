@@ -1,7 +1,6 @@
 import type { ApiErrorBody } from './types'
 import { applyRequestSignature, requestBodyBytes } from './request-signing'
 import { cachedTransport } from './cache/transport'
-import { clearResponseCache } from './cache/session'
 import { withRequestDeadline } from './requestDeadline'
 
 export type QueryValue = string | number | boolean | readonly string[] | undefined
@@ -116,19 +115,6 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return cachedTransport(url, options, async () => responsePayload<T>(await send(path, options)))
 }
 
-// Backup candidates bypass body signing so the browser never materializes a
-// multi-gigabyte multipart body. The server accepts this one exact route only.
-export async function streamAdminBackupUpload<T>(body: FormData, idempotencyKey: string): Promise<T> {
-  clearResponseCache()
-  const response = await fetch('/api/v1/admin/backups/upload', {
-    method: 'POST',
-    body,
-    credentials: 'include',
-    headers: { Accept: 'application/json', 'Idempotency-Key': idempotencyKey },
-  })
-  clearResponseCache()
-  return responsePayload<T>(response)
-}
 
 export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
   const response = await send(path, {

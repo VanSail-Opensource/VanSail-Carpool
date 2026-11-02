@@ -28,7 +28,7 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 		squads = append(squads, g.GroupID)
 	}
 	var current string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC,id LIMIT 1`, input.UserID, pricingStamp(now)).Scan(&current)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC,id LIMIT 1`, input.UserID, pricingStamp(now)).Scan(&current)
 	tx.Rollback()
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
@@ -54,7 +54,7 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now time.Time) (model.Purchase, error) {
 	// A replay must remain available after its original decision expires.
 	var exists int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND idempotency_key=?)`, input.UserID, input.IdempotencyKey).Scan(&exists)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND idempotency_key=$2))::bigint", input.UserID, input.IdempotencyKey).Scan(&exists)
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -65,7 +65,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 	}
 	p, err := s.createPurchase(ctx, input, now)
 	if errors.Is(err, ErrInsufficientBalance) {
-		_, e := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome_reason='INSUFFICIENT_FUNDS' WHERE user_id=? AND product_type='combo' AND product_id=? AND outcome IS NULL AND expires_at>?`, input.UserID, input.ComboID, pricingStamp(now))
+		_, e := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome_reason='INSUFFICIENT_FUNDS' WHERE user_id=$1 AND product_type='combo' AND product_id=$2 AND outcome IS NULL AND expires_at>$3`, input.UserID, input.ComboID, pricingStamp(now))
 		if e != nil {
 			return p, errors.Join(err, e)
 		}
@@ -75,7 +75,7 @@ func (s *Store) CreatePurchase(ctx context.Context, input PurchaseInput, now tim
 
 func (s *Store) queuedRenewalDecisionTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) (*model.PricingDecision, error) {
 	var current, product string
-	err := tx.QueryRowContext(ctx, `SELECT id,combo_id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC,id LIMIT 1`, user, pricingStamp(now)).Scan(&current, &product)
+	err := tx.QueryRowContext(ctx, `SELECT id,combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC,id LIMIT 1`, user, pricingStamp(now)).Scan(&current, &product)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -96,7 +96,7 @@ func (s *Store) queuedRenewalDecisionTx(ctx context.Context, tx *sql.Tx, user st
 	if err != nil {
 		return nil, err
 	}
-	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=? AND contract_version=? AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH') AND valid_until>? ORDER BY generated_at DESC LIMIT 1`, c.ID, c.Version, pricingStamp(now)))
+	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 AND contract_version=$2 AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH') AND valid_until>$3 ORDER BY generated_at DESC LIMIT 1`, c.ID, c.Version, pricingStamp(now)))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrPricingDecisionPending
 	}

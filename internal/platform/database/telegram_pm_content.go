@@ -32,7 +32,7 @@ func (s *Store) savePMContentTx(ctx context.Context, tx *sql.Tx, operation strin
 	if err != nil {
 		return model.ErrPMContentInvalid
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO telegram_pm_payloads(operation_id,encrypted_payload,expires_at) VALUES(?,?,?)`, operation, encrypted, now.Add(24*time.Hour).Unix())
+	_, err = tx.ExecContext(ctx, `INSERT INTO telegram_pm_payloads(operation_id,encrypted_payload,expires_at) VALUES($1,$2,$3)`, operation, encrypted, now.Add(24*time.Hour).Unix())
 	return err
 }
 
@@ -40,7 +40,7 @@ func (s *Store) savePMContentTx(ctx context.Context, tx *sql.Tx, operation strin
 func (s *Store) PMRelayContent(ctx context.Context, operation string, now time.Time) (json.RawMessage, bool, error) {
 	var encrypted string
 	var expires int64
-	err := s.db.QueryRowContext(ctx, `SELECT encrypted_payload,expires_at FROM telegram_pm_payloads WHERE operation_id=?`, operation).Scan(&encrypted, &expires)
+	err := s.db.QueryRowContext(ctx, `SELECT encrypted_payload,expires_at FROM telegram_pm_payloads WHERE operation_id=$1`, operation).Scan(&encrypted, &expires)
 	if err == sql.ErrNoRows {
 		return nil, false, nil
 	}

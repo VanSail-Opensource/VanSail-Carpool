@@ -16,7 +16,7 @@ const providerOperationItemSelect = `SELECT operation_id,item_key,target_type,ta
 // ProviderOperationItems returns the bounded targets required by a worker.
 func (s *Store) ProviderOperationItems(ctx context.Context, operationID string) ([]providerops.Item, error) {
 	rows, err := s.db.QueryContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=? ORDER BY item_key`, operationID)
+		` WHERE operation_id=$1 ORDER BY item_key`, operationID)
 	if err != nil {
 		return nil, fmt.Errorf("list provider operation items: %w", err)
 	}
@@ -41,8 +41,8 @@ func (s *Store) ListProviderOperationItems(ctx context.Context, operationID stri
 func (s *Store) BeginProviderOperationItemAttempt(ctx context.Context, operationID, itemKey string, now time.Time) (providerops.Item, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status='processing',attempt_started_at=?,
-		updated_at=? WHERE operation_id=? AND item_key=? AND status='queued'`, stamp(now), stamp(now), operationID, itemKey)
+	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status='processing',attempt_started_at=$1,
+		updated_at=$2 WHERE operation_id=$3 AND item_key=$4 AND status='queued'`, stamp(now), stamp(now), operationID, itemKey)
 	if err != nil {
 		return providerops.Item{}, fmt.Errorf("begin provider operation item: %w", err)
 	}
@@ -52,7 +52,7 @@ func (s *Store) BeginProviderOperationItemAttempt(ctx context.Context, operation
 		return providerops.Item{}, ErrConflict
 	}
 	return scanProviderOperationItem(s.db.QueryRowContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=? AND item_key=?`, operationID, itemKey))
+		` WHERE operation_id=$1 AND item_key=$2`, operationID, itemKey))
 }
 
 // CompleteProviderOperationItem stores one sanitized item result.
@@ -67,8 +67,8 @@ func (s *Store) CompleteProviderOperationItem(ctx context.Context, operationID, 
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,provider_reference=?,error_code=?,
-		result_json=?,completed_at=?,updated_at=? WHERE operation_id=? AND item_key=? AND status='processing'
+	result, err := s.db.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,
+		result_json=$4,completed_at=$5,updated_at=$6 WHERE operation_id=$7 AND item_key=$8 AND status='processing'
 		AND attempt_started_at IS NOT NULL`, completion.Status, completion.ProviderReference, operationCode(completion.ErrorCode),
 		resultJSON, stamp(now), stamp(now), operationID, itemKey)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *Store) CompleteProviderOperationItem(ctx context.Context, operationID, 
 		return providerops.Item{}, ErrConflict
 	}
 	return scanProviderOperationItem(s.db.QueryRowContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=? AND item_key=?`, operationID, itemKey))
+		` WHERE operation_id=$1 AND item_key=$2`, operationID, itemKey))
 }
 
 func scanProviderOperationItem(row rowScanner) (providerops.Item, error) {

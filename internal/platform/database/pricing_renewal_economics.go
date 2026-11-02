@@ -15,7 +15,7 @@ import (
 func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product, purchase string, nodes []string, now time.Time) (float64, float64, bool, error) {
 	var raw string
 	var coverage int
-	err := tx.QueryRowContext(ctx, `SELECT features_json,coverage_bps FROM pricing_features WHERE entity_type='user' AND entity_id=? AND watermark>=? AND watermark<=? ORDER BY day DESC LIMIT 1`, user, pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now)).Scan(&raw, &coverage)
+	err := tx.QueryRowContext(ctx, `SELECT features_json,coverage_bps FROM pricing_features WHERE entity_type='user' AND entity_id=$1 AND watermark>=$2 AND watermark<=$3 ORDER BY day DESC LIMIT 1`, user, pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now)).Scan(&raw, &coverage)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, 0, false, nil
 	}
@@ -30,13 +30,13 @@ func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product, p
 		return 0, 0, false, err
 	}
 	var days int
-	if err = tx.QueryRowContext(ctx, `SELECT validity_days FROM combos WHERE id=?`, product).Scan(&days); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT validity_days FROM combos WHERE id=$1`, product).Scan(&days); err != nil {
 		return 0, 0, false, err
 	}
 	cost := 0.0
 	complete := coverage >= 8000
 	day := now.UTC().Truncate(24 * time.Hour)
-	rows, err := tx.QueryContext(ctx, `WITH usage AS (SELECT u.node_id,SUM(u.upload_bytes+u.download_bytes) AS total,SUM(CASE WHEN t.purchase_id=? THEN u.upload_bytes+u.download_bytes ELSE 0 END) AS owned FROM xnode_daily_usage u LEFT JOIN xnode_periods t ON t.id=u.period_id WHERE u.date>=? AND u.date<? GROUP BY u.node_id) SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros,u.total,u.owned FROM pricing_cost_metadata c LEFT JOIN usage u ON u.node_id=c.node_id WHERE c.effective_at<=? ORDER BY c.node_id LIMIT 4097`, purchase, day.AddDate(0, 0, -30).Format(time.DateOnly), day.Format(time.DateOnly), pricingStamp(now))
+	rows, err := tx.QueryContext(ctx, `WITH usage AS (SELECT u.node_id,SUM(u.upload_bytes+u.download_bytes) AS total,SUM(CASE WHEN t.purchase_id=$1 THEN u.upload_bytes+u.download_bytes ELSE 0 END) AS owned FROM xnode_daily_usage u LEFT JOIN xnode_periods t ON t.id=u.period_id WHERE u.date>=$2 AND u.date<$3 GROUP BY u.node_id) SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros,u.total,u.owned FROM pricing_cost_metadata c LEFT JOIN usage u ON u.node_id=c.node_id WHERE c.effective_at<=$4 ORDER BY c.node_id LIMIT 4097`, purchase, day.AddDate(0, 0, -30).Format(time.DateOnly), day.Format(time.DateOnly), pricingStamp(now))
 	if err != nil {
 		return 0, 0, false, err
 	}
@@ -80,7 +80,7 @@ func pricingRenewalEconomicsTx(ctx context.Context, tx *sql.Tx, user, product, p
 
 // pricingCostEvidenceTx binds renewal quotes to the exact metadata versions.
 func pricingCostEvidenceTx(ctx context.Context, tx *sql.Tx, nodes []string, now time.Time) (string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT node_id,version FROM pricing_cost_metadata WHERE effective_at<=? ORDER BY node_id LIMIT 4097`, pricingStamp(now))
+	rows, err := tx.QueryContext(ctx, `SELECT node_id,version FROM pricing_cost_metadata WHERE effective_at<=$1 ORDER BY node_id LIMIT 4097`, pricingStamp(now))
 	if err != nil {
 		return "", err
 	}

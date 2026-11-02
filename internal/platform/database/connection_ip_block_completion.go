@@ -22,18 +22,15 @@ func (s *Store) retryAttempt_CompleteConnectionIPBlockOperation(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin connection IP block completion: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 	var expiryJobID string
-	if err := tx.QueryRowContext(ctx, `SELECT expiry_job_id FROM connection_ip_blocks WHERE id=?
-		AND (block_operation_id=? OR unblock_operation_id=?)`, blockID, operationID, operationID).Scan(&expiryJobID); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT expiry_job_id FROM connection_ip_blocks WHERE id=$1
+		AND (block_operation_id=$2 OR unblock_operation_id=$3)`, blockID, operationID, operationID).Scan(&expiryJobID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return connections.ErrIPBlockNotFound
 		}
@@ -43,10 +40,10 @@ func (s *Store) retryAttempt_CompleteConnectionIPBlockOperation(ctx context.Cont
 		return err
 	}
 	if completion.RemoveBlock {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=? AND status<>'processing'`, expiryJobID); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=$1 AND status<>'processing'`, expiryJobID); err != nil {
 			return fmt.Errorf("cancel IP block expiry: %w", err)
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM connection_ip_blocks WHERE id=?`, blockID); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM connection_ip_blocks WHERE id=$1`, blockID); err != nil {
 			return fmt.Errorf("delete connection IP block: %w", err)
 		}
 	} else {
@@ -54,8 +51,8 @@ func (s *Store) retryAttempt_CompleteConnectionIPBlockOperation(ctx context.Cont
 		if completion.ClearUnblock {
 			clearUnblock = 1
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status=?,
-			unblock_operation_id=CASE WHEN ?=1 THEN NULL ELSE unblock_operation_id END,updated_at=? WHERE id=?`,
+		result, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status=$1,
+			unblock_operation_id=CASE WHEN $2=1 THEN NULL ELSE unblock_operation_id END,updated_at=$3 WHERE id=$4`,
 			completion.BlockStatus, clearUnblock, stamp(now), blockID)
 		if err != nil {
 			return err
@@ -69,9 +66,9 @@ func (s *Store) retryAttempt_CompleteConnectionIPBlockOperation(ctx context.Cont
 
 func completeIPBlockReceiptTx(ctx context.Context, tx *sql.Tx, operationID, itemKey string,
 	completion connections.BlockOperationCompletion, resultJSON string, now time.Time) error {
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,provider_reference=?,error_code=?,
-		result_json=?,attempt_started_at=COALESCE(attempt_started_at,?),completed_at=?,updated_at=?
-		WHERE operation_id=? AND item_key=? AND status IN ('queued','processing')`, completion.ItemStatus,
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,
+		result_json=$4,attempt_started_at=COALESCE(attempt_started_at,$5),completed_at=$6,updated_at=$7
+		WHERE operation_id=$8 AND item_key=$9 AND status IN ('queued','processing')`, completion.ItemStatus,
 		strings.TrimSpace(completion.Operation.ProviderReference), operationCode(completion.Operation.ErrorCode), resultJSON,
 		stamp(now), stamp(now), stamp(now), operationID, itemKey)
 	if err != nil {
@@ -80,8 +77,8 @@ func completeIPBlockReceiptTx(ctx context.Context, tx *sql.Tx, operationID, item
 	if affected, _ := result.RowsAffected(); affected != 1 {
 		return ErrConflict
 	}
-	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,
-		result_json=?,completed_at=?,updated_at=? WHERE id=? AND status='processing' AND attempt_started_at IS NOT NULL`,
+	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,provider_reference=$2,error_code=$3,
+		result_json=$4,completed_at=$5,updated_at=$6 WHERE id=$7 AND status='processing' AND attempt_started_at IS NOT NULL`,
 		completion.Operation.Status, strings.TrimSpace(completion.Operation.ProviderReference),
 		operationCode(completion.Operation.ErrorCode), resultJSON, stamp(now), stamp(now), operationID)
 	if err != nil {

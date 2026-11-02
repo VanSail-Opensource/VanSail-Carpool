@@ -27,25 +27,25 @@ func TestCompactionProtectsTransitiveRetainedRenewalLineage(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=? WHERE id=?`, stamp(old), purchase.ID); err != nil {
+				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE id=$2`, stamp(old), purchase.ID); err != nil {
 					t.Fatal(err)
 				}
 				ids = append(ids, purchase.ID)
 			}
-			if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=? WHERE id=?`, ids[0], ids[1]); err != nil {
+			if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=$1 WHERE id=$2`, ids[0], ids[1]); err != nil {
 				t.Fatal(err)
 			}
 			if batch {
-				if _, err := s.db.ExecContext(ctx, `INSERT INTO renewal_batches(id,user_id,source_purchase_id,idempotency_key,request_fingerprint,term_count,charged_txb_minor,created_at) VALUES('lineage',?,?,'batch','fingerprint',1,100,?)`, identity.UserID, ids[1], stamp(old)); err != nil {
+				if _, err := s.db.ExecContext(ctx, `INSERT INTO renewal_batches(id,user_id,source_purchase_id,idempotency_key,request_fingerprint,term_count,charged_txb_minor,created_at) VALUES('lineage',$1,$2,'batch','fingerprint',1,100,$3)`, identity.UserID, ids[1], stamp(old)); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET renewal_batch_id='lineage',renewal_index=1 WHERE id=?`, ids[2]); err != nil {
+				if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET renewal_batch_id='lineage',renewal_index=1 WHERE id=$1`, ids[2]); err != nil {
 					t.Fatal(err)
 				}
-			} else if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=? WHERE id=?`, ids[1], ids[2]); err != nil {
+			} else if _, err := s.db.ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=$1 WHERE id=$2`, ids[1], ids[2]); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=?,status='closing',used_bytes=77 WHERE id=?`, ids[2], period.ID); err != nil {
+			if _, err := s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=$1,status='closing',used_bytes=77 WHERE id=$2`, ids[2], period.ID); err != nil {
 				t.Fatal(err)
 			}
 			if _, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='done'`); err != nil {
@@ -73,7 +73,7 @@ func TestCompactionProtectsTransitiveRetainedRenewalLineage(t *testing.T) {
 					}
 				}
 				var charged int64
-				if err := s.db.QueryRowContext(ctx, `SELECT charged_txb_minor FROM purchase_history_tombstones WHERE purchase_id=?`, ids[3]).Scan(&charged); err != nil || charged != 100 {
+				if err := s.db.QueryRowContext(ctx, `SELECT charged_txb_minor FROM purchase_history_tombstones WHERE purchase_id=$1`, ids[3]).Scan(&charged); err != nil || charged != 100 {
 					t.Fatal("compacted financial evidence changed", charged, err)
 				}
 			}
@@ -86,7 +86,7 @@ func TestMaintenanceRetainsAbandonedUserReferencedByAudit(t *testing.T) {
 	ctx := context.Background()
 	user := createTestUser(t, store, 87101)
 	now := time.Now().UTC()
-	if _, err := store.db.ExecContext(ctx, `UPDATE users SET onboarding_state='intro',created_at=? WHERE id=?`, stamp(now.Add(-48*time.Hour)), user.ID); err != nil {
+	if _, err := store.db.ExecContext(ctx, `UPDATE users SET onboarding_state='intro',created_at=$1 WHERE id=$2`, stamp(now.Add(-48*time.Hour)), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.AppendAudit(ctx, &user.ID, "retention", "user", user.ID, `{}`, now); err != nil {

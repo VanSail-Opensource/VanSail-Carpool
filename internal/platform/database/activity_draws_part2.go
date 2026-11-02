@@ -22,10 +22,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if strings.HasPrefix(key, "raffle:") {
 		return activity.DrawResult{}, activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -100,7 +97,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO activity_draw_results
   (id,user_id,draw_id,prize_id,prize_name,fee_minor,reward_kind,reward_payload,balance_after_minor,
-  configuration_snapshot,idempotency_key,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+  configuration_snapshot,idempotency_key,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
 		resultID, userID, drawID, selected.ID, selected.Name, draw.FeeMinor, resolved.Kind, string(rewardPayload), balance, string(snapshot), key, stamp(now))
 	if err != nil {
 		return activity.DrawResult{}, fmt.Errorf("record instant draw: %w", err)
@@ -112,7 +109,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE activity_draw_results SET balance_after_minor=? WHERE id=?`, balance, resultID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE activity_draw_results SET balance_after_minor=$1 WHERE id=$2`, balance, resultID); err != nil {
 		return activity.DrawResult{}, err
 	}
 	if resolved.Kind != activity.RewardNone {

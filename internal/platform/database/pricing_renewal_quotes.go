@@ -17,7 +17,7 @@ import (
 func (s *Store) PreparePricingRenewal(ctx context.Context, purchase string, now time.Time) (renewal.Quote, error) {
 	ctx = pricingFreshContext(ctx)
 	var product string
-	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=?`, purchase).Scan(&product); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=$1`, purchase).Scan(&product); err != nil {
 		return renewal.Quote{}, err
 	}
 	policy, err := s.PricingPolicy(ctx, "combo", product)
@@ -46,10 +46,7 @@ func (s *Store) PreparePricingRenewal(ctx context.Context, purchase string, now 
 }
 
 func (s *Store) retryAttempt_prepareRenewalPriceSnapshot(ctx context.Context, purchase string, now time.Time) (renewalPriceSnapshot, *renewal.Quote, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return renewalPriceSnapshot{}, nil, err
@@ -71,7 +68,7 @@ func (s *Store) retryAttempt_prepareRenewalPriceSnapshot(ctx context.Context, pu
 }
 
 func existingRenewalSnapshotTx(ctx context.Context, tx *sql.Tx, in renewalPriceSnapshot, now time.Time) (*renewal.Quote, error) {
-	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=? AND state NOT IN ('CANCELLED','EXPIRED') AND valid_until>? ORDER BY generated_at DESC LIMIT 1`, in.Contract.ID, pricingStamp(now)))
+	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 AND state NOT IN ('CANCELLED','EXPIRED') AND valid_until>$2 ORDER BY generated_at DESC LIMIT 1`, in.Contract.ID, pricingStamp(now)))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -88,10 +85,7 @@ func existingRenewalSnapshotTx(ctx context.Context, tx *sql.Tx, in renewalPriceS
 }
 
 func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewalPriceSnapshot, best renewal.Candidate, curve []renewal.Candidate, now time.Time) (renewal.Quote, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return renewal.Quote{}, err
@@ -162,7 +156,7 @@ func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewal
 		return renewal.Quote{}, err
 	}
 	q := renewal.Quote{ID: id, PurchaseID: c.PurchaseID, ContractID: c.ID, Price: best.Price, PolicyVersion: in.Policy.Version, ContractVersion: c.Version, State: "AUTHORIZED", AuthorizedAt: &now, GeneratedAt: now, SettleAfter: in.Due, ValidUntil: in.Due.Add(72 * time.Hour), Probability: best.Probability, Contribution: best.Contribution, HealthState: in.Health, ModelVersion: in.Model, Trace: string(raw)}
-	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_renewal_quotes(id,purchase_id,contract_id,price_minor,policy_version,contract_version,state,generated_at,authorized_at,settle_after,valid_until,probability,contribution,health_state,model_version,trace_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, id, q.PurchaseID, c.ID, q.Price, q.PolicyVersion, c.Version, q.State, pricingStamp(now), pricingStamp(now), pricingStamp(in.Due), pricingStamp(q.ValidUntil), q.Probability, q.Contribution, q.HealthState, q.ModelVersion, q.Trace)
+	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_renewal_quotes(id,purchase_id,contract_id,price_minor,policy_version,contract_version,state,generated_at,authorized_at,settle_after,valid_until,probability,contribution,health_state,model_version,trace_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`, id, q.PurchaseID, c.ID, q.Price, q.PolicyVersion, c.Version, q.State, pricingStamp(now), pricingStamp(now), pricingStamp(in.Due), pricingStamp(q.ValidUntil), q.Probability, q.Contribution, q.HealthState, q.ModelVersion, q.Trace)
 	if err != nil {
 		return q, err
 	}

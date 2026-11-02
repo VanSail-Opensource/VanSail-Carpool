@@ -17,10 +17,7 @@ func (s *Store) retryAttempt_GrantAdminCoupon(ctx context.Context, input AdminCo
 	if strings.TrimSpace(input.ActorUserID) == "" || strings.TrimSpace(input.UserID) == "" || strings.TrimSpace(input.CouponID) == "" || strings.TrimSpace(input.IdempotencyKey) == "" {
 		return coupons.Grant{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return coupons.Grant{}, err
@@ -28,12 +25,12 @@ func (s *Store) retryAttempt_GrantAdminCoupon(ctx context.Context, input AdminCo
 	defer func() { _ = tx.Rollback() }()
 	sourceID := input.ActorUserID + ":" + input.IdempotencyKey
 	var existingID, existingCouponID string
-	err = tx.QueryRowContext(ctx, `SELECT id,coupon_id FROM coupon_grants WHERE user_id=? AND source_type='admin_grant' AND source_id=?`, input.UserID, sourceID).Scan(&existingID, &existingCouponID)
+	err = tx.QueryRowContext(ctx, `SELECT id,coupon_id FROM coupon_grants WHERE user_id=$1 AND source_type='admin_grant' AND source_id=$2`, input.UserID, sourceID).Scan(&existingID, &existingCouponID)
 	if err == nil {
 		if existingCouponID != input.CouponID {
 			return coupons.Grant{}, ErrConflict
 		}
-		grant, loadErr := scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=?`, existingID))
+		grant, loadErr := scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=$1`, existingID))
 		if loadErr != nil {
 			return coupons.Grant{}, loadErr
 		}
@@ -76,17 +73,14 @@ func (s *Store) retryAttempt_DiscardAdminCoupon(ctx context.Context, actorID, us
 	if actorID == "" || userID == "" || grantID == "" || key == "" {
 		return ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var replayUserID, replayGrantID string
-	err = tx.QueryRowContext(ctx, `SELECT user_id,grant_id FROM admin_coupon_discard_commands WHERE actor_user_id=? AND idempotency_key=?`, actorID, key).Scan(&replayUserID, &replayGrantID)
+	err = tx.QueryRowContext(ctx, `SELECT user_id,grant_id FROM admin_coupon_discard_commands WHERE actor_user_id=$1 AND idempotency_key=$2`, actorID, key).Scan(&replayUserID, &replayGrantID)
 	if err == nil {
 		if replayUserID != userID || replayGrantID != grantID {
 			return ErrConflict
@@ -97,7 +91,7 @@ func (s *Store) retryAttempt_DiscardAdminCoupon(ctx context.Context, actorID, us
 		return err
 	}
 	var status string
-	err = tx.QueryRowContext(ctx, `SELECT status FROM coupon_grants WHERE id=? AND user_id=?`, grantID, userID).Scan(&status)
+	err = tx.QueryRowContext(ctx, `SELECT status FROM coupon_grants WHERE id=$1 AND user_id=$2`, grantID, userID).Scan(&status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -105,18 +99,18 @@ func (s *Store) retryAttempt_DiscardAdminCoupon(ctx context.Context, actorID, us
 		return err
 	}
 	var discarded int
-	err = tx.QueryRowContext(ctx, `SELECT 1 FROM coupon_grant_discards WHERE grant_id=? AND user_id=?`, grantID, userID).Scan(&discarded)
+	err = tx.QueryRowContext(ctx, `SELECT 1 FROM coupon_grant_discards WHERE grant_id=$1 AND user_id=$2`, grantID, userID).Scan(&discarded)
 	if errors.Is(err, sql.ErrNoRows) {
 		if status != "active" {
 			return ErrConflict
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO coupon_grant_discards(grant_id,user_id,discarded_at) VALUES(?,?,?)`, grantID, userID, stamp(now.UTC())); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO coupon_grant_discards(grant_id,user_id,discarded_at) VALUES($1,$2,$3)`, grantID, userID, stamp(now.UTC())); err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO admin_coupon_discard_commands(actor_user_id,idempotency_key,user_id,grant_id,created_at) VALUES(?,?,?,?,?)`, actorID, key, userID, grantID, stamp(now.UTC())); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO admin_coupon_discard_commands(actor_user_id,idempotency_key,user_id,grant_id,created_at) VALUES($1,$2,$3,$4,$5)`, actorID, key, userID, grantID, stamp(now.UTC())); err != nil {
 		return err
 	}
 	auditID, err := ids.New()

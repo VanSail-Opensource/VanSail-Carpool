@@ -19,14 +19,14 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 	if err := s.SaveXNodeGroup(ctx, xnode.Group{ID: group.GroupID, Name: "Capacity", Enabled: true, Bindings: []xnode.GroupBinding{{NodeID: "node", InboundTag: "in"}}}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_payg_accounts(proxy_user_id,user_id,group_id,node_id,period_id,unit_price_minor) VALUES(?,?,?,'node',?,100)`, identity.ProxyUserID, identity.UserID, group.GroupID, period.ID); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_payg_accounts(proxy_user_id,user_id,group_id,node_id,period_id,unit_price_minor) VALUES($1,$2,$3,'node',$4,100)`, identity.ProxyUserID, identity.UserID, group.GroupID, period.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES(?,'node',?,?,?,0)`, identity.ProxyUserID, period.ID, now.AddDate(0, 0, -1).Format(time.DateOnly), xnode.PAYGGB); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES($1,'node',$2,$3,$4,0)`, identity.ProxyUserID, period.ID, now.AddDate(0, 0, -1).Format(time.DateOnly), xnode.PAYGGB); err != nil {
 		t.Fatal(err)
 	}
 	stamp := pricingStamp(now)
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at) VALUES('node',3000,30,?,?, 'fixture',?)`, 300*xnode.PAYGGB, stamp, stamp); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at) VALUES('node',3000,30,$1,$2, 'fixture',$3)`, 300*xnode.PAYGGB, stamp, stamp); err != nil {
 		t.Fatal(err)
 	}
 	base := pricingForecastFixture(t, s, "capacity-source", now)
@@ -55,7 +55,7 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 		if i >= 2 {
 			f.Watermark = f.GeneratedAt
 			f.SnapshotHash = f.ID
-			if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'node','node',?,?,10000,'HEALTHY','{}',?)`, f.ID, f.GeneratedAt.Format(time.DateOnly), pricingStamp(f.Watermark), f.ID); err != nil {
+			if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'node','node',$2,$3,10000,'HEALTHY','{}',$4)`, f.ID, f.GeneratedAt.Format(time.DateOnly), pricingStamp(f.Watermark), f.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -76,14 +76,14 @@ func TestPricingCapacityUsesGiBAndExactForecastHorizon(t *testing.T) {
 		t.Fatal(got, err)
 	}
 	// Prepaid traffic is already in forecast consumption; reserve the larger amount.
-	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=?,credit_started_at=?`, 6*xnode.PAYGGB, stamp); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1,credit_started_at=$2`, 6*xnode.PAYGGB, stamp); err != nil {
 		t.Fatal(err)
 	}
 	got, err = read()
 	if err != nil || got.CommittedGB != 2 || got.DemandGB != 6 || got.SalesUnits != 6 {
 		t.Fatal(got, err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET capacity_bytes=?`, 30*xnode.PAYGGB); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE pricing_cost_metadata SET capacity_bytes=$1`, 30*xnode.PAYGGB); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = read(); !errors.Is(err, pricing.CapacityUnsafe) {

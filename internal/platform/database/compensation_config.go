@@ -41,17 +41,14 @@ func scanCompensationConfig(row rowScanner) (compensation.Config, error) {
 
 // UpdateCompensationConfig applies revision-based optimistic concurrency and audits the actor.
 func (s *Store) retryAttempt_UpdateCompensationConfig(ctx context.Context, actorID string, input compensation.ConfigUpdate, now time.Time) (compensation.Config, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return compensation.Config{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE node_compensation_config SET enabled=?,threshold_minutes=?,multiplier_bps=?,
-		revision=revision+1,updated_at=? WHERE id=1 AND revision=?`, boolInt(input.Enabled), nullableInt(input.ThresholdMinutes),
+	result, err := tx.ExecContext(ctx, `UPDATE node_compensation_config SET enabled=$1,threshold_minutes=$2,multiplier_bps=$3,
+		revision=revision+1,updated_at=$4 WHERE id=1 AND revision=$5`, boolInt(input.Enabled), nullableInt(input.ThresholdMinutes),
 		nullableInt(input.MultiplierBPS), stamp(now), input.Revision)
 	if err != nil {
 		return compensation.Config{}, fmt.Errorf("update compensation config: %w", err)

@@ -39,11 +39,11 @@ func VerifySchema(ctx context.Context, db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("schema column %s.%s: %w", table.Name, column.Name, err)
 			}
-			wantType := map[string]string{"TEXT": "text", "INTEGER": "bigint", "SMALLINT": "smallint", "BLOB": "bytea", "REAL": "double precision", "DOUBLE PRECISION": "double precision"}[column.Type]
+			wantType := column.Type
 			if declared != wantType || primary != column.PrimaryKey || notNull != (column.NotNull || primary > 0) {
 				return fmt.Errorf("schema contract differs at %s.%s: type=%q want=%q primary=%d want=%d notNull=%t want=%t", table.Name, column.Name, declared, wantType, primary, column.PrimaryKey, notNull, column.NotNull || primary > 0)
 			}
-			if column.Type == "TEXT" {
+			if column.Type == "text" {
 				var collation string
 				if err := db.QueryRowContext(ctx, `SELECT c.collname FROM pg_attribute a JOIN pg_collation c ON c.oid=a.attcollation WHERE a.attrelid=to_regclass($1) AND a.attname=$2`, "public."+table.Name, column.Name).Scan(&collation); err != nil {
 					return err

@@ -43,7 +43,7 @@ func raffleTrafficCoverageTx(ctx context.Context, tx *sql.Tx, userID string, dra
 			minimumRenewalTraffic = min(minimumRenewalTraffic, prize.Reward.TrafficLimitBytes)
 		case activity.RewardCoreComboSwitch:
 			var targetTraffic int64
-			if err = tx.QueryRowContext(ctx, `SELECT traffic_limit_bytes FROM combos WHERE id=?`, prize.Reward.ComboID).Scan(&targetTraffic); err != nil {
+			if err = tx.QueryRowContext(ctx, `SELECT traffic_limit_bytes FROM combos WHERE id=$1`, prize.Reward.ComboID).Scan(&targetTraffic); err != nil {
 				if err == sql.ErrNoRows {
 					return ErrConflict
 				}
@@ -71,7 +71,7 @@ func raffleTrafficCoverageTx(ctx context.Context, tx *sql.Tx, userID string, dra
 
 func validateRaffleTrafficForEntriesTx(ctx context.Context, tx *sql.Tx, draw activity.LuckyDraw, now time.Time) error {
 	rows, err := tx.QueryContext(ctx, `SELECT user_id,COUNT(*) FROM activity_raffle_tickets
-  WHERE draw_id=? AND status='active' GROUP BY user_id`, draw.ID)
+  WHERE draw_id=$1 AND status='active' GROUP BY user_id`, draw.ID)
 	if err != nil {
 		return err
 	}

@@ -22,7 +22,7 @@ func TestNamedServicePreservesUsageAndScopesRouting(t *testing.T) {
 	if item.Identity.UserID != "" || item.Identity.CurrentPeriodID == "" {
 		t.Fatal("service created a member or lacks accounting")
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=400 WHERE id=?`, item.Identity.CurrentPeriodID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=400 WHERE id=$1`, item.Identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
 	access.LimitBytes = 2000

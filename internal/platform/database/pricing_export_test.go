@@ -21,7 +21,7 @@ func TestPricingExportRetainedRegistryHashesPrivacyAndCancellation(t *testing.T)
 	s, parent, _, _ := paygBillingFixture(t)
 	ctx := context.Background()
 	secret := "private-xray-material-never-export"
-	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_identities SET credentials_cipher=?`, secret); err != nil {
+	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_identities SET credentials_cipher=$1`, secret); err != nil {
 		t.Fatal(err)
 	}
 	scope := PricingExportScope{Format: "jsonl", IncludeUsers: true, IncludeFinancial: true, Pseudonymize: true, Users: []string{parent.UserID}}

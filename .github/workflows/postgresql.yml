@@ -20,12 +20,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Verify configuration and deterministic post-startup schema
-        run: |
-          go test ./internal/platform/config ./internal/platform/dbinventory ./cmd/db-inventory
-          go run ./cmd/db-inventory --output "$RUNNER_TEMP/schema"
-          diff --strip-trailing-cr docs/plans/postgresql/sqlite-schema.sql "$RUNNER_TEMP/schema/sqlite-schema.sql"
-          diff --strip-trailing-cr docs/plans/postgresql/sqlite-inventory.json "$RUNNER_TEMP/schema/sqlite-inventory.json"
+      - name: Verify PostgreSQL-only bootstrap configuration
+        run: go test ./internal/platform/config
       - name: Create protected infrastructure secrets
         run: |
           umask 077
@@ -64,32 +60,16 @@ jobs:
         env:
           CGO_ENABLED: 0
         run: |
-          python3 scripts/ci/postgresql_contracts.py "$RUNNER_TEMP/postgres-contracts.regex" "$RUNNER_TEMP/postgres-contracts.json"
           go test -c -o "$RUNNER_TEMP/database.test" ./internal/platform/database
           container=$(docker compose ps -q postgres)
           docker cp "$RUNNER_TEMP/database.test" "$container:/tmp/database.test"
-          docker cp "$RUNNER_TEMP/postgres-contracts.regex" "$container:/tmp/postgres-contracts.regex"
           docker compose exec -T postgres sh -c '
             password=$(cat /run/secrets/postgres_password)
             export POSTGRES_CONTRACT_URL="postgres://postgres:$password@127.0.0.1/vansail?sslmode=disable"
-            /tmp/database.test -test.v -test.parallel=2 -test.timeout=20m -test.run "$(cat /tmp/postgres-contracts.regex)"
-          '
-      - name: Verify exact snapshot conversion and cutover refusal paths
-        id: conversion
-        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
-        env:
-          CGO_ENABLED: 0
-        run: |
-          go test -c -o "$RUNNER_TEMP/migration.test" ./internal/platform/datamigrate
-          container=$(docker compose ps -q postgres)
-          docker cp "$RUNNER_TEMP/migration.test" "$container:/tmp/migration.test"
-          docker compose exec -T postgres sh -c '
-            password=$(cat /run/secrets/migration_password)
-            export POSTGRES_MIGRATION_TEST_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
-            /tmp/migration.test -test.v -test.timeout=5m
+            /tmp/database.test -test.v -test.parallel=2 -test.timeout=20m
           '
       - name: Verify administrative logical export and isolated restoration
-        if: ${{ !cancelled() && steps.conversion.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
         env:
           CGO_ENABLED: 0
         run: |
@@ -106,16 +86,16 @@ jobs:
             /tmp/backup.test -test.v -test.timeout=5m -test.run TestPostgresLogicalRecovery
           '
       - name: Verify encrypted physical backup and point-in-time recovery
-        if: ${{ !cancelled() && steps.conversion.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
         env:
           CGO_ENABLED: 0
         run: |
-          go build -o "$RUNNER_TEMP/db-migrate" ./cmd/db-migrate
+          go build -o "$RUNNER_TEMP/db-schema" ./cmd/db-schema
           container=$(docker compose ps -q postgres)
-          docker cp "$RUNNER_TEMP/db-migrate" "$container:/tmp/db-migrate"
+          docker cp "$RUNNER_TEMP/db-schema" "$container:/tmp/db-schema"
           bash scripts/ci/postgresql_recovery.sh
       - name: Verify PostgreSQL application composition and single ownership
-        if: ${{ !cancelled() && steps.conversion.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
         env:
           CGO_ENABLED: 0
         run: |
@@ -147,12 +127,6 @@ jobs:
           grep -Eq '^pg_exporter_last_scrape_error(\{[^}]*\})? 0$' "$RUNNER_TEMP/postgres.metrics"
           grep -Eq '^vansail_financial_discrepancies(\{[^}]*\})? 0$' "$RUNNER_TEMP/postgres.metrics"
           grep -q '^vansail_accounting_known_sequence_backlog' "$RUNNER_TEMP/postgres.metrics"
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: postgresql-contract-selection
-          path: ${{ runner.temp }}/postgres-contracts.json
-          if-no-files-found: ignore
       - name: Stop isolated infrastructure
         if: always()
         run: |

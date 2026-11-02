@@ -1,43 +1,24 @@
-# Database administration
+# PostgreSQL administration
 
-`postgres.go` discovers PostgreSQL tables, columns and declared keys through system
-catalogs. It retains masking, typed values and sealed cursor paging while generic
-mutation review/application refuse PostgreSQL until editor parity is verified.
-Ciphertext columns are masked by both `_cipher` and `ciphertext` naming.
-- `mutation_prepare_part2.go` continues the focused implementation from its original package module.
-- `mutations_part2.go` continues the focused implementation from its original package module.
-- `query_part2.go` continues the focused implementation from its original package module.
-- `schema_part2.go` continues the focused implementation from its original package module.
-- `types_part2.go` continues the focused implementation from its original package module.
+The browser API exposes an allowlisted, read-only PostgreSQL catalog and typed
+record pages. Domain APIs own all mutations. Historical mutation request/receipt
+wire types remain accepted only to return an explicit read-only error; generic
+writes cannot create reviews, rescue archives or alter credentials/financial data.
 
-This package provides the allowlisted, typed SQLite administration surface. It
-introspects real schema metadata, masks sensitive data, uses opaque cursors, and
-requires reviewed mutations with rescue backups and immutable audit evidence.
+- `types.go` and `types_part2.go` define decimal-string/boolean/base64 transport,
+  schema metadata, paging/filter contracts and historical mutation shapes.
+- `schema.go` and `schema_part2.go` classify native PG types and redact sensitive
+  fields; `postgres.go` resolves validated identifiers and declared primary keys
+  through server catalogs. Tables without keys cannot be paginated.
+- `records.go` builds native parameterized cursor pages and redacted row hashes.
+- `record_keys.go` preserves exact numeric keys and seals sensitive keys/cursors.
+- `record_values.go` renders exact values without browser-number conversion.
+- `query.go` and `query_part2.go` bind typed filters/search and fingerprint sealed
+  query cursors. `filter_values.go` validates values using the resolved PG type.
+- `mutations.go` rejects generic writes before any side effect.
+- `service_test.go` covers native catalogs, declared-key pagination, large numeric
+  precision and malformed input. `mutation_service_test.go` verifies secret
+  masking and unchanged records when a generic write is attempted.
 
-- `mutations_part2.go` contains remaining mutation validation and review helpers.
-- `types_part2.go` contains typed editor value and request helpers.
-
-## Files
-
-- `types.go` — public service contracts, table/column/value representations,
-  query and mutation requests, reviews, results, and reason validation.
-- `schema.go` — identifier allowlisting, SQLite schema introspection, affinity,
-  boolean detection, and sensitive-column classification.
-- `query.go` — filtered record queries, stable fingerprints, and typed query
-  cursor encoding/decoding.
-- `records.go` — basic table paging, select/key construction, scanning, and public
-  record assembly.
-- `record_values.go` — sensitive-value masking, canonical hashing, and canonical
-  key representation.
-- `record_keys.go` — public-key parsing plus legacy record cursor encoding and
-  decoding.
-- `mutations.go` — mutation review/application orchestration, confirmations,
-  digests, and one-time review consumption.
-- `mutation_prepare.go` — current-record lookup, requested-value preparation,
-  default/null handling, and encrypted-setting replacement.
-- `mutation_values.go` — strict editor-value conversion and mutation key recovery.
-- `mutation_execute.go` — transactional insert/update/delete execution, audited
-  rescue-backup linkage, and defensive request cloning.
-- `service_test.go` — schema, typed value, rowid, default insert, and cursor tests.
-- `mutation_service_test.go` — reviewed mutation, rollback/conflict, encrypted
-  setting, shared fixture, and fake backup tests.
+No user-supplied identifier reaches SQL without catalog resolution and identifier
+validation. No query results, raw SQL or secret argument values enter logs.

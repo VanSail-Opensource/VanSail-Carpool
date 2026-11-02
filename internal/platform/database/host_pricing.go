@@ -29,7 +29,7 @@ func (s *Store) retryAttempt_HostPAYGRate(ctx context.Context, user, group strin
 		if e == nil {
 			public = price
 		} else if p.LastApprovedVersion != "" {
-			e = tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE id=?`, p.LastApprovedVersion).Scan(&public)
+			e = tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE id=$1`, p.LastApprovedVersion).Scan(&public)
 			if e != nil && !errors.Is(e, sql.ErrNoRows) {
 				return 0, e
 			}

@@ -66,7 +66,7 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 			return
 		}
 		if expr == "" {
-			if related, bindings := pricingRelatedScope(d, dimension, values); related != "" {
+			if related, bindings := pricingRelatedScope(d, dimension, values, len(args)+1); related != "" {
 				conditions = append(conditions, related)
 				args = append(args, bindings...)
 				return
@@ -78,7 +78,7 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 		}
 		marks := make([]string, len(values))
 		for i, v := range values {
-			marks[i] = "?"
+			marks[i] = fmt.Sprintf("$%d", len(args)+1)
 			args = append(args, v)
 		}
 		conditions = append(conditions, expr+" IN ("+strings.Join(marks, ",")+")")
@@ -95,7 +95,9 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 		if len(s.Nodes) > 0 {
 			parts := []string{}
 			for _, node := range s.Nodes {
-				parts = append(parts, "("+prefix+"entity_type='node' AND "+prefix+"entity_id=? OR "+prefix+"entity_type='user_node' AND SUBSTR("+prefix+"entity_id,LENGTH("+prefix+"entity_id)-LENGTH(?))=':'||?)")
+				parts = append(parts, "("+prefix+"entity_type='node' AND "+prefix+fmt.Sprintf("entity_id=$%d OR ", len(args)+1)+
+					prefix+"entity_type='user_node' AND SUBSTR("+prefix+"entity_id,LENGTH("+prefix+fmt.Sprintf("entity_id)-LENGTH($%d))=':'||$%d)", len(args)+2, len(args)+3),
+				)
 				args = append(args, node, node, node)
 			}
 			conditions = append(conditions, "("+strings.Join(parts, " OR ")+")")
@@ -103,7 +105,9 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 		if len(s.Users) > 0 {
 			parts := []string{}
 			for _, user := range s.Users {
-				parts = append(parts, "("+prefix+"entity_type='user' AND "+prefix+"entity_id=? OR "+prefix+"entity_type='user_node' AND SUBSTR("+prefix+"entity_id,1,LENGTH(?)+1)=?||':')")
+				parts = append(parts, "("+prefix+"entity_type='user' AND "+prefix+fmt.Sprintf("entity_id=$%d OR ", len(args)+1)+
+					prefix+"entity_type='user_node' AND SUBSTR("+prefix+fmt.Sprintf("entity_id,1,LENGTH($%d)+1)=$%d||':')", len(args)+2, len(args)+3),
+				)
 				args = append(args, user, user, user)
 			}
 			conditions = append(conditions, "("+strings.Join(parts, " OR ")+")")
@@ -126,7 +130,7 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 		addIDs(column(d.User), s.Users, "user")
 		addIDs(column(d.Node), s.Nodes, "node")
 		if len(s.Products) > 0 {
-			condition, bindings := pricingTypedProductScope(d, s.Products)
+			condition, bindings := pricingTypedProductScope(d, s.Products, len(args)+1)
 			if condition != "" {
 				conditions = append(conditions, condition)
 				args = append(args, bindings...)
@@ -143,11 +147,11 @@ func pricingDatasetQuery(d pricing.Dataset, s PricingExportScope) (string, []any
 			until = s.Until.UTC().Format("2006-01-02")
 		}
 		if !s.From.IsZero() {
-			conditions = append(conditions, column(d.Date)+">=?")
+			conditions = append(conditions, column(d.Date)+fmt.Sprintf(">=$%d", len(args)+1))
 			args = append(args, from)
 		}
 		if !s.Until.IsZero() {
-			conditions = append(conditions, column(d.Date)+"<?")
+			conditions = append(conditions, column(d.Date)+fmt.Sprintf("<$%d", len(args)+1))
 			args = append(args, until)
 		}
 	}

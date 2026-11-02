@@ -13,7 +13,7 @@ type raffleTicket struct {
 
 func activeRaffleTicketsTx(ctx context.Context, tx *sql.Tx, drawID string) ([]raffleTicket, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT id,user_id,fee_minor,reserve_minor FROM activity_raffle_tickets
-  WHERE draw_id=? AND status='active' ORDER BY created_at,id`, drawID)
+  WHERE draw_id=$1 AND status='active' ORDER BY created_at,id`, drawID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,6 @@ func refundRaffleTicketTx(ctx context.Context, tx *sql.Tx, ticket raffleTicket, 
 	if _, err = insertLedgerTx(ctx, tx, ticket.UserID, refund, balance, "activity_raffle_refund", ticket.ID, drawName, now); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET status='refunded',updated_at=? WHERE id=? AND status='active'`, stamp(now), ticket.ID)
+	_, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET status='refunded',updated_at=$1 WHERE id=$2 AND status='active'`, stamp(now), ticket.ID)
 	return err
 }

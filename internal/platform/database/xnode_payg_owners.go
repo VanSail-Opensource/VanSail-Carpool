@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Store) XNodeIdentityByService(ctx context.Context, name string) (xnode.Identity, error) {
-	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.service_name=?`, name))
+	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.service_name=$1`, name))
 }
 
 // Frequent activity reconciliation reads identifiers only, never the fleet's
@@ -30,7 +30,7 @@ func (s *Store) XNodePrincipalOwners(ctx context.Context) (map[int]string, error
 }
 
 func (s *Store) XNodeIdentitiesForNode(ctx context.Context, node string) ([]xnode.Identity, error) {
-	rows, err := s.db.QueryContext(ctx, xnodeIdentitySelect+` WHERE p.service_name IS NULL OR p.service_name NOT LIKE 'member-payg-%' OR EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.proxy_user_id=p.proxy_user_id AND a.node_id=?) ORDER BY p.proxy_user_id`, node)
+	rows, err := s.db.QueryContext(ctx, xnodeIdentitySelect+` WHERE p.service_name IS NULL OR p.service_name NOT ILIKE 'member-payg-%' OR EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.proxy_user_id=p.proxy_user_id AND a.node_id=$1) ORDER BY p.proxy_user_id`, node)
 	if err != nil {
 		return nil, err
 	}

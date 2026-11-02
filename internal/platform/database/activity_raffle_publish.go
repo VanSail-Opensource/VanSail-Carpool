@@ -14,10 +14,7 @@ func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, group
 	if groupID == 0 {
 		return activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -40,7 +37,7 @@ func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, group
 	if err = requireRaffleTriggersAvailableTx(ctx, tx, draw.LuckyDrawInput); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='publishing',group_chat_id=?,updated_at=? WHERE id=? AND status='draft'`, groupID, stamp(now), id); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='publishing',group_chat_id=$1,updated_at=$2 WHERE id=$3 AND status='draft'`, groupID, stamp(now), id); err != nil {
 		if isUniqueConstraint(err) {
 			return ErrConflict
 		}
@@ -59,10 +56,7 @@ func (s *Store) retryAttempt_ConfirmRafflePublished(ctx context.Context, id stri
 	if messageID <= 0 {
 		return activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -87,7 +81,7 @@ func (s *Store) retryAttempt_ConfirmRafflePublished(ctx context.Context, id stri
 	} else if draw.Status != "publishing" {
 		return ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status=?,announcement_message_id=?,updated_at=? WHERE id=?`,
+	if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status=$1,announcement_message_id=$2,updated_at=$3 WHERE id=$4`,
 		status, messageID, stamp(now), id); err != nil {
 		return err
 	}
@@ -109,8 +103,8 @@ func (s *Store) retryAttempt_ConfirmRafflePublished(ctx context.Context, id stri
 // Existing indexes only cover publishing/open, so enforce this in both write paths.
 func requireRaffleTriggersAvailableTx(ctx context.Context, tx *sql.Tx, input activity.LuckyDrawInput) error {
 	var count int
-	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_lucky_draws WHERE id<>? AND kind='raffle'
-		AND status IN ('publishing','open','settling') AND (lower(keyword)=lower(?) OR lower(command)=lower(?))`,
+	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_lucky_draws WHERE id<>$1 AND kind='raffle'
+		AND status IN ('publishing','open','settling') AND (lower(keyword)=lower($2) OR lower(command)=lower($3))`,
 		input.ID, input.Keyword, input.Command).Scan(&count)
 	if err != nil {
 		return err

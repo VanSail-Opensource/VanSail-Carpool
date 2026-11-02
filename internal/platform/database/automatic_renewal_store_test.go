@@ -39,7 +39,7 @@ func TestAutomaticRenewalCommitsAfterCalculatedRollover(t *testing.T) {
 		t.Fatalf("CommitAutoRenewal(calculated): %v", err)
 	}
 	var applyJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=$1`,
 		`{"purchaseId":"`+successor.ID+`"}`).Scan(&applyJobs); err != nil || applyJobs != 1 {
 		t.Fatalf("automatic activation jobs = %d, %v", applyJobs, err)
 	}
@@ -82,7 +82,7 @@ func TestAutomaticRenewalDefaultsToggleAndSuccessorIdempotency(t *testing.T) {
 		t.Fatalf("DueAutoRenewals(after successor) = (%+v, %v), want none", due, err)
 	}
 	var successors, debits int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE auto_renew_source_purchase_id=?`, first.ID).Scan(&successors); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE auto_renew_source_purchase_id=$1`, first.ID).Scan(&successors); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE kind='automatic_renewal'`).Scan(&debits); err != nil {

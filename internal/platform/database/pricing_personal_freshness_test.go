@@ -21,7 +21,7 @@ func TestPersonalForecastMissingIsNotStale(t *testing.T) {
 
 	// A completed feature without complete observed days cannot produce a
 	// forecast; it must remain missing, not claim an old prediction exists.
-	_, err = store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'user',?,?,?,0,'UNKNOWN','{}','fixture')`, "user:"+user.ID+":"+now.Format(time.DateOnly), user.ID, now.Format(time.DateOnly), pricingStamp(now))
+	_, err = store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'user',$2,$3,$4,0,'UNKNOWN','{}','fixture')`, "user:"+user.ID+":"+now.Format(time.DateOnly), user.ID, now.Format(time.DateOnly), pricingStamp(now))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestPersonalForecastOldVintageRemainsStale(t *testing.T) {
 	now := time.Now().UTC()
 	day := now.Truncate(24 * time.Hour)
 	generated := day.Add(-time.Hour)
-	_, err := store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'user',?,?,?,10000,'UNKNOWN','{}','old-feature')`, "old-user-feature", user.ID, generated.Format(time.DateOnly), pricingStamp(generated))
+	_, err := store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'user',$2,$3,$4,10000,'UNKNOWN','{}','old-feature')`, "old-user-feature", user.ID, generated.Format(time.DateOnly), pricingStamp(generated))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestPersonalForecastOldVintageRemainsStale(t *testing.T) {
 	}
 	// A later feature with no complete total observations must not hide a
 	// still-future vintage from the previous day.
-	_, err = store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'user',?,?,?,0,'UNKNOWN','{}','empty-feature')`, "empty-user-feature", user.ID, day.Format(time.DateOnly), pricingStamp(now))
+	_, err = store.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'user',$2,$3,$4,0,'UNKNOWN','{}','empty-feature')`, "empty-user-feature", user.ID, day.Format(time.DateOnly), pricingStamp(now))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestPersonalForecastDefersWhenAnalyticsSlotBusy(t *testing.T) {
 		t.Fatalf("deferred forecast: %+v, %v", forecast, err)
 	}
 	var queued int
-	if err = store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`, PricingComputeJob).Scan(&queued); err != nil || queued != 0 {
+	if err = store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`, PricingComputeJob).Scan(&queued); err != nil || queued != 0 {
 		t.Fatalf("queued calculations while busy: %d, %v", queued, err)
 	}
 }

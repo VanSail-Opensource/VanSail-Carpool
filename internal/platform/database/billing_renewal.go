@@ -48,7 +48,7 @@ func (s *Store) retryAttempt_RenewalQuoteExcludingAddons(ctx context.Context, us
 	return quote, err
 }
 
-// Renew creates all terms and one ledger debit in one SQLite transaction.
+// Renew creates all terms and one ledger debit in one PostgreSQL transaction.
 func (s *Store) Renew(ctx context.Context, input RenewalInput, now time.Time) (model.RenewalBatch, error) {
 	return s.renewWithOutcome(ctx, input, nil, now)
 }
@@ -64,7 +64,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		return model.RenewalBatch{}, ErrConflict
 	}
 	var replay int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM renewal_batches WHERE user_id=? AND idempotency_key=?)`, input.UserID, input.IdempotencyKey).Scan(&replay); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM renewal_batches WHERE user_id=$1 AND idempotency_key=$2))::bigint", input.UserID, input.IdempotencyKey).Scan(&replay); err != nil {
 		return model.RenewalBatch{}, err
 	}
 	if replay == 0 {
@@ -72,10 +72,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 			return model.RenewalBatch{}, err
 		}
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.RenewalBatch{}, err
@@ -83,7 +80,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 	defer func() { _ = tx.Rollback() }()
 	var existingID, existingFingerprint string
 	fingerprint := fmt.Sprintf("%s:%d", input.PurchaseID, input.TermCount)
-	err = tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM renewal_batches WHERE user_id=? AND idempotency_key=?`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
+	err = tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM renewal_batches WHERE user_id=$1 AND idempotency_key=$2`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
 	if err == nil {
 		if existingID == "" || existingFingerprint != fingerprint {
 			return model.RenewalBatch{}, ErrConflict
@@ -109,7 +106,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 	var trafficRenewal int
 	if err = tx.QueryRowContext(ctx, `SELECT entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,
 		reward_renewal_price_minor,reward_traffic_renewal,
-		reward_renewal_traffic_limit_bytes FROM purchases WHERE id=?`,
+		reward_renewal_traffic_limit_bytes FROM purchases WHERE id=$1`,
 		input.PurchaseID).Scan(&traffic, &reset, &squads, &customPrice, &trafficRenewal, &renewalTraffic); err != nil {
 		return model.RenewalBatch{}, err
 	}
@@ -130,7 +127,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 	if err != nil {
 		return model.RenewalBatch{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO renewal_batches(id,user_id,source_purchase_id,idempotency_key,request_fingerprint,term_count,charged_txb_minor,created_at) VALUES(?,?,?,?,?,?,?,?)`, batchID, input.UserID, input.PurchaseID, input.IdempotencyKey, fingerprint, input.TermCount, quote.TotalPrice.MinorInt64(), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO renewal_batches(id,user_id,source_purchase_id,idempotency_key,request_fingerprint,term_count,charged_txb_minor,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, batchID, input.UserID, input.PurchaseID, input.IdempotencyKey, fingerprint, input.TermCount, quote.TotalPrice.MinorInt64(), stamp(now)); err != nil {
 		return model.RenewalBatch{}, err
 	}
 	start := quote.EffectiveAt
@@ -154,7 +151,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		if customPrice.Valid {
 			coreGross = customPrice.Int64
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,recurring_discount_attached,idempotency_key,request_fingerprint,renewal_batch_id,renewal_index,entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, purchaseID, input.UserID, combo.ID, quote.PricePerTerm.MinorInt64(), stamp(from), stamp(until), status, quote.CouponGrantID, quote.GrossPrice.MinorInt64(), coreGross, quote.Discount.MinorInt64(), boolInt(quote.CouponGrantID != nil), requestKey, fingerprint, batchID, index,
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,recurring_discount_attached,idempotency_key,request_fingerprint,renewal_batch_id,renewal_index,entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`, purchaseID, input.UserID, combo.ID, quote.PricePerTerm.MinorInt64(), stamp(from), stamp(until), status, quote.CouponGrantID, quote.GrossPrice.MinorInt64(), coreGross, quote.Discount.MinorInt64(), boolInt(quote.CouponGrantID != nil), requestKey, fingerprint, batchID, index,
 			traffic, reset, squads, customPrice, 1, traffic, stamp(now), stamp(now)); err != nil {
 			return model.RenewalBatch{}, err
 		}
@@ -162,7 +159,7 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 			return model.RenewalBatch{}, err
 		}
 		for _, addon := range addons {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, purchaseID, addon.GroupID, addon.PriceTXBMinor); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES($1,$2,$3)`, purchaseID, addon.GroupID, addon.PriceTXBMinor); err != nil {
 				return model.RenewalBatch{}, err
 			}
 		}

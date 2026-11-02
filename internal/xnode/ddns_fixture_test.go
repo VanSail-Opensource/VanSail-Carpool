@@ -20,7 +20,7 @@ func ddnsRoutingFixture(t *testing.T) (fixture, xnode.Node, xnode.Endpoint, xnod
 	t.Helper()
 	f := controlFixture(t, true)
 	ctx := context.Background()
-	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, f.user.ID); err != nil {
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	profile, err := f.service.ResolveConfiguration(ctx, f.node.ConfigID)
@@ -101,7 +101,7 @@ func pumpDDNSJobs(t *testing.T, ctx context.Context, f fixture) {
 			callErr = f.master.HandleOutbox(ctx, *job)
 		}
 		if !errors.Is(callErr, jobqueue.ErrDeferred) {
-			if err = f.store.CompleteOutboxJob(ctx, job.ID, job.Attempts, callErr, time.Now()); err != nil {
+			if err = f.store.CompleteOutboxClaim(ctx, *job, callErr, time.Now()); err != nil {
 				t.Fatal(err)
 			}
 		}

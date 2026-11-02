@@ -26,7 +26,7 @@ type Service struct {
 	OnError     func(string)
 }
 
-// NewService uses the existing encrypted settings facade and SQLite repository.
+// NewService uses the existing encrypted settings facade and PostgreSQL repository.
 func NewService(repository Repository, settings Settings) *Service {
 	return &Service{repository: repository, settings: settings, executor: newExecutor(), states: map[string]NetworkStatus{}, done: make(chan struct{}), wake: make(chan struct{}, 1)}
 }

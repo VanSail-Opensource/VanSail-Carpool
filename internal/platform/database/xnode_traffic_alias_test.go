@@ -11,7 +11,7 @@ import (
 func TestXNodeTrafficAliasOnlyAggregateCommitsWithoutChargingAgain(t *testing.T) {
 	store, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
-	if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',?,42,?)`, identity.UserID, identity.ProxyUserID); err != nil {
+	if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',$1,42,$2)`, identity.UserID, identity.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	// No identity row has ID 42: only the durable alias survives migration.
@@ -36,7 +36,7 @@ func TestXNodeTrafficRekeyedAggregatesDoNotReplayCumulativeCounters(t *testing.T
 		t.Run(map[bool]string{false: "idle-rekey", true: "old-period-sample"}[sampled], func(t *testing.T) {
 			store, identity, period := xnodeTrafficFixture(t)
 			ctx := context.Background()
-			if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',?,42,?)`, identity.UserID, identity.ProxyUserID); err != nil {
+			if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',$1,42,$2)`, identity.UserID, identity.ProxyUserID); err != nil {
 				t.Fatal(err)
 			}
 			if err := store.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
@@ -79,7 +79,7 @@ func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
 				owner = "another-member"
 			}
 			if scenario != "unmapped-member" {
-				if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',?,42,?)`, owner, identity.ProxyUserID); err != nil {
+				if _, err := store.db.Exec(`INSERT INTO member_identity_aliases(old_user_id,user_id,old_proxy_id,proxy_id) VALUES('legacy-member',$1,42,$2)`, owner, identity.ProxyUserID); err != nil {
 					t.Fatal(err)
 				}
 			}

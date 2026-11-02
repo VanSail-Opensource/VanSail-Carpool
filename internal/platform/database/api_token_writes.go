@@ -10,17 +10,14 @@ import (
 )
 
 func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apitoken.Token) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	var active int
-	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE user_id=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?)`, item.UserID, stamp(item.CreatedAt)).Scan(&active); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM admin_api_tokens WHERE user_id=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)`, item.UserID, stamp(item.CreatedAt)).Scan(&active); err != nil {
 		return err
 	}
 	if active >= 50 {
@@ -34,7 +31,7 @@ func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apito
 	if item.ExpiresAt != nil {
 		expires = stamp(*item.ExpiresAt)
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO admin_api_tokens(id,user_id,name,token_prefix,token_hash,scopes_json,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?)`, item.ID, item.UserID, item.Name, item.Prefix, item.Hash, string(scopes), stamp(item.CreatedAt), expires); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO admin_api_tokens(id,user_id,name,token_prefix,token_hash,scopes_json,created_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, item.ID, item.UserID, item.Name, item.Prefix, item.Hash, string(scopes), stamp(item.CreatedAt), expires); err != nil {
 		return err
 	}
 	auditID, err := ids.New()
@@ -52,23 +49,20 @@ func (s *Store) retryAttempt_CreateAdminAPIToken(ctx context.Context, item apito
 }
 
 func (s *Store) retryAttempt_RevokeAdminAPIToken(ctx context.Context, id, userID string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	var exists bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=? AND user_id=?) OR EXISTS(SELECT 1 FROM audit_events WHERE target_type='api_token' AND target_id=? AND actor_user_id=? AND action='api_token.revoked')`, id, userID, id, userID).Scan(&exists); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=$1 AND user_id=$2) OR EXISTS(SELECT 1 FROM audit_events WHERE target_type='api_token' AND target_id=$3 AND actor_user_id=$4 AND action='api_token.revoked')`, id, userID, id, userID).Scan(&exists); err != nil {
 		return err
 	}
 	if !exists {
 		return apitoken.ErrNotFound
 	}
-	result, err := tx.ExecContext(ctx, `DELETE FROM admin_api_tokens WHERE id=? AND user_id=?`, id, userID)
+	result, err := tx.ExecContext(ctx, `DELETE FROM admin_api_tokens WHERE id=$1 AND user_id=$2`, id, userID)
 	if err != nil {
 		return err
 	}

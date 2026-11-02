@@ -58,7 +58,7 @@ func TestZeroHourUnbanIsGenerationSafeIdempotentAndPreservesExemptions(t *testin
 		t.Fatal("release changed grants", before, after, err)
 	}
 	var paidPrice int64
-	if err = store.db.QueryRowContext(ctx, `SELECT price_minor FROM xnode_firewall_exemptions WHERE id=? AND grant_kind='member' AND released_version=0`, paid.ID).Scan(&paidPrice); err != nil || paidPrice != 125 {
+	if err = store.db.QueryRowContext(ctx, `SELECT price_minor FROM xnode_firewall_exemptions WHERE id=$1 AND grant_kind='member' AND released_version=0`, paid.ID).Scan(&paidPrice); err != nil || paidPrice != 125 {
 		t.Fatal("paid evidence changed", paidPrice, err)
 	}
 	if done, err := store.FinalizeAdminFirewallExemption(ctx, receipt.ID, now); err != nil || done {

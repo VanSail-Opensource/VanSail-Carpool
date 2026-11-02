@@ -11,7 +11,7 @@ import (
 func pricingForecastFixture(t *testing.T, s *Store, id string, now time.Time) pricing.Forecast {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'node','node',?,?,10000,'HEALTHY','{}',?)`, id, now.Format("2006-01-02"), pricingStamp(now), id); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'node','node',$2,$3,10000,'HEALTHY','{}',$4)`, id, now.Format("2006-01-02"), pricingStamp(now), id); err != nil {
 		t.Fatal(err)
 	}
 	f := pricing.Forecast{ID: id, EntityType: "node", EntityID: "node", Metric: "traffic_bytes", GeneratedAt: now, TargetFrom: now.Add(24 * time.Hour), TargetUntil: now.Add(48 * time.Hour), HorizonSeconds: 86400, P10: 40, P50: 60, P90: 80, Mean: 60, ModelVersion: "original-v1", Watermark: now, SnapshotHash: id, CoverageBPS: 10000, HealthState: "HEALTHY", Calibration: "UNVALIDATED"}
@@ -31,7 +31,7 @@ func TestPricingOriginalForecastLateActualAndHorizonIsolation(t *testing.T) {
 	if err := s.SavePricingForecast(ctx, changed); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.ExecContext(ctx, `UPDATE pricing_forecast_values SET predicted_p50=65 WHERE forecast_id=?`, pricingForecastID(f.ID)); err == nil {
+	if _, err := s.db.ExecContext(ctx, `UPDATE pricing_forecast_values SET predicted_p50=65 WHERE forecast_id=$1`, pricingForecastID(f.ID)); err == nil {
 		t.Fatal("original vintage was mutable")
 	}
 	if err := s.EvaluatePricingForecast(ctx, f.ID, "MISSING", nil, f.TargetUntil, f.TargetUntil); err != nil {
@@ -57,7 +57,7 @@ func TestPricingOriginalForecastLateActualAndHorizonIsolation(t *testing.T) {
 	other.Watermark = other.GeneratedAt
 	other.HorizonSeconds = 604800
 	other.SnapshotHash = "seven-input"
-	if _, err = s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES('seven-input','node','node',?,?,10000,'HEALTHY','{}','seven-input')`, other.GeneratedAt.Format("2006-01-02"), pricingStamp(other.Watermark)); err != nil {
+	if _, err = s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES('seven-input','node','node',$1,$2,10000,'HEALTHY','{}','seven-input')`, other.GeneratedAt.Format("2006-01-02"), pricingStamp(other.Watermark)); err != nil {
 		t.Fatal(err)
 	}
 	if err = s.SavePricingForecast(ctx, other); err != nil {

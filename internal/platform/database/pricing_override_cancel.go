@@ -10,23 +10,20 @@ func (s *Store) retryAttempt_CancelPricingIntervention(ctx context.Context, acto
 	if reason == "" || len(reason) > 1000 {
 		return ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	var serial int
-	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 /*pg:FOR UPDATE*/`).Scan(&serial); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&serial); err != nil {
 		return err
 	}
 	if err = pricingAdminTx(ctx, tx, actor); err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE pricing_admin_overrides SET status='CANCELLED' WHERE id=? AND status='ACTIVE'`, id)
+	result, err := tx.ExecContext(ctx, `UPDATE pricing_admin_overrides SET status='CANCELLED' WHERE id=$1 AND status='ACTIVE'`, id)
 	if err != nil {
 		return err
 	}

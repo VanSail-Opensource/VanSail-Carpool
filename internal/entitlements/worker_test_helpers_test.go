@@ -47,8 +47,8 @@ func (r *entitlementRepository) ClaimOutboxJob(context.Context, time.Time) (*mod
 	r.claimIndex++
 	return job, nil
 }
-func (r *entitlementRepository) CompleteOutboxJob(_ context.Context, jobID string, attempts int, jobErr error, _ time.Time) error {
-	r.completedJobID, r.completedAttempts, r.completedErr = jobID, attempts, jobErr
+func (r *entitlementRepository) CompleteOutboxClaim(_ context.Context, job model.OutboxJob, jobErr error, _ time.Time) error {
+	r.completedJobID, r.completedAttempts, r.completedErr = job.ID, job.Attempts, jobErr
 	return r.completeErr
 }
 func (r *entitlementRepository) PurchaseByID(context.Context, string) (model.Purchase, error) {

@@ -15,7 +15,7 @@ func TestDiskInventoryRebuildsOnlyOwnedCacheFiles(t *testing.T) {
 	if err := os.WriteFile(keep, []byte("keep"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	first, err := openInventoryDisk(context.Background(), dir, 32<<20)
+	first, err := openInventoryDisk(context.Background(), inventoryTestDatabase(t), dir, 32<<20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,13 +32,13 @@ func TestDiskInventoryRebuildsOnlyOwnedCacheFiles(t *testing.T) {
 	if err := first.db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	second, err := openInventoryDisk(context.Background(), dir, 32<<20)
+	second, err := openInventoryDisk(context.Background(), inventoryTestDatabase(t), dir, 32<<20)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer second.db.Close()
 	var count int
-	if err := second.db.QueryRow("SELECT count(*) FROM prefixes").Scan(&count); err != nil || count != 0 {
+	if err := second.db.QueryRowContext(context.Background(), "SELECT count(*) FROM prefixes").Scan(&count); err != nil || count != 0 {
 		t.Fatal("restart reused stale evidence", err)
 	}
 	if _, err := os.Stat(keep); err != nil {
@@ -76,7 +76,7 @@ func TestDiskInventoryStagesDomainsWithBoundedPages(t *testing.T) {
 
 func TestDiskInventoryUnavailableDoesNotFallBackToMemory(t *testing.T) {
 	s := NewEnhancedService(nil, nil, nil)
-	if err := s.ConfigureInventoryCache(context.Background(), t.TempDir(), 1); err == nil {
+	if err := s.ConfigureInventoryCache(context.Background(), inventoryTestDatabase(t), t.TempDir(), 1); err == nil {
 		t.Fatal("invalid quota accepted")
 	}
 	called := false
@@ -90,7 +90,7 @@ func TestDiskInventoryUnavailableDoesNotFallBackToMemory(t *testing.T) {
 func TestDiskCacheShutdownRemovesOnlyOwnedFiles(t *testing.T) {
 	dir := t.TempDir()
 	s := NewEnhancedService(nil, nil, nil)
-	if err := s.ConfigureInventoryCache(context.Background(), dir, 32<<20); err != nil {
+	if err := s.ConfigureInventoryCache(context.Background(), inventoryTestDatabase(t), dir, 32<<20); err != nil {
 		t.Fatal(err)
 	}
 	keep := filepath.Join(dir, "operator-note")
@@ -127,10 +127,6 @@ func TestDiskCacheReclaimsLargeRetiredSourceInOnePass(t *testing.T) {
 	index.release()
 	if err := s.disk.prune(ctx); err != nil {
 		t.Fatal(err)
-	}
-	var free int64
-	if err := s.disk.db.QueryRow("PRAGMA freelist_count").Scan(&free); err != nil || free != 0 {
-		t.Fatal("retired pages retained", free, err)
 	}
 	if after := s.disk.usage(); after >= before/2 {
 		t.Fatal("retired source kept disk allocation", before, after)

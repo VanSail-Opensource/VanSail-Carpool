@@ -53,7 +53,7 @@ func TestFirewallSweepSharesAudienceWithoutExpiringActiveMembers(t *testing.T) {
 	if err != nil || len(bans) != 0 {
 		t.Fatal("retirement waited for history-pruning interval", bans, err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_at=? WHERE released_version>0`, stamp(now.Add(-8*24*time.Hour))); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_at=$1 WHERE released_version>0`, stamp(now.Add(-8*24*time.Hour))); err != nil {
 		t.Fatal(err)
 	}
 	for _, step := range []struct {

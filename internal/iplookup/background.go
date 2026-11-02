@@ -68,7 +68,7 @@ func (w *Worker) StartBackground(ctx context.Context, queue *upstreamqueue.Queue
 	}()
 }
 
-// WaitBackground joins all database-dependent work before SQLite closes.
+// WaitBackground joins all database-dependent work before PostgreSQL closes.
 func (w *Worker) WaitBackground() {
 	if w.background != nil {
 		<-w.background.done

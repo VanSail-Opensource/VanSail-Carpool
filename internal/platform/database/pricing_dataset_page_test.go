@@ -49,7 +49,7 @@ func TestPersonalDecisionCursorKeepsOpaqueVersions(t *testing.T) {
 	user := createTestUser(t, s, 49553)
 	now := time.Now().UTC()
 	for _, version := range []string{"hash-a", "hash-b"} {
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_personal_decisions(version,user_id,product_type,product_id,context_key,policy_version,public_minor,personal_minor,net_minor,status,reason,model_version,calibration,generated_at,valid_until,coupon_json) VALUES(?,?,'combo','c','scope',1,100,100,100,'UNCHANGED','FIXED_PRICE','fixed-v1','NOT_APPLICABLE',?,?,'[]')`, version, user.ID, pricingStamp(now), pricingStamp(now.Add(time.Hour))); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_personal_decisions(version,user_id,product_type,product_id,context_key,policy_version,public_minor,personal_minor,net_minor,status,reason,model_version,calibration,generated_at,valid_until,coupon_json) VALUES($1,$2,'combo','c','scope',1,100,100,100,'UNCHANGED','FIXED_PRICE','fixed-v1','NOT_APPLICABLE',$3,$4,'[]')`, version, user.ID, pricingStamp(now), pricingStamp(now.Add(time.Hour))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -68,7 +68,7 @@ func TestPricingTypedProductScopeDoesNotMixEqualIdentifiers(t *testing.T) {
 	ctx := context.Background()
 	now := pricingStamp(time.Now().UTC())
 	for _, kind := range []string{"combo", "addon"} {
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_decisions(id,product_type,product_id,generated_at,policy_version,model_version,reference_minor,proposed_minor,selected_minor,state,trace_json) VALUES(?,?,?, ?,1,'fixture',100,100,100,'SHADOW','{}')`, kind, kind, "shared", now); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_decisions(id,product_type,product_id,generated_at,policy_version,model_version,reference_minor,proposed_minor,selected_minor,state,trace_json) VALUES($1,$2,$3, $4,1,'fixture',100,100,100,'SHADOW','{}')`, kind, kind, "shared", now); err != nil {
 			t.Fatal(err)
 		}
 	}

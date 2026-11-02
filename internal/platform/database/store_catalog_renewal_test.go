@@ -95,13 +95,13 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 		t.Fatalf("EnqueueDueEntitlementTransitions(retry): %v", err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='purchase_expire' AND payload=?`, `{"purchaseId":"`+first.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='purchase_expire' AND payload=$1`, `{"purchaseId":"`+first.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count rollover jobs: %v", err)
 	}
 	if count != 1 {
 		t.Fatalf("rollover job count = %d, want 1", count)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=$1`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count renewal activation jobs: %v", err)
 	}
 	if count != 0 {
@@ -110,7 +110,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 	if err := store.ExpireDuePurchase(ctx, first.ID, first.ValidUntil); err != nil {
 		t.Fatalf("FinalizeRollover(): %v", err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=$1`, `{"purchaseId":"`+renewal.ID+`"}`).Scan(&count); err != nil {
 		t.Fatalf("count renewal activation jobs after rollover: %v", err)
 	}
 	if count != 1 {
@@ -120,7 +120,7 @@ func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T
 		t.Fatalf("MarkPurchaseSyncResult(renewal): %v", err)
 	}
 	var notificationKind string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind FROM user_notification_events WHERE event_key=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind FROM user_notification_events WHERE event_key=$1`,
 		"activation:"+renewal.ID).Scan(&notificationKind); err != nil {
 		t.Fatal(err)
 	}

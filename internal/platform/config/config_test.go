@@ -71,5 +71,8 @@ func setValidEnvironment(t *testing.T) {
 	t.Setenv("PUBLIC_BASE_URL", "https://carpool.example")
 	t.Setenv("CONFIG_MASTER_KEY", base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	t.Setenv("TZ", "UTC")
+	t.Setenv("DB_DRIVER", "postgres")
+	t.Setenv("DATABASE_URL", "postgres://app:secret@db/vansail")
+	t.Setenv("DATABASE_URL_FILE", "")
 	t.Setenv("ALLOW_INSECURE_HTTP", "")
 }

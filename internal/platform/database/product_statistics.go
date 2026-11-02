@@ -3,8 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"os"
+
 	"strconv"
 	"time"
 
@@ -79,9 +78,9 @@ func (s *Store) spendStatistics(ctx context.Context) (int64, int64, int64, error
 func (s *Store) subscriptionStateShares(ctx context.Context, now time.Time) ([]model.NamedShare, error) {
 	rows, err := s.db.QueryContext(ctx, `WITH classified AS (
 		SELECT u.id,CASE
-		WHEN NOT EXISTS (SELECT 1 FROM purchases p WHERE p.user_id=u.id AND p.status IN ('active','activating') AND p.valid_from<=? AND p.valid_until>?) THEN 'no_active'
+		WHEN NOT EXISTS (SELECT 1 FROM purchases p WHERE p.user_id=u.id AND p.status IN ('active','activating') AND p.valid_from<=$1 AND p.valid_until>$2) THEN 'no_active'
 		WHEN EXISTS (SELECT 1 FROM purchases p WHERE p.user_id=u.id AND p.status='queued') THEN 'queued'
-		WHEN EXISTS (SELECT 1 FROM purchases p WHERE p.user_id=u.id AND p.status IN ('active','activating') AND p.valid_from<=? AND p.valid_until>? AND p.auto_renew_enabled=1) THEN 'auto_renew'
+		WHEN EXISTS (SELECT 1 FROM purchases p WHERE p.user_id=u.id AND p.status IN ('active','activating') AND p.valid_from<=$3 AND p.valid_until>$4 AND p.auto_renew_enabled=1) THEN 'auto_renew'
 		ELSE 'neither' END state FROM users u WHERE u.role='user')
 		SELECT state,COUNT(*) FROM classified GROUP BY state ORDER BY state`, stamp(now), stamp(now), stamp(now), stamp(now))
 	if err != nil {
@@ -115,36 +114,7 @@ func integerQuery(ctx context.Context, db *sql.DB, query string, args ...any) (i
 }
 
 func databaseDiskBytes(ctx context.Context, db *sql.DB) (int64, error) {
-	if IsPostgres(db) {
-		return integerQuery(ctx, db, `SELECT pg_database_size(current_database())`)
-	}
-	rows, err := db.QueryContext(ctx, `PRAGMA database_list`)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { _ = rows.Close() }()
-	var path string
-	for rows.Next() {
-		var sequence int
-		var name, candidate string
-		if err := rows.Scan(&sequence, &name, &candidate); err != nil {
-			return 0, err
-		}
-		if name == "main" {
-			path = candidate
-		}
-	}
-	if path == "" {
-		return 0, fmt.Errorf("main database path is unavailable")
-	}
-	var total int64
-	for _, candidate := range []string{path, path + "-wal"} {
-		info, statErr := os.Stat(candidate)
-		if statErr == nil {
-			total += info.Size()
-		} else if !os.IsNotExist(statErr) {
-			return 0, statErr
-		}
-	}
-	return total, nil
+
+	return integerQuery(ctx, db, `SELECT pg_database_size(current_database())`)
+
 }

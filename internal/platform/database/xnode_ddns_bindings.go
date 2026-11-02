@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Store) XNodeDDNSBindings(ctx context.Context, node string) (map[string]xnode.DDNSHostBinding, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT j.job_id,j.configured_by,h.family,h.host_id FROM xnode_ddns_jobs j LEFT JOIN xnode_ddns_hosts h ON h.node_id=j.node_id AND h.job_id=j.job_id WHERE j.node_id=? ORDER BY j.job_id,h.family,h.host_id`, node)
+	rows, err := s.db.QueryContext(ctx, `SELECT j.job_id,j.configured_by,h.family,h.host_id FROM xnode_ddns_jobs j LEFT JOIN xnode_ddns_hosts h ON h.node_id=j.node_id AND h.job_id=j.job_id WHERE j.node_id=$1 ORDER BY j.job_id,h.family,h.host_id`, node)
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +37,7 @@ func (s *Store) XNodeDDNSBindings(ctx context.Context, node string) (map[string]
 // Discovery settings and host references commit together. Host ownership and
 // single-job binding are also authoritative FK/unique constraints.
 func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.Node, bindings map[string]xnode.DDNSHostBinding) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 	if _, err = tx.ExecContext(ctx, saveXNodeNodeSQL, xnodeNodeArgs(node)...); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_ddns_jobs WHERE node_id=?`, node.ID); err != nil {
+	if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_ddns_jobs WHERE node_id=$1`, node.ID); err != nil {
 		return err
 	}
 	keys := make([]string, 0, len(bindings))
@@ -59,7 +56,7 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 	slices.Sort(keys)
 	for _, job := range keys {
 		binding := bindings[job]
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_ddns_jobs(node_id,job_id,configured_by) VALUES(?,?,?)`, node.ID, job, binding.ConfiguredBy); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_ddns_jobs(node_id,job_id,configured_by) VALUES($1,$2,$3)`, node.ID, job, binding.ConfiguredBy); err != nil {
 			return err
 		}
 		for _, family := range []struct {
@@ -67,7 +64,7 @@ func (s *Store) retryAttempt_SaveXNodeNodeDDNS(ctx context.Context, node xnode.N
 			hosts []string
 		}{{"ipv4", binding.IPv4HostIDs}, {"ipv6", binding.IPv6HostIDs}} {
 			for _, host := range family.hosts {
-				if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_ddns_hosts(node_id,job_id,family,host_id) VALUES(?,?,?,?)`, node.ID, job, family.name, host); err != nil {
+				if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_ddns_hosts(node_id,job_id,family,host_id) VALUES($1,$2,$3,$4)`, node.ID, job, family.name, host); err != nil {
 					return err
 				}
 			}

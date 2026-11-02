@@ -8,11 +8,11 @@ import (
 func (s *Store) loadRenewalBatch(ctx context.Context, batchID string) (model.RenewalBatch, error) {
 	var batch model.RenewalBatch
 	var total int64
-	if err := s.db.QueryRowContext(ctx, `SELECT id,source_purchase_id,term_count,charged_txb_minor FROM renewal_batches WHERE id=?`, batchID).Scan(&batch.ID, &batch.PurchaseID, &batch.TermCount, &total); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT id,source_purchase_id,term_count,charged_txb_minor FROM renewal_batches WHERE id=$1`, batchID).Scan(&batch.ID, &batch.PurchaseID, &batch.TermCount, &total); err != nil {
 		return batch, err
 	}
 	batch.TotalPrice = model.TXBMoney(total)
-	rows, err := s.db.QueryContext(ctx, `SELECT id FROM purchases WHERE renewal_batch_id=? ORDER BY renewal_index`, batchID)
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM purchases WHERE renewal_batch_id=$1 ORDER BY renewal_index`, batchID)
 	if err != nil {
 		return batch, err
 	}

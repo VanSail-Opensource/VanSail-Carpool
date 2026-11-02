@@ -85,7 +85,7 @@ func TestBotStatusOrderingAndAdministratorExclusion(t *testing.T) {
 		t.Fatal(got, err)
 	}
 	admin := createTestUser(t, s, 49013)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.HandleTelegramBotStatus(ctx, admin.TelegramID, 20, 300, true, false, now); err != nil {
@@ -123,7 +123,7 @@ func TestPurgedAccountPaymentGoesToReviewAfterFreshRegistration(t *testing.T) {
 		t.Fatal("old payment funded fresh account", balance, err)
 	}
 	var reviews int
-	if err := s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='payment.purged_account_review' AND target_id=?`, order.ID).Scan(&reviews); err != nil || reviews != 1 {
+	if err := s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE action='payment.purged_account_review' AND target_id=$1`, order.ID).Scan(&reviews); err != nil || reviews != 1 {
 		t.Fatal(reviews, err)
 	}
 }

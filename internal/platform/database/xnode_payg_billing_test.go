@@ -92,7 +92,7 @@ func TestPAYGAutomaticGBReconnectPriceAndDebt(t *testing.T) {
 	}
 	var charges int
 	var total int64
-	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*),SUM(blocks*unit_price_minor) FROM xnode_payg_charges WHERE proxy_user_id=?`, a.ProxyUserID).Scan(&charges, &total); err != nil || charges != 3 || total != 500 {
+	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*),SUM(blocks*unit_price_minor) FROM xnode_payg_charges WHERE proxy_user_id=$1`, a.ProxyUserID).Scan(&charges, &total); err != nil || charges != 3 || total != 500 {
 		t.Fatal(charges, total, err)
 	}
 	owner, err := s.XNodeIdentity(ctx, a.ProxyUserID)

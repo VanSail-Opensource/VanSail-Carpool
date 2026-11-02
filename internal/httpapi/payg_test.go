@@ -7,14 +7,15 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"net/http/httptest"
-	"path/filepath"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"testing"
 	"time"
 )
 
 func TestPAYGReadIgnoresForeignOwnerQuery(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "payg.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +29,7 @@ func TestPAYGReadIgnoresForeignOwnerQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id IN (?,?)`, first.ID, second.ID); err != nil {
+	if _, err = db.ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id IN ($1,$2)`, first.ID, second.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.SaveSquadProduct(ctx, database.SquadProductInput{GroupID: "owner-group", UpstreamPresent: true, BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
@@ -39,7 +40,7 @@ func TestPAYGReadIgnoresForeignOwnerQuery(t *testing.T) {
 	}
 	at := time.Now().UTC().Truncate(time.Minute).Add(-time.Minute).Format(time.RFC3339Nano)
 	for index, user := range []model.User{first, second} {
-		if _, err = db.ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes,spent_minor) VALUES(?,?,?,?,?)`, user.ID, "owner-group", at, (index+1)*101, (index+1)*3); err != nil {
+		if _, err = db.ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes,spent_minor) VALUES($1,$2,$3,$4,$5)`, user.ID, "owner-group", at, (index+1)*101, (index+1)*3); err != nil {
 			t.Fatal(err)
 		}
 	}

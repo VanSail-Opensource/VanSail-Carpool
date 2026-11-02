@@ -49,7 +49,7 @@ func (s *Service) completedBackupPath(ctx context.Context, backupID string) (str
 	}
 	var path string
 	var size int64
-	err := s.db.QueryRowContext(ctx, `SELECT path,size_bytes FROM backup_runs WHERE id=? AND status='complete'`, backupID).Scan(&path, &size)
+	err := s.db.QueryRowContext(ctx, `SELECT path,size_bytes FROM backup_runs WHERE id=$1 AND status='complete'`, backupID).Scan(&path, &size)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", 0, ErrBackupNotFound
 	}

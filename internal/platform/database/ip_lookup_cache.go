@@ -12,7 +12,7 @@ import (
 
 // ipCachedReportTx prefers evidence for the address itself, then a completed IPv4 /24.
 func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (*iplookup.Report, string, error) {
-	id, err := newestIPCacheTx(ctx, tx, "ip=?", ip)
+	id, err := newestIPCacheTx(ctx, tx, "ip=$1", ip)
 	match := "exact"
 	if err != nil {
 		return nil, "none", err
@@ -25,7 +25,7 @@ func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (
 		prefix := ip[:strings.LastIndexByte(ip, '.')+1]
 		// Canonical IPv4 text in [prefix, prefix-with-slash) has this exact /24.
 		upper := strings.TrimSuffix(prefix, ".") + "/"
-		id, err = newestIPCacheTx(ctx, tx, "ip>=? AND ip<?", prefix, upper)
+		id, err = newestIPCacheTx(ctx, tx, "ip>=$1 AND ip<$2", prefix, upper)
 		match = "subnet"
 	}
 	if err != nil {
@@ -35,7 +35,7 @@ func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (
 		return nil, "none", nil
 	}
 	var raw string
-	if err := tx.QueryRowContext(ctx, `SELECT report_json FROM ip_lookup_reports WHERE id=?`, id).Scan(&raw); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT report_json FROM ip_lookup_reports WHERE id=$1`, id).Scan(&raw); err != nil {
 		return nil, "none", err
 	}
 	report, err := iplookup.DecodeReport([]byte(raw))
@@ -50,15 +50,15 @@ func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (
 	return &public, match, nil
 }
 
-// newestIPCacheTx parses full nanoseconds inside SQLite's newest coarse clock bucket.
-// Only metadata is streamed; rowid breaks ties between exactly equal completion times.
+// newestIPCacheTx compares original nanoseconds within a PostgreSQL timestamp bucket.
+// Only metadata is streamed; record_order breaks equal-time ties.
 func newestIPCacheTx(ctx context.Context, tx *sql.Tx, predicate string, args ...any) (string, error) {
 	return newestIPCacheTableTx(ctx, tx, "ip_lookup_reports", predicate, args...)
 }
 
 // Callers select a fixed internal table; predicates and tables never come from HTTP.
 func newestIPCacheTableTx(ctx context.Context, tx *sql.Tx, table, predicate string, args ...any) (string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT id,completed_at,rowid,julianday(completed_at) FROM `+table+` WHERE `+predicate+` AND status IN ('succeeded','partial') ORDER BY julianday(completed_at) DESC,rowid DESC`, args...)
+	rows, err := tx.QueryContext(ctx, `SELECT id,completed_at,record_order,vansail_timestamp(completed_at) FROM `+table+` WHERE `+predicate+` AND status IN ('succeeded','partial') ORDER BY vansail_timestamp(completed_at) DESC,record_order DESC`, args...)
 	if err != nil {
 		return "", err
 	}
@@ -66,12 +66,12 @@ func newestIPCacheTableTx(ctx context.Context, tx *sql.Tx, table, predicate stri
 	var bestID string
 	var bestTime time.Time
 	var bestRowID int64
-	var bestBucket sql.NullFloat64
+	var bestBucket sql.NullTime
 	for rows.Next() {
 		var id string
 		var timestamp sql.NullString
 		var rowID int64
-		var bucket sql.NullFloat64
+		var bucket sql.NullTime
 		if err := rows.Scan(&id, &timestamp, &rowID, &bucket); err != nil {
 			return "", err
 		}

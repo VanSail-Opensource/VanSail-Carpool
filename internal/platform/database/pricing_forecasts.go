@@ -36,7 +36,7 @@ func validatePricingForecast(f pricing.Forecast) error {
 func (s *Store) EvaluatePricingForecast(ctx context.Context, id, status string, actual *float64, observed, now time.Time) error {
 	id = pricingForecastID(id)
 	var until string
-	if err := s.db.QueryRowContext(ctx, `SELECT target_until FROM pricing_forecast_vintages WHERE forecast_id=?`, id).Scan(&until); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT target_until FROM pricing_forecast_vintages WHERE forecast_id=$1`, id).Scan(&until); err != nil {
 		return err
 	}
 	end, err := parseStamp(until)
@@ -53,7 +53,7 @@ func (s *Store) EvaluatePricingForecast(ctx context.Context, id, status string, 
 		return ErrConflict
 	}
 	code := map[string]int{"COMPLETE": 0, "MISSING": 1, "CENSORED": 2, "INCOMPLETE": 3}[status]
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_forecast_actuals(forecast_id,actual,status_code,observed_until_ns,evaluated_at_ns) VALUES(?,?,?,?,?) ON CONFLICT(forecast_id) DO UPDATE SET actual=excluded.actual,status_code=excluded.status_code,observed_until_ns=excluded.observed_until_ns,evaluated_at_ns=excluded.evaluated_at_ns WHERE pricing_forecast_actuals.observed_until_ns<=excluded.observed_until_ns AND pricing_forecast_actuals.evaluated_at_ns<=excluded.evaluated_at_ns`, id, actual, code, observed.UnixNano(), now.UnixNano())
+	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_forecast_actuals(forecast_id,actual,status_code,observed_until_ns,evaluated_at_ns) VALUES($1,$2,$3,$4,$5) ON CONFLICT(forecast_id) DO UPDATE SET actual=excluded.actual,status_code=excluded.status_code,observed_until_ns=excluded.observed_until_ns,evaluated_at_ns=excluded.evaluated_at_ns WHERE pricing_forecast_actuals.observed_until_ns<=excluded.observed_until_ns AND pricing_forecast_actuals.evaluated_at_ns<=excluded.evaluated_at_ns`, id, actual, code, observed.UnixNano(), now.UnixNano())
 	return err
 }
 
@@ -65,7 +65,7 @@ func (s *Store) PricingFeatureBatch(ctx context.Context, now time.Time, cursor s
 		return cursor, slotErr
 	}
 	defer release()
-	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_nodes n WHERE enabled=1 AND id>? AND NOT EXISTS(SELECT 1 FROM pricing_features f WHERE f.entity_type='node' AND f.entity_id=n.id AND f.day=?) ORDER BY id LIMIT 16`, cursor, now.UTC().Format("2006-01-02"))
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_nodes n WHERE enabled=1 AND id>$1 AND NOT EXISTS(SELECT 1 FROM pricing_features f WHERE f.entity_type='node' AND f.entity_id=n.id AND f.day=$2) ORDER BY id LIMIT 16`, cursor, now.UTC().Format("2006-01-02"))
 	if err != nil {
 		return cursor, err
 	}
@@ -100,12 +100,12 @@ func (s *Store) PricingFeatureBatch(ctx context.Context, now time.Time, cursor s
 func (s *Store) pricingNodeForecast(ctx context.Context, node string, now time.Time) error {
 	day := now.UTC().Truncate(24 * time.Hour)
 	var exists int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='node' AND entity_id=? AND day=?)`, node, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='node' AND entity_id=$1 AND day=$2))::bigint", node, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
 	// Existing raw accounting is the only traffic source. Missing dates are never
 	// padded with invented zero usage, including during node outages.
-	rows, err := s.db.QueryContext(ctx, `SELECT date,SUM(upload_bytes+download_bytes) FROM xnode_daily_usage WHERE node_id=? AND date>=? AND date<? GROUP BY date ORDER BY date`, node, day.AddDate(0, 0, -30).Format("2006-01-02"), day.Format("2006-01-02"))
+	rows, err := s.db.QueryContext(ctx, `SELECT date,SUM(upload_bytes+download_bytes) FROM xnode_daily_usage WHERE node_id=$1 AND date>=$2 AND date<$3 GROUP BY date ORDER BY date`, node, day.AddDate(0, 0, -30).Format("2006-01-02"), day.Format("2006-01-02"))
 	if err != nil {
 		return err
 	}
@@ -171,12 +171,12 @@ func (s *Store) pricingNodeForecast(ctx context.Context, node string, now time.T
 // RegisterPricingModels saves reproducible algorithm definitions once.
 func (s *Store) RegisterPricingModels(ctx context.Context, now time.Time) error {
 	for _, m := range []struct{ id, kind, definition string }{{"empirical-user-total-v1", "traffic", `{"lookbackDays":30,"quantiles":[0.1,0.5,0.9],"missing":"exclude days lacking any observed node","unit":"bytes/day","horizon":"UTC complete accounting days 1..5","calibration":"original future evaluations required"}`}, {"purchase-prior-v1", "purchase", `{"alpha":1,"beta":1,"probability":0.5}`}, {"empirical-receipts-v1", "revenue", `{"quantiles":[0.1,0.5,0.9],"lookbackDays":30,"units":"TXB minor units/day before refunds"}`}} {
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES(?,?,?,'PRIOR_ONLY',?,'{}',?,'{}') ON CONFLICT(id) DO NOTHING`, m.id, m.kind, pricingStamp(now), m.definition, pricingStamp(now)); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES($1,$2,$3,'PRIOR_ONLY',$4,'{}',$5,'{}') ON CONFLICT(id) DO NOTHING`, m.id, m.kind, pricingStamp(now), m.definition, pricingStamp(now)); err != nil {
 			return err
 		}
 	}
 	for _, m := range []struct{ id, kind, parameters, features string }{{"empirical-daily-v1", "traffic", `{"quantiles":[0.1,0.5,0.9],"lookbackDays":30,"missing":"excluded","healthInflation":1.5}`, `{"source":"xnode_daily_usage","unit":"bytes/day","timezone":"UTC"}`}, {"renewal-prior-v1", "renewal", `{"alpha":1,"beta":1,"elasticityValidated":false}`, `{"source":"system renewal basis snapshots","unit":"probability"}`}} {
-		_, err := s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES(?,?,?,'PRIOR_ONLY',?,?,?,'{}') ON CONFLICT(id) DO NOTHING`, m.id, m.kind, pricingStamp(now), m.parameters, m.features, pricingStamp(now))
+		_, err := s.db.ExecContext(ctx, `INSERT INTO pricing_model_versions(id,kind,created_at,calibration_status,parameters_json,feature_definition_json,watermark,diagnostics_json) VALUES($1,$2,$3,'PRIOR_ONLY',$4,$5,$6,'{}') ON CONFLICT(id) DO NOTHING`, m.id, m.kind, pricingStamp(now), m.parameters, m.features, pricingStamp(now))
 		if err != nil {
 			return err
 		}

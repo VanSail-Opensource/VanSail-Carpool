@@ -17,7 +17,7 @@ func (s *Store) ActiveMemberUsageForStatistics(ctx context.Context, now time.Tim
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id JOIN users member ON member.id=purchases.user_id
 		JOIN xnode_identities native ON native.user_id=member.id
 		WHERE member.role='user'
-		AND purchases.status IN ('active','activating') AND purchases.valid_from<=? AND purchases.valid_until>?
+		AND purchases.status IN ('active','activating') AND purchases.valid_from<=$1 AND purchases.valid_until>$2
 		ORDER BY purchases.user_id,purchases.valid_from DESC,purchases.created_at DESC`, stamp(now), stamp(now))
 	if err != nil {
 		return nil, fmt.Errorf("list active member purchases for statistics: %w", err)

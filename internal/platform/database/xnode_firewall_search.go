@@ -24,7 +24,7 @@ func (s *Store) SearchFirewallBans(ctx context.Context, query netip.Prefix, curs
 			return page, xnode.ErrInvalid
 		}
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 AND (?='' OR detected_at<? OR (detected_at=? AND generation<?)) ORDER BY detected_at DESC,generation DESC`, cursor, after[0], after[0], after[1])
+	rows, err := s.db.QueryContext(ctx, `SELECT prefix,generation,ip,rule,detected_count,detected_at,until_at,refresh_seconds,participants,expired FROM xnode_firewall_bans WHERE released_version=0 AND ($1='' OR detected_at<$2 OR (detected_at=$3 AND generation<$4)) ORDER BY detected_at DESC,generation DESC`, cursor, after[0], after[0], after[1])
 	if err != nil {
 		return page, err
 	}

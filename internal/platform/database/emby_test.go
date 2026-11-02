@@ -59,7 +59,7 @@ func TestEmbySetupDebitRefundAndRetryAreAtomic(t *testing.T) {
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE kind='emby_setup_refund'`).Scan(&refundCount); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.accountId')=?`, domain.ProvisionOutboxKind, account.ID).Scan(&outboxCount); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{accountId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{accountId}' END)=$2`, domain.ProvisionOutboxKind, account.ID).Scan(&outboxCount); err != nil {
 		t.Fatal(err)
 	}
 	if debitCount != 2 || refundCount != 1 || outboxCount != 2 {
@@ -102,7 +102,7 @@ func TestEmbyProvisioningTransitionsEraseSecretOnlyAfterSuccess(t *testing.T) {
 	if err != nil || requeued.Status != domain.StatusQueued || requeued.LastError != "temporary outage" || requeued.PasswordCiphertext != "sealed" || !requeued.Retryable {
 		t.Fatalf("requeued record = (%+v, %v)", requeued, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed' WHERE kind=? AND json_extract(payload,'$.accountId')=?`, domain.ProvisionOutboxKind, account.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status='failed' WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{accountId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{accountId}' END)=$2`, domain.ProvisionOutboxKind, account.ID); err != nil {
 		t.Fatal(err)
 	}
 	if retried, err := store.RetryEmbyProvisioning(ctx, account.ID, now.Add(3*time.Second)); err != nil || !retried.Retryable {

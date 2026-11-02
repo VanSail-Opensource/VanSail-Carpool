@@ -11,7 +11,7 @@ import (
 )
 
 type leaseRepository interface {
-	RenewOutboxJob(context.Context, string, int, time.Time) (bool, error)
+	RenewOutboxClaim(context.Context, model.OutboxJob, time.Time) (bool, error)
 }
 
 type executor struct {
@@ -83,7 +83,7 @@ func (e *executor) drain(ctx context.Context, limit int, claim func(context.Cont
 			e.mu.Unlock()
 			return nil
 		}
-		// Serialize reservation with shutdown; claiming is a short SQLite operation.
+		// Serialize reservation with shutdown; claiming is a short PostgreSQL operation.
 		job, err := claim(ctx, e.worker.now().UTC())
 		if err != nil || job == nil {
 			<-slots

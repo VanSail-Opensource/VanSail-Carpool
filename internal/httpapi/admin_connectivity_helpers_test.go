@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
+
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +13,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/upstreamqueue"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -59,7 +60,7 @@ func (probe *connectivityHTTPProbe) Check(ctx context.Context, _ connectivity.Ta
 
 func connectivityHTTPFixture(t *testing.T) (http.Handler, *database.Store, *connectivityHTTPProbe, string) {
 	t.Helper()
-	db, err := database.Open(context.Background(), filepath.Join(t.TempDir(), "connectivity.db"))
+	db, err := testdatabase.Open(context.Background(), t)
 	if err != nil {
 		t.Fatal(err)
 	}

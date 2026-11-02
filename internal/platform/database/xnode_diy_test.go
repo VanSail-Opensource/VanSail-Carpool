@@ -26,7 +26,7 @@ func TestDIYAtomicRevisionsReplayAndUnchangedRouting(t *testing.T) {
 		t.Fatal("encrypted document", saved, err)
 	}
 	var routeCount int
-	if err = store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_routing_plans WHERE proxy_user_id=?`, identity.ProxyUserID).Scan(&routeCount); err != nil || routeCount != 0 {
+	if err = store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_routing_plans WHERE proxy_user_id=$1`, identity.ProxyUserID).Scan(&routeCount); err != nil || routeCount != 0 {
 		t.Fatal("settings-only save redeployed routes", err)
 	}
 	if replay, found, routed, err := store.ReplayXNodeDIY(ctx, identity.UserID, input.IdempotencyKey, input.RequestFingerprint); err != nil || !found || routed || replay.ID != receipt.ID {

@@ -11,7 +11,7 @@ import (
 func explainStockPlan(t *testing.T, s *Store, purchase string) {
 	t.Helper()
 	ctx := context.Background()
-	rows, err := s.db.QueryContext(ctx, `SELECT * FROM purchases WHERE id=?`, purchase)
+	rows, err := s.db.QueryContext(ctx, `SELECT * FROM purchases WHERE id=$1`, purchase)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func explainStockPlan(t *testing.T, s *Store, purchase string) {
 		}
 		expressions = append(expressions, expression)
 	}
-	query := `INSERT INTO purchases(` + strings.Join(names, ",") + `) SELECT ` + strings.Join(expressions, ",") + ` FROM purchases p CROSS JOIN generate_series(1,2000) n WHERE p.id=?`
+	query := `INSERT INTO purchases(` + strings.Join(names, ",") + `) SELECT ` + strings.Join(expressions, ",") + ` FROM purchases p CROSS JOIN generate_series(1,2000) n WHERE p.id=$1`
 	if _, err := s.db.ExecContext(ctx, query, purchase); err != nil {
 		t.Fatal(err)
 	}

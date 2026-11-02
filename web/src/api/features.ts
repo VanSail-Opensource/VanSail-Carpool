@@ -3,7 +3,7 @@ import type { OperationReceipt } from './types'
 import type { ActivityOverview, ActivityResult, ActivitySettings, ActivitySettingsWrite, BetGame, LuckyDrawAdmin, LuckyDrawWrite, LuckyDrawForecast } from './contracts/activity'
 import type { CouponDefinition, CouponGrant, CouponRedemption } from './contracts/community'
 import type { EmbyAccount, EmbyOverview } from './contracts/commerce'
-import type { AdminStatistics, DatabaseMutationInput, DatabaseMutationResult, DatabaseMutationReview, DatabaseQueryInput, DatabaseRowsPage, DatabaseTable, OnboardingBundle, OnboardingLocalizedContent, PublishedOnboarding, RestoreOperation, StatisticsQuery } from './contracts/admin'
+import type { AdminStatistics, DatabaseMutationInput, DatabaseMutationResult, DatabaseMutationReview, DatabaseQueryInput, DatabaseRowsPage, DatabaseTable, OnboardingBundle, OnboardingLocalizedContent, PublishedOnboarding, StatisticsQuery } from './contracts/admin'
 import type { AdminAffiliateView, AffiliateOverview, AffiliateReferralPage, AffiliateTier } from './contracts/affiliates'
 
 export type * from './contracts/activity'
@@ -97,11 +97,7 @@ export const featuresApi = {
   downloadBackup: async (id: string) => {
     return requestBlob(`/api/v1/admin/backups/${encodeURIComponent(id)}/download`)
   },
-  restoreBackup: (id: string, reason: string, confirmation: string, idempotencyKey: string) => featureRequest<RestoreOperation>(`/api/v1/admin/backups/${encodeURIComponent(id)}/restore`, {
-    method: 'POST', body: { reason, confirmation }, headers: { 'Idempotency-Key': idempotencyKey },
-  }),
   deleteBackup: (id: string) => featureRequest<void>(`/api/v1/admin/backups/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  getRestoreStatus: (id: string) => featureRequest<RestoreOperation>(`/api/v1/admin/restores/${encodeURIComponent(id)}`),
   getDatabaseTables: () => featureRequest<{ items: DatabaseTable[] }>('/api/v1/admin/database/tables'),
   getDatabaseRows: (table: string, cursor?: string) => featureRequest<DatabaseRowsPage>(
     `/api/v1/admin/database/tables/${encodeURIComponent(table)}/rows`, { query: { cursor, limit: 50 } },

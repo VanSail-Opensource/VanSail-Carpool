@@ -21,7 +21,7 @@ func (s *Store) retryAttempt_pricingUnallocatedOverhead(ctx context.Context, now
 		return "", err
 	}
 	day := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
-	rows, err := tx.QueryContext(ctx, `SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros, (SELECT f.predicted_p90 FROM pricing_forecast_vintages f WHERE f.entity_type='node' AND f.entity_id=c.node_id AND f.metric='traffic_bytes' AND f.model_version='empirical-daily-v1' AND f.horizon_seconds=86400 AND f.target_from=? AND f.target_until=? AND f.generated_at<=? AND f.generated_at>=? ORDER BY f.generated_at DESC LIMIT 1) FROM pricing_cost_metadata c WHERE c.effective_at<=?`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now))
+	rows, err := tx.QueryContext(ctx, `SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros, (SELECT f.predicted_p90 FROM pricing_forecast_vintages f WHERE f.entity_type='node' AND f.entity_id=c.node_id AND f.metric='traffic_bytes' AND f.model_version='empirical-daily-v1' AND f.horizon_seconds=86400 AND f.target_from=$1 AND f.target_until=$2 AND f.generated_at<=$3 AND f.generated_at>=$4 ORDER BY f.generated_at DESC LIMIT 1) FROM pricing_cost_metadata c WHERE c.effective_at<=$5`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now))
 	if err != nil {
 		return "", err
 	}

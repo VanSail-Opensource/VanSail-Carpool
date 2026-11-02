@@ -14,16 +14,13 @@ func (s *Store) retryAttempt_EnqueueBoostAppreciation(ctx context.Context, item 
 	if item.ChatID >= 0 || strings.TrimSpace(item.BoostID) == "" {
 		return false, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO telegram_boost_receipts(chat_id,boost_id,created_at) VALUES(?,?,?)`, item.ChatID, item.BoostID, stamp(now))
+	result, err := tx.ExecContext(ctx, `INSERT   INTO telegram_boost_receipts(chat_id,boost_id,created_at) VALUES($1,$2,$3) ON CONFLICT DO NOTHING `, item.ChatID, item.BoostID, stamp(now))
 	if err != nil {
 		return false, err
 	}

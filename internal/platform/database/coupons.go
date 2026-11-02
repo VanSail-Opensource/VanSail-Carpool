@@ -41,13 +41,13 @@ func (s *Store) SaveCoupon(ctx context.Context, input coupons.CouponInput, now t
 		}
 		_, err = s.db.ExecContext(ctx, `INSERT INTO coupon_definitions(id,code,name,kind,discount_mode,value_minor_or_bps,percent_cap_minor,
 			eligible_combo_ids,eligible_squad_ids,expires_at,global_use_limit,per_user_use_limit,active,created_at,updated_at)
-			VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, normalized.ID, normalized.Code, normalized.Name, normalized.Kind, normalized.DiscountMode,
+			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`, normalized.ID, normalized.Code, normalized.Name, normalized.Kind, normalized.DiscountMode,
 			normalized.ValueMinorOrBPS, nullableInt64(normalized.PercentCapMinor), string(comboJSON), string(squadJSON), nullableStamp(normalized.ExpiresAt),
 			nullableInt64(normalized.GlobalUseLimit), nullableInt64(normalized.PerUserUseLimit), boolInt(normalized.Active), stamp(now), stamp(now))
 	} else {
 		var result sql.Result
-		result, err = s.db.ExecContext(ctx, `UPDATE coupon_definitions SET code=?,name=?,kind=?,discount_mode=?,value_minor_or_bps=?,percent_cap_minor=?,
-			eligible_combo_ids=?,eligible_squad_ids=?,expires_at=?,global_use_limit=?,per_user_use_limit=?,active=?,updated_at=? WHERE id=?`,
+		result, err = s.db.ExecContext(ctx, `UPDATE coupon_definitions SET code=$1,name=$2,kind=$3,discount_mode=$4,value_minor_or_bps=$5,percent_cap_minor=$6,
+			eligible_combo_ids=$7,eligible_squad_ids=$8,expires_at=$9,global_use_limit=$10,per_user_use_limit=$11,active=$12,updated_at=$13 WHERE id=$14`,
 			normalized.Code, normalized.Name, normalized.Kind, normalized.DiscountMode, normalized.ValueMinorOrBPS, nullableInt64(normalized.PercentCapMinor),
 			string(comboJSON), string(squadJSON), nullableStamp(normalized.ExpiresAt), nullableInt64(normalized.GlobalUseLimit), nullableInt64(normalized.PerUserUseLimit),
 			boolInt(normalized.Active), stamp(now), normalized.ID)
@@ -74,7 +74,8 @@ func (s *Store) ListCoupons(ctx context.Context, activeOnly bool) ([]coupons.Cou
 	query := couponSelect
 	args := make([]any, 0, 1)
 	if activeOnly {
-		query += ` WHERE admin_visible=1 AND active=1 AND (expires_at IS NULL OR expires_at>?)`
+		query += fmt.Sprintf(" WHERE admin_visible=1 AND active=1 AND (expires_at IS NULL OR expires_at>$%d)", len(args)+1)
+
 		args = append(args, stamp(time.Now().UTC()))
 	} else {
 		query += ` WHERE admin_visible=1`

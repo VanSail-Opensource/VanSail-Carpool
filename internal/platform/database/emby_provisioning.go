@@ -9,16 +9,13 @@ import (
 )
 
 func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountID string, now time.Time) (domain.Account, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=?`, accountID))
+	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=$1`, accountID))
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -30,8 +27,8 @@ func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountI
 		return domain.Account{}, ErrConflict
 	}
 	if record.Status == domain.StatusPendingReview {
-		if _, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error='',updated_at=?
-			WHERE id=? AND status='pending_review'`, stamp(now), accountID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error='',updated_at=$1
+			WHERE id=$2 AND status='pending_review'`, stamp(now), accountID); err != nil {
 			return domain.Account{}, fmt.Errorf("resume Emby provisioning review: %w", err)
 		}
 	}
@@ -40,7 +37,7 @@ func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountI
 		return domain.Account{}, marshalErr
 	}
 	var existing int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2 AND status IN ('pending','processing')`,
 		domain.ProvisionOutboxKind, string(payload)).Scan(&existing); err != nil {
 		return domain.Account{}, fmt.Errorf("check Emby retry work: %w", err)
 	}
@@ -60,7 +57,7 @@ func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountI
 func (s *Store) BeginEmbyProvisioning(ctx context.Context, accountID string, now time.Time) (domain.ProvisioningRecord, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if _, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='provisioning',updated_at=? WHERE id=? AND status='queued'`, stamp(now), accountID); err != nil {
+	if _, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='provisioning',updated_at=$1 WHERE id=$2 AND status='queued'`, stamp(now), accountID); err != nil {
 		return domain.ProvisioningRecord{}, fmt.Errorf("begin Emby provisioning: %w", err)
 	}
 	return s.EmbyProvisioningByID(ctx, accountID)
@@ -69,8 +66,8 @@ func (s *Store) BeginEmbyProvisioning(ctx context.Context, accountID string, now
 // SetEmbyCandidate persists the exact name before any create attempt.
 
 func (s *Store) SetEmbyCandidate(ctx context.Context, accountID, candidate string, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET candidate_username=?,updated_at=?
-		WHERE id=? AND status='provisioning' AND candidate_username IS NULL`, candidate, stamp(now), accountID)
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET candidate_username=$1,updated_at=$2
+		WHERE id=$3 AND status='provisioning' AND candidate_username IS NULL`, candidate, stamp(now), accountID)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return domain.ErrAccountExists
@@ -79,7 +76,7 @@ func (s *Store) SetEmbyCandidate(ctx context.Context, accountID, candidate strin
 	}
 	if affected, _ := result.RowsAffected(); affected == 0 {
 		var stored sql.NullString
-		if loadErr := s.db.QueryRowContext(ctx, `SELECT candidate_username FROM emby_accounts WHERE id=?`, accountID).Scan(&stored); loadErr != nil {
+		if loadErr := s.db.QueryRowContext(ctx, `SELECT candidate_username FROM emby_accounts WHERE id=$1`, accountID).Scan(&stored); loadErr != nil {
 			return mapEmbyNotFound(loadErr)
 		}
 		if !stored.Valid || stored.String != candidate {
@@ -92,8 +89,8 @@ func (s *Store) SetEmbyCandidate(ctx context.Context, accountID, candidate strin
 // MarkEmbyCreateAttempted records the ambiguity boundary before POST /Users/New.
 
 func (s *Store) MarkEmbyCreateAttempted(ctx context.Context, accountID string, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET create_attempted=1,updated_at=?
-		WHERE id=? AND status='provisioning' AND candidate_username IS NOT NULL`, stamp(now), accountID)
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET create_attempted=1,updated_at=$1
+		WHERE id=$2 AND status='provisioning' AND candidate_username IS NOT NULL`, stamp(now), accountID)
 	if err != nil {
 		return fmt.Errorf("mark Emby create attempt: %w", err)
 	}
@@ -106,8 +103,8 @@ func (s *Store) MarkEmbyCreateAttempted(ctx context.Context, accountID string, n
 // SetEmbyRemoteIdentity stores the authoritative remote identity idempotently.
 
 func (s *Store) SetEmbyRemoteIdentity(ctx context.Context, accountID, remoteID, remoteUsername string, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET remote_user_id=?,remote_username=?,candidate_username=?,updated_at=?
-		WHERE id=? AND status='provisioning' AND (remote_user_id IS NULL OR remote_user_id=?)`,
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET remote_user_id=$1,remote_username=$2,candidate_username=$3,updated_at=$4
+		WHERE id=$5 AND status='provisioning' AND (remote_user_id IS NULL OR remote_user_id=$6)`,
 		remoteID, remoteUsername, remoteUsername, stamp(now), accountID, remoteID)
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -124,8 +121,8 @@ func (s *Store) SetEmbyRemoteIdentity(ctx context.Context, accountID, remoteID, 
 // RequeueEmbyProvisioning preserves the secret and records a retry-safe error.
 
 func (s *Store) RequeueEmbyProvisioning(ctx context.Context, accountID string, provisionErr error, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error=?,updated_at=?
-		WHERE id=? AND status='provisioning'`, sanitizeError(provisionErr), stamp(now), accountID)
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error=$1,updated_at=$2
+		WHERE id=$3 AND status='provisioning'`, sanitizeError(provisionErr), stamp(now), accountID)
 	if err != nil {
 		return fmt.Errorf("requeue Emby provisioning: %w", err)
 	}
@@ -137,8 +134,8 @@ func (s *Store) RequeueEmbyProvisioning(ctx context.Context, accountID string, p
 
 // MarkEmbyPendingReview stops automatic retries while retaining the sealed desired state.
 func (s *Store) MarkEmbyPendingReview(ctx context.Context, accountID string, provisionErr error, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='pending_review',last_error=?,updated_at=?
-		WHERE id=? AND status='provisioning'`, sanitizeError(provisionErr), stamp(now), accountID)
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET status='pending_review',last_error=$1,updated_at=$2
+		WHERE id=$3 AND status='provisioning'`, sanitizeError(provisionErr), stamp(now), accountID)
 	if err != nil {
 		return fmt.Errorf("mark Emby provisioning for review: %w", err)
 	}
@@ -152,18 +149,15 @@ func (s *Store) MarkEmbyPendingReview(ctx context.Context, accountID string, pro
 // re-fetched and verified the remote full policy.
 
 func (s *Store) retryAttempt_MarkEmbyProvisioned(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	result, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='active',password_ciphertext='',password_context='',
-		max_parental_rating=?,pending_preferences_json='{}',last_error='',provisioned_at=COALESCE(provisioned_at,?),updated_at=?
-		WHERE id=? AND status='provisioning' AND remote_user_id IS NOT NULL`, nullableInt32(preferences.MaxParentalRating), stamp(now), stamp(now), accountID)
+		max_parental_rating=$1,pending_preferences_json='{}',last_error='',provisioned_at=COALESCE(provisioned_at,$2),updated_at=$3
+		WHERE id=$4 AND status='provisioning' AND remote_user_id IS NOT NULL`, nullableInt32(preferences.MaxParentalRating), stamp(now), stamp(now), accountID)
 	if err != nil {
 		return fmt.Errorf("mark Emby provisioned: %w", err)
 	}

@@ -147,7 +147,7 @@ func (s *Store) preparePersonalPricing(ctx context.Context, user, kind, product,
 	if err != nil {
 		return d, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_personal_decisions(version,user_id,product_type,product_id,context_key,policy_version,public_minor,personal_minor,net_minor,status,reason,model_version,probability,calibration,generated_at,valid_until,coupon_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(version) DO NOTHING`, d.Version, user, kind, product, in.Context, in.Policy.Version, in.Public, selected, selected+in.BasketOther-discount, d.Status, d.Reason, d.ModelVersion, d.Probability, d.Calibration, pricingStamp(now), pricingStamp(in.Until), string(raw))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_personal_decisions(version,user_id,product_type,product_id,context_key,policy_version,public_minor,personal_minor,net_minor,status,reason,model_version,probability,calibration,generated_at,valid_until,coupon_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) ON CONFLICT(version) DO NOTHING`, d.Version, user, kind, product, in.Context, in.Policy.Version, in.Public, selected, selected+in.BasketOther-discount, d.Status, d.Reason, d.ModelVersion, d.Probability, d.Calibration, pricingStamp(now), pricingStamp(in.Until), string(raw))
 	return d, err
 }
 

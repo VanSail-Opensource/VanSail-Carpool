@@ -22,16 +22,16 @@ const grantSelect = `SELECT coupon_grants.id,coupon_grants.user_id,coupon_grants
 const authorizedCouponGrant = `(coupon_definitions.admin_visible=1 OR coupon_grants.source_type<>'code')`
 
 func grantByIDTx(ctx context.Context, tx *sql.Tx, grantID string) (coupons.Grant, error) {
-	return scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=? AND `+authorizedCouponGrant, grantID))
+	return scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=$1 AND `+authorizedCouponGrant, grantID))
 }
 
 func grantBySourceTx(ctx context.Context, tx *sql.Tx, userID, couponID, sourceType, sourceID string) (coupons.Grant, error) {
-	return scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.user_id=? AND coupon_grants.coupon_id=? AND coupon_grants.source_type=? AND coupon_grants.source_id=?`, userID, couponID, sourceType, sourceID))
+	return scanGrant(tx.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.coupon_id=$2 AND coupon_grants.source_type=$3 AND coupon_grants.source_id=$4`, userID, couponID, sourceType, sourceID))
 }
 
 func grantDiscardedTx(ctx context.Context, tx *sql.Tx, grantID string) (bool, error) {
 	var matched int
-	err := tx.QueryRowContext(ctx, `SELECT 1 FROM coupon_grant_discards WHERE grant_id=?`, grantID).Scan(&matched)
+	err := tx.QueryRowContext(ctx, `SELECT 1 FROM coupon_grant_discards WHERE grant_id=$1`, grantID).Scan(&matched)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -94,12 +94,12 @@ func scanGrant(row rowScanner) (coupons.Grant, error) {
 }
 
 func (s *Store) redemptionByID(ctx context.Context, redemptionID string) (coupons.RedemptionResult, error) {
-	result, err := scanRedemption(s.db.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.id=?`, redemptionID))
+	result, err := scanRedemption(s.db.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.id=$1`, redemptionID))
 	if err != nil {
 		return coupons.RedemptionResult{}, err
 	}
 	if result.Grant != nil {
-		grant, grantErr := scanGrant(s.db.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=?`, result.Grant.ID))
+		grant, grantErr := scanGrant(s.db.QueryRowContext(ctx, grantSelect+` WHERE coupon_grants.id=$1`, result.Grant.ID))
 		if grantErr != nil {
 			return coupons.RedemptionResult{}, grantErr
 		}
@@ -117,7 +117,7 @@ const redemptionSelect = `SELECT coupon_redemptions.id,coupon_redemptions.balanc
 	FROM coupon_redemptions JOIN coupon_definitions ON coupon_definitions.id=coupon_redemptions.coupon_id`
 
 func redemptionByKeyTx(ctx context.Context, tx *sql.Tx, userID, key string) (coupons.RedemptionResult, error) {
-	result, err := scanRedemption(tx.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.user_id=? AND coupon_redemptions.idempotency_key=?`, userID, key))
+	result, err := scanRedemption(tx.QueryRowContext(ctx, redemptionSelect+` WHERE coupon_redemptions.user_id=$1 AND coupon_redemptions.idempotency_key=$2`, userID, key))
 	if err != nil {
 		return coupons.RedemptionResult{}, err
 	}

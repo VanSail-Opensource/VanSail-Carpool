@@ -41,7 +41,7 @@ func TestQueuedPurchaseAndCancellationReceiptsAreOnceOnly(t *testing.T) {
 	}
 	assertEventKind(t, store, "queued-cancellation:"+second.ID, jobpayload.UserEventQueuedCancellation)
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=?`, second.ID).Scan(&count); err != nil || count != 2 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=$1`, second.ID).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("queued purchase event count = %d, %v", count, err)
 	}
 }
@@ -75,7 +75,7 @@ func TestAutomaticRenewalFailureReplacesExpiryNotice(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE event_key=?`, "expired:"+purchase.ID).Scan(&count); err != nil || count != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE event_key=$1`, "expired:"+purchase.ID).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("generic expiry count = %d, %v", count, err)
 	}
 }
@@ -84,7 +84,7 @@ func TestManualResetReportsOnlyTerminalOutcomes(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 90_003)
 	combo := saveTestCombo(t, store, "Reset", 301, 30)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET reset_strategy='DAY' WHERE id=?`, combo.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET reset_strategy='DAY' WHERE id=$1`, combo.ID); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 9, 23, 0, 0, 0, 0, time.UTC)
@@ -109,7 +109,7 @@ func TestManualResetReportsOnlyTerminalOutcomes(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=?`, operation.Receipt.ID).Scan(&count); err != nil || count != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE source_id=$1`, operation.Receipt.ID).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("premature reset event count = %d, %v", count, err)
 	}
 	if _, err := store.CompleteProviderOperationItem(ctx, operation.Receipt.ID, "purchase", providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: "{}"}, now.Add(2*time.Hour)); err != nil {
@@ -124,7 +124,7 @@ func TestManualResetReportsOnlyTerminalOutcomes(t *testing.T) {
 func assertEventKind(t *testing.T, store *Store, key, want string) {
 	t.Helper()
 	var kind, encoded string
-	if err := store.DB().QueryRow(`SELECT kind,payload_json FROM user_notification_events WHERE event_key=?`, key).Scan(&kind, &encoded); err != nil {
+	if err := store.DB().QueryRow(`SELECT kind,payload_json FROM user_notification_events WHERE event_key=$1`, key).Scan(&kind, &encoded); err != nil {
 		if err == sql.ErrNoRows {
 			t.Fatalf("missing notification %s", key)
 		}

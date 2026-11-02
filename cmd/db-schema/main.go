@@ -3,6 +3,8 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -19,8 +21,8 @@ func main() {
 }
 
 func run() error {
-	if len(os.Args) != 2 || (os.Args[1] != "migrate" && os.Args[1] != "verify") {
-		return fmt.Errorf("usage: db-schema migrate|verify")
+	if len(os.Args) != 2 || (os.Args[1] != "migrate" && os.Args[1] != "verify" && os.Args[1] != "fingerprint") {
+		return fmt.Errorf("usage: db-schema migrate|verify|fingerprint")
 	}
 	cfg, err := config.LoadDatabase()
 	if err != nil {
@@ -37,5 +39,19 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	if os.Args[1] == "fingerprint" {
+		key, err := base64.StdEncoding.DecodeString(os.Getenv("CONFIG_MASTER_KEY"))
+		if err != nil {
+			return err
+		}
+		report, err := postgres.InspectRecovery(ctx, db, key)
+		if err != nil {
+			return err
+		}
+		if report.FinancialMismatches != 0 {
+			return fmt.Errorf("financial recovery invariant failed")
+		}
+		return json.NewEncoder(os.Stdout).Encode(report)
+	}
 	return postgres.VerifySchema(ctx, db)
 }

@@ -13,7 +13,7 @@ func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, inpu
 	var grant xnode.FirewallGrant
 	err := s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var until string
-		err := tx.QueryRowContext(ctx, `SELECT id,ip,until_at,price_minor,hours FROM xnode_firewall_exemptions WHERE user_id=? AND idempotency_key=?`, user, input.Key).Scan(&grant.ID, &grant.IP, &until, &grant.PriceMinor, &grant.Hours)
+		err := tx.QueryRowContext(ctx, `SELECT id,ip,until_at,price_minor,hours FROM xnode_firewall_exemptions WHERE user_id=$1 AND idempotency_key=$2`, user, input.Key).Scan(&grant.ID, &grant.IP, &until, &grant.PriceMinor, &grant.Hours)
 		if err == nil {
 			if grant.IP != input.IP || grant.PriceMinor != price || grant.Hours != input.Hours {
 				return xnode.ErrConflict
@@ -28,7 +28,7 @@ func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, inpu
 			return xnode.ErrConflict
 		}
 		var existing int
-		if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE ip=? AND until_at>? AND released_version=0`, input.IP, stamp(now)).Scan(&existing); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE ip=$1 AND until_at>$2 AND released_version=0`, input.IP, stamp(now)).Scan(&existing); err != nil {
 			return err
 		}
 		if existing > 0 {
@@ -51,7 +51,7 @@ func (s *Store) PurchaseFirewallExemption(ctx context.Context, user string, inpu
 			return err
 		}
 		grant = xnode.FirewallGrant{ID: id, IP: input.IP, PriceMinor: price, Hours: input.Hours, Until: now.Add(time.Duration(input.Hours) * time.Hour)}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_exemptions(id,user_id,idempotency_key,ip,price_minor,hours,until_at,created_at,issued_version,ledger_id) VALUES(?,?,?,?,?,?,?,?,?,?)`, id, user, input.Key, input.IP, price, input.Hours, stamp(grant.Until), stamp(now), version, ledger); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_exemptions(id,user_id,idempotency_key,ip,price_minor,hours,until_at,created_at,issued_version,ledger_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, id, user, input.Key, input.IP, price, input.Hours, stamp(grant.Until), stamp(now), version, ledger); err != nil {
 			return err
 		}
 		return queueFirewallFleetTx(ctx, tx, now)

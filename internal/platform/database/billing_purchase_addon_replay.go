@@ -17,7 +17,7 @@ func (s *Store) PurchaseAddonReplay(ctx context.Context, input PurchaseAddonInpu
 		return model.Purchase{}, false, err
 	}
 	var saved string
-	err = s.db.QueryRowContext(ctx, `SELECT adjustment.request_fingerprint FROM purchase_addon_adjustments adjustment JOIN purchases purchase ON purchase.id=adjustment.purchase_id WHERE purchase.user_id=? AND adjustment.purchase_id=? AND adjustment.idempotency_key=?`, input.UserID, input.PurchaseID, input.IdempotencyKey).Scan(&saved)
+	err = s.db.QueryRowContext(ctx, `SELECT adjustment.request_fingerprint FROM purchase_addon_adjustments adjustment JOIN purchases purchase ON purchase.id=adjustment.purchase_id WHERE purchase.user_id=$1 AND adjustment.purchase_id=$2 AND adjustment.idempotency_key=$3`, input.UserID, input.PurchaseID, input.IdempotencyKey).Scan(&saved)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.Purchase{}, false, nil
 	}

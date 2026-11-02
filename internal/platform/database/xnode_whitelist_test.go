@@ -29,7 +29,7 @@ func TestWhitelistModeRejectsNewUnbanButReplaysExistingPurchase(t *testing.T) {
 		t.Fatal("charged retry rejected after whitelist activation", err)
 	}
 	var debits int
-	if err = store.DB().QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='firewall_exemption'`, identity.UserID).Scan(&debits); err != nil || debits != 1 {
+	if err = store.DB().QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='firewall_exemption'`, identity.UserID).Scan(&debits); err != nil || debits != 1 {
 		t.Fatal("duplicate or missing unban debit", debits, err)
 	}
 }

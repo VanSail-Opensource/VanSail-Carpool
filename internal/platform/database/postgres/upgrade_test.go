@@ -66,6 +66,17 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	}
 	seedRetirementUpgrade(t, ctx, raw)
 	seedCommunityRetirement(t, ctx, raw)
+	if _, err = provider.UpTo(ctx, 31); err != nil {
+		t.Fatal(err)
+	}
+	contract, err := SchemaContract()
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeNative, err := inspect(ctx, raw, contract.Tables)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err = raw.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +86,18 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
+	afterNative, err := inspect(ctx, db, contract.Tables)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if beforeNative.Hash != afterNative.Hash {
+		t.Fatal("native upgrade changed authoritative records or identity sequences")
+	}
+	var obsolete int
+	if err = db.QueryRowContext(ctx, `SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname IN ('json_valid','json_type','json_extract','json_each','json_set','json_patch','vansail_json','julianday','instr')`).Scan(&obsolete); err != nil || obsolete != 0 {
+		t.Fatal("live compatibility function retained", obsolete, err)
+	}
+
 	verifyRetirementUpgrade(t, ctx, db)
 	verifyCommunityRetirement(t, ctx, db)
 	if err = VerifySchema(ctx, db); err != nil {

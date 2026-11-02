@@ -47,11 +47,11 @@ func (s *Store) ReconcileFirewallSources(ctx context.Context, allowed []string, 
 			return err
 		}
 		for _, id := range remove {
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_sources SET released_version=?,released_at=? WHERE id=? AND released_version=0`, v, stamp(now), id); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_sources SET released_version=$1,released_at=$2 WHERE id=$3 AND released_version=0`, v, stamp(now), id); err != nil {
 				return err
 			}
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=? WHERE singleton=1`, v); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=$1 WHERE singleton=1`, v); err != nil {
 			return err
 		}
 		return queueFirewallFleetTx(ctx, tx, now)
@@ -69,7 +69,7 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 		if err := s.sweepRetiredFirewallTx(ctx, tx); err != nil {
 			return err
 		}
-		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at<=?`, stamp(now)).Scan(&count); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_firewall_exemptions WHERE released_version=0 AND until_at<=$1`, stamp(now)).Scan(&count); err != nil {
 			return err
 		}
 		if count > 0 {
@@ -77,7 +77,7 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 			if err != nil {
 				return err
 			}
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_exemptions SET released_version=? WHERE released_version=0 AND until_at<=?`, v, stamp(now)); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_exemptions SET released_version=$1 WHERE released_version=0 AND until_at<=$2`, v, stamp(now)); err != nil {
 				return err
 			}
 		}
@@ -85,7 +85,7 @@ func (s *Store) SweepFirewall(ctx context.Context, now time.Time) error {
 		// snapshot lifetime; lagging nodes receive a full snapshot after seven days.
 		if prune {
 			for _, table := range []string{"xnode_firewall_bans", "xnode_firewall_sources"} {
-				if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND released_at<?`, stamp(now.Add(-7*24*time.Hour))); err != nil {
+				if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE released_version>0 AND released_at<$1`, stamp(now.Add(-7*24*time.Hour))); err != nil {
 					return err
 				}
 			}

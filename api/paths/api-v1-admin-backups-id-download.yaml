@@ -2,12 +2,12 @@ get:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Database Administration]
   operationId: downloadAdminBackup
-  summary: Download an authenticated verified SQLite snapshot
+  summary: Download an authenticated verified PostgreSQL custom archive
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/ResourceID'
   responses:
     '200':
-      description: Streamed SQLite database snapshot.
+      description: Streamed PostgreSQL custom archive.
       headers:
         Content-Disposition:
           required: true
@@ -30,7 +30,7 @@ get:
             type: string
             const: nosniff
       content:
-        application/vnd.sqlite3:
+        application/octet-stream:
           schema:
             type: string
             format: binary

@@ -1,5 +1,5 @@
 import type { components } from './generated'
-import { request, streamAdminBackupUpload } from './http'
+import { request } from './http'
 
 export type XNodeProfileMetrics = components['schemas']['XNodeProfileMetrics']
 export type AdminUserDetail = components['schemas']['AdminUserDetail']
@@ -91,10 +91,4 @@ export const adminOperationsApi = {
     request<OperationReceipt>(`/api/v1/admin/operations/${encodeURIComponent(operationId)}/resolve`, {
       method: 'POST', headers: keyHeader(key), body: { resolution, reason },
     }),
-  uploadBackup: (file: File, sha256: string, key: string) => {
-    const form = new FormData()
-    form.append('file', file, file.name)
-    if (sha256) form.append('sha256', sha256)
-    return streamAdminBackupUpload<BackupRun>(form, key)
-  },
 }

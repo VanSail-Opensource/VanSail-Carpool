@@ -29,7 +29,7 @@ func TestAdminEntitlementFiltersUseDisplayValidityWithoutSettling(t *testing.T) 
 	for index, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			user, purchase := createAdminWorkflowPurchase(t, store, 82_000+int64(index), combo, now)
-			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=?,valid_from=?,valid_until=? WHERE id=?`,
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=$1,valid_from=$2,valid_until=$3 WHERE id=$4`,
 				tc.raw, stamp(tc.from), stamp(tc.until), purchase.ID); err != nil {
 				t.Fatal(err)
 			}

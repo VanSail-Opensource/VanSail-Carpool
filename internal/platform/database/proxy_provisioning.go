@@ -9,8 +9,7 @@ import (
 // HasProvisionablePurchase limits remote creation to paid, unexpired access.
 func (s *Store) HasProvisionablePurchase(ctx context.Context, userID string, now time.Time) (bool, error) {
 	var exists int
-	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=?
-		AND status IN ('active','activating','queued') AND valid_until>?)`, userID, stamp(now)).Scan(&exists)
+	err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND valid_until>$2))::bigint", userID, stamp(now)).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("check provisionable purchase: %w", err)
 	}
@@ -24,9 +23,9 @@ func (s *Store) LinkProvisionedProxyUser(ctx context.Context, userID, username, 
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE users SET proxy_user_id=?,recovery_reason='',updated_at=?
-		WHERE id=? AND CAST(telegram_id AS TEXT)=? AND onboarding_state='complete' AND COALESCE(proxy_user_id,'')=?
-		AND EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status IN ('active','activating','queued') AND valid_until>?)`,
+	result, err := s.db.ExecContext(ctx, `UPDATE users SET proxy_user_id=$1,recovery_reason='',updated_at=$2
+		WHERE id=$3 AND CAST(telegram_id AS TEXT)=$4 AND onboarding_state='complete' AND COALESCE(proxy_user_id,'')=$5
+		AND EXISTS(SELECT 1 FROM purchases WHERE user_id=$6 AND status IN ('active','activating','queued') AND valid_until>$7)`,
 		remoteID, stamp(now), userID, username, previousID, userID, stamp(now))
 	if err != nil {
 		if isUniqueConstraint(err) {

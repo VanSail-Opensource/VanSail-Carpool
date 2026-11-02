@@ -15,10 +15,7 @@ func (s *Store) retryAttempt_ResolvePaymentCreateOperation(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin payment operation resolution: %w", err)
@@ -36,16 +33,16 @@ func (s *Store) retryAttempt_ResolvePaymentCreateOperation(ctx context.Context, 
 func resolvePaymentCreateOperationTx(ctx context.Context, tx *sql.Tx, orderID, providerReference, result string, now time.Time) error {
 	args := []any{providerReference, providerReference, result, stamp(now), stamp(now), orderID}
 	_, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',
-		provider_reference=CASE WHEN ?<>'' THEN ? ELSE provider_reference END,error_code='',result_json=?,
-		completed_at=?,updated_at=? WHERE target_type='payment_order' AND target_id=?
+		provider_reference=CASE WHEN $1<>'' THEN $2 ELSE provider_reference END,error_code='',result_json=$3,
+		completed_at=$4,updated_at=$5 WHERE target_type='payment_order' AND target_id=$6
 		AND operation_id IN (SELECT id FROM provider_operations WHERE kind='payment_create')`, args...)
 	if err != nil {
 		return fmt.Errorf("resolve payment operation item: %w", err)
 	}
 	_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',
-		provider_reference=CASE WHEN ?<>'' THEN ? ELSE provider_reference END,error_code='',result_json=?,
-		completed_at=?,updated_at=? WHERE kind='payment_create' AND id IN (
-			SELECT operation_id FROM provider_operation_items WHERE target_type='payment_order' AND target_id=?)`, args...)
+		provider_reference=CASE WHEN $1<>'' THEN $2 ELSE provider_reference END,error_code='',result_json=$3,
+		completed_at=$4,updated_at=$5 WHERE kind='payment_create' AND id IN (
+			SELECT operation_id FROM provider_operation_items WHERE target_type='payment_order' AND target_id=$6)`, args...)
 	if err != nil {
 		return fmt.Errorf("resolve payment operation receipt: %w", err)
 	}

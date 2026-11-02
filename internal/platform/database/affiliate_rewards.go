@@ -23,7 +23,7 @@ func awardCrossedAffiliateTierTx(ctx context.Context, tx *sql.Tx, config affilia
 		}
 		description := affiliateRewardDescription(tier.Reward, locale)
 		_, err = tx.ExecContext(ctx, `INSERT INTO affiliate_tier_awards(id,inviter_user_id,tier_id,settlement_id,tier_name,reward_kind,reward_description,
-			reward_coupon_id,reward_txb_minor,reward_extension_days,awarded_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, awardID, inviterID, tier.ID, settlementID,
+			reward_coupon_id,reward_txb_minor,reward_extension_days,awarded_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, awardID, inviterID, tier.ID, settlementID,
 			tier.Name, tier.Reward.Kind, description, nullableText(tier.Reward.CouponID), nullablePositive(tier.Reward.TXBMinor), nullablePositiveInt(tier.Reward.ExtensionDays), stamp(now))
 		if err != nil {
 			return err

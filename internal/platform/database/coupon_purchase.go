@@ -55,7 +55,7 @@ func applyPurchaseCouponTx(ctx context.Context, tx *sql.Tx, input coupons.Purcha
 		return coupons.Discount{}, err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO coupon_uses(id,coupon_id,grant_id,user_id,purchase_id,gross_price_minor,discount_minor,net_price_minor,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?)`, useID, grant.Coupon.ID, grant.ID, input.UserID, purchaseID, discount.GrossMinor, discount.DiscountMinor, discount.NetMinor, stamp(now)); err != nil {
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, useID, grant.Coupon.ID, grant.ID, input.UserID, purchaseID, discount.GrossMinor, discount.DiscountMinor, discount.NetMinor, stamp(now)); err != nil {
 		if isUniqueConstraint(err) {
 			return coupons.Discount{}, ErrConflict
 		}
@@ -67,8 +67,8 @@ func applyPurchaseCouponTx(ctx context.Context, tx *sql.Tx, input coupons.Purcha
 		status = "consumed"
 		consumed = stamp(now)
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE coupon_grants SET use_count=use_count+1,status=?,consumed_at=?
-		WHERE id=? AND status='active' AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE grant_id=?)`, status, consumed, grant.ID, grant.ID)
+	result, err := tx.ExecContext(ctx, `UPDATE coupon_grants SET use_count=use_count+1,status=$1,consumed_at=$2
+		WHERE id=$3 AND status='active' AND NOT EXISTS (SELECT 1 FROM coupon_grant_discards WHERE grant_id=$4)`, status, consumed, grant.ID, grant.ID)
 	if err != nil {
 		return coupons.Discount{}, fmt.Errorf("consume coupon grant: %w", err)
 	}
@@ -130,7 +130,7 @@ func grantCouponTx(ctx context.Context, tx *sql.Tx, userID string, coupon coupon
 		return coupons.Grant{}, err
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO coupon_grants(id,coupon_id,user_id,source_type,source_id,status,use_count,created_at)
-		VALUES(?,?,?,?,?,'active',0,?)`, grantID, coupon.ID, userID, sourceType, sourceID, stamp(now))
+		VALUES($1,$2,$3,$4,$5,'active',0,$6)`, grantID, coupon.ID, userID, sourceType, sourceID, stamp(now))
 	if err != nil {
 		return coupons.Grant{}, fmt.Errorf("grant coupon: %w", err)
 	}
@@ -140,10 +140,10 @@ func grantCouponTx(ctx context.Context, tx *sql.Tx, userID string, coupon coupon
 func ensureCouponUseAvailableTx(ctx context.Context, tx *sql.Tx, coupon coupons.Coupon, userID string) error {
 	var globalCount, userCount int64
 	query := `SELECT
-		(SELECT COUNT(*) FROM coupon_uses WHERE coupon_id=?) +
-		(SELECT COUNT(*) FROM coupon_redemptions r JOIN coupon_definitions d ON d.id=r.coupon_id WHERE r.coupon_id=? AND d.kind IN ('balance_add','balance_multiply')),
-		(SELECT COUNT(*) FROM coupon_uses WHERE coupon_id=? AND user_id=?) +
-		(SELECT COUNT(*) FROM coupon_redemptions r JOIN coupon_definitions d ON d.id=r.coupon_id WHERE r.coupon_id=? AND r.user_id=? AND d.kind IN ('balance_add','balance_multiply'))`
+		(SELECT COUNT(*) FROM coupon_uses WHERE coupon_id=$1) +
+		(SELECT COUNT(*) FROM coupon_redemptions r JOIN coupon_definitions d ON d.id=r.coupon_id WHERE r.coupon_id=$2 AND d.kind IN ('balance_add','balance_multiply')),
+		(SELECT COUNT(*) FROM coupon_uses WHERE coupon_id=$3 AND user_id=$4) +
+		(SELECT COUNT(*) FROM coupon_redemptions r JOIN coupon_definitions d ON d.id=r.coupon_id WHERE r.coupon_id=$5 AND r.user_id=$6 AND d.kind IN ('balance_add','balance_multiply'))`
 	if err := tx.QueryRowContext(ctx, query, coupon.ID, coupon.ID, coupon.ID, userID, coupon.ID, userID).Scan(&globalCount, &userCount); err != nil {
 		return fmt.Errorf("count coupon uses: %w", err)
 	}
@@ -166,10 +166,10 @@ func couponAvailable(coupon coupons.Coupon, now time.Time) error {
 func couponByID(ctx context.Context, queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, couponID string) (coupons.Coupon, error) {
-	return scanCoupon(queryer.QueryRowContext(ctx, couponSelect+` WHERE id=?`, couponID))
+	return scanCoupon(queryer.QueryRowContext(ctx, couponSelect+` WHERE id=$1`, couponID))
 }
 
 func couponByCodeTx(ctx context.Context, tx *sql.Tx, code string) (coupons.Coupon, error) {
 	// Draw rewards are private wallet grants, never shareable redemption codes.
-	return scanCoupon(tx.QueryRowContext(ctx, couponSelect+` WHERE code=? AND admin_visible=1`, code))
+	return scanCoupon(tx.QueryRowContext(ctx, couponSelect+` WHERE code=$1 AND admin_visible=1`, code))
 }

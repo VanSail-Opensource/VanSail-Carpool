@@ -14,7 +14,7 @@ func (s *Store) IPLookupRun(ctx context.Context, operationID string) (iplookup.R
 	var report iplookup.Report
 	var config iplookup.Config
 	var raw, configJSON string
-	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,COALESCE((SELECT value FROM settings WHERE key=?),'') FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE c.operation_id=?`, iplookup.SettingKey, operationID).Scan(&raw, &configJSON)
+	err := s.db.QueryRowContext(ctx, `SELECT r.report_json,COALESCE((SELECT value FROM settings WHERE key=$1),'') FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE c.operation_id=$2`, iplookup.SettingKey, operationID).Scan(&raw, &configJSON)
 	if err == sql.ErrNoRows {
 		return report, config, ErrNotFound
 	}
@@ -37,7 +37,7 @@ func (s *Store) SaveIPLookupProgress(ctx context.Context, report iplookup.Report
 	if err != nil {
 		return err
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=? WHERE id=? AND status='processing'`, string(raw), report.ID)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2 AND status='processing'`, string(raw), report.ID)
 	if err != nil {
 		return err
 	}
@@ -57,10 +57,7 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 	if report.Status != "succeeded" && report.Status != "partial" && report.Status != "failed" {
 		return ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -86,7 +83,7 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=?,report_json=?,completed_at=? WHERE id=? AND status='processing'`, report.Status, string(raw), stamp(now), report.ID)
+	result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=$1,report_json=$2,completed_at=$3 WHERE id=$4 AND status='processing'`, report.Status, string(raw), stamp(now), report.ID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +91,7 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 		return err
 	} else if affected == 0 {
 		var stored string
-		if err := tx.QueryRowContext(ctx, `SELECT report_json FROM ip_lookup_reports WHERE id=?`, report.ID).Scan(&stored); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT report_json FROM ip_lookup_reports WHERE id=$1`, report.ID).Scan(&stored); err != nil {
 			return err
 		}
 		report, err = iplookup.DecodeReport([]byte(stored))
@@ -104,7 +101,7 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 	} else if err := scheduleIPLookupReportRetryTx(ctx, tx, report.ID, report, now); err != nil {
 		return err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=?`, report.ID)
+	rows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=$1`, report.ID)
 	if err != nil {
 		return err
 	}
@@ -145,7 +142,7 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 func finishIPCheckTx(ctx context.Context, tx *sql.Tx, operationID, reportID, status string, now time.Time) error {
 	var usedQuota int
 	var metadata string
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(CAST(json_extract(o.result_json,'$.usedQuota') AS INTEGER),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),o.result_json FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=?`, operationID).Scan(&usedQuota, &metadata); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(CAST((CASE ((o.result_json)::jsonb #> '{usedQuota}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (o.result_json)::jsonb #>> '{usedQuota}' END) AS BIGINT),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),o.result_json FROM ip_lookup_checks c JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=$1`, operationID).Scan(&usedQuota, &metadata); err != nil {
 		return err
 	}
 	errorCode := ""
@@ -161,7 +158,7 @@ func finishIPCheckTx(ctx context.Context, tx *sql.Tx, operationID, reportID, sta
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,error_code=?,result_json=?,attempt_started_at=COALESCE(attempt_started_at,?),completed_at=?,updated_at=? WHERE id=? AND status IN ('queued','processing')`, status, errorCode, string(resultJSON), stamp(now), stamp(now), stamp(now), operationID)
+	_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,error_code=$2,result_json=$3,attempt_started_at=COALESCE(attempt_started_at,$4),completed_at=$5,updated_at=$6 WHERE id=$7 AND status IN ('queued','processing')`, status, errorCode, string(resultJSON), stamp(now), stamp(now), stamp(now), operationID)
 	if err != nil {
 		return err
 	}
@@ -170,6 +167,6 @@ func finishIPCheckTx(ctx context.Context, tx *sql.Tx, operationID, reportID, sta
 	if itemStatus == "partial" {
 		itemStatus = "succeeded"
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,error_code=?,result_json=?,completed_at=?,updated_at=? WHERE operation_id=? AND status IN ('queued','processing')`, itemStatus, errorCode, string(resultJSON), stamp(now), stamp(now), operationID)
+	_, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,error_code=$2,result_json=$3,completed_at=$4,updated_at=$5 WHERE operation_id=$6 AND status IN ('queued','processing')`, itemStatus, errorCode, string(resultJSON), stamp(now), stamp(now), operationID)
 	return err
 }

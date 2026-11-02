@@ -32,7 +32,7 @@ func (s *Store) PricingProducts(ctx context.Context, cursor string) ([]map[strin
 	return page.Items, page.Next, err
 }
 func (s *Store) pricingProducts(ctx context.Context, cursor string) ([]map[string]any, string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT kind,id,name,price FROM (SELECT 'combo' AS kind,id,name,price_txb_minor AS price FROM combos UNION ALL SELECT CASE WHEN billing_mode='payg' THEN 'payg' ELSE 'addon' END AS kind,o.group_id AS id,COALESCE(NULLIF(g.name,''),o.group_id) AS name,CASE WHEN o.billing_mode='payg' THEN o.payg_price_minor ELSE o.price_txb_minor END AS price FROM squad_product_overrides o LEFT JOIN xnode_groups g ON g.id=o.group_id) p WHERE kind||':'||id>? ORDER BY kind,id LIMIT 101`, cursor)
+	rows, err := s.db.QueryContext(ctx, `SELECT kind,id,name,price FROM (SELECT 'combo' AS kind,id,name,price_txb_minor AS price FROM combos UNION ALL SELECT CASE WHEN billing_mode='payg' THEN 'payg' ELSE 'addon' END AS kind,o.group_id AS id,COALESCE(NULLIF(g.name,''),o.group_id) AS name,CASE WHEN o.billing_mode='payg' THEN o.payg_price_minor ELSE o.price_txb_minor END AS price FROM squad_product_overrides o LEFT JOIN xnode_groups g ON g.id=o.group_id) p WHERE kind||':'||id>$1 ORDER BY kind,id LIMIT 101`, cursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -86,25 +86,13 @@ func (s *Store) PricingStorage(ctx context.Context) (map[string]any, error) {
 func (s *Store) pricingStorage(ctx context.Context) (map[string]any, error) {
 	var total int64
 	var databaseBytes int64
-	if IsPostgres(s.db) {
-		if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(pg_total_relation_size(c.oid)),0) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND c.relname LIKE 'pricing_%'`).Scan(&total); err != nil {
-			return nil, err
-		}
-		if err := s.db.QueryRowContext(ctx, `SELECT pg_database_size(current_database())`).Scan(&databaseBytes); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(pgsize),0) FROM dbstat WHERE name IN (SELECT name FROM sqlite_master WHERE name LIKE 'pricing_%' OR tbl_name LIKE 'pricing_%')`).Scan(&total); err != nil {
-			return nil, err
-		}
-		var pages, size int64
-		if err := s.db.QueryRowContext(ctx, `PRAGMA page_count`).Scan(&pages); err != nil {
-			return nil, err
-		}
-		if err := s.db.QueryRowContext(ctx, `PRAGMA page_size`).Scan(&size); err != nil {
-			return nil, err
-		}
-		databaseBytes = pages * size
+
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(pg_total_relation_size(c.oid)),0) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND c.relname ILIKE 'pricing_%'`).Scan(&total); err != nil {
+		return nil, err
 	}
+	if err := s.db.QueryRowContext(ctx, `SELECT pg_database_size(current_database())`).Scan(&databaseBytes); err != nil {
+		return nil, err
+	}
+
 	return map[string]any{"pricingBytes": fmt.Sprint(total), "databaseBytes": fmt.Sprint(databaseBytes), "pricingBudgetBytes": fmt.Sprint(700 << 20), "databaseTargetBytes": fmt.Sprint(3_000_000_000), "pressure": total >= 700<<20 || databaseBytes >= 3_000_000_000, "measuredAt": time.Now().UTC()}, nil
 }

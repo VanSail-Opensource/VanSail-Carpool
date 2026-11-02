@@ -16,7 +16,7 @@ func personalDecisionTx(ctx context.Context, tx *sql.Tx, version string, now tim
 	var public, personal, net int64
 	var at, until, couponRaw string
 	var probability sql.NullFloat64
-	err := tx.QueryRowContext(ctx, `SELECT version,status,reason,public_minor,personal_minor,net_minor,probability,model_version,calibration,generated_at,valid_until,coupon_json FROM pricing_personal_decisions WHERE version=? AND valid_until>?`, version, pricingStamp(now)).Scan(&d.Version, &d.Status, &d.Reason, &public, &personal, &net, &probability, &d.ModelVersion, &d.Calibration, &at, &until, &couponRaw)
+	err := tx.QueryRowContext(ctx, `SELECT version,status,reason,public_minor,personal_minor,net_minor,probability,model_version,calibration,generated_at,valid_until,coupon_json FROM pricing_personal_decisions WHERE version=$1 AND valid_until>$2`, version, pricingStamp(now)).Scan(&d.Version, &d.Status, &d.Reason, &public, &personal, &net, &probability, &d.ModelVersion, &d.Calibration, &at, &until, &couponRaw)
 	if err != nil {
 		return d, err
 	}

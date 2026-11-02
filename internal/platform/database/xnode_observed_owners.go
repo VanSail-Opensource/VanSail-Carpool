@@ -16,7 +16,7 @@ func (s *Store) XNodeObservedPrincipalOwners(ctx context.Context, ids []int) (ma
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.db.QueryContext(ctx, `WITH observed AS (SELECT CAST(value AS BIGINT) AS id FROM json_each(?)), owners AS (SELECT COALESCE(i.user_id,a.user_id,'') AS owner FROM xnode_identities i LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=i.proxy_user_id WHERE i.proxy_user_id IN (SELECT id FROM observed)) SELECT proxy_user_id,user_id FROM xnode_identities WHERE user_id IN (SELECT owner FROM owners WHERE owner<>'') UNION ALL SELECT proxy_user_id,user_id FROM xnode_payg_accounts WHERE user_id IN (SELECT owner FROM owners WHERE owner<>'')`, string(raw))
+	rows, err := s.db.QueryContext(ctx, `WITH observed AS (SELECT CAST(value AS BIGINT) AS id FROM jsonb_array_elements_text(($1)::jsonb)), owners AS (SELECT COALESCE(i.user_id,a.user_id,'') AS owner FROM xnode_identities i LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=i.proxy_user_id WHERE i.proxy_user_id IN (SELECT id FROM observed)) SELECT proxy_user_id,user_id FROM xnode_identities WHERE user_id IN (SELECT owner FROM owners WHERE owner<>'') UNION ALL SELECT proxy_user_id,user_id FROM xnode_payg_accounts WHERE user_id IN (SELECT owner FROM owners WHERE owner<>'')`, string(raw))
 	if err != nil {
 		return nil, err
 	}

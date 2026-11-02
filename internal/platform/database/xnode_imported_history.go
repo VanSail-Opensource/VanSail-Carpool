@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Store) XNodeImportedHistory(ctx context.Context, user int64, from, to time.Time) ([]xnode.ImportedHistory, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,date,raw_bytes,weighted_bytes FROM xnode_imported_history WHERE proxy_user_id=? AND date>=? AND date<=? ORDER BY date,node_id`, user, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
+	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,date,raw_bytes,weighted_bytes FROM xnode_imported_history WHERE proxy_user_id=$1 AND date>=$2 AND date<=$3 ORDER BY date,node_id`, user, from.UTC().Format(time.DateOnly), to.UTC().Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}

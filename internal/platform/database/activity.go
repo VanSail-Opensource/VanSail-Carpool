@@ -34,11 +34,11 @@ func (s *Store) SaveActivityGame(ctx context.Context, input activity.GameInput, 
 			return activity.Game{}, err
 		}
 		_, err = s.db.ExecContext(ctx, `INSERT INTO activity_games(id,name,icon,description,enabled,win_chance_bps,minimum_stake_minor,maximum_stake_minor,return_multiplier_bps,created_at,updated_at)
-			VALUES(?,?,?,?,?,?,?,?,?,?,?)`, input.ID, input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS, input.MinimumStakeMinor,
+			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, input.ID, input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS, input.MinimumStakeMinor,
 			input.MaximumStakeMinor, input.ReturnMultiplierBPS, stamp(now), stamp(now))
 	} else {
 		var result sql.Result
-		result, err = s.db.ExecContext(ctx, `UPDATE activity_games SET name=?,icon=?,description=?,enabled=?,win_chance_bps=?,minimum_stake_minor=?,maximum_stake_minor=?,return_multiplier_bps=?,updated_at=? WHERE id=?`,
+		result, err = s.db.ExecContext(ctx, `UPDATE activity_games SET name=$1,icon=$2,description=$3,enabled=$4,win_chance_bps=$5,minimum_stake_minor=$6,maximum_stake_minor=$7,return_multiplier_bps=$8,updated_at=$9 WHERE id=$10`,
 			input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS, input.MinimumStakeMinor, input.MaximumStakeMinor, input.ReturnMultiplierBPS, stamp(now), input.ID)
 		if err == nil {
 			if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
@@ -84,10 +84,7 @@ func (s *Store) retryAttempt_PlaceActivityBet(ctx context.Context, userID, gameI
 	if strings.TrimSpace(userID) == "" || strings.TrimSpace(gameID) == "" || stakeMinor <= 0 || strings.TrimSpace(idempotencyKey) == "" || len(idempotencyKey) > 128 || rng == nil {
 		return activity.BetResult{}, activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -136,7 +133,7 @@ func (s *Store) retryAttempt_PlaceActivityBet(ctx context.Context, userID, gameI
 		return activity.BetResult{}, fmt.Errorf("encode activity game snapshot: %w", err)
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO activity_bets(id,user_id,game_id,stake_minor,won,payout_minor,balance_after_minor,configuration_snapshot,idempotency_key,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?)`, betID, userID, game.ID, stakeMinor, boolInt(won), payout, balance, string(snapshot), idempotencyKey, stamp(now))
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, betID, userID, game.ID, stakeMinor, boolInt(won), payout, balance, string(snapshot), idempotencyKey, stamp(now))
 	if err != nil {
 		return activity.BetResult{}, fmt.Errorf("record activity bet: %w", err)
 	}

@@ -9,10 +9,10 @@ import (
 )
 
 func (s *Store) UserByUsername(ctx context.Context, name string) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE CAST(users.telegram_id AS TEXT)=?`, name))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE CAST(users.telegram_id AS TEXT)=$1`, name))
 }
 func (s *Store) XNodePeriods(ctx context.Context, user int64) ([]xnode.Period, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE proxy_user_id=? ORDER BY started_at,id`, user)
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE proxy_user_id=$1 ORDER BY started_at,id`, user)
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +44,11 @@ func (s *Store) XNodePeriods(ctx context.Context, user int64) ([]xnode.Period, e
 
 // Track is written before granting admission, never after a potentially successful send.
 func (s *Store) TrackXNodePeriodNode(ctx context.Context, period, node string) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES(?,?) ON CONFLICT DO NOTHING`, period, node)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, period, node)
 	return err
 }
 func (s *Store) XNodePeriodNodes(ctx context.Context, period string) ([]xnode.PeriodNode, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT node_id,flushed_sequence FROM xnode_period_nodes WHERE period_id=? ORDER BY node_id`, period)
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id,flushed_sequence FROM xnode_period_nodes WHERE period_id=$1 ORDER BY node_id`, period)
 	if err != nil {
 		return nil, err
 	}
@@ -70,20 +70,17 @@ func (s *Store) SealXNodePeriodNode(ctx context.Context, period, node string, se
 	if sequence > math.MaxInt64 {
 		return xnode.ErrInvalid
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=? WHERE period_id=? AND node_id=?`, sequence, period, node)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=$1 WHERE period_id=$2 AND node_id=$3`, sequence, period, node)
 	return err
 }
 func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=? AND status IN('closed','closing')`, id)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=$1 AND status IN('closed','closing')`, id)
 	if err != nil {
 		return err
 	}
@@ -94,7 +91,7 @@ func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) e
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=?`, id); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=$1`, id); err != nil {
 		return err
 	}
 	return tx.Commit()

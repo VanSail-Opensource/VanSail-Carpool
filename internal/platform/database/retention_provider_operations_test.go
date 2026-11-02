@@ -49,7 +49,7 @@ func TestCompactAndPrunePreservesReferencedProviderOperations(t *testing.T) {
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_events(
 		id,node_uuid,node_name,status,offline_observed_at,threshold_minutes,multiplier_bps,
 		frozen_recipient_count,provider_operation_id,revision,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, "maintenance-event", "maintenance-node", "Maintenance node", "queued",
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, "maintenance-event", "maintenance-node", "Maintenance node", "queued",
 		stamp(now.Add(-48*time.Hour)), 1, 100, 1, compensation.Receipt.ID, 0,
 		stamp(now.Add(-48*time.Hour)), stamp(now.Add(-48*time.Hour))); err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestCompactAndPrunePreservesReferencedProviderOperations(t *testing.T) {
 		t.Fatalf("pruned provider operations = %d, want 1", counts["provider_operations"])
 	}
 	var remaining int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN (?,?,?)`, ban.ID, unban.ID, compensation.Receipt.ID).Scan(&remaining); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN ($1,$2,$3)`, ban.ID, unban.ID, compensation.Receipt.ID).Scan(&remaining); err != nil {
 		t.Fatal(err)
 	}
 	if remaining != 3 {

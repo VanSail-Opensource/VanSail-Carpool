@@ -9,7 +9,7 @@ import (
 func TestNativeEntitlementNormalizesLastSquadWithoutLegacyIdentity(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
-	if _, err := f.store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES(?,?)`, f.user.ID, f.group.ID); err != nil {
+	if _, err := f.store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES($1,$2)`, f.user.ID, f.group.ID); err != nil {
 		t.Fatal(err)
 	}
 	purchase, err := f.store.DesiredEntitlement(ctx, f.user.ID, time.Now())

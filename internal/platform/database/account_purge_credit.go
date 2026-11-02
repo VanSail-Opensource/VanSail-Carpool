@@ -9,7 +9,7 @@ import (
 
 // Keep the forfeited prepaid quantity beside immutable charge evidence.
 func archiveAccountCreditTx(ctx context.Context, tx *sql.Tx, user string, generation int64, now time.Time) error {
-	rows, err := tx.QueryContext(ctx, `SELECT proxy_user_id,credit_bytes,credit_started_at FROM xnode_payg_accounts WHERE user_id=? AND credit_bytes>0`, user)
+	rows, err := tx.QueryContext(ctx, `SELECT proxy_user_id,credit_bytes,credit_started_at FROM xnode_payg_accounts WHERE user_id=$1 AND credit_bytes>0`, user)
 	if err != nil {
 		return err
 	}

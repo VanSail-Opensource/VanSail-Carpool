@@ -38,7 +38,7 @@ func TestPAYGRollingWindowExcludesExactlyExpiredUnbilledTraffic(t *testing.T) {
 		t.Fatal("window charge lost raw evidence or billed aged-out bytes", value, err)
 	}
 	var charges int
-	if err := s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_payg_charges WHERE proxy_user_id=?`, a.ProxyUserID).Scan(&charges); err != nil || charges != 1 {
+	if err := s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_payg_charges WHERE proxy_user_id=$1`, a.ProxyUserID).Scan(&charges); err != nil || charges != 1 {
 		t.Fatal("replayed report billed again", charges, err)
 	}
 }
@@ -48,7 +48,7 @@ func TestPAYGPrepaidRemainderExpiresWithoutIdleReplacementCharge(t *testing.T) {
 	ctx := context.Background()
 	expires := time.Now().UTC().Add(-time.Minute).Truncate(time.Second)
 	started := expires.Add(-72 * time.Hour)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,credit_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, xnode.PAYGGB, xnode.PAYGGB, stamp(started), a.ProxyUserID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=$1,credit_bytes=$2,credit_started_at=$3 WHERE proxy_user_id=$4`, xnode.PAYGGB, xnode.PAYGGB, stamp(started), a.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	// Delayed metering before the exact expiry may consume already-paid bytes.

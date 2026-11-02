@@ -13,7 +13,7 @@ func TestReservedFirewallAndOrdinaryAdmissionProgressWithoutConsumingBusyAttempt
 	ctx := context.Background()
 	now := time.Now().UTC()
 	for _, job := range []struct{ id, kind, body string }{{"old", "provider_operation", `{}`}, {"urgent", "xnode_firewall", `{"nodeId":"node","bank":"dynamic"}`}} {
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?,'pending',0,?,?,?)`, job.id, job.kind, job.body, stamp(now.Add(-time.Hour)), stamp(now.Add(-time.Hour)), stamp(now)); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES($1,$2,$3,'pending',0,$4,$5,$6)`, job.id, job.kind, job.body, stamp(now.Add(-time.Hour)), stamp(now.Add(-time.Hour)), stamp(now)); err != nil {
 			t.Fatal(err)
 		}
 	}

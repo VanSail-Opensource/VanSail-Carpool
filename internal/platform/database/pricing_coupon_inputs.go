@@ -21,7 +21,7 @@ func pricingCouponsTx(ctx context.Context, tx *sql.Tx, user, combo string, squad
 		}
 		return grants, nil
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT id FROM coupon_grants WHERE user_id=? AND status='active' AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) ORDER BY id`, user)
+	rows, err := tx.QueryContext(ctx, `SELECT id FROM coupon_grants WHERE user_id=$1 AND status='active' AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) ORDER BY id`, user)
 	if err != nil {
 		return nil, err
 	}

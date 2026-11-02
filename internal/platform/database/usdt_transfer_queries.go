@@ -36,7 +36,7 @@ func (s *Store) USDTCursor(ctx context.Context, network string) (usdt.Cursor, er
 	if !ok {
 		return c, usdt.ErrConfiguration
 	}
-	err := s.db.QueryRowContext(ctx, "SELECT value,hash FROM usdt_scan_cursors WHERE network=? AND token=?", spec.Network, spec.Token).Scan(&c.Value, &c.Hash)
+	err := s.db.QueryRowContext(ctx, "SELECT value,hash FROM usdt_scan_cursors WHERE network=$1 AND token=$2", spec.Network, spec.Token).Scan(&c.Value, &c.Hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, nil
 	}
@@ -45,7 +45,7 @@ func (s *Store) USDTCursor(ctx context.Context, network string) (usdt.Cursor, er
 
 // USDTReady recovers transfers committed immediately before process interruption.
 func (s *Store) USDTReady(ctx context.Context, limit int) ([]usdt.Transfer, error) {
-	return s.usdtTransferList(ctx, " WHERE status='ready' ORDER BY received_at,id LIMIT ?", limit)
+	return s.usdtTransferList(ctx, " WHERE status='ready' ORDER BY received_at,id LIMIT $1", limit)
 }
 
 func (s *Store) usdtTransferList(ctx context.Context, where string, args ...any) ([]usdt.Transfer, error) {
@@ -70,7 +70,7 @@ func (s *Store) USDTReview(ctx context.Context, cursor string, limit int) (usdt.
 	if limit < 1 || limit > 100 {
 		limit = 50
 	}
-	items, err := s.usdtTransferList(ctx, " WHERE status='review' AND id>? ORDER BY id LIMIT ?", cursor, limit+1)
+	items, err := s.usdtTransferList(ctx, " WHERE status='review' AND id>$1 ORDER BY id LIMIT $2", cursor, limit+1)
 	page := usdt.ReviewPage{Items: items}
 	if err != nil {
 		return page, err

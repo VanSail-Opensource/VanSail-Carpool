@@ -15,6 +15,6 @@ func (s *Store) PricingScopeVersion(ctx context.Context, kind, id string) (int64
 		return p.Version, err
 	}
 	var version int64
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(expected_version),0) FROM pricing_admin_overrides WHERE scope_type=? AND scope_id=?`, kind, id).Scan(&version)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(expected_version),0) FROM pricing_admin_overrides WHERE scope_type=$1 AND scope_id=$2`, kind, id).Scan(&version)
 	return version, err
 }

@@ -13,7 +13,7 @@ import (
 // Balance returns the current TXB amount.
 func (s *Store) Balance(ctx context.Context, userID string) (model.Money, error) {
 	var balance int64
-	if err := s.db.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, userID).Scan(&balance); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=$1`, userID).Scan(&balance); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.TXBMoney(0), nil
 		}
@@ -24,10 +24,7 @@ func (s *Store) Balance(ctx context.Context, userID string) (model.Money, error)
 
 // AdjustBalance appends an immutable administrator-authored ledger entry.
 func (s *Store) retryAttempt_AdjustBalance(ctx context.Context, userID string, delta int64, referenceID, note string, now time.Time) (model.LedgerEntry, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err
@@ -52,17 +49,14 @@ func (s *Store) retryAttempt_DeductBalance(ctx context.Context, userID string, a
 	if amount <= 0 {
 		return model.LedgerEntry{}, ErrInsufficientBalance
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var existingID string
-	if err := tx.QueryRowContext(ctx, `SELECT id FROM ledger_entries WHERE kind='telegram_deduct' AND reference_id=? LIMIT 1`, referenceID).Scan(&existingID); err == nil {
+	if err := tx.QueryRowContext(ctx, `SELECT id FROM ledger_entries WHERE kind='telegram_deduct' AND reference_id=$1 LIMIT 1`, referenceID).Scan(&existingID); err == nil {
 		_ = tx.Rollback()
 		return s.LedgerEntryByID(ctx, existingID)
 	} else if !errors.Is(err, sql.ErrNoRows) {
@@ -87,12 +81,12 @@ func insertLedgerTx(ctx context.Context, tx *sql.Tx, userID string, delta, balan
 	if err != nil {
 		return "", err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ledger_entries(id,user_id,delta_txb_minor,balance_after,kind,reference_id,note,created_at) VALUES(?,?,?,?,?,?,?,?)`, id, userID, delta, balance, kind, referenceID, note, stamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT INTO ledger_entries(id,user_id,delta_txb_minor,balance_after,kind,reference_id,note,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, id, userID, delta, balance, kind, referenceID, note, stamp(now))
 	if err != nil {
 		return "", fmt.Errorf("append ledger: %w", err)
 	}
 	if delta < 0 && memberCommerceKind(kind) {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO user_preferences(user_id,show_around_tx) VALUES(?,1)
+		if _, err = tx.ExecContext(ctx, `INSERT INTO user_preferences(user_id,show_around_tx) VALUES($1,1)
 			ON CONFLICT(user_id) DO UPDATE SET show_around_tx=1`, userID); err != nil {
 			return "", fmt.Errorf("enable member community entrance: %w", err)
 		}
@@ -110,7 +104,7 @@ func memberCommerceKind(kind string) bool {
 
 // LedgerEntryByID returns one immutable ledger row.
 func (s *Store) LedgerEntryByID(ctx context.Context, id string) (model.LedgerEntry, error) {
-	return scanLedger(s.db.QueryRowContext(ctx, ledgerSelect+` WHERE id=?`, id))
+	return scanLedger(s.db.QueryRowContext(ctx, ledgerSelect+` WHERE id=$1`, id))
 }
 
 // ListLedger returns newest entries first.
@@ -118,7 +112,7 @@ func (s *Store) ListLedger(ctx context.Context, userID string, limit int) ([]mod
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, ledgerSelect+` WHERE user_id=? ORDER BY created_at DESC LIMIT ?`, userID, limit)
+	rows, err := s.db.QueryContext(ctx, ledgerSelect+` WHERE user_id=$1 ORDER BY created_at DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list ledger: %w", err)
 	}

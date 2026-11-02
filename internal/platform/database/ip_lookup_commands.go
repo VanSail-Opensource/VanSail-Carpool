@@ -16,10 +16,7 @@ import (
 
 // CreateIPLookupCheck atomically replays or charges, joins a report and queues its receipt.
 func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key string, q iplookup.Quote, now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -38,7 +35,7 @@ func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key 
 		return op.Receipt, tx.Commit()
 	}
 	var running int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&running); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE ip=$1 AND status='processing'`, q.IP).Scan(&running); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	fresh, c, err := ipQuoteTx(ctx, tx, user, q.IP, q.Refresh, now)
@@ -62,7 +59,7 @@ func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key 
 	var allowance any
 	if fresh.UseQuota {
 		allowance = fresh.PurchaseID
-		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+? WHERE purchase_id=? AND used+?<=total`, fresh.QuotaCost, allowance, fresh.QuotaCost)
+		result, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used+$1 WHERE purchase_id=$2 AND used+$3<=total`, fresh.QuotaCost, allowance, fresh.QuotaCost)
 		if err != nil {
 			return model.OperationReceipt{}, err
 		}
@@ -84,14 +81,14 @@ func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key 
 			return model.OperationReceipt{}, err
 		}
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_checks(id,operation_id,user_id,report_id,allowance_id,charge_minor,cached,quota_consumed) VALUES(?,?,?,?,?,?,?,?)`, checkID, op.Receipt.ID, user, reportID, allowance, charge, boolInt(cached), fresh.QuotaCost)
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_checks(id,operation_id,user_id,report_id,allowance_id,charge_minor,cached,quota_consumed) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, checkID, op.Receipt.ID, user, reportID, allowance, charge, boolInt(cached), fresh.QuotaCost)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
 	cacheMatch := "none"
 	if cached {
 		var evaluatedIP string
-		if err := tx.QueryRowContext(ctx, `SELECT ip FROM ip_lookup_reports WHERE id=?`, reportID).Scan(&evaluatedIP); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT ip FROM ip_lookup_reports WHERE id=$1`, reportID).Scan(&evaluatedIP); err != nil {
 			return model.OperationReceipt{}, err
 		}
 		cacheMatch = "exact"
@@ -103,18 +100,18 @@ func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key 
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE provider_operations SET result_json=? WHERE id=?`, string(metadata), op.Receipt.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE provider_operations SET result_json=$1 WHERE id=$2`, string(metadata), op.Receipt.ID); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	if cached {
 		var status string
-		if err := tx.QueryRowContext(ctx, `SELECT status FROM ip_lookup_reports WHERE id=?`, reportID).Scan(&status); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT status FROM ip_lookup_reports WHERE id=$1`, reportID).Scan(&status); err != nil {
 			return model.OperationReceipt{}, err
 		}
 		if err := finishIPCheckTx(ctx, tx, op.Receipt.ID, reportID, status, now); err != nil {
 			return model.OperationReceipt{}, err
 		}
-		op, err = scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, op.Receipt.ID))
+		op, err = scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, op.Receipt.ID))
 		if err != nil {
 			return model.OperationReceipt{}, err
 		}
@@ -131,7 +128,7 @@ func fmtBool(value bool) string {
 
 func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c iplookup.Config, now time.Time) (string, bool, error) {
 	var id string
-	err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_reports WHERE ip=? AND status='processing'`, q.IP).Scan(&id)
+	err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_reports WHERE ip=$1 AND status='processing'`, q.IP).Scan(&id)
 	if err == nil {
 		return id, false, nil
 	}
@@ -155,6 +152,6 @@ func selectIPRunTx(ctx context.Context, tx *sql.Tx, q, fresh iplookup.Quote, c i
 	if q.Refresh {
 		liveState = `{"status":"queued","attempted":false,"snapshotId":""}`
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,live_state_json,cache_key) VALUES(?,?,'processing',?,?,?,?)`, id, q.IP, string(encoded), stamp(now), liveState, iplookup.CacheKey(q.IP))
+	_, err = tx.ExecContext(ctx, `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,live_state_json,cache_key) VALUES($1,$2,'processing',$3,$4,$5,$6)`, id, q.IP, string(encoded), stamp(now), liveState, iplookup.CacheKey(q.IP))
 	return id, false, err
 }

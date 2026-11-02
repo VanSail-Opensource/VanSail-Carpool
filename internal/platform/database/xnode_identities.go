@@ -41,20 +41,20 @@ func (s *Store) XNodeIdentities(ctx context.Context) ([]xnode.Identity, error) {
 	return out, rows.Err()
 }
 func (s *Store) XNodeIdentity(ctx context.Context, id int64) (xnode.Identity, error) {
-	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.proxy_user_id=?`, id))
+	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.proxy_user_id=$1`, id))
 }
 func (s *Store) XNodeIdentityByUser(ctx context.Context, id string) (xnode.Identity, error) {
-	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.user_id=?`, id))
+	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.user_id=$1`, id))
 }
 func (s *Store) XNodeIdentityBySubscription(ctx context.Context, hash []byte) (xnode.Identity, error) {
-	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.subscription_hash=?`, hash))
+	return scanXNodeIdentity(s.db.QueryRowContext(ctx, xnodeIdentitySelect+` WHERE p.subscription_hash=$1`, hash))
 }
 func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xnode.Identity, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	if item.UserID != "" {
 		var active bool
-		if err := s.db.QueryRowContext(ctx, `SELECT account_status='active' FROM users WHERE id=?`, item.UserID).Scan(&active); err != nil {
+		if err := s.db.QueryRowContext(ctx, `SELECT account_status='active' FROM users WHERE id=$1`, item.UserID).Scan(&active); err != nil {
 			return item, err
 		}
 		if !active {
@@ -64,12 +64,12 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 	if item.ProxyUserID == 0 {
 		// Member IDs are Telegram IDs. Non-member services use a disjoint range.
 		var next int64
-		query := `SELECT MAX(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities WHERE user_id IS NULL`
-		if IsPostgres(s.db) {
-			query = `SELECT nextval('xnode_service_proxy_id_seq')`
-		}
+		query := `SELECT GREATEST(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities WHERE user_id IS NULL`
+
+		query = `SELECT nextval('xnode_service_proxy_id_seq')`
+
 		if item.UserID != "" {
-			query = `SELECT telegram_id FROM users WHERE id=?`
+			query = `SELECT telegram_id FROM users WHERE id=$1`
 		}
 		var args []any
 		if item.UserID != "" {
@@ -81,14 +81,14 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 		if next >= 1<<53 {
 			return item, xnode.ErrConflict
 		}
-		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 		if err != nil {
 			return item, err
 		}
 		item.ProxyUserID = next
 		return item, err
 	}
-	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id,access_disabled=CASE WHEN xnode_identities.credentials_cipher='' THEN excluded.access_disabled ELSE xnode_identities.access_disabled END WHERE xnode_identities.user_id IS excluded.user_id AND xnode_identities.service_name IS excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id,access_disabled=CASE WHEN xnode_identities.credentials_cipher='' THEN excluded.access_disabled ELSE xnode_identities.access_disabled END WHERE xnode_identities.user_id IS NOT DISTINCT FROM excluded.user_id AND xnode_identities.service_name IS NOT DISTINCT FROM excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 	if err != nil {
 		return item, err
 	}

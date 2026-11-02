@@ -28,17 +28,14 @@ func (s *Store) retryAttempt_UpdateAddTXBBounds(ctx context.Context, minimumMino
 	if minimumMinor <= 0 || maximumMinor < minimumMinor {
 		return model.AddTXBBounds{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.AddTXBBounds{}, fmt.Errorf("begin Add TXB bounds update: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE txb_limits SET minimum_txb_minor=?,maximum_txb_minor=?,
-		updated_by=?,updated_at=? WHERE singleton=1`, minimumMinor, maximumMinor, nullIfEmpty(actorID), stamp(now))
+	result, err := tx.ExecContext(ctx, `UPDATE txb_limits SET minimum_txb_minor=$1,maximum_txb_minor=$2,
+		updated_by=$3,updated_at=$4 WHERE singleton=1`, minimumMinor, maximumMinor, nullIfEmpty(actorID), stamp(now))
 	if err != nil {
 		return model.AddTXBBounds{}, fmt.Errorf("update Add TXB bounds: %w", err)
 	}

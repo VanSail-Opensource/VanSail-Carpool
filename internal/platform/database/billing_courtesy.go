@@ -27,10 +27,7 @@ func (s *Store) retryAttempt_CourtesyCreditPayment(ctx context.Context, actorID,
 	if actorID == "" || orderID == "" || len(reason) < 3 || len(reason) > 500 {
 		return model.CourtesyCredit{}, errors.New("a courtesy-credit actor, payment order, and reason of 3 to 500 bytes are required")
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.CourtesyCredit{}, fmt.Errorf("begin payment courtesy credit: %w", err)
@@ -63,7 +60,7 @@ func (s *Store) retryAttempt_CourtesyCreditPayment(ctx context.Context, actorID,
 		return model.CourtesyCredit{}, err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO courtesy_credits(id,payment_order_id,actor_user_id,txb_minor,ledger_entry_id,reason,created_at)
-		VALUES(?,?,?,?,?,?,?)`, creditID, order.ID, actorID, order.TXBMinor, ledgerID, reason, stamp(now)); err != nil {
+		VALUES($1,$2,$3,$4,$5,$6,$7)`, creditID, order.ID, actorID, order.TXBMinor, ledgerID, reason, stamp(now)); err != nil {
 		return model.CourtesyCredit{}, fmt.Errorf("record payment courtesy credit: %w", err)
 	}
 	detail, err := json.Marshal(map[string]any{"creditId": creditID, "ledgerEntryId": ledgerID, "amountMinor": order.TXBMinor, "reason": reason})
@@ -95,7 +92,7 @@ func courtesyCreditByOrderTx(ctx context.Context, tx *sql.Tx, orderID string) (m
 	var credit model.CourtesyCredit
 	var txbMinor int64
 	var created string
-	err := tx.QueryRowContext(ctx, courtesyCreditSelect+` WHERE payment_order_id=?`, orderID).Scan(
+	err := tx.QueryRowContext(ctx, courtesyCreditSelect+` WHERE payment_order_id=$1`, orderID).Scan(
 		&credit.ID, &credit.PaymentOrderID, &credit.ActorUserID, &txbMinor, &credit.LedgerEntryID, &credit.Reason, &created,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -114,7 +111,7 @@ func courtesyCreditByOrderTx(ctx context.Context, tx *sql.Tx, orderID string) (m
 
 func courtesyCreditExistsTx(ctx context.Context, tx *sql.Tx, orderID string) (bool, error) {
 	var matched int
-	err := tx.QueryRowContext(ctx, `SELECT 1 FROM courtesy_credits WHERE payment_order_id=?`, orderID).Scan(&matched)
+	err := tx.QueryRowContext(ctx, `SELECT 1 FROM courtesy_credits WHERE payment_order_id=$1`, orderID).Scan(&matched)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}

@@ -11,17 +11,14 @@ func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent str
 	if multiplier < 0 || cutoff >= math.MaxInt64 {
 		return xnode.ErrInvalid
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	var bound string
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=?`, nodeID).Scan(&bound); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=$1`, nodeID).Scan(&bound); err != nil {
 		return err
 	}
 	if bound != agent {
@@ -36,11 +33,11 @@ func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent str
 	}
 	// Reports committed after the flush retain their already-settled price.
 	// Only the next uncommitted sequence may adopt the new multiplier.
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES(?,?,?) ON CONFLICT(agent_id,from_sequence) DO UPDATE SET multiplier_fp=excluded.multiplier_fp`, agent, committed+1, multiplier)
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES($1,$2,$3) ON CONFLICT(agent_id,from_sequence) DO UPDATE SET multiplier_fp=excluded.multiplier_fp`, agent, committed+1, multiplier)
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE xnode_nodes SET multiplier_fp=? WHERE id=?`, multiplier, nodeID)
+	_, err = tx.ExecContext(ctx, `UPDATE xnode_nodes SET multiplier_fp=$1 WHERE id=$2`, multiplier, nodeID)
 	if err != nil {
 		return err
 	}

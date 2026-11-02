@@ -30,13 +30,13 @@ func TestWakeRoutingRetainsReceiptsAndRepairsOnlyUnfinishedJobs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = store.db.ExecContext(ctx, `UPDATE provider_operations SET status=?,result_json='{"diySave":{"settingsRevision":7}}' WHERE id=?`, tc.operationStatus, receipt.ID); err != nil {
+			if _, err = store.db.ExecContext(ctx, `UPDATE provider_operations SET status=$1,result_json='{"diySave":{"settingsRevision":7}}' WHERE id=$2`, tc.operationStatus, receipt.ID); err != nil {
 				t.Fatal(err)
 			}
 			if tc.remove {
-				_, err = store.db.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE json_extract(payload,'$.operationId')=?`, receipt.ID)
+				_, err = store.db.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, receipt.ID)
 			} else {
-				_, err = store.db.ExecContext(ctx, `UPDATE outbox_jobs SET status=?,attempts=8,available_at=? WHERE json_extract(payload,'$.operationId')=?`, tc.status, stamp(now.Add(time.Hour)), receipt.ID)
+				_, err = store.db.ExecContext(ctx, `UPDATE outbox_jobs SET status=$1,attempts=8,available_at=$2 WHERE (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$3`, tc.status, stamp(now.Add(time.Hour)), receipt.ID)
 			}
 			if err != nil {
 				t.Fatal(err)
@@ -48,7 +48,7 @@ func TestWakeRoutingRetainsReceiptsAndRepairsOnlyUnfinishedJobs(t *testing.T) {
 			}
 			var count, attempts int
 			var status string
-			if err = store.db.QueryRowContext(ctx, `SELECT count(*),coalesce(min(status),''),coalesce(min(attempts),0) FROM outbox_jobs WHERE json_extract(payload,'$.operationId')=?`, receipt.ID).Scan(&count, &status, &attempts); err != nil {
+			if err = store.db.QueryRowContext(ctx, `SELECT count(*),coalesce(min(status),''),coalesce(min(attempts),0) FROM outbox_jobs WHERE (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, receipt.ID).Scan(&count, &status, &attempts); err != nil {
 				t.Fatal(err)
 			}
 			if tc.wake && (count != 1 || status != "pending" || attempts != 0) {
@@ -58,7 +58,7 @@ func TestWakeRoutingRetainsReceiptsAndRepairsOnlyUnfinishedJobs(t *testing.T) {
 				t.Fatal("recovery changed leased or terminal work")
 			}
 			var result, operationStatus string
-			if err = store.db.QueryRowContext(ctx, `SELECT status,result_json FROM provider_operations WHERE id=?`, receipt.ID).Scan(&operationStatus, &result); err != nil || operationStatus != tc.operationStatus || result != `{"diySave":{"settingsRevision":7}}` {
+			if err = store.db.QueryRowContext(ctx, `SELECT status,result_json FROM provider_operations WHERE id=$1`, receipt.ID).Scan(&operationStatus, &result); err != nil || operationStatus != tc.operationStatus || result != `{"diySave":{"settingsRevision":7}}` {
 				t.Fatal("recovery changed receipt or financial evidence", err)
 			}
 		})

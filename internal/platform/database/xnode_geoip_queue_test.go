@@ -16,10 +16,10 @@ func TestQueueXNodeGeoIPCoalescesAndReopensFailedDelivery(t *testing.T) {
 	}
 	var count int
 	var id string
-	if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*),MIN(id) FROM outbox_jobs WHERE kind='xnode_firewall' AND json_extract(payload,'$.nodeId')='node' AND json_extract(payload,'$.bank')='geoip'`).Scan(&count, &id); err != nil || count != 1 {
+	if err := store.db.QueryRowContext(ctx, `SELECT COUNT(*),MIN(id) FROM outbox_jobs WHERE kind='xnode_firewall' AND (CASE ((payload)::jsonb #> '{nodeId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{nodeId}' END)='node' AND (CASE ((payload)::jsonb #> '{bank}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{bank}' END)='geoip'`).Scan(&count, &id); err != nil || count != 1 {
 		t.Fatalf("coalesced GeoIP jobs = %d, err=%v", count, err)
 	}
-	if _, err := store.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10 WHERE id=?`, id); err != nil {
+	if _, err := store.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10 WHERE id=$1`, id); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.QueueXNodeGeoIP(ctx, "node"); err != nil {
@@ -27,7 +27,7 @@ func TestQueueXNodeGeoIPCoalescesAndReopensFailedDelivery(t *testing.T) {
 	}
 	var status string
 	var attempts int
-	if err := store.db.QueryRowContext(ctx, `SELECT status,attempts FROM outbox_jobs WHERE id=?`, id).Scan(&status, &attempts); err != nil || status != "pending" || attempts != 0 {
+	if err := store.db.QueryRowContext(ctx, `SELECT status,attempts FROM outbox_jobs WHERE id=$1`, id).Scan(&status, &attempts); err != nil || status != "pending" || attempts != 0 {
 		t.Fatalf("retried GeoIP job = %q/%d, err=%v", status, attempts, err)
 	}
 }

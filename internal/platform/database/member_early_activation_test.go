@@ -28,7 +28,7 @@ func TestEarlyActivationPreservesDurationsWithoutCredit(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=? WHERE id=?`, stamp(queued.ValidFrom.Add(test.duration)), queued.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(queued.ValidFrom.Add(test.duration)), queued.ID); err != nil {
 				t.Fatal(err)
 			}
 			queued, err = store.PurchaseByID(ctx, queued.ID)
@@ -40,10 +40,10 @@ func TestEarlyActivationPreservesDurationsWithoutCredit(t *testing.T) {
 				t.Fatal(err)
 			}
 			if test.automatic {
-				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=1 WHERE id=?`, current.ID); err != nil {
+				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET auto_renew_enabled=1 WHERE id=$1`, current.ID); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=?,auto_renew_enabled=1 WHERE id=?`, current.ID, queued.ID); err != nil {
+				if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET auto_renew_source_purchase_id=$1,auto_renew_enabled=1 WHERE id=$2`, current.ID, queued.ID); err != nil {
 					t.Fatal(err)
 				}
 			}

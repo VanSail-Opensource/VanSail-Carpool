@@ -71,7 +71,7 @@ func TestLiveOnlyAttemptSurvivesStalledRunMaintenanceWithoutRefund(t *testing.T)
 	baseline := submitIP(t, service, user, "baseline", false)
 	finishIP(t, store, baseline.ID, false)
 	op := submitIP(t, service, user, "stalled-live", true)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at='2000-01-01T00:00:00Z',lease_expires_at='2000-01-01T00:01:00Z' WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?)`, op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at='2000-01-01T00:00:00Z',lease_expires_at='2000-01-01T00:01:00Z' WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$1)`, op.ID); err != nil {
 		t.Fatal(err)
 	}
 	r, _, err := store.IPLookupRun(ctx, op.ID)
@@ -92,7 +92,7 @@ func TestLiveOnlyAttemptSurvivesStalledRunMaintenanceWithoutRefund(t *testing.T)
 	if _, err := tx.ExecContext(ctx, `CREATE TEMP TABLE maintenance_operation_candidates(id TEXT PRIMARY KEY)`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO maintenance_operation_candidates(id) VALUES(?)`, op.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO maintenance_operation_candidates(id) VALUES($1)`, op.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err := reconcileStaleIPLookupsTx(ctx, tx, now); err != nil {

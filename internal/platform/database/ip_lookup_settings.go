@@ -12,10 +12,7 @@ import (
 
 // SaveIPLookupSettings commits configuration, encrypted secrets, quotas and audit together.
 func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor string, config iplookup.Config, secrets map[string]string, quotas map[string]*int) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -26,7 +23,7 @@ func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor str
 		if quota != nil && (*quota < 0 || *quota > 1000000) {
 			return &iplookup.CodeError{Code: "IP_LOOKUP_INVALID_CONFIG"}
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=?,updated_at=? WHERE id=?`, quota, stamp(now), id)
+		result, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=$1,updated_at=$2 WHERE id=$3`, quota, stamp(now), id)
 		if err != nil {
 			return err
 		}
@@ -54,7 +51,7 @@ func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor str
 				continue
 			}
 			var value string
-			if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=? AND encrypted=1`, iplookup.CredentialKey(p.ID)).Scan(&value); err == sql.ErrNoRows || (err == nil && value == "") {
+			if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=$1 AND encrypted=1`, iplookup.CredentialKey(p.ID)).Scan(&value); err == sql.ErrNoRows || (err == nil && value == "") {
 				return &iplookup.CodeError{Code: "IP_LOOKUP_CREDENTIAL_REQUIRED"}
 			} else if err != nil {
 				return err
@@ -72,7 +69,7 @@ func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor str
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES(?,?,'ip_lookup.settings','settings',?,?,?)`, id, actor, iplookup.SettingKey, string(raw), stamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,$2,'ip_lookup.settings','settings',$3,$4,$5)`, id, actor, iplookup.SettingKey, string(raw), stamp(now))
 	if err != nil {
 		return err
 	}
@@ -80,7 +77,7 @@ func (s *Store) retryAttempt_SaveIPLookupSettings(ctx context.Context, actor str
 }
 
 func putIPSettingTx(ctx context.Context, tx *sql.Tx, key, value string, encrypted bool, actor string, now time.Time) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by) VALUES(?,?,?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=excluded.encrypted,updated_at=excluded.updated_at,updated_by=excluded.updated_by`, key, value, boolInt(encrypted), stamp(now), actor)
+	_, err := tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at,updated_by) VALUES($1,$2,$3,$4,$5) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=excluded.encrypted,updated_at=excluded.updated_at,updated_by=excluded.updated_by`, key, value, boolInt(encrypted), stamp(now), actor)
 	return err
 }
 
@@ -90,7 +87,7 @@ func saveComboIPQuotaTx(ctx context.Context, tx *sql.Tx, input ComboInput, creat
 	}
 	if creating && input.IPLookupQuota == nil {
 		var raw string
-		if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=?`, iplookup.SettingKey).Scan(&raw); err != nil && err != sql.ErrNoRows {
+		if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=$1`, iplookup.SettingKey).Scan(&raw); err != nil && err != sql.ErrNoRows {
 			return err
 		}
 		config, err := iplookup.DecodeConfig(raw)
@@ -103,7 +100,7 @@ func saveComboIPQuotaTx(ctx context.Context, tx *sql.Tx, input ComboInput, creat
 	}
 	// Creation sets its quota after the combo row has been inserted.
 	if !creating && input.IPLookupQuota != nil {
-		_, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=? WHERE id=?`, *input.IPLookupQuota, input.ID)
+		_, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=$1 WHERE id=$2`, *input.IPLookupQuota, input.ID)
 		return err
 	}
 	return nil

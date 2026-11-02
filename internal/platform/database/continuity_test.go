@@ -27,7 +27,7 @@ func TestQueuedPurchaseUsesNativeContinuityWithoutPreparationJob(t *testing.T) {
 		t.Fatalf("CreatePurchase(queued) = (%+v, %v)", queued, err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`, jobpayload.ContinuityKind).Scan(&count); err != nil || count != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`, jobpayload.ContinuityKind).Scan(&count); err != nil || count != 0 {
 		t.Fatal("retired continuity job was produced", count, err)
 	}
 	projection, err := store.ContinuityEntitlement(ctx, queued.ID, queued.ValidFrom.Add(-time.Minute))
@@ -49,7 +49,7 @@ func TestRetireContinuityJobsPreservesClaimsAndHistory(t *testing.T) {
 		if err := store.EnqueueOutbox(ctx, jobpayload.ContinuityKind, `{"purchaseId":"`+status+`"}`, at.Add(24*time.Hour)); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status=? WHERE kind=? AND json_extract(payload,'$.purchaseId')=?`, status, jobpayload.ContinuityKind, status); err != nil {
+		if _, err := store.DB().ExecContext(ctx, `UPDATE outbox_jobs SET status=$1 WHERE kind=$2 AND (CASE ((payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{purchaseId}' END)=$3`, status, jobpayload.ContinuityKind, status); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -59,10 +59,10 @@ func TestRetireContinuityJobsPreservesClaimsAndHistory(t *testing.T) {
 		}
 	}
 	var done, processing int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND status='done'`, jobpayload.ContinuityKind).Scan(&done); err != nil || done != 3 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND status='done'`, jobpayload.ContinuityKind).Scan(&done); err != nil || done != 3 {
 		t.Fatal(done, err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND status='processing'`, jobpayload.ContinuityKind).Scan(&processing); err != nil || processing != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND status='processing'`, jobpayload.ContinuityKind).Scan(&processing); err != nil || processing != 1 {
 		t.Fatal(processing, err)
 	}
 }

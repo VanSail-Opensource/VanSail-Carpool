@@ -23,7 +23,7 @@ func pricingRenewalGrossTx(ctx context.Context, tx *sql.Tx, purchase string, gro
 	if c.Mode == "FIXED" {
 		return currentPricingContractGross(c, addons), nil
 	}
-	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=? AND state NOT IN ('CANCELLED','EXPIRED') ORDER BY generated_at DESC LIMIT 1`, c.ID))
+	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 AND state NOT IN ('CANCELLED','EXPIRED') ORDER BY generated_at DESC LIMIT 1`, c.ID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return c.Price, nil
 	}
@@ -50,7 +50,7 @@ func validatePricingRenewalSettlementTx(ctx context.Context, tx *sql.Tx, purchas
 	if !pricingAddonTermsMatch(c, addons) {
 		return pricing.RenewalHealthDeferred
 	}
-	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=? AND state NOT IN ('CANCELLED','EXPIRED') ORDER BY generated_at DESC LIMIT 1`, c.ID))
+	q, err := scanPricingQuote(tx.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 AND state NOT IN ('CANCELLED','EXPIRED') ORDER BY generated_at DESC LIMIT 1`, c.ID))
 	if errors.Is(err, sql.ErrNoRows) {
 		p, e := loadPricingPolicy(ctx, tx, "combo", c.ProductID, c.Price)
 		if e != nil {
@@ -71,7 +71,7 @@ func validatePricingRenewalSettlementTx(ctx context.Context, tx *sql.Tx, purchas
 		return err
 	}
 	var held int
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='HOLD_RENEWAL' AND scope_type='purchase' AND scope_id=? AND status='ACTIVE' AND starts_at<=? AND expires_at>?)`, purchase, pricingStamp(now), pricingStamp(now)).Scan(&held); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='HOLD_RENEWAL' AND scope_type='purchase' AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::bigint", purchase, pricingStamp(now), pricingStamp(now)).Scan(&held); err != nil {
 		return err
 	}
 	if held != 0 {

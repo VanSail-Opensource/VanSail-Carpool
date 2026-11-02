@@ -8,7 +8,7 @@ import (
 func emptyRenewalTx(ctx context.Context, tx *sql.Tx, purchase string) (bool, error) {
 	var comboID string
 	var customPrice sql.NullInt64
-	if err := tx.QueryRowContext(ctx, `SELECT combo_id,reward_renewal_price_minor FROM purchases WHERE id=?`, purchase).Scan(&comboID, &customPrice); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT combo_id,reward_renewal_price_minor FROM purchases WHERE id=$1`, purchase).Scan(&comboID, &customPrice); err != nil {
 		return false, err
 	}
 	combo, err := comboByIDTx(ctx, tx, comboID, false)
@@ -32,7 +32,7 @@ func emptyRenewalTx(ctx context.Context, tx *sql.Tx, purchase string) (bool, err
 	}
 	for _, id := range owned {
 		var mode string
-		e := tx.QueryRowContext(ctx, `SELECT billing_mode FROM squad_product_overrides WHERE group_id=?`, id).Scan(&mode)
+		e := tx.QueryRowContext(ctx, `SELECT billing_mode FROM squad_product_overrides WHERE group_id=$1`, id).Scan(&mode)
 		if e != nil && e != sql.ErrNoRows {
 			return false, e
 		}

@@ -45,7 +45,7 @@ func (s *Store) PricingRenewalQuote(ctx context.Context, user, purchase string) 
 	if err != nil || c == nil {
 		return nil, err
 	}
-	q, err := scanPricingQuote(s.db.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=? ORDER BY generated_at DESC LIMIT 1`, c.ID))
+	q, err := scanPricingQuote(s.db.QueryRowContext(ctx, pricingQuoteSelect+` WHERE contract_id=$1 ORDER BY generated_at DESC LIMIT 1`, c.ID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

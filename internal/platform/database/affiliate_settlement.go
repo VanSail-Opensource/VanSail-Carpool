@@ -17,7 +17,7 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 	var telegramID int64
 	err := tx.QueryRowContext(ctx, `SELECT inviter.id,inviter.telegram_id,
 		COALESCE(NULLIF(invitee.telegram_username,''),NULLIF(invitee.telegram_first_name,''),''),inviter.notification_locale
-		FROM users invitee JOIN users inviter ON inviter.telegram_id=invitee.inviter_id WHERE invitee.id=? AND inviter.account_status='active'`, invitedUserID).
+		FROM users invitee JOIN users inviter ON inviter.telegram_id=invitee.inviter_id WHERE invitee.id=$1 AND inviter.account_status='active'`, invitedUserID).
 		Scan(&inviterID, &telegramID, &inviteeName, &locale)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
@@ -26,7 +26,7 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 		return err
 	}
 	var prior int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM payment_orders WHERE user_id=? AND id<>? AND paid_at IS NOT NULL`, invitedUserID, orderID).Scan(&prior); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM payment_orders WHERE user_id=$1 AND id<>$2 AND paid_at IS NOT NULL`, invitedUserID, orderID).Scan(&prior); err != nil {
 		return err
 	}
 	if prior > 0 {
@@ -37,7 +37,7 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 		return err
 	}
 	var successCount int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM affiliate_settlements WHERE inviter_user_id=?`, inviterID).Scan(&successCount); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM affiliate_settlements WHERE inviter_user_id=$1`, inviterID).Scan(&successCount); err != nil {
 		return err
 	}
 	current := enabledTierAt(config.Tiers, successCount)
@@ -51,7 +51,7 @@ func settleAffiliateTx(ctx context.Context, tx *sql.Tx, orderID, invitedUserID s
 		return err
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO affiliate_settlements(id,invited_user_id,inviter_user_id,payment_order_id,config_id,tier_id,tier_name,
-		commission_bps,topup_txb_minor,commission_txb_minor,settled_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, settlementID, invitedUserID, inviterID,
+		commission_bps,topup_txb_minor,commission_txb_minor,settled_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, settlementID, invitedUserID, inviterID,
 		orderID, config.ID, current.ID, current.Name, bps, amount, commission, stamp(now))
 	if err != nil {
 		if isUniqueConstraint(err) {

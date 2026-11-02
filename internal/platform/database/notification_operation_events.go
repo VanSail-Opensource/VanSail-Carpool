@@ -16,14 +16,14 @@ func operationComboTx(ctx context.Context, tx *sql.Tx, operationID string) (stri
 	var combo string
 	err := tx.QueryRowContext(ctx, `SELECT combos.name FROM provider_operation_items item
 		JOIN purchases ON purchases.id=item.target_id JOIN combos ON combos.id=purchases.combo_id
-		WHERE item.operation_id=? AND item.item_key='purchase'`, operationID).Scan(&combo)
+		WHERE item.operation_id=$1 AND item.item_key='purchase'`, operationID).Scan(&combo)
 	return combo, err
 }
 
 func operationLedgerTx(ctx context.Context, tx *sql.Tx, operationID, kind string) (int64, int64, error) {
 	var delta, balance int64
 	err := tx.QueryRowContext(ctx, `SELECT delta_txb_minor,balance_after FROM ledger_entries
-		WHERE kind=? AND reference_id=?`, kind, operationID).Scan(&delta, &balance)
+		WHERE kind=$1 AND reference_id=$2`, kind, operationID).Scan(&delta, &balance)
 	return delta, balance, err
 }
 
@@ -90,7 +90,7 @@ func (s *Store) insertMemberRefundCompletedNoticeTx(ctx context.Context, tx *sql
 	if replacementID != "" {
 		var replacement string
 		if err := tx.QueryRowContext(ctx, `SELECT combos.name FROM purchases JOIN combos ON combos.id=purchases.combo_id
-			WHERE purchases.id=?`, replacementID).Scan(&replacement); err != nil {
+			WHERE purchases.id=$1`, replacementID).Scan(&replacement); err != nil {
 			return err
 		}
 		facts[notifications.FactReplacement] = replacement

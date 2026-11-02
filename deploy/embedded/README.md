@@ -2,8 +2,8 @@
 
 The production image includes PostgreSQL 18 server, client/contrib tools and
 pgBackRest. `PG_EMBEDDED=true DB_DRIVER=postgres` opts into running the server
-inside the application container. Legacy SQLite and explicitly configured
-external PostgreSQL remain supported. Never automatically convert a live source.
+inside the application container. Explicitly configured external PostgreSQL
+is also supported; disable PG_EMBEDDED and provide its protected connection URL.
 
 `compose.yml` is the selected deployment: one unprivileged UID 10001 container,
 1 GiB memory/swap ceiling, read-only root, dropped capabilities, `/data` preserved,
@@ -14,8 +14,8 @@ the existing bot, origin, administrator and master-key configuration. Do not
 put database URLs in this file for embedded mode.
 
 Always bind both `/data` and `/var/lib/postgresql` to explicit persistent volumes,
-as this Compose file does. `/data` holds logical backups and the bounded disposable
-proxy inventory cache even when PostgreSQL holds the application database.
+as this Compose file does. `/data` holds logical backups and temporary application assets. Disposable proxy
+inventories use session-scoped PostgreSQL temporary tables, without durable rows.
 An omitted mount creates an anonymous volume that can be abandoned on recreation;
 repeated deployments can leave several copies of the cache and backup history.
 To repair an existing deployment, inspect the current container mounts and declare
@@ -25,9 +25,7 @@ Do not replace it with an empty volume or prune volumes containing backups.
 Database size excludes WAL, proxy inventories, exports, old Docker volumes and
 images. Diagnose these separately with `docker system df`, container mount
 inspection and filesystem sizes. Remove only reviewed, unused disposable caches;
-preserve database volumes, migration evidence and logical exports. Old offline
-SQLite snapshots can be losslessly compressed after checking decompressed hashes.
-Never unlink PostgreSQL files or run a blanket volume prune as maintenance.
+preserve database volumes, migration evidence and logical exports. Never unlink PostgreSQL files or run a blanket volume prune as maintenance.
 
 `entrypoint.sh` runs under Tini, starts PostgreSQL before schema work, runs
 `db-schema migrate` with the migration role, then launches the restricted
@@ -35,36 +33,17 @@ application role. Signals stop the application first, then perform a fast,
 durable PostgreSQL shutdown. Either process failing stops the whole container.
 `postgres.sh` creates a UTF-8/C cluster, SCRAM roles and random passwords only
 when required. Secrets/URLs persist with mode 0600 below the database volume;
-the shared role initializer is restart-safe. A populated SQLite source prevents
-an accidental fresh PostgreSQL application startup.
+the shared role initializer is restart-safe. Existing clusters are reused and
+major-version mismatches fail rather than reinitializing the database.
 If recovery lacks the separate password files, peer-authenticated bootstrap
 recreates and synchronizes SQL login passwords before starting the application;
 the application master key must still come from independent protected recovery.
 
-For an existing installation, follow the [cutover gates](../postgres/cutover.md).
-Start this container with command `postgres-only` while the application is
-stopped, then run offline `db-migrate` commands using
-`DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url`. After import,
-verification and cutover-check, recreate with the normal `serve` command. The
-application's activation gate rechecks imported hashes before workers can run.
-Do not run the external PostgreSQL Compose service against this same volume.
-
-Merge `compose.offline.yml` for database-only mode with a database health check.
-For example, from the repository root with protected configuration already set:
-
-```sh
-docker compose -f deploy/embedded/compose.yml -f deploy/embedded/compose.recovery.yml -f deploy/embedded/compose.offline.yml up -d --wait
-docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-schema migrate
-docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate import --source /data/final-snapshot.db --output /data/import-report.json
-docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate verify --source /data/final-snapshot.db --output /data/verification-report.json
-docker compose -f deploy/embedded/compose.yml exec -e DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url application db-migrate cutover-check --output /data/readiness-report.json
-```
-
-Reports and snapshot paths must be new/protected as required by the CLI. After
-all gates pass, stop the offline container, then `up -d --wait` with the base and
-recovery files only. Removing the offline overlay restores `serve`; `/data` and
-database volumes persist. Do not use `down -v`. Retained SQLite data also blocks
-an initialized-but-fresh PostgreSQL application until import is verified.
+For upgrades, retain the current PostgreSQL volume and application master key.
+`db-schema migrate` applies only new forward migrations; existing SQL scripts and
+historical records remain unchanged. `compose.offline.yml` starts only PostgreSQL
+for operator maintenance/recovery with workers stopped. It is not an import path.
+Never run the external server against the same data volume or use `down -v`.
 
 `tuning.sh` budgets for the combined container rather than a dedicated database:
 at 1 GiB, 128 MiB shared buffers, 256 MiB effective cache estimate, 2 MiB per sort,

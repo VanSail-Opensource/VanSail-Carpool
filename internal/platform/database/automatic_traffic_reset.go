@@ -23,10 +23,7 @@ type automaticResetCandidate struct {
 // ProcessAutomaticTrafficResetObservation revalidates and records one reset period atomically.
 func (s *Store) retryAttempt_ProcessAutomaticTrafficResetObservation(ctx context.Context, remoteID string, used, limit int64,
 	remoteReset string, lastReset *time.Time, now time.Time) (notifications.AutomaticResetResult, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return notifications.AutomaticResetResult{}, err
@@ -101,8 +98,8 @@ func automaticResetCandidateTx(ctx context.Context, tx *sql.Tx, remoteID string,
 	var validFrom string
 	err := tx.QueryRowContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_from
 		FROM users JOIN purchases ON purchases.user_id=users.id JOIN combos ON combos.id=purchases.combo_id
-		WHERE users.proxy_user_id=? AND users.auto_traffic_reset_enabled=1 AND purchases.status='active'
-		AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`,
+		WHERE users.proxy_user_id=$1 AND users.auto_traffic_reset_enabled=1 AND purchases.status='active'
+		AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`,
 		strings.TrimSpace(remoteID), stamp(now), stamp(now)).Scan(&result.purchaseID, &result.userID, &result.combo, &validFrom)
 	if err == nil {
 		result.validFrom, err = parseStamp(validFrom)
@@ -114,16 +111,16 @@ func resetOperationSinceTx(ctx context.Context, tx *sql.Tx, purchaseID string, a
 	var count int
 	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations operation
 		JOIN provider_operation_items item ON item.operation_id=operation.id
-		WHERE operation.kind=? AND item.target_type='purchase' AND item.target_id=?
-		AND operation.status NOT IN ('failed','compensated') AND operation.created_at>=?`,
+		WHERE operation.kind=$1 AND item.target_type='purchase' AND item.target_id=$2
+		AND operation.status NOT IN ('failed','compensated') AND operation.created_at>=$3`,
 		purchaseops.OperationResetKind, purchaseID, stamp(anchor)).Scan(&count)
 	return count > 0, err
 }
 
 func (s *Store) disableAutomaticResetTx(ctx context.Context, tx *sql.Tx, candidate automaticResetCandidate, period string,
 	used, limit int64, reset string, price, balance int64, now time.Time) (notifications.AutomaticResetResult, error) {
-	if _, err := tx.ExecContext(ctx, `UPDATE users SET auto_traffic_reset_enabled=0,updated_at=?
-		WHERE id=? AND auto_traffic_reset_enabled=1`, stamp(now), candidate.userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE users SET auto_traffic_reset_enabled=0,updated_at=$1
+		WHERE id=$2 AND auto_traffic_reset_enabled=1`, stamp(now), candidate.userID); err != nil {
 		return notifications.AutomaticResetResult{}, err
 	}
 	created, err := s.insertUserNotificationTx(ctx, tx, "automatic-reset-insufficient:"+candidate.purchaseID+":"+period,

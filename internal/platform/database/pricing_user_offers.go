@@ -25,7 +25,7 @@ func (s *Store) PricingUserPricePage(ctx context.Context, user, cursor string, n
 	}
 	out.NextCursor = next
 	var current string
-	err = s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
+	err = s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return out, err
 	}

@@ -44,19 +44,19 @@ func (s *Store) retryAttempt_StreamPricingExport(ctx context.Context, writer io.
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	options := &sql.TxOptions{ReadOnly: true}
-	if IsPostgres(s.db) {
-		options.Isolation = sql.LevelRepeatableRead
-	}
+
+	options.Isolation = sql.LevelRepeatableRead
+
 	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if IsPostgres(s.db) {
-		if _, err = tx.ExecContext(ctx, `SET LOCAL statement_timeout='15s'`); err != nil {
-			return err
-		}
+
+	if _, err = tx.ExecContext(ctx, `SET LOCAL statement_timeout='15s'`); err != nil {
+		return err
 	}
+
 	key := make([]byte, 32)
 	if _, err = rand.Read(key); err != nil {
 		return err

@@ -2,7 +2,9 @@ package iplookup
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"net/netip"
 	"testing"
 )
@@ -10,7 +12,7 @@ import (
 func diskService(t *testing.T, quota int64) *EnhancedService {
 	t.Helper()
 	s := NewEnhancedService(nil, nil, nil)
-	if err := s.ConfigureInventoryCache(context.Background(), t.TempDir(), quota); err != nil {
+	if err := s.ConfigureInventoryCache(context.Background(), inventoryTestDatabase(t), t.TempDir(), quota); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -77,14 +79,14 @@ func TestDiskInventoryRetiresOnlyUnreferencedGenerations(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := s.disk.db.QueryRow("SELECT count(*) FROM prefixes").Scan(&count); err != nil || count != 0 {
+	if err := s.disk.db.QueryRowContext(context.Background(), "SELECT count(*) FROM prefixes").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("retired rows=%d err=%v", count, err)
 	}
 }
 
 func TestDiskInventoryQuotaPreservesPartialEvidence(t *testing.T) {
 	s := diskService(t, 16<<20)
-	// Exercise SQLite's page ceiling without allocating a giant input document.
+	// Exercise the bounded temporary-table quota without allocating a giant input document.
 	s.inventoryStream = func(ctx context.Context, _ string, _ Config, emit func(string)) error {
 		for i := 0; i < 300000; i++ {
 			emit(fmt.Sprintf("2001:ac8:%x:%x::/64", i>>16, i&65535))
@@ -109,7 +111,7 @@ func TestDiskInventoryReadFailureCannotCertifyMiss(t *testing.T) {
 	s := diskService(t, 32<<20)
 	index := collectDiskFixture(t, s, "11.0.0.1")
 	defer index.release()
-	if _, err := s.disk.db.Exec("DROP TABLE prefixes"); err != nil {
+	if _, err := s.disk.db.ExecContext(context.Background(), "DROP TABLE prefixes"); err != nil {
 		t.Fatal(err)
 	}
 	pool := &proxyPool{indexes: []*prefixIndex{index}, sources: []ProxySourceResult{{ID: "fixture"}}, complete: true}
@@ -117,4 +119,13 @@ func TestDiskInventoryReadFailureCannotCertifyMiss(t *testing.T) {
 	if err == nil || assessment.Status != "partial" {
 		t.Fatal("storage failure certified a negative")
 	}
+}
+
+func inventoryTestDatabase(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := testdatabase.Open(context.Background(), t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db
 }

@@ -62,7 +62,7 @@ func (s *Store) LuckyDrawForecast(ctx context.Context, id string) (LuckyDrawFore
 		var sold int
 		var collected int64
 		err = s.db.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(SUM(fee_minor),0) FROM activity_raffle_tickets
-   WHERE draw_id=? AND status IN ('active','settled')`, id).Scan(&sold, &collected)
+   WHERE draw_id=$1 AND status IN ('active','settled')`, id).Scan(&sold, &collected)
 		if err != nil {
 			return result, err
 		}

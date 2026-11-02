@@ -24,13 +24,13 @@ func comboControlConflictFrom(ctx context.Context, reader controlQueryer, userID
  'subscription_revoke','xnode_routing','xnode_diy','admin_entitlement_edit','admin_entitlement_refund','admin_combo_replacement',
  'admin_bulk_extension','node_compensation','admin_temporary_ban','admin_temporary_unban')
  AND operation.status IN ('queued','processing','pending_review','partial') AND
- (operation.owner_user_id=? OR (item.target_type='user' AND item.target_id=?) OR
- (item.target_type='purchase' AND item.target_id IN (SELECT id FROM purchases WHERE user_id=?))))
+ (operation.owner_user_id=$1 OR (item.target_type='user' AND item.target_id=$2) OR
+ (item.target_type='purchase' AND item.target_id IN (SELECT id FROM purchases WHERE user_id=$3))))
  OR EXISTS(SELECT 1 FROM outbox_jobs job WHERE job.status='processing' AND
- ((json_extract(CASE WHEN json_valid(job.payload) THEN job.payload ELSE '{}' END,'$.userId')=? AND job.kind='xnode_sync_user') OR
+ (((CASE ((CASE WHEN COALESCE((job.payload) IS JSON,false) THEN job.payload ELSE '{}' END)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (CASE WHEN COALESCE((job.payload) IS JSON,false) THEN job.payload ELSE '{}' END)::jsonb #>> '{userId}' END)=$4 AND job.kind='xnode_sync_user') OR
  (job.kind IN ('xnode_apply_entitlement','xnode_prepare_continuity','purchase_expire') AND
- json_extract(CASE WHEN json_valid(job.payload) THEN job.payload ELSE '{}' END,'$.purchaseId') IN (SELECT id FROM purchases WHERE user_id=?))))
- OR EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=? AND restored_at IS NULL)`, userID, userID, userID, userID, userID, userID).Scan(&conflict)
+ (CASE ((CASE WHEN COALESCE((job.payload) IS JSON,false) THEN job.payload ELSE '{}' END)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (CASE WHEN COALESCE((job.payload) IS JSON,false) THEN job.payload ELSE '{}' END)::jsonb #>> '{purchaseId}' END) IN (SELECT id FROM purchases WHERE user_id=$5))))
+ OR EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=$6 AND restored_at IS NULL)`, userID, userID, userID, userID, userID, userID).Scan(&conflict)
 	return conflict, err
 }
 
@@ -40,7 +40,7 @@ func (s *Store) ComboControlConflict(ctx context.Context, userID string) (bool, 
 }
 
 func activeControlPurchaseTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, now time.Time) (model.Purchase, error) {
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, purchaseID, userID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID))
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -48,7 +48,7 @@ func activeControlPurchaseTx(ctx context.Context, tx *sql.Tx, userID, purchaseID
 		return model.Purchase{}, purchaseops.ErrIneligible
 	}
 	var other bool
-	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND id<>? AND status IN ('active','activating') AND valid_until>?)`, userID, purchaseID, stamp(now)).Scan(&other)
+	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND id<>$2 AND status IN ('active','activating') AND valid_until>$3)`, userID, purchaseID, stamp(now)).Scan(&other)
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -71,7 +71,7 @@ func auditComboControlTx(ctx context.Context, tx *sql.Tx, userID, action, purcha
 }
 
 func queuedControlPurchaseTx(ctx context.Context, tx *sql.Tx, userID, queuedID string) (model.Purchase, error) {
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=? AND purchases.status='queued'
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 AND purchases.status='queued'
  ORDER BY purchases.valid_from,purchases.created_at,purchases.id LIMIT 1`, userID))
 	if errors.Is(err, ErrNotFound) {
 		return model.Purchase{}, purchaseops.ErrIneligible

@@ -23,16 +23,16 @@ func TestPurgeWaitsForAccountingAndRejoinRotatesPAYG(t *testing.T) {
 	if err = s.CompleteAccountPurge(ctx, u.ID, 1, now); !errors.Is(err, ErrConflict) {
 		t.Fatal("unfinished accounting discarded", err)
 	}
-	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closing' WHERE id=?`, a.PeriodID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closing' WHERE id=$1`, a.PeriodID); err != nil {
 		t.Fatal(err)
 	}
 	paygReportAt(t, s, a, 1, now, 128)
 	var used int64
-	if err = s.DB().QueryRowContext(ctx, `SELECT used_bytes FROM xnode_periods WHERE id=?`, a.PeriodID).Scan(&used); err != nil || used != 128 {
+	if err = s.DB().QueryRowContext(ctx, `SELECT used_bytes FROM xnode_periods WHERE id=$1`, a.PeriodID).Scan(&used); err != nil || used != 128 {
 		t.Fatal("closing traffic lost", used, err)
 	}
 	// This fixture has no remote participant; simulate its completed flush barrier.
-	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closed',ended_at=? WHERE proxy_user_id IN (?,?)`, stamp(now), parent.ProxyUserID, a.ProxyUserID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closed',ended_at=$1 WHERE proxy_user_id IN ($2,$3)`, stamp(now), parent.ProxyUserID, a.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	if err = s.CompleteAccountPurge(ctx, u.ID, 1, now); err != nil {
@@ -59,7 +59,7 @@ func TestPurgeWaitsForAccountingAndRejoinRotatesPAYG(t *testing.T) {
 		t.Fatal(got, err)
 	}
 	var credit int64
-	if err = s.DB().QueryRowContext(ctx, `SELECT credit_bytes FROM xnode_payg_accounts WHERE proxy_user_id=?`, a.ProxyUserID).Scan(&credit); err != nil || credit != 0 {
+	if err = s.DB().QueryRowContext(ctx, `SELECT credit_bytes FROM xnode_payg_accounts WHERE proxy_user_id=$1`, a.ProxyUserID).Scan(&credit); err != nil || credit != 0 {
 		t.Fatal("prepaid benefit restored", credit, err)
 	}
 	if err = s.SaveXNodePeriod(ctx, xnode.Period{ID: a.PeriodID, ProxyUserID: a.ProxyUserID, StartedAt: now, Strategy: "PAYG", Status: "open"}); !errors.Is(err, xnode.ErrConflict) {

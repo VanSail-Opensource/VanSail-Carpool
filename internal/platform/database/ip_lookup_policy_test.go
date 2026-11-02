@@ -91,7 +91,7 @@ func TestIPLookupAnyProviderOutageKeepsCostAndCachesReport(t *testing.T) {
 					t.Fatalf("outage result=%+v %v", check, err)
 				}
 				var itemStatus string
-				if err := store.DB().QueryRowContext(ctx, `SELECT status FROM provider_operation_items WHERE operation_id=?`, op.ID).Scan(&itemStatus); err != nil || itemStatus != "succeeded" {
+				if err := store.DB().QueryRowContext(ctx, `SELECT status FROM provider_operation_items WHERE operation_id=$1`, op.ID).Scan(&itemStatus); err != nil || itemStatus != "succeeded" {
 					t.Fatalf("delivered partial/rejected report item=%s error=%v", itemStatus, err)
 				}
 				state, err := service.State(ctx, user)

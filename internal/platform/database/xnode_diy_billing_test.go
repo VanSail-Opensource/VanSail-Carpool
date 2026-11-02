@@ -56,7 +56,7 @@ func TestDIYAndIPCheckCompeteForOneAllowanceWithoutFallbackCharge(t *testing.T) 
 		t.Fatal(state, err)
 	}
 	var charged int
-	if err = s.db.QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind IN('xnode_diy','ip_lookup')`, user).Scan(&charged); err != nil || charged != 0 {
+	if err = s.db.QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind IN('xnode_diy','ip_lookup')`, user).Scan(&charged); err != nil || charged != 0 {
 		t.Fatal("silently charged stale free quote", charged, err)
 	}
 }
@@ -140,7 +140,7 @@ func TestDIYBillingRollbackReplayAndFreeUnchangedSave(t *testing.T) {
 				t.Fatal("lost committed outcome", got, err)
 			}
 			var count int
-			if err = s.db.QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='xnode_diy'`, user).Scan(&count); err != nil {
+			if err = s.db.QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='xnode_diy'`, user).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
 			want := 0

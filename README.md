@@ -8,7 +8,7 @@ The engine tests authenticated HTTPS traffic and reports status, TTFB, and safe
 diagnostics. [Module details](internal/connectivity/README.md) describe supported
 configurations, lifecycle, retention, and extension points.
 
-VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared X-Node access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, SQLite database, and static assets. Production therefore needs one container, one persistent volume, and one HTTP port.
+VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared X-Node access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, PostgreSQL database, and static assets. Production therefore needs one container, durable application and PostgreSQL volumes, and one HTTP port.
 
 ## What is included
 
@@ -19,8 +19,8 @@ VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB bal
 - Queue-first X-Node and Emby access, subscription rotation, traffic statistics, and persistent synchronization jobs.
 - Multiple Activity games, daily check-ins, weighted lucky draws, and coupon wallets.
 - Durable Emby account setup, encrypted temporary credentials, server-enforced restricted policies, and compensating refunds.
-- Audited administration for settings, catalog, users, adjustments, entitlements, refunds, schema-aware database editing, backups, staged restore, and failed jobs.
-- Daily verified SQLite backups with seven-day retention, authenticated download, and pre-open atomic restore recovery.
+- Audited administration for settings, catalog, users, adjustments, entitlements, refunds, schema-aware database inspection, backups, offline recovery, and failed jobs.
+- Daily verified PostgreSQL exports with seven-day retention, authenticated download, and offline recovery.
 
 The machine-readable HTTP contract is [api/openapi.yaml](api/openapi.yaml). Module boundaries, invariants, failure behavior, and test expectations are indexed in [docs/modules/README.md](docs/modules/README.md).
 
@@ -32,7 +32,7 @@ Telegram Mini App
       v
 Go HTTP server :8080 ---- embedded Vue assets
       |
-      +---- SQLite WAL at /data/tx-carpool.db
+      +---- PostgreSQL 18 at /var/lib/postgresql
       +---- persistent outbox and scheduler
       +---- Telegram Bot API
       +---- X-Node API
@@ -40,7 +40,7 @@ Go HTTP server :8080 ---- embedded Vue assets
       +---- EZPay / BEPusdt / Telegram Stars
 ```
 
-`cmd/server` is deliberately thin and exposes two commands: `serve` and `healthcheck`. Domain packages live under `internal`; blocking operations accept `context.Context`, and provider clients are hidden behind consumer-owned interfaces. SQLite enables foreign keys, WAL, a busy timeout, and bounded connections. Balance changes, purchases, webhook deduplication, and outbox creation are transactional.
+`cmd/server` is deliberately thin and exposes two commands: `serve` and `healthcheck`. Domain packages live under `internal`; blocking operations accept `context.Context`, and provider clients are hidden behind consumer-owned interfaces. PostgreSQL enforces foreign keys, serializable write transactions, statement/lock deadlines and bounded connections. Balance changes, purchases, webhook deduplication, and outbox creation are transactional.
 
 The Vue application lives in `web` and uses Composition API, `<script setup lang="ts">`, Vue Router, Pinia for session-wide identity only, Nuxt UI v4, Motion for Vue, external Iconify Phosphor/country icons, and Zod validation. English and Simplified Chinese ship as parity-checked locale modules. `npm run build` writes to `internal/webui/dist`; Go embeds that directory and serves the SPA with same-origin APIs.
 
@@ -63,7 +63,7 @@ X-Node credentials, provider credentials, provider feature flags, chat IDs, rate
 
 ## Build and run
 
-Prerequisites are Go 1.26.5, Node.js 26 with npm, and GNU Make. The application stack includes Vue 3.5.41, Tailwind CSS 4.3.3, and `modernc.org/sqlite` 1.56.0.
+Prerequisites are Go 1.26.5, Node.js 26 with npm, and GNU Make. The application stack includes Vue 3.5.41, Tailwind CSS 4.3.3, and PostgreSQL 18 with pgx.
 
 ```sh
 make frontend-install
@@ -94,10 +94,12 @@ docker run --rm \
   --env-file .env \
   -p 8080:8080 \
   -v tx-carpool-data:/data \
+  -v vansail-postgres-data:/var/lib/postgresql \
+  -e PG_EMBEDDED=true \
   vansail-carpool:local
 ```
 
-The runtime image executes as UID/GID `10001`, exposes only port `8080`, persists only `/data`, and uses `vansail-carpool healthcheck` against `/healthz`. `/readyz` remains unavailable until local storage works and the required dashboard setup is complete.
+The runtime image executes as UID/GID `10001`, exposes only port `8080`, persists `/data` and the embedded PostgreSQL volume, and uses `vansail-carpool healthcheck` against `/healthz`. `/readyz` remains unavailable until local storage works and the required dashboard setup is complete.
 If a host bind mount is used instead of a named volume, make the mounted directory writable by UID/GID `10001` before startup.
 
 ## First-time setup
@@ -105,7 +107,7 @@ If a host bind mount is used instead of a named volume, make the mounted directo
 1. Deploy the HTTPS origin with the required environment and a durable `/data` volume.
 2. Open the Mini App as one of the configured `ADMIN_TELEGRAM_ID` values. It opens directly to the admin dashboard; authorization is the validated Telegram session plus a configured environment ID. Select **Set up user account** there when the admin also needs normal user-side access. A X-Node identity is created after a combo purchase.
 3. Configure the target Telegram group and channel, X-Node endpoint and token, enabled payment methods and required `txb_per_*` rates, and at least one combo. Configure the encrypted Emby token, HTTPS URL, and setup price only when Emby access is offered.
-4. Review the live X-Node internal squads, then add only the local descriptions, TXB prices, and visibility overrides you need. Upstream-owned squad identities are not duplicated in SQLite.
+4. Review the live X-Node internal squads, then add only the local descriptions, TXB prices, and visibility overrides you need. Upstream-owned squad identities are not duplicated locally.
 5. In BotFather, select the deployed URL as the bot's Main Mini App. The service configures the Telegram webhook and chat menu button from `PUBLIC_BASE_URL`; the bot needs invite and join-request administration rights in both chats.
 6. Confirm `/readyz` reports `status: ok` before sharing the Mini App.
 
@@ -119,13 +121,13 @@ Payment redirects are navigation only. TXB is credited exclusively after a verif
 
 ## Operations and recovery
 
-- `/healthz` proves HTTP and local SQLite liveness. `/readyz` also checks required dashboard setup readiness.
+- `/healthz` proves HTTP and PostgreSQL liveness. `/readyz` also checks required dashboard setup readiness.
 - A single context-managed scheduler handles entitlement boundaries, kind-routed outbox retries, payment reconciliation, purchase accounting closure and compute jobs, Emby provisioning, and daily online backups.
 - Verified backups are written atomically under `/data/backups`; completed files older than seven days are removed. Failed backup attempts remain visible to the admin and never publish a partial database file.
-- An administrator can download a verified backup. Restore accepts only a stored snapshot, creates a rescue backup, verifies integrity and migration compatibility, stages an adjacent copy, records a marker, returns `202`, and exits gracefully. Startup performs the atomic pre-open swap, rolls back a failed swap, records the result, and requires clients to reauthenticate.
+- Administrators download verified PostgreSQL archives. Restore runs offline into an isolated target; verify schema, exact recovery fingerprints and role grants before resuming one application/master. The browser has no database upload or live replacement action.
 - Logs are structured. Bot tokens, provider secrets, encrypted setting plaintext, session cookies, Telegram raw `initData`, and X-Node subscription URLs must never appear in logs or audit details.
 
-The admin API exposes domain operations plus an allowlisted, schema-aware table editor; it never accepts raw SQL. Generic edits use typed values, cursor pagination, optimistic hashes, diff review, typed confirmation, automatic rescue backup, and audit records. The UI warns that direct table edits bypass domain synchronization hooks. Ordinary domain APIs keep ledger rows, refunds, audit events, and provider event records append-only; the break-glass editor can bypass those hooks only through its reviewed, rescued, and audited workflow.
+The admin API exposes domain operations plus allowlisted, schema-aware read-only record pages; it never accepts raw SQL. Domain APIs keep ledger rows, refunds, audit events and provider events immutable. PostgreSQL credentials use separate migration/application roles.
 
 ## CI and release images
 
@@ -133,14 +135,11 @@ Pull requests enforce source line limits, per-folder file maps, locale parity, i
 
 Dependabot checks the root Go module, `web` npm dependencies, Docker base images, and GitHub Actions weekly. Dependabot pull requests are eligible for squash auto-merge only after every reported check succeeds; enable repository auto-merge and protect `main` with the required checks for this policy to take effect.
 
-Existing deployments retain `/data/tx-carpool.db` and the `tx-carpool-data` volume.
-
-The image also embeds PostgreSQL 18 server and pgBackRest. The selected opt-in
-[single-container deployment](deploy/embedded/README.md) has a 1 GiB memory
-budget and persistent PostgreSQL storage. Existing SQLite installations must
-complete the verified offline migration before changing the authoritative backend.
-The product and executable names change without relocating persistent data.
-
-## Adaptive pricing
-
-Pricing remains fixed unless an administrator enables a product. Purchase, renewal and campaign modes are independent. Enabled renewals apply automatically with notifications; no owner terms approval or second administrator is required. Calculated bounds, health/capacity gates, original forecast history and retained-data exports are documented in [the pricing module](internal/pricing/README.md). Delivery evidence and empirical rollout gates are tracked in [BAPO 5.1](docs/plans/bapo-5.1-progress.md).
+PostgreSQL is required. Use the [embedded deployment](deploy/embedded/README.md)
+with durable `/data` and `/var/lib/postgresql` volumes, or configure an external
+connection using DATABASE_URL_FILE. DB_DRIVER defaults to postgres and no other
+driver is accepted. Missing/unavailable databases fail startup. Run `db-schema
+migrate` with the migration role, then start the restricted application role.
+Keep existing PostgreSQL volumes and CONFIG_MASTER_KEY unchanged during upgrades.
+See [schema policy](docs/postgresql-migration.md) and
+[backup/recovery operations](deploy/postgres/recovery.md).

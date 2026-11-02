@@ -69,7 +69,7 @@ func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, produc
 			cutoff = now.UTC().Truncate(time.Minute)
 		}
 		var state string
-		e := tx.QueryRowContext(ctx, `SELECT state FROM pricing_decisions WHERE product_type=? AND product_id=? AND policy_version>=? AND generated_at>=? ORDER BY generated_at DESC LIMIT 1`, kind, product, in.Policy.Version, pricingStamp(cutoff)).Scan(&state)
+		e := tx.QueryRowContext(ctx, `SELECT state FROM pricing_decisions WHERE product_type=$1 AND product_id=$2 AND policy_version>=$3 AND generated_at>=$4 ORDER BY generated_at DESC LIMIT 1`, kind, product, in.Policy.Version, pricingStamp(cutoff)).Scan(&state)
 		if errors.Is(e, sql.ErrNoRows) {
 			in.GlobalPending = true
 		} else if e != nil {
@@ -95,7 +95,7 @@ func personalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, user, kind, produc
 	if err != nil {
 		return in, err
 	}
-	err = tx.QueryRowContext(ctx, `SELECT id,parameters_json,calibration_status,diagnostics_json FROM pricing_model_versions WHERE kind=? AND id LIKE ? AND frozen=0 AND created_at<=? ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, "%:"+pricing.StrategyVersion+":%", pricingStamp(now)).Scan(&in.ModelID, &raw, &in.Calibration, &diagnostics)
+	err = tx.QueryRowContext(ctx, `SELECT id,parameters_json,calibration_status,diagnostics_json FROM pricing_model_versions WHERE kind=$1 AND id ILIKE $2 AND frozen=0 AND created_at<=$3 ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, "%:"+pricing.StrategyVersion+":%", pricingStamp(now)).Scan(&in.ModelID, &raw, &in.Calibration, &diagnostics)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return in, err
 	}

@@ -59,7 +59,7 @@ func TestDDNSChangesCommitOrderingAndOperationTogether(t *testing.T) {
 		t.Fatal(states, err)
 	}
 	var operations, jobs int
-	if err = s.DB().QueryRowContext(ctx, `SELECT count(*) FROM provider_operations WHERE kind=?`, xnode.DDNSOperationKind).Scan(&operations); err != nil {
+	if err = s.DB().QueryRowContext(ctx, `SELECT count(*) FROM provider_operations WHERE kind=$1`, xnode.DDNSOperationKind).Scan(&operations); err != nil {
 		t.Fatal(err)
 	}
 	if err = s.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE kind='provider_operation'`).Scan(&jobs); err != nil || operations != 1 || jobs != 1 {
@@ -82,7 +82,7 @@ func TestDDNSChangesCommitOrderingAndOperationTogether(t *testing.T) {
 	}
 	// Simulate an explicitly authorized identity reset. Ordinary enrollment
 	// rotation does not permit a different agent to replace this identity.
-	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=NULL WHERE id=?`, in.Node.ID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=NULL WHERE id=$1`, in.Node.ID); err != nil {
 		t.Fatal(err)
 	}
 	if err = s.BindXNodeAgent(ctx, in.Node.ID, "agent-two"); err != nil {
@@ -122,7 +122,7 @@ func TestDDNSChangesCommitOrderingAndOperationTogether(t *testing.T) {
 		t.Fatal(err)
 	}
 	var status string
-	if err = tx.QueryRowContext(ctx, `SELECT status FROM provider_operations WHERE id=?`, states[0].OperationID).Scan(&status); err != nil || status != "queued" {
+	if err = tx.QueryRowContext(ctx, `SELECT status FROM provider_operations WHERE id=$1`, states[0].OperationID).Scan(&status); err != nil || status != "queued" {
 		t.Fatal(fmt.Sprint(counts), status, err)
 	}
 }

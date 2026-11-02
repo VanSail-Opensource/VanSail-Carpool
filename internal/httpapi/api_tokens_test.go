@@ -67,7 +67,7 @@ func TestBearerTokenScopesRevocationAndSessionIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.deps.Store.DB().ExecContext(context.Background(), `UPDATE users SET role='user' WHERE id=?`, user.ID); err != nil {
+	if _, err = s.deps.Store.DB().ExecContext(context.Background(), `UPDATE users SET role='user' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if w := request("GET", "/api/v1/admin/xnode/nodes", issued.Token); w.Code != 401 {

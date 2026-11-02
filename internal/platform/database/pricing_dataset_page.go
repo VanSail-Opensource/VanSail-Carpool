@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"github.com/VanSail-Opensource/X-Node/pkg/compute"
 	"strconv"
@@ -124,10 +125,10 @@ func (s *Store) pricingDatasetPage(ctx context.Context, name string, scope Prici
 		for i, key := range keys {
 			parts := []string{}
 			for j := 0; j < i; j++ {
-				parts = append(parts, "export_rows."+keys[j]+"=?")
+				parts = append(parts, "export_rows."+keys[j]+fmt.Sprintf("=$%d", len(args)+1))
 				args = append(args, values[j])
 			}
-			parts = append(parts, "export_rows."+key+"<?")
+			parts = append(parts, "export_rows."+key+fmt.Sprintf("<$%d", len(args)+1))
 			args = append(args, values[i])
 			alternatives = append(alternatives, "("+strings.Join(parts, " AND ")+")")
 		}
@@ -138,7 +139,8 @@ func (s *Store) pricingDatasetPage(ctx context.Context, name string, scope Prici
 	for _, key := range keys {
 		ordering = append(ordering, "export_rows."+key+" DESC")
 	}
-	query += " ORDER BY " + strings.Join(ordering, ",") + " LIMIT ?"
+	query += " ORDER BY " + strings.Join(ordering, ",") + fmt.Sprintf(" LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

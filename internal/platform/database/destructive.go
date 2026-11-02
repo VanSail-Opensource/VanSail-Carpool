@@ -14,16 +14,16 @@ import (
 // reversing any already-settled balance effects.
 func (s *Store) DeleteActivityGame(ctx context.Context, actorID, gameID string, now time.Time) error {
 	return s.deleteFeature(ctx, actorID, "activity_game.delete", "activity_game", gameID, now, func(tx *sql.Tx) error {
-		if err := requireRowTx(ctx, tx, `SELECT 1 FROM activity_games WHERE id=?`, gameID); err != nil {
+		if err := requireRowTx(ctx, tx, `SELECT 1 FROM activity_games WHERE id=$1`, gameID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM ledger_entries WHERE kind IN ('activity_bet_stake','activity_bet_payout') AND reference_id IN (SELECT id FROM activity_bets WHERE game_id=?)`, gameID); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM ledger_entries WHERE kind IN ('activity_bet_stake','activity_bet_payout') AND reference_id IN (SELECT id FROM activity_bets WHERE game_id=$1)`, gameID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM activity_bets WHERE game_id=?`, gameID); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM activity_bets WHERE game_id=$1`, gameID); err != nil {
 			return err
 		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM activity_games WHERE id=?`, gameID)
+		_, err := tx.ExecContext(ctx, `DELETE FROM activity_games WHERE id=$1`, gameID)
 		return err
 	})
 }
@@ -37,7 +37,7 @@ func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now
 			return err
 		}
 		if draw.Kind == "instant" {
-			_, err = tx.ExecContext(ctx, `DELETE FROM activity_lucky_draws WHERE id=?`, drawID)
+			_, err = tx.ExecContext(ctx, `DELETE FROM activity_lucky_draws WHERE id=$1`, drawID)
 			return err
 		}
 		if draw.Status == "cancelled" {
@@ -46,7 +46,7 @@ func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now
 		if draw.Status == "completed" {
 			var pending int
 			if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='draw_raffle_complete'
-				AND json_extract(payload,'$.drawId')=?`, drawID).Scan(&pending); err != nil {
+				AND (CASE ((payload)::jsonb #> '{drawId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{drawId}' END)=$1`, drawID).Scan(&pending); err != nil {
 				return err
 			}
 			if pending > 0 {
@@ -62,7 +62,7 @@ func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now
 				return err
 			}
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), drawID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), drawID); err != nil {
 			return err
 		}
 		return insertOutboxTx(ctx, tx, "draw_telegram_delete", `{"drawId":"`+drawID+`"}`, now, now)
@@ -70,10 +70,7 @@ func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now
 }
 
 func (s *Store) retryAttempt_deleteFeature(ctx context.Context, actorID, action, targetType, targetID string, now time.Time, mutate func(*sql.Tx) error) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

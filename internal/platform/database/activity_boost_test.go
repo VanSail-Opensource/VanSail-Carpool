@@ -51,7 +51,7 @@ func TestBoostedCheckInSamplesBaseOnceAcrossConcurrentClaims(t *testing.T) {
 		t.Fatalf("changed boosts replay = %+v, %v", replay, err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='activity_daily_checkin'`, user.ID).Scan(&count); err != nil || count != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='activity_daily_checkin'`, user.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("ledger count = %d, %v", count, err)
 	}
 }
@@ -78,7 +78,7 @@ func TestBoostedCheckInRefusalAndOverflowDoNotCredit(t *testing.T) {
 		t.Fatalf("balance = %+v, %v", balance, err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_daily_checkins WHERE user_id=?`, user.ID).Scan(&count); err != nil || count != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_daily_checkins WHERE user_id=$1`, user.ID).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("claims = %d, %v", count, err)
 	}
 }
@@ -92,7 +92,7 @@ func createBoostRewardMember(t *testing.T, store *Store, telegramID int64, now t
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=?,valid_until=? WHERE id=?`, stamp(now.Add(-time.Hour)), stamp(now.Add(24*time.Hour)), purchase.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=$1,valid_until=$2 WHERE id=$3`, stamp(now.Add(-time.Hour)), stamp(now.Add(24*time.Hour)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	return user
@@ -144,7 +144,7 @@ func TestConcurrentGroupMessageReplayCreditsOnce(t *testing.T) {
 	}
 	group.Wait()
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='activity_group_message_reward'`, user.ID).Scan(&count); err != nil || count != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='activity_group_message_reward'`, user.ID).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("ledger count = %d, %v", count, err)
 	}
 }

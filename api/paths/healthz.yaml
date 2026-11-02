@@ -5,13 +5,13 @@ get:
   security: []
   responses:
     '200':
-      description: The process can serve HTTP and SQLite responds.
+      description: The process can serve HTTP and PostgreSQL responds.
       content:
         application/json:
           schema:
             $ref: '../openapi.yaml#/components/schemas/HealthStatus'
     '503':
-      description: The process is serving HTTP but SQLite is unavailable.
+      description: The process is serving HTTP but PostgreSQL is unavailable.
       content:
         application/json:
           schema:

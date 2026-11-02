@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"time"
 )
@@ -24,7 +25,7 @@ type statisticEvent struct {
 func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
 		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id),0),p.created_at
-		FROM purchases p WHERE p.combo_id=? AND p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<? ORDER BY p.created_at`,
+		FROM purchases p WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3 ORDER BY p.created_at`,
 		comboID, stamp(from), stamp(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
@@ -53,10 +54,10 @@ func (s *Store) ComboStatistics(ctx context.Context, comboID string, from, to ti
 
 func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT p.user_id,p.charged_txb_minor,p.coupon_discount_txb_minor,
-		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id AND group_id=?),0),p.created_at
+		COALESCE((SELECT SUM(charged_txb_minor) FROM purchase_addons WHERE purchase_id=p.id AND group_id=$1),0),p.created_at
 		FROM purchases p JOIN combos c ON c.id=p.combo_id
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<? AND
-		(EXISTS (SELECT 1 FROM json_each(c.included_squad_uuids) WHERE value=?) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=p.id AND group_id=?))
+		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3 AND
+		(EXISTS (SELECT 1 FROM jsonb_array_elements_text((c.included_squad_uuids)::jsonb) WHERE value=$4) OR EXISTS (SELECT 1 FROM purchase_addons WHERE purchase_id=p.id AND group_id=$5))
 		ORDER BY p.created_at`, squadUUID, stamp(from), stamp(to), squadUUID, squadUUID)
 	if err != nil {
 		return model.AdminStatistics{}, err
@@ -82,22 +83,23 @@ func (s *Store) SquadStatistics(ctx context.Context, squadUUID string, from, to 
 
 func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID string, from, to time.Time) ([]model.StatisticSlice, error) {
 	query := `SELECT kind,uuid,COUNT(*) FROM (
-		SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, json_each(c.included_squad_uuids) j
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?
+		SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j
+		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$1 AND p.created_at<$2
 		UNION ALL
 		SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
-		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?) usage WHERE 1=1`
+		WHERE p.status NOT IN ('cancelled','failed') AND p.created_at>=$3 AND p.created_at<$4) usage WHERE 1=1`
 	args := []any{stamp(from), stamp(to), stamp(from), stamp(to)}
 	if comboID != "" {
 		query = `SELECT kind,uuid,COUNT(*) FROM (
-			SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, json_each(c.included_squad_uuids) j
-			WHERE p.combo_id=? AND p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?
+			SELECT 'included' AS kind,j.value AS uuid FROM purchases p JOIN combos c ON c.id=p.combo_id, jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j
+			WHERE p.combo_id=$1 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$2 AND p.created_at<$3
 			UNION ALL SELECT 'addon',a.group_id FROM purchases p JOIN purchase_addons a ON a.purchase_id=p.id
-			WHERE p.combo_id=? AND p.status NOT IN ('cancelled','failed') AND p.created_at>=? AND p.created_at<?) usage WHERE 1=1`
+			WHERE p.combo_id=$4 AND p.status NOT IN ('cancelled','failed') AND p.created_at>=$5 AND p.created_at<$6) usage WHERE 1=1`
 		args = []any{comboID, stamp(from), stamp(to), comboID, stamp(from), stamp(to)}
 	}
 	if squadUUID != "" {
-		query += ` AND uuid=?`
+		query += fmt.Sprintf(" AND uuid=$%d", len(args)+1)
+
 		args = append(args, squadUUID)
 	}
 	query += ` GROUP BY kind,uuid ORDER BY kind,uuid`
@@ -119,7 +121,7 @@ func (s *Store) catalogSquadDistribution(ctx context.Context, comboID, squadUUID
 }
 
 func (s *Store) ActivityGameStatistics(ctx context.Context, gameID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT user_id,stake_minor,payout_minor,won,created_at FROM activity_bets WHERE game_id=? AND created_at>=? AND created_at<? ORDER BY created_at`, gameID, stamp(from), stamp(to))
+	rows, err := s.db.QueryContext(ctx, `SELECT user_id,stake_minor,payout_minor,won,created_at FROM activity_bets WHERE game_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`, gameID, stamp(from), stamp(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}

@@ -16,10 +16,7 @@ func (s *Store) retryAttempt_QueuePMModeration(ctx context.Context, actorID, key
 	if input.Blocked == nil && input.Muted == nil {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -28,7 +25,7 @@ func (s *Store) retryAttempt_QueuePMModeration(ctx context.Context, actorID, key
 	if err := requirePMAdminTx(ctx, tx, actorID); err != nil {
 		return model.OperationReceipt{}, err
 	}
-	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=?`, input.ConversationID))
+	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=$1`, input.ConversationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -59,10 +56,10 @@ func (s *Store) retryAttempt_QueuePMModeration(ctx context.Context, actorID, key
 		if input.Muted != nil {
 			muted = *input.Muted
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE users SET pm_blocked=?,pm_muted=?,updated_at=? WHERE id=?`, blocked, muted, stamp(now), conversation.UserID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE users SET pm_blocked=$1,pm_muted=$2,updated_at=$3 WHERE id=$4`, boolInt(blocked), boolInt(muted), stamp(now), conversation.UserID); err != nil {
 			return model.OperationReceipt{}, err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE telegram_pm_conversations SET updated_at=? WHERE user_id=?`, stamp(now), conversation.UserID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE telegram_pm_conversations SET updated_at=$1 WHERE user_id=$2`, stamp(now), conversation.UserID); err != nil {
 			return model.OperationReceipt{}, err
 		}
 		auditID, err := ids.New()
@@ -84,10 +81,7 @@ func (s *Store) retryAttempt_QueuePMProfileRefresh(ctx context.Context, actorID,
 	if strings.TrimSpace(key) == "" || strings.TrimSpace(conversationID) == "" {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -96,7 +90,7 @@ func (s *Store) retryAttempt_QueuePMProfileRefresh(ctx context.Context, actorID,
 	if err := requirePMAdminTx(ctx, tx, actorID); err != nil {
 		return model.OperationReceipt{}, err
 	}
-	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=?`, conversationID))
+	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=$1`, conversationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -134,10 +128,7 @@ func (s *Store) retryAttempt_QueuePMTopicRepair(ctx context.Context, actorID, ke
 	if input.TopicID <= 1 || input.ProfileMessageID < 0 {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -146,7 +137,7 @@ func (s *Store) retryAttempt_QueuePMTopicRepair(ctx context.Context, actorID, ke
 	if err := requirePMAdminTx(ctx, tx, actorID); err != nil {
 		return model.OperationReceipt{}, err
 	}
-	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=?`, input.ConversationID))
+	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=$1`, input.ConversationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -165,14 +156,14 @@ func (s *Store) retryAttempt_QueuePMTopicRepair(ctx context.Context, actorID, ke
 	}
 	if !replayed {
 		var conflict bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE chat_id=? AND topic_id=? AND id<>?)
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM telegram_pm_conversations WHERE chat_id=$1 AND topic_id=$2 AND id<>$3)
 			OR EXISTS(SELECT 1 FROM provider_operation_items WHERE status='processing' AND
-			((target_type='pm_conversation' AND target_id=? AND item_key='profile') OR (target_type='pm_topic_recovery' AND target_id LIKE ?)))
+			((target_type='pm_conversation' AND target_id=$4 AND item_key='profile') OR (target_type='pm_topic_recovery' AND target_id ILIKE $5)))
 			OR EXISTS(SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
-			WHERE item.target_type='pm_topic_recovery' AND item.target_id LIKE ? AND operation.id<>? AND operation.status IN ('queued','processing'))
+			WHERE item.target_type='pm_topic_recovery' AND item.target_id ILIKE $6 AND operation.id<>$7 AND operation.status IN ('queued','processing'))
 			OR EXISTS(SELECT 1 FROM provider_operation_items item JOIN provider_operations operation ON operation.id=item.operation_id
-			JOIN telegram_pm_conversations other ON other.id=substr(item.target_id,1,instr(item.target_id,':')-1)
-			WHERE item.target_type='pm_topic_recovery' AND other.chat_id=? AND other.id<>? AND item.target_id LIKE other.id||':'||?||':%'
+			JOIN telegram_pm_conversations other ON other.id=substr(item.target_id,1,strpos(item.target_id,':')-1)
+			WHERE item.target_type='pm_topic_recovery' AND other.chat_id=$8 AND other.id<>$9 AND item.target_id ILIKE other.id||':'||$10||':%'
 			AND operation.status IN ('queued','processing','pending_review'))`, conversation.ChatID, input.TopicID, conversation.ID, conversation.ID, conversation.ID+":%", conversation.ID+":%", operation.Receipt.ID, conversation.ChatID, conversation.ID, strconv.FormatInt(input.TopicID, 10)).Scan(&conflict); err != nil {
 			return model.OperationReceipt{}, err
 		}

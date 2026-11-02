@@ -13,7 +13,7 @@ import (
 // ReconcilePricingForecasts revisits recent actuals for delayed reports, without
 // changing original predictions or interpreting missing observations as zero.
 func (s *Store) ReconcilePricingForecasts(ctx context.Context, now time.Time) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT f.forecast_id,f.entity_type,f.entity_id,f.metric,f.target_from,f.target_until FROM pricing_forecast_vintages f LEFT JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.target_until<=? AND (e.forecast_id IS NULL OR e.evaluated_at_ns<? AND (e.status<>'COMPLETE' OR f.target_until>?)) ORDER BY CASE WHEN e.forecast_id IS NULL THEN 0 ELSE 1 END,f.target_until DESC,f.forecast_id LIMIT 64`, pricingStamp(now.Add(-48*time.Hour)), now.Add(-24*time.Hour).UnixNano(), pricingStamp(now.AddDate(0, 0, -7)))
+	rows, err := s.db.QueryContext(ctx, `SELECT f.forecast_id,f.entity_type,f.entity_id,f.metric,f.target_from,f.target_until FROM pricing_forecast_vintages f LEFT JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.target_until<=$1 AND (e.forecast_id IS NULL OR e.evaluated_at_ns<$2 AND (e.status<>'COMPLETE' OR f.target_until>$3)) ORDER BY CASE WHEN e.forecast_id IS NULL THEN 0 ELSE 1 END,f.target_until DESC,f.forecast_id LIMIT 64`, pricingStamp(now.Add(-48*time.Hour)), now.Add(-24*time.Hour).UnixNano(), pricingStamp(now.AddDate(0, 0, -7)))
 	if err != nil {
 		return err
 	}
@@ -56,14 +56,14 @@ func (s *Store) ReconcilePricingForecasts(ctx context.Context, now time.Time) er
 // partial statistics if an unexpectedly large day exceeds the bounded budget.
 func (s *Store) SummarizePricingValidation(ctx context.Context, now time.Time) error {
 	var day string
-	err := s.db.QueryRowContext(ctx, `SELECT SUBSTR(f.target_from,1,10) FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.target_until<=? AND NOT EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds AND m.updated_at_ns>=e.evaluated_at_ns) ORDER BY f.target_from LIMIT 1`, pricingStamp(now)).Scan(&day)
+	err := s.db.QueryRowContext(ctx, `SELECT SUBSTR(f.target_from,1,10) FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.target_until<=$1 AND NOT EXISTS(SELECT 1 FROM pricing_model_validation_daily m WHERE m.day=SUBSTR(f.target_from,1,10) AND m.model_version=f.model_version AND m.metric=f.metric AND m.horizon_seconds=f.horizon_seconds AND m.updated_at_ns>=e.evaluated_at_ns) ORDER BY f.target_from LIMIT 1`, pricingStamp(now)).Scan(&day)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT f.model_version,f.metric,f.horizon_seconds,f.predicted_p50,f.predicted_p10,f.predicted_p90,e.actual,e.status FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE SUBSTR(f.target_from,1,10)=? ORDER BY f.forecast_id LIMIT 20001`, day)
+	rows, err := s.db.QueryContext(ctx, `SELECT f.model_version,f.metric,f.horizon_seconds,f.predicted_p50,f.predicted_p10,f.predicted_p90,e.actual,e.status FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE SUBSTR(f.target_from,1,10)=$1 ORDER BY f.forecast_id LIMIT 20001`, day)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (s *Store) SummarizePricingValidation(ctx context.Context, now time.Time) e
 		if err != nil {
 			return err
 		}
-		if _, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_validation_daily(day,model_version,metric,horizon_seconds,samples,metrics_json,updated_at_ns) VALUES(?,?,?,?,?,?,?) ON CONFLICT(day,model_version,metric,horizon_seconds) DO UPDATE SET samples=excluded.samples,metrics_json=excluded.metrics_json,updated_at_ns=excluded.updated_at_ns`, day, k.model, k.metric, k.horizon, v.Samples, string(raw), now.UnixNano()); err != nil {
+		if _, err = s.db.ExecContext(ctx, `INSERT INTO pricing_model_validation_daily(day,model_version,metric,horizon_seconds,samples,metrics_json,updated_at_ns) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(day,model_version,metric,horizon_seconds) DO UPDATE SET samples=excluded.samples,metrics_json=excluded.metrics_json,updated_at_ns=excluded.updated_at_ns`, day, k.model, k.metric, k.horizon, v.Samples, string(raw), now.UnixNano()); err != nil {
 			return err
 		}
 	}

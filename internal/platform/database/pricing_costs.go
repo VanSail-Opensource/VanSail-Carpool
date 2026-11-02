@@ -37,10 +37,7 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	if c.Cost < 0 || c.Cost > pricing.MaxPrice || c.CycleDays < 1 || c.CycleDays > 366 || c.Capacity < 0 || c.Capacity == 0 && !c.Unlimited || c.Reason == "" || len(c.Reason) > 1000 || c.EffectiveAt.IsZero() || c.EffectiveAt.After(now) {
 		return ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -51,9 +48,9 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	}
 	var result sql.Result
 	if c.Version == 0 {
-		result, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at,version,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES(?,?,?,?,?,?,?,1,?,?,?,?) ON CONFLICT(node_id) DO NOTHING`, c.NodeID, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited))
+		result, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_metadata(node_id,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,updated_by,updated_at,version,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES($1,$2,$3,$4,$5,$6,$7,1,$8,$9,$10,$11) ON CONFLICT(node_id) DO NOTHING`, c.NodeID, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited))
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE pricing_cost_metadata SET cycle_cost_minor=?,cycle_days=?,capacity_bytes=?,effective_at=?,updated_by=?,updated_at=?,version=version+1,charge_mode=?,hourly_rate_micros=?,traffic_rate_micros=?,capacity_unlimited=? WHERE node_id=? AND version=?`, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited), c.NodeID, c.Version)
+		result, err = tx.ExecContext(ctx, `UPDATE pricing_cost_metadata SET cycle_cost_minor=$1,cycle_days=$2,capacity_bytes=$3,effective_at=$4,updated_by=$5,updated_at=$6,version=version+1,charge_mode=$7,hourly_rate_micros=$8,traffic_rate_micros=$9,capacity_unlimited=$10 WHERE node_id=$11 AND version=$12`, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), actor, pricingStamp(now), c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited), c.NodeID, c.Version)
 	}
 	if err != nil {
 		return err
@@ -66,7 +63,7 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	if err = pricingAuditTx(ctx, tx, actor, "cost.save", c.NodeID, c.Reason, c, now); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_versions(node_id,version,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,recorded_at,actor_id,reason,actual_paid_minor,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, c.NodeID, c.Version+1, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), pricingStamp(now), actor, c.Reason, c.ActualPaid, c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited)); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_cost_versions(node_id,version,cycle_cost_minor,cycle_days,capacity_bytes,effective_at,recorded_at,actor_id,reason,actual_paid_minor,charge_mode,hourly_rate_micros,traffic_rate_micros,capacity_unlimited) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, c.NodeID, c.Version+1, c.Cost, c.CycleDays, c.Capacity, pricingStamp(c.EffectiveAt), pricingStamp(now), actor, c.Reason, c.ActualPaid, c.ChargeMode, c.HourlyRate, c.TrafficRate, boolInt(c.Unlimited)); err != nil {
 		return err
 	}
 	if err = pricingChangeNoticeTx(ctx, tx, actor, "COST", c.NodeID, c.Reason, now); err != nil {
@@ -74,7 +71,7 @@ func (s *Store) retryAttempt_SavePricingCost(ctx context.Context, actor string, 
 	}
 	// Invalidate future analytical offers for products fulfilled by this machine.
 	// Historical publications, charges and contracts remain immutable.
-	if _, err = tx.ExecContext(ctx, `UPDATE pricing_product_settings SET version=version+1,updated_at=?,updated_by=? WHERE dynamic_enabled=1 AND ((product_type IN ('addon','payg') AND EXISTS(SELECT 1 FROM xnode_group_bindings b WHERE b.group_id=pricing_product_settings.product_id AND b.node_id=?)) OR (product_type='combo' AND EXISTS(SELECT 1 FROM combos c JOIN json_each(c.included_squad_uuids) j ON 1=1 JOIN xnode_group_bindings b ON b.group_id=j.value WHERE c.id=pricing_product_settings.product_id AND b.node_id=?)))`, pricingStamp(now), actor, c.NodeID, c.NodeID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE pricing_product_settings SET version=version+1,updated_at=$1,updated_by=$2 WHERE dynamic_enabled=1 AND ((product_type IN ('addon','payg') AND EXISTS(SELECT 1 FROM xnode_group_bindings b WHERE b.group_id=pricing_product_settings.product_id AND b.node_id=$3)) OR (product_type='combo' AND EXISTS(SELECT 1 FROM combos c JOIN jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j ON 1=1 JOIN xnode_group_bindings b ON b.group_id=j.value WHERE c.id=pricing_product_settings.product_id AND b.node_id=$4)))`, pricingStamp(now), actor, c.NodeID, c.NodeID); err != nil {
 		return err
 	}
 	if err = tx.Commit(); err == nil {

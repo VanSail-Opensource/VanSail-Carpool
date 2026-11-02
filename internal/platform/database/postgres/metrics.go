@@ -15,7 +15,7 @@ type Metrics struct {
 }
 
 func Snapshot(d driver.Driver) Metrics {
-	value, ok := d.(compatDriver)
+	value, ok := d.(nativeDriver)
 	if !ok || value.metrics == nil {
 		return Metrics{}
 	}
@@ -25,7 +25,7 @@ func Snapshot(d driver.Driver) Metrics {
 
 // ObserveRetry counts only safe whole-operation serialization/deadlock retries.
 func ObserveRetry(d driver.Driver) {
-	if value, ok := d.(compatDriver); ok && value.metrics != nil {
+	if value, ok := d.(nativeDriver); ok && value.metrics != nil {
 		value.metrics.retries.Add(1)
 	}
 }

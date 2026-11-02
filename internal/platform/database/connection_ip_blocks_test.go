@@ -47,17 +47,17 @@ func TestConnectionIPBlockAtomicCreationReplayAndIsolation(t *testing.T) {
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_ip_blocks`).Scan(&rows); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.operationId')=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$2`,
 		providerops.OutboxKind, operation.Receipt.ID).Scan(&immediate); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND json_extract(payload,'$.blockId')=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{blockId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{blockId}' END)=$2`,
 		connections.BlockExpiryOutboxKind, block.ID).Scan(&expiry); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_ip_blocks WHERE sealed_ip LIKE '%203.0.113.8%'
-		OR EXISTS(SELECT 1 FROM outbox_jobs WHERE payload LIKE '%203.0.113.8%')
-		OR EXISTS(SELECT 1 FROM provider_operation_items WHERE target_id LIKE '%203.0.113.8%')`).Scan(&plaintext); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_ip_blocks WHERE sealed_ip ILIKE '%203.0.113.8%'
+		OR EXISTS(SELECT 1 FROM outbox_jobs WHERE payload ILIKE '%203.0.113.8%')
+		OR EXISTS(SELECT 1 FROM provider_operation_items WHERE target_id ILIKE '%203.0.113.8%')`).Scan(&plaintext); err != nil {
 		t.Fatal(err)
 	}
 	if rows != 1 || immediate != 1 || expiry != 1 || plaintext != 0 {
@@ -104,10 +104,10 @@ func TestConnectionIPUnblockCreationAndManualCancellation(t *testing.T) {
 		t.Fatal(err)
 	}
 	var expiry, active int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE id=?`, block.ExpiryJobID).Scan(&expiry); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE id=$1`, block.ExpiryJobID).Scan(&expiry); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_ip_blocks WHERE id=?`, block.ID).Scan(&active); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_ip_blocks WHERE id=$1`, block.ID).Scan(&active); err != nil {
 		t.Fatal(err)
 	}
 	completed, err := store.ProviderOperationByID(ctx, operation.Receipt.ID)

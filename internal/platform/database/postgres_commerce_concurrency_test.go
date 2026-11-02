@@ -125,10 +125,10 @@ func TestPostgresRenewalRacesCancellation(t *testing.T) {
 		}
 	}
 	var successors, ledger int64
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE auto_renew_source_purchase_id=?`, source.ID).Scan(&successors); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE auto_renew_source_purchase_id=$1`, source.ID).Scan(&successors); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='automatic_renewal'`, user.ID).Scan(&ledger); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='automatic_renewal'`, user.ID).Scan(&ledger); err != nil {
 		t.Fatal(err)
 	}
 	balance, err := s.Balance(ctx, user.ID)

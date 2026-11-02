@@ -24,32 +24,29 @@ func (s *Store) ClaimComputeOutboxJob(ctx context.Context, now time.Time) (*mode
 	return s.claimOutboxJob(ctx, now, false, true)
 }
 
-const priorityOutboxFilter = `kind='xnode_firewall' AND json_extract(CASE WHEN json_valid(payload) THEN payload ELSE '{}' END,'$.bank')='dynamic'`
+const priorityOutboxFilter = `kind='xnode_firewall' AND (CASE ((CASE WHEN COALESCE((payload) IS JSON,false) THEN payload ELSE '{}' END)::jsonb #> '{bank}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (CASE WHEN COALESCE((payload) IS JSON,false) THEN payload ELSE '{}' END)::jsonb #>> '{bank}' END)='dynamic'`
 
 func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, priorityOnly bool, computeOnly ...bool) (*model.OutboxJob, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	var options *sql.TxOptions
-	if IsPostgres(s.db) {
-		options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
-	}
+
+	options = &sql.TxOptions{Isolation: sql.LevelReadCommitted}
+
 	tx, err := s.db.BeginTx(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if IsPostgres(s.db) {
-		if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(72173681)`); err != nil {
-			return nil, err
-		}
+
+	if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(72173681)`); err != nil {
+		return nil, err
 	}
+
 	job, err := claimableOutboxTx(ctx, tx, now, priorityOnly, computeOnly...)
 	if err != nil || job == nil {
 		return nil, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='processing',attempts=attempts+1,updated_at=? /*pg:advance-claim*/ WHERE id=? AND status='pending'`, stamp(now), job.ID)
+	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='processing',attempts=attempts+1,updated_at=$1 ,claim_generation=claim_generation+1 WHERE id=$2 AND status='pending'`, stamp(now), job.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +55,9 @@ func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, 
 	}
 	job.Status = "processing"
 	job.Attempts++
-	if IsPostgres(s.db) {
-		job.ClaimGeneration++
-	}
+
+	job.ClaimGeneration++
+
 	job.UpdatedAt = now
 	if err := tx.Commit(); err != nil {
 		return nil, err
@@ -71,17 +68,14 @@ func (s *Store) retryAttempt_claimOutboxJob(ctx context.Context, now time.Time, 
 // RetryOutboxJob lets an administrator explicitly retry a failed operation.
 
 func (s *Store) retryAttempt_RetryOutboxJob(ctx context.Context, jobID string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var kind string
-	if err := tx.QueryRowContext(ctx, `SELECT kind FROM outbox_jobs WHERE id=? AND status='failed'`, jobID).Scan(&kind); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT kind FROM outbox_jobs WHERE id=$1 AND status='failed'`, jobID).Scan(&kind); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConflict
 		}
@@ -96,17 +90,14 @@ func (s *Store) retryAttempt_RetryOutboxJob(ctx context.Context, jobID string, n
 // DeleteOutboxJob removes any job that is not currently leased by a worker.
 
 func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var kind, status string
-	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=?`, jobID).Scan(&kind, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1`, jobID).Scan(&kind, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -115,7 +106,7 @@ func (s *Store) retryAttempt_DeleteOutboxJob(ctx context.Context, jobID string) 
 	if status == "processing" {
 		return ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=? AND status<>'processing'`, jobID)
+	result, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=$1 AND status<>'processing'`, jobID)
 	if err != nil {
 		return fmt.Errorf("delete outbox job: %w", err)
 	}

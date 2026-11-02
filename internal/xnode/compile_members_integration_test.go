@@ -15,7 +15,7 @@ func TestBulkCompileMembersPreserveEntitlementsAndFreshUsage(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, used, identity.CurrentPeriodID); err != nil {
+		if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2`, used, identity.CurrentPeriodID); err != nil {
 			t.Fatal(err)
 		}
 		inputs, err := f.store.XNodeCompileMembers(ctx, []string{f.user.ID})

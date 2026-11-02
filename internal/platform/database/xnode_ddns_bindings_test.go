@@ -63,7 +63,7 @@ func TestDDNSBindingOwnershipIsAtomicAndProtectsCredentials(t *testing.T) {
 	if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_endpoints SET node_id='other' WHERE id='v4'`); err == nil {
 		t.Fatal("bound host escaped node ownership")
 	}
-	if _, err = s.DB().ExecContext(ctx, `UPDATE users SET role='user',onboarding_state='intro',created_at=? WHERE id=?`, stamp(time.Now().Add(-72*time.Hour)), owner.ID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE users SET role='user',onboarding_state='intro',created_at=$1 WHERE id=$2`, stamp(time.Now().Add(-72*time.Hour)), owner.ID); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := s.DB().BeginTx(ctx, nil)

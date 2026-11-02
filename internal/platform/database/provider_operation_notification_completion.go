@@ -19,17 +19,14 @@ func (s *Store) retryAttempt_CompleteProviderOperationItemAndReleaseNotification
 	if err != nil {
 		return providerops.Item{}, err
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Item{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,provider_reference=?,error_code=?,
-		result_json=?,completed_at=?,updated_at=? WHERE operation_id=? AND item_key=? AND status='processing'
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,
+		result_json=$4,completed_at=$5,updated_at=$6 WHERE operation_id=$7 AND item_key=$8 AND status='processing'
 		AND attempt_started_at IS NOT NULL`, completion.Status, completion.ProviderReference, operationCode(completion.ErrorCode),
 		resultJSON, stamp(now), stamp(now), operationID, itemKey)
 	if err != nil {
@@ -45,7 +42,7 @@ func (s *Store) retryAttempt_CompleteProviderOperationItemAndReleaseNotification
 		return providerops.Item{}, err
 	}
 	item, err := scanProviderOperationItem(tx.QueryRowContext(ctx, providerOperationItemSelect+
-		` WHERE operation_id=? AND item_key=?`, operationID, itemKey))
+		` WHERE operation_id=$1 AND item_key=$2`, operationID, itemKey))
 	if err != nil {
 		return providerops.Item{}, err
 	}

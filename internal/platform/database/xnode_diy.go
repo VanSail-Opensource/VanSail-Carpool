@@ -14,7 +14,7 @@ import (
 
 func (s *Store) XNodeDIY(ctx context.Context, id string) (xnode.DIYDocument, error) {
 	doc := xnode.DIYDocument{UserID: id}
-	err := s.db.QueryRowContext(ctx, `SELECT revision,cipher FROM xnode_member_diy WHERE user_id=?`, id).Scan(&doc.Revision, &doc.Cipher)
+	err := s.db.QueryRowContext(ctx, `SELECT revision,cipher FROM xnode_member_diy WHERE user_id=$1`, id).Scan(&doc.Revision, &doc.Cipher)
 	if errors.Is(err, sql.ErrNoRows) {
 		return doc, nil
 	}
@@ -22,7 +22,7 @@ func (s *Store) XNodeDIY(ctx context.Context, id string) (xnode.DIYDocument, err
 }
 
 func (s *Store) ReplayXNodeDIY(ctx context.Context, user, key, fingerprint string) (model.OperationReceipt, bool, bool, error) {
-	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=? AND kind=? AND idempotency_key=?`, user, xnode.DIYOperationKind, key))
+	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, user, xnode.DIYOperationKind, key))
 	if errors.Is(err, ErrNotFound) {
 		return model.OperationReceipt{}, false, false, nil
 	}
@@ -33,7 +33,7 @@ func (s *Store) ReplayXNodeDIY(ctx context.Context, user, key, fingerprint strin
 		return op.Receipt, false, false, xnode.ErrConflict
 	}
 	var routed bool
-	err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM provider_operation_items WHERE operation_id=? AND target_type='xnode_user')`, op.Receipt.ID).Scan(&routed)
+	err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM provider_operation_items WHERE operation_id=$1 AND target_type='xnode_user')`, op.Receipt.ID).Scan(&routed)
 	return op.Receipt, true, routed, err
 }
 
@@ -43,10 +43,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 	if doc.UserID == "" || doc.UserID != input.OwnerUserID || doc.UserID != input.ActorUserID {
 		return model.OperationReceipt{}, xnode.ErrNotFound
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -60,18 +57,18 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		return op.Receipt, tx.Commit()
 	}
 	var owner bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=? AND id=?)`, doc.UserID, input.OwnerUserID).Scan(&owner); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=$1 AND id=$2)`, doc.UserID, input.OwnerUserID).Scan(&owner); err != nil {
 		return op.Receipt, err
 	}
 	if !owner {
 		return op.Receipt, xnode.ErrNotFound
 	}
 	var current int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT revision FROM xnode_member_diy WHERE user_id=?),0)`, doc.UserID).Scan(&current); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT revision FROM xnode_member_diy WHERE user_id=$1),0)`, doc.UserID).Scan(&current); err != nil {
 		return op.Receipt, err
 	}
 	var currentRouting int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT p.revision FROM xnode_routing_plans p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE i.user_id=?),0)`, doc.UserID).Scan(&currentRouting); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT p.revision FROM xnode_routing_plans p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE i.user_id=$1),0)`, doc.UserID).Scan(&currentRouting); err != nil {
 		return op.Receipt, err
 	}
 	if current != doc.Revision || currentRouting != routingRevision || current >= 9007199254740991 {
@@ -84,7 +81,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 	}
 	if plan != nil {
 		var planOwned bool
-		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=? AND user_id=?)`, plan.ProxyUserID, doc.UserID).Scan(&planOwned); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=$1 AND user_id=$2)`, plan.ProxyUserID, doc.UserID).Scan(&planOwned); err != nil {
 			return op.Receipt, err
 		}
 		if !planOwned {
@@ -98,7 +95,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		}
 	}
 	if !doc.Unchanged {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET revision=excluded.revision,cipher=excluded.cipher`, doc.UserID, current+1, doc.Cipher); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES($1,$2,$3) ON CONFLICT(user_id) DO UPDATE SET revision=excluded.revision,cipher=excluded.cipher`, doc.UserID, current+1, doc.Cipher); err != nil {
 			return op.Receipt, err
 		}
 	}
@@ -107,7 +104,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		if err != nil {
 			return op.Receipt, err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE provider_operations SET result_json=? WHERE id=?`, string(raw), op.Receipt.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operations SET result_json=$1 WHERE id=$2`, string(raw), op.Receipt.ID); err != nil {
 			return op.Receipt, err
 		}
 	}
@@ -117,13 +114,13 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		}
 	}
 	if plan == nil && !doc.NativeChanged {
-		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',completed_at=?,updated_at=? WHERE operation_id=?`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',completed_at=$1,updated_at=$2 WHERE operation_id=$3`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
 			return op.Receipt, err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',completed_at=?,updated_at=? WHERE id=?`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',completed_at=$1,updated_at=$2 WHERE id=$3`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
 			return op.Receipt, err
 		}
-		op, err = scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, op.Receipt.ID))
+		op, err = scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, op.Receipt.ID))
 		if err != nil {
 			return op.Receipt, err
 		}

@@ -6,33 +6,6 @@ import (
 	"time"
 )
 
-func TestCommunityMembershipMigrationMapsLegacyStates(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	store := newTestStore(t)
-	unnamed := createTestUser(t, store, 22001)
-	named := createTestUser(t, store, 22002)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='membership' WHERE id IN (?,?)`, unnamed.ID, named.ID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET username='river' WHERE id=?`, named.ID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.DB().ExecContext(ctx, `DELETE FROM schema_migrations WHERE version='042_community_membership.sql'`); err != nil {
-		t.Fatal(err)
-	}
-	if err := migrate(ctx, store.DB()); err != nil {
-		t.Fatal(err)
-	}
-	for _, test := range []struct{ userID, state string }{{unnamed.ID, "username"}, {named.ID, "agreement"}} {
-		user, err := store.UserByID(ctx, test.userID)
-		if err != nil || user.OnboardingState != test.state {
-			t.Fatalf("legacy user %s = (%+v, %v), want %s", test.userID, user, err, test.state)
-		}
-	}
-}
-
 func TestCommunityMembershipPersistsFactsWithoutOnboardingTransition(t *testing.T) {
 	t.Parallel()
 
@@ -74,7 +47,7 @@ func TestHasActiveComboUsesStrictCurrentActiveWindow(t *testing.T) {
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=?,valid_from=?,valid_until=? WHERE id=?`, test.status, stamp(test.from), stamp(test.until), purchase.ID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=$1,valid_from=$2,valid_until=$3 WHERE id=$4`, test.status, stamp(test.from), stamp(test.until), purchase.ID); err != nil {
 				t.Fatal(err)
 			}
 			got, err := store.HasActiveCombo(ctx, user.ID, now)

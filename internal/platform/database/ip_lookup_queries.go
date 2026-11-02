@@ -11,7 +11,7 @@ import (
 
 func ipConfigTx(ctx context.Context, tx *sql.Tx) (iplookup.Config, error) {
 	var raw string
-	if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=?`, iplookup.SettingKey).Scan(&raw); err != nil && err != sql.ErrNoRows {
+	if err := tx.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=$1`, iplookup.SettingKey).Scan(&raw); err != nil && err != sql.ErrNoRows {
 		return iplookup.Config{}, err
 	}
 	return iplookup.DecodeConfig(raw)
@@ -20,7 +20,7 @@ func ipConfigTx(ctx context.Context, tx *sql.Tx) (iplookup.Config, error) {
 func ipAllowanceTx(ctx context.Context, tx *sql.Tx, user string, now time.Time) (*iplookup.Allowance, error) {
 	var a iplookup.Allowance
 	err := tx.QueryRowContext(ctx, `SELECT p.id,a.total,a.total-a.used,p.valid_until FROM purchases p JOIN ip_lookup_allowances a ON a.purchase_id=p.id
-		WHERE p.user_id=? AND p.status='active' AND julianday(p.valid_from)<=julianday(?) AND julianday(p.valid_until)>julianday(?) ORDER BY p.valid_from DESC,p.id LIMIT 1`, user, stamp(now), stamp(now)).Scan(&a.PurchaseID, &a.Total, &a.Remaining, &a.ValidUntil)
+		WHERE p.user_id=$1 AND p.status='active' AND vansail_timestamp(p.valid_from)<=vansail_timestamp($2) AND vansail_timestamp(p.valid_until)>vansail_timestamp($3) ORDER BY p.valid_from DESC,p.id LIMIT 1`, user, stamp(now), stamp(now)).Scan(&a.PurchaseID, &a.Total, &a.Remaining, &a.ValidUntil)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -72,7 +72,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 	}
 	q.ConfigHash = iplookup.ConfigHash(c)
 	var running bool
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE ip=? AND status='processing')`, ip).Scan(&running); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE ip=$1 AND status='processing')`, ip).Scan(&running); err != nil {
 		return q, c, err
 	}
 	cached, _, err := ipCachedReportTx(ctx, tx, ip, true)
@@ -138,7 +138,7 @@ func (s *Store) IPLookupCheck(ctx context.Context, user, id string) (iplookup.Ch
 	var cached, refunded int
 	var usedQuota int
 	var charge int64
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(r.report_json,''),COALESCE(r.live_state_json,'{}'),c.cached,c.refunded,COALESCE(CAST(json_extract(o.result_json,'$.usedQuota') AS INTEGER),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),c.charge_minor,COALESCE(json_extract(o.result_json,'$.requestedIP'),r.ip,''),COALESCE(json_extract(o.result_json,'$.cacheMatch'),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END),c.quota_consumed FROM ip_lookup_checks c LEFT JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=? AND c.user_id=?`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch, &result.QuotaConsumed)
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(r.report_json,''),COALESCE(r.live_state_json,'{}'),c.cached,c.refunded,COALESCE(CAST((CASE ((o.result_json)::jsonb #> '{usedQuota}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (o.result_json)::jsonb #>> '{usedQuota}' END) AS BIGINT),CASE WHEN c.allowance_id IS NOT NULL THEN 1 ELSE 0 END),c.charge_minor,COALESCE((CASE ((o.result_json)::jsonb #> '{requestedIP}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (o.result_json)::jsonb #>> '{requestedIP}' END),r.ip,''),COALESCE((CASE ((o.result_json)::jsonb #> '{cacheMatch}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (o.result_json)::jsonb #>> '{cacheMatch}' END),CASE c.cached WHEN 1 THEN 'exact' ELSE 'none' END),c.quota_consumed FROM ip_lookup_checks c LEFT JOIN ip_lookup_reports r ON r.id=c.report_id JOIN provider_operations o ON o.id=c.operation_id WHERE c.operation_id=$1 AND c.user_id=$2`, id, user).Scan(&raw, &liveRaw, &cached, &refunded, &usedQuota, &charge, &result.RequestedIP, &result.CacheMatch, &result.QuotaConsumed)
 	if err == sql.ErrNoRows {
 		return result, ErrNotFound
 	}

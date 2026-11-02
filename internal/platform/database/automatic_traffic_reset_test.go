@@ -43,8 +43,8 @@ func TestAutomaticTrafficResetDebitIsIdempotentAndSuccessGated(t *testing.T) {
 	}
 	assertNotificationCounts(t, store, 2, 2)
 	var completion string
-	if err := store.DB().QueryRow(`SELECT json_extract(payload,'$.facts.time') FROM outbox_jobs
-		WHERE kind=? AND json_extract(payload,'$.kind')=?`, jobpayload.UserNotificationKind,
+	if err := store.DB().QueryRow(`SELECT (CASE ((payload)::jsonb #> '{facts,time}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{facts,time}' END) FROM outbox_jobs
+		WHERE kind=$1 AND (CASE ((payload)::jsonb #> '{kind}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{kind}' END)=$2`, jobpayload.UserNotificationKind,
 		jobpayload.UserEventAutomaticReset).Scan(&completion); err != nil || completion != completedAt.Format(time.RFC3339Nano) {
 		t.Fatalf("completion time = %q, %v", completion, err)
 	}
@@ -104,14 +104,14 @@ func automaticResetFixture(t *testing.T, telegramID, seed int64) (*Store, string
 		t.Fatal(err)
 	}
 	combo := saveTestCombo(t, store, "Automatic reset", 301, 30)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET reset_strategy='DAY' WHERE id=?`, combo.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET reset_strategy='DAY' WHERE id=$1`, combo.ID); err != nil {
 		t.Fatal(err)
 	}
 	purchase := createMemberOperationPurchase(t, store, user.ID, combo.ID, "automatic-reset-purchase", now.Add(-time.Hour))
 	if err := store.MarkPurchaseSyncResult(ctx, purchase.ID, true, now.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=? WHERE id=?`, strconv.FormatInt(telegramID, 10), user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=$1 WHERE id=$2`, strconv.FormatInt(telegramID, 10), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	setting, err := store.TrafficResetAutomation(ctx, user.ID)
@@ -127,7 +127,7 @@ func assertAutomaticResetCounts(t *testing.T, store *Store, userID string, opera
 	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM provider_operations WHERE kind='purchase_traffic_reset'`).Scan(&operationCount); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='traffic_reset_debit'`, userID).Scan(&debitCount); err != nil {
+	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='traffic_reset_debit'`, userID).Scan(&debitCount); err != nil {
 		t.Fatal(err)
 	}
 	if operationCount != operations || debitCount != debits {

@@ -13,10 +13,10 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_purchase_candidates(id)
 		SELECT purchase.id FROM purchases purchase
-		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<?
+		WHERE purchase.status IN ('expired','cancelled','failed') AND purchase.updated_at<$1
 		AND NOT EXISTS (SELECT 1 FROM xnode_periods period WHERE period.purchase_id=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM outbox_jobs job WHERE job.status IN ('pending','processing')
-			AND json_extract(job.payload,'$.purchaseId')=purchase.id)
+			AND (CASE ((job.payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (job.payload)::jsonb #>> '{purchaseId}' END)=purchase.id)
 		AND NOT EXISTS (SELECT 1 FROM provider_operation_items item
 			JOIN provider_operations operation ON operation.id=item.operation_id
 			WHERE item.target_type='purchase' AND item.target_id=purchase.id
@@ -27,7 +27,7 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	if err = protectPurchaseLineageTx(ctx, tx); err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO purchase_history_tombstones(purchase_id,user_id,combo_id,status,
+	_, err = tx.ExecContext(ctx, `INSERT   INTO purchase_history_tombstones(purchase_id,user_id,combo_id,status,
 		charged_txb_minor,gross_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,addon_count,
 		traffic_limit_bytes,reset_strategy,valid_from,valid_until,renewal_batch_id,renewal_index,
 		auto_renew_source_purchase_id,created_at,removed_at)
@@ -37,9 +37,9 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 		COALESCE(purchase.entitlement_traffic_limit_bytes,combo.traffic_limit_bytes),
 		COALESCE(purchase.entitlement_reset_strategy,combo.reset_strategy),purchase.valid_from,purchase.valid_until,
 		COALESCE(purchase.renewal_batch_id,''),purchase.renewal_index,COALESCE(purchase.auto_renew_source_purchase_id,''),
-		purchase.created_at,?
+		purchase.created_at,$1
 		FROM purchases purchase JOIN combos combo ON combo.id=purchase.combo_id
-		JOIN maintenance_purchase_candidates candidate ON candidate.id=purchase.id`, stamp(now))
+		JOIN maintenance_purchase_candidates candidate ON candidate.id=purchase.id ON CONFLICT DO NOTHING `, stamp(now))
 	if err != nil {
 		return fmt.Errorf("preserve purchase tombstones: %w", err)
 	}

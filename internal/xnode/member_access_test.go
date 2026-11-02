@@ -15,7 +15,7 @@ import (
 func TestPaidMemberWithoutPanelUsernameHasHostsAndAdmission(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
-	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET username=NULL WHERE id=?`, f.user.ID); err != nil {
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE users SET username=NULL WHERE id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.service.SaveEndpoint(ctx, xnode.Endpoint{NodeID: f.node.ID, InboundTag: "paid", Name: "Paid host", Address: "proxy.example", Port: 443, Enabled: true}); err != nil {
@@ -38,10 +38,10 @@ func TestMissingPeriodPointerIsPendingAndRecoveryRetainsUsage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=?`, identity.CurrentPeriodID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=$1`, identity.CurrentPeriodID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=NULL WHERE user_id=?`, f.user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=NULL WHERE user_id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	link, err := f.service.SubscriptionURL(identity)
@@ -83,9 +83,9 @@ func TestRecoveryDoesNotResetClosedOrExhaustedPurchase(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			query := `UPDATE xnode_periods SET status='closed' WHERE id=?`
+			query := `UPDATE xnode_periods SET status='closed' WHERE id=$1`
 			if state == "exhausted" {
-				query = `UPDATE xnode_periods SET used_bytes=limit_bytes WHERE id=?`
+				query = `UPDATE xnode_periods SET used_bytes=limit_bytes WHERE id=$1`
 			}
 			if _, err = f.store.DB().ExecContext(ctx, query, identity.CurrentPeriodID); err != nil {
 				t.Fatal(err)

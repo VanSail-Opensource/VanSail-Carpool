@@ -17,10 +17,10 @@ func TestIPLookupMaintenancePreservesReceiptsAndRefundsStalledRuns(t *testing.T)
 		t.Fatal(err)
 	}
 	op := submitIP(t, service, user, "stalled", false)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at=?,lease_expires_at=? WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?)`, stamp(now.Add(-48*time.Hour)), stamp(now.Add(-47*time.Hour)), op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at=$1,lease_expires_at=$2 WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$3)`, stamp(now.Add(-48*time.Hour)), stamp(now.Add(-47*time.Hour)), op.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=? WHERE id=?`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=$1 WHERE id=$2`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := store.DB().BeginTx(ctx, nil)
@@ -84,7 +84,7 @@ func TestIPLookupMaintenanceCachesAttemptedProviderOutageWithoutRefund(t *testin
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 0)
 	op := submitIP(t, service, user, "attempted-stalled", false)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at=?,lease_expires_at=? WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=?)`, stamp(now.Add(-48*time.Hour)), stamp(now.Add(-47*time.Hour)), op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET lease_owner='interrupted',heartbeat_at=$1,lease_expires_at=$2 WHERE id=(SELECT report_id FROM ip_lookup_checks WHERE operation_id=$3)`, stamp(now.Add(-48*time.Hour)), stamp(now.Add(-47*time.Hour)), op.ID); err != nil {
 		t.Fatal(err)
 	}
 	report, _, err := store.IPLookupRun(ctx, op.ID)
@@ -100,7 +100,7 @@ func TestIPLookupMaintenanceCachesAttemptedProviderOutageWithoutRefund(t *testin
 	if err := store.SaveIPLookupProgress(ctx, report); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=? WHERE id=?`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET created_at=$1 WHERE id=$2`, stamp(now.Add(-48*time.Hour)), op.ID); err != nil {
 		t.Fatal(err)
 	}
 	before, err := store.Balance(ctx, user)

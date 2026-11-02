@@ -32,7 +32,7 @@ func TestPaidPAYGGrantsMemberAccessAndPreservesPreferences(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), p.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), p.ID); err != nil {
 		t.Fatal(err)
 	}
 	got, err = s.UserPreferenceSnapshot(ctx, parent.UserID, now.Add(96*time.Hour))

@@ -12,10 +12,7 @@ import (
 
 // CompleteAccountPurge retains exact financial references and a non-login subject.
 func (s *Store) retryAttempt_CompleteAccountPurge(ctx context.Context, id string, generation int64, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -23,7 +20,7 @@ func (s *Store) retryAttempt_CompleteAccountPurge(ctx context.Context, id string
 	defer tx.Rollback()
 	var state, role string
 	var current int64
-	if err = tx.QueryRowContext(ctx, `SELECT account_status,account_generation,role FROM users WHERE id=?`, id).Scan(&state, &current, &role); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT account_status,account_generation,role FROM users WHERE id=$1`, id).Scan(&state, &current, &role); err != nil {
 		return err
 	}
 	if current != generation || state != "purging" || role == "admin" {
@@ -36,7 +33,7 @@ func (s *Store) retryAttempt_CompleteAccountPurge(ctx context.Context, id string
 	if pending {
 		return ErrConflict
 	}
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.status<>'closed' AND (i.user_id=? OR i.proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=?)))`, id, id).Scan(&pending); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.status<>'closed' AND (i.user_id=$1 OR i.proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2)))`, id, id).Scan(&pending); err != nil {
 		return err
 	}
 	if pending {
@@ -54,7 +51,7 @@ func (s *Store) retryAttempt_CompleteAccountPurge(ctx context.Context, id string
 	if err = purgeAccountMaterialTx(ctx, tx, id, now); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE users SET account_status='purged',telegram_first_name='',telegram_last_name='',telegram_username='',proxy_user_id=NULL,group_joined=0,channel_joined=0,inviter_id=NULL,recovery_reason='',policy_accepted_at=NULL,accepted_agreement_revision=0,notification_locale='en',display_currency='TXB',pm_blocked=0,pm_muted=0,updated_at=? WHERE id=? AND account_generation=?`, stamp(now), id, generation); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE users SET account_status='purged',telegram_first_name='',telegram_last_name='',telegram_username='',proxy_user_id=NULL,group_joined=0,channel_joined=0,inviter_id=NULL,recovery_reason='',policy_accepted_at=NULL,accepted_agreement_revision=0,notification_locale='en',display_currency='TXB',pm_blocked=0,pm_muted=0,updated_at=$1 WHERE id=$2 AND account_generation=$3`, stamp(now), id, generation); err != nil {
 		return err
 	}
 	if err = insertAuditTx(ctx, tx, fmt.Sprintf("account-purge-complete:%s:%d", id, generation), nil, "account.purged", "user", id, `{"retained":"immutable_accounting"}`, now); err != nil {
@@ -88,7 +85,7 @@ func closeAccountBalanceTx(ctx context.Context, tx *sql.Tx, id string, generatio
 func archiveAccountAcceptanceTx(ctx context.Context, tx *sql.Tx, id string, generation int64, now time.Time) error {
 	var accepted sql.NullString
 	var revision int
-	if err := tx.QueryRowContext(ctx, `SELECT policy_accepted_at,accepted_agreement_revision FROM users WHERE id=?`, id).Scan(&accepted, &revision); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT policy_accepted_at,accepted_agreement_revision FROM users WHERE id=$1`, id).Scan(&accepted, &revision); err != nil {
 		return err
 	}
 	detail, err := json.Marshal(map[string]any{"acceptedAt": accepted.String, "revision": revision, "generation": generation})
@@ -100,7 +97,7 @@ func archiveAccountAcceptanceTx(ctx context.Context, tx *sql.Tx, id string, gene
 	}
 	var embyID, remote string
 	var price int64
-	err = tx.QueryRowContext(ctx, `SELECT id,COALESCE(remote_user_id,''),setup_price_txb_minor FROM emby_accounts WHERE user_id=?`, id).Scan(&embyID, &remote, &price)
+	err = tx.QueryRowContext(ctx, `SELECT id,COALESCE(remote_user_id,''),setup_price_txb_minor FROM emby_accounts WHERE user_id=$1`, id).Scan(&embyID, &remote, &price)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}

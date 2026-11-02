@@ -13,10 +13,7 @@ import (
 
 // FinalizeConnectionIPBlockExpiry resolves linked work before scrubbing an expired sensitive row.
 func (s *Store) retryAttempt_FinalizeConnectionIPBlockExpiry(ctx context.Context, blockID string, accepted bool, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin connection IP block expiry: %w", err)
@@ -24,7 +21,7 @@ func (s *Store) retryAttempt_FinalizeConnectionIPBlockExpiry(ctx context.Context
 	defer func() { _ = tx.Rollback() }()
 	var blockOperation, unblockOperation sql.NullString
 	if err := tx.QueryRowContext(ctx, `SELECT block_operation_id,unblock_operation_id
-		FROM connection_ip_blocks WHERE id=?`, blockID).Scan(&blockOperation, &unblockOperation); err != nil {
+		FROM connection_ip_blocks WHERE id=$1`, blockID).Scan(&blockOperation, &unblockOperation); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
@@ -45,7 +42,7 @@ func (s *Store) retryAttempt_FinalizeConnectionIPBlockExpiry(ctx context.Context
 			return err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM connection_ip_blocks WHERE id=?`, blockID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM connection_ip_blocks WHERE id=$1`, blockID); err != nil {
 		return fmt.Errorf("scrub expired connection IP block: %w", err)
 	}
 	return tx.Commit()
@@ -53,7 +50,7 @@ func (s *Store) retryAttempt_FinalizeConnectionIPBlockExpiry(ctx context.Context
 
 func resolveBlockOperationAtExpiryTx(ctx context.Context, tx *sql.Tx, operationID string, now time.Time) error {
 	var status string
-	if err := tx.QueryRowContext(ctx, `SELECT status FROM provider_operations WHERE id=? AND kind=?`,
+	if err := tx.QueryRowContext(ctx, `SELECT status FROM provider_operations WHERE id=$1 AND kind=$2`,
 		operationID, connections.BlockOperationKind).Scan(&status); err != nil {
 		return err
 	}
@@ -71,9 +68,9 @@ func resolveBlockOperationAtExpiryTx(ctx context.Context, tx *sql.Tx, operationI
 
 func resolveLinkedIPOperationTx(ctx context.Context, tx *sql.Tx, operationID, kind string,
 	status providerops.Status, code string, now time.Time) error {
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,error_code=?,result_json='{}',
-		attempt_started_at=COALESCE(attempt_started_at,?),completed_at=?,updated_at=?
-		WHERE operation_id=? AND target_type='connection_ip_hmac' AND status IN ('queued','processing','pending_review')`,
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,error_code=$2,result_json='{}',
+		attempt_started_at=COALESCE(attempt_started_at,$3),completed_at=$4,updated_at=$5
+		WHERE operation_id=$6 AND target_type='connection_ip_hmac' AND status IN ('queued','processing','pending_review')`,
 		status, operationCode(code), stamp(now), stamp(now), stamp(now), operationID)
 	if err != nil {
 		return fmt.Errorf("resolve expired IP operation item: %w", err)
@@ -81,9 +78,9 @@ func resolveLinkedIPOperationTx(ctx context.Context, tx *sql.Tx, operationID, ki
 	if affected, _ := result.RowsAffected(); affected != 1 {
 		return ErrConflict
 	}
-	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,error_code=?,result_json='{}',
-		attempt_started_at=COALESCE(attempt_started_at,?),completed_at=?,updated_at=?
-		WHERE id=? AND kind=? AND status IN ('queued','processing','pending_review')`, status, operationCode(code),
+	result, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,error_code=$2,result_json='{}',
+		attempt_started_at=COALESCE(attempt_started_at,$3),completed_at=$4,updated_at=$5
+		WHERE id=$6 AND kind=$7 AND status IN ('queued','processing','pending_review')`, status, operationCode(code),
 		stamp(now), stamp(now), stamp(now), operationID, kind)
 	if err != nil {
 		return fmt.Errorf("resolve expired IP operation: %w", err)

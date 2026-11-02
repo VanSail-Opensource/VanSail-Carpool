@@ -17,10 +17,7 @@ func (s *Store) retryAttempt_BeginEmbySetupOperation(ctx context.Context, comman
 		command.Items[0].TargetID != setup.UserID || command.OwnerUserID != setup.UserID {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err
@@ -48,10 +45,7 @@ func (s *Store) retryAttempt_BeginEmbyProvisionRetryOperation(ctx context.Contex
 		command.Items[0].TargetID != accountID {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, err
@@ -64,7 +58,7 @@ func (s *Store) retryAttempt_BeginEmbyProvisionRetryOperation(ctx context.Contex
 	if replayed {
 		return commitEmbyOperation(tx, operation, true)
 	}
-	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=?`, accountID))
+	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=$1`, accountID))
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
@@ -77,19 +71,19 @@ func (s *Store) retryAttempt_BeginEmbyProvisionRetryOperation(ctx context.Contex
 		return providerops.Operation{}, false, err
 	}
 	var processing int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status='processing'`,
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2 AND status='processing'`,
 		domain.ProvisionOutboxKind, string(payload)).Scan(&processing); err != nil {
 		return providerops.Operation{}, false, err
 	}
 	if processing != 0 {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind=? AND payload=?`,
+	if _, err := tx.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE kind=$1 AND payload=$2`,
 		domain.ProvisionOutboxKind, string(payload)); err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("remove legacy Emby retry work: %w", err)
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error='',updated_at=?
-		WHERE id=? AND status IN ('queued','pending_review')`, stamp(now), accountID)
+	result, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error='',updated_at=$1
+		WHERE id=$2 AND status IN ('queued','pending_review')`, stamp(now), accountID)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("queue durable Emby retry: %w", err)
 	}

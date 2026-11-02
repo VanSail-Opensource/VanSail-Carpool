@@ -16,12 +16,13 @@ func (s *Store) ListAdminOutboxJobsPage(ctx context.Context, cursor, search, sta
 	args := make([]any, 0, 8)
 	if search != "" {
 		pattern := "%" + escapeLike(search) + "%"
-		query += ` AND (id LIKE ? ESCAPE '\' COLLATE NOCASE OR kind LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR last_error LIKE ? ESCAPE '\' COLLATE NOCASE)`
+		query += fmt.Sprintf(" AND (id ILIKE $%d ESCAPE '\\'  OR kind ILIKE $%d ESCAPE '\\' \n\t\t\tOR last_error ILIKE $%d ESCAPE '\\' )", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, pattern, pattern, pattern)
 	}
 	if status != "" {
-		query += ` AND status=?`
+		query += fmt.Sprintf(" AND status=$%d", len(args)+1)
+
 		args = append(args, status)
 	}
 	filter := pageFilterFingerprint(search, status)
@@ -30,10 +31,12 @@ func (s *Store) ListAdminOutboxJobsPage(ctx context.Context, cursor, search, sta
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (created_at<? OR (created_at=? AND id<?))`
+		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY created_at DESC,id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

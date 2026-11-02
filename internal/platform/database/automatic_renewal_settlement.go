@@ -16,7 +16,7 @@ import (
 func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, excludedAddonIDs []string, now time.Time) (model.Purchase, error) {
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	var replay int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE auto_renew_source_purchase_id=?)`, purchaseID).Scan(&replay); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE auto_renew_source_purchase_id=$1))::bigint", purchaseID).Scan(&replay); err != nil {
 		return model.Purchase{}, err
 	}
 	if replay == 0 {
@@ -24,10 +24,7 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 			return model.Purchase{}, err
 		}
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -43,7 +40,7 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 		return s.PurchaseByID(ctx, successorID)
 	}
 	var userID string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=?`, purchaseID).Scan(&userID); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=$1`, purchaseID).Scan(&userID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.Purchase{}, ErrNotFound
 		}
@@ -90,7 +87,7 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 		return model.Purchase{}, err
 	}
 
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',auto_renew_enabled=0,updated_at=? WHERE id=? AND status IN ('active','activating','expired')`, stamp(now), purchaseID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',auto_renew_enabled=0,updated_at=$1 WHERE id=$2 AND status IN ('active','activating','expired')`, stamp(now), purchaseID); err != nil {
 		return model.Purchase{}, err
 	}
 	if err := enqueuePurchaseTransitionTx(ctx, tx, successorID, "activating", plan.ScheduledAt, now); err != nil {
@@ -118,7 +115,7 @@ func insertAutomaticRenewalSuccessorTx(ctx context.Context, tx *sql.Tx, successo
 		gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,recurring_discount_attached,auto_renew_source_purchase_id,request_fingerprint,
 		entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,
 		reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,'activating',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, successorID, userID, plan.Combo.ID, plan.NetMinor,
+		VALUES($1,$2,$3,$4,$5,$6,'activating',$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`, successorID, userID, plan.Combo.ID, plan.NetMinor,
 		stamp(plan.ScheduledAt), stamp(plan.NextCycleEndsAt), couponGrantID, plan.GrossMinor, coreGross, plan.DiscountMinor, 1,
 		boolInt(plan.Purchase.RecurringDiscountAttached), purchaseID, "automatic-renewal:"+purchaseID, plan.trafficLimitOverride, plan.resetStrategyOverride,
 		plan.squadUUIDsOverride, plan.rewardRenewalPrice, boolInt(plan.rewardTrafficRenewal),
@@ -133,7 +130,7 @@ func insertAutomaticRenewalSuccessorTx(ctx context.Context, tx *sql.Tx, successo
 		return err
 	}
 	for _, addon := range plan.Addons {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,?)`, successorID, addon.GroupID, addon.PriceTXBMinor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES($1,$2,$3)`, successorID, addon.GroupID, addon.PriceTXBMinor); err != nil {
 			return fmt.Errorf("snapshot automatic renewal add-on: %w", err)
 		}
 	}

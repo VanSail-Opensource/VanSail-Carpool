@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"github.com/VanSail-Opensource/X-Node/pkg/compute"
-	"strings"
 	"time"
 )
 
@@ -62,9 +62,10 @@ func quoteEvidenceTx(ctx context.Context, tx *sql.Tx, user, coupon string, compo
 	if len(args) == 0 {
 		return evidence, until, dynamic, nil
 	}
-	marks := strings.TrimSuffix(strings.Repeat("?,", len(args)), ",")
+	marks := placeholders(len(args))
+	timeStart := len(args) + 1
 	args = append(args, pricingStamp(now), pricingStamp(now))
-	rows, err := tx.QueryContext(ctx, `SELECT o.id,o.proposed_json,o.expected_version,o.expires_at,COALESCE((SELECT SUM(d.discount_minor) FROM pricing_discount_spend d WHERE d.override_id=o.id AND d.status IN ('RESERVED','CONSUMED')),0) FROM pricing_admin_overrides o WHERE o.command='PERSONAL_DISCOUNT' AND o.scope_type='user_product' AND o.scope_id IN (`+marks+`) AND o.status='ACTIVE' AND o.starts_at<=? AND o.expires_at>? ORDER BY o.id LIMIT 4097`, args...)
+	rows, err := tx.QueryContext(ctx, `SELECT o.id,o.proposed_json,o.expected_version,o.expires_at,COALESCE((SELECT SUM(d.discount_minor) FROM pricing_discount_spend d WHERE d.override_id=o.id AND d.status IN ('RESERVED','CONSUMED')),0) FROM pricing_admin_overrides o WHERE o.command='PERSONAL_DISCOUNT' AND o.scope_type='user_product' AND o.scope_id IN (`+marks+fmt.Sprintf(`) AND o.status='ACTIVE' AND o.starts_at<=$%d AND o.expires_at>$%d ORDER BY o.id LIMIT 4097`, timeStart, timeStart+1), args...)
 	if err != nil {
 		return nil, until, dynamic, err
 	}

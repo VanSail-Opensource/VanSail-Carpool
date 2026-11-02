@@ -21,7 +21,7 @@ func TestRuntimePAYGReadsFollowCurrentWalletAndCredit(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertCandidates(0)
-	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=10,credit_started_at=? WHERE proxy_user_id=?`, stamp(time.Now().UTC()), account.ProxyUserID); err != nil {
+	if _, err := s.db.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=10,credit_started_at=$1 WHERE proxy_user_id=$2`, stamp(time.Now().UTC()), account.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	assertCandidates(1)

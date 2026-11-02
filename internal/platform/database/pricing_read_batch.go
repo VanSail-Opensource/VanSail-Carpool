@@ -60,7 +60,7 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		if err != nil {
 			return ctx, err
 		}
-		rows, err = tx.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=? AND coupon_grants.status='active' AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>?) AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) AND `+authorizedCouponGrant+` AND coupon_definitions.kind IN ('purchase_once','purchase_recurring') AND (coupon_definitions.global_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id)<coupon_definitions.global_use_limit) AND (coupon_definitions.per_user_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id AND u.user_id=coupon_grants.user_id)<coupon_definitions.per_user_use_limit) ORDER BY coupon_grants.id LIMIT 4097`, user, pricingStamp(now))
+		rows, err = tx.QueryContext(ctx, grantSelect+` WHERE coupon_grants.user_id=$1 AND coupon_grants.status='active' AND coupon_definitions.active=1 AND (coupon_definitions.expires_at IS NULL OR coupon_definitions.expires_at>$2) AND NOT EXISTS(SELECT 1 FROM coupon_grant_discards d WHERE d.grant_id=coupon_grants.id) AND `+authorizedCouponGrant+` AND coupon_definitions.kind IN ('purchase_once','purchase_recurring') AND (coupon_definitions.global_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id)<coupon_definitions.global_use_limit) AND (coupon_definitions.per_user_use_limit IS NULL OR (SELECT COUNT(*) FROM coupon_uses u WHERE u.coupon_id=coupon_definitions.id AND u.user_id=coupon_grants.user_id)<coupon_definitions.per_user_use_limit) ORDER BY coupon_grants.id LIMIT 4097`, user, pricingStamp(now))
 		if err != nil {
 			return ctx, err
 		}
@@ -92,7 +92,7 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		enabled = enabled || p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
 	}
 	if enabled {
-		rows, err = tx.QueryContext(ctx, `SELECT product_type,product_id,trace_json FROM (SELECT d.product_type,d.product_id,d.trace_json,ROW_NUMBER() OVER(PARTITION BY d.product_type,d.product_id ORDER BY d.generated_at DESC,d.id DESC) AS ordinal FROM pricing_decisions d JOIN pricing_product_settings p ON p.product_type=d.product_type AND p.product_id=d.product_id AND p.version=d.policy_version WHERE d.state='PUBLISHED' AND d.generated_at>=?) latest WHERE ordinal=1 LIMIT 4097`, pricingStamp(now.Add(-24*time.Hour)))
+		rows, err = tx.QueryContext(ctx, `SELECT product_type,product_id,trace_json FROM (SELECT d.product_type,d.product_id,d.trace_json,ROW_NUMBER() OVER(PARTITION BY d.product_type,d.product_id ORDER BY d.generated_at DESC,d.id DESC) AS ordinal FROM pricing_decisions d JOIN pricing_product_settings p ON p.product_type=d.product_type AND p.product_id=d.product_id AND p.version=d.policy_version WHERE d.state='PUBLISHED' AND d.generated_at>=$1) latest WHERE ordinal=1 LIMIT 4097`, pricingStamp(now.Add(-24*time.Hour)))
 		if err != nil {
 			return ctx, err
 		}

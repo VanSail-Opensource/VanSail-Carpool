@@ -44,7 +44,7 @@ func TestSquadStockRetainsExistingReservationsAfterLimitReduction(t *testing.T) 
 					ownerPurchaseID = purchase.ID
 				}
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=? WHERE id=?`, test.status, ownerPurchaseID); err != nil {
+			if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status=$1 WHERE id=$2`, test.status, ownerPurchaseID); err != nil {
 				t.Fatal(err)
 			}
 			if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: addon.ID, Name: addon.Name,

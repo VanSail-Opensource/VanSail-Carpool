@@ -3,13 +3,14 @@ package catalog
 import (
 	"context"
 	"errors"
-	"path/filepath"
+
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
@@ -30,7 +31,7 @@ func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
-			db, err := database.Open(ctx, filepath.Join(t.TempDir(), "reward-renewal.db"))
+			db, err := testdatabase.Open(ctx, t)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -128,7 +129,7 @@ func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
 			var successorID, squads, resetStrategy string
 			var price, traffic int64
 			if err := db.QueryRowContext(ctx, `SELECT id,entitlement_squad_uuids,reward_renewal_price_minor,
-				entitlement_traffic_limit_bytes,entitlement_reset_strategy FROM purchases WHERE auto_renew_source_purchase_id=?`,
+				entitlement_traffic_limit_bytes,entitlement_reset_strategy FROM purchases WHERE auto_renew_source_purchase_id=$1`,
 				source.ID).Scan(&successorID, &squads, &price, &traffic, &resetStrategy); err != nil {
 				t.Fatal(err)
 			}
@@ -146,7 +147,7 @@ func TestAutomaticRenewalUsesAwardedCustomCombo(t *testing.T) {
 				t.Fatalf("renewed balance = (%+v, %v)", balance, err)
 			}
 			var debits int
-			if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='automatic_renewal'`, user.ID).Scan(&debits); err != nil || debits != 1 {
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='automatic_renewal'`, user.ID).Scan(&debits); err != nil || debits != 1 {
 				t.Fatalf("renewal debits = %d, %v", debits, err)
 			}
 		})

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
+
 	"strconv"
 	"strings"
 	"testing"
@@ -17,13 +17,14 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 	"github.com/go-chi/chi/v5"
 )
 
 func testBrowserHTTP(t *testing.T) (*Server, http.Handler, model.User) {
 	t.Helper()
-	db, err := database.Open(context.Background(), filepath.Join(t.TempDir(), "browser-http.db"))
+	db, err := testdatabase.Open(context.Background(), t)
 	if err != nil {
 		t.Fatal(err)
 	}

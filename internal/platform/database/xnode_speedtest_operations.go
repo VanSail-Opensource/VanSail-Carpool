@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Store) ReplayXNodeRouteSpeedtest(ctx context.Context, user, key, fingerprint string) (model.OperationReceipt, bool, error) {
-	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=? AND kind=? AND idempotency_key=?`, user, xnode.RouteSpeedtestOperation, key))
+	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, user, xnode.RouteSpeedtestOperation, key))
 	if errors.Is(err, ErrNotFound) {
 		return model.OperationReceipt{}, false, nil
 	}

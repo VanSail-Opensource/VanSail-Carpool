@@ -32,7 +32,7 @@ func (s *Server) authenticateAPIToken(w http.ResponseWriter, r *http.Request, ne
 		s.writeError(w, r, http.StatusForbidden, "API_TOKEN_SCOPE_REQUIRED", "This API token does not permit this action.")
 		return
 	}
-	if err = s.requests.CheckBearer(r, principal.Item.ID, isStreamingBackupUpload(r)); err != nil {
+	if err = s.requests.CheckBearer(r, principal.Item.ID, false); err != nil {
 		s.writeRequestAuthError(w, r, err)
 		return
 	}

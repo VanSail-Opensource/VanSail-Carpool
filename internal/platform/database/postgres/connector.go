@@ -10,8 +10,7 @@ import (
 
 type connector struct {
 	driver.Connector
-	metrics  *transactionMetrics
-	bindings *bindingCache
+	metrics *transactionMetrics
 }
 
 func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
@@ -19,13 +18,12 @@ func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &connection{Conn: conn, metrics: c.metrics, bindings: c.bindings}, nil
+	return &connection{Conn: conn, metrics: c.metrics}, nil
 }
 
 type connection struct {
 	driver.Conn
-	metrics  *transactionMetrics
-	bindings *bindingCache
+	metrics *transactionMetrics
 }
 
 func (c *connection) CheckNamedValue(value *driver.NamedValue) error {
@@ -36,13 +34,7 @@ func (c *connection) CheckNamedValue(value *driver.NamedValue) error {
 }
 
 func (c *connection) Prepare(query string) (driver.Stmt, error) {
-	// Domain statements use context entry points; reject argument-less binding
-	// guesses during preparation. Authored PostgreSQL statements still work.
-	bound, err := c.bind(query, nil)
-	if err != nil {
-		return nil, err
-	}
-	return c.Conn.Prepare(bound)
+	return c.Conn.Prepare(query)
 }
 
 func (c *connection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
@@ -58,33 +50,15 @@ func (c *connection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver
 }
 
 func (c *connection) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	bound, err := c.bind(query, args)
-	if err != nil {
-		return nil, err
-	}
-	return c.Conn.(driver.ExecerContext).ExecContext(ctx, bound, args)
+	return c.Conn.(driver.ExecerContext).ExecContext(ctx, query, args)
 }
 
 func (c *connection) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	bound, err := c.bind(query, args)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := c.Conn.(driver.QueryerContext).QueryContext(ctx, bound, args)
-	if err != nil {
-		return nil, err
-	}
-	return compatRows{rows}, nil
+	return c.Conn.(driver.QueryerContext).QueryContext(ctx, query, args)
 }
 
 func (c *connection) Ping(ctx context.Context) error { return c.Conn.(driver.Pinger).Ping(ctx) }
 
-func (c *connection) bind(query string, args []driver.NamedValue) (string, error) {
-	if c.bindings == nil {
-		return Bind(query, args)
-	}
-	return c.bindings.bind(query, args)
-}
 func (c *connection) ResetSession(ctx context.Context) error {
 	return c.Conn.(driver.SessionResetter).ResetSession(ctx)
 }
@@ -93,33 +67,12 @@ func (c *connection) IsValid() bool {
 	return !ok || validator.IsValid()
 }
 
-type compatRows struct{ driver.Rows }
-
-func (r compatRows) Next(values []driver.Value) error {
-	if err := r.Rows.Next(values); err != nil {
-		return err
-	}
-	for i, value := range values {
-		if flag, ok := value.(bool); ok {
-			if flag {
-				values[i] = int64(1)
-			} else {
-				values[i] = int64(0)
-			}
-		}
-	}
-	return nil
-}
-
-// Is reports whether a sql.DB driver is the PostgreSQL compatibility connector.
-func Is(dbDriver driver.Driver) bool { _, ok := dbDriver.(compatDriver); return ok }
-
-type compatDriver struct {
+type nativeDriver struct {
 	driver.Driver
 	metrics *transactionMetrics
 }
 
-func (c connector) Driver() driver.Driver { return compatDriver{c.Connector.Driver(), c.metrics} }
-func (compatDriver) Open(string) (driver.Conn, error) {
+func (c connector) Driver() driver.Driver { return nativeDriver{c.Connector.Driver(), c.metrics} }
+func (nativeDriver) Open(string) (driver.Conn, error) {
 	return nil, errors.New("use the PostgreSQL connector")
 }

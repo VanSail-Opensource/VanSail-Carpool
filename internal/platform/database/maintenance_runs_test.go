@@ -55,7 +55,7 @@ func TestMaintenanceRunAllowsForcedSameDayRerun(t *testing.T) {
 		t.Fatalf("forced claim = (%q, %t, %v), first %q", secondID, acquired, err, firstID)
 	}
 	var count int
-	if err := store.db.QueryRow(`SELECT COUNT(*) FROM maintenance_runs WHERE local_date=?`, "2026-08-18").Scan(&count); err != nil {
+	if err := store.db.QueryRow(`SELECT COUNT(*) FROM maintenance_runs WHERE local_date=$1`, "2026-08-18").Scan(&count); err != nil {
 		t.Fatalf("count maintenance runs: %v", err)
 	}
 	if count != 2 {

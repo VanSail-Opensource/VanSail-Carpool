@@ -40,7 +40,8 @@ func (s *Service) Records(ctx context.Context, table, cursor string, limit int) 
 		query += ` WHERE ` + keyTuple(schema) + ` > (` + placeholders(len(keyValues)) + `)`
 		args = append(args, keyValues...)
 	}
-	query += ` ORDER BY ` + keyOrder(schema) + ` LIMIT ?`
+	query += ` ORDER BY ` + keyOrder(schema) + fmt.Sprintf(" LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -81,16 +82,12 @@ func selectList(schema tableSchema) string {
 	for _, column := range schema.ColumnsRaw {
 		parts = append(parts, quoteIdentifier(column.Name))
 	}
-	if schema.UsesRowID {
-		parts = append(parts, quoteIdentifier(schema.RowIDName))
-	}
+
 	return strings.Join(parts, `,`)
 }
 
 func keyTuple(schema tableSchema) string {
-	if schema.UsesRowID {
-		return `(` + quoteIdentifier(schema.RowIDName) + `)`
-	}
+
 	parts := make([]string, 0, len(schema.KeyColumns))
 	for _, column := range schema.KeyColumns {
 		parts = append(parts, quoteIdentifier(column.Name))
@@ -99,9 +96,7 @@ func keyTuple(schema tableSchema) string {
 }
 
 func keyOrder(schema tableSchema) string {
-	if schema.UsesRowID {
-		return quoteIdentifier(schema.RowIDName) + ` ASC`
-	}
+
 	parts := make([]string, 0, len(schema.KeyColumns))
 	for _, column := range schema.KeyColumns {
 		parts = append(parts, quoteIdentifier(column.Name)+` ASC`)
@@ -109,15 +104,20 @@ func keyOrder(schema tableSchema) string {
 	return strings.Join(parts, `,`)
 }
 
-func placeholders(count int) string {
-	if count <= 0 {
-		return ""
+func placeholders(count int, first ...int) string {
+	start := 1
+	if len(first) > 0 {
+		start = first[0]
 	}
-	return strings.TrimSuffix(strings.Repeat("?,", count), ",")
+	values := make([]string, count)
+	for i := range values {
+		values[i] = fmt.Sprintf("$%d", start+i)
+	}
+	return strings.Join(values, ",")
 }
 
 func (s *Service) scanRecord(schema tableSchema, row interface{ Scan(...any) error }) (rowData, error) {
-	values := make([]any, len(schema.ColumnsRaw)+boolInt(schema.UsesRowID))
+	values := make([]any, len(schema.ColumnsRaw))
 	destinations := make([]any, len(values))
 	for index := range values {
 		destinations[index] = &values[index]
@@ -126,18 +126,16 @@ func (s *Service) scanRecord(schema tableSchema, row interface{ Scan(...any) err
 		return rowData{}, fmt.Errorf("scan %s record: %w", schema.Name, err)
 	}
 	keyRaw := make([]any, 0, max(1, len(schema.KeyColumns)))
-	if schema.UsesRowID {
-		keyRaw = append(keyRaw, values[len(values)-1])
-	} else {
-		for _, key := range schema.KeyColumns {
-			for index, column := range schema.ColumnsRaw {
-				if column.Name == key.Name {
-					keyRaw = append(keyRaw, values[index])
-					break
-				}
+
+	for _, key := range schema.KeyColumns {
+		for index, column := range schema.ColumnsRaw {
+			if column.Name == key.Name {
+				keyRaw = append(keyRaw, values[index])
+				break
 			}
 		}
 	}
+
 	record, err := s.makeRecord(schema, values[:len(schema.ColumnsRaw)], keyRaw)
 	if err != nil {
 		return rowData{}, err
@@ -158,31 +156,25 @@ func (s *Service) makeRecord(schema tableSchema, raw, keyRaw []any) (Record, err
 		}
 		record.Values[column.Name] = value
 	}
-	if schema.UsesRowID {
-		encoded, err := canonicalKeyValue(schemaColumn{Column: Column{Name: "_rowid_"}, Affinity: affinityInteger}, keyRaw[0])
+
+	for index, column := range schema.KeyColumns {
+		encoded, err := canonicalKeyValue(column, keyRaw[index])
 		if err != nil {
 			return Record{}, err
 		}
-		record.Key["_rowid_"] = encoded
-	} else {
-		for index, column := range schema.KeyColumns {
-			encoded, err := canonicalKeyValue(column, keyRaw[index])
+		if column.Sensitive {
+			if s.vault == nil {
+				return Record{}, errors.New("vault is required to conceal a sensitive record key")
+			}
+			sealed, err := s.vault.Encrypt(keyContext(schema.Name, column.Name), encoded)
 			if err != nil {
-				return Record{}, err
+				return Record{}, fmt.Errorf("seal sensitive record key: %w", err)
 			}
-			if column.Sensitive {
-				if s.vault == nil {
-					return Record{}, errors.New("vault is required to conceal a sensitive record key")
-				}
-				sealed, err := s.vault.Encrypt(keyContext(schema.Name, column.Name), encoded)
-				if err != nil {
-					return Record{}, fmt.Errorf("seal sensitive record key: %w", err)
-				}
-				encoded = "sealed:" + sealed
-			}
-			record.Key[column.Name] = encoded
+			encoded = "sealed:" + sealed
 		}
+		record.Key[column.Name] = encoded
 	}
+
 	hash, err := recordHash(schema, raw, keyRaw)
 	if err != nil {
 		return Record{}, err

@@ -25,6 +25,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/turnstile"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/backup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
@@ -40,17 +41,9 @@ import (
 
 // New opens persistence, constructs integrations, and builds the HTTP router.
 func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
-	startupTimeout := 20 * time.Second
-	if cfg.Database.Driver == "postgres" {
-		startupTimeout = 30 * time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), startupTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
-	migrationVersions, err := database.MigrationVersions()
-	if err != nil {
-		return nil, err
-	}
-	db, owner, err := openPersistence(ctx, cfg, logger, migrationVersions)
+	db, owner, err := openPersistence(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +57,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	vault, err := secret.NewVault(cfg.MasterKey)
 	if err != nil {
 		return cleanup(err)
-	}
-	if err = store.MigrateTelegramIdentities(ctx, vault, cfg.DatabasePath); err != nil {
-		return cleanup(fmt.Errorf("migrate Telegram member identity: %w", err))
 	}
 	if err = store.MigrateGlobalFirewallDetection(ctx, vault); err != nil {
 		return cleanup(fmt.Errorf("migrate global firewall detection: %w", err))
@@ -107,19 +97,12 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	paymentBridge := paymentAdapter{settings: settings, telegram: queuedTelegramClient, queue: upstreams.payment, users: store, usdt: usdtService}
 	paymentProfiles := newPaymentProfileManager(settings, paymentChannels, upstreams.payment, queuedTelegramClient, store, cfg.AdminTelegramIDs, cfg.PublicBaseURL, logger)
 	backupService := backup.NewService(db, store, filepath.Join(cfg.DataDir, "backups"), cfg.BackupRetention)
-	if database.IsPostgres(db) {
-		backupService.ConfigurePostgres(cfg.Database.URL)
-	}
-	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	reconcileErr := backupService.ReconcileUploads(reconcileCtx, migrationVersions)
-	reconcileCancel()
-	if reconcileErr != nil {
-		return cleanup(fmt.Errorf("reconcile interrupted backup uploads: %w", reconcileErr))
-	}
+
+	backupService.ConfigurePostgres(cfg.Database.URL)
+
 	maintenanceService := maintenance.NewService(store, backupService, cfg.Timezone)
 	databaseEditor := databaseadmin.NewService(db, backupService, vault, logger)
-	databaseAdminHTTP := httpapi.NewDatabaseAdministrationHTTP(databaseEditor, backupService, migrationVersions)
-	databaseAdminHTTP.SetBackupUploadMaxBytes(cfg.BackupUploadMaxBytes)
+	databaseAdminHTTP := httpapi.NewDatabaseAdministrationHTTP(databaseEditor, backupService)
 	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, provider, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
 	catalogService := catalog.NewService(store, provider, 2*time.Minute)
 	catalogService.SetConnectivity(connectivityService)
@@ -178,7 +161,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerMutationOperationHandlers(operationDispatcher, catalogService, embyOperations, adminService); err != nil {
 		return cleanup(err)
 	}
-	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, maintenanceDatabasePath(cfg), logger); err != nil {
+	if err := registerMaintenanceOperationHandler(operationDispatcher, store, maintenanceService, logger); err != nil {
 		return cleanup(err)
 	}
 	if err := registerAdminOperationHandlers(operationDispatcher, store, provider); err != nil {
@@ -274,7 +257,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		Addr: ":" + cfg.Port, Handler: api.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
 		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20,
 	}
-	if err := ipLookupWorker.Enhanced.ConfigureInventoryCache(context.Background(), filepath.Join(cfg.DataDir, "cache", "proxy-inventory"), cfg.ProxyCacheMaxBytes); err != nil {
+	if err := ipLookupWorker.Enhanced.ConfigureInventoryCache(context.Background(), db, filepath.Join(cfg.DataDir, "cache", "proxy-inventory"), cfg.ProxyCacheMaxBytes); err != nil {
 		logger.Error("proxy inventory cache unavailable", "error", err)
 	}
 	return &Application{

@@ -26,7 +26,7 @@ var (
 	ErrStockUnavailable = errors.New("squad stock is unavailable")
 )
 
-// Store implements persistent repositories on top of SQLite.
+// Store implements persistent repositories on PostgreSQL.
 type Store struct {
 	pricingExposureCache *pricing.AnalysisCache
 	pricingCache         *pricing.AnalysisCache
@@ -71,12 +71,12 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	}
 	userID := strconv.FormatInt(profile.ID, 10)
 	var existed bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE telegram_id=?)`, profile.ID).Scan(&existed); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE telegram_id=$1)`, profile.ID).Scan(&existed); err != nil {
 		return model.User{}, false, err
 	}
 	locale := affiliates.NormalizeLocale(profile.LanguageCode)
 	_, err := s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,0,?,1,?,?) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
+		VALUES($1,$2,$3,$4,$5,$6,0,$7,1,$8,$9) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
 		telegram_last_name=excluded.telegram_last_name,telegram_username=excluded.telegram_username,
 		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at
 		WHERE users.account_status='active' AND users.bot_blocked=0`,
@@ -91,7 +91,7 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	if user.AccountStatus != "active" || user.BotBlocked {
 		return model.User{}, false, ErrAccountUnavailable
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO NOTHING`, user.ID, 0, stamp(now)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING`, user.ID, 0, stamp(now)); err != nil {
 		return model.User{}, false, fmt.Errorf("initialize balance: %w", err)
 	}
 	return user, !existed, nil
@@ -99,16 +99,14 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 
 // UserByID returns a user by internal ID.
 func (s *Store) UserByID(ctx context.Context, userID string) (model.User, error) {
-	condition := `old_user_id GLOB '*[^0-9]*'`
-	if IsPostgres(s.db) {
-		condition = `old_user_id ~ '[^0-9]'`
-	}
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=COALESCE((SELECT user_id FROM member_identity_aliases WHERE old_user_id=? AND `+condition+`),?)`, userID, userID))
+	condition := `old_user_id ~ '[^0-9]'`
+
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.id=COALESCE((SELECT user_id FROM member_identity_aliases WHERE old_user_id=$1 AND `+condition+`),$2)`, userID, userID))
 }
 
 // UserByTelegramID returns a user by trusted Telegram ID.
 func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.telegram_id=?`, telegramID))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` WHERE users.telegram_id=$1`, telegramID))
 }
 
 // Assigned usernames were removed with the Telegram identity migration. Member
@@ -175,10 +173,6 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 
 // ReplaceSession stores one current opaque session per user.
 func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byte, userID string, expiresAt time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
 
 	now := time.Now().UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -186,10 +180,10 @@ func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byt
 		return fmt.Errorf("begin session replacement: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=? AND scope='miniapp'`, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=$1 AND scope='miniapp'`, userID); err != nil {
 		return fmt.Errorf("remove previous session: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,expires_at,created_at,renewed_at) VALUES(?,?,?,?,?)`, tokenHash, userID, stamp(expiresAt), stamp(now), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,expires_at,created_at,renewed_at) VALUES($1,$2,$3,$4,$5)`, tokenHash, userID, stamp(expiresAt), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("replace session: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -200,7 +194,7 @@ func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byt
 
 // UserBySession returns the owner of a non-expired session.
 func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=? AND sessions.scope='miniapp' AND sessions.expires_at>? AND users.account_status='active' AND users.bot_blocked=0`, tokenHash, stamp(now)))
+	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=$1 AND sessions.scope='miniapp' AND sessions.expires_at>$2 AND users.account_status='active' AND users.bot_blocked=0`, tokenHash, stamp(now)))
 }
 
 // DeleteExpiredSessions removes stale session rows.
@@ -209,7 +203,7 @@ func (s *Store) DeleteExpiredSessions(ctx context.Context, now time.Time) error 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at<=?`, stamp(now)); err != nil {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at<=$1`, stamp(now)); err != nil {
 		return fmt.Errorf("delete expired sessions: %w", err)
 	}
 	return nil
@@ -222,7 +216,7 @@ func (s *Store) UpdateMembership(ctx context.Context, userID string, groupJoined
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET group_joined=?,channel_joined=?,updated_at=? WHERE id=?`,
+	_, err := s.db.ExecContext(ctx, `UPDATE users SET group_joined=$1,channel_joined=$2,updated_at=$3 WHERE id=$4`,
 		boolInt(groupJoined), boolInt(channelJoined), stamp(time.Now().UTC()), userID)
 	if err != nil {
 		return model.User{}, fmt.Errorf("update membership: %w", err)

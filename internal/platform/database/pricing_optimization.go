@@ -58,10 +58,7 @@ func (s *Store) PricingOptimizeProduct(ctx context.Context, kind, product string
 }
 
 func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kind, product, model string, in pricing.OptimizationInputs, best pricing.PriceCandidate, candidates []pricing.PriceCandidate, optErr error, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	ctx = pricing.WithHealth(ctx, s.pricingHealth)
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -69,7 +66,7 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 	}
 	defer tx.Rollback()
 	var serial int
-	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 /*pg:FOR UPDATE*/`).Scan(&serial); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&serial); err != nil {
 		return err
 	}
 	fixed, err := pricingReference(ctx, tx, kind, product)
@@ -145,14 +142,14 @@ func (s *Store) retryAttempt_publishPricingOptimization(ctx context.Context, kin
 	if changed {
 		decisionVersion++
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_decisions(id,product_type,product_id,generated_at,policy_version,model_version,reference_minor,proposed_minor,selected_minor,state,trace_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, id, kind, product, pricingStamp(now), decisionVersion, model, fixed, max(0, best.Price), selected, state, string(trace)); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_decisions(id,product_type,product_id,generated_at,policy_version,model_version,reference_minor,proposed_minor,selected_minor,state,trace_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, kind, product, pricingStamp(now), decisionVersion, model, fixed, max(0, best.Price), selected, state, string(trace)); err != nil {
 		return err
 	}
 	if optErr == nil {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_published_prices(id,product_type,product_id,price_minor,policy_version,model_version,source,valid_from,valid_until,created_by,created_at,reason) VALUES(?,?,?,?,?,?,'MODEL',?,?,?,?,?)`, id, kind, product, selected, decisionVersion, model, pricingStamp(now), pricingStamp(now.Add(24*time.Hour)), "pricing-worker", pricingStamp(now), "validated constrained optimization"); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO pricing_published_prices(id,product_type,product_id,price_minor,policy_version,model_version,source,valid_from,valid_until,created_by,created_at,reason) VALUES($1,$2,$3,$4,$5,$6,'MODEL',$7,$8,$9,$10,$11)`, id, kind, product, selected, decisionVersion, model, pricingStamp(now), pricingStamp(now.Add(24*time.Hour)), "pricing-worker", pricingStamp(now), "validated constrained optimization"); err != nil {
 			return err
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE pricing_product_settings SET version=?,last_approved_price_version=?,max_increase_bps=?,max_discount_bps=?,updated_at=? WHERE product_type=? AND product_id=? AND version=?`, decisionVersion, id, p.MaxIncreaseBPS, p.MaxDiscountBPS, pricingStamp(now), kind, product, p.Version)
+		result, err := tx.ExecContext(ctx, `UPDATE pricing_product_settings SET version=$1,last_approved_price_version=$2,max_increase_bps=$3,max_discount_bps=$4,updated_at=$5 WHERE product_type=$6 AND product_id=$7 AND version=$8`, decisionVersion, id, p.MaxIncreaseBPS, p.MaxDiscountBPS, pricingStamp(now), kind, product, p.Version)
 		if err != nil {
 			return err
 		}

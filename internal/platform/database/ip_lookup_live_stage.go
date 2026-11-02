@@ -11,7 +11,7 @@ import (
 func ipLiveStageTx(ctx context.Context, tx *sql.Tx, id string) (iplookup.LiveStage, error) {
 	var raw string
 	var stage iplookup.LiveStage
-	err := tx.QueryRowContext(ctx, `SELECT live_state_json FROM ip_lookup_reports WHERE id=?`, id).Scan(&raw)
+	err := tx.QueryRowContext(ctx, `SELECT live_state_json FROM ip_lookup_reports WHERE id=$1`, id).Scan(&raw)
 	if err == nil {
 		err = json.Unmarshal([]byte(raw), &stage)
 	}
@@ -20,10 +20,7 @@ func ipLiveStageTx(ctx context.Context, tx *sql.Tx, id string) (iplookup.LiveSta
 
 // ClaimIPLookupLiveStage recovers a persisted snapshot before considering replay.
 func (s *Store) retryAttempt_ClaimIPLookupLiveStage(ctx context.Context, id string) (iplookup.LiveStage, bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return iplookup.LiveStage{}, false, err
@@ -57,7 +54,7 @@ func saveLiveStageTx(ctx context.Context, tx *sql.Tx, id string, stage iplookup.
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=? WHERE id=? AND status='processing'`, string(raw), id)
+	_, err = tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=$1 WHERE id=$2 AND status='processing'`, string(raw), id)
 	return err
 }
 
@@ -65,7 +62,7 @@ func saveLiveStageTx(ctx context.Context, tx *sql.Tx, id string, stage iplookup.
 func (s *Store) MarkIPLookupLiveAttempt(ctx context.Context, id string) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=json_set(live_state_json,'$.attempted',json('true')) WHERE id=? AND status='processing' AND json_extract(live_state_json,'$.status')='processing'`, id)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET live_state_json=jsonb_set((live_state_json)::jsonb,'{attempted}',('true')::jsonb,true)::text WHERE id=$1 AND status='processing' AND (CASE ((live_state_json)::jsonb #> '{status}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (live_state_json)::jsonb #>> '{status}' END)='processing'`, id)
 	if err != nil {
 		return err
 	}
@@ -78,10 +75,7 @@ func (s *Store) MarkIPLookupLiveAttempt(ctx context.Context, id string) error {
 
 // FinishIPLookupLiveStage keeps the durable attempted marker independent of readers.
 func (s *Store) retryAttempt_FinishIPLookupLiveStage(ctx context.Context, id string, stage iplookup.LiveStage) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

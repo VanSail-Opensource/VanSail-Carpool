@@ -38,7 +38,7 @@ func saveUSDTTestTransfer(t *testing.T, s *Store, transfer usdt.Transfer) string
 		t.Fatal(err)
 	}
 	var id string
-	if err := s.db.QueryRow("SELECT id FROM usdt_transfers WHERE network=? AND tx_hash=? AND event_id=?", transfer.Network, transfer.TxHash, transfer.EventID).Scan(&id); err != nil {
+	if err := s.db.QueryRow("SELECT id FROM usdt_transfers WHERE network=$1 AND tx_hash=$2 AND event_id=$3", transfer.Network, transfer.TxHash, transfer.EventID).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	return id

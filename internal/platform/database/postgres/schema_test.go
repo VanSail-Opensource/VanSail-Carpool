@@ -34,6 +34,17 @@ func TestPostgresBaseline(t *testing.T) {
 	if _, err = db.ExecContext(ctx, `DELETE FROM affiliate_config_versions`); err == nil {
 		t.Fatal("immutable config accepted deletion")
 	}
+	var flag bool
+	if err = db.QueryRowContext(ctx, `SELECT $1::boolean`, true).Scan(&flag); err != nil || !flag {
+		t.Fatal("native boolean transport changed", err)
+	}
+	if _, err = db.ExecContext(ctx, `UPDATE combos SET included_squad_uuids='{}'`); err == nil {
+		// Empty catalogs still need a direct native CHECK assertion.
+		var constraints int
+		if err = db.QueryRowContext(ctx, `SELECT count(*) FROM pg_constraint WHERE conrelid='combos'::regclass AND pg_get_constraintdef(oid) LIKE '%jsonb_typeof%'`).Scan(&constraints); err != nil || constraints == 0 {
+			t.Fatal("native JSON contract missing", err)
+		}
+	}
 	var timestamp string
 	if err = db.QueryRowContext(ctx, `SELECT $1::text`, "2026-10-24T01:02:03.123456789Z").Scan(&timestamp); err != nil || timestamp != "2026-10-24T01:02:03.123456789Z" {
 		t.Fatal("timestamp evidence changed", err)

@@ -23,16 +23,13 @@ func (s *Store) retryAttempt_UpdateConnectionScan(ctx context.Context, scanID st
 			update.Status != providerops.StatusFailed && update.Status != providerops.StatusPendingReview) {
 		return providerops.ConnectionScan{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.ConnectionScan{}, fmt.Errorf("begin connection scan update: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	current, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=?`, scanID))
+	current, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
 	if err != nil {
 		return providerops.ConnectionScan{}, err
 	}
@@ -65,13 +62,13 @@ func (s *Store) retryAttempt_UpdateConnectionScan(ctx context.Context, scanID st
 	if update.Status == providerops.StatusSucceeded || update.Status == providerops.StatusFailed || update.Status == providerops.StatusPendingReview {
 		completed = stamp(now)
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE connection_scans SET provider_job_id=?,status=?,progress_percent=?,
-		error_code=?,completed_at=?,updated_at=? WHERE id=?`, providerJobID, update.Status, update.ProgressPercent,
+	_, err = tx.ExecContext(ctx, `UPDATE connection_scans SET provider_job_id=$1,status=$2,progress_percent=$3,
+		error_code=$4,completed_at=$5,updated_at=$6 WHERE id=$7`, providerJobID, update.Status, update.ProgressPercent,
 		update.ErrorCode, completed, stamp(now), scanID)
 	if err != nil {
 		return providerops.ConnectionScan{}, fmt.Errorf("update connection scan: %w", err)
 	}
-	scan, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=?`, scanID))
+	scan, err := scanConnectionScan(tx.QueryRowContext(ctx, connectionScanSelect+` WHERE id=$1`, scanID))
 	if err != nil {
 		return providerops.ConnectionScan{}, err
 	}

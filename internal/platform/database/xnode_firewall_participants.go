@@ -12,7 +12,7 @@ import (
 func (s *Store) JoinFirewallParticipants(ctx context.Context, node string, bans []wire.FirewallBan, sources []wire.FirewallSource) error {
 	return s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var ordinal uint32
-		if err := tx.QueryRowContext(ctx, `SELECT ordinal FROM xnode_firewall_members WHERE node_id=? AND active=1`, node).Scan(&ordinal); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT ordinal FROM xnode_firewall_members WHERE node_id=$1 AND active=1`, node).Scan(&ordinal); err != nil {
 			return err
 		}
 		join := func(table, key, gen string) error {
@@ -21,7 +21,7 @@ func (s *Store) JoinFirewallParticipants(ctx context.Context, node string, bans 
 				field = "id"
 			}
 			var raw []byte
-			err := tx.QueryRowContext(ctx, `SELECT participants FROM `+table+` WHERE `+field+`=? AND generation=? AND released_version=0`, key, gen).Scan(&raw)
+			err := tx.QueryRowContext(ctx, `SELECT participants FROM `+table+` WHERE `+field+`=$1 AND generation=$2 AND released_version=0`, key, gen).Scan(&raw)
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
 			}
@@ -40,7 +40,7 @@ func (s *Store) JoinFirewallParticipants(ctx context.Context, node string, bans 
 			if err != nil {
 				return err
 			}
-			_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET participants=? WHERE `+field+`=? AND generation=?`, raw, key, gen)
+			_, err = tx.ExecContext(ctx, `UPDATE `+table+` SET participants=$1 WHERE `+field+`=$1 AND generation=$2`, raw, key, gen)
 			return err
 		}
 		for _, b := range bans {

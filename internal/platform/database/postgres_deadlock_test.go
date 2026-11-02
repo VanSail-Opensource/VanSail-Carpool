@@ -28,7 +28,7 @@ func TestPostgresWholeOperationRetriesRealDeadlock(t *testing.T) {
 						return err
 					}
 					defer tx.Rollback()
-					if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(?)`, keys[0]); err != nil {
+					if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock($1)`, keys[0]); err != nil {
 						return err
 					}
 					if attempt == 0 {
@@ -39,7 +39,7 @@ func TestPostgresWholeOperationRetriesRealDeadlock(t *testing.T) {
 							return ctx.Err()
 						}
 					}
-					if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(?)`, keys[1]); err != nil {
+					if _, err = tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock($1)`, keys[1]); err != nil {
 						return err
 					}
 					return tx.Commit()

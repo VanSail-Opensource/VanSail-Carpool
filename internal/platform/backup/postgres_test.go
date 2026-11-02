@@ -13,7 +13,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/backup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/config"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database/postgres"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/datamigrate"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -41,7 +40,7 @@ func TestPostgresLogicalRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	before, err := datamigrate.InspectPostgres(ctx, db, make([]byte, 32))
+	before, err := postgres.InspectRecovery(ctx, db, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +104,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE vansail_migration IN SCHEMA public GRANT USAGE
 		t.Fatal(err)
 	}
 	defer restored.Close()
-	after, err := datamigrate.InspectPostgres(ctx, restored, make([]byte, 32))
+	after, err := postgres.InspectRecovery(ctx, restored, make([]byte, 32))
 	if err != nil {
 		t.Fatal(err)
 	}

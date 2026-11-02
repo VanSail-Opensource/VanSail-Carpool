@@ -35,7 +35,7 @@ func (s *Store) retryAttempt_autoRenewalPlan(ctx context.Context, userID, purcha
 }
 
 func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, excludedAddonIDs []string, now time.Time) (AutoRenewalPlan, error) {
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, purchaseID, userID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID))
 	if err != nil {
 		return AutoRenewalPlan{}, err
 	}
@@ -51,7 +51,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	var trafficRenewal int
 	if err = tx.QueryRowContext(ctx, `SELECT entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,
 		reward_renewal_price_minor,reward_traffic_renewal,
-		reward_renewal_traffic_limit_bytes FROM purchases WHERE id=?`, purchaseID).Scan(
+		reward_renewal_traffic_limit_bytes FROM purchases WHERE id=$1`, purchaseID).Scan(
 		&trafficLimit, &resetStrategy, &squadUUIDs, &renewalPrice, &trafficRenewal, &renewalTraffic); err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("load renewal entitlement overrides: %w", err)
 	}
@@ -82,8 +82,7 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		}
 	}
 	var queued int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=?
-		AND status IN ('active','activating','queued') AND id<>? AND valid_until>?)`, userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1\n\t\tAND status IN ('active','activating','queued') AND id<>$2 AND valid_until>$3))::bigint", userID, purchaseID, stamp(now)).Scan(&queued); err != nil {
 		return AutoRenewalPlan{}, fmt.Errorf("check queued purchase: %w", err)
 	}
 	if queued == 1 {

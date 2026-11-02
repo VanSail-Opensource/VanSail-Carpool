@@ -44,10 +44,10 @@ func TestLiveSquadCouponDebitsOnceAndKeepsRenewalAttachment(t *testing.T) {
 		t.Fatal(replay, err)
 	}
 	var uses, charges int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_uses WHERE grant_id=?`, grant.Grant.ID).Scan(&uses); err != nil || uses != 1 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_uses WHERE grant_id=$1`, grant.Grant.ID).Scan(&uses); err != nil || uses != 1 {
 		t.Fatal(uses, err)
 	}
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='purchase_addon_debit'`, user.ID).Scan(&charges); err != nil || charges != 1 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='purchase_addon_debit'`, user.ID).Scan(&charges); err != nil || charges != 1 {
 		t.Fatal(charges, err)
 	}
 }

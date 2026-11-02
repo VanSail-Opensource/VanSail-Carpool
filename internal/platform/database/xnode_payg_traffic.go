@@ -6,7 +6,6 @@ import (
 	"errors"
 	"math"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
@@ -35,7 +34,7 @@ func lockPAYGOwnersTx(ctx context.Context, tx *sql.Tx, node string, ids map[int6
 		for _, id := range batch {
 			args = append(args, id)
 		}
-		query := `SELECT user_id FROM xnode_payg_accounts WHERE node_id=? AND proxy_user_id IN (` + strings.TrimSuffix(strings.Repeat("?,", len(batch)), ",") + `)`
+		query := `SELECT user_id FROM xnode_payg_accounts WHERE node_id=$1 AND proxy_user_id IN (` + placeholders(len(batch), 2) + `)`
 		rows, err := tx.QueryContext(ctx, query, args...)
 		if err != nil {
 			return err
@@ -68,7 +67,7 @@ func lockPAYGOwnersTx(ctx context.Context, tx *sql.Tx, node string, ids map[int6
 }
 
 func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wire.TrafficSample) (bool, error) {
-	a, err := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=?`, sample.UserID))
+	a, err := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1`, sample.UserID))
 	if errors.Is(err, xnode.ErrNotFound) {
 		return false, nil
 	}
@@ -82,7 +81,7 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 		return true, xnode.ErrInvalid
 	}
 	var status string
-	if err = tx.QueryRowContext(ctx, `SELECT status FROM xnode_periods WHERE id=?`, a.PeriodID).Scan(&status); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT status FROM xnode_periods WHERE id=$1`, a.PeriodID).Scan(&status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return true, xnode.ErrTrafficPAYGPeriodMissing
 		}
@@ -99,7 +98,7 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 	if err = recordPAYGWindowTx(ctx, tx, &a, sample.Through, bytes, time.Now().UTC()); err != nil {
 		return true, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=? AND status IN ('open','closing')`, a.UsedBytes, a.PeriodID)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2 AND status IN ('open','closing')`, a.UsedBytes, a.PeriodID)
 	if err != nil {
 		return true, err
 	}
@@ -114,10 +113,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 	if len(ids) == 0 {
 		return nil
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -132,7 +128,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	for _, id := range ids {
-		a, e := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=? AND a.node_id=?`, id, node))
+		a, e := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1 AND a.node_id=$2`, id, node))
 		if errors.Is(e, xnode.ErrNotFound) {
 			continue
 		}
@@ -140,10 +136,10 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 			return e
 		}
 		var locked string
-		if e = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=? /*pg:FOR UPDATE*/`, a.PeriodID).Scan(&locked); e != nil {
+		if e = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=$1 FOR UPDATE`, a.PeriodID).Scan(&locked); e != nil {
 			return e
 		}
-		a, e = scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=?`, id))
+		a, e = scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1`, id))
 		if e != nil {
 			return e
 		}
@@ -168,7 +164,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 			continue
 		}
 		a.UnitPriceMinor = price
-		if _, e = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET unit_price_minor=? WHERE proxy_user_id=?`, price, a.ProxyUserID); e != nil {
+		if _, e = tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET unit_price_minor=$1 WHERE proxy_user_id=$2`, price, a.ProxyUserID); e != nil {
 			return e
 		}
 		if _, e = tx.ExecContext(ctx, "SAVEPOINT pricing_payg_offer"); e != nil {

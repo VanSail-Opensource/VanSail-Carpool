@@ -10,7 +10,7 @@ import (
 
 func (s *Store) pricingUserActual(ctx context.Context, user string, from, until time.Time) (*float64, string, error) {
 	var raw string
-	err := s.db.QueryRowContext(ctx, `SELECT features_json FROM pricing_features WHERE entity_type='user' AND entity_id=? AND watermark<? ORDER BY watermark DESC LIMIT 1`, user, pricingStamp(from)).Scan(&raw)
+	err := s.db.QueryRowContext(ctx, `SELECT features_json FROM pricing_features WHERE entity_type='user' AND entity_id=$1 AND watermark<$2 ORDER BY watermark DESC LIMIT 1`, user, pricingStamp(from)).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, "MISSING", nil
 	}

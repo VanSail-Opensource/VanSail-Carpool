@@ -4,23 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
+
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
-
-// Full-schema renames validate every SQLite relation under the race detector;
-// retain a bounded setup budget separate from each business operation deadline.
-const testDatabaseOpenTimeout = 90 * time.Second
-
-// testDatabaseOpenGate prevents parallel tests from compiling and applying the
-// full SQLite schema simultaneously under the race detector. The timeout starts
-// only after a test enters the gate, so scheduler contention cannot consume it.
-var testDatabaseOpenGate = make(chan struct{}, 2)
 
 func newTestStore(t *testing.T) *Store {
 	t.Helper()
@@ -28,26 +19,14 @@ func newTestStore(t *testing.T) *Store {
 	return NewStore(openTestDatabase(t, "tx-carpool-test.db"))
 }
 
-func openTestDatabase(t *testing.T, filename string) *sql.DB {
+func openTestDatabase(t *testing.T, _ string) *sql.DB {
 	t.Helper()
-	if os.Getenv("POSTGRES_CONTRACT_URL") != "" {
-		return openPostgresContractDatabase(t)
-	}
-
-	testDatabaseOpenGate <- struct{}{}
-	defer func() { <-testDatabaseOpenGate }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), testDatabaseOpenTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	db, err := Open(ctx, filepath.Join(t.TempDir(), filename))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
-		t.Fatalf("Open(): %v", err)
+		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := db.Close(); err != nil {
-			t.Errorf("close test database: %v", err)
-		}
-	})
 	return db
 }
 

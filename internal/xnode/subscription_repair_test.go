@@ -15,14 +15,14 @@ func TestMissingSubscriptionRepairRetainsIdentityCredentialsAndAccounting(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=?`, u.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, u.ID); err != nil {
 		t.Fatal(err)
 	}
 	i, err := f.service.EnsureIdentity(ctx, u)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET subscription_cipher='',subscription_hash=NULL WHERE proxy_user_id=?`, i.ProxyUserID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET subscription_cipher='',subscription_hash=NULL WHERE proxy_user_id=$1`, i.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	job := model.OutboxJob{Kind: xnode.AccessRepairJob, Payload: `{"userId":"` + u.ID + `"}`}

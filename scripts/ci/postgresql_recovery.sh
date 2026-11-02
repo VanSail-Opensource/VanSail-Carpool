@@ -12,7 +12,7 @@ config=$(realpath deploy/postgres/secrets/pgbackrest_config)
 evidence=$(docker compose exec -T postgres sh -c '
   password=$(cat /run/secrets/migration_password)
   export DB_DRIVER=postgres DATABASE_URL="postgres://vansail_migration:$password@127.0.0.1/vansail?sslmode=disable"
-  /tmp/db-migrate cutover-check
+  CONFIG_MASTER_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= /tmp/db-schema fingerprint
 ' | python3 -c 'import json,sys; print(json.load(sys.stdin)["sha256"])')
 
 docker compose exec -T --user postgres postgres psql -v ON_ERROR_STOP=1 -d vansail <<'SQL'
@@ -58,15 +58,17 @@ restore_one() {
   if [[ $ready != true ]]; then docker logs "$name"; return 1; fi
   actual=$(docker exec --user postgres "$name" psql -At -d vansail -c "SELECT string_agg(id::text,',' ORDER BY id) FROM recovery_canary")
   if [[ $actual != "$expected" ]]; then echo "Recovery target differs: $kind $actual" >&2; return 1; fi
-  docker cp "$RUNNER_TEMP/db-migrate" "$name:/tmp/db-migrate"
+  docker cp "$RUNNER_TEMP/db-schema" "$name:/tmp/db-schema"
   docker exec -e DB_DRIVER=postgres \
     -e "DATABASE_URL=postgres://vansail_migration:$(cat deploy/postgres/secrets/migration_password)@127.0.0.1/vansail?sslmode=disable" \
     -e CONFIG_MASTER_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
-    "$name" /tmp/db-migrate recovery-check --expected-hash "$evidence"
+    "$name" /tmp/db-schema fingerprint > "$RUNNER_TEMP/${kind}-recovery.json"
+  actual_hash=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["sha256"])' "$RUNNER_TEMP/${kind}-recovery.json")
+  [[ "$actual_hash" == "$evidence" ]] || { echo 'Restored authoritative records differ' >&2; return 1; }
   docker stop "$name" >/dev/null
   docker rm "$name" >/dev/null
   docker volume rm "$volume" >/dev/null
 }
 restore_one full 1
 restore_one pitr 1,2
-echo 'Verified encrypted full backup and named-target PITR against all 127 exact table hashes.'
+echo 'Verified encrypted full backup and named-target PITR against all authoritative table and identity-sequence hashes.'

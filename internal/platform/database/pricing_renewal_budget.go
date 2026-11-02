@@ -11,10 +11,10 @@ import (
 )
 
 func invalidatePricingRenewalBasketTx(ctx context.Context, tx *sql.Tx, purchase string) error {
-	if _, err := tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='RELEASED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE purchase_id=? AND state<>'SETTLED')`, purchase); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='RELEASED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE purchase_id=$1 AND state<>'SETTLED')`, purchase); err != nil {
 		return err
 	}
-	_, err := tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='CANCELLED' WHERE purchase_id=? AND state NOT IN ('SETTLED','EXPIRED','CANCELLED')`, purchase)
+	_, err := tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='CANCELLED' WHERE purchase_id=$1 AND state NOT IN ('SETTLED','EXPIRED','CANCELLED')`, purchase)
 	return err
 }
 
@@ -25,7 +25,7 @@ func reservePricingRenewalBatchTx(ctx context.Context, tx *sql.Tx, user, purchas
 	}
 	var override string
 	var amount int64
-	err := tx.QueryRowContext(ctx, `SELECT d.override_id,d.discount_minor FROM pricing_discount_spend d JOIN pricing_renewal_quotes q ON d.reference_id='renewal:'||q.id WHERE q.purchase_id=? AND d.status='RESERVED'`, purchase).Scan(&override, &amount)
+	err := tx.QueryRowContext(ctx, `SELECT d.override_id,d.discount_minor FROM pricing_discount_spend d JOIN pricing_renewal_quotes q ON d.reference_id='renewal:'||q.id WHERE q.purchase_id=$1 AND d.status='RESERVED'`, purchase).Scan(&override, &amount)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -33,7 +33,7 @@ func reservePricingRenewalBatchTx(ctx context.Context, tx *sql.Tx, user, purchas
 		return err
 	}
 	var raw string
-	if err = tx.QueryRowContext(ctx, `SELECT proposed_json FROM pricing_admin_overrides WHERE id=? /*pg:FOR UPDATE*/`, override).Scan(&raw); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT proposed_json FROM pricing_admin_overrides WHERE id=$1 FOR UPDATE`, override).Scan(&raw); err != nil {
 		return err
 	}
 	var grant PricingIntervention
@@ -41,12 +41,12 @@ func reservePricingRenewalBatchTx(ctx context.Context, tx *sql.Tx, user, purchas
 		return err
 	}
 	var spent int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE override_id=? AND status IN ('RESERVED','CONSUMED')`, override).Scan(&spent); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE override_id=$1 AND status IN ('RESERVED','CONSUMED')`, override).Scan(&spent); err != nil {
 		return err
 	}
 	if amount > (grant.Budget-spent)/int64(terms-1) {
 		return pricing.VersionConflict
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_discount_spend(override_id,reference_id,user_id,discount_minor,created_at,status) VALUES(?,?,?,?,?,'CONSUMED')`, override, "renewal-batch:"+batch, user, amount*int64(terms-1), pricingStamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_discount_spend(override_id,reference_id,user_id,discount_minor,created_at,status) VALUES($1,$2,$3,$4,$5,'CONSUMED')`, override, "renewal-batch:"+batch, user, amount*int64(terms-1), pricingStamp(now))
 	return err
 }

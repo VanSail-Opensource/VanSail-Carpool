@@ -67,7 +67,7 @@ func NewService(repository Repository, provider ProxyClient, cacheTTL time.Durat
 	return &Service{repository: repository, provider: provider, cacheTTL: cacheTTL, now: time.Now, cache: make(map[string]cachedDashboard)}
 }
 
-// Purchase delegates all pricing and balance work to one SQLite transaction.
+// Purchase delegates all pricing and balance work to one PostgreSQL transaction.
 func (s *Service) Purchase(ctx context.Context, user model.User, comboID string, addonIDs []string, idempotencyKey string) (model.Purchase, error) {
 	return s.PurchaseWithCoupon(ctx, user, comboID, addonIDs, "", nil, idempotencyKey)
 }

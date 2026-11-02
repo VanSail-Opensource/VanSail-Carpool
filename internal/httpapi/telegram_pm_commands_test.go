@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"context"
-	"path/filepath"
+
 	"testing"
 	"time"
 
@@ -10,11 +10,12 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 func TestTelegramPMCommandTargetRequiresConfiguredAdminAndUserTopic(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "pm-command-target.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func TestTelegramPMCommandTargetRequiresConfiguredAdminAndUserTopic(t *testing.T
 	if err != nil || !found {
 		t.Fatalf("conversation found=%v err=%v", found, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE telegram_pm_conversations SET topic_id=55,topic_state='ready' WHERE id=?`, conversation.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE telegram_pm_conversations SET topic_id=55,topic_state='ready' WHERE id=$1`, conversation.ID); err != nil {
 		t.Fatal(err)
 	}
 	conversation.TopicID = 55

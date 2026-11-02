@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
-	"path/filepath"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"testing"
 )
 
 // Both paths read the same synthetic member set; setup is outside measurement.
 func BenchmarkXNodeCompileMemberReads(b *testing.B) {
 	ctx := context.Background()
-	db, err := Open(ctx, filepath.Join(b.TempDir(), "members.db"))
+	db, err := testdatabase.Open(ctx, b)
 	if err != nil {
 		b.Fatal(err)
 	}

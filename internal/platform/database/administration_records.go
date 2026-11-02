@@ -11,10 +11,7 @@ import (
 
 // AppendAudit writes an immutable privileged action record.
 func (s *Store) retryAttempt_AppendAudit(ctx context.Context, actorUserID *string, action, targetType, targetID, detail string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	id, err := ids.New()
 	if err != nil {
 		return err
@@ -34,7 +31,7 @@ func (s *Store) retryAttempt_AppendAudit(ctx context.Context, actorUserID *strin
 }
 
 func insertAuditTx(ctx context.Context, tx *sql.Tx, id string, actorUserID *string, action, targetType, targetID, detail string, now time.Time) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES(?,?,?,?,?,?,?)`, id, actorUserID, action, targetType, targetID, detail, stamp(now))
+	_, err := tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, id, actorUserID, action, targetType, targetID, detail, stamp(now))
 	return err
 }
 
@@ -43,7 +40,7 @@ func (s *Store) ListAuditEvents(ctx context.Context, limit int) ([]model.AuditEv
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,actor_user_id,action,target_type,target_id,detail,created_at FROM audit_events ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,actor_user_id,action,target_type,target_id,detail,created_at FROM audit_events ORDER BY created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +68,7 @@ func (s *Store) ListUsers(ctx context.Context, limit int) ([]model.User, error) 
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, userSelect+` ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, userSelect+` ORDER BY created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +90,7 @@ func (s *Store) StartBackupRun(ctx context.Context, path string, now time.Time) 
 	if err != nil {
 		return model.BackupRun{}, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO backup_runs(id,path,status,created_at) VALUES(?,?,?,?)`, id, path, "running", stamp(now))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO backup_runs(id,path,status,created_at) VALUES($1,$2,$3,$4)`, id, path, "running", stamp(now))
 	if err != nil {
 		return model.BackupRun{}, err
 	}
@@ -106,7 +103,7 @@ func (s *Store) CompleteBackupRun(ctx context.Context, id string, size int64, ba
 	if backupErr != nil {
 		status, message = "failed", sanitizeError(backupErr)
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE backup_runs SET size_bytes=?,status=?,error=?,completed_at=? WHERE id=?`, size, status, message, stamp(now), id)
+	_, err := s.db.ExecContext(ctx, `UPDATE backup_runs SET size_bytes=$1,status=$2,error=$3,completed_at=$4 WHERE id=$5`, size, status, message, stamp(now), id)
 	return err
 }
 
@@ -115,7 +112,7 @@ func (s *Store) ListBackupRuns(ctx context.Context, limit int) ([]model.BackupRu
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,path,size_bytes,status,error,created_at,completed_at FROM backup_runs ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,path,size_bytes,status,error,created_at,completed_at FROM backup_runs ORDER BY created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

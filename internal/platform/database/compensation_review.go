@@ -15,10 +15,7 @@ import (
 
 // ApproveCompensationEvent rechecks frozen recipients and atomically queues exact-state sync.
 func (s *Store) retryAttempt_ApproveCompensationEvent(ctx context.Context, input compensation.ReviewInput, fingerprint string, now time.Time) (compensation.Event, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return compensation.Event{}, err
@@ -62,9 +59,9 @@ func (s *Store) retryAttempt_ApproveCompensationEvent(ctx context.Context, input
 	if err := applyCompensationExtension(ctx, s, tx, event, operation.Receipt.ID, targets, input.ExtensionMinutes, input.Reason, now); err != nil {
 		return compensation.Event{}, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE node_compensation_events SET status='queued',final_extension_minutes=?,
-		eligible_recipient_count=?,skipped_recipient_count=?,reviewed_by=?,reviewed_at=?,review_reason=?,review_idempotency_key=?,
-		review_fingerprint=?,provider_operation_id=?,revision=revision+1,updated_at=? WHERE id=? AND status='pending_review' AND revision=?`,
+	result, err := tx.ExecContext(ctx, `UPDATE node_compensation_events SET status='queued',final_extension_minutes=$1,
+		eligible_recipient_count=$2,skipped_recipient_count=$3,reviewed_by=$4,reviewed_at=$5,review_reason=$6,review_idempotency_key=$7,
+		review_fingerprint=$8,provider_operation_id=$9,revision=revision+1,updated_at=$10 WHERE id=$11 AND status='pending_review' AND revision=$12`,
 		input.ExtensionMinutes, len(targets), frozenCount-len(targets), input.ActorUserID, stamp(now), strings.TrimSpace(input.Reason),
 		input.IdempotencyKey, fingerprint, operation.Receipt.ID, stamp(now), input.EventID, input.Revision)
 	if err != nil {
@@ -84,12 +81,12 @@ func (s *Store) retryAttempt_ApproveCompensationEvent(ctx context.Context, input
 }
 
 func loadReviewableCompensationEvent(ctx context.Context, tx *sql.Tx, input compensation.ReviewInput, fingerprint string) (compensation.Event, bool, error) {
-	event, err := scanCompensationEvent(tx.QueryRowContext(ctx, compensationEventSelect+` WHERE id=?`, input.EventID))
+	event, err := scanCompensationEvent(tx.QueryRowContext(ctx, compensationEventSelect+` WHERE id=$1`, input.EventID))
 	if err != nil {
 		return event, false, err
 	}
 	var actor, key, storedFingerprint sql.NullString
-	if err := tx.QueryRowContext(ctx, `SELECT reviewed_by,review_idempotency_key,review_fingerprint FROM node_compensation_events WHERE id=?`,
+	if err := tx.QueryRowContext(ctx, `SELECT reviewed_by,review_idempotency_key,review_fingerprint FROM node_compensation_events WHERE id=$1`,
 		input.EventID).Scan(&actor, &key, &storedFingerprint); err != nil {
 		return event, false, err
 	}
@@ -104,8 +101,8 @@ func loadReviewableCompensationEvent(ctx context.Context, tx *sql.Tx, input comp
 
 func activeFrozenTargets(ctx context.Context, tx *sql.Tx, eventID string, now time.Time) ([]adminBulkTarget, int, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.user_id FROM node_compensation_event_recipients recipients
-		JOIN purchases ON purchases.user_id=recipients.user_id WHERE recipients.event_id=? AND purchases.status='active'
-		AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.user_id,purchases.valid_until,purchases.id`,
+		JOIN purchases ON purchases.user_id=recipients.user_id WHERE recipients.event_id=$1 AND purchases.status='active'
+		AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.user_id,purchases.valid_until,purchases.id`,
 		eventID, stamp(now), stamp(now))
 	if err != nil {
 		return nil, 0, err
@@ -124,7 +121,7 @@ func activeFrozenTargets(ctx context.Context, tx *sql.Tx, eventID string, now ti
 		}
 	}
 	var count int
-	err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM node_compensation_event_recipients WHERE event_id=?`, eventID).Scan(&count)
+	err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM node_compensation_event_recipients WHERE event_id=$1`, eventID).Scan(&count)
 	return targets, count, errors.Join(rows.Err(), err)
 }
 

@@ -29,7 +29,7 @@ func (s *Store) PricingCalculate(ctx context.Context, task compute.Task) (comput
 		return compute.Result{}, err
 	}
 	var saved string
-	err = s.db.QueryRowContext(ctx, `SELECT features_json FROM pricing_features WHERE id=? AND entity_type='compute_result'`, "compute-result:"+task.ID).Scan(&saved)
+	err = s.db.QueryRowContext(ctx, `SELECT features_json FROM pricing_features WHERE id=$1 AND entity_type='compute_result'`, "compute-result:"+task.ID).Scan(&saved)
 	if err == nil {
 		var out compute.Results
 		if json.Unmarshal([]byte(saved), &out) != nil || compute.ValidateResult(b, out) != nil {
@@ -51,17 +51,14 @@ func (s *Store) PricingCalculate(ctx context.Context, task compute.Task) (comput
 }
 
 func (s *Store) retryAttempt_enqueuePricingCompute(ctx context.Context, hash, raw string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	input := "compute-input:" + hash
-	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'compute_input',?,?,?,10000,'NOT_APPLICABLE',?,?) ON CONFLICT DO NOTHING`, input, hash, now.Format(time.DateOnly), pricingStamp(now), raw, compute.Digest([]byte(raw)))
+	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'compute_input',$2,$3,$4,10000,'NOT_APPLICABLE',$5,$6) ON CONFLICT DO NOTHING`, input, hash, now.Format(time.DateOnly), pricingStamp(now), raw, compute.Digest([]byte(raw)))
 	if err != nil {
 		return err
 	}
@@ -79,7 +76,7 @@ func (s *Store) retryAttempt_enqueuePricingCompute(ctx context.Context, hash, ra
 func (s *Store) PricingComputeInput(ctx context.Context, input string) (compute.Task, error) {
 	var raw, hash string
 	var task compute.Task
-	err := s.db.QueryRowContext(ctx, `SELECT features_json,snapshot_hash FROM pricing_features WHERE id=? AND entity_type='compute_input'`, input).Scan(&raw, &hash)
+	err := s.db.QueryRowContext(ctx, `SELECT features_json,snapshot_hash FROM pricing_features WHERE id=$1 AND entity_type='compute_input'`, input).Scan(&raw, &hash)
 	if err != nil {
 		return task, err
 	}
@@ -103,6 +100,6 @@ func (s *Store) AcceptPricingCompute(ctx context.Context, task compute.Task, ite
 	if err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES(?,'compute_result',?,?,?,10000,'NOT_APPLICABLE',?,?) ON CONFLICT DO NOTHING`, "compute-result:"+task.ID, task.ID, now.Format(time.DateOnly), pricingStamp(now), string(raw), compute.Digest(raw))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO pricing_features(id,entity_type,entity_id,day,watermark,coverage_bps,health_state,features_json,snapshot_hash) VALUES($1,'compute_result',$2,$3,$4,10000,'NOT_APPLICABLE',$5,$6) ON CONFLICT DO NOTHING`, "compute-result:"+task.ID, task.ID, now.Format(time.DateOnly), pricingStamp(now), string(raw), compute.Digest(raw))
 	return err
 }

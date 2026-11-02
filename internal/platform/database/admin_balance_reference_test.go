@@ -11,7 +11,7 @@ func TestAdminBalanceReferenceReplayIsIdempotent(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 31982)
 	admin := createTestUser(t, store, 31983)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 10, 8, 13, 0, 0, 0, time.UTC)

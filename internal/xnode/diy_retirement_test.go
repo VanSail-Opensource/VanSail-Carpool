@@ -22,7 +22,7 @@ func TestDIYRetirementResealsOnlyClientDocumentWithoutCharging(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES(?,7,?)`, f.user.ID, cipher); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `INSERT INTO xnode_member_diy(user_id,revision,cipher) VALUES($1,7,$2)`, f.user.ID, cipher); err != nil {
 		t.Fatal(err)
 	}
 	var ledgerBefore int

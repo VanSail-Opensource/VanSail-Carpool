@@ -24,7 +24,7 @@ func (s *Store) sweepRetiredFirewallTx(ctx context.Context, tx *sql.Tx) error {
 	rows, err := tx.QueryContext(ctx, `SELECT key,kind,target,generation,participants,expired FROM (
  SELECT 'b:'||generation AS key,'xnode_firewall_bans' AS kind,prefix AS target,generation,participants,expired FROM xnode_firewall_bans WHERE released_version=0
  UNION ALL SELECT 's:'||id,'xnode_firewall_sources',id,generation,participants,expired FROM xnode_firewall_sources WHERE released_version=0
- ) WHERE key>? ORDER BY key LIMIT 256`, s.firewallSweepCursor)
+ ) WHERE key>$1 ORDER BY key LIMIT 256`, s.firewallSweepCursor)
 	if err != nil {
 		return err
 	}

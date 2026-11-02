@@ -15,7 +15,7 @@ import (
 
 // ComboByID returns one live combo with UUID-only included-squad placeholders.
 func (s *Store) ComboByID(ctx context.Context, id string, activeOnly bool) (model.Combo, error) {
-	query := comboSelect + ` WHERE id=?`
+	query := comboSelect + ` WHERE id=$1`
 	if activeOnly {
 		query += ` AND active=1`
 	}

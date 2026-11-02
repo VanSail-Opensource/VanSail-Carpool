@@ -25,7 +25,7 @@ func (s *Store) SaveStatisticsPartition(ctx context.Context, partition string, p
 		return fmt.Errorf("canonicalize statistics partition: %w", err)
 	}
 	_, err = s.db.ExecContext(ctx, `INSERT INTO statistics_snapshots(partition,payload_json,generated_at)
-		VALUES(?,?,?) ON CONFLICT(partition) DO UPDATE SET payload_json=excluded.payload_json,
+		VALUES($1,$2,$3) ON CONFLICT(partition) DO UPDATE SET payload_json=excluded.payload_json,
 		generated_at=excluded.generated_at`, partition, string(canonical), stamp(generatedAt))
 	if err != nil {
 		return fmt.Errorf("save statistics partition: %w", err)
@@ -36,7 +36,7 @@ func (s *Store) SaveStatisticsPartition(ctx context.Context, partition string, p
 // LoadStatisticsPartition returns one independent last-good JSON part.
 func (s *Store) LoadStatisticsPartition(ctx context.Context, partition string) ([]byte, time.Time, error) {
 	var payload, generated string
-	err := s.db.QueryRowContext(ctx, `SELECT payload_json,generated_at FROM statistics_snapshots WHERE partition=?`,
+	err := s.db.QueryRowContext(ctx, `SELECT payload_json,generated_at FROM statistics_snapshots WHERE partition=$1`,
 		strings.TrimSpace(partition)).Scan(&payload, &generated)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

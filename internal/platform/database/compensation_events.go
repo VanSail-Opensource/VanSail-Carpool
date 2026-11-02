@@ -20,7 +20,7 @@ func (s *Store) ListCompensationEvents(ctx context.Context, status, cursor strin
 	args := make([]any, 0, 3)
 	where := " WHERE 1=1"
 	if status != "" {
-		where += " AND status=?"
+		where += " AND status=$1"
 		args = append(args, status)
 	}
 	if cursor != "" {
@@ -28,11 +28,11 @@ func (s *Store) ListCompensationEvents(ctx context.Context, status, cursor strin
 		if err != nil {
 			return compensation.EventPage{}, err
 		}
-		where += ` AND (created_at<? OR (created_at=? AND id<?))`
+		where += ` AND (created_at<$1 OR (created_at=$2 AND id<$3))`
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(ctx, query+where+` ORDER BY created_at DESC,id DESC LIMIT ?`, args...)
+	rows, err := s.db.QueryContext(ctx, query+where+` ORDER BY created_at DESC,id DESC LIMIT $1`, args...)
 	if err != nil {
 		return compensation.EventPage{}, err
 	}
@@ -67,7 +67,7 @@ func (s *Store) ListCompensationEvents(ctx context.Context, status, cursor strin
 }
 
 func (s *Store) compensationEventByID(ctx context.Context, eventID string) (compensation.Event, error) {
-	event, err := scanCompensationEvent(s.db.QueryRowContext(ctx, compensationEventSelect+` WHERE id=?`, eventID))
+	event, err := scanCompensationEvent(s.db.QueryRowContext(ctx, compensationEventSelect+` WHERE id=$1`, eventID))
 	if err == nil {
 		err = s.hydrateCompensationEvent(ctx, &event)
 	}
@@ -121,7 +121,7 @@ func setNullableNumbers(event *compensation.Event, seconds, proposed, final sql.
 
 func (s *Store) hydrateCompensationEvent(ctx context.Context, event *compensation.Event) error {
 	event.Squads = []compensation.Squad{}
-	rows, err := s.db.QueryContext(ctx, `SELECT squad_uuid,squad_name FROM node_compensation_event_squads WHERE event_id=? ORDER BY squad_name,squad_uuid`, event.ID)
+	rows, err := s.db.QueryContext(ctx, `SELECT squad_uuid,squad_name FROM node_compensation_event_squads WHERE event_id=$1 ORDER BY squad_name,squad_uuid`, event.ID)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (s *Store) hydrateCompensationEvent(ctx context.Context, event *compensatio
 		return err
 	}
 	var operationID sql.NullString
-	if err := s.db.QueryRowContext(ctx, `SELECT provider_operation_id FROM node_compensation_events WHERE id=?`, event.ID).Scan(&operationID); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT provider_operation_id FROM node_compensation_events WHERE id=$1`, event.ID).Scan(&operationID); err != nil {
 		return err
 	}
 	if operationID.Valid {

@@ -58,7 +58,7 @@ func outboxRetryRows(t *testing.T, store *Store, kind string) []struct {
 	availableAt string
 } {
 	t.Helper()
-	rows, err := store.DB().QueryContext(context.Background(), `SELECT payload,available_at FROM outbox_jobs WHERE kind=? ORDER BY created_at`, kind)
+	rows, err := store.DB().QueryContext(context.Background(), `SELECT payload,available_at FROM outbox_jobs WHERE kind=$1 ORDER BY created_at`, kind)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestFreezingPartialReportSchedulesDelayedFirstRetry(t *testing.T) {
 	store, service, user, _, _ := ipLookupFixture(t, 0)
 	r := freezePartialRun(t, store, service, user, "retry-first", "partial")
 	var completedAt string
-	if err := store.DB().QueryRowContext(context.Background(), `SELECT completed_at FROM ip_lookup_reports WHERE id=?`, r.ID).Scan(&completedAt); err != nil {
+	if err := store.DB().QueryRowContext(context.Background(), `SELECT completed_at FROM ip_lookup_reports WHERE id=$1`, r.ID).Scan(&completedAt); err != nil {
 		t.Fatal(err)
 	}
 	completed, err := time.Parse(time.RFC3339Nano, completedAt)
@@ -143,7 +143,7 @@ func TestCachedReportRepairKeepsCompletionAndStopsAfterStatusChange(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=? WHERE id=?`, string(raw), "repair-target"); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2`, string(raw), "repair-target"); err != nil {
 		t.Fatal(err)
 	}
 	loaded, _, err = store.IPLookupReportByID(ctx, "repair-target")
@@ -159,7 +159,7 @@ func TestCachedReportRepairKeepsCompletionAndStopsAfterStatusChange(t *testing.T
 		t.Fatal(err)
 	}
 	var status, completedAt string
-	if err := store.DB().QueryRowContext(ctx, `SELECT status,completed_at FROM ip_lookup_reports WHERE id=?`, "repair-target").Scan(&status, &completedAt); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT status,completed_at FROM ip_lookup_reports WHERE id=$1`, "repair-target").Scan(&status, &completedAt); err != nil {
 		t.Fatal(err)
 	}
 	if status != "succeeded" || completedAt != stamp(completed) {

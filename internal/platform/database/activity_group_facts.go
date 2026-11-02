@@ -26,7 +26,7 @@ type groupMessageFact struct {
 }
 
 const insertGroupMessageFact = `INSERT INTO activity_group_message_raw_events(chat_id,message_id,local_date,created_at)
-	VALUES(?,?,?,?) ON CONFLICT(chat_id,message_id) DO NOTHING`
+	VALUES($1,$2,$3,$4) ON CONFLICT(chat_id,message_id) DO NOTHING`
 
 // RecordGroupMessageFact deduplicates every non-command message observed in
 // the configured Telegram group without requiring a local user identity.
@@ -41,7 +41,7 @@ func (s *Store) RecordGroupMessageFact(ctx context.Context, chatID, messageID in
 	return err
 }
 
-// BufferGroupMessageFact accepts a webhook fact without waiting for SQLite.
+// BufferGroupMessageFact accepts a webhook fact without waiting for PostgreSQL.
 func (s *Store) BufferGroupMessageFact(chatID, messageID int64, localDate string, now time.Time) error {
 	fact, err := newGroupMessageFact(chatID, messageID, localDate, now)
 	if err != nil {

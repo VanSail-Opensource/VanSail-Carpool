@@ -17,7 +17,7 @@ type squadPreferenceReader interface {
 }
 
 func disabledSquadsFrom(ctx context.Context, reader squadPreferenceReader, userID string) ([]string, error) {
-	rows, err := reader.QueryContext(ctx, `SELECT squad_uuid FROM user_disabled_squads WHERE user_id=? ORDER BY squad_uuid`, userID)
+	rows, err := reader.QueryContext(ctx, `SELECT squad_uuid FROM user_disabled_squads WHERE user_id=$1 ORDER BY squad_uuid`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,17 +41,14 @@ func (s *Store) UserDisabledSquads(ctx context.Context, userID string) ([]string
 // EnabledSquadsForRemote applies account preferences immediately before provider execution.
 // A new term whose owned squads are all disabled clears the stable first preference.
 func (s *Store) retryAttempt_EnabledSquadsForRemote(ctx context.Context, remoteID string, owned []string) ([]string, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var userID string
-	err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE proxy_user_id=?`, remoteID).Scan(&userID)
+	err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE proxy_user_id=$1`, remoteID).Scan(&userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return append([]string{}, owned...), nil
 	}
@@ -71,10 +68,7 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 	if err != nil || input.Kind != purchaseops.OperationSquadSwitch || input.ActorUserID != input.OwnerUserID || len(input.Items) != 1 || input.Items[0].TargetType != "purchase" || input.Items[0].TargetID != purchaseID {
 		return providerops.Operation{}, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, err
@@ -116,9 +110,9 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 		return providerops.Operation{}, purchaseops.ErrLastEnabledSquad
 	}
 	if enabled {
-		_, err = tx.ExecContext(ctx, `DELETE FROM user_disabled_squads WHERE user_id=? AND squad_uuid=?`, input.OwnerUserID, uuid)
+		_, err = tx.ExecContext(ctx, `DELETE FROM user_disabled_squads WHERE user_id=$1 AND squad_uuid=$2`, input.OwnerUserID, uuid)
 	} else {
-		_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO user_disabled_squads(user_id,squad_uuid) VALUES(?,?)`, input.OwnerUserID, uuid)
+		_, err = tx.ExecContext(ctx, `INSERT   INTO user_disabled_squads(user_id,squad_uuid) VALUES($1,$2) ON CONFLICT DO NOTHING `, input.OwnerUserID, uuid)
 	}
 	if err != nil {
 		return providerops.Operation{}, err
@@ -135,7 +129,7 @@ func (s *Store) retryAttempt_BeginSquadSwitch(ctx context.Context, input provide
 
 // LatestComboControl resumes pending/review/failed member commands after a reload.
 func (s *Store) LatestComboControl(ctx context.Context, userID string) (*model.OperationReceipt, error) {
-	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE owner_user_id=? AND kind IN (?,?)
+	operation, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE owner_user_id=$1 AND kind IN ($2,$3)
  AND status IN ('queued','processing','failed','pending_review','partial') ORDER BY created_at DESC,id DESC LIMIT 1`, userID, purchaseops.OperationSquadSwitch, purchaseops.OperationEarlyActivation))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil

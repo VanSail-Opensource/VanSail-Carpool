@@ -35,7 +35,7 @@ func TestPersistentLiveCacheMatchingRestartAndCompactStorage(t *testing.T) {
 		}
 	}
 	var raw string
-	if err := store.DB().QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=?`, id).Scan(&raw); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=$1`, id).Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 	var saved iplookup.LiveDetails

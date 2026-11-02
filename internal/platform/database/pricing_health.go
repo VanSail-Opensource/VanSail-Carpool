@@ -35,9 +35,9 @@ func (s *Store) retryAttempt_PricingPAYGAdmission(ctx context.Context, group, no
 }
 
 func pricingNodesTx(ctx context.Context, tx *sql.Tx, kind, id string) ([]string, error) {
-	query := `SELECT DISTINCT b.node_id FROM xnode_group_bindings b JOIN xnode_nodes n ON n.id=b.node_id WHERE n.enabled=1 AND b.group_id=?`
+	query := `SELECT DISTINCT b.node_id FROM xnode_group_bindings b JOIN xnode_nodes n ON n.id=b.node_id WHERE n.enabled=1 AND b.group_id=$1`
 	if kind == "combo" {
-		query = `SELECT DISTINCT b.node_id FROM xnode_group_bindings b JOIN xnode_nodes n ON n.id=b.node_id JOIN combos c ON c.id=? WHERE n.enabled=1 AND EXISTS(SELECT 1 FROM json_each(c.included_squad_uuids) j WHERE j.value=b.group_id)`
+		query = `SELECT DISTINCT b.node_id FROM xnode_group_bindings b JOIN xnode_nodes n ON n.id=b.node_id JOIN combos c ON c.id=$1 WHERE n.enabled=1 AND EXISTS(SELECT 1 FROM jsonb_array_elements_text((c.included_squad_uuids)::jsonb) j WHERE j.value=b.group_id)`
 	}
 	rows, err := tx.QueryContext(ctx, query, id)
 	if err != nil {
@@ -64,7 +64,7 @@ func pricingHealthAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, 
 		// A combo without proxy groups has no node telemetry to gate. Do not
 		// extend this exception to configured groups with missing/disabled nodes.
 		var noProxyGroups bool
-		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos c WHERE c.id=? AND NOT EXISTS(SELECT 1 FROM json_each(c.included_squad_uuids)))`, id).Scan(&noProxyGroups); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM combos c WHERE c.id=$1 AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text((c.included_squad_uuids)::jsonb)))`, id).Scan(&noProxyGroups); err != nil {
 			return err
 		}
 		if noProxyGroups {

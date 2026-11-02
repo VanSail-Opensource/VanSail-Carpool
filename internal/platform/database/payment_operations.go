@@ -13,10 +13,7 @@ import (
 // BeginPaymentOrderOperation atomically stores a priced order and queues checkout creation.
 func (s *Store) retryAttempt_BeginPaymentOrderOperation(ctx context.Context, order model.PaymentOrder,
 	input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("begin payment create command: %w", err)
@@ -43,10 +40,7 @@ func (s *Store) retryAttempt_BeginPaymentOrderOperation(ctx context.Context, ord
 // BeginPaymentCancellationOperation atomically stops polling and queues provider cancellation.
 func (s *Store) retryAttempt_BeginPaymentCancellationOperation(ctx context.Context, orderID, userID string,
 	input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("begin payment cancel command: %w", err)
@@ -56,16 +50,16 @@ func (s *Store) retryAttempt_BeginPaymentCancellationOperation(ctx context.Conte
 	if err != nil || replayed {
 		return commitPaymentOperationReplay(tx, operation, replayed, err)
 	}
-	order, err := scanPaymentOrder(tx.QueryRowContext(ctx, paymentSelect+` WHERE id=? AND user_id=?`, orderID, userID))
+	order, err := scanPaymentOrder(tx.QueryRowContext(ctx, paymentSelect+` WHERE id=$1 AND user_id=$2`, orderID, userID))
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
 	if (order.Status != "creating" && order.Status != "pending") || order.CancelledAt != nil {
 		return providerops.Operation{}, false, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE payment_orders SET cancelled_at=?,cancel_reason='cancelled by user',
+	result, err := tx.ExecContext(ctx, `UPDATE payment_orders SET cancelled_at=$1,cancel_reason='cancelled by user',
 		provider_payload='{}',payment_url=NULL,qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,
-		updated_at=? WHERE id=? AND user_id=? AND status IN ('creating','pending') AND paid_at IS NULL AND cancelled_at IS NULL`,
+		updated_at=$2 WHERE id=$3 AND user_id=$4 AND status IN ('creating','pending') AND paid_at IS NULL AND cancelled_at IS NULL`,
 		stamp(now), stamp(now), orderID, userID)
 	if err != nil {
 		return providerops.Operation{}, false, fmt.Errorf("cancel payment for provider command: %w", err)
@@ -95,8 +89,8 @@ func commitPaymentOperationReplay(tx *sql.Tx, operation providerops.Operation, r
 
 func expireStalePaymentsTx(ctx context.Context, tx *sql.Tx, now time.Time) error {
 	_, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='expired',provider_payload='{}',payment_url=NULL,
-		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=?
-		WHERE provider<>'bepusdt' AND status IN ('creating','pending') AND cancelled_at IS NULL AND expires_at<=?`, stamp(now), stamp(now))
+		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=$1
+		WHERE provider<>'bepusdt' AND status IN ('creating','pending') AND cancelled_at IS NULL AND expires_at<=$2`, stamp(now), stamp(now))
 	if err != nil {
 		return fmt.Errorf("expire stale payments for provider command: %w", err)
 	}
@@ -109,7 +103,7 @@ func insertPaymentOrderTx(ctx context.Context, tx *sql.Tx, order model.PaymentOr
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO payment_orders(id,user_id,provider,method_id,provider_rail,status,
 		txb_minor,payable_amount,payable_currency,rate_snapshot,rate_direction,provider_payload,expires_at,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,'{}',?,?,?)`, order.ID, order.UserID, order.Provider, order.MethodID,
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'{}',$12,$13,$14)`, order.ID, order.UserID, order.Provider, order.MethodID,
 		order.ProviderRail, order.Status, order.TXBMinor, order.PayableAmount, order.PayableCurrency, order.RateSnapshot,
 		order.RateDirection, stamp(order.ExpiresAt), stamp(now), stamp(now))
 	if err != nil {

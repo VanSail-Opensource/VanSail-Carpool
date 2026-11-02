@@ -2,7 +2,7 @@ get:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Database Administration]
   operationId: listAdminDatabaseRows
-  summary: Page typed rows by declared primary key or rowid
+  summary: Page typed rows by declared primary key
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/DatabaseTableName'
     - $ref: '../openapi.yaml#/components/parameters/Cursor'

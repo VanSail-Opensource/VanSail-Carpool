@@ -197,7 +197,7 @@ DatabaseColumn:
 DatabaseTable:
   type: object
   additionalProperties: false
-  required: [name, columns, highRisk, supportsRowId, warning]
+  required: [name, columns, highRisk, warning]
   properties:
     name:
       type: string
@@ -209,8 +209,6 @@ DatabaseTable:
     highRisk:
       type: boolean
       const: true
-    supportsRowId:
-      type: boolean
     warning:
       type: string
 
@@ -234,7 +232,7 @@ DatabaseBlobValue:
       contentEncoding: base64
 
 DatabaseValue:
-  description: SQLite NULL, boolean, lossless text/decimal string, or base64 blob. INTEGER, REAL, and NUMERIC cells are always returned as strings.
+  description: PostgreSQL NULL, boolean, lossless text/decimal string, or base64 blob. INTEGER, REAL, and NUMERIC cells are always returned as strings.
   oneOf:
     - type: 'null'
     - type: boolean

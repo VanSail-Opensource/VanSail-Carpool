@@ -25,7 +25,7 @@ func insertIPCache(t *testing.T, store *Store, id, ip, status string, completed 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(context.Background(), `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,completed_at) VALUES(?,?,?,?,?,?)`, id, ip, status, string(raw), stamp(completed.Add(-time.Second)), stamp(completed)); err != nil {
+	if _, err := store.DB().ExecContext(context.Background(), `INSERT INTO ip_lookup_reports(id,ip,status,report_json,created_at,completed_at) VALUES($1,$2,$3,$4,$5,$6)`, id, ip, status, string(raw), stamp(completed.Add(-time.Second)), stamp(completed)); err != nil {
 		t.Fatal(err)
 	}
 	return r
@@ -69,7 +69,7 @@ func TestIPLookupPreviewPrefersExactThenNewestCompletedSubnet(t *testing.T) {
 		})
 	}
 	var operations int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE kind=?`, iplookup.OperationKind).Scan(&operations); err != nil || operations != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE kind=$1`, iplookup.OperationKind).Scan(&operations); err != nil || operations != 0 {
 		t.Fatal("cache preview created an operation")
 	}
 	state, err := service.State(ctx, user)

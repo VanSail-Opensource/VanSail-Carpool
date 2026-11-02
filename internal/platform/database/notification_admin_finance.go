@@ -38,10 +38,7 @@ func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, us
 	if actorID == "" || userID == "" || delta == 0 || reason == "" || len(reason) > 500 {
 		return model.LedgerEntry{}, errors.New("administrator balance change is invalid")
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.LedgerEntry{}, err
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_adminBalanceChange(ctx context.Context, actorID, us
 	defer func() { _ = tx.Rollback() }()
 	var existingID, existingUserID, existingNote string
 	var existingDelta int64
-	if err := tx.QueryRowContext(ctx, `SELECT id,user_id,delta_txb_minor,note FROM ledger_entries WHERE kind=? AND reference_id=?`, ledgerKind, referenceID).
+	if err := tx.QueryRowContext(ctx, `SELECT id,user_id,delta_txb_minor,note FROM ledger_entries WHERE kind=$1 AND reference_id=$2`, ledgerKind, referenceID).
 		Scan(&existingID, &existingUserID, &existingDelta, &existingNote); err == nil {
 		if existingUserID != userID || existingDelta != delta || existingNote != reason {
 			return model.LedgerEntry{}, ErrConflict

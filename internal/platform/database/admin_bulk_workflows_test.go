@@ -26,7 +26,7 @@ func TestAdminBulkExtensionUsesInclusiveORDeduplicationAndQueueShift(t *testing.
 	if err != nil {
 		t.Fatalf("CreatePurchase(third): %v", err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=?,valid_until=?,updated_at=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4`,
 		stamp(now.Add(-2*time.Hour)), stamp(now.Add(20*24*time.Hour)), stamp(now), second.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -85,12 +85,12 @@ func TestAdminBulkExtensionUsesInclusiveORDeduplicationAndQueueShift(t *testing.
 		t.Fatalf("queued successor = %+v, want minute-precise shift", queued)
 	}
 	var retiredJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2 AND status IN ('pending','processing')`,
 		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
 		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
 	var itemCount int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operation_items WHERE operation_id=?`, operation.ID).Scan(&itemCount); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operation_items WHERE operation_id=$1`, operation.ID).Scan(&itemCount); err != nil {
 		t.Fatal(err)
 	}
 	if itemCount != 2 {
@@ -108,7 +108,7 @@ func TestAdminBulkAddonFilterUsesEffectiveEntitlementOverrides(t *testing.T) {
 	addonOverride := "66666666-6666-4666-8666-666666666666"
 	fullOverride := "77777777-7777-4777-8777-777777777777"
 	_, purchase := createAdminWorkflowPurchase(t, store, 42_004, combo, now, original.GroupID)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=$1 WHERE id=$2`,
 		`["`+addonOverride+`"]`, purchase.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestAdminBulkAddonFilterUsesEffectiveEntitlementOverrides(t *testing.T) {
 	if err != nil || addonPreview.MatchedUsers != 1 {
 		t.Fatalf("add-on override preview = %+v, %v", addonPreview, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=$1 WHERE id=$2`,
 		`["`+fullOverride+`"]`, purchase.ID); err != nil {
 		t.Fatal(err)
 	}

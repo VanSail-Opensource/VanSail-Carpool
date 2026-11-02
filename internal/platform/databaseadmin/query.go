@@ -43,10 +43,10 @@ func (s *Service) QueryRecords(ctx context.Context, table string, request QueryR
 	if request.Search != "" {
 		searchable := make([]string, 0)
 		for _, column := range schema.ColumnsRaw {
-			if column.Sensitive || column.Affinity == affinityBlob || column.Hidden != 0 {
+			if column.Sensitive || column.Family == storageFamilyBlob || column.Hidden != 0 {
 				continue
 			}
-			searchable = append(searchable, `CAST(`+quoteIdentifier(column.Name)+` AS TEXT) LIKE ? ESCAPE '\'`)
+			searchable = append(searchable, `CAST(`+quoteIdentifier(column.Name)+fmt.Sprintf(` AS TEXT) ILIKE $%d ESCAPE '\'`, len(args)+1))
 			args = append(args, "%"+escapeLike(request.Search)+"%")
 		}
 		if len(searchable) > 0 {
@@ -78,16 +78,16 @@ func (s *Service) QueryRecords(ctx context.Context, table string, request QueryR
 			}
 			conditions = append(conditions, quoted+" IS NOT NULL")
 		default:
-			if filter.Value == nil || column.Sensitive || column.Affinity == affinityBlob {
+			if filter.Value == nil || column.Sensitive || column.Family == storageFamilyBlob {
 				return Page{}, fmt.Errorf("%w: filter value is unavailable", ErrInvalidValue)
 			}
-			value, parseErr := parseEditorValue(column, *filter.Value)
+			value, parseErr := parseFilterValue(column, *filter.Value)
 			if parseErr != nil || value == nil {
 				return Page{}, fmt.Errorf("%w: invalid filter value", ErrInvalidValue)
 			}
 			switch filter.Operator {
 			case "contains", "starts_with":
-				if column.Affinity != affinityText {
+				if column.Family != storageFamilyText {
 					return Page{}, fmt.Errorf("%w: text operator requires a text column", ErrInvalidValue)
 				}
 				text, _ := filter.Value.Text()
@@ -95,11 +95,11 @@ func (s *Service) QueryRecords(ctx context.Context, table string, request QueryR
 				if filter.Operator == "starts_with" {
 					pattern = escapeLike(text) + "%"
 				}
-				conditions = append(conditions, quoted+` LIKE ? ESCAPE '\'`)
+				conditions = append(conditions, quoted+fmt.Sprintf(" ILIKE $%d ESCAPE '\\'", len(args)+1))
 				args = append(args, pattern)
 			default:
 				operatorSQL := map[string]string{"eq": "=", "ne": "<>", "gt": ">", "gte": ">=", "lt": "<", "lte": "<="}[filter.Operator]
-				conditions = append(conditions, quoted+" "+operatorSQL+" ?")
+				conditions = append(conditions, quoted+" "+operatorSQL+fmt.Sprintf(" $%d", len(args)+1))
 				args = append(args, value)
 			}
 		}
@@ -109,14 +109,15 @@ func (s *Service) QueryRecords(ctx context.Context, table string, request QueryR
 		if decodeErr != nil {
 			return Page{}, fmt.Errorf("%w: invalid query cursor", ErrInvalidValue)
 		}
-		conditions = append(conditions, keyTuple(schema)+" > ("+placeholders(len(keys))+")")
+		conditions = append(conditions, keyTuple(schema)+" > ("+placeholders(len(keys), len(args)+1)+")")
 		args = append(args, keys...)
 	}
 	query := `SELECT ` + selectList(schema) + ` FROM ` + quoteIdentifier(schema.Name)
 	if len(conditions) > 0 {
 		query += ` WHERE ` + strings.Join(conditions, ` AND `)
 	}
-	query += ` ORDER BY ` + keyOrder(schema) + ` LIMIT ?`
+	query += ` ORDER BY ` + keyOrder(schema) + fmt.Sprintf(" LIMIT $%d", len(args)+1)
+
 	args = append(args, request.Limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

@@ -15,10 +15,7 @@ import (
 
 // RefundPayment appends a reversal and unwinds entitlements until the account is solvent or no purchases remain.
 func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string, orderID, reason string, now time.Time) (model.PaymentOrder, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PaymentOrder{}, err
@@ -38,7 +35,7 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 	if err != nil {
 		return model.PaymentOrder{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO refunds(id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at) VALUES(?,?,?,?,?,'completed',?)`, refundID, order.ID, actorID, order.TXBMinor, reason, stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO refunds(id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at) VALUES($1,$2,$3,$4,$5,'completed',$6)`, refundID, order.ID, actorID, order.TXBMinor, reason, stamp(now)); err != nil {
 		return model.PaymentOrder{}, fmt.Errorf("record refund: %w", err)
 	}
 	balance, err := adjustBalanceTx(ctx, tx, order.UserID, -order.TXBMinor, now)
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 		return model.PaymentOrder{}, err
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.charged_txb_minor,purchases.status,combos.name
-		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=?
+		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=$1
 		AND purchases.status IN ('queued','activating','active') ORDER BY CASE purchases.status WHEN 'queued' THEN 0 ELSE 1 END,purchases.created_at DESC`, order.UserID)
 	if err != nil {
 		return model.PaymentOrder{}, err
@@ -78,7 +75,7 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 		if balance >= 0 {
 			break
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), item.id); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), item.id); err != nil {
 			return model.PaymentOrder{}, err
 		}
 		balance, err = adjustBalanceTx(ctx, tx, order.UserID, item.price, now)
@@ -96,7 +93,7 @@ func (s *Store) retryAttempt_RefundPayment(ctx context.Context, actorID *string,
 		}
 		cancelledNames = append(cancelledNames, item.combo)
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='refunded',provider_payload='{}',payment_url=NULL,qr_payload=NULL,refunded_at=?,updated_at=? WHERE id=?`, stamp(now), stamp(now), order.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='refunded',provider_payload='{}',payment_url=NULL,qr_payload=NULL,refunded_at=$1,updated_at=$2 WHERE id=$3`, stamp(now), stamp(now), order.ID); err != nil {
 		return model.PaymentOrder{}, err
 	}
 	if actorID != nil {
@@ -142,7 +139,7 @@ func (s *Store) ListRefunds(ctx context.Context, limit int) ([]model.Refund, err
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at FROM refunds ORDER BY created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,payment_order_id,actor_user_id,txb_minor,reason,status,created_at FROM refunds ORDER BY created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}

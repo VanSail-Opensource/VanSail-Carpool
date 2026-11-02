@@ -45,7 +45,7 @@ func TestPaidAroundEntranceReturnsAfterLaterActivation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='active',updated_at=? WHERE id=?`, stamp(now), purchase.ID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='active',updated_at=$1 WHERE id=$2`, stamp(now), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	on := true
@@ -53,10 +53,10 @@ func TestPaidAroundEntranceReturnsAfterLaterActivation(t *testing.T) {
 	if err != nil || !got.ShowActivity || !got.ShowAroundTX {
 		t.Fatalf("opt in: %+v %v", got, err)
 	}
-	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now.Add(time.Hour)), purchase.ID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now.Add(time.Hour)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_until=?,updated_at=? WHERE id=?`, stamp(now.Add(48*time.Hour)), stamp(now.Add(2*time.Hour)), purchase.ID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_until=$1,updated_at=$2 WHERE id=$3`, stamp(now.Add(48*time.Hour)), stamp(now.Add(2*time.Hour)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}
 	got, err = s.UserPreferenceSnapshot(ctx, u.ID, now.Add(3*time.Hour))

@@ -18,7 +18,7 @@ func TestTrafficResetDebitReplayAndCompensationAreAtomic(t *testing.T) {
 	store := newTestStore(t)
 	user := createTestUser(t, store, 28001)
 	combo := saveTestCombo(t, store, "daily-reset", 301, 30)
-	if _, err := store.DB().ExecContext(ctx, "UPDATE combos SET reset_strategy='DAY' WHERE id=?", combo.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, "UPDATE combos SET reset_strategy='DAY' WHERE id=$1", combo.ID); err != nil {
 		t.Fatalf("set daily strategy: %v", err)
 	}
 	if _, err := store.AdjustBalance(ctx, user.ID, 5_000, "reset-seed", "test credit", time.Now()); err != nil {
@@ -107,12 +107,12 @@ func TestMemberRefundCreditsNetAndShiftsQueuedTimeline(t *testing.T) {
 		t.Fatalf("third queued start = %s, %v; want %s", third.ValidFrom, err, result.Successor.ValidUntil)
 	}
 	var retiredJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2 AND status IN ('pending','processing')`,
 		jobpayload.ContinuityKind, `{"purchaseId":"`+third.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
 		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
 	var activatedContinuity int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2`,
 		jobpayload.ContinuityKind, `{"purchaseId":"`+second.ID+`"}`).Scan(&activatedContinuity); err != nil || activatedContinuity != 0 {
 		t.Fatalf("activated successor continuity jobs = %d, %v", activatedContinuity, err)
 	}

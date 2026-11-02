@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Store) OnboardingBundle(ctx context.Context, kind string) (onboarding.Bundle, error) {
-	return scanOnboardingBundle(s.db.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=?`, kind))
+	return scanOnboardingBundle(s.db.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=$1`, kind))
 }
 
 func scanOnboardingBundle(row rowScanner) (onboarding.Bundle, error) {
@@ -65,7 +65,7 @@ func (s *Store) SaveOnboardingDraft(ctx context.Context, kind string, content on
 	if err != nil {
 		return onboarding.Bundle{}, err
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE onboarding_content SET draft_json=?,draft_revision=draft_revision+1,updated_at=?,updated_by=? WHERE kind=? AND draft_revision=?`, string(encoded), stamp(now), actorID, kind, expectedRevision)
+	result, err := s.db.ExecContext(ctx, `UPDATE onboarding_content SET draft_json=$1,draft_revision=draft_revision+1,updated_at=$2,updated_by=$3 WHERE kind=$4 AND draft_revision=$5`, string(encoded), stamp(now), actorID, kind, expectedRevision)
 	if err != nil {
 		return onboarding.Bundle{}, err
 	}
@@ -76,16 +76,13 @@ func (s *Store) SaveOnboardingDraft(ctx context.Context, kind string, content on
 }
 
 func (s *Store) retryAttempt_PublishOnboarding(ctx context.Context, kind string, expectedDraftRevision int, actorID string, now time.Time) (onboarding.Bundle, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return onboarding.Bundle{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	bundle, err := scanOnboardingBundle(tx.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=?`, kind))
+	bundle, err := scanOnboardingBundle(tx.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=$1`, kind))
 	if err != nil {
 		return onboarding.Bundle{}, err
 	}
@@ -105,7 +102,7 @@ func (s *Store) retryAttempt_PublishOnboarding(ctx context.Context, kind string,
 	}
 	changed := !slices.Equal(draftJSON, publishedJSON)
 	if changed {
-		if _, err := tx.ExecContext(ctx, `UPDATE onboarding_content SET published_json=draft_json,published_revision=published_revision+1,published_at=?,updated_by=? WHERE kind=? AND draft_revision=?`, stamp(now), actorID, kind, expectedDraftRevision); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE onboarding_content SET published_json=draft_json,published_revision=published_revision+1,published_at=$1,updated_by=$2 WHERE kind=$3 AND draft_revision=$4`, stamp(now), actorID, kind, expectedDraftRevision); err != nil {
 			return onboarding.Bundle{}, err
 		}
 	}
@@ -127,16 +124,13 @@ func (s *Store) CurrentAgreementContract(ctx context.Context) (int, []string, er
 func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, userID string, revision int, agreementIDs []string, acceptedAt time.Time) (model.User, error) {
 	provided := append([]string(nil), agreementIDs...)
 	slices.Sort(provided)
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.User{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	bundle, err := scanOnboardingBundle(tx.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=?`, onboarding.KindAgreements))
+	bundle, err := scanOnboardingBundle(tx.QueryRowContext(ctx, `SELECT kind,draft_json,published_json,draft_revision,published_revision FROM onboarding_content WHERE kind=$1`, onboarding.KindAgreements))
 	if err != nil {
 		return model.User{}, err
 	}
@@ -148,14 +142,14 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 	if revision != bundle.PublishedRevision || !slices.Equal(provided, requiredIDs) {
 		return model.User{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=?,accepted_agreement_revision=?,recovery_reason='',updated_at=? WHERE id=? AND onboarding_state='agreement'`, stamp(acceptedAt), revision, stamp(acceptedAt), userID)
+	result, err := tx.ExecContext(ctx, `UPDATE users SET onboarding_state='complete',policy_accepted_at=$1,accepted_agreement_revision=$2,recovery_reason='',updated_at=$3 WHERE id=$4 AND onboarding_state='agreement'`, stamp(acceptedAt), revision, stamp(acceptedAt), userID)
 	if err != nil {
 		return model.User{}, err
 	}
 	if affected, _ := result.RowsAffected(); affected != 1 {
 		return model.User{}, ErrConflict
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM panel_entry_verification WHERE telegram_id=(SELECT telegram_id FROM users WHERE id=?)`, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM panel_entry_verification WHERE telegram_id=(SELECT telegram_id FROM users WHERE id=$1)`, userID); err != nil {
 		return model.User{}, err
 	}
 	payload, err := json.Marshal(map[string]string{"userId": userID})
@@ -166,7 +160,7 @@ func (s *Store) retryAttempt_CompleteOnboardingRevision(ctx context.Context, use
 		return model.User{}, err
 	}
 	var purchased int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases WHERE user_id=? AND status IN ('active','activating','queued') AND valid_until>?)`, userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('active','activating','queued') AND valid_until>$2))::bigint", userID, stamp(acceptedAt)).Scan(&purchased); err != nil {
 		return model.User{}, err
 	}
 	if purchased == 1 {

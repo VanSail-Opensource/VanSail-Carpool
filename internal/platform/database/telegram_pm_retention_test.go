@@ -29,7 +29,7 @@ func TestPMRetentionBoundsReceiptsAndKeepsUncertainRoutingAndOwners(t *testing.T
 	if _, err := store.BeginProviderOperationItemAttempt(ctx, receipt.ID, "topic", old); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET created_at=? WHERE id=?`, stamp(old), user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET created_at=$1 WHERE id=$2`, stamp(old), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	recent := queuedPM(t, store, user, 402, 2, now.Add(-time.Hour))
@@ -57,7 +57,7 @@ func TestPMRetentionBoundsReceiptsAndKeepsUncertainRoutingAndOwners(t *testing.T
 		t.Fatalf("conversation owner pruned: %v", err)
 	}
 	var failed int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_foreign_key_check`).Scan(&failed); err != nil || failed != 0 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype='f' AND NOT convalidated`).Scan(&failed); err != nil || failed != 0 {
 		t.Fatalf("FK errors=%d,%v", failed, err)
 	}
 }

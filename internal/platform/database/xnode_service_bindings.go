@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Store) XNodeServiceBindings(ctx context.Context, id int64) ([]xnode.ServiceBinding, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,inbound_tag,valid_until FROM xnode_service_bindings WHERE proxy_user_id=? ORDER BY node_id,inbound_tag`, id)
+	rows, err := s.db.QueryContext(ctx, `SELECT proxy_user_id,node_id,inbound_tag,valid_until FROM xnode_service_bindings WHERE proxy_user_id=$1 ORDER BY node_id,inbound_tag`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +28,6 @@ func (s *Store) XNodeServiceBindings(ctx context.Context, id int64) ([]xnode.Ser
 	return out, rows.Err()
 }
 func (s *Store) SaveXNodeServiceBinding(ctx context.Context, item xnode.ServiceBinding) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_service_bindings(proxy_user_id,node_id,inbound_tag,valid_until) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=? AND service_name IS NOT NULL) ON CONFLICT DO UPDATE SET valid_until=excluded.valid_until`, item.ProxyUserID, item.NodeID, item.InboundTag, stamp(item.ValidUntil), item.ProxyUserID)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_service_bindings(proxy_user_id,node_id,inbound_tag,valid_until) SELECT $1,$2,$3,$4 WHERE EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=$5 AND service_name IS NOT NULL) ON CONFLICT DO UPDATE SET valid_until=excluded.valid_until`, item.ProxyUserID, item.NodeID, item.InboundTag, stamp(item.ValidUntil), item.ProxyUserID)
 	return err
 }

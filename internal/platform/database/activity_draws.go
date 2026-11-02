@@ -13,10 +13,7 @@ import (
 
 // SaveLuckyDraw persists a validated configuration and audits every revision.
 func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.LuckyDrawInput, now time.Time) (activity.LuckyDraw, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -57,7 +54,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 		input.GroupChatID, input.AnnouncementMessageID = previous.GroupChatID, previous.AnnouncementMessageID
 		input.Revision = previous.Revision + 1
 		if input.Kind == "raffle" {
-			if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=? AND status='active'`, input.ID).Scan(&activeSeats); err != nil {
+			if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=$1 AND status='active'`, input.ID).Scan(&activeSeats); err != nil {
 				return activity.LuckyDraw{}, err
 			}
 			if input.Threshold < activeSeats {
@@ -82,11 +79,11 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 	if input.Revision == 1 {
 		_, err = tx.ExecContext(ctx, `INSERT INTO activity_lucky_draws
    (id,name,description,kind,status,fee_minor,expected_participation,threshold,keyword,command,revision,created_at,updated_at)
-   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, input.ID, input.Name, input.Description, input.Kind, input.Status, input.FeeMinor,
+   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, input.ID, input.Name, input.Description, input.Kind, input.Status, input.FeeMinor,
 			nullablePositiveInt(input.ExpectedParticipation), nullablePositiveInt(input.Threshold), input.Keyword, input.Command, input.Revision, stamp(now), stamp(now))
 	} else {
-		result, updateErr := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET name=?,description=?,status=?,fee_minor=?,
-   expected_participation=?,threshold=?,keyword=?,command=?,revision=?,updated_at=? WHERE id=?`,
+		result, updateErr := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET name=$1,description=$2,status=$3,fee_minor=$4,
+   expected_participation=$5,threshold=$6,keyword=$7,command=$8,revision=$9,updated_at=$10 WHERE id=$11`,
 			input.Name, input.Description, input.Status, input.FeeMinor, nullablePositiveInt(input.ExpectedParticipation),
 			nullablePositiveInt(input.Threshold), input.Keyword, input.Command, input.Revision, stamp(now), input.ID)
 		err = updateErr
@@ -106,7 +103,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 		}
 		return activity.LuckyDraw{}, fmt.Errorf("save lucky draw: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_lucky_prizes WHERE draw_id=?`, input.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_lucky_prizes WHERE draw_id=$1`, input.ID); err != nil {
 		return activity.LuckyDraw{}, err
 	}
 	for position, prize := range input.Prizes {
@@ -128,7 +125,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 			stock = prize.Stock
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO activity_lucky_prizes(id,draw_id,name,position,probability_bps,stock,reward_payload)
-			VALUES(?,?,?,?,?,?,?)`, prizeID, input.ID, strings.TrimSpace(prize.Name), position, probability, stock, string(payload)); err != nil {
+			VALUES($1,$2,$3,$4,$5,$6,$7)`, prizeID, input.ID, strings.TrimSpace(prize.Name), position, probability, stock, string(payload)); err != nil {
 			if isUniqueConstraint(err) {
 				return activity.LuckyDraw{}, ErrConflict
 			}
@@ -143,7 +140,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 	if err != nil {
 		return activity.LuckyDraw{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO activity_draw_revisions(id,draw_id,revision,snapshot_json,created_at) VALUES(?,?,?,?,?)`,
+	if _, err := tx.ExecContext(ctx, `INSERT INTO activity_draw_revisions(id,draw_id,revision,snapshot_json,created_at) VALUES($1,$2,$3,$4,$5)`,
 		revisionID, input.ID, input.Revision, string(snapshot), stamp(now)); err != nil {
 		return activity.LuckyDraw{}, err
 	}
@@ -160,7 +157,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 			}
 		}
 		if activeSeats == input.Threshold {
-			if _, err := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling',updated_at=? WHERE id=?`, stamp(now), input.ID); err != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling',updated_at=$1 WHERE id=$2`, stamp(now), input.ID); err != nil {
 				return activity.LuckyDraw{}, err
 			}
 			if err := insertOutboxTx(ctx, tx, "draw_raffle_settle", string(payload), now, now); err != nil {

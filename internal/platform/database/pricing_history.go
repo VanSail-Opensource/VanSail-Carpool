@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
 
@@ -34,18 +35,18 @@ func (s *Store) pricingHistory(ctx context.Context, filter PricingHistoryFilter,
 	if filter.EntityID == "" || len(filter.EntityID) > 256 || (filter.EntityType != "node" && filter.EntityType != "user" && filter.EntityType != "user_node" && filter.EntityType != "product") || (filter.Horizon != 604800 && (filter.Horizon < 86400 || filter.Horizon > 432000 || filter.Horizon%86400 != 0)) {
 		return nil, pricing.Validation{}, ErrConflict
 	}
-	conditions := []string{"f.entity_type=?", "f.entity_id=?", "f.metric=?", "f.horizon_seconds>?", "f.horizon_seconds<=?"}
+	conditions := []string{"f.entity_type=$1", "f.entity_id=$2", "f.metric=$3", "f.horizon_seconds>$4", "f.horizon_seconds<=$5"}
 	args := []any{filter.EntityType, filter.EntityID, filter.Metric, filter.Horizon - 3600, filter.Horizon}
 	if filter.ModelVersion != "" {
-		conditions = append(conditions, "f.model_version=?")
+		conditions = append(conditions, fmt.Sprintf("f.model_version=$%d", len(args)+1))
 		args = append(args, filter.ModelVersion)
 	}
 	if !filter.From.IsZero() {
-		conditions = append(conditions, "f.target_from>=?")
+		conditions = append(conditions, fmt.Sprintf("f.target_from>=$%d", len(args)+1))
 		args = append(args, pricingStamp(filter.From))
 	}
 	if !filter.Until.IsZero() {
-		conditions = append(conditions, "f.target_from<?")
+		conditions = append(conditions, fmt.Sprintf("f.target_from<$%d", len(args)+1))
 		args = append(args, pricingStamp(filter.Until))
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT f.forecast_id,f.entity_type,f.entity_id,f.metric,f.generated_at,f.target_from,f.target_until,f.horizon_seconds,f.predicted_p10,f.predicted_p50,f.predicted_p90,f.predicted_mean,f.model_version,f.feature_watermark,f.feature_snapshot_hash,f.data_coverage_bps,f.health_state,f.calibration_status,e.actual,e.status FROM pricing_forecast_vintages f LEFT JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE `+strings.Join(conditions, " AND ")+` ORDER BY f.target_from DESC,f.generated_at DESC LIMIT 500`, args...)

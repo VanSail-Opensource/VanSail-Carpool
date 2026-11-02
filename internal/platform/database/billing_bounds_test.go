@@ -42,7 +42,7 @@ func TestAddTXBBoundsReadUpdateAndAudit(t *testing.T) {
 		t.Fatalf("AddTXBBounds(updated) = (%+v, %v)", loaded, err)
 	}
 	var audits int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE actor_user_id=?
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_events WHERE actor_user_id=$1
 		AND action='billing.amount_bounds.update' AND target_type='txb_limits' AND target_id='1'`, actor.ID).Scan(&audits); err != nil {
 		t.Fatal(err)
 	}

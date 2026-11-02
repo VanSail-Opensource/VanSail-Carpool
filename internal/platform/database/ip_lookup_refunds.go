@@ -14,14 +14,14 @@ func refundIPCheckTx(ctx context.Context, tx *sql.Tx, operationID string, now ti
 	var allowance sql.NullString
 	var refunded int
 	var quota int
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,charge_minor,allowance_id,refunded,quota_consumed FROM ip_lookup_checks WHERE operation_id=?`, operationID).Scan(&user, &charge, &allowance, &refunded, &quota); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,charge_minor,allowance_id,refunded,quota_consumed FROM ip_lookup_checks WHERE operation_id=$1`, operationID).Scan(&user, &charge, &allowance, &refunded, &quota); err != nil {
 		return err
 	}
 	if refunded == 1 {
 		return nil
 	}
 	if allowance.Valid {
-		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used-? WHERE purchase_id=? AND used>=?`, quota, allowance.String, quota); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=used-$1 WHERE purchase_id=$2 AND used>=$3`, quota, allowance.String, quota); err != nil {
 			return err
 		}
 	}
@@ -34,7 +34,7 @@ func refundIPCheckTx(ctx context.Context, tx *sql.Tx, operationID string, now ti
 			return err
 		}
 	}
-	_, err := tx.ExecContext(ctx, `UPDATE ip_lookup_checks SET refunded=1 WHERE operation_id=?`, operationID)
+	_, err := tx.ExecContext(ctx, `UPDATE ip_lookup_checks SET refunded=1 WHERE operation_id=$1`, operationID)
 	return err
 }
 
@@ -105,13 +105,13 @@ func reconcileStaleIPLookupsTx(ctx context.Context, tx *sql.Tx, now time.Time) e
 		if err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=?,report_json=?,completed_at=? WHERE id=?`, report.Status, string(raw), stamp(now), run.id); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=$1,report_json=$2,completed_at=$3 WHERE id=$4`, report.Status, string(raw), stamp(now), run.id); err != nil {
 			return err
 		}
 		if err := scheduleIPLookupReportRetryTx(ctx, tx, run.id, report, now); err != nil {
 			return err
 		}
-		checkRows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=?`, run.id)
+		checkRows, err := tx.QueryContext(ctx, `SELECT operation_id FROM ip_lookup_checks WHERE report_id=$1`, run.id)
 		if err != nil {
 			return err
 		}

@@ -136,7 +136,7 @@ func TestNodeSnapshotsReplaceCountsWithoutPersistingTelemetry(t *testing.T) {
 			t.Fatalf("authoritative count=%d,error=%v", metrics.ActiveConnections, err)
 		}
 	}
-	rows, err := f.store.DB().QueryContext(ctx, `SELECT name,sql FROM sqlite_master WHERE type='table' AND name LIKE 'xnode_%'`)
+	rows, err := f.store.DB().QueryContext(ctx, `SELECT table_name,string_agg(column_name,',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='public' AND table_name LIKE 'xnode_%' GROUP BY table_name`)
 	if err != nil {
 		t.Fatal(err)
 	}

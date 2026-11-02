@@ -13,7 +13,7 @@ import (
 
 func memberOperationReplayTx(ctx context.Context, tx *sql.Tx, input providerops.CreateInput, now time.Time) (providerops.Operation, bool, error) {
 	existing, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+
-		` WHERE actor_user_id=? AND kind=? AND idempotency_key=?`, input.ActorUserID, input.Kind, input.IdempotencyKey))
+		` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, input.ActorUserID, input.Kind, input.IdempotencyKey))
 	if errors.Is(err, ErrNotFound) {
 		return providerops.Operation{}, false, nil
 	}
@@ -39,7 +39,7 @@ func memberPurchaseFactsTx(ctx context.Context, tx *sql.Tx, purchaseID, userID s
 		CASE WHEN purchases.renewal_batch_id IS NULL AND purchases.auto_renew_source_purchase_id IS NULL
 		AND NOT EXISTS(SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchases.id)
 		AND NOT EXISTS(SELECT 1 FROM renewal_batches WHERE source_purchase_id=purchases.id) THEN 1 ELSE 0 END
-		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=? AND purchases.user_id=?`, purchaseID, userID).
+		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID).
 		Scan(&purchase.ID, &purchase.UserID, &purchase.ComboName, &purchase.PriceTXBMinor, &purchase.CoreGrossTXBMinor,
 			&purchase.Status, &validFrom, &validUntil, &purchase.ResetStrategy, &created, &firstTerm)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -74,7 +74,7 @@ func openMemberOperationTx(ctx context.Context, tx *sql.Tx, purchaseID, kind str
 	var count int
 	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations operation
 		JOIN provider_operation_items item ON item.operation_id=operation.id
-		WHERE operation.kind=? AND item.target_type='purchase' AND item.target_id=?
+		WHERE operation.kind=$1 AND item.target_type='purchase' AND item.target_id=$2
 		AND operation.status IN ('queued','processing','pending_review')`, kind, purchaseID).Scan(&count)
 	return count > 0, err
 }

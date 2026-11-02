@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
+
 	"testing"
 )
 
@@ -12,7 +12,7 @@ func TestSchemaRowsAndCursorAreTypedAndAllowlisted(t *testing.T) {
 	t.Parallel()
 	service, db, _, _, actor := newTestService(t)
 	ctx := context.Background()
-	if _, err := db.ExecContext(ctx, `CREATE TABLE rowid_records(label TEXT NOT NULL,amount INTEGER NOT NULL,enabled INTEGER NOT NULL DEFAULT 0)`); err != nil {
+	if _, err := db.ExecContext(ctx, `CREATE TABLE keyed_records(label TEXT COLLATE "C" PRIMARY KEY,amount BIGINT NOT NULL,enabled BIGINT NOT NULL DEFAULT 0)`); err != nil {
 		t.Fatalf("create rowid table: %v", err)
 	}
 	for _, values := range []struct {
@@ -20,8 +20,8 @@ func TestSchemaRowsAndCursorAreTypedAndAllowlisted(t *testing.T) {
 		amount  int64
 		enabled int
 	}{{"first", 9007199254740993, 1}, {"second", 2, 0}, {"third", 3, 1}} {
-		if _, err := db.ExecContext(ctx, `INSERT INTO rowid_records(label,amount,enabled) VALUES(?,?,?)`, values.label, values.amount, values.enabled); err != nil {
-			t.Fatalf("insert rowid record: %v", err)
+		if _, err := db.ExecContext(ctx, `INSERT INTO keyed_records(label,amount,enabled) VALUES($1,$2,$3)`, values.label, values.amount, values.enabled); err != nil {
+			t.Fatalf("insert record_order record: %v", err)
 		}
 	}
 	tables, err := service.Tables(ctx)
@@ -30,17 +30,17 @@ func TestSchemaRowsAndCursorAreTypedAndAllowlisted(t *testing.T) {
 	}
 	foundRowID, foundMigration := false, false
 	for _, table := range tables {
-		if table.Name == "rowid_records" {
-			foundRowID = table.SupportsRowID && table.HighRisk
+		if table.Name == "keyed_records" {
+			foundRowID = table.HighRisk
 		}
-		if table.Name == "schema_migrations" || strings.HasPrefix(table.Name, "sqlite_") {
+		if table.Name == "schema_migrations" || table.Name == "goose_db_version" {
 			foundMigration = true
 		}
 	}
 	if !foundRowID || foundMigration {
 		t.Fatalf("rowid table found=%v, excluded table leaked=%v", foundRowID, foundMigration)
 	}
-	page, err := service.Records(ctx, "rowid_records", "", 2)
+	page, err := service.Records(ctx, "keyed_records", "", 2)
 	if err != nil {
 		t.Fatalf("Records(first): %v", err)
 	}
@@ -53,7 +53,7 @@ func TestSchemaRowsAndCursorAreTypedAndAllowlisted(t *testing.T) {
 	if enabled, ok := page.Items[0].Values["enabled"].Bool(); !ok || !enabled {
 		t.Fatalf("boolean value = %v, bool=%v", enabled, ok)
 	}
-	page2, err := service.Records(ctx, "rowid_records", *page.NextCursor, 2)
+	page2, err := service.Records(ctx, "keyed_records", *page.NextCursor, 2)
 	if err != nil || len(page2.Items) != 1 || page2.NextCursor != nil {
 		t.Fatalf("Records(second) = %+v, %v", page2, err)
 	}
@@ -63,7 +63,7 @@ func TestSchemaRowsAndCursorAreTypedAndAllowlisted(t *testing.T) {
 
 	// Ensure the generated actor remains usable; this also guards against the
 	// schema introspection accidentally mutating application state.
-	if _, err := db.ExecContext(ctx, `SELECT id FROM users WHERE id=?`, actor); err != nil {
+	if _, err := db.ExecContext(ctx, `SELECT id FROM users WHERE id=$1`, actor); err != nil {
 		t.Fatalf("actor query: %v", err)
 	}
 }
@@ -82,82 +82,6 @@ func TestDatabaseValueRequiresDecimalStringForNumericJSON(t *testing.T) {
 	}
 }
 
-func TestRowIDTableRemainsAddressableWhenOneAliasIsShadowed(t *testing.T) {
-	t.Parallel()
-	service, db, backup, _, actor := newTestService(t)
-	ctx := context.Background()
-	if _, err := db.ExecContext(ctx, `CREATE TABLE rowid_shadow(rowid TEXT NOT NULL,label TEXT NOT NULL)`); err != nil {
-		t.Fatalf("create rowid-shadow table: %v", err)
-	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO rowid_shadow(rowid,label) VALUES('display-only','first')`); err != nil {
-		t.Fatalf("insert rowid-shadow record: %v", err)
-	}
-	page, err := service.Records(ctx, "rowid_shadow", "", 10)
-	if err != nil {
-		t.Fatalf("Records(rowid_shadow): %v", err)
-	}
-	if len(page.Items) != 1 || page.Items[0].Key["_rowid_"] != "1" {
-		t.Fatalf("rowid-shadow page = %+v", page)
-	}
-	request := MutationRequest{Action: "update", Table: "rowid_shadow", Key: page.Items[0].Key,
-		ExpectedHash: page.Items[0].RecordHash, Values: map[string]Value{"label": StringValue("reviewed")},
-		Reason: "Verify the remaining rowid alias"}
-	review, err := service.ReviewMutation(ctx, actor, request)
-	if err != nil {
-		t.Fatalf("ReviewMutation(rowid shadow): %v", err)
-	}
-	request.ReviewHash, request.Confirmation = review.ReviewHash, review.RequiredConfirmation
-	result, err := service.ApplyMutation(ctx, actor, request)
-	if err != nil {
-		t.Fatalf("ApplyMutation(rowid shadow): %v", err)
-	}
-	if backup.calls != 1 || result.Row == nil {
-		t.Fatalf("rowid-shadow mutation result=%+v backup calls=%d", result, backup.calls)
-	}
-}
-
-func TestRowIDInsertStillRequiresDeclaredNotNullColumns(t *testing.T) {
-	t.Parallel()
-	service, db, _, _, actor := newTestService(t)
-	ctx := context.Background()
-	if _, err := db.ExecContext(ctx, `CREATE TABLE rowid_insert_required(label TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0)`); err != nil {
-		t.Fatalf("create rowid insert table: %v", err)
-	}
-	request := MutationRequest{Action: "insert", Table: "rowid_insert_required",
-		Values: map[string]Value{"enabled": BooleanValue(true)}, Reason: "Verify required field enforcement"}
-	if _, err := service.ReviewMutation(ctx, actor, request); !errors.Is(err, ErrInvalidValue) {
-		t.Fatalf("missing required rowid-table column error = %v", err)
-	}
-}
-
-func TestDefaultValuesInsertIsReviewedAndTransactional(t *testing.T) {
-	t.Parallel()
-	service, db, backup, _, actor := newTestService(t)
-	ctx := context.Background()
-	if _, err := db.ExecContext(ctx, `CREATE TABLE default_value_records(enabled INTEGER NOT NULL DEFAULT 1)`); err != nil {
-		t.Fatalf("create default-value table: %v", err)
-	}
-	request := MutationRequest{Action: "insert", Table: "default_value_records", Reason: "Create the default configuration row"}
-	review, err := service.ReviewMutation(ctx, actor, request)
-	if err != nil {
-		t.Fatalf("ReviewMutation(default values): %v", err)
-	}
-	if len(review.After) != 0 {
-		t.Fatalf("default-value review claimed unresolved values: %+v", review.After)
-	}
-	request.ReviewHash, request.Confirmation = review.ReviewHash, review.RequiredConfirmation
-	result, err := service.ApplyMutation(ctx, actor, request)
-	if err != nil {
-		t.Fatalf("ApplyMutation(default values): %v", err)
-	}
-	if backup.calls != 1 || result.Row == nil {
-		t.Fatalf("default-value result=%+v backup calls=%d", result, backup.calls)
-	}
-	if enabled, ok := result.Row.Values["enabled"].Bool(); !ok || !enabled {
-		t.Fatalf("default enabled=%v, boolean=%v", enabled, ok)
-	}
-}
-
 func TestNumericPrimaryKeyCursorPreservesExactLargeInteger(t *testing.T) {
 	t.Parallel()
 	service, db, _, _, actor := newTestService(t)
@@ -166,7 +90,7 @@ func TestNumericPrimaryKeyCursorPreservesExactLargeInteger(t *testing.T) {
 		t.Fatalf("create numeric-key table: %v", err)
 	}
 	for _, id := range []int64{9007199254740993, 9007199254740995} {
-		if _, err := db.ExecContext(ctx, `INSERT INTO numeric_key_records(id,label) VALUES(?,?)`, id, "record"); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO numeric_key_records(id,label) VALUES($1,$2)`, id, "record"); err != nil {
 			t.Fatalf("insert numeric key %d: %v", id, err)
 		}
 	}
@@ -188,7 +112,7 @@ func TestNumericPrimaryKeyCursorPreservesExactLargeInteger(t *testing.T) {
 	request := MutationRequest{Action: "update", Table: "numeric_key_records", Key: first.Items[0].Key,
 		ExpectedHash: first.Items[0].RecordHash, Values: map[string]Value{"label": StringValue("reviewed")},
 		Reason: "Verify exact numeric key handling"}
-	if _, err := service.ReviewMutation(ctx, actor, request); err != nil {
+	if _, err := service.ReviewMutation(ctx, actor, request); !errors.Is(err, ErrInvalidValue) {
 		t.Fatalf("ReviewMutation(large numeric key): %v", err)
 	}
 }

@@ -30,12 +30,12 @@ type pricedPurchaseAddon struct {
 }
 
 func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonInput, now time.Time) (model.PurchaseAddonQuote, []pricedPurchaseAddon, error) {
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, input.PurchaseID, input.UserID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, input.PurchaseID, input.UserID))
 	if err != nil {
 		return model.PurchaseAddonQuote{}, nil, err
 	}
 	var overridden bool
-	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids IS NOT NULL OR entitlement_addon_squad_uuids IS NOT NULL FROM purchases WHERE id=?`, purchase.ID).Scan(&overridden); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids IS NOT NULL OR entitlement_addon_squad_uuids IS NOT NULL FROM purchases WHERE id=$1`, purchase.ID).Scan(&overridden); err != nil {
 		return model.PurchaseAddonQuote{}, nil, fmt.Errorf("check add-on entitlement override: %w", err)
 	}
 	if overridden {
@@ -127,7 +127,7 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 }
 
 func purchaseAddonFactsTx(ctx context.Context, tx *sql.Tx, purchaseID string, existing map[string]struct{}) error {
-	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=?`, purchaseID)
+	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=$1`, purchaseID)
 	if err != nil {
 		return fmt.Errorf("load purchase add-on facts: %w", err)
 	}

@@ -68,7 +68,7 @@ func TestBrowserHTTPAdminScopeReplayAndRoleRevocation(t *testing.T) {
 	if response.Code != 409 {
 		t.Fatalf("signed admin replay accepted=%d", response.Code)
 	}
-	if _, err = server.deps.Store.DB().ExecContext(context.Background(), `UPDATE users SET role='user' WHERE id=?`, user.ID); err != nil {
+	if _, err = server.deps.Store.DB().ExecContext(context.Background(), `UPDATE users SET role='user' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	request = httptest.NewRequest(http.MethodGet, "/api/v1/auth/browser/session", nil)
@@ -121,7 +121,7 @@ func TestBrowserHTTPExpiredIdentityCookie(t *testing.T) {
 
 }
 
-func TestStreamingBackupRequiresBrowserScopeAndSameOrigin(t *testing.T) {
+func TestRemovedUploadCannotBypassRequestSigning(t *testing.T) {
 	server, _, user := testBrowserHTTP(t)
 	_, token, _, err := createBrowserTestSession(t, server, user)
 	if err != nil {
@@ -133,9 +133,9 @@ func TestStreamingBackupRequiresBrowserScopeAndSameOrigin(t *testing.T) {
 		origin string
 		cookie bool
 		status int
-	}{{"valid browser", "https://panel.example", true, 204}, {"foreign origin", "https://evil.example", true, 403}, {"missing device", "https://panel.example", false, 401}} {
+	}{{"valid browser", "https://panel.example", true, 401}, {"foreign origin", "https://evil.example", true, 401}, {"missing device", "https://panel.example", false, 401}} {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, streamingBackupUploadPath, nil)
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/admin/backups/upload", nil)
 			request.Header.Set("Origin", test.origin)
 			request.Header.Set("Sec-Fetch-Site", "same-origin")
 			request.Header.Set("Idempotency-Key", "upload-command")

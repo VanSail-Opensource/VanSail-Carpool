@@ -21,13 +21,13 @@ func validatePricingCommandScope(ctx context.Context, tx *sql.Tx, in PricingInte
 	query := ""
 	switch in.ScopeType {
 	case "node", "machine":
-		query = `SELECT id FROM xnode_nodes WHERE id=?`
+		query = `SELECT id FROM xnode_nodes WHERE id=$1`
 	case "purchase":
-		query = `SELECT id FROM purchases WHERE id=?`
+		query = `SELECT id FROM purchases WHERE id=$1`
 	case "model":
-		query = `SELECT id FROM pricing_model_versions WHERE id=?`
+		query = `SELECT id FROM pricing_model_versions WHERE id=$1`
 	case "incident":
-		query = `SELECT id FROM pricing_operational_incidents WHERE id=?`
+		query = `SELECT id FROM pricing_operational_incidents WHERE id=$1`
 	}
 	if query != "" {
 		var id string

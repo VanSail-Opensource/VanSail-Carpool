@@ -16,7 +16,7 @@ func TestStablecoinMatchingKeepsExactPriorityToleranceAndAmbiguity(t *testing.T)
 			user := createTestUser(t, s, 99035)
 			admin := createTestUser(t, s, 99036)
 			ctx := context.Background()
-			if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=?", admin.ID); err != nil {
+			if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=$1", admin.ID); err != nil {
 				t.Fatal(err)
 			}
 			q := stablecoinOrder(t, s, user.ID, rail)
@@ -29,7 +29,7 @@ func TestStablecoinMatchingKeepsExactPriorityToleranceAndAmbiguity(t *testing.T)
 				if err := s.SaveUSDTBatch(ctx, rail, usdt.Batch{Transfers: []usdt.Transfer{tr}}); err != nil {
 					t.Fatal(err)
 				}
-				stored, err := scanUSDTTransfer(s.db.QueryRow(usdtTransferSelect+" WHERE tx_hash=?", hash))
+				stored, err := scanUSDTTransfer(s.db.QueryRow(usdtTransferSelect+" WHERE tx_hash=$1", hash))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -52,7 +52,7 @@ func TestStablecoinMatchingKeepsExactPriorityToleranceAndAmbiguity(t *testing.T)
 				t.Fatal("overpayment matched", overpaid)
 			}
 			// Imported evidence can contain finer precision than new three-place quotes.
-			if _, err := s.db.Exec("UPDATE usdt_quotes SET atomic_amount='1000500',amount='1.0005' WHERE order_id=?", other.OrderID); err != nil {
+			if _, err := s.db.Exec("UPDATE usdt_quotes SET atomic_amount='1000500',amount='1.0005' WHERE order_id=$1", other.OrderID); err != nil {
 				t.Fatal(err)
 			}
 			ambiguous := save("999500", "ambiguous")

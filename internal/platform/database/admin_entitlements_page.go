@@ -21,18 +21,14 @@ func (s *Store) listAdminPurchasesPageAt(ctx context.Context, cursor, search, st
 	args := make([]any, 0, 8)
 	if search != "" {
 		pattern := "%" + escapeLike(search) + "%"
-		query += ` AND (purchases.id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR purchases.user_id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR purchases.combo_id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR combos.name LIKE ? ESCAPE '\' COLLATE NOCASE)`
+		query += fmt.Sprintf(" AND (purchases.id ILIKE $%d ESCAPE '\\' \n\t\t\tOR purchases.user_id ILIKE $%d ESCAPE '\\' \n\t\t\tOR purchases.combo_id ILIKE $%d ESCAPE '\\' \n\t\t\tOR combos.name ILIKE $%d ESCAPE '\\' )", len(args)+1, len(args)+2, len(args)+3, len(args)+4)
+
 		args = append(args, pattern, pattern, pattern, pattern)
 	}
 	if status != "" {
 		// Raw lifecycle status remains available to settlement and advanced edits.
-		query += ` AND (CASE
-			WHEN purchases.status IN ('active','activating','queued') AND purchases.valid_until<=? THEN 'expired'
-			WHEN purchases.status IN ('active','activating') AND purchases.valid_from>? THEN 'queued'
-			ELSE purchases.status END)=?`
+		query += fmt.Sprintf(" AND (CASE\n\t\t\tWHEN purchases.status IN ('active','activating','queued') AND purchases.valid_until<=$%d THEN 'expired'\n\t\t\tWHEN purchases.status IN ('active','activating') AND purchases.valid_from>$%d THEN 'queued'\n\t\t\tELSE purchases.status END)=$%d", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, stamp(now), stamp(now), status)
 	}
 	filter := pageFilterFingerprint(search, status)
@@ -41,10 +37,12 @@ func (s *Store) listAdminPurchasesPageAt(ctx context.Context, cursor, search, st
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (purchases.created_at<? OR (purchases.created_at=? AND purchases.id<?))`
+		query += fmt.Sprintf(" AND (purchases.created_at<$%d OR (purchases.created_at=$%d AND purchases.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY purchases.created_at DESC,purchases.id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY purchases.created_at DESC,purchases.id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

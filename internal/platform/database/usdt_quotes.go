@@ -29,7 +29,7 @@ func scanUSDTQuote(row rowScanner) (usdt.Quote, error) {
 
 // USDTQuote returns the permanent fingerprint for an idempotent create retry.
 func (s *Store) USDTQuote(ctx context.Context, orderID string) (usdt.Quote, error) {
-	quote, err := scanUSDTQuote(s.db.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=?", orderID))
+	quote, err := scanUSDTQuote(s.db.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=$1", orderID))
 	if errors.Is(err, ErrNotFound) {
 		return quote, usdt.ErrQuoteNotFound
 	}
@@ -42,16 +42,13 @@ func (s *Store) retryAttempt_ReserveUSDTQuote(ctx context.Context, orderID strin
 	if !ok || pinned != spec {
 		return usdt.Quote{}, usdt.ErrProof
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return usdt.Quote{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if existing, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=?", orderID)); err == nil {
+	if existing, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=$1", orderID)); err == nil {
 		return existing, nil
 	} else if !errors.Is(err, ErrNotFound) {
 		return usdt.Quote{}, err
@@ -68,7 +65,7 @@ func (s *Store) retryAttempt_ReserveUSDTQuote(ctx context.Context, orderID strin
 		return usdt.Quote{}, err
 	}
 	counts := map[string]int{}
-	rows, err := tx.QueryContext(ctx, "SELECT recipient,COUNT(*) FROM usdt_quotes WHERE network=? AND token=? GROUP BY recipient", spec.Network, spec.Token)
+	rows, err := tx.QueryContext(ctx, "SELECT recipient,COUNT(*) FROM usdt_quotes WHERE network=$1 AND token=$2 GROUP BY recipient", spec.Network, spec.Token)
 	if err != nil {
 		return usdt.Quote{}, err
 	}
@@ -102,7 +99,7 @@ func (s *Store) retryAttempt_ReserveUSDTQuote(ctx context.Context, orderID strin
 			q.Recipient = address
 			q.Amount = usdt.FormatAtomic(value, 3)
 			q.AtomicAmount = new(big.Int).Mul(value, factor).String()
-			result, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO usdt_quotes(order_id,network,token,recipient,amount,atomic_amount,expires_at) VALUES(?,?,?,?,?,?,?)`, q.OrderID, q.Network, q.Token, q.Recipient, q.Amount, q.AtomicAmount, stamp(q.ExpiresAt))
+			result, err := tx.ExecContext(ctx, `INSERT   INTO usdt_quotes(order_id,network,token,recipient,amount,atomic_amount,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING `, q.OrderID, q.Network, q.Token, q.Recipient, q.Amount, q.AtomicAmount, stamp(q.ExpiresAt))
 			if err != nil {
 				return usdt.Quote{}, err
 			}
@@ -113,7 +110,7 @@ func (s *Store) retryAttempt_ReserveUSDTQuote(ctx context.Context, orderID strin
 			if inserted == 0 {
 				continue
 			}
-			if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='pending',provider_trade_id=?,receiving_address=?,actual_crypto_amount=?,actual_crypto_currency=?,expires_at=?,updated_at=? WHERE id=? AND status='creating'`, "builtin:"+orderID, q.Recipient, q.Amount, spec.Currency(), stamp(q.ExpiresAt), stamp(time.Now().UTC()), orderID); err != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='pending',provider_trade_id=$1,receiving_address=$2,actual_crypto_amount=$3,actual_crypto_currency=$4,expires_at=$5,updated_at=$6 WHERE id=$7 AND status='creating'`, "builtin:"+orderID, q.Recipient, q.Amount, spec.Currency(), stamp(q.ExpiresAt), stamp(time.Now().UTC()), orderID); err != nil {
 				return usdt.Quote{}, err
 			}
 			if err := tx.Commit(); err != nil {
@@ -131,7 +128,7 @@ func (s *Store) USDTWatchAddresses(ctx context.Context, network string) ([]strin
 	if !ok {
 		return nil, usdt.ErrConfiguration
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT quote.recipient FROM usdt_quotes quote JOIN payment_orders payment ON payment.id=quote.order_id WHERE quote.network=? AND quote.token=? AND payment.paid_at IS NULL AND payment.status<>'failed' ORDER BY quote.recipient`, spec.Network, spec.Token)
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT quote.recipient FROM usdt_quotes quote JOIN payment_orders payment ON payment.id=quote.order_id WHERE quote.network=$1 AND quote.token=$2 AND payment.paid_at IS NULL AND payment.status<>'failed' ORDER BY quote.recipient`, spec.Network, spec.Token)
 	if err != nil {
 		return nil, err
 	}

@@ -19,24 +19,20 @@ func (s *Store) retryAttempt_CancelQueuedPurchase(ctx context.Context, userID, p
 		return model.Purchase{}, ErrConflict
 	}
 
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=?`, purchaseID, userID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID))
 	if err != nil {
 		return model.Purchase{}, err
 	}
 	if purchase.Status != "queued" {
 		return model.Purchase{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=? AND user_id=? AND status='queued'`, stamp(now), purchaseID, userID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2 AND user_id=$3 AND status='queued'`, stamp(now), purchaseID, userID)
 	if err != nil {
 		return model.Purchase{}, err
 	}

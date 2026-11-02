@@ -29,19 +29,19 @@ func publicValue(column schemaColumn, raw any) (Value, error) {
 	case float64:
 		return StringValue(strconv.FormatFloat(value, 'g', -1, 64)), nil
 	case string:
-		if column.Affinity == affinityBlob {
+		if column.Family == storageFamilyBlob {
 			return BlobValue([]byte(value)), nil
 		}
 		return StringValue(value), nil
 	case []byte:
-		if column.Affinity == affinityBlob {
+		if column.Family == storageFamilyBlob {
 			return BlobValue(value), nil
 		}
 		return StringValue(string(value)), nil
 	case bool:
 		return BooleanValue(value), nil
 	default:
-		return Value{}, fmt.Errorf("unsupported SQLite value %T", raw)
+		return Value{}, fmt.Errorf("unsupported PostgreSQL value %T", raw)
 	}
 }
 

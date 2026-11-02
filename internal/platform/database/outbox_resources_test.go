@@ -19,7 +19,7 @@ func TestOutboxSkipsOccupiedAccountAcrossKinds(t *testing.T) {
 		{"a-second", "xnode_apply_entitlement", `{"userId":"account-a"}`},
 		{"m-third", "xnode_sync_user", `{"userId":"account-b"}`},
 	} {
-		_, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?,'pending',0,?,?,?)`, row.id, row.kind, row.payload, stamp(now), stamp(now), stamp(now))
+		_, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES($1,$2,$3,'pending',0,$4,$5,$6)`, row.id, row.kind, row.payload, stamp(now), stamp(now), stamp(now))
 		if err != nil {
 			t.Fatal(err)
 		}

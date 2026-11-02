@@ -33,7 +33,7 @@ func (s *Store) renewalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, c renewa
 	var recurring int
 	var grant sql.NullString
 	var reward sql.NullInt64
-	err := tx.QueryRowContext(ctx, `SELECT valid_until,recurring_discount_attached,coupon_grant_id,reward_renewal_price_minor FROM purchases WHERE id=?`, c.PurchaseID).Scan(&until, &recurring, &grant, &reward)
+	err := tx.QueryRowContext(ctx, `SELECT valid_until,recurring_discount_attached,coupon_grant_id,reward_renewal_price_minor FROM purchases WHERE id=$1`, c.PurchaseID).Scan(&until, &recurring, &grant, &reward)
 	if err != nil {
 		return in, err
 	}
@@ -100,7 +100,7 @@ func (s *Store) renewalPriceSnapshotTx(ctx context.Context, tx *sql.Tx, c renewa
 	in.Validated = c.Mode == "DYNAMIC" && in.Response.Validated && in.Health == "HEALTHY" && complete && !reward.Valid
 	if in.Coupon != nil && in.Validated {
 		var raw string
-		if err = tx.QueryRowContext(ctx, `SELECT diagnostics_json FROM pricing_model_versions WHERE id=?`, in.Model).Scan(&raw); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT diagnostics_json FROM pricing_model_versions WHERE id=$1`, in.Model).Scan(&raw); err != nil {
 			return in, err
 		}
 		var evidence struct {

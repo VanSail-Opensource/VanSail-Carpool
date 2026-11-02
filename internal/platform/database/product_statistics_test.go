@@ -84,11 +84,11 @@ func TestProductStatisticsUseEffectiveSquadOverrides(t *testing.T) {
 	combo := saveTestCombo(t, store, "Override combo", 100, 30, included.ID)
 	first, firstPurchase := createAdminWorkflowPurchase(t, store, 72_001, combo, now, staleAddon.GroupID)
 	second, secondPurchase := createAdminWorkflowPurchase(t, store, 72_002, combo, now, staleAddon.GroupID)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_squad_uuids=$1 WHERE id=$2`,
 		`["`+fullOverride.GroupID+`"]`, firstPurchase.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET entitlement_addon_squad_uuids=$1 WHERE id=$2`,
 		`["`+addonOverride.GroupID+`"]`, secondPurchase.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestProductStatisticsCountDeduplicatedRawGroupMessages(t *testing.T) {
 		}
 	}
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO activity_daily_rollups(local_date,group_message_count,updated_at)
-		VALUES('2026-08-17',3,?)`, stamp(now)); err != nil {
+		VALUES('2026-08-17',3,$1)`, stamp(now)); err != nil {
 		t.Fatal(err)
 	}
 	statistics, err := store.ProductDatabaseStatistics(ctx, now)
@@ -144,7 +144,7 @@ func TestProductStatisticsExcludeFutureActiveRowsAndIgnoredPaymentStates(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=?,valid_until=? WHERE id=?`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='active',valid_from=$1,valid_until=$2 WHERE id=$3`,
 		stamp(now.Add(time.Hour)), stamp(now.Add(31*24*time.Hour)), purchase.ID); err != nil {
 		t.Fatal(err)
 	}

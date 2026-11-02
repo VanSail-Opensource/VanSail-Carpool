@@ -71,20 +71,16 @@ func TestPostgresApplicationBootstrap(t *testing.T) {
 		second.Close()
 		t.Fatal("second application acquired scheduler ownership")
 	}
-	var phase string
 	var role string
 	if err = app.store.DB().QueryRowContext(ctx, `SELECT current_user`).Scan(&role); err != nil || role != "vansail_app" {
 		t.Fatal("application did not use restricted role", err)
 	}
-	if err = app.store.DB().QueryRowContext(ctx, `SELECT phase FROM vansail_migration_state WHERE singleton=1`).Scan(&phase); err != nil || phase != "active" {
-		t.Fatal("verified activation failed", err)
-	}
 	// Simulate a referral account created by an older release after activation.
 	// Its stable owner ID and financial references must survive a restart.
-	if _, err = app.store.DB().ExecContext(ctx, `INSERT INTO users(id,telegram_id,created_at,updated_at) VALUES('legacy-referral-owner',912099,?,?)`, time.Now().UTC().Format(time.RFC3339Nano), time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+	if _, err = app.store.DB().ExecContext(ctx, `INSERT INTO users(id,telegram_id,created_at,updated_at) VALUES('legacy-referral-owner',912099,$1,$2)`, time.Now().UTC().Format(time.RFC3339Nano), time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = app.store.DB().ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES('legacy-referral-owner',123,?)`, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+	if _, err = app.store.DB().ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES('legacy-referral-owner',123,$1)`, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
 	if err = app.Close(); err != nil {

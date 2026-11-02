@@ -22,8 +22,8 @@ func enqueuePurchaseTransitionTx(ctx context.Context, tx *sql.Tx, purchaseID, st
 // Retire only unclaimed legacy jobs. Existing claims complete through the
 // compatibility handler and retain their generation fence and audit history.
 func retirePurchaseContinuityTx(ctx context.Context, tx *sql.Tx, purchaseID string, now time.Time) error {
-	_, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=?
-        WHERE kind=? AND json_extract(payload,'$.purchaseId')=? AND status IN ('pending','failed')`,
+	_, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=$1
+        WHERE kind=$2 AND (CASE ((payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{purchaseId}' END)=$3 AND status IN ('pending','failed')`,
 		stamp(now), jobpayload.ContinuityKind, purchaseID)
 	return err
 }
@@ -31,8 +31,8 @@ func retirePurchaseContinuityTx(ctx context.Context, tx *sql.Tx, purchaseID stri
 // RetireContinuityJobs acknowledges dormant pre-upgrade jobs without extending
 // an entitlement, deleting history, or touching a currently owned claim.
 func (s *Store) RetireContinuityJobs(ctx context.Context, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=?
-        WHERE kind=? AND status IN ('pending','failed')`, stamp(now), jobpayload.ContinuityKind)
+	_, err := s.db.ExecContext(ctx, `UPDATE outbox_jobs SET status='done',last_error='',updated_at=$1
+        WHERE kind=$2 AND status IN ('pending','failed')`, stamp(now), jobpayload.ContinuityKind)
 	return err
 }
 
@@ -40,7 +40,7 @@ func (s *Store) RetireContinuityJobs(ctx context.Context, now time.Time) error {
 // lineage, so a retried provider extension cannot turn into an expiry gap.
 func (s *Store) ContinuityEntitlement(ctx context.Context, successorID string, _ time.Time) (*model.Purchase, error) {
 	var userID, status, validFromValue, validUntilValue string
-	err := s.db.QueryRowContext(ctx, `SELECT user_id,status,valid_from,valid_until FROM purchases WHERE id=?`, successorID).
+	err := s.db.QueryRowContext(ctx, `SELECT user_id,status,valid_from,valid_until FROM purchases WHERE id=$1`, successorID).
 		Scan(&userID, &status, &validFromValue, &validUntilValue)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -55,8 +55,8 @@ func (s *Store) ContinuityEntitlement(ctx context.Context, successorID string, _
 	if status != "queued" {
 		return nil, nil
 	}
-	current, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=?
-		AND purchases.status IN ('active','activating') AND purchases.valid_until=? ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(validFrom)))
+	current, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
+		AND purchases.status IN ('active','activating') AND purchases.valid_until=$2 ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(validFrom)))
 	if errors.Is(err, ErrNotFound) {
 		return nil, nil
 	}

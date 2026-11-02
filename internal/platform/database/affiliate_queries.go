@@ -16,7 +16,7 @@ func (s *Store) AffiliateOverview(ctx context.Context, userID, botUsername strin
 	var totalCommission int64
 	err := s.db.QueryRowContext(ctx, `SELECT u.telegram_id,COUNT(i.id),COUNT(a.id),COALESCE(SUM(a.commission_txb_minor),0)
 		FROM users u LEFT JOIN users i ON i.inviter_id=u.telegram_id LEFT JOIN affiliate_settlements a ON a.invited_user_id=i.id
-		WHERE u.id=? GROUP BY u.id`, userID).Scan(&telegramID, &result.RegisteredCount, &result.SuccessfulCount, &totalCommission)
+		WHERE u.id=$1 GROUP BY u.id`, userID).Scan(&telegramID, &result.RegisteredCount, &result.SuccessfulCount, &totalCommission)
 	if err != nil {
 		return result, err
 	}
@@ -69,16 +69,16 @@ func (s *Store) AffiliateReferrals(ctx context.Context, userID string, page int)
 	}
 	result := affiliates.ReferralPage{Page: page, PageSize: affiliates.PageSize, Items: []affiliates.Referral{}}
 	var telegramID int64
-	if err := s.db.QueryRowContext(ctx, `SELECT telegram_id FROM users WHERE id=?`, userID).Scan(&telegramID); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT telegram_id FROM users WHERE id=$1`, userID).Scan(&telegramID); err != nil {
 		return result, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE inviter_id=?`, telegramID).Scan(&result.Total); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE inviter_id=$1`, telegramID).Scan(&result.Total); err != nil {
 		return result, err
 	}
 	result.TotalPages = (result.Total + affiliates.PageSize - 1) / affiliates.PageSize
 	rows, err := s.db.QueryContext(ctx, `SELECT COALESCE(i.telegram_first_name,''),COALESCE(i.telegram_last_name,''),i.created_at,
 		a.settled_at,a.commission_txb_minor FROM users i LEFT JOIN affiliate_settlements a ON a.invited_user_id=i.id
-		WHERE i.inviter_id=? ORDER BY i.created_at DESC,i.id DESC LIMIT ? OFFSET ?`, telegramID, affiliates.PageSize, (page-1)*affiliates.PageSize)
+		WHERE i.inviter_id=$1 ORDER BY i.created_at DESC,i.id DESC LIMIT $2 OFFSET $3`, telegramID, affiliates.PageSize, (page-1)*affiliates.PageSize)
 	if err != nil {
 		return result, err
 	}
@@ -117,15 +117,15 @@ func (s *Store) SuccessfulAffiliateReferrals(ctx context.Context, userID string,
 	}
 	result := affiliates.ReferralPage{Page: 1, PageSize: limit, Items: []affiliates.Referral{}}
 	var telegramID int64
-	if err := s.db.QueryRowContext(ctx, `SELECT telegram_id FROM users WHERE id=?`, userID).Scan(&telegramID); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT telegram_id FROM users WHERE id=$1`, userID).Scan(&telegramID); err != nil {
 		return result, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users i JOIN affiliate_settlements a ON a.invited_user_id=i.id WHERE i.inviter_id=?`, telegramID).Scan(&result.Total); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users i JOIN affiliate_settlements a ON a.invited_user_id=i.id WHERE i.inviter_id=$1`, telegramID).Scan(&result.Total); err != nil {
 		return result, err
 	}
 	result.TotalPages = (result.Total + limit - 1) / limit
 	rows, err := s.db.QueryContext(ctx, `SELECT COALESCE(i.telegram_first_name,''),COALESCE(i.telegram_last_name,''),i.created_at,a.settled_at,a.commission_txb_minor
-		FROM users i JOIN affiliate_settlements a ON a.invited_user_id=i.id WHERE i.inviter_id=? ORDER BY a.settled_at DESC,i.id DESC LIMIT ?`, telegramID, limit)
+		FROM users i JOIN affiliate_settlements a ON a.invited_user_id=i.id WHERE i.inviter_id=$1 ORDER BY a.settled_at DESC,i.id DESC LIMIT $2`, telegramID, limit)
 	if err != nil {
 		return result, err
 	}

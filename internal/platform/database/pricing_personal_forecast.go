@@ -31,7 +31,7 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 	}
 	for i := range 2 {
 		var value sql.NullString
-		err := s.db.QueryRowContext(ctx, `SELECT SUM(d.upload_bytes+d.download_bytes) FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE COALESCE(i.user_id,a.user_id)=? AND d.date=?`, user, out.Days[i].Date).Scan(&value)
+		err := s.db.QueryRowContext(ctx, `SELECT SUM(d.upload_bytes+d.download_bytes) FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE COALESCE(i.user_id,a.user_id)=$1 AND d.date=$2`, user, out.Days[i].Date).Scan(&value)
 		if err != nil {
 			return out, err
 		}
@@ -52,7 +52,7 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 	// A newer snapshot can legitimately have no complete total observations.
 	// Keep an older, still relevant vintage visible rather than hiding it behind
 	// that empty snapshot; its original generation time marks it as stale.
-	err = s.db.QueryRowContext(ctx, `SELECT f.watermark,f.features_json FROM pricing_features f WHERE f.entity_type='user' AND f.entity_id=? ORDER BY CASE WHEN EXISTS(SELECT 1 FROM pricing_forecast_vintages v WHERE v.entity_type='user' AND v.entity_id=f.entity_id AND v.metric='traffic_bytes' AND v.model_version='empirical-user-total-v1' AND v.generated_at=f.watermark AND v.target_from>=? AND v.target_from<?) THEN 0 ELSE 1 END,f.watermark DESC LIMIT 1`, user, pricingStamp(day.AddDate(0, 0, 1)), pricingStamp(day.AddDate(0, 0, 6))).Scan(&at, &raw)
+	err = s.db.QueryRowContext(ctx, `SELECT f.watermark,f.features_json FROM pricing_features f WHERE f.entity_type='user' AND f.entity_id=$1 ORDER BY CASE WHEN EXISTS(SELECT 1 FROM pricing_forecast_vintages v WHERE v.entity_type='user' AND v.entity_id=f.entity_id AND v.metric='traffic_bytes' AND v.model_version='empirical-user-total-v1' AND v.generated_at=f.watermark AND v.target_from>=$2 AND v.target_from<$3) THEN 0 ELSE 1 END,f.watermark DESC LIMIT 1`, user, pricingStamp(day.AddDate(0, 0, 1)), pricingStamp(day.AddDate(0, 0, 6))).Scan(&at, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return out, nil
 	}
@@ -71,7 +71,7 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 	if feature.Expected > 0 {
 		out.Confidence.ObservedCoverageBPS = int64(feature.NodeDays * 10000 / feature.Expected)
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT generated_at,target_from,predicted_p10,predicted_p50,predicted_p90,model_version,calibration_status FROM pricing_forecast_vintages WHERE entity_type='user' AND entity_id=? AND metric='traffic_bytes' AND model_version='empirical-user-total-v1' AND generated_at=? AND target_from>=? AND target_from<? ORDER BY target_from`, user, at, pricingStamp(day.AddDate(0, 0, 1)), pricingStamp(day.AddDate(0, 0, 6)))
+	rows, err := s.db.QueryContext(ctx, `SELECT generated_at,target_from,predicted_p10,predicted_p50,predicted_p90,model_version,calibration_status FROM pricing_forecast_vintages WHERE entity_type='user' AND entity_id=$1 AND metric='traffic_bytes' AND model_version='empirical-user-total-v1' AND generated_at=$2 AND target_from>=$3 AND target_from<$4 ORDER BY target_from`, user, at, pricingStamp(day.AddDate(0, 0, 1)), pricingStamp(day.AddDate(0, 0, 6)))
 	if err != nil {
 		return out, err
 	}
@@ -131,7 +131,7 @@ func (s *Store) personalForecast(ctx context.Context, user string, now time.Time
 // daily features need no slot; a busy worker leaves the refresh pending.
 func (s *Store) preparePersonalForecastFeatures(ctx context.Context, user string, now time.Time) error {
 	var exists bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='user' AND entity_id=? AND day=?)`, user, now.UTC().Format(time.DateOnly)).Scan(&exists); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='user' AND entity_id=$1 AND day=$2)`, user, now.UTC().Format(time.DateOnly)).Scan(&exists); err != nil {
 		return err
 	}
 	if exists {

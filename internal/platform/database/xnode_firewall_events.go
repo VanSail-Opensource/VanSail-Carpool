@@ -38,11 +38,11 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 		}
 		var ordinal uint32
 		var active bool
-		if err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=?`, node).Scan(&ordinal, &active); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=$1`, node).Scan(&ordinal, &active); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		var cursor uint64
-		if err := tx.QueryRowContext(ctx, `SELECT sequence FROM xnode_firewall_cursors WHERE node_id=? AND namespace=?`, node, namespace).Scan(&cursor); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err := tx.QueryRowContext(ctx, `SELECT sequence FROM xnode_firewall_cursors WHERE node_id=$1 AND namespace=$2`, node, namespace).Scan(&cursor); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		for _, event := range events {
@@ -105,7 +105,7 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 			}
 			cursor = sequence
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_cursors(node_id,namespace,sequence) VALUES(?,?,?) ON CONFLICT(node_id,namespace) DO UPDATE SET sequence=excluded.sequence`, node, namespace, cursor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_cursors(node_id,namespace,sequence) VALUES($1,$2,$3) ON CONFLICT(node_id,namespace) DO UPDATE SET sequence=excluded.sequence`, node, namespace, cursor); err != nil {
 			return err
 		}
 		var after uint64
@@ -138,7 +138,7 @@ func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, ev
 		return xnode.ErrUnavailable
 	}
 	var existing string
-	err := tx.QueryRowContext(ctx, `SELECT generation FROM xnode_firewall_bans WHERE prefix=? AND released_version=0`, prefix).Scan(&existing)
+	err := tx.QueryRowContext(ctx, `SELECT generation FROM xnode_firewall_bans WHERE prefix=$1 AND released_version=0`, prefix).Scan(&existing)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -151,7 +151,7 @@ func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, ev
 		return err
 	}
 	if existing != "" {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_version=?,released_at=? WHERE generation=?`, version, stamp(now), existing); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_version=$1,released_at=$2 WHERE generation=$3`, version, stamp(now), existing); err != nil {
 			return err
 		}
 	}
@@ -163,6 +163,6 @@ func authorizeDetectionTx(ctx context.Context, tx *sql.Tx, prefix, ip string, ev
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_bans(generation,prefix,ip,rule,detected_count,detected_at,until_at,refresh_seconds,issued_version,participants,expired) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, generation, prefix, ip, event.Rule, fmt.Sprint(event.Count), stamp(event.Time), stamp(now.Add(policy.BanDuration())), int(policy.BanDuration()/time.Second), version, audience, empty)
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_bans(generation,prefix,ip,rule,detected_count,detected_at,until_at,refresh_seconds,issued_version,participants,expired) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, generation, prefix, ip, event.Rule, fmt.Sprint(event.Count), stamp(event.Time), stamp(now.Add(policy.BanDuration())), int(policy.BanDuration()/time.Second), version, audience, empty)
 	return err
 }

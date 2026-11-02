@@ -31,7 +31,7 @@ func insertOutboxJobTx(ctx context.Context, tx *sql.Tx, kind, payload string, av
 	if err != nil {
 		return "", err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)`, id, kind, string(canonicalPayload), "pending", 0, stamp(availableAt), stamp(now), stamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT   INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING `, id, kind, string(canonicalPayload), "pending", 0, stamp(availableAt), stamp(now), stamp(now))
 	if err != nil {
 		return "", fmt.Errorf("enqueue outbox job: %w", err)
 	}
@@ -53,17 +53,14 @@ func (s *Store) retryAttempt_EnqueueOutbox(ctx context.Context, kind, payload st
 
 // EnqueueDueEntitlementTransitions turns time-bound state changes into durable work.
 func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Context, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	type expiredItem struct{ purchaseID, userID string }
-	rows, err := tx.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE status IN ('active','activating') AND valid_until<=?`, stamp(now))
+	rows, err := tx.QueryContext(ctx, `SELECT id,user_id FROM purchases WHERE status IN ('active','activating') AND valid_until<=$1`, stamp(now))
 	if err != nil {
 		return err
 	}
@@ -88,10 +85,10 @@ func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Contex
 		}
 	}
 	// Queued terms that were never activated have no upstream traffic to settle.
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=? WHERE status IN ('queued','failed') AND valid_until<=?`, stamp(now), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE status IN ('queued','failed') AND valid_until<=$2`, stamp(now), stamp(now)); err != nil {
 		return err
 	}
-	rows, err = tx.QueryContext(ctx, `SELECT id FROM purchases WHERE status='queued' AND valid_from<=? AND valid_until>?`, stamp(now), stamp(now))
+	rows, err = tx.QueryContext(ctx, `SELECT id FROM purchases WHERE status='queued' AND valid_from<=$1 AND valid_until>$2`, stamp(now), stamp(now))
 	if err != nil {
 		return err
 	}
@@ -110,7 +107,7 @@ func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Contex
 	}
 	_ = rows.Close()
 	for _, purchaseID := range queued {
-		result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',updated_at=? WHERE id=? AND status='queued'
+		result, err := tx.ExecContext(ctx, `UPDATE purchases SET status='activating',updated_at=$1 WHERE id=$2 AND status='queued'
 			AND NOT EXISTS (SELECT 1 FROM purchases prior WHERE prior.user_id=purchases.user_id AND prior.status IN ('active','activating'))`, stamp(now), purchaseID)
 		if err != nil {
 			return err
@@ -130,17 +127,14 @@ func (s *Store) retryAttempt_EnqueueDueEntitlementTransitions(ctx context.Contex
 
 // ExpirePurchase closes a delayed activation and requests a user-level entitlement reconciliation.
 func (s *Store) retryAttempt_ExpirePurchase(ctx context.Context, purchaseID string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	var userID, status string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,status FROM purchases WHERE id=?`, purchaseID).Scan(&userID, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,status FROM purchases WHERE id=$1`, purchaseID).Scan(&userID, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -149,7 +143,7 @@ func (s *Store) retryAttempt_ExpirePurchase(ctx context.Context, purchaseID stri
 	if status == "expired" || status == "cancelled" {
 		return nil
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=? WHERE id=?`, stamp(now), purchaseID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='expired',updated_at=$1 WHERE id=$2`, stamp(now), purchaseID); err != nil {
 		return err
 	}
 	if err := insertOutboxTx(ctx, tx, "xnode_sync_user", `{"userId":"`+userID+`"}`, now, now); err != nil {

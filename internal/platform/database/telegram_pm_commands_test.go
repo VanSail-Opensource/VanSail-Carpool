@@ -67,7 +67,7 @@ func TestPMModerationIsIdempotentAndCarriesAcrossDestinationGroups(t *testing.T)
 	now := time.Now().UTC()
 	user := pmMember(t, store, 31921)
 	admin := createTestUser(t, store, 31922)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	input := model.PMRelayInput{ActorUserID: user.ID, UserID: user.ID, UpdateID: 101, ChatID: -100123, SourceChatID: user.TelegramID, SourceMessageID: 1, Inbound: true}
@@ -116,7 +116,7 @@ func TestPMProfileRefreshQueuesOneScopedOperation(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := pmMember(t, store, 31984)
 	admin := createTestUser(t, store, 31985)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.QueuePMRelay(ctx, model.PMRelayInput{ActorUserID: user.ID, UserID: user.ID, UpdateID: 701, ChatID: -100123,

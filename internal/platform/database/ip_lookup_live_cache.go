@@ -30,21 +30,21 @@ func (s *Store) retryAttempt_CachedIPDetails(ctx context.Context, ip string) (*i
 		details.IP = ip
 		return &details, nil
 	}
-	id, err := newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip=?", ip)
+	id, err := newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip=$1", ip)
 	match = "exact"
 	if err != nil {
 		return nil, err
 	}
 	if address, parseErr := netip.ParseAddr(ip); id == "" && parseErr == nil && address.Is4() {
 		prefix := ip[:strings.LastIndexByte(ip, '.')+1]
-		id, err = newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip>=? AND ip<?", prefix, strings.TrimSuffix(prefix, ".")+"/")
+		id, err = newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip>=$1 AND ip<$2", prefix, strings.TrimSuffix(prefix, ".")+"/")
 		match = "subnet"
 	}
 	if err != nil || id == "" {
 		return nil, err
 	}
 	var raw string
-	if err := tx.QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=?`, id).Scan(&raw); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT details_json FROM ip_lookup_live_snapshots WHERE id=$1`, id).Scan(&raw); err != nil {
 		return nil, err
 	}
 	r, err := decodeIPDetails(raw, id, ip, match)
@@ -91,10 +91,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 	if status == "partial" {
 		retryDelay, retryEnabled = s.ipLiveRetryDelay(ctx)
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
@@ -102,7 +99,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 	defer func() { _ = tx.Rollback() }()
 	if run == "" {
 		var fetched string
-		err := tx.QueryRowContext(ctx, `SELECT json_extract(details_json,'$.fetchedAt') FROM ip_lookup_live_snapshots WHERE ip=? ORDER BY julianday(completed_at) DESC,rowid DESC LIMIT 1`, r.IP).Scan(&fetched)
+		err := tx.QueryRowContext(ctx, `SELECT (CASE ((details_json)::jsonb #> '{fetchedAt}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (details_json)::jsonb #>> '{fetchedAt}' END) FROM ip_lookup_live_snapshots WHERE ip=$1 ORDER BY vansail_timestamp(completed_at) DESC,record_order DESC LIMIT 1`, r.IP).Scan(&fetched)
 		if err != nil && err != sql.ErrNoRows {
 			return "", err
 		}
@@ -113,7 +110,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 			return "", nil
 		}
 	}
-	result, err := tx.ExecContext(ctx, `INSERT INTO ip_lookup_live_snapshots(id,ip,status,details_json,completed_at,run_key) VALUES(?,?,?,?,?,?) ON CONFLICT(run_key) DO NOTHING`, id, r.IP, status, string(raw), stamp(now), runKey)
+	result, err := tx.ExecContext(ctx, `INSERT INTO ip_lookup_live_snapshots(id,ip,status,details_json,completed_at,run_key) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(run_key) DO NOTHING`, id, r.IP, status, string(raw), stamp(now), runKey)
 	if err != nil {
 		return "", err
 	}
@@ -127,7 +124,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 		}
 	}
 	if run != "" {
-		if err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_live_snapshots WHERE run_key=?`, run).Scan(&id); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT id FROM ip_lookup_live_snapshots WHERE run_key=$1`, run).Scan(&id); err != nil {
 			return "", err
 		}
 	}
@@ -139,7 +136,7 @@ func (s *Store) retryAttempt_SaveIPDetails(ctx context.Context, run string, r ip
 
 func liveSnapshotForRunTx(ctx context.Context, tx *sql.Tx, run string) (string, string, error) {
 	var id, status string
-	err := tx.QueryRowContext(ctx, `SELECT id,status FROM ip_lookup_live_snapshots WHERE run_key=?`, run).Scan(&id, &status)
+	err := tx.QueryRowContext(ctx, `SELECT id,status FROM ip_lookup_live_snapshots WHERE run_key=$1`, run).Scan(&id, &status)
 	if err == sql.ErrNoRows {
 		return "", "", nil
 	}

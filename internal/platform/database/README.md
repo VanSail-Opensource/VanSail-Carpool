@@ -1,9 +1,9 @@
 # Application store
 
-Agreement publication updates content only. Migration 113 / PostgreSQL 00027
+Agreement publication updates content only. PostgreSQL migration 00027
 restores previously accepted members to complete without rewriting their original
 acceptance evidence. First-time acceptance still validates the latest revision.
-`agreement_continuity_test.go` covers publication and upgrade continuity.
+`agreement_continuity_test.go` covers publication and acceptance continuity.
 
 `pricing_readiness_test.go` verifies that published price validity survives the
 calculation cadence and that expired publications become unavailable. Product
@@ -25,7 +25,7 @@ an operator can diagnose a recurring agent journal without retaining traffic pay
 Agent identity, malformed input, storage failures and accounting durability remain
 mandatory; no fabricated traffic is charged. Duplicate exceptions are idempotent.
 `xnode_traffic_discard_test.go` covers full-batch rollback, audit replay and
-the next valid journal report on both supported stores.
+the next valid journal report on PostgreSQL.
 
 Firewall sweeps reuse one active-member bitmap and the bounded page's participant
 snapshots within the same serializable transaction. `xnode_firewall_tx.go` shares
@@ -867,7 +867,7 @@ Bounded retention of settled or summarized operational records: `retention_node_
 - `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
 - `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
 
-Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
+Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
 
 - `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
 
@@ -1044,7 +1044,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
 - `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
 
-Provider cost metadata uses forward migrations 111 (SQLite) and 25 (PostgreSQL). Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
+Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
 
 - `pricing_provider_models_test.go`: Hosted coverage of legacy and hourly provider costs, unlimited capacity and immutable payment history.
 
@@ -1065,3 +1065,7 @@ preserving paid evidence independently of catalog serialization order.
 master bans; matching bans suppress overlapping reports. `xnode_firewall_record_heap.go`
 keeps pagination memory bounded and binds cursors to the filter. The hosted
 `xnode_firewall_records_test.go` covers pagination and report/ban transitions.
+
+`provider_operation_results.go` applies RFC 7396 to locked DIY operation results in Go, preserving exact numeric payloads and completion fences. All authored SQL uses PostgreSQL parameters; historical engine fixtures/importers are retired in favor of native populated forward-upgrade and recovery gates.
+
+`provider_operation_results_test.go` protects exact large integers, nested receipt preservation, null deletion and array replacement during completion.

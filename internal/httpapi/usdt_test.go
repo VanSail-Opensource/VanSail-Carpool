@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
+
 	"strings"
 	"testing"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/usdt"
 	"github.com/go-chi/chi/v5"
 )
@@ -20,7 +21,7 @@ import (
 func TestUSDTAdminRoutesMaskSecretsAndRequireConfiguredAdministrator(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "usdt-http.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}

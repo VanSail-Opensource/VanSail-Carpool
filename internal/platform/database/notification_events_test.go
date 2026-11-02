@@ -93,7 +93,7 @@ func TestTrafficNotificationRearmsAfterResetOnly(t *testing.T) {
 	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='99' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='99' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	firstReset := now
@@ -130,7 +130,7 @@ func TestNoResetTrafficNotificationIsLifetimeOnly(t *testing.T) {
 	if err := store.MarkPurchaseSyncResult(context.Background(), purchase.ID, true, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='100' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().Exec(`UPDATE users SET proxy_user_id='100' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	firstReset, secondReset := now, now.Add(24*time.Hour)
@@ -156,7 +156,7 @@ func TestImmediateAdminFinanceNotificationIsAtomic(t *testing.T) {
 	}
 	assertNotificationCounts(t, store, 1, 1)
 	var amount string
-	if err := store.DB().QueryRow(`SELECT json_extract(payload_json,'$.facts.amountMinor') FROM user_notification_events`).Scan(&amount); err != nil {
+	if err := store.DB().QueryRow(`SELECT (CASE ((payload_json)::jsonb #> '{facts,amountMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,amountMinor}' END) FROM user_notification_events`).Scan(&amount); err != nil {
 		t.Fatal(err)
 	}
 	if amount != "125" {
@@ -170,7 +170,7 @@ func assertNotificationCounts(t *testing.T, store *Store, events, jobs int) {
 	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM user_notification_events`).Scan(&eventCount); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`, jobpayload.UserNotificationKind).Scan(&jobCount); err != nil {
+	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`, jobpayload.UserNotificationKind).Scan(&jobCount); err != nil {
 		t.Fatal(err)
 	}
 	if eventCount != events || jobCount != jobs {

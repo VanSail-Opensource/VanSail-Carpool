@@ -15,10 +15,7 @@ import (
 // SettleUSDTTransfer consumes verified evidence and uses the established ledger
 // transaction. An administrator may override only the original payment window.
 func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID, actorID, reason string) (model.PaymentOrder, bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.PaymentOrder{}, false, err
@@ -26,14 +23,14 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 	defer func() { _ = tx.Rollback() }()
 	if actorID != "" {
 		var role string
-		if err := tx.QueryRowContext(ctx, "SELECT role FROM users WHERE id=?", actorID).Scan(&role); err != nil {
+		if err := tx.QueryRowContext(ctx, "SELECT role FROM users WHERE id=$1", actorID).Scan(&role); err != nil {
 			return model.PaymentOrder{}, false, err
 		}
 		if role != "admin" || len(strings.TrimSpace(reason)) < 1 || len(reason) > 500 {
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
 	}
-	t, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=?", id))
+	t, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=$1", id))
 	if err != nil {
 		return model.PaymentOrder{}, false, err
 	}
@@ -53,7 +50,7 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 	if t.Status == "dismissed" {
 		return model.PaymentOrder{}, false, usdt.ErrConflict
 	}
-	q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=?", orderID))
+	q, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE order_id=$1", orderID))
 	if err != nil {
 		return model.PaymentOrder{}, false, err
 	}
@@ -82,7 +79,7 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 		return model.PaymentOrder{}, false, err
 	}
 	if retired && order.PaidAt == nil {
-		if _, err = tx.ExecContext(ctx, `UPDATE usdt_transfers SET status='review',order_id=?,reason='ACCOUNT_PURGED' WHERE id=?`, order.ID, id); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE usdt_transfers SET status='review',order_id=$1,reason='ACCOUNT_PURGED' WHERE id=$2`, order.ID, id); err != nil {
 			return model.PaymentOrder{}, false, err
 		}
 		if err = tx.Commit(); err != nil {
@@ -98,7 +95,7 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 		if actorID != "" {
 			return model.PaymentOrder{}, false, usdt.ErrConflict
 		}
-		if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='review',reason='USDT_ALREADY_CREDITED' WHERE id=?", id); err != nil {
+		if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='review',reason='USDT_ALREADY_CREDITED' WHERE id=$1", id); err != nil {
 			return model.PaymentOrder{}, false, err
 		}
 		if err := tx.Commit(); err != nil {
@@ -125,7 +122,7 @@ func (s *Store) retryAttempt_SettleUSDTTransfer(ctx context.Context, id, orderID
 	if !changed {
 		return model.PaymentOrder{}, false, usdt.ErrConflict
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='credited',order_id=?,reason='' WHERE id=?", orderID, id); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE usdt_transfers SET status='credited',order_id=$1,reason='' WHERE id=$2", orderID, id); err != nil {
 		return model.PaymentOrder{}, false, err
 	}
 	if actorID != "" {

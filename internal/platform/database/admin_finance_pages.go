@@ -17,14 +17,13 @@ func (s *Store) ListAdminPaymentOrdersPage(ctx context.Context, cursor, search, 
 	args := make([]any, 0, 10)
 	if search != "" {
 		pattern := "%" + escapeLike(search) + "%"
-		query += ` AND (id LIKE ? ESCAPE '\' COLLATE NOCASE OR user_id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR provider LIKE ? ESCAPE '\' COLLATE NOCASE OR COALESCE(method_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(provider_trade_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(provider_charge_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE)`
+		query += fmt.Sprintf(" AND (id ILIKE $%d ESCAPE '\\'  OR user_id ILIKE $%d ESCAPE '\\' \n\t\t\tOR provider ILIKE $%d ESCAPE '\\'  OR COALESCE(method_id,'') ILIKE $%d ESCAPE '\\' \n\t\t\tOR COALESCE(provider_trade_id,'') ILIKE $%d ESCAPE '\\' \n\t\t\tOR COALESCE(provider_charge_id,'') ILIKE $%d ESCAPE '\\' )", len(args)+1, len(args)+2, len(args)+3, len(args)+4, len(args)+5, len(args)+6)
+
 		args = append(args, pattern, pattern, pattern, pattern, pattern, pattern)
 	}
 	if status != "" {
-		query += ` AND status=?`
+		query += fmt.Sprintf(" AND status=$%d", len(args)+1)
+
 		args = append(args, status)
 	}
 	filter := pageFilterFingerprint(search, status)
@@ -33,10 +32,12 @@ func (s *Store) ListAdminPaymentOrdersPage(ctx context.Context, cursor, search, 
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (created_at<? OR (created_at=? AND id<?))`
+		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY created_at DESC,id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -72,12 +73,13 @@ func (s *Store) ListAdminRefundsPage(ctx context.Context, cursor, search, status
 	args := make([]any, 0, 8)
 	if search != "" {
 		pattern := "%" + escapeLike(search) + "%"
-		query += ` AND (id LIKE ? ESCAPE '\' COLLATE NOCASE OR payment_order_id LIKE ? ESCAPE '\' COLLATE NOCASE
-			OR COALESCE(actor_user_id,'') LIKE ? ESCAPE '\' COLLATE NOCASE OR reason LIKE ? ESCAPE '\' COLLATE NOCASE)`
+		query += fmt.Sprintf(" AND (id ILIKE $%d ESCAPE '\\'  OR payment_order_id ILIKE $%d ESCAPE '\\' \n\t\t\tOR COALESCE(actor_user_id,'') ILIKE $%d ESCAPE '\\'  OR reason ILIKE $%d ESCAPE '\\' )", len(args)+1, len(args)+2, len(args)+3, len(args)+4)
+
 		args = append(args, pattern, pattern, pattern, pattern)
 	}
 	if status != "" {
-		query += ` AND status=?`
+		query += fmt.Sprintf(" AND status=$%d", len(args)+1)
+
 		args = append(args, status)
 	}
 	filter := pageFilterFingerprint(search, status)
@@ -86,10 +88,12 @@ func (s *Store) ListAdminRefundsPage(ctx context.Context, cursor, search, status
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (created_at<? OR (created_at=? AND id<?))`
+		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY created_at DESC,id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

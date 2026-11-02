@@ -25,7 +25,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 		return input, nil
 	}
 	key := string(raw)
-	rows, err := s.db.QueryContext(ctx, userSelect+` WHERE users.id IN (SELECT value FROM json_each(?))`, key)
+	rows, err := s.db.QueryContext(ctx, userSelect+` WHERE users.id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb))`, key)
 	if err != nil {
 		return input, err
 	}
@@ -40,7 +40,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 	if err = finishCompileRows(rows); err != nil {
 		return input, err
 	}
-	rows, err = s.db.QueryContext(ctx, purchaseSelect+` WHERE purchases.user_id IN (SELECT value FROM json_each(?)) ORDER BY purchases.valid_from DESC,purchases.created_at DESC`, key)
+	rows, err = s.db.QueryContext(ctx, purchaseSelect+` WHERE purchases.user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)) ORDER BY purchases.valid_from DESC,purchases.created_at DESC`, key)
 	if err != nil {
 		return input, err
 	}
@@ -56,7 +56,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 		return input, err
 	}
 	groups := map[string][]string{}
-	rows, err = s.db.QueryContext(ctx, `WITH selected_purchases AS (SELECT `+purchaseSquadColumns+` FROM purchases WHERE user_id IN (SELECT value FROM json_each(?))), `+purchaseSquadMembershipCTE+` SELECT DISTINCT purchase_id,group_id FROM owned_squads ORDER BY purchase_id,group_id`, key)
+	rows, err = s.db.QueryContext(ctx, `WITH selected_purchases AS (SELECT `+purchaseSquadColumns+` FROM purchases WHERE user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb))), `+purchaseSquadMembershipCTE+` SELECT DISTINCT purchase_id,group_id FROM owned_squads ORDER BY purchase_id,group_id`, key)
 	if err != nil {
 		return input, err
 	}
@@ -77,7 +77,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 		}
 		input.Purchases[id] = purchases
 	}
-	rows, err = s.db.QueryContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE proxy_user_id IN (SELECT proxy_user_id FROM xnode_identities WHERE user_id IN (SELECT value FROM json_each(?)))`, key)
+	rows, err = s.db.QueryContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE proxy_user_id IN (SELECT proxy_user_id FROM xnode_identities WHERE user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)))`, key)
 	if err != nil {
 		return input, err
 	}
@@ -92,7 +92,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 	if err = finishCompileRows(rows); err != nil {
 		return input, err
 	}
-	rows, err = s.db.QueryContext(ctx, `SELECT user_id,squad_uuid FROM user_disabled_squads WHERE user_id IN (SELECT value FROM json_each(?)) ORDER BY user_id,squad_uuid`, key)
+	rows, err = s.db.QueryContext(ctx, `SELECT user_id,squad_uuid FROM user_disabled_squads WHERE user_id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)) ORDER BY user_id,squad_uuid`, key)
 	if err != nil {
 		return input, err
 	}
@@ -107,7 +107,7 @@ func (s *Store) XNodeCompileMembers(ctx context.Context, ids []string) (xnode.Co
 	if err = finishCompileRows(rows); err != nil {
 		return input, err
 	}
-	rows, err = s.db.QueryContext(ctx, `SELECT id FROM users WHERE id IN (SELECT value FROM json_each(?)) AND (EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=users.id AND restored_at IS NULL) OR EXISTS(SELECT 1 FROM xnode_identities WHERE user_id=users.id AND access_disabled=1))`, key)
+	rows, err = s.db.QueryContext(ctx, `SELECT id FROM users WHERE id IN (SELECT value FROM jsonb_array_elements_text(($1)::jsonb)) AND (EXISTS(SELECT 1 FROM admin_temporary_bans WHERE user_id=users.id AND restored_at IS NULL) OR EXISTS(SELECT 1 FROM xnode_identities WHERE user_id=users.id AND access_disabled=1))`, key)
 	if err != nil {
 		return input, err
 	}

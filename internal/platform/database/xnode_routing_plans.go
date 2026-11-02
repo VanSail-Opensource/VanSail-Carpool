@@ -15,7 +15,7 @@ import (
 const routingPlanSelect = `SELECT proxy_user_id,cipher,previous_cipher,legacy_cipher,revision,phase,operation_id,reason FROM xnode_routing_plans`
 
 func (s *Store) XNodeUnmanagedRoutes(ctx context.Context, before time.Time) ([]xnode.Customization, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT c.proxy_user_id,c.user_id,c.node_id,c.outbounds_cipher,c.routing_cipher,c.revision FROM xnode_customizations c WHERE c.user_id IS NOT NULL AND julianday(c.updated_at)<julianday(?) AND NOT EXISTS(SELECT 1 FROM xnode_routing_plans p WHERE p.proxy_user_id=c.proxy_user_id) ORDER BY c.proxy_user_id,c.node_id`, stamp(before))
+	rows, err := s.db.QueryContext(ctx, `SELECT c.proxy_user_id,c.user_id,c.node_id,c.outbounds_cipher,c.routing_cipher,c.revision FROM xnode_customizations c WHERE c.user_id IS NOT NULL AND vansail_timestamp(c.updated_at)<vansail_timestamp($1) AND NOT EXISTS(SELECT 1 FROM xnode_routing_plans p WHERE p.proxy_user_id=c.proxy_user_id) ORDER BY c.proxy_user_id,c.node_id`, stamp(before))
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (s *Store) XNodeUnmanagedRoutes(ctx context.Context, before time.Time) ([]x
 }
 
 func (s *Store) ReplayXNodeRouting(ctx context.Context, user, key, fingerprint string) (model.OperationReceipt, bool, error) {
-	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=? AND kind=? AND idempotency_key=?`, user, xnode.RoutingOperationKind, key))
+	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=$1 AND kind=$2 AND idempotency_key=$3`, user, xnode.RoutingOperationKind, key))
 	if errors.Is(err, ErrNotFound) {
 		return model.OperationReceipt{}, false, nil
 	}
@@ -54,7 +54,7 @@ func scanRoutingPlan(row interface{ Scan(...any) error }) (xnode.RoutingPlan, er
 	return p, err
 }
 func (s *Store) XNodeRoutingPlan(ctx context.Context, id int64) (xnode.RoutingPlan, error) {
-	return scanRoutingPlan(s.db.QueryRowContext(ctx, routingPlanSelect+` WHERE proxy_user_id=?`, id))
+	return scanRoutingPlan(s.db.QueryRowContext(ctx, routingPlanSelect+` WHERE proxy_user_id=$1`, id))
 }
 
 func (s *Store) XNodeRoutingPlans(ctx context.Context) ([]xnode.RoutingPlan, error) {
@@ -77,10 +77,7 @@ func (s *Store) XNodeRoutingPlans(ctx context.Context) ([]xnode.RoutingPlan, err
 // QueueXNodeRouting commits the desired graph and its existing durable outbox
 // operation together. Retries cannot create an unowned or unqueued generation.
 func (s *Store) retryAttempt_QueueXNodeRouting(ctx context.Context, p xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -99,10 +96,7 @@ func (s *Store) retryAttempt_QueueXNodeRouting(ctx context.Context, p xnode.Rout
 	return op.Receipt, tx.Commit()
 }
 func (s *Store) retryAttempt_AdvanceXNodeRouting(ctx context.Context, id int64, operation, from, to string, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	valid := to == "disabled" || from == "revoking" && to == "applying" || from == "applying" && to == "enabling" || from == "enabling" && to == "active"
 	if !valid {
 		return xnode.ErrInvalid
@@ -112,7 +106,7 @@ func (s *Store) retryAttempt_AdvanceXNodeRouting(ctx context.Context, id int64, 
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_routing_plans SET phase=?,reason=CASE WHEN ?='disabled' THEN 'routing_dependencies_changed' ELSE '' END,previous_cipher=CASE WHEN ?='active' THEN '' ELSE previous_cipher END,updated_at=? WHERE proxy_user_id=? AND operation_id=? AND phase=?`, to, to, to, stamp(now), id, operation, from)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_routing_plans SET phase=$1,reason=CASE WHEN $2='disabled' THEN 'routing_dependencies_changed' ELSE '' END,previous_cipher=CASE WHEN $3='active' THEN '' ELSE previous_cipher END,updated_at=$4 WHERE proxy_user_id=$5 AND operation_id=$6 AND phase=$7`, to, to, to, stamp(now), id, operation, from)
 	if err != nil {
 		return err
 	}
@@ -124,7 +118,7 @@ func (s *Store) retryAttempt_AdvanceXNodeRouting(ctx context.Context, id int64, 
 		return err
 	}
 	var actor string
-	if err = tx.QueryRowContext(ctx, `SELECT actor_user_id FROM provider_operations WHERE id=?`, operation).Scan(&actor); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT actor_user_id FROM provider_operations WHERE id=$1`, operation).Scan(&actor); err != nil {
 		return err
 	}
 	reason := ""

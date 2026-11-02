@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Store) personalForecastCalibration(ctx context.Context, user string, out *model.PersonalForecast) error {
-	rows, err := s.db.QueryContext(ctx, `WITH originals AS (SELECT f.horizon_seconds,f.target_from,f.generated_at,f.predicted_p50,f.predicted_p10,f.predicted_p90,e.actual,e.status,ROW_NUMBER() OVER(PARTITION BY f.horizon_seconds,f.target_from ORDER BY f.generated_at DESC) AS vintage_rank FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.entity_type='user' AND f.entity_id=? AND f.metric='traffic_bytes' AND f.model_version='empirical-user-total-v1' AND f.horizon_seconds IN (86400,172800,259200,345600,432000)) SELECT horizon_seconds,predicted_p50,predicted_p10,predicted_p90,actual,status FROM (SELECT *,ROW_NUMBER() OVER(PARTITION BY horizon_seconds ORDER BY target_from DESC) AS ordinal FROM originals WHERE vintage_rank=1) v WHERE ordinal<=90`, user)
+	rows, err := s.db.QueryContext(ctx, `WITH originals AS (SELECT f.horizon_seconds,f.target_from,f.generated_at,f.predicted_p50,f.predicted_p10,f.predicted_p90,e.actual,e.status,ROW_NUMBER() OVER(PARTITION BY f.horizon_seconds,f.target_from ORDER BY f.generated_at DESC) AS vintage_rank FROM pricing_forecast_vintages f JOIN pricing_forecast_evaluations e ON e.forecast_id=f.forecast_id WHERE f.entity_type='user' AND f.entity_id=$1 AND f.metric='traffic_bytes' AND f.model_version='empirical-user-total-v1' AND f.horizon_seconds IN (86400,172800,259200,345600,432000)) SELECT horizon_seconds,predicted_p50,predicted_p10,predicted_p90,actual,status FROM (SELECT *,ROW_NUMBER() OVER(PARTITION BY horizon_seconds ORDER BY target_from DESC) AS ordinal FROM originals WHERE vintage_rank=1) v WHERE ordinal<=90`, user)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *Store) retryAttempt_PersonalRenewalDecision(ctx context.Context, user s
 
 func (s *Store) preparePersonalRenewalDecision(ctx context.Context, user string, now time.Time) (*model.PricingDecision, error) {
 	var current string
-	err := s.db.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=? AND status IN ('active','activating') AND valid_until>? ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM purchases WHERE user_id=$1 AND status IN ('active','activating') AND valid_until>$2 ORDER BY valid_until DESC LIMIT 1`, user, pricingStamp(now)).Scan(&current)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

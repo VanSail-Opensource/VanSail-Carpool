@@ -22,7 +22,7 @@ func TestReviewedPriceChangeDoesNotDebitAndReplaySurvivesExpiry(t *testing.T) {
 		t.Fatal(q, err)
 	}
 	input.QuoteVersion = q.QuoteVersion
-	if _, err = s.db.ExecContext(ctx, `UPDATE combos SET price_txb_minor=1100 WHERE id=?`, combo.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE combos SET price_txb_minor=1100 WHERE id=$1`, combo.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.CreatePurchase(ctx, input, now); !errors.Is(err, ErrPricingQuoteChanged) {

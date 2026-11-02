@@ -22,5 +22,5 @@ func (s *Store) HasActiveCombo(ctx context.Context, userID string, now time.Time
 }
 
 const memberEligibilitySQL = `SELECT EXISTS(SELECT 1 FROM purchases
-	WHERE user_id=? AND status='active' AND valid_from<=? AND valid_until>?)
-	OR EXISTS(SELECT 1 FROM xnode_payg_accounts WHERE user_id=? AND purchased_bytes>0)`
+	WHERE user_id=$1 AND status='active' AND valid_from<=$2 AND valid_until>$3)
+	OR EXISTS(SELECT 1 FROM xnode_payg_accounts WHERE user_id=$4 AND purchased_bytes>0)`

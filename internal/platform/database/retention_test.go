@@ -57,7 +57,7 @@ func TestPaymentCreationDoesNotPruneTerminalOrLiveOrders(t *testing.T) {
 		}
 		created = append(created, order)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET status='failed' WHERE id=?`, created[0].ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET status='failed' WHERE id=$1`, created[0].ID); err != nil {
 		t.Fatalf("mark terminal order: %v", err)
 	}
 	newOrder, err := store.CreatePaymentOrder(ctx, model.PaymentOrder{
@@ -116,7 +116,7 @@ func TestCancelledPaymentCanSettleLateExactlyOnce(t *testing.T) {
 		t.Fatalf("SettlePayment(replay) = applied %t, err %v", applied, err)
 	}
 	var balance int64
-	if err := store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, user.ID).Scan(&balance); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=$1`, user.ID).Scan(&balance); err != nil {
 		t.Fatalf("read balance: %v", err)
 	}
 	if balance != 500 {
@@ -148,7 +148,7 @@ func TestPaymentCreationNeverPrunesCancelledOrders(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("CreatePaymentOrder(after cancellation): %v", err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=? WHERE id=?`, stamp(now.Add(-time.Second)), order.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=$1 WHERE id=$2`, stamp(now.Add(-time.Second)), order.ID); err != nil {
 		t.Fatalf("expire cancelled order: %v", err)
 	}
 	if _, err := store.CreatePaymentOrder(ctx, model.PaymentOrder{

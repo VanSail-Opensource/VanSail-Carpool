@@ -56,7 +56,7 @@ func TestUSDTQuoteReservationIsConcurrentPermanentAndExact(t *testing.T) {
 	}
 	order := createUSDTTestOrder(t, s, user.ID, "1.000")
 	q := reserveUSDTTestQuote(t, s, order)
-	if _, err := s.db.Exec("DELETE FROM payment_orders WHERE id=?", order.ID); err != nil {
+	if _, err := s.db.Exec("DELETE FROM payment_orders WHERE id=$1", order.ID); err != nil {
 		t.Fatal(err)
 	}
 	retained, err := s.USDTQuote(ctx, order.ID)
@@ -88,7 +88,7 @@ func TestUSDTQuoteCapacityAndAtomicBSCAmount(t *testing.T) {
 	}
 	bsc, _ := usdt.Network("bsc")
 	next := createUSDTTestOrder(t, s, user.ID, "1.000")
-	if _, err := s.db.Exec("UPDATE payment_orders SET provider_rail=?,method_id=? WHERE id=?", bsc.Rail, usdt.Provider+":"+bsc.Rail, next.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE payment_orders SET provider_rail=$1,method_id=$2 WHERE id=$3", bsc.Rail, usdt.Provider+":"+bsc.Rail, next.ID); err != nil {
 		t.Fatal(err)
 	}
 	quote, err := s.ReserveUSDTQuote(ctx, next.ID, bsc, []string{usdtTestWallet}, "1.000")

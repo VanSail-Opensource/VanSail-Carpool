@@ -8,8 +8,8 @@ import (
 
 func shiftAdminSubscriptionTx(ctx context.Context, tx *sql.Tx, target adminBulkTarget, durationMinutes int, now time.Time) error {
 	var validUntilRaw string
-	if err := tx.QueryRowContext(ctx, `SELECT valid_until FROM purchases WHERE id=? AND user_id=? AND status='active'
-		AND valid_from<=? AND valid_until>?`, target.PurchaseID, target.UserID, stamp(now), stamp(now)).Scan(&validUntilRaw); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT valid_until FROM purchases WHERE id=$1 AND user_id=$2 AND status='active'
+		AND valid_from<=$3 AND valid_until>$4`, target.PurchaseID, target.UserID, stamp(now), stamp(now)).Scan(&validUntilRaw); err != nil {
 		return err
 	}
 	validUntil, err := parseStamp(validUntilRaw)
@@ -20,7 +20,7 @@ func shiftAdminSubscriptionTx(ctx context.Context, tx *sql.Tx, target adminBulkT
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=?,updated_at=? WHERE id=? AND status='active'`,
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=$1,updated_at=$2 WHERE id=$3 AND status='active'`,
 		stamp(shiftedUntil), stamp(now), target.PurchaseID)
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func shiftAdminSubscriptionTx(ctx context.Context, tx *sql.Tx, target adminBulkT
 		return ErrConflict
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-		WHERE user_id=? AND status='queued' ORDER BY valid_from,id`, target.UserID)
+		WHERE user_id=$1 AND status='queued' ORDER BY valid_from,id`, target.UserID)
 	if err != nil {
 		return err
 	}
@@ -68,8 +68,8 @@ func shiftAdminSubscriptionTx(ctx context.Context, tx *sql.Tx, target adminBulkT
 		if err != nil {
 			return err
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=?,valid_until=?,updated_at=?
-			WHERE id=? AND status='queued'`, stamp(shiftedFrom), stamp(shiftedEnd), stamp(now), term.id)
+		result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3
+			WHERE id=$4 AND status='queued'`, stamp(shiftedFrom), stamp(shiftedEnd), stamp(now), term.id)
 		if err != nil {
 			return err
 		}

@@ -27,17 +27,19 @@ func (s *Store) ListLedgerPage(ctx context.Context, userID, cursor string, limit
 	if limit <= 0 || limit > 100 {
 		limit = 25
 	}
-	query := ledgerSelect + ` WHERE user_id=?`
+	query := ledgerSelect + ` WHERE user_id=$1`
 	args := []any{userID}
 	if cursor != "" {
 		decoded, err := decodeLedgerCursor(cursor)
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (created_at<? OR (created_at=? AND id<?))`
+		query += fmt.Sprintf(" AND (created_at<$%d OR (created_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.CreatedAt, decoded.CreatedAt, decoded.ID)
 	}
-	query += ` ORDER BY created_at DESC,id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY created_at DESC,id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

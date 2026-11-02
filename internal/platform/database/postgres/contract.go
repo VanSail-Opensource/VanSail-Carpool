@@ -1,12 +1,10 @@
 package postgres
 
 import (
-	_ "embed"
 	"encoding/json"
-	"strings"
 )
 
-// ColumnContract is the exact legacy representation retained during conversion.
+// ColumnContract is the native PostgreSQL column contract.
 type ColumnContract struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
@@ -14,7 +12,7 @@ type ColumnContract struct {
 	PrimaryKey int    `json:"primaryKey"`
 }
 
-// TableContract names source columns; PostgreSQL operational columns are separate.
+// TableContract names authoritative application columns.
 type TableContract struct {
 	Name    string           `json:"name"`
 	Columns []ColumnContract `json:"columns"`
@@ -27,12 +25,6 @@ type Contract struct {
 	Indexes  []string        `json:"indexes"`
 	Triggers []string        `json:"triggers"`
 }
-
-//go:embed source-schema.sha256
-var sourceSchemaHash string
-
-// SourceSchemaHash pins the canonical final SQLite schema accepted for import.
-func SourceSchemaHash() string { return strings.TrimSpace(sourceSchemaHash) }
 
 // SchemaContract returns the embedded inventory used by reconciliation tooling.
 func SchemaContract() (Contract, error) {

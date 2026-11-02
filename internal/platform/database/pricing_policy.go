@@ -24,11 +24,11 @@ func pricingReference(ctx context.Context, q pricingReader, kind, id string) (in
 	var query string
 	switch kind {
 	case "combo":
-		query = `SELECT price_txb_minor FROM combos WHERE id=?`
+		query = `SELECT price_txb_minor FROM combos WHERE id=$1`
 	case "addon":
-		query = `SELECT price_txb_minor FROM squad_product_overrides WHERE group_id=? AND billing_mode='combo'`
+		query = `SELECT price_txb_minor FROM squad_product_overrides WHERE group_id=$1 AND billing_mode='combo'`
 	case "payg":
-		query = `SELECT payg_price_minor FROM squad_product_overrides WHERE group_id=? AND billing_mode='payg'`
+		query = `SELECT payg_price_minor FROM squad_product_overrides WHERE group_id=$1 AND billing_mode='payg'`
 	default:
 		return 0, ErrNotFound
 	}
@@ -46,7 +46,7 @@ func loadPricingPolicy(ctx context.Context, q pricingReader, kind, id string, fi
 		}
 		return pricing.DefaultPolicy(kind, id, fixed), nil
 	}
-	p, err := scanPricingPolicy(q.QueryRowContext(ctx, pricingPolicySelect+` WHERE product_type=? AND product_id=?`, kind, id))
+	p, err := scanPricingPolicy(q.QueryRowContext(ctx, pricingPolicySelect+` WHERE product_type=$1 AND product_id=$2`, kind, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return pricing.DefaultPolicy(kind, id, fixed), nil
 	}
@@ -64,7 +64,7 @@ func (s *Store) PricingPolicy(ctx context.Context, kind, id string) (pricing.Pol
 
 func pricingAdminTx(ctx context.Context, tx *sql.Tx, actor string) error {
 	var role string
-	if err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE id=?`, actor).Scan(&role); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT role FROM users WHERE id=$1`, actor).Scan(&role); err != nil {
 		return err
 	}
 	if role != "admin" {
@@ -95,17 +95,14 @@ func (s *Store) retryAttempt_SavePricingPolicy(ctx context.Context, actor, reaso
 	if strings.TrimSpace(reason) == "" || len(reason) > 1000 || p.OverrideStatus == "MANUAL" {
 		return p, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return p, err
 	}
 	defer tx.Rollback()
 	var serial int
-	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 /*pg:FOR UPDATE*/`).Scan(&serial); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&serial); err != nil {
 		return p, err
 	}
 	if err = pricingAdminTx(ctx, tx, actor); err != nil {
@@ -135,12 +132,12 @@ func (s *Store) retryAttempt_SavePricingPolicy(ctx context.Context, actor, reaso
 		if err != nil {
 			return p, err
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_published_prices(id,product_type,product_id,price_minor,policy_version,model_version,source,valid_from,valid_until,created_by,created_at,reason) VALUES(?,?,?,?,?,?,'FIXED',?,?,?,?,?)`, p.LastApprovedVersion, p.ProductType, p.ProductID, fixed, p.Version, "fixed-v1", pricingStamp(now), pricingStamp(now.AddDate(1, 0, 0)), actor, pricingStamp(now), reason)
+		_, err = tx.ExecContext(ctx, `INSERT INTO pricing_published_prices(id,product_type,product_id,price_minor,policy_version,model_version,source,valid_from,valid_until,created_by,created_at,reason) VALUES($1,$2,$3,$4,$5,$6,'FIXED',$7,$8,$9,$10,$11)`, p.LastApprovedVersion, p.ProductType, p.ProductID, fixed, p.Version, "fixed-v1", pricingStamp(now), pricingStamp(now.AddDate(1, 0, 0)), actor, pricingStamp(now), reason)
 		if err != nil {
 			return p, err
 		}
 	}
-	result, err := tx.ExecContext(ctx, `INSERT INTO pricing_product_settings(product_type,product_id,dynamic_enabled,purchase_pricing_mode,renewal_pricing_mode,personal_discounts_enabled,fixed_price_minor,max_increase_bps,max_discount_bps,override_status,last_approved_price_version,version,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(product_type,product_id) DO UPDATE SET dynamic_enabled=excluded.dynamic_enabled,purchase_pricing_mode=excluded.purchase_pricing_mode,renewal_pricing_mode=excluded.renewal_pricing_mode,personal_discounts_enabled=excluded.personal_discounts_enabled,fixed_price_minor=excluded.fixed_price_minor,max_increase_bps=excluded.max_increase_bps,max_discount_bps=excluded.max_discount_bps,override_status=excluded.override_status,last_approved_price_version=excluded.last_approved_price_version,version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at WHERE pricing_product_settings.version=?`, p.ProductType, p.ProductID, boolInt(p.DynamicEnabled), p.PurchaseMode, p.RenewalMode, boolInt(p.PersonalDiscounts), fixed, p.MaxIncreaseBPS, p.MaxDiscountBPS, p.OverrideStatus, p.LastApprovedVersion, p.Version, actor, pricingStamp(now), old.Version)
+	result, err := tx.ExecContext(ctx, `INSERT INTO pricing_product_settings(product_type,product_id,dynamic_enabled,purchase_pricing_mode,renewal_pricing_mode,personal_discounts_enabled,fixed_price_minor,max_increase_bps,max_discount_bps,override_status,last_approved_price_version,version,updated_by,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(product_type,product_id) DO UPDATE SET dynamic_enabled=excluded.dynamic_enabled,purchase_pricing_mode=excluded.purchase_pricing_mode,renewal_pricing_mode=excluded.renewal_pricing_mode,personal_discounts_enabled=excluded.personal_discounts_enabled,fixed_price_minor=excluded.fixed_price_minor,max_increase_bps=excluded.max_increase_bps,max_discount_bps=excluded.max_discount_bps,override_status=excluded.override_status,last_approved_price_version=excluded.last_approved_price_version,version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at WHERE pricing_product_settings.version=$15`, p.ProductType, p.ProductID, boolInt(p.DynamicEnabled), p.PurchaseMode, p.RenewalMode, boolInt(p.PersonalDiscounts), fixed, p.MaxIncreaseBPS, p.MaxDiscountBPS, p.OverrideStatus, p.LastApprovedVersion, p.Version, actor, pricingStamp(now), old.Version)
 	if err != nil {
 		return p, fmt.Errorf("save pricing policy: %w", err)
 	}

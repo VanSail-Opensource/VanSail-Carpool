@@ -60,7 +60,7 @@ func TestPAYGSharedEndpointRendersAllFormatsWithDistinctCredentials(t *testing.T
 			if creditPrincipal == 0 {
 				t.Fatal("fixture must have an exported PAYG principal")
 			}
-			if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,credit_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, xnode.PAYGGB, 123, time.Now().UTC().Format(time.RFC3339Nano), creditPrincipal); err != nil {
+			if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=$1,credit_bytes=$2,credit_started_at=$3 WHERE proxy_user_id=$4`, xnode.PAYGGB, 123, time.Now().UTC().Format(time.RFC3339Nano), creditPrincipal); err != nil {
 				t.Fatal(err)
 			}
 			accountsBefore, err = f.store.XNodePAYGAccounts(ctx, f.user.ID, "")

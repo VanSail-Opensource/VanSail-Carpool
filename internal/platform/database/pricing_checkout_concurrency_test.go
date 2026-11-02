@@ -40,7 +40,7 @@ func TestCheckoutRevalidatesCouponBeforeConsumption(t *testing.T) {
 		t.Fatal(err)
 	}
 	var uses int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_uses WHERE grant_id=?`, grant.Grant.ID).Scan(&uses); err != nil || uses != 0 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM coupon_uses WHERE grant_id=$1`, grant.Grant.ID).Scan(&uses); err != nil || uses != 0 {
 		t.Fatal(uses, err)
 	}
 	balance, err := s.Balance(ctx, user.ID)
@@ -70,7 +70,7 @@ func TestQueuedCheckoutRejectsChangedCampaignWithoutChangingPaidPredecessor(t *t
 		t.Fatal(paid, err)
 	}
 	var spend int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_discount_spend WHERE user_id=?`, user.ID).Scan(&spend); err != nil || spend != 0 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_discount_spend WHERE user_id=$1`, user.ID).Scan(&spend); err != nil || spend != 0 {
 		t.Fatal(spend, err)
 	}
 }

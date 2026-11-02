@@ -32,7 +32,7 @@ func TestSetAutomaticRenewalAllowsSettledExpiredTerm(t *testing.T) {
 		t.Fatalf("FinalizeRollover(): %v", err)
 	}
 	var kind string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind FROM user_notification_events WHERE event_key=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind FROM user_notification_events WHERE event_key=$1`,
 		"expired:"+purchase.ID).Scan(&kind); err != nil || kind != jobpayload.UserEventExpiration {
 		t.Fatalf("expiration notification = %q, %v", kind, err)
 	}

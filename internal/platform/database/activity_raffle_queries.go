@@ -19,7 +19,7 @@ type RaffleTicketInfo struct {
 
 func (s *Store) RaffleTicketByID(ctx context.Context, id string) (RaffleTicketInfo, error) {
 	var item RaffleTicketInfo
-	err := s.db.QueryRowContext(ctx, `SELECT id,draw_id,user_id,chat_id,message_id,status FROM activity_raffle_tickets WHERE id=?`, id).
+	err := s.db.QueryRowContext(ctx, `SELECT id,draw_id,user_id,chat_id,message_id,status FROM activity_raffle_tickets WHERE id=$1`, id).
 		Scan(&item.ID, &item.DrawID, &item.UserID, &item.ChatID, &item.MessageID, &item.Status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return item, ErrNotFound
@@ -47,7 +47,7 @@ func (s *Store) LuckyDrawResultByID(ctx context.Context, id string) (activity.Dr
 	return s.drawResultByID(ctx, id)
 }
 func (s *Store) RaffleResults(ctx context.Context, id string) ([]activity.DrawResult, error) {
-	rows, err := s.db.QueryContext(ctx, drawResultSelect+` WHERE draw_id=? AND idempotency_key LIKE 'raffle:%' ORDER BY created_at,id`, id)
+	rows, err := s.db.QueryContext(ctx, drawResultSelect+` WHERE draw_id=$1 AND idempotency_key ILIKE 'raffle:%' ORDER BY created_at,id`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +64,12 @@ func (s *Store) RaffleResults(ctx context.Context, id string) ([]activity.DrawRe
 }
 func (s *Store) RaffleProgress(ctx context.Context, id string) (int, error) {
 	var count int
-	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=? AND status IN ('active','settled')`, id).Scan(&count)
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_raffle_tickets WHERE draw_id=$1 AND status IN ('active','settled')`, id).Scan(&count)
 	return count, err
 }
 func (s *Store) DrawDelivery(ctx context.Context, key string) (int64, bool, error) {
 	var messageID int64
-	err := s.db.QueryRowContext(ctx, `SELECT message_id FROM activity_draw_delivery WHERE delivery_key=?`, key).Scan(&messageID)
+	err := s.db.QueryRowContext(ctx, `SELECT message_id FROM activity_draw_delivery WHERE delivery_key=$1`, key).Scan(&messageID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, false, nil
 	}
@@ -78,7 +78,7 @@ func (s *Store) DrawDelivery(ctx context.Context, key string) (int64, bool, erro
 func (s *Store) RecordDrawDelivery(ctx context.Context, key string, chatID, messageID int64, now time.Time) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	_, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO activity_draw_delivery(delivery_key,chat_id,message_id,created_at) VALUES(?,?,?,?)`,
+	_, err := s.db.ExecContext(ctx, `INSERT   INTO activity_draw_delivery(delivery_key,chat_id,message_id,created_at) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING `,
 		key, chatID, messageID, stamp(now))
 	return err
 }

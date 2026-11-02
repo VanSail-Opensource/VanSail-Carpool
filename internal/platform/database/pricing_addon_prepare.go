@@ -10,7 +10,7 @@ import (
 
 func (s *Store) prepareAddonPricing(ctx context.Context, input PurchaseAddonInput, now time.Time) error {
 	var combo string
-	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=? AND user_id=?`, input.PurchaseID, input.UserID).Scan(&combo); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=$1 AND user_id=$2`, input.PurchaseID, input.UserID).Scan(&combo); err != nil {
 		return err
 	}
 	for _, id := range uniqueSorted(input.AddonSquadIDs) {
@@ -30,7 +30,7 @@ func (s *Store) QuotePurchaseAddons(ctx context.Context, input PurchaseAddonInpu
 
 func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput, now time.Time) (model.Purchase, error) {
 	var exists int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchase_addon_adjustments WHERE purchase_id=? AND idempotency_key=?)`, input.PurchaseID, input.IdempotencyKey).Scan(&exists); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchase_addon_adjustments WHERE purchase_id=$1 AND idempotency_key=$2))::bigint", input.PurchaseID, input.IdempotencyKey).Scan(&exists); err != nil {
 		return model.Purchase{}, err
 	}
 	if exists == 0 {
@@ -41,7 +41,7 @@ func (s *Store) AddPurchaseAddons(ctx context.Context, input PurchaseAddonInput,
 	p, err := s.addPurchaseAddons(ctx, input, now)
 	if errors.Is(err, ErrInsufficientBalance) {
 		for _, id := range input.AddonSquadIDs {
-			if _, e := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome_reason='INSUFFICIENT_FUNDS' WHERE user_id=? AND product_type='addon' AND product_id=? AND outcome IS NULL AND expires_at>?`, input.UserID, id, pricingStamp(now)); e != nil {
+			if _, e := s.db.ExecContext(ctx, `UPDATE pricing_offers SET outcome_reason='INSUFFICIENT_FUNDS' WHERE user_id=$1 AND product_type='addon' AND product_id=$2 AND outcome IS NULL AND expires_at>$3`, input.UserID, id, pricingStamp(now)); e != nil {
 				return p, errors.Join(err, e)
 			}
 		}

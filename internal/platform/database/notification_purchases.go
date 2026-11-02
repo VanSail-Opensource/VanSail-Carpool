@@ -13,7 +13,7 @@ import (
 func (s *Store) insertExpirationNotificationTx(ctx context.Context, tx *sql.Tx, purchaseID, gateKey string, now time.Time) error {
 	var userID, combo, expired string
 	err := tx.QueryRowContext(ctx, `SELECT purchases.user_id,combos.name,purchases.valid_until
-		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=?
+		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1
 		AND purchases.auto_renew_enabled=0 AND purchases.auto_renew_failure_reason='' AND NOT EXISTS (
 			SELECT 1 FROM purchases successor WHERE successor.user_id=purchases.user_id AND successor.id<>purchases.id
 			AND successor.status IN ('queued','activating','active') AND successor.valid_until>purchases.valid_until
@@ -37,7 +37,7 @@ func (s *Store) insertActivationNotificationTx(ctx context.Context, tx *sql.Tx, 
 		COALESCE(purchases.entitlement_traffic_limit_bytes,combos.traffic_limit_bytes),
 		COALESCE(purchases.entitlement_reset_strategy,combos.reset_strategy),purchases.valid_until,
 		purchases.charged_txb_minor,purchases.auto_renew_source_purchase_id,purchases.valid_from,purchases.created_at
-		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=?`, purchaseID).Scan(
+		FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1`, purchaseID).Scan(
 		&userID, &combo, &traffic, &reset, &validUntil, &debit, &source, &validFrom, &created)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (s *Store) insertActivationNotificationTx(ctx context.Context, tx *sql.Tx, 
 
 func (s *Store) insertAutoRenewalNotificationTx(ctx context.Context, tx *sql.Tx, purchaseID, sourceID, userID, combo, validUntil string, debit int64, now time.Time) error {
 	var balance int64
-	if err := tx.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, userID).Scan(&balance); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=$1`, userID).Scan(&balance); err != nil {
 		return err
 	}
 	facts := map[string]string{notifications.FactCombo: combo, notifications.FactRenewalDebit: strconv.FormatInt(-debit, 10), notifications.FactBalance: strconv.FormatInt(balance, 10), notifications.FactValidUntil: validUntil}
@@ -85,7 +85,7 @@ func (s *Store) insertAutoRenewalNotificationTx(ctx context.Context, tx *sql.Tx,
 }
 
 func purchaseAddonSummaryTx(ctx context.Context, tx *sql.Tx, purchaseID string) (string, error) {
-	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=? ORDER BY group_id`, purchaseID)
+	rows, err := tx.QueryContext(ctx, `SELECT group_id FROM purchase_addons WHERE purchase_id=$1 ORDER BY group_id`, purchaseID)
 	if err != nil {
 		return "", err
 	}

@@ -23,7 +23,7 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,CASE WHEN EXISTS(SELECT 1 FROM pricing_contracts c WHERE c.purchase_id=a.purchase_id) THEN a.charged_txb_minor ELSE COALESCE(o.price_txb_minor,0) END
 		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
-		WHERE a.purchase_id=? AND COALESCE(o.billing_mode,'combo')='combo' ORDER BY a.group_id`, purchaseID)
+		WHERE a.purchase_id=$1 AND COALESCE(o.billing_mode,'combo')='combo' ORDER BY a.group_id`, purchaseID)
 	if err != nil {
 		return nil, fmt.Errorf("load current renewal add-ons: %w", err)
 	}

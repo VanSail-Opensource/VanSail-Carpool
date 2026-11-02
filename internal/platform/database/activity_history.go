@@ -15,7 +15,7 @@ func (s *Store) ListActivityHistory(ctx context.Context, userID string, limit in
 		CheckIns: make([]activity.DailyCheckIn, 0),
 		Draws:    make([]activity.DrawResult, 0),
 	}
-	betRows, err := s.db.QueryContext(ctx, activityBetSelect+` WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT ?`, userID, limit)
+	betRows, err := s.db.QueryContext(ctx, activityBetSelect+` WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return activity.History{}, err
 	}
@@ -32,7 +32,7 @@ func (s *Store) ListActivityHistory(ctx context.Context, userID string, limit in
 		return activity.History{}, err
 	}
 	_ = betRows.Close()
-	checkInRows, err := s.db.QueryContext(ctx, dailyCheckInSelect+` WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT ?`, userID, limit)
+	checkInRows, err := s.db.QueryContext(ctx, dailyCheckInSelect+` WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return activity.History{}, err
 	}
@@ -49,7 +49,7 @@ func (s *Store) ListActivityHistory(ctx context.Context, userID string, limit in
 		return activity.History{}, err
 	}
 	_ = checkInRows.Close()
-	drawRows, err := s.db.QueryContext(ctx, drawResultSelect+` WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT ?`, userID, limit)
+	drawRows, err := s.db.QueryContext(ctx, drawResultSelect+` WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`, userID, limit)
 	if err != nil {
 		return activity.History{}, err
 	}

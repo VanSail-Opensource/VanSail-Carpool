@@ -8,16 +8,13 @@ import (
 )
 
 func (s *Store) retryAttempt_FailAndRefundEmbySetup(ctx context.Context, accountID, reason string, now time.Time) (domain.Account, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=?`, accountID))
+	record, err := scanEmbyProvisioning(tx.QueryRowContext(ctx, embyAccountSelect+` WHERE id=$1`, accountID))
 	if err != nil {
 		return domain.Account{}, err
 	}
@@ -37,7 +34,7 @@ func (s *Store) retryAttempt_FailAndRefundEmbySetup(ctx context.Context, account
 		return domain.Account{}, err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='failed',password_ciphertext='',password_context='',pending_preferences_json='{}',
-		last_error=?,refunded_at=?,updated_at=? WHERE id=?`, truncateEmbyError(reason), stamp(now), stamp(now), record.ID); err != nil {
+		last_error=$1,refunded_at=$2,updated_at=$3 WHERE id=$4`, truncateEmbyError(reason), stamp(now), stamp(now), record.ID); err != nil {
 		return domain.Account{}, fmt.Errorf("record failed Emby setup: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -49,16 +46,13 @@ func (s *Store) retryAttempt_FailAndRefundEmbySetup(ctx context.Context, account
 // UpdateEmbyPreferences persists only preferences that were accepted upstream.
 
 func (s *Store) retryAttempt_UpdateEmbyPreferences(ctx context.Context, accountID string, preferences domain.Preferences, now time.Time) (domain.Account, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return domain.Account{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	result, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET max_parental_rating=?,updated_at=? WHERE id=? AND status='active'`,
+	result, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET max_parental_rating=$1,updated_at=$2 WHERE id=$3 AND status='active'`,
 		nullableInt32(preferences.MaxParentalRating), stamp(now), accountID)
 	if err != nil {
 		return domain.Account{}, fmt.Errorf("update Emby preferences: %w", err)
@@ -79,7 +73,7 @@ func (s *Store) retryAttempt_UpdateEmbyPreferences(ctx context.Context, accountI
 // TouchEmbyAccount records a successful password operation without storing password data.
 
 func (s *Store) TouchEmbyAccount(ctx context.Context, accountID string, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET updated_at=? WHERE id=? AND status='active'`, stamp(now), accountID)
+	result, err := s.db.ExecContext(ctx, `UPDATE emby_accounts SET updated_at=$1 WHERE id=$2 AND status='active'`, stamp(now), accountID)
 	if err != nil {
 		return fmt.Errorf("touch Emby account: %w", err)
 	}

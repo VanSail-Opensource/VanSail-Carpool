@@ -54,7 +54,7 @@ func (s *Store) insertAddonNoticeTx(ctx context.Context, tx *sql.Tx, adjustmentI
 	products []model.SquadProduct, charge, balance int64, now time.Time) error {
 	var combo, until string
 	if err := tx.QueryRowContext(ctx, `SELECT combos.name,purchases.valid_until FROM purchases
-		JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=?`, purchaseID).Scan(&combo, &until); err != nil {
+		JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1`, purchaseID).Scan(&combo, &until); err != nil {
 		return err
 	}
 	_, err := s.insertUserNotificationTx(ctx, tx, "addon-activated:"+adjustmentID, userID,
@@ -81,7 +81,7 @@ func (s *Store) insertAutoRenewalFailureNoticeTx(ctx context.Context, tx *sql.Tx
 	now time.Time) error {
 	var combo, expired string
 	if err := tx.QueryRowContext(ctx, `SELECT combos.name,purchases.valid_until FROM purchases
-		JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=?`, purchaseID).Scan(&combo, &expired); err != nil {
+		JOIN combos ON combos.id=purchases.combo_id WHERE purchases.id=$1`, purchaseID).Scan(&combo, &expired); err != nil {
 		return err
 	}
 	_, err := s.insertUserNotificationTx(ctx, tx, "auto-renewal-failed:"+purchaseID, userID,

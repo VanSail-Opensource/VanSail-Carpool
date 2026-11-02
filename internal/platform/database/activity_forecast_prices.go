@@ -107,7 +107,7 @@ func (s *Store) drawPrizeExpense(ctx context.Context, price drawPriceContext, re
 	case activity.RewardSquadAccess:
 		for _, uuid := range reward.SquadUUIDs {
 			var squadPrice sql.NullInt64
-			err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM squad_product_overrides WHERE group_id=?`, uuid).Scan(&squadPrice)
+			err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM squad_product_overrides WHERE group_id=$1`, uuid).Scan(&squadPrice)
 			if err != nil && err != sql.ErrNoRows {
 				return 0, 0, false, err
 			}
@@ -118,7 +118,7 @@ func (s *Store) drawPrizeExpense(ctx context.Context, price drawPriceContext, re
 		}
 	case activity.RewardCoreComboSwitch:
 		var selected int64
-		if err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM combos WHERE id=?`, reward.ComboID).Scan(&selected); err != nil {
+		if err := s.db.QueryRowContext(ctx, `SELECT price_txb_minor FROM combos WHERE id=$1`, reward.ComboID).Scan(&selected); err != nil {
 			return 0, 0, false, err
 		}
 		maximum = float64(max(0, selected-price.cheapestCombo))

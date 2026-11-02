@@ -131,15 +131,12 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 		case <-maintenanceTimer.C:
 			maintenanceCtx, cancel := context.WithTimeout(ctx, maintenance.RunTimeout)
 			maintenanceNow := time.Now().UTC()
-			maintenanceResult, err := runMaintenanceTask(maintenanceCtx, a.maintenance, maintenanceDatabasePath(a.config), maintenanceNow, false)
+			maintenanceResult, err := runMaintenanceTask(maintenanceCtx, a.maintenance, maintenanceNow, false)
 			if err != nil && !errors.Is(err, context.Canceled) {
 				a.logger.Error("daily maintenance failed", "error", err)
 			} else if err == nil {
 				if maintenanceResult.BackupRetentionWarning != nil {
 					a.logger.Warn("verified backup retention failed after daily cleanup", "error", maintenanceResult.BackupRetentionWarning)
-				}
-				if maintenanceResult.MigrationSnapshotRetentionWarning != nil {
-					a.logger.Error("migration snapshot retention failed", "error", maintenanceResult.MigrationSnapshotRetentionWarning)
 				}
 			}
 			cancel()

@@ -42,7 +42,7 @@ func scanAPIToken(row rowScanner) (apitoken.Token, error) {
 func (s *Store) AdminAPITokens(ctx context.Context, userID string) ([]apitoken.Token, error) {
 	// All active keys fit in the first page (creation caps them at 50).
 	// Revocations delete credentials; only secret-free audit events survive.
-	rows, err := s.db.QueryContext(ctx, apiTokenSelect+` WHERE user_id=? ORDER BY (revoked_at IS NULL AND (expires_at IS NULL OR expires_at>?)) DESC,created_at DESC,id DESC LIMIT 200`, userID, stamp(time.Now().UTC()))
+	rows, err := s.db.QueryContext(ctx, apiTokenSelect+` WHERE user_id=$1 ORDER BY (revoked_at IS NULL AND (expires_at IS NULL OR expires_at>$2)) DESC,created_at DESC,id DESC LIMIT 200`, userID, stamp(time.Now().UTC()))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *Store) AdminAPITokens(ctx context.Context, userID string) ([]apitoken.T
 }
 
 func (s *Store) AdminAPITokenByHash(ctx context.Context, hash []byte) (apitoken.Token, error) {
-	item, err := scanAPIToken(s.db.QueryRowContext(ctx, apiTokenSelect+` WHERE token_hash=?`, hash))
+	item, err := scanAPIToken(s.db.QueryRowContext(ctx, apiTokenSelect+` WHERE token_hash=$1`, hash))
 	if errors.Is(err, apitoken.ErrNotFound) {
 		return item, apitoken.ErrUnauthorized
 	}
@@ -67,14 +67,14 @@ func (s *Store) AdminAPITokenByHash(ctx context.Context, hash []byte) (apitoken.
 }
 
 func (s *Store) TouchAdminAPIToken(ctx context.Context, id string, now time.Time) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE admin_api_tokens SET last_used_at=? WHERE id=? AND revoked_at IS NULL AND (last_used_at IS NULL OR last_used_at<=?)`, stamp(now), id, stamp(now.Add(-5*time.Minute)))
+	result, err := s.db.ExecContext(ctx, `UPDATE admin_api_tokens SET last_used_at=$1 WHERE id=$2 AND revoked_at IS NULL AND (last_used_at IS NULL OR last_used_at<=$3)`, stamp(now), id, stamp(now.Add(-5*time.Minute)))
 	if err != nil {
 		return err
 	}
 	count, err := result.RowsAffected()
 	if err == nil && count == 0 {
 		var active bool
-		if err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=? AND revoked_at IS NULL)`, id).Scan(&active); err != nil {
+		if err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM admin_api_tokens WHERE id=$1 AND revoked_at IS NULL)`, id).Scan(&active); err != nil {
 			return err
 		}
 		if !active {

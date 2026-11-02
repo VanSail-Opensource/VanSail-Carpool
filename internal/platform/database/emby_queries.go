@@ -84,7 +84,7 @@ func hydrateEmbyPreferences(ctx context.Context, queryer embyQueryer, record *do
 }
 
 func embyFolderIDs(ctx context.Context, queryer embyQueryer, accountID string) ([]string, error) {
-	rows, err := queryer.QueryContext(ctx, `SELECT folder_id FROM emby_account_disabled_folders WHERE account_id=? ORDER BY folder_id`, accountID)
+	rows, err := queryer.QueryContext(ctx, `SELECT folder_id FROM emby_account_disabled_folders WHERE account_id=$1 ORDER BY folder_id`, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("list Emby folders: %w", err)
 	}
@@ -101,7 +101,7 @@ func embyFolderIDs(ctx context.Context, queryer embyQueryer, accountID string) (
 }
 
 func replaceEmbyFoldersTx(ctx context.Context, tx *sql.Tx, accountID string, folderIDs []string) error {
-	if _, err := tx.ExecContext(ctx, `DELETE FROM emby_account_disabled_folders WHERE account_id=?`, accountID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM emby_account_disabled_folders WHERE account_id=$1`, accountID); err != nil {
 		return fmt.Errorf("clear Emby folders: %w", err)
 	}
 	seen := make(map[string]struct{}, len(folderIDs))
@@ -114,7 +114,7 @@ func replaceEmbyFoldersTx(ctx context.Context, tx *sql.Tx, accountID string, fol
 			continue
 		}
 		seen[folderID] = struct{}{}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO emby_account_disabled_folders(account_id,folder_id) VALUES(?,?)`, accountID, folderID); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO emby_account_disabled_folders(account_id,folder_id) VALUES($1,$2)`, accountID, folderID); err != nil {
 			return fmt.Errorf("insert Emby folder: %w", err)
 		}
 	}

@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"net/url"
-	"path/filepath"
+
 	"strconv"
 	"testing"
 	"time"
@@ -11,6 +11,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -26,7 +27,7 @@ type nativePurchaseFixture struct {
 func newNativePurchaseFixture(t *testing.T) nativePurchaseFixture {
 	t.Helper()
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "purchase.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +47,7 @@ func newNativePurchaseFixture(t *testing.T) nativePurchaseFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `UPDATE users SET username='nativepurchase',onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
+	if _, err := db.ExecContext(ctx, `UPDATE users SET username='nativepurchase',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = store.UserByID(ctx, user.ID)

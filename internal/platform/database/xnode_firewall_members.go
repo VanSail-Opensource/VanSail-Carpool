@@ -12,7 +12,7 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 	return s.firewallWrite(ctx, func(tx *sql.Tx) error {
 		var ordinal uint32
 		var previous int
-		err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=?`, node).Scan(&ordinal, &previous)
+		err := tx.QueryRowContext(ctx, `SELECT ordinal,active FROM xnode_firewall_members WHERE node_id=$1`, node).Scan(&ordinal, &previous)
 		fresh := errors.Is(err, sql.ErrNoRows)
 		if err != nil && !fresh {
 			return err
@@ -22,7 +22,7 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 		}
 		if fresh {
 			var id int64
-			e := tx.QueryRowContext(ctx, `INSERT INTO xnode_firewall_members(node_id,active) VALUES(?,1) RETURNING ordinal`, node).Scan(&id)
+			e := tx.QueryRowContext(ctx, `INSERT INTO xnode_firewall_members(node_id,active) VALUES($1,1) RETURNING ordinal`, node).Scan(&id)
 			if e != nil {
 				return e
 			}
@@ -31,11 +31,11 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 			}
 			ordinal = uint32(id)
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=?+1,version=?+1 WHERE singleton=1 AND version<?`, observed, observed, observed); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_clock SET source_version=$1+1,version=$2+1 WHERE singleton=1 AND version<$3`, observed, observed, observed); err != nil {
 			return err
 		}
 		if reconnect || previous != boolInt(active) {
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=?,force_sync=MAX(force_sync,?),connection_epoch=connection_epoch+? WHERE node_id=?`, boolInt(active), boolInt(reconnect), boolInt(reconnect), node); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=$1,force_sync=GREATEST(force_sync,$2),connection_epoch=connection_epoch+$3 WHERE node_id=$4`, boolInt(active), boolInt(reconnect), boolInt(reconnect), node); err != nil {
 				return err
 			}
 		}
@@ -43,7 +43,7 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 		if active {
 			var applied, sourceApplied, version, sourceVersion uint64
 			var force int
-			if err = tx.QueryRowContext(ctx, `SELECT m.applied,m.source_applied,m.force_sync,c.version,c.source_version FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c WHERE node_id=?`, node).Scan(&applied, &sourceApplied, &force, &version, &sourceVersion); err != nil {
+			if err = tx.QueryRowContext(ctx, `SELECT m.applied,m.source_applied,m.force_sync,c.version,c.source_version FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c WHERE node_id=$1`, node).Scan(&applied, &sourceApplied, &force, &version, &sourceVersion); err != nil {
 				return err
 			}
 			if force != 0 || applied < version || sourceApplied < sourceVersion {
@@ -56,7 +56,7 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 func (s *Store) FirewallMember(ctx context.Context, node string) (xnode.FirewallMember, error) {
 	v := xnode.FirewallMember{NodeID: node}
 	var force int
-	err := s.db.QueryRowContext(ctx, `SELECT m.applied,m.source_applied,m.force_sync,c.version,c.source_version,m.connection_epoch FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c WHERE m.node_id=?`, node).Scan(&v.Applied, &v.SourceApplied, &force, &v.Version, &v.SourceVersion, &v.Epoch)
+	err := s.db.QueryRowContext(ctx, `SELECT m.applied,m.source_applied,m.force_sync,c.version,c.source_version,m.connection_epoch FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c WHERE m.node_id=$1`, node).Scan(&v.Applied, &v.SourceApplied, &force, &v.Version, &v.SourceVersion, &v.Epoch)
 	v.Force = force != 0
 	return v, err
 }
@@ -69,6 +69,6 @@ func (s *Store) MarkFirewallDelivered(ctx context.Context, node string, version 
 	if full && !sources {
 		force = ",force_sync=0"
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_firewall_members SET `+field+`=MAX(`+field+`,?)`+force+` WHERE node_id=? AND connection_epoch=?`, version, node, epoch)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_firewall_members SET `+field+`=GREATEST(`+field+`,$1)`+force+` WHERE node_id=$2 AND connection_epoch=$3`, version, node, epoch)
 	return err
 }

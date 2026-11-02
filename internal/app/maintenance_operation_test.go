@@ -30,7 +30,7 @@ func TestMaintenanceOperationCompletesSuccessAndFailureReceipts(t *testing.T) {
 			maintenanceRepository := &maintenanceRepositoryFake{acquired: true}
 			backup := &maintenanceBackupFake{run: model.BackupRun{ID: "backup-1", Status: test.backupStatus}, err: test.backupErr}
 			service := maintenance.NewService(maintenanceRepository, backup, time.UTC)
-			handler := &maintenanceOperationHandler{repository: repository, maintenance: service, databasePath: t.TempDir() + "\\database.db", now: func() time.Time {
+			handler := &maintenanceOperationHandler{repository: repository, maintenance: service, now: func() time.Time {
 				return time.Date(2026, 8, 18, 2, 0, 0, 0, time.UTC)
 			}}
 			err := handler.HandleProviderOperation(context.Background(), providerops.Operation{Receipt: model.OperationReceipt{
@@ -57,7 +57,7 @@ func TestMaintenanceOperationRetriesWhenActiveLeaseIsHeld(t *testing.T) {
 		OperationID: "operation-1", Key: "target", TargetType: "maintenance", TargetID: "retention", Status: providerops.StatusQueued,
 	}}}
 	service := maintenance.NewService(&maintenanceRepositoryFake{acquired: false}, &maintenanceBackupFake{}, time.UTC)
-	handler := &maintenanceOperationHandler{repository: repository, maintenance: service, databasePath: t.TempDir() + "\\database.db", now: time.Now}
+	handler := &maintenanceOperationHandler{repository: repository, maintenance: service, now: time.Now}
 	if err := handler.HandleProviderOperation(context.Background(), providerops.Operation{Receipt: model.OperationReceipt{
 		ID: "operation-1", Kind: providerops.KindAdminMaintenance, Status: string(providerops.StatusQueued),
 	}}, model.OutboxJob{ID: "job-1"}); !errors.Is(err, maintenance.ErrBusy) {

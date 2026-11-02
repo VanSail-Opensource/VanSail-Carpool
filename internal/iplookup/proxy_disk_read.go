@@ -31,13 +31,13 @@ func (p *prefixIndex) containsContext(ctx context.Context, address netip.Addr) (
 			continue
 		}
 		_, network := prefixBytes(netip.PrefixFrom(address, bits).Masked().Addr())
-		candidates = append(candidates, "(?,?)")
+		candidates = append(candidates, fmt.Sprintf("($%d::bigint,$%d::bytea)", len(args)+1, len(args)+2))
 		args = append(args, bits, network)
 	}
 	if len(candidates) == 0 {
 		return false, ctx.Err()
 	}
-	query := "SELECT EXISTS(SELECT 1 FROM prefixes WHERE gen=? AND family=? AND (bits,network) IN (VALUES " + strings.Join(candidates, ",") + "))"
+	query := "SELECT EXISTS(SELECT 1 FROM prefixes WHERE gen=$1 AND family=$2 AND (bits,network) IN (VALUES " + strings.Join(candidates, ",") + "))"
 	d := p.disk.store
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -61,7 +61,7 @@ func countDiskIndexes(ctx context.Context, indexes []*prefixIndex) (int, error) 
 			return 0, fmt.Errorf("mixed inventory stores")
 		}
 		d = index.disk.store
-		ids = append(ids, "?")
+		ids = append(ids, fmt.Sprintf("$%d", len(args)+1))
 		args = append(args, index.disk.id)
 	}
 	if d == nil {
@@ -69,7 +69,7 @@ func countDiskIndexes(ctx context.Context, indexes []*prefixIndex) (int, error) 
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	query := "SELECT count(*) FROM (SELECT family,bits,network FROM prefixes INDEXED BY canonical WHERE gen IN (" + strings.Join(ids, ",") + ") GROUP BY family,bits,network)"
+	query := "SELECT count(*) FROM (SELECT family,bits,network FROM prefixes WHERE gen IN (" + strings.Join(ids, ",") + ") GROUP BY family,bits,network)"
 	var count int
 	err := d.db.QueryRowContext(ctx, query, args...).Scan(&count)
 	return count, err
@@ -98,7 +98,7 @@ func mergeDiskIndexes(ctx context.Context, previous, incoming *prefixIndex, limi
 		network := []byte{}
 		for {
 			d.mu.Lock()
-			rows, e := d.db.QueryContext(ctx, "SELECT family,bits,network FROM prefixes WHERE gen=? AND (family,bits,network)>(?,?,?) ORDER BY family,bits,network LIMIT 256", index.disk.id, family, bits, network)
+			rows, e := d.db.QueryContext(ctx, "SELECT family,bits,network FROM prefixes WHERE gen=$1 AND (family,bits,network)>($2,$3,$4) ORDER BY family,bits,network LIMIT 256", index.disk.id, family, bits, network)
 			if e != nil {
 				d.mu.Unlock()
 				writer.err = e

@@ -8,7 +8,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-// newTestStore uses SQLite and the hosted PostgreSQL contract backend.
+// newTestStore owns an isolated, migrated PostgreSQL database.
 func TestCatalogTopologyEpochTracksMetadataWithoutLiveState(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
@@ -40,7 +40,7 @@ func TestCatalogTopologyEpochTracksMetadataWithoutLiveState(t *testing.T) {
 		}
 	}
 	before := version()
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET name=name,desired_revision=desired_revision+1,updated_at=? WHERE id='node'`, stamp(time.Now())); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET name=name,desired_revision=desired_revision+1,updated_at=$1 WHERE id='node'`, stamp(time.Now())); err != nil {
 		t.Fatal(err)
 	}
 	if version() != before {

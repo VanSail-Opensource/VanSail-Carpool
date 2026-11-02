@@ -18,7 +18,7 @@ func (s *Store) renewWithOutcome(ctx context.Context, input RenewalInput, exclud
 		}
 	}
 	if errors.Is(err, ErrInsufficientBalance) {
-		_, e := s.db.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET outcome_reason='INSUFFICIENT_FUNDS' WHERE purchase_id=? AND state<>'SETTLED'`, input.PurchaseID)
+		_, e := s.db.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET outcome_reason='INSUFFICIENT_FUNDS' WHERE purchase_id=$1 AND state<>'SETTLED'`, input.PurchaseID)
 		if e != nil {
 			return b, errors.Join(err, e)
 		}

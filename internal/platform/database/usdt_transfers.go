@@ -14,10 +14,7 @@ import (
 
 // SaveUSDTBatch durably stores verified receiving events before advancing progress.
 func (s *Store) retryAttempt_SaveUSDTBatch(ctx context.Context, network string, b usdt.Batch) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -41,7 +38,7 @@ func (s *Store) retryAttempt_SaveUSDTBatch(ctx context.Context, network string, 
 		}
 		digest := sha256.Sum256([]byte(spec.Network + "\x00" + t.TxHash + "\x00" + t.EventID))
 		t.ID = hex.EncodeToString(digest[:])
-		old, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=?", t.ID))
+		old, err := scanUSDTTransfer(tx.QueryRowContext(ctx, usdtTransferSelect+" WHERE id=$1", t.ID))
 		if err == nil {
 			if old.Token != t.Token || old.Recipient != t.Recipient || old.AtomicAmount != t.AtomicAmount || !old.OccurredAt.Equal(t.OccurredAt) {
 				return usdt.ErrConflict
@@ -70,18 +67,18 @@ func (s *Store) retryAttempt_SaveUSDTBatch(ctx context.Context, network string, 
 				return loadErr
 			}
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_transfers(id,network,token,recipient,atomic_amount,amount,tx_hash,event_id,occurred_at,order_id,status,reason,received_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, t.ID, t.Network, t.Token, t.Recipient, t.AtomicAmount, t.Amount, t.TxHash, t.EventID, stamp(t.OccurredAt), t.OrderID, t.Status, t.Reason, stamp(time.Now().UTC())); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_transfers(id,network,token,recipient,atomic_amount,amount,tx_hash,event_id,occurred_at,order_id,status,reason,received_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, t.ID, t.Network, t.Token, t.Recipient, t.AtomicAmount, t.Amount, t.TxHash, t.EventID, stamp(t.OccurredAt), t.OrderID, t.Status, t.Reason, stamp(time.Now().UTC())); err != nil {
 			return err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_scan_cursors(network,token,value,hash,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(network,token) DO UPDATE SET value=excluded.value,hash=excluded.hash,updated_at=excluded.updated_at`, spec.Network, spec.Token, b.Cursor.Value, b.Cursor.Hash, stamp(time.Now().UTC())); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO usdt_scan_cursors(network,token,value,hash,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(network,token) DO UPDATE SET value=excluded.value,hash=excluded.hash,updated_at=excluded.updated_at`, spec.Network, spec.Token, b.Cursor.Value, b.Cursor.Hash, stamp(time.Now().UTC())); err != nil {
 		return err
 	}
 	return tx.Commit()
 }
 
 func matchUSDTQuote(ctx context.Context, tx *sql.Tx, transfer usdt.Transfer) (usdt.Quote, bool, error) {
-	exact, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE network=? AND token=? AND recipient=? AND atomic_amount=?", transfer.Network, transfer.Token, transfer.Recipient, transfer.AtomicAmount))
+	exact, err := scanUSDTQuote(tx.QueryRowContext(ctx, usdtQuoteSelect+" WHERE network=$1 AND token=$2 AND recipient=$3 AND atomic_amount=$4", transfer.Network, transfer.Token, transfer.Recipient, transfer.AtomicAmount))
 	if err == nil {
 		return exact, true, nil
 	}
@@ -99,9 +96,9 @@ func matchUSDTQuote(ctx context.Context, tx *sql.Tx, transfer usdt.Transfer) (us
 	tolerance := usdt.AmountShortfallTolerance(spec.Decimals)
 	maximum := new(big.Int).Add(new(big.Int).Set(amount), tolerance).String()
 	minimum := amount.String()
-	rows, err := tx.QueryContext(ctx, usdtQuoteSelect+` WHERE network=? AND token=? AND recipient=?
-		AND (length(atomic_amount)>length(?) OR (length(atomic_amount)=length(?) AND atomic_amount>?))
-		AND (length(atomic_amount)<length(?) OR (length(atomic_amount)=length(?) AND atomic_amount<=?))
+	rows, err := tx.QueryContext(ctx, usdtQuoteSelect+` WHERE network=$1 AND token=$2 AND recipient=$3
+		AND (length(atomic_amount)>length($4) OR (length(atomic_amount)=length($5) AND atomic_amount>$6))
+		AND (length(atomic_amount)<length($7) OR (length(atomic_amount)=length($8) AND atomic_amount<=$9))
 		ORDER BY length(atomic_amount),atomic_amount LIMIT 2`,
 		transfer.Network, transfer.Token, transfer.Recipient,
 		minimum, minimum, minimum, maximum, maximum, maximum)

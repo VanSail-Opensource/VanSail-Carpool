@@ -40,7 +40,7 @@ func (s *Store) releaseAdminFirewallBan(ctx context.Context, actor string, input
 			return nil
 		}
 		var found bool
-		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_bans WHERE prefix=? AND generation=? AND released_version=0)`, input.Prefix, input.Generation).Scan(&found); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_bans WHERE prefix=$1 AND generation=$2 AND released_version=0)`, input.Prefix, input.Generation).Scan(&found); err != nil {
 			return err
 		}
 		if !found {
@@ -50,14 +50,14 @@ func (s *Store) releaseAdminFirewallBan(ctx context.Context, actor string, input
 		if err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_version=?,released_at=? WHERE prefix=? AND generation=? AND released_version=0`, version, stamp(now), input.Prefix, input.Generation); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_bans SET released_version=$1,released_at=$2 WHERE prefix=$3 AND generation=$4 AND released_version=0`, version, stamp(now), input.Prefix, input.Generation); err != nil {
 			return err
 		}
 		evidence, err := json.Marshal(firewallReleaseEvidence{Prefix: input.Prefix, Generation: input.Generation, Version: version})
 		if err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET result_json=? WHERE operation_id=? AND item_key='release'`, string(evidence), receipt.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET result_json=$1 WHERE operation_id=$2 AND item_key='release'`, string(evidence), receipt.ID); err != nil {
 			return err
 		}
 		audit, err := ids.New()
@@ -78,7 +78,7 @@ func (s *Store) releaseAdminFirewallBan(ctx context.Context, actor string, input
 
 func finalizeFirewallReleaseTx(ctx context.Context, tx *sql.Tx, operation string, now time.Time) (bool, bool, error) {
 	var status, raw string
-	err := tx.QueryRowContext(ctx, `SELECT operation.status,item.result_json FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='release' AND item.target_type='firewall_ban_release' WHERE operation.id=? AND operation.kind=?`, operation, xnode.FirewallExemptionOperation).Scan(&status, &raw)
+	err := tx.QueryRowContext(ctx, `SELECT operation.status,item.result_json FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='release' AND item.target_type='firewall_ban_release' WHERE operation.id=$1 AND operation.kind=$2`, operation, xnode.FirewallExemptionOperation).Scan(&status, &raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, false, nil
 	}
@@ -93,15 +93,15 @@ func finalizeFirewallReleaseTx(ctx context.Context, tx *sql.Tx, operation string
 		return true, false, xnode.ErrInvalid
 	}
 	var pending bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_members WHERE active=1 AND (applied<? OR force_sync<>0))`, evidence.Version).Scan(&pending); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_members WHERE active=1 AND (applied<$1 OR force_sync<>0))`, evidence.Version).Scan(&pending); err != nil {
 		return true, false, err
 	}
 	if pending {
 		return true, false, nil
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference=?,completed_at=?,updated_at=? WHERE operation_id=? AND item_key='release'`, evidence.Generation, stamp(now), stamp(now), operation); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference=$1,completed_at=$2,updated_at=$3 WHERE operation_id=$4 AND item_key='release'`, evidence.Generation, stamp(now), stamp(now), operation); err != nil {
 		return true, false, err
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',provider_reference=?,result_json=?,completed_at=?,updated_at=? WHERE id=? AND status IN('queued','processing')`, evidence.Generation, raw, stamp(now), stamp(now), operation)
+	_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',provider_reference=$1,result_json=$2,completed_at=$3,updated_at=$4 WHERE id=$5 AND status IN('queued','processing')`, evidence.Generation, raw, stamp(now), stamp(now), operation)
 	return true, err == nil, err
 }

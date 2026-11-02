@@ -26,13 +26,13 @@ func TestPricingNativeAllocationConservesSharedMachineCost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=? WHERE id=?`, purchase.ID, period.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE xnode_periods SET purchase_id=$1 WHERE id=$2`, purchase.ID, period.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES(?,?,100)`, purchase.ID, group.GroupID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `INSERT INTO purchase_addons(purchase_id,group_id,charged_txb_minor) VALUES($1,$2,100)`, purchase.ID, group.GroupID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES(?,'node',?,?,?,0)`, identity.ProxyUserID, period.ID, now.AddDate(0, 0, -1).Format(time.DateOnly), xnode.PAYGGB); err != nil {
+	if _, err = s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES($1,'node',$2,$3,$4,0)`, identity.ProxyUserID, period.ID, now.AddDate(0, 0, -1).Format(time.DateOnly), xnode.PAYGGB); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := s.db.BeginTx(ctx, nil)

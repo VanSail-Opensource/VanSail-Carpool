@@ -19,12 +19,12 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 	from := now.AddDate(0, 0, -30)
 	var revenue, paid int64
 	var costCount int
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=? AND created_at<? AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(-SUM(delta_txb_minor),0) FROM ledger_entries WHERE created_at>=$1 AND created_at<$2 AND kind IN ('purchase_debit','purchase_addon_debit','automatic_renewal','payg_gb','purchase_cancellation','admin_entitlement_cancellation')`, pricingStamp(from), pricingStamp(now)).Scan(&revenue); err != nil {
 		return nil, err
 	}
 	// Actual payments have a recording time, not a separate payment date. The
 	// metadata effective date describes the rate and may be much older.
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0),COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE recorded_at>=? AND recorded_at<?`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(actual_paid_minor),0),COUNT(actual_paid_minor) FROM pricing_cost_versions WHERE recorded_at>=$1 AND recorded_at<$2`, pricingStamp(from), pricingStamp(now)).Scan(&paid, &costCount); err != nil {
 		return nil, err
 	}
 	var cost, margin any
@@ -32,7 +32,7 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 		cost, margin = fmt.Sprint(paid), fmt.Sprint(revenue-paid)
 	}
 	var forecast sql.NullFloat64
-	if err := s.db.QueryRowContext(ctx, `SELECT SUM(f.predicted_mean) FROM pricing_forecast_vintages f WHERE f.entity_type='product' AND f.metric='gross_revenue_minor' AND f.target_from=? AND f.model_version='empirical-receipts-v1' AND f.generated_at=(SELECT MAX(x.generated_at) FROM pricing_forecast_vintages x WHERE x.entity_type=f.entity_type AND x.entity_id=f.entity_id AND x.metric=f.metric AND x.target_from=f.target_from AND x.model_version=f.model_version)`, pricingStamp(now.UTC().Truncate(24*time.Hour).Add(24*time.Hour))).Scan(&forecast); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT SUM(f.predicted_mean) FROM pricing_forecast_vintages f WHERE f.entity_type='product' AND f.metric='gross_revenue_minor' AND f.target_from=$1 AND f.model_version='empirical-receipts-v1' AND f.generated_at=(SELECT MAX(x.generated_at) FROM pricing_forecast_vintages x WHERE x.entity_type=f.entity_type AND x.entity_id=f.entity_id AND x.metric=f.metric AND x.target_from=f.target_from AND x.model_version=f.model_version)`, pricingStamp(now.UTC().Truncate(24*time.Hour).Add(24*time.Hour))).Scan(&forecast); err != nil {
 		return nil, err
 	}
 	dailyCost, knownNodes, totalNodes, costsComplete, err := s.pricingNextDayCosts(ctx, now)
@@ -51,15 +51,15 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 		return nil, err
 	}
 	var pending, failed int
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN status IN ('pending','processing') THEN 1 ELSE 0 END),0),COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0) FROM outbox_jobs WHERE kind LIKE 'pricing_%'`).Scan(&pending, &failed); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN status IN ('pending','processing') THEN 1 ELSE 0 END),0),COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0) FROM outbox_jobs WHERE kind ILIKE 'pricing_%'`).Scan(&pending, &failed); err != nil {
 		return nil, err
 	}
 	var interventions int
 	var discount int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_admin_overrides WHERE created_at>=?`, pricingStamp(from)).Scan(&interventions); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_admin_overrides WHERE created_at>=$1`, pricingStamp(from)).Scan(&interventions); err != nil {
 		return nil, err
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=?`, pricingStamp(from)).Scan(&discount); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE status='CONSUMED' AND created_at>=$1`, pricingStamp(from)).Scan(&discount); err != nil {
 		return nil, err
 	}
 	overhead, err := s.pricingUnallocatedOverhead(ctx, now)
@@ -73,8 +73,8 @@ func (s *Store) pricingSummary(ctx context.Context, now time.Time) (map[string]a
 func (s *Store) pricingNextDayCosts(ctx context.Context, now time.Time) (float64, int, int, bool, error) {
 	day := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
 	rows, err := s.db.QueryContext(ctx, `SELECT c.node_id,c.cycle_cost_minor,c.cycle_days,c.charge_mode,c.hourly_rate_micros,c.traffic_rate_micros,
- (SELECT f.predicted_p90 FROM pricing_forecast_vintages f WHERE f.entity_type='node' AND f.entity_id=c.node_id AND f.metric='traffic_bytes' AND f.model_version='empirical-daily-v1' AND f.horizon_seconds=86400 AND f.target_from=? AND f.target_until=? AND f.generated_at<=? AND f.generated_at>=? ORDER BY f.generated_at DESC LIMIT 1)
- FROM xnode_nodes n LEFT JOIN pricing_cost_metadata c ON c.node_id=n.id AND c.effective_at<=? WHERE n.enabled=1`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now))
+ (SELECT f.predicted_p90 FROM pricing_forecast_vintages f WHERE f.entity_type='node' AND f.entity_id=c.node_id AND f.metric='traffic_bytes' AND f.model_version='empirical-daily-v1' AND f.horizon_seconds=86400 AND f.target_from=$1 AND f.target_until=$2 AND f.generated_at<=$3 AND f.generated_at>=$4 ORDER BY f.generated_at DESC LIMIT 1)
+ FROM xnode_nodes n LEFT JOIN pricing_cost_metadata c ON c.node_id=n.id AND c.effective_at<=$5 WHERE n.enabled=1`, pricingStamp(day), pricingStamp(day.Add(24*time.Hour)), pricingStamp(now), pricingStamp(now.Add(-48*time.Hour)), pricingStamp(now))
 	if err != nil {
 		return 0, 0, 0, false, err
 	}

@@ -72,12 +72,12 @@ func TestProviderOperationReplayAndAttemptLifecycle(t *testing.T) {
 		t.Fatalf("ProviderOperationForOwner() = (%+v, %v)", receipt, err)
 	}
 	var jobs, replays int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?
-		AND json_extract(payload,'$.operationId')=? AND json_extract(payload,'$.sealedTarget')=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1
+		AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$2 AND (CASE ((payload)::jsonb #> '{sealedTarget}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{sealedTarget}' END)=$3`,
 		providerops.OutboxKind, operation.Receipt.ID, input.SealedTarget).Scan(&jobs); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operation_replays WHERE operation_id=?`, operation.Receipt.ID).Scan(&replays); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operation_replays WHERE operation_id=$1`, operation.Receipt.ID).Scan(&replays); err != nil {
 		t.Fatal(err)
 	}
 	if jobs != 1 || replays != 1 {

@@ -18,10 +18,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 	if strings.TrimSpace(userID) == "" || chatID == 0 || messageID <= 0 || threshold < 0 || rewardMinor < 0 || boostCount < 0 {
 		return activity.GroupMessageRewardResult{}, activity.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	now = now.UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -36,7 +33,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 	}
 
 	var existingCounted int
-	lookupErr := tx.QueryRowContext(ctx, `SELECT counted FROM activity_group_message_events WHERE chat_id=? AND message_id=?`, chatID, messageID).Scan(&existingCounted)
+	lookupErr := tx.QueryRowContext(ctx, `SELECT counted FROM activity_group_message_events WHERE chat_id=$1 AND message_id=$2`, chatID, messageID).Scan(&existingCounted)
 	if lookupErr == nil {
 		if err := tx.Rollback(); err != nil {
 			return activity.GroupMessageRewardResult{}, fmt.Errorf("close group-message replay transaction: %w", err)
@@ -52,13 +49,11 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 	}
 
 	var subscribed int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(
-		SELECT 1 FROM purchases WHERE user_id=? AND status IN ('activating','active') AND valid_from<=? AND valid_until>?
-	)`, userID, stamp(now), stamp(now)).Scan(&subscribed); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(\n\t\tSELECT 1 FROM purchases WHERE user_id=$1 AND status IN ('activating','active') AND valid_from<=$2 AND valid_until>$3\n\t))::bigint", userID, stamp(now), stamp(now)).Scan(&subscribed); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("check group-message subscription: %w", err)
 	}
 	counted := subscribed == 1 && boostCount > 0
-	if _, err := tx.ExecContext(ctx, `INSERT INTO activity_group_message_events(chat_id,message_id,user_id,local_date,counted,created_at) VALUES(?,?,?,?,?,?)`,
+	if _, err := tx.ExecContext(ctx, `INSERT INTO activity_group_message_events(chat_id,message_id,user_id,local_date,counted,created_at) VALUES($1,$2,$3,$4,$5,$6)`,
 		chatID, messageID, userID, localDate, boolInt(counted), stamp(now)); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("record group-message event: %w", err)
 	}
@@ -75,9 +70,9 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 
 	var messageCount int
 	var rewardedAt sql.NullString
-	windowErr := tx.QueryRowContext(ctx, `SELECT message_count,rewarded_at FROM activity_group_message_windows WHERE user_id=? AND local_date=?`, userID, localDate).Scan(&messageCount, &rewardedAt)
+	windowErr := tx.QueryRowContext(ctx, `SELECT message_count,rewarded_at FROM activity_group_message_windows WHERE user_id=$1 AND local_date=$2`, userID, localDate).Scan(&messageCount, &rewardedAt)
 	if errors.Is(windowErr, sql.ErrNoRows) {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO activity_group_message_windows(user_id,local_date,message_count,created_at,updated_at) VALUES(?,?,?,?,?)`,
+		if _, err := tx.ExecContext(ctx, `INSERT INTO activity_group_message_windows(user_id,local_date,message_count,created_at,updated_at) VALUES($1,$2,$3,$4,$5)`,
 			userID, localDate, 0, stamp(now), stamp(now)); err != nil {
 			return activity.GroupMessageRewardResult{}, fmt.Errorf("create group-message window: %w", err)
 		}
@@ -86,7 +81,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 	}
 
 	messageCount++
-	if _, err := tx.ExecContext(ctx, `UPDATE activity_group_message_windows SET message_count=?,updated_at=? WHERE user_id=? AND local_date=?`,
+	if _, err := tx.ExecContext(ctx, `UPDATE activity_group_message_windows SET message_count=$1,updated_at=$2 WHERE user_id=$3 AND local_date=$4`,
 		messageCount, stamp(now), userID, localDate); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("update group-message window: %w", err)
 	}
@@ -103,7 +98,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 		if balanceErr != nil {
 			return activity.GroupMessageRewardResult{}, balanceErr
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE activity_group_message_windows SET rewarded_at=?,updated_at=? WHERE user_id=? AND local_date=? AND rewarded_at IS NULL`,
+		if _, err := tx.ExecContext(ctx, `UPDATE activity_group_message_windows SET rewarded_at=$1,updated_at=$2 WHERE user_id=$3 AND local_date=$4 AND rewarded_at IS NULL`,
 			stamp(now), stamp(now), userID, localDate); err != nil {
 			return activity.GroupMessageRewardResult{}, fmt.Errorf("mark group-message reward: %w", err)
 		}
@@ -118,7 +113,7 @@ func (s *Store) retryAttempt_RecordGroupMessage(ctx context.Context, userID stri
 			return activity.GroupMessageRewardResult{}, err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_events WHERE created_at<?`, stamp(now.Add(-31*24*time.Hour))); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM activity_group_message_events WHERE created_at<$1`, stamp(now.Add(-31*24*time.Hour))); err != nil {
 		return activity.GroupMessageRewardResult{}, fmt.Errorf("prune group-message events: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -136,7 +131,7 @@ func groupMessageRewardStatusQuery(ctx context.Context, queryer interface {
 }, userID, localDate string, threshold int, rewardMinor int64) (activity.GroupMessageRewardStatus, error) {
 	status := activity.GroupMessageRewardStatus{Enabled: threshold > 0 && rewardMinor > 0, LocalDate: localDate, Threshold: threshold, RewardMinor: rewardMinor}
 	var rewardedAt sql.NullString
-	err := queryer.QueryRowContext(ctx, `SELECT message_count,rewarded_at FROM activity_group_message_windows WHERE user_id=? AND local_date=?`, userID, localDate).Scan(&status.MessageCount, &rewardedAt)
+	err := queryer.QueryRowContext(ctx, `SELECT message_count,rewarded_at FROM activity_group_message_windows WHERE user_id=$1 AND local_date=$2`, userID, localDate).Scan(&status.MessageCount, &rewardedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return status, nil
 	}
@@ -151,7 +146,7 @@ func groupMessageRewardStatusQuery(ctx context.Context, queryer interface {
 		status.Rewarded = true
 		status.RewardedAt = &value
 		if err := queryer.QueryRowContext(ctx, `SELECT delta_txb_minor FROM ledger_entries
-			WHERE user_id=? AND kind='activity_group_message_reward' AND note=? AND created_at=?
+			WHERE user_id=$1 AND kind='activity_group_message_reward' AND note=$2 AND created_at=$3
 			ORDER BY id DESC LIMIT 1`, userID, localDate, rewardedAt.String).Scan(&status.RewardMinor); err != nil {
 			return activity.GroupMessageRewardStatus{}, fmt.Errorf("load settled group-message amount: %w", err)
 		}

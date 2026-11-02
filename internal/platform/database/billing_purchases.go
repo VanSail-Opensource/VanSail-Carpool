@@ -14,7 +14,7 @@ import (
 // PurchaseByID returns transaction facts combined with the combo's current
 // live configuration, as required by the mutable-catalog contract.
 func (s *Store) PurchaseByID(ctx context.Context, id string) (model.Purchase, error) {
-	purchase, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=?`, id))
+	purchase, err := scanPurchase(s.db.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, id))
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -24,7 +24,7 @@ func (s *Store) PurchaseByID(ctx context.Context, id string) (model.Purchase, er
 
 // ListPurchases returns a user's purchase history.
 func (s *Store) ListPurchases(ctx context.Context, userID string) ([]model.Purchase, error) {
-	rows, err := s.db.QueryContext(ctx, purchaseSelect+` WHERE purchases.user_id=? ORDER BY purchases.valid_from DESC,purchases.created_at DESC`, userID)
+	rows, err := s.db.QueryContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 ORDER BY purchases.valid_from DESC,purchases.created_at DESC`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list purchases: %w", err)
 	}
@@ -54,7 +54,7 @@ func (s *Store) ListAllPurchases(ctx context.Context, limit int) ([]model.Purcha
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.QueryContext(ctx, purchaseSelect+` ORDER BY purchases.created_at DESC LIMIT ?`, limit)
+	rows, err := s.db.QueryContext(ctx, purchaseSelect+` ORDER BY purchases.created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -81,16 +81,13 @@ func (s *Store) ListAllPurchases(ctx context.Context, limit int) ([]model.Purcha
 
 // CancelPurchase credits its snapshotted price and schedules entitlement replacement when needed.
 func (s *Store) retryAttempt_CancelPurchase(ctx context.Context, purchaseID, reason string, now time.Time) (model.Purchase, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=?`, purchaseID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchaseID))
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -101,7 +98,7 @@ func (s *Store) retryAttempt_CancelPurchase(ctx context.Context, purchaseID, rea
 		return model.Purchase{}, ErrConflict
 	}
 	previousStatus := purchase.Status
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), purchase.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), purchase.ID); err != nil {
 		return model.Purchase{}, err
 	}
 	balance, err := adjustBalanceTx(ctx, tx, purchase.UserID, purchase.PriceTXBMinor, now)
@@ -169,7 +166,7 @@ type purchaseSquadQueryer interface {
 }
 
 func purchaseSquadsFrom(ctx context.Context, queryer purchaseSquadQueryer, purchaseID string) ([]string, error) {
-	rows, err := queryer.QueryContext(ctx, `WITH selected_purchases AS (SELECT `+purchaseSquadColumns+` FROM purchases WHERE id=?), `+purchaseSquadMembershipCTE+`
+	rows, err := queryer.QueryContext(ctx, `WITH selected_purchases AS (SELECT `+purchaseSquadColumns+` FROM purchases WHERE id=$1), `+purchaseSquadMembershipCTE+`
 		SELECT DISTINCT group_id FROM owned_squads ORDER BY group_id`, purchaseID)
 	if err != nil {
 		return nil, err

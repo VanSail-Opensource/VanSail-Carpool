@@ -20,16 +20,13 @@ func (s *Store) retryAttempt_CancelAdminPurchase(ctx context.Context, actorID, p
 	if actorID == "" || purchaseID == "" || reason == "" || len(reason) > 500 {
 		return model.Purchase{}, errors.New("administrator cancellation is invalid")
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.Purchase{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=?`, purchaseID))
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, purchaseID))
 	if err != nil {
 		return model.Purchase{}, err
 	}
@@ -40,7 +37,7 @@ func (s *Store) retryAttempt_CancelAdminPurchase(ctx context.Context, actorID, p
 		return model.Purchase{}, ErrConflict
 	}
 	previousStatus := purchase.Status
-	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=? WHERE id=?`, stamp(now), purchase.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE purchases SET status='cancelled',updated_at=$1 WHERE id=$2`, stamp(now), purchase.ID); err != nil {
 		return model.Purchase{}, err
 	}
 	balance, err := changeBalanceTx(ctx, tx, purchase.UserID, purchase.PriceTXBMinor, now)

@@ -31,15 +31,15 @@ func TestPAYGNodesSpendOneWalletWithoutDuplicatingCredit(t *testing.T) {
 	// Both nodes have already consumed their first prepaid GB. Continuation
 	// observations can purchase only one further GB from this wallet.
 	for _, a := range []xnode.PAYGAccount{first, second} {
-		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, xnode.PAYGGB, a.PeriodID); err != nil {
+		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2`, xnode.PAYGGB, a.PeriodID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, xnode.PAYGGB, stamp(time.Now()), a.ProxyUserID); err != nil {
+		if _, err = s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=$1,credit_started_at=$2 WHERE proxy_user_id=$3`, xnode.PAYGGB, stamp(time.Now()), a.ProxyUserID); err != nil {
 			t.Fatal(err)
 		}
 		// Outstanding metered traffic, rather than an idle exhausted allowance,
 		// is required before an observation may buy a replacement GB.
-		if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES(?,?,?,1)`, a.ProxyUserID, paygWindowStamp(time.Now().Add(-time.Second)), xnode.PAYGStartBytes); err != nil {
+		if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES($1,$2,$3,1)`, a.ProxyUserID, paygWindowStamp(time.Now().Add(-time.Second)), xnode.PAYGStartBytes); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -87,14 +87,14 @@ func TestPAYGMinuteWindowAndRetention(t *testing.T) {
 	if err != nil || len(usage) != 1 || usage[0].TrafficBytes != 34 || usage[0].SpentMinor != 6 {
 		t.Fatal("window/current partial boundary", usage, err)
 	}
-	if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes) VALUES(?,?,?,1)`, parent.UserID, a.GroupID, stamp(asOf.Add(-74*time.Hour))); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes) VALUES($1,$2,$3,1)`, parent.UserID, a.GroupID, stamp(asOf.Add(-74*time.Hour))); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.PrunePAYGTransientRecords(ctx, asOf); err != nil {
 		t.Fatal(err)
 	}
 	var old int
-	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_payg_minutes WHERE minute<?`, stamp(asOf.Add(-73*time.Hour))).Scan(&old); err != nil || old != 0 {
+	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM xnode_payg_minutes WHERE minute<$1`, stamp(asOf.Add(-73*time.Hour))).Scan(&old); err != nil || old != 0 {
 		t.Fatal("expired aggregates retained", old, err)
 	}
 }

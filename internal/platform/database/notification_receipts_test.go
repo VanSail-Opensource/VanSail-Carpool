@@ -28,8 +28,8 @@ func TestImmediatePurchaseQueuesActivationReceiptAfterSync(t *testing.T) {
 		t.Fatal(err)
 	}
 	var kind, charge string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,json_extract(payload_json,'$.facts.chargeMinor')
-		FROM user_notification_events WHERE event_key=?`, "activation:"+purchase.ID).Scan(&kind, &charge); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind,(CASE ((payload_json)::jsonb #> '{facts,chargeMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,chargeMinor}' END)
+		FROM user_notification_events WHERE event_key=$1`, "activation:"+purchase.ID).Scan(&kind, &charge); err != nil {
 		t.Fatal(err)
 	}
 	if kind != jobpayload.UserEventPurchaseActivation || charge != "1250" {
@@ -52,8 +52,8 @@ func TestPaymentCreditAndProviderRefundQueuePrivateReceiptsOnce(t *testing.T) {
 		t.Fatalf("SettlePayment() = %t, %v", applied, err)
 	}
 	var kind, amount, balance string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,json_extract(payload_json,'$.facts.amountMinor'),
-		json_extract(payload_json,'$.facts.balanceMinor') FROM user_notification_events WHERE event_key=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind,(CASE ((payload_json)::jsonb #> '{facts,amountMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,amountMinor}' END),
+		(CASE ((payload_json)::jsonb #> '{facts,balanceMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,balanceMinor}' END) FROM user_notification_events WHERE event_key=$1`,
 		"payment:"+order.ID).Scan(&kind, &amount, &balance); err != nil {
 		t.Fatal(err)
 	}
@@ -66,8 +66,8 @@ func TestPaymentCreditAndProviderRefundQueuePrivateReceiptsOnce(t *testing.T) {
 	if _, err := store.RefundPayment(ctx, nil, order.ID, "replayed", now.Add(2*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,json_extract(payload_json,'$.facts.amountMinor'),
-		json_extract(payload_json,'$.facts.balanceMinor') FROM user_notification_events WHERE source_kind='payment-refund'`).
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind,(CASE ((payload_json)::jsonb #> '{facts,amountMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,amountMinor}' END),
+		(CASE ((payload_json)::jsonb #> '{facts,balanceMinor}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,balanceMinor}' END) FROM user_notification_events WHERE source_kind='payment-refund'`).
 		Scan(&kind, &amount, &balance); err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestProviderRefundWaitsForCancelledComboSync(t *testing.T) {
 	var pending bool
 	var cancelled string
 	if err := store.DB().QueryRowContext(ctx, `SELECT queued_at IS NULL,
-		json_extract(payload_json,'$.facts.cancelledCombos') FROM user_notification_events WHERE source_kind='payment-refund'`).
+		(CASE ((payload_json)::jsonb #> '{facts,cancelledCombos}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload_json)::jsonb #>> '{facts,cancelledCombos}' END) FROM user_notification_events WHERE source_kind='payment-refund'`).
 		Scan(&pending, &cancelled); err != nil {
 		t.Fatal(err)
 	}

@@ -94,7 +94,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 	id := hex.EncodeToString(h[:])
 	_, err = s.pricingCache.Load(ctx, "exposure:"+id, time.Hour, func() ([]byte, error) {
 		var enabled int
-		if e := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=? AND product_id=? AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC')`, kind, product).Scan(&enabled); e != nil {
+		if e := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_product_settings WHERE product_type=$1 AND product_id=$2 AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC'))::bigint", kind, product).Scan(&enabled); e != nil {
 			return nil, e
 		}
 		if enabled == 0 {
@@ -120,7 +120,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 		m := pricing.ResponseModel{}
 		model := "purchase-prior-v1"
 		var raw string
-		e = s.db.QueryRowContext(ctx, `SELECT id,parameters_json FROM pricing_model_versions WHERE kind=? AND frozen=0 AND created_at<=? ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, pricingStamp(now)).Scan(&model, &raw)
+		e = s.db.QueryRowContext(ctx, `SELECT id,parameters_json FROM pricing_model_versions WHERE kind=$1 AND frozen=0 AND created_at<=$2 ORDER BY created_at DESC LIMIT 1`, "response:"+kind+":"+product, pricingStamp(now)).Scan(&model, &raw)
 		if e != nil && !errors.Is(e, sql.ErrNoRows) {
 			return nil, e
 		}
@@ -133,7 +133,7 @@ func (s *Store) recordPricingOffer(ctx context.Context, user, kind, product stri
 		if e != nil {
 			return nil, e
 		}
-		_, e = s.db.ExecContext(ctx, `INSERT INTO pricing_offers(id,user_id,product_type,product_id,price_minor,reference_minor,exposed_at,expires_at,model_version,predicted_probability,features_json) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING`, id, user, kind, product, price, reference, pricingStamp(now), pricingStamp(now.Add(24*time.Hour)), model, m.Predict(observation), string(feature))
+		_, e = s.db.ExecContext(ctx, `INSERT INTO pricing_offers(id,user_id,product_type,product_id,price_minor,reference_minor,exposed_at,expires_at,model_version,predicted_probability,features_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(id) DO NOTHING`, id, user, kind, product, price, reference, pricingStamp(now), pricingStamp(now.Add(24*time.Hour)), model, m.Predict(observation), string(feature))
 		return nil, e
 	})
 	return err

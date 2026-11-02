@@ -16,7 +16,7 @@ type renewalAdmissionReader interface {
 // Parse exact instants: RFC3339Nano strings do not have uniform lexical order.
 func renewalBlockedUntil(ctx context.Context, reader renewalAdmissionReader, user string, now time.Time) (*time.Time, error) {
 	rows, err := reader.QueryContext(ctx, `SELECT valid_from,valid_until FROM purchases
-		WHERE user_id=? AND auto_renew_enabled=1 AND status IN ('active','activating')`, user)
+		WHERE user_id=$1 AND auto_renew_enabled=1 AND status IN ('active','activating')`, user)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func (s *Store) AutoRenewalBlockedUntil(ctx context.Context, user string, now ti
 }
 
 // One member balance row serializes manual checkout, renewal, and enablement.
-// SQLite already holds its writer lock; PostgreSQL uses this existing row lock.
+// Lock the existing purchase row inside the serializable transaction.
 func lockMemberPurchaseTx(ctx context.Context, tx *sql.Tx, user string) error {
 	var owner string
-	return tx.QueryRowContext(ctx, `SELECT user_id FROM balances WHERE user_id=? /*pg:FOR UPDATE*/`, user).Scan(&owner)
+	return tx.QueryRowContext(ctx, `SELECT user_id FROM balances WHERE user_id=$1 FOR UPDATE`, user).Scan(&owner)
 }

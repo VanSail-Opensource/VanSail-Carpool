@@ -69,12 +69,12 @@ func TestCourtesySettlementAndDismissalRaceRetainsOneFinancialOutcome(t *testing
 	user := createTestUser(t, s, 99032)
 	admin := createTestUser(t, s, 99033)
 	ctx := context.Background()
-	if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=?", admin.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=$1", admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	for i := range 5 {
 		q := stablecoinOrder(t, s, user.ID, "usdc.erc20")
-		if _, err := s.db.Exec("UPDATE payment_orders SET status='expired',cancelled_at=created_at WHERE id=?", q.OrderID); err != nil {
+		if _, err := s.db.Exec("UPDATE payment_orders SET status='expired',cancelled_at=created_at WHERE id=$1", q.OrderID); err != nil {
 			t.Fatal(err)
 		}
 		txHash := time.Now().UTC().Format(time.RFC3339Nano)
@@ -99,11 +99,11 @@ func TestCourtesySettlementAndDismissalRaceRetainsOneFinancialOutcome(t *testing
 		close(start)
 		wg.Wait()
 		var credits int
-		if err := s.db.QueryRow("SELECT COUNT(*) FROM ledger_entries WHERE reference_id=? AND kind IN ('payment_credit','payment_courtesy_credit')", q.OrderID).Scan(&credits); err != nil || credits != 1 {
+		if err := s.db.QueryRow("SELECT COUNT(*) FROM ledger_entries WHERE reference_id=$1 AND kind IN ('payment_credit','payment_courtesy_credit')", q.OrderID).Scan(&credits); err != nil || credits != 1 {
 			t.Fatal("race duplicated or lost credit", i, credits, err)
 		}
 		var status string
-		if err := s.db.QueryRow("SELECT status FROM usdt_transfers WHERE id=?", id).Scan(&status); err != nil {
+		if err := s.db.QueryRow("SELECT status FROM usdt_transfers WHERE id=$1", id).Scan(&status); err != nil {
 			t.Fatal(err)
 		}
 		if status == "dismissed" {

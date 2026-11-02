@@ -12,10 +12,10 @@ func TestDatabaseConfiguration(t *testing.T) {
 		env       map[string]string
 		wantError string
 	}{
-		{"legacy", nil, ""},
+		{"missing-default", nil, "DATABASE_URL"},
 		{"postgres", map[string]string{"DB_DRIVER": "postgres", "DATABASE_URL": "postgres://app:secret@db/vansail"}, ""},
 		{"no-fallback", map[string]string{"DB_DRIVER": "mysql"}, "DB_DRIVER"},
-		{"explicit-opt-in", map[string]string{"DATABASE_URL": "postgres://app:secret@db/vansail"}, "DB_DRIVER"},
+		{"default-postgres", map[string]string{"DATABASE_URL": "postgres://app:secret@db/vansail"}, ""},
 		{"missing-url", map[string]string{"DB_DRIVER": "postgres"}, "DATABASE_URL"},
 		{"redacted-url", map[string]string{"DB_DRIVER": "postgres", "DATABASE_URL": "postgres://app:TOPSECRET%zz@db/vansail"}, "DATABASE_URL"},
 		{"pool-bounds", map[string]string{"DB_MAX_OPEN_CONNS": "2", "DB_MAX_IDLE_CONNS": "3"}, "DB_MAX_IDLE_CONNS"},
@@ -25,6 +25,9 @@ func TestDatabaseConfiguration(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, name := range []string{"DB_DRIVER", "DATABASE_URL", "DATABASE_URL_FILE", "DB_MAX_OPEN_CONNS", "DB_MAX_IDLE_CONNS", "DB_CONN_MAX_LIFETIME", "DB_CONNECT_TIMEOUT", "DB_STATEMENT_TIMEOUT", "DB_LOCK_TIMEOUT", "DB_MIGRATE_ON_START"} {
 				t.Setenv(name, "")
+			}
+			if tc.name != "missing-default" && tc.name != "missing-url" {
+				t.Setenv("DATABASE_URL", "postgres://app:secret@db/vansail")
 			}
 			for name, value := range tc.env {
 				t.Setenv(name, value)
@@ -42,7 +45,7 @@ func TestDatabaseConfiguration(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.MigrateOnStart != (cfg.Driver == "sqlite") {
+			if cfg.MigrateOnStart || cfg.Driver != "postgres" {
 				t.Fatal("unsafe default migration policy")
 			}
 		})

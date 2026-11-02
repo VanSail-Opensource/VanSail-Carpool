@@ -13,7 +13,7 @@ func (s *Store) SetDisplayCurrency(ctx context.Context, userID, currency string)
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	result, err := s.db.ExecContext(ctx, `UPDATE users SET display_currency=?,updated_at=? WHERE id=?`, currency, stamp(time.Now().UTC()), userID)
+	result, err := s.db.ExecContext(ctx, `UPDATE users SET display_currency=$1,updated_at=$2 WHERE id=$3`, currency, stamp(time.Now().UTC()), userID)
 	if err != nil {
 		return model.User{}, fmt.Errorf("save display currency: %w", err)
 	}

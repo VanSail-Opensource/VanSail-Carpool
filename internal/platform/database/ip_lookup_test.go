@@ -133,10 +133,10 @@ func TestIPLookupNewActivationAndExpiredAllowance(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store, service, user, purchase, now := ipLookupFixture(t, 2)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=2 WHERE purchase_id=?`, purchase); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE ip_lookup_allowances SET used=2 WHERE purchase_id=$1`, purchase); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='activating',valid_until=? WHERE id=?`, stamp(now.Add(-time.Minute)), purchase); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='activating',valid_until=$1 WHERE id=$2`, stamp(now.Add(-time.Minute)), purchase); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.MarkPurchaseSyncResult(ctx, purchase, true, now); err != nil {
@@ -147,7 +147,7 @@ func TestIPLookupNewActivationAndExpiredAllowance(t *testing.T) {
 		t.Fatalf("expired quota eligible: %+v %v", state, err)
 	}
 	var combo string
-	if err := store.DB().QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=?`, purchase).Scan(&combo); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=$1`, purchase).Scan(&combo); err != nil {
 		t.Fatal(err)
 	}
 	next, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user, ComboID: combo, IdempotencyKey: "next"}, now)

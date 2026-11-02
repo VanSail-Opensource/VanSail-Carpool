@@ -21,19 +21,18 @@ type maintenanceOperationRepository interface {
 }
 
 type maintenanceOperationHandler struct {
-	repository   maintenanceOperationRepository
-	maintenance  *maintenance.Service
-	databasePath string
-	logger       *slog.Logger
-	now          func() time.Time
+	repository  maintenanceOperationRepository
+	maintenance *maintenance.Service
+	logger      *slog.Logger
+	now         func() time.Time
 }
 
 func registerMaintenanceOperationHandler(dispatcher *providerops.Dispatcher, repository maintenanceOperationRepository,
-	service *maintenance.Service, databasePath string, logger *slog.Logger) error {
+	service *maintenance.Service, logger *slog.Logger) error {
 	if dispatcher == nil || repository == nil || service == nil {
 		return errors.New("maintenance operation dependencies are incomplete")
 	}
-	handler := &maintenanceOperationHandler{repository: repository, maintenance: service, databasePath: databasePath, logger: logger, now: time.Now}
+	handler := &maintenanceOperationHandler{repository: repository, maintenance: service, logger: logger, now: time.Now}
 	if err := dispatcher.Register(providerops.KindAdminMaintenance, handler); err != nil {
 		return fmt.Errorf("register %s operation: %w", providerops.KindAdminMaintenance, err)
 	}
@@ -47,7 +46,7 @@ func (h *maintenanceOperationHandler) HandleProviderOperation(ctx context.Contex
 	}
 	runCtx, cancel := context.WithTimeout(ctx, maintenance.RunTimeout)
 	defer cancel()
-	result, runErr := runMaintenanceTask(runCtx, h.maintenance, h.databasePath, h.now().UTC(), true)
+	result, runErr := runMaintenanceTask(runCtx, h.maintenance, h.now().UTC(), true)
 	if errors.Is(runErr, maintenance.ErrBusy) {
 		return runErr
 	}
@@ -59,13 +58,8 @@ func (h *maintenanceOperationHandler) HandleProviderOperation(ctx context.Contex
 		return h.complete(ctx, operation, item, providerops.Completion{Status: providerops.StatusFailed, ErrorCode: "MAINTENANCE_FAILED"})
 	}
 	resultJSON := "{}"
-	switch {
-	case result.BackupRetentionWarning != nil && result.MigrationSnapshotRetentionWarning != nil:
-		resultJSON = `{"backupRetentionWarning":true,"migrationSnapshotRetentionWarning":true}`
-	case result.BackupRetentionWarning != nil:
+	if result.BackupRetentionWarning != nil {
 		resultJSON = `{"backupRetentionWarning":true}`
-	case result.MigrationSnapshotRetentionWarning != nil:
-		resultJSON = `{"migrationSnapshotRetentionWarning":true}`
 	}
 	return h.complete(ctx, operation, item, providerops.Completion{Status: providerops.StatusSucceeded, ResultJSON: resultJSON})
 }

@@ -11,7 +11,7 @@ import (
 
 func pricingModelSupportTx(ctx context.Context, q pricingReader, id string) (*pricing.PriceSupport, error) {
 	var raw string
-	err := q.QueryRowContext(ctx, `SELECT diagnostics_json FROM pricing_model_versions WHERE id=? AND frozen=0`, id).Scan(&raw)
+	err := q.QueryRowContext(ctx, `SELECT diagnostics_json FROM pricing_model_versions WHERE id=$1 AND frozen=0`, id).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pricing.PriceSupport{}, nil
 	}

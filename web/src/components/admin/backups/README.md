@@ -1,9 +1,10 @@
-# Backup admin
+# Backup administration
 
-- `BackupUploadPanel.vue` streams a bounded SQLite candidate with optional SHA-256 verification into the staged restore workflow.
-- `MaintenanceTrigger.vue` confirms and tracks the idempotent manual maintenance command, emitting a completion event for backup and job refresh.
-- `MaintenanceTrigger.test.ts` covers confirmation, queued/loading state, receipt polling, completion refresh signaling, and queue errors.
-- `RestoreBackupDialog.vue` confirms a server-reviewed restore operation.
-- `BackupUploadPanel.vue`, `MaintenanceTrigger.vue`, and `RestoreBackupDialog.vue` limit Motion to upload, receipt, and confirmation state changes.
-
-`BackupInventory.vue` renders verified backups as a desktop table with signed-download, staged-restore and delete actions; `JobInventory.vue` renders durable jobs, attempts, errors and guarded retry/delete actions.
+`BackupInventory.vue` renders PostgreSQL archive metadata with download and
+reviewed delete actions. Restore is an offline operator operation, described by
+the localized page copy. Tables remain horizontally contained on mobile.
+`JobInventory.vue` renders durable job attempts, errors and retry/delete actions.
+`MaintenanceTrigger.vue` tracks the existing durable maintenance command and
+refreshes backup/job lists after completion. `MaintenanceTrigger.test.ts` covers
+confirmation, pending receipts, completion refresh and queue failures in hosted CI.
+The parent `AdminBackupsPanel.vue` owns API actions, errors and workspace tabs.

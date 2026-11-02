@@ -34,7 +34,7 @@ func TestGroupDeletionRemovesLiveCatalogAndPreservesPaidHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.DB().ExecContext(ctx, `UPDATE purchases SET status='queued' WHERE id=?`, p.ID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE purchases SET status='queued' WHERE id=$1`, p.ID); err != nil {
 		t.Fatal(err)
 	}
 	usage, err := s.XNodeGroupUsage(ctx, now)
@@ -44,11 +44,11 @@ func TestGroupDeletionRemovesLiveCatalogAndPreservesPaidHistory(t *testing.T) {
 	if err = s.DeleteXNodeGroup(ctx, "retired"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatal("queued access deleted", err)
 	}
-	if _, err = s.DB().ExecContext(ctx, `UPDATE purchases SET status='expired',entitlement_squad_uuids=NULL,combo_squad_uuids=NULL WHERE id=?`, p.ID); err != nil {
+	if _, err = s.DB().ExecContext(ctx, `UPDATE purchases SET status='expired',entitlement_squad_uuids=NULL,combo_squad_uuids=NULL WHERE id=$1`, p.ID); err != nil {
 		t.Fatal(err)
 	}
 	for _, id := range []string{"retired", "retained"} {
-		if _, err = s.DB().ExecContext(ctx, `INSERT INTO pricing_product_settings(product_type,product_id,fixed_price_minor,updated_by,updated_at) VALUES('addon',?,10,'fixture',?)`, id, stamp(now)); err != nil {
+		if _, err = s.DB().ExecContext(ctx, `INSERT INTO pricing_product_settings(product_type,product_id,fixed_price_minor,updated_by,updated_at) VALUES('addon',$1,10,'fixture',$2)`, id, stamp(now)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -59,10 +59,10 @@ func TestGroupDeletionRemovesLiveCatalogAndPreservesPaidHistory(t *testing.T) {
 		t.Fatal("delete replay", err)
 	}
 	var live, snapshot string
-	if err = s.DB().QueryRowContext(ctx, `SELECT included_squad_uuids FROM combos WHERE id=?`, c.ID).Scan(&live); err != nil || live != `["retained"]` {
+	if err = s.DB().QueryRowContext(ctx, `SELECT included_squad_uuids FROM combos WHERE id=$1`, c.ID).Scan(&live); err != nil || live != `["retained"]` {
 		t.Fatal(live, err)
 	}
-	if err = s.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=?`, p.ID).Scan(&snapshot); err != nil {
+	if err = s.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=$1`, p.ID).Scan(&snapshot); err != nil {
 		t.Fatal("legacy entitlement changed", snapshot, err)
 	}
 	var groups []string
@@ -80,7 +80,7 @@ func TestGroupDeletionRemovesLiveCatalogAndPreservesPaidHistory(t *testing.T) {
 	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pricing_product_settings WHERE product_id='retired'`).Scan(&prices); err != nil || prices != 0 {
 		t.Fatal(prices, err)
 	}
-	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=? AND kind='purchase_debit'`, p.ID).Scan(&ledger); err != nil || ledger != 1 {
+	if err = s.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE reference_id=$1 AND kind='purchase_debit'`, p.ID).Scan(&ledger); err != nil || ledger != 1 {
 		t.Fatal("paid evidence lost", ledger, err)
 	}
 }
@@ -102,7 +102,7 @@ func TestGroupDeletionCountsPAYGFundingCreditAndAccounting(t *testing.T) {
 	ctx, now := context.Background(), time.Now().UTC()
 	s, parent, _, a := paygBillingFixture(t)
 	saveDeletionGroup(t, s, a.GroupID)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=?`, parent.UserID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, parent.UserID); err != nil {
 		t.Fatal(err)
 	}
 	assertUsage := func(members int, pending bool) {
@@ -120,22 +120,22 @@ func TestGroupDeletionCountsPAYGFundingCreditAndAccounting(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertUsage(0, false)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=1,credit_started_at=? WHERE proxy_user_id=?`, stamp(now), a.ProxyUserID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=1,credit_started_at=$1 WHERE proxy_user_id=$2`, stamp(now), a.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	assertUsage(1, false)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_started_at=? WHERE proxy_user_id=?`, stamp(now.Add(-72*time.Hour)), a.ProxyUserID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_started_at=$1 WHERE proxy_user_id=$2`, stamp(now.Add(-72*time.Hour)), a.ProxyUserID); err != nil {
 		t.Fatal(err)
 	}
 	assertUsage(0, false)
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closing' WHERE id=?`, a.PeriodID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closing' WHERE id=$1`, a.PeriodID); err != nil {
 		t.Fatal(err)
 	}
 	assertUsage(0, true)
 	if err := s.DeleteXNodeGroup(ctx, a.GroupID); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatal("unfinished accounting deleted", err)
 	}
-	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closed' WHERE id=?`, a.PeriodID); err != nil {
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_periods SET status='closed' WHERE id=$1`, a.PeriodID); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.DeleteXNodeGroup(ctx, a.GroupID); err != nil {

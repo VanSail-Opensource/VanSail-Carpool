@@ -14,7 +14,7 @@ func TestSettleRaffleRetryAfterReopen(t *testing.T) {
 	const drawID = "reopened-raffle"
 	_, err := store.DB().ExecContext(ctx, `INSERT INTO activity_lucky_draws
   (id,name,description,kind,status,fee_minor,threshold,keyword,command,revision,created_at,updated_at)
-  VALUES(?,?,?,'raffle','open',?,?,?,?,?,?,?)`, drawID, "Reopened", "", 100, 1, "join", "join_draw", 1, stamp(now), stamp(now))
+  VALUES($1,$2,$3,'raffle','open',$4,$5,$6,$7,$8,$9,$10)`, drawID, "Reopened", "", 100, 1, "join", "join_draw", 1, stamp(now), stamp(now))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -42,7 +42,7 @@ func (s *Store) GrantAdminFirewallExemption(ctx context.Context, actor string, i
 			return err
 		}
 		until := now.Add(time.Duration(input.Hours) * time.Hour)
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_exemptions(id,user_id,idempotency_key,ip,price_minor,hours,until_at,created_at,issued_version,grant_kind) VALUES(?,?,?,?,0,?,?,?,?,'admin')`, grant, actor, input.Key, input.Prefix, input.Hours, stamp(until), stamp(now), version); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_firewall_exemptions(id,user_id,idempotency_key,ip,price_minor,hours,until_at,created_at,issued_version,grant_kind) VALUES($1,$2,$3,$4,0,$5,$6,$7,$8,'admin')`, grant, actor, input.Key, input.Prefix, input.Hours, stamp(until), stamp(now), version); err != nil {
 			return err
 		}
 		audit, err := ids.New()
@@ -69,7 +69,7 @@ func (s *Store) FinalizeAdminFirewallExemption(ctx context.Context, operation st
 			return err
 		}
 		var version uint64
-		err := tx.QueryRowContext(ctx, `SELECT exemption.id,exemption.until_at,exemption.issued_version,operation.status FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='grant' JOIN xnode_firewall_exemptions exemption ON exemption.id=item.target_id AND exemption.grant_kind='admin' WHERE operation.id=? AND operation.kind=?`, operation, xnode.FirewallExemptionOperation).Scan(&grant, &until, &version, &status)
+		err := tx.QueryRowContext(ctx, `SELECT exemption.id,exemption.until_at,exemption.issued_version,operation.status FROM provider_operations operation JOIN provider_operation_items item ON item.operation_id=operation.id AND item.item_key='grant' JOIN xnode_firewall_exemptions exemption ON exemption.id=item.target_id AND exemption.grant_kind='admin' WHERE operation.id=$1 AND operation.kind=$2`, operation, xnode.FirewallExemptionOperation).Scan(&grant, &until, &version, &status)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (s *Store) FinalizeAdminFirewallExemption(ctx context.Context, operation st
 		}
 		expired := !now.Before(deadline)
 		var pending bool
-		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_members WHERE active=1 AND (applied<? OR force_sync<>0))`, version).Scan(&pending); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_firewall_members WHERE active=1 AND (applied<$1 OR force_sync<>0))`, version).Scan(&pending); err != nil {
 			return err
 		}
 		if pending && !expired {
@@ -94,10 +94,10 @@ func (s *Store) FinalizeAdminFirewallExemption(ctx context.Context, operation st
 			status, errorCode = "failed", "XNODE_EXEMPTION_EXPIRED"
 		}
 		result, _ := json.Marshal(map[string]string{"exemptionId": grant})
-		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=?,provider_reference=?,error_code=?,result_json=?,completed_at=?,updated_at=? WHERE operation_id=? AND item_key='grant'`, status, grant, errorCode, string(result), stamp(now), stamp(now), operation); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status=$1,provider_reference=$2,error_code=$3,result_json=$4,completed_at=$5,updated_at=$6 WHERE operation_id=$7 AND item_key='grant'`, status, grant, errorCode, string(result), stamp(now), stamp(now), operation); err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,provider_reference=?,error_code=?,result_json=?,completed_at=?,updated_at=? WHERE id=? AND status IN ('queued','processing')`, status, grant, errorCode, string(result), stamp(now), stamp(now), operation)
+		_, err = tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,provider_reference=$2,error_code=$3,result_json=$4,completed_at=$5,updated_at=$6 WHERE id=$7 AND status IN ('queued','processing')`, status, grant, errorCode, string(result), stamp(now), stamp(now), operation)
 		done = err == nil
 		return err
 	})

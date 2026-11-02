@@ -93,7 +93,7 @@ func normalizeCarriers(values []string) []string {
 	return result
 }
 
-// ParseJSON decodes and validates the JSON representation used by SQLite.
+// ParseJSON decodes and validates the JSON representation stored as PostgreSQL text.
 func ParseJSON(raw string) (*Profile, error) {
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil

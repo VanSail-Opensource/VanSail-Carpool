@@ -49,17 +49,17 @@ func TestSquadControlsIgnoreUnrelatedProviderOperationsAndKeepEntitlementFence(t
 func TestNativeSquadPreferencesDoNotNeedLegacyLink(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 89012)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET proxy_user_id=NULL WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES(?,'b')`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES($1,'b')`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	enabled, err := store.EnabledSquadsForUser(ctx, user.ID, []string{"b", "a"})
 	if err != nil || !slices.Equal(enabled, []string{"a"}) {
 		t.Fatal(enabled, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES(?,'a')`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `INSERT INTO user_disabled_squads VALUES($1,'a')`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	enabled, err = store.EnabledSquadsForUser(ctx, user.ID, []string{"b", "a"})

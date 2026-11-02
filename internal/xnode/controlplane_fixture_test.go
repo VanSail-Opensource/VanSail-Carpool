@@ -11,7 +11,8 @@ import (
 	"io"
 	"log/slog"
 	"net/url"
-	"path/filepath"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"sync"
 	"testing"
 	"time"
@@ -65,7 +66,7 @@ type fixture struct {
 func controlFixture(t *testing.T, paid bool) fixture {
 	t.Helper()
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "panel.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +119,7 @@ func controlFixture(t *testing.T, paid bool) fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.ExecContext(ctx, `UPDATE users SET username='alice',onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
+	if _, err = db.ExecContext(ctx, `UPDATE users SET username='alice',onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	user, err = store.UserByID(ctx, user.ID)

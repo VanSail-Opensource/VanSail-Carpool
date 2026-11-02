@@ -37,12 +37,12 @@ func TestSubscriptionInfoPreservesComboAndPrepaidPAYGSnapshots(t *testing.T) {
 				t.Fatal(err)
 			}
 			if tc.combo {
-				if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=321,limit_bytes=2048 WHERE id=?`, identity.CurrentPeriodID); err != nil {
+				if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=321,limit_bytes=2048 WHERE id=$1`, identity.CurrentPeriodID); err != nil {
 					t.Fatal(err)
 				}
 			}
 			if tc.expiredCombo {
-				if _, err := f.store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired',valid_until=? WHERE user_id=?`, time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano), f.user.ID); err != nil {
+				if _, err := f.store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired',valid_until=$1 WHERE user_id=$2`, time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano), f.user.ID); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -70,14 +70,14 @@ func TestSubscriptionInfoPreservesComboAndPrepaidPAYGSnapshots(t *testing.T) {
 					t.Fatalf("PAYG fixture: %d accounts: %v", len(accounts), err)
 				}
 				for index, account := range accounts {
-					if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=? WHERE id=?`, 64+index*6, account.PeriodID); err != nil {
+					if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2`, 64+index*6, account.PeriodID); err != nil {
 						t.Fatal(err)
 					}
 					started := time.Now().UTC()
 					if index > 0 || tc.expiredCredit {
 						started = started.Add(-xnode.PAYGWindow)
 					}
-					if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=?,credit_bytes=?,credit_started_at=? WHERE proxy_user_id=?`, 3*xnode.PAYGGB, 600+index*200, started.Format(time.RFC3339Nano), account.ProxyUserID); err != nil {
+					if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_payg_accounts SET purchased_bytes=$1,credit_bytes=$2,credit_started_at=$3 WHERE proxy_user_id=$4`, 3*xnode.PAYGGB, 600+index*200, started.Format(time.RFC3339Nano), account.ProxyUserID); err != nil {
 						t.Fatal(err)
 					}
 				}

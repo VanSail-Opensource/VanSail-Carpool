@@ -13,10 +13,7 @@ import (
 
 // EnqueueExpiryReminderNotifications records newly eligible 48-hour reminders.
 func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Context, now time.Time) (int, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -24,9 +21,9 @@ func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Cont
 	defer func() { _ = tx.Rollback() }()
 	rows, err := tx.QueryContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_until
 		FROM purchases JOIN combos ON combos.id=purchases.combo_id
-		WHERE purchases.status='active' AND purchases.valid_until>? AND purchases.valid_until<=?
+		WHERE purchases.status='active' AND purchases.valid_until>$1 AND purchases.valid_until<=$2
 		AND purchases.auto_renew_enabled=0 AND NOT EXISTS (
-			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND queued.valid_until>?
+			SELECT 1 FROM purchases queued WHERE queued.user_id=purchases.user_id AND queued.status='queued' AND queued.valid_until>$3
 		) ORDER BY purchases.valid_until,purchases.id`, stamp(now), stamp(now.Add(48*time.Hour)), stamp(now))
 	if err != nil {
 		return 0, err
@@ -69,10 +66,7 @@ func (s *Store) retryAttempt_EnqueueExpiryReminderNotifications(ctx context.Cont
 // EnqueueTrafficThresholdNotification records one event per purchase reset period.
 func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Context, remoteID string, used, limit int64,
 	remoteReset string, lastReset *time.Time, now time.Time) (bool, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
@@ -82,8 +76,8 @@ func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Con
 	err = tx.QueryRowContext(ctx, `SELECT purchases.id,purchases.user_id,combos.name,purchases.valid_from,
 		COALESCE(purchases.entitlement_reset_strategy,combos.reset_strategy)
 		FROM users JOIN purchases ON purchases.user_id=users.id JOIN combos ON combos.id=purchases.combo_id
-		WHERE users.proxy_user_id=? AND purchases.status='active'
-		AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`,
+		WHERE users.proxy_user_id=$1 AND purchases.status='active'
+		AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`,
 		remoteID, stamp(now), stamp(now)).Scan(&purchaseID, &userID, &combo, &validFrom, &reset)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -99,8 +93,7 @@ func (s *Store) retryAttempt_EnqueueTrafficThresholdNotification(ctx context.Con
 		anchor = stamp(lastReset.UTC())
 	}
 	var alreadyQueued int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_notification_events
-		WHERE event_key LIKE ? AND created_at>=?)`, "traffic-90:"+purchaseID+":%", anchor).Scan(&alreadyQueued); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM user_notification_events\n\t\tWHERE event_key ILIKE $1 AND created_at>=$2))::bigint", "traffic-90:"+purchaseID+":%", anchor).Scan(&alreadyQueued); err != nil {
 		return false, err
 	}
 	if alreadyQueued == 1 {

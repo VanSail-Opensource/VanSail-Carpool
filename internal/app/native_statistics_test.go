@@ -6,19 +6,20 @@ import (
 	"io"
 	"log/slog"
 	"net/url"
-	"path/filepath"
+
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func TestNativeStatisticsNeverFallsBackToTheSourceProvider(t *testing.T) {
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "statistics.db"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatal(err)
 	}

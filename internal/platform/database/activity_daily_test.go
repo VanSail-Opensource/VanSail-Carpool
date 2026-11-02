@@ -66,7 +66,7 @@ func TestDailyActivityRewardCanReduceExistingDebt(t *testing.T) {
 		t.Fatalf("BalanceAfterMinor = %d, want -375", claimed.BalanceAfterMinor)
 	}
 	var ledgerCount int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE kind='activity_daily_checkin' AND reference_id=?`, claimed.ID).Scan(&ledgerCount); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE kind='activity_daily_checkin' AND reference_id=$1`, claimed.ID).Scan(&ledgerCount); err != nil {
 		t.Fatalf("count ledger: %v", err)
 	}
 	if ledgerCount != 1 {

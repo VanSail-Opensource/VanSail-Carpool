@@ -49,7 +49,7 @@ func TestRafflePublishingFreezesTermsAndCleansUpLateMessage(t *testing.T) {
 	}
 	var cleanup int
 	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='draw_telegram_delete'
-		AND status='pending' AND CAST(json_extract(payload,'$.messageId') AS INTEGER)=42`).Scan(&cleanup); err != nil || cleanup != 1 {
+		AND status='pending' AND CAST((CASE ((payload)::jsonb #> '{messageId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{messageId}' END) AS BIGINT)=42`).Scan(&cleanup); err != nil || cleanup != 1 {
 		t.Fatalf("late cleanup jobs = %d, %v", cleanup, err)
 	}
 	if _, err = store.SettleRaffle(ctx, draw.ID, fixedActivityRandom{}, now); err != nil {
@@ -72,7 +72,7 @@ func TestSettlingRaffleReservesTriggers(t *testing.T) {
 			if err = store.ConfirmRafflePublished(ctx, first.ID, 42, now); err != nil {
 				t.Fatal(err)
 			}
-			if _, err = store.DB().ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling' WHERE id=?`, first.ID); err != nil {
+			if _, err = store.DB().ExecContext(ctx, `UPDATE activity_lucky_draws SET status='settling' WHERE id=$1`, first.ID); err != nil {
 				t.Fatal(err)
 			}
 			input := auditRaffleInput("other", "other_draw")

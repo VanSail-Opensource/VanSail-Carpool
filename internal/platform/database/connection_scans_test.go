@@ -61,12 +61,11 @@ func TestConnectionScanReplayAndMonotonicLifecycle(t *testing.T) {
 		t.Fatalf("ConnectionScanForUser() = (%+v, %v)", owned, err)
 	}
 	var sensitiveColumns, jobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('connection_scans')
-		WHERE name IN ('ip','handle','result_json')`).Scan(&sensitiveColumns); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM pg_attribute WHERE attrelid=to_regclass('connection_scans') AND attnum>0 AND NOT attisdropped AND attname IN ('ip','handle','result_json')`).Scan(&sensitiveColumns); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='connection_scan_request'
-		AND json_extract(payload,'$.scanId')=?`, scan.ID).Scan(&jobs); err != nil {
+		AND (CASE ((payload)::jsonb #> '{scanId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{scanId}' END)=$1`, scan.ID).Scan(&jobs); err != nil {
 		t.Fatal(err)
 	}
 	if sensitiveColumns != 0 || jobs != 1 {

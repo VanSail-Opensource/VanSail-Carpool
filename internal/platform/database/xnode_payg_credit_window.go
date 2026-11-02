@@ -23,10 +23,10 @@ func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 	covered := min(bytes, a.CreditBytes)
 	a.CreditBytes -= covered
 	if bytes > 0 {
-		result, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES(?,?,?,?)
+		result, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES($1,$2,$3,$4)
  ON CONFLICT(proxy_user_id,through) DO UPDATE SET traffic_bytes=xnode_payg_windows.traffic_bytes+excluded.traffic_bytes,
  unbilled_bytes=xnode_payg_windows.unbilled_bytes+excluded.unbilled_bytes
- WHERE xnode_payg_windows.traffic_bytes<=?`, a.ProxyUserID, paygWindowStamp(through), bytes, bytes-covered, math.MaxInt64-bytes)
+ WHERE xnode_payg_windows.traffic_bytes<=$5`, a.ProxyUserID, paygWindowStamp(through), bytes, bytes-covered, math.MaxInt64-bytes)
 		if err != nil {
 			return err
 		}
@@ -41,7 +41,7 @@ func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 	if err := settlePAYGWindowTx(ctx, tx, a, through, true, now); err != nil {
 		return err
 	}
-	_, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=? WHERE proxy_user_id=?`, a.CreditBytes, a.ProxyUserID)
+	_, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1 WHERE proxy_user_id=$2`, a.CreditBytes, a.ProxyUserID)
 	return err
 }
 
@@ -50,7 +50,7 @@ func recordPAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, through time.Time, debt bool, now time.Time) error {
 	from, to := paygWindowStamp(through.Add(-xnode.PAYGWindow)), paygWindowStamp(through)
 	var traffic, pending int64
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(traffic_bytes),0),COALESCE(SUM(unbilled_bytes),0) FROM xnode_payg_windows WHERE proxy_user_id=? AND through>? AND through<=?`, a.ProxyUserID, from, to).Scan(&traffic, &pending); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(traffic_bytes),0),COALESCE(SUM(unbilled_bytes),0) FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through>$2 AND through<=$3`, a.ProxyUserID, from, to).Scan(&traffic, &pending); err != nil {
 		return err
 	}
 	if traffic >= xnode.PAYGStartBytes && pending > 0 {
@@ -65,10 +65,10 @@ func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 			return err
 		}
 		a.CreditBytes -= pending
-		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=? WHERE proxy_user_id=?`, a.CreditBytes, a.ProxyUserID); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_accounts SET credit_bytes=$1 WHERE proxy_user_id=$2`, a.CreditBytes, a.ProxyUserID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_windows SET unbilled_bytes=0 WHERE proxy_user_id=? AND through>? AND through<=?`, a.ProxyUserID, from, to); err != nil {
+		if _, err := tx.ExecContext(ctx, `UPDATE xnode_payg_windows SET unbilled_bytes=0 WHERE proxy_user_id=$1 AND through>$2 AND through<=$3`, a.ProxyUserID, from, to); err != nil {
 			return err
 		}
 	}
@@ -76,12 +76,12 @@ func settlePAYGWindowTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, t
 	// samples can never affect a future rolling decision: they expire first.
 	// Keep pending evidence, and avoid scanning 72 hours of high-volume reports.
 	if traffic >= xnode.PAYGStartBytes {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=? AND unbilled_bytes=0 AND through<(
+		if _, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND unbilled_bytes=0 AND through<(
  SELECT MAX(through) FROM (SELECT through,SUM(traffic_bytes) OVER (ORDER BY through DESC) AS total
- FROM xnode_payg_windows WHERE proxy_user_id=? AND through>? AND through<=?) recent WHERE total>=?)`, a.ProxyUserID, a.ProxyUserID, from, to, xnode.PAYGStartBytes); err != nil {
+ FROM xnode_payg_windows WHERE proxy_user_id=$2 AND through>$3 AND through<=$4) recent WHERE total>=$5)`, a.ProxyUserID, a.ProxyUserID, from, to, xnode.PAYGStartBytes); err != nil {
 			return err
 		}
 	}
-	_, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=? AND through<=?`, a.ProxyUserID, from)
+	_, err := tx.ExecContext(ctx, `DELETE FROM xnode_payg_windows WHERE proxy_user_id=$1 AND through<=$2`, a.ProxyUserID, from)
 	return err
 }

@@ -62,7 +62,7 @@ func (s *Store) ipLiveRetryDelay(ctx context.Context) (time.Duration, bool) {
 // IPLookupReportByID loads one report row with current saved settings.
 func (s *Store) IPLookupReportByID(ctx context.Context, id string) (iplookup.Report, iplookup.Config, error) {
 	var raw, configJSON string
-	err := s.db.QueryRowContext(ctx, `SELECT report_json,COALESCE((SELECT value FROM settings WHERE key=?),'') FROM ip_lookup_reports WHERE id=?`, iplookup.SettingKey, id).Scan(&raw, &configJSON)
+	err := s.db.QueryRowContext(ctx, `SELECT report_json,COALESCE((SELECT value FROM settings WHERE key=$1),'') FROM ip_lookup_reports WHERE id=$2`, iplookup.SettingKey, id).Scan(&raw, &configJSON)
 	if errors.Is(err, sql.ErrNoRows) {
 		return iplookup.Report{}, iplookup.Config{}, iplookup.ErrRepairGone
 	}
@@ -87,7 +87,7 @@ func (s *Store) UpdateIPLookupCachedReport(ctx context.Context, report iplookup.
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=?,report_json=? WHERE id=? AND status='partial'`, report.Status, string(raw), report.ID)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_reports SET status=$1,report_json=$2 WHERE id=$3 AND status='partial'`, report.Status, string(raw), report.ID)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (s *Store) UpdateIPLookupCachedReport(ctx context.Context, report iplookup.
 // IPLiveSnapshotByID loads one stored snapshot with its freeze status.
 func (s *Store) IPLiveSnapshotByID(ctx context.Context, id string) (iplookup.LiveDetails, string, error) {
 	var raw, status string
-	err := s.db.QueryRowContext(ctx, `SELECT details_json,status FROM ip_lookup_live_snapshots WHERE id=?`, id).Scan(&raw, &status)
+	err := s.db.QueryRowContext(ctx, `SELECT details_json,status FROM ip_lookup_live_snapshots WHERE id=$1`, id).Scan(&raw, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return iplookup.LiveDetails{}, "", iplookup.ErrRepairGone
 	}
@@ -135,7 +135,7 @@ func (s *Store) UpdateIPLiveSnapshot(ctx context.Context, id string, details ipl
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_live_snapshots SET details_json=?,status=? WHERE id=? AND status='partial'`, string(raw), status, id)
+	result, err := s.db.ExecContext(ctx, `UPDATE ip_lookup_live_snapshots SET details_json=$1,status=$2 WHERE id=$3 AND status='partial'`, string(raw), status, id)
 	if err != nil {
 		return err
 	}

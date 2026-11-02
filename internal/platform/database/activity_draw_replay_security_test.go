@@ -50,9 +50,9 @@ func TestInstantDrawReplayIsBoundToDrawAndMember(t *testing.T) {
 	}
 	var balance, results, ledger int
 	if err = store.DB().QueryRowContext(ctx, `SELECT txb_minor,
-		(SELECT COUNT(*) FROM activity_draw_results WHERE user_id=?),
-		(SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind IN ('activity_draw_fee','activity_draw_reward'))
-		FROM balances WHERE user_id=?`, firstUser.ID, firstUser.ID, firstUser.ID).Scan(&balance, &results, &ledger); err != nil {
+		(SELECT COUNT(*) FROM activity_draw_results WHERE user_id=$1),
+		(SELECT COUNT(*) FROM ledger_entries WHERE user_id=$2 AND kind IN ('activity_draw_fee','activity_draw_reward'))
+		FROM balances WHERE user_id=$3`, firstUser.ID, firstUser.ID, firstUser.ID).Scan(&balance, &results, &ledger); err != nil {
 		t.Fatal(err)
 	}
 	if balance != 950 || results != 1 || ledger != 2 {

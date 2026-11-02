@@ -13,17 +13,14 @@ import (
 
 // ReplaceAdminCombo changes active configuration without moving TXB facts.
 func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminComboReplacementInput, now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=?
-		AND purchases.status IN ('activating','active') AND purchases.valid_from<=? AND purchases.valid_until>?
+	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1
+		AND purchases.status IN ('activating','active') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
 		ORDER BY purchases.valid_from DESC LIMIT 1`, input.UserID, stamp(now), stamp(now)))
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -47,7 +44,7 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 		return operation.Receipt, nil
 	}
 	var comboExists int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM combos WHERE id=?`, input.ComboID).Scan(&comboExists); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM combos WHERE id=$1`, input.ComboID).Scan(&comboExists); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	if comboExists != 1 {
@@ -57,11 +54,11 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_traffic_limit_bytes=NULL,
-		entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=?,
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=$1,entitlement_traffic_limit_bytes=NULL,
+		entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=$2,
 		reward_renewal_price_minor=NULL,reward_traffic_renewal=1,
-		reward_renewal_traffic_limit_bytes=NULL,updated_at=?
-		WHERE id=? AND user_id=? AND status IN ('activating','active')`, input.ComboID, string(addons), stamp(now), purchase.ID, input.UserID)
+		reward_renewal_traffic_limit_bytes=NULL,updated_at=$3
+		WHERE id=$4 AND user_id=$5 AND status IN ('activating','active')`, input.ComboID, string(addons), stamp(now), purchase.ID, input.UserID)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -77,7 +74,7 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 		return model.OperationReceipt{}, err
 	}
 	var newComboName string
-	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=?`, input.ComboID).Scan(&newComboName); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT name FROM combos WHERE id=$1`, input.ComboID).Scan(&newComboName); err != nil {
 		return model.OperationReceipt{}, err
 	}
 	facts := adminNotificationBase("combo_replacement", input.Reason, now)

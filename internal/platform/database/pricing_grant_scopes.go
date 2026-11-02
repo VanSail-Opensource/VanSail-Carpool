@@ -9,7 +9,7 @@ import (
 // and every financial debit independently checks current policy, expiry and spend.
 func (s *Store) pricingGrantScopes(ctx context.Context, now time.Time) (map[string]bool, error) {
 	ids, err := pricingCached(ctx, s, "personal-grant-scopes", 30*time.Second, func() ([]string, error) {
-		rows, e := s.db.QueryContext(ctx, `SELECT scope_id FROM pricing_admin_overrides WHERE command='PERSONAL_DISCOUNT' AND status='ACTIVE' AND starts_at<=? AND expires_at>? ORDER BY scope_id LIMIT 16384`, pricingStamp(now), pricingStamp(now))
+		rows, e := s.db.QueryContext(ctx, `SELECT scope_id FROM pricing_admin_overrides WHERE command='PERSONAL_DISCOUNT' AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 ORDER BY scope_id LIMIT 16384`, pricingStamp(now), pricingStamp(now))
 		if e != nil {
 			return nil, e
 		}

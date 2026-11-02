@@ -3,12 +3,13 @@ package billing
 import (
 	"context"
 	"errors"
-	"path/filepath"
+
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -80,7 +81,7 @@ func TestPaymentOperationAmbiguityIsNotRetriedAndCallbackResolves(t *testing.T) 
 
 func newPaymentOperationStore(t *testing.T, telegramID int64) (*database.Store, model.User) {
 	t.Helper()
-	db, err := database.Open(context.Background(), filepath.Join(t.TempDir(), "payment-operations.db"))
+	db, err := testdatabase.Open(context.Background(), t)
 	if err != nil {
 		t.Fatalf("database.Open(): %v", err)
 	}

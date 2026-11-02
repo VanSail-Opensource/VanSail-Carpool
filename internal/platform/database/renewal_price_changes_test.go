@@ -115,7 +115,7 @@ func saveRenewalSquadPrice(t *testing.T, store *Store, id string, current int64)
 func assertRenewalAddonCharge(t *testing.T, store *Store, purchaseID string, want int64) {
 	t.Helper()
 	var charged int64
-	if err := store.DB().QueryRow(`SELECT charged_txb_minor FROM purchase_addons WHERE purchase_id=?`, purchaseID).Scan(&charged); err != nil {
+	if err := store.DB().QueryRow(`SELECT charged_txb_minor FROM purchase_addons WHERE purchase_id=$1`, purchaseID).Scan(&charged); err != nil {
 		t.Fatal(err)
 	}
 	if charged != want {

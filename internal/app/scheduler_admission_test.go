@@ -31,11 +31,11 @@ func (*admissionRepository) ClaimPriorityOutboxJob(context.Context, time.Time) (
 	return nil, nil
 }
 
-func (*admissionRepository) CompleteOutboxJob(context.Context, string, int, error, time.Time) error {
+func (*admissionRepository) CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error {
 	return nil
 }
 
-func (*admissionRepository) RenewOutboxJob(context.Context, string, int, time.Time) (bool, error) {
+func (*admissionRepository) RenewOutboxClaim(context.Context, model.OutboxJob, time.Time) (bool, error) {
 	return true, nil
 }
 

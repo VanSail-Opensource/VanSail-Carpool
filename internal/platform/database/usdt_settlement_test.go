@@ -18,10 +18,10 @@ func TestUSDTSettlementRecoversExpiredOrdersAndClaimsTransfersOnce(t *testing.T)
 	q := reserveUSDTTestQuote(t, s, order)
 	created := time.Now().UTC().Add(-time.Hour)
 	expires := created.Add(30 * time.Minute)
-	if _, err := s.db.Exec("UPDATE payment_orders SET created_at=?,expires_at=?,status='expired' WHERE id=?", stamp(created), stamp(expires), order.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE payment_orders SET created_at=$1,expires_at=$2,status='expired' WHERE id=$3", stamp(created), stamp(expires), order.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec("UPDATE usdt_quotes SET expires_at=? WHERE order_id=?", stamp(expires), order.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE usdt_quotes SET expires_at=$1 WHERE order_id=$2", stamp(expires), order.ID); err != nil {
 		t.Fatal(err)
 	}
 	transfer := usdtTestTransfer(q, "in-window", created.Add(time.Minute))
@@ -65,12 +65,12 @@ func TestUSDTReviewEnforcesRoleAmountAndAudit(t *testing.T) {
 	user := createTestUser(t, s, 88004)
 	admin := createTestUser(t, s, 88005)
 	ctx := context.Background()
-	if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=?", admin.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE users SET role='admin' WHERE id=$1", admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	order := createUSDTTestOrder(t, s, user.ID, "1.000")
 	q := reserveUSDTTestQuote(t, s, order)
-	if _, err := s.db.Exec("UPDATE payment_orders SET cancelled_at=? WHERE id=?", stamp(order.CreatedAt), order.ID); err != nil {
+	if _, err := s.db.Exec("UPDATE payment_orders SET cancelled_at=$1 WHERE id=$2", stamp(order.CreatedAt), order.ID); err != nil {
 		t.Fatal(err)
 	}
 	id := saveUSDTTestTransfer(t, s, usdtTestTransfer(q, "late", order.CreatedAt.Add(time.Second)))

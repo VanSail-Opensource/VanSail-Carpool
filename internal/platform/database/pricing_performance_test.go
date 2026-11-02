@@ -3,11 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+
 	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 // The fixed path must not perform per-product reads or create compute work.
@@ -15,7 +16,7 @@ import (
 func BenchmarkPricingFixedCatalog(b *testing.B) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	db, err := Open(ctx, filepath.Join(b.TempDir(), "pricing-benchmark.db"))
+	db, err := testdatabase.Open(ctx, b)
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -8,7 +8,7 @@ import (
 
 // AccountOperationPermitted rejects old lifecycle receipts before dispatch.
 func (s *Store) AccountOperationPermitted(ctx context.Context, operationID string) (bool, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT u.account_status,u.last_purged_at,o.created_at FROM provider_operations o JOIN users u ON u.id=o.owner_user_id OR u.id=o.actor_user_id WHERE o.id=?`, operationID)
+	rows, err := s.db.QueryContext(ctx, `SELECT u.account_status,u.last_purged_at,o.created_at FROM provider_operations o JOIN users u ON u.id=o.owner_user_id OR u.id=o.actor_user_id WHERE o.id=$1`, operationID)
 	if err != nil {
 		return false, err
 	}
@@ -42,7 +42,7 @@ func (s *Store) AccountOperationPermitted(ctx context.Context, operationID strin
 func accountOrderRetiredTx(ctx context.Context, tx *sql.Tx, userID string, createdAt time.Time) (bool, error) {
 	var status string
 	var cutoff sql.NullString
-	err := tx.QueryRowContext(ctx, `SELECT account_status,last_purged_at FROM users WHERE id=?`, userID).Scan(&status, &cutoff)
+	err := tx.QueryRowContext(ctx, `SELECT account_status,last_purged_at FROM users WHERE id=$1`, userID).Scan(&status, &cutoff)
 	if err != nil {
 		return false, err
 	}

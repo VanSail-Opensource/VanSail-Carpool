@@ -17,7 +17,8 @@ func (s *Store) ListPMConversations(ctx context.Context, cursor, search string, 
 	query, args := pmConversationSelect+` WHERE 1=1`, []any{}
 	if search != "" {
 		pattern := "%" + escapeLike(search) + "%"
-		query += ` AND ((u.telegram_first_name||' '||u.telegram_last_name) LIKE ? ESCAPE '\' COLLATE NOCASE OR u.telegram_username LIKE ? ESCAPE '\' COLLATE NOCASE OR CAST(u.telegram_id AS TEXT) LIKE ? ESCAPE '\')`
+		query += fmt.Sprintf(" AND ((u.telegram_first_name||' '||u.telegram_last_name) ILIKE $%d ESCAPE '\\'  OR u.telegram_username ILIKE $%d ESCAPE '\\'  OR CAST(u.telegram_id AS TEXT) ILIKE $%d ESCAPE '\\')", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, pattern, pattern, pattern)
 	}
 	filter := pageFilterFingerprint(search)
@@ -26,10 +27,12 @@ func (s *Store) ListPMConversations(ctx context.Context, cursor, search string, 
 		if err != nil {
 			return nil, nil, err
 		}
-		query += ` AND (c.created_at<? OR (c.created_at=? AND c.id<?))`
+		query += fmt.Sprintf(" AND (c.created_at<$%d OR (c.created_at=$%d AND c.id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
-	query += ` ORDER BY c.created_at DESC,c.id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY c.created_at DESC,c.id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -59,7 +62,7 @@ func (s *Store) ListPMConversations(ctx context.Context, cursor, search string, 
 func (s *Store) ListPMDeliveries(ctx context.Context, id string) ([]model.PMDelivery, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT o.id,o.status,o.error_code,o.created_at,r.target_type,r.target_id,r.provider_reference,p.provider_reference,
 		read_state.read_at,COALESCE(read_state.source,'')
-		FROM provider_operations o JOIN provider_operation_items p ON p.operation_id=o.id AND p.item_key='topic' AND p.target_id=?
+		FROM provider_operations o JOIN provider_operation_items p ON p.operation_id=o.id AND p.item_key='topic' AND p.target_id=$1
 		JOIN provider_operation_items r ON r.operation_id=o.id AND r.item_key='relay'
 		LEFT JOIN telegram_pm_read_status read_state ON read_state.operation_id=o.id WHERE o.kind='telegram_pm_relay'
 		ORDER BY o.created_at DESC,o.id DESC LIMIT 50`, id)

@@ -20,7 +20,7 @@ func applyCompensationExtension(ctx context.Context, store *Store, tx *sql.Tx, e
 		return err
 	}
 	for _, target := range targets {
-		before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=?`, target.PurchaseID))
+		before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, target.PurchaseID))
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func compensationNotificationFacts(ctx context.Context, tx *sql.Tx, event compen
 
 func compensationSquadNames(ctx context.Context, tx *sql.Tx, eventID string) ([]string, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT squad_name FROM node_compensation_event_squads
-		WHERE event_id=? ORDER BY squad_name,squad_uuid`, eventID)
+		WHERE event_id=$1 ORDER BY squad_name,squad_uuid`, eventID)
 	if err != nil {
 		return nil, err
 	}

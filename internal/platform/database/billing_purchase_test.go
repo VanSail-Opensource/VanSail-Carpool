@@ -65,7 +65,7 @@ func TestCreatePurchaseSnapshotsAndRenewsAtCurrentTermEnd(t *testing.T) {
 	}
 	var provisioningJobs int
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user'
-		AND json_extract(payload,'$.userId')=?`, user.ID).Scan(&provisioningJobs); err != nil || provisioningJobs != 1 {
+		AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$1`, user.ID).Scan(&provisioningJobs); err != nil || provisioningJobs != 1 {
 		t.Fatalf("queued purchase provisioning jobs = %d, err %v", provisioningJobs, err)
 	}
 	if second.CoreGrossTXBMinor != 1_000 {
@@ -183,13 +183,13 @@ func TestCreatePurchaseIdempotencyReplaysAndRejectsFingerprintReuse(t *testing.T
 		t.Fatal("CreatePurchase() accepted a missing idempotency key")
 	}
 	var purchases, debits, jobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE user_id=?`, user.ID).Scan(&purchases); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM purchases WHERE user_id=$1`, user.ID).Scan(&purchases); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='purchase_debit'`, user.ID).Scan(&debits); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='purchase_debit'`, user.ID).Scan(&debits); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=?`, `{"purchaseId":"`+purchaseID+`"}`).Scan(&jobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_apply_entitlement' AND payload=$1`, `{"purchaseId":"`+purchaseID+`"}`).Scan(&jobs); err != nil {
 		t.Fatal(err)
 	}
 	if purchases != 1 || debits != 1 || jobs != 1 {

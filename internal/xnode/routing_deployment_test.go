@@ -148,7 +148,7 @@ func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 			claimed = true
 			break
 		}
-		if err = f.store.CompleteOutboxJob(ctx, job.ID, job.Attempts, nil, time.Now()); err != nil {
+		if err = f.store.CompleteOutboxClaim(ctx, *job, nil, time.Now()); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -28,7 +28,7 @@ COPY --from=frontend-build /src/internal/webui/dist ./internal/webui/dist
 RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/server ./cmd/db-schema ./cmd/db-migrate
+    go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/server ./cmd/db-schema
 
 FROM alpine:3.24 AS runtime
 ARG VERSION=dev
@@ -49,7 +49,7 @@ RUN apk add --no-cache ca-certificates tzdata postgresql18 postgresql18-contrib 
        /var/lib/pgbackrest /var/lib/pgbackrest/log /var/lib/pgbackrest/spool /var/lib/pgbackrest/lock
 
 COPY --from=go-build --chown=10001:10001 /out/server /usr/local/bin/vansail-carpool
-COPY --from=go-build --chown=10001:10001 /out/db-schema /out/db-migrate /usr/local/bin/
+COPY --from=go-build --chown=10001:10001 /out/db-schema /usr/local/bin/
 COPY docs/licenses /usr/share/licenses/vansail-carpool
 COPY --chmod=755 deploy/embedded/*.sh /usr/local/lib/vansail/
 COPY deploy/postgres/init.sh /usr/local/lib/vansail/init-roles.sh

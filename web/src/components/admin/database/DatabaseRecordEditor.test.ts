@@ -14,7 +14,6 @@ const table: DatabaseTable = {
     { name: 'role', declaredType: 'TEXT', nullable: false, primaryKeyPosition: 0, editable: true, sensitive: false },
   ],
   highRisk: true,
-  supportsRowId: false,
   warning: 'Direct edits bypass hooks.',
 }
 const review: DatabaseMutationReview = {

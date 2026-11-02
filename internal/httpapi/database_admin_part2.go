@@ -9,33 +9,9 @@ import (
 	"strings"
 )
 
-func mapRestoreOperation(job backup.RestoreJob) restoreOperationResponse {
-	status := "staging"
-	switch job.Status {
-	case "ready", "applying":
-		status = "restarting"
-	case "complete":
-		status = "complete"
-	case "failed", "rolled_back":
-		status = "failed"
-	}
-	var message *string
-	if status == "failed" {
-		value := "Restore did not complete. The original database remains available."
-		message = &value
-	}
-	return restoreOperationResponse{ID: job.ID, BackupID: job.BackupID, Status: status, Error: message, CreatedAt: job.CreatedAt, UpdatedAt: job.UpdatedAt}
-}
-
 func (h *DatabaseAdministrationHTTP) failure(w http.ResponseWriter, r *http.Request, err error) {
 	status, code, message := http.StatusUnprocessableEntity, "DATABASE_ADMIN_FAILED", "The database administration operation could not be completed."
 	switch {
-	case errors.Is(err, backup.ErrUploadTooLarge):
-		status, code, message = http.StatusRequestEntityTooLarge, "BACKUP_TOO_LARGE", "The backup exceeds the configured upload limit."
-	case errors.Is(err, backup.ErrUploadHashMismatch):
-		status, code, message = http.StatusBadRequest, "BACKUP_HASH_MISMATCH", "The uploaded backup does not match its SHA-256 digest."
-	case errors.Is(err, backup.ErrUploadConflict):
-		status, code, message = http.StatusConflict, "BACKUP_UPLOAD_CONFLICT", "The upload key is already associated with different or unfinished content."
 	case errors.Is(err, databaseadmin.ErrTableNotFound), errors.Is(err, databaseadmin.ErrRecordNotFound), errors.Is(err, backup.ErrBackupNotFound):
 		status, code, message = http.StatusNotFound, "NOT_FOUND", "The requested table, record, backup, or restore was not found."
 	case errors.Is(err, databaseadmin.ErrOptimisticConflict), errors.Is(err, databaseadmin.ErrReviewConflict), errors.Is(err, backup.ErrRestoreConflict):

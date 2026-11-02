@@ -3,7 +3,7 @@ package databaseadmin
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
+
 	"strings"
 )
 
@@ -12,21 +12,15 @@ func (s *Service) encodeQueryCursor(schema tableSchema, raw []any, fingerprint s
 		return "", errors.New("vault is required for query cursors")
 	}
 	keys := make([]string, 0, len(raw))
-	if schema.UsesRowID {
-		value, err := canonicalKeyValue(schemaColumn{Column: Column{Name: "_rowid_"}, Affinity: affinityInteger}, raw[0])
+
+	for index, column := range schema.KeyColumns {
+		value, err := canonicalKeyValue(column, raw[index])
 		if err != nil {
 			return "", err
 		}
 		keys = append(keys, value)
-	} else {
-		for index, column := range schema.KeyColumns {
-			value, err := canonicalKeyValue(column, raw[index])
-			if err != nil {
-				return "", err
-			}
-			keys = append(keys, value)
-		}
 	}
+
 	encoded, err := json.Marshal(queryCursor{Fingerprint: fingerprint, Keys: keys})
 	if err != nil {
 		return "", err
@@ -50,16 +44,7 @@ func (s *Service) decodeQueryCursor(schema tableSchema, cursor, fingerprint stri
 	if err := json.Unmarshal([]byte(plain), &decoded); err != nil || decoded.Fingerprint != fingerprint {
 		return nil, errors.New("query cursor fingerprint differs")
 	}
-	if schema.UsesRowID {
-		if len(decoded.Keys) != 1 {
-			return nil, errors.New("query cursor key shape differs")
-		}
-		value, err := strconv.ParseInt(decoded.Keys[0], 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		return []any{value}, nil
-	}
+
 	if len(decoded.Keys) != len(schema.KeyColumns) {
 		return nil, errors.New("query cursor key shape differs")
 	}

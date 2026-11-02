@@ -13,10 +13,7 @@ import (
 // CompleteOutboxRetryOperation reactivates one job and completes its receipt atomically.
 func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, operationID, itemKey, jobID string,
 	now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -25,8 +22,8 @@ func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, o
 	var targetID string
 	err = tx.QueryRowContext(ctx, `SELECT item.target_id FROM provider_operation_items item
 		JOIN provider_operations operation ON operation.id=item.operation_id
-		WHERE operation.id=? AND operation.kind=? AND operation.status='processing'
-		AND item.item_key=? AND item.target_type='outbox_job' AND item.status='processing'`,
+		WHERE operation.id=$1 AND operation.kind=$2 AND operation.status='processing'
+		AND item.item_key=$3 AND item.target_type='outbox_job' AND item.status='processing'`,
 		operationID, providerops.KindOutboxRetry, itemKey).Scan(&targetID)
 	if errors.Is(err, sql.ErrNoRows) || targetID != jobID {
 		return ErrConflict
@@ -35,7 +32,7 @@ func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, o
 		return err
 	}
 	var kind, status string
-	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=?`, jobID).Scan(&kind, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT kind,status FROM outbox_jobs WHERE id=$1`, jobID).Scan(&kind, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -50,12 +47,12 @@ func (s *Store) retryAttempt_CompleteOutboxRetryOperation(ctx context.Context, o
 	}
 	stampNow := stamp(now.UTC())
 	if _, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',error_code='',
-		result_json='{}',completed_at=?,updated_at=? WHERE operation_id=? AND item_key=? AND status='processing'`,
+		result_json='{}',completed_at=$1,updated_at=$2 WHERE operation_id=$3 AND item_key=$4 AND status='processing'`,
 		stampNow, stampNow, operationID, itemKey); err != nil {
 		return fmt.Errorf("complete outbox retry item: %w", err)
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status='succeeded',error_code='',
-		result_json='{}',completed_at=?,updated_at=? WHERE id=? AND status='processing'`,
+		result_json='{}',completed_at=$1,updated_at=$2 WHERE id=$3 AND status='processing'`,
 		stampNow, stampNow, operationID)
 	if err != nil {
 		return fmt.Errorf("complete outbox retry operation: %w", err)
@@ -79,7 +76,7 @@ func reactivateOutboxJobTx(ctx context.Context, tx *sql.Tx, jobID, kind string, 
 		}
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,last_error='',
-		available_at=?,updated_at=? WHERE id=? AND status='failed'`, stamp(now), stamp(now), jobID)
+		available_at=$1,updated_at=$2 WHERE id=$3 AND status='failed'`, stamp(now), stamp(now), jobID)
 	if isUniqueViolation(err) {
 		return ErrConflict
 	}

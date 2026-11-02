@@ -15,7 +15,7 @@ func (s *Store) LatestConnectivityAttempts(ctx context.Context, configHash strin
 	rows, err := s.db.QueryContext(ctx, `SELECT `+connectivityAttemptColumns+` FROM (
 		SELECT `+connectivityAttemptColumns+`,ROW_NUMBER() OVER
 		(PARTITION BY host_uuid ORDER BY started_at DESC,id DESC) AS freshness
-		FROM host_connectivity_attempts WHERE config_hash=? AND host_uuid IS NOT NULL AND started_at>?
+		FROM host_connectivity_attempts WHERE config_hash=$1 AND host_uuid IS NOT NULL AND started_at>$2
 		) WHERE freshness=1 ORDER BY host_uuid`, configHash, connectivityStamp(now.Add(-connectivityRetention)))
 	if err != nil {
 		return nil, fmt.Errorf("query latest connectivity attempts: %w", err)
@@ -34,10 +34,11 @@ func (s *Store) ConnectivityHistory(ctx context.Context, hostUUID, cursor string
 	if hostUUID != "" && (!connectivityHostPattern.MatchString(hostUUID) || hostUUID == uuid.Nil.String()) {
 		return connectivity.HistoryPage{}, ErrConflict
 	}
-	query := `SELECT ` + connectivityAttemptColumns + ` FROM host_connectivity_attempts WHERE started_at>?`
+	query := `SELECT ` + connectivityAttemptColumns + ` FROM host_connectivity_attempts WHERE started_at>$1`
 	args := []any{connectivityStamp(now.Add(-connectivityRetention))}
 	if hostUUID != "" {
-		query += ` AND host_uuid=?`
+		query += fmt.Sprintf(" AND host_uuid=$%d", len(args)+1)
+
 		args = append(args, hostUUID)
 	}
 	filter := pageFilterFingerprint("connectivity", hostUUID)
@@ -51,10 +52,12 @@ func (s *Store) ConnectivityHistory(ctx context.Context, hostUUID, cursor string
 			return connectivity.HistoryPage{}, ErrInvalidCursor
 		}
 		cursorAt := connectivityStamp(at)
-		query += ` AND (started_at<? OR (started_at=? AND id<?))`
+		query += fmt.Sprintf(" AND (started_at<$%d OR (started_at=$%d AND id<$%d))", len(args)+1, len(args)+2, len(args)+3)
+
 		args = append(args, cursorAt, cursorAt, decoded.ID)
 	}
-	query += ` ORDER BY started_at DESC,id DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY started_at DESC,id DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit+1)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

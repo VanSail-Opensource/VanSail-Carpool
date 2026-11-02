@@ -11,7 +11,7 @@ type diskPrefix struct {
 	network      []byte
 }
 
-// diskWriter owns at most 256 prefixes/hostnames between durable flushes.
+// diskWriter owns at most 256 prefixes/hostnames between temporary-table flushes.
 type diskWriter struct {
 	ctx          context.Context
 	index        *prefixIndex
@@ -60,73 +60,36 @@ func (w *diskWriter) flush() {
 	d := w.index.disk.store
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	// Reserve a conservative batch allowance before extending relations. This
+	// avoids retained relation pages exceeding the quota after rollback.
+	if d.usage() > d.quota-(1<<20) {
+		w.err = &CodeError{"IP_PROXY_LIMIT"}
+		return
+	}
 	tx, err := d.db.BeginTx(w.ctx, nil)
 	if err != nil {
 		w.err = err
 		return
 	}
 	defer func() { _ = tx.Rollback() }()
-	insert, err := tx.PrepareContext(w.ctx, "INSERT OR IGNORE INTO prefixes(gen,family,bits,network) VALUES(?,?,?,?)")
+	count, hosts := w.index.size, w.hosts
+	added, limited, err := insertInventoryPrefixes(w.ctx, tx, w.index.disk.id, w.pending, w.limit, count)
 	if err != nil {
 		w.err = err
 		return
 	}
-	defer insert.Close()
-	count, hosts := w.index.size, w.hosts
-	for _, prefix := range w.pending {
-		if w.limit > 0 && count >= w.limit {
-			var exists bool
-			err = tx.QueryRowContext(w.ctx, "SELECT EXISTS(SELECT 1 FROM prefixes WHERE gen=? AND family=? AND bits=? AND network=?)", w.index.disk.id, prefix.family, prefix.bits, prefix.network).Scan(&exists)
-			if err != nil {
-				w.err = err
-				return
-			}
-			if !exists {
-				w.err = &CodeError{"IP_PROXY_LIMIT"}
-				break
-			}
-			continue
-		}
-		result, e := insert.ExecContext(w.ctx, w.index.disk.id, prefix.family, prefix.bits, prefix.network)
-		if e != nil {
-			w.err = e
-			return
-		}
-		n, e := result.RowsAffected()
-		if e != nil {
-			w.err = e
-			return
-		}
-		count += int(n)
-	}
-	for _, host := range w.domains {
-		if hosts >= maxProxyHosts {
-			var exists bool
-			if e := tx.QueryRowContext(w.ctx, "SELECT EXISTS(SELECT 1 FROM domains WHERE gen=? AND host=?)", w.index.disk.id, host).Scan(&exists); e != nil {
-				w.err = e
-				return
-			}
-			if !exists {
-				w.err = &CodeError{"IP_PROXY_LIMIT"}
-				break
-			}
-			continue
-		}
-		result, e := tx.ExecContext(w.ctx, "INSERT OR IGNORE INTO domains(gen,host) VALUES(?,?)", w.index.disk.id, host)
-		if e != nil {
-			w.err = e
-			return
-		}
-		n, e := result.RowsAffected()
-		if e != nil {
-			w.err = e
-			return
-		}
-		hosts += int(n)
-	}
-	if d.usage() > d.quota {
+	count += added
+	if limited {
 		w.err = &CodeError{"IP_PROXY_LIMIT"}
+	}
+	added, limited, err = insertInventoryDomains(w.ctx, tx, w.index.disk.id, w.domains, maxProxyHosts-hosts)
+	if err != nil {
+		w.err = err
 		return
+	}
+	hosts += added
+	if limited {
+		w.err = &CodeError{"IP_PROXY_LIMIT"}
 	}
 	if err := tx.Commit(); err != nil {
 		w.err = err
@@ -149,7 +112,7 @@ func (w *diskWriter) domainPage(after string) ([]string, error) {
 	d := w.index.disk.store
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	rows, err := d.db.QueryContext(w.ctx, "SELECT host FROM domains WHERE gen=? AND host>? ORDER BY host LIMIT 128", w.index.disk.id, after)
+	rows, err := d.db.QueryContext(w.ctx, "SELECT host FROM domains WHERE gen=$1 AND host>$2 ORDER BY host LIMIT 128", w.index.disk.id, after)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +135,7 @@ func (w *diskWriter) clearDomains() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for {
-		result, err := d.db.ExecContext(ctx, "DELETE FROM domains WHERE gen=? AND host IN (SELECT host FROM domains WHERE gen=? LIMIT 256)", w.index.disk.id, w.index.disk.id)
+		result, err := d.db.ExecContext(ctx, "DELETE FROM domains WHERE gen=$1 AND host IN (SELECT host FROM domains WHERE gen=$2 LIMIT 256)", w.index.disk.id, w.index.disk.id)
 		if err != nil {
 			return err
 		}

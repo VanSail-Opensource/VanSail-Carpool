@@ -17,7 +17,7 @@ func pricingCommandEffectTx(ctx context.Context, tx *sql.Tx, in PricingIntervent
 		if in.ScopeType != "incident" {
 			return ErrConflict
 		}
-		result, err := tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET acknowledged_by=?,acknowledged_at=? WHERE id=?`, actor, pricingStamp(now), in.ScopeID)
+		result, err := tx.ExecContext(ctx, `UPDATE pricing_operational_incidents SET acknowledged_by=$1,acknowledged_at=$2 WHERE id=$3`, actor, pricingStamp(now), in.ScopeID)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func pricingCommandEffectTx(ctx context.Context, tx *sql.Tx, in PricingIntervent
 // scheduled intelligence compute slot without touching authoritative billing.
 func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now time.Time) error {
 	var raw, status string
-	if err := s.db.QueryRowContext(ctx, `SELECT proposed_json,status FROM pricing_admin_overrides WHERE id=?`, id).Scan(&raw, &status); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT proposed_json,status FROM pricing_admin_overrides WHERE id=$1`, id).Scan(&raw, &status); err != nil {
 		return err
 	}
 	if status != "ACTIVE" {
@@ -69,7 +69,7 @@ func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now ti
 	}
 	if in.ScopeType == "model" {
 		var kind string
-		if err := s.db.QueryRowContext(ctx, `SELECT kind FROM pricing_model_versions WHERE id=?`, in.ScopeID).Scan(&kind); err != nil {
+		if err := s.db.QueryRowContext(ctx, `SELECT kind FROM pricing_model_versions WHERE id=$1`, in.ScopeID).Scan(&kind); err != nil {
 			return err
 		}
 		parts := strings.SplitN(kind, ":", 3)

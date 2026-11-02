@@ -78,7 +78,7 @@ func TestEditQueuedAdminEntitlementReconcilesContinuitySchedule(t *testing.T) {
 		t.Fatalf("EditAdminEntitlement(shift): %v", err)
 	}
 	var retiredJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND payload=? AND status IN ('pending','processing')`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND payload=$2 AND status IN ('pending','processing')`,
 		jobpayload.ContinuityKind, `{"purchaseId":"`+queued.ID+`"}`).Scan(&retiredJobs); err != nil || retiredJobs != 0 {
 		t.Fatal("purchase edit regenerated retired continuity work", retiredJobs, err)
 	}
@@ -91,8 +91,8 @@ func TestEditQueuedAdminEntitlementReconcilesContinuitySchedule(t *testing.T) {
 		t.Fatalf("EditAdminEntitlement(cancel): %v", err)
 	}
 	var continuityJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?
-		AND json_extract(payload,'$.purchaseId')=?`, jobpayload.ContinuityKind, queued.ID).Scan(&continuityJobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1
+		AND (CASE ((payload)::jsonb #> '{purchaseId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{purchaseId}' END)=$2`, jobpayload.ContinuityKind, queued.ID).Scan(&continuityJobs); err != nil {
 		t.Fatal(err)
 	}
 	if continuityJobs != 0 {

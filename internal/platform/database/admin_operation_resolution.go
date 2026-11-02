@@ -21,10 +21,7 @@ type AdminOperationResolutionInput struct {
 // ResolveAdminOperation records a human decision without another provider attempt.
 func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input AdminOperationResolutionInput,
 	now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -33,7 +30,7 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 	if receipt, replayed, replayErr := resolvedOperationReplay(ctx, tx, input); replayErr != nil || replayed {
 		return commitResolvedReplay(tx, receipt, replayErr)
 	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, input.OperationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -41,8 +38,8 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 	if (before != "pending_review" && before != "partial") || before == input.Resolution {
 		return model.OperationReceipt{}, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=?,updated_at=?,completed_at=?
-		WHERE id=? AND status=?`, input.Resolution, stamp(now), stamp(now), input.OperationID, before)
+	result, err := tx.ExecContext(ctx, `UPDATE provider_operations SET status=$1,updated_at=$2,completed_at=$3
+		WHERE id=$4 AND status=$5`, input.Resolution, stamp(now), stamp(now), input.OperationID, before)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -58,7 +55,7 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 	if err := insertResolutionAudit(ctx, tx, input, before, now); err != nil {
 		return model.OperationReceipt{}, err
 	}
-	updated, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, input.OperationID))
+	updated, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
@@ -71,7 +68,7 @@ func (s *Store) retryAttempt_ResolveAdminOperation(ctx context.Context, input Ad
 func resolvedOperationReplay(ctx context.Context, tx *sql.Tx, input AdminOperationResolutionInput) (model.OperationReceipt, bool, error) {
 	var fingerprint string
 	err := tx.QueryRowContext(ctx, `SELECT request_fingerprint FROM provider_operation_replays
-		WHERE operation_id=? AND actor_user_id=? AND idempotency_key=? LIMIT 1`, input.OperationID,
+		WHERE operation_id=$1 AND actor_user_id=$2 AND idempotency_key=$3 LIMIT 1`, input.OperationID,
 		input.ActorUserID, input.IdempotencyKey).Scan(&fingerprint)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.OperationReceipt{}, false, nil
@@ -82,7 +79,7 @@ func resolvedOperationReplay(ctx context.Context, tx *sql.Tx, input AdminOperati
 	if fingerprint != input.RequestFingerprint {
 		return model.OperationReceipt{}, false, ErrConflict
 	}
-	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=?`, input.OperationID))
+	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, input.OperationID))
 	return operation.Receipt, err == nil, err
 }
 
@@ -102,7 +99,7 @@ func insertResolutionReplay(ctx context.Context, tx *sql.Tx, input AdminOperatio
 		return err
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO provider_operation_replays(id,operation_id,actor_user_id,
-		idempotency_key,request_fingerprint,created_at) VALUES(?,?,?,?,?,?)`, id, input.OperationID,
+		idempotency_key,request_fingerprint,created_at) VALUES($1,$2,$3,$4,$5,$6)`, id, input.OperationID,
 		input.ActorUserID, input.IdempotencyKey, input.RequestFingerprint, stamp(now))
 	return err
 }

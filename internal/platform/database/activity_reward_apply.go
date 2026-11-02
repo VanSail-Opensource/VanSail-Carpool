@@ -38,8 +38,8 @@ func activeRewardPurchase(ctx context.Context, tx *sql.Tx, userID string, now ti
 	var id string
 	var traffic int64
 	err := tx.QueryRowContext(ctx, `SELECT purchases.id,COALESCE(purchases.entitlement_traffic_limit_bytes,combos.traffic_limit_bytes)
-  FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=?
-  AND purchases.status IN ('active','activating') AND purchases.valid_from<=? AND purchases.valid_until>?
+  FROM purchases JOIN combos ON combos.id=purchases.combo_id WHERE purchases.user_id=$1
+  AND purchases.status IN ('active','activating') AND purchases.valid_from<=$2 AND purchases.valid_until>$3
   ORDER BY purchases.valid_from DESC LIMIT 1`, userID, stamp(now), stamp(now)).Scan(&id, &traffic)
 	if err == sql.ErrNoRows {
 		return "", 0, ErrConflict
@@ -121,9 +121,9 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 		if comboErr != nil {
 			return comboErr
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=?,entitlement_traffic_limit_bytes=?,entitlement_squad_uuids=?,
-   entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=?,
-   reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=?,entitlement_reset_strategy=?,updated_at=? WHERE id=?`, reward.ComboID, reward.TrafficLimitBytes, string(squads),
+		_, err = tx.ExecContext(ctx, `UPDATE purchases SET combo_id=$1,entitlement_traffic_limit_bytes=$2,entitlement_squad_uuids=$3,
+   entitlement_addon_squad_uuids='[]',reward_renewal_price_minor=$4,
+   reward_traffic_renewal=1,reward_renewal_traffic_limit_bytes=$5,entitlement_reset_strategy=$6,updated_at=$7 WHERE id=$8`, reward.ComboID, reward.TrafficLimitBytes, string(squads),
 			reward.RenewalPriceMinor, reward.TrafficLimitBytes, combo.ResetStrategy, stamp(now), purchaseID)
 		if err == nil {
 			err = nil
@@ -133,7 +133,7 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 			if squad == "" {
 				return activity.ErrInvalidInput
 			}
-			_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO activity_reward_squad_access(purchase_id,squad_uuid,source_result_id) VALUES(?,?,?)`, purchaseID, squad, resultID)
+			_, err = tx.ExecContext(ctx, `INSERT   INTO activity_reward_squad_access(purchase_id,squad_uuid,source_result_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING `, purchaseID, squad, resultID)
 			if err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 	case activity.RewardTrafficGrant:
 		err = applyDrawTrafficTx(ctx, tx, purchaseID, traffic, value, reward.IncludeInRenewal, now)
 	case activity.RewardTrafficReset:
-		_, err = tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=? WHERE id=?`, stamp(now), purchaseID)
+		_, err = tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=$1 WHERE id=$2`, stamp(now), purchaseID)
 		if err == nil {
 			return insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
 		}
@@ -166,7 +166,7 @@ func grantDrawCouponTx(ctx context.Context, tx *sql.Tx, userID, resultID, name s
 	code := "DRAW_" + strings.ToUpper(couponID)
 	_, err = tx.ExecContext(ctx, `INSERT INTO coupon_definitions(id,code,name,kind,discount_mode,value_minor_or_bps,
   eligible_combo_ids,eligible_squad_ids,active,created_at,updated_at,admin_visible)
-  VALUES(?,?,?,?,?,?,'[]','[]',1,?,?,0)`, couponID, code, name, kind, reward.DiscountMode, value, stamp(now), stamp(now))
+  VALUES($1,$2,$3,$4,$5,$6,'[]','[]',1,$7,$8,0)`, couponID, code, name, kind, reward.DiscountMode, value, stamp(now), stamp(now))
 	if err != nil {
 		return err
 	}

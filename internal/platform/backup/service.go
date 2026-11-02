@@ -25,15 +25,8 @@ type Repository interface {
 // backup directory and symlinks are rejected before any mutation.
 
 func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
-	s.restoreMu.Lock()
-	defer s.restoreMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	select {
-	case <-s.restart:
-		return ErrRestoreConflict
-	default:
-	}
 	var activeRestores int
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM restore_jobs WHERE status IN ('staging','ready','applying')`).Scan(&activeRestores); err != nil {
 		return fmt.Errorf("check active restores: %w", err)
@@ -42,7 +35,7 @@ func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 		return ErrRestoreConflict
 	}
 	var path, status string
-	if err := s.db.QueryRowContext(ctx, `SELECT path,status FROM backup_runs WHERE id=?`, backupID).Scan(&path, &status); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT path,status FROM backup_runs WHERE id=$1`, backupID).Scan(&path, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrBackupNotFound
 		}
@@ -72,13 +65,13 @@ func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, `DELETE FROM restore_jobs WHERE backup_run_id=? AND status NOT IN ('staging','ready','applying')`, backupID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM restore_jobs WHERE backup_run_id=$1 AND status NOT IN ('staging','ready','applying')`, backupID); err != nil {
 		if fileExists {
 			_ = os.Rename(staged, resolved)
 		}
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM backup_runs WHERE id=?`, backupID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM backup_runs WHERE id=$1`, backupID); err != nil {
 		if fileExists {
 			_ = os.Rename(staged, resolved)
 		}
@@ -92,7 +85,7 @@ func (s *Service) Delete(ctx context.Context, backupID, actorID string) error {
 		return err
 	}
 	now := s.now().UTC().Format(time.RFC3339Nano)
-	if _, err := tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES(?,?,?,?,?,?,?)`,
+	if _, err := tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`,
 		auditID, actorID, "backup.delete", "backup", backupID, `{"path":"redacted"}`, now); err != nil {
 		if fileExists {
 			_ = os.Rename(staged, resolved)
@@ -149,9 +142,6 @@ type Service struct {
 	retention   time.Duration
 	now         func() time.Time
 	mu          sync.Mutex
-	restoreMu   sync.Mutex
-	restart     chan struct{}
-	restartOnce sync.Once
 }
 
 // NewService creates a backup service.
@@ -159,21 +149,6 @@ type Service struct {
 func NewService(db *sql.DB, repository Repository, directory string, retention time.Duration) *Service {
 	return &Service{
 		db: db, repository: repository, directory: filepath.Clean(directory), retention: retention,
-		now: time.Now, restart: make(chan struct{}),
+		now: time.Now,
 	}
 }
-
-// RestartRequested is closed after a restore marker has been durably staged.
-// The application should return HTTP 202 before reacting to the signal, then
-// gracefully stop so the next process startup can apply the restore pre-open.
-
-func (s *Service) RestartRequested() <-chan struct{} { return s.restart }
-
-// RequestRestart notifies the application that it can gracefully stop. HTTP
-// handlers should call this only after writing the accepted restore response.
-
-func (s *Service) RequestRestart() {
-	s.restartOnce.Do(func() { close(s.restart) })
-}
-
-// Run creates a temporary VACUUM INTO snapshot, verifies it, and atomically publishes it.

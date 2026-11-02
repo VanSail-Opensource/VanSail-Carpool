@@ -13,7 +13,7 @@ import (
 // Start attaches every scanner and queue to the application context.
 func (s *Service) Start(ctx context.Context) { s.start.Do(func() { go s.run(ctx) }) }
 
-// Wait joins all readers before SQLite is closed.
+// Wait joins all readers before PostgreSQL is closed.
 func (s *Service) Wait() { <-s.done }
 
 func (s *Service) run(ctx context.Context) {

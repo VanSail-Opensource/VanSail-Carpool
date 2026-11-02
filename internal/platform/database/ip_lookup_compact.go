@@ -18,7 +18,7 @@ func compactIPLookupReportsTx(ctx context.Context, tx *sql.Tx) error {
 	}
 	var cursor int64
 	for {
-		rows, err := tx.QueryContext(ctx, `SELECT rowid,id,report_json FROM ip_lookup_reports WHERE rowid>? ORDER BY rowid LIMIT 100`, cursor)
+		rows, err := tx.QueryContext(ctx, `SELECT record_order,id,report_json FROM ip_lookup_reports WHERE record_order>$1 ORDER BY record_order LIMIT 100`, cursor)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func compactIPLookupReportsTx(ctx context.Context, tx *sql.Tx) error {
 			if err != nil {
 				return fmt.Errorf("compact IP report %s: %w", item.id, err)
 			}
-			if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=? WHERE id=?`, string(compact), item.id); err != nil {
+			if _, err := tx.ExecContext(ctx, `UPDATE ip_lookup_reports SET report_json=$1 WHERE id=$2`, string(compact), item.id); err != nil {
 				return err
 			}
 			cursor = item.rowID

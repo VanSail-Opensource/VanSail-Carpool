@@ -49,7 +49,7 @@ func TestRenewalSelectionExcludesUnavailableAddons(t *testing.T) {
 				renewedID = batch.Purchases[0].ID
 			}
 			var price, addons int64
-			if err := store.DB().QueryRowContext(ctx, `SELECT charged_txb_minor,(SELECT COUNT(*) FROM purchase_addons WHERE purchase_id=?) FROM purchases WHERE id=?`, renewedID, renewedID).Scan(&price, &addons); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT charged_txb_minor,(SELECT COUNT(*) FROM purchase_addons WHERE purchase_id=$1) FROM purchases WHERE id=$2`, renewedID, renewedID).Scan(&price, &addons); err != nil {
 				t.Fatal(err)
 			}
 			if price != 1_000 || addons != 0 {

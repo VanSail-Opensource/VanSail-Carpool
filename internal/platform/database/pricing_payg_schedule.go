@@ -16,7 +16,7 @@ func (s *Store) PricingPAYGBatch(ctx context.Context, now time.Time) error {
 // PricingPAYGBatchAfter advances the attempted product even if its compute is pending.
 func (s *Store) PricingPAYGBatchAfter(ctx context.Context, now time.Time, after string) (next string, resultErr error) {
 	next = after
-	rows, err := s.db.QueryContext(ctx, `SELECT product_id FROM pricing_product_settings p WHERE product_type='payg' AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC' AND product_id>? AND NOT EXISTS(SELECT 1 FROM pricing_decisions d WHERE d.product_type='payg' AND d.product_id=p.product_id AND d.policy_version>=p.version AND d.generated_at>=?) ORDER BY product_id LIMIT 4`, after, pricingStamp(now.UTC().Truncate(time.Minute)))
+	rows, err := s.db.QueryContext(ctx, `SELECT product_id FROM pricing_product_settings p WHERE product_type='payg' AND dynamic_enabled=1 AND purchase_pricing_mode='DYNAMIC' AND product_id>$1 AND NOT EXISTS(SELECT 1 FROM pricing_decisions d WHERE d.product_type='payg' AND d.product_id=p.product_id AND d.policy_version>=p.version AND d.generated_at>=$2) ORDER BY product_id LIMIT 4`, after, pricingStamp(now.UTC().Truncate(time.Minute)))
 	if err != nil {
 		return next, err
 	}

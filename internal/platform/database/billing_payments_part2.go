@@ -17,10 +17,12 @@ func (s *Store) ListPaymentOrders(ctx context.Context, userID string, limit int)
 	query := paymentSelect
 	args := []any{}
 	if userID != "" {
-		query += ` WHERE user_id=?`
+		query += fmt.Sprintf(" WHERE user_id=$%d", len(args)+1)
+
 		args = append(args, userID)
 	}
-	query += ` ORDER BY created_at DESC LIMIT ?`
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", len(args)+1)
+
 	args = append(args, limit)
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -40,8 +42,8 @@ func (s *Store) ListPaymentOrders(ctx context.Context, userID string, limit int)
 
 // LatestValidUnpaidPaymentOrder returns the newest checkout that can still be paid.
 func (s *Store) LatestValidUnpaidPaymentOrder(ctx context.Context, userID string, now time.Time) (model.PaymentOrder, error) {
-	return scanPaymentOrder(s.db.QueryRowContext(ctx, paymentSelect+` WHERE user_id=? AND status='pending'
-		AND paid_at IS NULL AND cancelled_at IS NULL AND expires_at>? ORDER BY created_at DESC,id DESC LIMIT 1`,
+	return scanPaymentOrder(s.db.QueryRowContext(ctx, paymentSelect+` WHERE user_id=$1 AND status='pending'
+		AND paid_at IS NULL AND cancelled_at IS NULL AND expires_at>$2 ORDER BY created_at DESC,id DESC LIMIT 1`,
 		userID, stamp(now.UTC())))
 }
 

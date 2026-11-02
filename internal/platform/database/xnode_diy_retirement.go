@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Store) XNodeDIYUsers(ctx context.Context, after string) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT user_id FROM xnode_member_diy WHERE user_id>? ORDER BY user_id LIMIT 100`, after)
+	rows, err := s.db.QueryContext(ctx, `SELECT user_id FROM xnode_member_diy WHERE user_id>$1 ORDER BY user_id LIMIT 100`, after)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (s *Store) XNodeDIYUsers(ctx context.Context, after string) ([]string, erro
 func (s *Store) ReplaceXNodeDIY(ctx context.Context, doc xnode.DIYDocument, cipher string) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	result, err := s.db.ExecContext(ctx, `UPDATE xnode_member_diy SET revision=revision+1,cipher=? WHERE user_id=? AND revision=? AND cipher=? AND revision<9007199254740991`, cipher, doc.UserID, doc.Revision, doc.Cipher)
+	result, err := s.db.ExecContext(ctx, `UPDATE xnode_member_diy SET revision=revision+1,cipher=$1 WHERE user_id=$2 AND revision=$3 AND cipher=$4 AND revision<9007199254740991`, cipher, doc.UserID, doc.Revision, doc.Cipher)
 	if err != nil {
 		return err
 	}

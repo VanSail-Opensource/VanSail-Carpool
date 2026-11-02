@@ -32,10 +32,10 @@ func TestAffiliateSettlementUsesPreUpgradeTierOnce(t *testing.T) {
 		t.Fatalf("SettlePayment(first) = %v, %v", changed, err)
 	}
 	var balance, commission int64
-	if err := store.DB().QueryRow(`SELECT txb_minor FROM balances WHERE user_id=?`, inviter.ID).Scan(&balance); err != nil {
+	if err := store.DB().QueryRow(`SELECT txb_minor FROM balances WHERE user_id=$1`, inviter.ID).Scan(&balance); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRow(`SELECT commission_txb_minor FROM affiliate_settlements WHERE invited_user_id=?`, invitee.ID).Scan(&commission); err != nil {
+	if err := store.DB().QueryRow(`SELECT commission_txb_minor FROM affiliate_settlements WHERE invited_user_id=$1`, invitee.ID).Scan(&commission); err != nil {
 		t.Fatal(err)
 	}
 	if commission != 100 || balance != 600 {
@@ -75,7 +75,7 @@ func TestCompactAndPrunePreservesAffiliatePaymentEvidence(t *testing.T) {
 	if _, changed, err := store.SettlePayment(ctx, "ezpay", "affiliate-retention", "hash", order.ID, "trade-retention", "", settledAt); err != nil || !changed {
 		t.Fatalf("SettlePayment() = %v, %v", changed, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET updated_at=? WHERE id=?`, stamp(settledAt), order.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET updated_at=$1 WHERE id=$2`, stamp(settledAt), order.ID); err != nil {
 		t.Fatalf("age payment order: %v", err)
 	}
 
@@ -91,7 +91,7 @@ func TestCompactAndPrunePreservesAffiliatePaymentEvidence(t *testing.T) {
 		t.Fatalf("PaymentOrderByID() = %v, want preserved affiliate evidence", err)
 	}
 	var settlements int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM affiliate_settlements WHERE payment_order_id=?`, order.ID).Scan(&settlements); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM affiliate_settlements WHERE payment_order_id=$1`, order.ID).Scan(&settlements); err != nil {
 		t.Fatalf("count affiliate settlements: %v", err)
 	}
 	if settlements != 1 {

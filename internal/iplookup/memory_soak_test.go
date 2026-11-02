@@ -22,7 +22,7 @@ func TestUSDTProxyMemorySoak(t *testing.T) {
 		t.Fatal("soak requires writable bounded-deployment storage")
 	}
 	s := NewEnhancedService(nil, nil, nil)
-	if err := s.ConfigureInventoryCache(context.Background(), filepath.Join(root, "proxy-soak"), 1<<30); err != nil {
+	if err := s.ConfigureInventoryCache(context.Background(), inventoryTestDatabase(t), filepath.Join(root, "proxy-soak"), 1<<30); err != nil {
 		t.Fatal(err)
 	}
 	defer s.CloseInventoryCache()

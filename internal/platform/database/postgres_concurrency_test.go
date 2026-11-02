@@ -70,7 +70,7 @@ func TestPostgresOutboxGenerationSurvivesAttemptReset(t *testing.T) {
 	if err = s.RecoverOutbox(ctx, now.Add(2*time.Second), now.Add(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.ExecContext(ctx, `UPDATE outbox_jobs SET attempts=0 WHERE id=?`, old.ID); err != nil {
+	if _, err = s.db.ExecContext(ctx, `UPDATE outbox_jobs SET attempts=0 WHERE id=$1`, old.ID); err != nil {
 		t.Fatal(err)
 	}
 	current, err := s.ClaimOutboxJob(ctx, now.Add(3*time.Second))

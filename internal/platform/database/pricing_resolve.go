@@ -30,12 +30,12 @@ func approvedPricingTx(ctx context.Context, tx *sql.Tx, p pricing.Policy, fixed 
 	// Active manual prices expire naturally. The safe publication pointer remains
 	// unchanged, so expiration cannot overwrite a newer authorized policy.
 	// Published manual rows are selected only while their approved intervention lives.
-	err := tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE product_type=? AND product_id=? AND source='MANUAL' AND policy_version=? AND valid_from<=? AND valid_until>? AND EXISTS(SELECT 1 FROM pricing_admin_overrides o WHERE o.id=pricing_published_prices.id AND o.status='ACTIVE') ORDER BY created_at DESC LIMIT 1`, p.ProductType, p.ProductID, p.Version, pricingStamp(now), pricingStamp(now)).Scan(&price)
+	err := tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE product_type=$1 AND product_id=$2 AND source='MANUAL' AND policy_version=$3 AND valid_from<=$4 AND valid_until>$5 AND EXISTS(SELECT 1 FROM pricing_admin_overrides o WHERE o.id=pricing_published_prices.id AND o.status='ACTIVE') ORDER BY created_at DESC LIMIT 1`, p.ProductType, p.ProductID, p.Version, pricingStamp(now), pricingStamp(now)).Scan(&price)
 	if err == nil {
 		return price, nil
 	} // Explicit administrator rate takes precedence over inferred bounds.
 	if errors.Is(err, sql.ErrNoRows) {
-		err = tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE id=? AND valid_from<=? AND valid_until>?`, p.LastApprovedVersion, pricingStamp(now), pricingStamp(now)).Scan(&price)
+		err = tx.QueryRowContext(ctx, `SELECT price_minor FROM pricing_published_prices WHERE id=$1 AND valid_from<=$2 AND valid_until>$3`, p.LastApprovedVersion, pricingStamp(now), pricingStamp(now)).Scan(&price)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		if p.LastApprovedVersion == "" {
@@ -65,7 +65,7 @@ func pricingAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, now ti
 
 func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string, now time.Time) error {
 	var blocked int
-	err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE status='ACTIVE' AND starts_at<=? AND expires_at>? AND command='PAUSE_ADMISSIONS' AND (scope_type='global' OR (scope_type='product' AND scope_id=?)))`, pricingStamp(now), pricingStamp(now), kind+":"+id).Scan(&blocked)
+	err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE status='ACTIVE' AND starts_at<=$1 AND expires_at>$2 AND command='PAUSE_ADMISSIONS' AND (scope_type='global' OR (scope_type='product' AND scope_id=$3))))::bigint", pricingStamp(now), pricingStamp(now), kind+":"+id).Scan(&blocked)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string
 		return pricing.CapacityUnsafe
 	}
 	var nodeRules int
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND status='ACTIVE' AND starts_at<=? AND expires_at>?)`, pricingStamp(now), pricingStamp(now)).Scan(&nodeRules); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND status='ACTIVE' AND starts_at<=$1 AND expires_at>$2))::bigint", pricingStamp(now), pricingStamp(now)).Scan(&nodeRules); err != nil {
 		return err
 	}
 	if nodeRules != 0 {
@@ -82,7 +82,7 @@ func pricingOperatorAdmissionTx(ctx context.Context, tx *sql.Tx, kind, id string
 			return err
 		}
 		for _, node := range nodes {
-			if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND scope_id=? AND status='ACTIVE' AND starts_at<=? AND expires_at>?)`, node, pricingStamp(now), pricingStamp(now)).Scan(&blocked); err != nil {
+			if err := tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_admin_overrides WHERE command='PAUSE_ADMISSIONS' AND scope_type IN ('node','machine') AND scope_id=$1 AND status='ACTIVE' AND starts_at<=$2 AND expires_at>$3))::bigint", node, pricingStamp(now), pricingStamp(now)).Scan(&blocked); err != nil {
 				return err
 			}
 			if blocked != 0 {

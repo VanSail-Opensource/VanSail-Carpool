@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to time.Time, bucket string, location *time.Location) (model.AdminStatistics, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT user_id,fee_minor,reward_kind,reward_payload,created_at FROM activity_draw_results WHERE draw_id=? AND created_at>=? AND created_at<? ORDER BY created_at`, drawID, stamp(from), stamp(to))
+	rows, err := s.db.QueryContext(ctx, `SELECT user_id,fee_minor,reward_kind,reward_payload,created_at FROM activity_draw_results WHERE draw_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`, drawID, stamp(from), stamp(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
@@ -33,7 +33,7 @@ func (s *Store) LuckyDrawStatistics(ctx context.Context, drawID string, from, to
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}
-	distributionRows, err := s.db.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=? AND created_at>=? AND created_at<? GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, stamp(from), stamp(to))
+	distributionRows, err := s.db.QueryContext(ctx, `SELECT prize_id,prize_name,COUNT(*) FROM activity_draw_results WHERE draw_id=$1 AND created_at>=$2 AND created_at<$3 GROUP BY prize_id,prize_name ORDER BY COUNT(*) DESC,prize_name`, drawID, stamp(from), stamp(to))
 	if err != nil {
 		return model.AdminStatistics{}, err
 	}

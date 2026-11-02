@@ -22,10 +22,7 @@ func (s *Store) RepairXNodeAccessPeriod(ctx context.Context, identity xnode.Iden
 }
 
 func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Identity, purchase model.Purchase, period xnode.Period, at time.Time, create bool) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -38,10 +35,10 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 	if blocked {
 		return xnode.ErrAccessOperationPending
 	}
-	current, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=? AND purchases.status IN ('active','activating') AND purchases.valid_from<=? AND purchases.valid_until>? ORDER BY purchases.valid_from DESC LIMIT 1`, identity.UserID, stamp(at), stamp(at)))
+	current, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.user_id=$1 AND purchases.status IN ('active','activating') AND purchases.valid_from<=$2 AND purchases.valid_until>$3 ORDER BY purchases.valid_from DESC LIMIT 1`, identity.UserID, stamp(at), stamp(at)))
 	if errors.Is(err, ErrNotFound) {
 		// Match EffectivePurchase's already-paid queued successor lineage.
-		current, err = scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=? AND purchases.user_id=? AND purchases.status IN ('active','activating') AND EXISTS(SELECT 1 FROM purchases next WHERE next.user_id=purchases.user_id AND next.status='queued' AND next.valid_from=purchases.valid_until AND next.valid_from<=? AND next.valid_until=? AND next.valid_until>?)`, purchase.ID, identity.UserID, stamp(at), stamp(purchase.ValidUntil), stamp(at)))
+		current, err = scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2 AND purchases.status IN ('active','activating') AND EXISTS(SELECT 1 FROM purchases next WHERE next.user_id=purchases.user_id AND next.status='queued' AND next.valid_from=purchases.valid_until AND next.valid_from<=$3 AND next.valid_until=$4 AND next.valid_until>$5)`, purchase.ID, identity.UserID, stamp(at), stamp(purchase.ValidUntil), stamp(at)))
 	}
 	if errors.Is(err, ErrNotFound) {
 		return xnode.ErrConflict
@@ -56,7 +53,7 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 		return xnode.ErrAccessAccountingPending
 	}
 	var eligible bool
-	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities i JOIN users u ON u.id=i.user_id WHERE i.proxy_user_id=? AND i.user_id=? AND COALESCE(i.current_period_id,'')=? AND i.access_disabled=0 AND u.onboarding_state='complete') AND NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=? AND purchase_id=? AND status='open' AND id<>?)`, identity.ProxyUserID, identity.UserID, identity.CurrentPeriodID, identity.ProxyUserID, purchase.ID, period.ID).Scan(&eligible)
+	err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities i JOIN users u ON u.id=i.user_id WHERE i.proxy_user_id=$1 AND i.user_id=$2 AND COALESCE(i.current_period_id,'')=$3 AND i.access_disabled=0 AND u.onboarding_state='complete') AND NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=$4 AND purchase_id=$5 AND status='open' AND id<>$6)`, identity.ProxyUserID, identity.UserID, identity.CurrentPeriodID, identity.ProxyUserID, purchase.ID, period.ID).Scan(&eligible)
 	if err != nil {
 		return err
 	}
@@ -65,9 +62,9 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 	}
 	var result sql.Result
 	if create {
-		result, err = tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,limit_bytes,strategy,last_reset_at,status) SELECT ?,?,?,?,?,?,?,'open' WHERE NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=? AND purchase_id=?)`, period.ID, identity.ProxyUserID, purchase.ID, stamp(at), purchase.TrafficLimitBytes, purchase.ResetStrategy, stamp(at), identity.ProxyUserID, purchase.ID)
+		result, err = tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,limit_bytes,strategy,last_reset_at,status) SELECT $1,$2,$3,$4,$5,$6,$7,'open' WHERE NOT EXISTS(SELECT 1 FROM xnode_periods WHERE proxy_user_id=$8 AND purchase_id=$9)`, period.ID, identity.ProxyUserID, purchase.ID, stamp(at), purchase.TrafficLimitBytes, purchase.ResetStrategy, stamp(at), identity.ProxyUserID, purchase.ID)
 	} else {
-		result, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=? AND proxy_user_id=? AND purchase_id=? AND status=?`, period.ID, identity.ProxyUserID, purchase.ID, period.Status)
+		result, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET status='open',ended_at=NULL WHERE id=$1 AND proxy_user_id=$2 AND purchase_id=$3 AND status=$4`, period.ID, identity.ProxyUserID, purchase.ID, period.Status)
 	}
 	if err != nil {
 		return err
@@ -76,11 +73,11 @@ func (s *Store) restoreXNodeAccessPeriod(ctx context.Context, identity xnode.Ide
 		return err
 	}
 	if period.Status == "closing" {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=?`, period.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=$1`, period.ID); err != nil {
 			return err
 		}
 	}
-	result, err = tx.ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=? WHERE proxy_user_id=? AND COALESCE(current_period_id,'')=?`, period.ID, identity.ProxyUserID, identity.CurrentPeriodID)
+	result, err = tx.ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=$1 WHERE proxy_user_id=$2 AND COALESCE(current_period_id,'')=$3`, period.ID, identity.ProxyUserID, identity.CurrentPeriodID)
 	if err != nil {
 		return err
 	}

@@ -23,10 +23,10 @@ func TestPAYGRetentionCommitsBoundedBatchesWithoutAccountingChanges(t *testing.T
 	}
 	defer tx.Rollback()
 	for i := 0; i < paygRetentionBatch+1; i++ {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes) VALUES(?,?,?,1)`, parent.UserID, fmt.Sprintf("expired-%d", i), stamp(now.Add(-73*time.Hour))); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute,traffic_bytes) VALUES($1,$2,$3,1)`, parent.UserID, fmt.Sprintf("expired-%d", i), stamp(now.Add(-73*time.Hour))); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES(?,?,1,1)`, account.ProxyUserID, paygWindowStamp(now.Add(-73*time.Hour).Add(time.Duration(i)))); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through,traffic_bytes,unbilled_bytes) VALUES($1,$2,1,1)`, account.ProxyUserID, paygWindowStamp(now.Add(-73*time.Hour).Add(time.Duration(i)))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -57,12 +57,12 @@ func TestPAYGRetentionKeepsExactWindowBoundaries(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Minute)
 	cutoff := now.Add(-xnode.PAYGWindow)
 	for i, at := range []time.Time{cutoff.Add(-time.Minute), cutoff, now} {
-		if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute) VALUES(?,?,?)`, parent.UserID, fmt.Sprint(i), stamp(at)); err != nil {
+		if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_minutes(user_id,group_id,minute) VALUES($1,$2,$3)`, parent.UserID, fmt.Sprint(i), stamp(at)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for _, at := range []time.Time{cutoff.Add(-time.Nanosecond), cutoff, cutoff.Add(time.Nanosecond)} {
-		if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through) VALUES(?,?)`, account.ProxyUserID, paygWindowStamp(at)); err != nil {
+		if _, err := s.DB().ExecContext(ctx, `INSERT INTO xnode_payg_windows(proxy_user_id,through) VALUES($1,$2)`, account.ProxyUserID, paygWindowStamp(at)); err != nil {
 			t.Fatal(err)
 		}
 	}

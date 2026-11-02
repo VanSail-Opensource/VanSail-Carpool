@@ -32,7 +32,7 @@ func reconcileRaffleReservationsTx(ctx context.Context, tx *sql.Tx, drawID strin
 		if _, err = insertLedgerTx(ctx, tx, ticket.UserID, -delta, balance, "activity_raffle_reserve_adjust", ticket.ID, name, now); err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET reserve_minor=?,updated_at=? WHERE id=?`, required, stamp(now), ticket.ID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE activity_raffle_tickets SET reserve_minor=$1,updated_at=$2 WHERE id=$3`, required, stamp(now), ticket.ID); err != nil {
 			return err
 		}
 	}

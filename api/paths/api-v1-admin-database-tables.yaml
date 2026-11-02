@@ -3,7 +3,7 @@ get:
   tags: [Admin, Database Administration]
   operationId: listAdminDatabaseTables
   summary: List allowlisted application tables and typed columns
-  description: Excludes `schema_migrations` and SQLite internal tables. Direct edits bypass domain synchronization hooks.
+  description: Excludes `schema_migrations` and internal migration tables. Direct edits bypass domain synchronization hooks.
   responses:
     '200':
       description: Schema-aware editable table catalog.

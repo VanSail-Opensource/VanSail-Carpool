@@ -11,7 +11,7 @@ func TestPricingActualUsesDailyTrafficWindows(t *testing.T) {
 	ctx := context.Background()
 	day := time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
 	for offset, bytes := range []int64{11, 23} {
-		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES(?,'node',?,?,?,0)`, identity.ProxyUserID, period.ID, day.AddDate(0, 0, offset).Format(time.DateOnly), bytes)
+		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes) VALUES($1,'node',$2,$3,$4,0)`, identity.ProxyUserID, period.ID, day.AddDate(0, 0, offset).Format(time.DateOnly), bytes)
 		if err != nil {
 			t.Fatal(err)
 		}

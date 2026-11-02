@@ -15,14 +15,21 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		return fmt.Errorf("create stale operation set: %w", err)
 	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO maintenance_operation_candidates(id)
-		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<?
+		SELECT id FROM provider_operations operation WHERE status IN ('queued','processing','pending_review','partial') AND created_at<$1
 		AND kind<>'node_compensation'
 		AND NOT EXISTS (SELECT 1 FROM xnode_ddns_changes change WHERE change.operation_id=operation.id AND change.phase IN ('staging','routes'))
-		AND (kind NOT LIKE 'telegram_pm_%' OR created_at<=?) AND NOT (`+liveComboControlPredicate+`)`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
+		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$2) AND NOT (operation.kind IN ('member_squad_switch','member_early_activation') AND EXISTS(
+	SELECT 1 FROM provider_operation_items item JOIN purchases purchase ON purchase.id=item.target_id
+	WHERE item.operation_id=operation.id AND item.target_type='purchase' AND purchase.user_id=operation.owner_user_id
+	AND purchase.valid_from<=$3 AND purchase.valid_until>$4 AND
+	((operation.kind='member_squad_switch' AND purchase.status='active') OR
+	 (operation.kind='member_early_activation' AND purchase.status IN ('active','activating','failed')))
+	AND NOT EXISTS(SELECT 1 FROM purchases other WHERE other.user_id=purchase.user_id AND other.id<>purchase.id
+		AND other.status IN ('active','activating') AND other.valid_from<=$5 AND other.valid_until>$6)))`, stamp(cutoff), stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now))
 	if err != nil {
 		return fmt.Errorf("select stale operations: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id IN (SELECT c.operation_id FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE r.status='processing' AND (r.lease_owner IS NULL OR julianday(r.heartbeat_at)>julianday(?) OR julianday(r.lease_expires_at)>julianday(?)))`, stamp(now.Add(-2*time.Minute)), stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id IN (SELECT c.operation_id FROM ip_lookup_checks c JOIN ip_lookup_reports r ON r.id=c.report_id WHERE r.status='processing' AND (r.lease_owner IS NULL OR vansail_timestamp(r.heartbeat_at)>vansail_timestamp($1) OR vansail_timestamp(r.lease_expires_at)>vansail_timestamp($2)))`, stamp(now.Add(-2*time.Minute)), stamp(now)); err != nil {
 		return err
 	}
 	if err := reconcileExpiredPMOperationsTx(ctx, tx, now, counts); err != nil {
@@ -35,31 +42,31 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='failed',provider_payload='{}',payment_url=NULL,
-		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=?
+		qr_payload=CASE WHEN receiving_address IS NOT NULL THEN NULL ELSE qr_payload END,updated_at=$1
 		WHERE status='creating' AND id IN (SELECT item.target_id FROM provider_operation_items item
 			JOIN maintenance_operation_candidates candidate ON candidate.id=item.operation_id
 			JOIN provider_operations operation ON operation.id=candidate.id AND operation.kind='payment_create'
 			WHERE item.target_type='payment_order')`, stamp(now)); err != nil {
 		return fmt.Errorf("fail stale payment creation: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status='pending_review',updated_at=?
+	if _, err := tx.ExecContext(ctx, `UPDATE connection_ip_blocks SET status='pending_review',updated_at=$1
 		WHERE status IN ('blocking','unblocking') AND (block_operation_id IN (SELECT id FROM maintenance_operation_candidates)
 			OR unblock_operation_id IN (SELECT id FROM maintenance_operation_candidates))`, stamp(now)); err != nil {
 		return fmt.Errorf("flag stale IP block operation: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='failed',error_code=?,completed_at=?,updated_at=?
+	if _, err := tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='failed',error_code=$1,completed_at=$2,updated_at=$3
 		WHERE operation_id IN (SELECT id FROM maintenance_operation_candidates)
 		AND status IN ('queued','processing','pending_review')`, maintenanceTimeoutCode, stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("fail stale operation items: %w", err)
 	}
 	if counts["stale_provider_operations"], err = deleteCount(ctx, tx, `UPDATE provider_operations SET status='failed',
-		error_code=?,completed_at=?,updated_at=? WHERE id IN (SELECT id FROM maintenance_operation_candidates)`,
+		error_code=$1,completed_at=$2,updated_at=$3 WHERE id IN (SELECT id FROM maintenance_operation_candidates)`,
 		maintenanceTimeoutCode, stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("fail stale operations: %w", err)
 	}
 	if counts["provider_operation_jobs"], err = deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE kind='provider_operation'
-		AND json_extract(payload,'$.operationId') IN (SELECT id FROM provider_operations operation
-			WHERE status IN ('succeeded','failed','compensated') AND (kind NOT LIKE 'telegram_pm_%' OR created_at<=?)
+		AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END) IN (SELECT id FROM provider_operations operation
+			WHERE status IN ('succeeded','failed','compensated') AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
 			AND NOT (status='failed' AND (`+liveComboControlPredicate+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune provider operation jobs: %w", err)
 	}
@@ -67,7 +74,7 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	// audit or state-transition link. Deleting them would violate foreign keys.
 	if counts["provider_operations"], err = deleteCount(ctx, tx, `DELETE FROM provider_operations AS operation
 		WHERE status IN ('succeeded','failed','compensated')
-		AND (kind NOT LIKE 'telegram_pm_%' OR created_at<=?)
+		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
 		AND NOT (status='failed' AND (`+liveComboControlPredicate+`))
 		AND NOT EXISTS (SELECT 1 FROM admin_temporary_bans ban
 			WHERE ban.ban_operation_id=operation.id OR ban.unban_operation_id=operation.id)

@@ -10,10 +10,7 @@ import (
 
 // EnabledSquadsForUser applies native ownership without requiring a legacy link.
 func (s *Store) retryAttempt_EnabledSquadsForUser(ctx context.Context, userID string, owned []string) ([]string, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -33,7 +30,7 @@ func enabledSquadsTx(ctx context.Context, tx *sql.Tx, userID string, owned []str
 	}
 	enabled := purchaseops.EnabledSquads(uniqueSorted(owned), disabled)
 	if len(enabled) == 1 && slices.Contains(disabled, enabled[0]) {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM user_disabled_squads WHERE user_id=? AND squad_uuid=?`, userID, enabled[0]); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM user_disabled_squads WHERE user_id=$1 AND squad_uuid=$2`, userID, enabled[0]); err != nil {
 			return nil, err
 		}
 	}

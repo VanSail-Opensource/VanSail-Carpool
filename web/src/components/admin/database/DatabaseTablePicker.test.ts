@@ -8,8 +8,8 @@ import type { DatabaseTable } from '@/api/features'
 import DatabaseTablePicker from './DatabaseTablePicker.vue'
 
 const tables: DatabaseTable[] = [
-  { name: 'users', columns: [], highRisk: false, supportsRowId: false, warning: '' },
-  { name: 'audit_events_with_a_long_name', columns: [], highRisk: true, supportsRowId: false, warning: '' },
+  { name: 'users', columns: [], highRisk: false, warning: '' },
+  { name: 'audit_events_with_a_long_name', columns: [], highRisk: true, warning: '' },
 ]
 const SelectMenuStub = defineComponent({
   inheritAttrs: false,

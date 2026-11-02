@@ -57,7 +57,7 @@ func TestCompleteOutboxJobRemovesSuccessAndRetainsFailure(t *testing.T) {
 			}
 
 			var status string
-			err = store.DB().QueryRowContext(ctx, `SELECT status FROM outbox_jobs WHERE id=?`, claimed.ID).Scan(&status)
+			err = store.DB().QueryRowContext(ctx, `SELECT status FROM outbox_jobs WHERE id=$1`, claimed.ID).Scan(&status)
 			if test.wantStatus == "missing" {
 				if !errors.Is(err, sql.ErrNoRows) {
 					t.Fatalf("completed job lookup error = %v, want sql.ErrNoRows", err)
@@ -71,32 +71,5 @@ func TestCompleteOutboxJobRemovesSuccessAndRetainsFailure(t *testing.T) {
 				t.Fatalf("failed job status = %q, want %q", status, test.wantStatus)
 			}
 		})
-	}
-}
-
-func TestMarkupMigrationRetriesOnlyDefinitiveTelegramRejections(t *testing.T) {
-	t.Parallel()
-	ctx, store := context.Background(), newTestStore(t)
-	now := stamp(time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC))
-	for _, item := range []struct{ id, payload, failure string }{
-		{id: "parse", payload: `{"eventKey":"parse"}`, failure: "telegram sendMessage failed (http=400 api=400): Bad Request: can't parse entities"},
-		{id: "blocked", payload: `{"eventKey":"blocked"}`, failure: "telegram sendMessage failed (http=403 api=403): bot was blocked by the user"},
-	} {
-		if _, err := store.DB().ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,last_error,created_at,updated_at)
-			VALUES(?,'telegram_user_notification',?,'failed',10,?,?,?,?)`, item.id, item.payload, now, item.failure, now, now); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if _, err := store.DB().ExecContext(ctx, `DELETE FROM schema_migrations WHERE version='049_retry_rejected_telegram_markup.sql'`); err != nil {
-		t.Fatal(err)
-	}
-	if err := migrate(ctx, store.DB()); err != nil {
-		t.Fatal(err)
-	}
-	for _, item := range []struct{ id, wanted string }{{"parse", "pending"}, {"blocked", "failed"}} {
-		var status string
-		if err := store.DB().QueryRowContext(ctx, `SELECT status FROM outbox_jobs WHERE id=?`, item.id).Scan(&status); err != nil || status != item.wanted {
-			t.Fatalf("job %s status = %q, err %v, want %q", item.id, status, err, item.wanted)
-		}
 	}
 }

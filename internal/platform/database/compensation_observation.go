@@ -13,10 +13,7 @@ import (
 
 // RecordCompensationObservation atomically advances only nodes present in a complete sample.
 func (s *Store) retryAttempt_RecordCompensationObservation(ctx context.Context, config compensation.Config, nodes []compensation.Node, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -44,7 +41,7 @@ func (s *Store) retryAttempt_RecordCompensationObservation(ctx context.Context, 
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO node_compensation_node_state(node_uuid,node_name,is_connected,is_disabled,
-			open_event_id,last_observed_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(node_uuid) DO UPDATE SET
+			open_event_id,last_observed_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(node_uuid) DO UPDATE SET
 			node_name=excluded.node_name,is_connected=excluded.is_connected,is_disabled=excluded.is_disabled,
 			open_event_id=excluded.open_event_id,last_observed_at=excluded.last_observed_at,updated_at=excluded.updated_at`,
 			node.UUID, node.Name, boolInt(node.Connected), boolInt(node.Disabled), nullIfEmpty(eventID), stamp(now), stamp(now)); err != nil {
@@ -56,7 +53,7 @@ func (s *Store) retryAttempt_RecordCompensationObservation(ctx context.Context, 
 
 func observingCompensationEvent(ctx context.Context, tx *sql.Tx, nodeUUID string) (string, error) {
 	var eventID string
-	err := tx.QueryRowContext(ctx, `SELECT id FROM node_compensation_events WHERE node_uuid=? AND status='observing'`, nodeUUID).Scan(&eventID)
+	err := tx.QueryRowContext(ctx, `SELECT id FROM node_compensation_events WHERE node_uuid=$1 AND status='observing'`, nodeUUID).Scan(&eventID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
@@ -87,19 +84,19 @@ func startCompensationEvent(ctx context.Context, tx *sql.Tx, config compensation
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO node_compensation_events(id,node_uuid,node_name,status,offline_observed_at,
 		threshold_minutes,multiplier_bps,frozen_recipient_count,revision,created_at,updated_at)
-		VALUES(?,?,?,'observing',?,?,?,?,0,?,?)`, eventID, node.UUID, node.Name, stamp(now), *config.ThresholdMinutes,
+		VALUES($1,$2,$3,'observing',$4,$5,$6,$7,0,$8,$9)`, eventID, node.UUID, node.Name, stamp(now), *config.ThresholdMinutes,
 		*config.MultiplierBPS, len(targets), stamp(now), stamp(now))
 	if err != nil {
 		return "", fmt.Errorf("start compensation event: %w", err)
 	}
 	for _, squad := range node.AffectedSquads {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO node_compensation_event_squads(event_id,squad_uuid,squad_name) VALUES(?,?,?)`,
+		if _, err := tx.ExecContext(ctx, `INSERT INTO node_compensation_event_squads(event_id,squad_uuid,squad_name) VALUES($1,$2,$3)`,
 			eventID, squad.UUID, squad.Name); err != nil {
 			return "", err
 		}
 	}
 	for _, target := range targets {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO node_compensation_event_recipients(event_id,user_id) VALUES(?,?)`, eventID, target.UserID); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO node_compensation_event_recipients(event_id,user_id) VALUES($1,$2)`, eventID, target.UserID); err != nil {
 			return "", err
 		}
 	}
@@ -110,7 +107,7 @@ func recoverCompensationEvent(ctx context.Context, tx *sql.Tx, eventID string, n
 	var offline string
 	var threshold, multiplier, recipients int
 	if err := tx.QueryRowContext(ctx, `SELECT offline_observed_at,threshold_minutes,multiplier_bps,frozen_recipient_count
-		FROM node_compensation_events WHERE id=? AND status='observing'`, eventID).Scan(&offline, &threshold, &multiplier, &recipients); err != nil {
+		FROM node_compensation_events WHERE id=$1 AND status='observing'`, eventID).Scan(&offline, &threshold, &multiplier, &recipients); err != nil {
 		return err
 	}
 	started, err := parseStamp(offline)
@@ -127,15 +124,15 @@ func recoverCompensationEvent(ctx context.Context, tx *sql.Tx, eventID string, n
 	if reason != "" {
 		status, reasonValue = "ineligible", reason
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE node_compensation_events SET status=?,recovered_observed_at=?,observed_duration_seconds=?,
-		proposed_extension_minutes=?,capped=?,ineligible_reason=?,revision=revision+1,updated_at=? WHERE id=? AND status='observing'`,
+	_, err = tx.ExecContext(ctx, `UPDATE node_compensation_events SET status=$1,recovered_observed_at=$2,observed_duration_seconds=$3,
+		proposed_extension_minutes=$4,capped=$5,ineligible_reason=$6,revision=revision+1,updated_at=$7 WHERE id=$8 AND status='observing'`,
 		status, stamp(now), seconds, minutes, boolInt(capped), reasonValue, stamp(now), eventID)
 	return err
 }
 
 func closeCompensationEvent(ctx context.Context, tx *sql.Tx, eventID string, now time.Time, reason string) error {
-	_, err := tx.ExecContext(ctx, `UPDATE node_compensation_events SET status='ineligible',recovered_observed_at=?,
-		observed_duration_seconds=CAST((julianday(?) - julianday(offline_observed_at))*86400 AS INTEGER),ineligible_reason=?,
-		revision=revision+1,updated_at=? WHERE id=? AND status='observing'`, stamp(now), stamp(now), reason, stamp(now), eventID)
+	_, err := tx.ExecContext(ctx, `UPDATE node_compensation_events SET status='ineligible',recovered_observed_at=$1,
+		observed_duration_seconds=CAST((vansail_timestamp($2) - vansail_timestamp(offline_observed_at))*86400 AS BIGINT),ineligible_reason=$3,
+		revision=revision+1,updated_at=$4 WHERE id=$5 AND status='observing'`, stamp(now), stamp(now), reason, stamp(now), eventID)
 	return err
 }

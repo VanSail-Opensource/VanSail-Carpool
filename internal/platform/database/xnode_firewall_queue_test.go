@@ -26,7 +26,7 @@ func clearDeliveredFirewallJobs(t *testing.T, s *Store) {
 			t.Fatal(err)
 		}
 	}
-	if _, err = s.db.Exec(`DELETE FROM outbox_jobs WHERE kind=?`, xnode.FirewallJob); err != nil {
+	if _, err = s.db.Exec(`DELETE FROM outbox_jobs WHERE kind=$1`, xnode.FirewallJob); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -44,7 +44,7 @@ func TestFirewallJournalQueuesOnlyDesiredChangesAndLaggingBanks(t *testing.T) {
 	count := func(want int) {
 		t.Helper()
 		var n int
-		if err := s.db.QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`, xnode.FirewallJob).Scan(&n); err != nil || n != want {
+		if err := s.db.QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`, xnode.FirewallJob).Scan(&n); err != nil || n != want {
 			t.Fatalf("firewall jobs=%d, want=%d, error=%v", n, want, err)
 		}
 	}
@@ -60,12 +60,12 @@ func TestFirewallJournalQueuesOnlyDesiredChangesAndLaggingBanks(t *testing.T) {
 	}
 	count(1) // A new dynamic ban does not requeue the current source bank.
 	var bank string
-	if err := s.db.QueryRow(`SELECT json_extract(payload,'$.bank') FROM outbox_jobs WHERE kind=?`, xnode.FirewallJob).Scan(&bank); err != nil || bank != "dynamic" {
+	if err := s.db.QueryRow(`SELECT (CASE ((payload)::jsonb #> '{bank}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{bank}' END) FROM outbox_jobs WHERE kind=$1`, xnode.FirewallJob).Scan(&bank); err != nil || bank != "dynamic" {
 		t.Fatal("wrong bank queued", bank, err)
 	}
 	// Even while delivery is behind, replaying the already committed event
 	// must not regenerate fleet work. Periodic reconciliation owns recovery.
-	if _, err := s.db.Exec(`DELETE FROM outbox_jobs WHERE kind=?`, xnode.FirewallJob); err != nil {
+	if _, err := s.db.Exec(`DELETE FROM outbox_jobs WHERE kind=$1`, xnode.FirewallJob); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.RecordFirewallEvents(ctx, "node", "queue-events", []wire.FirewallEvent{event}, policy, now); err != nil {
@@ -89,7 +89,7 @@ func TestFirewallReconciliationPreservesPendingRetryAndReconnectsBothBanks(t *te
 		t.Fatal(err)
 	}
 	next := stamp(time.Now().UTC().Add(time.Hour))
-	if _, err := s.db.Exec(`UPDATE outbox_jobs SET attempts=4,available_at=? WHERE kind=?`, next, xnode.FirewallJob); err != nil {
+	if _, err := s.db.Exec(`UPDATE outbox_jobs SET attempts=4,available_at=$1 WHERE kind=$2`, next, xnode.FirewallJob); err != nil {
 		t.Fatal(err)
 	}
 	for range 3 {
@@ -98,7 +98,7 @@ func TestFirewallReconciliationPreservesPendingRetryAndReconnectsBothBanks(t *te
 		}
 	}
 	var count int
-	if err := s.db.QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=? AND attempts=4 AND available_at=?`, xnode.FirewallJob, next).Scan(&count); err != nil || count != 2 {
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1 AND attempts=4 AND available_at=$2`, xnode.FirewallJob, next).Scan(&count); err != nil || count != 2 {
 		t.Fatal("reconciliation erased retry delay or missed reconnect bank", count, err)
 	}
 }

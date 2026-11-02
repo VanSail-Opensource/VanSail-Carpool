@@ -17,7 +17,7 @@ import (
 
 var (
 	// ErrTableNotFound indicates that the table is excluded or is not part of
-	// the application schema discovered from sqlite_schema.
+	// the application schema discovered from PostgreSQL catalogs.
 	ErrTableNotFound = errors.New("database table not found")
 	// ErrRecordNotFound indicates that the declared key no longer identifies a row.
 	ErrRecordNotFound = errors.New("database record not found")
@@ -27,7 +27,7 @@ var (
 	// or does not cover the exact requested mutation.
 	ErrReviewConflict = errors.New("database mutation review conflicts")
 	// ErrInvalidValue indicates that a typed editor value does not match its
-	// SQLite column affinity or nullability.
+	// PostgreSQL column storageFamily or nullability.
 	ErrInvalidValue = errors.New("invalid database editor value")
 	// ErrConfirmation indicates that the typed destructive confirmation differs.
 	ErrConfirmation = errors.New("database mutation confirmation does not match")
@@ -84,11 +84,10 @@ type Column struct {
 // Table describes an allowlisted application table.
 
 type Table struct {
-	Name          string   `json:"name"`
-	Columns       []Column `json:"columns"`
-	HighRisk      bool     `json:"highRisk"`
-	SupportsRowID bool     `json:"supportsRowId"`
-	Warning       string   `json:"warning"`
+	Name     string   `json:"name"`
+	Columns  []Column `json:"columns"`
+	HighRisk bool     `json:"highRisk"`
+	Warning  string   `json:"warning"`
 }
 
 type valueKind uint8
@@ -101,7 +100,7 @@ const (
 	valueMasked
 )
 
-// Value is the JSON wire union used by typed record editors. SQLite integers
+// Value is the JSON wire union used by typed record editors. PostgreSQL integers
 // and real/numeric values intentionally use the string variant, preserving
 // decimal representation without JavaScript precision loss.
 
@@ -120,7 +119,7 @@ func NullValue() Value { return Value{kind: valueNull} }
 
 func StringValue(value string) Value { return Value{kind: valueString, text: value} }
 
-// BooleanValue creates a boolean editor value stored as SQLite 0 or 1.
+// BooleanValue creates a boolean editor value stored as PostgreSQL 0 or 1.
 
 func BooleanValue(value bool) Value { return Value{kind: valueBoolean, bool: value} }
 
@@ -168,6 +167,6 @@ func (v Value) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON accepts null, a string, a boolean, or a single
-// {"blobBase64":"..."} object. Numeric SQLite values must arrive as decimal
+// {"blobBase64":"..."} object. Numeric PostgreSQL values must arrive as decimal
 // strings so a JavaScript client cannot round a 64-bit integer before the
 // server validates it.

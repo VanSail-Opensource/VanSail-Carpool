@@ -28,7 +28,7 @@ func scanPricingContract(row rowScanner) (renewal.Contract, error) {
 }
 
 func pricingContractTx(ctx context.Context, tx *sql.Tx, purchase string) (renewal.Contract, error) {
-	return scanPricingContract(tx.QueryRowContext(ctx, pricingContractSelect+` WHERE purchase_id=? ORDER BY version DESC LIMIT 1`, purchase))
+	return scanPricingContract(tx.QueryRowContext(ctx, pricingContractSelect+` WHERE purchase_id=$1 ORDER BY version DESC LIMIT 1`, purchase))
 }
 
 func insertPricingContractTx(ctx context.Context, tx *sql.Tx, c renewal.Contract) error {
@@ -39,20 +39,20 @@ func insertPricingContractTx(ctx context.Context, tx *sql.Tx, c renewal.Contract
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_contracts(id,purchase_id,user_id,product_id,mode,contractual_price_minor,price_limit_minor,max_change_bps,policy_version,recorded_at,version,source_purchase_id,addon_terms_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, c.ID, c.PurchaseID, c.UserID, c.ProductID, c.Mode, c.Price, c.Ceiling, c.MaxChangeBPS, c.PolicyVersion, pricingStamp(c.RecordedAt), c.Version, c.SourcePurchaseID, string(raw))
+	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_contracts(id,purchase_id,user_id,product_id,mode,contractual_price_minor,price_limit_minor,max_change_bps,policy_version,recorded_at,version,source_purchase_id,addon_terms_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, c.ID, c.PurchaseID, c.UserID, c.ProductID, c.Mode, c.Price, c.Ceiling, c.MaxChangeBPS, c.PolicyVersion, pricingStamp(c.RecordedAt), c.Version, c.SourcePurchaseID, string(raw))
 	return err
 }
 
 // PricingContract returns only the owner's contract; no row means legacy terms.
 func (s *Store) PricingContract(ctx context.Context, user, purchase string) (*renewal.Contract, error) {
 	var owner string
-	if err := s.db.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=?`, purchase).Scan(&owner); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT user_id FROM purchases WHERE id=$1`, purchase).Scan(&owner); err != nil {
 		return nil, err
 	}
 	if owner != user {
 		return nil, ErrNotFound
 	}
-	c, err := scanPricingContract(s.db.QueryRowContext(ctx, pricingContractSelect+` WHERE purchase_id=? ORDER BY version DESC LIMIT 1`, purchase))
+	c, err := scanPricingContract(s.db.QueryRowContext(ctx, pricingContractSelect+` WHERE purchase_id=$1 ORDER BY version DESC LIMIT 1`, purchase))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -95,7 +95,7 @@ func inheritPricingContractTx(ctx context.Context, tx *sql.Tx, source, target st
 	c.Price = gross
 	if c.Mode == "DYNAMIC" {
 		var discount int64
-		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(d.discount_minor),0) FROM pricing_discount_spend d JOIN pricing_renewal_quotes q ON d.reference_id='renewal:'||q.id WHERE q.purchase_id=? AND d.status IN ('RESERVED','CONSUMED') AND q.state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH','SETTLED')`, source).Scan(&discount); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(d.discount_minor),0) FROM pricing_discount_spend d JOIN pricing_renewal_quotes q ON d.reference_id='renewal:'||q.id WHERE q.purchase_id=$1 AND d.status IN ('RESERVED','CONSUMED') AND q.state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH','SETTLED')`, source).Scan(&discount); err != nil {
 			return err
 		}
 		c.Price += discount // A one-term campaign cannot become an unlimited future discount.
@@ -110,10 +110,10 @@ func inheritPricingContractTx(ctx context.Context, tx *sql.Tx, source, target st
 		return err
 	}
 	if c.Mode == "DYNAMIC" {
-		if _, err = tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='CONSUMED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE purchase_id=? AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH'))`, source); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE pricing_discount_spend SET status='CONSUMED' WHERE status='RESERVED' AND reference_id IN (SELECT 'renewal:'||id FROM pricing_renewal_quotes WHERE purchase_id=$1 AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH'))`, source); err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='SETTLED',outcome_reason='',settled_purchase_id=? WHERE purchase_id=? AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH') AND valid_until>?`, target, source, pricingStamp(now))
+		_, err = tx.ExecContext(ctx, `UPDATE pricing_renewal_quotes SET state='SETTLED',outcome_reason='',settled_purchase_id=$1 WHERE purchase_id=$2 AND state IN ('AUTHORIZED','READY_TO_SETTLE','DEFERRED_HEALTH') AND valid_until>$3`, target, source, pricingStamp(now))
 	}
 	return err
 }

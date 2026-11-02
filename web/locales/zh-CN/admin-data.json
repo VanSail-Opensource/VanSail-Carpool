@@ -1,7 +1,7 @@
 {
   "adminDatabase": {
     "title": "数据库编辑器",
-    "copy": "仅支持类型化记录，不提供原始 SQL 和 SQLite 内部表。",
+    "copy": "仅支持 PostgreSQL 类型化记录，不提供原始 SQL 和内部迁移表。",
     "insertRow": "新增记录",
     "bypassTitle": "此操作绕过领域钩子",
     "bypassCopy": "请尽量使用常规管理操作。直接修改必须填写原因、审阅差异、输入确认文本并创建救援备份。",
@@ -50,13 +50,13 @@
     }
   },
   "adminBackups": {
-    "maintenance": "\u8fd0\u884c\u7ef4\u62a4",
-    "maintenanceTitle": "\u7acb\u5373\u8fd0\u884c\u7ef4\u62a4\uff1f",
-    "maintenanceDescription": "\u7cfb\u7edf\u4f1a\u5148\u521b\u5efa\u5e76\u9a8c\u8bc1\u5907\u4efd\uff0c\u7136\u540e\u6e05\u7406\u8d85\u8fc7\u4e03\u5929\u7684\u6570\u636e\u5e93\u8bb0\u5f55\u548c\u8fc1\u79fb\u5feb\u7167\u3002\u5373\u4f7f\u4eca\u5929\u5df2\u7ecf\u8fd0\u884c\u8fc7\uff0c\u4e5f\u53ef\u4ee5\u518d\u6b21\u6267\u884c\u3002",
-    "maintenanceConfirm": "\u8fd0\u884c\u7ef4\u62a4",
-    "maintenanceQueued": "\u7ef4\u62a4\u4efb\u52a1\u5df2\u6392\u961f\u3002\u5b8c\u6210\u540e\u5c06\u5237\u65b0\u5907\u4efd\u548c\u4efb\u52a1\u5217\u8868\u3002",
-    "maintenanceSucceeded": "\u7ef4\u62a4\u5df2\u5b8c\u6210\u3002\u5907\u4efd\u548c\u4efb\u52a1\u5217\u8868\u5df2\u5237\u65b0\u3002",
-    "maintenanceFailed": "\u7ef4\u62a4\u5931\u8d25\u3002\u8bf7\u68c0\u67e5\u4efb\u52a1\u72b6\u6001\u540e\u91cd\u8bd5\u3002",
+    "maintenance": "运行维护",
+    "maintenanceTitle": "立即运行维护？",
+    "maintenanceDescription": "系统会先创建并验证备份，然后清理超过七天的数据库记录和迁移快照。即使今天已经运行过，也可以再次执行。",
+    "maintenanceConfirm": "运行维护",
+    "maintenanceQueued": "维护任务已排队。完成后将刷新备份和任务列表。",
+    "maintenanceSucceeded": "维护已完成。备份和任务列表已刷新。",
+    "maintenanceFailed": "维护失败。请检查任务状态后重试。",
     "status": {
       "running": "运行中",
       "scheduled": "已计划",
@@ -69,29 +69,21 @@
       "failed": "失败"
     },
     "title": "备份",
-    "copy": "经过验证的 SQLite 快照保留七天。",
+    "copy": "经过验证的 PostgreSQL 归档保留七天。请在离线维护期间恢复。",
     "create": "创建备份",
     "deleteFailed": "备份删除失败。",
     "jobDeleteFailed": "任务删除失败。",
     "downloadFailed": "备份下载失败。",
-    "restoreFailed": "恢复暂存失败。",
     "backupName": "备份 {id}",
-    "restoreComplete": "恢复完成",
-    "restoreFailedTitle": "恢复失败",
-    "restoreStaged": "恢复已暂存",
-    "operationStatus": "操作 {id} 当前状态为 {status}。",
     "operationError": "恢复操作需要进一步处理。",
-    "reauthenticate": "如果之前的会话已不存在，请重新登录。",
-    "reconnect": "应用会在重启后重新连接。",
     "verified": "已验证",
     "download": "下载",
-    "restore": "恢复",
     "delete": "删除",
     "none": "暂无备份",
     "noneHint": "每日计划任务会创建第一份经过验证的副本。",
     "deleteTitle": "删除 {name}？",
     "backup": "备份",
-    "deleteDescription": "已验证的文件及其元数据会一并删除。恢复正在暂存或重启时禁止删除。",
+    "deleteDescription": "已验证的归档和元数据会一起删除。受恢复记录保护的归档不能删除。",
     "deleteBackup": "删除备份",
     "jobs": "同步任务",
     "jobsHint": "重试和计划的权益变更。连续性任务会在下一权益开始前三分钟运行。",
@@ -137,12 +129,5 @@
     "apply": "应用已审阅变更",
     "reviewChange": "审阅变更",
     "notPresent": "不存在"
-  },
-  "restoreBackup": {
-    "title": "暂存数据库恢复？",
-    "copy": "系统会先创建救援备份，然后重启并连接到所选的已验证快照。",
-    "confirmationPrefix": "RESTORE",
-    "staging": "正在暂存恢复",
-    "confirm": "创建救援备份并恢复"
   }
 }

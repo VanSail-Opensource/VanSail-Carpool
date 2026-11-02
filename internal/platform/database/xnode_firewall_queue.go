@@ -24,7 +24,7 @@ func queueFirewallMembersTx(ctx context.Context, tx *sql.Tx, node string, now ti
  (m.force_sync<>0 OR m.applied<c.version),
  (m.force_sync<>0 OR m.source_applied<c.source_version)
  FROM xnode_firewall_members m CROSS JOIN xnode_firewall_clock c
- WHERE m.active=1 AND (?='' OR m.node_id=?)
+ WHERE m.active=1 AND ($1='' OR m.node_id=$2)
  AND (m.force_sync<>0 OR m.applied<c.version OR m.source_applied<c.source_version)
  ORDER BY m.node_id`, node, node)
 	if err != nil {
@@ -61,7 +61,7 @@ func queueFirewallMembersTx(ctx context.Context, tx *sql.Tx, node string, now ti
 			if err != nil {
 				return err
 			}
-			if _, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=?,updated_at=? WHERE kind=? AND payload=? AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
+			if _, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=0,available_at=$1,updated_at=$2 WHERE kind=$3 AND payload=$4 AND status='failed'`, stamp(now), stamp(now), xnode.FirewallJob, string(raw)); err != nil {
 				return err
 			}
 			if err = insertOutboxTx(ctx, tx, xnode.FirewallJob, string(raw), now, now); err != nil {

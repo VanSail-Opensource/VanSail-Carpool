@@ -30,10 +30,10 @@ func TestAccessRepairFindsOpenResetAfterSettledPurchasePeriod(t *testing.T) {
 	if err = f.store.SaveXNodePeriod(ctx, next); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=?`, next.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=12345 WHERE id=$1`, next.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=? WHERE user_id=?`, previous.ID, f.user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=$1 WHERE user_id=$2`, previous.ID, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	for range 2 {

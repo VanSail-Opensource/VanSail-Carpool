@@ -24,7 +24,7 @@ func recordPMUpdateTx(ctx context.Context, tx *sql.Tx, updateID int64, now time.
 	if updateID <= 0 {
 		return false, ErrConflict
 	}
-	result, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO telegram_pm_updates(update_id,created_at) VALUES(?,?)`, updateID, stamp(now))
+	result, err := tx.ExecContext(ctx, `INSERT   INTO telegram_pm_updates(update_id,created_at) VALUES($1,$2) ON CONFLICT DO NOTHING `, updateID, stamp(now))
 	if err != nil {
 		return false, err
 	}
@@ -33,10 +33,7 @@ func recordPMUpdateTx(ctx context.Context, tx *sql.Tx, updateID int64, now time.
 }
 
 func (s *Store) retryAttempt_QueuePMNotice(ctx context.Context, updateID int64, notice model.PMNotice, now time.Time) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -63,10 +60,7 @@ func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRel
 	if input.Inbound && input.ActorUserID != input.UserID {
 		return nil, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -83,7 +77,7 @@ func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRel
 	}
 	var eligible, blocked bool
 	if err := tx.QueryRowContext(ctx, `SELECT (policy_accepted_at IS NOT NULL OR accepted_agreement_revision>0 OR EXISTS(
-		SELECT 1 FROM panel_entry_verification v WHERE v.telegram_id=users.telegram_id AND v.checked=1)),pm_blocked FROM users WHERE id=?`, input.UserID).Scan(&eligible, &blocked); err != nil {
+		SELECT 1 FROM panel_entry_verification v WHERE v.telegram_id=users.telegram_id AND v.checked=1)),pm_blocked FROM users WHERE id=$1`, input.UserID).Scan(&eligible, &blocked); err != nil {
 		return nil, err
 	}
 	if !eligible || input.Inbound && blocked {
@@ -93,11 +87,11 @@ func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRel
 	if err != nil {
 		return nil, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO telegram_pm_conversations(id,user_id,chat_id,created_at,updated_at) VALUES(?,?,?,?,?)
+	if _, err := tx.ExecContext(ctx, `INSERT INTO telegram_pm_conversations(id,user_id,chat_id,created_at,updated_at) VALUES($1,$2,$3,$4,$5)
 		ON CONFLICT(user_id,chat_id) DO UPDATE SET updated_at=excluded.updated_at`, id, input.UserID, input.ChatID, stamp(now), stamp(now)); err != nil {
 		return nil, err
 	}
-	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.user_id=? AND c.chat_id=?`, input.UserID, input.ChatID))
+	conversation, err := scanPMConversation(tx.QueryRowContext(ctx, pmConversationSelect+` WHERE c.user_id=$1 AND c.chat_id=$2`, input.UserID, input.ChatID))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +137,7 @@ func (s *Store) retryAttempt_QueuePMRelay(ctx context.Context, input model.PMRel
 
 func requirePMAdminTx(ctx context.Context, tx *sql.Tx, actorID string) error {
 	var authorized bool
-	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=? AND role='admin')`, actorID).Scan(&authorized); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id=$1 AND role='admin')`, actorID).Scan(&authorized); err != nil {
 		return err
 	}
 	if !authorized {

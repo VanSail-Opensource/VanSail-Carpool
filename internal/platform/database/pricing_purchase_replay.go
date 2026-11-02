@@ -14,7 +14,7 @@ func (s *Store) PurchaseReplay(ctx context.Context, input PurchaseInput) (model.
 		return model.Purchase{}, false, err
 	}
 	var id, saved string
-	err = s.db.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=? AND idempotency_key=?`, input.UserID, input.IdempotencyKey).Scan(&id, &saved)
+	err = s.db.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM purchases WHERE user_id=$1 AND idempotency_key=$2`, input.UserID, input.IdempotencyKey).Scan(&id, &saved)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.Purchase{}, false, nil
 	}

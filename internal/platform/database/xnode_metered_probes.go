@@ -31,11 +31,11 @@ func scanMeteredProbe(row rowScanner) (xnode.MeteredProbe, error) {
 }
 
 func (s *Store) XNodeMeteredProbe(ctx context.Context, id int64) (xnode.MeteredProbe, error) {
-	return scanMeteredProbe(s.db.QueryRowContext(ctx, meteredProbeSelect+` WHERE proxy_user_id=?`, id))
+	return scanMeteredProbe(s.db.QueryRowContext(ctx, meteredProbeSelect+` WHERE proxy_user_id=$1`, id))
 }
 
 func (s *Store) XNodePeriodProbes(ctx context.Context, period string) ([]xnode.MeteredProbe, error) {
-	rows, err := s.db.QueryContext(ctx, meteredProbeSelect+` WHERE period_id=? ORDER BY proxy_user_id`, period)
+	rows, err := s.db.QueryContext(ctx, meteredProbeSelect+` WHERE period_id=$1 ORDER BY proxy_user_id`, period)
 	if err != nil {
 		return nil, err
 	}
@@ -54,16 +54,13 @@ func (s *Store) XNodePeriodProbes(ctx context.Context, period string) ([]xnode.M
 // SaveXNodeMeteredProbe atomically binds access and attribution, only while the
 // originating identity still owns its open period. References never rebind.
 func (s *Store) retryAttempt_SaveXNodeMeteredProbe(ctx context.Context, p xnode.MeteredProbe) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_metered_probes(proxy_user_id,period_id,operation_id,pair_key,endpoint_id,node_id,inbound_tag,valid_until) SELECT ?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.id=? AND p.status='open' AND i.current_period_id=p.id AND i.access_disabled=0 AND (p.limit_bytes=0 OR p.used_bytes<p.limit_bytes))`, p.ProxyUserID, p.PeriodID, p.OperationID, p.PairKey, p.EndpointID, p.NodeID, p.InboundTag, stamp(p.ValidUntil), p.PeriodID)
+	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_metered_probes(proxy_user_id,period_id,operation_id,pair_key,endpoint_id,node_id,inbound_tag,valid_until) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.id=$9 AND p.status='open' AND i.current_period_id=p.id AND i.access_disabled=0 AND (p.limit_bytes=0 OR p.used_bytes<p.limit_bytes))`, p.ProxyUserID, p.PeriodID, p.OperationID, p.PairKey, p.EndpointID, p.NodeID, p.InboundTag, stamp(p.ValidUntil), p.PeriodID)
 	if err != nil {
 		return err
 	}
@@ -74,7 +71,7 @@ func (s *Store) retryAttempt_SaveXNodeMeteredProbe(ctx context.Context, p xnode.
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_service_bindings(proxy_user_id,node_id,inbound_tag,valid_until) VALUES(?,?,?,?)`, p.ProxyUserID, p.NodeID, p.InboundTag, stamp(p.ValidUntil))
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_service_bindings(proxy_user_id,node_id,inbound_tag,valid_until) VALUES($1,$2,$3,$4)`, p.ProxyUserID, p.NodeID, p.InboundTag, stamp(p.ValidUntil))
 	if err != nil {
 		return err
 	}
@@ -82,11 +79,11 @@ func (s *Store) retryAttempt_SaveXNodeMeteredProbe(ctx context.Context, p xnode.
 }
 
 func (s *Store) RevokeXNodeMeteredProbe(ctx context.Context, id int64, at time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_metered_probes SET revoked_at=COALESCE(revoked_at,?) WHERE proxy_user_id=?`, stamp(at), id)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_metered_probes SET revoked_at=COALESCE(revoked_at,$1) WHERE proxy_user_id=$2`, stamp(at), id)
 	return err
 }
 
 func (s *Store) SealXNodeMeteredProbe(ctx context.Context, id int64, sequence uint64) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_metered_probes SET flushed_sequence=? WHERE proxy_user_id=? AND revoked_at IS NOT NULL`, sequence, id)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_metered_probes SET flushed_sequence=$1 WHERE proxy_user_id=$2 AND revoked_at IS NOT NULL`, sequence, id)
 	return err
 }

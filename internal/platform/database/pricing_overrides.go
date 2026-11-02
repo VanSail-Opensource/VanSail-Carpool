@@ -43,17 +43,14 @@ func (s *Store) retryAttempt_CreatePricingIntervention(ctx context.Context, acto
 	if in.Command == "PERSONAL_DISCOUNT" && (in.DiscountBPS <= 0 || in.DiscountBPS > 10000 || in.Budget <= 0 || in.Budget > pricing.MaxPrice) {
 		return in, ErrConflict
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return in, err
 	}
 	defer tx.Rollback()
 	var serial int
-	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 /*pg:FOR UPDATE*/`).Scan(&serial); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT singleton FROM pricing_worker_watermark WHERE singleton=1 FOR UPDATE`).Scan(&serial); err != nil {
 		return in, err
 	}
 	if err = pricingAdminTx(ctx, tx, actor); err != nil {
@@ -65,7 +62,7 @@ func (s *Store) retryAttempt_CreatePricingIntervention(ctx context.Context, acto
 			return in, ErrConflict
 		}
 		var user string
-		if err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE id=?`, parts[0]).Scan(&user); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT id FROM users WHERE id=$1`, parts[0]).Scan(&user); err != nil {
 			return in, err
 		}
 		fixed, e := pricingReference(ctx, tx, parts[1], parts[2])
@@ -108,7 +105,7 @@ func (s *Store) retryAttempt_CreatePricingIntervention(ctx context.Context, acto
 		previous = string(raw)
 	} else {
 		var version int64
-		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(expected_version),0) FROM pricing_admin_overrides WHERE scope_type=? AND scope_id=?`, in.ScopeType, in.ScopeID).Scan(&version); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(expected_version),0) FROM pricing_admin_overrides WHERE scope_type=$1 AND scope_id=$2`, in.ScopeType, in.ScopeID).Scan(&version); err != nil {
 			return in, err
 		}
 		if version != in.ExpectedVersion {
@@ -127,7 +124,7 @@ func (s *Store) retryAttempt_CreatePricingIntervention(ctx context.Context, acto
 	if err != nil {
 		return in, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_admin_overrides(id,scope_type,scope_id,command,reason,created_by,starts_at,expires_at,expected_version,previous_json,proposed_json,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, in.ID, in.ScopeType, in.ScopeID, in.Command, in.Reason, actor, pricingStamp(now), pricingStamp(in.ExpiresAt), in.ExpectedVersion, previous, string(raw), in.Status, pricingStamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_admin_overrides(id,scope_type,scope_id,command,reason,created_by,starts_at,expires_at,expected_version,previous_json,proposed_json,status,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, in.ID, in.ScopeType, in.ScopeID, in.Command, in.Reason, actor, pricingStamp(now), pricingStamp(in.ExpiresAt), in.ExpectedVersion, previous, string(raw), in.Status, pricingStamp(now))
 	if err != nil {
 		return in, err
 	}

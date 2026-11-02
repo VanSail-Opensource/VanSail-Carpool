@@ -17,7 +17,7 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	}
 	var owner int64
 	var status string
-	if err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status FROM xnode_periods WHERE id=?`, sample.AccountingPeriod).Scan(&owner, &status); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status FROM xnode_periods WHERE id=$1`, sample.AccountingPeriod).Scan(&owner, &status); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return xnode.ErrTrafficPeriodMissing
 		}
@@ -28,7 +28,7 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	}
 	if owner != int64(sample.UserID) {
 		var migrated bool
-		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM member_identity_aliases a JOIN xnode_period_nodes p ON p.period_id=? AND p.node_id=? WHERE a.old_proxy_id=? AND a.proxy_id=?)`, sample.AccountingPeriod, node, sample.UserID, owner).Scan(&migrated); err != nil {
+		if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM member_identity_aliases a JOIN xnode_period_nodes p ON p.period_id=$1 AND p.node_id=$2 WHERE a.old_proxy_id=$3 AND a.proxy_id=$4)`, sample.AccountingPeriod, node, sample.UserID, owner).Scan(&migrated); err != nil {
 			return err
 		}
 		if migrated {
@@ -39,7 +39,7 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	}
 	date := sample.Through.UTC().Format(time.DateOnly)
 	var oldUpload, oldDownload, oldWeighted, remainder int64
-	err := tx.QueryRowContext(ctx, `SELECT upload_bytes,download_bytes,weighted_bytes,weight_remainder FROM xnode_daily_usage WHERE proxy_user_id=? AND node_id=? AND period_id=? AND date=?`, sample.UserID, node, sample.AccountingPeriod, date).Scan(&oldUpload, &oldDownload, &oldWeighted, &remainder)
+	err := tx.QueryRowContext(ctx, `SELECT upload_bytes,download_bytes,weighted_bytes,weight_remainder FROM xnode_daily_usage WHERE proxy_user_id=$1 AND node_id=$2 AND period_id=$3 AND date=$4`, sample.UserID, node, sample.AccountingPeriod, date).Scan(&oldUpload, &oldDownload, &oldWeighted, &remainder)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -54,11 +54,11 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	if !weighted.IsInt64() || oldWeighted > math.MaxInt64-weighted.Int64() {
 		return xnode.ErrInvalid
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes,weight_remainder) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(proxy_user_id,node_id,period_id,date) DO UPDATE SET upload_bytes=excluded.upload_bytes,download_bytes=excluded.download_bytes,weighted_bytes=excluded.weighted_bytes,weight_remainder=excluded.weight_remainder`, sample.UserID, node, sample.AccountingPeriod, date, oldUpload+upload, oldDownload+download, oldWeighted+weighted.Int64(), left.Int64())
+	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_daily_usage(proxy_user_id,node_id,period_id,date,upload_bytes,download_bytes,weighted_bytes,weight_remainder) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(proxy_user_id,node_id,period_id,date) DO UPDATE SET upload_bytes=excluded.upload_bytes,download_bytes=excluded.download_bytes,weighted_bytes=excluded.weighted_bytes,weight_remainder=excluded.weight_remainder`, sample.UserID, node, sample.AccountingPeriod, date, oldUpload+upload, oldDownload+download, oldWeighted+weighted.Int64(), left.Int64())
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=used_bytes+? WHERE id=? AND used_bytes<=?`, weighted.Int64(), sample.AccountingPeriod, math.MaxInt64-weighted.Int64())
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=used_bytes+$1 WHERE id=$2 AND used_bytes<=$3`, weighted.Int64(), sample.AccountingPeriod, math.MaxInt64-weighted.Int64())
 	if err != nil {
 		return err
 	}

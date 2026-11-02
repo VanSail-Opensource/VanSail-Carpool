@@ -43,12 +43,12 @@ provider before production use. Cloudflare R2 has not been selected or validated
 Keep a separately secured recovery bundle containing the exact application
 image digest, schema version, bootstrap configuration, CONFIG_MASTER_KEY and
 repository credentials. Access to a database backup without its original
-CONFIG_MASTER_KEY does not recover encrypted application secrets. Preserve source
-SQLite snapshots and hashed reports independently until the cutover is accepted.
+CONFIG_MASTER_KEY does not recover encrypted application secrets. Preserve secured recovery fingerprints and the original failed database independently
+until recovery is accepted.
 
 ## Offline restore
 
-1. Block authoritative ingress using the cutover procedure. Stop the application,
+1. Block authoritative ingress at the load balancer/proxy. Stop the application,
    scheduler, outbox and X-Node master; verify their processes are stopped. Keep
    agent journals durable and preserve provider callbacks using the reviewed
    ingress mechanism. Never restore into a database used by active workers.
@@ -62,8 +62,7 @@ SQLite snapshots and hashed reports independently until the cutover is accepted.
    `--type=name --target=...`. Set `--target-action=promote` only for the chosen
    recovery target. Mount the encrypted repository and its configuration.
 4. Start the isolated database. Check recovery has completed and inspect server
-   errors. Run `db-schema verify`, then `db-migrate recovery-check
-   --expected-hash <secured-evidence>` with the original CONFIG_MASTER_KEY. For
+   errors. Run `db-schema verify`, then `db-schema fingerprint` and compare its sha256 against secured evidence with the original CONFIG_MASTER_KEY. For
    PITR, compare evidence captured at the selected point, then reconcile effects
    after it. Verify balances/ledger, sessions, encrypted settings, cursors,
    periods, usage and outbox state before starting application workers.

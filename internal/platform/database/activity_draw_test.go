@@ -107,7 +107,7 @@ func TestStoredExtensionAppliesToExactNextActivationAndDelaysQueue(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE id=?`, first.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE id=$1`, first.ID); err != nil {
 		t.Fatal(err)
 	}
 	// Draw extension rewards now require a live term, so stored credits arrive via affiliate awards.
@@ -197,7 +197,7 @@ func TestActiveExtensionQueuesProxySync(t *testing.T) {
 		t.Fatalf("queued dates = %s..%s, want %s..%s", updatedQueued.ValidFrom, updatedQueued.ValidUntil, queued.ValidFrom.AddDate(0, 0, 3), queued.ValidUntil.AddDate(0, 0, 3))
 	}
 	var syncJobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=?`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user' AND payload=$1`, `{"userId":"`+user.ID+`"}`).Scan(&syncJobs); err != nil {
 		t.Fatal(err)
 	}
 	if syncJobs != 1 {

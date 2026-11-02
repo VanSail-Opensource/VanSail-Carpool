@@ -14,7 +14,7 @@ func TestRaffleAccountingReplayAndAtomicSettlement(t *testing.T) {
 	t.Parallel()
 	ctx, store, now := context.Background(), newTestStore(t), time.Now().UTC()
 	user := createTestUser(t, store, 31841)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=?`, user.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete' WHERE id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.AdjustBalance(ctx, user.ID, 1000, "seed", "seed", now); err != nil {
@@ -52,10 +52,10 @@ func TestRaffleAccountingReplayAndAtomicSettlement(t *testing.T) {
 		t.Fatalf("failed settlement = %v", err)
 	}
 	var balance, count int64
-	if err = store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, user.ID).Scan(&balance); err != nil || balance != 300 {
+	if err = store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=$1`, user.ID).Scan(&balance); err != nil || balance != 300 {
 		t.Fatalf("held balance = %d, %v", balance, err)
 	}
-	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_draw_results WHERE draw_id=?`, draw.ID).Scan(&count); err != nil || count != 0 {
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM activity_draw_results WHERE draw_id=$1`, draw.ID).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("partial results after failure = %d, %v", count, err)
 	}
 	settled, err := store.SettleRaffle(ctx, draw.ID, fixedActivityRandom{}, now)
@@ -65,14 +65,14 @@ func TestRaffleAccountingReplayAndAtomicSettlement(t *testing.T) {
 	if _, err = store.SettleRaffle(ctx, draw.ID, fixedActivityRandom{}, now); err != nil {
 		t.Fatal(err)
 	}
-	if err = store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=?`, user.ID).Scan(&balance); err != nil || balance != 550 {
+	if err = store.DB().QueryRowContext(ctx, `SELECT txb_minor FROM balances WHERE user_id=$1`, user.ID).Scan(&balance); err != nil || balance != 550 {
 		t.Fatalf("settled balance = %d, %v, want 1000 - 200 fees - 250 loss", balance, err)
 	}
-	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(DISTINCT prize_id) FROM activity_draw_results WHERE draw_id=?`, draw.ID).Scan(&count); err != nil || count != 2 {
+	if err = store.DB().QueryRowContext(ctx, `SELECT COUNT(DISTINCT prize_id) FROM activity_draw_results WHERE draw_id=$1`, draw.ID).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("distributed stock = %d, %v", count, err)
 	}
 	var ledgerSum int64
-	if err = store.DB().QueryRowContext(ctx, `SELECT SUM(delta_txb_minor) FROM ledger_entries WHERE user_id=?`, user.ID).Scan(&ledgerSum); err != nil || ledgerSum != balance {
+	if err = store.DB().QueryRowContext(ctx, `SELECT SUM(delta_txb_minor) FROM ledger_entries WHERE user_id=$1`, user.ID).Scan(&ledgerSum); err != nil || ledgerSum != balance {
 		t.Fatalf("ledger sum = %d, balance %d, %v", ledgerSum, balance, err)
 	}
 }

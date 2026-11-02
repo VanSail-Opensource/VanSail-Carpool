@@ -16,7 +16,7 @@ import (
 // Repository is the durable outbox and entitlement query surface.
 type Repository interface {
 	ClaimOutboxJob(context.Context, time.Time) (*model.OutboxJob, error)
-	CompleteOutboxJob(context.Context, string, int, error, time.Time) error
+	CompleteOutboxClaim(context.Context, model.OutboxJob, error, time.Time) error
 	PurchaseByID(context.Context, string) (model.Purchase, error)
 	UserForPurchase(context.Context, string) (model.User, error)
 	UserByID(context.Context, string) (model.User, error)

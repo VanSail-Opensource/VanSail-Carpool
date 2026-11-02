@@ -12,7 +12,7 @@ import (
 func activityGameByID(ctx context.Context, queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, gameID string, enabledOnly bool) (activity.Game, error) {
-	query := activityGameSelect + ` WHERE id=?`
+	query := activityGameSelect + ` WHERE id=$1`
 	if enabledOnly {
 		query += ` AND enabled=1`
 	}
@@ -42,11 +42,11 @@ func scanActivityGame(row rowScanner) (activity.Game, error) {
 const activityBetSelect = `SELECT id,user_id,game_id,stake_minor,won,payout_minor,balance_after_minor,configuration_snapshot,idempotency_key,created_at FROM activity_bets`
 
 func (s *Store) activityBetByID(ctx context.Context, betID string) (activity.BetResult, error) {
-	return scanActivityBet(s.db.QueryRowContext(ctx, activityBetSelect+` WHERE id=?`, betID))
+	return scanActivityBet(s.db.QueryRowContext(ctx, activityBetSelect+` WHERE id=$1`, betID))
 }
 
 func activityBetByKeyTx(ctx context.Context, tx *sql.Tx, userID, key string) (activity.BetResult, error) {
-	return scanActivityBet(tx.QueryRowContext(ctx, activityBetSelect+` WHERE user_id=? AND idempotency_key=?`, userID, key))
+	return scanActivityBet(tx.QueryRowContext(ctx, activityBetSelect+` WHERE user_id=$1 AND idempotency_key=$2`, userID, key))
 }
 
 func scanActivityBet(row rowScanner) (activity.BetResult, error) {
@@ -69,11 +69,11 @@ func scanActivityBet(row rowScanner) (activity.BetResult, error) {
 const dailyCheckInSelect = `SELECT id,user_id,local_date,timezone,reward_minor,balance_after_minor,created_at FROM activity_daily_checkins`
 
 func dailyCheckInByDateTx(ctx context.Context, tx *sql.Tx, userID, localDate string) (activity.DailyCheckIn, error) {
-	return scanDailyCheckIn(tx.QueryRowContext(ctx, dailyCheckInSelect+` WHERE user_id=? AND local_date=?`, userID, localDate))
+	return scanDailyCheckIn(tx.QueryRowContext(ctx, dailyCheckInSelect+` WHERE user_id=$1 AND local_date=$2`, userID, localDate))
 }
 
 func (s *Store) dailyCheckInByID(ctx context.Context, checkInID string) (activity.DailyCheckIn, error) {
-	return scanDailyCheckIn(s.db.QueryRowContext(ctx, dailyCheckInSelect+` WHERE id=?`, checkInID))
+	return scanDailyCheckIn(s.db.QueryRowContext(ctx, dailyCheckInSelect+` WHERE id=$1`, checkInID))
 }
 
 func scanDailyCheckIn(row rowScanner) (activity.DailyCheckIn, error) {
@@ -96,7 +96,7 @@ const luckyDrawSelect = `SELECT id,name,description,kind,status,fee_minor,expect
 func luckyDrawByID(ctx context.Context, queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }, drawID string, enabledOnly bool) (activity.LuckyDraw, error) {
-	query := luckyDrawSelect + ` WHERE id=?`
+	query := luckyDrawSelect + ` WHERE id=$1`
 	if enabledOnly {
 		query += ` AND kind='instant' AND status='open'`
 	}
@@ -139,7 +139,7 @@ func scanLuckyDraw(row rowScanner) (activity.LuckyDraw, error) {
 func luckyPrizes(ctx context.Context, queryer interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }, drawID string, availableOnly bool) ([]activity.PrizeInput, error) {
-	query := `SELECT id,name,probability_bps,stock,reward_payload FROM activity_lucky_prizes WHERE draw_id=?`
+	query := `SELECT id,name,probability_bps,stock,reward_payload FROM activity_lucky_prizes WHERE draw_id=$1`
 	query += ` ORDER BY position`
 	rows, err := queryer.QueryContext(ctx, query, drawID)
 	if err != nil {
@@ -171,11 +171,11 @@ func luckyPrizes(ctx context.Context, queryer interface {
 const drawResultSelect = `SELECT id,user_id,draw_id,prize_id,prize_name,fee_minor,reward_payload,balance_after_minor,configuration_snapshot,idempotency_key,created_at FROM activity_draw_results`
 
 func drawResultByKeyTx(ctx context.Context, tx *sql.Tx, userID, key string) (activity.DrawResult, error) {
-	return scanDrawResult(tx.QueryRowContext(ctx, drawResultSelect+` WHERE user_id=? AND idempotency_key=?`, userID, key))
+	return scanDrawResult(tx.QueryRowContext(ctx, drawResultSelect+` WHERE user_id=$1 AND idempotency_key=$2`, userID, key))
 }
 
 func (s *Store) drawResultByID(ctx context.Context, resultID string) (activity.DrawResult, error) {
-	return scanDrawResult(s.db.QueryRowContext(ctx, drawResultSelect+` WHERE id=?`, resultID))
+	return scanDrawResult(s.db.QueryRowContext(ctx, drawResultSelect+` WHERE id=$1`, resultID))
 }
 
 func scanDrawResult(row rowScanner) (activity.DrawResult, error) {

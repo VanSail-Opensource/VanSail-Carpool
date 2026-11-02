@@ -11,7 +11,7 @@ import (
 
 func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purchaseID string, now time.Time) error {
 	var userID, validUntilRaw string
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,valid_until FROM purchases WHERE id=? AND status='activating'`, purchaseID).Scan(&userID, &validUntilRaw); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,valid_until FROM purchases WHERE id=$1 AND status='activating'`, purchaseID).Scan(&userID, &validUntilRaw); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConflict
 		}
@@ -29,7 +29,7 @@ func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purch
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=?,updated_at=? WHERE id=? AND status='activating'`, stamp(shiftedUntil), stamp(now), purchaseID)
+	result, err := tx.ExecContext(ctx, `UPDATE purchases SET valid_until=$1,updated_at=$2 WHERE id=$3 AND status='activating'`, stamp(shiftedUntil), stamp(now), purchaseID)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purch
 		return ErrConflict
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT id,valid_from,valid_until FROM purchases
-		WHERE user_id=? AND id<>? AND status='queued' AND valid_from>=? ORDER BY valid_from,id`, userID, purchaseID, validUntilRaw)
+		WHERE user_id=$1 AND id<>$2 AND status='queued' AND valid_from>=$3 ORDER BY valid_from,id`, userID, purchaseID, validUntilRaw)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func applyPendingExtensionsToActivationTx(ctx context.Context, tx *sql.Tx, purch
 		if shiftErr != nil {
 			return shiftErr
 		}
-		result, updateErr := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=?,valid_until=?,updated_at=? WHERE id=? AND status='queued'`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id)
+		result, updateErr := tx.ExecContext(ctx, `UPDATE purchases SET valid_from=$1,valid_until=$2,updated_at=$3 WHERE id=$4 AND status='queued'`, stamp(shiftedFrom), stamp(shiftedUntil), stamp(now), term.id)
 		if updateErr != nil {
 			return updateErr
 		}

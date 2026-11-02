@@ -15,10 +15,7 @@ import (
 // MigrateGlobalFirewallDetection runs after vault initialization and preserves
 // the encryption and audit ownership of an existing global configuration.
 func (s *Store) retryAttempt_MigrateGlobalFirewallDetection(ctx context.Context, vault *secret.Vault) error {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -26,7 +23,7 @@ func (s *Store) retryAttempt_MigrateGlobalFirewallDetection(ctx context.Context,
 	defer tx.Rollback()
 	var raw string
 	var encrypted bool
-	err = tx.QueryRowContext(ctx, `SELECT value,encrypted FROM settings WHERE key=?`, xnode.GlobalSettingKey).Scan(&raw, &encrypted)
+	err = tx.QueryRowContext(ctx, `SELECT value,encrypted FROM settings WHERE key=$1`, xnode.GlobalSettingKey).Scan(&raw, &encrypted)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -86,7 +83,7 @@ func (s *Store) retryAttempt_MigrateGlobalFirewallDetection(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at) VALUES(?,?,1,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=1,updated_at=excluded.updated_at`, xnode.GlobalSettingKey, sealed, stamp(time.Now().UTC()))
+	_, err = tx.ExecContext(ctx, `INSERT INTO settings(key,value,encrypted,updated_at) VALUES($1,$2,1,$3) ON CONFLICT(key) DO UPDATE SET value=excluded.value,encrypted=1,updated_at=excluded.updated_at`, xnode.GlobalSettingKey, sealed, stamp(time.Now().UTC()))
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ func TestRoutingRetryRemainsPromptWithoutChangingCommandPolicy(t *testing.T) {
 				t.Fatal(err)
 			}
 			// An eighth retry previously delayed interactive changes for 128 min.
-			if _, err = s.db.ExecContext(ctx, `UPDATE outbox_jobs SET attempts=7 WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, op.Receipt.ID); err != nil {
+			if _, err = s.db.ExecContext(ctx, `UPDATE outbox_jobs SET attempts=7 WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, op.Receipt.ID); err != nil {
 				t.Fatal(err)
 			}
 			job, err := s.ClaimOutboxJob(ctx, now.Add(time.Second))
@@ -40,7 +40,7 @@ func TestRoutingRetryRemainsPromptWithoutChangingCommandPolicy(t *testing.T) {
 				t.Fatal(err)
 			}
 			var available string
-			if err = s.db.QueryRowContext(ctx, `SELECT available_at FROM outbox_jobs WHERE id=?`, job.ID).Scan(&available); err != nil {
+			if err = s.db.QueryRowContext(ctx, `SELECT available_at FROM outbox_jobs WHERE id=$1`, job.ID).Scan(&available); err != nil {
 				t.Fatal(err)
 			}
 			next, err := parseStamp(available)
@@ -51,7 +51,7 @@ func TestRoutingRetryRemainsPromptWithoutChangingCommandPolicy(t *testing.T) {
 			if err != nil || next.Sub(now) != want {
 				t.Fatalf("retry delay %v, want %v: %v", next.Sub(now), want, err)
 			}
-			if _, err = s.db.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=?`, job.ID); err != nil {
+			if _, err = s.db.ExecContext(ctx, `DELETE FROM outbox_jobs WHERE id=$1`, job.ID); err != nil {
 				t.Fatal(err)
 			}
 		})

@@ -23,7 +23,7 @@ func TestCompensationApprovalSkipsInactiveLinksOperationAndIsIdempotent(t *testi
 	_, active := createAdminWorkflowPurchase(t, store, 49_001, combo, now, squad.GroupID)
 	_, inactive := createAdminWorkflowPurchase(t, store, 49_002, combo, now, squad.GroupID)
 	event := recoveredCompensationEvent(t, store, now, squad.GroupID, squad.Name)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=? WHERE id=?`, stamp(now), inactive.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(now), inactive.ID); err != nil {
 		t.Fatal(err)
 	}
 	input := compensation.ReviewInput{EventID: event.ID, ActorUserID: actor.ID, IdempotencyKey: "approve-key",
@@ -46,15 +46,15 @@ func TestCompensationApprovalSkipsInactiveLinksOperationAndIsIdempotent(t *testi
 		t.Fatalf("inactive purchase was resurrected: %s", unchanged.ValidUntil)
 	}
 	var notifications, linked int
-	_ = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE event_key LIKE ?`,
+	_ = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE event_key ILIKE $1`,
 		"compensation:"+approved.Operation.ID+":%").Scan(&notifications)
-	_ = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM node_compensation_events WHERE id=? AND provider_operation_id=?`,
+	_ = store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM node_compensation_events WHERE id=$1 AND provider_operation_id=$2`,
 		event.ID, approved.Operation.ID).Scan(&linked)
 	if notifications != 1 || linked != 1 {
 		t.Fatalf("notifications=%d linked=%d", notifications, linked)
 	}
 	var notificationKind, payloadJSON string
-	if err := store.DB().QueryRowContext(ctx, `SELECT kind,payload_json FROM user_notification_events WHERE event_key LIKE ?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT kind,payload_json FROM user_notification_events WHERE event_key ILIKE $1`,
 		"compensation:"+approved.Operation.ID+":%").Scan(&notificationKind, &payloadJSON); err != nil {
 		t.Fatal(err)
 	}

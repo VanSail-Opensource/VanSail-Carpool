@@ -24,7 +24,7 @@ post:
   security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
   tags: [Admin, Database Administration]
   operationId: createAdminBackup
-  summary: Run and verify an online SQLite backup now
+  summary: Run and verify an online PostgreSQL backup now
   responses:
     '201':
       description: Backup completed and verified.

@@ -14,7 +14,7 @@ func TestProvisioningConflictResolutionRemainsClosedAndPreservesPaidAccess(t *te
 	combo := saveTestCombo(t, store, "conflicted", 100, 30)
 	now := time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',
-		policy_accepted_at=?,accepted_agreement_revision=1,group_joined=1,channel_joined=1 WHERE id=?`, stamp(now), user.ID); err != nil {
+		policy_accepted_at=$1,accepted_agreement_revision=1,group_joined=1,channel_joined=1 WHERE id=$2`, stamp(now), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.AdjustBalance(ctx, user.ID, 500, "conflict-seed", "seed", now); err != nil {
@@ -35,7 +35,7 @@ func TestProvisioningConflictResolutionRemainsClosedAndPreservesPaidAccess(t *te
 	if _, err := store.AdjustBalance(ctx, user.ID, -25, "addon-seed", "add-on", now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET charged_txb_minor=charged_txb_minor+25 WHERE id=?`, current.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET charged_txb_minor=charged_txb_minor+25 WHERE id=$1`, current.ID); err != nil {
 		t.Fatal(err)
 	}
 	beforeBalance, err := store.Balance(ctx, user.ID)
@@ -65,10 +65,10 @@ func TestProvisioningConflictResolutionRemainsClosedAndPreservesPaidAccess(t *te
 		t.Fatalf("paid access changed: current=%s queued=%s", currentAfter.Status, queuedAfter.Status)
 	}
 	var refunds, notices int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=? AND kind='proxy_identity_conflict_refund'`, user.ID).Scan(&refunds); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ledger_entries WHERE user_id=$1 AND kind='proxy_identity_conflict_refund'`, user.ID).Scan(&refunds); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE user_id=? AND kind='proxy_identity_conflict_refund'`, user.ID).Scan(&notices); err != nil {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE user_id=$1 AND kind='proxy_identity_conflict_refund'`, user.ID).Scan(&notices); err != nil {
 		t.Fatal(err)
 	}
 	if refunds != 0 || notices != 0 {
@@ -83,7 +83,7 @@ func TestUnlinkedPaidBacklogQueuesOneRepair(t *testing.T) {
 	combo := saveTestCombo(t, store, "repair", 100, 30)
 	now := time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)
 	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',
-		policy_accepted_at=? WHERE id=?`, stamp(now), user.ID); err != nil {
+		policy_accepted_at=$1 WHERE id=$2`, stamp(now), user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := store.AdjustBalance(ctx, user.ID, 100, "repair-seed", "seed", now); err != nil {
@@ -99,7 +99,7 @@ func TestUnlinkedPaidBacklogQueuesOneRepair(t *testing.T) {
 	}
 	var jobs int
 	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='xnode_sync_user'
-		AND json_extract(payload,'$.userId')=? AND status='pending'`, user.ID).Scan(&jobs); err != nil || jobs != 1 {
+		AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=$1 AND status='pending'`, user.ID).Scan(&jobs); err != nil || jobs != 1 {
 		t.Fatalf("repair jobs = %d, err %v", jobs, err)
 	}
 }

@@ -21,7 +21,7 @@ func (s *Store) PricingUserFeatureBatch(ctx context.Context, now time.Time, curs
 		return cursor, slotErr
 	}
 	defer release()
-	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT COALESCE(i.user_id,a.user_id) AS owner FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE d.date>=? AND COALESCE(i.user_id,a.user_id)>? AND NOT EXISTS(SELECT 1 FROM pricing_features f WHERE f.entity_type='user' AND f.entity_id=COALESCE(i.user_id,a.user_id) AND f.day=?) ORDER BY owner LIMIT 16`, now.AddDate(0, 0, -30).Format("2006-01-02"), cursor, now.UTC().Format("2006-01-02"))
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT COALESCE(i.user_id,a.user_id) AS owner FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE d.date>=$1 AND COALESCE(i.user_id,a.user_id)>$2 AND NOT EXISTS(SELECT 1 FROM pricing_features f WHERE f.entity_type='user' AND f.entity_id=COALESCE(i.user_id,a.user_id) AND f.day=$3) ORDER BY owner LIMIT 16`, now.AddDate(0, 0, -30).Format("2006-01-02"), cursor, now.UTC().Format("2006-01-02"))
 	if err != nil {
 		return cursor, err
 	}
@@ -56,10 +56,10 @@ func (s *Store) PricingUserFeatureBatch(ctx context.Context, now time.Time, curs
 func (s *Store) pricingUserFeatures(ctx context.Context, user string, now time.Time) error {
 	day := now.UTC().Truncate(24 * time.Hour)
 	var exists int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='user' AND entity_id=? AND day=?)`, user, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_features WHERE entity_type='user' AND entity_id=$1 AND day=$2))::bigint", user, day.Format("2006-01-02")).Scan(&exists); err != nil || exists == 1 {
 		return err
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT d.node_id,d.date,SUM(d.upload_bytes+d.download_bytes) FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE COALESCE(i.user_id,a.user_id)=? AND d.date>=? AND d.date<? GROUP BY d.node_id,d.date ORDER BY d.node_id,d.date LIMIT 32769`, user, day.AddDate(0, 0, -30).Format("2006-01-02"), day.Format("2006-01-02"))
+	rows, err := s.db.QueryContext(ctx, `SELECT d.node_id,d.date,SUM(d.upload_bytes+d.download_bytes) FROM xnode_daily_usage d JOIN xnode_identities i ON i.proxy_user_id=d.proxy_user_id LEFT JOIN xnode_payg_accounts a ON a.proxy_user_id=d.proxy_user_id WHERE COALESCE(i.user_id,a.user_id)=$1 AND d.date>=$2 AND d.date<$3 GROUP BY d.node_id,d.date ORDER BY d.node_id,d.date LIMIT 32769`, user, day.AddDate(0, 0, -30).Format("2006-01-02"), day.Format("2006-01-02"))
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (s *Store) pricingUserFeatures(ctx context.Context, user string, now time.T
 		return err
 	}
 	var renewals int64
-	if err = s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN kind='automatic_renewal' THEN 1 ELSE 0 END),0) FROM ledger_entries WHERE user_id=? AND created_at>=?`, user, pricingStamp(day.AddDate(0, 0, -30))).Scan(&renewals); err != nil {
+	if err = s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN kind='automatic_renewal' THEN 1 ELSE 0 END),0) FROM ledger_entries WHERE user_id=$1 AND created_at>=$2`, user, pricingStamp(day.AddDate(0, 0, -30))).Scan(&renewals); err != nil {
 		return err
 	}
 	sourceRaw, e := json.Marshal(series)

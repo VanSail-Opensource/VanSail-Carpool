@@ -5,17 +5,15 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 type maintenanceTaskResult struct {
 	maintenance.RunResult
-	MigrationSnapshotRetentionWarning error
 }
 
 // runMaintenanceTask keeps the scheduled and manual commands on the same
-// backup-gated cleanup path, including adjacent migration snapshot pruning.
-func runMaintenanceTask(ctx context.Context, service *maintenance.Service, databasePath string, at time.Time,
+// backup-gated PostgreSQL cleanup path.
+func runMaintenanceTask(ctx context.Context, service *maintenance.Service, at time.Time,
 	force bool) (maintenanceTaskResult, error) {
 	var (
 		result maintenanceTaskResult
@@ -29,8 +27,6 @@ func runMaintenanceTask(ctx context.Context, service *maintenance.Service, datab
 	if err != nil {
 		return result, err
 	}
-	if databasePath != "" {
-		result.MigrationSnapshotRetentionWarning = database.PruneExpansionBackups(databasePath, at)
-	}
+
 	return result, nil
 }

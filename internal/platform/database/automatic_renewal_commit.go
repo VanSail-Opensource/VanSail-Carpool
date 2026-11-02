@@ -21,7 +21,7 @@ func (s *Store) CommitAutoRenewalExcludingAddons(ctx context.Context, purchaseID
 
 func automaticRenewalSuccessorIDTx(ctx context.Context, tx *sql.Tx, sourceID string) (string, bool, error) {
 	var successorID string
-	err := tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE auto_renew_source_purchase_id=?`, sourceID).Scan(&successorID)
+	err := tx.QueryRowContext(ctx, `SELECT id FROM purchases WHERE auto_renew_source_purchase_id=$1`, sourceID).Scan(&successorID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}

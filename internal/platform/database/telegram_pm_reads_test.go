@@ -14,7 +14,7 @@ func TestPMReadStatusUsesReplyInference(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := pmMember(t, store, 31980)
 	admin := createTestUser(t, store, 31981)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=?`, admin.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE users SET role='admin' WHERE id=$1`, admin.ID); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 10, 8, 12, 0, 0, 0, time.UTC)
@@ -54,14 +54,14 @@ func queueSuccessfulPMOutbound(t *testing.T, ctx context.Context, store *Store, 
 	if err != nil || receipt == nil {
 		t.Fatalf("queue PM outbound: receipt=%+v err=%v", receipt, err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET status='succeeded' WHERE id=?`, receipt.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operations SET status='succeeded' WHERE id=$1`, receipt.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference=? WHERE operation_id=? AND item_key='relay'`,
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference=$1 WHERE operation_id=$2 AND item_key='relay'`,
 		strconv.FormatInt(deliveredMessage, 10), receipt.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference='77' WHERE operation_id=? AND item_key='topic'`, receipt.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',provider_reference='77' WHERE operation_id=$1 AND item_key='topic'`, receipt.ID); err != nil {
 		t.Fatal(err)
 	}
 	return *receipt

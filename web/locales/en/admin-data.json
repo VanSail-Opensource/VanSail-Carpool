@@ -1,7 +1,7 @@
 {
   "adminDatabase": {
     "title": "Database editor",
-    "copy": "Typed records only. Raw SQL and internal SQLite tables are unavailable.",
+    "copy": "Typed PostgreSQL records. Raw SQL and internal migration tables are unavailable.",
     "insertRow": "Insert row",
     "bypassTitle": "Domain hooks are bypassed",
     "bypassCopy": "Use normal admin actions whenever possible. Every direct change requires a reason, diff review, typed confirmation, and rescue backup.",
@@ -62,7 +62,7 @@
       "failed": "Failed"
     },
     "title": "Backups",
-    "copy": "Verified SQLite snapshots are retained for seven days.",
+    "copy": "Verified PostgreSQL archives are retained for seven days. Restore during offline maintenance.",
     "create": "Create backup",
     "maintenance": "Run maintenance",
     "maintenanceTitle": "Run maintenance now?",
@@ -74,24 +74,16 @@
     "deleteFailed": "Backup deletion failed.",
     "jobDeleteFailed": "Job deletion failed.",
     "downloadFailed": "Backup download failed.",
-    "restoreFailed": "Restore staging failed.",
     "backupName": "Backup {id}",
-    "restoreComplete": "Restore complete",
-    "restoreFailedTitle": "Restore failed",
-    "restoreStaged": "Restore staged",
-    "operationStatus": "Operation {id} is {status}.",
     "operationError": "The restore operation needs attention.",
-    "reauthenticate": "Reauthenticate if your previous session no longer exists.",
-    "reconnect": "The app will reconnect after restart.",
     "verified": "Verified",
     "download": "Download",
-    "restore": "Restore",
     "delete": "Delete",
     "none": "No backups yet",
     "noneHint": "The daily scheduler will create the first verified copy.",
     "deleteTitle": "Delete {name}?",
     "backup": "backup",
-    "deleteDescription": "The verified file and its metadata are removed together. Deletion is blocked while a restore is staging or restarting.",
+    "deleteDescription": "The verified archive and its metadata are removed together. Archives protected by recovery history cannot be deleted.",
     "deleteBackup": "Delete backup",
     "jobs": "Synchronization jobs",
     "jobsHint": "Retries and scheduled entitlement changes. Continuity runs three minutes before the next term.",
@@ -137,12 +129,5 @@
     "apply": "Apply reviewed change",
     "reviewChange": "Review change",
     "notPresent": "Not present"
-  },
-  "restoreBackup": {
-    "title": "Stage database restore?",
-    "copy": "A rescue backup is created first. The service then restarts and reconnects on the selected verified snapshot.",
-    "confirmationPrefix": "RESTORE",
-    "staging": "Staging restore",
-    "confirm": "Create rescue backup and restore"
   }
 }

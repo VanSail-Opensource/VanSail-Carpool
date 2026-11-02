@@ -32,12 +32,12 @@ func scanPMConversation(row rowScanner) (model.PMConversation, error) {
 }
 
 func (s *Store) PMConversation(ctx context.Context, id string) (model.PMConversation, error) {
-	return scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=?`, id))
+	return scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.id=$1`, id))
 }
 
 // PMConversationByUser returns the user's most recently used PM route, if any.
 func (s *Store) PMConversationByUser(ctx context.Context, userID string) (model.PMConversation, bool, error) {
-	item, err := scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.user_id=? ORDER BY c.updated_at DESC,c.id DESC LIMIT 1`, userID))
+	item, err := scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.user_id=$1 ORDER BY c.updated_at DESC,c.id DESC LIMIT 1`, userID))
 	if errors.Is(err, ErrNotFound) {
 		return item, false, nil
 	}
@@ -45,7 +45,7 @@ func (s *Store) PMConversationByUser(ctx context.Context, userID string) (model.
 }
 
 func (s *Store) PMConversationByTopic(ctx context.Context, chatID, topicID int64) (model.PMConversation, bool, error) {
-	item, err := scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.chat_id=? AND c.topic_id=?`, chatID, topicID))
+	item, err := scanPMConversation(s.db.QueryRowContext(ctx, pmConversationSelect+` WHERE c.chat_id=$1 AND c.topic_id=$2`, chatID, topicID))
 	if errors.Is(err, ErrNotFound) {
 		return item, false, nil
 	}
@@ -53,6 +53,6 @@ func (s *Store) PMConversationByTopic(ctx context.Context, chatID, topicID int64
 }
 
 func (s *Store) PMUserFlags(ctx context.Context, userID string) (blocked, muted bool, err error) {
-	err = s.db.QueryRowContext(ctx, `SELECT pm_blocked,pm_muted FROM users WHERE id=?`, userID).Scan(&blocked, &muted)
+	err = s.db.QueryRowContext(ctx, `SELECT pm_blocked,pm_muted FROM users WHERE id=$1`, userID).Scan(&blocked, &muted)
 	return
 }

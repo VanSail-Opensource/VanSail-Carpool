@@ -7,7 +7,7 @@ case "${1:-}" in
   serve|postgres-only) ;;
   *) exec /usr/local/bin/vansail-carpool "$@" ;;
 esac
-if [ "${DB_DRIVER:-}" != postgres ]; then
+if [ "${DB_DRIVER:-postgres}" != postgres ]; then
   echo 'PG_EMBEDDED=true requires DB_DRIVER=postgres' >&2
   exit 1
 fi
@@ -15,6 +15,7 @@ if [ -n "${DATABASE_URL:-}${DATABASE_URL_FILE:-}" ]; then
   echo 'Embedded PostgreSQL manages its own URL; remove DATABASE_URL and DATABASE_URL_FILE' >&2
   exit 1
 fi
+export DB_DRIVER=postgres
 export PATH="/usr/libexec/postgresql18:$PATH"
 export PGDATA=/var/lib/postgresql/18/docker
 export PGHOST=/var/lib/postgresql/socket PGUSER=postgres PGDATABASE=vansail
@@ -41,13 +42,6 @@ if [ "$1" = postgres-only ]; then
 fi
 # Schema work uses migration credentials before the restricted app is started.
 DATABASE_URL_FILE=/var/lib/postgresql/credentials/migration_url db-schema migrate
-if [ -s "${DATA_DIR:-/data}/tx-carpool.db" ]; then
-  phase=$(psql -Atc 'SELECT phase FROM vansail_migration_state WHERE singleton=1')
-  if [ "$phase" = fresh ]; then
-    echo 'Existing SQLite requires verified import before starting the PostgreSQL application' >&2
-    exit 1
-  fi
-fi
 export DATABASE_URL_FILE=/var/lib/postgresql/credentials/application_url
 export DB_MIGRATE_ON_START=false
 /usr/local/bin/vansail-carpool "$@" &

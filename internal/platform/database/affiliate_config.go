@@ -28,7 +28,7 @@ func affiliateConfig(ctx context.Context, query interface {
 	}
 	rows, err := query.QueryContext(ctx, `SELECT t.id,t.name,t.success_threshold,t.enabled,t.commission_enabled,t.commission_bps,
 		t.reward_kind,COALESCE(t.reward_coupon_id,''),COALESCE(c.name,''),COALESCE(t.reward_txb_minor,0),COALESCE(t.reward_extension_days,0)
-		FROM affiliate_tiers t LEFT JOIN coupon_definitions c ON c.id=t.reward_coupon_id WHERE t.config_id=? ORDER BY t.position`, config.ID)
+		FROM affiliate_tiers t LEFT JOIN coupon_definitions c ON c.id=t.reward_coupon_id WHERE t.config_id=$1 ORDER BY t.position`, config.ID)
 	if err != nil {
 		return config, err
 	}
@@ -50,10 +50,7 @@ func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID st
 	if input.ExpectedVersion < 1 || affiliates.ValidateTiers(input.Tiers) != nil {
 		return affiliates.Config{}, affiliates.ErrInvalidInput
 	}
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return affiliates.Config{}, err
@@ -73,7 +70,7 @@ func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID st
 	if err != nil {
 		return affiliates.Config{}, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO affiliate_config_versions(id,version,created_by,created_at) VALUES(?,?,?,?)`, configID, current.Version+1, actorID, stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO affiliate_config_versions(id,version,created_by,created_at) VALUES($1,$2,$3,$4)`, configID, current.Version+1, actorID, stamp(now)); err != nil {
 		return affiliates.Config{}, err
 	}
 	for position, tier := range input.Tiers {
@@ -82,14 +79,14 @@ func (s *Store) retryAttempt_SaveAffiliateConfig(ctx context.Context, actorID st
 			return affiliates.Config{}, idErr
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO affiliate_tiers(id,config_id,position,name,success_threshold,enabled,commission_enabled,commission_bps,
-			reward_kind,reward_coupon_id,reward_txb_minor,reward_extension_days) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+			reward_kind,reward_coupon_id,reward_txb_minor,reward_extension_days) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
 			tierID, configID, position, tier.Name, tier.Threshold, boolInt(tier.Enabled), boolInt(tier.CommissionEnabled), tier.CommissionBPS,
 			tier.Reward.Kind, nullableText(tier.Reward.CouponID), nullablePositive(tier.Reward.TXBMinor), nullablePositiveInt(tier.Reward.ExtensionDays))
 		if err != nil {
 			return affiliates.Config{}, err
 		}
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE affiliate_config_current SET config_id=? WHERE singleton=1`, configID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE affiliate_config_current SET config_id=$1 WHERE singleton=1`, configID); err != nil {
 		return affiliates.Config{}, err
 	}
 	detail, _ := json.Marshal(map[string]any{"previousVersion": current.Version, "version": current.Version + 1})

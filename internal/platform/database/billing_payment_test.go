@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"database/sql"
+
 	"encoding/json"
 	"errors"
 	"math"
@@ -27,7 +27,7 @@ func TestSettlePaymentCreditsExactlyOnce(t *testing.T) {
 		t.Fatalf("SavePaymentProfile(): %v", err)
 	}
 	order := createTestPaymentOrder(t, store, user.ID, "ezpay", 2_500, now)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET method_id='ezpay:ezpay-main:alipay',provider_rail='alipay' WHERE id=?`, order.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET method_id='ezpay:ezpay-main:alipay',provider_rail='alipay' WHERE id=$1`, order.ID); err != nil {
 		t.Fatalf("seed payment channel: %v", err)
 	}
 
@@ -77,7 +77,7 @@ func TestSettlePaymentCreditsExactlyOnce(t *testing.T) {
 		t.Fatalf("payment credit count = %d, want 1", got)
 	}
 	var announcementJSON string
-	if err := store.DB().QueryRowContext(ctx, `SELECT payload FROM outbox_jobs WHERE kind=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT payload FROM outbox_jobs WHERE kind=$1`,
 		jobpayload.PaymentSuccessAnnouncementKind).Scan(&announcementJSON); err != nil {
 		t.Fatalf("load payment announcement job: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestSettlePaymentCreditsExactlyOnce(t *testing.T) {
 		t.Fatalf("payment announcement snapshot = %+v", announcement)
 	}
 	var announcementCount int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=?`,
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind=$1`,
 		jobpayload.PaymentSuccessAnnouncementKind).Scan(&announcementCount); err != nil || announcementCount != 1 {
 		t.Fatalf("payment announcement jobs = %d, error %v", announcementCount, err)
 	}
@@ -183,7 +183,7 @@ func TestPaymentTerminalTransitionsMinimizeProviderData(t *testing.T) {
 				t.Fatalf("CreatePaymentOrder(): %v", err)
 			}
 			var initialPayload string
-			if err := store.DB().QueryRowContext(ctx, `SELECT provider_payload FROM payment_orders WHERE id=?`, order.ID).Scan(&initialPayload); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT provider_payload FROM payment_orders WHERE id=$1`, order.ID).Scan(&initialPayload); err != nil {
 				t.Fatalf("read new provider payload: %v", err)
 			}
 			if initialPayload != "{}" {
@@ -194,7 +194,7 @@ func TestPaymentTerminalTransitionsMinimizeProviderData(t *testing.T) {
 			if test.receivingAddress {
 				address = "TSeparateReceiveAddress"
 			}
-			if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET payment_url=?,qr_payload=?,receiving_address=?,provider_payload=? WHERE id=?`,
+			if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET payment_url=$1,qr_payload=$2,receiving_address=$3,provider_payload=$4 WHERE id=$5`,
 				"https://pay.example/secret", "TLegacyQRAddress", address, `{"provider":"secret"}`, order.ID); err != nil {
 				t.Fatalf("seed provider data: %v", err)
 			}
@@ -206,7 +206,7 @@ func TestPaymentTerminalTransitionsMinimizeProviderData(t *testing.T) {
 				_, _, err = store.SettlePayment(ctx, "ezpay", "event-1", "hash", order.ID, "trade-1", "charge-1", now)
 			case "refund":
 				if _, _, err = store.SettlePayment(ctx, "ezpay", "event-1", "hash", order.ID, "trade-1", "charge-1", now); err == nil {
-					_, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET payment_url=?,qr_payload=?,provider_payload=? WHERE id=?`,
+					_, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET payment_url=$1,qr_payload=$2,provider_payload=$3 WHERE id=$4`,
 						"https://pay.example/refund-secret", "TRefundQR", `{"provider":"refund-secret"}`, order.ID)
 				}
 				if err == nil {
@@ -215,11 +215,11 @@ func TestPaymentTerminalTransitionsMinimizeProviderData(t *testing.T) {
 			case "expire":
 				err = store.ExpirePaymentOrder(ctx, order.ID, "ezpay", now)
 			case "stale":
-				if _, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=? WHERE id=?`, stamp(now.Add(-time.Second)), order.ID); err == nil {
+				if _, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=$1 WHERE id=$2`, stamp(now.Add(-time.Second)), order.ID); err == nil {
 					err = store.ExpireStalePaymentOrders(ctx, now)
 				}
 			case "insert-stale":
-				if _, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=? WHERE id=?`, stamp(now.Add(-time.Second)), order.ID); err == nil {
+				if _, err = store.DB().ExecContext(ctx, `UPDATE payment_orders SET expires_at=$1 WHERE id=$2`, stamp(now.Add(-time.Second)), order.ID); err == nil {
 					_, err = store.CreatePaymentOrder(ctx, model.PaymentOrder{
 						UserID: user.ID, Provider: "stars", Status: "pending", TXBMinor: 100,
 						PayableAmount: "1", PayableCurrency: "XTR", RateSnapshot: "1", ExpiresAt: now.Add(time.Hour),
@@ -248,89 +248,11 @@ func TestPaymentTerminalTransitionsMinimizeProviderData(t *testing.T) {
 				t.Fatalf("terminal QR presence = %t, want %t", gotQR, test.wantQR)
 			}
 			var providerPayload string
-			if err := store.DB().QueryRowContext(ctx, `SELECT provider_payload FROM payment_orders WHERE id=?`, order.ID).Scan(&providerPayload); err != nil {
+			if err := store.DB().QueryRowContext(ctx, `SELECT provider_payload FROM payment_orders WHERE id=$1`, order.ID).Scan(&providerPayload); err != nil {
 				t.Fatalf("read terminal provider payload: %v", err)
 			}
 			if providerPayload != "{}" {
 				t.Fatalf("terminal provider payload = %q, want {}", providerPayload)
-			}
-		})
-	}
-}
-
-func TestPaymentPayloadMinimizationMigration(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name             string
-		status           string
-		cancelled        bool
-		receivingAddress bool
-		wantPaymentURL   bool
-		wantQR           bool
-	}{
-		{name: "live pending", status: "pending", wantPaymentURL: true, wantQR: true},
-		{name: "paid", status: "paid"},
-		{name: "failed", status: "failed"},
-		{name: "refunded", status: "refunded"},
-		{name: "expired with separate address", status: "expired", receivingAddress: true},
-		{name: "expired legacy QR address", status: "expired", wantQR: true},
-		{name: "cancelled with separate address", status: "pending", cancelled: true, receivingAddress: true},
-		{name: "cancelled legacy QR address", status: "pending", cancelled: true, wantQR: true},
-	}
-
-	ctx := context.Background()
-	store := newTestStore(t)
-	user := createTestUser(t, store, 34000)
-	now := time.Date(2099, time.August, 10, 13, 0, 0, 0, time.UTC)
-	orderIDs := make([]string, len(tests))
-	for index, test := range tests {
-		order, err := store.CreatePaymentOrder(ctx, model.PaymentOrder{
-			UserID: user.ID, Provider: "ezpay", Status: "pending", TXBMinor: 100,
-			PayableAmount: "1.00", PayableCurrency: "CNY", RateSnapshot: "1", ExpiresAt: now.Add(time.Hour),
-		})
-		if err != nil {
-			t.Fatalf("CreatePaymentOrder(%s): %v", test.name, err)
-		}
-		orderIDs[index] = order.ID
-		var cancelledAt any
-		if test.cancelled {
-			cancelledAt = stamp(now)
-		}
-		var address any
-		if test.receivingAddress {
-			address = "TSeparateReceiveAddress"
-		}
-		if _, err := store.DB().ExecContext(ctx, `UPDATE payment_orders SET status=?,cancelled_at=?,payment_url=?,qr_payload=?,receiving_address=?,provider_payload=? WHERE id=?`,
-			test.status, cancelledAt, "https://pay.example/legacy-secret", "TLegacyQRAddress", address, `{"provider":"legacy-secret"}`, order.ID); err != nil {
-			t.Fatalf("seed migration row %s: %v", test.name, err)
-		}
-	}
-
-	script, err := migrations.ReadFile("migrations/011_minimize_payment_payloads.sql")
-	if err != nil {
-		t.Fatalf("read payment minimization migration: %v", err)
-	}
-	if _, err := store.DB().ExecContext(ctx, string(script)); err != nil {
-		t.Fatalf("apply payment minimization migration: %v", err)
-	}
-
-	for index, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var providerPayload string
-			var paymentURL, qrPayload sql.NullString
-			if err := store.DB().QueryRowContext(ctx, `SELECT provider_payload,payment_url,qr_payload FROM payment_orders WHERE id=?`, orderIDs[index]).
-				Scan(&providerPayload, &paymentURL, &qrPayload); err != nil {
-				t.Fatalf("read migrated payment order: %v", err)
-			}
-			if providerPayload != "{}" {
-				t.Fatalf("provider payload = %q, want {}", providerPayload)
-			}
-			if paymentURL.Valid != test.wantPaymentURL {
-				t.Fatalf("payment URL presence = %t, want %t", paymentURL.Valid, test.wantPaymentURL)
-			}
-			if qrPayload.Valid != test.wantQR {
-				t.Fatalf("QR payload presence = %t, want %t", qrPayload.Valid, test.wantQR)
 			}
 		})
 	}

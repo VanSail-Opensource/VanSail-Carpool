@@ -16,7 +16,7 @@ func TestFirewallReservedDispatchContinuesWhileProviderWaits(t *testing.T) {
 	now := time.Now().UTC().Add(-time.Second)
 	insert := func(id, kind, payload string) {
 		t.Helper()
-		if _, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES(?,?,?,'pending',0,?,?,?)`, id, kind, payload, stamp(now), stamp(now), stamp(now)); err != nil {
+		if _, err := s.db.ExecContext(ctx, `INSERT INTO outbox_jobs(id,kind,payload,status,attempts,available_at,created_at,updated_at) VALUES($1,$2,$3,'pending',0,$4,$5,$6)`, id, kind, payload, stamp(now), stamp(now), stamp(now)); err != nil {
 			t.Fatal(err)
 		}
 	}

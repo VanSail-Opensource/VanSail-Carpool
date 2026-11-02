@@ -11,10 +11,6 @@ embedded_start() {
     fi
   done
   if [ ! -f "$PGDATA/PG_VERSION" ]; then
-    if [ -s "${DATA_DIR:-/data}/tx-carpool.db" ] && [ "$1" != postgres-only ]; then
-      echo 'Existing SQLite detected: use postgres-only and the verified offline migration procedure first' >&2
-      exit 1
-    fi
     initdb -D "$PGDATA" --username=postgres --pwfile="$credentials/postgres_password" \
       --encoding=UTF8 --locale=C --auth-host=scram-sha-256 --auth-local=peer
   fi

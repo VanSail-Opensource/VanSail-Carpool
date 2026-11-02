@@ -20,7 +20,7 @@ func TestAdminUserSearchCombinesFacetsAndBindsCursors(t *testing.T) {
 	activeA, _ := createAdminWorkflowPurchase(t, store, 48_001, comboA, now, squad.GroupID)
 	activeB, _ := createAdminWorkflowPurchase(t, store, 48_002, comboB, now)
 	inactive, expired := createAdminWorkflowPurchase(t, store, 48_003, comboB, now)
-	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE id=?`, expired.ID); err != nil {
+	if _, err := store.DB().ExecContext(ctx, `UPDATE purchases SET status='expired' WHERE id=$1`, expired.ID); err != nil {
 		t.Fatal(err)
 	}
 

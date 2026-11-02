@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"path/filepath"
+
 	"strconv"
 	"strings"
 	"time"
@@ -15,24 +15,22 @@ import (
 
 // Config contains the values required before encrypted dashboard settings can be read.
 type Config struct {
-	Database             DatabaseConfig
-	Port                 string
-	DataDir              string
-	DatabasePath         string
-	ProxyCacheMaxBytes   int64
-	PublicBaseURL        *url.URL
-	AdminTelegramIDs     []int64
-	TelegramBotToken     string
-	MasterKey            []byte
-	Timezone             *time.Location
-	LogLevel             slog.Level
-	SessionTTL           time.Duration
-	InitDataMaxAge       time.Duration
-	ShutdownTimeout      time.Duration
-	BackupRetention      time.Duration
-	BackupUploadMaxBytes int64
-	BackupHour           int
-	AllowInsecureHTTP    bool
+	Database           DatabaseConfig
+	Port               string
+	DataDir            string
+	ProxyCacheMaxBytes int64
+	PublicBaseURL      *url.URL
+	AdminTelegramIDs   []int64
+	TelegramBotToken   string
+	MasterKey          []byte
+	Timezone           *time.Location
+	LogLevel           slog.Level
+	SessionTTL         time.Duration
+	InitDataMaxAge     time.Duration
+	ShutdownTimeout    time.Duration
+	BackupRetention    time.Duration
+	BackupHour         int
+	AllowInsecureHTTP  bool
 }
 
 // Load reads configuration from the environment and returns an actionable error for invalid input.
@@ -45,7 +43,6 @@ func Load() (Config, error) {
 	}
 	cfg.Port = envDefault("PORT", "8080")
 	cfg.DataDir = envDefault("DATA_DIR", "/data")
-	cfg.DatabasePath = filepath.Join(cfg.DataDir, "tx-carpool.db")
 	cfg.ProxyCacheMaxBytes = 1 << 30
 	if value := strings.TrimSpace(os.Getenv("PROXY_CACHE_MAX_BYTES")); value != "" {
 		maximum, err := strconv.ParseInt(value, 10, 64)
@@ -58,16 +55,8 @@ func Load() (Config, error) {
 	cfg.InitDataMaxAge = 5 * time.Minute
 	cfg.ShutdownTimeout = 15 * time.Second
 	cfg.BackupRetention = 7 * 24 * time.Hour
-	cfg.BackupUploadMaxBytes = 2 << 30
 	cfg.BackupHour = 2
 	cfg.AllowInsecureHTTP = strings.EqualFold(os.Getenv("ALLOW_INSECURE_HTTP"), "true")
-	if value := strings.TrimSpace(os.Getenv("BACKUP_UPLOAD_MAX_BYTES")); value != "" {
-		maximum, parseErr := strconv.ParseInt(value, 10, 64)
-		if parseErr != nil || maximum < 1<<20 || maximum > 16<<30 {
-			return Config{}, fmt.Errorf("BACKUP_UPLOAD_MAX_BYTES must be between 1048576 and 17179869184")
-		}
-		cfg.BackupUploadMaxBytes = maximum
-	}
 
 	adminIDs, err := parseAdminTelegramIDs(os.Getenv("ADMIN_TELEGRAM_ID"))
 	if err != nil {

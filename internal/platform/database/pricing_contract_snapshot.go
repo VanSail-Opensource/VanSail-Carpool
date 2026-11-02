@@ -18,7 +18,7 @@ func ensurePricingContractTx(ctx context.Context, tx *sql.Tx, purchase string, n
 	var user, product string
 	var gross int64
 	var reward sql.NullInt64
-	if err := tx.QueryRowContext(ctx, `SELECT user_id,combo_id,gross_price_txb_minor,reward_renewal_price_minor FROM purchases WHERE id=? /*pg:FOR UPDATE*/`, purchase).Scan(&user, &product, &gross, &reward); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT user_id,combo_id,gross_price_txb_minor,reward_renewal_price_minor FROM purchases WHERE id=$1 FOR UPDATE`, purchase).Scan(&user, &product, &gross, &reward); err != nil {
 		return renewal.Contract{}, err
 	}
 	p, err := loadPricingPolicy(ctx, tx, "combo", product, gross)
@@ -31,7 +31,7 @@ func ensurePricingContractTx(ctx context.Context, tx *sql.Tx, purchase string, n
 	}
 	if c.ID != "" {
 		var quoted int
-		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pricing_renewal_quotes WHERE contract_id=? AND state NOT IN ('CANCELLED','EXPIRED'))`, c.ID).Scan(&quoted); err != nil {
+		if err = tx.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM pricing_renewal_quotes WHERE contract_id=$1 AND state NOT IN ('CANCELLED','EXPIRED')))::bigint", c.ID).Scan(&quoted); err != nil {
 			return c, err
 		}
 		if quoted != 0 && c.PolicyVersion == p.Version {
@@ -86,7 +86,7 @@ func ensurePricingContractTx(ctx context.Context, tx *sql.Tx, purchase string, n
 // commerce transaction. Legacy fixed products take the inexpensive query path.
 func (s *Store) prepareOwnedPricingRenewal(ctx context.Context, user, purchase string, now time.Time) error {
 	var enabled int
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM purchases p JOIN pricing_product_settings s ON s.product_type='combo' AND s.product_id=p.combo_id WHERE p.id=? AND (p.user_id=? OR ?='') AND s.dynamic_enabled=1 AND s.renewal_pricing_mode='DYNAMIC')`, purchase, user, user).Scan(&enabled); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT (EXISTS(SELECT 1 FROM purchases p JOIN pricing_product_settings s ON s.product_type='combo' AND s.product_id=p.combo_id WHERE p.id=$1 AND (p.user_id=$2 OR $3='') AND s.dynamic_enabled=1 AND s.renewal_pricing_mode='DYNAMIC'))::bigint", purchase, user, user).Scan(&enabled); err != nil {
 		return err
 	}
 	if enabled == 0 {

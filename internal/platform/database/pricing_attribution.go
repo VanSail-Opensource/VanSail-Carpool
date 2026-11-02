@@ -13,11 +13,11 @@ type pricingNodeAllocation struct{ Total, Allocated, Product float64 }
 // unknown product relationships remain unallocated, never charged to every product.
 const pricingAllocationSQL = `WITH native AS (
  SELECT node_id,period_id,SUM(upload_bytes+download_bytes) AS bytes FROM xnode_daily_usage
- WHERE date>=? AND date<? GROUP BY node_id,period_id
+ WHERE date>=$1 AND date<$2 GROUP BY node_id,period_id
 ), products AS (
  SELECT n.node_id,n.period_id,'combo' AS kind,p.combo_id AS product FROM native n
  JOIN xnode_periods t ON t.id=n.period_id JOIN purchases p ON p.id=t.purchase_id JOIN combos c ON c.id=p.combo_id
- WHERE EXISTS(SELECT 1 FROM xnode_group_bindings b JOIN json_each(COALESCE(p.combo_squad_uuids,c.included_squad_uuids)) j ON j.value=b.group_id WHERE b.node_id=n.node_id)
+ WHERE EXISTS(SELECT 1 FROM xnode_group_bindings b JOIN jsonb_array_elements_text((COALESCE(p.combo_squad_uuids,c.included_squad_uuids))::jsonb) j ON j.value=b.group_id WHERE b.node_id=n.node_id)
  UNION ALL SELECT n.node_id,n.period_id,'addon',a.group_id FROM native n
  JOIN xnode_periods t ON t.id=n.period_id JOIN purchase_addons a ON a.purchase_id=t.purchase_id
  WHERE EXISTS(SELECT 1 FROM xnode_group_bindings b WHERE b.group_id=a.group_id AND b.node_id=n.node_id)
@@ -25,7 +25,7 @@ const pricingAllocationSQL = `WITH native AS (
 ), counts AS (SELECT node_id,period_id,COUNT(*) AS count FROM products GROUP BY node_id,period_id),
  totals AS (SELECT node_id,SUM(bytes) AS total FROM native GROUP BY node_id)
  SELECT t.node_id,t.total,COALESCE(SUM(n.bytes*1.0/c.count),0),
- COALESCE(SUM(CASE WHEN p.kind=? AND p.product=? THEN n.bytes*1.0/c.count ELSE 0 END),0)
+ COALESCE(SUM(CASE WHEN p.kind=$3 AND p.product=$4 THEN n.bytes*1.0/c.count ELSE 0 END),0)
  FROM totals t LEFT JOIN native n ON n.node_id=t.node_id
  LEFT JOIN products p ON p.node_id=n.node_id AND p.period_id=n.period_id
  LEFT JOIN counts c ON c.node_id=n.node_id AND c.period_id=n.period_id GROUP BY t.node_id,t.total LIMIT 4097`

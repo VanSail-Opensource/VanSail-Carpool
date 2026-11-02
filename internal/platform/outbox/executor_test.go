@@ -24,11 +24,11 @@ func (r *concurrentRepository) ClaimOutboxJob(context.Context, time.Time) (*mode
 	r.jobs = r.jobs[1:]
 	return &job, nil
 }
-func (r *concurrentRepository) CompleteOutboxJob(_ context.Context, id string, _ int, _ error, _ time.Time) error {
-	r.completed <- id
+func (r *concurrentRepository) CompleteOutboxClaim(_ context.Context, job model.OutboxJob, _ error, _ time.Time) error {
+	r.completed <- job.ID
 	return nil
 }
-func (r *concurrentRepository) RenewOutboxJob(context.Context, string, int, time.Time) (bool, error) {
+func (r *concurrentRepository) RenewOutboxClaim(context.Context, model.OutboxJob, time.Time) (bool, error) {
 	return true, nil
 }
 

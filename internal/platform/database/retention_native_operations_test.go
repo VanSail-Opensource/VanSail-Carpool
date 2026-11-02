@@ -23,7 +23,7 @@ func TestMaintenanceRetainsNativeRoutingAndProbeReceipts(t *testing.T) {
 	}
 	completeTestProviderOperation(t, store, route.Receipt.ID, at)
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO xnode_routing_plans
-		(proxy_user_id,cipher,revision,phase,operation_id,updated_at) VALUES(?,'encrypted',1,'active',?,?)`,
+		(proxy_user_id,cipher,revision,phase,operation_id,updated_at) VALUES($1,'encrypted',1,'active',$2,$3)`,
 		owner.ProxyUserID, route.Receipt.ID, stamp(at)); err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestMaintenanceRetainsNativeRoutingAndProbeReceipts(t *testing.T) {
 			t.Fatal("repeat maintenance must retain referenced receipts", err)
 		}
 		var retained int
-		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN (?,?)`,
+		if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM provider_operations WHERE id IN ($1,$2)`,
 			route.Receipt.ID, probe.OperationID).Scan(&retained); err != nil || retained != 2 {
 			t.Fatal("native receipt attribution lost", retained, err)
 		}

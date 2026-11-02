@@ -16,8 +16,8 @@ import (
 // settlePaymentTx shares the existing ledger path with atomic on-chain transfer claims.
 func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedupeKey, payloadHash, orderID, tradeID, chargeID string, now time.Time) (model.PaymentOrder, bool, error) {
 	var existingOrderID string
-	err := tx.QueryRowContext(ctx, `SELECT order_id FROM webhook_events WHERE provider=? AND dedupe_key=?
-		UNION ALL SELECT order_id FROM payment_callback_tombstones WHERE provider=? AND dedupe_key=?`, provider, dedupeKey, provider, dedupeKey).Scan(&existingOrderID)
+	err := tx.QueryRowContext(ctx, `SELECT order_id FROM webhook_events WHERE provider=$1 AND dedupe_key=$2
+		UNION ALL SELECT order_id FROM payment_callback_tombstones WHERE provider=$3 AND dedupe_key=$4`, provider, dedupeKey, provider, dedupeKey).Scan(&existingOrderID)
 	if err == nil {
 		if existingOrderID != orderID {
 			return model.PaymentOrder{}, false, ErrConflict
@@ -38,7 +38,7 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 	if err != nil {
 		return model.PaymentOrder{}, false, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO webhook_events(id,provider,dedupe_key,order_id,payload_hash,received_at) VALUES(?,?,?,?,?,?)`, eventID, provider, dedupeKey, orderID, payloadHash, stamp(now)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO webhook_events(id,provider,dedupe_key,order_id,payload_hash,received_at) VALUES($1,$2,$3,$4,$5,$6)`, eventID, provider, dedupeKey, orderID, payloadHash, stamp(now)); err != nil {
 		return model.PaymentOrder{}, false, err
 	}
 	order, err := paymentOrderTx(ctx, tx, orderID)
@@ -77,8 +77,8 @@ func (s *Store) settlePaymentTx(ctx context.Context, tx *sql.Tx, provider, dedup
 	if order.Status != "pending" && order.Status != "creating" && order.Status != "expired" && order.Status != "cancelled" && !(provider == "builtin_usdt" && order.Status == "failed") {
 		return model.PaymentOrder{}, false, ErrConflict
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='paid',provider_trade_id=COALESCE(NULLIF(?,''),provider_trade_id),provider_charge_id=NULLIF(?,''),
-		provider_payload='{}',payment_url=NULL,qr_payload=NULL,paid_at=?,updated_at=? WHERE id=?`, tradeID, chargeID, stamp(now), stamp(now), order.ID); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE payment_orders SET status='paid',provider_trade_id=COALESCE(NULLIF($1,''),provider_trade_id),provider_charge_id=NULLIF($2,''),
+		provider_payload='{}',payment_url=NULL,qr_payload=NULL,paid_at=$3,updated_at=$4 WHERE id=$5`, tradeID, chargeID, stamp(now), stamp(now), order.ID); err != nil {
 		if isUniqueConstraint(err) {
 			return model.PaymentOrder{}, false, ErrConflict
 		}

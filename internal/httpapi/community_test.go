@@ -7,7 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
+
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +15,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/activity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
 )
 
 func TestParseMinorString(t *testing.T) {
@@ -149,7 +150,7 @@ func TestCouponUpdateDistinguishesOmittedFieldsFromNull(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db, err := database.Open(ctx, filepath.Join(t.TempDir(), "coupon-nullable.sqlite"))
+	db, err := testdatabase.Open(ctx, t)
 	if err != nil {
 		t.Fatalf("database.Open(): %v", err)
 	}

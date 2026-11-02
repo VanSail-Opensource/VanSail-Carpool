@@ -17,19 +17,19 @@ func TestNodeDownRetentionUsesCreationForEveryStatusAndClearsReferences(t *testi
 	for index, status := range []string{"observing", "pending_review", "queued", "dismissed", "ineligible"} {
 		id := status + "-expired"
 		if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_events(id,node_uuid,node_name,status,offline_observed_at,threshold_minutes,multiplier_bps,created_at,updated_at)
-			VALUES(?,?,?,?,?,1,10000,?,?)`, id, id, id, status, stamp(now.Add(-time.Hour)), stamp(cutoff), stamp(now)); err != nil {
+			VALUES($1,$2,$3,$4,$5,1,10000,$6,$7)`, id, id, id, status, stamp(now.Add(-time.Hour)), stamp(cutoff), stamp(now)); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_event_squads(event_id,squad_uuid,squad_name) VALUES(?,?,?)`, id, "squad", "Squad"); err != nil {
+		if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_event_squads(event_id,squad_uuid,squad_name) VALUES($1,$2,$3)`, id, "squad", "Squad"); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_node_state(node_uuid,node_name,is_connected,is_disabled,open_event_id,last_observed_at,updated_at)
-			VALUES(?,?,?,0,?,?,?)`, id, id, index%2, id, stamp(now), stamp(now)); err != nil {
+			VALUES($1,$2,$3,0,$4,$5,$6)`, id, id, index%2, id, stamp(now), stamp(now)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if _, err := store.DB().ExecContext(ctx, `INSERT INTO node_compensation_events(id,node_uuid,node_name,status,offline_observed_at,threshold_minutes,multiplier_bps,created_at,updated_at)
-		VALUES('retained','retained','Retained','observing',?,1,10000,?,?)`, stamp(cutoff.Add(-24*time.Hour)), stamp(cutoff.Add(time.Nanosecond)), stamp(now)); err != nil {
+		VALUES('retained','retained','Retained','observing',$1,1,10000,$2,$3)`, stamp(cutoff.Add(-24*time.Hour)), stamp(cutoff.Add(time.Nanosecond)), stamp(now)); err != nil {
 		t.Fatal(err)
 	}
 	counts, err := store.CompactAndPrune(ctx, cutoff, now.Add(-24*time.Hour), now)
@@ -43,7 +43,7 @@ func TestNodeDownRetentionUsesCreationForEveryStatusAndClearsReferences(t *testi
 	for _, query := range []struct {
 		sql   string
 		count *int
-	}{{`SELECT COUNT(*) FROM node_compensation_events`, &events}, {`SELECT COUNT(*) FROM node_compensation_node_state WHERE open_event_id IS NOT NULL`, &refs}, {`SELECT COUNT(*) FROM node_compensation_event_squads`, &details}, {`SELECT COUNT(*) FROM pragma_foreign_key_check`, &fk}} {
+	}{{`SELECT COUNT(*) FROM node_compensation_events`, &events}, {`SELECT COUNT(*) FROM node_compensation_node_state WHERE open_event_id IS NOT NULL`, &refs}, {`SELECT COUNT(*) FROM node_compensation_event_squads`, &details}, {`SELECT COUNT(*) FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype='f' AND NOT convalidated`, &fk}} {
 		if err := store.DB().QueryRowContext(ctx, query.sql).Scan(query.count); err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
 		t.Fatalf("independent targets=%+v,%v", items, err)
 	}
 	var jobs int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='provider_operation' AND json_extract(payload,'$.operationId')=?`, operation.Receipt.ID).Scan(&jobs); err != nil || jobs != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='provider_operation' AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END)=$1`, operation.Receipt.ID).Scan(&jobs); err != nil || jobs != 1 {
 		t.Fatalf("sync job=%d,%v", jobs, err)
 	}
 }

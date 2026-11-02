@@ -15,10 +15,7 @@ import (
 
 // CreateAdminBulkExtension atomically shifts targets and queues exact provider sync.
 func (s *Store) retryAttempt_CreateAdminBulkExtension(ctx context.Context, input AdminBulkExtensionInput, now time.Time) (model.OperationReceipt, error) {
-	if !IsPostgres(s.db) {
-		s.writeMu.Lock()
-		defer s.writeMu.Unlock()
-	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -49,7 +46,7 @@ func (s *Store) retryAttempt_CreateAdminBulkExtension(ctx context.Context, input
 		return operation.Receipt, nil
 	}
 	for _, target := range targets {
-		before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=?`, target.PurchaseID))
+		before, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1`, target.PurchaseID))
 		if err != nil {
 			return model.OperationReceipt{}, err
 		}
