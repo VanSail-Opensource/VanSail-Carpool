@@ -935,3 +935,12 @@ not consume the modern fleet's complete batch allowance. Commands/telemetry keep
 their independent lanes and the existing per-node outbound execution queue.
 `master_traffic_batch_test.go` verifies the deadline, immediate full batches,
 commit barrier, memory budget and joined shutdown using hosted fake-time tests.
+
+`global_cache.go` privately retains the validated fleet settings snapshot. Only
+`SaveGlobal` writes this document after startup migrations, and publishes a deep
+copy after the durable settings/audit write succeeds. Readers receive independent
+provider credentials, rule maps, selectors and interval pointers, including when
+HTTP responses redact secrets. Failed reads are never cached.
+`global_cache_test.go` covers concurrent cold reads, failed and committed writes,
+and caller mutation of secrets and policies. Adding a reference-valued global
+field also requires extending `cloneGlobal`.

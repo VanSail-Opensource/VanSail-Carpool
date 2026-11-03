@@ -77,9 +77,14 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err != nil {
 		return err
 	}
+	committed, err := DecodeGlobal(string(raw))
+	if err != nil {
+		return err
+	}
 	if err = s.settings.PutXNodeGlobal(ctx, actor, string(raw)); err != nil {
 		return err
 	}
+	s.globalSettings.publish(committed)
 	if repo, ok := s.repo.(interface{ ResetFirewallDetection() }); ok {
 		before, _ := json.Marshal(previous.FirewallDetection)
 		after, _ := json.Marshal(next.FirewallDetection)

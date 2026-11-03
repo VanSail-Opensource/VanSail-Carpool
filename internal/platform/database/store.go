@@ -28,6 +28,7 @@ var (
 
 // Store implements persistent repositories on PostgreSQL.
 type Store struct {
+	firewallPages        firewallPageCache
 	pricingExposureCache *pricing.AnalysisCache
 	pricingCache         *pricing.AnalysisCache
 	pricingExportSlot    chan struct{}

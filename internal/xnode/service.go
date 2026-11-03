@@ -15,6 +15,7 @@ import (
 )
 
 type Service struct {
+	globalSettings       globalSettingsCache
 	topology             *topologyCache
 	routingRuntime       *routingRuntime
 	compilation          *validationCache
@@ -43,11 +44,7 @@ func NewService(repo Repository, settings Settings, vault *secret.Vault, publicU
 
 func (s *Service) Now() time.Time { return s.now().UTC() }
 func (s *Service) Global(ctx context.Context) (GlobalConfig, error) {
-	raw, err := s.settings.Optional(ctx, GlobalSettingKey)
-	if err != nil {
-		return GlobalConfig{}, err
-	}
-	return DecodeGlobal(raw)
+	return s.globalSettings.read(ctx, s.settings)
 }
 func (s *Service) Nodes(ctx context.Context) ([]Node, error) { return s.repo.XNodeNodes(ctx) }
 func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, error) {

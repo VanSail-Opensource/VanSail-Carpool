@@ -16,6 +16,17 @@ func (s *Store) FirewallPage(ctx context.Context, after, target uint64, full boo
 	if limit < 1 || limit > 1000 {
 		limit = 256
 	}
+	var committed uint64
+	if err := s.db.QueryRowContext(ctx, `SELECT version FROM xnode_firewall_clock WHERE singleton=1`).Scan(&committed); err != nil {
+		return wire.FirewallUpdate{}, "", err
+	}
+	key := firewallPageKey{after, target, full, cursor, limit}
+	return s.firewallPages.read(ctx, committed, key, func() (wire.FirewallUpdate, string, error) {
+		return s.readFirewallPage(ctx, after, target, full, cursor, limit)
+	})
+}
+
+func (s *Store) readFirewallPage(ctx context.Context, after, target uint64, full bool, cursor string, limit int) (wire.FirewallUpdate, string, error) {
 	result := wire.FirewallUpdate{Version: target}
 	rows, err := s.db.QueryContext(ctx, `SELECT key,kind,prefix,generation,until_at,refresh_seconds,released FROM (
  SELECT 'b:'||generation AS key,'ban' AS kind,prefix,generation,until_at,refresh_seconds,released_version AS released FROM xnode_firewall_bans WHERE issued_version<=$1 AND (released_version=0 OR released_version>$2) AND ($3<>0 OR issued_version>$4)

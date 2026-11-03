@@ -1046,3 +1046,20 @@ financial effect and cursor before any report can be acknowledged.
   `xnode_traffic_batch_benchmark_test.go` compares individual and combined writes
   for 32 nodes and 64 owners. Hosted CI publishes latency, allocations and CPU
   profiles. Local automated suites remain prohibited.
+
+## Versioned firewall projections
+
+`xnode_firewall_cache.go` shares immutable dynamic-bank pages across node delivery
+workers. A single indexed committed-clock read precedes each lookup; a newer
+version invalidates prior pages, and delayed older readers cannot publish into
+the new generation. Cold loads coalesce and failures are never cached. Returned
+bank slices are private so snapshot IDs, pagination flags and caller changes
+cannot alter another node's payload. No financial or admission decisions use
+these cached projections.
+
+The LRU holds at most 128 pages and an estimated 8 MiB, with a five-minute lifetime
+below the seven-day operational-history retention. Existing absolute agent
+deadlines remain authoritative. This cache adds no tables or write transactions.
+`xnode_firewall_cache_test.go` covers committed detection visibility, immutable
+results, stale reader races, expiry, errors and capacity. New mutable projection
+banks require explicit cloning and size accounting before caching.
