@@ -949,3 +949,13 @@ Active-IP sampling is mandatory. `DefaultGlobal`, `DecodeGlobal` and `SaveGlobal
 normalize the retained legacy telemetry opt-out to enabled; older deployed agents
 therefore receive true without changing their saved sample/report intervals.
 `reporting_defaults_test.go` also protects this upgrade behavior.
+
+`master_activity.go` accepts only authenticated current-peer snapshots and
+independently negotiated observation history. Actual sample timestamps must be
+monotonic and no later than report publication (with bounded future clock skew).
+`live_availability.go` bounds activity by both report receipt and actual sample
+age, respecting separate configured intervals; report replay cannot refresh
+old activity. A negotiated agent with no first sample remains unavailable.
+Legacy measured snapshots retain decoding compatibility. `activity_observations_test.go`
+covers old/replaced/unnegotiated frames, missing samples and slow sample cadence.
+Managed-address protection also fences replaced peers before publishing IPs.

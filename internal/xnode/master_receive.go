@@ -59,28 +59,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		peer.mu.Unlock()
 		return nil
 	case "telemetry.report", "telemetry.compact":
-		report, err := decodeTelemetryFrame(peer, message)
-		if err != nil {
-			return ErrInvalid
-		}
-		if report.AgentID != peer.agentID || report.BootID != peer.bootID || !validMetrics(report.Users) {
-			return ErrInvalid
-		}
-		m.mu.Lock()
-		if m.peers[peer.nodeID] != peer {
-			m.mu.Unlock()
-			return ErrConflict
-		}
-		snapshot := m.live[peer.nodeID]
-		snapshot.report = report
-		snapshot.receivedAt = m.service.now()
-		if report.Ready && report.Synchronized {
-			snapshot.hello.UpgradePending = false
-		}
-		m.live[peer.nodeID] = snapshot
-		m.mu.Unlock()
-		m.rememberNodeIPs(peer, report.Machine)
-		return nil
+		return m.receiveActivity(peer, message)
 	case "traffic.report":
 		return m.receiveTraffic(ctx, peer, message)
 	case "ddns.changes":

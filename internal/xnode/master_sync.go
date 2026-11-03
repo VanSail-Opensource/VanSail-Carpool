@@ -30,7 +30,7 @@ func (m *Master) reconcile(ctx context.Context) error {
 		m.mu.RLock()
 		for id := range m.peers {
 			snapshot := m.live[id]
-			if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
+			if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds) {
 				for user, count := range snapshot.report.Users.Connections {
 					if count > 0 {
 						observed[user] = true
@@ -54,7 +54,7 @@ func (m *Master) reconcile(ctx context.Context) error {
 	for id, peer := range m.peers {
 		peers = append(peers, peer)
 		snapshot := m.live[id]
-		if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds) {
+		if native[id] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds) {
 			for user, count := range snapshot.report.Users.Connections {
 				if owner := paid[user]; owner != "" {
 					totals[owner] += int64(count)

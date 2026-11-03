@@ -35,7 +35,7 @@ func (m *Master) registerPeer(ctx context.Context, node string, hash []byte, hel
 		previous.socket.Close()
 	}
 	m.peers[node] = peer
-	m.live[node] = liveSnapshot{hello: hello}
+	m.live[node] = liveSnapshot{hello: hello, activityReports: peer.activityReports}
 	m.wg.Add(1)
 	return nil
 }

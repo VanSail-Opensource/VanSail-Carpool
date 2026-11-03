@@ -39,6 +39,10 @@ func (m *Master) rememberNodeIPs(peer *agentPeer, raw json.RawMessage) {
 	slices.Sort(ips)
 	ips = slices.Compact(ips)
 	m.mu.Lock()
+	if m.peers[peer.nodeID] != peer {
+		m.mu.Unlock()
+		return
+	}
 	if m.managedNodeIPs == nil {
 		m.managedNodeIPs = map[string][]string{}
 	}

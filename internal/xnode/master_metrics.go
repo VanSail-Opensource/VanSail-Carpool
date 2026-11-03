@@ -41,7 +41,7 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 		if len(summary) == 0 || !summary[0] {
 			item.Logs = append(item.Logs, snapshot.logs...)
 		}
-		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
+		item.Available = fresh && native[node.ID] && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
 		if node.Enabled {
 			openNodes++
 			if item.Available && m.peers[node.ID].openConnections {

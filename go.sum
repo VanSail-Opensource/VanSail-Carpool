@@ -8,6 +8,8 @@ github.com/VanSail-Opensource/X-Node v1.0.2-0.20261030084112-bdefc59f3479 h1:z0K
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261030084112-bdefc59f3479/go.mod h1:JJEgvbWPDiGxvvOGKmcFn7t+K0fPoKiftVyq9ilNLQY=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261103105412-6cc2a2abbdc2 h1:9W5UUETBid4bLZBJb0O/Q1d8QSlhvS8+Hpe1rq5/h4A=
 github.com/VanSail-Opensource/X-Node v1.0.2-0.20261103105412-6cc2a2abbdc2/go.mod h1:tBNEUpkT9wMXEVJc/vFkFl3axJ08pF2ksM7rpoZVay0=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261103121653-fb0b499e47c2 h1:bgWWnArUCKytY/Ye7PQfY7xcsXYtryQeLnPJoKipqA0=
+github.com/VanSail-Opensource/X-Node v1.0.2-0.20261103121653-fb0b499e47c2/go.mod h1:tBNEUpkT9wMXEVJc/vFkFl3axJ08pF2ksM7rpoZVay0=
 github.com/andybalholm/brotli v1.2.6 h1:ftYnfj6usCp+UGV5kSJ3+chpMQgU+gJf/AxsUQ52REI=
 github.com/andybalholm/brotli v1.2.6/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e h1:5mgtR5gwIgBKMiGI1QdXldZZ+SNor06Nbu1wCBulQBg=

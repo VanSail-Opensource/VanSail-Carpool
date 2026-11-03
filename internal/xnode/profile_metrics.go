@@ -62,7 +62,7 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 		}
 		snapshot := m.live[node.ID]
 		item := UserNodeMetric{NodeID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Connections: "0", UploadBytes: "0", DownloadBytes: "0", WeightedBytes: "0"}
-		item.Available = owned && node.Enabled && m.peers[node.ID] != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds)
+		item.Available = owned && node.Enabled && m.peers[node.ID] != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
 		if item.Available {
 			count := int64(0)
 			for _, principal := range principals {

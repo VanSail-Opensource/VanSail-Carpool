@@ -24,6 +24,7 @@ type agentPeer struct {
 	reportDecoder         *wire.ReportDecoder // owned by the socket reader, nil for legacy peers
 	trafficStreams        bool                // immutable, boot-scoped traffic negotiation
 	openConnections       bool                // immutable, independently negotiated open client counts
+	activityReports       bool                // immutable, independently negotiated sampled IP history
 	ddnsChanges           bool                // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string

@@ -46,11 +46,15 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	compactOffer := r.Header.Get(wire.TelemetryFormatHeader) == wire.CompactTelemetryFormat
 	openConnectionsOffer := r.Header.Get(wire.OpenConnectionsHeader) == wire.OpenConnectionsFormat
+	activityOffer := r.Header.Get(wire.ActivityObservationsHeader) == wire.ActivityObservationsFormat
 	ddnsOffer := r.Header.Get(wire.DDNSChangesHeader) == wire.DDNSChangesFormat
 	reportOffer := r.Header.Get(wire.ReportFramingHeader) == wire.ZstdReportFraming
 	_, streamSupported := m.service.repo.(TrafficStreamRepository)
 	streamOffer := streamSupported && r.Header.Get(wire.TrafficStreamHeader) == wire.TrafficStreamFormat
 	responseHeaders := http.Header{}
+	if activityOffer {
+		responseHeaders.Set(wire.ActivityObservationsHeader, wire.ActivityObservationsFormat)
+	}
 	if streamOffer {
 		responseHeaders.Set(wire.TrafficStreamHeader, wire.TrafficStreamFormat)
 	}
@@ -112,6 +116,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	peer.computePool = r.Header.Get(wire.ComputePoolHeader) == wire.ComputePoolFormat && containsCapability(hello.Capabilities, wire.ComputePoolCapability)
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
 	peer.openConnections = openConnectionsOffer && containsCapability(hello.Capabilities, wire.OpenConnectionsCapability)
+	peer.activityReports = activityOffer && containsCapability(hello.Capabilities, wire.ActivityObservationsCapability)
 	peer.ddnsChanges = ddnsOffer && containsCapability(hello.Capabilities, wire.DDNSChangesCapability)
 	peer.reportDecoder = reportDecoder
 	peer.trafficStreams = streamOffer && containsCapability(hello.Capabilities, wire.TrafficStreamCapability) && wire.ValidStreamID(hello.BootID)

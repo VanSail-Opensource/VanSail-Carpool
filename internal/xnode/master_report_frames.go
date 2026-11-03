@@ -39,7 +39,7 @@ func readAgentFrame(socket *websocket.Conn, decoders ...*wire.ReportDecoder) (wi
 func decodeTelemetryFrame(peer *agentPeer, message wire.Message) (wire.TelemetryReport, error) {
 	var report wire.TelemetryReport
 	if message.Type == "telemetry.report" {
-		if wire.Decode(message.Data, &report) != nil {
+		if wire.Decode(message.Data, &report) != nil || wire.ValidateActivity(report.Users) != nil {
 			return report, ErrInvalid
 		}
 		return report, nil

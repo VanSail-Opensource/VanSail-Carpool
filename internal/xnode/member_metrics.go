@@ -32,7 +32,7 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 	defer m.mu.RUnlock()
 	for nodeID := range nodes {
 		snapshot := m.live[nodeID]
-		if !nodes[nodeID] || m.peers[nodeID] == nil || !activityAvailable(snapshot, result.FetchedAt, global.Telemetry.ReportSeconds) {
+		if !nodes[nodeID] || m.peers[nodeID] == nil || !activityAvailable(snapshot, result.FetchedAt, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds) {
 			result.Incomplete = true
 			totalsAvailable = false
 			continue
@@ -51,7 +51,7 @@ func (m *Master) UserMetrics(ctx context.Context, userID string) (UserMetrics, e
 				totalConnections += int64(count)
 				online = count > 0
 			}
-			expires := snapshot.receivedAt.Add(reportWindow(global.Telemetry.ReportSeconds))
+			expires := activityExpiry(snapshot, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
 			if offlineExpiry.IsZero() || expires.Before(offlineExpiry) {
 				offlineExpiry = expires
 			}
