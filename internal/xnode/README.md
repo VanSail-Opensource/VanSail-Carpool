@@ -914,3 +914,13 @@ Access repair uses `access_repair.go` and `access_recovery_test.go` to reload cu
 `reporting_defaults_test.go` protects explicit saved intervals and historical omitted/zero intervals while new configurations target two seconds.
 
 `master_firewall_socket_test.go` exercises dropped liveness pongs and lost confirmation replies over an authenticated socket, preserving the transaction guard until confirmed.
+
+`master_registration.go` binds authenticated peer replacement and durable boot
+stream closure under the existing enrollment lock. `traffic_streams.go` exposes
+optional native repository contracts and dual legacy/boot flush barriers.
+Settlements wait on real committed cursors; a closed boot settles surviving
+known usage without synthetic cursor advancement. Normal control/traffic receipt
+remains independent of long financial barrier waits. Negotiated binary reports
+use the public bounded codec in `master_report_frames.go`.
+
+The coordinated protocol dependency currently tracks the boot-stream implementation commit for hosted integration. Final delivery requires replacing this intermediate pin with the source of the verified signed amd64/arm64 release.

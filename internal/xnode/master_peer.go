@@ -20,9 +20,11 @@ type agentPeer struct {
 	paygRecoveryQueued    bool         // mu; durable recovery is coalesced per boot
 	paygOverlayKey        string       // syncMu; disposable authorization projection
 	publicIP              string
-	compactTelemetry      bool // immutable, negotiated upgrade header plus hello capability
-	openConnections       bool // immutable, independently negotiated open client counts
-	ddnsChanges           bool // immutable, independently negotiated DDNS changes
+	compactTelemetry      bool                // immutable, negotiated upgrade header plus hello capability
+	reportDecoder         *wire.ReportDecoder // owned by the socket reader, nil for legacy peers
+	trafficStreams        bool                // immutable, boot-scoped traffic negotiation
+	openConnections       bool                // immutable, independently negotiated open client counts
+	ddnsChanges           bool                // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string
 	protectedIPs          []string // mu; last acknowledged protected bank

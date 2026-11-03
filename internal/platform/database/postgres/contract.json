@@ -152,7 +152,9 @@
     "xnode_period_aliases",
     "xnode_period_nodes",
     "xnode_payg_charges",
-    "xnode_payg_windows"
+    "xnode_payg_windows",
+    "xnode_traffic_streams",
+    "xnode_stream_rates"
   ],
   "tables": [
     {
@@ -9502,6 +9504,18 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "flushed_stream_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "flushed_legacy_sequence",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
         }
       ]
     },
@@ -9774,6 +9788,94 @@
           "primaryKey": 0
         }
       ]
+    },
+    {
+      "name": "xnode_traffic_streams",
+      "columns": [
+        {
+          "name": "agent_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "stream_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "node_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_sequence",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_digest",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "closed",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "has_gaps",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_stream_rates",
+      "columns": [
+        {
+          "name": "agent_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "stream_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "from_sequence",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 3
+        },
+        {
+          "name": "multiplier_fp",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
     }
   ],
   "indexes": [
@@ -9907,7 +10009,10 @@
     "xnode_payg_windows_expiry",
     "xnode_periods_purchase_idx",
     "xnode_periods_user_idx",
-    "xnode_service_bindings_expiry_idx"
+    "xnode_service_bindings_expiry_idx",
+    "xnode_traffic_active_stream",
+    "xnode_traffic_streams_pkey",
+    "xnode_stream_rates_pkey"
   ],
   "triggers": [
     "account_onboarding_update",

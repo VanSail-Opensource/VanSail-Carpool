@@ -73,6 +73,12 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Forward migrations may add operational columns/tables. Compare every
+	// original column against the same projection after the populated upgrade.
+	contract.Tables, err = existingUpgradeProjection(ctx, raw, contract.Tables)
+	if err != nil {
+		t.Fatal(err)
+	}
 	beforeNative, err := inspect(ctx, raw, contract.Tables)
 	if err != nil {
 		t.Fatal(err)
@@ -106,4 +112,37 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	if err = Migrate(ctx, db); err != nil {
 		t.Fatal("upgraded schema is not idempotent", err)
 	}
+}
+
+func existingUpgradeProjection(ctx context.Context, db *sql.DB, tables []TableContract) ([]TableContract, error) {
+	rows, err := db.QueryContext(ctx, `SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	present := map[string]map[string]bool{}
+	for rows.Next() {
+		var table, column string
+		if err := rows.Scan(&table, &column); err != nil {
+			return nil, err
+		}
+		if present[table] == nil {
+			present[table] = map[string]bool{}
+		}
+		present[table][column] = true
+	}
+	var projected []TableContract
+	for _, table := range tables {
+		var columns []ColumnContract
+		for _, column := range table.Columns {
+			if present[table.Name][column.Name] {
+				columns = append(columns, column)
+			}
+		}
+		if len(columns) > 0 {
+			table.Columns = columns
+			projected = append(projected, table)
+		}
+	}
+	return projected, rows.Err()
 }

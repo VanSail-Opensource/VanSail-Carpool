@@ -47,7 +47,16 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	compactOffer := r.Header.Get(wire.TelemetryFormatHeader) == wire.CompactTelemetryFormat
 	openConnectionsOffer := r.Header.Get(wire.OpenConnectionsHeader) == wire.OpenConnectionsFormat
 	ddnsOffer := r.Header.Get(wire.DDNSChangesHeader) == wire.DDNSChangesFormat
+	reportOffer := r.Header.Get(wire.ReportFramingHeader) == wire.ZstdReportFraming
+	_, streamSupported := m.service.repo.(TrafficStreamRepository)
+	streamOffer := streamSupported && r.Header.Get(wire.TrafficStreamHeader) == wire.TrafficStreamFormat
 	responseHeaders := http.Header{}
+	if streamOffer {
+		responseHeaders.Set(wire.TrafficStreamHeader, wire.TrafficStreamFormat)
+	}
+	if reportOffer {
+		responseHeaders.Set(wire.ReportFramingHeader, wire.ZstdReportFraming)
+	}
 	if openConnectionsOffer {
 		responseHeaders.Set(wire.OpenConnectionsHeader, wire.OpenConnectionsFormat)
 	}
@@ -69,7 +78,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Master commands/acks stay uncompressed; only the agent report writer opts
 	// into compression. This remains inside the single-writer contract.
 	socket.EnableWriteCompression(false)
-	socket.SetReadLimit(wire.MaxFrameBytes)
+	socket.SetReadLimit(wire.MaxReportFrameBytes)
 	if err = socket.SetReadDeadline(time.Now().Add(15 * time.Second)); err != nil {
 		return
 	}
@@ -80,6 +89,14 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var hello wire.AgentHello
 	if err = wire.Decode(message.Data, &hello); err != nil || len(hello.AgentID) != 32 || len(hello.BootID) != 32 {
 		return
+	}
+	var reportDecoder *wire.ReportDecoder
+	if reportOffer && containsCapability(hello.Capabilities, wire.ReportFramingCapability) {
+		reportDecoder, err = wire.NewReportDecoder()
+		if err != nil {
+			return
+		}
+		defer reportDecoder.Close()
 	}
 	queue, err := upstreamqueue.New(upstreamqueue.Config{Name: "xnode-" + node.ID, Capacity: 128})
 	if err != nil {
@@ -96,36 +113,17 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
 	peer.openConnections = openConnectionsOffer && containsCapability(hello.Capabilities, wire.OpenConnectionsCapability)
 	peer.ddnsChanges = ddnsOffer && containsCapability(hello.Capabilities, wire.DDNSChangesCapability)
+	peer.reportDecoder = reportDecoder
+	peer.trafficStreams = streamOffer && containsCapability(hello.Capabilities, wire.TrafficStreamCapability) && wire.ValidStreamID(hello.BootID)
 	if err = m.refreshDDNSProtection(ctx); err != nil {
 		return
 	}
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && r.Header.Get("X-Forwarded-For") == "" {
 		peer.publicIP, _ = FirewallPublicIP(host)
 	}
-	m.mu.Lock()
-	if lifetime.Err() != nil {
-		m.mu.Unlock()
+	if err = m.registerPeer(ctx, node.ID, hash[:], hello, peer); err != nil {
 		return
 	}
-	// Enrollment rotation uses the same lock. Recheck after the hello so a token
-	// revoked during the handshake cannot publish a new authenticated peer.
-	current, authErr := m.service.repo.XNodeNodeByToken(ctx, hash[:])
-	if authErr != nil || current.ID != node.ID {
-		m.mu.Unlock()
-		return
-	}
-	if err = m.service.repo.BindXNodeAgent(ctx, node.ID, hello.AgentID); err != nil {
-		m.mu.Unlock()
-		return
-	}
-	if previous := m.peers[node.ID]; previous != nil {
-		previous.cancel()
-		previous.socket.Close()
-	}
-	m.peers[node.ID] = peer
-	m.live[node.ID] = liveSnapshot{hello: hello}
-	m.wg.Add(1)
-	m.mu.Unlock()
 	m.rememberNodeIPs(peer, json.RawMessage(`{}`))
 	defer func() {
 		m.mu.Lock()
@@ -153,7 +151,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	receivers := m.startPeerReceivers(peer)
 	defer receivers.stop()
 	for {
-		message, err = readAgentFrame(socket)
+		message, err = readAgentFrame(socket, peer.reportDecoder)
 		if err != nil {
 			return
 		}

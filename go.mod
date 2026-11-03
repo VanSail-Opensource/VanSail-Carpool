@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	filippo.io/edwards25519 v1.2.0
 	github.com/RoaringBitmap/roaring/v2 v2.30.0
-	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261030084112-bdefc59f3479
+	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261103105412-6cc2a2abbdc2
 	github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/google/uuid v1.6.0
@@ -16,7 +16,7 @@ require (
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xssnick/tonutils-go v1.19.1
-	github.com/xtls/xray-core v1.260327.1-0.20261017152356-92ccc939aaf4
+	github.com/xtls/xray-core v1.260327.1-0.20261029083850-0afec66085a8
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
 	golang.org/x/crypto v0.58.0
 	golang.org/x/net v0.61.0
@@ -35,7 +35,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/juju/ratelimit v1.0.2 // indirect
-	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/libp2p/go-nat v1.0.1-0.20250821073202-01afc089f138 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/stun/v3 v3.1.7 // indirect
 	github.com/pion/transport/v4 v4.1.0 // indirect
-	github.com/pires/go-proxyproto v0.15.0 // indirect
+	github.com/pires/go-proxyproto v0.16.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af // indirect
 	github.com/sethvargo/go-retry v0.5.0 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/xtls/reality v0.0.0-20261014101318-83f621788ca8 // indirect
 	github.com/yuin/gopher-lua v1.1.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto/x509roots/fallback v0.0.0-20261005185213-c3db4df58582 // indirect
+	golang.org/x/crypto/x509roots/fallback v0.0.0-20261020153306-9f2b28d4331a // indirect
 	golang.org/x/exp v0.0.0-20261011100332-faecfb24eb49 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect

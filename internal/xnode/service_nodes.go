@@ -76,7 +76,16 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 		if err != nil {
 			return node, err
 		}
-		if err = s.repo.SetXNodeRate(ctx, node.ID, barrier.AgentID, barrier.Sequence, node.MultiplierFP); err != nil {
+		if barrier.StreamID != "" {
+			streams, ok := s.repo.(TrafficStreamRepository)
+			if !ok {
+				return node, ErrUnavailable
+			}
+			err = streams.SetXNodeStreamRate(ctx, node.ID, barrier.AgentID, barrier.StreamID, barrier.Sequence, node.MultiplierFP)
+		} else {
+			err = s.repo.SetXNodeRate(ctx, node.ID, barrier.AgentID, barrier.Sequence, node.MultiplierFP)
+		}
+		if err != nil {
 			return node, err
 		}
 	}

@@ -70,7 +70,7 @@ func (s *Store) SealXNodePeriodNode(ctx context.Context, period, node string, se
 	if sequence > math.MaxInt64 {
 		return xnode.ErrInvalid
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=$1 WHERE period_id=$2 AND node_id=$3`, sequence, period, node)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=$1 WHERE period_id=$2 AND node_id=$3 AND flushed_sequence IS NULL`, sequence, period, node)
 	return err
 }
 func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) error {

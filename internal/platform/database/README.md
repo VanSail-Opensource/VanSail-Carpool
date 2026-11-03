@@ -998,3 +998,19 @@ Native report state acknowledgments use GREATEST on accepted/applied revisions. 
   settlement independent of access preferences.
 - `xnode_traffic_test.go` protects atomic report replay, exact multiplier carry,
   ownership and known-usage gaps.
+
+## Volatile agent traffic streams
+
+`xnode_traffic_streams.go` serializes authenticated boot registration with node
+ownership, permanently closes replaced streams and preserves the last actual
+committed cursor. `xnode_stream_rates.go` owns independent sequence-based rate
+boundaries and known-usage settlement seals. `xnode_traffic.go` atomically commits
+usage, digest/cursor progress, gap evidence and financial effects before ACK.
+Legacy cursors/rates retain their original identities. Closed or reordered stream
+reports cannot charge again. No live IPs or pending report payloads are stored.
+`xnode_traffic_apply.go` resolves rate/accounting owners and deterministic locks
+through the existing PAYG/native accounting paths.
+
+`xnode_traffic_streams_test.go` covers duplicate/conflicting/reordered reports,
+restart closure, explicit buffer loss, legacy coexistence, unchanged committed
+prices, known-usage seals and rollback/retry without duplicate usage.

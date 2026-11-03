@@ -5,19 +5,35 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func readAgentFrame(socket *websocket.Conn) (wire.Message, error) {
+func readAgentFrame(socket *websocket.Conn, decoders ...*wire.ReportDecoder) (wire.Message, error) {
 	kind, reader, err := socket.NextReader()
 	if err != nil {
 		return wire.Message{}, err
 	}
-	if kind != websocket.TextMessage {
+	var decoder *wire.ReportDecoder
+	if len(decoders) > 0 {
+		decoder = decoders[0]
+	}
+	if kind != websocket.TextMessage && (kind != websocket.BinaryMessage || decoder == nil) {
 		return wire.Message{}, ErrInvalid
 	}
-	data, err := wire.ReadMessagePayload(reader)
+	var data []byte
+	if kind == websocket.BinaryMessage {
+		data, err = decoder.Read(reader)
+	} else {
+		data, err = wire.ReadMessagePayload(reader)
+	}
 	if err != nil {
 		return wire.Message{}, err
 	}
-	return wire.Parse(data)
+	message, err := wire.Parse(data)
+	if err != nil {
+		return wire.Message{}, err
+	}
+	if kind == websocket.BinaryMessage && !wire.IsReport(message.Type) || kind == websocket.TextMessage && decoder != nil && wire.IsReport(message.Type) {
+		return wire.Message{}, ErrInvalid
+	}
+	return message, nil
 }
 
 func decodeTelemetryFrame(peer *agentPeer, message wire.Message) (wire.TelemetryReport, error) {

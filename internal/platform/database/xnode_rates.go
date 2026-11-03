@@ -18,7 +18,7 @@ func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent str
 	}
 	defer tx.Rollback()
 	var bound string
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=$1`, nodeID).Scan(&bound); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=$1 FOR UPDATE`, nodeID).Scan(&bound); err != nil {
 		return err
 	}
 	if bound != agent {

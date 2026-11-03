@@ -94,12 +94,9 @@ func (m *Master) flush(ctx context.Context, nodeID string, args wire.TrafficFlus
 	tick := time.NewTicker(50 * time.Millisecond)
 	defer tick.Stop()
 	for {
-		sequence, err := m.service.repo.XNodeReportSequence(ctx, barrier.AgentID)
-		if err != nil {
+		ready, err := m.trafficBarrierCommitted(ctx, barrier)
+		if err != nil || ready {
 			return barrier, err
-		}
-		if sequence >= barrier.Sequence {
-			return barrier, nil
 		}
 		select {
 		case <-tick.C:
@@ -123,6 +120,15 @@ func (m *Master) captureTraffic(ctx context.Context, nodeID string, args wire.Tr
 	node, err := m.service.repo.XNodeNode(ctx, nodeID)
 	if err != nil {
 		return barrier, err
+	}
+	if barrier.StreamID != "" {
+		m.mu.RLock()
+		peer := m.peers[nodeID]
+		valid := peer != nil && peer.trafficStreams && peer.bootID == barrier.StreamID
+		m.mu.RUnlock()
+		if !valid {
+			return barrier, ErrUnavailable
+		}
 	}
 	if barrier.AgentID != node.AgentID {
 		return barrier, ErrInvalid

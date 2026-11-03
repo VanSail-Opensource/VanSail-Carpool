@@ -100,3 +100,7 @@ ledger rows. The hosted forward-upgrade rehearsal verifies these boundaries.
 account purge timestamp without changing its stored evidence or prior migrations.
 
 `00031_squad_features.sql` mirrors SQLite 116 for local squad merchandising features.
+
+`00033_volatile_traffic_streams.sql` adds boot-scoped cursor tombstones and rate
+boundaries plus settlement stream references. It never stores report buffers or
+source IPs and does not rewrite historical usage, financial facts or legacy IDs.

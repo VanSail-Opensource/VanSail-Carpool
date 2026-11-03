@@ -166,7 +166,16 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 			}
 			return err
 		}
-		if err = s.repo.SealXNodePeriodNode(ctx, period.ID, node.NodeID, barrier.Sequence); err != nil {
+		if barrier.StreamID != "" {
+			streams, ok := s.repo.(TrafficStreamRepository)
+			if !ok {
+				return ErrUnavailable
+			}
+			err = streams.SealXNodeStreamPeriodNode(ctx, period.ID, node.NodeID, barrier)
+		} else {
+			err = s.repo.SealXNodePeriodNode(ctx, period.ID, node.NodeID, barrier.Sequence)
+		}
+		if err != nil {
 			return err
 		}
 	}

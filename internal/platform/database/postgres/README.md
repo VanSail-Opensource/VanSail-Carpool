@@ -41,3 +41,10 @@ accounting/reward evidence. `runtime_test.go` checks ownership and notifications
 No local automated suites are permitted by repository policy.
 
 Native scalar flag projections use PostgreSQL boolean-to-integer casts explicitly; Go integer consumers do not depend on connector row coercion. Fixture users use existing Telegram identity columns and never recreate retired username fields.
+
+Schema 33 adds boot-scoped deduplication, rate boundaries and period-node seal
+references. These are necessary durable accounting evidence; live reports,
+source IPs and agent buffers remain volatile. Legacy cursors, rates and all old
+columns/financial facts remain unchanged. Populated upgrade fingerprints compare
+every original column through the identical pre-upgrade projection; added native
+objects are checked separately through the complete schema contract.

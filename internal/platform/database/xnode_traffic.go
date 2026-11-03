@@ -2,11 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"math"
-	"sort"
-	"strconv"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -15,7 +12,8 @@ import (
 
 // RecordXNodeTraffic commits accounting or an explicit discard before ACK.
 func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, agent string, sequence uint64, digest string, report wire.TrafficReport) error {
-	if sequence == 0 || sequence > math.MaxInt64 || report.ID != agent+":"+strconv.FormatUint(sequence, 10) {
+	parsed, parseErr := wire.TrafficSequence(agent, report)
+	if parseErr != nil || parsed != sequence || sequence > math.MaxInt64 || report.StreamID == "" && report.DroppedSamples != 0 {
 		return xnode.ErrInvalid
 	}
 
@@ -26,20 +24,38 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	defer tx.Rollback()
 	var bound string
 	var multiplier int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=$1`, nodeID).Scan(&bound, &multiplier); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, nodeID).Scan(&bound, &multiplier); err != nil {
 		return err
 	}
 	if bound != agent {
 		return xnode.ErrTrafficAgentMismatch
 	}
-	previous, previousDigest, err := lockXNodeCursorTx(ctx, tx, nodeID, agent)
+	var previous uint64
+	var previousDigest string
+	var closed bool
+	if report.StreamID == "" {
+		previous, previousDigest, err = lockXNodeCursorTx(ctx, tx, nodeID, agent)
+	} else {
+		previous, previousDigest, closed, err = lockXNodeStreamCursorTx(ctx, tx, nodeID, agent, report.StreamID)
+	}
 	if err != nil {
 		return err
+	}
+	if closed && sequence > previous {
+		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, "closed_stream", "", true, report); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if sequence <= previous {
 		if sequence == previous && digest != previousDigest {
 			if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, "digest_mismatch", "", true, report); err != nil {
 				return err
+			}
+			if report.StreamID != "" {
+				if _, err = tx.ExecContext(ctx, `UPDATE xnode_traffic_streams SET has_gaps=true WHERE agent_id=$1 AND stream_id=$2`, agent, report.StreamID); err != nil {
+					return err
+				}
 			}
 		}
 		return tx.Commit()
@@ -67,85 +83,24 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 	if _, err = tx.ExecContext(ctx, `RELEASE SAVEPOINT xnode_traffic_report`); err != nil {
 		return err
 	}
-	if discarded || sequence != previous+1 {
+	if discarded || sequence != previous+1 || report.DroppedSamples > 0 {
 		if reason == "" {
 			reason = "sequence_gap"
+			if report.DroppedSamples > 0 {
+				reason = "volatile_buffer_loss"
+			}
 		}
 		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, reason, missingPeriod, discarded, report); err != nil {
 			return err
 		}
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(agent_id) DO UPDATE SET last_sequence=excluded.last_sequence,last_digest=excluded.last_digest,updated_at=excluded.updated_at`, agent, nodeID, sequence, digest, stamp(time.Now().UTC()))
+	if report.StreamID == "" {
+		_, err = tx.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(agent_id) DO UPDATE SET last_sequence=excluded.last_sequence,last_digest=excluded.last_digest,updated_at=excluded.updated_at`, agent, nodeID, sequence, digest, stamp(time.Now().UTC()))
+	} else {
+		_, err = tx.ExecContext(ctx, `UPDATE xnode_traffic_streams SET last_sequence=$1,last_digest=$2,has_gaps=has_gaps OR $3,updated_at=$4 WHERE agent_id=$5 AND stream_id=$6`, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0, stamp(time.Now().UTC()), agent, report.StreamID)
+	}
 	if err != nil {
 		return err
 	}
 	return tx.Commit()
-}
-
-func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, multiplier int64, report wire.TrafficReport) error {
-	samples := report.Samples
-	var priced int64
-	err := tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id=$1 AND from_sequence<=$2 ORDER BY from_sequence DESC LIMIT 1`, agent, sequence).Scan(&priced)
-	if err == nil {
-		multiplier = priced
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-	sampled := map[int]bool{}
-	paygIDs := map[int64]bool{}
-	for _, sample := range samples {
-		paygIDs[int64(sample.UserID)] = true
-	}
-	if err = lockPAYGOwnersTx(ctx, tx, nodeID, paygIDs); err != nil {
-		return err
-	}
-	periods := map[string]bool{}
-	for _, sample := range samples {
-		periods[sample.AccountingPeriod] = true
-	}
-	ordered := make([]string, 0, len(periods))
-	for period := range periods {
-		ordered = append(ordered, period)
-	}
-	sort.Strings(ordered)
-	for _, period := range ordered {
-		var locked string
-		if err = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=$1 FOR UPDATE`, period).Scan(&locked); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return xnode.NewTrafficPeriodMissing(period)
-			}
-			return err
-		}
-	}
-	for _, sample := range samples {
-		sampled[sample.UserID] = true
-		if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
-			return e
-		} else if handled {
-			continue
-		}
-		if err = recordXNodeSample(ctx, tx, nodeID, multiplier, sample); err != nil {
-			return err
-		}
-	}
-	for user, bytes := range report.Traffic {
-		if sampled[user] || bytes == [2]uint64{} {
-			continue
-		}
-		var service sql.NullString
-		var metered, migrated bool
-		if err = tx.QueryRowContext(ctx, `SELECT service_name,
-			EXISTS(SELECT 1 FROM xnode_metered_probes p WHERE p.proxy_user_id=i.proxy_user_id),
-			EXISTS(SELECT 1 FROM member_identity_aliases a WHERE (a.old_proxy_id=$1 OR a.proxy_id=$2) AND a.proxy_id=i.proxy_user_id AND a.user_id=i.user_id)
-			FROM xnode_identities i WHERE proxy_user_id=COALESCE((SELECT proxy_id FROM member_identity_aliases WHERE old_proxy_id=$3),$4)`, user, user, user, user).Scan(&service, &metered, &migrated); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return xnode.ErrTrafficIdentityMissing
-			}
-			return err
-		}
-		if (!service.Valid && !migrated) || metered {
-			return xnode.ErrTrafficSampleMissing
-		}
-	}
-	return nil
 }

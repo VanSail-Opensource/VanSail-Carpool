@@ -5,8 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"strconv"
-	"strings"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -61,11 +59,18 @@ func (m *Master) commitTraffic(ctx context.Context, peer *agentPeer, message wir
 	if err := wire.Decode(message.Data, &report); err != nil {
 		return ErrInvalid
 	}
-	raw, ok := strings.CutPrefix(report.ID, peer.agentID+":")
-	if !ok || message.ID != report.ID {
+	if message.ID != report.ID || report.StreamID != "" && (!peer.trafficStreams || report.StreamID != peer.bootID) {
 		return ErrInvalid
 	}
-	sequence, err := strconv.ParseUint(raw, 10, 63)
+	if report.StreamID != "" {
+		m.mu.RLock()
+		current := m.peers[peer.nodeID] == peer
+		m.mu.RUnlock()
+		if !current {
+			return ErrUnavailable
+		}
+	}
+	sequence, err := wire.TrafficSequence(peer.agentID, report)
 	if err != nil {
 		return ErrInvalid
 	}
