@@ -944,3 +944,8 @@ HTTP responses redact secrets. Failed reads are never cached.
 `global_cache_test.go` covers concurrent cold reads, failed and committed writes,
 and caller mutation of secrets and policies. Adding a reference-valued global
 field also requires extending `cloneGlobal`.
+
+Active-IP sampling is mandatory. `DefaultGlobal`, `DecodeGlobal` and `SaveGlobal`
+normalize the retained legacy telemetry opt-out to enabled; older deployed agents
+therefore receive true without changing their saved sample/report intervals.
+`reporting_defaults_test.go` also protects this upgrade behavior.

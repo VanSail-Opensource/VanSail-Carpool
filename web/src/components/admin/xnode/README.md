@@ -131,3 +131,9 @@ receipt and capability validation; no additional confirmation flow is added.
 Provider cost settings support fixed cycles or hourly plus per-GiB rates, and finite or unlimited traffic. Rate inputs use six decimal places; recorded payments remain separate from estimated rates.
 
 Access groups show a localized delete action only with known zero members and server-confirmed eligibility. Mutations disable controls, reload on success, and refresh eligibility after conflicts. Group deletion reuses the workspace error state.
+
+Global telemetry has no active-IP opt-out. The sampling interval describes the
+mandatory IP/activity/rate sample; the independent report interval remains
+editable. `useXNodeGlobalSettings.ts` normalizes older loaded opt-outs before
+submission, while the backend normalizes both legacy documents and writes.
+Loading and failed reads cannot enable saving; failed writes preserve the draft.

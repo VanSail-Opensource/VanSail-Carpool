@@ -16,3 +16,15 @@ func TestNewReportingTargetPreservesSavedIntervals(t *testing.T) {
 		}
 	}
 }
+
+func TestSavedActiveIPOptOutIsNormalized(t *testing.T) {
+	for _, raw := range []string{"", `{}`, `{"telemetry":{"include_active_ips":false}}`, `{"telemetry":{"include_active_ips":true,"sample_seconds":12,"report_seconds":17}}`} {
+		config, err := DecodeGlobal(raw)
+		if err != nil || !config.Telemetry.IncludeActiveIPs {
+			t.Fatal("saved opt-out disabled mandatory reporting", raw, err)
+		}
+		if raw == `{"telemetry":{"include_active_ips":true,"sample_seconds":12,"report_seconds":17}}` && (config.Telemetry.SampleSeconds != 12 || config.Telemetry.ReportSeconds != 17) {
+			t.Fatal("normalization changed administrator intervals")
+		}
+	}
+}

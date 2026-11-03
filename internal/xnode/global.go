@@ -12,7 +12,7 @@ import (
 
 func DefaultGlobal() GlobalConfig {
 	hours := 24
-	return GlobalConfig{FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
+	return GlobalConfig{FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{IncludeActiveIPs: true, SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
 }
 
 func DecodeGlobal(raw string) (GlobalConfig, error) {
@@ -30,6 +30,7 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	if config.Telemetry.ReportSeconds == 0 {
 		config.Telemetry.ReportSeconds = 5
 	}
+	config.Telemetry.IncludeActiveIPs = true
 	if err := ValidateGlobal(config); err != nil {
 		return config, err
 	}

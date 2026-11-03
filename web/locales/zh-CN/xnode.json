@@ -42,7 +42,7 @@
     "geodataCron": "地理数据更新计划",
     "torrentBlocker": "阻止 BitTorrent",
     "torrentBanSeconds": "种子封禁时长（秒）",
-    "includeActiveIPs": "在遥测中包含活跃 IP",
+    "activitySamplingHint": "始终按此间隔采样活跃 IP、连接活动和实时速率。",
     "sampleSeconds": "采样间隔（秒）",
     "reportSeconds": "报告间隔（秒）",
     "automaticUpdates": "自动安装更新",

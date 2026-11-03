@@ -42,7 +42,7 @@
     "geodataCron": "Geodata refresh schedule",
     "torrentBlocker": "Block BitTorrent",
     "torrentBanSeconds": "Torrent ban (seconds)",
-    "includeActiveIPs": "Include active IPs in telemetry",
+    "activitySamplingHint": "Active IPs, connection activity and throughput are always sampled at this interval.",
     "sampleSeconds": "Sample interval (seconds)",
     "reportSeconds": "Report interval (seconds)",
     "automaticUpdates": "Install updates automatically",

@@ -14,6 +14,7 @@ import (
 func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfig) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	next.Telemetry.IncludeActiveIPs = true
 	previous, err := s.Global(ctx)
 	if err != nil {
 		return err

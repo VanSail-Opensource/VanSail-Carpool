@@ -27,8 +27,7 @@ const validPolicies = shallowRef(true)
         <UFormField :label="t('xnode.geoSiteHash')"><UInput v-model="draft.geoSiteHash" class="w-full font-mono" /></UFormField>
         <UFormField :label="t('xnode.torrentBanSeconds')"><UInput v-model.number="draft.torrent.ban_seconds" type="number" min="1" max="604800" class="w-full" /></UFormField>
         <UFormField><USwitch v-model="draft.torrent.enabled" :label="t('xnode.torrentBlocker')" /></UFormField>
-        <UFormField><USwitch v-model="draft.telemetry.include_active_ips" :label="t('xnode.includeActiveIPs')" /></UFormField>
-        <UFormField :label="t('xnode.sampleSeconds')"><UInput v-model.number="draft.telemetry.sample_seconds" type="number" min="1" max="3600" class="w-full" /></UFormField>
+        <UFormField :label="t('xnode.sampleSeconds')" :description="t('xnode.activitySamplingHint')"><UInput v-model.number="draft.telemetry.sample_seconds" type="number" min="1" max="3600" class="w-full" /></UFormField>
         <UFormField :label="t('xnode.reportSeconds')"><UInput v-model.number="draft.telemetry.report_seconds" type="number" min="1" max="3600" class="w-full" /></UFormField>
         <UFormField><USwitch v-model="draft.updates.enabled" :label="t('xnode.automaticUpdates')" /></UFormField>
         <UFormField :label="t('xnode.updateVersion')"><UInput v-model="draft.updates.version" class="w-full" /></UFormField>

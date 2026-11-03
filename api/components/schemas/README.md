@@ -103,3 +103,7 @@ Member preferences expose default-on `paygEnabled` and a sparse `paygSquads` map
 `schemas-07.yaml` owns coupons and wallet grants; `schemas-08.yaml` owns Emby account shapes.
 
 XNodeGroup includes optional read-only memberCount/canDelete eligibility on administration reads.
+
+`XNodeGlobal.telemetry.include_active_ips` remains a deprecated wire compatibility
+field. The server always returns and stores true, including when older clients
+submit false. Sample/report intervals retain their independent saved values.
