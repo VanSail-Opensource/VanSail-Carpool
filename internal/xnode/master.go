@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,6 +15,8 @@ type Master struct {
 	syncCursor               int
 	compute                  *computePool
 	trafficMetrics           trafficObservations
+	trafficBatcher           *trafficBatcher
+	trafficInboundBytes      atomic.Int64
 	protectedReleaseDigest   string
 	managedNodeIPs           map[string][]string
 	managedHostIPs           []string
@@ -57,6 +60,11 @@ func (m *Master) Start(ctx context.Context) error {
 		return ErrConflict
 	}
 	m.ctx, m.cancel = context.WithCancel(ctx)
+	if repo, ok := m.service.repo.(TrafficBatchRepository); ok {
+		m.trafficBatcher = &trafficBatcher{repo: repo, input: make(chan trafficBatchRequest, MaxTrafficBatchReports)}
+		m.wg.Add(1)
+		go func() { defer m.wg.Done(); m.trafficBatcher.run(m.ctx) }()
+	}
 	m.wg.Add(1)
 	go m.compute.run(m.ctx)
 	m.wg.Add(1)

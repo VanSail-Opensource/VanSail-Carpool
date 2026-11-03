@@ -80,7 +80,7 @@ func (m *Master) commitTraffic(ctx context.Context, peer *agentPeer, message wir
 	}
 	digest := sha256.Sum256(normalized)
 	commitStarted := time.Now()
-	if err = m.service.repo.RecordXNodeTraffic(ctx, peer.nodeID, peer.agentID, sequence, hex.EncodeToString(digest[:]), report); err != nil {
+	if err = m.persistTraffic(ctx, TrafficCommit{NodeID: peer.nodeID, AgentID: peer.agentID, Sequence: sequence, Digest: hex.EncodeToString(digest[:]), Report: report}, len(message.Data)); err != nil {
 		return trafficReportFailure{err: err, sequence: sequence, samples: len(report.Samples)}
 	}
 	committed := time.Now()

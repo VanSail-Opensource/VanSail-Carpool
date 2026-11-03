@@ -2,50 +2,50 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"math"
-	"time"
-
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
+	"math"
 )
 
 // RecordXNodeTraffic commits accounting or an explicit discard before ACK.
 func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, agent string, sequence uint64, digest string, report wire.TrafficReport) error {
-	parsed, parseErr := wire.TrafficSequence(agent, report)
-	if parseErr != nil || parsed != sequence || sequence > math.MaxInt64 || report.StreamID == "" && report.DroppedSamples != 0 {
-		return xnode.ErrInvalid
-	}
-
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	var bound string
-	var multiplier int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, nodeID).Scan(&bound, &multiplier); err != nil {
+	if err = s.recordXNodeTrafficTx(ctx, tx, nodeID, agent, sequence, digest, report, nil); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, digest string, report wire.TrafficReport, batch *trafficBatchState) error {
+	parsed, parseErr := wire.TrafficSequence(agent, report)
+	if parseErr != nil || parsed != sequence || sequence > math.MaxInt64 || report.StreamID == "" && report.DroppedSamples != 0 {
+		return xnode.ErrInvalid
+	}
+
+	bound, multiplier, err := trafficNodeTx(ctx, tx, batch, nodeID)
+	if err != nil {
 		return err
 	}
 	if bound != agent {
 		return xnode.ErrTrafficAgentMismatch
 	}
-	var previous uint64
-	var previousDigest string
-	var closed bool
-	if report.StreamID == "" {
-		previous, previousDigest, err = lockXNodeCursorTx(ctx, tx, nodeID, agent)
-	} else {
-		previous, previousDigest, closed, err = lockXNodeStreamCursorTx(ctx, tx, nodeID, agent, report.StreamID)
-	}
+	key := trafficCursorKey{agent, report.StreamID}
+	cursor, err := trafficCursorTx(ctx, tx, batch, nodeID, key)
 	if err != nil {
 		return err
 	}
+	previous, previousDigest, closed := cursor.sequence, cursor.digest, cursor.closed
 	if closed && sequence > previous {
 		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, "closed_stream", "", true, report); err != nil {
 			return err
 		}
-		return tx.Commit()
+		return nil
 	}
 	if sequence <= previous {
 		if sequence == previous && digest != previousDigest {
@@ -53,18 +53,22 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 				return err
 			}
 			if report.StreamID != "" {
-				if _, err = tx.ExecContext(ctx, `UPDATE xnode_traffic_streams SET has_gaps=true WHERE agent_id=$1 AND stream_id=$2`, agent, report.StreamID); err != nil {
+				if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, previous, previousDigest, true); err != nil {
 					return err
 				}
 			}
 		}
-		return tx.Commit()
+		return nil
 	}
 	// A rejected accounting batch must not leave partial usage or charges.
 	if _, err = tx.ExecContext(ctx, `SAVEPOINT xnode_traffic_report`); err != nil {
 		return err
 	}
-	err = applyXNodeTrafficTx(ctx, tx, nodeID, agent, sequence, multiplier, report)
+	var native *nativeReportBuffer
+	if batch != nil {
+		native = batch.native.fork()
+	}
+	err = applyXNodeTrafficTx(ctx, tx, nodeID, agent, sequence, multiplier, report, batch, native)
 	reason := discardedTrafficReason(err)
 	var missing interface{ MissingTrafficPeriod() string }
 	missingPeriod := ""
@@ -94,13 +98,12 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 			return err
 		}
 	}
-	if report.StreamID == "" {
-		_, err = tx.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES($1,$2,$3,$4,$5) ON CONFLICT(agent_id) DO UPDATE SET last_sequence=excluded.last_sequence,last_digest=excluded.last_digest,updated_at=excluded.updated_at`, agent, nodeID, sequence, digest, stamp(time.Now().UTC()))
-	} else {
-		_, err = tx.ExecContext(ctx, `UPDATE xnode_traffic_streams SET last_sequence=$1,last_digest=$2,has_gaps=has_gaps OR $3,updated_at=$4 WHERE agent_id=$5 AND stream_id=$6`, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0, stamp(time.Now().UTC()), agent, report.StreamID)
-	}
-	if err != nil {
+	if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if native != nil && !discarded {
+		native.accept()
+	}
+
+	return nil
 }

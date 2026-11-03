@@ -16,8 +16,7 @@ func (s *Store) retryTransaction(ctx context.Context, err error, attempt int) bo
 	if err == nil || attempt >= 15 || ctx.Err() != nil {
 		return false
 	}
-	var pg *pgconn.PgError
-	if !errors.As(err, &pg) || (pg.Code != "40001" && pg.Code != "40P01") {
+	if !transactionConflict(err) {
 		return false
 	}
 	delay := time.Millisecond * time.Duration(2<<min(attempt, 6))
@@ -30,4 +29,9 @@ func (s *Store) retryTransaction(ctx context.Context, err error, attempt int) bo
 		postgres.ObserveRetry(s.db.Driver())
 		return true
 	}
+}
+
+func transactionConflict(err error) bool {
+	var pg *pgconn.PgError
+	return errors.As(err, &pg) && (pg.Code == "40001" || pg.Code == "40P01")
 }

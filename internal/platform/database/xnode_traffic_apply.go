@@ -9,11 +9,17 @@ import (
 	"sort"
 )
 
-func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, multiplier int64, report wire.TrafficReport) error {
+func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, multiplier int64, report wire.TrafficReport, batch *trafficBatchState, native *nativeReportBuffer) error {
 	samples := report.Samples
 	var priced int64
 	var err error
-	if report.StreamID == "" {
+	if batch != nil {
+		var exists bool
+		priced, exists = batch.rates[trafficRateKey{trafficCursorKey{agent, report.StreamID}, sequence}]
+		if !exists {
+			priced = multiplier
+		}
+	} else if report.StreamID == "" {
 		err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id=$1 AND from_sequence<=$2 ORDER BY from_sequence DESC LIMIT 1`, agent, sequence).Scan(&priced)
 	} else {
 		err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_stream_rates WHERE agent_id=$1 AND stream_id=$2 AND from_sequence<=$3 ORDER BY from_sequence DESC LIMIT 1`, agent, report.StreamID, sequence).Scan(&priced)
@@ -24,39 +30,43 @@ func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, 
 		return err
 	}
 	sampled := map[int]bool{}
-	paygIDs := map[int64]bool{}
-	for _, sample := range samples {
-		paygIDs[int64(sample.UserID)] = true
-	}
-	if err = lockPAYGOwnersTx(ctx, tx, nodeID, paygIDs); err != nil {
-		return err
-	}
-	periods := map[string]bool{}
-	for _, sample := range samples {
-		periods[sample.AccountingPeriod] = true
-	}
-	ordered := make([]string, 0, len(periods))
-	for period := range periods {
-		ordered = append(ordered, period)
-	}
-	sort.Strings(ordered)
-	for _, period := range ordered {
-		var locked string
-		if err = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=$1 FOR UPDATE`, period).Scan(&locked); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return xnode.NewTrafficPeriodMissing(period)
-			}
+	if batch == nil {
+		paygIDs := map[int64]bool{}
+		for _, sample := range samples {
+			paygIDs[int64(sample.UserID)] = true
+		}
+		if err = lockPAYGOwnersTx(ctx, tx, nodeID, paygIDs); err != nil {
 			return err
+		}
+		periods := map[string]bool{}
+		for _, sample := range samples {
+			periods[sample.AccountingPeriod] = true
+		}
+		ordered := make([]string, 0, len(periods))
+		for period := range periods {
+			ordered = append(ordered, period)
+		}
+		sort.Strings(ordered)
+		for _, period := range ordered {
+			var locked string
+			if err = tx.QueryRowContext(ctx, `SELECT id FROM xnode_periods WHERE id=$1 FOR UPDATE`, period).Scan(&locked); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return xnode.NewTrafficPeriodMissing(period)
+				}
+				return err
+			}
 		}
 	}
 	for _, sample := range samples {
 		sampled[sample.UserID] = true
-		if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
-			return e
-		} else if handled {
-			continue
+		if batch == nil || batch.payg[int64(sample.UserID)] {
+			if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
+				return e
+			} else if handled {
+				continue
+			}
 		}
-		if err = recordXNodeSample(ctx, tx, nodeID, multiplier, sample); err != nil {
+		if err = recordXNodeSample(ctx, tx, nodeID, multiplier, sample, native); err != nil {
 			return err
 		}
 	}

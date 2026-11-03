@@ -366,6 +366,8 @@ jobs:
         run: go test ./internal/xnode -run '^(TestCatalogTopologyRevisionIsolationAndBounds|TestCompileCacheInvalidatesEpochAndAccessBoundary)$' -count=1 -v | tee xnode-cache-reads.txt
       - name: Compare member compilation reads
         run: go test ./internal/platform/database -run '^$' -bench '^BenchmarkXNodeCompileMemberReads$' -benchtime=20x -benchmem | tee xnode-member-reads.txt
+      - name: Compare individual and batched native traffic commits
+        run: go test ./internal/platform/database -run '^$' -bench '^BenchmarkTrafficBatchNative$' -benchtime=20x -benchmem -cpuprofile=traffic-batch.cpu.pprof -o /tmp/traffic-batch-profile.test -timeout 5m | tee traffic-batch-benchmark.txt
       - uses: actions/upload-artifact@v7
         with:
           name: xnode-cpu-profile
@@ -375,3 +377,5 @@ jobs:
             xnode-cache-reads.txt
             xnode-member-reads.txt
             pricing-benchmark.txt
+            traffic-batch.cpu.pprof
+            traffic-batch-benchmark.txt

@@ -61,9 +61,16 @@ func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 						lane.bytes.Add(-int64(len(message.Data) + 128))
 					}
 					if ctx.Err() != nil {
+						if lane == r.traffic {
+							m.trafficInboundBytes.Add(-int64(len(message.Data) + 128))
+						}
 						return
 					}
-					if err := m.receive(ctx, peer, message); err != nil {
+					err := m.receive(ctx, peer, message)
+					if lane == r.traffic {
+						m.trafficInboundBytes.Add(-int64(len(message.Data) + 128))
+					}
+					if err != nil {
 						m.rejectPeerFrame(peer, message, err)
 					}
 				}
@@ -78,7 +85,20 @@ func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 	return r
 }
 
-func (r *peerReceivers) stop() { r.cancel(); r.wg.Wait() }
+func (r *peerReceivers) stop() {
+	r.cancel()
+	r.wg.Wait()
+	for {
+		select {
+		case message := <-r.traffic.frames:
+			size := int64(len(message.Data) + 128)
+			r.traffic.bytes.Add(-size)
+			r.master.trafficInboundBytes.Add(-size)
+		default:
+			return
+		}
+	}
+}
 
 func (r *peerReceivers) offer(message wire.Message) error {
 	switch message.Type {
@@ -97,9 +117,15 @@ func (r *peerReceivers) offer(message wire.Message) error {
 		r.telemetry <- message
 		return nil
 	case "traffic.report":
+		size := int64(len(message.Data) + 128)
+		if r.master.trafficInboundBytes.Add(size) > 64<<20 {
+			r.master.trafficInboundBytes.Add(-size)
+			return ErrUnavailable
+		}
 		if r.traffic.offer(message) {
 			return nil
 		}
+		r.master.trafficInboundBytes.Add(-size)
 	case "logs.report":
 		if len(message.Data) > 256<<10 {
 			r.master.rejectPeerFrame(r.peer, message, ErrInvalid)

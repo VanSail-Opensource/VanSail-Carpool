@@ -1014,3 +1014,35 @@ through the existing PAYG/native accounting paths.
 `xnode_traffic_streams_test.go` covers duplicate/conflicting/reordered reports,
 restart closure, explicit buffer loss, legacy coexistence, unchanged committed
 prices, known-usage seals and rollback/retry without duplicate usage.
+
+## Combined traffic transactions
+
+`xnode_traffic_batch.go` accepts at most 256 decoded reports, preserves stable
+per-stream sequence order and retries complete serializable transactions at most
+three times. Nodes, journal cursors, wallet owners and accounting periods lock
+in that order, sorted within each bank. Individual malformed reports roll back
+to their own savepoints; recognized accounting-reference conflicts retain the
+existing explicit discard policy. A failed shared write rolls back every usage,
+financial effect and cursor before any report can be acknowledged.
+
+- `xnode_traffic_batch_read.go` bulk-loads node bindings, locks distinct wallet
+  owners and skips financial work for already committed or closed streams.
+- `xnode_traffic_batch_cursors.go` prepares ordered legacy/boot cursors and bounded
+  indexed rate lookups. `xnode_traffic_batch_write.go` flushes dirty cursors once.
+- `xnode_traffic_batch_state.go` owns transaction-private immutable read snapshots
+  and staged cursor changes. No wallet/admission state survives a transaction.
+- `xnode_traffic_buffer.go` stages native usage independently per report, so a SQL
+  savepoint rollback also discards that report's Go counters.
+- `xnode_traffic_bulk.go` loads locked periods and daily counters in 512-row
+  chunks; `xnode_traffic_bulk_write.go` combines native daily/period writes.
+- `xnode_traffic_arithmetic.go` preserves exact fixed-point remainders and rejects
+  overflow. PAYG charges, credits and immutable ledger facts keep their existing
+  durable path under the shared wallet/period locks. PAYG probe attribution stays
+  on its existing immediate financial path.
+- `xnode_traffic_batch_test.go` covers malformed/discarded/replayed reports, exact
+  remainder carry, whole-write rollback and retry. `xnode_traffic_batch_finance_test.go`
+  covers rolled-back charges, shared-wallet fleet contention and durable replay.
+- `xnode_traffic_batch_benchmark_fixture_test.go` prepares private native data;
+  `xnode_traffic_batch_benchmark_test.go` compares individual and combined writes
+  for 32 nodes and 64 owners. Hosted CI publishes latency, allocations and CPU
+  profiles. Local automated suites remain prohibited.

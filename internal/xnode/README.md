@@ -924,3 +924,14 @@ remains independent of long financial barrier waits. Negotiated binary reports
 use the public bounded codec in `master_report_frames.go`.
 
 The coordinated protocol dependency currently tracks the boot-stream implementation commit for hosted integration. Final delivery requires replacing this intermediate pin with the source of the verified signed amd64/arm64 release.
+
+`traffic_batch_types.go` defines the typed repository batch contract.
+`master_traffic_batch.go` joins the existing inbound traffic lanes into bounded
+32 MiB collection, flushing after 100 ms, 256 reports or the payload allowance.
+It never acknowledges a report before the shared SQL commit. Fleet raw traffic
+input is independently bounded to 64 MiB and released on receiver shutdown.
+Large pre-upgrade legacy journals retain isolated inbound execution so they do
+not consume the modern fleet's complete batch allowance. Commands/telemetry keep
+their independent lanes and the existing per-node outbound execution queue.
+`master_traffic_batch_test.go` verifies the deadline, immediate full batches,
+commit barrier, memory budget and joined shutdown using hosted fake-time tests.
