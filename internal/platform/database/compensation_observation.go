@@ -132,7 +132,7 @@ func recoverCompensationEvent(ctx context.Context, tx *sql.Tx, eventID string, n
 
 func closeCompensationEvent(ctx context.Context, tx *sql.Tx, eventID string, now time.Time, reason string) error {
 	_, err := tx.ExecContext(ctx, `UPDATE node_compensation_events SET status='ineligible',recovered_observed_at=$1,
-		observed_duration_seconds=CAST((vansail_timestamp($2) - vansail_timestamp(offline_observed_at))*86400 AS BIGINT),ineligible_reason=$3,
+		observed_duration_seconds=CAST(trunc(EXTRACT(EPOCH FROM (vansail_timestamp($2) - vansail_timestamp(offline_observed_at)))) AS BIGINT),ineligible_reason=$3,
 		revision=revision+1,updated_at=$4 WHERE id=$5 AND status='observing'`, stamp(now), stamp(now), reason, stamp(now), eventID)
 	return err
 }

@@ -30,7 +30,7 @@ Enabling auto-renewal does not require sufficient balance. Availability, stock a
 
 Purchase expiry closes accounting periods and promotes an already paid successor through the normal lifecycle. Unfinished periods remain available for settlement; settling a predecessor must never revoke its successor. Native account-wide reset/desired-state phases and durable node receipts retain their existing idempotency guards. Purchase-wide refund calculations combine native periods with reconciled historical usage once and retain evidence across resets.
 
-Operational unused-traffic credits have been retired. Forward SQLite 106/PostgreSQL 18 cancel unsettled work without crediting wallets, archive settled audit facts, and remove operational tables, columns, settings and jobs. Historical migrations and previously settled financial/refund facts remain immutable.
+Operational unused-traffic credits have been retired. Forward PostgreSQL migration 18 cancels unsettled work without crediting wallets, archive settled audit facts, and remove operational tables, columns, settings and jobs. Historical migrations and previously settled financial/refund facts remain immutable.
 
 ## PAYG provisioning and owner exports
 

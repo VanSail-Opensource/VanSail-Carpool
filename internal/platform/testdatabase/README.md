@@ -2,7 +2,7 @@
 
 `Open` creates an isolated database for one test or benchmark. It clones the
 fully migrated `POSTGRES_CONTRACT_URL` template, or initializes a process-private
-template through `POSTGRES_TEST_ADMIN_URL` / `POSTGRES_TEST_URL`. Credentials
+template through `POSTGRES_FIXTURE_URL` (falling back to `POSTGRES_TEST_ADMIN_URL` / `POSTGRES_TEST_URL`). Credentials
 must have database creation permission. Cleanup closes connections and removes
 each fixture; process-private templates disappear with the hosted service.
 

@@ -14,7 +14,7 @@ repository's rolling 24-hour attempt history.
 ## Entry points and dependencies
 
 - `NewService` receives the existing settings facade, queued X-Node source,
-  probe engine, SQLite repository, and a dedicated `upstreamqueue` lane.
+  probe engine, PostgreSQL repository, and a dedicated `upstreamqueue` lane.
 - `Run` recovers interrupted attempts, prunes expired diagnostics, starts one
   batch worker, and joins it before returning. The application owns starting and
   stopping the queue; it must stop the service before closing persistence.

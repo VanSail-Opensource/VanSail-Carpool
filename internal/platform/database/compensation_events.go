@@ -20,7 +20,7 @@ func (s *Store) ListCompensationEvents(ctx context.Context, status, cursor strin
 	args := make([]any, 0, 3)
 	where := " WHERE 1=1"
 	if status != "" {
-		where += " AND status=$1"
+		where += fmt.Sprintf(" AND status=$%d", len(args)+1)
 		args = append(args, status)
 	}
 	if cursor != "" {
@@ -28,11 +28,11 @@ func (s *Store) ListCompensationEvents(ctx context.Context, status, cursor strin
 		if err != nil {
 			return compensation.EventPage{}, err
 		}
-		where += ` AND (created_at<$1 OR (created_at=$2 AND id<$3))`
+		where += fmt.Sprintf(` AND (created_at<$%d OR (created_at=$%d AND id<$%d))`, len(args)+1, len(args)+2, len(args)+3)
 		args = append(args, decoded.Timestamp, decoded.Timestamp, decoded.ID)
 	}
 	args = append(args, limit+1)
-	rows, err := s.db.QueryContext(ctx, query+where+` ORDER BY created_at DESC,id DESC LIMIT $1`, args...)
+	rows, err := s.db.QueryContext(ctx, query+where+fmt.Sprintf(` ORDER BY created_at DESC,id DESC LIMIT $%d`, len(args)), args...)
 	if err != nil {
 		return compensation.EventPage{}, err
 	}

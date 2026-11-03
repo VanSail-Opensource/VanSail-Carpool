@@ -6,7 +6,7 @@ of rate availability. Stored order rate snapshots never change.
 
 `Service.Start` runs inside the existing application lifecycle. `Methods`
 and `Expiry` supply billing with local configuration/readiness; `Create` reserves
-an address/amount fingerprint through SQLite. Every external call enters
+an address/amount fingerprint through PostgreSQL. Every external call enters
 `upstreamqueue` through `Executor`, including probes, reconnects and WS commands.
 Inbound WS notifications only wake/coalesce scans; they never settle an order.
 
@@ -69,7 +69,7 @@ ledger versions. Server history/proof failures preserve cursors and close readin
 Extend collection by adding a pinned registry entry, adapter validation/normalization,
 wire contracts, localization and hosted fixtures. Never accept a token by symbol
 alone or advance a cursor past a failed page. The supported deployment is one Go
-process per SQLite database. Local automated suites are prohibited; tests below
+process per PostgreSQL database. Local automated suites are prohibited; tests below
 run in hosted CI.
 
 ## Files

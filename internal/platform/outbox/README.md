@@ -8,7 +8,7 @@
 `priority.go` reserves admission for dynamic firewall jobs through the same
 repository, handlers, leases and retry path. The application polls this claim
 path and ordinary admission once per second independently of scheduled
-maintenance work. Ordinary claims prefer other work before dynamic bans. SQLite
+maintenance work. Ordinary claims prefer other work before dynamic bans. PostgreSQL
 transactions prevent ordinary and reserved dispatch from claiming a job twice;
 native executor limits still bound actual execution. It is not a separate queue.
 
@@ -16,8 +16,7 @@ native executor limits still bound actual execution. It is not a separate queue.
 
 `executor_test.go` checks independent completion and cancellation joins without relying on timing sleeps.
 
-`claim.go` chooses durable generation-aware completion/renewal when supported,
-while retaining legacy test adapters. PostgreSQL claims serialize only resource
+`claim.go` requires durable generation-aware completion and renewal. PostgreSQL claims serialize only resource
 admission, lock candidates with SKIP LOCKED, then release locks before providers.
 
 - `compute.go`: Independent compute execution lane using the existing durable job infrastructure.

@@ -37,8 +37,8 @@ Unknown provider effects require reconciliation before retry after cutover.
 
 ## Trigger inventory
 
-The fixture contains 67 trigger definitions. The structured inventory preserves
-each exact source definition and its table. Non-compile protections include:
+The native catalog contract verifies required trigger definitions and their
+tables. Applied migrations preserve historical definitions. Protections include:
 
 - Affiliate config/tier update/delete immutability, including the narrow recorded
   identity-rekey exception for config authors.
@@ -55,8 +55,8 @@ exhaustion boundary. Concurrent invalidation cannot lose revisions.
 
 ## Recovery and operational gates
 
-Retain SQLite's verified file restore only for SQLite. PostgreSQL requires logical
-exports plus encrypted physical backups and continuous WAL archiving. Restore and
+PostgreSQL requires logical exports plus encrypted physical backups and continuous
+WAL archiving. Restore and
 PITR drills must verify data, encryption with the independently secured master key,
 session references, cursors and unfinished jobs in a separate deployment. The
 single master/scheduler rule remains until distributed ownership is implemented.
@@ -65,6 +65,6 @@ No production metrics or snapshot have been provided. Baseline latency, writer
 contention, data volume, callback ingress policy, off-site storage and recovery
 objectives remain deployment evidence requirements, not inferred passing results.
 
-Before PostgreSQL production writes, rollback may use the untouched verified
-SQLite snapshot. After production writes, use PostgreSQL repair/recovery or a
-separately verified reconciliation; never silently reopen stale SQLite truth.
+Use verified PostgreSQL repair/recovery or separately verified reconciliation.
+Never replace current financial truth with an older database. Applied PostgreSQL
+migrations remain immutable; schema changes use numbered forward migrations.

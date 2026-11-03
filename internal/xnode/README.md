@@ -206,7 +206,7 @@ while that settlement waits. `cadence_recovery_test.go` covers recovery, replay
 and financial/review fences without changing immutable usage.
 
 Routing/DIY saves bound preparation and agent validation to 45 seconds. Their
-read-only preparation runs outside the global mutation mutex; SQLite remains
+read-only preparation runs outside the global mutation mutex; PostgreSQL remains
 authoritative for atomic owner/revision/idempotency and DIY billing fences.
 Agent validation and deployment still use existing per-node queues and receipts.
 `routing_agent_test.go` supplies the hosted two-node agent fixture and checks
@@ -307,7 +307,7 @@ forced-reload semantics and conservative fallback boundaries.
 `Service` owns authoritative configurations, ordered snippets, node settings,
 access groups, endpoints, identities and accounting periods. `Master` accepts
 `/v1/agents/connect`, binds enrolled agents, owns per-socket queues, and joins
-their lifetimes before SQLite closes. Public wire/renderer packages come from a
+their lifetimes before PostgreSQL closes. Public wire/renderer packages come from a
 pinned X-Node revision; the same native core validates configuration.
 
 `compiler*.go` combines one base per node, global policy, node utilities, eligible
@@ -342,7 +342,7 @@ The send digest is published before writing the frame so an immediate failure
 cannot be overwritten by the sender's return path.
 
 `credentials.go` preserves imported secrets and creates independent random
-SS-2022 128/256-bit user keys. SQLite stores encrypted desired configuration and
+SS-2022 128/256-bit user keys. PostgreSQL stores encrypted desired configuration and
 credentials plus exact accounting; no live count, source-IP set, rate, log or
 connection-derived block decision enters persistence. `ports.go` keeps compact
 intervals. `public_transport.go` prevents private destinations and DNS rebinding

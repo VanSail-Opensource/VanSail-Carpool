@@ -113,6 +113,6 @@ func (s *Store) AcknowledgeXNodeState(ctx context.Context, id string, revision u
 	if applied {
 		column = "applied_revision"
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET `+column+`=MAX(`+column+`,$1) WHERE id=$2 AND desired_revision>=$3`, revision, id, revision)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET `+column+`=GREATEST(`+column+`,$1) WHERE id=$2 AND desired_revision>=$3`, revision, id, revision)
 	return err
 }

@@ -26,7 +26,7 @@ const groupUsageQuery = `WITH selected_purchases AS (
  LEFT JOIN user_preferences prefs ON prefs.user_id=a.user_id
  LEFT JOIN squad_product_overrides s ON s.group_id=a.group_id
  LEFT JOIN pricing_product_settings pricing ON pricing.product_type='payg' AND pricing.product_id=a.group_id
- WHERE (a.credit_bytes>0 AND vansail_timestamp(a.credit_started_at)>vansail_timestamp($1)-3)
+ WHERE (a.credit_bytes>0 AND vansail_timestamp(a.credit_started_at)>vansail_timestamp($1)-INTERVAL '3 days')
  OR (p.status='open' AND u.account_status='active' AND u.onboarding_state='complete'
  AND COALESCE(prefs.payg_enabled,1)=1 AND s.billing_mode='payg' AND s.payg_state<>'unavailable'
  AND NOT EXISTS(SELECT 1 FROM user_disabled_payg_squads d WHERE d.user_id=a.user_id AND d.group_id=a.group_id)

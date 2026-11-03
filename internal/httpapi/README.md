@@ -162,7 +162,7 @@ layer delegates scheduling/probes to `connectivity.Service` and bounded history
 queries to the store; resolved proxy credentials never enter response DTOs.
 `admin_connectivity_test.go` covers actual administrator route middleware,
 snapshot/resolution, asynchronous deduplication, and history validation;
-`admin_connectivity_helpers_test.go` provides a real SQLite fixture and a
+`admin_connectivity_helpers_test.go` provides a real PostgreSQL fixture and a
 cancellable fake probe for hosted execution without external network traffic.
 
 `member_subscription.go` serves authenticated onboarded GET `/api/v1/connectivity/summary` and `/api/v1/subscription` through the catalog authorization facade. Both return `Cache-Control: no-store`; only the subscription response contains that member's native links. Neither exposes monitoring account identity, raw configurations, latency or HTTP diagnostic numbers.

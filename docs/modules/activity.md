@@ -35,7 +35,7 @@ Administrators may hard-delete games and draws when no protected processing work
 ## Verification
 
 - Table-driven tests inject deterministic randomness for loss, win, weight boundaries, and invalid upper bounds.
-- SQLite tests cover insufficient funds, fee-plus-deduction coverage, stock races, idempotent replays, ledger atomicity, and extension application.
+- PostgreSQL tests cover insufficient funds, fee-plus-deduction coverage, stock races, idempotent replays, ledger atomicity, and extension application.
 - Calendar tests cover the configured timezone at UTC/local day boundaries.
 - Vue tests cover human-major TXB conversion, loading/error/empty states, visible cost and odds, bet feedback boundaries, reduced motion, keyboard use, and narrow layouts.
 

@@ -138,15 +138,15 @@ func (d *inventoryDisk) prune(ctx context.Context) error {
 	d.mu.Unlock()
 	for _, id := range retired {
 		for _, query := range []string{
-			"DELETE FROM prefixes WHERE gen=$1 AND (family,bits,network) IN (SELECT family,bits,network FROM prefixes WHERE gen=$2 LIMIT 256)",
-			"DELETE FROM domains WHERE gen=$1 AND host IN (SELECT host FROM domains WHERE gen=$2 LIMIT 256)",
+			"DELETE FROM prefixes WHERE ctid IN (SELECT ctid FROM prefixes WHERE gen=$1 LIMIT 256)",
+			"DELETE FROM domains WHERE ctid IN (SELECT ctid FROM domains WHERE gen=$1 LIMIT 256)",
 		} {
 			for {
 				if err := ctx.Err(); err != nil {
 					return err
 				}
 				d.mu.Lock()
-				result, err := d.db.ExecContext(ctx, query, id, id)
+				result, err := d.db.ExecContext(ctx, query, id)
 				var count int64
 				if err == nil {
 					count, err = result.RowsAffected()

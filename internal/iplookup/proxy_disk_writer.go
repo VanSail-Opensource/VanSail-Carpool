@@ -135,7 +135,7 @@ func (w *diskWriter) clearDomains() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for {
-		result, err := d.db.ExecContext(ctx, "DELETE FROM domains WHERE gen=$1 AND host IN (SELECT host FROM domains WHERE gen=$2 LIMIT 256)", w.index.disk.id, w.index.disk.id)
+		result, err := d.db.ExecContext(ctx, "DELETE FROM domains WHERE ctid IN (SELECT ctid FROM domains WHERE gen=$1 LIMIT 256)", w.index.disk.id)
 		if err != nil {
 			return err
 		}

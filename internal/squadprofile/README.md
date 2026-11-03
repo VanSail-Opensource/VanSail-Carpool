@@ -8,4 +8,4 @@
 
 This package owns local squad metadata only. X-Node remains authoritative for
 squad identity, name, and availability. Profile values are normalized before
-they reach SQLite and are never used to make upstream provider requests.
+they reach PostgreSQL and are never used to make upstream provider requests.

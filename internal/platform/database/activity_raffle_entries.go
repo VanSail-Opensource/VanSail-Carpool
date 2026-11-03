@@ -43,7 +43,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 		column = "command"
 	}
 	var drawID string
-	query := `SELECT id FROM activity_lucky_draws WHERE kind='raffle' AND status='open' AND group_chat_id=$1 AND lower(` + column + `)=$1 LIMIT 1`
+	query := `SELECT id FROM activity_lucky_draws WHERE kind='raffle' AND status='open' AND group_chat_id=$1 AND lower(` + column + `)=$2 LIMIT 1`
 	err = tx.QueryRowContext(ctx, query, chatID, token).Scan(&drawID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return activity.RaffleEntry{}, false, nil

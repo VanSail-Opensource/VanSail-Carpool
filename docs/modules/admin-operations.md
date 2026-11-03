@@ -47,26 +47,30 @@ encrypted credential, provider name, acknowledgement, and channel selection.
 The member method list uses each profile's stable ID so channels from accounts
 with the same provider remain independently selectable.
 
-## Schema-aware database editor
+## Read-only database catalog
 
-The editor lists every application table except `schema_migrations` and SQLite internals. Table and column identifiers come only from `sqlite_schema`, must pass a strict identifier allowlist, and are always quoted. Records use a declared primary key or `_rowid_` only when addressable. Cursor values are sealed by the vault; pages are bounded.
+The administrator can inspect allowlisted PostgreSQL tables and typed, redacted
+record pages. Native server catalogs supply validated table/column identifiers
+and declared primary keys. Tables without keys cannot be paginated. Cursor
+values are sealed and bind the filter fingerprint; pages remain bounded.
 
-Wire values are typed: `null`, boolean, text, decimal-string integer/numeric/real, or `{blobBase64}`. Integers never cross JavaScript as numbers. The query endpoint accepts debounced broad search plus up to five allowlisted column filters using `eq`, `ne`, `contains`, `starts_with`, `gt`, `gte`, `lt`, `lte`, `is_null`, or `not_null`; all values are bound and cursors include the query fingerprint. Sensitive columns are masked and excluded from broad search.
+Wire values preserve exact decimal-string integers/numerics and typed booleans,
+nulls and base64 binary values. Sensitive fields are masked and excluded from
+broad search. Generic mutations return a read-only error before creating any
+review or backup. Domain APIs own changes to credentials, finance and desired
+state, preserving their transaction and synchronization contracts.
 
-Every insert/update/delete is a two-step command:
+## PostgreSQL archive administration
 
-1. `POST /database/mutations/review` loads the current row, validates types/nullability, checks its optimistic `recordHash`, and returns a redacted before/after diff, exact `reviewHash`, warning, and required `EDIT <table>` confirmation.
-2. `POST /database/mutations` must reproduce the exact reviewed mutation, reason, record hash, review hash, and confirmation before the review expires. The server creates a verified rescue backup, rechecks the row/hash, performs one transaction, consumes the review, and appends a structured redacted audit.
+Export creation runs pg_dump and structural archive verification. Download takes
+an opaque stored run ID; browser paths cannot select files. Lists expose only a
+basename and decimal-string size. Deletion preserves path confinement and audit.
+The browser supports refresh, creation, download and guarded deletion.
 
-Review tokens are single-use. Concurrent changes produce a conflict and leave the review unconsumed so the administrator can refresh and review again. All tables are marked high risk because direct edits bypass domain synchronization hooks; the UI keeps that warning visible, uses key-only touch cards below the desktop breakpoint, preserves the full table on wider screens, and uses a safe-area-aware mobile drawer with a scrollable body and sticky review actions for record/diff work.
-
-## Backup download and staged restore
-
-Backup download accepts only an opaque stored run ID and streams a verified snapshot as `application/vnd.sqlite3`; browser paths cannot select files. List responses expose a basename and decimal-string size, not an absolute server path.
-
-Restore requires a 4–500 character reason and exact `RESTORE <backup filename>` confirmation. It verifies the stored snapshot's checksum, SQLite integrity, foreign keys, and migration compatibility, creates a rescue backup, copies a staged file beside the live database, writes a durable marker and audit, returns `202`, then requests graceful shutdown.
-
-The next startup processes the marker before opening SQLite, atomically swaps the candidate, verifies the result, and restores the original on failure. After migrations, it records completion/failure in `restore_jobs` and the audit stream. The UI reconnects and requires a fresh authenticated session.
+Recovery is an offline PostgreSQL operation into a separate volume with workers
+and the master stopped. Native fingerprints and the original encryption key
+verify restored evidence. The live API has no upload or staged file-swap restore.
+See [the recovery runbook](../../deploy/postgres/recovery.md).
 
 ## Failure behavior and verification
 
@@ -74,8 +78,8 @@ All failures use the request-ID envelope. Unauthorized responses do not reveal t
 
 - Authorization tests cover missing/expired sessions, non-admin identity, forged roles, exact administrator ID, and bootstrap setup.
 - Settings tests cover human-major TXB conversion, ordered rail validation, write-only secret rotation, nonce uniqueness, and redacted audits.
-- Database tests cover identifier injection, composite-key/rowid cursors, values beyond JavaScript's safe integer range, null/boolean/blob editing, optimistic conflicts, review replay, rescue backups, encrypted setting replacement, foreign keys, and redacted structured logs.
-- Restore tests cover source-ID confinement, confirmation mismatch, integrity/foreign-key/migration rejection, atomic success, simulated swap failure rollback, status import, and reauthentication after restart.
+- Database tests cover identifier injection, declared/composite-key cursors, exact large values, typed null/boolean/binary transport, sensitive masking and mutation refusal without side effects.
+- Hosted recovery checks cover restricted-role exports, isolated logical/physical restoration, PITR, exact table/sequence fingerprints and encryption invariants.
 
 ## Aggregate user workflows
 
@@ -103,17 +107,3 @@ calling the queued X-Node adapter. A completed target is never replayed. An
 interrupted attempt or uncertain network result becomes `pending_review`; mixed
 bulk results become `partial` and require audited resolution rather than a
 blind provider retry.
-
-## Streamed backup upload
-
-`POST /api/v1/admin/backups/upload` accepts exactly one multipart SQLite file
-with an `Idempotency-Key` and optional SHA-256. Intake streams to a private
-regular file with a configurable `BACKUP_UPLOAD_MAX_BYTES` cap (2 GiB by
-default), hashes while writing, then validates size, hash, integrity, foreign
-keys, and the ordered migration prefix in read-only mode.
-
-Publication is a durable filesystem/database saga. Startup reconciliation
-fails `receiving` or `validating` rows, resumes only a `publishing` row, rejects
-symlinks and escaped paths, revalidates the final file, and completes the backup
-run plus audit atomically. Only a complete upload enters the existing staged
-restore flow.

@@ -83,7 +83,7 @@ Cross-module rules:
 
 - HTTP request/response compatibility is defined by `api/openapi.yaml`; generated frontend types must not be hand-edited.
 - All blocking repository and provider calls accept `context.Context`. Background work stops through the application context.
-- SQLite is the source of truth for identity, money, purchases, callback deduplication, and pending work. Provider redirects and browser events are never authoritative.
+- PostgreSQL is the source of truth for identity, money, purchases, callback deduplication, and pending work. Provider redirects and browser events are never authoritative.
 - IDs are opaque strings, timestamps are RFC3339 UTC strings, TXB uses integer hundredths, provider decimals use fixed-decimal parsing, and traffic byte counts never pass through floating point.
 - Secret and bearer values are redacted at the logging boundary. Sensitive dashboard settings are AES-256-GCM encrypted and write-only through the API.
 - Production frontend and backend code is limited to 200 physical lines per file; tests, generated clients, migrations, API documents, and embedded build output are exempt. Every split implementation file is indexed by its package README.

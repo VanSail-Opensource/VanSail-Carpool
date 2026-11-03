@@ -1,7 +1,7 @@
 # Provider operations
 
 This package defines provider-neutral command, item, replay, and connection-scan
-metadata. SQLite persists request fingerprints and sanitized lifecycle facts;
+metadata. PostgreSQL persists request fingerprints and sanitized lifecycle facts;
 the outbox performs external calls. Raw connection IPs and signed connection
 handles remain short-lived service data and are never stored in these records.
 
