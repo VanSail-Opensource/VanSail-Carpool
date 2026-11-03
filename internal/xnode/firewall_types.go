@@ -3,7 +3,6 @@ package xnode
 import (
 	"context"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
-	"net/netip"
 	"time"
 )
 
@@ -58,25 +57,4 @@ type firewallRepository interface {
 	FirewallBans(context.Context, int) ([]FirewallBanView, error)
 	FirewallPrefixes(context.Context, func([]string) error) error
 	PurchaseFirewallExemption(context.Context, string, FirewallPurchase, int64, time.Time, ...bool) (FirewallGrant, error)
-}
-
-func FirewallPublicIP(raw string) (string, error) {
-	ip, err := netip.ParseAddr(raw)
-	if err != nil || ip.Zone() != "" {
-		return "", ErrInvalid
-	}
-	ip = ip.Unmap()
-	if ip.Is6() && !netip.MustParsePrefix("2000::/3").Contains(ip) {
-		return "", ErrInvalid
-	}
-	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() {
-		return "", ErrInvalid
-	}
-	// Shared address space, documentation and benchmarking ranges are not public.
-	for _, raw := range []string{"0.0.0.0/8", "100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "2001::/23", "2001:db8::/32", "2002::/16", "3fff::/20"} {
-		if netip.MustParsePrefix(raw).Contains(ip) {
-			return "", ErrInvalid
-		}
-	}
-	return ip.String(), nil
 }

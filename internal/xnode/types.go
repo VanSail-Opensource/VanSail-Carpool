@@ -59,25 +59,26 @@ type Snippet struct {
 }
 
 type GlobalConfig struct {
-	FirewallDetection      *FirewallDetectionConfig `json:"firewallDetection"`
-	GeodataIntervalHours   *int                     `json:"geodataIntervalHours,omitempty"`
-	SourceGeoIP            SourceGeoIPConfig        `json:"sourceGeoIp"`
-	BlockedDomains         []string                 `json:"blockedDomains"`
-	FirewallUnbanPrice     string                   `json:"firewallUnbanPrice"`
-	FirewallExemptionHours int                      `json:"firewallExemptionHours"`
-	ConnectionLimit        int                      `json:"connectionLimit"`
-	BlockedPorts           string                   `json:"blockedPorts"`
-	GeoIPURL               string                   `json:"geoIpUrl"`
-	GeoSiteURL             string                   `json:"geoSiteUrl"`
-	GeoIPHash              string                   `json:"geoIpHash"`
-	GeoSiteHash            string                   `json:"geoSiteHash"`
-	GeodataCron            string                   `json:"geodataCron"`
-	Torrent                wire.TorrentPolicy       `json:"torrent"`
-	Telemetry              wire.TelemetryPolicy     `json:"telemetry"`
-	Updates                wire.UpdatePolicy        `json:"updates"`
-	Providers              map[string]wire.Provider `json:"providers"`
-	SpeedtestDownloadURL   string                   `json:"speedtestDownloadUrl"`
-	SpeedtestUploadURL     string                   `json:"speedtestUploadUrl"`
+	AutomaticWhitelist     *AutomaticWhitelistConfig `json:"automaticWhitelist,omitempty"`
+	FirewallDetection      *FirewallDetectionConfig  `json:"firewallDetection"`
+	GeodataIntervalHours   *int                      `json:"geodataIntervalHours,omitempty"`
+	SourceGeoIP            SourceGeoIPConfig         `json:"sourceGeoIp"`
+	BlockedDomains         []string                  `json:"blockedDomains"`
+	FirewallUnbanPrice     string                    `json:"firewallUnbanPrice"`
+	FirewallExemptionHours int                       `json:"firewallExemptionHours"`
+	ConnectionLimit        int                       `json:"connectionLimit"`
+	BlockedPorts           string                    `json:"blockedPorts"`
+	GeoIPURL               string                    `json:"geoIpUrl"`
+	GeoSiteURL             string                    `json:"geoSiteUrl"`
+	GeoIPHash              string                    `json:"geoIpHash"`
+	GeoSiteHash            string                    `json:"geoSiteHash"`
+	GeodataCron            string                    `json:"geodataCron"`
+	Torrent                wire.TorrentPolicy        `json:"torrent"`
+	Telemetry              wire.TelemetryPolicy      `json:"telemetry"`
+	Updates                wire.UpdatePolicy         `json:"updates"`
+	Providers              map[string]wire.Provider  `json:"providers"`
+	SpeedtestDownloadURL   string                    `json:"speedtestDownloadUrl"`
+	SpeedtestUploadURL     string                    `json:"speedtestUploadUrl"`
 }
 
 type NodeSettings struct {

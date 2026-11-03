@@ -1,0 +1,196 @@
+{
+  "XNodeAutomaticWhitelistSettings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "durationHours": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 8760,
+        "default": 24
+      }
+    },
+    "required": [
+      "enabled",
+      "durationHours"
+    ]
+  },
+  "XNodeAutomaticLease": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "ip": {
+        "type": "string"
+      },
+      "firstActive": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "lastActive": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "leaseStarted": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "renewAfter": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "renewedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "expiresAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "remainingSeconds": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "observationCount": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "renewalCount": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "sourceCount": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 8
+      },
+      "sourceCountTruncated": {
+        "type": "boolean"
+      },
+      "sourceNodeIds": {
+        "type": "array",
+        "maxItems": 8,
+        "items": {
+          "type": "string"
+        }
+      },
+      "pendingNodes": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "banReleasePending": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "ip",
+      "firstActive",
+      "lastActive",
+      "leaseStarted",
+      "renewAfter",
+      "renewedAt",
+      "expiresAt",
+      "remainingSeconds",
+      "observationCount",
+      "renewalCount",
+      "sourceCount",
+      "sourceCountTruncated",
+      "sourceNodeIds",
+      "pendingNodes",
+      "banReleasePending"
+    ]
+  },
+  "XNodeAutomaticLeaseStatistics": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "active": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "ipv4": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "ipv6": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "created": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "renewed": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "expired": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "rejected": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      }
+    },
+    "required": [
+      "active",
+      "ipv4",
+      "ipv6",
+      "created",
+      "renewed",
+      "expired",
+      "rejected"
+    ]
+  },
+  "XNodeAutomaticLeasePage": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "type": "array",
+        "maxItems": 100,
+        "items": {
+          "$ref": "../../openapi.yaml#/components/schemas/XNodeAutomaticLease"
+        }
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "page": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "pageSize": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "statistics": {
+        "$ref": "../../openapi.yaml#/components/schemas/XNodeAutomaticLeaseStatistics"
+      },
+      "settings": {
+        "$ref": "../../openapi.yaml#/components/schemas/XNodeAutomaticWhitelistSettings"
+      },
+      "fetchedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "items",
+      "total",
+      "page",
+      "pageSize",
+      "statistics",
+      "settings",
+      "fetchedAt"
+    ]
+  }
+}

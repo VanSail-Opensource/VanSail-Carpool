@@ -73,8 +73,9 @@ func TestGlobalSnapshotDoesNotShareCredentialsOrPolicies(t *testing.T) {
 	first.FirewallDetection.Rules["xray_tcp_probe"] = wire.FirewallRule{}
 	*first.GeodataIntervalHours = 0
 	first.SourceGeoIP.Selectors[0] = "geoip:gb"
+	first.AutomaticWhitelist.DurationHours = 1
 	second, _ := cache.read(context.Background(), nil)
-	if second.Providers["dns"].Credentials["token"] != "private" || second.SourceGeoIP.Selectors[0] != "geoip:cn" || *second.GeodataIntervalHours != 24 || !second.FirewallDetection.Rules["xray_tcp_probe"].Enabled {
+	if second.Providers["dns"].Credentials["token"] != "private" || second.SourceGeoIP.Selectors[0] != "geoip:cn" || *second.GeodataIntervalHours != 24 || !second.FirewallDetection.Rules["xray_tcp_probe"].Enabled || second.AutomaticWhitelist.DurationHours != 24 {
 		t.Fatal("caller mutation changed a private global snapshot")
 	}
 }

@@ -1,0 +1,65 @@
+{
+  "get": {
+    "operationId": "listAutomaticFirewallLeases",
+    "tags": [
+      "Administration"
+    ],
+    "description": "Memory-only canonical public-IP leases. Requires xnode:read. Generation cursors and IP observations are never persisted. Source counts explicitly indicate bounded metadata saturation. Settings use the existing validated global write interface.",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "query",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      {
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 1
+        }
+      },
+      {
+        "in": "query",
+        "name": "pageSize",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Automatic leases and current volatile statistics",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/XNodeAutomaticLeasePage"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      }
+    }
+  }
+}

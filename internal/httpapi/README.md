@@ -261,3 +261,8 @@ covers both delivery paths and status boundaries in hosted CI.
 Admin group GET includes derived memberCount/canDelete; DELETE rechecks server eligibility and returns 409 when membership or the catalog changed.
 
 `request_origin.go` validates browser same-origin requests and normalized default ports; no file-upload signature exception remains.
+
+`xnode_automatic_leases.go` exposes bounded volatile lease search/pagination at
+`GET /api/v1/admin/xnode/firewall/leases`. Existing X-Node read authorization and
+private response headers apply; settings writes use the validated global
+interface and its write scope. No IP persistence is introduced.

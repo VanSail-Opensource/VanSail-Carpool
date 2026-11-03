@@ -289,3 +289,7 @@ provides browser-only admin preset inventory and optimistic writes.
 - `api-v1-subscription-hosts-id-name.yaml`: Owner host-name write contract.
 
 - `api-v1-admin-pricing-health.yaml`: Lightweight authorized node-health projection for foreground administrative polling.
+
+`api-v1-admin-xnode-firewall-leases.yaml` exposes bounded memory-only automatic
+lease reads through existing X-Node read authorization. Global settings writes
+retain their existing validated endpoint and write scope.

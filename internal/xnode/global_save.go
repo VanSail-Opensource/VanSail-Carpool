@@ -19,6 +19,9 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 	if err != nil {
 		return err
 	}
+	if next.AutomaticWhitelist == nil {
+		next.AutomaticWhitelist = previous.AutomaticWhitelist
+	}
 	for name, provider := range next.Providers {
 		old := previous.Providers[name]
 		if old.Type == provider.Type {
@@ -86,6 +89,9 @@ func (s *Service) SaveGlobal(ctx context.Context, actor string, next GlobalConfi
 		return err
 	}
 	s.globalSettings.publish(committed)
+	if s.master != nil {
+		s.master.configureAutomaticLeases(committed)
+	}
 	if repo, ok := s.repo.(interface{ ResetFirewallDetection() }); ok {
 		before, _ := json.Marshal(previous.FirewallDetection)
 		after, _ := json.Marshal(next.FirewallDetection)

@@ -107,3 +107,7 @@ XNodeGroup includes optional read-only memberCount/canDelete eligibility on admi
 `XNodeGlobal.telemetry.include_active_ips` remains a deprecated wire compatibility
 field. The server always returns and stores true, including when older clients
 submit false. Sample/report intervals retain their independent saved values.
+
+`xnode-automatic-leases.yaml` defines volatile lease rows, bounded source metadata,
+exact decimal counters, pagination/statistics and default-on 24-hour settings.
+The optional global setting field preserves older full-document writers.

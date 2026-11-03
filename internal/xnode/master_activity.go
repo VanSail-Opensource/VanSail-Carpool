@@ -30,6 +30,7 @@ func (m *Master) receiveActivity(peer *agentPeer, message wire.Message) error {
 		m.mu.Unlock()
 		return ErrConflict
 	}
+	automaticChanged := m.observeAutomaticActivityLocked(peer, report, snapshot.report.Users.SampledAt)
 	snapshot.report = report
 	snapshot.receivedAt = m.service.now()
 	if report.Ready && report.Synchronized {
@@ -37,6 +38,9 @@ func (m *Master) receiveActivity(peer *agentPeer, message wire.Message) error {
 	}
 	m.live[peer.nodeID] = snapshot
 	m.mu.Unlock()
+	if automaticChanged {
+		m.notifyAutomaticLeases()
+	}
 	m.rememberNodeIPs(peer, report.Machine)
 	return nil
 }

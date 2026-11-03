@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"log/slog"
 	"sync"
@@ -12,6 +13,9 @@ import (
 )
 
 type Master struct {
+	automaticLeases          *automaticLeaseManager
+	automaticFreshness       atomic.Int64
+	automaticWake            chan struct{}
 	syncCursor               int
 	compute                  *computePool
 	trafficMetrics           trafficObservations
@@ -46,11 +50,13 @@ type Master struct {
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {
-	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}}
+	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}, automaticLeases: newAutomaticLeaseManager(rand.Text())}
 	m.compute = newComputePool(m)
 	service.master = m
 	m.stateWake = make(chan struct{}, 1)
 	m.firewallWake = make(chan struct{}, 1)
+	m.automaticWake = make(chan struct{}, 1)
+	m.automaticFreshness.Store(int64(reportWindow(2)))
 	return m
 }
 func (m *Master) Start(ctx context.Context) error {
@@ -59,7 +65,16 @@ func (m *Master) Start(ctx context.Context) error {
 	if m.ctx != nil {
 		return ErrConflict
 	}
+	if m.service.settings != nil {
+		global, err := m.service.Global(ctx)
+		if err != nil {
+			return err
+		}
+		m.configureAutomaticLeases(global)
+	}
 	m.ctx, m.cancel = context.WithCancel(ctx)
+	m.wg.Add(1)
+	go m.runAutomaticLeases()
 	if repo, ok := m.service.repo.(TrafficBatchRepository); ok {
 		m.trafficBatcher = &trafficBatcher{repo: repo, input: make(chan trafficBatchRequest, MaxTrafficBatchReports)}
 		m.wg.Add(1)

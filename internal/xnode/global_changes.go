@@ -9,6 +9,7 @@ func globalRuntimeKey(config GlobalConfig) [32]byte {
 	// Admission is computed from fresh telemetry by the master. Commerce and
 	// speedtest endpoint settings are not inputs to a serving native document.
 	config.ConnectionLimit = 0
+	config.AutomaticWhitelist = nil
 	config.FirewallUnbanPrice = ""
 	config.FirewallExemptionHours = 0
 	config.SpeedtestDownloadURL = ""

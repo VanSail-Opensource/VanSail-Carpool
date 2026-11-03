@@ -25,6 +25,7 @@ type agentPeer struct {
 	trafficStreams        bool                // immutable, boot-scoped traffic negotiation
 	openConnections       bool                // immutable, independently negotiated open client counts
 	activityReports       bool                // immutable, independently negotiated sampled IP history
+	automaticCursor       uint64              // mu; last acknowledged automatic lease generation
 	ddnsChanges           bool                // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string

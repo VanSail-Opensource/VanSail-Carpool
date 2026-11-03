@@ -42,6 +42,10 @@ func (c *globalSettingsCache) publish(value GlobalConfig) {
 }
 
 func cloneGlobal(value GlobalConfig) GlobalConfig {
+	if value.AutomaticWhitelist != nil {
+		copy := *value.AutomaticWhitelist
+		value.AutomaticWhitelist = &copy
+	}
 	if value.FirewallDetection != nil {
 		copy := *value.FirewallDetection
 		copy.Rules = maps.Clone(copy.Rules)

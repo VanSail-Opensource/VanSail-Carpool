@@ -959,3 +959,43 @@ old activity. A negotiated agent with no first sample remains unavailable.
 Legacy measured snapshots retain decoding compatibility. `activity_observations_test.go`
 covers old/replaced/unnegotiated frames, missing samples and slow sample cadence.
 Managed-address protection also fences replaced peers before publishing IPs.
+
+## Automatic lease registry
+
+`automatic_lease_types.go` bounds the memory registry to 100,000 canonical public
+IPs and eight source-node watermarks per IP. Saturation is explicit in read views.
+`firewall_addresses.go` shares pre-parsed public-address exclusions with existing
+firewall administration. `automatic_lease_observe.go` creates observation-time
+leases, ignores duplicate/stale reports and renews only after half the current
+interval, using twice the current configured duration. Configuration changes
+apply to future grants/renewals; older global writers preserve existing settings.
+
+`automatic_lease_heap.go` indexes expiry without stale heap entries. Expiry clears
+IP and cached snapshot state without removal commands. `automatic_lease_delivery.go`
+builds shared generation-sorted snapshots only after grants, renewals or expiry,
+returns private batches of 256 and tracks bounded durable-ban-release intents.
+Nodes need one acknowledged generation watermark rather than per-IP ACK maps.
+
+`automatic_lease_activity.go` consumes authenticated current-peer observation
+timestamps, including sources with disabled firewalls or unsynchronized runtimes.
+It does not query SQL on the report path. Old snapshots without negotiated actual
+sample timestamps remain decodable but cannot manufacture fresh lease evidence.
+`automatic_lease_service.go`, `automatic_lease_page.go` and
+`automatic_lease_views.go` provide private paginated read projections and pending
+node counts from durable node configuration plus volatile delivery watermarks.
+Settings alone are durable; all IPs, source metadata and delivery state are lost
+on master restart and rebuilt from fresh authenticated activity.
+
+`automatic_lease_test.go` and `automatic_lease_activity_test.go` cover exact half
+boundaries, configurable non-compounding renewal, expiry, IPv4/IPv6 normalization,
+source saturation, replay, disabled-firewall sources and replaced peers.
+`automatic_lease_performance_test.go` runs its isolated 10,000-IP timing/memory
+gate only in hosted CI. It measures creation, repeated observations, renewals,
+expiry and initial/reconnect synchronization, rejecting duplicate grants and
+steady release requests. Each registry pass must finish within one second and
+retained manager memory must remain below 64 MiB. Hosted artifacts include CPU
+profiles, runtime user-CPU estimates, latency, allocations and retention.
+
+`automatic_lease_runtime.go` owns joined one-second expiry maintenance, so offline
+nodes do not retain expired IPs indefinitely. Observation/configuration changes
+coalesce wakeups independently of sampling and command receipt.

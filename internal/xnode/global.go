@@ -12,7 +12,7 @@ import (
 
 func DefaultGlobal() GlobalConfig {
 	hours := 24
-	return GlobalConfig{FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{IncludeActiveIPs: true, SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
+	return GlobalConfig{AutomaticWhitelist: defaultAutomaticWhitelist(), FirewallDetection: DefaultFirewallDetection(), GeodataIntervalHours: &hours, SourceGeoIP: SourceGeoIPConfig{Selectors: []string{"geoip:cn"}}, BlockedDomains: []string{}, Providers: map[string]wire.Provider{}, Telemetry: wire.TelemetryPolicy{IncludeActiveIPs: true, SampleSeconds: 1, ReportSeconds: 2}, Torrent: wire.TorrentPolicy{BanSeconds: 600}}
 }
 
 func DecodeGlobal(raw string) (GlobalConfig, error) {
@@ -31,12 +31,18 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 		config.Telemetry.ReportSeconds = 5
 	}
 	config.Telemetry.IncludeActiveIPs = true
+	if config.AutomaticWhitelist == nil {
+		config.AutomaticWhitelist = defaultAutomaticWhitelist()
+	}
 	if err := ValidateGlobal(config); err != nil {
 		return config, err
 	}
 	return config, nil
 }
 func ValidateGlobal(config GlobalConfig) error {
+	if config.AutomaticWhitelist != nil && (config.AutomaticWhitelist.DurationHours < 1 || config.AutomaticWhitelist.DurationHours > 8760) {
+		return ErrInvalid
+	}
 	if err := config.FirewallDetection.Apply(wire.FirewallPolicy{}).ValidateDetection(); err != nil {
 		return ErrInvalid
 	}
