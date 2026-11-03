@@ -53,7 +53,13 @@ healthy
   AND current_setting('full_page_writes')='on'
   AND current_setting('archive_mode')='on'
   AND current_setting('listen_addresses')='127.0.0.1'") == t ]]
-[[ $(sql "SELECT max(version_id) FROM goose_db_version WHERE is_applied") == 32 ]]
+expected_schema=$(sed -n 's/^const SchemaVersion int64 = \([0-9][0-9]*\)$/\1/p' internal/platform/database/postgres/open.go)
+[[ -n "$expected_schema" ]]
+actual_schema=$(sql "SELECT max(version_id) FROM goose_db_version WHERE is_applied")
+[[ "$actual_schema" == "$expected_schema" ]] || {
+  echo "Embedded PostgreSQL schema $actual_schema differs from application schema $expected_schema" >&2
+  exit 1
+}
 [[ $(sql "SELECT NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole FROM pg_roles WHERE rolname='vansail_app'") == t ]]
 [[ $(sql "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='balances'::regclass") == vansail_migration ]]
 docker logs "$container" > "$RUNNER_TEMP/embedded-startup.log" 2>&1
