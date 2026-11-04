@@ -4,6 +4,7 @@ import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import XNodeGlobalSettings from './XNodeGlobalSettings.vue'
 import XNodeFirewall from './XNodeFirewall.vue'
+import XNodeAutomaticLeases from './XNodeAutomaticLeases.vue'
 import XNodeServiceUsers from './XNodeServiceUsers.vue'
 import XNodeNodes from './XNodeNodes.vue'
 import XNodeConfigurations from './XNodeConfigurations.vue'
@@ -16,7 +17,7 @@ import { useXNodeWorkspace } from './useXNodeWorkspace'
 const { t } = useI18n()
 const workspace = useXNodeWorkspace()
 const tab = shallowRef('nodes')
-const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'metrics'].map(value => ({ value, label: t(value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
+const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'leases', 'metrics'].map(value => ({ value, label: t(value === 'leases' ? 'automaticLeases.title' : value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
 </script>
 
 <template>
@@ -29,6 +30,7 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
       <XNodeServiceUsers v-else-if="tab === 'services'" :nodes="workspace.nodes.value" :groups="workspace.groups.value" />
       <XNodeGlobalSettings v-else-if="tab === 'global'" />
       <XNodeFirewall v-else-if="tab === 'firewall'" />
+      <XNodeAutomaticLeases v-else-if="tab === 'leases'" :nodes="workspace.nodes.value" />
       <XNodeSubscriptionTemplates v-else-if="tab === 'templates'" />
       <XNodeRoutingTemplates v-else-if="tab === 'routing'" />
       <XNodeConfigurations v-else-if="tab === 'configurations'" :configurations="workspace.configurations.value" :snippets="workspace.snippets.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />

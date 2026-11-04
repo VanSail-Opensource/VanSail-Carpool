@@ -137,3 +137,16 @@ mandatory IP/activity/rate sample; the independent report interval remains
 editable. `useXNodeGlobalSettings.ts` normalizes older loaded opt-outs before
 submission, while the backend normalizes both legacy documents and writes.
 Loading and failed reads cannot enable saving; failed writes preserve the draft.
+
+`XNodeAutomaticLeases.vue` composes the private, paginated automatic lease view.
+`useAutomaticLeases.ts` owns debounced search and visible-page polling, aborts
+replaced requests, fences stale responses and clears volatile rows on session
+end. `XNodeAutomaticLeaseTable.vue` preserves exact counters and exposes activity,
+renewal boundaries, source saturation, expiry and delivery/ban-release state.
+`XNodeAutomaticLeaseSettings.vue` reuses the global settings lifecycle and write
+authorization, validating the 1..8760 hour duration before saving. IP rows never
+enter browser storage; failed refreshes retain a clearly marked last snapshot.
+
+`useAutomaticLeases.test.ts` covers aborted and stale search replies, failed
+refresh retention, hidden-page polling, session teardown and shrinking pages.
+It runs in hosted frontend CI only.

@@ -227,3 +227,9 @@ PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. Cat
 The X-Node audit fixture accepts `cost-hourly`, `cost-unlimited`, `cost-slow`, `cost-error`, and `cost-save-error` for provider metadata states.
 
 The X-Node fixture accepts group-deletion, group-delete-error, empty, slow and error to inspect occupied/free/unknown/service groups, stale conflicts and disabled mutation controls. stablecoin-audit accepts purged-review to inspect the localized account review reason.
+
+`xnode-audit.html?leases` mounts the actual automatic lease composition.
+`automaticLeaseFixture.ts` supplies exact large counters, IPv4/IPv6, truncated
+source metadata, pagination and pending delivery. `lease-state=loading|empty|error`
+and the volatile `__leaseFixture` controls exercise recovery and stale refreshes.
+No lease fixture writes production data or stores source IPs in browser storage.
