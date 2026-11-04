@@ -40,7 +40,7 @@ func (s *Service) ReviewMutation(ctx context.Context, actorUserID string, reques
 	if err != nil {
 		return MutationReview{}, err
 	}
-	prepared, err := s.prepare(ctx, s.db, schema, request, false)
+	prepared, err := s.prepare(ctx, s.db, schema, request)
 	if err != nil {
 		return MutationReview{}, err
 	}
@@ -133,7 +133,7 @@ func (s *Service) ApplyMutation(ctx context.Context, actorUserID string, request
 	if s.backups == nil {
 		return MutationResult{}, errors.New("database rescue backup service is unavailable")
 	}
-	if _, err = s.prepare(ctx, s.db, schema, request, false); err != nil {
+	if _, err = s.prepare(ctx, s.db, schema, request); err != nil {
 		return MutationResult{}, err
 	}
 	rescue, err := s.backups.Run(ctx)
@@ -151,7 +151,7 @@ func (s *Service) ApplyMutation(ctx context.Context, actorUserID string, request
 	if err := consumeReview(ctx, tx, actorUserID, request, digest, s.now().UTC()); err != nil {
 		return MutationResult{}, err
 	}
-	prepared, err := s.prepare(ctx, tx, schema, request, true)
+	prepared, err := s.prepare(ctx, tx, schema, request)
 	if err != nil {
 		return MutationResult{}, err
 	}

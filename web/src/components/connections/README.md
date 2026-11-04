@@ -16,3 +16,5 @@ Existing Nuxt UI forms and pagination provide keyboard/touch interaction. The
 member route remains separate from the browser admin root. Browser fixtures use
 `fixtures/member-connections-audit.html`; admin scans and unblock dialogs remain
 under administrator modules. Hosted regressions own backend behavior checks.
+
+`ConnectionLeaseForm.vue` accepts a canonical IP. `ConnectionObservationList.vue` displays observations and lease times. `useMemberConnections.ts` owns private paging, cancellation and grant refresh.

@@ -53,6 +53,19 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if !validNodeCommand(request) || key == "" || len(key) > 128 {
 		return model.OperationReceipt{}, ErrInvalid
 	}
+	raw, err := json.Marshal(request)
+	if err != nil {
+		return model.OperationReceipt{}, err
+	}
+	hash := sha256.Sum256(append([]byte(node+"\n"), raw...))
+	if replay, ok := s.repo.(interface {
+		ReplayXNodeCommand(context.Context, string, string, string) (model.OperationReceipt, bool, error)
+	}); ok {
+		receipt, found, err := replay.ReplayXNodeCommand(ctx, actor, key, hex.EncodeToString(hash[:]))
+		if err != nil || found {
+			return receipt, err
+		}
+	}
 	target, err := s.repo.XNodeNode(ctx, node)
 	if err != nil {
 		return model.OperationReceipt{}, err
@@ -66,11 +79,6 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if (request.Name == "runtime.reload" || request.Name == "geodata.refresh") && s.master != nil && s.master.Connected(node) && !slices.Contains(s.master.Capabilities(node), "activation_commands_v1") {
 		return model.OperationReceipt{}, &CapabilityError{Capability: "activation_commands_v1"}
 	}
-	raw, err := json.Marshal(request)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	hash := sha256.Sum256(append([]byte(node+"\n"), raw...))
 	sealed, err := s.vault.Encrypt("xnode.command."+actor+"."+key, string(raw))
 	if err != nil {
 		return model.OperationReceipt{}, err

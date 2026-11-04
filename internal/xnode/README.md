@@ -1073,3 +1073,9 @@ legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
 
 Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, checks every squad binding including disabled groups and active service/probe dependencies, disables admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline used nodes and accounting gaps remain explicit blockers. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
+
+`member_connection_types.go` defines private transport; `member_connection_leases_test.go` checks grants and isolation. `node_removal.go` runs queued removal. `subscription_readiness_test.go` checks exact-peer applied proof.
+
+`member_connections_eligibility_test.go` checks funding, onboarding, account eligibility, automation gates, duplicate expiry and unchanged balance.
+
+`service_enrollment.go` rotates enrollment through the master lock and rejects retired nodes.

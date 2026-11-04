@@ -24,7 +24,7 @@ function detail(row: ChartDatum, key: string): string {
  const formatted = format(value)
  if (props.unit && props.unit !== 'bytes') return formatted
  const raw = t('adminNative.exactBytes', { bytes: String(value) })
- return `${formatted} ? ${props.unit === 'bytes' ? raw : t('statistics.perSecond', { value: raw })}`
+ return `${formatted} · ${props.unit === 'bytes' ? raw : t('statistics.perSecond', { value: raw })}`
 }
 </script>
 <template>

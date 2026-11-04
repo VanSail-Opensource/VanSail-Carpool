@@ -22,7 +22,7 @@ export function useAutomaticLeases() {
       const value = await firewallApi.leases(query.value.trim(), page.value, controller.signal)
       if (latest.isCurrent(ticket)) {
         const lastPage = Math.max(1, Math.ceil(value.total / value.pageSize))
-        data.value = value
+        data.value = { ...value, page: Math.min(value.page, lastPage) }
         if (page.value > lastPage) page.value = lastPage
       }
     } catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'automaticLeases.loadFailed') }

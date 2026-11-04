@@ -11,11 +11,11 @@ func (s *Service) applySchemaPolicy(ctx context.Context, schema *tableSchema) er
 		column.ProtectionReason = columnProtection(schema.Name, *column, false)
 		column.Editable = column.ProtectionReason == ""
 		column.Insertable = columnProtection(schema.Name, *column, true) == ""
-		column.HasDefault = column.Default.Valid
+		column.HasDefault = column.Default.Valid || column.Hidden != 0
 		if column.Sensitive {
 			schema.AllowDelete = false
 		}
-		if !column.Insertable && !column.Nullable && !column.Default.Valid && column.Name != "created_at" && column.Name != "updated_at" {
+		if !column.Insertable && !column.Nullable && !column.Default.Valid && column.Hidden == 0 && column.Name != "created_at" && column.Name != "updated_at" {
 			schema.AllowInsert = false
 		}
 		schema.Columns[index] = column.Column

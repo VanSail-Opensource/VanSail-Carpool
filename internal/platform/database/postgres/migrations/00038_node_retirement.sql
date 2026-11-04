@@ -1,5 +1,6 @@
 -- +goose Up
 ALTER TABLE xnode_nodes ADD COLUMN retired_at TEXT COLLATE "C";
+ALTER TABLE xnode_nodes ADD CONSTRAINT xnode_retired_admission CHECK(retired_at IS NULL OR (enabled=0 AND token_hash IS NULL));
 -- Lock the parent so a binding insert cannot race a retirement check.
 -- +goose StatementBegin
 CREATE FUNCTION xnode_active_binding_guard_fn() RETURNS trigger LANGUAGE plpgsql AS $$

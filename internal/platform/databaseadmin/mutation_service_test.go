@@ -17,7 +17,7 @@ import (
 
 func TestProtectedEvidenceAndSecrets(t *testing.T) {
 	s, _, backups, _, actor := newTestService(t)
-	for _, table := range []string{"settings", "ledger_entries", "purchases", "audit_events", "xnode_payg_accounts", "database_admin_reviews"} {
+	for _, table := range []string{"settings", "ledger_entries", "purchases", "audit_events", "xnode_payg_accounts", "database_admin_reviews", "refunds", "usdt_transfers", "pricing_cost_versions", "coupon_uses", "activity_daily_checkins", "xnode_report_cursors"} {
 		_, err := s.ReviewMutation(context.Background(), actor, MutationRequest{Action: "insert", Table: table, Reason: "review protected record"})
 		var protected *ProtectionError
 		if !errors.As(err, &protected) {

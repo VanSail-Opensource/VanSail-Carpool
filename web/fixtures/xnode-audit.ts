@@ -74,7 +74,7 @@ xnodeApi.snippets = async () => ({ items: [] })
 const deletedGroups = new Set<string>()
 let groupConflict = false
 xnodeApi.groups = async () => ({ items: params.has('empty') ? [] : [
-  { id: 'group-one', name: 'Global group', enabled: true, memberCount: 3, canDelete: false, bindings: nodes.map(node => ({ nodeId: node.id, inboundTag: 'paid' })) },
+  { id: 'group-one', name: 'Global group', enabled: true, memberCount: 3, canDelete: false, bindings: (params.has('unbound') ? [] : nodes).map(node => ({ nodeId: node.id, inboundTag: 'paid' })) },
   ...(params.has('group-deletion') ? [
     { id: 'empty-group', name: 'Unused group', enabled: true, memberCount: groupConflict ? 1 : 0, canDelete: !groupConflict, bindings: [] },
     { id: 'service-group', name: 'Service assignment', enabled: true, memberCount: 0, canDelete: false, bindings: [] },

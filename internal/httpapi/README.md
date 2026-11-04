@@ -255,3 +255,5 @@ Admin group GET includes derived memberCount/canDelete; DELETE rechecks server e
 `GET /api/v1/admin/xnode/firewall/leases`. Existing X-Node read authorization and
 private response headers apply; settings writes use the validated global
 interface and its write scope. No IP persistence is introduced.
+
+`admin_ip_block_errors.go` maps administrator errors. `member_connection_observations.go` exposes owner observations and rate-limited grants. `member_payg_history.go` exposes private directional history.

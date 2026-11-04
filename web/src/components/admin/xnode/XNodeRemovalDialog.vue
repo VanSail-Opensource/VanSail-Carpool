@@ -17,8 +17,8 @@ async function remove() {
 function close() { if (!busy.value) { command.reset(); emit('close') } }
 </script>
 <template>
- <UModal :open="!!node" :title="t('nodeRemoval.title', { name: node?.name ?? '' })" :description="t('nodeRemoval.description')" :dismissible="!busy" @update:open="!$event && close()">
-  <template #body><OperationStatusNotice :receipt="receipt" :error="error" :checking="checking" :message="message" @refresh="refresh" /></template>
-  <template #footer><div class="flex w-full justify-end gap-2"><UButton color="neutral" variant="ghost" :disabled="busy" :label="t('common.close')" @click="close" /><UButton v-if="receipt?.status !== 'succeeded'" color="error" :loading="busy" :disabled="blocksMutations" :label="t('nodeRemoval.remove')" @click="remove" /></div></template>
- </UModal>
+  <UModal :open="!!node" :title="t('nodeRemoval.title', { name: node?.name ?? '' })" :description="t('nodeRemoval.description')" :dismissible="!busy" @update:open="!$event && close()">
+    <template #body><OperationStatusNotice :receipt="receipt" :error="error" :checking="checking" :message="message" @refresh="refresh" /></template>
+    <template #footer><div class="flex w-full justify-end gap-2"><UButton color="neutral" variant="ghost" :disabled="busy" :label="t('common.close')" @click="close" /><UButton v-if="receipt?.status !== 'succeeded'" color="error" :loading="busy" :disabled="blocksMutations" :label="t('nodeRemoval.remove')" @click="remove" /></div></template>
+  </UModal>
 </template>

@@ -2,7 +2,6 @@ package xnode
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"math"
 	"strings"
@@ -96,34 +95,6 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 		return node, err
 	}
 	return s.repo.XNodeNode(ctx, node.ID)
-}
-func (s *Service) Enrollment(ctx context.Context, id string) (string, string, error) {
-	node, err := s.repo.XNodeNode(ctx, id)
-	if err != nil {
-		return "", "", err
-	}
-	if node.RetiredAt != nil {
-		return "", "", ErrConflict
-	}
-	token, err := ids.Token(32)
-	if err != nil {
-		return "", "", err
-	}
-	hash := sha256.Sum256([]byte(token))
-	if s.master != nil {
-		err = s.master.rotateEnrollment(ctx, id, hash[:])
-	} else {
-		err = s.repo.RotateXNodeToken(ctx, id, hash[:])
-	}
-	if err != nil {
-		return "", "", err
-	}
-	u := *s.publicURL
-	u.Scheme = "wss"
-	u.Path = "/v1/agents/connect"
-	u.RawQuery = ""
-	u.Fragment = ""
-	return u.String(), token, nil
 }
 func (s *Service) Groups(ctx context.Context) ([]Group, error) { return s.repo.XNodeGroups(ctx) }
 func (s *Service) SaveGroup(ctx context.Context, group Group) (Group, error) {

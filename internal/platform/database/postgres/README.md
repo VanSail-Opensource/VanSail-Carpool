@@ -64,3 +64,5 @@ Schema 37 adds only nullable owner first-sync evidence on xnode_identities.
 No node-wide readiness or historical traffic is used as a backfill. Exact
 configuration membership is supplied by authenticated applied-state processing;
 the timestamp is written once and ordinary identity upserts preserve it.
+
+`upgrade_audit_test.go` compares original audits separately from appended retirement evidence.

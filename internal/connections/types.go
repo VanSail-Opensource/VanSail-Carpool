@@ -1,4 +1,4 @@
-// Package connections owns member connection scans and signed drop handles.
+// Package connections owns administrator diagnostics and retired block cleanup.
 package connections
 
 import (
@@ -8,17 +8,12 @@ import (
 
 const HandleTTL = 15 * time.Minute
 
-// BlockDuration is the fixed member-requested IP block window.
-const BlockDuration = 72 * time.Hour
-
 const (
 	// ScanTTL bounds provider job metadata and all handles derived from it.
 	ScanTTL = 30 * time.Minute
 	// ScanRequestOutboxKind starts a metadata-only provider connection scan.
 	ScanRequestOutboxKind = "connection_scan_request"
-	// DropOperationKind owns durable selected-IP unlink operations.
-	DropOperationKind = "connection_drop"
-	// BlockOperationKind blocks one selected IP before disconnecting it.
+	// BlockOperationKind identifies historical receipts during cleanup.
 	BlockOperationKind = "connection_block"
 	// UnblockOperationKind removes one active node-scoped IP block.
 	UnblockOperationKind = "connection_unblock"

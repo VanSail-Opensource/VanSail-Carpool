@@ -11,7 +11,7 @@ const tone = computed(() => props.status === 'available' ? 'green'
 
 <template>
   <UPopover>
-    <button type="button" class="payg-status-trigger" :aria-label="t(`payg.status.${status}`)"><span class="payg-status-dot" :class="`payg-status-dot--${tone}`" aria-hidden="true" /></button>
+    <UButton type="button" color="neutral" variant="ghost" class="payg-status-trigger" :aria-label="t(`payg.status.${status}`)"><span class="payg-status-dot" :class="`payg-status-dot--${tone}`" aria-hidden="true" /></UButton>
     <template #content><p class="px-3 py-2 text-sm">{{ t(`payg.status.${status}`) }}</p></template>
   </UPopover>
 </template>

@@ -1,4 +1,5 @@
 import { createApp, h } from 'vue'
+import { createRouter, createMemoryHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import App from '@nuxt/ui/components/App.vue'
 import { en, zh_cn } from '@nuxt/ui/locale'
@@ -30,4 +31,4 @@ memberConnectionsApi.grant = async ip => {
   const added: MemberConnection = { ip, initialLeaseAt: new Date().toISOString(), lastObservedAt: null, expiresAt: expiry }
   items.push(added); return added
 }
-createApp({ render: () => h(App, { locale: params.has('zh') ? zh_cn : en }, () => h(ConnectionsPage)) }).use(ui).mount('#app')
+createApp({ render: () => h(App, { locale: params.has('zh') ? zh_cn : en }, () => h(ConnectionsPage)) }).use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }] })).use(ui).mount('#app')

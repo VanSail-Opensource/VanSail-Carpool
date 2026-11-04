@@ -107,3 +107,18 @@ func parseOptionalStamp(value sql.NullString) (*time.Time, error) {
 	}
 	return &parsed, nil
 }
+
+// ReplayXNodeCommand retains receipts after a completed physical node deletion.
+func (s *Store) ReplayXNodeCommand(ctx context.Context, actor, key, fingerprint string) (model.OperationReceipt, bool, error) {
+	op, err := scanProviderOperation(s.db.QueryRowContext(ctx, providerOperationSelect+` WHERE actor_user_id=$1 AND kind='xnode_command' AND idempotency_key=$2`, actor, key))
+	if errors.Is(err, ErrNotFound) {
+		return model.OperationReceipt{}, false, nil
+	}
+	if err != nil {
+		return model.OperationReceipt{}, false, err
+	}
+	if op.RequestFingerprint != fingerprint {
+		return op.Receipt, false, ErrConflict
+	}
+	return op.Receipt, true, nil
+}

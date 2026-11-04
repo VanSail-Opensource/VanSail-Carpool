@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (s *Service) prepare(ctx context.Context, querier queryRower, schema tableSchema, request MutationRequest, encryptSettings bool) (preparedMutation, error) {
+func (s *Service) prepare(ctx context.Context, querier queryRower, schema tableSchema, request MutationRequest) (preparedMutation, error) {
 	prepared := preparedMutation{schema: schema}
 	if err := allowMutation(schema, request.Action); err != nil {
 		return prepared, err
@@ -39,7 +39,7 @@ func (s *Service) prepare(ctx context.Context, querier queryRower, schema tableS
 		}
 		return prepared, nil
 	}
-	columns, arguments, afterRaw, changed, err := s.prepareValues(schema, prepared.current, request.Values, request.Action == "insert", encryptSettings)
+	columns, arguments, afterRaw, changed, err := s.prepareValues(schema, prepared.current, request.Values, request.Action == "insert")
 	if err != nil {
 		return preparedMutation{}, err
 	}
@@ -70,7 +70,7 @@ func errString(err error) string {
 	return err.Error()
 }
 
-func (s *Service) prepareValues(schema tableSchema, current *rowData, requested map[string]Value, insert, encryptSettings bool) ([]schemaColumn, []any, []any, []string, error) {
+func (s *Service) prepareValues(schema tableSchema, current *rowData, requested map[string]Value, insert bool) ([]schemaColumn, []any, []any, []string, error) {
 	if len(requested) == 0 && !insert {
 		return nil, nil, nil, nil, fmt.Errorf("%w: update contains no values", ErrInvalidValue)
 	}

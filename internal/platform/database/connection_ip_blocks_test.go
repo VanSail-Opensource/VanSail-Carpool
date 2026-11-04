@@ -20,13 +20,13 @@ func TestConnectionIPBlockAtomicCreationReplayAndIsolation(t *testing.T) {
 	now := time.Date(2026, 8, 19, 12, 0, 0, 0, time.UTC)
 	digest := strings.Repeat("a", 64)
 	input := connections.CreateIPBlockInput{UserID: owner.ID, NodeUUID: "6aa6d759-20de-4b11-8c0a-8e0daee3a4ee",
-		IPDigest: digest, SealedIP: "vault:v1:ciphertext", ExpiresAt: now.Add(connections.BlockDuration)}
+		IPDigest: digest, SealedIP: "vault:v1:ciphertext", ExpiresAt: now.Add((72 * time.Hour))}
 	command := providerops.CreateInput{ActorUserID: owner.ID, OwnerUserID: owner.ID, Kind: connections.BlockOperationKind,
 		IdempotencyKey: "block-key", RequestFingerprint: "0123456789abcdef",
 		Items: []providerops.ItemInput{{Key: "ip", TargetType: "connection_ip_hmac", TargetID: digest}}}
 
 	block, operation, replayed, err := store.BeginConnectionIPBlock(ctx, input, command, now)
-	if err != nil || replayed || block.ExpiresAt.Sub(block.CreatedAt) != connections.BlockDuration {
+	if err != nil || replayed || block.ExpiresAt.Sub(block.CreatedAt) != (72*time.Hour) {
 		t.Fatalf("BeginConnectionIPBlock() = (%+v, %+v, %t, %v)", block, operation, replayed, err)
 	}
 	replayedBlock, replayedOperation, replayed, err := store.BeginConnectionIPBlock(ctx, input, command, now.Add(time.Second))

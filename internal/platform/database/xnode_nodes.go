@@ -80,7 +80,14 @@ func (s *Store) DeleteXNodeNode(ctx context.Context, id string) error {
 	return err
 }
 func (s *Store) RotateXNodeToken(ctx context.Context, id string, hash []byte) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3 AND retired_at IS NULL`, hash, stamp(time.Now().UTC()), id)
+	result, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3 AND retired_at IS NULL`, hash, stamp(time.Now().UTC()), id)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err == nil && count != 1 {
+		return xnode.ErrConflict
+	}
 	return err
 }
 func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent string) error {

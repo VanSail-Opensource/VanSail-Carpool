@@ -9,7 +9,6 @@ import { usePreferencesStore } from '@/stores/preferences'
 import PAYGSummary from './PAYGSummary.vue'
 import PAYGSquadCard from './PAYGSquadCard.vue'
 
-withDefaults(defineProps<{ entranceReady?: boolean }>(), { entranceReady: true })
 const { t } = useI18n()
 const preferences = usePreferencesStore()
 const { value: data, loading, error, refresh } = useSubscriptionData(paygApi.get, 15_000, 'payg.loadFailed')
@@ -19,8 +18,8 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 </script>
 
 <template>
-  <section class="payg-page" :class="{ 'payg-page--waiting': !entranceReady }">
-    <PAYGSummary :data="data" :loading="loading" :entrance-ready="entranceReady" />
+  <section class="payg-page">
+    <PAYGSummary :data="data" :loading="loading" />
     <InlineNotice v-if="preferences.value?.paygEnabled === false" tone="info">{{ t('payg.disabled') }}</InlineNotice>
     <div v-if="error" class="payg-page__error">
       <InlineNotice tone="warning">{{ error }}</InlineNotice>
@@ -42,7 +41,6 @@ watch(loading, value => emit('ready', !value), { immediate: true })
 .payg-page__empty { margin: 0; padding-block: 1.5rem; text-align: center; color: var(--text-muted); font-size: .8rem; }
 .payg-page__error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .payg-page__grid--content > * { animation: payg-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
-.payg-page--waiting .payg-page__grid--content > * { animation-play-state: paused; }
 @media (min-width: 900px) {
   .payg-page__grid--content { display: block; column-width: 20rem; column-gap: .65rem; }
   .payg-page__grid--content > * { display: flex; width: 100%; margin-bottom: .65rem; break-inside: avoid; }

@@ -71,3 +71,5 @@ Generated API compatibility regression: `openapiContract.test.ts`.
 `features.ts` owns typed activity, coupon, Emby, affiliate, onboarding, and administration requests.
 
 `xnode.ts` exposes group deletion and derived admin eligibility without caching membership.
+
+`memberConnections.ts` owns private observation paging and single-IP grants.

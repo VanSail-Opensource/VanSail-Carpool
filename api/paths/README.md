@@ -292,3 +292,5 @@ lease reads through existing X-Node read authorization. Global settings writes
 retain their existing validated endpoint and write scope.
 
 `api-v1-subscription.yaml` describes uncached owner-scoped subscription and host links.
+
+`api-v1-admin-xnode-nodes-id-removal.yaml` queues removal. `api-v1-payg-history.yaml` returns owner history. `api-v1-subscription-connections-leases.yaml` grants a single IP.

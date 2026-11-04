@@ -49,3 +49,5 @@ strings/BigInt; only bounded proportional shares are numbers. Native legend
 buttons and pointer/touch slices expose identical name/traffic/percentage detail.
 Empty history does not claim historical zero use; stale/errors and truncated
 attribution remain explicit. No history is reconstructed from financial totals.
+
+`paygHistorySegments.ts` derives bounded drawing shares from exact totals; `paygHistorySegments.test.ts` checks precision and zero use. `PAYGUsagePie.vue` provides chart and legend selection.

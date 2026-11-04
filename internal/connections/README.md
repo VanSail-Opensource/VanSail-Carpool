@@ -16,3 +16,5 @@ Migration 36 records retirement, fails obsolete operations without changing
 terminal receipts, advances firewall/config revisions, and makes all existing
 manual blocks due for queued cleanup. Payment, audit and ledger evidence remain.
 The X-Node module owns member observations and free volatile single-IP grants.
+
+`types.go` retains administrator contracts. `scoped_control.go` scopes administrator control. `admin_target_scan_test.go`, `block_worker_test.go`, `handles_test.go`, `native_scan_test.go`, `unblock_expiry_test.go` and `worker_test.go` cover authorization, native targets, receipts and retained offline cleanup.

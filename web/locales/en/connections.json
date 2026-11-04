@@ -15,7 +15,7 @@
     "incomplete": "Some observations are unavailable or the retained history is incomplete.",
     "loadFailed": "Connections could not be loaded. Refresh to try again.",
     "grantFailed": "The IP could not be added. Check the address, eligibility, and lease capacity.",
-    "page": "Page {page} of {pages} ? {total} addresses",
+    "page": "Page {page} of {pages} · {total} addresses",
     "status": {
       "available": "Available",
       "empty": "No observed addresses or active grants match.",

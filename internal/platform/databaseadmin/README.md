@@ -20,3 +20,5 @@ Extend policies before exposing another protected subsystem. Ordinary fields
 inherit native constraints; generated columns/defaults come from metadata.
 Hosted regressions cover CRUD, numeric precision, actor binding, expiry/replay,
 concurrent changes, protected records/keys and backup failure.
+
+`types.go` and `types_part2.go` define typed transport. `schema.go`, `schema_part2.go`, `policies.go` and `policy_schema.go` classify fields and enforce protection. `records.go`, `record_keys.go` and `record_values.go` preserve exact redacted rows. `query.go`, `query_part2.go` and `filter_values.go` bind queries. `mutations.go` and `mutations_part2.go` own reviews and backups; `mutation_prepare.go` validates/locks, `mutation_values.go` parses values, and `mutation_execute.go` executes writes and audits. `service_test.go` and `mutation_service_test.go` cover reads and reviewed CRUD.

@@ -111,3 +111,5 @@ exact decimal counters, pagination/statistics and default-on 24-hour settings.
 The optional global setting field preserves older full-document writers.
 
 `subscription.yaml` defines owner-scoped subscription hosts and their squad references without monitoring fields.
+
+`member-connections.yaml` defines observation and lease metadata.

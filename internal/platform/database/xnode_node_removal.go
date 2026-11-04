@@ -55,6 +55,7 @@ func lockRemoval(ctx context.Context, tx *sql.Tx, id string, version int64, fini
 		return xnode.ErrConflict
 	}
 	checks := []struct{ query, code string }{
+		{`SELECT EXISTS(SELECT 1 FROM xnode_ddns_changes WHERE node_id=$1 AND phase IN ('staging','routes'))`, "XNODE_REMOVAL_SERVICE"},
 		{`SELECT EXISTS(SELECT 1 FROM xnode_group_bindings WHERE node_id=$1)`, "XNODE_REMOVAL_BINDINGS"},
 		{`SELECT EXISTS(SELECT 1 FROM xnode_service_bindings WHERE node_id=$1 AND valid_until::timestamptz>now())`, "XNODE_REMOVAL_SERVICE"},
 		{`SELECT EXISTS(SELECT 1 FROM xnode_metered_probes WHERE node_id=$1 AND revoked_at IS NULL AND valid_until::timestamptz>now())`, "XNODE_REMOVAL_SERVICE"},
@@ -110,6 +111,9 @@ func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64
 	if historical {
 		_, err = tx.ExecContext(ctx, `UPDATE xnode_nodes SET retired_at=$2,token_hash=NULL,enabled=0,updated_at=$2 WHERE id=$1`, id, stamp(now))
 	} else {
+		if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_ddns_jobs WHERE node_id=$1`, id); err != nil {
+			return false, err
+		}
 		if _, err = tx.ExecContext(ctx, `DELETE FROM xnode_endpoints WHERE node_id=$1`, id); err != nil {
 			return false, err
 		}

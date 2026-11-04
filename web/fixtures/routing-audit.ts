@@ -31,10 +31,11 @@ if (params.has('haptics') && !params.has('admin')) {
 const nodes = params.has('empty') ? [] : [{ id: 'a', name: 'Amsterdam' }, { id: 'b', name: 'Singapore' }, { id: 'c', name: 'Tokyo' }]
 if (params.has('unused') && nodes.length) nodes.push({ id: 'd', name: 'New York' })
 const endpoints: NonNullable<RoutingView['endpoints']> = nodes.flatMap(node => [
-  { id: `${node.id}-primary`, nodeId: node.id, name: `${node.name} primary`, address: `${node.id}.proxy.example`, port: 443 },
-  { id: `${node.id}-secondary`, nodeId: node.id, name: `${node.name} alternate`, address: `${node.id}-alt.proxy.example`, port: 8443 },
+  { available: !(params.has('unavailable') && node.id==='b'), id: `${node.id}-primary`, nodeId: node.id, name: `${node.name} primary`, address: `${node.id}.proxy.example`, port: 443 },
+  { available: true, id: `${node.id}-secondary`, nodeId: node.id, name: `${node.name} alternate`, address: `${node.id}-alt.proxy.example`, port: 8443 },
 ])
 if (params.has('long-names')) for (const endpoint of endpoints) endpoint.name += ' dedicated international connection for member routing'
+if(params.has('renamed')) for(const endpoint of endpoints) if(endpoint.id==='b-primary'){endpoint.name='Renamed Singapore';endpoint.address='new-address.proxy.example'}
 let catalog: components['schemas']['XNodeRoutingTemplateConfig'] = { revision: 1, templates: params.has('no-templates') ? [] : [{ id: 'google-ai', name: 'Google + AI', match: { domain: ['domain:google.com', 'domain:openai.com'] } }, { id: 'google', name: 'Google', match: { domain: ['domain:google.com'] } }, { id: 'ai', name: 'AI', match: { domain: ['domain:openai.com'] } }] }
 if (params.has('geosite')) for (const template of catalog.templates) if (template.id !== 'ai') template.match.domain = ['geosite:google']
 if (params.has('unrelated-geosite')) catalog.templates.push({ id: 'unrelated', name: 'Unused streaming', match: { domain: ['geosite:youtube'] } })

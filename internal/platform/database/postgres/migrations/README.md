@@ -110,3 +110,5 @@ PAYG display. It is forward-only, with no historical reconstruction or changes
 to committed accounting. Expiry runs in bounded existing PAYG retention batches.
 
 `00035_retire_host_connectivity.sql` drops disposable host-check attempts and its obsolete setting; accounting, audit and earlier migrations remain intact.
+
+`00036_retire_member_firewall.sql` releases grants, retires jobs and queues cleanup. `00037_member_first_sync.sql` adds first-sync evidence. `00038_node_retirement.sql` adds retirement and binding guards. `00039_combo_features.sql` adds empty-default features.

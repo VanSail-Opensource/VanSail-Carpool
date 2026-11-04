@@ -33,11 +33,11 @@ const events = { [Donut.selectors.segment]: {
         </ChartContainer>
         <ul class="grid gap-1 min-w-0 content-start">
           <li v-for="segment in segments" :key="segment.nodeId">
-            <button type="button" class="payg-usage-pie__legend" :aria-pressed="isSelected(segment.nodeId)" @pointerenter="activate(segment.nodeId)" @pointerleave="deactivate(segment.nodeId)" @focus="activate(segment.nodeId)" @blur="deactivate(segment.nodeId)" @click="select(segment.nodeId)">
+            <UButton type="button" color="neutral" variant="ghost" class="payg-usage-pie__legend" :aria-pressed="isSelected(segment.nodeId)" @pointerenter="activate(segment.nodeId)" @pointerleave="deactivate(segment.nodeId)" @focus="activate(segment.nodeId)" @blur="deactivate(segment.nodeId)" @click="select(segment.nodeId)">
               <span class="h-2 w-2 rounded-sm shrink-0" :style="{ background: segment.color }" aria-hidden="true" />
               <span class="min-w-0 break-words">{{ segment.name }}</span>
               <span class="ml-auto whitespace-nowrap text-muted">{{ formatStatisticPercent(segment.percentage) }}</span>
-            </button>
+            </UButton>
           </li>
         </ul>
       </div>

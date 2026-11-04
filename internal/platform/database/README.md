@@ -1075,3 +1075,5 @@ rollback, owner isolation, removed nodes, retention and read bounds.
 Migration 38 adds node retirement and parent-locking binding guards. xnode_node_removal.go fences final deletion/retirement with row locks and the compile revision, keeps historical references and audit evidence, and excludes retirement from active inventory without deleting accounting.
 
 Migration 39 adds combos.features_json with an empty array default. Combo writes validate shared feature limits; omitted features preserve stored order/content and an explicit empty list clears them.
+
+`combo_features_test.go` covers ordered feature preservation/clearing. `firewall_history_fixture_test.go` seeds historical financial grants. `xnode_first_sync.go` and `xnode_first_sync_test.go` persist and verify owner proof. `xnode_node_removal.go` and `xnode_node_removal_test.go` guard dependencies, retirement and history.
