@@ -13,7 +13,6 @@ export type RouteSpeedtestResult = Schema['XNodeRouteSpeedtestResult']
 export type DIYView = Schema['XNodeDIYView']
 export type DIYSplitProfile = NonNullable<DIYWrite['splitProfiles']>[number]
 export type DIYSplitHost = DIYView['splitHosts'][number]
-export type DIYBillingQuote = DIYView['billing']
 export type DIYWhitelist = NonNullable<Schema['XNodeDIYWrite']['whitelist']>
 export type DIYWhitelistView = NonNullable<DIYView['whitelist']>
 export type DIYWrite = Schema['XNodeDIYWrite']

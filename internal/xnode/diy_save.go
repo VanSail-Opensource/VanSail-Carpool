@@ -35,7 +35,7 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 		}
 		return replay, err
 	}
-	// The store atomically fences revisions, quotes, charges and replay. Keep
+	// The store atomically fences revisions and replay. Keep
 	// read-only preparation and agent waits outside the global mutation mutex.
 	preview, err := s.PreviewOwnedDIY(ctx, user, input)
 	if err != nil {
@@ -91,21 +91,9 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	}
 	changed := !sameDIYValue(previousSettings, settings) || plan != nil
 	result = DIYSaveResult{Changed: changed, SettingsRevision: input.SettingsRevision, RoutingChanged: plan != nil, DeploymentChanged: plan != nil || whitelistChanged}
-	var quote *DIYBillingQuote
 	if changed {
 		result.SettingsRevision++
-		if _, ok := s.repo.(diyBillingRepository); ok {
-			quote, err = s.openDIYQuote(user, input.Quote)
-			if err != nil {
-				return result, err
-			}
-			paid := *quote
-			paid.Token = ""
-			paid.ConfigHash = ""
-			paid.Changed = true
-			result.Billing = &paid
-		}
 	}
-	result.Receipt, err = repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher, NativeChanged: whitelistChanged, Unchanged: !changed, Billing: quote, Result: &result}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
+	result.Receipt, err = repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher, NativeChanged: whitelistChanged, Unchanged: !changed, Result: &result}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
 	return result, err
 }

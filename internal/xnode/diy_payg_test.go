@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -83,23 +82,22 @@ func TestDIYRepairsPAYGInventoryWithPositiveSubGBBalance(t *testing.T) {
 		t.Fatal("DIY read charged the member", balance, err)
 	}
 	// Exercise the same owner-scoped identifiers beyond the initial selectors.
-	configIP := iplookup.DefaultConfig()
-	configIP.LookupFeeTXB = "0"
-	if err := f.store.SaveIPLookupSettings(ctx, f.user.ID, configIP, nil, nil); err != nil {
-		t.Fatal(err)
-	}
 	view, err = f.service.OwnedDIY(ctx, f.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	profiles := []xnode.SplitProfile{{ID: "payg-split", UploadEndpointID: view.SplitHosts[0].ID, DownloadEndpointID: view.SplitHosts[0].DownloadIDs[0], Mode: "auto"}}
-	input := xnode.DIYWrite{Quote: view.Billing.Token, SettingsRevision: view.SettingsRevision, RoutingRevision: view.Routing.Plan.Revision, Choices: view.Routing.Plan.Choices, SplitProfiles: &profiles}
+	input := xnode.DIYWrite{SettingsRevision: view.SettingsRevision, RoutingRevision: view.Routing.Plan.Revision, Choices: view.Routing.Plan.Choices, SplitProfiles: &profiles}
 	preview, err := f.service.PreviewOwnedDIY(ctx, f.user.ID, input)
 	if err != nil || !preview.Valid {
 		t.Fatal("PAYG split failed preview", preview, err)
 	}
 	if _, err := f.service.SaveOwnedDIY(ctx, f.user.ID, "payg-split", input); err != nil {
 		t.Fatal("PAYG split failed save", err)
+	}
+	balance, err = f.store.Balance(ctx, f.user.ID)
+	if err != nil || balance.MinorInt64() != 1 {
+		t.Fatal("DIY save charged the member", balance, err)
 	}
 	proxies, err := f.service.MemberProxies(ctx, f.user.ID)
 	if err != nil {

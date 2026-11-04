@@ -17,7 +17,6 @@ const DIYOperationKind = "xnode_diy"
 
 type DIYDocument struct {
 	Unchanged     bool
-	Billing       *DIYBillingQuote
 	Result        *DIYSaveResult
 	NativeChanged bool
 	UserID        string
@@ -25,7 +24,6 @@ type DIYDocument struct {
 	Cipher        string
 }
 type DIYWrite struct {
-	Quote            string                           `json:"quote,omitempty"`
 	Whitelist        *WhitelistPolicy                 `json:"whitelist,omitempty"`
 	SplitProfiles    *[]SplitProfile                  `json:"splitProfiles,omitempty"`
 	SettingsRevision int64                            `json:"settingsRevision"`
@@ -53,7 +51,6 @@ func (input *DIYWrite) UnmarshalJSON(raw []byte) error {
 type DIYView struct {
 	InventoryPending bool                               `json:"inventoryPending"`
 	SplitHosts       []DIYSplitHost                     `json:"splitHosts"`
-	Billing          DIYBillingQuote                    `json:"billing"`
 	Whitelist        WhitelistView                      `json:"whitelist"`
 	SplitProfiles    []SplitProfile                     `json:"splitProfiles"`
 	SettingsRevision int64                              `json:"settingsRevision"`
@@ -63,7 +60,6 @@ type DIYView struct {
 	Compatibility    []subscription.TuningApplicability `json:"compatibility"`
 }
 type DIYPreview struct {
-	Billing       DIYBillingQuote                    `json:"billing"`
 	Valid         bool                               `json:"valid"`
 	FieldErrors   map[string]string                  `json:"fieldErrors"`
 	Paths         []routingmatch.Path                `json:"paths"`
@@ -72,7 +68,6 @@ type DIYPreview struct {
 type DIYSaveResult struct {
 	Legacy            bool                   `json:"-"`
 	Changed           bool                   `json:"changed"`
-	Billing           *DIYBillingQuote       `json:"billing,omitempty"`
 	DeploymentChanged bool                   `json:"deploymentChanged"`
 	SettingsRevision  int64                  `json:"settingsRevision"`
 	RoutingChanged    bool                   `json:"routingChanged"`

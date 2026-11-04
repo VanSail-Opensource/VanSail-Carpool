@@ -50,19 +50,17 @@ references and a split-compatible mode from the server catalog. Pair-specific
 download modes are authoritative; the legacy per-upload union is only a fallback
 for rolling compatibility.
 
-Quotes beside Save use the existing IP-check allowance, then the fresh-check TXB
-price. `useDIY.ts` retains the exact request, quote and key after uncertain replies;
-a retry reads the committed receipt before validating current access or prices.
-A changed quote requires another Save with the updated displayed price. No extra
-confirmation is introduced. Backend transactions own fees and revision fencing.
+DIY saves are free and do not consume an IP Lookup allowance. `useDIY.ts` retains
+the exact request and key after uncertain replies; a retry reads the committed
+receipt before validating current access. Backend transactions own revision fencing.
 
 `diyRange.ts` parses exact values or ascending hyphen ranges into the existing min/max wire object. `DIYRangeField.vue` retains incomplete text in the shared draft, shows examples when empty, and blocks invalid Save/automatic preview without discarding input.
 
 The five tabs are Connection, XHTTP, Routing, Whitelist and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
 
 The page grid and tab root constrain intrinsic width so long labels scroll
-inside navigation instead of widening the phone viewport. The Save bar stacks
-cost above equal-width touch actions on phones and inherits the shell's mobile
+inside navigation instead of widening the phone viewport. The Save bar uses
+equal-width touch actions on phones and inherits the shell's mobile
 navigation clearance; desktop keeps one row. Routing inherits the page surface
 without an extra padded card. Split pairs stack both hosts above mode/delete
 on phones, then use bounded columns on desktop. Compatibility names wrap beside

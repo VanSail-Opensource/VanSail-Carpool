@@ -74,11 +74,6 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 	if current != doc.Revision || currentRouting != routingRevision || current >= 9007199254740991 {
 		return op.Receipt, xnode.ErrConflict
 	}
-	if !doc.Unchanged {
-		if err = chargeDIYTx(ctx, tx, doc.UserID, op.Receipt.ID, doc.Billing, now); err != nil {
-			return op.Receipt, err
-		}
-	}
 	if plan != nil {
 		var planOwned bool
 		if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_identities WHERE proxy_user_id=$1 AND user_id=$2)`, plan.ProxyUserID, doc.UserID).Scan(&planOwned); err != nil {

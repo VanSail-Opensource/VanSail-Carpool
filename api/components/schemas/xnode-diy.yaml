@@ -42,7 +42,6 @@ XNodeDIYWrite:
   additionalProperties: false
   required: [settingsRevision, routingRevision, overrides, choices]
   properties:
-    quote: {type: string, maxLength: 16384}
     whitelist: {$ref: '#/XNodeWhitelistPolicy'}
     splitProfiles: {type: array, maxItems: 64, items: {$ref: '#/XNodeSplitProfile'}}
     settingsRevision: {type: integer, minimum: 0, maximum: 9007199254740990}
@@ -55,10 +54,9 @@ XNodeDIYWrite:
 XNodeDIYView:
   type: object
   additionalProperties: false
-  required: [settingsRevision, overrides, routing, fields, compatibility, splitProfiles, splitHosts, billing]
+  required: [settingsRevision, overrides, routing, fields, compatibility, splitProfiles, splitHosts]
   properties:
     inventoryPending: {type: boolean}
-    billing: {$ref: '#/XNodeDIYBillingQuote'}
     splitHosts: {type: array, items: {$ref: '#/XNodeDIYSplitHost'}}
     whitelist: {$ref: '#/XNodeWhitelistView'}
     splitProfiles: {type: array, items: {$ref: '#/XNodeSplitProfile'}}
@@ -70,9 +68,8 @@ XNodeDIYView:
 XNodeDIYPreview:
   type: object
   additionalProperties: false
-  required: [valid, fieldErrors, paths, compatibility, billing]
+  required: [valid, fieldErrors, paths, compatibility]
   properties:
-    billing: {$ref: '#/XNodeDIYBillingQuote'}
     valid: {type: boolean}
     fieldErrors: {type: object, additionalProperties: {type: string}}
     paths: {type: array, items: {$ref: '../../openapi.yaml#/components/schemas/XNodeRoutingPath'}}
@@ -83,7 +80,6 @@ XNodeDIYSaveResult:
   required: [settingsRevision, routingChanged, receipt, changed]
   properties:
     changed: {type: boolean}
-    billing: {$ref: '#/XNodeDIYBillingQuote'}
     deploymentChanged: {type: boolean}
     settingsRevision: {type: integer, minimum: 0}
     routingChanged: {type: boolean}
@@ -136,17 +132,3 @@ XNodeDIYSplitHost:
         properties:
           downloadEndpointId: {type: string}
           modes: {type: array, items: {type: string, enum: [auto, packet-up, stream-up]}}
-XNodeDIYBillingQuote:
-  type: object
-  additionalProperties: false
-  required: [available, changed, useQuota, remaining, charge, token, expiresAt]
-  properties:
-    available: {type: boolean}
-    changed: {type: boolean}
-    useQuota: {type: boolean}
-    remaining: {type: integer, minimum: 0}
-    charge: {$ref: '../../openapi.yaml#/components/schemas/Money'}
-    token: {type: string}
-    expiresAt: {type: integer}
-    purchaseId: {type: string}
-    configHash: {type: string}

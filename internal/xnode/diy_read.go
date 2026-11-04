@@ -57,16 +57,12 @@ func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
 	view.Fields = subscription.TuningFieldsFor(proxies)
 	view.SplitProfiles = validSplitProfiles(settings.SplitProfiles, proxies)
 	view.SplitHosts = splitHostCatalog(proxies)
-	view.Billing, err = s.diyBillingQuote(ctx, user)
-	if err != nil {
-		return view, err
-	}
 	view.Compatibility = subscription.TuningCompatibility(settings.Overrides, proxies)
 	return view, nil
 }
 
 // ExportProxiesForUser annotates only owner exports/host links. Routing,
-// transit peers, monitoring identities and connectivity probes use untuned data.
+// transit peers and service identities use untuned data.
 func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies []subscription.Proxy) ([]subscription.Proxy, error) {
 	if user == "" {
 		return s.presentHosts(ctx, user, proxies)

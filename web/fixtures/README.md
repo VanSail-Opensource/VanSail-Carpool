@@ -205,9 +205,8 @@ X-Node `combo-quota` mounts the real combo editor and records its capacity paylo
 with `whitelist` verifies paid-unban controls stay hidden. DIY `whitelist` and
 `small-quota` exercise saved lists, quota bounds and queued deployment.
 
-DIY flags `split`, `inherited-stream-one`, `paid`, `insufficient` and `stale-quote`
-exercise current-reference profiles, inherited field dependencies and billing
-errors. The split fixture changes the download endpoint and verifies that the
+DIY flags `split` and `inherited-stream-one` exercise current-reference profiles
+and inherited field dependencies. The split fixture changes the download endpoint and verifies that the
 mode resets from that exact pair. Command fixture writes record normal versus
 explicit forced reload payloads.
 

@@ -21,13 +21,6 @@ watch([activeTab, tabs], scrolling.revealSelected, { flush: 'post' })
 function selectTab(value: string | number) { if (value !== activeTab.value) selectionHaptic(); activeTab.value = value }
 const routePending = computed(() => state.view.value && !['active', 'disabled'].includes(state.view.value.routing.plan.phase))
 const routingError = computed(() => state.errors.value.routing ? t(`managedRouting.errors.${state.errors.value.routing}`) : '')
-const cost = computed(() => {
-  const quote = state.billing.value
-  if (!quote) return ''
-  if (!quote.changed) return t('diy.cost.unchanged')
-  if (!quote.available) return t('diy.cost.unavailable')
-  return quote.useQuota ? t('diy.cost.allowance', { remaining: quote.remaining }) : t('diy.cost.txb', { amount: quote.charge.display })
-})
 </script>
 
 <template>
@@ -58,7 +51,6 @@ const cost = computed(() => {
       <OperationStatusNotice :receipt="state.tracker.receipt.value" :error="state.tracker.error.value" :checking="state.tracker.checking.value" @refresh="state.tracker.refresh" />
       <Transition name="diy-feedback"><p v-if="state.saved.value" role="status" class="text-sm text-success">{{ t(routePending ? 'diy.routingPending' : state.view.value.whitelist?.phase === 'pending' ? 'diy.whitelist.savedPending' : 'diy.saved') }}</p></Transition>
       <div class="diy-save">
-        <p role="status" class="text-xs text-muted">{{ cost }}</p>
         <div class="diy-save-actions"><UButton data-haptic="action" variant="ghost" color="neutral" icon="i-ph-arrow-u-up-left" :label="t('diy.reset')" :disabled="state.submitting.value" @click="state.reset" /><UButton data-haptic="confirm" :label="t('common.save')" :loading="state.submitting.value" :disabled="state.submitting.value || state.loading.value || state.invalid.value || state.autoPreview.pending.value" @click="state.save" /></div>
       </div>
     </template>
@@ -69,7 +61,7 @@ const cost = computed(() => {
 .diy-center { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; max-width: 900px; margin-inline: auto; padding-bottom: var(--mobile-nav-clearance, 2rem); min-width: 0; }
 .diy-center h1 { font-size: 1.3rem; margin: 0; }
 .diy-center p { margin: 0; }
-.diy-save { position: sticky; z-index: 2; bottom: var(--mobile-nav-clearance, var(--shell-safe-bottom, 0px)); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding-block: .65rem; background: var(--canvas); }
+.diy-save { position: sticky; z-index: 2; bottom: var(--mobile-nav-clearance, var(--shell-safe-bottom, 0px)); display: flex; justify-content: flex-end; padding-block: .65rem; background: var(--canvas); }
 .diy-save-actions { display: flex; gap: .5rem; }
 .diy-tabs { min-width: 0; max-width: 100%; }
 .diy-categories { position: relative; min-width: 0; }
@@ -86,8 +78,7 @@ const cost = computed(() => {
 }
 @keyframes diy-enter { from { opacity: .55; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 @media(max-width:599px) {
-  .diy-save { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
-  .diy-save-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .diy-save-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .diy-save-actions :deep(button) { min-width: 0; }
 }
 @media(max-width:899px) { .diy-save { position: static; } }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -13,11 +12,6 @@ import (
 func TestDIYSplitAccessLossExcludesImmediatelyAndReconcilesForFree(t *testing.T) {
 	f := controlFixture(t, true)
 	ctx := context.Background()
-	c := iplookup.DefaultConfig()
-	c.LookupFeeTXB = "0"
-	if err := f.store.SaveIPLookupSettings(ctx, f.user.ID, c, nil, nil); err != nil {
-		t.Fatal(err)
-	}
 	config, err := f.service.SaveConfiguration(ctx, xnode.Configuration{Name: "Split hosts", Document: json.RawMessage(`{"inbounds":[{"tag":"paid","protocol":"vless","port":443,"settings":{"decryption":"none"},"streamSettings":{"network":"xhttp","xhttpSettings":{"path":"/shared"}}}],"outbounds":[{"tag":"direct","protocol":"freedom"},{"UserOutbound":{}}],"routing":{"rules":[{"UserRouting":{}}]}}`)})
 	if err != nil {
 		t.Fatal(err)
@@ -39,7 +33,7 @@ func TestDIYSplitAccessLossExcludesImmediatelyAndReconcilesForFree(t *testing.T)
 		t.Fatal(view.SplitHosts, err)
 	}
 	profiles := []xnode.SplitProfile{{ID: "one", UploadEndpointID: up.ID, DownloadEndpointID: down.ID, Mode: "packet-up"}}
-	input := xnode.DIYWrite{Quote: view.Billing.Token, SettingsRevision: view.SettingsRevision, RoutingRevision: view.Routing.Plan.Revision, Choices: view.Routing.Plan.Choices, SplitProfiles: &profiles}
+	input := xnode.DIYWrite{SettingsRevision: view.SettingsRevision, RoutingRevision: view.Routing.Plan.Revision, Choices: view.Routing.Plan.Choices, SplitProfiles: &profiles}
 	result, err := f.service.SaveOwnedDIY(ctx, f.user.ID, "save-split", input)
 	if err != nil || !result.Changed {
 		t.Fatal(result, err)

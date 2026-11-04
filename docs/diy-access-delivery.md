@@ -15,7 +15,7 @@ CI and Chrome DevTools provide execution evidence.
   retry, completion and Chinese conflict handling; no console/request errors.
   Migration and credential-bound agent rekey regressions await hosted CI.
 - [x] Firewall: global policy, master aggregation, node exemptions, whitelists.
-- [x] DIY: tabs, split profiles, conditional fields, atomic shared-quota billing.
+- [x] DIY: tabs, split profiles, conditional fields, and free revision-fenced saves.
   Full Go vet, Vue typecheck, lint, structure/i18n and diff checks passed.
   Chrome DevTools checked 390px/1365px rendering, loading, empty split hosts,
   populated profiles, creation/removal, tab draft retention, stream-one field

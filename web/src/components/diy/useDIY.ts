@@ -33,7 +33,6 @@ export function useDIY() {
   const activeOverrides = computed(() => view.value ? activeDIYOverrides(view.value.fields, overrides.value) : {})
   const invalid = computed(() => view.value ? !diySchema(view.value.fields).safeParse(activeOverrides.value).success : false)
   const autoPreview = useDIYPreview(() => view.value && !invalid.value ? { settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: activeOverrides.value, whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value } : null, () => submitting.value)
-  const billing = computed(() => autoPreview.result.value?.billing ?? view.value?.billing)
   const compatibility = computed(() => autoPreview.result.value?.compatibility ?? preview.value?.compatibility ?? view.value?.compatibility ?? [])
   const errors = computed(() => ({ ...autoPreview.result.value?.fieldErrors, ...fieldErrors.value }))
   function scheduleInventoryRefresh() {
@@ -68,9 +67,9 @@ export function useDIY() {
       for (const issue of parsed.error.issues) fieldErrors.value[String(issue.path[0] ?? 'overrides')] = codes.has(issue.message) ? issue.message : 'invalid'
       error.value = t('diy.validationFailed'); notifyHaptic('error'); return
     }
-    let body: DIYWrite = JSON.parse(JSON.stringify({ settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: parsed.data, whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value })) as DIYWrite
-    const fingerprint = JSON.stringify(body), retry = keys.get(fingerprint), key = retry?.key ?? createUuid()
-    body = retry?.body ?? { ...body, quote: billing.value?.token }
+    const draft: DIYWrite = JSON.parse(JSON.stringify({ settingsRevision: view.value.settingsRevision, routingRevision: view.value.routing.plan.revision, overrides: parsed.data, whitelist: whitelist.value, splitProfiles: splitProfiles.value, choices: choices.value })) as DIYWrite
+    const fingerprint = JSON.stringify(draft), retry = keys.get(fingerprint), key = retry?.key ?? createUuid()
+    const body = retry?.body ?? draft
     submitting.value = true
     validator?.abort(); validator = new globalThis.AbortController()
     try {
@@ -90,15 +89,11 @@ export function useDIY() {
     } catch (caught) {
       if (!disposed) notifyHaptic('error')
       if (!disposed) error.value = caught && typeof caught === 'object' && 'code' in caught && caught.code === 'XNODE_CONFLICT' ? t('diy.conflict') : localizedError(caught, 'diy.saveFailed')
-      if (caught instanceof ApiError && caught.status >= 400 && caught.status < 500) {
-        keys.delete(fingerprint)
-        if (caught.code === 'DIY_QUOTE_CHANGED') void load(true).then(() => { if (!disposed) error.value = t('diy.quoteChanged') })
-        if (caught.code === 'DIY_BILLING_UNAVAILABLE') error.value = t('diy.cost.unavailable')
-      }
+      if (caught instanceof ApiError && caught.status >= 400 && caught.status < 500) keys.delete(fingerprint)
     } finally { if (!disposed) submitting.value = false }
   }
   onMounted(() => void load(false))
   watch([overrides, whitelist, splitProfiles], () => { saved.value = false; preview.value = null; fieldErrors.value = {} }, { deep: true })
   onScopeDispose(() => { disposed = true; latest.dispose(); controller?.abort(); validator?.abort(); if (inventoryTimer) globalThis.clearTimeout(inventoryTimer); keys.clear() })
-  return { invalid, view, overrides, whitelist, splitProfiles, billing, choices, loading, submitting, saved, error, errors, compatibility, tracker, autoPreview, load, save, reset, routeDraft }
+  return { invalid, view, overrides, whitelist, splitProfiles, choices, loading, submitting, saved, error, errors, compatibility, tracker, autoPreview, load, save, reset, routeDraft }
 }

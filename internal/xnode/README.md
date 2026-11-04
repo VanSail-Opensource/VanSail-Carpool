@@ -207,7 +207,7 @@ and financial/review fences without changing immutable usage.
 
 Routing/DIY saves bound preparation and agent validation to 45 seconds. Their
 read-only preparation runs outside the global mutation mutex; PostgreSQL remains
-authoritative for atomic owner/revision/idempotency and DIY billing fences.
+authoritative for atomic owner, revision and idempotency fences.
 Agent validation and deployment still use existing per-node queues and receipts.
 `routing_agent_test.go` supplies the hosted two-node agent fixture and checks
 that pending native validation does not block unrelated member mutations.
@@ -788,9 +788,8 @@ credentials enter the encrypted settings document. Exports omit an
 ineligible pair immediately; `diy_reconcile.go` later removes its references for
 free. Authoritative inventory errors and pending provisioning defer cleanup;
 node connectivity never decides ownership. `diy_changes.go` compares normalized
-settings, whitelist and routing for free unchanged saves. `diy_billing.go` seals
-owner-bound five-minute quotes; the existing database transaction rechecks price,
-allowance, balance and revisions before any committed change.
+settings, whitelist and routing. All DIY saves are free and consume no IP Lookup
+allowance; the existing transaction still fences revisions and idempotent replay.
 
 `diy_split_test.go` covers current-reference exports, disconnected nodes, immediate
 host-access exclusion, pinned-parser validation and free reference reconciliation.

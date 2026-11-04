@@ -147,14 +147,7 @@
       "number": "Split profile {number}",
       "remove": "Remove split profile {number}"
     },
-    "cost": {
-      "allowance": "Save uses 1 IP-check allowance ({remaining} remaining)",
-      "txb": "Save costs {amount}",
-      "unchanged": "Unchanged Save is free",
-      "unavailable": "Save price is not configured."
-    },
     "noApplicableFields": "No applicable options for your current hosts.",
-    "quoteChanged": "Allowance or price changed. The quote has refreshed and your draft is retained. Review it before saving again.",
     "rangeExample": "e.g. 100 or 100-200",
     "rangeInvalid": "Enter a number or an ascending range, such as 100-200."
   }
