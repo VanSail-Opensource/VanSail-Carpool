@@ -66,7 +66,7 @@ func lockPAYGOwnersTx(ctx context.Context, tx *sql.Tx, node string, ids map[int6
 	return nil
 }
 
-func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wire.TrafficSample) (bool, error) {
+func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wire.TrafficSample, buffer *nativeReportBuffer) (bool, error) {
 	a, err := scanPAYG(tx.QueryRowContext(ctx, paygSelect+` WHERE a.proxy_user_id=$1`, sample.UserID))
 	if errors.Is(err, xnode.ErrNotFound) {
 		return false, nil
@@ -105,7 +105,10 @@ func recordPAYGSampleTx(ctx context.Context, tx *sql.Tx, node string, sample wir
 	if count, err := result.RowsAffected(); err != nil || count != 1 {
 		return true, xnode.ErrTrafficPeriodSettled
 	}
-	return true, recordPAYGMinuteTx(ctx, tx, a.UserID, a.GroupID, sample.Through, bytes, 0)
+	if err = recordPAYGMinuteTx(ctx, tx, a.UserID, a.GroupID, sample.Through, bytes, 0); err != nil {
+		return true, err
+	}
+	return true, recordPAYGNodeSampleTx(ctx, tx, a.UserID, node, sample, buffer)
 }
 
 func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, node string, ids []int64, now time.Time) error {

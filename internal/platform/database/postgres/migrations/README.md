@@ -104,3 +104,7 @@ account purge timestamp without changing its stored evidence or prior migrations
 `00033_volatile_traffic_streams.sql` adds boot-scoped cursor tombstones and rate
 boundaries plus settlement stream references. It never stores report buffers or
 source IPs and does not rewrite historical usage, financial facts or legacy IDs.
+
+`00034_payg_node_history.sql` adds 72-hour directional minute summaries for
+PAYG display. It is forward-only, with no historical reconstruction or changes
+to committed accounting. Expiry runs in bounded existing PAYG retention batches.

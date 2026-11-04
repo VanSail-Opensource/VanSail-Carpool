@@ -1,7 +1,7 @@
 XNodeProfileNode:
   type: object
   additionalProperties: false
-  required: [nodeId, name, countryCode, available, currentUse, connections, uploadBytesPerSecond, downloadBytesPerSecond, uploadBytes, downloadBytes, weightedBytes]
+  required: [nodeId, name, countryCode, available, currentUse, connections, uploadBytesPerSecond, downloadBytesPerSecond, uploadBytes, downloadBytes, weightedBytes, nativeWeightedBytes, activeIpStatus, sampledAt, activeIps, activeIpsTruncated]
   properties:
     nodeId: { type: string }
     name: { type: string }
@@ -14,20 +14,26 @@ XNodeProfileNode:
     uploadBytes: { type: string, pattern: '^[0-9]+$', description: Seven-day exact native upload bytes. }
     downloadBytes: { type: string, pattern: '^[0-9]+$' }
     weightedBytes: { type: string, pattern: '^[0-9]+$' }
+    nativeWeightedBytes: { type: string, pattern: '^[0-9]+$', description: Seven-day native accounted bytes excluding imported evidence. }
+    activeIpStatus: { type: string, enum: [available, stale, unavailable] }
+    sampledAt: { type: [string, 'null'], format: date-time }
+    activeIps: { type: array, maxItems: 256, items: { $ref: '#/XNodeProfileIPObservation' } }
+    activeIpsTruncated: { type: boolean }
 XNodeProfileUsage:
   type: object
   additionalProperties: false
-  required: [date, uploadBytes, downloadBytes, weightedBytes, legacyBytes]
+  required: [date, uploadBytes, downloadBytes, weightedBytes, legacyBytes, nativeWeightedBytes]
   properties:
     date: { type: string, format: date }
     uploadBytes: { type: string, pattern: '^[0-9]+$' }
     downloadBytes: { type: string, pattern: '^[0-9]+$' }
     weightedBytes: { type: string, pattern: '^[0-9]+$' }
     legacyBytes: { type: string, pattern: '^[0-9]+$', description: Reconciled legacy total; its original directional split is unavailable. }
+    nativeWeightedBytes: { type: string, pattern: '^[0-9]+$' }
 XNodeProfileMetrics:
   type: object
   additionalProperties: false
-  required: [connections, uploadBytesPerSecond, downloadBytesPerSecond, incomplete, limited, reasons, fetchedAt, nodes, usage, usedTrafficBytes, lifetimeTrafficBytes]
+  required: [connections, uploadBytesPerSecond, downloadBytesPerSecond, incomplete, limited, reasons, fetchedAt, nodes, usage, usedTrafficBytes, lifetimeTrafficBytes, paygHistory]
   properties:
     activityStatus: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityStatus' }
     activityExpiresAt: { $ref: './xnode.yaml#/XNodeUserMetrics/properties/activityExpiresAt' }
@@ -43,3 +49,41 @@ XNodeProfileMetrics:
     usage: { type: array, maxItems: 7, items: { $ref: '#/XNodeProfileUsage' } }
     usedTrafficBytes: { type: string, pattern: '^[0-9]+$' }
     lifetimeTrafficBytes: { type: string, pattern: '^[0-9]+$' }
+    paygHistory: { $ref: '#/XNodePAYGNodeHistory' }
+XNodeProfileIPObservation:
+  type: object
+  additionalProperties: false
+  required: [ip, lastActive, observations]
+  properties:
+    ip: { type: string }
+    lastActive: { type: string, format: date-time }
+    observations: { type: string, pattern: '^[0-9]+$' }
+XNodePAYGHistoryNode:
+  type: object
+  additionalProperties: false
+  required: [nodeId, name, countryCode, uploadBytes, downloadBytes]
+  properties:
+    nodeId: { type: string }
+    name: { type: string }
+    countryCode: { type: string }
+    uploadBytes: { type: string, pattern: '^[0-9]+$' }
+    downloadBytes: { type: string, pattern: '^[0-9]+$' }
+XNodePAYGHistoryHour:
+  type: object
+  additionalProperties: false
+  required: [nodeId, hour, uploadBytes, downloadBytes]
+  properties:
+    nodeId: { type: string }
+    hour: { type: string, format: date-time }
+    uploadBytes: { type: string, pattern: '^[0-9]+$' }
+    downloadBytes: { type: string, pattern: '^[0-9]+$' }
+XNodePAYGNodeHistory:
+  type: object
+  additionalProperties: false
+  required: [from, to, nodes, hours, truncated]
+  properties:
+    from: { type: string, format: date-time }
+    to: { type: string, format: date-time }
+    nodes: { type: array, maxItems: 128, items: { $ref: '#/XNodePAYGHistoryNode' } }
+    hours: { type: array, maxItems: 9344, items: { $ref: '#/XNodePAYGHistoryHour' } }
+    truncated: { type: boolean, description: More than 128 recorded node IDs; the lexically first 128 are included. }

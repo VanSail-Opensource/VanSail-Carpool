@@ -1069,3 +1069,15 @@ existing serializable firewall write/outbox path. It does not insert lease IPs,
 remove broader ranges or modify manual/paid exemptions or ledger records.
 `xnode_automatic_leases_test.go` covers replay, expired grants, retained IPv6
 ranges, unchanged paid/manual grants and an unchanged clock on no-op replay.
+
+`xnode_payg_node_buffer.go` collects exact directional PAYG samples per owner,
+node and capture minute. Report-local forks merge only after successful accounting;
+512-row sorted UNNEST upserts share the existing batched traffic transaction and
+cursor/financial commit. PAYG probes retain immediate financial counters while
+staging their raw display samples. Old/future samples outside the current
+72-hour minute window do not extend this disposable history.
+`xnode_payg_node_history.go` reads at most 128 node IDs and 73 hourly buckets
+per node, with explicit truncation. Historical node IDs remain readable after
+node deletion, and absent history is never inferred from group totals.
+`xnode_payg_node_history_test.go` covers savepoint discard, replay, financial
+rollback, owner isolation, removed nodes, retention and read bounds.

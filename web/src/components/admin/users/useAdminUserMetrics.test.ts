@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ getUserMetrics: vi.fn() }))
 vi.mock('@/api/adminOperations', () => ({ adminOperationsApi: mocks }))
 import { useAdminUserMetrics } from './useAdminUserMetrics'
 
-const metrics: XNodeProfileMetrics = { connections: 2, uploadBytesPerSecond: 100, downloadBytesPerSecond: 200, incomplete: false, limited: false, reasons: [], fetchedAt: '2026-10-18T00:00:00Z', nodes: [], usage: [], usedTrafficBytes: '9007199254740993', lifetimeTrafficBytes: '90071992547409930' }
+const metrics: XNodeProfileMetrics = { paygHistory: { from: '2026-10-15T00:00:00Z', to: '2026-10-18T00:00:00Z', nodes: [], hours: [], truncated: false }, connections: 2, uploadBytesPerSecond: 100, downloadBytesPerSecond: 200, incomplete: false, limited: false, reasons: [], fetchedAt: '2026-10-18T00:00:00Z', nodes: [], usage: [], usedTrafficBytes: '9007199254740993', lifetimeTrafficBytes: '90071992547409930' }
 function mountMetrics(id: MaybeRefOrGetter<string>) {
   let state!: ReturnType<typeof useAdminUserMetrics>
   const wrapper = mount(defineComponent({ setup() { state = useAdminUserMetrics(id); return () => null } }))

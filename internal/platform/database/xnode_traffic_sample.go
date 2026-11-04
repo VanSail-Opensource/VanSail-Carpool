@@ -17,6 +17,7 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	if len(buffers) > 0 {
 		buffer = buffers[0]
 	}
+	history := buffer
 	period, err := nativePeriodTx(ctx, tx, buffer, sample.AccountingPeriod)
 	if err != nil {
 		return err
@@ -24,7 +25,11 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	// PAYG probe attribution keeps the existing immediate financial path. A
 	// deferred native counter may never hide bytes from a later wallet charge.
 	if buffer != nil && period.payg {
-		return recordXNodeSample(ctx, tx, node, multiplier, sample)
+		buffer = nil
+		period, err = nativePeriodTx(ctx, tx, nil, sample.AccountingPeriod)
+		if err != nil {
+			return err
+		}
 	}
 	owner, status := period.owner, period.status
 	if status == "closed" || status == "review" {
@@ -71,6 +76,13 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	}
 	if count != 1 {
 		return xnode.ErrInvalid
+	}
+	if period.payg {
+		var user string
+		if err := tx.QueryRowContext(ctx, `SELECT user_id FROM xnode_payg_accounts WHERE period_id=$1 AND proxy_user_id=$2 AND node_id=$3`, sample.AccountingPeriod, sample.UserID, node).Scan(&user); err != nil {
+			return err
+		}
+		return recordPAYGNodeSampleTx(ctx, tx, user, node, sample, history)
 	}
 	return nil
 }

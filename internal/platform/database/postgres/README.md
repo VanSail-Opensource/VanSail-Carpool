@@ -48,3 +48,8 @@ source IPs and agent buffers remain volatile. Legacy cursors, rates and all old
 columns/financial facts remain unchanged. Populated upgrade fingerprints compare
 every original column through the identical pre-upgrade projection; added native
 objects are checked separately through the complete schema contract.
+
+Schema 34 adds only the disposable `xnode_payg_node_minutes` direction summaries.
+Its native timestamp and exact numeric counters do not alter any historical
+financial facts, credentials or applied migration. Node IDs deliberately have
+no cascading node foreign key; user erasure can clear this ephemeral history.

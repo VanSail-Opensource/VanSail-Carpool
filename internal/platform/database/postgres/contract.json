@@ -88,6 +88,7 @@
     "xnode_member_diy",
     "xnode_nodes",
     "xnode_payg_minutes",
+    "xnode_payg_node_minutes",
     "abuse_notification_deliveries",
     "abuse_record_nodes",
     "abuse_record_reasons",
@@ -9423,6 +9424,46 @@
       ]
     },
     {
+      "name": "xnode_payg_node_minutes",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 1
+        },
+        {
+          "name": "node_id",
+          "type": "text",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 2
+        },
+        {
+          "name": "minute",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "default": null,
+          "primaryKey": 3
+        },
+        {
+          "name": "upload_bytes",
+          "type": "numeric(30,0)",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        },
+        {
+          "name": "download_bytes",
+          "type": "numeric(30,0)",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
       "name": "xnode_payg_windows",
       "columns": [
         {
@@ -10005,6 +10046,8 @@
     "xnode_legacy_history_date_node_idx",
     "xnode_metered_probes_period",
     "xnode_payg_minutes_expiry",
+    "xnode_payg_node_minutes_expiry",
+    "xnode_payg_node_minutes_user_time",
     "xnode_payg_node",
     "xnode_payg_windows_expiry",
     "xnode_periods_purchase_idx",

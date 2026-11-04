@@ -4,21 +4,27 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"time"
 )
 
 // UserNodeMetric is a memory-only, owner-scoped activity projection.
 type UserNodeMetric struct {
-	NodeID                 string  `json:"nodeId"`
-	Name                   string  `json:"name"`
-	CountryCode            string  `json:"countryCode"`
-	Available              bool    `json:"available"`
-	CurrentUse             bool    `json:"currentUse"`
-	Connections            string  `json:"connections"`
-	UploadBytesPerSecond   float64 `json:"uploadBytesPerSecond"`
-	DownloadBytesPerSecond float64 `json:"downloadBytesPerSecond"`
-	UploadBytes            string  `json:"uploadBytes"`
-	DownloadBytes          string  `json:"downloadBytes"`
-	WeightedBytes          string  `json:"weightedBytes"`
+	NodeID                 string                 `json:"nodeId"`
+	Name                   string                 `json:"name"`
+	CountryCode            string                 `json:"countryCode"`
+	Available              bool                   `json:"available"`
+	CurrentUse             bool                   `json:"currentUse"`
+	Connections            string                 `json:"connections"`
+	UploadBytesPerSecond   float64                `json:"uploadBytesPerSecond"`
+	DownloadBytesPerSecond float64                `json:"downloadBytesPerSecond"`
+	UploadBytes            string                 `json:"uploadBytes"`
+	DownloadBytes          string                 `json:"downloadBytes"`
+	WeightedBytes          string                 `json:"weightedBytes"`
+	NativeWeightedBytes    string                 `json:"nativeWeightedBytes"`
+	ActiveIPStatus         string                 `json:"activeIpStatus"`
+	SampledAt              *time.Time             `json:"sampledAt"`
+	ActiveIPs              []ProfileIPObservation `json:"activeIps"`
+	ActiveIPsTruncated     bool                   `json:"activeIpsTruncated"`
 }
 
 type ProfileMetrics struct {
@@ -27,6 +33,7 @@ type ProfileMetrics struct {
 	Usage                []ProfileUsage   `json:"usage"`
 	UsedTrafficBytes     string           `json:"usedTrafficBytes"`
 	LifetimeTrafficBytes string           `json:"lifetimeTrafficBytes"`
+	PAYGHistory          PAYGNodeHistory  `json:"paygHistory"`
 }
 
 // UserNodeMetrics never substitutes source-provider data for unavailable agents.
@@ -61,8 +68,9 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 			continue
 		}
 		snapshot := m.live[node.ID]
-		item := UserNodeMetric{NodeID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Connections: "0", UploadBytes: "0", DownloadBytes: "0", WeightedBytes: "0"}
+		item := UserNodeMetric{NodeID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Connections: "0", UploadBytes: "0", DownloadBytes: "0", WeightedBytes: "0", NativeWeightedBytes: "0", ActiveIPStatus: "unavailable", ActiveIPs: []ProfileIPObservation{}}
 		item.Available = owned && node.Enabled && m.peers[node.ID] != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
+		profileNodeActivity(&item, snapshot, m.peers[node.ID], principals, now)
 		if item.Available {
 			count := int64(0)
 			for _, principal := range principals {
@@ -92,5 +100,9 @@ func (m *Master) ProfileMetrics(ctx context.Context, userID string) (ProfileMetr
 		return ProfileMetrics{}, err
 	}
 	result := ProfileMetrics{UserMetrics: live, Nodes: nodes, Usage: []ProfileUsage{}}
+	result.PAYGHistory, err = m.service.profilePAYGHistory(ctx, userID)
+	if err != nil {
+		return result, err
+	}
 	return m.service.profileAccounting(ctx, userID, result)
 }

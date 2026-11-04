@@ -28,7 +28,7 @@ func (s *Store) PrunePAYGTransientRecords(ctx context.Context, now time.Time) (m
 		for key, count := range batch {
 			counts[key] += count
 		}
-		if batch["xnode_payg_minutes"] < paygRetentionBatch && batch["xnode_payg_windows"] < paygRetentionBatch {
+		if batch["xnode_payg_minutes"] < paygRetentionBatch && batch["xnode_payg_windows"] < paygRetentionBatch && batch["xnode_payg_node_minutes"] < paygRetentionBatch {
 			return counts, nil
 		}
 	}
@@ -52,6 +52,10 @@ func (s *Store) retryAttempt_PrunePAYGTransientBatch(ctx context.Context, now ti
 
 func prunePAYGTransientTx(ctx context.Context, tx *sql.Tx, now time.Time, counts map[string]int64) error {
 	var err error
+	counts["xnode_payg_node_minutes"], err = deleteCount(ctx, tx, `DELETE FROM xnode_payg_node_minutes WHERE (user_id,node_id,minute) IN (SELECT user_id,node_id,minute FROM xnode_payg_node_minutes WHERE minute<$1 ORDER BY minute LIMIT 4096)`, now.UTC().Truncate(time.Minute).Add(-xnode.PAYGWindow))
+	if err != nil {
+		return fmt.Errorf("prune PAYG node summaries: %w", err)
+	}
 	counts["xnode_payg_minutes"], err = deleteCount(ctx, tx, `DELETE FROM xnode_payg_minutes WHERE (user_id,group_id,minute) IN
 		(SELECT user_id,group_id,minute FROM xnode_payg_minutes WHERE minute<$1 ORDER BY minute LIMIT 4096)`, stamp(now.UTC().Truncate(time.Minute).Add(-xnode.PAYGWindow)))
 	if err != nil {

@@ -60,7 +60,7 @@ func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, 
 	for _, sample := range samples {
 		sampled[sample.UserID] = true
 		if batch == nil || batch.payg[int64(sample.UserID)] {
-			if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample); e != nil {
+			if handled, e := recordPAYGSampleTx(ctx, tx, nodeID, sample, native); e != nil {
 				return e
 			} else if handled {
 				continue

@@ -9,14 +9,15 @@ import (
 
 // ProfileUsage serializes exact daily counters as decimal strings.
 type ProfileUsage struct {
-	Date          string `json:"date"`
-	UploadBytes   string `json:"uploadBytes"`
-	DownloadBytes string `json:"downloadBytes"`
-	WeightedBytes string `json:"weightedBytes"`
-	LegacyBytes   string `json:"legacyBytes"`
+	Date                string `json:"date"`
+	UploadBytes         string `json:"uploadBytes"`
+	DownloadBytes       string `json:"downloadBytes"`
+	WeightedBytes       string `json:"weightedBytes"`
+	LegacyBytes         string `json:"legacyBytes"`
+	NativeWeightedBytes string `json:"nativeWeightedBytes"`
 }
 
-type profileCounters struct{ upload, download, weighted, legacy big.Int }
+type profileCounters struct{ upload, download, weighted, legacy, nativeWeighted big.Int }
 
 func (c *profileCounters) add(row DailyUsage) error {
 	if row.UploadBytes < 0 || row.DownloadBytes < 0 || row.WeightedBytes < 0 {
@@ -25,6 +26,7 @@ func (c *profileCounters) add(row DailyUsage) error {
 	c.upload.Add(&c.upload, big.NewInt(row.UploadBytes))
 	c.download.Add(&c.download, big.NewInt(row.DownloadBytes))
 	c.weighted.Add(&c.weighted, big.NewInt(row.WeightedBytes))
+	c.nativeWeighted.Add(&c.nativeWeighted, big.NewInt(row.WeightedBytes))
 	return nil
 }
 
@@ -84,11 +86,12 @@ func (s *Service) profileAccounting(ctx context.Context, userID string, result P
 		if values == nil {
 			values = &profileCounters{}
 		}
-		result.Usage = append(result.Usage, ProfileUsage{Date: key, UploadBytes: values.upload.String(), DownloadBytes: values.download.String(), WeightedBytes: values.weighted.String(), LegacyBytes: values.legacy.String()})
+		result.Usage = append(result.Usage, ProfileUsage{Date: key, UploadBytes: values.upload.String(), DownloadBytes: values.download.String(), WeightedBytes: values.weighted.String(), LegacyBytes: values.legacy.String(), NativeWeightedBytes: values.nativeWeighted.String()})
 	}
 	for i := range result.Nodes {
 		if values := byNode[result.Nodes[i].NodeID]; values != nil {
 			result.Nodes[i].UploadBytes, result.Nodes[i].DownloadBytes, result.Nodes[i].WeightedBytes = values.upload.String(), values.download.String(), values.weighted.String()
+			result.Nodes[i].NativeWeightedBytes = values.nativeWeighted.String()
 		}
 	}
 	return result, nil

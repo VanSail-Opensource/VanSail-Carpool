@@ -25,22 +25,30 @@ type nativePeriodValue struct {
 // state is never cached between commits. Each report stages independently so a
 // savepoint rollback cannot leave partial counters in Go memory.
 type nativeTrafficBuffer struct {
-	periods map[string]nativePeriodValue
-	daily   map[nativeUsageKey]nativeUsageValue
-	known   map[nativeUsageKey]bool
-	changed map[nativeUsageKey]nativeUsageValue
-	used    map[string]int64
+	paygHistory paygNodeMinutes
+	periods     map[string]nativePeriodValue
+	daily       map[nativeUsageKey]nativeUsageValue
+	known       map[nativeUsageKey]bool
+	changed     map[nativeUsageKey]nativeUsageValue
+	used        map[string]int64
 }
 type nativeReportBuffer struct {
-	parent *nativeTrafficBuffer
-	daily  map[nativeUsageKey]nativeUsageValue
-	used   map[string]int64
+	paygHistory paygNodeMinutes
+	parent      *nativeTrafficBuffer
+	daily       map[nativeUsageKey]nativeUsageValue
+	used        map[string]int64
 }
 
 func (b *nativeTrafficBuffer) fork() *nativeReportBuffer {
 	return &nativeReportBuffer{parent: b, daily: map[nativeUsageKey]nativeUsageValue{}, used: map[string]int64{}}
 }
 func (b *nativeReportBuffer) accept() {
+	if len(b.paygHistory) > 0 && b.parent.paygHistory == nil {
+		b.parent.paygHistory = paygNodeMinutes{}
+	}
+	for key, value := range b.paygHistory {
+		b.parent.paygHistory.add(key, &value.upload, &value.download)
+	}
 	for key, value := range b.daily {
 		b.parent.changed[key] = value
 	}
@@ -58,7 +66,7 @@ func nativePeriodTx(ctx context.Context, tx *sql.Tx, b *nativeReportBuffer, id s
 		return value, nil
 	}
 	var value nativePeriodValue
-	err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status,used_bytes FROM xnode_periods WHERE id=$1`, id).Scan(&value.owner, &value.status, &value.used)
+	err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status,used_bytes,EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.period_id=p.id) FROM xnode_periods p WHERE id=$1`, id).Scan(&value.owner, &value.status, &value.used, &value.payg)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = xnode.NewTrafficPeriodMissing(id)
 	}

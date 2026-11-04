@@ -1020,3 +1020,12 @@ Enrollment revocation removes peer authority before closing the socket; queued
 activity cannot create leases after token rotation. `master_revocation_test.go`
 covers revoked reporters and drained deletion. Registration and deletion share
 the same master lock, preventing a handshake from crossing the drain check.
+
+`profile_activity.go` provides bounded owner-scoped sampled IP observations with
+actual last-activity times, exact counts, truncation and distinct available,
+stale and unavailable states. Old agents without capture-time negotiation do
+not claim fresh IP evidence. `profile_payg_history.go` composes recorded 72-hour
+per-node PAYG totals and hourly history, including removed/unavailable nodes.
+`profile_activity_test.go` covers scope, freshness, precision, bounds and native
+graph counters. Native graph counters exclude imported evidence; canonical
+period/lifetime and historical accounting fields retain their original meaning.
