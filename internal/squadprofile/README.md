@@ -9,3 +9,5 @@
 This package owns local squad metadata only. X-Node remains authoritative for
 squad identity, name, and availability. Profile values are normalized before
 they reach PostgreSQL and are never used to make upstream provider requests.
+
+The shared feature palette accepts only built-in Phosphor identifiers. Squads and Core combos share the 12-feature, 80-character title and 160-character detail limits. Extend backend validation, frontend icon mappings, API enum and both picker locales together.

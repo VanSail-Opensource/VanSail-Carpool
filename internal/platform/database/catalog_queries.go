@@ -45,20 +45,23 @@ func (s *Store) ListCombos(ctx context.Context, activeOnly bool) ([]model.Combo,
 	return combos, rows.Err()
 }
 
-const comboSelect = `SELECT id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,included_squad_uuids,created_at,updated_at,ip_lookup_quota FROM combos`
+const comboSelect = `SELECT id,name,description,price_txb_minor,validity_days,traffic_limit_bytes,reset_strategy,active,included_squad_uuids,created_at,updated_at,ip_lookup_quota,features_json FROM combos`
 
 func scanCombo(row rowScanner) (model.Combo, error) {
 	var combo model.Combo
 	var active int
 	var quota sql.NullInt64
-	var encodedSquads, created, updated string
+	var encodedSquads, created, updated, featuresJSON string
 	if err := row.Scan(&combo.ID, &combo.Name, &combo.Description, &combo.PriceTXBMinor, &combo.ValidityDays,
 		&combo.TrafficLimitBytes, &combo.ResetStrategy, &active,
-		&encodedSquads, &created, &updated, &quota); err != nil {
+		&encodedSquads, &created, &updated, &quota, &featuresJSON); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.Combo{}, ErrNotFound
 		}
 		return model.Combo{}, fmt.Errorf("scan combo: %w", err)
+	}
+	if err := json.Unmarshal([]byte(featuresJSON), &combo.Features); err != nil {
+		return model.Combo{}, fmt.Errorf("decode combo features: %w", err)
 	}
 	var squadUUIDs []string
 	if err := json.Unmarshal([]byte(encodedSquads), &squadUUIDs); err != nil {

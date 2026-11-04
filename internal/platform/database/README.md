@@ -1073,3 +1073,5 @@ node deletion, and absent history is never inferred from group totals.
 rollback, owner isolation, removed nodes, retention and read bounds.
 
 Migration 38 adds node retirement and parent-locking binding guards. xnode_node_removal.go fences final deletion/retirement with row locks and the compile revision, keeps historical references and audit evidence, and excludes retirement from active inventory without deleting accounting.
+
+Migration 39 adds combos.features_json with an empty array default. Combo writes validate shared feature limits; omitted features preserve stored order/content and an explicit empty list clears them.

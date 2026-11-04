@@ -65,3 +65,10 @@ describe('ComboOption', () => {
     expect(wrapper.emitted('select')).toEqual([['combo-1']])
   })
 })
+
+it('renders ordered shared features and keeps validity among the terms', () => {
+ const wrapper=mount(ComboOption,{props:{combo:{...combo,features:[{icon:'cloud',title:'Cloud',detail:'Regional'},{icon:'lock-key',title:'Private'}]},selected:true}})
+ expect(wrapper.findAll('.squad-features__copy strong').map(item=>item.text())).toEqual(['Cloud','Private'])
+ expect(wrapper.get('.combo-option__metrics').text()).toContain('per 30 days')
+ expect(wrapper.find('.combo-option__price').exists()).toBe(false)
+})

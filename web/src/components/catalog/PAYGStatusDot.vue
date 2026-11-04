@@ -10,13 +10,17 @@ const tone = computed(() => props.status === 'available' ? 'green'
 </script>
 
 <template>
-  <UTooltip :text="t(`payg.status.${status}`)">
-    <span class="payg-status-dot" :class="`payg-status-dot--${tone}`" role="img" :aria-label="t(`payg.status.${status}`)" tabindex="0" />
-  </UTooltip>
+  <UPopover>
+    <button type="button" class="payg-status-trigger" :aria-label="t(`payg.status.${status}`)"><span class="payg-status-dot" :class="`payg-status-dot--${tone}`" aria-hidden="true" /></button>
+    <template #content><p class="px-3 py-2 text-sm">{{ t(`payg.status.${status}`) }}</p></template>
+  </UPopover>
 </template>
 
 <style scoped>
-.payg-status-dot { position: absolute; left: .6rem; top: 1rem; width: .4rem; height: .4rem; border-radius: 50%; }
+.payg-status-trigger { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; flex: none; }
+.payg-status-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.payg-status-trigger:active { background: var(--surface-raised); }
+.payg-status-dot { position: relative; display: block; width: .4rem; height: .4rem; border-radius: 50%; }
 .payg-status-dot::before, .payg-status-dot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
 .payg-status-dot::before { background: var(--dot-color); animation: payg-status 2.2s ease-in-out infinite; }
 .payg-status-dot::after { border: 1px solid var(--dot-color); animation: payg-ripple 2.2s ease-out infinite; }

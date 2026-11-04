@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AnimatePresence, motion } from 'motion-v'
 
+import SquadFeatures from './SquadFeatures.vue'
 import type { Combo } from '@/api/types'
 import { useI18n } from '@/i18n'
 import { formatBytes } from '@/utils/format'
@@ -29,15 +30,8 @@ function selectCombo(): void {
 </script>
 
 <template>
-  <UButton
-    class="combo-option"
-    :class="{ 'combo-option--selected': selected }"
-    color="neutral"
-    variant="ghost"
-    type="button"
-    :aria-pressed="selected"
-    @click="selectCombo"
-  >
+  <article class="combo-option" :class="{ 'combo-option--selected': selected }" @click="selectCombo">
+    <UButton class="combo-option__select" color="neutral" variant="ghost" type="button" :aria-label="combo.name" :aria-pressed="selected" />
     <span class="combo-option__top">
       <span>
         <strong>{{ combo.name }}</strong>
@@ -49,13 +43,19 @@ function selectCombo(): void {
     <span v-if="combo.description" class="combo-option__description">{{ combo.description }}</span>
     <span class="combo-option__metrics">
       <span><UIcon name="i-ph-gauge" />{{ trafficTerm() }}</span>
+      <span><UIcon name="i-ph-calendar" />{{ $t('catalog.perDays', { count: combo.validityDays }) }}</span>
       <span><UIcon name="i-ph-stack" />{{ $t('catalog.includedSquadCount', { count: combo.includedSquads.length }) }}</span>
     </span>
-    <span class="combo-option__price"><small>{{ $t('catalog.perDays', { count: combo.validityDays }) }}</small></span>
-  </UButton>
+    <SquadFeatures :features="combo.features ?? []" />
+  </article>
 </template>
 
 <style scoped>
+.combo-option { position: relative; align-self: start; }
+.combo-option__select { position: absolute; inset: 0; z-index: 1; width: 100%; padding: 0; border-radius: inherit; }
+.combo-option__select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.combo-option:active { transform: scale(.995); }
+@media (prefers-reduced-motion: reduce) { .combo-option { transition: none; } .combo-option:hover, .combo-option:active { transform: none; } }
 .combo-option__description { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (min-width: 900px) {
   .combo-option { gap: 0.6rem; padding: 0.85rem; }

@@ -2198,6 +2198,12 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "features_json",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
         }
       ]
     },

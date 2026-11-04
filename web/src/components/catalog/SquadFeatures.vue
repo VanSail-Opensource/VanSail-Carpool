@@ -24,5 +24,5 @@ defineProps<{ features: readonly { icon: string; title: string; detail?: string 
 .squad-features__icon { display: grid; place-items: center; width: 1.125rem; height: 1.125rem; color: var(--squad-profile-tone, var(--accent)); background: color-mix(in srgb, var(--squad-profile-tone, var(--accent)) 11%, var(--surface)); border-radius: 5px; }
 .squad-features__copy { display: block; min-width: 0; padding-top: .05rem; color: var(--text-muted); font-size: .69rem; line-height: 1.4; overflow-wrap: anywhere; text-align: left; }
 .squad-features__copy strong { display: block; color: var(--text); font-weight: 650; }
-.squad-features__copy small { display: block; font-size: inherit; color: var(--text-faint); }
+.squad-features__copy small { display: block; font-size: inherit; color: var(--text-faint); text-align: left; margin: 0; padding: 0; }
 </style>

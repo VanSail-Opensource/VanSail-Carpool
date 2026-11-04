@@ -16,6 +16,7 @@ import (
 // SquadProductIDs contains Proxy internal-squad UUIDs; the historical field
 // name remains at the service boundary for source compatibility.
 type ComboInput struct {
+	Features          squadprofile.Features
 	IPLookupQuota     *int
 	ID                string
 	Name              string
@@ -72,6 +73,18 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 	if err != nil {
 		return model.Combo{}, fmt.Errorf("encode combo squad UUIDs: %w", err)
 	}
+	var featuresJSON any
+	if input.Features != nil {
+		features, e := squadprofile.NormalizeFeatures(input.Features)
+		if e != nil {
+			return model.Combo{}, e
+		}
+		encoded, e := json.Marshal(features)
+		if e != nil {
+			return model.Combo{}, e
+		}
+		featuresJSON = string(encoded)
+	}
 	now := time.Now().UTC()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -99,6 +112,11 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 		return model.Combo{}, fmt.Errorf("inspect saved combo: %w", rowsErr)
 	} else if affected != 1 {
 		return model.Combo{}, ErrNotFound
+	}
+	if featuresJSON != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE combos SET features_json=$1 WHERE id=$2`, featuresJSON, input.ID); err != nil {
+			return model.Combo{}, err
+		}
 	}
 	if creating && input.IPLookupQuota != nil {
 		if _, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=$1 WHERE id=$2`, *input.IPLookupQuota, input.ID); err != nil {

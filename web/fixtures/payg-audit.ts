@@ -6,7 +6,7 @@ import { installHapticClickFeedback } from '@/utils/telegram'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme, setBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
-import type { SquadProduct } from '@/api/types'
+import type { Combo, SquadProduct } from '@/api/types'
 import PAYGAudit from './PAYGAudit.vue'
 import '@/styles/main.css'
 import '@/browser/styles.css'
@@ -34,6 +34,7 @@ const squad = (index: number): SquadProduct => ({
   id: `00000000-0000-4000-8000-00000000000${index}`, groupId: `00000000-0000-4000-8000-00000000000${index}`,
   name: ['Tokyo Direct', 'Singapore Transit', 'Los Angeles', 'Frankfurt', 'Hong Kong International Transit', 'London', 'Amsterdam'][index]!,
   paygState: params.has('hidden') && index === 0 ? 'hidden' : 'normal',
+  features: params.has('features') ? [{ icon: 'rocket-launch', title: 'Fast regional access', detail: 'Stable routes across supported endpoints' }, ...(index%2 ? [] : [{ icon: 'lock-key' as const, title: 'Private', detail: 'Owner-scoped configuration' }])] : [],
   description: '', profile: profiles[index] ?? null, billingMode: 'payg', paygPrice: money('125'), price: money('0'),
   visible: true, upstreamPresent: true, stockHeldByCurrentUser: false, stockLimit: 100, stockRemaining: 80,
   activationRequired: false, accessibleNodes: [{ uuid: '00000000-0000-4000-8000-000000000099', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1.5, providerName: null }],
@@ -60,14 +61,15 @@ window.fetch = async (input, init) => {
   if (url.pathname === '/api/v1/payg') value = { balance: money('2500'), asOf: stamp, windowStart: '2026-10-21T00:00:00Z', squads: params.has('empty') ? [] : statuses.map((status, index) => ({ squad: squad(index), status, trafficBytes: '1610612736', spent: money('250') })), trafficBytes: params.has('empty') ? '0' : '9663676416', spent: money(params.has('empty') ? '0' : '1500') }
   else if (url.pathname === '/api/v1/catalog') {
     if (params.has('combo-error')) return new Response(JSON.stringify({ code: 'XNODE_UNAVAILABLE', message: 'fixture unavailable' }), { status: 503 })
-    value = { autoRenewalBlockedUntil: params.has('blocked') ? new Date(Date.now() + 60000).toISOString() : null, combos: params.has('combo-empty') ? [] : [{ id: 'audit-combo', name: 'Standard', description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, createdAt: stamp, updatedAt: stamp }], addons: params.has('combo-empty') ? [] : statuses.map((_, index) => ({ ...squad(index), billingMode: 'combo' })), nodes: [] }
+    value = { autoRenewalBlockedUntil: params.has('blocked') ? new Date(Date.now() + 60000).toISOString() : null, combos: params.has('combo-empty') ? [] : [{ id: 'audit-combo', name: 'Standard', features: params.has('features') ? [{ icon: 'cloud', title: 'Flexible access', detail: 'Choose your squads' }] : [], description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, createdAt: stamp, updatedAt: stamp }], addons: params.has('combo-empty') ? [] : statuses.map((_, index) => ({ ...squad(index), billingMode: 'combo' })), nodes: [] }
   }
   else if (url.pathname === '/api/v1/dashboard') value = { activePurchase: null, queuedPurchase: null, balance: money('2500'), user: { id: '99101', role: 'member' } }
   else if (url.pathname === '/api/v1/balance') value = { balance: money('2500'), methods: [] }
   void init
   return new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
-const props = { admin, cards: params.has('cards'), squads: statuses.map((_, index) => squad(index)), squad: squad(0) }
+const combo:Combo={id:'core-fixture',name:'Core',features:[{icon:'cloud',title:'Flexible access',detail:'Choose your squads'}],description:'Core fixture',price:money('1000'),validityDays:30,trafficLimitBytes:'107374182400',resetStrategy:'MONTH_ROLLING',includedSquads:[],active:true,createdAt:stamp,updatedAt:stamp}
+const props = { combo: params.has('admin-combo') ? combo : undefined, admin, cards: params.has('cards'), squads: statuses.map((_, index) => squad(index)), squad: squad(0) }
 const app = createApp(PAYGAudit, props)
 app.config.globalProperties.$t = t
 app.use(createPinia()).use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: PAYGAudit }] })).use(ui).mount('#app')

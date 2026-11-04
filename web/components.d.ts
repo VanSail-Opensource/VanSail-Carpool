@@ -97,7 +97,6 @@ declare module 'vue' {
     CatalogExperience: typeof import('./src/components/catalog/CatalogExperience.vue')['default']
     CatalogFlowControls: typeof import('./src/components/catalog/CatalogFlowControls.vue')['default']
     CatalogFlowProgress: typeof import('./src/components/catalog/CatalogFlowProgress.vue')['default']
-    CatalogModeTransition: typeof import('./src/components/catalog/CatalogModeTransition.vue')['default']
     CatalogPage: typeof import('./src/components/catalog/CatalogPage.vue')['default']
     CatalogPaymentStep: typeof import('./src/components/catalog/CatalogPaymentStep.vue')['default']
     CatalogSquadStep: typeof import('./src/components/catalog/CatalogSquadStep.vue')['default']

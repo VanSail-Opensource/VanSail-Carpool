@@ -15,3 +15,5 @@ The editor emits only a complete typed profile. Incomplete drafts remain local
 to the form and cannot be submitted to the admin API.
 Saves omit untouched feature lists to preserve concurrent updates; an explicitly
 edited empty list clears the saved features.
+
+AdminSquadFeaturesEditor and featureForm are shared by squad and Core combo editors. Untouched features are omitted to preserve newer content; explicit empty lists clear them.

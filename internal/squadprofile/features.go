@@ -38,7 +38,7 @@ func NormalizeFeatures(features Features) (Features, error) {
 		feature.Title = strings.TrimSpace(feature.Title)
 		feature.Detail = strings.TrimSpace(feature.Detail)
 		switch feature.Icon {
-		case "route", "globe", "lightning", "shield", "sparkle", "house", "broadcast", "clock", "stack", "gauge", "server", "arrows-clockwise":
+		case "route", "globe", "lightning", "shield", "sparkle", "house", "broadcast", "clock", "stack", "gauge", "server", "arrows-clockwise", "rocket-launch", "cloud", "wifi-high", "planet", "compass", "map-pin", "devices", "desktop", "timer", "lock-key", "check-circle", "lifebuoy", "heart", "leaf", "lightbulb", "cube", "link", "code", "funnel", "faders", "sliders", "arrows-left-right", "database", "globe-hemisphere-east":
 		default:
 			return nil, ErrInvalidFeatures
 		}

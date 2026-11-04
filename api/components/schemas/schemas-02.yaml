@@ -88,7 +88,7 @@ SquadFeature:
   properties:
     icon:
       type: string
-      enum: [route, globe, lightning, shield, sparkle, house, broadcast, clock, stack, gauge, server, arrows-clockwise]
+      enum: [route, globe, lightning, shield, sparkle, house, broadcast, clock, stack, gauge, server, arrows-clockwise, rocket-launch, cloud, wifi-high, planet, compass, map-pin, devices, desktop, timer, lock-key, check-circle, lifebuoy, heart, leaf, lightbulb, cube, link, code, funnel, faders, sliders, arrows-left-right, database, globe-hemisphere-east]
     title: {type: string, minLength: 1, maxLength: 80}
     detail: {type: string, maxLength: 160}
 
@@ -178,6 +178,10 @@ Combo:
     - createdAt
     - updatedAt
   properties:
+    features:
+      type: array
+      maxItems: 12
+      items: { $ref: '../../openapi.yaml#/components/schemas/SquadFeature' }
     pricingDecision: {"$ref":"../../openapi.yaml#/components/schemas/PricingDecision"}
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
     id:
@@ -260,6 +264,10 @@ ComboWrite:
     - resetStrategy
     - active
   properties:
+    features:
+      type: array
+      maxItems: 12
+      items: { $ref: '../../openapi.yaml#/components/schemas/SquadFeature' }
     ipLookupQuota: {"anyOf":[{"type":"integer","minimum":0,"maximum":1000000},{"type":"null"}]}
     name:
       type: string

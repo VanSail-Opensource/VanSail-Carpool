@@ -10,6 +10,8 @@ import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useI18n } from '@/i18n'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { moneyFromTxbInput, trafficBytesFromInput, txbInputFromMinor } from '@/utils/format'
+import AdminSquadFeaturesEditor from './squad-profile/AdminSquadFeaturesEditor.vue'
+import { squadFeaturesPatch, validSquadFeatures, type SquadFeature } from './squad-profile/featureForm'
 import ProductPricingSettings from './pricing/ProductPricingSettings.vue'
 
 const props = defineProps<{ combo?: Combo; squads: readonly SquadProduct[]; busy: boolean; error?: string | null }>()
@@ -20,8 +22,9 @@ const resetItems = computed(() => resetCadences.map((value) => ({ value, label: 
 const draft = reactive({
   ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
   resetStrategy: 'MONTH_ROLLING' as ResetCadence, squadProductIds: [] as string[],
-  active: true,
+  features: [] as SquadFeature[], active: true,
 })
+const featuresTouched = ref(false)
 const trafficInvalid = ref(false)
 const invalid = ref(false)
 const schema = z.object({
@@ -36,8 +39,9 @@ const schema = z.object({
 const { reducedMotion, offset } = useMotionPreferences()
 
 watch(() => props.combo, (combo) => {
+  featuresTouched.value = false
   Object.assign(draft, combo ? {
-    name: combo.name,
+    features: (combo.features ?? []).map(feature => ({ ...feature })), name: combo.name,
     description: combo.description,
     priceTxb: txbInputFromMinor(combo.price.minor),
     ipLookupQuota: combo.ipLookupQuota ?? null, validityDays: combo.validityDays,
@@ -47,7 +51,7 @@ watch(() => props.combo, (combo) => {
     active: combo.active,
   } : {
     ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
-    trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], active: true,
+    features: [], trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], active: true,
   })
 }, { immediate: true })
 
@@ -62,10 +66,10 @@ function submit(): void {
     resetStrategy: draft.resetStrategy, squadProductIds: [...draft.squadProductIds],
     active: draft.active,
   })
-  invalid.value = !result.success
-  if (!result.success) return
+  invalid.value = !result.success || !validSquadFeatures(draft.features)
+  if (!result.success || !validSquadFeatures(draft.features)) return
   draft.trafficLimitBytes = trafficLimitBytes
-  emit('save', result.data)
+  emit('save', { ...result.data, ...squadFeaturesPatch(draft.features, featuresTouched.value) })
 }
 
 function normalizeTrafficLimit(): void {
@@ -105,6 +109,7 @@ function setSquad(id: string, selected: boolean): void {
             </AnimatePresence>
           </motion.div>
         </fieldset>
+        <AdminSquadFeaturesEditor v-model="draft.features" class="catalog-editor__wide" :busy="busy" :show-validation="invalid" @update:model-value="featuresTouched = true" />
         <SwitchField id="combo-active" v-model="draft.active" class="catalog-editor__wide" :label="t('adminCatalogEditor.available')" :help="t('adminCatalogEditor.liveTermsHint')" />
         <ProductPricingSettings v-if="combo" class="catalog-editor__wide" kind="combo" :product-id="combo.id" />
         <UButton class="catalog-editor__wide" type="submit" icon="i-ph-floppy-disk" :loading="busy" :disabled="busy" :label="busy ? t('common.saving') : t('adminCatalogEditor.save')" />

@@ -18,16 +18,17 @@ func (s *Server) adminCombos(w http.ResponseWriter, r *http.Request) {
 }
 
 type comboRequest struct {
-	IPLookupQuota     *int     `json:"ipLookupQuota"`
-	Name              string   `json:"name"`
-	Description       string   `json:"description"`
-	PriceTXBMinor     string   `json:"priceTxbMinor"`
-	ValidityDays      int      `json:"validityDays"`
-	TrafficLimitBytes string   `json:"trafficLimitBytes"`
-	ResetStrategy     string   `json:"resetStrategy"`
-	Active            bool     `json:"active"`
-	SquadProductIDs   []string `json:"squadProductIds"`
-	IncludedSquadIDs  []string `json:"includedSquadIds"`
+	Features          squadprofile.Features `json:"features"`
+	IPLookupQuota     *int                  `json:"ipLookupQuota"`
+	Name              string                `json:"name"`
+	Description       string                `json:"description"`
+	PriceTXBMinor     string                `json:"priceTxbMinor"`
+	ValidityDays      int                   `json:"validityDays"`
+	TrafficLimitBytes string                `json:"trafficLimitBytes"`
+	ResetStrategy     string                `json:"resetStrategy"`
+	Active            bool                  `json:"active"`
+	SquadProductIDs   []string              `json:"squadProductIds"`
+	IncludedSquadIDs  []string              `json:"includedSquadIds"`
 }
 
 func (s *Server) adminCreateCombo(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +55,7 @@ func (s *Server) adminSaveCombo(w http.ResponseWriter, r *http.Request, id strin
 	if len(squadIDs) == 0 {
 		squadIDs = request.IncludedSquadIDs
 	}
-	combo, err := s.deps.Admin.SaveCombo(r.Context(), currentUser(r).ID, database.ComboInput{ID: id, Name: request.Name,
+	combo, err := s.deps.Admin.SaveCombo(r.Context(), currentUser(r).ID, database.ComboInput{Features: request.Features, ID: id, Name: request.Name,
 		Description: request.Description, PriceTXBMinor: price, ValidityDays: request.ValidityDays, TrafficLimitBytes: traffic,
 		ResetStrategy: request.ResetStrategy, Active: request.Active, SquadProductIDs: squadIDs,
 		IPLookupQuota: request.IPLookupQuota})

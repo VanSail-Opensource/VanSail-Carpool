@@ -63,9 +63,7 @@ mode controls. API errors retain each mode's existing retry flow. Catalog/coupon
 reads are excluded from session preload and Home; financial decisions still make
 fresh requests through their existing loaders and checkout paths.
 
-- `CatalogModeTransition.vue` presents an 800ms viewport-wide introduction. Animation completion releases the content gate; a 900ms fallback handles suppressed WebView events. Readiness remeasures controls without restarting the scene. Combo content mounts immediately but stays hidden/inert until completion, then enters over 200ms. Only mode navigation and application navigation sit outside its continuous cover; PAYG additionally reserves its wallet. Scroll/viewport changes remeasure without ending the scene. Reduced motion skips both animations. Generation checks discard stale scenes on rapid switching.
 
-- `CatalogModeTransition.test.ts` covers rapid scene replacement, timed disposal and reduced-motion omission in hosted CI.
 
 PAYG receives an `entranceReady` gate from actual scene completion (or reduced
 motion), rather than a fixed animation delay. Cards and populated 72-hour totals
@@ -96,3 +94,5 @@ full-card keyboard selection, stock and visibility guards.
 Selectable core Combo presentation with price and traffic terms: `CatalogComboPricingTable.vue`, `ComboOption.vue`.
 
 Combo descriptions are plain escaped text with preserved line breaks. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.
+
+Explore uses immediate, interruptible native 140ms content entrance transitions; mode controls stay interactive and reduced motion skips the entrance. Combo and squad cards follow content height with no automatic spacer. Shared SquadFeatures renders ordered icon/title/detail rows with aligned text. PAYG status uses a header popover trigger with accessible text, keyboard and touch support.
