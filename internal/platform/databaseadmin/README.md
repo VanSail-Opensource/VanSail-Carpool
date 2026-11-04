@@ -1,24 +1,22 @@
-# PostgreSQL administration
+# Reviewed PostgreSQL administration
 
-The browser API exposes an allowlisted, read-only PostgreSQL catalog and typed
-record pages. Domain APIs own all mutations. Historical mutation request/receipt
-wire types remain accepted only to return an explicit read-only error; generic
-writes cannot create reviews, rescue archives or alter credentials/financial data.
+The browser editor exposes typed records and reviewed insert/update/delete for
+operational tables. Policies own table/column protection reasons and project the
+same rules into metadata. Deletes cannot cascade into protected evidence or
+credentials. Financial/accounting/audit evidence, secrets, generated fields and
+existing keys cannot be edited.
 
-- `types.go` and `types_part2.go` define decimal-string/boolean/base64 transport,
-  schema metadata, paging/filter contracts and historical mutation shapes.
-- `schema.go` and `schema_part2.go` classify native PG types and redact sensitive
-  fields; `postgres.go` resolves validated identifiers and declared primary keys
-  through server catalogs. Tables without keys cannot be paginated.
-- `records.go` builds native parameterized cursor pages and redacted row hashes.
-- `record_keys.go` preserves exact numeric keys and seals sensitive keys/cursors.
-- `record_values.go` renders exact values without browser-number conversion.
-- `query.go` and `query_part2.go` bind typed filters/search and fingerprint sealed
-  query cursors. `filter_values.go` validates values using the resolved PG type.
-- `mutations.go` rejects generic writes before any side effect.
-- `service_test.go` covers native catalogs, declared-key pagination, large numeric
-  precision and malformed input. `mutation_service_test.go` verifies secret
-  masking and unchanged records when a generic write is attempted.
+`postgres.go` resolves identifiers and native types through PostgreSQL catalogs.
+Record, key, value and query modules preserve exact numeric strings and redact
+sensitive values. Declared primary keys are required.
 
-No user-supplied identifier reaches SQL without catalog resolution and identifier
-validation. No query results, raw SQL or secret argument values enter logs.
+Mutation modules create actor-bound ten-minute one-use reviews. Preparation
+checks exact request digests and optimistic hashes. Apply requires a complete
+verified rescue backup, consumes the review, locks and rechecks the record,
+executes parameterized SQL, and appends a redacted audit in one transaction.
+Constraints remain authoritative; domain hooks are bypassed.
+
+Extend policies before exposing another protected subsystem. Ordinary fields
+inherit native constraints; generated columns/defaults come from metadata.
+Hosted regressions cover CRUD, numeric precision, actor binding, expiry/replay,
+concurrent changes, protected records/keys and backup failure.

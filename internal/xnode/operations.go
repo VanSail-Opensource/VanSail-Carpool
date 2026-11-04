@@ -33,7 +33,7 @@ func validNodeCommand(request CommandRequest) bool {
 		return false
 	}
 	switch request.Name {
-	case "update.check", "update.rollback", "runtime.reload", "geodata.refresh":
+	case "node.remove", "update.check", "update.rollback", "runtime.reload", "geodata.refresh":
 		return request.JobID == "" && request.Version == "" && request.PeerEndpointID == ""
 	case "update.install":
 		return request.JobID == "" && request.PeerEndpointID == "" && len(request.Version) < 64
@@ -53,8 +53,12 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if !validNodeCommand(request) || key == "" || len(key) > 128 {
 		return model.OperationReceipt{}, ErrInvalid
 	}
-	if _, err := s.repo.XNodeNode(ctx, node); err != nil {
+	target, err := s.repo.XNodeNode(ctx, node)
+	if err != nil {
 		return model.OperationReceipt{}, err
+	}
+	if target.RetiredAt != nil && request.Name != "node.remove" {
+		return model.OperationReceipt{}, ErrConflict
 	}
 	if request.Name == "runtime.reload" && s.master != nil && s.master.Connected(node) && !containsCapability(s.master.Capabilities(node), "incremental_reload_v1") {
 		return model.OperationReceipt{}, &CapabilityError{Capability: "incremental_reload_v1"}

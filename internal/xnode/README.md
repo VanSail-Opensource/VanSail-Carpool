@@ -1071,3 +1071,5 @@ preserving IDs. `routing_inventory_view.go` keeps refreshed labels for unavailab
 choices. Dependency changes compile via the existing revoke/apply/enable queue;
 legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
+
+Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, checks every squad binding including disabled groups and active service/probe dependencies, disables admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline used nodes and accounting gaps remain explicit blockers. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.

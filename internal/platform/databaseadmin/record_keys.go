@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (s *Service) decodePublicKey(schema tableSchema, key map[string]string) ([]any, error) {
@@ -40,6 +41,13 @@ func (s *Service) decodePublicKey(schema tableSchema, key map[string]string) ([]
 }
 
 func parseKeyValue(column schemaColumn, encoded string) (any, error) {
+	if strings.HasPrefix(column.DeclaredType, "timestamp") {
+		at, err := time.Parse(time.RFC3339Nano, encoded)
+		if err != nil {
+			return nil, ErrInvalidValue
+		}
+		return at, nil
+	}
 	switch column.Family {
 	case storageFamilyInteger:
 		value, err := strconv.ParseInt(encoded, 10, 64)

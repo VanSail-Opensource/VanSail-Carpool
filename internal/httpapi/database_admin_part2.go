@@ -10,6 +10,11 @@ import (
 )
 
 func (h *DatabaseAdministrationHTTP) failure(w http.ResponseWriter, r *http.Request, err error) {
+	var protection *databaseadmin.ProtectionError
+	if errors.As(err, &protection) {
+		writeJSON(w, http.StatusUnprocessableEntity, apiError{Code: "DATABASE_PROTECTED", Message: "The table or field is protected.", Details: map[string]string{"reason": protection.Reason, "column": protection.Column, "table": protection.Table}})
+		return
+	}
 	status, code, message := http.StatusUnprocessableEntity, "DATABASE_ADMIN_FAILED", "The database administration operation could not be completed."
 	switch {
 	case errors.Is(err, databaseadmin.ErrTableNotFound), errors.Is(err, databaseadmin.ErrRecordNotFound), errors.Is(err, backup.ErrBackupNotFound):

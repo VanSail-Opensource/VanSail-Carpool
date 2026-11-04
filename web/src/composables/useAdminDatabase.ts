@@ -3,7 +3,8 @@ import { computed, onMounted, readonly, shallowRef } from 'vue'
 
 import type { DatabaseMutationInput, DatabaseMutationReview, DatabaseQueryInput, DatabaseRow, DatabaseTable } from '@/api/features'
 import { featuresApi } from '@/api/features'
-import { localizedError } from '@/i18n'
+import { ApiError } from '@/api/http'
+import { localizedError, t } from '@/i18n'
 
 export function useAdminDatabase() {
   const tables = shallowRef<DatabaseTable[]>([])
@@ -86,7 +87,7 @@ export function useAdminDatabase() {
       review.value = await featuresApi.reviewDatabaseMutation(input)
       return true
     } catch (caught) {
-      error.value = localizedError(caught, 'errors.mutationReview')
+      error.value = mutationError(caught, 'errors.mutationReview')
       return false
     } finally {
       busy.value = false
@@ -110,7 +111,7 @@ export function useAdminDatabase() {
       review.value = null
       return true
     } catch (caught) {
-      error.value = localizedError(caught, 'errors.mutationApply')
+      error.value = mutationError(caught, 'errors.mutationApply')
       return false
     } finally {
       busy.value = false
@@ -142,4 +143,10 @@ export function useAdminDatabase() {
     applyMutation,
     clearReview,
   }
+}
+
+function mutationError(error: unknown, fallback: string): string {
+  const reasons = ['financialEvidence', 'secrets', 'managedState', 'generated', 'primaryKey', 'protectedDependencies']
+  if (error instanceof ApiError && error.code === 'DATABASE_PROTECTED' && reasons.includes(error.details?.reason ?? '')) return t(`databaseProtection.${error.details!.reason}`)
+  return localizedError(error, fallback)
 }

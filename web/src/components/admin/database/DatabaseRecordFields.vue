@@ -8,6 +8,7 @@ import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { useI18n } from '@/i18n'
 
 const props = defineProps<{
+  insert?: boolean
   columns: readonly DatabaseColumn[]
   draft: Readonly<Record<string, DatabaseValue>>
   textDraft: Readonly<Record<string, string>>
@@ -20,8 +21,8 @@ const emit = defineEmits<{
 }>()
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
-const editableColumns = computed(() => props.columns.filter((column) => column.editable && !column.sensitive))
-const protectedColumns = computed(() => props.columns.filter((column) => !column.editable || column.sensitive))
+const editableColumns = computed(() => props.columns.filter((column) => (props.insert ? column.insertable ?? column.editable : column.editable) && !column.sensitive))
+const protectedColumns = computed(() => props.columns.filter((column) => !(props.insert ? column.insertable ?? column.editable : column.editable) || column.sensitive))
 
 function isBoolean(column: DatabaseColumn): boolean {
   return typeof props.draft[column.name] === 'boolean' || /BOOL/i.test(column.declaredType)
@@ -89,7 +90,7 @@ function protectedValue(column: DatabaseColumn): string {
       <dl>
         <div v-for="column in protectedColumns" :key="column.name">
           <dt><span>{{ column.name }}</span><small>{{ column.declaredType }}</small></dt>
-          <dd><code>{{ protectedValue(column) }}</code></dd>
+          <dd><code>{{ protectedValue(column) }}</code><p v-if="column.protectionReason">{{ t(`databaseProtection.${column.protectionReason}`) }}</p></dd>
         </div>
       </dl>
     </details>

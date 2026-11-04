@@ -38,6 +38,7 @@ export const xnodeApi = {
   nodes: (signal?: AbortSignal) => request<{ items: XNode[] }>(`${root}/nodes`, { cache: 'no-store', signal }),
   node: (id: string, signal?: AbortSignal) => request<Schema['XNodeNodeDetail']>(`${root}/nodes/${encodeURIComponent(id)}`, { cache: 'no-store', signal }),
   saveNode: (node: Partial<XNode>, settings: XNodeSettings) => request<XNode>(`${root}/nodes${node.id ? `/${encodeURIComponent(node.id)}` : ''}`, { method: node.id ? 'PUT' : 'POST', body: { node, settings } }),
+  removeNode: (id: string, key: string) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/removal`, { method: 'POST', headers: { 'Idempotency-Key': key }, cache: 'no-store' }),
   enroll: (id: string) => request<XNodeEnrollment>(`${root}/nodes/${encodeURIComponent(id)}/enrollment`, { method: 'POST', cache: 'no-store' }),
   global: (signal?: AbortSignal) => request<XNodeGlobal>(`${root}/global`, { cache: 'no-store', signal }),
   saveGlobal: (body: XNodeGlobal, part?: 'automaticWhitelist') => request<XNodeGlobal>(`${root}/global`, { method: 'PUT', body, query: { part } }),

@@ -1,4 +1,17 @@
 {
+  "nodeRemoval": {
+    "title": "Remove {name}",
+    "remove": "Remove",
+    "description": "Admission will stop, accounting will be reconciled, and enrollment will be revoked. Historical traffic and financial evidence are retained.",
+    "done": "Removed from active inventory. Historical accounting is retained.",
+    "blockers": {
+      "XNODE_REMOVAL_BINDINGS": "Remove every squad binding first, including disabled squads.",
+      "XNODE_REMOVAL_SERVICE": "An active service or diagnostic still depends on this node.",
+      "XNODE_REMOVAL_ROUTING": "A saved routing plan still depends on this node. Remove its choices first.",
+      "XNODE_REMOVAL_OFFLINE": "Reconnect this node to prove its final accounting barrier. Admission remains disabled.",
+      "XNODE_REMOVAL_PENDING_ACCOUNTING": "Accounting is still pending or has an unresolved gap. Admission remains disabled; reconcile it before retrying."
+    }
+  },
   "nodeAdmin": {
     "command": "Node command",
     "endpointOverrides": "Client endpoint overrides (JSON)",

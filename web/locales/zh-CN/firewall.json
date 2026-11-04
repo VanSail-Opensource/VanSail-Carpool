@@ -69,6 +69,7 @@
     "migrationNotice": "原节点策略不同，已采用共享默认值，请检查这些规则。"
   },
   "automaticLeases": {
+    "pages": "第 {page} 页，共 {total} 页",
     "title": "自动租约",
     "description": "节点报告的新活动会为该 IP 在全节点集群授予精确地址防火墙豁免。",
     "active": "有效租约",

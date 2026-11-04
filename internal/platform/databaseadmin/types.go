@@ -73,6 +73,9 @@ func NewService(db *sql.DB, backups Backupper, vault Vault, logger *slog.Logger)
 // Column describes a schema-declared editable field.
 
 type Column struct {
+	Insertable         bool   `json:"insertable"`
+	HasDefault         bool   `json:"hasDefault"`
+	ProtectionReason   string `json:"protectionReason"`
 	Name               string `json:"name"`
 	DeclaredType       string `json:"declaredType"`
 	Nullable           bool   `json:"nullable"`
@@ -84,10 +87,14 @@ type Column struct {
 // Table describes an allowlisted application table.
 
 type Table struct {
-	Name     string   `json:"name"`
-	Columns  []Column `json:"columns"`
-	HighRisk bool     `json:"highRisk"`
-	Warning  string   `json:"warning"`
+	AllowInsert      bool     `json:"allowInsert"`
+	AllowUpdate      bool     `json:"allowUpdate"`
+	AllowDelete      bool     `json:"allowDelete"`
+	ProtectionReason string   `json:"protectionReason"`
+	Name             string   `json:"name"`
+	Columns          []Column `json:"columns"`
+	HighRisk         bool     `json:"highRisk"`
+	Warning          string   `json:"warning"`
 }
 
 type valueKind uint8

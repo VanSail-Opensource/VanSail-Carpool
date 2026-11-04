@@ -69,6 +69,7 @@
     "migrationNotice": "Different node policies used shared defaults. Review these rules."
   },
   "automaticLeases": {
+    "pages": "Page {page} of {total}",
     "title": "Automatic leases",
     "description": "Fresh node activity grants an exact-address firewall exemption across the fleet.",
     "active": "Active leases",

@@ -78,3 +78,13 @@ it('returns to an existing page when expiry shrinks the result set', async () =>
   expect(state.data.value?.total).toBe(10)
   wrapper.unmount()
 })
+
+it('preserves pager metadata while moving pages and resets search to one', async () => {
+ mocks.leases.mockResolvedValue(page())
+ const wrapper=mount(Harness);await flushPromises()
+ state.page.value=2;await nextTick()
+ expect(state.loading.value).toBe(true)
+ expect(state.data.value?.total).toBe(75)
+ state.query.value='8.8';await nextTick();expect(state.page.value).toBe(1)
+ wrapper.unmount()
+})

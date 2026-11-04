@@ -16,7 +16,7 @@ const data = computed(() => paygHistorySeries(props.history, nodeId.value === '*
 const config = computed(() => ({ upload: { label: t('xnode.upload'), color: 'var(--accent)' }, download: { label: t('xnode.download'), color: 'var(--success)' } }))
 const columns = computed(() => [{ accessorKey: 'name', header: t('adminWorkspace.name') }, { id: 'status', header: t('firewall.status') }, { id: 'upload', header: t('xnode.upload') }, { id: 'download', header: t('xnode.download') }, { id: 'total', header: t('adminNative.recordedTotal') }])
 const available = computed(() => new Set(props.stale ? [] : props.nodes.filter(node => node.available).map(node => node.nodeId)))
-const exact = (row: ChartDatum, key: string) => t('adminNative.exactBytes', { bytes: String(row[`${key}Exact`] ?? '0') })
+const exact = (row: ChartDatum, key: string) => `${formatBytes(String(row[`${key}Exact`] ?? '0'))} ? ${t('adminNative.exactBytes', { bytes: String(row[`${key}Exact`] ?? '0') })}`
 const hour = (at: number) => new Intl.DateTimeFormat(locale.value, { month: 'short', day: 'numeric', hour: '2-digit', timeZone: 'UTC' }).format(at)
 const total = (upload: string, download: string) => (BigInt(upload) + BigInt(download)).toString()
 watch(() => props.history.nodes, nodes => { if (nodeId.value !== '*' && !nodes.some(node => node.nodeId === nodeId.value)) nodeId.value = '*' })

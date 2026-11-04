@@ -40,7 +40,7 @@ func (s *Service) postgresSchema(ctx context.Context, name string) (tableSchema,
 	if !identifierPattern.MatchString(name) || name == "schema_migrations" || name == "goose_db_version" {
 		return tableSchema{}, ErrTableNotFound
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,pg_get_expr(d.adbin,d.adrelid),COALESCE((SELECT array_position(k.conkey,a.attnum) FROM pg_constraint k WHERE k.conrelid=c.oid AND k.contype='p'),0) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_attribute a ON a.attrelid=c.oid LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum WHERE n.nspname='public' AND c.relname=$1 AND c.relkind='r' AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum`, name)
+	rows, err := s.db.QueryContext(ctx, `SELECT a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,pg_get_expr(d.adbin,d.adrelid),COALESCE((SELECT array_position(k.conkey,a.attnum) FROM pg_constraint k WHERE k.conrelid=c.oid AND k.contype='p'),0),(a.attgenerated<>'' OR a.attidentity<>'')::int FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_attribute a ON a.attrelid=c.oid LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum WHERE n.nspname='public' AND c.relname=$1 AND c.relkind='r' AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum`, name)
 	if err != nil {
 		return tableSchema{}, err
 	}
@@ -49,7 +49,7 @@ func (s *Service) postgresSchema(ctx context.Context, name string) (tableSchema,
 	for rows.Next() {
 		var c schemaColumn
 		var notNull bool
-		if err = rows.Scan(&c.Name, &c.DeclaredType, &notNull, &c.Default, &c.PrimaryKeyPosition); err != nil {
+		if err = rows.Scan(&c.Name, &c.DeclaredType, &notNull, &c.Default, &c.PrimaryKeyPosition, &c.Hidden); err != nil {
 			return tableSchema{}, err
 		}
 		if !identifierPattern.MatchString(c.Name) {
@@ -72,11 +72,17 @@ func (s *Service) postgresSchema(ctx context.Context, name string) (tableSchema,
 	if len(schema.ColumnsRaw) == 0 {
 		return tableSchema{}, ErrTableNotFound
 	}
+	if err = rows.Close(); err != nil {
+		return tableSchema{}, err
+	}
 	sort.Slice(schema.KeyColumns, func(i, j int) bool {
 		return schema.KeyColumns[i].PrimaryKeyPosition < schema.KeyColumns[j].PrimaryKeyPosition
 	})
 	if len(schema.KeyColumns) == 0 {
 		return tableSchema{}, fmt.Errorf("%w: PostgreSQL requires a declared primary key", ErrTableNotFound)
+	}
+	if err = s.applySchemaPolicy(ctx, &schema); err != nil {
+		return tableSchema{}, err
 	}
 	return schema, nil
 }

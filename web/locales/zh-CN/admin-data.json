@@ -1,4 +1,12 @@
 {
+  "databaseProtection": {
+    "financialEvidence": "财务、计量或审计证据不可修改。",
+    "secrets": "凭据和加密文档须通过对应的管理功能修改。",
+    "managedState": "此状态由所属工作进程管理。",
+    "generated": "此值由系统生成。",
+    "primaryKey": "现有主键不可修改。",
+    "protectedDependencies": "此操作会影响受保护的关联记录。"
+  },
   "adminDatabase": {
     "title": "数据库编辑器",
     "copy": "仅支持 PostgreSQL 类型化记录，不提供原始 SQL 和内部迁移表。",

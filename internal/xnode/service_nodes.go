@@ -68,6 +68,9 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	if previousErr != nil && !isMissing(previousErr) {
 		return node, previousErr
 	}
+	if previousErr == nil && previous.RetiredAt != nil {
+		return node, ErrConflict
+	}
 	if previousErr == nil && previous.AgentID != "" && previous.MultiplierFP != node.MultiplierFP {
 		if s.master == nil {
 			return node, ErrUnavailable
@@ -95,8 +98,12 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	return s.repo.XNodeNode(ctx, node.ID)
 }
 func (s *Service) Enrollment(ctx context.Context, id string) (string, string, error) {
-	if _, err := s.repo.XNodeNode(ctx, id); err != nil {
+	node, err := s.repo.XNodeNode(ctx, id)
+	if err != nil {
 		return "", "", err
+	}
+	if node.RetiredAt != nil {
+		return "", "", ErrConflict
 	}
 	token, err := ids.Token(32)
 	if err != nil {

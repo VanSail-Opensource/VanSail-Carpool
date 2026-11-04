@@ -18,22 +18,23 @@ var ErrUnavailable = errors.New("X-Node agent unavailable")
 var ErrInvalid = errors.New("invalid X-Node input")
 
 type Node struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	CountryCode      string    `json:"countryCode"`
-	ProviderName     string    `json:"providerName"`
-	MultiplierFP     int64     `json:"-"`
-	Multiplier       float64   `json:"multiplier"`
-	Enabled          bool      `json:"enabled"`
-	ConfigID         string    `json:"configId"`
-	SettingsCipher   string    `json:"-"`
-	TokenHash        []byte    `json:"-"`
-	AgentID          string    `json:"agentId"`
-	DesiredRevision  uint64    `json:"desiredRevision"`
-	AcceptedRevision uint64    `json:"acceptedRevision"`
-	AppliedRevision  uint64    `json:"appliedRevision"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
+	RetiredAt        *time.Time `json:"retiredAt,omitempty"`
+	ID               string     `json:"id"`
+	Name             string     `json:"name"`
+	CountryCode      string     `json:"countryCode"`
+	ProviderName     string     `json:"providerName"`
+	MultiplierFP     int64      `json:"-"`
+	Multiplier       float64    `json:"multiplier"`
+	Enabled          bool       `json:"enabled"`
+	ConfigID         string     `json:"configId"`
+	SettingsCipher   string     `json:"-"`
+	TokenHash        []byte     `json:"-"`
+	AgentID          string     `json:"agentId"`
+	DesiredRevision  uint64     `json:"desiredRevision"`
+	AcceptedRevision uint64     `json:"acceptedRevision"`
+	AppliedRevision  uint64     `json:"appliedRevision"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 type Configuration struct {

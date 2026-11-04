@@ -52,3 +52,12 @@ func (s *Server) xnodeDeleteResource(w http.ResponseWriter, r *http.Request, rem
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (s *Server) xnodeQueueRemoval(w http.ResponseWriter, r *http.Request) {
+	receipt, err := s.deps.XNode.QueueCommand(r.Context(), currentUser(r).ID, chiURLParam(r, "id"), r.Header.Get("Idempotency-Key"), xnode.CommandRequest{Name: "node.remove"})
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, receipt)
+}

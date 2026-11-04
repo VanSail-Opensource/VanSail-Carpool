@@ -22,8 +22,8 @@ export function useAutomaticLeases() {
       const value = await firewallApi.leases(query.value.trim(), page.value, controller.signal)
       if (latest.isCurrent(ticket)) {
         const lastPage = Math.max(1, Math.ceil(value.total / value.pageSize))
+        data.value = value
         if (page.value > lastPage) page.value = lastPage
-        else data.value = value
       }
     } catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'automaticLeases.loadFailed') }
     finally {
@@ -35,8 +35,8 @@ export function useAutomaticLeases() {
   }
   function changed() {
     latest.invalidate(); controller?.abort(); clearTimeout(timer)
-    // Search/page changes must not show rows from the previous query.
-    data.value = null; loading.value = true
+    // Preserve pager metadata while the next bounded page is fetched.
+    loading.value = true
     timer = setTimeout(() => void load(), 300)
   }
   watch(query, () => { if (page.value !== 1) page.value = 1; else changed() })

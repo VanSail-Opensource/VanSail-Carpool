@@ -13,3 +13,5 @@ The browser workspace uses a table on every viewport with contained horizontal s
 - `DatabaseMutationReviewPanel.vue` renders exact before/after values, backup guidance, and typed confirmation.
 - `types.ts` contains shared readonly and query-control contracts for the database feature.
 - Query filters, result/empty handoff, record-editor stages, field geometry, and table selection own local Motion feedback; table data remains stable during edits.
+
+Reviewed CRUD uses server table/column capabilities. Protected fields show localized reasons; insertable keys differ from immutable existing keys, generated defaults may be omitted, and protected tables disable mutation actions. Exact strings continue through review/apply; backup, replay and optimistic checks are server-owned.

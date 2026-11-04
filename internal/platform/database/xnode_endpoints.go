@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Store) XNodeEndpoints(ctx context.Context) ([]xnode.Endpoint, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher FROM xnode_endpoints ORDER BY name,id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,node_id,inbound_tag,name,address,port,enabled,hidden,overrides_cipher FROM xnode_endpoints WHERE node_id IN(SELECT id FROM xnode_nodes WHERE retired_at IS NULL) ORDER BY name,id`)
 	if err != nil {
 		return nil, err
 	}

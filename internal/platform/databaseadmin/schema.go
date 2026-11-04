@@ -56,6 +56,9 @@ func quoteIdentifier(value string) string {
 }
 
 func columnFamily(declared string) storageFamily {
+	if strings.HasPrefix(strings.ToLower(declared), "numeric(") || strings.HasPrefix(strings.ToLower(declared), "decimal(") {
+		return storageFamilyNumeric
+	}
 	switch strings.ToLower(declared) {
 	case "bigint", "integer", "smallint":
 		return storageFamilyInteger

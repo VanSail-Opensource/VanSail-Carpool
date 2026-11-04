@@ -35,7 +35,8 @@ func (m *automaticLeaseManager) page(search string, page, size int, watermarks [
 	watermarks = slices.Clone(watermarks)
 	slices.Sort(watermarks)
 	result.Total = len(items)
-	start := min((page-1)*size, len(items))
+	result.Page = min(page, max(1, (len(items)+size-1)/size))
+	start := min((result.Page-1)*size, len(items))
 	for _, item := range items[start:min(start+size, len(items))] {
 		pending, _ := slices.BinarySearch(watermarks, item.generation)
 		view := AutomaticLeaseView{IP: item.ip.String(), FirstActive: item.first, LeaseStarted: item.started, RenewAfter: item.started.Add(item.until.Sub(item.started) / 2), ExpiresAt: item.until, RemainingSeconds: max(0, int64(item.until.Sub(now)/time.Second)), ObservationCount: item.observations, RenewalCount: item.renewals, SourceCount: item.sourceCount, SourceCountTruncated: item.sourcesTruncated, SourceNodeIDs: []string{}, PendingNodes: pending, BanReleasePending: m.pendingBans[item.ip] != 0}

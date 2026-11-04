@@ -66,7 +66,8 @@ function values(): Record<string, DatabaseValue> {
   const output: Record<string, DatabaseValue> = {}
   for (const column of props.table.columns) {
     const current = draft[column.name]
-    if (!column.editable || column.sensitive) continue
+    if (!(props.action === 'insert' ? column.insertable ?? column.editable : column.editable) || column.sensitive) continue
+    if (props.action === 'insert' && column.hasDefault && !textDraft[column.name] && typeof current !== 'boolean' && !nullDraft[column.name]) continue
     if (nullDraft[column.name]) output[column.name] = null
     else if ((typeof current === 'object' && current !== null) || /BLOB|BINARY/i.test(column.declaredType)) output[column.name] = { blobBase64: textDraft[column.name] ?? '' }
     else output[column.name] = typeof current === 'boolean' ? current : textDraft[column.name]
@@ -111,6 +112,7 @@ function submit(): void {
                 <DatabaseRecordFields
                   v-else
                   :columns="table.columns"
+                  :insert="action === 'insert'"
                   :draft="draft"
                   :text-draft="textDraft"
                   :null-draft="nullDraft"

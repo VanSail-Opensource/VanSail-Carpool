@@ -28,9 +28,10 @@ const settingsOpen = shallowRef(false)
     <UProgress v-if="loading" :aria-label="t('adminSection.loadingContent')" />
     <UAlert v-if="error" color="warning" :title="error" :description="data ? t('automaticLeases.stale') : undefined" />
     <UButton v-if="error" class="justify-self-start" variant="ghost" :label="t('common.tryAgain')" @click="load" />
-    <p v-if="data && !data.items.length" role="status" class="py-6 text-sm text-muted">{{ t('automaticLeases.empty') }}</p>
-    <XNodeAutomaticLeaseTable v-else-if="data" :items="data.items" :nodes="nodes" />
-    <UPagination v-if="data && data.total > data.pageSize" v-model:page="page" :items-per-page="data.pageSize" :total="data.total" :sibling-count="0" :disabled="loading" size="sm" class="justify-self-center" />
+    <p v-if="data && !loading && !data.items.length" role="status" class="py-6 text-sm text-muted">{{ t('automaticLeases.empty') }}</p>
+    <XNodeAutomaticLeaseTable v-else-if="data && !loading" :items="data.items" :nodes="nodes" />
+    <p v-if="data" class="text-center text-xs text-muted" role="status">{{ t('automaticLeases.pages', { page: data.page, total: Math.max(1, Math.ceil(data.total / data.pageSize)) }) }}</p>
+    <UPagination v-if="data && data.total > data.pageSize" v-model:page="page" :items-per-page="data.pageSize" :total="data.total" :sibling-count="1" show-edges :disabled="loading" size="sm" class="justify-self-center" />
     <p class="text-xs text-muted">{{ t('automaticLeases.memoryHint') }}</p>
   </section>
 </template>

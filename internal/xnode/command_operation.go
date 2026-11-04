@@ -39,6 +39,9 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 	if json.Unmarshal([]byte(raw), &request) != nil || !validNodeCommand(request) {
 		return ErrInvalid
 	}
+	if request.Name == "node.remove" {
+		return s.runNodeRemoval(ctx, operation, items[0].TargetID)
+	}
 	preflight, stopPreflight := context.WithTimeout(ctx, 30*time.Second)
 	args, err := s.commandArguments(preflight, items[0].TargetID, request)
 	stopPreflight()

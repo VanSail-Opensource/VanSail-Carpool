@@ -86,15 +86,16 @@ async function chooseTable(name: string): Promise<void> { closeEditor(); search.
 </script>
 <template>
   <section class="admin-panel database-panel">
-    <header class="admin-panel__heading"><div><h2>{{ t('adminDatabase.title') }}</h2><p>{{ t('adminDatabase.copy') }}</p></div><UButton icon="i-ph-plus" :disabled="!selectedTable || busy" :label="t('adminDatabase.insertRow')" @click="openEditor('insert')" /></header>
+    <header class="admin-panel__heading"><div><h2>{{ t('adminDatabase.title') }}</h2><p>{{ t('adminDatabase.copy') }}</p></div><UButton icon="i-ph-plus" :disabled="!selectedTable || selectedTable.allowInsert === false || busy" :label="t('adminDatabase.insertRow')" @click="openEditor('insert')" /></header>
     <InlineNotice tone="warning" :title="t('adminDatabase.bypassTitle')">{{ t('adminDatabase.bypassCopy') }}</InlineNotice>
     <InlineNotice v-if="lastRescueBackupId" tone="success" :title="t('adminDatabase.appliedTitle')">{{ t('adminDatabase.appliedCopy', { id: lastRescueBackupId }) }}</InlineNotice>
     <AdminSectionState :loading="loading" :error="error" @retry="loadTables">
       <div class="database-workspace">
         <DatabaseTablePicker :tables="tables" :selected="selectedTableName" :busy="busy" @select="chooseTable" /><section class="database-data" :aria-label="t('adminDatabase.rows')">
+          <p v-if="selectedTable?.protectionReason" class="text-sm text-muted">{{ t(`databaseProtection.${selectedTable.protectionReason}`) }}</p>
           <DatabaseQueryControls :search="search" :filters="filters" :column-items="columnItems" :operators="operators" @update:search="updateSearch" @update:filters="updateFilters" />
           <UTable :data="tableData" :columns="tableColumns" :loading="busy" class="admin-table">
-            <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :disabled="busy" :aria-label="t('adminDatabase.editRow')" @click="openEditor('update', row.original.record)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :disabled="busy" :aria-label="t('adminDatabase.deleteRow')" @click="openEditor('delete', row.original.record)" /></div></template>
+            <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :disabled="busy || selectedTable?.allowUpdate === false" :aria-label="t('adminDatabase.editRow')" @click="openEditor('update', row.original.record)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :disabled="busy || selectedTable?.allowDelete === false" :aria-label="t('adminDatabase.deleteRow')" @click="openEditor('delete', row.original.record)" /></div></template>
             <template #loading><AdminSectionState :loading="true" :error="null" /></template>
             <template #empty><div class="empty-inline"><h3>{{ t('adminDatabase.noRows') }}</h3><p>{{ t('adminDatabase.empty') }}</p></div></template>
           </UTable>

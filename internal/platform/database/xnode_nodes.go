@@ -10,9 +10,9 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const xnodeNodeSelect = `SELECT id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,token_hash,COALESCE(agent_id,''),desired_revision,accepted_revision,applied_revision,created_at,updated_at FROM xnode_nodes`
+const xnodeNodeSelect = `SELECT id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,token_hash,COALESCE(agent_id,''),desired_revision,accepted_revision,applied_revision,created_at,updated_at,retired_at FROM xnode_nodes`
 
-const saveXNodeNodeSQL = `INSERT INTO xnode_nodes(id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,country_code=excluded.country_code,provider_name=excluded.provider_name,multiplier_fp=excluded.multiplier_fp,enabled=excluded.enabled,config_id=excluded.config_id,settings_cipher=excluded.settings_cipher,updated_at=excluded.updated_at`
+const saveXNodeNodeSQL = `INSERT INTO xnode_nodes(id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,country_code=excluded.country_code,provider_name=excluded.provider_name,multiplier_fp=excluded.multiplier_fp,enabled=excluded.enabled,config_id=excluded.config_id,settings_cipher=excluded.settings_cipher,updated_at=excluded.updated_at WHERE xnode_nodes.retired_at IS NULL`
 
 func xnodeNodeArgs(node xnode.Node) []any {
 	return []any{node.ID, node.Name, node.CountryCode, node.ProviderName, node.MultiplierFP, boolInt(node.Enabled), node.ConfigID, node.SettingsCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC())}
@@ -22,12 +22,20 @@ func scanXNodeNode(row rowScanner) (xnode.Node, error) {
 	var node xnode.Node
 	var enabled int
 	var created, updated string
-	err := row.Scan(&node.ID, &node.Name, &node.CountryCode, &node.ProviderName, &node.MultiplierFP, &enabled, &node.ConfigID, &node.SettingsCipher, &node.TokenHash, &node.AgentID, &node.DesiredRevision, &node.AcceptedRevision, &node.AppliedRevision, &created, &updated)
+	var retired sql.NullString
+	err := row.Scan(&node.ID, &node.Name, &node.CountryCode, &node.ProviderName, &node.MultiplierFP, &enabled, &node.ConfigID, &node.SettingsCipher, &node.TokenHash, &node.AgentID, &node.DesiredRevision, &node.AcceptedRevision, &node.AppliedRevision, &created, &updated, &retired)
 	if errors.Is(err, sql.ErrNoRows) {
 		return node, xnode.ErrNotFound
 	}
 	if err != nil {
 		return node, err
+	}
+	if retired.Valid {
+		at, e := time.Parse(time.RFC3339Nano, retired.String)
+		if e != nil {
+			return node, e
+		}
+		node.RetiredAt = &at
 	}
 	node.Enabled, node.Multiplier = enabled == 1, float64(node.MultiplierFP)/float64(xnode.MultiplierScale)
 	node.CreatedAt, err = time.Parse(time.RFC3339Nano, created)
@@ -39,7 +47,7 @@ func scanXNodeNode(row rowScanner) (xnode.Node, error) {
 }
 
 func (s *Store) XNodeNodes(ctx context.Context) ([]xnode.Node, error) {
-	rows, err := s.db.QueryContext(ctx, xnodeNodeSelect+` ORDER BY name,id`)
+	rows, err := s.db.QueryContext(ctx, xnodeNodeSelect+` WHERE retired_at IS NULL ORDER BY name,id`)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +66,7 @@ func (s *Store) XNodeNode(ctx context.Context, id string) (xnode.Node, error) {
 	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE id=$1`, id))
 }
 func (s *Store) XNodeNodeByToken(ctx context.Context, hash []byte) (xnode.Node, error) {
-	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE token_hash=$1`, hash))
+	return scanXNodeNode(s.db.QueryRowContext(ctx, xnodeNodeSelect+` WHERE token_hash=$1 AND retired_at IS NULL`, hash))
 }
 
 func (s *Store) SaveXNodeNode(ctx context.Context, node xnode.Node) error {
@@ -72,7 +80,7 @@ func (s *Store) DeleteXNodeNode(ctx context.Context, id string) error {
 	return err
 }
 func (s *Store) RotateXNodeToken(ctx context.Context, id string, hash []byte) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3`, hash, stamp(time.Now().UTC()), id)
+	_, err := s.db.ExecContext(ctx, `UPDATE xnode_nodes SET token_hash=$1,updated_at=$2 WHERE id=$3 AND retired_at IS NULL`, hash, stamp(time.Now().UTC()), id)
 	return err
 }
 func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent string) error {
@@ -82,7 +90,7 @@ func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent strin
 		return err
 	}
 	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=$1 WHERE id=$2 AND (agent_id IS NULL OR agent_id=$3)`, agent, id, agent)
+	result, err := tx.ExecContext(ctx, `UPDATE xnode_nodes SET agent_id=$1 WHERE id=$2 AND retired_at IS NULL AND (agent_id IS NULL OR agent_id=$3)`, agent, id, agent)
 	if err != nil {
 		return err
 	}

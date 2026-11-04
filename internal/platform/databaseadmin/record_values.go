@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func publicValue(column schemaColumn, raw any) (Value, error) {
@@ -24,6 +25,8 @@ func publicValue(column schemaColumn, raw any) (Value, error) {
 		}
 	}
 	switch value := raw.(type) {
+	case time.Time:
+		return StringValue(value.UTC().Format(time.RFC3339Nano)), nil
 	case int64:
 		return StringValue(strconv.FormatInt(value, 10)), nil
 	case float64:
@@ -69,6 +72,8 @@ func recordHash(schema tableSchema, raw, keyRaw []any) (string, error) {
 
 func canonicalRaw(value any) string {
 	switch typed := value.(type) {
+	case time.Time:
+		return "timestamp:" + typed.UTC().Format(time.RFC3339Nano)
 	case nil:
 		return "null:"
 	case int64:
@@ -91,6 +96,8 @@ func canonicalKeyValue(column schemaColumn, raw any) (string, error) {
 		return "", fmt.Errorf("%w: primary key %s is NULL", ErrInvalidValue, column.Name)
 	}
 	switch value := raw.(type) {
+	case time.Time:
+		return value.UTC().Format(time.RFC3339Nano), nil
 	case int64:
 		return strconv.FormatInt(value, 10), nil
 	case float64:

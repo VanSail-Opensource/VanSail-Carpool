@@ -1,4 +1,17 @@
 {
+  "nodeRemoval": {
+    "title": "移除 {name}",
+    "remove": "移除",
+    "description": "将停止准入、核对流量账务并撤销注册凭据。历史流量和财务证据会保留。",
+    "done": "已从活动节点列表移除，历史账务已保留。",
+    "blockers": {
+      "XNODE_REMOVAL_BINDINGS": "请先解除所有车队绑定，包括已停用的车队。",
+      "XNODE_REMOVAL_SERVICE": "仍有有效服务或诊断依赖此节点。",
+      "XNODE_REMOVAL_ROUTING": "已保存的路由方案仍依赖此节点，请先移除相关选择。",
+      "XNODE_REMOVAL_OFFLINE": "请重新连接节点以确认最终账务屏障。准入保持停用。",
+      "XNODE_REMOVAL_PENDING_ACCOUNTING": "账务仍待处理或存在未解决的缺口。准入保持停用，请核对后重试。"
+    }
+  },
   "nodeAdmin": {
     "forceReload": "强制恢复运行时",
     "reloadHint": "常规重载会重新检查依赖材料并保留未改变的监听器。强制恢复会重启运行时。",

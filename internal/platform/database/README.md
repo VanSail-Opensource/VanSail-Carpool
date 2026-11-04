@@ -1071,3 +1071,5 @@ per node, with explicit truncation. Historical node IDs remain readable after
 node deletion, and absent history is never inferred from group totals.
 `xnode_payg_node_history_test.go` covers savepoint discard, replay, financial
 rollback, owner isolation, removed nodes, retention and read bounds.
+
+Migration 38 adds node retirement and parent-locking binding guards. xnode_node_removal.go fences final deletion/retirement with row locks and the compile revision, keeps historical references and audit evidence, and excludes retirement from active inventory without deleting accounting.

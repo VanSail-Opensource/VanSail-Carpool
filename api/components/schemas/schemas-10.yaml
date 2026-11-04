@@ -189,6 +189,12 @@ DatabaseColumn:
     primaryKeyPosition:
       type: integer
       minimum: 0
+    insertable:
+      type: boolean
+    hasDefault:
+      type: boolean
+    protectionReason:
+      type: string
     editable:
       type: boolean
     sensitive:
@@ -206,6 +212,14 @@ DatabaseTable:
       type: array
       items:
         $ref: '../../openapi.yaml#/components/schemas/DatabaseColumn'
+    allowInsert:
+      type: boolean
+    allowUpdate:
+      type: boolean
+    allowDelete:
+      type: boolean
+    protectionReason:
+      type: string
     highRisk:
       type: boolean
       const: true

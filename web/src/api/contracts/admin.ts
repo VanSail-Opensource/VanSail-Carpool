@@ -4,6 +4,9 @@ export interface DatabaseColumn {
   declaredType: string
   nullable: boolean
   primaryKeyPosition: number
+  insertable?: boolean
+  hasDefault?: boolean
+  protectionReason?: string
   editable: boolean
   sensitive: boolean
 }
@@ -11,6 +14,10 @@ export interface DatabaseColumn {
 export interface DatabaseTable {
   name: string
   columns: DatabaseColumn[]
+  allowInsert?: boolean
+  allowUpdate?: boolean
+  allowDelete?: boolean
+  protectionReason?: string
   highRisk: boolean
   warning: string
 }

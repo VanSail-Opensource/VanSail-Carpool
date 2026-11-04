@@ -9181,6 +9181,12 @@
           "notNull": true,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "retired_at",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },
@@ -10063,6 +10069,9 @@
     "provider_operation_items_open_host_guard",
     "retire_xnode_firewall_member",
     "usdt_terminal_evidence_immutable",
-    "user_notification_events_immutable"
+    "user_notification_events_immutable",
+    "xnode_group_retirement_guard",
+    "xnode_service_retirement_guard",
+    "xnode_endpoint_retirement_guard"
   ]
 }
