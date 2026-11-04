@@ -39,11 +39,12 @@ onScopeDispose(() => latest.dispose())
       <section class="subscription-content">
         <h1>{{ t('publicSubscription.title') }}</h1>
         <div v-if="subscription.loading.value" class="grid gap-4" role="status" :aria-label="t('common.loading')"><USkeleton class="h-16 w-full" /><USkeleton class="h-12 w-full" /><UProgress /></div>
-        <UAlert v-else-if="subscription.failed.value" color="warning" variant="soft" :title="t('publicSubscription.unavailable')" :description="t('publicSubscription.unavailableHint')" :actions="[{ label: t('common.tryAgain'), onClick: subscription.load }]" />
+        <UAlert v-else-if="subscription.failed.value && !subscription.metadata.value" color="warning" variant="soft" :title="t('publicSubscription.unavailable')" :description="t('publicSubscription.unavailableHint')" :actions="[{ label: t('common.tryAgain'), onClick: subscription.load }]" />
         <div v-else-if="subscription.metadata.value" class="grid gap-5 min-w-0">
           <div class="subscription-facts"><div><small>{{ t('publicSubscription.account') }}</small><strong>{{ subscription.metadata.value.username }}</strong></div><div><small>{{ t('publicSubscription.usage') }}</small><strong>{{ formatBytes(subscription.metadata.value.usedBytes) }} / {{ subscription.metadata.value.limitBytes === '0' ? t('publicSubscription.unlimited') : formatBytes(subscription.metadata.value.limitBytes) }}</strong></div><div><small>{{ t('publicSubscription.expiry') }}</small><strong>{{ formatDate(subscription.metadata.value.expiresAt ?? undefined) }}</strong></div></div>
           <UAlert v-if="subscription.metadata.value.incomplete" color="warning" variant="soft" :title="t('publicSubscription.incomplete')" />
-          <UAlert v-if="!subscription.metadata.value.active" color="neutral" variant="soft" :title="t('publicSubscription.noAccess')" />
+          <UAlert v-if="subscription.metadata.value.ready === false" color="neutral" :title="t('subscription.firstSyncPending')" :description="t('subscription.firstSyncHint')" />
+          <UAlert v-else-if="!subscription.metadata.value.active" color="neutral" variant="soft" :title="t('publicSubscription.noAccess')" />
           <UAlert v-else-if="!Object.values(subscription.metadata.value.formats).some(Boolean)" color="neutral" variant="soft" :title="t('memberNodes.noFormats')" />
           <UFormField :label="t('publicSubscription.format')"><USelect v-model="subscription.format.value" :items="formats" :disabled="!subscription.metadata.value.active || !formats.some(item => !item.disabled)" class="w-full" /></UFormField>
           <SubscriptionFormatDiagnostics :diagnostics="subscription.metadata.value.formatDiagnostics" />

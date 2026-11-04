@@ -242,3 +242,8 @@ fresh empty IPs, unavailable/stale activity and recovery without production data
 constructed owner observations and manual grants. Query switches include `zh`,
 `slow`, `empty`, `error`, `stale`, `incomplete`, `disabled` and `grant-error`.
 It uses the member root assets; browser administrator fixtures remain independent.
+
+Subscription fixtures add first-sync pending state and Home PAYG usage with
+`mode=home&inactive&payg`; `history-empty`, `history-error`, `history-slow`,
+`history-stale` and `history-truncated` exercise retained-history states. The
+constructed data includes exact byte totals beyond Number integer precision.

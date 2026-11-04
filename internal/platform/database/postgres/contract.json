@@ -8851,6 +8851,12 @@
           "notNull": true,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "first_synced_at",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },

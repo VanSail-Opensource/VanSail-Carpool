@@ -59,3 +59,8 @@ obsolete pending jobs/receipts receive explicit retirement codes, existing block
 are queued for confirmed cleanup, and the unused combo whitelist quota is dropped.
 No financial/audit evidence or terminal receipt is rewritten. Encrypted DIY
 whitelists are removed by startup versioned resealing before HTTP admission.
+
+Schema 37 adds only nullable owner first-sync evidence on xnode_identities.
+No node-wide readiness or historical traffic is used as a backfill. Exact
+configuration membership is supplied by authenticated applied-state processing;
+the timestamp is written once and ordinary identity upserts preserve it.

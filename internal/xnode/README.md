@@ -1056,3 +1056,18 @@ release mechanism. Duplicate grants preserve deadlines and manual grants have no
 observed time until telemetry. Initial lease time is immutable through renewal.
 DIY document version 3 retires only whitelist data through encrypted resealing;
 tuning, split and routing choices survive. Paid exemption creation is retired.
+
+Member subscription readiness is centralized in `subscription_readiness.go`.
+Only exact authenticated state.applied membership can stage proof. Joined master
+reconciliation persists first_synced_at once on the owner identity; no traffic
+acknowledgment waits for it. Old node-wide applied revisions cannot backfill user
+membership, so pending owners request a fresh per-node synchronization. Metadata,
+Home URLs, host links and bearer exports withhold credentials until proof; normal
+export/access rules continue afterward. Service subscriptions remain independent.
+
+`routing_entitlements.go` prunes only authoritative endpoint/entitlement loss.
+Disabled nodes/endpoints and provisioning or quota pauses suspend the graph while
+preserving IDs. `routing_inventory_view.go` keeps refreshed labels for unavailable
+choices. Dependency changes compile via the existing revoke/apply/enable queue;
+legacy node-only graphs never rebind automatically after dependency changes.
+Owner PAYG history uses the existing exact recorded 72-hour per-node repository.

@@ -36,6 +36,11 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	if err != nil {
 		return subscription.MemberSubscription{}, err
 	}
+	readiness, err := a.native.SubscriptionReadiness(ctx, identity)
+	if err != nil {
+		return subscription.MemberSubscription{}, err
+	}
+	links = links && readiness.Ready
 	proxies, err := a.native.MemberProxies(ctx, identity.UserID)
 	if err != nil {
 		return subscription.MemberSubscription{}, err
@@ -59,6 +64,7 @@ func (a proxyProvider) LoadMemberSubscription(ctx context.Context, id string, en
 	}
 	result := subscription.MemberSubscription{Hosts: []subscription.SubscriptionHost{}}
 	result = projectMemberSubscription(proxies, enabled, links)
+	result.Ready, result.FirstSyncedAt = readiness.Ready, readiness.FirstSyncedAt
 
 	if links {
 		link, err := a.native.SubscriptionURL(identity)

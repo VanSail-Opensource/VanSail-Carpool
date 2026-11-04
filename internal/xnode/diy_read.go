@@ -63,7 +63,13 @@ func (s *Service) ExportProxiesForUser(ctx context.Context, user string, proxies
 	if user == "" {
 		return s.presentHosts(ctx, user, proxies)
 	}
-	var err error
+	identity, err := s.repo.XNodeIdentityByUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	if identity.FirstSyncedAt == nil {
+		return []subscription.Proxy{}, nil
+	}
 	proxies, err = s.visiblePAYGExports(ctx, user, proxies)
 	if err != nil {
 		return nil, err

@@ -1,5 +1,7 @@
 package subscription
 
+import "time"
+
 // SubscriptionHost contains one owner's native import link and display metadata.
 type SubscriptionHost struct {
 	PublishedName string   `json:"publishedName"`
@@ -17,6 +19,8 @@ type SubscriptionHost struct {
 
 // MemberSubscription is the owner's locally authorized subscription view.
 type MemberSubscription struct {
+	Ready           bool               `json:"ready"`
+	FirstSyncedAt   *time.Time         `json:"firstSyncedAt"`
 	ActiveCombo     bool               `json:"activeCombo"`
 	SubscriptionURL *string            `json:"subscriptionUrl"`
 	Hosts           []SubscriptionHost `json:"hosts"`

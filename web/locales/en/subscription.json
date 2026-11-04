@@ -1,5 +1,7 @@
 {
   "subscription": {
+    "firstSyncPending": "Waiting for the first node sync",
+    "firstSyncHint": "Your links appear after a node confirms your eligible account in its applied configuration. Synchronization is requested automatically.",
     "title": "Subscription",
     "copy": "Your subscription and individual host import links.",
     "hosts": "Accessible hosts",

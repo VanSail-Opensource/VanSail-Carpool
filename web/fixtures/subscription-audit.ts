@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { api } from '@/api/client'
+import { paygApi } from '@/api/payg'
 import { pricingApi } from '@/api/pricing'
 import { ApiError } from '@/api/http'
 import { subscriptionApi, type MemberSubscription } from '@/api/subscription'
@@ -19,13 +20,18 @@ import SubscriptionAudit from './SubscriptionAudit.vue'
 
 const params = new URLSearchParams(location.search)
 ipLookupApi.state = async () => ({ enabled: false }) as never
-xnodeMemberApi.subscription = async () => ({ username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, formats: { native: true, base64: true, xray: true, 'sing-box': true, clash: true, stash: !params.has('diagnostics') }, formatDiagnostics: params.has('diagnostics') ? { 'sing-box': { code: 'SUBSCRIPTION_ENDPOINTS_EXCLUDED', excludedEndpoints: 2 }, stash: { code: 'SUBSCRIPTION_FORMAT_RENDER_FAILED', excludedEndpoints: 0 } } : undefined })
+xnodeMemberApi.subscription = async () => ({ ready: !params.has('first-sync'), firstSyncedAt: params.has('first-sync') ? null : new Date().toISOString(), username: 'native-member', active: true, incomplete: false, url: 'https://panel.example/subscription/' + 'a'.repeat(43), downloadUrl: 'https://panel.example/api/v1/subscriptions/' + 'a'.repeat(43), usedBytes: '0', limitBytes: '1000', expiresAt: null, formats: { native: true, base64: true, xray: true, 'sing-box': true, clash: true, stash: !params.has('diagnostics') }, formatDiagnostics: params.has('diagnostics') ? { 'sing-box': { code: 'SUBSCRIPTION_ENDPOINTS_EXCLUDED', excludedEndpoints: 2 }, stash: { code: 'SUBSCRIPTION_FORMAT_RENDER_FAILED', excludedEndpoints: 0 } } : undefined })
 xnodeMemberApi.routing = async () => ({ plan: { revision: 0, choices: [], phase: 'active', reason: '', operationId: '' }, nodes: [], templates: [], paths: [] })
 xnodeMemberApi.previewRouting = async () => ({ paths: [], trace: null })
 xnodeMemberApi.metrics = async () => {
   if (params.has('metrics-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 1200))
   return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: params.has('policy-expired'), incomplete: params.has('unknown'), reasons: params.has('policy-expired') ? [{ nodeId: 'hdnl', reason: 'expired', scope: 'new_connection' }] : [], fetchedAt: new Date().toISOString() }
+}
+paygApi.history = async () => {
+ if (params.has('history-slow')) await new Promise(resolve => setTimeout(resolve,1800))
+ if (params.has('history-error')) throw new ApiError(503,{code:'XNODE_UNAVAILABLE',message:''})
+ return { from:new Date(Date.now()-72*3600000).toISOString(),to:new Date(Date.now()-(params.has('history-stale')?300000:0)).toISOString(),hours:[],truncated:params.has('history-truncated'),nodes:params.has('history-empty')?[]:[{nodeId:'tokyo',name:'Tokyo native',countryCode:'JP',uploadBytes:'9007199254740993',downloadBytes:'1024'},{nodeId:'retired',name:'Frankfurt historical',countryCode:'DE',uploadBytes:'12345678900000000',downloadBytes:'5432109876543210'}] }
 }
 if (params.has('telegram')) Object.assign(window, { Telegram: { WebApp: { platform: 'ios', version: '9.0', initData: '', initDataUnsafe: {}, BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} } } } })
 const hostNames: Record<string, string> = {}
@@ -34,8 +40,9 @@ const now = Date.now()
 const at = (offset: number) => new Date(now + offset).toISOString()
 const day = 86_400_000
 const data = (): MemberSubscription => ({
-  activeCombo: !params.has('inactive'), subscriptionUrl: params.has('inactive') && !params.has('payg') ? null : 'https://subscription.example/import/revision-' + state.revocations,
-  hosts: params.has('empty') || params.has('inactive') && !params.has('payg') ? [] : [
+  ready: !params.has('first-sync'), firstSyncedAt: params.has('first-sync') ? null : at(-day),
+  activeCombo: !params.has('inactive'), subscriptionUrl: params.has('first-sync') ? null : params.has('inactive') && !params.has('payg') ? null : 'https://subscription.example/import/revision-' + state.revocations,
+  hosts: params.has('first-sync') || params.has('empty') || params.has('inactive') && !params.has('payg') ? [] : [
     { uuid: 'tokyo-edge', publishedName: 'Tokyo {price}', nameOverride: hostNames['tokyo-edge'] || '', priceLabel:'1.0x',customRoute:true,splitXhttp:false, name: (hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x'), countryCodes: ['JP'], squadUuids: ['international'], link: 'vless://fixture-' + state.revocations + '@tokyo.example:443#'+encodeURIComponent((hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x')), linkErrorCode: '' },
     { uuid: 'shared-edge',customRoute:false,splitXhttp:true, name: 'Shared transit with a deliberately long host name to check narrow layouts', countryCodes: ['DE', 'NL'], squadUuids: ['international', 'europe'], link: 'trojan://fixture-' + state.revocations + '@europe.example:443#Shared', linkErrorCode: '' },
     { uuid: 'unknown-edge', name: 'Unmeasured host', countryCodes: [], squadUuids: ['europe'], link: null, linkErrorCode: 'SUBSCRIPTION_LINK_UNAVAILABLE' },

@@ -60,7 +60,7 @@ func (s *Service) loadRoutingEndpoints(ctx context.Context, identity Identity, i
 		}
 		in.byEndpoint[endpoint.ID] = endpoint
 		in.vertices[routingVertex(endpoint)] = endpoint.NodeID
-		in.available = append(in.available, RoutingEndpoint{ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port})
+		in.available = append(in.available, RoutingEndpoint{Available: true, ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port})
 		if in.endpoints[endpoint.NodeID].ID == "" {
 			in.endpoints[endpoint.NodeID] = endpoint // Preserve the previous deterministic default.
 		}
@@ -112,4 +112,13 @@ func (in routingInput) publicPaths(paths []routingmatch.Path) []routingmatch.Pat
 		}
 	}
 	return paths
+}
+
+func stableRoutingChoices(choices []RoutingChoice) bool {
+	for _, choice := range choices {
+		if choice.InboundEndpointID == "" || choice.OutboundEndpointID == "" {
+			return false
+		}
+	}
+	return true
 }

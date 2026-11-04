@@ -69,6 +69,7 @@ Dashboard:
       oneOf:
         - $ref: '../../openapi.yaml#/components/schemas/Statistics'
         - type: 'null'
+    subscriptionReady: {type: boolean}
     subscriptionUrl:
       type: [string, 'null']
       format: uri

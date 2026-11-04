@@ -1,4 +1,16 @@
 {
+  "paygHistory": {
+    "title": "PAYG 用量",
+    "hint": "滚动 72 小时内按节点记录的上传和下载流量。",
+    "total": "已记录总量：{traffic}",
+    "exact": "{bytes} 字节",
+    "directions": "上传 {upload} · 下载 {download}",
+    "window": "{from} 至 {to}",
+    "empty": "保留的历史中尚无流量记录。",
+    "loadFailed": "无法加载 PAYG 历史。",
+    "stale": "当前显示上次获取的历史，请刷新更新。",
+    "truncated": "历史记录不完整，占比仅涵盖保留的节点记录。"
+  },
   "payg": {
     "title": "按量付费",
     "combo": "套餐",

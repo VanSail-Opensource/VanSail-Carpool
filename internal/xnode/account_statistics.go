@@ -13,6 +13,9 @@ func (s *Service) Statistics(ctx context.Context, id string) (model.Statistics, 
 	if err != nil {
 		return result, "", err
 	}
+	if _, err = s.SubscriptionReadiness(ctx, identity); err != nil {
+		return result, "", err
+	}
 	link, err := s.SubscriptionURL(identity)
 	return result, link, err
 }

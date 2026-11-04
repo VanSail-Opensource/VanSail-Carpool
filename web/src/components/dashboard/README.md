@@ -40,3 +40,12 @@ offline requires complete fresh coverage reporting no open flows.
 - `EntitlementSummary.vue` renders the active combo directly and keeps queued purchase controls; member usage forecasts are not requested.
 
 Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageBar.vue`, `TrafficUsageBarDetails.vue`, `TrafficUsageDetails.vue`.
+
+When no combo is active and the balance is positive, `UserHome.vue` composes
+`PAYGUsagePanel.vue` in place of the quota meter. It uses the existing visibility
+aware subscription-data reader against GET /api/v1/payg/history. PAYGUsagePie uses
+ChartContainer/Unovis and the existing chart-selection helper. Exact bytes remain
+strings/BigInt; only bounded proportional shares are numbers. Native legend
+buttons and pointer/touch slices expose identical name/traffic/percentage detail.
+Empty history does not claim historical zero use; stale/errors and truncated
+attribution remain explicit. No history is reconstructed from financial totals.

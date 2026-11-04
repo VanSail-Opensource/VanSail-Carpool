@@ -12,6 +12,7 @@ import (
 )
 
 type agentPeer struct {
+	firstSync             *appliedMemberConfig // protected by mu; membership of the exact sent revision
 	logger                *slog.Logger
 	computePool           bool         // immutable, negotiated protocol extension
 	trafficRetry          trafficRetry // mu; bounded retries for an unchanged rejected journal head

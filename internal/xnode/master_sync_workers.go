@@ -62,6 +62,9 @@ func (m *Master) syncPeer(ctx context.Context, peer *agentPeer, now time.Time) {
 		}
 	}
 	if err == nil {
+		err = m.confirmFirstSync(child, peer)
+	}
+	if err == nil {
 		err = m.syncNodeLocked(child, peer, force)
 	}
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-func TestOnboardedMemberGetsStableSubscriptionWithoutPurchase(t *testing.T) {
+func TestOnboardedMemberKeepsCredentialsPrivateUntilFirstSync(t *testing.T) {
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	user, _, err := f.store.UpsertTelegramUser(ctx, model.TelegramProfile{ID: 99102, FirstName: "New member"}, false)
@@ -44,8 +44,8 @@ func TestOnboardedMemberGetsStableSubscriptionWithoutPurchase(t *testing.T) {
 			t.Fatal(err)
 		}
 		metadata, err := f.service.OwnedSubscription(ctx, user.ID)
-		if err != nil || metadata.URL == "" || metadata.DownloadURL == "" || metadata.Active {
-			t.Fatal("subscription missing or unauthorized access granted", metadata, err)
+		if err != nil || metadata.URL != "" || metadata.DownloadURL != "" || metadata.Active || metadata.Ready {
+			t.Fatal("unconfirmed subscription disclosed", metadata, err)
 		}
 		if link != "" && link != metadata.URL {
 			t.Fatal("retry rotated subscription")

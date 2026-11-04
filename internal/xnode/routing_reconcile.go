@@ -48,17 +48,27 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		} else if pruned {
 			continue
 		}
-		if plan.Phase != "active" {
+		if plan.Phase != "active" && plan.Phase != "disabled" {
 			continue
 		}
 		input, validationErr := s.routingInput(ctx, identity, doc.Choices)
 		if validationErr != nil {
-			if err = repo.AdvanceXNodeRouting(ctx, plan.ProxyUserID, plan.OperationID, "active", "disabled", s.now().UTC()); err != nil {
-				return err
+			if plan.Phase == "active" {
+				if err = repo.AdvanceXNodeRouting(ctx, plan.ProxyUserID, plan.OperationID, "active", "disabled", s.now().UTC()); err != nil {
+					return err
+				}
 			}
 			continue
 		}
-		if input.dependencies == doc.Dependencies {
+		if plan.Phase == "active" && input.dependencies == doc.Dependencies {
+			continue
+		}
+		if !stableRoutingChoices(doc.Choices) && input.dependencies != doc.Dependencies {
+			if plan.Phase == "active" {
+				if err = repo.AdvanceXNodeRouting(ctx, plan.ProxyUserID, plan.OperationID, "active", "disabled", s.now().UTC()); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		key := sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%s", plan.ProxyUserID, plan.Revision, input.dependencies)))

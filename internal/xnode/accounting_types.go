@@ -16,20 +16,21 @@ type Credentials struct {
 }
 
 type Identity struct {
-	PAYGOwnerID        string    `json:"-"`
-	ProxyUserID        int64     `json:"proxyUserId,string"`
-	ReplacesID         int64     `json:"-"`
-	UserID             string    `json:"userId"`
-	Username           string    `json:"username"`
-	ServiceName        string    `json:"serviceName"`
-	CredentialsCipher  string    `json:"-"`
-	SubscriptionHash   []byte    `json:"-"`
-	SubscriptionCipher string    `json:"-"`
-	CurrentPeriodID    string    `json:"currentPeriodId"`
-	LegacyUserID       string    `json:"-"`
-	LifetimeBase       int64     `json:"-"`
-	AccessDisabled     bool      `json:"accessDisabled"`
-	CreatedAt          time.Time `json:"createdAt"`
+	FirstSyncedAt      *time.Time `json:"firstSyncedAt"`
+	PAYGOwnerID        string     `json:"-"`
+	ProxyUserID        int64      `json:"proxyUserId,string"`
+	ReplacesID         int64      `json:"-"`
+	UserID             string     `json:"userId"`
+	Username           string     `json:"username"`
+	ServiceName        string     `json:"serviceName"`
+	CredentialsCipher  string     `json:"-"`
+	SubscriptionHash   []byte     `json:"-"`
+	SubscriptionCipher string     `json:"-"`
+	CurrentPeriodID    string     `json:"currentPeriodId"`
+	LegacyUserID       string     `json:"-"`
+	LifetimeBase       int64      `json:"-"`
+	AccessDisabled     bool       `json:"accessDisabled"`
+	CreatedAt          time.Time  `json:"createdAt"`
 }
 
 func (i Identity) MemberOwnerID() string {

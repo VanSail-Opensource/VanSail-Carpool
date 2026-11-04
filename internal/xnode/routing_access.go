@@ -33,8 +33,8 @@ func (s *Service) pruneRoutingAccess(ctx context.Context, plan RoutingPlan, iden
 	if err != nil {
 		return false, err
 	}
-	in := routingInput{endpoints: map[string]Endpoint{}}
-	if err := s.loadRoutingEndpoints(ctx, identity, &in); err != nil {
+	in, err := s.routingEntitlementEndpoints(ctx, identity.UserID)
+	if err != nil {
 		return false, err
 	}
 	kept := accessibleRoutingChoices(doc.Choices, in)

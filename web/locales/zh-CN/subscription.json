@@ -1,5 +1,7 @@
 {
   "subscription": {
+    "firstSyncPending": "等待首次节点同步",
+    "firstSyncHint": "节点确认已应用包含您有效账户的配置后，订阅链接才会显示。系统会自动请求同步。",
     "title": "订阅",
     "copy": "查看订阅链接和各节点的导入链接。",
     "hosts": "可访问的主机",

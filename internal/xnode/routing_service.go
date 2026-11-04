@@ -27,11 +27,13 @@ func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingVie
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return view, err
 	}
+	savedDependencies := ""
 	if err == nil {
 		doc, err := s.routingDocument(plan)
 		if err != nil {
 			return view, err
 		}
+		savedDependencies = doc.Dependencies
 		plan.Choices = doc.Choices
 		if plan.Choices == nil {
 			plan.Choices = []RoutingChoice{}
@@ -52,13 +54,18 @@ func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingVie
 	if len(view.Plan.Choices) > 0 {
 		in, err = s.routingInput(ctx, identity, view.Plan.Choices)
 		if err == nil {
-			view.Plan.Choices = in.choices
+			if stableRoutingChoices(view.Plan.Choices) || in.dependencies == savedDependencies {
+				view.Plan.Choices = in.choices
+			}
 			view.Paths, err = in.graph.Paths()
 			view.Paths = in.publicPaths(view.Paths)
 		}
 		if err != nil {
 			view.Plan.Reason = "routing_dependencies_changed"
 		}
+	}
+	if err = s.appendUnavailableRoutingEndpoints(ctx, user, &view); err != nil {
+		return view, err
 	}
 	return view, nil
 }

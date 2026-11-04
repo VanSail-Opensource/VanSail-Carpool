@@ -30,7 +30,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   const busy = computed(() => command.blocksMutations.value || command.submitting.value)
   const nodes = computed(() => current.value?.nodes.map(node => ({ value: node.id, label: node.name })) ?? [])
   const endpoints = computed(() => current.value?.endpoints ?? [])
-  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, label: endpoint.name })))
+  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, disabled: endpoint.available === false, label: endpoint.available === false ? `${endpoint.name} (${t('memberNodes.incomplete')})` : endpoint.name })))
   const traceNodes = computed(() => nodes.value.filter(node => choices.value.some(choice => choice.inboundNodeId === node.value)))
   const traceEndpoints = computed(() => endpointItems.value.filter(endpoint => choices.value.some(choice => choice.inboundNodeId === start.value && choice.inboundEndpointId === endpoint.value)))
   const templates = computed(() => current.value?.templates.map(item => ({ value: item.id, label: item.name })) ?? [])
@@ -48,8 +48,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
       const keepDraft = !!options && !!current.value && JSON.stringify(choices.value) !== savedChoices
       current.value = value
       if (['active', 'disabled'].includes(value.plan.phase) && value.plan.operationId === command.receipt.value?.id && !command.submitting.value) command.reset()
-      const available = [...(value.endpoints ?? [])].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
-      const incoming = globalThis.structuredClone(value.plan.choices).map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.inboundNodeId)?.id, outboundEndpointId: choice.outboundEndpointId || available.find(endpoint => endpoint.nodeId === choice.outboundNodeId)?.id }))
+      const incoming = globalThis.structuredClone(value.plan.choices)
       if (!keepDraft) choices.value = incoming
       savedChoices = JSON.stringify(incoming)
       for (const choice of choices.value) if (choice.inboundEndpointId && !entryHosts.has(choice.inboundNodeId)) entryHosts.set(choice.inboundNodeId, choice.inboundEndpointId)
@@ -88,7 +87,7 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   }
   function setEndpoint(choice: RoutingChoice, side: 'inbound' | 'outbound', id: string) {
     const endpoint = endpoints.value.find(endpoint => endpoint.id === id)
-    if (!endpoint) return
+    if (!endpoint || endpoint.available === false) return
     if (side === 'inbound') { choice.inboundNodeId = endpoint.nodeId; choice.inboundEndpointId = id; entryHosts.set(endpoint.nodeId, id) }
     else { choice.outboundNodeId = endpoint.nodeId; choice.outboundEndpointId = id }
   }

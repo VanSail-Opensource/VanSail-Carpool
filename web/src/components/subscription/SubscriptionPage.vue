@@ -14,7 +14,7 @@ import HostLinkRow from './HostLinkRow.vue'
 import { useSubscriptionData } from './useSubscriptionData'
 import SubscriptionFormats from './SubscriptionFormats.vue'
 
-const { value: subscription, loading, error, refresh } = useSubscriptionData(subscriptionApi.subscription)
+const { value: subscription, loading, error, refresh } = useSubscriptionData(subscriptionApi.subscription, 60_000, 'subscription.loadFailed', value => value?.ready === false ? 2000 : 60_000)
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
@@ -55,6 +55,7 @@ function consumeRevoke(): void {
         <p v-else class="subscription-page__empty">{{ t('subscription.noHosts') }}</p>
       </section>
     </template>
+    <section v-else-if="subscription?.ready === false" class="section-block grid gap-3"><h2>{{ t('subscription.firstSyncPending') }}</h2><p class="text-sm text-muted">{{ t('subscription.firstSyncHint') }}</p><UButton variant="outline" color="neutral" :label="t('common.refresh')" @click="refresh()" /></section>
     <section v-else-if="subscription" class="section-block empty-inline">
       <div><h2>{{ t('subscription.noCombo') }}</h2><p>{{ t('subscription.noComboHint') }}</p><UButton to="/catalog" :label="t('nav.explore')" color="neutral" variant="outline" /></div>
     </section>

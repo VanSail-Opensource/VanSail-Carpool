@@ -91,7 +91,7 @@ func (s *Service) identityInventory(ctx context.Context, identity Identity) ([]s
 }
 
 func (s *Service) serviceSubscriptionMetadata(ctx context.Context, identity Identity) (SubscriptionMetadata, error) {
-	result := SubscriptionMetadata{Username: identity.ServiceName, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
+	result := SubscriptionMetadata{SubscriptionReadiness: SubscriptionReadiness{Ready: true}, Username: identity.ServiceName, UsedBytes: "0", LimitBytes: "0", Formats: map[string]bool{}}
 	access, err := s.ServiceAccess(ctx, identity)
 	if err != nil {
 		return result, err

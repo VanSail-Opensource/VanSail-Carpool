@@ -81,3 +81,9 @@ work; a status failure retains its refresh action and never unlocks an
 unfinished deployment. Standalone refresh remains available while deployment runs.
 `useMemberRouting.test.ts` checks receipt resumption, terminal refresh, preserved
 drafts and review locks in hosted CI.
+
+Member responses include ready/firstSyncedAt. A pending first sync shows a
+localized state and refreshes at two-second intervals; confirmed links remain
+visible during node outages because proof is durable on the owner identity.
+Routing selectors retain stable IDs and refreshed unavailable labels. Refresh
+never substitutes endpoints using names, addresses or current list ordering.

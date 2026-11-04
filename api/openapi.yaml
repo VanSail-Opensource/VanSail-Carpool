@@ -17,6 +17,7 @@ paths:
   /api/v1/admin/pricing/data: { $ref: "./paths/api-v1-admin-pricing-data.yaml" }
   /api/v1/admin/pricing/products/{kind}/{id}: { $ref: "./paths/api-v1-admin-pricing-products-kind-id.yaml" }
   /api/v1/admin/pricing: { $ref: "./paths/api-v1-admin-pricing.yaml" }
+  /api/v1/payg/history: { $ref: './paths/api-v1-payg-history.yaml' }
   /api/v1/payg: {"$ref":"./paths/api-v1-payg.yaml"}
   /api/v1/admin/xnode/firewall/exemptions: { $ref: './paths/api-v1-admin-xnode-firewall-exemptions.yaml' }
   /api/v1/admin/xnode/subscription-templates/selection-preview: { $ref: './paths/api-v1-admin-xnode-subscription-templates-selection-preview.yaml' }

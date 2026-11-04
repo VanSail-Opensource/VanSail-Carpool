@@ -17,8 +17,10 @@ SubscriptionHost:
 MemberSubscription:
   type: object
   additionalProperties: false
-  required: [activeCombo, subscriptionUrl, hosts]
+  required: [activeCombo, subscriptionUrl, hosts, ready, firstSyncedAt]
   properties:
+    ready: {type: boolean}
+    firstSyncedAt: {type: [string, 'null'], format: date-time}
     activeCombo: { type: boolean }
     subscriptionUrl: { type: [string, 'null'] }
     hosts:

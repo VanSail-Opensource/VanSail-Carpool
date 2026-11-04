@@ -29,7 +29,7 @@ const schema = z.object({
   priceTxbMinor: z.string().refine(value => /^\d+$/.test(value) && BigInt(value) <= 1_000_000_000_000n),
   trafficLimitBytes: z.string().refine(value => /^[1-9]\d*$/.test(value) && BigInt(value) <= 9_223_372_036_854_775_807n),
   validityDays: z.number().int().min(1).max(3650),
-  ipLookupQuota: z.number().int().min(0).max(1000000).nullable(), 
+  ipLookupQuota: z.number().int().min(0).max(1000000).nullable(),
   resetStrategy: z.enum(['DAY', 'WEEK', 'MONTH_ROLLING']), squadProductIds: z.array(z.string()),
   active: z.boolean(),
 })

@@ -34,8 +34,8 @@ func TestMissingSubscriptionRepairRetainsIdentityCredentialsAndAccounting(t *tes
 		t.Fatal("repair replaced identity or accounting", after, err)
 	}
 	link, err := f.service.SubscriptionURL(after)
-	if err != nil || link == "" {
-		t.Fatal("subscription not repaired", err)
+	if err != nil || link != "" || after.SubscriptionCipher == "" {
+		t.Fatal("repair disclosed an unconfirmed subscription", err)
 	}
 	if err = f.service.RepairAccess(ctx, job); err != nil {
 		t.Fatal(err)

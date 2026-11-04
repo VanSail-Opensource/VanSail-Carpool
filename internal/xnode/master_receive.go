@@ -27,6 +27,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 			return err
 		}
 		if message.Type == "state.applied" {
+			m.recordFirstSyncAck(peer, message.Revision)
 			peer.mu.Lock()
 			if message.Revision == peer.revision {
 				if peer.digest == "" {

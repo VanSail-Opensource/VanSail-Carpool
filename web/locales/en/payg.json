@@ -1,4 +1,16 @@
 {
+  "paygHistory": {
+    "title": "PAYG usage",
+    "hint": "Recorded upload and download by node over the rolling 72-hour window.",
+    "total": "Recorded total: {traffic}",
+    "exact": "{bytes} bytes",
+    "directions": "Upload {upload} · Download {download}",
+    "window": "{from} to {to}",
+    "empty": "No traffic is recorded in the retained history.",
+    "loadFailed": "PAYG history could not be loaded.",
+    "stale": "Showing the last available history. Refresh to update it.",
+    "truncated": "History is truncated. Shares cover only the retained node records."
+  },
   "payg": {
     "title": "Pay as you go",
     "combo": "Combo",

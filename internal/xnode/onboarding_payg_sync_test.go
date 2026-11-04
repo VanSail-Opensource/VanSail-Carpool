@@ -93,6 +93,9 @@ func TestFundedOnboardingSyncsPAYGThroughOutboxAndAgentBarrier(t *testing.T) {
 					t.Fatal("onboarding charged idle PAYG", a)
 				}
 				metadata, err := f.service.OwnedSubscription(ctx, user.ID)
+				if err == nil && !metadata.Ready {
+					continue
+				}
 				if err != nil || !metadata.Active || metadata.URL == "" {
 					t.Fatal("PAYG subscription unavailable", metadata, err)
 				}

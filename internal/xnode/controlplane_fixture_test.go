@@ -130,6 +130,11 @@ func controlFixture(t *testing.T, paid bool) fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
+	confirmed := time.Now().UTC()
+	if _, err = db.ExecContext(ctx, `UPDATE xnode_identities SET first_synced_at=$1 WHERE user_id=$2`, confirmed.Format(time.RFC3339Nano), user.ID); err != nil {
+		t.Fatal(err)
+	}
+	identity.FirstSyncedAt = &confirmed
 	if paid {
 		combo, err := store.SaveCombo(ctx, database.ComboInput{Name: "Paid", ValidityDays: 30, TrafficLimitBytes: 1 << 30, ResetStrategy: "MONTH_ROLLING", Active: true, SquadProductIDs: []string{group.ID}})
 		if err != nil {

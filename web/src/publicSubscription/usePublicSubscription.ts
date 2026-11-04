@@ -11,7 +11,7 @@ export function usePublicSubscription(token: string) {
   const copied = shallowRef(false)
   const copyFailed = shallowRef(false)
   const link = computed(() => {
-    if (!metadata.value?.active || !metadata.value.formats[format.value]) return ''
+    if (metadata.value?.ready === false || !metadata.value?.active || !metadata.value.formats[format.value]) return ''
     const url = new URL(metadata.value.downloadUrl || `/api/v1/subscriptions/${encodeURIComponent(token)}`, location.origin)
     url.searchParams.set('format', format.value)
     return url.href
@@ -24,7 +24,9 @@ export function usePublicSubscription(token: string) {
   })
   let controller: AbortController | undefined
   let active = true
+  let timer: ReturnType<typeof setTimeout> | undefined
   async function load(): Promise<void> {
+    if (timer) clearTimeout(timer)
     controller?.abort(); controller = new AbortController()
     const current = controller
     loading.value = true; failed.value = false
@@ -34,14 +36,14 @@ export function usePublicSubscription(token: string) {
       if (!active || current !== controller) return
       metadata.value = value
       if (!value.formats[format.value]) format.value = (['base64', 'native', 'xray', 'sing-box', 'clash', 'stash'].find(key => value.formats[key]) as SubscriptionFormat | undefined) ?? 'base64'
-    } catch { if (active && current === controller) { failed.value = true; metadata.value = null } }
-    finally { if (active && current === controller) loading.value = false }
+    } catch { if (active && current === controller) { failed.value = true } }
+    finally { if (active && current === controller) { loading.value = false; if (metadata.value?.ready === false) timer=setTimeout(() => void load(),2000) } }
   }
   async function copy(): Promise<void> {
     copied.value = false; copyFailed.value = false
     if (link.value) { copied.value = await copyText(link.value); copyFailed.value = !copied.value }
   }
   onMounted(() => void load())
-  onScopeDispose(() => { active = false; controller?.abort() })
+  onScopeDispose(() => { active = false; controller?.abort(); if (timer) clearTimeout(timer) })
   return { metadata, loading, failed, format, copied, copyFailed, link, importLink, load, copy }
 }

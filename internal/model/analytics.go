@@ -65,6 +65,7 @@ type ProxyNode struct {
 
 // Dashboard combines local financial state with a briefly cached Proxy snapshot.
 type Dashboard struct {
+	SubscriptionReady  bool                `json:"subscriptionReady"`
 	User               User                `json:"user"`
 	Balance            Money               `json:"balance"`
 	ActivePurchase     *Purchase           `json:"activePurchase"`

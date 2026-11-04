@@ -55,6 +55,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	if exists && now.Sub(cached.fetchedAt) <= s.cacheTTL {
 		dashboard.Statistics = &cached.value.Statistics
 		dashboard.SubscriptionURL = &cached.value.SubscriptionURL
+		dashboard.SubscriptionReady = cached.value.SubscriptionURL != ""
 		dashboard.FetchedAt = cached.fetchedAt
 		return dashboard, nil
 	}
@@ -68,6 +69,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	if remoteErr == nil {
 		dashboard.Statistics = &remote.Statistics
 		dashboard.SubscriptionURL = &remote.SubscriptionURL
+		dashboard.SubscriptionReady = remote.SubscriptionURL != ""
 		s.cacheDashboard(user.ID, remote, now)
 		return dashboard, nil
 	}
@@ -78,6 +80,7 @@ func (s *Service) Dashboard(ctx context.Context, user model.User) (model.Dashboa
 	}
 	dashboard.Statistics = &cached.value.Statistics
 	dashboard.SubscriptionURL = &cached.value.SubscriptionURL
+	dashboard.SubscriptionReady = cached.value.SubscriptionURL != ""
 	dashboard.StatisticsStale = true
 	dashboard.StatisticsWarning = "Live usage is unavailable. Showing the latest cached data."
 	dashboard.FetchedAt = cached.fetchedAt

@@ -1,0 +1,12 @@
+get:
+  tags: [Dashboard]
+  operationId: getOwnedPAYGHistory
+  summary: Read the current owner's recorded rolling 72-hour per-node PAYG history
+  responses:
+    '200':
+      description: Exact recorded directional bytes including historical nodes, with explicit truncation.
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodePAYGNodeHistory'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

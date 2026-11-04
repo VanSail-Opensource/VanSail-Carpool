@@ -73,7 +73,7 @@ func TestNewUnfundedMemberGetsPAYGInventoryThroughOnboardingQueue(t *testing.T) 
 		t.Fatal("new member cannot browse PAYG or balance gate lost", view, err)
 	}
 	metadata, err := f.service.OwnedSubscription(ctx, user.ID)
-	if err != nil || !metadata.Active || metadata.URL == "" {
+	if err != nil || metadata.Active || metadata.Ready || metadata.URL != "" {
 		t.Fatal("new member subscription unavailable", metadata, err)
 	}
 	proxies, err := f.service.MemberProxies(ctx, user.ID)

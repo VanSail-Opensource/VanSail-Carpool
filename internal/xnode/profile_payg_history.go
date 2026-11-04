@@ -41,6 +41,11 @@ type paygNodeHistoryRepository interface {
 	XNodePAYGNodeHistory(context.Context, string, time.Time, time.Time) ([]PAYGNodeUsageHour, bool, error)
 }
 
+// OwnedPAYGHistory reuses exact owner-scoped recorded history; no attribution is reconstructed.
+func (s *Service) OwnedPAYGHistory(ctx context.Context, user string) (PAYGNodeHistory, error) {
+	return s.profilePAYGHistory(ctx, user)
+}
+
 func (s *Service) profilePAYGHistory(ctx context.Context, user string) (PAYGNodeHistory, error) {
 	now := s.now().UTC()
 	result := PAYGNodeHistory{From: now.Add(-PAYGWindow).Truncate(time.Minute), To: now, Nodes: []PAYGHistoryNode{}, Hours: []PAYGHistoryHour{}}

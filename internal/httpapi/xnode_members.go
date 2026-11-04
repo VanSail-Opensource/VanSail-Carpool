@@ -12,6 +12,7 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		return
 	}
 	router.Get("/api/v1/payg", s.ownedPAYG)
+	router.Get("/api/v1/payg/history", s.ownedPAYGHistory)
 	router.Put("/api/v1/subscription/hosts/{id}/name", s.saveOwnedHostName)
 	router.Route("/api/v1/xnode", func(router chi.Router) {
 		router.Get("/diy", s.xnodeDIY)

@@ -11,6 +11,7 @@ import (
 )
 
 type SubscriptionMetadata struct {
+	SubscriptionReadiness
 	ResponseKind       string                                  `json:"responseKind,omitempty"`
 	StatusCode         int                                     `json:"statusCode,omitempty"`
 	ConnectionOptions  []subscription.TuningApplicability      `json:"connectionOptions,omitempty"`
@@ -70,6 +71,14 @@ func (s *Service) subscriptionMetadata(ctx context.Context, identity Identity) (
 		return result, err
 	}
 	result.Username = owner.DisplayName()
+	result.SubscriptionReadiness, err = s.SubscriptionReadiness(ctx, identity)
+	if err != nil {
+		return result, err
+	}
+	if !result.Ready {
+		result.Incomplete = true
+		return result, nil
+	}
 	result.URL, err = s.SubscriptionURL(identity)
 	if err != nil {
 		return result, err

@@ -89,6 +89,9 @@ func (s *Service) newSubscription(identity *Identity) error {
 	return err
 }
 func (s *Service) SubscriptionURL(identity Identity) (string, error) {
+	if identity.UserID != "" && identity.FirstSyncedAt == nil {
+		return "", nil
+	}
 	token, err := s.vault.Decrypt("xnode.subscription."+identityScope(identity), identity.SubscriptionCipher)
 	if err != nil {
 		return "", err
