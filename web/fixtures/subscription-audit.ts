@@ -29,9 +29,18 @@ xnodeMemberApi.metrics = async () => {
   return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: params.has('policy-expired'), incomplete: params.has('unknown'), reasons: params.has('policy-expired') ? [{ nodeId: 'hdnl', reason: 'expired', scope: 'new_connection' }] : [], fetchedAt: new Date().toISOString() }
 }
 paygApi.history = async () => {
- if (params.has('history-slow')) await new Promise(resolve => setTimeout(resolve,1800))
+ if (params.has('history-slow')) await new Promise(resolve => setTimeout(resolve,Number(params.get('history-slow')) || 1800))
  if (params.has('history-error')) throw new ApiError(503,{code:'XNODE_UNAVAILABLE',message:''})
- return { from:new Date(Date.now()-72*3600000).toISOString(),to:new Date(Date.now()-(params.has('history-stale')?300000:0)).toISOString(),hours:[],truncated:params.has('history-truncated'),nodes:params.has('history-empty')?[]:[{nodeId:'tokyo',name:'Tokyo native',countryCode:'JP',uploadBytes:'9007199254740993',downloadBytes:'1024'},{nodeId:'retired',name:'Frankfurt historical',countryCode:'DE',uploadBytes:'12345678900000000',downloadBytes:'5432109876543210'}] }
+ const nodes = params.has('history-shares') ? [
+  { nodeId:'major',name:'Tokyo primary',countryCode:'JP',uploadBytes:'9800',downloadBytes:'0',spentMinor:'5000' },
+  { nodeId:'threshold',name:'Osaka threshold',countryCode:'JP',uploadBytes:'100',downloadBytes:'0',spentMinor:'4900' },
+  { nodeId:'small',name:'Frankfurt small share',countryCode:'DE',uploadBytes:'99',downloadBytes:'0',spentMinor:'99' },
+  { nodeId:'tiny',name:'London tiny share',countryCode:'GB',uploadBytes:'1',downloadBytes:'0',spentMinor:'1' },
+ ] : [
+  {nodeId:'tokyo',name:'Tokyo native',countryCode:'JP',uploadBytes:'9007199254740993',downloadBytes:'1024'},
+  {nodeId:'retired',name:'Frankfurt historical',countryCode:'DE',uploadBytes:'12345678900000000',downloadBytes:'5432109876543210'},
+ ]
+ return { from:new Date(Date.now()-72*3600000).toISOString(),to:new Date(Date.now()-(params.has('history-stale')?300000:0)).toISOString(),hours:[],truncated:params.has('history-truncated'),costAvailable:params.has('history-shares'),nodes:params.has('history-empty')?[]:nodes }
 }
 if (params.has('telegram')) Object.assign(window, { Telegram: { WebApp: { platform: 'ios', version: '9.0', initData: '', initDataUnsafe: {}, BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} } } } })
 const hostNames: Record<string, string> = {}

@@ -25,6 +25,23 @@ describe('PAYG history shares', () => {
     expect(paygHistorySegments(history, 'cost').segments.map(row => row.percentage)).toEqual([12.5, 37.5, 50])
     expect(paygHistorySegments(history, 'cost').total).toBe('8')
   })
+  it('combines only shares below one percent, independently for each measure', () => {
+    const history = { from: '', to: '', hours: [], truncated: false, costAvailable: true, nodes: [
+      { nodeId: 'major', name: 'Major', countryCode: '', uploadBytes: '9900', downloadBytes: '0', spentMinor: '1' },
+      { nodeId: 'exact', name: 'Exact', countryCode: '', uploadBytes: '100', downloadBytes: '0', spentMinor: '99' },
+      { nodeId: 'small', name: 'Small', countryCode: '', uploadBytes: '99', downloadBytes: '0', spentMinor: '9900' },
+      { nodeId: 'tiny', name: 'Tiny', countryCode: '', uploadBytes: '1', downloadBytes: '0', spentMinor: '0' },
+    ] }
+    const traffic = paygHistorySegments(history)
+    expect(traffic.segments.map(segment => segment.nodeId)).toEqual(['major', 'exact', '__payg_others__'])
+    expect(traffic.segments[2]).toMatchObject({ bytes: '100', percentage: 1, isOther: true })
+
+    const cost = paygHistorySegments(history, 'cost')
+    expect(cost.segments.map(segment => segment.nodeId)).toEqual(['small', '__payg_others__'])
+    expect(cost.segments[1]).toMatchObject({ bytes: '100', percentage: 1, isOther: true })
+    expect(traffic.segments.reduce((sum, segment) => sum + BigInt(segment.bytes), 0n)).toBe(BigInt(traffic.total))
+    expect(cost.segments.reduce((sum, segment) => sum + BigInt(segment.bytes), 0n)).toBe(BigInt(cost.total))
+  })
   it('preserves large cost strings and leaves missing costs empty', () => {
     const history = { from: '', to: '', hours: [], truncated: false, nodes: [
       { nodeId: 'a', name: 'A', countryCode: '', uploadBytes: '1', downloadBytes: '0', spentMinor: '9007199254740993' },

@@ -50,4 +50,4 @@ buttons and pointer/touch slices expose identical name/traffic/percentage detail
 Empty history does not claim historical zero use; stale/errors and truncated
 attribution remain explicit. No history is reconstructed from financial totals.
 
-`paygHistorySegments.ts` derives bounded drawing shares from exact totals; `paygHistorySegments.test.ts` checks precision and zero use. `PAYGUsagePie.vue` provides chart and legend selection.
+`paygHistorySegments.ts` derives bounded drawing shares from exact totals and groups nodes below 1% into one localized Others segment per metric; `paygHistorySegments.test.ts` checks precision, zero use, threshold behavior and total preservation. `PAYGUsagePie.vue` provides chart and legend selection, Nuxt UI metric tabs and Telegram selection haptics on metric changes.

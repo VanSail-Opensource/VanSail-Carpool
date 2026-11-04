@@ -86,7 +86,7 @@ full-card keyboard selection, stock and visibility guards.
 
 Selectable core Combo presentation with price and traffic terms: `CatalogComboPricingTable.vue`, `ComboOption.vue`.
 
-Combo descriptions are plain escaped text with preserved line breaks. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.
+Combo descriptions are plain escaped text with preserved line breaks. Combo selection uses a shared Motion layout indicator that slides between cards; reduced-motion preferences shorten that movement. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.
 
 Explore uses immediate, interruptible native 140ms content entrance transitions; mode controls stay interactive and reduced motion skips the entrance. Combo and squad cards follow content height with no automatic spacer. Shared SquadFeatures renders ordered icon/title/detail rows with aligned text. PAYG status uses a header popover trigger with accessible text, keyboard and touch support.
 

@@ -5,6 +5,7 @@
     "measure": "PAYG 占比视图",
     "trafficShare": "流量占比",
     "costShare": "费用占比",
+    "others": "其他",
     "costEmpty": "此时间范围内尚无 PAYG 扣费记录。",
     "costUnavailable": "PAYG 费用记录暂时不可用。",
     "empty": "保留的历史中尚无流量记录。",

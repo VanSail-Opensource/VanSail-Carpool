@@ -7,14 +7,24 @@ import { ChartContainer } from '@/components/charts'
 import { useStatisticsChartSelection } from '@/components/statistics/useStatisticsChartSelection'
 import { formatStatisticPercent } from '@/components/statistics/statisticsFormat'
 import { t } from '@/i18n'
+import { selectionHaptic } from '@/utils/telegramHaptics'
 import { paygHistorySegments, type PAYGHistoryMetric } from './paygHistorySegments'
 
 const props = defineProps<{ history: PAYGNodeHistory }>()
 const metric = shallowRef<PAYGHistoryMetric>('traffic')
 watch(() => props.history.costAvailable, available => { if (!available) metric.value = 'traffic' })
 const plotted = computed(() => paygHistorySegments(props.history, metric.value))
-const segments = computed(() => plotted.value.segments)
+const segments = computed(() => plotted.value.segments.map(segment => segment.isOther ? { ...segment, name: t('paygHistory.others') } : segment))
+const tabs = computed(() => [
+  { label: t('paygHistory.trafficShare'), value: 'traffic' },
+  { label: t('paygHistory.costShare'), value: 'cost', disabled: !props.history.costAvailable },
+])
 const { activeItem, activate, deactivate, select, isSelected } = useStatisticsChartSelection(segments)
+function selectMetric(value: string | number): void {
+  if ((value !== 'traffic' && value !== 'cost') || value === metric.value) return
+  selectionHaptic()
+  metric.value = value
+}
 const events = { [Donut.selectors.segment]: {
   pointerenter: (d: { data: typeof segments.value[number] }) => activate(d.data.interactionId),
   pointerleave: (d: { data: typeof segments.value[number] }) => deactivate(d.data.interactionId),
@@ -24,10 +34,7 @@ const events = { [Donut.selectors.segment]: {
 
 <template>
   <div class="payg-usage-pie">
-    <div class="flex gap-1 justify-self-start" role="group" :aria-label="t('paygHistory.measure')">
-      <UButton size="sm" color="neutral" :variant="metric === 'traffic' ? 'soft' : 'ghost'" :aria-pressed="metric === 'traffic'" :label="t('paygHistory.trafficShare')" @click="metric = 'traffic'" />
-      <UButton size="sm" color="neutral" :variant="metric === 'cost' ? 'soft' : 'ghost'" :aria-pressed="metric === 'cost'" :disabled="!history.costAvailable" :label="t('paygHistory.costShare')" @click="metric = 'cost'" />
-    </div>
+    <UTabs :model-value="metric" :items="tabs" :content="false" color="neutral" variant="pill" size="sm" role="group" :ui="{ root: 'justify-self-start', list: 'gap-1 rounded-lg bg-elevated p-1', trigger: 'min-h-10 px-4 font-semibold' }" :aria-label="t('paygHistory.measure')" @update:model-value="selectMetric" />
     <p v-if="!history.costAvailable" class="text-xs text-muted">{{ t('paygHistory.costUnavailable') }}</p>
     <p v-if="!segments.length" role="status" class="py-6 text-sm text-muted">{{ t(metric === 'cost' ? 'paygHistory.costEmpty' : 'paygHistory.empty') }}</p>
     <template v-else>

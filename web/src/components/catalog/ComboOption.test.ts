@@ -59,6 +59,15 @@ describe('ComboOption', () => {
     expect(wrapper.text()).not.toContain('Private provider')
   })
 
+  it('renders the shared selection box instead of a disappearing checkmark', () => {
+    const unselected = mount(ComboOption, { props: { combo, selected: false } })
+    const selected = mount(ComboOption, { props: { combo, selected: true } })
+
+    expect(unselected.find('.combo-option__selection').exists()).toBe(false)
+    expect(selected.find('.combo-option__selection').exists()).toBe(true)
+    expect(selected.find('.selection-mark').exists()).toBe(false)
+  })
+
   it('emits the stable combo id on selection', async () => {
     const wrapper = mount(ComboOption, { props: { combo, selected: false } })
     await wrapper.trigger('click')

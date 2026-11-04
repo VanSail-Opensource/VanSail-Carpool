@@ -48,14 +48,13 @@
   transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), background-color 200ms var(--ease-out);
 }
 
+.combo-option--selected {
+  z-index: 2;
+}
+
 .combo-option:hover {
   border-color: var(--line-strong);
   transform: translateY(-2px);
-}
-
-.combo-option--selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .combo-option__top,
@@ -69,17 +68,6 @@
 .combo-option__top > span:first-child { min-width: 0; flex-direction: column; }
 
 .combo-option__top strong { font-size: 1.15rem; overflow-wrap: anywhere; }
-
-.selection-mark {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  color: var(--accent-ink);
-  background: var(--accent);
-}
 
 .combo-option__description {
   min-width: 0; color: var(--text-muted);

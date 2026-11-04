@@ -19,6 +19,8 @@ statistics section via `NodeStatisticsAudit.vue`; combine `unknown-metrics`,
 
 PAYG `deferred` exposes an Explore entry action; `window.paygAuditCalls` and
 resource timings show that PAYG/Combo imports and reads start on selection.
+The Combo flow includes three distinct Core options for selection and
+shared-indicator audits.
 Combine with `slow=1800`, `empty`, `combo-empty`, `error` or `combo-error` for
 loading/recovery states. An isolated browser context can go offline after PAYG
 loads to exercise the Combo chunk recovery, then return online and Reload.
@@ -96,6 +98,7 @@ These files are for local visual audits. The production Vite build starts from t
   polling errors and retry controls; `reduced` constructs reduced-motion preference.
 
 `SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render constructed member Home and Subscription states for Chrome DevTools MCP.
+Use `mode=home&history-shares` to inspect traffic/cost aggregation, including a node at exactly 1%, on the real PAYG history chart.
 
 - `IPLookupAudit.vue` mounts actual member/admin IP Lookup components inside the existing app shell.
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.

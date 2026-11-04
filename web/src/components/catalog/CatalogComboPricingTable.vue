@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { LayoutGroup } from 'motion-v'
 import type { Combo } from '@/api/types'
 import ComboOption from './ComboOption.vue'
 
@@ -12,15 +13,17 @@ const emit = defineEmits<{ select: [id: string] }>()
 
 <template>
   <div class="combo-pricing">
-    <div class="combo-grid">
-      <ComboOption
-        v-for="combo in props.combos"
-        :key="combo.id"
-        :combo="combo"
-        :selected="combo.id === props.selectedId"
-        @select="emit('select', $event)"
-      />
-    </div>
+    <LayoutGroup id="catalog-combo-selection">
+      <div class="combo-grid">
+        <ComboOption
+          v-for="combo in props.combos"
+          :key="combo.id"
+          :combo="combo"
+          :selected="combo.id === props.selectedId"
+          @select="emit('select', $event)"
+        />
+      </div>
+    </LayoutGroup>
   </div>
 </template>
 

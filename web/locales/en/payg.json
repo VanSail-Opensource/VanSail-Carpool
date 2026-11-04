@@ -5,6 +5,7 @@
     "measure": "PAYG percentage view",
     "trafficShare": "Traffic %",
     "costShare": "Cost %",
+    "others": "Others",
     "costEmpty": "No PAYG charges were recorded in this window.",
     "costUnavailable": "Recorded PAYG costs are temporarily unavailable.",
     "empty": "No traffic is recorded in the retained history.",

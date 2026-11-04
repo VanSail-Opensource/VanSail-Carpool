@@ -63,7 +63,7 @@ window.fetch = async (input, init) => {
   if (url.pathname === '/api/v1/payg') value = { balance: money('2500'), asOf: stamp, windowStart: '2026-10-21T00:00:00Z', squads: params.has('empty') ? [] : statuses.map((status, index) => ({ squad: squad(index), status, trafficBytes: '1610612736', spent: money('250') })), trafficBytes: params.has('empty') ? '0' : '9663676416', spent: money(params.has('empty') ? '0' : '1500') }
   else if (url.pathname === '/api/v1/catalog') {
     if (params.has('combo-error')) return new Response(JSON.stringify({ code: 'XNODE_UNAVAILABLE', message: 'fixture unavailable' }), { status: 503 })
-    value = { autoRenewalBlockedUntil: params.has('blocked') ? new Date(Date.now() + 60000).toISOString() : null, combos: params.has('combo-empty') ? [] : [{ id: 'audit-combo', name: 'Standard', features: params.has('features') ? [{ icon: 'cloud', title: 'Flexible access', detail: 'Choose your squads' }] : [], description: '', price: money('1000'), validityDays: 30, trafficLimitBytes: '107374182400', resetStrategy: 'MONTH_ROLLING', includedSquads: [], active: true, createdAt: stamp, updatedAt: stamp }], addons: params.has('combo-empty') ? [] : statuses.map((_, index) => ({ ...squad(index), billingMode: 'combo' })), nodes: [] }
+    value = { autoRenewalBlockedUntil: params.has('blocked') ? new Date(Date.now() + 60000).toISOString() : null, combos: params.has('combo-empty') ? [] : fixtureCombos, addons: params.has('combo-empty') ? [] : statuses.map((_, index) => ({ ...squad(index), billingMode: 'combo' })), nodes: [] }
   }
   else if (url.pathname === '/api/v1/dashboard') value = { activePurchase: null, queuedPurchase: null, balance: money('2500'), user: { id: '99101', role: 'member' } }
   else if (url.pathname === '/api/v1/balance') value = { balance: money('2500'), methods: [] }
@@ -71,6 +71,11 @@ window.fetch = async (input, init) => {
   return new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
 const combo:Combo={id:'core-fixture',name:'Core',features:[{icon:'cloud',title:'Flexible access',detail:'Choose your squads'}],description:'Core fixture',price:money('1000'),validityDays:30,trafficLimitBytes:'107374182400',resetStrategy:'MONTH_ROLLING',includedSquads:[],active:true,createdAt:stamp,updatedAt:stamp}
+const fixtureCombos: Combo[] = [
+  combo,
+  { ...combo, id: 'core-flex-fixture', name: 'Core Flex', validityDays: 14, trafficLimitBytes: '53687091200' },
+  { ...combo, id: 'core-max-fixture', name: 'Core Max', validityDays: 90, trafficLimitBytes: '322122547200' },
+]
 const props = { combo: params.has('admin-combo') ? combo : undefined, admin, cards: params.has('cards'), squads: statuses.map((_, index) => squad(index)), squad: squad(0) }
 const app = createApp(PAYGAudit, props)
 app.config.globalProperties.$t = t
