@@ -22,7 +22,7 @@ func TestPAYGNodeCostsUseOwnerChargesAndWindow(t *testing.T) {
 		t.Fatal("PAYG history changed combo accounting", period, err)
 	}
 	for _, query := range []struct {
-		owner string
+		owner    string
 		from, to time.Time
 	}{{"another-owner", before, after}, {owner.UserID, before.Add(-time.Hour), before}} {
 		costs, _, err := s.XNodePAYGNodeCosts(ctx, query.owner, query.from, query.to)

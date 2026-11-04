@@ -28,6 +28,7 @@ const { t } = useI18n()
 .payg-squad { display: flex; flex-direction: column; align-self: start; gap: .4rem; padding: .6rem; }
 .payg-squad :deep(.squad-profile-facts--member) { gap: .15rem .35rem; }
 .payg-squad :deep(.squad-profile-facts--member > span) { padding-block: .12rem; }
+.payg-squad :deep(.squad-profile-summary__name-tags) { margin-inline-start: -.2rem; }
 .payg-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
 .payg-squad__price strong { font: 600 .95rem var(--font-mono); white-space: nowrap; }
 .payg-squad__price small { color: var(--text-muted); font-size: .65rem; white-space: nowrap; }

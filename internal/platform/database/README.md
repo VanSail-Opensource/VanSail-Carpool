@@ -47,6 +47,12 @@ bounded connection batches and retained cadence recovery on PostgreSQL.
 before locking owners in stable order. Atomic journal and financial writes keep
 their existing isolation and retry rules.
 
+`xnode_payg_node_costs.go` reads exact owner-scoped PAYG charges from immutable
+ledger records for the requested history window. Account/node references retain
+cost-only and retired-node entries without deriving cost from traffic;
+`xnode_payg_node_costs_test.go` covers owner/window isolation, exact minor-unit
+aggregation and combo-accounting independence on PostgreSQL.
+
 `catalog_stock.go` owns bounded aggregate stock display;
 `purchase_squad_membership.go` shares ownership precedence with checkout.
 `catalog_stock_test.go` verifies snapshot/fallback behavior and stockless reads;

@@ -151,6 +151,12 @@ refresh both routing and compatible XHTTP choices without changing drafts.
 `diy_payg_test.go` covers this queued path with a one-minor-unit balance and no
 combo. Existing stock, activation and wallet admission gates remain independent.
 
+`profile_payg_costs.go` adds exact immutable owner-scoped charges to the existing
+72-hour PAYG history when supported by the repository. Cost-only nodes remain
+visible with zero traffic; historical charges are never reconstructed from live
+prices. `profile_payg_costs_test.go` covers exact large minor-unit values,
+pre-purchased credit separation and repositories without charge history.
+
 New members receive PAYG provisioning from the onboarding outbox without buying
 a combo. Completed onboarding exposes owner-scoped PAYG listings and stable
 subscription links even with an empty wallet; actual connection leases require
