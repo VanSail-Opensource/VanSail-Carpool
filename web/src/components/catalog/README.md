@@ -89,3 +89,5 @@ Selectable core Combo presentation with price and traffic terms: `CatalogComboPr
 Combo descriptions are plain escaped text with preserved line breaks. Squad cards reuse typed features and native focus/active transitions; reduced-motion preferences disable card transforms.
 
 Explore uses immediate, interruptible native 140ms content entrance transitions; mode controls stay interactive and reduced motion skips the entrance. Combo and squad cards follow content height with no automatic spacer. Shared SquadFeatures renders ordered icon/title/detail rows with aligned text. PAYG status uses a header popover trigger with accessible text, keyboard and touch support.
+
+PAYG headers project the price through the shared profile heading-meta slot: name, static status dot and price share one centered row. The status keeps a 24px focus/touch trigger without adding header height; long names retain full accessible text and a native title.

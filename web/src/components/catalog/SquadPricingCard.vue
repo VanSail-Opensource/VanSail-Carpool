@@ -67,7 +67,7 @@ function toggle(): void {
       :aria-pressed="selected"
       @click="toggle"
     />
-    <div class="squad-card__header">
+    <div class="squad-card__header" :class="{ 'squad-card__header--informational': informational }">
       <SquadProfileSummary
         :name="squad.name"
         :profile="squad.profile"
@@ -85,8 +85,11 @@ function toggle(): void {
           <UBadge v-if="!informational && isFull" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" color="error" variant="solid" icon="i-ph-user-minus" :aria-label="$t('catalog.full')" />
           <UBadge v-else-if="!informational && !included" size="sm" class="shrink-0 rounded-full px-1.5 py-0.5 font-bold" :color="remainingBadge.color" variant="solid" :icon="remainingBadge.icon" :aria-label="`${$t('catalog.remaining')} ${remainingBadge.label}`" />
         </template>
+        <template v-if="informational && $slots.price" #headingMeta>
+          <span class="squad-card__price"><slot name="price" /></span>
+        </template>
       </SquadProfileSummary>
-      <div v-if="!included && $slots.price" class="squad-card__price">
+      <div v-if="!informational && !included && $slots.price" class="squad-card__price">
         <slot name="price" />
       </div>
     </div>
@@ -136,6 +139,11 @@ function toggle(): void {
 .squad-card__header :deep(.squad-profile-summary--member .squad-profile-summary__name-row--with-tags) { flex-wrap: wrap; }
 .squad-card__header :deep(.squad-profile-summary--member .squad-profile-summary__name-row--with-tags .squad-profile-summary__name-copy strong) { overflow: visible; overflow-wrap: anywhere; white-space: normal; }
 .squad-card__price { min-width: 0; padding-top: 0.05rem; text-align: right; }
+.squad-card__header--informational { display: block; }
+.squad-card__header--informational :deep(.squad-profile-summary__name-row) { flex-wrap: nowrap; align-items: center; gap: .2rem; }
+.squad-card__header--informational :deep(.squad-profile-summary__name-copy) { flex: 0 1 auto; }
+.squad-card__header--informational :deep(.squad-profile-summary__name-row .squad-profile-summary__name-copy strong) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.squad-card__header--informational .squad-card__price { flex: none; margin-inline-start: auto; padding-top: 0; color: var(--text); }
 .squad-card__price > strong { display: block; white-space: nowrap; font-family: var(--font-mono); font-size: 1.1rem; }
 .squad-card__footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .45rem; border-top: 1px solid var(--line); color: var(--squad-profile-tone, var(--text-muted)); font-size: .68rem; font-weight: 650; }
 .squad-card__footer .iconify { flex: none; font-size: .95rem; }

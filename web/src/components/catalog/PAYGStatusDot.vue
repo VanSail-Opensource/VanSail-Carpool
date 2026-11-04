@@ -17,19 +17,12 @@ const tone = computed(() => props.status === 'available' ? 'green'
 </template>
 
 <style scoped>
-.payg-status-trigger { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; flex: none; }
+.payg-status-trigger { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; min-width: 1.5rem; min-height: 1.5rem; border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; flex: none; }
 .payg-status-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .payg-status-trigger:active { background: var(--surface-raised); }
-.payg-status-dot { position: relative; display: block; width: .4rem; height: .4rem; border-radius: 50%; }
-.payg-status-dot::before, .payg-status-dot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.payg-status-dot::before { background: var(--dot-color); animation: payg-status 2.2s ease-in-out infinite; }
-.payg-status-dot::after { border: 1px solid var(--dot-color); animation: payg-ripple 2.2s ease-out infinite; }
+.payg-status-dot { display: block; width: .4375rem; height: .4375rem; border-radius: 50%; background: var(--dot-color); }
 .payg-status-dot--green { --dot-color: var(--ui-success); }
 .payg-status-dot--grey { --dot-color: var(--ui-text-dimmed); }
 .payg-status-dot--red { --dot-color: var(--ui-error); }
 .payg-status-dot--yellow { --dot-color: var(--ui-warning); }
-.payg-status-dot:focus-visible { outline: 2px solid var(--dot-color); outline-offset: 4px; }
-@keyframes payg-status { 0%, 100% { opacity: .35; } 45%, 60% { opacity: 1; } }
-@keyframes payg-ripple { 0% { opacity: .65; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(3.2); } }
-@media (prefers-reduced-motion: reduce) { .payg-status-dot::before, .payg-status-dot::after { animation: none; } .payg-status-dot::after { display: none; } }
 </style>

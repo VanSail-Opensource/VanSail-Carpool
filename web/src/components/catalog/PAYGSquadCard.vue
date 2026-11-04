@@ -14,7 +14,7 @@ const { t } = useI18n()
 <template>
   <SquadPricingCard class="payg-squad" :squad="item.squad" :selected="false" :included="false" :featured="false" informational>
     <template #status><PAYGStatusDot :status="item.status" /></template>
-    <template #price><div class="payg-squad__price"><strong>{{ formatMemberMoney(item.squad.paygPrice ?? item.squad.price) }}</strong><small>{{ t('payg.perGB') }}</small><LivePrice :decision="item.squad.pricingDecision" /></div></template>
+    <template #price><span class="payg-squad__price"><strong>{{ formatMemberMoney(item.squad.paygPrice ?? item.squad.price) }}</strong><small>{{ t('payg.perGB') }}</small><LivePrice :decision="item.squad.pricingDecision" /></span></template>
     <footer class="payg-squad__footer">
       <div class="payg-squad__usage">
         <span><UIcon name="i-ph-arrows-down-up" aria-hidden="true" /><span class="sr-only">{{ t('payg.traffic') }} </span>{{ formatBytes(item.trafficBytes) }}</span>
@@ -28,7 +28,7 @@ const { t } = useI18n()
 .payg-squad { display: flex; flex-direction: column; align-self: start; gap: .4rem; padding: .6rem; }
 .payg-squad :deep(.squad-profile-facts--member) { gap: .15rem .35rem; }
 .payg-squad :deep(.squad-profile-facts--member > span) { padding-block: .12rem; }
-.payg-squad__price { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
+.payg-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
 .payg-squad__price strong { font: 600 .95rem var(--font-mono); white-space: nowrap; }
 .payg-squad__price small { color: var(--text-muted); font-size: .65rem; white-space: nowrap; }
 .payg-squad__footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem .6rem; padding-top: .2rem; }

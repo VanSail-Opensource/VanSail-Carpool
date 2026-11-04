@@ -68,3 +68,5 @@ operation using existing native apply and traffic.flush barriers.
 
 Hosted exact-head CI and container publication are the final delivery gate; the
 final delivery response records their terminal result and commit.
+
+Follow-up header refinement: Chrome measurements at 390px and 1440px confirm the squad name, solid status dot and price centers differ by less than one pixel. The status popover remains available through touch/focus; the continuous ripple was removed.

@@ -40,7 +40,7 @@ const memberProfileText = computed(() => {
         <span v-if="presentation === 'member' && name" class="squad-profile-summary__name-row" :class="{ 'squad-profile-summary__name-row--with-tags': $slots.nameTags }">
           <span class="squad-profile-summary__name-copy">
             <slot v-if="$slots.namePrefix" name="namePrefix" />
-            <strong>{{ name }}</strong>
+            <strong :title="name">{{ name }}</strong>
           </span>
           <span v-if="$slots.nameTags" class="squad-profile-summary__name-tags">
             <slot v-if="$slots.nameTags" name="nameTags" />
