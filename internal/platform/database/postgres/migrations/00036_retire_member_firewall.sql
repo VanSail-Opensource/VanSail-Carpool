@@ -29,6 +29,8 @@ WHERE kind='connection_scan_request' AND status IN('pending','processing');
 UPDATE connection_ip_blocks SET status='unblocking',expires_at=vansail_now(),updated_at=vansail_now();
 UPDATE outbox_jobs SET status='pending',attempts=0,available_at=vansail_now(),updated_at=vansail_now()
 WHERE id IN(SELECT expiry_job_id FROM connection_ip_blocks);
+DROP TRIGGER compile_combo_whitelist_update ON combos;
+DROP FUNCTION compile_combo_whitelist_update_fn();
 ALTER TABLE combos DROP COLUMN whitelist_ip_quota;
 
 -- +goose Down

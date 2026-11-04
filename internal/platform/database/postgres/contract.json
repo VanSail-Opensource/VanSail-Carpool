@@ -9987,7 +9987,6 @@
     "compile_admin_temporary_bans_delete",
     "compile_admin_temporary_bans_insert",
     "compile_admin_temporary_bans_update",
-    "compile_combo_whitelist_update",
     "compile_ddns_hosts_delete",
     "compile_ddns_hosts_insert",
     "compile_ddns_hosts_update",
