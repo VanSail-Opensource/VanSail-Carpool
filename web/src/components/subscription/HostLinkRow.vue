@@ -40,7 +40,7 @@ const qrError = shallowRef(false)
 const copyError = shallowRef(false)
 const latest = createLatestRequest()
 const flags = computed(() => props.host.countryCodes.length ? props.host.countryCodes : [''])
-const linkError = computed(() => t(props.host.linkErrorCode === 'CONNECTIVITY_LINK_AMBIGUOUS' ? 'subscription.ambiguousLink' : 'subscription.noLink'))
+const linkError = computed(() => t('subscription.noLink'))
 watch(() => [open.value, props.host.link] as const, async ([show, link]) => {
   const token = latest.begin()
   qr.value = null

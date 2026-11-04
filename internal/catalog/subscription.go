@@ -2,34 +2,31 @@ package catalog
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 type subscriptionSource interface {
-	LoadMemberSubscription(context.Context, string, []string, bool) (connectivity.MemberSubscription, error)
+	LoadMemberSubscription(context.Context, string, []string, bool) (subscription.MemberSubscription, error)
 }
 type nativeSubscriptionSource interface {
-	LoadSubscriptionForMember(context.Context, model.User, []string, bool) (connectivity.MemberSubscription, error)
+	LoadSubscriptionForMember(context.Context, model.User, []string, bool) (subscription.MemberSubscription, error)
 }
 type unifiedSubscriptionSource interface {
-	LoadUnifiedSubscription(context.Context, model.User, bool) (connectivity.MemberSubscription, error)
+	LoadUnifiedSubscription(context.Context, model.User, bool) (subscription.MemberSubscription, error)
 }
 type subscriptionPreferences interface {
 	UserDisabledSquads(context.Context, string) ([]string, error)
 }
 
-// SetConnectivity shares retained monitoring outcomes with member projections.
-func (s *Service) SetConnectivity(monitor *connectivity.Service) { s.connectivity = monitor }
-
 // Subscription authorizes the local entitlement before loading this user's live links.
-func (s *Service) Subscription(ctx context.Context, user model.User, links bool) (connectivity.MemberSubscription, error) {
+func (s *Service) Subscription(ctx context.Context, user model.User, links bool) (subscription.MemberSubscription, error) {
 	now := s.now().UTC()
-	result := connectivity.MemberSubscription{Hosts: []connectivity.SubscriptionHost{}, Squads: []connectivity.SubscriptionSquad{}}
-	result.Summary = connectivity.UptimeSummary{UptimeTimeline: connectivity.UnknownTimeline(now)}
+	result := subscription.MemberSubscription{Hosts: []subscription.SubscriptionHost{}}
 	active, _, err := s.repository.ActiveAndQueuedPurchases(ctx, user.ID, now)
 	if err != nil {
 		return result, err
@@ -40,21 +37,19 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 			return result, err
 		}
 		result.ActiveCombo = activeSubscription(active, now)
-		s.connectivity.ProjectMember(ctx, &result, s.now().UTC())
 		return result, nil
 	}
 	if !activeSubscription(active, now) {
 		return result, nil
 	}
-	result.ActiveCombo, result.Summary.ActiveCombo = true, true
+	result.ActiveCombo = true
 	nativeSource, native := s.provider.(nativeSubscriptionSource)
 	if !native && user.ProxyUserID == nil {
-		result.Summary.ErrorCode = "CONNECTIVITY_ACCOUNT_UNAVAILABLE"
 		return result, nil
 	}
 	preferences, ok := s.repository.(subscriptionPreferences)
 	if !ok {
-		return result, &connectivity.CodeError{Code: "CONNECTIVITY_UNAVAILABLE"}
+		return result, errors.New("subscription preferences unavailable")
 	}
 	disabled, err := preferences.UserDisabledSquads(ctx, user.ID)
 	if err != nil {
@@ -63,7 +58,7 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 	enabled := purchaseops.EnabledSquads(active.SquadUUIDs, disabled)
 	source, ok := s.provider.(subscriptionSource)
 	if !ok && !native {
-		return result, &connectivity.CodeError{Code: "CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE"}
+		return result, errors.New("subscription source unavailable")
 	}
 	if native {
 		result, err = nativeSource.LoadSubscriptionForMember(ctx, user, enabled, links)
@@ -71,22 +66,21 @@ func (s *Service) Subscription(ctx context.Context, user model.User, links bool)
 		result, err = source.LoadMemberSubscription(ctx, *user.ProxyUserID, enabled, links)
 	}
 	if err != nil {
-		return connectivity.MemberSubscription{}, err
+		return subscription.MemberSubscription{}, err
 	}
 	// A slow queued read must not release credentials after an entitlement change.
 	current, _, err := s.repository.ActiveAndQueuedPurchases(ctx, user.ID, s.now().UTC())
 	if err != nil {
-		return connectivity.MemberSubscription{}, err
+		return subscription.MemberSubscription{}, err
 	}
 	currentDisabled, err := preferences.UserDisabledSquads(ctx, user.ID)
 	if err != nil {
-		return connectivity.MemberSubscription{}, err
+		return subscription.MemberSubscription{}, err
 	}
 	if !activeSubscription(current, s.now().UTC()) || current.ID != active.ID || !sameSquads(enabled, purchaseops.EnabledSquads(current.SquadUUIDs, currentDisabled)) {
-		return connectivity.MemberSubscription{}, &connectivity.CodeError{Code: "CONNECTIVITY_INTERRUPTED"}
+		return subscription.MemberSubscription{}, errors.New("subscription entitlement changed")
 	}
 	result.ActiveCombo = true
-	s.connectivity.ProjectMember(ctx, &result, s.now().UTC())
 	return result, nil
 }
 

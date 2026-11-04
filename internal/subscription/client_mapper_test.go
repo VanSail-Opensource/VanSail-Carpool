@@ -1,4 +1,4 @@
-package connectivity
+package subscription
 
 import (
 	"reflect"
@@ -19,12 +19,12 @@ func TestXrayMapperOrderedCopySetUnsetAndIsolation(t *testing.T) {
 		}}},
 	}
 	outbound := map[string]any{"settings": map[string]any{"old": true}}
-	result, err := applyXrayMapper(outbound, host)
+	result, err := ApplyClientMapper(outbound, host, "xrayJson")
 	if err != nil {
 		t.Fatal(err)
 	}
 	settings := configObject(result["settings"])
-	if configObject(settings["copied"])["key"] != "changed" || singleConfigObject(settings["users"])["id"] != "resolved-user" || settings["old"] != nil || settings["flag"] != true {
+	if configObject(settings["copied"])["key"] != "changed" || configObject(settings["users"].([]any)[0])["id"] != "resolved-user" || settings["old"] != nil || settings["flag"] != true {
 		t.Fatal("ordered mapper semantics changed")
 	}
 	if fromInbound["key"] != "original" || !reflect.DeepEqual(outbound, map[string]any{"settings": map[string]any{"old": true}}) {
@@ -33,13 +33,13 @@ func TestXrayMapperOrderedCopySetUnsetAndIsolation(t *testing.T) {
 }
 
 func TestXrayMapperSkipsMissingDisallowedAndBlockedPaths(t *testing.T) {
-	host := map[string]any{"metadata": map[string]any{"uuid": probeHostUUID}, "clientOverrides": map[string]any{"mapper": map[string]any{"xrayJson": []any{
+	host := map[string]any{"metadata": map[string]any{"uuid": "fixture-host"}, "clientOverrides": map[string]any{"mapper": map[string]any{"xrayJson": []any{
 		map[string]any{"op": "copy", "from": "$host.metadata.uuid", "to": "forbidden"},
 		map[string]any{"op": "copy", "from": "missing.source", "to": "missing"},
 		map[string]any{"op": "set", "to": "primitive.child", "value": true},
 		map[string]any{"op": "unset", "to": "array.0"},
 	}}}}
-	result, err := applyXrayMapper(map[string]any{"primitive": false, "array": []any{"first", "second"}}, host)
+	result, err := ApplyClientMapper(map[string]any{"primitive": false, "array": []any{"first", "second"}}, host, "xrayJson")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestXrayMapperSkipsMissingDisallowedAndBlockedPaths(t *testing.T) {
 func TestXrayMapperRejectsUnboundedOrAmbiguousPaths(t *testing.T) {
 	for _, path := range []string{"", "settings..users", "settings.users[999999]", "settings.__proto__.key", "settings.users[-1]"} {
 		t.Run(path, func(t *testing.T) {
-			if _, err := mapperSegments(path); err == nil || ErrorCode(err) != "CONNECTIVITY_INVALID_MAPPER" {
+			if _, err := mapperSegments(path); err == nil {
 				t.Fatal("unsafe mapper path accepted")
 			}
 		})

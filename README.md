@@ -1,13 +1,5 @@
 # VanSail Carpool
 
-Administrators can configure built-in host connectivity checks in **Settings**.
-Resolve an existing X-Node monitoring username, save the configuration, then
-run a manual check or enable scheduling. Checks use that account's accessible
-enabled hosts, including hidden hosts; every attempt is retained for 24 hours.
-The engine tests authenticated HTTPS traffic and reports status, TTFB, and safe
-diagnostics. [Module details](internal/connectivity/README.md) describe supported
-configurations, lifecycle, retention, and extension points.
-
 VanSail Carpool provides a premium-dark Telegram Mini App for member onboarding, TXB funding and shared X-Node access, plus an independent browser admin console with light/dark appearance. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, PostgreSQL database, and static assets. Production therefore needs one container, durable application and PostgreSQL volumes, and one HTTP port.
 
 ## What is included

@@ -9,13 +9,13 @@ import (
 
 // Observation contains transient authenticated machine telemetry, never SQL data.
 type Observation struct {
-	NodeID                                                               string
-	At                                                                   time.Time
-	ReportedAt                                                           time.Time
-	ReceivedAt                                                           time.Time
-	Connected, Ready, Synchronized, Stale, ProbeUnavailable, Maintenance bool
-	CPU, Memory                                                          float64
-	Complete                                                             bool
+	NodeID                                             string
+	At                                                 time.Time
+	ReportedAt                                         time.Time
+	ReceivedAt                                         time.Time
+	Connected, Ready, Synchronized, Stale, Maintenance bool
+	CPU, Memory                                        float64
+	Complete                                           bool
 }
 
 // Health is a memory-only operational projection with recovery hysteresis.
@@ -119,7 +119,7 @@ func (r *HealthRegistry) Observe(o Observation) Health {
 	warn := persistent(&h.warningAt, o.CPU >= 85, sampleAt, 3*time.Minute) && h.highSamples >= 3
 	critical := persistent(&h.criticalAt, o.CPU >= 95 || o.Memory >= 92, sampleAt, 2*time.Minute) && h.highSamples >= 3
 	peak := persistent(&h.peakAt, o.CPU >= 99, sampleAt, time.Minute) && h.highSamples >= 3
-	offline := persistent(&h.offlineAt, !o.Connected && o.ProbeUnavailable, o.At, time.Minute)
+	offline := persistent(&h.offlineAt, !o.Connected, o.At, time.Minute)
 	switch {
 	case o.Maintenance:
 		state = "MAINTENANCE"

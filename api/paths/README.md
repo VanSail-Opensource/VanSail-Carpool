@@ -163,9 +163,7 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 
 `api-v1-admin-pm.yaml`, `api-v1-admin-pm-id.yaml`, `api-v1-admin-pm-id-deliveries.yaml` and `api-v1-admin-pm-id-topic.yaml` define panel-admin conversation, idempotent controls, review and recovery routes.
 
-`api-v1-admin-host-connectivity.yaml` exposes administrator-only progress and current results. `api-v1-admin-host-connectivity-checks.yaml` accepts or returns an active manual run. `api-v1-admin-host-connectivity-test-user-resolve.yaml` resolves an exact test username, and `api-v1-admin-host-connectivity-history.yaml` exposes host-filtered 24-hour cursor history with a default page of 50 and maximum of 200.
 
-`api-v1-connectivity-summary.yaml` declares the onboarded member's credential-free 24-hour summary. `api-v1-subscription.yaml` declares live owner-specific native links and current-squad histories. Both prohibit persistent caching and return empty member collections when no combo is active.
 - `api-v1-admin-ip-lookup.yaml` describes the signed IP Lookup operation and its typed responses.
 - `api-v1-ip-lookup-checks-id.yaml` describes the signed IP Lookup operation and its typed responses.
 - `api-v1-ip-lookup-checks.yaml` describes the signed IP Lookup operation and its typed responses.
@@ -293,3 +291,5 @@ provides browser-only admin preset inventory and optimistic writes.
 `api-v1-admin-xnode-firewall-leases.yaml` exposes bounded memory-only automatic
 lease reads through existing X-Node read authorization. Global settings writes
 retain their existing validated endpoint and write scope.
+
+`api-v1-subscription.yaml` describes uncached owner-scoped subscription and host links.

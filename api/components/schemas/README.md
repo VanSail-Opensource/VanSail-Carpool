@@ -57,9 +57,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 
 `schemas-26.yaml` defines private-message conversations, moderation/repair requests, paged inventory and bounded delivery references. Telegram numeric IDs remain decimal strings.
 
-`connectivity.yaml` defines the seven credential-free connectivity configuration, account, attempt, batch, host-result, snapshot and cursor-history contracts. Nullable fields remain present; X-Node account references are canonical numeric IDs.
 
-`uptime.yaml` describes neutral-gap timelines, the credential-free home summary and member-only subscription host/squad projections, without diagnostic timing or HTTP status fields.
 - `ip-lookup-config.yaml` defines independent provider/geolocation ordering, allowance, signed pricing and response-only free cache previews. Submission uses only the signed quote fields.
 - `ip-lookup-report.yaml` defines compact merged facts, source provenance, refusal evidence, nullable MaxMind fields and owner-scoped receipts with the requested IP and cache match.
 `ip-lookup-live.yaml` defines source timestamps/status, bounded BGP paths/topology, ASN metrics, nullable contextual scores, block counts, PTR records, and Cloudflare traffic windows.
@@ -111,3 +109,5 @@ submit false. Sample/report intervals retain their independent saved values.
 `xnode-automatic-leases.yaml` defines volatile lease rows, bounded source metadata,
 exact decimal counters, pagination/statistics and default-on 24-hour settings.
 The optional global setting field preserves older full-document writers.
+
+`subscription.yaml` defines owner-scoped subscription hosts and their squad references without monitoring fields.

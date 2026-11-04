@@ -108,3 +108,5 @@ source IPs and does not rewrite historical usage, financial facts or legacy IDs.
 `00034_payg_node_history.sql` adds 72-hour directional minute summaries for
 PAYG display. It is forward-only, with no historical reconstruction or changes
 to committed accounting. Expiry runs in bounded existing PAYG retention batches.
+
+`00035_retire_host_connectivity.sql` drops disposable host-check attempts and its obsolete setting; accounting, audit and earlier migrations remain intact.

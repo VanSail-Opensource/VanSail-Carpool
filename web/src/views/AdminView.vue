@@ -12,7 +12,6 @@ const panels: Record<string, Component> = {
   'api-access': defineAsyncComponent(() => import('@/components/admin/api-access/AdminAPITokens.vue')),
   xnode: defineAsyncComponent(() => import('@/components/admin/xnode/XNodeWorkspace.vue')),
   usdt: defineAsyncComponent(() => import('@/components/admin/usdt/AdminUSDTPage.vue')),
-  'host-connectivity': defineAsyncComponent(() => import('@/components/admin/connectivity/AdminConnectivitySettings.vue')),
   catalog: defineAsyncComponent(() => import('@/components/admin/AdminCatalogPanel.vue')),
   activity: defineAsyncComponent(() => import('@/components/admin/AdminActivityPanel.vue')),
   affiliates: defineAsyncComponent(() => import('@/components/admin/affiliates/AdminAffiliatesPanel.vue')),

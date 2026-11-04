@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 type Proxy struct {
@@ -63,7 +61,7 @@ func (p Proxy) Outbound() (map[string]any, error) {
 	if len(p.Mux) > 0 {
 		result["mux"] = p.Mux
 	}
-	result, err := connectivity.ApplyClientMapper(result, p.MapperHost, "xrayJson")
+	result, err := ApplyClientMapper(result, p.MapperHost, "xrayJson")
 	if err != nil {
 		return nil, err
 	}

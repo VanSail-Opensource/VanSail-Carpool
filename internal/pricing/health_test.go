@@ -5,32 +5,32 @@ import (
 	"time"
 )
 
-func TestHealthPersistenceStaleMonitoringAndRecovery(t *testing.T) {
+func TestHealthPersistenceStaleTelemetryAndRecovery(t *testing.T) {
 	start := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 	r := NewHealthRegistry()
-	observe := func(at time.Time, cpu float64, stale, connected, probe bool) Health {
-		return r.Observe(Observation{NodeID: "node", At: at, ReportedAt: at, CPU: cpu, Memory: 20, Connected: connected, Ready: true, Synchronized: true, Complete: true, Stale: stale, ProbeUnavailable: probe})
+	observe := func(at time.Time, cpu float64, stale, connected bool) Health {
+		return r.Observe(Observation{NodeID: "node", At: at, ReportedAt: at, CPU: cpu, Memory: 20, Connected: connected, Ready: true, Synchronized: true, Complete: true, Stale: stale})
 	}
-	if h := observe(start, 20, false, true, false); h.State != "HEALTHY" {
+	if h := observe(start, 20, false, true); h.State != "HEALTHY" {
 		t.Fatal(h)
 	}
-	if h := observe(start.Add(20*time.Second), 100, false, true, false); h.State == "OVERLOADED" || h.State == "OFFLINE" {
+	if h := observe(start.Add(20*time.Second), 100, false, true); h.State == "OVERLOADED" || h.State == "OFFLINE" {
 		t.Fatal("brief spike became outage", h)
 	}
 	for i := 2; i <= 5; i++ {
-		observe(start.Add(time.Duration(i)*20*time.Second), 100, false, true, false)
+		observe(start.Add(time.Duration(i)*20*time.Second), 100, false, true)
 	}
 	if r.Snapshot(start.Add(100 * time.Second))[0].State != "OVERLOADED" {
 		t.Fatal("persistent overload not detected")
 	}
-	if h := observe(start.Add(120*time.Second), 20, true, true, false); h.State != "TELEMETRY_STALE" {
-		t.Fatal("unavailable monitoring became zero demand", h)
+	if h := observe(start.Add(120*time.Second), 20, true, true); h.State != "TELEMETRY_STALE" {
+		t.Fatal("unavailable telemetry became zero demand", h)
 	}
-	if h := observe(start.Add(140*time.Second), 20, false, true, false); h.State != "RECOVERING" {
+	if h := observe(start.Add(140*time.Second), 20, false, true); h.State != "RECOVERING" {
 		t.Fatal(h)
 	}
 	for i := 8; i <= 23; i++ {
-		observe(start.Add(time.Duration(i)*20*time.Second), 20, false, true, false)
+		observe(start.Add(time.Duration(i)*20*time.Second), 20, false, true)
 	}
 	if !r.Safe([]string{"node"}, start.Add(460*time.Second)) {
 		t.Fatal("healthy recovery never cleared")
@@ -48,6 +48,19 @@ func TestRepeatedCPUSampleCannotProveSustainedOverload(t *testing.T) {
 		if h.State == "OVERLOADED" {
 			t.Fatal("one sample was counted repeatedly", h)
 		}
+	}
+}
+
+func TestDisconnectedNodeBecomesOffline(t *testing.T) {
+	registry := NewHealthRegistry()
+	at := time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)
+	observation := Observation{NodeID: "node", At: at, Stale: true}
+	if got := registry.Observe(observation); got.State != "TELEMETRY_STALE" {
+		t.Fatalf("initial missing telemetry: %s", got.State)
+	}
+	observation.At = at.Add(time.Minute)
+	if got := registry.Observe(observation); got.State != "OFFLINE" {
+		t.Fatalf("sustained disconnection: %s", got.State)
 	}
 }
 

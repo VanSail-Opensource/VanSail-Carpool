@@ -38,9 +38,8 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 `pm.ts` exposes typed admin moderation, topic repair and reference-only delivery reads, using existing signed requests and idempotency headers.
 
-`connectivity.ts` uses generated OpenAPI types for administrator-only snapshots, exact-account resolution, asynchronous manual checks and cursor history. Read requests bypass browser caching; configuration writes serialize one credential-free `connectivity.config` value through the existing settings endpoint.
 
-`subscription.ts` exposes live authenticated member uptime and native import links. These endpoints are excluded from persistent rendering snapshots; neither test-account credentials nor raw resolved configurations are returned.
+`subscription.ts` exposes live authenticated member subscription and native import links. These endpoints are excluded from persistent rendering snapshots; neither test-account credentials nor raw resolved configurations are returned.
 - `ipLookup.ts` provides generated typed IP Lookup clients with fresh capability/receipt reads and quote-only cached report previews. Submission explicitly selects the signed action fields and excludes preview metadata; `ipLookup.test.ts` covers this strict transport shape for hosted CI.
 
 - `ipLookupStream.ts` decodes bounded UTF-8 SSE frames through the ordinary signed request transport, supports JSON fallback and requires explicit completion.

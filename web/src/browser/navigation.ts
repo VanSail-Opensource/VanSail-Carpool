@@ -16,7 +16,6 @@ export const adminGroups = [
   { labelKey: 'browser.services', sections: [
     { value: 'statistics', labelKey: 'statistics.title', icon: 'i-ph-chart-donut-bold' },
     { value: 'xnode', labelKey: 'xnode.title', icon: 'i-ph-hard-drives-bold' },
-    { value: 'host-connectivity', labelKey: 'hostConnectivity.title', icon: 'i-ph-plugs-connected-bold' },
     { value: 'ip-lookup', labelKey: 'ipLookup.adminTitle', icon: 'i-ph-globe-bold' },
     { value: 'compensation', labelKey: 'adminCompensation.nav', icon: 'i-ph-first-aid-bold' },
   ] },

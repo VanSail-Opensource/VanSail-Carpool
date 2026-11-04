@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 type subscriptionRepositoryFixture struct {
@@ -37,10 +37,10 @@ type subscriptionRemoteFixture struct {
 	err      error
 }
 
-func (r *subscriptionRemoteFixture) LoadMemberSubscription(_ context.Context, id string, enabled []string, links bool) (connectivity.MemberSubscription, error) {
+func (r *subscriptionRemoteFixture) LoadMemberSubscription(_ context.Context, id string, enabled []string, links bool) (subscription.MemberSubscription, error) {
 	r.calls++
 	r.remoteID, r.enabled = id, enabled
-	result := connectivity.MemberSubscription{Hosts: []connectivity.SubscriptionHost{}, Squads: []connectivity.SubscriptionSquad{}}
+	result := subscription.MemberSubscription{Hosts: []subscription.SubscriptionHost{}}
 	if links {
 		url := "https://subscription.example/owner-key"
 		result.SubscriptionURL = &url

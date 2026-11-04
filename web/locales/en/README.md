@@ -28,7 +28,7 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 
 `settings.json` owns user preference and Telegram member-tag copy.
 
-`host-connectivity.json` owns host-check configuration, progress, retained history, status and sanitized diagnostic translations.
+`subscription.json` owns subscription and host-link copy.
 - `ip-lookup.json` owns English IP Lookup member/admin copy, stable errors and report labels.
 `ip-lookup-live.json` owns the independent ipLookupLive namespace for BGP, ASN, PTR, block counts, traffic, source states and Cloudflare credential guidance.
 

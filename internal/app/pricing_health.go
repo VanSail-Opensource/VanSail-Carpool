@@ -40,25 +40,6 @@ func (a *Application) observePricingHealth(ctx context.Context, now time.Time) e
 	if err != nil {
 		return err
 	}
-	probes := map[string]bool{}
-	if a.connectivity != nil {
-		snapshot, e := a.connectivity.Snapshot(ctx)
-		if e == nil && !snapshot.Stale {
-			endpoints, e := a.xnodeService.Endpoints(ctx)
-			if e != nil {
-				return e
-			}
-			byEndpoint := map[string]string{}
-			for _, p := range endpoints {
-				byEndpoint[p.ID] = p.NodeID
-			}
-			for _, h := range snapshot.Hosts {
-				if h.Latest != nil && h.Latest.FinishedAt != nil && now.Sub(*h.Latest.FinishedAt) < 5*time.Minute && h.Latest.Status == "failed" {
-					probes[byEndpoint[h.HostUUID]] = true
-				}
-			}
-		}
-	}
 	for _, node := range metrics.Nodes {
 		if !node.Enabled {
 			a.store.PricingHealth().Remove(node.NodeID)
@@ -76,7 +57,7 @@ func (a *Application) observePricingHealth(ctx context.Context, now time.Time) e
 		if e != nil {
 			return e
 		}
-		h := a.store.PricingHealth().Observe(pricing.Observation{NodeID: node.NodeID, At: now, ReportedAt: reported, ReceivedAt: node.ReceivedAt, Connected: node.Connected, Ready: node.Ready, Synchronized: node.Synchronized, Stale: node.Stale, ProbeUnavailable: probes[node.NodeID], CPU: cpu, Memory: memory, Complete: complete, Maintenance: maintenance})
+		h := a.store.PricingHealth().Observe(pricing.Observation{NodeID: node.NodeID, At: now, ReportedAt: reported, ReceivedAt: node.ReceivedAt, Connected: node.Connected, Ready: node.Ready, Synchronized: node.Synchronized, Stale: node.Stale, CPU: cpu, Memory: memory, Complete: complete, Maintenance: maintenance})
 		if err = a.store.RecordPricingHealth(ctx, h); err != nil {
 			return err
 		}

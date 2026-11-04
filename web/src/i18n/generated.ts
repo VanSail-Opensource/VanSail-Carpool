@@ -59,7 +59,7 @@ import enAffiliates from '../../locales/en/affiliates.json'
 import enCommerce from '../../locales/en/commerce.json'
 import enCommunity from '../../locales/en/community.json'
 import enConnections from '../../locales/en/connections.json'
-import enHostConnectivity from '../../locales/en/host-connectivity.json'
+import enSubscription from '../../locales/en/subscription.json'
 import enCore from '../../locales/en/core.json'
 import enHome from '../../locales/en/home.json'
 import enMember from '../../locales/en/member.json'
@@ -83,7 +83,7 @@ import zhAffiliates from '../../locales/zh-CN/affiliates.json'
 import zhCommerce from '../../locales/zh-CN/commerce.json'
 import zhCommunity from '../../locales/zh-CN/community.json'
 import zhConnections from '../../locales/zh-CN/connections.json'
-import zhHostConnectivity from '../../locales/zh-CN/host-connectivity.json'
+import zhSubscription from '../../locales/zh-CN/subscription.json'
 import zhCore from '../../locales/zh-CN/core.json'
 import zhHome from '../../locales/zh-CN/home.json'
 import zhMember from '../../locales/zh-CN/member.json'
@@ -105,7 +105,7 @@ const en = {
  ...enAdminUsdt,
  ipLookup: { ...enIPLookup.ipLookup, ...enIPLookupChecks.ipLookup, refusals: { ...enIPLookup.ipLookup.refusals, ...enIPLookupChecks.ipLookup.refusals } },
  ...enIPLookupLive,
-  ...enHostConnectivity,
+  ...enSubscription,
   ...enSettings,
   ...enCore, ...enRecovery, ...enAffiliates, ...enActivity, ...enCommerce, ...enPaymentCrypto, ...enCommunity, ...enMember, ...enConnections, ...enHome, ...enAdminCore, ...enAdminOnboarding, ...enAdminData,
   ...enAdminActivity, ...enAdminDraw, ...enAdminCommunity, ...enAdminCatalog, ...enAdminOperations, ...enAdminWorkflows, ...enAdminCompensation, ...enSquadProfile, ...enStatistics,
@@ -122,7 +122,7 @@ const zhCN: typeof en = {
  ...zhAdminUsdt,
  ipLookup: { ...zhIPLookup.ipLookup, ...zhIPLookupChecks.ipLookup, refusals: { ...zhIPLookup.ipLookup.refusals, ...zhIPLookupChecks.ipLookup.refusals } },
  ...zhIPLookupLive,
-  ...zhHostConnectivity,
+  ...zhSubscription,
   ...zhSettings,
   ...zhCore, ...zhRecovery, ...zhAffiliates, ...zhActivity, ...zhCommerce, ...zhPaymentCrypto, ...zhCommunity, ...zhMember, ...zhConnections, ...zhHome, ...zhAdminCore, ...zhAdminOnboarding, ...zhAdminData,
   ...zhAdminActivity, ...zhAdminDraw, ...zhAdminCommunity, ...zhAdminCatalog, ...zhAdminOperations, ...zhAdminWorkflows, ...zhAdminCompensation, ...zhSquadProfile, ...zhStatistics,

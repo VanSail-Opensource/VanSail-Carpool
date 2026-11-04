@@ -17,7 +17,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/entitlements"
@@ -86,8 +85,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	xnodeMaster := xnode.NewMaster(xnodeService, logger)
 	provider := proxyProvider{native: xnodeService, master: xnodeMaster, store: store}
-	connectivityService := connectivity.NewService(settings, proxyConnectivitySource{provider: provider}, connectivity.NewXrayProbe(), store, upstreams.connectivity)
-	settings.SetConnectivityValidation(connectivityService.ValidateConfig, connectivityService.Invalidate)
 	queuedTelegramClient := &queuedTelegram{client: telegramClient, queue: upstreams.telegram}
 	settings.SetPMForumValidator(validatePMForum(queuedTelegramClient))
 	affiliateService := affiliates.NewService(store, queuedTelegramClient)
@@ -105,7 +102,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	databaseAdminHTTP := httpapi.NewDatabaseAdministrationHTTP(databaseEditor, backupService)
 	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, provider, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
 	catalogService := catalog.NewService(store, provider, 2*time.Minute)
-	catalogService.SetConnectivity(connectivityService)
 	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL)
 	billingService.SetBuiltinUSDT(usdtService)
 	activityService := newActivityService(store, settings, queuedTelegramClient)
@@ -233,13 +229,12 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	api, err := httpapi.New(httpapi.Dependencies{
 		XNode: xnodeService, XNodeMaster: xnodeMaster,
-		BrowserAuth:  browserauth.New(store, cfg.PublicBaseURL, cfg.AdminTelegramIDs),
-		USDT:         usdtService,
-		IPLookup:     ipLookupService,
-		PM:           pmService,
-		Connectivity: connectivityService,
-		FirstEntry:   &accounts.FirstEntry{Repository: store, Settings: settings, Verifier: turnstile.New(upstreams.turnstile), Hostname: cfg.PublicBaseURL.Hostname(), AdminTelegramIDs: cfg.AdminTelegramIDs},
-		Accounts:     accountsService, Catalog: catalogService, Connections: memberServices.connections,
+		BrowserAuth: browserauth.New(store, cfg.PublicBaseURL, cfg.AdminTelegramIDs),
+		USDT:        usdtService,
+		IPLookup:    ipLookupService,
+		PM:          pmService,
+		FirstEntry:  &accounts.FirstEntry{Repository: store, Settings: settings, Verifier: turnstile.New(upstreams.turnstile), Hostname: cfg.PublicBaseURL.Hostname(), AdminTelegramIDs: cfg.AdminTelegramIDs},
+		Accounts:    accountsService, Catalog: catalogService, Connections: memberServices.connections,
 		ConnectionDrops: memberServices.drops, PurchaseOperations: memberServices.purchases, Statistics: statisticsService,
 		Billing: billingService, Activity: activityService,
 		Coupons: couponService, Emby: embyService,
@@ -267,8 +262,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
 		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService,
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
-		connectivity: connectivityService,
-		ipLookup:     ipLookupWorker,
-		usdt:         usdtService,
+		ipLookup: ipLookupWorker,
+		usdt:     usdtService,
 	}, nil
 }

@@ -508,9 +508,7 @@ attached-coupon policy and a unique source-successor link.
 `telegram_pm_commands_test.go`, `telegram_pm_permissions_test.go`, `telegram_pm_topics_test.go` and `telegram_pm_retention_test.go` cover concurrent replay, normalized flags across destinations, unauthorized mutation, serialized topic/card phases, safe recovery, retention boundaries and foreign keys in hosted CI.
 `telegram_pm_reads_test.go` covers reply-inferred read state. `admin_balance_reference_test.go` covers stable-reference replay without duplicate ledger or audit effects.
 
-`connectivity_attempts.go`, `connectivity_queries.go`, `connectivity_scan.go` and `connectivity_retention.go` implement the `connectivity.Repository` interface against one indexed diagnostic-attempt table. A probe inserts its identity and running state before execution, then seals a sanitized terminal result with a conditional transition. Host UUID is nullable for setup failures; resolved proxy configurations, host metadata and credentials are never persisted. Latest results are derived by host and configuration hash, while history uses the shared filter-bound timestamp cursor with a default page of 50 and a maximum of 200. Fixed-width UTC nanosecond timestamps provide exact indexed ordering and retention comparisons. Every read excludes attempts at or before `now-24h`, independently of pruning. Checker startup interrupts unfinished attempts without changing their start, and its independent five-minute cleanup calls the pruning method even while scheduling is disabled. Mutations use the existing store write lock and context-aware PostgreSQL calls; the storage module performs no external API calls. The connectivity lifecycle, queries, retention and concurrency tests cover terminal immutability, nullable setup results, sanitized codes, restart recovery, pagination, configuration separation and exact fractional-second expiry in hosted CI.
 
-`connectivity_lifecycle_test.go`, `connectivity_queries_test.go`, `connectivity_retention_test.go` and `connectivity_concurrency_test.go` exercise those repository invariants in hosted CI; `connectivity_test_helpers_test.go` provides credential-free attempt fixtures.
 
 - `ip_lookup_refunds.go` restores never-attempted costs and closes interrupted shared runs during existing operation maintenance. Attempted calls remain charged and cacheable; IP receipts are excluded from generic compensation after domain settlement.
 - `ip_lookup_cache.go` serves free compact quote previews, preferring exact-IP evidence before the newest completed IPv4 /24 report. IPv6 stays exact-only; parsed completion timestamps avoid RFC3339 text ordering errors. Quote previews create no receipt, debit, or upstream request.
@@ -982,8 +980,6 @@ Native report state acknowledgments use GREATEST on accepted/applied revisions. 
   `CUSTOM_COMBO_RECOVERY.md` documents the old repair boundaries.
 - `admin_entitlement_validity_test.go` and `billing_purchase_addons_test.go`
   cover exact validity boundaries, pending settlement and atomic squad additions.
-- `connectivity_timeline.go` and `connectivity_timeline_test.go` provide bounded
-  chronological diagnostic history without persisting upstream credentials.
 - `ip_lookup_test.go` checks durable lookup settlement and report lifecycles.
 - `payg_commerce_test.go` covers metered purchases and wallet/accounting evidence.
 - `pricing_admission_test.go`, `pricing_compute_test.go`, `pricing_export_test.go`,

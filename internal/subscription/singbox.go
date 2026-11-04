@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func (p Proxy) SingBox() (map[string]any, error) {
@@ -72,7 +71,7 @@ func (p Proxy) SingBox() (map[string]any, error) {
 	default:
 		return nil, fmt.Errorf("%w: sing-box transport", ErrUnsupported)
 	}
-	mapped, err := connectivity.ApplyClientMapper(out, p.MapperHost, "singbox")
+	mapped, err := ApplyClientMapper(out, p.MapperHost, "singbox")
 	if err != nil {
 		return nil, err
 	}

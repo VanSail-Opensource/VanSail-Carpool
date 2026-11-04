@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
 
 type nativeSubscriptionRemote struct{ *subscriptionRemoteFixture }
 
-func (r *nativeSubscriptionRemote) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (connectivity.MemberSubscription, error) {
+func (r *nativeSubscriptionRemote) LoadSubscriptionForMember(ctx context.Context, user model.User, enabled []string, links bool) (subscription.MemberSubscription, error) {
 	return r.LoadMemberSubscription(ctx, "native:"+user.ID, enabled, links)
 }
 

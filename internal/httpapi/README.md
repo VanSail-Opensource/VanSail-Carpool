@@ -154,18 +154,7 @@ onboarding, signed requests and the existing idempotent operation protections.
 
 `telegram_pm.go` delegates authenticated ordinary message/callback updates to PM; payment/command paths retain their routing. `telegram_pm_commands.go` applies `/refund`, `/addtxb`, and `/deducttxb` only to the authorized topic owner. `admin_pm.go` retains PM conversation inventory, idempotent moderation and topic repair APIs for the per-user profile controls. `admin_pm_deliveries.go` exposes bounded delivery references and read evidence, including ambiguous sends.
 
-`admin_connectivity.go` exposes the administrator-only host snapshot, asynchronous
-manual check admission, exact test-user resolution, and rolling 24-hour history.
-Routes inherit signed-session, entry-verification, and configured-administrator
-middleware. Configuration uses the existing atomic settings resource. The HTTP
-layer delegates scheduling/probes to `connectivity.Service` and bounded history
-queries to the store; resolved proxy credentials never enter response DTOs.
-`admin_connectivity_test.go` covers actual administrator route middleware,
-snapshot/resolution, asynchronous deduplication, and history validation;
-`admin_connectivity_helpers_test.go` provides a real PostgreSQL fixture and a
-cancellable fake probe for hosted execution without external network traffic.
-
-`member_subscription.go` serves authenticated onboarded GET `/api/v1/connectivity/summary` and `/api/v1/subscription` through the catalog authorization facade. Both return `Cache-Control: no-store`; only the subscription response contains that member's native links. Neither exposes monitoring account identity, raw configurations, latency or HTTP diagnostic numbers.
+`member_subscription.go` serves the onboarded owner subscription with no-store headers and no raw configuration disclosure.
 - `ip_lookup.go` mounts signed member and admin IP Lookup routes with owner scoping and safe errors.
 `ip_lookup_details.go` serves authenticated, non-billed, no-store live IP enrichment with feature/onboarding guards and member admission errors.
 

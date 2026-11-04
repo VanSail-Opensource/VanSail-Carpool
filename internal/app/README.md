@@ -34,7 +34,6 @@ scheduled drain, with cancellation and executor shutdown joined in hosted CI.
 worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
 the independent browser access-link/session flow authorizes the administrator.
 
-`xnode_connectivity.go` derives monitoring targets from native identities and published endpoints, keeping credentials server-side. The application owns the dedicated connectivity lane and joins its checker before closing PostgreSQL.
 
 The entitlement adapter intersects applied squads with account preferences at
 execution; member receipts reuse the entitlement executor and invalidate usage.
@@ -115,7 +114,6 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_connections.go`: Entry points: `RequestConnectionScan`, `PollConnectionScan`, `ControlMemberIP`, `DropConnection`.
 
-- `xnode_connectivity.go`: Entry points: `Resolve`, `Validate`, `Load`.
 
 
 - `xnode_member_subscription.go`: Entry points: `LoadMemberSubscription`.
@@ -154,10 +152,7 @@ connection and the authoritative database.
 
 Native compensation readiness requires fresh ready reports. Extensions update
 expiry on the existing period and retain combined quota usage.
-`xnode_service_connectivity.go` derives monitoring targets from the native
-standalone inventory and current host access.
-Provider name/ID resolution accepts explicit service identities without creating
-a Telegram association; internal bounded probes retain their separate path.
+Provider name/ID resolution accepts explicit service identities without creating a Telegram association.
 
 `xnode_admin_scan.go` starts native-only scans in the existing durable scan workflow and reads fresh eligible nodes through the per-node command executor. Ownership/freshness is checked again before projecting observations; raw source IPs stay memory-only.
 
@@ -165,12 +160,10 @@ a Telegram association; internal bounded probes retain their separate path.
 
 `xnode_dashboard.go` resolves native dashboard statistics from panel ownership.
 
-`xnode_connectivity_test.go` rejects disabled native monitoring identities before host resolution. Target loading uses published enabled endpoints, standalone service names and ephemeral native outbounds. Member subscription reads resolve panel ownership first.
 
 `xnode_subscription_projection.go` keeps owner-scoped split XHTTP import links
-while restricting Squad status membership to the original published inventory.
-`xnode_subscription_projection_test.go` verifies link retention, enabled-group
-filtering and identical monitoring membership with and without export profiles.
+while filtering host references by enabled squads.
+`xnode_subscription_projection_test.go` verifies link retention and filtering.
 The unified member subscription adapter returns empty hosts for members without
 a native identity, allowing the entrance to remain available before provisioning.
 PAYG-only identities use the same owner-scoped export path without a Combo gate.
@@ -179,14 +172,14 @@ PAYG-only identities use the same owner-scoped export path without a Combo gate.
 
 `xnode_purchase_remote.go` and `xnode_purchase_reset.go` bind native reset/refund reads, mutations and recovery to a panel owner and purchase. `xnode_purchase_test_helpers_test.go` builds native-only paid fixtures. `xnode_purchase_operations_test.go` covers reset charging, purchase-wide refund evidence, zero-use refunds and retry exhaustion; `xnode_reset_reconciliation_test.go` distinguishes operation proof from natural cadence and interrupted attempts. These regressions run only in hosted CI.
 
-`connectivity_errors.go` maps native probe failures into stable client codes. `metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.
+`metric_values.go` bounds rounded telemetry projections. Commerce adapters call the authoritative native service; source fallback and migration workers are removed.
 
 PAYG jobs use the existing durable outbox and master executor. Startup and 30-second scans provision missing member/squad/node references in bounded batches. Connection scans and IP controls resolve every internal PAYG principal back to the authenticated member; source IP observations stay memory-only.
 
 `retention.go` runs bounded PAYG expiry independently at startup and each transition tick, reporting counts and failures without coupling deletion to account repairs.
 
 - `pricing_worker.go`: Single joined 20-second worker, three-second shared work budget, rotating bounded batches and pressure/storage gates.
-- `pricing_health.go`: Reuse authenticated X-Node CPU/memory semantics and independent connectivity without raw telemetry SQL.
+- `pricing_health.go`: Reuse authenticated X-Node CPU/memory and connection health without raw telemetry SQL.
 - `pricing_notice.go`: Queued model requests and nonblocking renewal price notifications.
 - `pricing_health_notice.go`: Queued administrator incident notifications containing sanitized facts.
 - `pricing_change_notice.go`: Notify administrators after direct audited pricing edits and material campaigns; no approval stage.

@@ -18,9 +18,9 @@ const (
 )
 
 type providerQueues struct {
-	xnodeValidation                                  *upstreamqueue.Queue
-	iplookup                                         map[string]*upstreamqueue.Queue
-	emby, telegram, payment, turnstile, connectivity *upstreamqueue.Queue
+	xnodeValidation                    *upstreamqueue.Queue
+	iplookup                           map[string]*upstreamqueue.Queue
+	emby, telegram, payment, turnstile *upstreamqueue.Queue
 }
 
 func newProviderQueues() (*providerQueues, error) {
@@ -33,7 +33,6 @@ func newProviderQueues() (*providerQueues, error) {
 		{&q.telegram, upstreamqueue.Config{Name: "telegram", Capacity: telegramQueueCapacity, MinInterval: telegramPace, Workers: 4}},
 		{&q.payment, upstreamqueue.Config{Name: "payment", Capacity: paymentQueueCapacity, MinInterval: paymentPace, Workers: 4}},
 		{&q.turnstile, upstreamqueue.Config{Name: "turnstile", Capacity: 32, MinInterval: 100 * time.Millisecond, Workers: 4}},
-		{&q.connectivity, upstreamqueue.Config{Name: "connectivity", Capacity: 8, Workers: 4}},
 		{&q.xnodeValidation, upstreamqueue.Config{Name: "xnode-validation", Capacity: 32, Workers: 4}},
 	}
 	for _, entry := range entries {
@@ -48,7 +47,7 @@ func newProviderQueues() (*providerQueues, error) {
 	return q, err
 }
 func (q *providerQueues) queues() []*upstreamqueue.Queue {
-	return []*upstreamqueue.Queue{q.emby, q.telegram, q.payment, q.turnstile, q.connectivity, q.xnodeValidation}
+	return []*upstreamqueue.Queue{q.emby, q.telegram, q.payment, q.turnstile, q.xnodeValidation}
 }
 func (q *providerQueues) start(ctx context.Context) error {
 	if q == nil {

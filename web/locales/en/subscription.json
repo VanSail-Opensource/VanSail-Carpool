@@ -1,0 +1,17 @@
+{
+  "subscription": {
+    "title": "Subscription",
+    "copy": "Your subscription and individual host import links.",
+    "hosts": "Accessible hosts",
+    "copyHost": "Copy {name} link",
+    "qrHost": "QR code for {name}",
+    "qrHint": "Scan this code with your proxy client to import this host.",
+    "qrFailed": "The QR code could not be generated. Close and reopen it to retry.",
+    "copyFailed": "The link could not be copied. Try again.",
+    "noLink": "An individual import link is unavailable for this host.",
+    "noHosts": "No accessible hosts are available.",
+    "noCombo": "No subscription hosts yet",
+    "noComboHint": "Explore available PAYG squads or activate a Combo to get connected.",
+    "loadFailed": "Subscription data could not be loaded."
+  }
+}

@@ -1,6 +1,6 @@
-# Embedded connectivity engine
+# Xray Core
 
-The host connectivity module links Xray Core under the Mozilla Public License
+The native configuration validator links Xray Core under the Mozilla Public License
 2.0. `Xray-core-LICENSE.txt` preserves the dependency's license text.
 
 The unmodified engine source for the pinned module revision
@@ -9,5 +9,4 @@ The unmodified engine source for the pinned module revision
 
 `go.mod` and `go.sum` identify the exact engine and transitive dependencies.
 The production image includes this notice and license under
-`/usr/share/licenses/vansail-carpool`. The panel-owned connectivity adapter projects
-X-Node's documented resolved configurations and exposes sanitized results.
+`/usr/share/licenses/vansail-carpool`.

@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
@@ -52,14 +51,13 @@ type cachedDashboard struct {
 
 // Service owns price selection and short-lived statistics caching.
 type Service struct {
-	repository   Repository
-	provider     ProxyClient
-	cacheTTL     time.Duration
-	now          func() time.Time
-	cacheMu      sync.RWMutex
-	cache        map[string]cachedDashboard
-	cacheBytes   int
-	connectivity *connectivity.Service
+	repository Repository
+	provider   ProxyClient
+	cacheTTL   time.Duration
+	now        func() time.Time
+	cacheMu    sync.RWMutex
+	cache      map[string]cachedDashboard
+	cacheBytes int
 }
 
 // NewService creates a catalog service.

@@ -1,11 +1,11 @@
 get:
   tags: [Dashboard]
   operationId: getMemberSubscription
-  summary: Get this member's subscription links and squad uptime
-  description: Uses active local entitlement and enabled squad preferences intersected with upstream access. Returns only the requesting member's native links, including enabled hidden hosts. No monitoring credentials or raw proxy configurations. Inactive combos return empty collections. Links must not be persisted by clients.
+  summary: Get this member's subscription links and hosts
+  description: Uses local entitlement and enabled squad preferences. Returns only the requesting member's native links, including eligible PAYG and hidden hosts. Links must not be persisted by clients.
   responses:
     '200':
-      description: Member subscription and derived 24-hour timelines.
+      description: Member subscription and accessible hosts.
       headers:
         Cache-Control: { schema: { type: string, const: no-store } }
       content:

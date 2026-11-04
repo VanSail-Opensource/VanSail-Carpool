@@ -15,7 +15,7 @@
 
 `SettingsView.vue` is the thin route entry for user notification, display, subscription and community preferences.
 
-`SubscriptionView.vue` is the thin route composition for Subscription & uptime, delegating fetching and display to the subscription components.
+`SubscriptionView.vue` is the thin route composition for Subscription, delegating fetching and display to the subscription components.
 - `IPLookupView.vue` composes the member IP Lookup feature.
 - `AdminIPLookupView.vue` composes the standalone administrator IP Lookup settings feature.
 

@@ -1,4 +1,4 @@
-package connectivity
+package subscription
 
 import (
 	"regexp"
@@ -12,20 +12,20 @@ var mapperPathPattern = regexp.MustCompile(`^[A-Za-z0-9_$-]+(?:\.[A-Za-z0-9_$-]+
 
 func mapperSegments(path string) ([]string, error) {
 	if len(path) > 512 || !mapperPathPattern.MatchString(path) {
-		return nil, projectionError("INVALID_MAPPER")
+		return nil, mapperError()
 	}
 	path = strings.ReplaceAll(strings.ReplaceAll(path, "[", "."), "]", "")
 	parts := strings.Split(path, ".")
 	if len(parts) > 32 {
-		return nil, projectionError("INVALID_MAPPER")
+		return nil, mapperError()
 	}
 	for _, part := range parts {
 		if part == "__proto__" || part == "prototype" || part == "constructor" {
-			return nil, projectionError("INVALID_MAPPER")
+			return nil, mapperError()
 		}
 		if strings.IndexFunc(part, func(letter rune) bool { return letter < '0' || letter > '9' }) == -1 {
 			if index, err := strconv.Atoi(part); err != nil || index > 1024 {
-				return nil, projectionError("INVALID_MAPPER")
+				return nil, mapperError()
 			}
 		}
 	}

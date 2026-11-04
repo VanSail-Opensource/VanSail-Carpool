@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 )
@@ -22,7 +21,6 @@ type SettingDefinition struct {
 }
 
 var settingDefinitions = map[string]SettingDefinition{
-	connectivity.SettingKey:                  {Default: `{"scheduledEnabled":false,"proxyUserId":0,"intervalSeconds":300,"timeoutSeconds":15,"maxRetries":10,"retryIntervalSeconds":1,"probeUrl":"https://cp.cloudflare.com/generate_204"}`, Validate: func(value string) error { _, err := connectivity.DecodeConfig(value); return err }},
 	"telegram.pm.enabled":                    {Default: "false", Validate: validateBoolean},
 	"telegram.pm.group_chat_id":              {Validate: validatePMGroup},
 	"captcha.turnstile.enabled":              {Default: "false", Validate: validateBoolean},
@@ -67,14 +65,12 @@ type SettingsRepository interface {
 // SettingsService validates the fixed registry and protects secret values.
 
 type SettingsService struct {
-	connectivityValidator func(context.Context, connectivity.Config) error
-	connectivityChanged   func()
-	pmForumValidator      func(context.Context, int64) error
-	mu                    sync.Mutex
-	repository            SettingsRepository
-	vault                 *secret.Vault
-	profiles              PaymentProfileRepository
-	channels              paymentProfileChannelReader
+	pmForumValidator func(context.Context, int64) error
+	mu               sync.Mutex
+	repository       SettingsRepository
+	vault            *secret.Vault
+	profiles         PaymentProfileRepository
+	channels         paymentProfileChannelReader
 }
 
 // NewSettingsService creates the runtime settings facade.
@@ -146,13 +142,6 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 	if err := s.validatePMSettings(ctx, key, value); err != nil {
 		return err
 	}
-	if err := s.validateConnectivitySettings(ctx, key, value); err != nil {
-		return err
-	}
-	changed, err := s.connectivitySettingChanged(ctx, key, value)
-	if err != nil {
-		return err
-	}
 	stored := value
 	// A non-blank secret is an explicit replacement. Encrypt it freshly so
 	// the write-only value from the settings UI can never be persisted as-is.
@@ -165,9 +154,6 @@ func (s *SettingsService) put(ctx context.Context, actorID, key, value string) e
 	}
 	if err := s.repository.PutSetting(ctx, key, stored, definition.Secret, &actorID); err != nil {
 		return err
-	}
-	if s.connectivityChanged != nil && changed {
-		s.connectivityChanged()
 	}
 	return nil
 }

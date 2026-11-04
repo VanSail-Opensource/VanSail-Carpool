@@ -24,8 +24,7 @@ path and session options, and use distinct published hosts. PAYG inventory uses
 its owner-specific host IDs in loading, validation, saved references and export;
 no Combo or whole-GB wallet threshold gates those client metadata projections.
 
-Xray rendering and connectivity probes share the existing ordered mapper in
-`internal/connectivity`. Sing-box and Mihomo apply their own mapper operations.
+Xray rendering uses the subscription-owned ordered mapper. Sing-box and Mihomo apply their own mapper operations.
 Unsupported protocol or transport combinations return errors instead of producing
 broken imports. Host exclusions are applied before rendering.
 
@@ -117,3 +116,5 @@ policies are reserved, and existing endpoint labels are preserved when unique.
 Only the ephemeral rendered document changes; inventory, routing, accounting
 and saved templates remain authoritative. Regression coverage lives in
 `template_names_test.go` and `internal/xnode/payg_subscription_test.go`.
+
+`member.go` defines owner-scoped host and subscription projections. `client_mapper.go` and `client_mapper_path.go` implement bounded ordered client mapping without retaining credentials; `client_mapper_test.go` covers copying, mutation isolation and rejected paths.

@@ -2,7 +2,6 @@ package subscription
 
 import (
 	"fmt"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 )
 
 func yamlFormat(format string) bool { return format == "clash" || format == "stash" }
@@ -94,7 +93,7 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 			delete(out, "servername")
 		}
 	}
-	mapped, err := connectivity.ApplyClientMapper(out, p.MapperHost, mapper)
+	mapped, err := ApplyClientMapper(out, p.MapperHost, mapper)
 	if err != nil {
 		return nil, err
 	}

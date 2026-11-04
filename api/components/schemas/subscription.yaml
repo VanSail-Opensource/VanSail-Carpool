@@ -1,0 +1,36 @@
+SubscriptionHost:
+  type: object
+  additionalProperties: false
+  required: [uuid, name, countryCodes, squadUuids, link, linkErrorCode]
+  properties:
+    uuid: { type: string }
+    name: { type: string }
+    publishedName: { type: string }
+    nameOverride: { type: string }
+    priceLabel: { type: string }
+    customRoute: { type: boolean }
+    splitXhttp: { type: boolean }
+    countryCodes: { type: array, items: { type: string } }
+    squadUuids: { type: array, items: { type: string } }
+    link: { type: [string, 'null'] }
+    linkErrorCode: { type: string }
+MemberSubscription:
+  type: object
+  additionalProperties: false
+  required: [activeCombo, subscriptionUrl, hosts]
+  properties:
+    activeCombo: { type: boolean }
+    subscriptionUrl: { type: [string, 'null'] }
+    hosts:
+      type: array
+      items: { $ref: '../../openapi.yaml#/components/schemas/SubscriptionHost' }
+HostNameCustomization:
+  type: object
+  additionalProperties: false
+  required: [hostId, name, nameOverride, publishedName, priceLabel]
+  properties:
+    hostId: { type: string }
+    name: { type: string }
+    nameOverride: { type: string }
+    publishedName: { type: string }
+    priceLabel: { type: string }

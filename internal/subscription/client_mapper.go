@@ -1,6 +1,9 @@
-package connectivity
+package subscription
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 var mapperHostPaths = []string{
 	"address", "clientOverrides.serverDescription", "finalRemark", "metadata.inboundTag",
@@ -9,14 +12,8 @@ var mapperHostPaths = []string{
 	"transport", "transportOptions",
 }
 
-// Proxy applies xrayJson operations in order. Missing copy sources and paths
-// blocked by primitives are skipped, matching its documented generator behavior.
-func applyXrayMapper(outbound, host map[string]any) (map[string]any, error) {
-	return ApplyClientMapper(outbound, host, "xrayJson")
-}
-
 // ApplyClientMapper shares the documented ordered host mapping semantics across
-// native Xray probes and owner-scoped subscription renderers.
+// owner-scoped subscription renderers.
 func ApplyClientMapper(outbound, host map[string]any, format string) (map[string]any, error) {
 	mapper := configObject(configObject(host["clientOverrides"])["mapper"])
 	operationsValue := mapper[format]
@@ -25,7 +22,7 @@ func ApplyClientMapper(outbound, host map[string]any, format string) (map[string
 	}
 	operations, ok := operationsValue.([]any)
 	if !ok || len(operations) > 256 {
-		return nil, projectionError("INVALID_MAPPER")
+		return nil, mapperError()
 	}
 	result := cloneConfigValue(outbound).(map[string]any)
 	for _, item := range operations {
@@ -40,7 +37,7 @@ func ApplyClientMapper(outbound, host map[string]any, format string) (map[string
 			var exists bool
 			value, exists = operation["value"]
 			if !exists {
-				return nil, projectionError("INVALID_MAPPER")
+				return nil, mapperError()
 			}
 		case "unset":
 			mapperUpdate(result, to, nil, true)
@@ -55,7 +52,7 @@ func ApplyClientMapper(outbound, host map[string]any, format string) (map[string
 				continue
 			}
 		default:
-			return nil, projectionError("INVALID_MAPPER")
+			return nil, mapperError()
 		}
 		mapperUpdate(result, to, cloneConfigValue(value), false)
 	}
@@ -105,3 +102,10 @@ func cloneConfigValue(value any) any {
 		return value
 	}
 }
+
+var errInvalidMapper = errors.New("invalid client mapper")
+
+func mapperError() error { return errInvalidMapper }
+
+func configObject(value any) map[string]any { object, _ := value.(map[string]any); return object }
+func stringValue(value any) string          { text, _ := value.(string); return text }

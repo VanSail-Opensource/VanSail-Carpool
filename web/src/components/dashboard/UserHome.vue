@@ -10,7 +10,7 @@ import { useI18n } from '@/i18n'
 import BalanceHero from './BalanceHero.vue'
 import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
-import HomeUptimePanel from '@/components/subscription/HomeUptimePanel.vue'
+import HomeSubscriptionEntrance from '@/components/subscription/HomeSubscriptionEntrance.vue'
 import UsagePanel from './UsagePanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
 import type { ActivityStatus } from './memberActivity'
@@ -90,7 +90,7 @@ function consumeReissueRequest(): void {
             <InlineNotice v-if="autoRenewalFailureMessage" tone="warning" :title="$t('home.autoRenewalFailureTitle')">{{ autoRenewalFailureMessage }}</InlineNotice>
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>
-          <HomeUptimePanel />
+          <HomeSubscriptionEntrance />
           <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
           <UsagePanel
             v-if="dashboard.statistics"

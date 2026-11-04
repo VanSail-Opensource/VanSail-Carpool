@@ -1,4 +1,4 @@
-# Subscription and uptime
+# Subscription
 
 `SubscriptionFormatDiagnostics.vue` shares localized format omission/failure
 messages between the member center and public page. It renders only bounded safe
@@ -32,40 +32,15 @@ draft, checking, unavailable or disabled routing; it never implies measured
 destination reachability. `routingPresentation.ts` simplifies only proven literal
 selector inclusion and preserves other intersections/exclusions without guessing.
 
-`HomeUptimePanel.vue` exposes the subscription entrance to every onboarded member,
-including PAYG-only members. Only the uptime bar and squad history require an
-active Combo. Members without native identities receive an empty subscription
-projection; no credentials are allocated by browsing this page.
-Its subscription entrance stays centered on mobile and desktop; a failed read
-places Retry on a separate row so it does not shift the entrance.
-The entrance is a native button calling the named Vue Router route, following
-the existing Connections action. It has no anchor URL for mobile Telegram to
-open as a new Mini App document; in-memory routing preserves the launch context
-and the shell retains native Back ownership.
-`SubscriptionPage.vue` composes the full subscription URL, existing revoke and
-connections actions, native host links, and squad history. `HostLinkRow.vue`
-owns clipboard feedback and an on-demand QR popup using the installed `qrcode`
-library and Nuxt UI modal. `SquadUptime.vue` keeps host history in native,
-initially closed disclosures. `UptimeBar.vue` renders time-proportional intervals
-with pointer and arrow-key inspection and localized, accessible status labels.
-
-`useSubscriptionData.ts` owns live fetching, 60-second visible-page polling,
-superseded request cancellation and lifecycle cleanup. It never restores or
-persists bearer links. Successful revocation clears the previous snapshot before
-loading current native links; unmounting drops all member data.
-
-The typed client `web/src/api/subscription.ts` calls authenticated member routes.
-The server authorizes active local ownership and preferences, joins upstream
-host/inbound/node metadata, and derives histories from the existing monitor.
-Unknown measurements are neutral gaps. Hosts are green/red; squads and the home
-summary add yellow for partial outages, only with complete measurement coverage.
-No probe credentials, latency, or numeric HTTP results enter these interfaces.
-
-English and Chinese copy inherits the host-connectivity locale domain. Views
-reuse the existing premium-dark layout and do not add dependencies.
-`useSubscriptionData.test.ts` covers revocation clearing, obsolete response rejection, visible-page polling and disposal of private state in hosted CI. `UptimeBar.test.ts` covers keyboard inspection and neutral current status after refresh data expires.
-`HomeUptimePanel.test.ts` covers entry navigation during loading, the absence of
-a document link, and preservation of the Telegram launch URL in hosted CI.
+`HomeSubscriptionEntrance.vue` links every onboarded member to Subscription using
+Vue Router so Telegram keeps the launch URL. `HomeSubscriptionEntrance.test.ts`
+covers navigation without a document link. `SubscriptionPage.vue` composes the
+owner-only link, format diagnostics and accessible host links. `HostLinkRow.vue`
+provides name editing, clipboard feedback and on-demand QR codes.
+`useSubscriptionData.ts` polls only while visible and clears private data on disposal;
+`useSubscriptionData.test.ts` covers those lifecycle and stale-response boundaries.
+The typed `subscription.ts` client uses no-store responses; `subscription.json`
+provides English and Chinese copy.
 
 `MemberRoutingEditor.vue` edits ordered endpoint/template choices; `useMemberRouting.ts` owns versioned loads and previews, with revision-checked saves or the DIY page draft owner. The backend enforces ownership and validates references.
 
@@ -79,7 +54,6 @@ analysis and traces come from the same backend matcher as native compilation.
 
 `SubscriptionFormats.vue` retains availability diagnostics alongside the automatic subscription link.
 
-Member network timelines require summary.monitoringEnabled. The home subscription entrance and published host links remain available while monitoring is disabled. `HomeUptimePanel.vue` also hides retained timelines after a failed refresh.
 
 If preview is unavailable, the tree keeps individual configured edges and template
 leaves inspectable with error/draft status; it never infers a validated full path.

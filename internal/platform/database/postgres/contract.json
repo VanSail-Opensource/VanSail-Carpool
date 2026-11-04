@@ -7,7 +7,6 @@
     "activity_lucky_draws",
     "combos",
     "coupon_definitions",
-    "host_connectivity_attempts",
     "ip_lookup_live_snapshots",
     "ip_lookup_reports",
     "member_identity_aliases",
@@ -2995,95 +2994,6 @@
           "type": "text",
           "notNull": true,
           "default": "'{}'",
-          "primaryKey": 0
-        }
-      ]
-    },
-    {
-      "name": "host_connectivity_attempts",
-      "columns": [
-        {
-          "name": "id",
-          "type": "text",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 1
-        },
-        {
-          "name": "run_id",
-          "type": "text",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "host_uuid",
-          "type": "text",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "config_hash",
-          "type": "text",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "proxy_user_id",
-          "type": "bigint",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "trigger",
-          "type": "text",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "started_at",
-          "type": "text",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "finished_at",
-          "type": "text",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "status",
-          "type": "text",
-          "notNull": true,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "latency_ms",
-          "type": "double precision",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "http_status",
-          "type": "bigint",
-          "notNull": false,
-          "default": null,
-          "primaryKey": 0
-        },
-        {
-          "name": "error_code",
-          "type": "text",
-          "notNull": true,
-          "default": "''",
           "primaryKey": 0
         }
       ]
@@ -9956,9 +9866,6 @@
     "emby_accounts_status_idx",
     "emby_setup_open_operation_idx",
     "firewall_bans_detecting_ip_active",
-    "host_connectivity_attempts_host_idx",
-    "host_connectivity_attempts_latest_idx",
-    "host_connectivity_attempts_started_idx",
     "ip_lookup_cache",
     "ip_lookup_cache_key",
     "ip_lookup_check_report",

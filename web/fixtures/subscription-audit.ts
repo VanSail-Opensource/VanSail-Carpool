@@ -7,8 +7,7 @@ import { personalForecast } from './pricing-data'
 import { forecastApi } from '@/api/forecasts'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/http'
-import { subscriptionApi, type MemberSubscription, type UptimeTimeline } from '@/api/subscription'
-import { connectivityApi } from '@/api/connectivity'
+import { subscriptionApi, type MemberSubscription } from '@/api/subscription'
 import { xnodeMemberApi } from '@/api/xnodeMember'
 import { ipLookupApi } from '@/api/ipLookup'
 import { memberOperationsApi } from '@/api/memberOperations'
@@ -35,32 +34,22 @@ const state = { reads: 0, summaryReads: 0, revocations: 0, saves: 0, checks: 0, 
 const now = Date.now()
 const at = (offset: number) => new Date(now + offset).toISOString()
 const day = 86_400_000
-const timeline = (status: UptimeTimeline['state']): UptimeTimeline => ({ from: at(-day), to: at(0), state: status, segments: [
-  { from: at(-day), to: at(-day * 0.75), state: 'unknown' },
-  { from: at(-day * 0.75), to: at(-day * 0.25), state: status === 'outage' ? 'operational' : status },
-  { from: at(-day * 0.25), to: at(0), state: status },
-] })
 const data = (): MemberSubscription => ({
   activeCombo: !params.has('inactive'), subscriptionUrl: params.has('inactive') && !params.has('payg') ? null : 'https://subscription.example/import/revision-' + state.revocations,
-  summary: { monitoringEnabled: !params.has('monitor-off'), activeCombo: !params.has('inactive'), ...timeline(params.has('unknown') ? 'unknown' : 'partial'), errorCode: params.has('unknown') ? 'CONNECTIVITY_NOT_CONFIGURED' : '' },
   hosts: params.has('empty') || params.has('inactive') && !params.has('payg') ? [] : [
-    { uuid: 'tokyo-edge', publishedName: 'Tokyo {price}', nameOverride: hostNames['tokyo-edge'] || '', priceLabel:'1.0x',customRoute:true,splitXhttp:false, name: (hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x'), countryCodes: ['JP'], squadUuids: ['international'], link: 'vless://fixture-' + state.revocations + '@tokyo.example:443#'+encodeURIComponent((hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x')), linkErrorCode: '', timeline: timeline('operational') },
-    { uuid: 'shared-edge',customRoute:false,splitXhttp:true, name: 'Shared transit with a deliberately long host name to check narrow layouts', countryCodes: ['DE', 'NL'], squadUuids: ['international', 'europe'], link: 'trojan://fixture-' + state.revocations + '@europe.example:443#Shared', linkErrorCode: '', timeline: timeline('outage') },
-    { uuid: 'unknown-edge', name: 'Unmeasured host', countryCodes: [], squadUuids: ['europe'], link: null, linkErrorCode: 'CONNECTIVITY_LINK_AMBIGUOUS', timeline: timeline('unknown') },
+    { uuid: 'tokyo-edge', publishedName: 'Tokyo {price}', nameOverride: hostNames['tokyo-edge'] || '', priceLabel:'1.0x',customRoute:true,splitXhttp:false, name: (hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x'), countryCodes: ['JP'], squadUuids: ['international'], link: 'vless://fixture-' + state.revocations + '@tokyo.example:443#'+encodeURIComponent((hostNames['tokyo-edge'] || 'Tokyo {price}').replaceAll('{price}', '1.0x')), linkErrorCode: '' },
+    { uuid: 'shared-edge',customRoute:false,splitXhttp:true, name: 'Shared transit with a deliberately long host name to check narrow layouts', countryCodes: ['DE', 'NL'], squadUuids: ['international', 'europe'], link: 'trojan://fixture-' + state.revocations + '@europe.example:443#Shared', linkErrorCode: '' },
+    { uuid: 'unknown-edge', name: 'Unmeasured host', countryCodes: [], squadUuids: ['europe'], link: null, linkErrorCode: 'SUBSCRIPTION_LINK_UNAVAILABLE' },
   ],
-  squads: params.has('inactive') ? [] : [
-    { uuid: 'international', name: 'International network', hostUuids: params.has('empty') ? [] : ['tokyo-edge', 'shared-edge'], timeline: timeline('partial') },
-    { uuid: 'europe', name: 'European transit', hostUuids: params.has('empty') ? [] : ['shared-edge', 'unknown-edge'], timeline: timeline('unknown') },
-  ],
+
 })
 async function delay(): Promise<void> {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
-  if (state.failure) throw new ApiError(502, { code: 'CONNECTIVITY_SUBSCRIPTION_UNAVAILABLE', message: '' })
+  if (state.failure) throw new ApiError(502, { code: 'SUBSCRIPTION_UNAVAILABLE', message: '' })
 }
 forecastApi.personal = async () => { await delay(); return personalForecast(params) }
 subscriptionApi.saveHostName = async (id, name) => { await delay(); if (params.has('save-error')) throw new ApiError(409,{code:'XNODE_UNAVAILABLE',message:''}); hostNames[id]=name.trim(); state.saves++; return {hostId:id,name:name.replaceAll('{price}','1.0x'),nameOverride:name,publishedName:'Tokyo {price}',priceLabel:'1.0x'} }
 subscriptionApi.subscription = async () => { state.reads++; await delay(); return data() }
-subscriptionApi.summary = async () => { state.summaryReads++; await delay(); return data().summary }
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ eligible:false,reason:'FIXTURE',amount:{currency:'TXB',minor:'0',display:'0.00 TXB'} }) as never
 api.getAutoRenewal = async () => ({ purchaseId:'fixture-purchase',enabled:true,canEnable:true,ineligibleReason:null,grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},discount:{currency:'TXB',minor:'0',display:'0.00 TXB'},netPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},scheduledAt:at(23*day),nextCycleEndsAt:at(53*day) })
 api.getCommunityAccess = async () => ({ activeCombo: !params.has('inactive') })
@@ -69,12 +58,6 @@ api.getDashboard = async () => ({ user: {}, balance: { currency: 'TXB', minor: '
 api.getCatalog = async () => ({ combos: [], addons: [], nodes: [] })
 api.revokeSubscription = async () => { state.revocations++; return { id: 'audit-revoke', kind: 'subscription_revoke', status: 'queued', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: null } }
 memberOperationsApi.getOperation = async () => ({ id: 'audit-revoke', kind: 'subscription_revoke', status: 'succeeded', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: at(0) })
-const config = { scheduledEnabled: true, proxyUserId: 42, intervalSeconds: 300, timeoutSeconds: 15, maxRetries: 10, retryIntervalSeconds: 1, probeUrl: 'https://probe.example/status' }
-connectivityApi.resolve = async username => { state.resolves.push(username); await delay(); if (params.has('resolve-error')) throw new ApiError(422, { code: 'CONNECTIVITY_ACCOUNT_UNAVAILABLE', message: '' }); return { id: 1099511627776, username, status: 'ACTIVE' } }
-connectivityApi.snapshot = async () => { await delay(); return { config: { ...config }, user: { id: config.proxyUserId, username: config.proxyUserId === 42 ? 'monitor' : 'native-monitor', status: 'ACTIVE' }, run: null, hosts: params.has('empty') ? [] : [{ hostUuid: 'tokyo-edge', remark: 'Tokyo transit', address: 'tokyo.example', port: 443, latest: { id: 'result', runId: 'run', hostUuid: 'tokyo-edge', proxyUserId: 42, trigger: 'scheduled', startedAt: at(-30_000), finishedAt: at(-29_000), status: 'connected', latencyMs: 123, httpStatus: 204, errorCode: '' } }], stale: false, errorCode: '' } }
-connectivityApi.history = async () => { await delay(); return { items: [], nextCursor: null } }
-connectivityApi.save = async next => { state.saves++; state.savedConfig = structuredClone(next); Object.assign(config, next) }
-connectivityApi.check = async () => { state.checks++; return { id: 'run', status: 'completed', trigger: 'manual', startedAt: at(0), finishedAt: at(0), total: 1, completed: 1, errorCode: '' } }
 Object.assign(window, { __subscriptionAudit: state, __subscriptionAuditLocale: setLocale, __subscriptionSnapshot: data })
 const mode = params.get('mode') ?? 'subscription'
 const shell = params.has('shell')

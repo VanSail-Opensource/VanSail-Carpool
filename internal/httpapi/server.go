@@ -20,7 +20,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connectivity"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
@@ -59,7 +58,6 @@ type Dependencies struct {
 	BrowserAuth        *browserauth.Service
 	USDT               *usdt.Service
 	IPLookup           *iplookup.Service
-	Connectivity       *connectivity.Service
 	PM                 *telegrampm.Service
 	FirstEntry         *accounts.FirstEntry
 	Accounts           *accounts.Service

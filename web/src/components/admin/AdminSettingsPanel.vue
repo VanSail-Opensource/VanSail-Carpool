@@ -36,7 +36,7 @@ const activitySettingKeys = new Set([
 ])
 const clearableSettingKeys = new Set(['telegram.payment_announcement_chat_id', 'captcha.turnstile.site_key', 'telegram.pm.group_chat_id'])
 const legacyPaymentSetting = (key: string): boolean => key.startsWith('billing.ezpay.') || key.startsWith('billing.bepusdt.') || key.startsWith('billing.usdt.')
-const grouped = computed(() => items.value.filter((item) => !item.key.startsWith('ip_lookup.') && item.key !== 'connectivity.config' && !activitySettingKeys.has(item.key) && !legacyPaymentSetting(item.key)).reduce<Record<string, AdminSetting[]>>((groups, item) => {
+const grouped = computed(() => items.value.filter((item) => !item.key.startsWith('ip_lookup.') && !activitySettingKeys.has(item.key) && !legacyPaymentSetting(item.key)).reduce<Record<string, AdminSetting[]>>((groups, item) => {
   const category = item.category
   groups[category] ??= []
   groups[category].push(item)
@@ -89,7 +89,7 @@ function setBoolean(key: string, value: boolean): void {
 async function saveSettings(): Promise<void> {
   const values = Object.entries(draft).filter(([key, value]) => {
     const configured = items.value.some(item => item.key === key && item.configured)
-    return key !== 'connectivity.config' && !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
+    return !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
       && (value !== '' || (configured && clearableSettingKeys.has(key)))
   })
   const { api } = await import('@/api/client')

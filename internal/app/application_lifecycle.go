@@ -76,8 +76,6 @@ func (a *Application) Run(ctx context.Context) error {
 		a.runScheduler(runCtx, schedulerStarted)
 	}()
 	<-schedulerStarted
-	connectivityDone := make(chan error, 1)
-	go func() { connectivityDone <- a.connectivity.Run(runCtx) }()
 	statisticsDone := make(chan struct{})
 	go func() {
 		defer close(statisticsDone)
@@ -99,12 +97,6 @@ func (a *Application) Run(ctx context.Context) error {
 		if ctx.Err() == nil {
 			runErr = errors.New("database ownership lost; runtime stopped")
 		}
-	case err := <-connectivityDone:
-		if err != nil && !errors.Is(err, context.Canceled) {
-			runErr = fmt.Errorf("run connectivity checker: %w", err)
-		}
-		// Keep one completion available for the shutdown join.
-		connectivityDone <- err
 	case err := <-listenerDone:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			runErr = fmt.Errorf("serve HTTP: %w", err)
@@ -113,11 +105,7 @@ func (a *Application) Run(ctx context.Context) error {
 	shutdownErr := a.shutdownRuntime(cancelRun, schedulerDone, statisticsDone, notificationsDone)
 	<-pricingDone
 	<-computeDone
-	connectivityErr := <-connectivityDone
-	if errors.Is(connectivityErr, context.Canceled) {
-		connectivityErr = nil
-	}
-	return errors.Join(runErr, shutdownErr, connectivityErr)
+	return errors.Join(runErr, shutdownErr)
 }
 
 func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDone, statisticsDone, notificationsDone <-chan struct{}) error {
