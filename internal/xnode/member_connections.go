@@ -8,7 +8,7 @@ import (
 
 func (s *Service) memberGrantEligible(ctx context.Context, user string) (bool, error) {
 	member, err := s.repo.UserByID(ctx, user)
-	if err != nil || member.OnboardingState != "complete" {
+	if err != nil || member.OnboardingState != "complete" || member.AccountStatus != "active" {
 		return false, err
 	}
 	restricted, err := s.repo.XNodeUserRestricted(ctx, user)

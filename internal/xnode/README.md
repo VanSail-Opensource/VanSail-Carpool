@@ -1071,10 +1071,11 @@ membership, so pending owners request a fresh per-node synchronization. Metadata
 Home URLs, host links and bearer exports withhold credentials until proof; normal
 export/access rules continue afterward. Service subscriptions remain independent.
 
-`routing_entitlements.go` prunes only authoritative endpoint/entitlement loss.
-Disabled nodes/endpoints and provisioning or quota pauses suspend the graph while
-preserving IDs. `routing_inventory_view.go` keeps refreshed labels for unavailable
-choices. Dependency changes compile via the existing revoke/apply/enable queue;
+`routing_entitlements.go` prunes authoritative endpoint/entitlement loss,
+including administrator-disabled product groups. Disabled nodes/endpoints and
+provisioning or quota pauses suspend the graph while preserving IDs.
+`routing_inventory_view.go` keeps refreshed labels for unavailable choices.
+Dependency changes compile via the existing revoke/apply/enable queue;
 legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
 

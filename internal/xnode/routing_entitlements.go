@@ -5,9 +5,9 @@ import (
 	"slices"
 )
 
-// Authoritative entitlement checks deliberately ignore transport, enabled flags,
-// readiness, quota exhaustion and short provisioning gaps. Those suspend runtime
-// use without erasing a member's stable endpoint references.
+// Entitlement ignores transient endpoint transport/readiness, quota exhaustion
+// and short provisioning gaps. Administrator-disabled product groups are no
+// longer entitlements; disabled endpoints retain their stable references.
 func (s *Service) routingEntitlementEndpoints(ctx context.Context, user string) (routingInput, error) {
 	in := routingInput{endpoints: map[string]Endpoint{}, byEndpoint: map[string]Endpoint{}}
 	purchase, err := s.EffectivePurchase(ctx, user)
@@ -21,6 +21,10 @@ func (s *Service) routingEntitlementEndpoints(ctx context.Context, user string) 
 	groups, err := s.repo.XNodeGroups(ctx)
 	if err != nil {
 		return in, err
+	}
+	groupEnabled := make(map[string]bool, len(groups))
+	for _, group := range groups {
+		groupEnabled[group.ID] = group.Enabled
 	}
 	endpoints, err := s.Endpoints(ctx)
 	if err != nil {
@@ -60,11 +64,11 @@ func (s *Service) routingEntitlementEndpoints(ctx context.Context, user string) 
 			return in, err
 		}
 		for _, group := range bound {
-			if purchase != nil && slices.Contains(purchase.SquadUUIDs, group) && !slices.Contains(disabled, group) {
+			if groupEnabled[group] && purchase != nil && slices.Contains(purchase.SquadUUIDs, group) && !slices.Contains(disabled, group) {
 				in.byEndpoint[endpoint.ID] = endpoint
 			}
 			for _, account := range accounts {
-				if account.GroupID == group && account.NodeID == endpoint.NodeID && !account.Disabled && payg[group] {
+				if groupEnabled[group] && account.GroupID == group && account.NodeID == endpoint.NodeID && !account.Disabled && payg[group] {
 					copy := endpoint
 					copy.ID = paygProxyID(endpoint.ID, group)
 					in.byEndpoint[copy.ID] = copy

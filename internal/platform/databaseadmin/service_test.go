@@ -112,8 +112,9 @@ func TestNumericPrimaryKeyCursorPreservesExactLargeInteger(t *testing.T) {
 	request := MutationRequest{Action: "update", Table: "numeric_key_records", Key: first.Items[0].Key,
 		ExpectedHash: first.Items[0].RecordHash, Values: map[string]Value{"label": StringValue("reviewed")},
 		Reason: "Verify exact numeric key handling"}
-	if _, err := service.ReviewMutation(ctx, actor, request); !errors.Is(err, ErrInvalidValue) {
-		t.Fatalf("ReviewMutation(large numeric key): %v", err)
+	review, err := service.ReviewMutation(ctx, actor, request)
+	if err != nil || review.Key["id"] != "9007199254740993" {
+		t.Fatalf("ReviewMutation did not preserve the exact large numeric key: %+v, %v", review, err)
 	}
 }
 
