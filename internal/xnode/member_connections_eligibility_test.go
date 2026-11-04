@@ -52,7 +52,7 @@ func TestMemberGrantRequiresFundingAndEligibilityWithoutCharging(t *testing.T) {
 	if _, err = f.service.GrantOwnedConnection(ctx, f.user.ID, "8.8.8.8"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("onboarding: %v", err)
 	}
-	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET onboarding_state='complete',account_status='purging' WHERE id=$1`, f.user.ID); err != nil {
+	if _, err = f.store.DB().ExecContext(ctx, `UPDATE users SET account_status='purging' WHERE id=$1`, f.user.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = f.service.GrantOwnedConnection(ctx, f.user.ID, "8.8.8.8"); !errors.Is(err, xnode.ErrConflict) {
