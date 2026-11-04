@@ -26,6 +26,10 @@ type agentPeer struct {
 	openConnections       bool                // immutable, independently negotiated open client counts
 	activityReports       bool                // immutable, independently negotiated sampled IP history
 	automaticCursor       uint64              // mu; last acknowledged automatic lease generation
+	automaticReset        uint64              // mu; enabling firewall fences older in-flight delivery
+	automaticRunning      bool                // mu; one bounded lease sender per peer
+	automaticRetryAt      time.Time           // mu
+	automaticRetryDelay   time.Duration       // mu
 	ddnsChanges           bool                // immutable, independently negotiated DDNS changes
 	protectedMu           sync.Mutex
 	protectedDigest       string

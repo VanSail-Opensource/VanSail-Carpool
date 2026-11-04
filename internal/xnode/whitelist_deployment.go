@@ -8,15 +8,16 @@ import (
 )
 
 type whitelistNodeState struct {
-	observing  bool
-	revision   uint64
-	interval   int
-	users      map[int]WhitelistPolicy
-	exemptions map[string]time.Time
+	firewallEnabled bool
+	observing       bool
+	revision        uint64
+	interval        int
+	users           map[int]WhitelistPolicy
+	exemptions      map[string]time.Time
 }
 
 func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revision uint64) {
-	state := whitelistNodeState{observing: config.Firewall.Enabled && config.Firewall.Protect && config.Firewall.MasterControlled, revision: revision, interval: config.Telemetry.ReportSeconds, users: map[int]WhitelistPolicy{}, exemptions: map[string]time.Time{}}
+	state := whitelistNodeState{firewallEnabled: config.Firewall.Enabled, observing: config.Firewall.Enabled && config.Firewall.Protect && config.Firewall.MasterControlled, revision: revision, interval: config.Telemetry.ReportSeconds, users: map[int]WhitelistPolicy{}, exemptions: map[string]time.Time{}}
 	for _, user := range config.Users {
 		state.users[user.ID] = WhitelistPolicy{Enabled: user.WhitelistEnabled, IPs: slices.Clone(user.WhitelistedIPs)}
 		if user.WhitelistEnabled {
@@ -33,8 +34,18 @@ func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revis
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.peers[peer.nodeID] != peer {
+		return
+	}
 	if m.whitelistStates == nil {
 		m.whitelistStates = map[string]whitelistNodeState{}
+	}
+	if state.firewallEnabled && !m.whitelistStates[peer.nodeID].firewallEnabled {
+		peer.mu.Lock()
+		peer.automaticReset++
+		peer.automaticCursor, peer.automaticRetryAt = 0, time.Time{}
+		peer.mu.Unlock()
+		m.notifyAutomaticLeases()
 	}
 	m.whitelistStates[peer.nodeID] = state
 }

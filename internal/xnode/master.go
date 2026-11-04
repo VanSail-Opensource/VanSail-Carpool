@@ -100,13 +100,9 @@ func (m *Master) Start(ctx context.Context) error {
 
 // Disconnect forces a new authenticated handshake after an enrollment credential changes.
 func (m *Master) Disconnect(nodeID string) {
-	m.mu.RLock()
-	peer := m.peers[nodeID]
-	m.mu.RUnlock()
-	if peer != nil {
-		peer.cancel()
-		_ = peer.socket.Close()
-	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.disconnectPeerLocked(nodeID)
 }
 func (m *Master) Shutdown(ctx context.Context) error {
 	m.mu.Lock()

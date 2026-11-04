@@ -17,9 +17,6 @@ func (s *Service) AutomaticFirewallLeases(ctx context.Context, search string, pa
 	}
 	var watermarks []uint64
 	for _, node := range nodes {
-		if !node.Enabled {
-			continue
-		}
 		var settings NodeSettings
 		if err := s.open("xnode.node."+node.ID, node.SettingsCipher, &settings); err != nil {
 			return AutomaticLeasePage{}, err
@@ -29,13 +26,13 @@ func (s *Service) AutomaticFirewallLeases(ctx context.Context, search string, pa
 		}
 		s.master.mu.RLock()
 		peer := s.master.peers[node.ID]
-		s.master.mu.RUnlock()
 		var cursor uint64
 		if peer != nil {
 			peer.mu.Lock()
 			cursor = peer.automaticCursor
 			peer.mu.Unlock()
 		}
+		s.master.mu.RUnlock()
 		watermarks = append(watermarks, cursor)
 	}
 	return s.master.automaticLeases.page(search, page, size, watermarks, s.Now())

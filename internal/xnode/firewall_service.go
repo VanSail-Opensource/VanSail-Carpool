@@ -128,6 +128,12 @@ func (m *Master) NotifyFirewallChanged() {
 	}
 }
 func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, message wire.Message) error {
+	m.mu.RLock()
+	current := m.peers[peer.nodeID] == peer
+	m.mu.RUnlock()
+	if !current {
+		return ErrConflict
+	}
 	if !hasFirewallCapability(m.Capabilities(peer.nodeID)) {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_CAPABILITY_INVALID", ErrInvalid)
 	}
@@ -141,6 +147,10 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 	if report.State != nil {
 		copy := *report.State
 		m.mu.Lock()
+		if m.peers[peer.nodeID] != peer {
+			m.mu.Unlock()
+			return ErrConflict
+		}
 		live := m.live[peer.nodeID]
 		live.firewall = &copy
 		m.live[peer.nodeID] = live
@@ -176,8 +186,13 @@ func (m *Master) receiveFirewallEvents(ctx context.Context, peer *agentPeer, mes
 		// Drain old journal events without authorizing new restrictions.
 		settings.Firewall.Protect = false
 	}
-	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now(), m.protectedIPs(true)); err != nil {
+	if err = repo.RecordFirewallEvents(ctx, peer.nodeID, report.InstanceID, report.Events, settings.Firewall, m.service.Now(), m.protectedIPs(true), m.automaticLeases.protectedEventIPs(report.Events, m.service.Now(), false)); err != nil {
 		return firewallEventFailure("XNODE_FIREWALL_EVENT_STORAGE_FAILED", err)
+	}
+	// A lease can arrive while this durable event transaction is committing.
+	// Recheck after commit so an earlier no-op release cannot strand a new ban.
+	if len(m.automaticLeases.protectedEventIPs(report.Events, m.service.Now(), true)) > 0 {
+		m.notifyAutomaticLeases()
 	}
 	ids := make([]string, len(report.Events))
 	for i, e := range report.Events {

@@ -105,7 +105,7 @@ func (s *Store) RecordFirewallEvents(ctx context.Context, node, namespace string
 			}
 			cursor = sequence
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_cursors(node_id,namespace,sequence) VALUES($1,$2,$3) ON CONFLICT(node_id,namespace) DO UPDATE SET sequence=excluded.sequence`, node, namespace, cursor); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO xnode_firewall_cursors(node_id,namespace,sequence) VALUES($1,$2,$3) ON CONFLICT(node_id,namespace) DO UPDATE SET sequence=excluded.sequence WHERE xnode_firewall_cursors.sequence<excluded.sequence`, node, namespace, cursor); err != nil {
 			return err
 		}
 		var after uint64

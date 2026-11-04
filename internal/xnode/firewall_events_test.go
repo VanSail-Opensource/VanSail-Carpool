@@ -13,6 +13,7 @@ func TestFirewallEventFrameLimitIsEnforcedBeforePersistence(t *testing.T) {
 		"node": {hello: wire.AgentHello{Capabilities: []string{"firewall_control_v1"}}},
 	}}
 	peer := &agentPeer{nodeID: "node"}
+	master.peers = map[string]*agentPeer{"node": peer}
 	events := make([]wire.FirewallEvent, wire.MaxFirewallEventsPerFrame+1)
 	message := wire.New("firewall.events", "", 0, wire.FirewallEvents{InstanceID: "events", Events: events})
 	err := master.receiveFirewallEvents(context.Background(), peer, message)

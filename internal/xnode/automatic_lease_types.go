@@ -4,6 +4,8 @@ import (
 	"net/netip"
 	"sync"
 	"time"
+
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 const maximumAutomaticLeases = 100000
@@ -19,11 +21,7 @@ func defaultAutomaticWhitelist() *AutomaticWhitelistConfig {
 	return &AutomaticWhitelistConfig{Enabled: true, DurationHours: 24}
 }
 
-type AutomaticLeaseGrant struct {
-	IP         string    `json:"ip"`
-	Generation uint64    `json:"generation,string"`
-	Until      time.Time `json:"until"`
-}
+type AutomaticLeaseGrant = wire.AutomaticLeaseGrant
 type AutomaticLeaseObservation struct {
 	IP, Node string
 	At       time.Time

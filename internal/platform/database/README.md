@@ -1063,3 +1063,9 @@ deadlines remain authoritative. This cache adds no tables or write transactions.
 `xnode_firewall_cache_test.go` covers committed detection visibility, immutable
 results, stale reader races, expiry, errors and capacity. New mutable projection
 banks require explicit cloning and size accounting before caching.
+
+`xnode_automatic_leases.go` releases only unexpired exact-IP bans through the
+existing serializable firewall write/outbox path. It does not insert lease IPs,
+remove broader ranges or modify manual/paid exemptions or ledger records.
+`xnode_automatic_leases_test.go` covers replay, expired grants, retained IPv6
+ranges, unchanged paid/manual grants and an unchanged clock on no-op replay.

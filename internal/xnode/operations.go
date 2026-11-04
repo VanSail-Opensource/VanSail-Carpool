@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"slices"
@@ -98,8 +97,8 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 }
 
 func (s *Service) DeleteNode(ctx context.Context, id string) error {
-	if s.master != nil && s.master.Connected(id) {
-		return fmt.Errorf("%w: enrolled node must be drained before deletion", ErrConflict)
+	if s.master != nil {
+		return s.master.deleteNode(ctx, id)
 	}
 	return s.repo.DeleteXNodeNode(ctx, id)
 }

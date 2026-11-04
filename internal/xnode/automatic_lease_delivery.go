@@ -20,7 +20,7 @@ func (m *automaticLeaseManager) delivery(after uint64, now time.Time) (grants []
 	if m.snapshotAt != m.revision {
 		m.snapshot = make([]AutomaticLeaseGrant, 0, len(m.leases))
 		for _, item := range m.leases {
-			m.snapshot = append(m.snapshot, AutomaticLeaseGrant{item.ip.String(), item.generation, item.until})
+			m.snapshot = append(m.snapshot, AutomaticLeaseGrant{IP: item.ip.String(), Generation: item.generation, Until: item.until})
 		}
 		slices.SortFunc(m.snapshot, func(a, b AutomaticLeaseGrant) int { return cmp.Compare(a.Generation, b.Generation) })
 		m.snapshotAt = m.revision
@@ -45,7 +45,7 @@ func (m *automaticLeaseManager) pendingBanReleases(now time.Time) []AutomaticLea
 	items := make([]AutomaticLeaseGrant, 0, min(automaticLeaseBatch, len(m.pendingBans)))
 	for ip, generation := range m.pendingBans {
 		item := m.leases[ip]
-		items = append(items, AutomaticLeaseGrant{ip.String(), generation, item.until})
+		items = append(items, AutomaticLeaseGrant{IP: ip.String(), Generation: generation, Until: item.until})
 		if len(items) == automaticLeaseBatch {
 			break
 		}

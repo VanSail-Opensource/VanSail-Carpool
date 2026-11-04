@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 func (m *Master) rotateEnrollment(ctx context.Context, id string, hash []byte) error {
@@ -11,11 +12,37 @@ func (m *Master) rotateEnrollment(ctx context.Context, id string, hash []byte) e
 	if err := m.service.repo.RotateXNodeToken(ctx, id, hash); err != nil {
 		return err
 	}
-	if peer := m.peers[id]; peer != nil {
-		peer.cancel()
-		_ = peer.socket.Close()
-	}
+	m.disconnectPeerLocked(id)
 	return nil
+}
+
+// Invalidate identity before closing the transport: queued reports must lose
+// authority immediately, even while their receiver goroutines are stopping.
+func (m *Master) disconnectPeerLocked(id string) {
+	peer := m.peers[id]
+	delete(m.peers, id)
+	snapshot := m.live[id]
+	snapshot.receivedAt = time.Time{}
+	m.live[id] = snapshot
+	if peer != nil {
+		if peer.cancel != nil {
+			peer.cancel()
+		}
+		if peer.socket != nil {
+			_ = peer.socket.Close()
+		}
+	}
+}
+
+func (m *Master) deleteNode(ctx context.Context, id string) error {
+	// Share registration's lock so a handshake cannot join between the drain
+	// check and the durable deletion. A later handshake rechecks its token.
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.peers[id] != nil {
+		return fmt.Errorf("%w: enrolled node must be drained before deletion", ErrConflict)
+	}
+	return m.service.repo.DeleteXNodeNode(ctx, id)
 }
 
 func (m *Master) Connected(id string) bool {

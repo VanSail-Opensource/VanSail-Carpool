@@ -999,3 +999,24 @@ profiles, runtime user-CPU estimates, latency, allocations and retention.
 `automatic_lease_runtime.go` owns joined one-second expiry maintenance, so offline
 nodes do not retain expired IPs indefinitely. Observation/configuration changes
 coalesce wakeups independently of sampling and command receipt.
+
+`automatic_lease_send.go` delivers private 256-grant commands through the existing
+per-node writer, advancing a single generation watermark only after a matching
+epoch/generation completion. `automatic_lease_runtime.go` rotates two joined
+senders with bounded execution and retry backoff; ordinary telemetry and traffic
+ACKs remain independent. New connections start at zero, and firewall enable
+resets its watermark while fencing older in-flight completions.
+
+`automatic_lease_bans.go` batches exact-ban release intents without steady report
+writes. Event exclusion reads only addresses in the current event frame; a
+post-commit recheck closes the observation/event/release race. Existing broad
+ranges remain in the durable ban bank and agent exact-address exemptions protect
+only leased addresses. Replayed firewall journals do not rewrite unchanged
+cursors. `automatic_lease_bans_test.go` covers zero steady release calls and late
+ban commits; `automatic_lease_socket_test.go` exercises authenticated batched
+synchronization, unchanged grants and firewall-enable acknowledgement fences.
+
+Enrollment revocation removes peer authority before closing the socket; queued
+activity cannot create leases after token rotation. `master_revocation_test.go`
+covers revoked reporters and drained deletion. Registration and deletion share
+the same master lock, preventing a handshake from crossing the drain check.
