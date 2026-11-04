@@ -15,4 +15,22 @@ describe('PAYG history shares', () => {
   it('keeps a zero-use window empty', () => {
     expect(paygHistorySegments({ from: '', to: '', hours: [], nodes: [], truncated: false })).toEqual({ total: '0', segments: [] })
   })
+  it('defaults to traffic and switches to recorded costs without mixing the measures', () => {
+    const history = { from: '', to: '', hours: [], truncated: false, costAvailable: true, nodes: [
+      { nodeId: 'a', name: 'A', countryCode: '', uploadBytes: '1', downloadBytes: '2', spentMinor: '1' },
+      { nodeId: 'b', name: 'B', countryCode: '', uploadBytes: '1', downloadBytes: '0', spentMinor: '3' },
+      { nodeId: 'credit', name: 'Credit only', countryCode: '', uploadBytes: '0', downloadBytes: '0', spentMinor: '4' },
+    ] }
+    expect(paygHistorySegments(history).segments.map(row => row.percentage)).toEqual([75, 25])
+    expect(paygHistorySegments(history, 'cost').segments.map(row => row.percentage)).toEqual([12.5, 37.5, 50])
+    expect(paygHistorySegments(history, 'cost').total).toBe('8')
+  })
+  it('preserves large cost strings and leaves missing costs empty', () => {
+    const history = { from: '', to: '', hours: [], truncated: false, nodes: [
+      { nodeId: 'a', name: 'A', countryCode: '', uploadBytes: '1', downloadBytes: '0', spentMinor: '9007199254740993' },
+      { nodeId: 'b', name: 'B', countryCode: '', uploadBytes: '1', downloadBytes: '0' },
+    ] }
+    expect(paygHistorySegments(history, 'cost').total).toBe('9007199254740993')
+    expect(paygHistorySegments(history, 'cost').segments).toHaveLength(1)
+  })
 })

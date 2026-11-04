@@ -17,7 +17,7 @@ const tone = computed(() => props.status === 'available' ? 'green'
 </template>
 
 <style scoped>
-.payg-status-trigger { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; min-width: 1.5rem; min-height: 1.5rem; border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; flex: none; }
+.payg-status-trigger { display: inline-grid; align-items: center; justify-items: start; width: 1.5rem; height: 1.5rem; min-width: 1.5rem; min-height: 1.5rem; border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; flex: none; }
 .payg-status-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .payg-status-trigger:active { background: var(--surface-raised); }
 .payg-status-dot { display: block; width: .4375rem; height: .4375rem; border-radius: 50%; background: var(--dot-color); }

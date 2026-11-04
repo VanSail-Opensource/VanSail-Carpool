@@ -21,7 +21,7 @@ defineProps<{ features: readonly { icon: string; title: string; detail?: string 
 .squad-features__heading { margin-bottom: .45rem; color: var(--text-faint); font: 650 .625rem var(--font-mono); }
 .squad-features ul { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
 .squad-features li { display: grid; grid-template-columns: 1.125rem minmax(0, 1fr); align-items: start; gap: .4rem; min-width: 0; }
-.squad-features__icon { display: grid; place-items: center; width: 1.125rem; height: 1.125rem; color: var(--squad-profile-tone, var(--accent)); background: color-mix(in srgb, var(--squad-profile-tone, var(--accent)) 11%, var(--surface)); border-radius: 5px; }
+.squad-features__icon { display: grid; place-items: center; width: 1.125rem; height: 1.125rem; color: var(--squad-profile-tone, var(--accent)); }
 .squad-features__copy { display: block; min-width: 0; padding-top: .05rem; color: var(--text-muted); font-size: .69rem; line-height: 1.4; overflow-wrap: anywhere; text-align: left; }
 .squad-features__copy strong { display: block; color: var(--text); font-weight: 650; }
 .squad-features__copy small { display: block; font-size: inherit; color: var(--text-faint); text-align: left; margin: 0; padding: 0; }

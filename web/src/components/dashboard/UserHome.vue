@@ -93,9 +93,9 @@ function consumeReissueRequest(): void {
           </div>
           <HomeSubscriptionEntrance />
           <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
-          <PAYGUsagePanel v-if="!hasValidCombo && BigInt(dashboard.balance.minor) > 0n" class="home-layout__usage" />
+          <PAYGUsagePanel v-if="hasValidCombo || BigInt(dashboard.balance.minor) > 0n" class="home-layout__usage" />
           <UsagePanel
-            v-else-if="dashboard.statistics"
+            v-if="dashboard.statistics && (hasValidCombo || BigInt(dashboard.balance.minor) <= 0n)"
             class="home-layout__usage"
             :statistics="dashboard.statistics"
             :activity="activity"
@@ -103,7 +103,7 @@ function consumeReissueRequest(): void {
             :stale="dashboard.statisticsStale"
             :fetched-at="dashboard.fetchedAt"
           />
-          <section v-else class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
+          <section v-else-if="hasValidCombo || BigInt(dashboard.balance.minor) <= 0n" class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
             <div><h3>{{ $t('dashboard.noStatistics') }}</h3><p>{{ $t('dashboard.statisticsPending') }}</p></div>
           </section>
           <EntitlementSummary

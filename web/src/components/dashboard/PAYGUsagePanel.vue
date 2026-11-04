@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { paygApi } from '@/api/payg'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
-import { formatDateTime } from '@/utils/format'
 import { t } from '@/i18n'
 import PAYGUsagePie from './PAYGUsagePie.vue'
 const { value, loading, refreshing, error, refresh } = useSubscriptionData(paygApi.history, 60_000, 'paygHistory.loadFailed')
@@ -17,7 +16,6 @@ const stale = computed(() => !!value.value && (error.value || Date.now() - new D
     <UAlert v-if="error" color="warning" :title="error" />
     <UAlert v-if="stale" color="warning" :title="t('paygHistory.stale')" />
     <template v-if="value">
-      <p class="text-xs text-muted">{{ t('paygHistory.window', { from: formatDateTime(value.from), to: formatDateTime(value.to) }) }}</p>
       <UAlert v-if="value.truncated" color="warning" :title="t('paygHistory.truncated')" />
       <PAYGUsagePie :history="value" />
     </template>

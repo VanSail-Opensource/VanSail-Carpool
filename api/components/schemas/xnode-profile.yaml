@@ -63,6 +63,7 @@ XNodePAYGHistoryNode:
   additionalProperties: false
   required: [nodeId, name, countryCode, uploadBytes, downloadBytes]
   properties:
+    spentMinor: { type: string, pattern: '^[0-9]+$', description: Exact recorded PAYG charges in TXB minor units. }
     nodeId: { type: string }
     name: { type: string }
     countryCode: { type: string }
@@ -82,6 +83,7 @@ XNodePAYGNodeHistory:
   additionalProperties: false
   required: [from, to, nodes, hours, truncated]
   properties:
+    costAvailable: { type: boolean, description: Owner-scoped native PAYG charge history was available. }
     from: { type: string, format: date-time }
     to: { type: string, format: date-time }
     nodes: { type: array, maxItems: 128, items: { $ref: '#/XNodePAYGHistoryNode' } }

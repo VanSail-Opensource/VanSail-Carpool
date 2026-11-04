@@ -39,3 +39,7 @@ Thumbs.db
 /.tmp/
 /.lighthouse/
 *.log
+
+/node_modules
+/package.json
+/pnpm-lock.yaml

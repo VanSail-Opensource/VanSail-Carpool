@@ -22,6 +22,7 @@ type PAYGHistoryHour struct {
 }
 
 type PAYGHistoryNode struct {
+	SpentMinor    string `json:"spentMinor,omitempty"`
 	NodeID        string `json:"nodeId"`
 	Name          string `json:"name"`
 	CountryCode   string `json:"countryCode"`
@@ -30,11 +31,12 @@ type PAYGHistoryNode struct {
 }
 
 type PAYGNodeHistory struct {
-	From      time.Time         `json:"from"`
-	To        time.Time         `json:"to"`
-	Nodes     []PAYGHistoryNode `json:"nodes"`
-	Hours     []PAYGHistoryHour `json:"hours"`
-	Truncated bool              `json:"truncated"`
+	CostAvailable bool              `json:"costAvailable"`
+	From          time.Time         `json:"from"`
+	To            time.Time         `json:"to"`
+	Nodes         []PAYGHistoryNode `json:"nodes"`
+	Hours         []PAYGHistoryHour `json:"hours"`
+	Truncated     bool              `json:"truncated"`
 }
 
 type paygNodeHistoryRepository interface {
@@ -81,6 +83,24 @@ func (s *Service) profilePAYGHistory(ctx context.Context, user string) (PAYGNode
 		node.view.UploadBytes, node.view.DownloadBytes = node.upload.String(), node.download.String()
 		result.Nodes = append(result.Nodes, node.view)
 	}
+	if err := s.appendPAYGCosts(ctx, user, &result); err != nil {
+		return result, err
+	}
 	sort.Slice(result.Nodes, func(i, j int) bool { return result.Nodes[i].NodeID < result.Nodes[j].NodeID })
+	if len(result.Nodes) > MaxPAYGHistoryNodes {
+		result.Truncated = true
+		result.Nodes = result.Nodes[:MaxPAYGHistoryNodes]
+		selected := map[string]bool{}
+		for _, node := range result.Nodes {
+			selected[node.NodeID] = true
+		}
+		hours := result.Hours[:0]
+		for _, hour := range result.Hours {
+			if selected[hour.NodeID] {
+				hours = append(hours, hour)
+			}
+		}
+		result.Hours = hours
+	}
 	return result, nil
 }

@@ -1,11 +1,12 @@
 {
   "paygHistory": {
     "title": "PAYG 用量",
-    "hint": "滚动 72 小时内按节点记录的上传和下载流量。",
-    "total": "已记录总量：{traffic}",
-    "exact": "{bytes} 字节",
-    "directions": "上传 {upload} · 下载 {download}",
-    "window": "{from} 至 {to}",
+    "hint": "近 72 小时各节点的 PAYG 专属占比。",
+    "measure": "PAYG 占比视图",
+    "trafficShare": "流量占比",
+    "costShare": "费用占比",
+    "costEmpty": "此时间范围内尚无 PAYG 扣费记录。",
+    "costUnavailable": "PAYG 费用记录暂时不可用。",
     "empty": "保留的历史中尚无流量记录。",
     "loadFailed": "无法加载 PAYG 历史。",
     "stale": "当前显示上次获取的历史，请刷新更新。",
