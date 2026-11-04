@@ -60,17 +60,30 @@ func (m *Master) UserNodeMetrics(ctx context.Context, userID string) ([]UserNode
 	}
 	now := m.service.now()
 	result := []UserNodeMetric{}
+	ipBudget := maxProfileIPObservations
+	type observation struct {
+		snapshot liveSnapshot
+		peer     *agentPeer
+	}
+	captured := make(map[string]observation, len(scope))
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	for id := range scope {
+		captured[id] = observation{m.live[id], m.peers[id]}
+	}
+	m.mu.RUnlock()
+	// Report banks and negotiated peer capabilities are immutable after
+	// publication. IP selection must not hold the master lock during sorting.
 	for _, node := range nodes {
 		owned, included := scope[node.ID]
 		if !included {
 			continue
 		}
-		snapshot := m.live[node.ID]
+		live := captured[node.ID]
+		snapshot := live.snapshot
 		item := UserNodeMetric{NodeID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Connections: "0", UploadBytes: "0", DownloadBytes: "0", WeightedBytes: "0", NativeWeightedBytes: "0", ActiveIPStatus: "unavailable", ActiveIPs: []ProfileIPObservation{}}
-		item.Available = owned && node.Enabled && m.peers[node.ID] != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
-		profileNodeActivity(&item, snapshot, m.peers[node.ID], principals, now)
+		item.Available = owned && node.Enabled && live.peer != nil && activityAvailable(snapshot, now, global.Telemetry.ReportSeconds, global.Telemetry.SampleSeconds)
+		profileNodeActivity(&item, snapshot, live.peer, principals, now, ipBudget)
+		ipBudget -= len(item.ActiveIPs)
 		if item.Available {
 			count := int64(0)
 			for _, principal := range principals {

@@ -56,5 +56,5 @@ goroutines and the 1 GiB cache allowance. Container state, cycle measurements
 and a final heap profile are uploaded as memory-soak artifacts. Failure blocks
 image publication. Local automated suites remain prohibited.
 
-PostgreSQL while retaining SQLite-only upgrade/metadata fixtures in normal CI;
-the selection manifest is saved for review.
+Hosted Go fixtures use isolated PostgreSQL databases for runtime, populated
+upgrade and metadata contracts. The package selection manifest is saved for review.

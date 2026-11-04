@@ -5,7 +5,7 @@ import { useXNodeGlobalSettings } from './useXNodeGlobalSettings'
 
 const emit = defineEmits<{ saved: [] }>()
 const { t } = useI18n()
-const { draft, loading, busy, error, canSave, load, save } = useXNodeGlobalSettings()
+const { draft, loading, busy, error, canSave, load, save } = useXNodeGlobalSettings('automaticWhitelist')
 const saved = shallowRef(false)
 const valid = computed(() => Number.isInteger(draft.value?.automaticWhitelist?.durationHours) && (draft.value?.automaticWhitelist?.durationHours ?? 0) >= 1 && (draft.value?.automaticWhitelist?.durationHours ?? 0) <= 8760)
 async function submit() {

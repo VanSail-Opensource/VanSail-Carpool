@@ -108,7 +108,20 @@ func (s *Server) xnodeSaveGlobal(w http.ResponseWriter, r *http.Request) {
 		s.xnodeError(w, r, xnode.ErrInvalid)
 		return
 	}
-	if err := s.deps.XNode.SaveGlobal(r.Context(), currentUser(r).ID, config); err != nil {
+	var err error
+	switch r.URL.Query().Get("part") {
+	case "":
+		err = s.deps.XNode.SaveGlobal(r.Context(), currentUser(r).ID, config)
+	case "automaticWhitelist":
+		if config.AutomaticWhitelist == nil {
+			err = xnode.ErrInvalid
+		} else {
+			err = s.deps.XNode.SaveAutomaticWhitelist(r.Context(), currentUser(r).ID, *config.AutomaticWhitelist)
+		}
+	default:
+		err = xnode.ErrInvalid
+	}
+	if err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}

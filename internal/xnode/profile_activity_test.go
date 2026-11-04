@@ -24,10 +24,14 @@ func TestProfileIPsAreFreshOwnerScopedAndExact(t *testing.T) {
 	}
 	m.live["node"] = snapshot
 	items, err := m.UserNodeMetrics(context.Background(), "member")
-	if err != nil || len(items) != 1 || items[0].ActiveIPStatus != "available" || len(items[0].ActiveIPs) != 1 {
+	if err != nil || len(items) != 1 || items[0].ActiveIPStatus != "available" || len(items[0].ActiveIPs) != 2 {
 		t.Fatal("missing or unscoped activity", items, err)
 	}
-	if value := items[0].ActiveIPs[0]; value.IP != "8.8.8.8" || !value.LastActive.Equal(now) || value.Observations != "18446744073709551616" {
+	addresses := map[string]ProfileIPObservation{}
+	for _, ip := range items[0].ActiveIPs {
+		addresses[ip.IP] = ip
+	}
+	if value := addresses["8.8.8.8"]; !value.LastActive.Equal(now) || value.Observations != "18446744073709551616" || addresses["10.0.0.1"].Observations != "1" {
 		t.Fatal("IP normalization, capture time or exact count was lost", value)
 	}
 	snapshot.receivedAt = now.Add(-time.Hour)
@@ -58,6 +62,14 @@ func TestProfileIPRowsBoundedAndAvailableEmptyIsDistinct(t *testing.T) {
 	profileNodeActivity(&item, snapshot, peer, []int64{1}, now)
 	if len(item.ActiveIPs) != maxProfileActiveIPs || !item.ActiveIPsTruncated {
 		t.Fatal("IP projection exceeded its bound", len(item.ActiveIPs), item.ActiveIPsTruncated)
+	}
+	profileNodeActivity(&item, snapshot, peer, []int64{1}, now, 10)
+	if len(item.ActiveIPs) != 10 || cap(item.ActiveIPs) > 16 || !item.ActiveIPsTruncated {
+		t.Fatal("clipped projection retained the complete node history", len(item.ActiveIPs), cap(item.ActiveIPs))
+	}
+	profileNodeActivity(&item, snapshot, peer, []int64{1}, now, 0)
+	if len(item.ActiveIPs) != 0 || !item.ActiveIPsTruncated || item.ActiveIPStatus != "available" {
+		t.Fatal("response budget claimed a fresh empty report", item)
 	}
 }
 

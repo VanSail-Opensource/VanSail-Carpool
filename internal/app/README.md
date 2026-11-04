@@ -11,11 +11,12 @@ requests and creates no duplicate accounting storage.
 Startup retires dormant `xnode_prepare_continuity` jobs before admission starts;
 native purchase compilation and ordinary activation preserve paid successors.
 
-`persistence.go` selects the configured backend and applies SQLite file recovery
-or PostgreSQL import/ownership gates before bootstrap mutations. PostgreSQL never
-falls back to SQLite and never prunes retained source migration snapshots.
+`persistence.go` opens the configured PostgreSQL connection and verifies native
+schema/ownership fencing before bootstrap mutations. Embedded deployments supply
+their PostgreSQL connection through the same path. Missing or unavailable
+PostgreSQL fails startup; no file import, conversion or swap runs at bootstrap.
 `database_runtime.go` joins ownership monitoring on shutdown;
-`database_observability.go` logs bounded pool/transaction/journal aggregates every
+`database_observability.go` logs bounded pool/transaction aggregates every
 30 seconds without SQL, payload or user labels. `postgres_bootstrap_test.go`
 rehearses verified activation, health and refusal of a second hosted application.
 
@@ -33,13 +34,13 @@ scheduled drain, with cancellation and executor shutdown joined in hosted CI.
 worker. New profile cards link to `/admin/users/{id}` without bearer credentials;
 the independent browser access-link/session flow authorizes the administrator.
 
-`xnode_connectivity.go` derives monitoring targets from native identities and published endpoints, keeping credentials server-side. The application owns the dedicated connectivity lane and joins its checker before closing SQLite.
+`xnode_connectivity.go` derives monitoring targets from native identities and published endpoints, keeping credentials server-side. The application owns the dedicated connectivity lane and joins its checker before closing PostgreSQL.
 
 The entitlement adapter intersects applied squads with account preferences at
 execution; member receipts reuse the entitlement executor and invalidate usage.
 - `adapters_part2.go` continues the focused implementation from its original package module.
 
-The `app` package is the process composition root. It opens SQLite, constructs
+The `app` package is the process composition root. It opens PostgreSQL, constructs
 domain services and provider adapters, registers durable outbox handlers, and
 owns HTTP, scheduler, backup, and provider-queue lifecycles.
 
@@ -50,8 +51,7 @@ adapters for the final network attempt.
 
 `Application.Run` starts provider workers before accepting HTTP traffic and
 waits for the scheduler and provider workers to finish before returning.
-`Application.Close` checkpoints and closes SQLite only after that runtime has
-stopped.
+`Application.Close` closes PostgreSQL only after that runtime has stopped.
 
 - `app.go` composes configuration, persistence, domain services, adapters, workers, and HTTP delivery.
 - `lucky_draw_outbox.go` registers durable publish, edit, delete, entry reply, and settlement jobs; only the queued Telegram adapter calls the Bot API.
@@ -106,7 +106,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
 
-`ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before SQLite closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.
+`ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before PostgreSQL closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.
 
 
 
@@ -139,11 +139,11 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `xnode_compensation.go` qualifies native inbound identities for node compensation.
 
 
-Bootstrap applies container-aware memory budgeting and writable SQLite temporary
-storage before application construction. Application wiring opens the disposable
-proxy cache after fallible service construction; cache failure degrades inventory
-coverage independently of USDT. Shutdown joins workers/readers before closing the
-cache and authoritative database.
+Bootstrap applies container-aware memory budgeting before application construction.
+Application wiring opens the disposable PostgreSQL TEMP proxy inventory after
+fallible service construction; cache failure degrades inventory coverage
+independently of USDT. Shutdown joins workers/readers before closing its dedicated
+connection and the authoritative database.
 
 `retired_detector.go` registers one bounded, durable `proxy_restriction_release` compatibility job per acknowledged historical detector ban. It preserves manual restrictions and paid entitlement terms; all legacy mutations use the existing provider queue. `retired_detector_test.go` covers manual precedence, acknowledgement checks, replay and retry failures. `payment_profile_manager_test.go` retains localized payment-profile alert coverage.
 

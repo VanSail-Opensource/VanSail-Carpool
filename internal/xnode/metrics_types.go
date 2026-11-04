@@ -63,7 +63,7 @@ type liveSnapshot struct {
 	activityReports bool
 	firewall        *wire.FirewallState
 	hello           wire.AgentHello
-	report          wire.TelemetryReport
+	report          wire.TelemetryReport // immutable banks; replace the whole report after decoding
 	receivedAt      time.Time
 	logs            []json.RawMessage
 	logsDropped     uint64

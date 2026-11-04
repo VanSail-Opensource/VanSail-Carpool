@@ -40,7 +40,7 @@ export const xnodeApi = {
   saveNode: (node: Partial<XNode>, settings: XNodeSettings) => request<XNode>(`${root}/nodes${node.id ? `/${encodeURIComponent(node.id)}` : ''}`, { method: node.id ? 'PUT' : 'POST', body: { node, settings } }),
   enroll: (id: string) => request<XNodeEnrollment>(`${root}/nodes/${encodeURIComponent(id)}/enrollment`, { method: 'POST', cache: 'no-store' }),
   global: (signal?: AbortSignal) => request<XNodeGlobal>(`${root}/global`, { cache: 'no-store', signal }),
-  saveGlobal: (body: XNodeGlobal) => request<XNodeGlobal>(`${root}/global`, { method: 'PUT', body }),
+  saveGlobal: (body: XNodeGlobal, part?: 'automaticWhitelist') => request<XNodeGlobal>(`${root}/global`, { method: 'PUT', body, query: { part } }),
   configurations: (signal?: AbortSignal) => request<{ items: XNodeConfiguration[] }>(`${root}/configurations`, { cache: 'no-store', signal }),
   saveConfiguration: (body: Partial<XNodeConfiguration>) => request<XNodeConfiguration>(`${root}/configurations${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   validate: (document: object, snippetIds: string[] = []) => request<XNodeValidation>(`${root}/configurations/validate`, { method: 'POST', body: { document, snippetIds } }),

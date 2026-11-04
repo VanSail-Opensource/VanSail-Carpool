@@ -51,3 +51,7 @@ plot coordinates; `userTrafficHistory.test.ts` checks precision and filters.
 series or columns. Canonical current/lifetime accounting totals remain unchanged.
 Refreshes never overlap, pause while hidden and preserve a clearly marked stale
 snapshot on error; scope changes and logout clear all volatile information.
+
+An available but truncated empty IP list is marked limited, preserving the
+distinction from a complete fresh report with no recent activity. The backend
+bounds output across nodes as well as per node.

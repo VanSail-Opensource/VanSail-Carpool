@@ -35,8 +35,8 @@ func (m *Master) runAutomaticLeases() {
 			}
 		}
 		cancel()
-		generation, enabled := m.automaticLeases.currentGeneration()
-		if !enabled {
+		generation, hasLeases := m.automaticLeases.currentGeneration()
+		if !hasLeases {
 			continue
 		}
 		m.mu.RLock()
@@ -94,5 +94,5 @@ func (m *Master) runAutomaticLeases() {
 func (m *automaticLeaseManager) currentGeneration() (uint64, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.generation, m.config.Enabled
+	return m.generation, len(m.leases) > 0
 }

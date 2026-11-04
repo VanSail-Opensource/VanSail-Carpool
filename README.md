@@ -8,15 +8,16 @@ The engine tests authenticated HTTPS traffic and reports status, TTFB, and safe
 diagnostics. [Module details](internal/connectivity/README.md) describe supported
 configurations, lifecycle, retention, and extension points.
 
-VanSail Carpool is a Telegram Mini App for onboarding members, funding a TXB balance, buying shared X-Node access, and administering the service from one premium-dark web interface. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, PostgreSQL database, and static assets. Production therefore needs one container, durable application and PostgreSQL volumes, and one HTTP port.
+VanSail Carpool provides a premium-dark Telegram Mini App for member onboarding, TXB funding and shared X-Node access, plus an independent browser admin console with light/dark appearance. A Vue 3 single-page app is built into a Go binary; the binary owns the API, background work, PostgreSQL database, and static assets. Production therefore needs one container, durable application and PostgreSQL volumes, and one HTTP port.
 
 ## What is included
 
-- Telegram-only authentication with five-minute `initData` validation, seven-day HttpOnly sessions, and replay-protected HMAC signing on every authenticated API request.
+- Telegram member authentication with five-minute `initData` validation; independent browser admin sessions use short-lived one-use access links. Authenticated requests use replay-protected HMAC signing.
 - Resumable group/channel membership, immutable username, and agreement onboarding.
 - Server-priced combos, optional X-Node internal squads, renewals, queued plan changes, and a transactional TXB ledger.
 - EZPay, BEPusdt, and Telegram Stars top-ups with signed, idempotent callback processing.
-- Queue-first X-Node and Emby access, subscription rotation, traffic statistics, and persistent synchronization jobs.
+- Authoritative X-Node WebSocket control with per-node execution queues; queued Emby access, subscription rotation, traffic statistics and durable synchronization jobs.
+- Memory-only automatic firewall leases and automatically refreshed member IP observations; bounded 72-hour per-node PAYG history. [Operation and hosted measurements](docs/automatic-firewall-leases.md).
 - Multiple Activity games, daily check-ins, weighted lucky draws, and coupon wallets.
 - Durable Emby account setup, encrypted temporary credentials, server-enforced restricted policies, and compensating refunds.
 - Audited administration for settings, catalog, users, adjustments, entitlements, refunds, schema-aware database inspection, backups, offline recovery, and failed jobs.
@@ -27,15 +28,15 @@ The machine-readable HTTP contract is [api/openapi.yaml](api/openapi.yaml). Modu
 ## Architecture
 
 ```text
-Telegram Mini App
+Telegram Mini App / browser admin console
       |
       v
 Go HTTP server :8080 ---- embedded Vue assets
       |
-      +---- PostgreSQL 18 at /var/lib/postgresql
+      +---- configured or embedded PostgreSQL
       +---- persistent outbox and scheduler
       +---- Telegram Bot API
-      +---- X-Node API
+      +---- authenticated X-Node agent WebSockets
       +---- Emby API
       +---- EZPay / BEPusdt / Telegram Stars
 ```
@@ -52,7 +53,7 @@ Copy `.env.example` to a secret deployment-specific file and set these four valu
 
 | Variable | Requirement |
 | --- | --- |
-| `ADMIN_TELEGRAM_ID` | One or more positive Telegram user IDs separated by commas. Each configured identity starts in the admin dashboard and can optionally complete signup; X-Node creation begins after a combo purchase. |
+| `ADMIN_TELEGRAM_ID` | One or more positive Telegram user IDs separated by commas. Configured admins can open the browser console from Mini App settings and complete member signup independently; native member access begins after purchase. |
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather. It is also used for Mini App auth validation and Stars. |
 | `PUBLIC_BASE_URL` | Canonical externally reachable HTTPS origin, without a trailing path. Webhooks and returns are derived only from this value. |
 | `CONFIG_MASTER_KEY` | Base64 encoding of exactly 32 random bytes, for example `openssl rand -base64 32`. Keep it stable and backed up. |
@@ -105,9 +106,9 @@ If a host bind mount is used instead of a named volume, make the mounted directo
 ## First-time setup
 
 1. Deploy the HTTPS origin with the required environment and a durable `/data` volume.
-2. Open the Mini App as one of the configured `ADMIN_TELEGRAM_ID` values. It opens directly to the admin dashboard; authorization is the validated Telegram session plus a configured environment ID. Select **Set up user account** there when the admin also needs normal user-side access. A X-Node identity is created after a combo purchase.
-3. Configure the target Telegram group and channel, X-Node endpoint and token, enabled payment methods and required `txb_per_*` rates, and at least one combo. Configure the encrypted Emby token, HTTPS URL, and setup price only when Emby access is offered.
-4. Review the live X-Node internal squads, then add only the local descriptions, TXB prices, and visibility overrides you need. Upstream-owned squad identities are not duplicated locally.
+2. Open the Mini App as a configured `ADMIN_TELEGRAM_ID` and use `/settings/admin-access` to obtain a short-lived, one-use browser console link. Browser administration has its own device session; member signup remains independent.
+3. Configure Telegram membership, payment profiles, required `txb_per_*` rates and catalog products. Add native X-Node configurations, nodes and access groups, then generate per-node enrollment credentials. Configure the encrypted Emby token, HTTPS URL and setup price when Emby access is offered.
+4. Review native access groups and their published nodes. Configure product prices, visibility, plain-text descriptions and ordered feature lists in the catalog.
 5. In BotFather, select the deployed URL as the bot's Main Mini App. The service configures the Telegram webhook and chat menu button from `PUBLIC_BASE_URL`; the bot needs invite and join-request administration rights in both chats.
 6. Confirm `/readyz` reports `status: ok` before sharing the Mini App.
 

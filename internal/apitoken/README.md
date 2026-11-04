@@ -3,7 +3,7 @@
 `service.go` issues 256-bit opaque `vsc_` credentials, checks expiry and the
 owner's current role/administrator allowlist, and loads metadata for browser
 administrators. `types.go` defines repository contracts and secret-free metadata.
-Only the creation response contains a secret; SQLite retains a SHA-256 digest.
+Only the creation response contains a secret; PostgreSQL retains a SHA-256 digest.
 
 `scopes.go` confines bearer use to administrator APIs and distinguishes `admin`,
 `xnode` and `migration` read/write scopes. Write includes read access. Migration

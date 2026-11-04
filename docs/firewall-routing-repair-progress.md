@@ -1,5 +1,9 @@
 # Firewall, commerce, assets and routing repair
 
+Historical delivery record. Current operation is PostgreSQL only; database
+conversion, SQLite fixtures and file-swap recovery described below are retired.
+Use the current deployment and PostgreSQL module documentation for operations.
+
 Delivery evidence for the 2026-10-20 request. No local automated suites ran.
 Chrome fixtures establish UI behavior; production debugging was read-only.
 

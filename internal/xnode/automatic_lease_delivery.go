@@ -14,9 +14,6 @@ func (m *automaticLeaseManager) delivery(after uint64, now time.Time) (grants []
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expireLocked(now)
-	if !m.config.Enabled {
-		return nil, after, false
-	}
 	if m.snapshotAt != m.revision {
 		m.snapshot = make([]AutomaticLeaseGrant, 0, len(m.leases))
 		for _, item := range m.leases {

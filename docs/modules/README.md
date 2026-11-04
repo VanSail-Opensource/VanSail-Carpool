@@ -16,6 +16,7 @@ These documents describe the implemented module boundaries. They are maintenance
 | Coupon definitions, wallet grants, and purchase discounts | [coupons.md](coupons.md) |
 | Emby account setup and restricted policy management | [emby.md](emby.md) |
 | Telegram, X-Node, EZPay, and BEPusdt adapters | [integrations.md](integrations.md) |
+| Automatic firewall leases and hosted performance | [automatic-firewall-leases.md](../automatic-firewall-leases.md) |
 | Retired detector upgrade | [detector-retirement.md](detector-retirement.md) |
 | Admin authorization and domain operations | [admin-operations.md](admin-operations.md) |
 | Vue Mini App and generated API client | [web-ui.md](web-ui.md) |

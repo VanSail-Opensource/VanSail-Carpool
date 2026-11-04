@@ -1029,3 +1029,20 @@ per-node PAYG totals and hourly history, including removed/unavailable nodes.
 `profile_activity_test.go` covers scope, freshness, precision, bounds and native
 graph counters. Native graph counters exclude imported evidence; canonical
 period/lifetime and historical accounting fields retain their original meaning.
+
+`automatic_lease_settings.go` merges lease settings under the existing global
+writer lock. The scoped global update preserves every unrelated committed field;
+legacy full-document writes that omit automaticWhitelist preserve newer leases.
+
+Disabling automatic creation stops new leases and renewals. Existing leases keep
+their deadlines, update activity statistics and synchronize to joining nodes
+until expiry. Canonical address searches accept expanded IPv6 notation.
+
+Profile IP output has a 256-address node limit and 4096-address response budget.
+Selection copies truncated rows so excess history does not remain retained by a
+clipped slice. Capturing immutable report headers under the master lock keeps
+sorting and projection outside report ingestion critical sections. A truncated
+empty list never claims no activity; it remains visibly incomplete.
+
+Owner activity includes valid private/LAN addresses as reported; only the separate
+automatic firewall lease classifier requires public routable addresses.

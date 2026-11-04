@@ -3,7 +3,7 @@ import { xnodeApi, type XNodeGlobal } from '@/api/xnode'
 import { localizedError } from '@/i18n'
 import { createLatestRequest } from '@/utils/latestRequest'
 
-export function useXNodeGlobalSettings() {
+export function useXNodeGlobalSettings(part?: 'automaticWhitelist') {
   const draft = ref<XNodeGlobal | null>(null)
   const loading = shallowRef(true)
   const busy = shallowRef(false)
@@ -31,7 +31,14 @@ export function useXNodeGlobalSettings() {
     if (!draft.value || !canSave.value) return
     const ticket = latest.begin()
     busy.value = true; error.value = null
-    try { const value = await xnodeApi.saveGlobal(draft.value); if (latest.isCurrent(ticket)) draft.value = value }
+    try {
+      const body = { ...draft.value }
+      // The general form does not edit leases. Omission preserves newer lease
+      // changes; the dedicated form uses a server-side locked field merge.
+      if (!part) delete body.automaticWhitelist
+      const value = await xnodeApi.saveGlobal(body, part)
+      if (latest.isCurrent(ticket)) draft.value = value
+    }
     catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'xnode.saveFailed') }
     finally { if (latest.isCurrent(ticket)) busy.value = false }
   }

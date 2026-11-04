@@ -145,15 +145,22 @@ func documentWrappers() {
 	raw, err := os.ReadFile(path)
 	check(err)
 	const marker = "\n<!-- generated transaction retry map -->"
-	text := strings.SplitN(string(raw), marker, 2)[0]
+	const endMarker = "<!-- end generated transaction retry map -->"
+	prefix, previous, found := strings.Cut(string(raw), marker)
+	_, suffix, complete := strings.Cut(previous, endMarker)
+	if !found || !complete {
+		check(fmt.Errorf("transaction retry documentation boundaries missing"))
+	}
+	text := prefix
 	files, err := filepath.Glob("internal/platform/database/*_retry_generated.go")
 	check(err)
-	text += marker + "\n\nGenerated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE\n40001/40P01, with bounded context-aware backoff. SQLite retains its writer lock.\nThe generator excludes methods that access SQL outside their transaction or own\nmutable in-memory batches. Provider requests remain outside every transaction.\n\n"
+	text += marker + "\n\nGenerated adapters repeat complete rolled-back PostgreSQL operations for SQLSTATE\n40001/40P01, with bounded context-aware backoff.\nThe generator excludes methods that access SQL outside their transaction or own\nmutable in-memory batches. Provider requests remain outside every transaction.\n\n"
 	for _, file := range files {
 		name := filepath.Base(file)
 		original := strings.TrimSuffix(name, "_retry_generated.go") + ".go"
 		text += "- `" + name + "` wraps the transactional methods in `" + original + "`.\n"
 	}
+	text += "\n" + endMarker + suffix
 	check(os.WriteFile(path, []byte(text), 0o644))
 }
 

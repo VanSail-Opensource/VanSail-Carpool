@@ -1,5 +1,9 @@
 # DIY and access delivery
 
+Historical delivery record. Current operation is PostgreSQL only; database
+conversion, SQLite fixtures and file-swap recovery described below are retired.
+Use the current deployment and PostgreSQL module documentation for operations.
+
 Ordered implementation checklist. Local automated suites are prohibited; hosted
 CI and Chrome DevTools provide execution evidence.
 

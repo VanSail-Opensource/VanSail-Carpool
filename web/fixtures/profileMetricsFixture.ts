@@ -11,7 +11,7 @@ export function profileMetricsFixture(params: URLSearchParams) {
     const now = Date.now(), at = (ms: number) => new Date(now + ms).toISOString(), hour = (offset: number) => new Date(Math.floor(now / 3600000) * 3600000 + offset * 3600000).toISOString()
     const base = { countryCode: 'NL', available: true, currentUse: true, connections: '2', uploadBytesPerSecond: 12345, downloadBytesPerSecond: 54321, uploadBytes: '9007199254740993', downloadBytes: '7', weightedBytes: '9007199254791000', nativeWeightedBytes: '9007199254741000', activeIpStatus: 'available' as const, sampledAt: at(-1000), activeIpsTruncated: params.has('profile-truncated') }
     const nodes: XNodeProfileMetrics['nodes'] = state.mode === 'empty' ? [] : [
-      { ...base, nodeId: 'current-node', name: 'Amsterdam', activeIps: [{ ip: '8.8.8.8', lastActive: at(-2000), observations: '9007199254740993' }, { ip: '2606:4700:4700::1111', lastActive: at(-10000), observations: '5' }] },
+      { ...base, nodeId: 'current-node', name: 'Amsterdam', activeIps: [{ ip: '8.8.8.8', lastActive: at(-2000), observations: '9007199254740993' }, { ip: '2606:4700:4700::1111', lastActive: at(-10000), observations: '5' }, { ip: '10.0.0.8', lastActive: at(-20000), observations: '2' }] },
       { ...base, nodeId: 'quiet-node', name: 'Tokyo', countryCode: 'JP', currentUse: false, connections: '0', uploadBytesPerSecond: 0, downloadBytesPerSecond: 0, activeIps: [] },
       { ...base, nodeId: 'stale-node', name: 'Singapore', countryCode: 'SG', available: false, activeIpStatus: 'stale', sampledAt: at(-120000), activeIps: [] },
       { ...base, nodeId: 'legacy-node', name: 'Unavailable', countryCode: '', available: false, activeIpStatus: 'unavailable', sampledAt: null, activeIps: [] },

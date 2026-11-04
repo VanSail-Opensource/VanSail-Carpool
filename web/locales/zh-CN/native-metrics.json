@@ -31,9 +31,11 @@
     "historyTruncated": "当前显示前 128 个有使用记录的节点，其他节点不在本次视图中。",
     "noPAYGHistory": "近 72 小时尚未记录各节点的按量流量。",
     "activeIPs": "近期 IP 活动",
+    "ipAddress": "IP 地址",
     "activeIPsHint": "自动根据节点报告刷新最近两小时的 IP 活动。",
     "lastActivity": "最近活动",
     "noRecentIPs": "近期无活动",
+    "ipsLimited": "活动列表已截断",
     "ipsTruncated": "部分 IP 观测超出报告或显示上限，当前列表可能不完整。",
     "sampledAt": "采样于 {time}",
     "ipStatus": { "available": "报告有效", "stale": "报告已过期", "unavailable": "报告不可用" }

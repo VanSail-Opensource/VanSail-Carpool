@@ -31,9 +31,11 @@
     "historyTruncated": "Showing the first 128 nodes with recorded usage. Additional nodes are outside this view.",
     "noPAYGHistory": "No per-node PAYG usage has been recorded in the past 72 hours.",
     "activeIPs": "Recent IP activity",
+    "ipAddress": "IP address",
     "activeIPsHint": "IP observations from the past two hours refresh automatically from node reports.",
     "lastActivity": "Last activity",
     "noRecentIPs": "No recent activity",
+    "ipsLimited": "Activity list limited",
     "ipsTruncated": "Some IP observations exceeded the reporting or display limit. This list may be incomplete.",
     "sampledAt": "Sampled {time}",
     "ipStatus": { "available": "Fresh report", "stale": "Stale report", "unavailable": "Report unavailable" }

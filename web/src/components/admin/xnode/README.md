@@ -150,3 +150,8 @@ enter browser storage; failed refreshes retain a clearly marked last snapshot.
 `useAutomaticLeases.test.ts` covers aborted and stale search replies, failed
 refresh retention, hidden-page polling, session teardown and shrinking pages.
 It runs in hosted frontend CI only.
+
+The lease form uses the existing global write endpoint with
+`part=automaticWhitelist`, merging only that field on the server and preserving
+newer credentials or sampling settings. The general global form omits the
+unedited lease property, preserving lease changes from another administrator.

@@ -17,6 +17,9 @@ func (m *automaticLeaseManager) page(search string, page, size int, watermarks [
 	result.Settings = m.config
 	result.Statistics = AutomaticLeaseStatistics{Active: len(m.leases), Created: m.created, Renewed: m.renewed, Expired: m.expired, Rejected: m.rejected}
 	search = strings.ToLower(strings.TrimSpace(search))
+	if ip, err := firewallPublicAddr(search); err == nil {
+		search = ip.String()
+	}
 	items := make([]*automaticLease, 0, len(m.leases))
 	for _, item := range m.leases {
 		if item.ip.Is4() {

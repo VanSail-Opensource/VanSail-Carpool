@@ -1,5 +1,9 @@
 # Maintenance foreign-key follow-up
 
+Historical delivery record. Current operation is PostgreSQL only; database
+conversion, SQLite fixtures and file-swap recovery described below are retired.
+Use the current deployment and PostgreSQL module documentation for operations.
+
 Production revision `7778ac23` passed the original routing receipt pruning
 failure. Authorized maintenance `80defeda-8e57-4dcd-8d0f-247948450d4a` then failed
 in purchase compaction on `purchases_auto_renew_source_purchase_id_fkey`.

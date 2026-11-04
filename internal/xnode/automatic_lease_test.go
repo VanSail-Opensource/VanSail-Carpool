@@ -90,3 +90,22 @@ func TestAutomaticLeaseSourcesReplayBoundsAndPrivateViews(t *testing.T) {
 		t.Fatal("disabled manager granted a lease")
 	}
 }
+
+func TestDisabledLeaseCreationPreservesUnexpiredSynchronizationAndStatistics(t *testing.T) {
+	m := newAutomaticLeaseManager("master")
+	at := time.Now().UTC()
+	m.observe([]AutomaticLeaseObservation{{"2606:4700:4700::1111", "one", at}}, at, time.Minute)
+	m.configure(AutomaticWhitelistConfig{false, 6})
+	later := at.Add(12 * time.Hour)
+	if m.observe([]AutomaticLeaseObservation{{"2606:4700:4700::1111", "two", later}}, later, time.Minute) {
+		t.Fatal("disabled creation renewed an existing deadline")
+	}
+	grants, _, _ := m.delivery(0, later)
+	if len(grants) != 1 || !grants[0].Until.Equal(at.Add(24*time.Hour)) {
+		t.Fatal("configuration change removed an unexpired reconnect grant", grants)
+	}
+	page, err := m.page("2606:4700:4700:0:0:0:0:1111", 1, 25, nil, later)
+	if err != nil || len(page.Items) != 1 || !page.Items[0].LastActive.Equal(later) || page.Items[0].ObservationCount != 2 {
+		t.Fatal("canonical search or ongoing activity was lost", page, err)
+	}
+}

@@ -53,6 +53,32 @@ func TestPAYGHistoryFlushFailureDoesNotCommitChargesOrCursor(t *testing.T) {
 	}
 }
 
+func TestPAYGNodeHistoryRetainsAcceptedFutureCaptureMinutes(t *testing.T) {
+	s, owner, _, _ := paygBillingFixture(t)
+	ctx, now := context.Background(), time.Now().UTC()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	sample := wire.TrafficSample{Through: now.Add(2 * time.Minute), UploadBytes: 3, DownloadBytes: 4}
+	if err := recordPAYGNodeSampleTx(ctx, tx, owner.UserID, "node", sample, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	rows, _, err := s.XNodePAYGNodeHistory(ctx, owner.UserID, now.Add(-72*time.Hour), now)
+	if err != nil || len(rows) != 0 {
+		t.Fatal("future capture was shown before its minute", rows, err)
+	}
+	later := now.Add(3 * time.Minute)
+	rows, _, err = s.XNodePAYGNodeHistory(ctx, owner.UserID, later.Add(-72*time.Hour), later)
+	if err != nil || len(rows) != 1 || rows[0].UploadBytes != "3" || rows[0].DownloadBytes != "4" {
+		t.Fatal("accepted clock skew discarded committed directional usage", rows, err)
+	}
+}
+
 func TestPAYGNodeHistoryRetainsHistoricalNodesAndPrunesOnlyExpiredSummaries(t *testing.T) {
 	s, owner, _, _ := paygBillingFixture(t)
 	ctx, now := context.Background(), time.Now().UTC().Truncate(time.Minute)

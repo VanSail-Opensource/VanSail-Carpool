@@ -28,7 +28,7 @@ func (m paygNodeMinutes) add(key paygNodeMinuteKey, upload, download *big.Int) {
 
 func recordPAYGNodeSampleTx(ctx context.Context, tx *sql.Tx, user, node string, sample wire.TrafficSample, buffer *nativeReportBuffer) error {
 	now, minute := time.Now().UTC().Truncate(time.Minute), sample.Through.UTC().Truncate(time.Minute)
-	if minute.Before(now.Add(-xnode.PAYGWindow)) || minute.After(now) || sample.UploadBytes == 0 && sample.DownloadBytes == 0 {
+	if minute.Before(now.Add(-xnode.PAYGWindow)) || minute.After(now.Add(5*time.Minute)) || sample.UploadBytes == 0 && sample.DownloadBytes == 0 {
 		return nil
 	}
 	key := paygNodeMinuteKey{user, node, stamp(minute)}

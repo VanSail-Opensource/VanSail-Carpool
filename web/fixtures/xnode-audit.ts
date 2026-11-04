@@ -132,12 +132,12 @@ if (params.has('legacy-source-rule')) global.firewallDetection.rules.source_matc
 let globalLoadFailed = false
 function globalProjection() { const value = JSON.parse(JSON.stringify(global)) as XNodeGlobal; for (const provider of Object.values(value.providers)) for (const key of Object.keys(provider.credentials)) provider.credentials[key] = ''; return value }
 xnodeApi.global = async () => { await check('global'); if (params.has('global-load-error') && !globalLoadFailed) { globalLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }; return globalProjection() }
-xnodeApi.saveGlobal = async value => {
+xnodeApi.saveGlobal = async (value, part) => {
   await check('save-global')
   const policyCode = params.get('policy-error')
   if (policyCode && ['XNODE_DOMAIN_SELECTOR_INVALID', 'XNODE_GEOSITE_REQUIRED', 'XNODE_GEOSITE_UNAVAILABLE', 'XNODE_GEOIP_INVALID', 'XNODE_GEOIP_UNAVAILABLE'].includes(policyCode)) throw new ApiError(422, { code: policyCode, message: '' })
   if (params.has('global-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
-  trace.writes.push(JSON.parse(JSON.stringify(value))); global = JSON.parse(JSON.stringify(value)) as XNodeGlobal; return globalProjection()
+  trace.writes.push(JSON.parse(JSON.stringify({ ...value, ...(part ? { part } : {}) }))); global = JSON.parse(JSON.stringify(part ? { ...global, automaticWhitelist: value.automaticWhitelist } : { ...value, automaticWhitelist: value.automaticWhitelist ?? global.automaticWhitelist })) as XNodeGlobal; return globalProjection()
 }
 xnodeApi.enroll = async id => { trace.calls.push(`enroll:${id}`); return { masterUrl: 'wss://panel.example/v1/agents/connect', token: 'fixture-token', protocol: 'x-node.v1' } }
 xnodeApi.validate = async () => params.has('invalid') ? { valid: false, needsAgentValidation: false, errorCode: 'XNODE_CONFIG_INVALID', detail: 'outbound[1]: unsupported protocol' } : { valid: true, needsAgentValidation: false, errorCode: '' }

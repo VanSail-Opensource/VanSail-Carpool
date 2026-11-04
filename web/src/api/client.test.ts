@@ -141,7 +141,7 @@ describe('admin API mutations', () => {
   it('creates a backup without sending an invented payload', async () => {
     fetchMock.mockResolvedValue(jsonResponse({
       id: 'backup-1',
-      path: 'backup-1.sqlite',
+      path: 'backup-1.pgdump',
       sizeBytes: '1024',
       status: 'complete',
       error: '',

@@ -933,6 +933,8 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `xnode_routing_recovery_retry_generated.go` wraps the transactional methods in `xnode_routing_recovery.go`.
 - `xnode_traffic_retry_generated.go` wraps the transactional methods in `xnode_traffic.go`.
 
+<!-- end generated transaction retry map -->
+
 - `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
 - `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
 - `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
@@ -1074,8 +1076,9 @@ ranges, unchanged paid/manual grants and an unchanged clock on no-op replay.
 node and capture minute. Report-local forks merge only after successful accounting;
 512-row sorted UNNEST upserts share the existing batched traffic transaction and
 cursor/financial commit. PAYG probes retain immediate financial counters while
-staging their raw display samples. Old/future samples outside the current
-72-hour minute window do not extend this disposable history.
+staging their raw display samples. Samples use their captured Through minute.
+Records older than 72 hours or more than five minutes ahead are skipped; accepted
+clock-skew minutes remain stored and become visible when their time arrives.
 `xnode_payg_node_history.go` reads at most 128 node IDs and 73 hourly buckets
 per node, with explicit truncation. Historical node IDs remain readable after
 node deletion, and absent history is never inferred from group totals.

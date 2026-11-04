@@ -62,3 +62,21 @@ func TestAutomaticLeaseSettingsPreserveLegacyWriters(t *testing.T) {
 		t.Fatal("legacy global writer reset automatic lease settings")
 	}
 }
+
+func TestAutomaticLeaseSettingsMergeKeepsUnrelatedGlobalState(t *testing.T) {
+	service := NewService(nil, &globalCacheSettings{}, nil, nil, nil)
+	previous, err := service.Global(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous.Telemetry.SampleSeconds, previous.Telemetry.ReportSeconds = 7, 11
+	previous.ConnectionLimit = 37
+	service.globalSettings.publish(previous)
+	if err := service.SaveAutomaticWhitelist(context.Background(), "lease-admin", AutomaticWhitelistConfig{Enabled: false, DurationHours: 72}); err != nil {
+		t.Fatal(err)
+	}
+	current, _ := service.Global(context.Background())
+	if current.Telemetry != previous.Telemetry || current.ConnectionLimit != 37 || current.AutomaticWhitelist.Enabled || current.AutomaticWhitelist.DurationHours != 72 {
+		t.Fatal("lease update replaced unrelated desired state", current)
+	}
+}

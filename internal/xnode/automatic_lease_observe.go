@@ -10,7 +10,7 @@ func (m *automaticLeaseManager) observe(observations []AutomaticLeaseObservation
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.expireLocked(now)
-	if !m.config.Enabled {
+	if !m.config.Enabled && len(m.leases) == 0 {
 		return false
 	}
 	duration := time.Duration(m.config.DurationHours) * time.Hour
@@ -25,6 +25,9 @@ func (m *automaticLeaseManager) observe(observations []AutomaticLeaseObservation
 		}
 		item := m.leases[ip]
 		if item == nil {
+			if !m.config.Enabled {
+				continue
+			}
 			if !observation.At.Add(duration).After(now) {
 				continue
 			}
@@ -40,7 +43,7 @@ func (m *automaticLeaseManager) observe(observations []AutomaticLeaseObservation
 			changed = true
 		} else if !item.observeSource(observation.Node, observation.At) {
 			continue
-		} else if !observation.At.Before(item.started.Add(item.until.Sub(item.started)/2)) && observation.At.Add(2*duration).After(now) && m.generation < math.MaxUint64 {
+		} else if m.config.Enabled && !observation.At.Before(item.started.Add(item.until.Sub(item.started)/2)) && observation.At.Add(2*duration).After(now) && m.generation < math.MaxUint64 {
 			item.started, item.until = observation.At, observation.At.Add(2*duration)
 			at := observation.At
 			item.renewed = &at

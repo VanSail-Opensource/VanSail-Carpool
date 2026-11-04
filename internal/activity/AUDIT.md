@@ -25,7 +25,7 @@ production accounts or proof that historical abuse did not occur.
   requires the webhook secret, configured group, sender identity and onboarding.
 - Randomness comes from `crypto/rand`; weighted instant selection and raffle
   Fisher-Yates assignment happen on the server. The UI animates the returned result.
-- Fees, reserves, results, ledger entries and queued reward effects share a SQLite
+- Fees, reserves, results, ledger entries and queued reward effects share a PostgreSQL
   transaction. Message identity and result keys provide database uniqueness guards.
 - Native access effects and Telegram notifications use the existing durable queues.
   This change introduces no external API calls, dependencies or schema migration.
@@ -52,4 +52,4 @@ errors and require correction or cancellation/refund through existing admin flow
 
 Telegram send outcomes remain ambiguous if a network failure occurs after delivery.
 Publication keeps sales closed in that case. These fixes do not claim exactly-once
-delivery across Telegram and SQLite or recovery of an unknown Telegram message ID.
+delivery across Telegram and PostgreSQL or recovery of an unknown Telegram message ID.

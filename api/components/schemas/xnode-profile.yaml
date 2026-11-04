@@ -18,7 +18,7 @@ XNodeProfileNode:
     activeIpStatus: { type: string, enum: [available, stale, unavailable] }
     sampledAt: { type: [string, 'null'], format: date-time }
     activeIps: { type: array, maxItems: 256, items: { $ref: '#/XNodeProfileIPObservation' } }
-    activeIpsTruncated: { type: boolean }
+    activeIpsTruncated: { type: boolean, description: Source history or the 256-per-node/4096-per-response display budget omitted observations. An empty truncated list cannot prove no activity. }
 XNodeProfileUsage:
   type: object
   additionalProperties: false

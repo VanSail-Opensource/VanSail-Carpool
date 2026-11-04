@@ -1,6 +1,16 @@
 {
   "get": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -25,7 +35,17 @@
     }
   },
   "put": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -46,6 +66,9 @@
       },
       "403": {
         "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
       }
     },
     "requestBody": {
@@ -57,6 +80,20 @@
           }
         }
       }
-    }
+    },
+    "parameters": [
+      {
+        "in": "query",
+        "name": "part",
+        "required": false,
+        "description": "When automaticWhitelist is selected, only the non-null automaticWhitelist settings are merged under the global settings writer lock; unrelated fields are preserved. Omit for a full global update.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "automaticWhitelist"
+          ]
+        }
+      }
+    ]
   }
 }
