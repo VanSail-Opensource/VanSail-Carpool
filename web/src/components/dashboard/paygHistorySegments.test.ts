@@ -27,7 +27,7 @@ describe('PAYG history shares', () => {
   })
   it('combines only shares below one percent, independently for each measure', () => {
     const history = { from: '', to: '', hours: [], truncated: false, costAvailable: true, nodes: [
-      { nodeId: 'major', name: 'Major', countryCode: '', uploadBytes: '9900', downloadBytes: '0', spentMinor: '1' },
+      { nodeId: 'major', name: 'Major', countryCode: '', uploadBytes: '9800', downloadBytes: '0', spentMinor: '1' },
       { nodeId: 'exact', name: 'Exact', countryCode: '', uploadBytes: '100', downloadBytes: '0', spentMinor: '99' },
       { nodeId: 'small', name: 'Small', countryCode: '', uploadBytes: '99', downloadBytes: '0', spentMinor: '9900' },
       { nodeId: 'tiny', name: 'Tiny', countryCode: '', uploadBytes: '1', downloadBytes: '0', spentMinor: '0' },
