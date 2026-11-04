@@ -39,7 +39,10 @@ func activityExpiry(snapshot liveSnapshot, reportSeconds int, sampleSeconds ...i
 		// the authenticated report stream and sample sequence remain current.
 		sampledAt := snapshot.activitySampleReceivedAt
 		if sampledAt.IsZero() {
-			sampledAt = snapshot.receivedAt
+			// Snapshots without a receive marker have no evidence that this
+			// sample advanced during the current report stream. Preserve the
+			// sample's own age instead of refreshing it from report receipt.
+			sampledAt = *snapshot.report.Users.SampledAt
 		}
 		deadline := sampledAt.Add(reportWindow(seconds))
 		if deadline.Before(expiry) {
