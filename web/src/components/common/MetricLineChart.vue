@@ -15,7 +15,7 @@ const data = computed(() => {
 const config = computed(() => ({ actual: { label: props.label, color: 'var(--accent)' }, ...(props.forecasts?.length ? { predicted: { label: props.forecastLabel ?? t('predictions.predicted'), color: 'var(--text-muted)', dashed: true } } : {}) }))
 function formatTime(at: number): string {
  const span = (data.value.at(-1)?.x ?? 0) - (data.value[0]?.x ?? 0)
- return new Intl.DateTimeFormat(locale.value, span >= 86400000 ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { hour: '2-digit', minute: '2-digit' }).format(at)
+ return new Intl.DateTimeFormat(locale.value, span >= 86400000 ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { hour: '2-digit', minute: '2-digit', ...(span < 3600000 ? { second: '2-digit' as const } : {}) }).format(at)
 }
 function format(value: number): string { return props.unit === 'percent' ? `${value.toFixed(1)}%` : props.unit === 'money' ? `${(value / 100).toFixed(2)} TXB` : props.unit === 'count' ? String(Math.round(value)) : props.unit === 'bytes' ? formatBytes(value) : t('statistics.perSecond', { value: formatBytes(value) }) }
 </script>

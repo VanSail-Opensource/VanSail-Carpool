@@ -156,7 +156,6 @@
     "temporaryBanUntil": "临时封禁将在 {date} 结束。",
     "banDuration": "时长（分钟）",
     "changeRemoteId": "更改 X-Node ID",
-    "scanActiveIp": "扫描活跃 IP",
     "noActiveIp": "未找到活跃 IP。",
     "addCoupon": "添加优惠券",
     "addCouponHint": "只能向此钱包发放活跃的购买折扣优惠券。",

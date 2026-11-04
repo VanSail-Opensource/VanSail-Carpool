@@ -36,8 +36,18 @@ by the existing typed APIs and composables.
 abort/generation guards. Selecting evidence invokes settlement; the no-evidence option
 uses the courtesy ledger. Failed evidence loads disable confirmation until retry.
 
-`AdminUserMetrics.vue` presents native availability, rates, exact accounting and seven-day charts/tables. `useAdminUserMetrics.ts` aborts superseded loads, guards identity generations, polls only while mounted and clears snapshots/buffers at logout. `AdminUserScan.vue` owns native-only durable scans with scoped responses and unavailable-node rows. `AdminUserBalanceAdjustment.vue` moves audited TXB adjustments into the selected profile.
+`AdminUserMetrics.vue` presents native availability, rates, exact accounting and seven-day charts/tables. `useAdminUserMetrics.ts` aborts superseded loads, guards identity generations, polls only while mounted and clears snapshots/buffers at logout. `AdminUserBalanceAdjustment.vue` moves audited TXB adjustments into the selected profile.
 
 `useAdminUserMetrics.test.ts` verifies abort/generation isolation between profiles and retirement of pending responses/samples on logout.
 
-Scan failures use localized durable error codes. The table distinguishes an unavailable node from an available node with no active connections.
+The IP table distinguishes stale/unavailable reports from a fresh report with no recent activity. No scan action or receipt polling is needed.
+
+`AdminUserActiveIPs.vue` presents automatically refreshed, owner-scoped sampled
+IP observations, node, last activity and exact counts. `AdminUserPAYGHistory.vue`
+keeps recorded historical nodes in a native Nuxt UI filter and 72-hour hourly
+chart/table. `userTrafficHistory.ts` aggregates with BigInt and converts only
+plot coordinates; `userTrafficHistory.test.ts` checks precision and filters.
+`AdminUserTrafficHistory.vue` displays native graph counters without imported
+series or columns. Canonical current/lifetime accounting totals remain unchanged.
+Refreshes never overlap, pause while hidden and preserve a clearly marked stale
+snapshot on error; scope changes and logout clear all volatile information.

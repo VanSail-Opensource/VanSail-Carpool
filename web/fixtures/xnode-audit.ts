@@ -15,10 +15,12 @@ import { setLocale, t } from '@/i18n'
 import { subscriptionPreset } from '@/components/admin/xnode/subscriptionTemplatePresets'
 import XNodeAudit from './XNodeAudit.vue'
 import { automaticLeaseFixture } from './automaticLeaseFixture'
+import { profileMetricsFixture } from './profileMetricsFixture'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
 automaticLeaseFixture(params)
+profileMetricsFixture(params)
 setExperience('browser'); initializeBrowserTheme(); setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const trace = { calls: [] as string[], copies: [] as string[], writes: [] as unknown[], reloads: 0 }
 globalThis.addEventListener('catalog-quota-save', event => trace.writes.push((event as CustomEvent).detail))

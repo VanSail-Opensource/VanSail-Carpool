@@ -6,7 +6,7 @@ import { ChartContainer, ChartCrosshair, ChartTooltip, ChartTooltipContent, Char
 import type { ChartConfig, ChartDatum } from './index'
 import { useI18n } from '@/i18n'
 import { bridgeSeries } from './bridge'
-const props = withDefaults(defineProps<{ data: readonly ChartDatum[]; config: ChartConfig; label: string; formatValue?: (value: number) => string; formatX?: (value: number) => string; band?: { low: string; high: string; color: string }; height?: number; bar?: boolean; stacked?: boolean; legend?: boolean; connectMissing?: boolean; bridge?: { from: string; to: string; color: string } }>(), { height: 200, legend: true, formatValue: undefined, formatX: undefined, band: undefined, bridge: undefined })
+const props = withDefaults(defineProps<{ data: readonly ChartDatum[]; config: ChartConfig; label: string; formatValue?: (value: number) => string; formatDatumValue?: (row: ChartDatum, key: string) => string; formatX?: (value: number) => string; band?: { low: string; high: string; color: string }; height?: number; bar?: boolean; stacked?: boolean; legend?: boolean; connectMissing?: boolean; bridge?: { from: string; to: string; color: string } }>(), { height: 200, legend: true, formatValue: undefined, formatDatumValue: undefined, formatX: undefined, band: undefined, bridge: undefined })
 const { t } = useI18n()
 const selected = shallowRef<number | undefined>()
 const forceX = shallowRef<number | undefined>()
@@ -25,7 +25,7 @@ const bandSegments = computed(() => {
 const accessors = computed(() => Object.keys(props.config).map(key => (d: ChartDatum) => Number(d[key] ?? NaN)))
 const point = computed(() => selected.value === undefined ? undefined : rows.value[selected.value])
 const tooltipConfig = computed(() => ({ ...props.config, ...(props.band ? { [props.band.low]: { label: t('charts.lower'), color: props.band.color }, [props.band.high]: { label: t('charts.upper'), color: props.band.color } } : {}) }))
-const tooltip = computed(() => componentToString(tooltipConfig.value, ChartTooltipContent, { labelFormatter: (x: number | Date) => rows.value.find(row => row.x === Number(x))?.label || props.formatX?.(Number(x)) || String(x), valueFormatter: props.formatValue, missingLabel: props.connectMissing ? t('common.notAvailable') : undefined }))
+const tooltip = computed(() => componentToString(tooltipConfig.value, ChartTooltipContent, { labelFormatter: (x: number | Date) => rows.value.find(row => row.x === Number(x))?.label || props.formatX?.(Number(x)) || String(x), valueFormatter: props.formatValue, datumValueFormatter: props.formatDatumValue, missingLabel: props.connectMissing ? t('common.notAvailable') : undefined }))
 function inspect(index: number): void {
   if (!rows.value.length) return
   selected.value = Math.max(0, Math.min(rows.value.length - 1, index))
@@ -64,7 +64,7 @@ watch(() => props.data, () => { selected.value = undefined; forceX.value = undef
     <ChartLegendContent v-if="legend" />
     <div v-if="rows.length" class="line-chart__inspection">
       <UButton icon="i-ph-caret-left" size="xs" color="neutral" variant="ghost" :aria-label="t('charts.previous')" @click="inspect((selected ?? 1) - 1)" />
-      <output aria-live="polite"><template v-if="point"><strong>{{ point.label }}</strong><span v-for="(item, key) in tooltipConfig" :key="key">{{ item.label }}: {{ typeof point[key] === 'number' && Number.isFinite(point[key]) ? (formatValue?.(Number(point[key])) ?? point[key]) : t('common.notAvailable') }}</span></template><span v-else>{{ t('charts.inspect') }}</span></output>
+      <output aria-live="polite"><template v-if="point"><strong>{{ point.label || formatX?.(point.x) }}</strong><span v-for="(item, key) in tooltipConfig" :key="key">{{ item.label }}: {{ typeof point[key] === 'number' && Number.isFinite(point[key]) ? (formatDatumValue?.(point, String(key)) ?? formatValue?.(Number(point[key])) ?? point[key]) : t('common.notAvailable') }}</span></template><span v-else>{{ t('charts.inspect') }}</span></output>
       <UButton icon="i-ph-caret-right" size="xs" color="neutral" variant="ghost" :aria-label="t('charts.next')" @click="inspect((selected ?? -1) + 1)" />
     </div>
   </ChartContainer>

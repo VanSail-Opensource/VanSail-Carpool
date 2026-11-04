@@ -156,7 +156,6 @@
     "temporaryBanUntil": "Temporary ban ends {date}.",
     "banDuration": "Duration (minutes)",
     "changeRemoteId": "Change X-Node ID",
-    "scanActiveIp": "Scan active IPs",
     "noActiveIp": "No active IPs were found.",
     "addCoupon": "Add coupon",
     "addCouponHint": "Only active purchase-discount coupons can be granted to this wallet.",

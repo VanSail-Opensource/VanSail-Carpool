@@ -22,3 +22,6 @@ to their metric; the default remains the usage forecast label.
 - `PricingQuoteNotice.vue`: Localized calculating, delayed, stale and unavailable quote states, manual retry and precise validity.
 
 Catalog descriptions use escaped Vue text and a native multiline field. Squad merchandising uses the structured feature list; no application Markdown parser or editor remains.
+
+Short-window `MetricLineChart.vue` axes include seconds so ten-second rate
+samples have distinct labels; day histories retain UTC calendar labels.

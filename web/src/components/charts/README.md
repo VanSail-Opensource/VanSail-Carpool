@@ -12,3 +12,9 @@ Quantitative charts use the official [shadcn-vue chart composition](https://www.
 Extension points are numerical series, localized labels, value formatters and optional intervals. These components never fetch data, calculate prices or persist telemetry.
 
 Source copyright (c) 2023-present shadcn-vue contributors. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies, and to permit persons to whom the Software is furnished to do so, subject to inclusion of this copyright and permission notice. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+`LineChart.vue` accepts an optional `formatDatumValue` callback used by both
+pointer tooltips and keyboard inspection. Callers can retain exact decimal
+strings alongside rounded plotting coordinates. `tooltip.test.ts` covers exact
+integer display and escaped detached payloads; legacy numeric formatters retain
+their existing behavior.

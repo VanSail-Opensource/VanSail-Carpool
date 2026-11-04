@@ -65,12 +65,6 @@ export const adminOperationsApi = {
 			method: 'POST', headers: keyHeader(key), body: { reason },
 		}),
 
-	requestUserConnections: (userId: string, key: string) =>
-		request<components['schemas']['ConnectionScan']>(`/api/v1/admin/users/${encodeURIComponent(userId)}/connections`, {
-			method: 'POST', headers: keyHeader(key),
-		}),
-	pollUserConnections: (userId: string, scanId: string) =>
-		request<components['schemas']['ConnectionScan']>(`/api/v1/admin/users/${encodeURIComponent(userId)}/connections/${encodeURIComponent(scanId)}`),
   refundPayment: (paymentId: string, reason: string, key: string) =>
     request<OperationReceipt>(`/api/v1/admin/payments/${encodeURIComponent(paymentId)}/refund`, {
       method: 'POST', headers: keyHeader(key), body: { reason },

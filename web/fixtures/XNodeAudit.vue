@@ -12,6 +12,8 @@ import AdminControlsAudit from './AdminControlsAudit.vue'
 import CatalogQuotaAudit from './CatalogQuotaAudit.vue'
 import NodeStatisticsAudit from './NodeStatisticsAudit.vue'
 import XNodeAutomaticLeases from '@/components/admin/xnode/XNodeAutomaticLeases.vue'
+import AdminUserMetrics from '@/components/admin/users/AdminUserMetrics.vue'
+const profileMetrics = new globalThis.URLSearchParams(globalThis.location.search).has('profile-metrics')
 const leases = new globalThis.URLSearchParams(globalThis.location.search).has('leases')
 const statistics = new globalThis.URLSearchParams(globalThis.location.search).has('node-statistics')
 const quota = new globalThis.URLSearchParams(globalThis.location.search).has('combo-quota')
@@ -19,7 +21,7 @@ const commands = new globalThis.URLSearchParams(globalThis.location.search).has(
 const controls = new globalThis.URLSearchParams(globalThis.location.search).has('controls')
 </script>
 
-<template><UApp :locale="uiLocale"><main class="audit-shell"><XNodeAutomaticLeases v-if="leases" :nodes="[]" /><NodeStatisticsAudit v-else-if="statistics" /><CatalogQuotaAudit v-else-if="quota" /><AdminControlsAudit v-else-if="controls" /><XNodeCommands v-else-if="commands" node-id="node-one" :endpoints="[]" /><FirewallExemption v-else-if="member" /><XNodeWorkspace v-else /></main></UApp></template>
+<template><UApp :locale="uiLocale"><main class="audit-shell"><AdminUserMetrics v-if="profileMetrics" user-id="fixture-member" /><XNodeAutomaticLeases v-else-if="leases" :nodes="[]" /><NodeStatisticsAudit v-else-if="statistics" /><CatalogQuotaAudit v-else-if="quota" /><AdminControlsAudit v-else-if="controls" /><XNodeCommands v-else-if="commands" node-id="node-one" :endpoints="[]" /><FirewallExemption v-else-if="member" /><XNodeWorkspace v-else /></main></UApp></template>
 
 <style scoped>
 .audit-shell { max-width: 1180px; padding: 24px; margin: 0 auto; }

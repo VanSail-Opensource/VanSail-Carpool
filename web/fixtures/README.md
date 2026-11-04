@@ -233,3 +233,8 @@ The X-Node fixture accepts group-deletion, group-delete-error, empty, slow and e
 source metadata, pagination and pending delivery. `lease-state=loading|empty|error`
 and the volatile `__leaseFixture` controls exercise recovery and stale refreshes.
 No lease fixture writes production data or stores source IPs in browser storage.
+
+`xnode-audit.html?profile-metrics` mounts the real user metrics composition with
+`profileMetricsFixture.ts`. `profile-state=loading|empty|error`, `profile-truncated`
+and volatile `__profileFixture` controls exercise precision, historical nodes,
+fresh empty IPs, unavailable/stale activity and recovery without production data.

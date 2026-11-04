@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ChartConfig } from './index'
-const props = defineProps<{ config: ChartConfig; payload?: Record<string, unknown>; x?: number | Date; labelFormatter?: (x: number | Date) => string; valueFormatter?: (value: number) => string; missingLabel?: string }>()
+import type { ChartConfig, ChartDatum } from './index'
+const props = defineProps<{ config: ChartConfig; payload?: Record<string, unknown>; x?: number | Date; labelFormatter?: (x: number | Date) => string; valueFormatter?: (value: number) => string; datumValueFormatter?: (row: ChartDatum, key: string) => string; missingLabel?: string }>()
 const entries = computed(() => Object.keys(props.config).map(key => [key, props.payload?.[key]] as const).filter(([, value]) => props.missingLabel !== undefined || typeof value === 'number' && Number.isFinite(value)))
+function format(key: string, value: unknown): string | number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return props.missingLabel
+  if (props.datumValueFormatter && props.payload) return props.datumValueFormatter(props.payload as ChartDatum, key)
+  return props.valueFormatter?.(value) ?? value
+}
 </script>
 <template>
   <div class="chart-tooltip">
     <strong>{{ labelFormatter && x !== undefined ? labelFormatter(x) : payload?.label }}</strong>
-    <div v-for="[key, value] in entries" :key="key"><span :style="{ color: config[key]?.color }">{{ config[key]?.label }}</span><b>{{ typeof value === 'number' && Number.isFinite(value) ? (valueFormatter ? valueFormatter(value) : value) : missingLabel }}</b></div>
+    <div v-for="[key, value] in entries" :key="key"><span :style="{ color: config[key]?.color }">{{ config[key]?.label }}</span><b>{{ format(key, value) }}</b></div>
   </div>
 </template>
 <style scoped>
