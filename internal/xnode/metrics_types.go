@@ -11,6 +11,7 @@ type NodeMetrics struct {
 	Enabled                bool                `json:"-"`
 	ReceivedAt             time.Time           `json:"-"`
 	Available              bool                `json:"available"`
+	TelemetryAvailable     bool                `json:"telemetryAvailable"`
 	Firewall               *wire.FirewallState `json:"firewall,omitempty"`
 	NodeID                 string              `json:"nodeId"`
 	Connected              bool                `json:"connected"`
@@ -61,6 +62,7 @@ type MetricsSummary struct {
 }
 type liveSnapshot struct {
 	activityReports bool
+	activitySampleReceivedAt time.Time
 	firewall        *wire.FirewallState
 	hello           wire.AgentHello
 	report          wire.TelemetryReport // immutable banks; replace the whole report after decoding

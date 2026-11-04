@@ -16,7 +16,7 @@ const status = computed(() => {
   if (node.stale) return { label: 'xnode.stale', color: 'neutral' as const }
   if (!node.connected || !node.ready) return { label: 'xnode.offline', color: 'error' as const }
   if (!node.synchronized) return { label: 'xnode.degraded', color: 'warning' as const }
-  if (!node.available) return { label: 'xnode.metricsUnavailable', color: 'neutral' as const }
+  if (!node.telemetryAvailable) return { label: 'xnode.metricsUnavailable', color: 'neutral' as const }
   return { label: 'xnode.online', color: 'success' as const }
 })
 const fields = computed(() => expanded.value ? Object.entries(props.node.machine ?? {}) : [])
@@ -29,8 +29,8 @@ function toggle(event: globalThis.Event) { expanded.value = (event.currentTarget
     <summary><span class="min-w-0 flex-1 break-words">{{ name }}</span><UBadge :color="status.color" variant="subtle">{{ t(status.label) }}</UBadge><UButton type="button" variant="ghost" color="neutral" icon="i-ph-terminal-window" :aria-label="t('xnode.viewLogs', { name })" :title="t('xnode.viewLogs', { name })" @click.stop.prevent="emit('logs')" /></summary>
     <template v-if="expanded">
       <div class="metrics-meta"><span>{{ node.version }} · Xray {{ node.xrayVersion }}</span><span>{{ formatDate(node.reportedAt ?? undefined) }}</span><span v-if="node.available">{{ rate(node.uploadBytesPerSecond) }} ↑ · {{ rate(node.downloadBytesPerSecond) }} ↓</span></div>
-      <div v-if="node.available" class="metrics-sections"><MetricLineChart :samples="cpu" :label="t('adminNative.cpu')" unit="percent" /><MetricLineChart :samples="memory" :label="t('adminNative.memory')" unit="percent" /></div>
-      <div v-if="node.available" class="metrics-sections"><XNodeMetricSection v-for="[key, value] in fields" :key="key" :value="value" :label="metricLabel(key)" :prefix="key" /><XNodeMetricSection :value="node.certificates" :label="t('xnode.certificates')" /></div>
+      <div v-if="node.telemetryAvailable" class="metrics-sections"><MetricLineChart :samples="cpu" :label="t('adminNative.cpu')" unit="percent" /><MetricLineChart :samples="memory" :label="t('adminNative.memory')" unit="percent" /></div>
+      <div v-if="node.telemetryAvailable" class="metrics-sections"><XNodeMetricSection v-for="[key, value] in fields" :key="key" :value="value" :label="metricLabel(key)" :prefix="key" /><XNodeMetricSection :value="node.certificates" :label="t('xnode.certificates')" /></div>
     </template>
   </details>
 </template>

@@ -390,7 +390,7 @@ administrator document and rejection of unrelated native-core errors.
 `master_receive.go` Replaces reports, commits traffic before ACK and confirms firewall liveness.
 `master_sync.go` Serializes revisions and computes memory-only global connection controls.
 `master_commands.go` Waits for commands outside frame queues and verifies accounting barriers.
-`master_metrics.go` Projects fresh available fleet and owner-specific snapshots.
+`master_metrics.go` Projects fresh machine telemetry separately from sampled activity availability. Activity-dependent rates and connection counts remain gated by advancing samples; receive-time freshness avoids false stale status from agent clock drift.
 `ports_test.go` Pins compact range normalization and invalid inputs for hosted CI.
 `master_metrics_test.go` Pins report freshness and invalid/empty count handling for hosted CI.
 
@@ -608,7 +608,7 @@ Global saves validate shared selectors against native parsing and the configured
 
 `command_outcomes.go` bounds acceptance separately from protocol execution and reports undelivered, rejected, failed and uncertain results. `command_updates.go` reconciles durable upgrades after reconnect, requiring fresh readiness at the current configuration revision. `command_outcomes_test.go`, `command_socket_test.go` and `command_update_reconnect_test.go` cover typed results, concurrent accounting acknowledgments and lost upgrade replies.
 
-`member_metrics.go` derives online, offline or unavailable from fresh native activity within the authorized node scope. `member_activity_test.go` covers stale/unsupported/rolled-back observations, idle nodes and transfer-only activity. The expiry is based on master receive time, stays memory-only and is transported in both member and profile projections.
+`member_metrics.go` derives online, offline or unavailable from fresh native activity within the authorized node scope. Activity sample freshness advances only when the authenticated agent sample timestamp advances, but the expiry is based on its master receive time so bounded agent clock drift cannot make current samples appear stale. This state stays memory-only and is transported in both member and profile projections.
 
 `squad_normalization_test.go` covers normalization of the final enabled squad during native entitlement activation without creating a legacy link. `periods.go` normalizes only mutation paths, preserving current counters and paid-successor accounting.
 

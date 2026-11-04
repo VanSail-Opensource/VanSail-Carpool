@@ -30,6 +30,9 @@ func (m *Master) receiveActivity(peer *agentPeer, message wire.Message) error {
 		m.mu.Unlock()
 		return ErrConflict
 	}
+	if sampled := report.Users.SampledAt; sampled != nil && (snapshot.report.Users.SampledAt == nil || sampled.After(*snapshot.report.Users.SampledAt)) {
+		snapshot.activitySampleReceivedAt = m.service.now()
+	}
 	automaticChanged := m.observeAutomaticActivityLocked(peer, report, snapshot.report.Users.SampledAt)
 	snapshot.report = report
 	snapshot.receivedAt = m.service.now()

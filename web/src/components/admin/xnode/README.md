@@ -41,7 +41,7 @@ panel-owned and are not part of the agent configuration.
 local JSON feedback and debounced pinned-core validation.
 JSON inputs reuse `JsonDocumentField.vue` in the common component module.
 `XNodeAccessGroups.vue` manages node/inbound access and subscription endpoints.
-`XNodeMetrics.vue` renders fleet and detailed collector snapshots. Its badge distinguishes offline, stale, unsynchronized, metrics-unavailable and fully available states using the existing connection, readiness, synchronization and availability fields.
+`XNodeMetrics.vue` renders fleet and detailed collector snapshots. `telemetryAvailable` gates fresh machine/certificate details and CPU/memory history; `available` separately gates sampled-activity rates and connection metrics. Its badge distinguishes offline, stale, unsynchronized, metrics-unavailable and fully available states.
 
 Typed clients are in `api/xnode.ts`; all copy comes from `xnode.json` locales.
 Configuration and enrollment reads bypass response persistence. No component

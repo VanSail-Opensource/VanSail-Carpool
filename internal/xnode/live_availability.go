@@ -30,12 +30,18 @@ func activityAvailable(snapshot liveSnapshot, now time.Time, reportSeconds int, 
 
 func activityExpiry(snapshot liveSnapshot, reportSeconds int, sampleSeconds ...int) time.Time {
 	expiry := snapshot.receivedAt.Add(reportWindow(reportSeconds))
-	if sampled := snapshot.report.Users.SampledAt; sampled != nil {
+	if snapshot.report.Users.SampledAt != nil {
 		seconds := reportSeconds
 		if len(sampleSeconds) > 0 {
 			seconds = max(seconds, sampleSeconds[0])
 		}
-		deadline := sampled.Add(reportWindow(seconds))
+		// Compare freshness in master time. Agent wall clocks can drift while
+		// the authenticated report stream and sample sequence remain current.
+		sampledAt := snapshot.activitySampleReceivedAt
+		if sampledAt.IsZero() {
+			sampledAt = snapshot.receivedAt
+		}
+		deadline := sampledAt.Add(reportWindow(seconds))
 		if deadline.Before(expiry) {
 			expiry = deadline
 		}

@@ -21,7 +21,7 @@ watch(() => props.metrics, value => {
   if (!value) return
   const values: Record<string, number> = {}
   for (const node of value.nodes) {
-    if (!node.available) continue
+    if (!node.telemetryAvailable) continue
     const machine = node.machine as Record<string, unknown>
     const cpu = Array.isArray(machine.cpu_usage) ? machine.cpu_usage.filter((item): item is number => typeof item === 'number' && Number.isFinite(item)) : []
     const memory = machine.memory as { usedPercent?: number } | undefined
