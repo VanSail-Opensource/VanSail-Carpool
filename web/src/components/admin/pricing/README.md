@@ -46,6 +46,7 @@ read-only notice; dynamic pricing requires no terms approval.
 - `PricingDecisionFacts.vue`: Expanded decision versions, reasons, probability, model and validity facts.
 
 - `UserPricingAnalysis.vue`: Embeds all owner-specific product bases, coupon terms and forecasts directly on the user page.
+- `AdminUserPredictions.vue`: Loads an administrator-scoped user's historical and forecast traffic, including incomplete, pending, and error states, through `api/forecasts.ts`.
 
 - `useUserPrices.ts`: Cancels obsolete reads and appends explicit bounded pages without silently dropping products.
 

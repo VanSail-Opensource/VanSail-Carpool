@@ -62,7 +62,7 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `pricingAnalysis.ts`: Bounded original forecasts, statistics, provider inputs and immediate administrator commands.
 - `pricingExports.ts`: Scope-bound sensitive-export authorization and cancellable direct ZIP streams.
 
-- `forecasts.ts`: Owner/admin forecast projection and cursor-paginated per-user pricing contracts.
+- `forecasts.ts`: Administrator-scoped user forecast projection and cursor-paginated per-user pricing contracts.
 
 Generated API compatibility regression: `openapiContract.test.ts`.
 

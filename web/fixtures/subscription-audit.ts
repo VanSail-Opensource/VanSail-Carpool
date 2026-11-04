@@ -3,9 +3,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
-import { personalForecast } from './pricing-data'
-import { forecastApi } from '@/api/forecasts'
 import { api } from '@/api/client'
+import { pricingApi } from '@/api/pricing'
 import { ApiError } from '@/api/http'
 import { subscriptionApi, type MemberSubscription } from '@/api/subscription'
 import { xnodeMemberApi } from '@/api/xnodeMember'
@@ -47,14 +46,18 @@ async function delay(): Promise<void> {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
   if (state.failure) throw new ApiError(502, { code: 'SUBSCRIPTION_UNAVAILABLE', message: '' })
 }
-forecastApi.personal = async () => { await delay(); return personalForecast(params) }
 subscriptionApi.saveHostName = async (id, name) => { await delay(); if (params.has('save-error')) throw new ApiError(409,{code:'XNODE_UNAVAILABLE',message:''}); hostNames[id]=name.trim(); state.saves++; return {hostId:id,name:name.replaceAll('{price}','1.0x'),nameOverride:name,publishedName:'Tokyo {price}',priceLabel:'1.0x'} }
 subscriptionApi.subscription = async () => { state.reads++; await delay(); return data() }
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ eligible:false,reason:'FIXTURE',amount:{currency:'TXB',minor:'0',display:'0.00 TXB'} }) as never
 api.getAutoRenewal = async () => ({ purchaseId:'fixture-purchase',enabled:true,canEnable:true,ineligibleReason:null,grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},discount:{currency:'TXB',minor:'0',display:'0.00 TXB'},netPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},scheduledAt:at(23*day),nextCycleEndsAt:at(53*day) })
+pricingApi.renewalInfo = async () => ({ policy: { dynamicEnabled: false }, quote: null, graceSeconds: 0 }) as never
 api.getCommunityAccess = async () => ({ activeCombo: !params.has('inactive') })
 const fixturePurchase = { id:'fixture-purchase',comboId:'fixture-combo',comboName:'Tokyo monthly',price:{currency:'TXB',minor:'1000',display:'10.00 TXB'},grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},couponDiscount:{currency:'TXB',minor:'0',display:'0.00 TXB'},couponGrantId:null,validFrom:at(-7*day),validUntil:at(23*day),status:'active',autoRenewEnabled:true,trafficLimitBytes:'100000000000',resetStrategy:'MONTH_ROLLING',squadUuids:['international'],createdAt:at(-7*day),updatedAt:at(0) }
-api.getDashboard = async () => ({ user: {}, balance: { currency: 'TXB', minor: '12345', display: '123.45 TXB' }, activePurchase: params.has('combo') ? fixturePurchase : null, queuedPurchase: null, statisticsStale: false, fetchedAt: at(0), subscriptionUrl: 'https://subscription.example/import', statistics: { usedTrafficBytes: '12345678900', lifetimeTrafficBytes: '22345678900', trafficLimitBytes: '100000000000', onlineAt: at(0), lastTrafficResetAt: params.has('noreset') ? null : at(-day), categories: [], sparklineData: [], topNodes: [] } }) as never
+api.getDashboard = async () => {
+  if (params.has('home-slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
+  if (params.has('home-error')) throw new ApiError(502, { code: 'DASHBOARD_UNAVAILABLE', message: '' })
+  return ({ user: {}, balance: { currency: 'TXB', minor: '12345', display: '123.45 TXB' }, activePurchase: params.has('combo') ? fixturePurchase : null, queuedPurchase: null, statisticsStale: false, fetchedAt: at(0), subscriptionUrl: 'https://subscription.example/import', statistics: { usedTrafficBytes: '12345678900', lifetimeTrafficBytes: '22345678900', trafficLimitBytes: '100000000000', onlineAt: at(0), lastTrafficResetAt: params.has('noreset') ? null : at(-day), categories: [], sparklineData: [], topNodes: [] } }) as never
+}
 api.getCatalog = async () => ({ combos: [], addons: [], nodes: [] })
 api.revokeSubscription = async () => { state.revocations++; return { id: 'audit-revoke', kind: 'subscription_revoke', status: 'queued', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: null } }
 memberOperationsApi.getOperation = async () => ({ id: 'audit-revoke', kind: 'subscription_revoke', status: 'succeeded', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: at(0) })

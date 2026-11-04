@@ -12,7 +12,7 @@ import PricingAudit from './PricingAudit.vue'
 import '@/styles/main.css'
 import '@/browser/styles.css'
 
-setExperience(new URLSearchParams(location.search).get('view') === 'member' || new URLSearchParams(location.search).get('view') === 'checkout' ? 'miniapp' : 'browser')
+setExperience(new URLSearchParams(location.search).get('view') === 'checkout' ? 'miniapp' : 'browser')
 initializeBrowserTheme()
 const params = new URLSearchParams(location.search)
 if (params.has('light')) setBrowserTheme('light')
@@ -33,7 +33,6 @@ const health = [
 ]
 const calls: string[] = []
 Object.assign(window, { pricingAuditCalls: calls })
-if (view === 'member') policy = { ...policy, dynamicEnabled: true, renewalPricingMode: 'DYNAMIC', version: 1 }
 window.fetch = async (input, init) => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.origin)
   ;(window as unknown as { pricingAuditQueries: string[] }).pricingAuditQueries ??= []

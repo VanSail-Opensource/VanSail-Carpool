@@ -6,8 +6,7 @@ import { api } from '@/api/client'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import PersonalPredictions from './PersonalPredictions.vue'
-import ForecastFlipCard from './ForecastFlipCard.vue'
+import RideSummaryFace from './RideSummaryFace.vue'
 import PurchaseActions from './PurchaseActions.vue'
 import { formatDate } from '@/utils/format'
 import { localizedError } from '@/i18n'
@@ -48,19 +47,17 @@ async function cancelQueued(): Promise<void> {
     queuedCancelBusy.value = false
   }
 }
-
-
 </script>
 
 <template>
-  <section class="section-block home-ride">
+  <section v-if="currentActive || currentQueued" class="section-block home-ride">
     <div class="section-heading">
       <h2>{{ $t('dashboard.yourRide') }}</h2>
       <StatusBadge v-if="currentActive" tone="success" :label="$t('common.active')" />
     </div>
 
-    <div v-if="currentActive || currentQueued" class="home-ride__content">
-      <ForecastFlipCard v-if="currentActive" :active="currentActive" :squad-names="squadNames" />
+    <div class="home-ride__content">
+      <RideSummaryFace v-if="currentActive" class="home-ride__summary" :active="currentActive" :squad-names="squadNames" />
       <div v-if="currentQueued" class="home-ride__queued">
         <div class="home-ride__queued-content">
           <span>
@@ -81,8 +78,6 @@ async function cancelQueued(): Promise<void> {
       </div>
       <PurchaseActions v-if="currentActive" :purchase="currentActive" @changed="emit('autoRenewalChanged')" />
     </div>
-
-    <PersonalPredictions v-else />
   </section>
   <ConfirmDialog
     v-model:open="queuedCancelOpen"

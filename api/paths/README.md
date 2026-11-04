@@ -282,7 +282,6 @@ provides browser-only admin preset inventory and optimistic writes.
 
 - `api-v1-admin-users-id-prices.yaml`: Explicitly paginated user product pricing.
 
-- `api-v1-dashboard-predictions.yaml`: Member personal predictions.
 
 - `api-v1-subscription-hosts-id-name.yaml`: Owner host-name write contract.
 

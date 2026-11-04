@@ -7,14 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (s *Server) personalForecast(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-	if !s.requireOnboarded(w, r, user) {
-		return
-	}
-	s.writePersonalForecast(w, r, user.ID)
-}
-
 func (s *Server) adminPersonalForecast(w http.ResponseWriter, r *http.Request) {
 	s.writePersonalForecast(w, r, chi.URLParam(r, "id"))
 }

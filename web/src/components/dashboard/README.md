@@ -15,7 +15,7 @@ Settings. This keeps dashboard actions separate from subscription settings.
 - `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links and renders the section only for an opted-in entrance preference and a server-confirmed valid combo; the desktop sidebar carries the same gated entry points.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
-- `EntitlementSummary.test.ts` verifies the catalog action stays in Vue Router history.
+- `EntitlementSummary.test.ts` covers active, queued, and absent combos.
 - `TrafficResetAutomationControl.test.ts` verifies the switch remains controlled while emitting an immediate account preference update.
 
 Dashboard controls distinguish copy, open, navigation, retry, confirmation, and destructive intents. Automatic renewal and traffic-reset switches emit selection feedback only when their controlled value changes.
@@ -37,8 +37,6 @@ offline requires complete fresh coverage reporting no open flows.
 `useDashboard` and `EntitlementSummary.vue` revalidate cached purchases at validity boundaries and on visibility/focus refresh. Expired predecessors disappear immediately while successor discovery refreshes quietly; display state never changes settlement records.
 
 
-- `ForecastFlipCard.vue`: Keeps the active Combo face transition and isolates the interactive prediction reverse.
-
-- `PersonalPredictions.vue`: Loads the last two complete UTC accounting days and next five daily forecast windows for a graph with an uncertainty band. Loading, stale, error and missing states remain visible. Dashed connectors bridge unavailable days and the historical-to-forecast transition without creating observations.
+- `EntitlementSummary.vue` renders the active combo directly and keeps queued purchase controls; member usage forecasts are not requested.
 
 Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageBar.vue`, `TrafficUsageBarDetails.vue`, `TrafficUsageDetails.vue`.

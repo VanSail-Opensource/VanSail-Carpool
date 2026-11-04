@@ -5,7 +5,6 @@ paths:
   /api/v1/subscription/hosts/{id}/name: { $ref: ./paths/api-v1-subscription-hosts-id-name.yaml }
   /api/v1/admin/users/{id}/prices: { $ref: "./paths/api-v1-admin-users-id-prices.yaml" }
   /api/v1/admin/users/{id}/predictions: { $ref: "./paths/api-v1-admin-users-id-predictions.yaml" }
-  /api/v1/dashboard/predictions: { $ref: "./paths/api-v1-dashboard-predictions.yaml" }
   /api/v1/purchases/{id}/pricing: { $ref: "./paths/api-v1-purchases-id-pricing.yaml" }
   /api/v1/admin/pricing/exports: { $ref: "./paths/api-v1-admin-pricing-exports.yaml" }
   /api/v1/admin/pricing/exports/authorization: { $ref: "./paths/api-v1-admin-pricing-exports-authorization.yaml" }

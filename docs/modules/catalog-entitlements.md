@@ -4,7 +4,7 @@
 
 The catalog module owns Combo definitions, sparse squad merchandising, server-priced quotes, coupon-aware checkout, active/queued terms and automatic renewal. Native X-Node owns proxy identities, credentials, accounting periods and desired access. Database transactions own money and immutable purchase/refund evidence. External work uses the existing durable queue.
 
-Member interfaces include `/api/v1/catalog`, `/api/v1/purchases/quote`, `/api/v1/purchases`, purchase add-on quote/commit resources, `/api/v1/dashboard`, `/api/v1/dashboard/node-usage` and `/api/v1/dashboard/predictions`. Owner-only automatic-renewal GET/PUT resources expose next-cycle amounts, dates, eligibility and preference. Admin user price/prediction resources are scoped to the browser administrator/API-token boundary.
+Member interfaces include `/api/v1/catalog`, `/api/v1/purchases/quote`, `/api/v1/purchases`, purchase add-on quote/commit resources, `/api/v1/dashboard` and `/api/v1/dashboard/node-usage`. Owner-only automatic-renewal GET/PUT resources expose next-cycle amounts, dates, eligibility and preference. Admin user price/prediction resources are scoped to the browser administrator/API-token boundary.
 
 ## Catalog and checkout
 

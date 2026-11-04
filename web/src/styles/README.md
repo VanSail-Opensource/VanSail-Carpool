@@ -59,4 +59,4 @@ perpetual loaders, skeletons, radar, and particles.
 
 - `admin-08.css` owns the shared admin row geometry and final responsive heading/card refinements. It is imported after the earlier admin and responsive layers so section-specific row variants can correct their actual content tracks.
 
-Active Combo flip-card layout and its prediction reverse: `home-04.css`.
+Active combo summary layout: `home-04.css`.

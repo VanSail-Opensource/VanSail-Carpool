@@ -239,7 +239,7 @@ covers both delivery paths and status boundaries in hosted CI.
 
 - `host_names.go`: Owner-authorized host display preference write handler.
 
-- `personal_forecast.go`: Member/admin analytical projections, behind their existing scopes.
+- `personal_forecast.go`: Administrator-scoped user forecasts and pricing analysis.
 
 - `pricing_user_response.go`: Reuses canonical coupon response conversion, including decimal amounts and explicit nulls.
 

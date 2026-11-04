@@ -6,10 +6,9 @@ import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useSubscriptionData } from '@/components/subscription/useSubscriptionData'
 import { useI18n } from '@/i18n'
 import { formatBytes, formatAccountingDay } from '@/utils/format'
-const props = defineProps<{ userId?: string; back?: boolean }>()
-const emit = defineEmits<{ back: [] }>()
+const props = defineProps<{ userId: string }>()
 const { t } = useI18n()
-const { value: forecast, loading, error, refresh } = useSubscriptionData(signal => props.userId ? forecastApi.user(props.userId, signal) : forecastApi.personal(signal), 15_000, 'predictions.loadFailed', value => value?.refreshPending || value?.renewalDecision?.status === 'PENDING' ? 15_000 : (Math.floor(Date.now() / 86400000) + 1) * 86400000 - Date.now())
+const { value: forecast, loading, error, refresh } = useSubscriptionData(signal => forecastApi.user(props.userId, signal), 15_000, 'predictions.loadFailed', value => value?.refreshPending || value?.renewalDecision?.status === 'PENDING' ? 15_000 : (Math.floor(Date.now() / 86400000) + 1) * 86400000 - Date.now())
 const data = computed(() => {
   const days = (forecast.value?.days || []).map(day => ({ x: Date.parse(day.date), label: day.date, actual: day.actualBytes === null ? undefined : Number(day.actualBytes), predicted: day.predictedBytes === null ? undefined : Number(day.predictedBytes), low: day.lowerBytes === null ? undefined : Number(day.lowerBytes), high: day.upperBytes === null ? undefined : Number(day.upperBytes) }))
   const byDay = new Map(days.map(day => [day.x, day]))
@@ -24,7 +23,7 @@ const hasData = computed(() => data.value.some(day => day.actual !== undefined |
 </script>
 <template>
   <section class="personal-predictions" :aria-busy="loading">
-    <header><h3>{{ t('predictions.title') }}</h3><UButton v-if="back" color="neutral" variant="ghost" icon="i-ph-arrow-left" :aria-label="t('predictions.back')" @click="emit('back')" /></header>
+    <header><h3>{{ t('predictions.title') }}</h3></header>
     <USkeleton v-if="loading && !forecast" class="h-64 w-full" />
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton color="neutral" variant="link" :label="t('common.tryAgain')" @click="refresh()" /></InlineNotice>
     <template v-if="forecast">

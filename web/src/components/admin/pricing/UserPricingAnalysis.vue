@@ -5,7 +5,7 @@ import { formatDate } from '@/utils/format'
 import { formatMemberMoney as formatMoney } from '@/utils/displayCurrency'
 import { pricingLabel, pricingMoney } from '@/utils/pricingDisplay'
 import InlineNotice from '@/components/common/InlineNotice.vue'
-import PersonalPredictions from '@/components/dashboard/PersonalPredictions.vue'
+import AdminUserPredictions from './AdminUserPredictions.vue'
 import PricingDecisionFacts from './PricingDecisionFacts.vue'
 import { useUserPrices } from './useUserPrices'
 const props = defineProps<{ userId: string }>()
@@ -16,7 +16,7 @@ const { items, cursor, loading, error, load } = useUserPrices(toRef(props, 'user
   <section class="user-prices">
     <header><h2>{{ t('userPrices.title') }}</h2><UButton variant="outline" color="neutral" :loading="loading" :label="t('pricing.refresh')" @click="load()" /></header>
     <p>{{ t('userPrices.hint') }}</p>
-    <PersonalPredictions :key="userId" :user-id="userId" />
+    <AdminUserPredictions :key="userId" :user-id="userId" />
     <InlineNotice v-if="error" tone="warning">{{ error }}</InlineNotice>
     <USkeleton v-if="loading && !items.length" class="h-64 w-full" />
     <p v-if="!loading && !error && !items.length">{{ t('pricing.emptyProducts') }}</p>
