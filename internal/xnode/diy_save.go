@@ -52,7 +52,6 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	if err != nil {
 		return result, err
 	}
-	whitelistChanged := previousSettings.Whitelist.Enabled != settings.Whitelist.Enabled || settings.Whitelist.Enabled && !sameDIYValue(previousSettings.Whitelist, settings.Whitelist)
 	routing, err := s.diyRouting(ctx, user)
 	if err != nil {
 		return result, err
@@ -70,9 +69,6 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 	}
 	var plan *RoutingPlan
 	items := []providerops.ItemInput{{Key: "settings", TargetType: "member_diy", TargetID: user}}
-	if whitelistChanged {
-		items = []providerops.ItemInput{{Key: "whitelist", TargetType: "member_whitelist", TargetID: user}}
-	}
 	if string(previous) != string(next) {
 		identity, err := s.repo.XNodeIdentityByUser(ctx, user)
 		if err != nil {
@@ -90,10 +86,10 @@ func (s *Service) SaveOwnedDIY(ctx context.Context, user, key string, input DIYW
 		return result, err
 	}
 	changed := !sameDIYValue(previousSettings, settings) || plan != nil
-	result = DIYSaveResult{Changed: changed, SettingsRevision: input.SettingsRevision, RoutingChanged: plan != nil, DeploymentChanged: plan != nil || whitelistChanged}
+	result = DIYSaveResult{Changed: changed, SettingsRevision: input.SettingsRevision, RoutingChanged: plan != nil, DeploymentChanged: plan != nil}
 	if changed {
 		result.SettingsRevision++
 	}
-	result.Receipt, err = repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher, NativeChanged: whitelistChanged, Unchanged: !changed, Result: &result}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
+	result.Receipt, err = repo.SaveXNodeDIY(ctx, DIYDocument{UserID: user, Revision: input.SettingsRevision, Cipher: cipher, Unchanged: !changed, Result: &result}, input.RoutingRevision, plan, providerops.CreateInput{ActorUserID: user, OwnerUserID: user, Kind: DIYOperationKind, IdempotencyKey: key, RequestFingerprint: fingerprint, Items: items}, s.now())
 	return result, err
 }

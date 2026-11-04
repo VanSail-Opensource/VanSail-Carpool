@@ -200,8 +200,6 @@ firewallApi.bans = async (query = '', cursor = '') => {
   const selected = query.startsWith('8.8') || cursor ? second : first
   return { items: params.has('firewall-empty') || releasedBans.has(selected.prefix) || query.startsWith('9.9') ? [] : [selected], ...(params.has('firewall-pages') && !cursor && !query ? { nextCursor: 'second' } : {}) }
 }
-firewallApi.quote = async () => { await check('firewall-quote'); if (params.has('quote-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { enabled: !params.has('unban-disabled') && !params.has('whitelist'), whitelistMode: params.has('whitelist'), price: '1.25', hours: 24 } }
-firewallApi.purchase = async (ip, quote, key) => { await check('firewall-purchase:' + ip + ':' + key); if (params.has('unban-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' }); return { id: key, ip, priceMinor: '125', hours: quote.hours, until: '2026-10-20T00:00:00Z' } }
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)

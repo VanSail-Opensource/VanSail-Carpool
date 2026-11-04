@@ -8,16 +8,17 @@ import (
 )
 
 func decodeDIYSettings(raw []byte) (DIYSettings, bool, error) {
-	settings := DIYSettings{Version: 2, Whitelist: WhitelistPolicy{IPs: []string{}}, SplitProfiles: []SplitProfile{}}
+	settings := DIYSettings{Version: 3, SplitProfiles: []SplitProfile{}}
 	var header struct {
 		Version int `json:"version"`
 	}
 	if err := json.Unmarshal(raw, &header); err != nil {
 		return settings, false, err
 	}
-	if header.Version == 2 {
+	if header.Version == 2 || header.Version == 3 {
 		err := json.Unmarshal(raw, &settings)
-		return settings, false, err
+		settings.Version = 3
+		return settings, header.Version != 3, err
 	}
 	if header.Version != 0 && header.Version != 1 {
 		return settings, false, ErrInvalid
@@ -41,7 +42,7 @@ func decodeDIYSettings(raw []byte) (DIYSettings, bool, error) {
 		if err == nil {
 			err = json.Unmarshal(raw, &settings)
 		}
-		settings.Version = 2
+		settings.Version = 3
 	}
 	return settings, true, err
 }

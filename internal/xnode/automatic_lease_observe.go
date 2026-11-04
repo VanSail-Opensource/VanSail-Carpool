@@ -56,9 +56,6 @@ func (m *automaticLeaseManager) observe(observations []AutomaticLeaseObservation
 		if item.observations == 0 {
 			item.observeSource(observation.Node, observation.At)
 		}
-		if observation.At.Before(item.first) {
-			item.first = observation.At
-		}
 		if observation.At.After(item.last) {
 			item.last = observation.At
 		}

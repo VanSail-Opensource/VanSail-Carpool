@@ -1,11 +1,10 @@
-import { xnodeMemberApi, type DIYOverrides, type DIYPreview, type DIYView, type DIYWhitelist, type DIYWrite, type DIYSplitProfile, type RoutingView } from '@/api/xnodeMember'
+import { xnodeMemberApi, type DIYOverrides, type DIYPreview, type DIYView, type DIYWrite, type DIYSplitProfile, type RoutingView } from '@/api/xnodeMember'
 import { memberOperationsApi } from '@/api/memberOperations'
 import { ApiError } from '@/api/http'
 import type { OperationReceipt } from '@/api/types'
 
 export function installDIYAudit(params: URLSearchParams, trace: { calls: string[]; keys: string[]; writes: unknown[] }, routing: () => Promise<RoutingView>) {
   let revision = 0, overrides: DIYOverrides = params.has('populated') ? { fingerprint: 'firefox', tcpFastOpen: false, muxXudpConcurrency: -1 } : {}
-  let whitelist: DIYWhitelist = { enabled: params.has('whitelist'), ips: params.has('whitelist') ? ['8.8.8.8'] : [] }, pendingWhitelist = false
   let splitProfiles: DIYSplitProfile[] = params.has('split') ? [{ id: 'split-one', uploadEndpointId: 'a-primary', downloadEndpointId: 'a-secondary', mode: 'auto' }] : []
   const splitHosts: DIYView['splitHosts'] = params.has('empty') ? [] : [
     { id: 'a-primary', name: 'Amsterdam primary', nodeId: 'a', inboundTag: 'xhttp', downloadIds: ['a-secondary', 'a-tertiary'], modes: ['auto', 'packet-up'], downloadOptions: [{ downloadEndpointId: 'a-secondary', modes: ['auto'] }, { downloadEndpointId: 'a-tertiary', modes: ['packet-up'] }] },
@@ -34,7 +33,7 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
     }
     current.plan.choices = current.plan.choices.map(choice => ({ ...choice, inboundEndpointId: choice.inboundEndpointId ?? `${choice.inboundNodeId}-primary`, outboundEndpointId: choice.outboundEndpointId ?? `${choice.outboundNodeId}-primary` }))
     const metadata = await preview(overrides, signal)
-    return structuredClone({ splitProfiles, splitHosts, settingsRevision: revision, overrides, whitelist: { ...whitelist, quota: params.has('small-quota') ? 1 : 5, phase: pendingWhitelist ? 'pending' : whitelist.enabled ? 'active' : 'disabled', pendingNodes: pendingWhitelist ? ['a'] : [] }, routing: current, fields: metadata.fields, compatibility: metadata.compatibility })
+    return structuredClone({ splitProfiles, splitHosts, settingsRevision: revision, overrides, routing: current, fields: metadata.fields, compatibility: metadata.compatibility })
   }
   xnodeMemberApi.previewDIY = async (body, signal) => { trace.calls.push('diy-preview'); return await preview(body.overrides, signal) }
   xnodeMemberApi.saveDIY = async (body: DIYWrite, key: string) => {
@@ -43,11 +42,10 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
     if (replay) return { changed: true, settingsRevision: body.settingsRevision + 1, ...replay }
     if (params.has('save-error')) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' })
     if (body.settingsRevision !== revision || body.routingRevision !== current.plan.revision) throw new ApiError(409, { code: 'XNODE_CONFLICT', message: '' })
-    const changed = JSON.stringify(body.overrides) !== JSON.stringify(overrides) || JSON.stringify(body.choices) !== JSON.stringify(current.plan.choices) || JSON.stringify(body.whitelist ?? whitelist) !== JSON.stringify(whitelist) || JSON.stringify(body.splitProfiles ?? splitProfiles) !== JSON.stringify(splitProfiles)
+    const changed = JSON.stringify(body.overrides) !== JSON.stringify(overrides) || JSON.stringify(body.choices) !== JSON.stringify(current.plan.choices) || JSON.stringify(body.splitProfiles ?? splitProfiles) !== JSON.stringify(splitProfiles)
     splitProfiles = structuredClone(body.splitProfiles ?? splitProfiles)
     const routingChanged = JSON.stringify(current.plan.choices) !== JSON.stringify(body.choices)
-    const deploymentChanged = routingChanged || JSON.stringify(whitelist) !== JSON.stringify(body.whitelist ?? whitelist)
-    whitelist = structuredClone(body.whitelist ?? whitelist); pendingWhitelist = deploymentChanged
+    const deploymentChanged = routingChanged
     overrides = structuredClone(body.overrides); if (changed) revision++
     const receipt: OperationReceipt = { id: `diy-${revision}`, kind: 'xnode_diy', status: deploymentChanged ? 'queued' : 'succeeded', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     operations.set(key, { receipt, routingChanged, deploymentChanged }); trace.writes.push(structuredClone(body))
@@ -62,7 +60,6 @@ export function installDIYAudit(params: URLSearchParams, trace: { calls: string[
     if (params.has('poll-error') && polls === 1) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' })
     if (receipt.status === 'failed' || receipt.status === 'pending_review' || params.has('recovered') && polls < 3) return { ...receipt }
     if (params.has('deployment-error') && polls < 3) return { ...receipt, status: 'pending_review' }
-    pendingWhitelist = false
     current = { ...current, plan: { ...current.plan, phase: 'active' } }
     return { ...receipt, status: 'succeeded' }
   }

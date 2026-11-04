@@ -3,11 +3,11 @@ package connections
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	platformoutbox "github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 )
 
 // ExpiryRepository owns sensitive-row cleanup for scheduled unblocks.
@@ -52,12 +52,8 @@ func (w *ExpiryWorker) HandleOutbox(ctx context.Context, job model.OutboxJob) er
 		}
 	}
 	if err != nil {
-		if job.Attempts >= 10 {
-			if deleteErr := w.repository.FinalizeConnectionIPBlockExpiry(ctx, block.ID, false, w.now().UTC()); deleteErr != nil {
-				return fmt.Errorf("scrub exhausted IP block: %w", deleteErr)
-			}
-		}
-		return err
+		return platformoutbox.ErrBusy // Preserve encrypted cleanup targets until the node confirms removal.
 	}
+
 	return w.repository.FinalizeConnectionIPBlockExpiry(ctx, block.ID, true, w.now().UTC())
 }

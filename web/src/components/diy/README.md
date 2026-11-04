@@ -37,10 +37,7 @@ applicability, host counts and documented client/platform restrictions.
 
 `useDIY.test.ts` covers both draft sections through validation, same-key lost replies, revision conflicts and inheritance reset in hosted CI.
 
-`DIYWhitelist.vue` edits exact IPs in the shared draft and displays the active
-combo's capacity and deployment phase. Empty enabled lists explicitly deny all
-connections. The single Save persists desired policy; node acknowledgment controls
-activation status. Browser admin combo capacity uses the existing catalog editor.
+
 
 `DIYTuningPanel.vue` renders one tab's active catalog groups. `diyApplicability.ts`
 uses the server's shared dependency rules for visibility and Save validation;
@@ -56,7 +53,7 @@ receipt before validating current access. Backend transactions own revision fenc
 
 `diyRange.ts` parses exact values or ascending hyphen ranges into the existing min/max wire object. `DIYRangeField.vue` retains incomplete text in the shared draft, shows examples when empty, and blocks invalid Save/automatic preview without discarding input.
 
-The five tabs are Connection, XHTTP, Routing, Whitelist and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
+The four tabs are Connection, XHTTP, Routing and Compatibility. Applicable fields and compatibility rows stay expanded without subgroup headings. One Reset and Save bar owns submission. Native tab scrolling hides its scrollbar while retaining keyboard/swipe access; mounted panels retain drafts.
 
 The page grid and tab root constrain intrinsic width so long labels scroll
 inside navigation instead of widening the phone viewport. The Save bar uses

@@ -42,17 +42,6 @@ func (r *ipBlockHTTPRepository) BeginConnectionIPUnblock(_ context.Context, _, o
 		Status: string(providerops.StatusQueued)}, OwnerUserID: ownerID}, false, nil
 }
 
-func TestMemberIPUnblockHidesOwnershipMismatch(t *testing.T) {
-	t.Parallel()
-	repository := &ipBlockHTTPRepository{ownerID: "owner"}
-	server := &Server{deps: Dependencies{ConnectionDrops: connections.NewDropService(repository, nil, nil)}}
-	response := httptest.NewRecorder()
-	server.memberUnblockIP(response, ipBlockRequest("other", ""))
-	if response.Code != http.StatusNotFound {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusNotFound)
-	}
-}
-
 func TestAdminIPUnblockUsesAdministratorAsActor(t *testing.T) {
 	t.Parallel()
 	repository := &ipBlockHTTPRepository{ownerID: "owner"}
@@ -61,17 +50,6 @@ func TestAdminIPUnblockUsesAdministratorAsActor(t *testing.T) {
 	server.adminUnblockIP(response, ipBlockRequest("admin", "owner"))
 	if response.Code != http.StatusAccepted || repository.actorID != "admin" {
 		t.Fatalf("status = %d actor = %q", response.Code, repository.actorID)
-	}
-}
-
-func TestMemberIPUnblockMapsOpenOperationToConflict(t *testing.T) {
-	t.Parallel()
-	repository := &ipBlockHTTPRepository{ownerID: "owner", conflict: true}
-	server := &Server{deps: Dependencies{ConnectionDrops: connections.NewDropService(repository, nil, nil)}}
-	response := httptest.NewRecorder()
-	server.memberUnblockIP(response, ipBlockRequest("owner", ""))
-	if response.Code != http.StatusConflict {
-		t.Fatalf("status = %d, want %d", response.Code, http.StatusConflict)
 	}
 }
 

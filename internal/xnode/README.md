@@ -1045,3 +1045,14 @@ empty list never claims no activity; it remains visibly incomplete.
 
 Owner activity includes valid private/LAN addresses as reported; only the separate
 automatic firewall lease classifier requires public routable addresses.
+
+Member connections use `member_connections.go` and `member_connection_leases.go`.
+The existing sampled native reports populate bounded principal/IP associations in
+memory, sharing the lease lifetime and aggregate capacity. GET resolves owner
+principals outside socket readers. Manual grants require normal account status,
+completed onboarding, active combo or positive balance, and enabled automation;
+canonical public IPv4/IPv6 use the existing volatile fleet delivery and exact-ban
+release mechanism. Duplicate grants preserve deadlines and manual grants have no
+observed time until telemetry. Initial lease time is immutable through renewal.
+DIY document version 3 retires only whitelist data through encrypted resealing;
+tuning, split and routing choices survive. Paid exemption creation is retired.

@@ -22,25 +22,6 @@ type FirewallBanView struct {
 	DetectedAt   time.Time `json:"detectedAt"`
 	PendingNodes int       `json:"pendingNodes"`
 }
-type FirewallGrant struct {
-	ID         string    `json:"id"`
-	IP         string    `json:"ip"`
-	Until      time.Time `json:"until"`
-	PriceMinor int64     `json:"priceMinor,string"`
-	Hours      int       `json:"hours"`
-}
-type FirewallQuote struct {
-	WhitelistMode bool   `json:"whitelistMode"`
-	Enabled       bool   `json:"enabled"`
-	Price         string `json:"price"`
-	Hours         int    `json:"hours"`
-}
-type FirewallPurchase struct {
-	IP    string `json:"ip"`
-	Key   string `json:"-"`
-	Price string `json:"price"`
-	Hours int    `json:"hours"`
-}
 type FirewallDetectionSink interface {
 	SetDetectedPrefixes([]string)
 }
@@ -56,5 +37,4 @@ type firewallRepository interface {
 	SweepFirewall(context.Context, time.Time) error
 	FirewallBans(context.Context, int) ([]FirewallBanView, error)
 	FirewallPrefixes(context.Context, func([]string) error) error
-	PurchaseFirewallExemption(context.Context, string, FirewallPurchase, int64, time.Time, ...bool) (FirewallGrant, error)
 }

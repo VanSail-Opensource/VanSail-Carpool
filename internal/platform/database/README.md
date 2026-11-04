@@ -662,8 +662,6 @@ only after durable cursor/ban writes; `xnode_firewall_detection_test.go` covers
 cross-node totals, replay, exclusion, rollback and expiry. `xnode_firewall_policy.go`
 migrates encrypted node rules to one encrypted global policy.
 `xnode_firewall_protected.go` releases existing managed-node false positives.
-`xnode_whitelist.go` derives capacity from the effective purchase's combo;
-`xnode_whitelist_test.go` checks paid-unban refusal and charged retry replay.
 `xnode_diy_reconcile.go` batches free reference cleanup through the existing outbox
 and uses revision fences; it never debits a wallet or allowance.
 

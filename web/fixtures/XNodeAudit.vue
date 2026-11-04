@@ -4,8 +4,6 @@ import { en, zh_cn } from '@nuxt/ui/locale'
 import { useI18n } from '@/i18n'
 const { locale } = useI18n()
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
-import FirewallExemption from '@/components/connections/FirewallExemption.vue'
-const member = new globalThis.URLSearchParams(globalThis.location.search).has('firewall-member')
 import XNodeWorkspace from '@/components/admin/xnode/XNodeWorkspace.vue'
 import XNodeCommands from '@/components/admin/xnode/XNodeCommands.vue'
 import AdminControlsAudit from './AdminControlsAudit.vue'
@@ -21,7 +19,7 @@ const commands = new globalThis.URLSearchParams(globalThis.location.search).has(
 const controls = new globalThis.URLSearchParams(globalThis.location.search).has('controls')
 </script>
 
-<template><UApp :locale="uiLocale"><main class="audit-shell"><AdminUserMetrics v-if="profileMetrics" user-id="fixture-member" /><XNodeAutomaticLeases v-else-if="leases" :nodes="[]" /><NodeStatisticsAudit v-else-if="statistics" /><CatalogQuotaAudit v-else-if="quota" /><AdminControlsAudit v-else-if="controls" /><XNodeCommands v-else-if="commands" node-id="node-one" :endpoints="[]" /><FirewallExemption v-else-if="member" /><XNodeWorkspace v-else /></main></UApp></template>
+<template><UApp :locale="uiLocale"><main class="audit-shell"><AdminUserMetrics v-if="profileMetrics" user-id="fixture-member" /><XNodeAutomaticLeases v-else-if="leases" :nodes="[]" /><NodeStatisticsAudit v-else-if="statistics" /><CatalogQuotaAudit v-else-if="quota" /><AdminControlsAudit v-else-if="controls" /><XNodeCommands v-else-if="commands" node-id="node-one" :endpoints="[]" /><XNodeWorkspace v-else /></main></UApp></template>
 
 <style scoped>
 .audit-shell { max-width: 1180px; padding: 24px; margin: 0 auto; }

@@ -3,7 +3,6 @@ package connections
 import (
 	"context"
 	"errors"
-	"testing"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -85,7 +84,7 @@ func (r *blockWorkerRemote) PollConnectionScan(context.Context, string) (Provide
 }
 func (r *blockWorkerRemote) DefinitiveMutationFailure(error) bool { return r.definitive }
 
-func newBlockWorkerFixture(now time.Time) (*blockWorkerRepo, *blockWorkerRemote, *BlockWorker) {
+func newBlockWorkerFixture(now time.Time) (*blockWorkerRepo, *blockWorkerRemote, *UnblockWorker) {
 	remoteID := "42"
 	repo := &blockWorkerRepo{
 		operation: providerops.Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: BlockOperationKind, Status: "queued"}, OwnerUserID: "owner"},
@@ -94,63 +93,7 @@ func newBlockWorkerFixture(now time.Time) (*blockWorkerRepo, *blockWorkerRemote,
 		user:      model.User{ID: "owner", ProxyUserID: &remoteID},
 	}
 	remote := &blockWorkerRemote{}
-	worker := NewBlockWorker(repo, remote, workerSecrets{})
+	worker := NewUnblockWorker(repo, remote, workerSecrets{})
 	worker.now = func() time.Time { return now }
 	return repo, remote, worker
-}
-
-func TestBlockWorkerBlocksBeforeDropping(t *testing.T) {
-	t.Parallel()
-	now := time.Date(2026, 8, 19, 0, 0, 0, 0, time.UTC)
-	repo, remote, worker := newBlockWorkerFixture(now)
-	if err := worker.HandleProviderOperation(context.Background(), repo.operation, model.OutboxJob{}); err != nil {
-		t.Fatal(err)
-	}
-	if len(remote.events) != 2 || remote.events[0] != "block" || remote.events[1] != "drop" {
-		t.Fatalf("events = %v", remote.events)
-	}
-	if repo.block.Status != BlockStatusActive || repo.operation.Receipt.Status != "succeeded" || repo.deleted {
-		t.Fatalf("repo = %+v", repo)
-	}
-}
-
-func TestBlockWorkerFailureClassification(t *testing.T) {
-	t.Parallel()
-	now := time.Date(2026, 8, 19, 0, 0, 0, 0, time.UTC)
-	tests := []struct {
-		name        string
-		definitive  bool
-		wantStatus  string
-		wantBlock   string
-		wantDeleted bool
-	}{
-		{name: "definitive", definitive: true, wantStatus: "failed", wantBlock: BlockStatusBlocking, wantDeleted: true},
-		{name: "ambiguous", wantStatus: "pending_review", wantBlock: BlockStatusPendingReview},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repo, remote, worker := newBlockWorkerFixture(now)
-			remote.blockErr, remote.definitive = errors.New("provider"), test.definitive
-			if err := worker.HandleProviderOperation(context.Background(), repo.operation, model.OutboxJob{}); err != nil {
-				t.Fatal(err)
-			}
-			if repo.operation.Receipt.Status != test.wantStatus || repo.block.Status != test.wantBlock || repo.deleted != test.wantDeleted {
-				t.Fatalf("repo = %+v", repo)
-			}
-		})
-	}
-}
-
-func TestBlockWorkerKeepsSuccessfulBlockOnUnresolvedDrop(t *testing.T) {
-	t.Parallel()
-	now := time.Date(2026, 8, 19, 0, 0, 0, 0, time.UTC)
-	repo, remote, worker := newBlockWorkerFixture(now)
-	remote.dropErr, remote.scanErr = errors.New("drop uncertain"), errors.New("scan unavailable")
-	if err := worker.HandleProviderOperation(context.Background(), repo.operation, model.OutboxJob{}); err != nil {
-		t.Fatal(err)
-	}
-	if repo.operation.Receipt.Status != "partial" || repo.item.Status != providerops.StatusSucceeded ||
-		repo.block.Status != BlockStatusActive || repo.deleted {
-		t.Fatalf("repo = %+v", repo)
-	}
 }

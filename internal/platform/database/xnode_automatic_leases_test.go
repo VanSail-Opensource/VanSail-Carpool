@@ -26,10 +26,7 @@ func TestAutomaticLeasesReleaseExactBansAndPreserveRangesAndFinancialGrants(t *t
 	if _, err := s.AdjustBalance(ctx, owner.UserID, 1000, "seed-auto", "", now); err != nil {
 		t.Fatal(err)
 	}
-	paid, err := s.PurchaseFirewallExemption(ctx, owner.UserID, xnode.FirewallPurchase{IP: "8.8.8.8", Key: "paid-auto", Hours: 24}, 125, now)
-	if err != nil {
-		t.Fatal(err)
-	}
+	paidID := seedHistoricalFirewallGrant(t, s, owner.UserID, "paid-auto", now)
 	if _, err := s.GrantAdminFirewallExemption(ctx, owner.UserID, xnode.AdminFirewallExemption{Prefix: "8.8.8.0/24", Hours: 24, Key: "manual-auto"}, now); err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +50,7 @@ func TestAutomaticLeasesReleaseExactBansAndPreserveRangesAndFinancialGrants(t *t
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM xnode_firewall_exemptions WHERE released_version=0`).Scan(&grants); err != nil || grants != 2 {
 		t.Fatal("automatic lease was persisted or existing grant removed", grants, err)
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT price_minor FROM xnode_firewall_exemptions WHERE id=$1`, paid.ID).Scan(&price); err != nil || price != 125 {
+	if err := s.db.QueryRowContext(ctx, `SELECT price_minor FROM xnode_firewall_exemptions WHERE id=$1`, paidID).Scan(&price); err != nil || price != 125 {
 		t.Fatal("paid exemption fact changed", price, err)
 	}
 	var version, after uint64

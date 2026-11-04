@@ -16,19 +16,6 @@ func (s *Service) PreviewOwnedDIY(ctx context.Context, user string, input DIYWri
 	}
 	input.Overrides = subscription.ActiveTuningFor(input.Overrides, proxies)
 	result := DIYPreview{FieldErrors: subscription.ValidateTuning(input.Overrides), Paths: []routingmatch.Path{}}
-	if input.Whitelist != nil {
-		_, current, err := s.readDIYSettings(ctx, user)
-		if err != nil {
-			return result, err
-		}
-		quota, err := s.whitelistQuota(ctx, user)
-		if err != nil {
-			return result, err
-		}
-		if _, err = normalizeWhitelist(current.Whitelist, *input.Whitelist, quota); err != nil {
-			result.FieldErrors["whitelist"] = "whitelistInvalid"
-		}
-	}
 	if input.SettingsRevision < 0 || input.RoutingRevision < 0 || input.SettingsRevision >= 9007199254740991 {
 		result.FieldErrors["revision"] = "invalid"
 	}

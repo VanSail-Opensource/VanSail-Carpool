@@ -38,7 +38,11 @@ func (m *automaticLeaseManager) page(search string, page, size int, watermarks [
 	start := min((page-1)*size, len(items))
 	for _, item := range items[start:min(start+size, len(items))] {
 		pending, _ := slices.BinarySearch(watermarks, item.generation)
-		view := AutomaticLeaseView{IP: item.ip.String(), FirstActive: item.first, LastActive: item.last, LeaseStarted: item.started, RenewAfter: item.started.Add(item.until.Sub(item.started) / 2), ExpiresAt: item.until, RemainingSeconds: max(0, int64(item.until.Sub(now)/time.Second)), ObservationCount: item.observations, RenewalCount: item.renewals, SourceCount: item.sourceCount, SourceCountTruncated: item.sourcesTruncated, SourceNodeIDs: []string{}, PendingNodes: pending, BanReleasePending: m.pendingBans[item.ip] != 0}
+		view := AutomaticLeaseView{IP: item.ip.String(), FirstActive: item.first, LeaseStarted: item.started, RenewAfter: item.started.Add(item.until.Sub(item.started) / 2), ExpiresAt: item.until, RemainingSeconds: max(0, int64(item.until.Sub(now)/time.Second)), ObservationCount: item.observations, RenewalCount: item.renewals, SourceCount: item.sourceCount, SourceCountTruncated: item.sourcesTruncated, SourceNodeIDs: []string{}, PendingNodes: pending, BanReleasePending: m.pendingBans[item.ip] != 0}
+		if !item.last.IsZero() {
+			last := item.last
+			view.LastActive = &last
+		}
 		if item.renewed != nil {
 			at := *item.renewed
 			view.RenewedAt = &at

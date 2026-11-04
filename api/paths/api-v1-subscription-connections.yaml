@@ -1,15 +1,17 @@
-post:
+get:
   tags: [Dashboard]
-  operationId: requestSubscriptionConnections
-  summary: Start a queued connection scan for the current member
+  operationId: getOwnedConnections
+  summary: Read owner-scoped native IP observations and volatile leases
   parameters:
-    - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
+    - {in: query, name: page, schema: {type: integer, minimum: 1, maximum: 100000, default: 1}}
+    - {in: query, name: pageSize, schema: {type: integer, minimum: 1, maximum: 100, default: 25}}
+    - {in: query, name: search, schema: {type: string, maxLength: 128}}
   responses:
-    '202':
-      description: Scan accepted.
+    '200':
+      description: Native observations and owner lease metadata without node identities.
       content:
         application/json:
-          schema: { $ref: '../openapi.yaml#/components/schemas/ConnectionScan' }
-    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
-    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
-    '502': { $ref: '../openapi.yaml#/components/responses/UpstreamFailure' }
+          schema: {$ref: '../openapi.yaml#/components/schemas/MemberConnectionPage'}
+    '400': {$ref: '../openapi.yaml#/components/responses/BadRequest'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

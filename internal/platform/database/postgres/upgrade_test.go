@@ -79,6 +79,14 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	beforeAudits := captureUpgradeAudits(t, ctx, raw)
+	var unchanged []TableContract
+	for _, table := range contract.Tables {
+		if table.Name != "audit_events" {
+			unchanged = append(unchanged, table)
+		}
+	}
+	contract.Tables = unchanged
 	beforeNative, err := inspect(ctx, raw, contract.Tables)
 	if err != nil {
 		t.Fatal(err)
@@ -104,6 +112,7 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		t.Fatal("live compatibility function retained", obsolete, err)
 	}
 
+	verifyUpgradeAudits(t, ctx, db, beforeAudits)
 	verifyRetirementUpgrade(t, ctx, db)
 	verifyCommunityRetirement(t, ctx, db)
 	if err = VerifySchema(ctx, db); err != nil {

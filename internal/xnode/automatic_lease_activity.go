@@ -42,5 +42,7 @@ func (m *Master) observeAutomaticActivityLocked(peer *agentPeer, report wire.Tel
 	for ip, at := range addresses {
 		items = append(items, AutomaticLeaseObservation{ip.String(), peer.nodeID, at})
 	}
-	return m.automaticLeases.observe(items, m.service.now(), time.Duration(m.automaticFreshness.Load()))
+	changed := m.automaticLeases.observe(items, m.service.now(), time.Duration(m.automaticFreshness.Load()))
+	m.automaticLeases.associate(report.Users, m.service.now(), time.Duration(m.automaticFreshness.Load()))
+	return changed
 }

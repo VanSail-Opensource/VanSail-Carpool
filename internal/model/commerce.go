@@ -41,22 +41,22 @@ type SquadProduct struct {
 
 // Combo is a time-limited traffic entitlement and its included squads.
 type Combo struct {
-	PricingDecision   *PricingDecision `json:"pricingDecision,omitempty"`
-	WhitelistIPQuota  int              `json:"whitelistIpQuota"`
-	IPLookupQuota     *int             `json:"ipLookupQuota"`
-	ID                string           `json:"id"`
-	Name              string           `json:"name"`
-	Description       string           `json:"description"`
-	PriceTXBMinor     int64            `json:"-"`
-	Price             Money            `json:"price"`
-	ValidityDays      int              `json:"validityDays"`
-	TrafficLimitBytes int64            `json:"-"`
-	TrafficLimit      string           `json:"trafficLimitBytes"`
-	ResetStrategy     string           `json:"resetStrategy"`
-	Active            bool             `json:"active"`
-	IncludedSquads    []SquadProduct   `json:"includedSquads"`
-	CreatedAt         time.Time        `json:"createdAt"`
-	UpdatedAt         time.Time        `json:"updatedAt"`
+	PricingDecision *PricingDecision `json:"pricingDecision,omitempty"`
+
+	IPLookupQuota     *int           `json:"ipLookupQuota"`
+	ID                string         `json:"id"`
+	Name              string         `json:"name"`
+	Description       string         `json:"description"`
+	PriceTXBMinor     int64          `json:"-"`
+	Price             Money          `json:"price"`
+	ValidityDays      int            `json:"validityDays"`
+	TrafficLimitBytes int64          `json:"-"`
+	TrafficLimit      string         `json:"trafficLimitBytes"`
+	ResetStrategy     string         `json:"resetStrategy"`
+	Active            bool           `json:"active"`
+	IncludedSquads    []SquadProduct `json:"includedSquads"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         time.Time      `json:"updatedAt"`
 }
 
 // Purchase represents an active, queued, or historical combo term.

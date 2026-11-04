@@ -21,9 +21,6 @@
 - `home-02.css` styles traffic details, ride facts, and Around TX links on Home.
 - `home-03.css` styles the compact renewal term slider and separated quote total/date block.
 - `home-05.css` keeps Home's card stream and alerts in the same single-column order on phones and desktop, with shrinkable grid tracks for long ride names.
-- `connections-01.css` styles the connections page heading, node/IP rows, empty states, and selected connection confirmation detail.
-- `connections-02.css` styles the stable connection scan visualization, progress presentation, tablet split layout, and reduced-motion fallback.
-- `connections-03.css` styles active block rows, exact-expiry metadata, and compact unblock confirmation targets.
 - `statistics-01.css` styles the independently divided statistics sections, centered refresh control, KPI panels, dense icon-based node rows, and compact states.
 - `statistics-02.css` styles the responsive generic SVG donut, labeled pies, traffic tooltips, legends, and normalized stacked bars.
 - `affiliates-01.css` styles flat member metrics, tier progress, referral rows, and tablet expansion.

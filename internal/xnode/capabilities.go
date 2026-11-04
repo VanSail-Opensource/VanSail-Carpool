@@ -37,9 +37,6 @@ func configurationCapabilities(config wire.Config, advertised []string) error {
 		if user.ReplacesID != 0 {
 			required = append(required, "telegram_identity_rekey_v1")
 		}
-		if user.WhitelistEnabled || len(user.WhitelistedIPs) > 0 {
-			required = append(required, "member_source_whitelist_v1")
-		}
 		if len(user.TransitCredentials) > 0 {
 			required = append(required, "transit_credentials_v1")
 		}

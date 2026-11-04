@@ -66,13 +66,6 @@ ConnectionScan:
     createdAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
     expiresAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
 
-ConnectionDropRequest:
-  type: object
-  additionalProperties: false
-  required: [handle]
-  properties:
-    handle: { type: string, minLength: 16, maxLength: 4096 }
-
 IPBlock:
   type: object
   additionalProperties: false

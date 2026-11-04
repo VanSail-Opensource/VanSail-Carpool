@@ -18,7 +18,7 @@ const { t } = useI18n()
 const resetCadences: ResetCadence[] = ['DAY', 'WEEK', 'MONTH_ROLLING']
 const resetItems = computed(() => resetCadences.map((value) => ({ value, label: t(`adminCatalogEditor.reset.${value}`) })))
 const draft = reactive({
-  whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
+  ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30, trafficLimitBytes: '',
   resetStrategy: 'MONTH_ROLLING' as ResetCadence, squadProductIds: [] as string[],
   active: true,
 })
@@ -29,7 +29,7 @@ const schema = z.object({
   priceTxbMinor: z.string().refine(value => /^\d+$/.test(value) && BigInt(value) <= 1_000_000_000_000n),
   trafficLimitBytes: z.string().refine(value => /^[1-9]\d*$/.test(value) && BigInt(value) <= 9_223_372_036_854_775_807n),
   validityDays: z.number().int().min(1).max(3650),
-  ipLookupQuota: z.number().int().min(0).max(1000000).nullable(), whitelistIpQuota: z.number().int().min(0).max(1000),
+  ipLookupQuota: z.number().int().min(0).max(1000000).nullable(), 
   resetStrategy: z.enum(['DAY', 'WEEK', 'MONTH_ROLLING']), squadProductIds: z.array(z.string()),
   active: z.boolean(),
 })
@@ -40,13 +40,13 @@ watch(() => props.combo, (combo) => {
     name: combo.name,
     description: combo.description,
     priceTxb: txbInputFromMinor(combo.price.minor),
-    whitelistIpQuota: combo.whitelistIpQuota ?? 5, ipLookupQuota: combo.ipLookupQuota ?? null, validityDays: combo.validityDays,
+    ipLookupQuota: combo.ipLookupQuota ?? null, validityDays: combo.validityDays,
     trafficLimitBytes: combo.trafficLimitBytes,
     resetStrategy: combo.resetStrategy,
     squadProductIds: combo.includedSquads.map((squad) => squad.id),
     active: combo.active,
   } : {
-    whitelistIpQuota: 5, ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
+    ipLookupQuota: null as number | null, name: '', description: '', priceTxb: '', validityDays: 30,
     trafficLimitBytes: '', resetStrategy: 'MONTH_ROLLING', squadProductIds: [], active: true,
   })
 }, { immediate: true })
@@ -58,7 +58,7 @@ function submit(): void {
   trafficInvalid.value = trafficLimitBytes === ''
   const result = schema.safeParse({
     name: draft.name, description: draft.description, priceTxbMinor,
-    whitelistIpQuota: draft.whitelistIpQuota, ipLookupQuota: draft.ipLookupQuota, validityDays: draft.validityDays, trafficLimitBytes,
+    ipLookupQuota: draft.ipLookupQuota, validityDays: draft.validityDays, trafficLimitBytes,
     resetStrategy: draft.resetStrategy, squadProductIds: [...draft.squadProductIds],
     active: draft.active,
   })
@@ -91,7 +91,6 @@ function setSquad(id: string, selected: boolean): void {
         <TxbAmountField id="combo-price" v-model="draft.priceTxb" :label="t('adminCatalogEditor.price')" min-minor="0" max-minor="1000000000000" required />
         <UFormField name="validity-days" :label="t('adminCatalogEditor.validityDays')" required><UInput v-model.number="draft.validityDays" class="w-full" type="number" :min="1" :max="3650" required /></UFormField>
         <UFormField name="ip-lookup-quota" :label="t('ipLookup.quotaHeading')" :hint="t('ipLookup.quotaHelp')"><UInputNumber v-model="draft.ipLookupQuota" class="w-full" :min="0" :max="1000000" :step="1" /></UFormField>
-        <UFormField name="whitelist-quota" :label="t('diy.whitelist.comboQuota')"><UInputNumber v-model="draft.whitelistIpQuota" class="w-full" :min="0" :max="1000" :step="1" /></UFormField>
         <UFormField name="traffic-limit" :label="t('adminCatalogEditor.trafficLimit')" :hint="t('adminCatalogEditor.trafficLimitHint')" :error="trafficInvalid ? t('adminCatalogEditor.trafficLimitInvalid') : undefined" required><UInput v-model="draft.trafficLimitBytes" class="w-full" inputmode="text" required @blur="normalizeTrafficLimit" /></UFormField>
         <UFormField name="reset-cadence" :label="t('adminCatalogEditor.resetCadence')"><USelect v-model="draft.resetStrategy" class="w-full" :items="resetItems" /></UFormField>
         <fieldset class="catalog-editor__wide squad-picker">

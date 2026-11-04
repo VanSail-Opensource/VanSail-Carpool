@@ -3,7 +3,6 @@ package xnode
 import (
 	"encoding/hex"
 	"encoding/json"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"net/url"
 	"strings"
 
@@ -24,7 +23,17 @@ func DecodeGlobal(raw string) (GlobalConfig, error) {
 	// five-second effective default. Only a newly created configuration uses two.
 	config.Telemetry.ReportSeconds = 5
 	config.GeodataIntervalHours = nil // Saved legacy cron/disabled schedules require explicit conversion.
-	if err := wire.Decode([]byte(raw), &config); err != nil {
+	var document map[string]json.RawMessage
+	if json.Unmarshal([]byte(raw), &document) != nil {
+		return config, ErrInvalid
+	}
+	delete(document, "firewallUnbanPrice")
+	delete(document, "firewallExemptionHours")
+	clean, err := json.Marshal(document)
+	if err != nil {
+		return config, err
+	}
+	if err := wire.Decode(clean, &config); err != nil {
 		return config, ErrInvalid
 	}
 	if config.Telemetry.ReportSeconds == 0 {
@@ -49,15 +58,7 @@ func ValidateGlobal(config GlobalConfig) error {
 	if err := validateNativeGlobal(config); err != nil {
 		return err
 	}
-	if config.FirewallExemptionHours < 0 || config.FirewallExemptionHours > 8760 {
-		return ErrInvalid
-	}
-	if config.FirewallUnbanPrice != "" {
-		price, err := model.ParseTXBMajor(config.FirewallUnbanPrice)
-		if err != nil || price < 0 {
-			return ErrInvalid
-		}
-	}
+
 	if config.ConnectionLimit < 0 || config.ConnectionLimit > 1000000 {
 		return ErrInvalid
 	}

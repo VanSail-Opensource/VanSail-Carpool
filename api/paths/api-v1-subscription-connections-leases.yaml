@@ -1,0 +1,24 @@
+post:
+  tags: [Dashboard]
+  operationId: grantOwnedConnectionLease
+  summary: Add a free volatile single-IP lease for the eligible current owner
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          additionalProperties: false
+          required: [ip]
+          properties:
+            ip: {type: string, minLength: 2, maxLength: 45}
+  responses:
+    '200':
+      description: Existing expiry preserved or a new grant queued for delivery.
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/MemberConnection'}
+    '400': {$ref: '../openapi.yaml#/components/responses/BadRequest'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '409': {$ref: '../openapi.yaml#/components/responses/Conflict'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

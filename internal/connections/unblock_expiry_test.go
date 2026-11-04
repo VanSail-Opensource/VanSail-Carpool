@@ -57,7 +57,7 @@ func (r *expiryRepo) FinalizeConnectionIPBlockExpiry(context.Context, string, bo
 	return nil
 }
 
-func TestExpiryRetriesAndScrubsAfterExhaustion(t *testing.T) {
+func TestExpiryRetainsOfflineCleanupAfterExhaustion(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 8, 22, 0, 0, 0, 0, time.UTC)
 	repo := &expiryRepo{block: IPBlockRecord{ID: "block", UserID: "owner", NodeUUID: "6aa6d759-20de-4b11-8c0a-8e0daee3a4ee",
@@ -70,7 +70,7 @@ func TestExpiryRetriesAndScrubsAfterExhaustion(t *testing.T) {
 		t.Fatalf("attempt 9 err=%v deleted=%t", err, repo.deleted)
 	}
 	job.Attempts = 10
-	if err := worker.HandleOutbox(context.Background(), job); err == nil || !repo.deleted {
+	if err := worker.HandleOutbox(context.Background(), job); err == nil || repo.deleted {
 		t.Fatalf("attempt 10 err=%v deleted=%t", err, repo.deleted)
 	}
 }

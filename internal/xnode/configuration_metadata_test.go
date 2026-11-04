@@ -83,8 +83,6 @@ func TestAdmissionCommerceAndProbeSettingsDoNotInvalidateNativeGlobals(t *testin
 	base := DefaultGlobal()
 	next := base
 	next.ConnectionLimit = 20
-	next.FirewallUnbanPrice = "1"
-	next.FirewallExemptionHours = 24
 	next.SpeedtestDownloadURL = "https://example.com/down"
 	next.SpeedtestUploadURL = "https://example.com/up"
 	if globalRuntimeKey(base) != globalRuntimeKey(next) || globalPoliciesKey(base) != globalPoliciesKey(next) {

@@ -7,13 +7,12 @@ import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue
 import DIYTuningPanel from './DIYTuningPanel.vue'
 import DIYCompatibility from './DIYCompatibility.vue'
 import DIYSplitProfiles from './DIYSplitProfiles.vue'
-import DIYWhitelist from './DIYWhitelist.vue'
 import { useDIY } from './useDIY'
 import { useScrollableTabs } from './useScrollableTabs'
 
 const { t } = useI18n()
 const state = useDIY()
-const tabs = computed(() => ['connection', 'xhttp', 'routing', 'whitelist', 'compatibility'].map(value => ({ value, label: t(`diy.tabs.${value}`) })))
+const tabs = computed(() => ['connection', 'xhttp', 'routing', 'compatibility'].map(value => ({ value, label: t(`diy.tabs.${value}`) })))
 const activeTab = shallowRef<string | number>('connection')
 const tabRoot = shallowRef<InstanceType<typeof globalThis.HTMLElement> | null>(null)
 const scrolling = useScrollableTabs(tabRoot)
@@ -40,7 +39,6 @@ const routingError = computed(() => state.errors.value.routing ? t(`managedRouti
             </div>
             <div v-else-if="item.value === 'routing'"><MemberRoutingEditor external :initial="state.view.value.routing" :disabled="state.submitting.value" @draft="state.routeDraft" @refresh="state.load(true)" @save="state.save" /><UAlert v-if="routingError" color="warning" :title="routingError" /></div>
             <DIYCompatibility v-else-if="item.value === 'compatibility'" :items="state.compatibility.value" />
-            <DIYWhitelist v-else v-model="state.whitelist.value" :view="state.view.value.whitelist" :disabled="state.submitting.value" :error="state.errors.value.whitelist ? t(`diy.errors.${state.errors.value.whitelist}`) : undefined" />
           </template>
         </UTabs>
         <span v-if="scrolling.before.value" class="diy-overflow diy-overflow--before" aria-hidden="true"><UIcon name="i-ph-caret-left-bold" /></span>
@@ -49,7 +47,7 @@ const routingError = computed(() => state.errors.value.routing ? t(`managedRouti
       <UProgress v-if="state.autoPreview.pending.value" />
       <UAlert v-if="state.autoPreview.error.value" color="warning" :title="state.autoPreview.error.value" />
       <OperationStatusNotice :receipt="state.tracker.receipt.value" :error="state.tracker.error.value" :checking="state.tracker.checking.value" @refresh="state.tracker.refresh" />
-      <Transition name="diy-feedback"><p v-if="state.saved.value" role="status" class="text-sm text-success">{{ t(routePending ? 'diy.routingPending' : state.view.value.whitelist?.phase === 'pending' ? 'diy.whitelist.savedPending' : 'diy.saved') }}</p></Transition>
+      <Transition name="diy-feedback"><p v-if="state.saved.value" role="status" class="text-sm text-success">{{ t(routePending ? 'diy.routingPending' : 'diy.saved') }}</p></Transition>
       <div class="diy-save">
         <div class="diy-save-actions"><UButton data-haptic="action" variant="ghost" color="neutral" icon="i-ph-arrow-u-up-left" :label="t('diy.reset')" :disabled="state.submitting.value" @click="state.reset" /><UButton data-haptic="confirm" :label="t('common.save')" :loading="state.submitting.value" :disabled="state.submitting.value || state.loading.value || state.invalid.value || state.autoPreview.pending.value" @click="state.save" /></div>
       </div>

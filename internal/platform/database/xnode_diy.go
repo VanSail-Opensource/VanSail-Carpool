@@ -123,7 +123,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 		}
 	}
 	if doc.Result != nil {
-		raw, err := json.Marshal(map[string]any{"diySave": doc.Result, "whitelistChanged": doc.NativeChanged})
+		raw, err := json.Marshal(map[string]any{"diySave": doc.Result})
 		if err != nil {
 			return op.Receipt, err
 		}
@@ -131,12 +131,7 @@ func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocu
 			return op.Receipt, err
 		}
 	}
-	if doc.NativeChanged {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1`); err != nil {
-			return op.Receipt, err
-		}
-	}
-	if plan == nil && !doc.NativeChanged {
+	if plan == nil {
 		if _, err = tx.ExecContext(ctx, `UPDATE provider_operation_items SET status='succeeded',completed_at=$1,updated_at=$2 WHERE operation_id=$3`, stamp(now), stamp(now), op.Receipt.ID); err != nil {
 			return op.Receipt, err
 		}

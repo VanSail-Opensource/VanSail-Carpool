@@ -18,7 +18,6 @@ func (s *Server) adminCombos(w http.ResponseWriter, r *http.Request) {
 }
 
 type comboRequest struct {
-	WhitelistIPQuota  *int     `json:"whitelistIpQuota"`
 	IPLookupQuota     *int     `json:"ipLookupQuota"`
 	Name              string   `json:"name"`
 	Description       string   `json:"description"`
@@ -58,7 +57,7 @@ func (s *Server) adminSaveCombo(w http.ResponseWriter, r *http.Request, id strin
 	combo, err := s.deps.Admin.SaveCombo(r.Context(), currentUser(r).ID, database.ComboInput{ID: id, Name: request.Name,
 		Description: request.Description, PriceTXBMinor: price, ValidityDays: request.ValidityDays, TrafficLimitBytes: traffic,
 		ResetStrategy: request.ResetStrategy, Active: request.Active, SquadProductIDs: squadIDs,
-		IPLookupQuota: request.IPLookupQuota, WhitelistIPQuota: request.WhitelistIPQuota})
+		IPLookupQuota: request.IPLookupQuota})
 	if err != nil {
 		s.adminFailure(w, r, err)
 		return

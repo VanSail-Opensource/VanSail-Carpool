@@ -16,7 +16,6 @@ import (
 // SquadProductIDs contains Proxy internal-squad UUIDs; the historical field
 // name remains at the service boundary for source compatibility.
 type ComboInput struct {
-	WhitelistIPQuota  *int
 	IPLookupQuota     *int
 	ID                string
 	Name              string
@@ -59,9 +58,6 @@ type ImportedSquad struct {
 // SaveCombo creates or updates one stable live combo and schedules affected
 // active users for upstream re-synchronization after an edit.
 func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (model.Combo, error) {
-	if input.WhitelistIPQuota != nil && (*input.WhitelistIPQuota < 0 || *input.WhitelistIPQuota > 1000) {
-		return model.Combo{}, ErrConflict
-	}
 
 	creating := input.ID == ""
 	if creating {
@@ -106,11 +102,6 @@ func (s *Store) retryAttempt_SaveCombo(ctx context.Context, input ComboInput) (m
 	}
 	if creating && input.IPLookupQuota != nil {
 		if _, err := tx.ExecContext(ctx, `UPDATE combos SET ip_lookup_quota=$1 WHERE id=$2`, *input.IPLookupQuota, input.ID); err != nil {
-			return model.Combo{}, err
-		}
-	}
-	if input.WhitelistIPQuota != nil {
-		if _, err := tx.ExecContext(ctx, `UPDATE combos SET whitelist_ip_quota=$1 WHERE id=$2`, *input.WhitelistIPQuota, input.ID); err != nil {
 			return model.Combo{}, err
 		}
 	}

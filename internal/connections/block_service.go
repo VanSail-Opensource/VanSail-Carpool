@@ -40,41 +40,6 @@ func NewDropService(repository BlockRepository, signer *Signer, secrets SecretBo
 	return &DropService{repository: repository, signer: signer, secrets: secrets, now: time.Now}
 }
 
-// Drop verifies a scan capability and creates a three-day node-scoped block.
-func (s *DropService) Drop(ctx context.Context, userID, handle, idempotencyKey string) (model.OperationReceipt, error) {
-	handle = strings.TrimSpace(handle)
-	fingerprint := blockFingerprint(handle)
-	if receipt, found, err := s.repository.ProviderOperationForActorKey(ctx, userID, BlockOperationKind,
-		idempotencyKey, fingerprint); found || err != nil {
-		return receipt, err
-	}
-	now := s.now().UTC()
-	claims, err := s.signer.Verify(handle, userID, now)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	scan, err := s.repository.ConnectionScanForUser(ctx, claims.ScanID, userID)
-	if err != nil || scan.Status != providerops.StatusSucceeded || !now.Before(scan.ExpiresAt) {
-		return model.OperationReceipt{}, ErrScanNotFound
-	}
-	canonicalIP, digest, err := s.signer.ipDigest(claims.IP)
-	if err != nil {
-		return model.OperationReceipt{}, ErrInvalidHandle
-	}
-	sealed, err := s.secrets.Seal(ipBlockSecretContext(userID, claims.NodeUUID, digest), []byte(canonicalIP))
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	_, operation, _, err := s.repository.BeginConnectionIPBlock(ctx, CreateIPBlockInput{
-		UserID: userID, NodeUUID: claims.NodeUUID, IPDigest: digest, SealedIP: sealed, ExpiresAt: now.Add(BlockDuration),
-	}, providerops.CreateInput{
-		ActorUserID: userID, OwnerUserID: userID, Kind: BlockOperationKind,
-		IdempotencyKey: strings.TrimSpace(idempotencyKey), RequestFingerprint: fingerprint,
-		Items: []providerops.ItemInput{{Key: "ip", TargetType: "connection_ip_hmac", TargetID: digest}},
-	}, now)
-	return operation.Receipt, err
-}
-
 // List returns decrypted active blocks to their owner.
 func (s *DropService) List(ctx context.Context, userID string) ([]IPBlock, error) {
 	records, err := s.repository.ListConnectionIPBlocksForUser(ctx, userID)

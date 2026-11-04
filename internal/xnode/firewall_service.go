@@ -3,9 +3,7 @@ package xnode
 import (
 	"context"
 	"errors"
-	"strings"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
@@ -48,68 +46,6 @@ func firewallForCapabilities(config wire.Config, capabilities []string) wire.Con
 		config.Firewall.BanSeconds = 0
 	}
 	return config
-}
-func (s *Service) FirewallQuote(ctx context.Context) (FirewallQuote, error) {
-	config, err := s.Global(ctx)
-	if err != nil {
-		return FirewallQuote{}, err
-	}
-	price, e := model.ParseTXBMajor(config.FirewallUnbanPrice)
-	return FirewallQuote{Enabled: e == nil && price > 0 && config.FirewallExemptionHours > 0, Price: config.FirewallUnbanPrice, Hours: config.FirewallExemptionHours}, nil
-}
-
-func (s *Service) OwnedFirewallQuote(ctx context.Context, user string) (FirewallQuote, error) {
-	quote, err := s.FirewallQuote(ctx)
-	if err != nil {
-		return quote, err
-	}
-	_, settings, err := s.readDIYSettings(ctx, user)
-	if err != nil {
-		return quote, err
-	}
-	purchase, err := s.EffectivePurchase(ctx, user)
-	if err != nil {
-		return quote, err
-	}
-	quote.WhitelistMode = purchase != nil && settings.Whitelist.Enabled
-	quote.Enabled = quote.Enabled && !quote.WhitelistMode
-	return quote, nil
-}
-func (s *Service) PurchaseFirewallExemption(ctx context.Context, user string, input FirewallPurchase) (FirewallGrant, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	ip, err := FirewallPublicIP(strings.TrimSpace(input.IP))
-	if err != nil {
-		return FirewallGrant{}, err
-	}
-	input.IP = ip
-	if len(input.Key) < 16 || len(input.Key) > 128 {
-		return FirewallGrant{}, ErrInvalid
-	}
-	quote, err := s.FirewallQuote(ctx)
-	if err != nil {
-		return FirewallGrant{}, err
-	}
-	if !quote.Enabled || input.Price != quote.Price || input.Hours != quote.Hours {
-		return FirewallGrant{}, ErrConflict
-	}
-	price, err := model.ParseTXBMajor(quote.Price)
-	if err != nil {
-		return FirewallGrant{}, ErrInvalid
-	}
-	repo, ok := s.repo.(firewallRepository)
-	if !ok {
-		return FirewallGrant{}, ErrUnavailable
-	}
-	_, settings, err := s.readDIYSettings(ctx, user)
-	if err != nil {
-		return FirewallGrant{}, err
-	}
-	purchase, err := s.EffectivePurchase(ctx, user)
-	if err != nil {
-		return FirewallGrant{}, err
-	}
-	return repo.PurchaseFirewallExemption(ctx, user, input, price, s.Now(), purchase == nil || !settings.Whitelist.Enabled)
 }
 func (s *Service) FirewallBans(ctx context.Context) ([]FirewallBanView, error) {
 	repo, ok := s.repo.(firewallRepository)

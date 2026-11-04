@@ -94,9 +94,6 @@ func (s *Service) paygUsers(ctx context.Context, node Node, inbounds map[string]
 			u.Credentials[b.InboundTag] = credential
 		}
 		sort.Strings(u.InboundTags)
-		if err = s.applyMemberWhitelist(ctx, a.UserID, &u); err != nil {
-			return nil, err
-		}
 		if len(u.InboundTags) > 0 {
 			out = append(out, u)
 		}

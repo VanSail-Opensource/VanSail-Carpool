@@ -100,7 +100,6 @@
       "serverCapability": "This server protocol is unavailable for your endpoints.",
       "xrayValidation": "The resulting client options failed pinned Xray validation. Review dependent options.",
       "routing": "Review the custom routing draft.",
-      "whitelistInvalid": "Enter unique public IPs within your quota.",
       "splitInvalid": "A host or mode is unavailable. Select compatible hosts or remove the profile.",
       "fixedOff": "This setting stays disabled."
     },
@@ -110,29 +109,10 @@
       "bytes": "bytes",
       "count": "count"
     },
-    "whitelist": {
-      "unsaved": "Unsaved changes",
-      "title": "IP whitelist",
-      "enabled": "Require whitelisted IPs on all nodes",
-      "hint": "Only these IPs may use your credentials. They bypass firewall bans; non-Reality geolocation limits remain.",
-      "quota": "{used} / {quota} IPs",
-      "comboQuota": "Whitelist IP slots",
-      "add": "Add IP",
-      "empty": "Add exact public IP addresses.",
-      "blocksAll": "No IPs added. Enabling this blocks all connections with your credentials.",
-      "phase": {
-        "disabled": "Whitelist is off.",
-        "inactive": "No eligible node access. Your list is retained.",
-        "pending": "Waiting for node confirmation ({count}).",
-        "active": "Applied to your nodes."
-      },
-      "savedPending": "Saved. Whitelist deployment is pending."
-    },
     "tabs": {
       "connection": "Connection",
       "xhttp": "XHTTP",
       "routing": "Routing",
-      "whitelist": "Whitelist",
       "compatibility": "Compatibility"
     },
     "split": {

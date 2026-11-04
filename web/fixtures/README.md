@@ -237,3 +237,8 @@ No lease fixture writes production data or stores source IPs in browser storage.
 `profileMetricsFixture.ts`. `profile-state=loading|empty|error`, `profile-truncated`
 and volatile `__profileFixture` controls exercise precision, historical nodes,
 fresh empty IPs, unavailable/stale activity and recovery without production data.
+
+`member-connections-audit.html` exercises the native member connections UI using
+constructed owner observations and manual grants. Query switches include `zh`,
+`slow`, `empty`, `error`, `stale`, `incomplete`, `disabled` and `grant-error`.
+It uses the member root assets; browser administrator fixtures remain independent.

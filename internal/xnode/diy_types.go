@@ -16,15 +16,14 @@ import (
 const DIYOperationKind = "xnode_diy"
 
 type DIYDocument struct {
-	Unchanged     bool
-	Result        *DIYSaveResult
-	NativeChanged bool
-	UserID        string
-	Revision      int64
-	Cipher        string
+	Unchanged bool
+	Result    *DIYSaveResult
+
+	UserID   string
+	Revision int64
+	Cipher   string
 }
 type DIYWrite struct {
-	Whitelist        *WhitelistPolicy                 `json:"whitelist,omitempty"`
 	SplitProfiles    *[]SplitProfile                  `json:"splitProfiles,omitempty"`
 	SettingsRevision int64                            `json:"settingsRevision"`
 	RoutingRevision  int64                            `json:"routingRevision"`
@@ -49,9 +48,9 @@ func (input *DIYWrite) UnmarshalJSON(raw []byte) error {
 }
 
 type DIYView struct {
-	InventoryPending bool                               `json:"inventoryPending"`
-	SplitHosts       []DIYSplitHost                     `json:"splitHosts"`
-	Whitelist        WhitelistView                      `json:"whitelist"`
+	InventoryPending bool           `json:"inventoryPending"`
+	SplitHosts       []DIYSplitHost `json:"splitHosts"`
+
 	SplitProfiles    []SplitProfile                     `json:"splitProfiles"`
 	SettingsRevision int64                              `json:"settingsRevision"`
 	Overrides        subscription.ConnectionOverrides   `json:"overrides"`

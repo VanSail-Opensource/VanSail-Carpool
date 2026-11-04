@@ -43,22 +43,3 @@ func TestDeferredPanicReturnsFailureAndCancellationPropagates(t *testing.T) {
 		t.Fatal("cancellation lost", err)
 	}
 }
-
-func TestDIYRoutingOnlyReceiptSkipsUnrelatedWhitelistDeployment(t *testing.T) {
-	for _, tc := range []struct {
-		name, raw string
-		want      bool
-	}{
-		{"routing only", `{"diySave":{"routingChanged":true},"whitelistChanged":false}`, false},
-		{"combined change", `{"whitelistChanged":true}`, true},
-		{"legacy receipt", `{"diySave":{"routingChanged":true}}`, true},
-		{"missing metadata", `{}`, true},
-		{"malformed metadata", `invalid`, true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := diyWhitelistDeployment(tc.raw); got != tc.want {
-				t.Fatal("unsafe deployment scope", got)
-			}
-		})
-	}
-}

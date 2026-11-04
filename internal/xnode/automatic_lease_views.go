@@ -5,7 +5,7 @@ import "time"
 type AutomaticLeaseView struct {
 	IP                   string     `json:"ip"`
 	FirstActive          time.Time  `json:"firstActive"`
-	LastActive           time.Time  `json:"lastActive"`
+	LastActive           *time.Time `json:"lastActive"`
 	LeaseStarted         time.Time  `json:"leaseStarted"`
 	RenewAfter           time.Time  `json:"renewAfter"`
 	RenewedAt            *time.Time `json:"renewedAt"`

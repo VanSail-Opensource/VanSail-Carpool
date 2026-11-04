@@ -53,3 +53,9 @@ Schema 34 adds only the disposable `xnode_payg_node_minutes` direction summaries
 Its native timestamp and exact numeric counters do not alter any historical
 financial facts, credentials or applied migration. Node IDs deliberately have
 no cascading node foreign key; user erasure can clear this ephemeral history.
+
+Schema 36 retires member firewall features: paid grants receive release versions,
+obsolete pending jobs/receipts receive explicit retirement codes, existing blocks
+are queued for confirmed cleanup, and the unused combo whitelist quota is dropped.
+No financial/audit evidence or terminal receipt is rewritten. Encrypted DIY
+whitelists are removed by startup versioned resealing before HTTP admission.

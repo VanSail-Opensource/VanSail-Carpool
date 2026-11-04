@@ -20,10 +20,6 @@ func (s *Service) ReconcileDIY(ctx context.Context, job model.OutboxJob) error {
 	if err != nil || doc.Cipher == "" {
 		return err
 	}
-	quota, err := s.whitelistQuota(ctx, input.UserID)
-	if err != nil {
-		return err
-	}
 	previous := settings
 	proxies, pending, err := s.memberInventory(ctx, input.UserID)
 	if err != nil {
@@ -32,7 +28,6 @@ func (s *Service) ReconcileDIY(ctx context.Context, job model.OutboxJob) error {
 	if !pending {
 		settings.SplitProfiles = validSplitProfiles(settings.SplitProfiles, proxies)
 	}
-	settings.Whitelist.IPs = settings.Whitelist.IPs[:min(len(settings.Whitelist.IPs), quota)]
 	if sameDIYValue(previous, settings) {
 		return nil
 	}
@@ -40,7 +35,6 @@ func (s *Service) ReconcileDIY(ctx context.Context, job model.OutboxJob) error {
 	if err != nil {
 		return err
 	}
-	doc.NativeChanged = false // Effective projections already enforce the current quota.
 	repo, ok := s.repo.(interface {
 		SaveSystemDIY(context.Context, DIYDocument) error
 	})

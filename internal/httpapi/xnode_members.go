@@ -17,8 +17,6 @@ func (s *Server) mountXNodeMembers(router chi.Router) {
 		router.Get("/diy", s.xnodeDIY)
 		router.Post("/diy/preview", s.xnodePreviewDIY)
 		router.Put("/diy", s.xnodeSaveDIY)
-		router.Get("/firewall/exemption", s.xnodeFirewallQuote)
-		router.Post("/firewall/exemption", s.xnodeFirewallPurchase)
 		router.Get("/metrics", s.xnodeMemberMetrics)
 		router.Get("/subscription", s.xnodeOwnedSubscription)
 		router.Get("/routing", s.xnodeRoutingPlan)

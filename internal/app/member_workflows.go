@@ -37,12 +37,6 @@ func newMemberWorkflows(store *database.Store, proxy proxyProvider, vault *secre
 			return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register %s: %w", kind, err)
 		}
 	}
-	if err := dispatcher.Register(connections.DropOperationKind, connections.NewDropWorker(store, proxy, signer, secrets)); err != nil {
-		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection drop: %w", err)
-	}
-	if err := dispatcher.Register(connections.BlockOperationKind, connections.NewBlockWorker(store, proxy, secrets)); err != nil {
-		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection block: %w", err)
-	}
 	if err := dispatcher.Register(connections.UnblockOperationKind, connections.NewUnblockWorker(store, proxy, secrets)); err != nil {
 		return memberWorkflowServices{}, nil, nil, nil, fmt.Errorf("register connection unblock: %w", err)
 	}

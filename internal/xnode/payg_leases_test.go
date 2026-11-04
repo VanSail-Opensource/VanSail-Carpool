@@ -113,12 +113,6 @@ func TestPAYGLeasesExpireIndependentlyAndPreserveNativeCandidate(t *testing.T) {
 	}
 }
 
-func TestWhitelistCannotEnableWithoutActiveComboQuota(t *testing.T) {
-	if _, err := normalizeWhitelist(WhitelistPolicy{}, WhitelistPolicy{Enabled: true}, 0); err == nil {
-		t.Fatal("PAYG-only whitelist enabled")
-	}
-}
-
 func (r *paygLeaseRepository) XNodePAYGPreferences(context.Context, string) (preferences.PAYG, error) {
 	return preferences.PAYG{Enabled: true}, nil
 }

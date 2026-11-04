@@ -1,7 +1,6 @@
 package xnode
 
 import (
-	"slices"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
@@ -12,26 +11,11 @@ type whitelistNodeState struct {
 	observing       bool
 	revision        uint64
 	interval        int
-	users           map[int]WhitelistPolicy
 	exemptions      map[string]time.Time
 }
 
 func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revision uint64) {
-	state := whitelistNodeState{firewallEnabled: config.Firewall.Enabled, observing: config.Firewall.Enabled && config.Firewall.Protect && config.Firewall.MasterControlled, revision: revision, interval: config.Telemetry.ReportSeconds, users: map[int]WhitelistPolicy{}, exemptions: map[string]time.Time{}}
-	for _, user := range config.Users {
-		state.users[user.ID] = WhitelistPolicy{Enabled: user.WhitelistEnabled, IPs: slices.Clone(user.WhitelistedIPs)}
-		if user.WhitelistEnabled {
-			until := time.Now().Add(365 * 24 * time.Hour)
-			if user.ValidUntil != nil {
-				until = *user.ValidUntil
-			}
-			for _, ip := range user.WhitelistedIPs {
-				if until.After(state.exemptions[ip]) {
-					state.exemptions[ip] = until
-				}
-			}
-		}
-	}
+	state := whitelistNodeState{firewallEnabled: config.Firewall.Enabled, observing: config.Firewall.Enabled && config.Firewall.Protect && config.Firewall.MasterControlled, revision: revision, interval: config.Telemetry.ReportSeconds, exemptions: map[string]time.Time{}}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.peers[peer.nodeID] != peer {
@@ -48,27 +32,4 @@ func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revis
 		m.notifyAutomaticLeases()
 	}
 	m.whitelistStates[peer.nodeID] = state
-}
-
-func (m *Master) whitelistApplied(node string, id int64, desired WhitelistPolicy) bool {
-	if id <= 0 || id >= 1<<53 {
-		return false
-	}
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	peer := m.peers[node]
-	live := m.live[node]
-	state := m.whitelistStates[node]
-	interval := time.Duration(max(30, state.interval*3)) * time.Second
-	if peer == nil || !live.report.Ready || !live.report.Synchronized || live.firewallPending != "" || live.report.ConfigRevision < state.revision || state.revision == 0 || m.service.now().Sub(live.receivedAt) > interval {
-		return false
-	}
-	policy, exists := state.users[int(id)]
-	if state.observing && (live.firewall == nil || !live.firewall.KernelReady) {
-		return false
-	}
-	if !exists {
-		return false
-	}
-	return policy.Enabled == desired.Enabled && (!desired.Enabled || slices.Equal(policy.IPs, desired.IPs))
 }

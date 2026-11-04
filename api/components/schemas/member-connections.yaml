@@ -1,0 +1,23 @@
+MemberConnection:
+  type: object
+  additionalProperties: false
+  required: [ip, initialLeaseAt, lastObservedAt, expiresAt]
+  properties:
+    ip: {type: string}
+    initialLeaseAt: {type: [string, 'null'], format: date-time}
+    lastObservedAt: {type: [string, 'null'], format: date-time}
+    expiresAt: {type: [string, 'null'], format: date-time}
+MemberConnectionPage:
+  type: object
+  additionalProperties: false
+  required: [items, page, pageSize, total, status, incomplete, canGrant, settings, fetchedAt]
+  properties:
+    items: {type: array, items: {$ref: '#/MemberConnection'}}
+    page: {type: integer, minimum: 1}
+    pageSize: {type: integer, minimum: 1, maximum: 100}
+    total: {type: integer, minimum: 0}
+    status: {type: string, enum: [available, stale, unavailable, empty]}
+    incomplete: {type: boolean}
+    canGrant: {type: boolean}
+    settings: {$ref: '../../openapi.yaml#/components/schemas/XNodeAutomaticWhitelistSettings'}
+    fetchedAt: {type: string, format: date-time}

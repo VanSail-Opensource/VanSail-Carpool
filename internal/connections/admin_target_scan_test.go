@@ -16,7 +16,7 @@ func TestPollConnectionScanRejectsAnotherProfileTarget(t *testing.T) {
 	repository := &targetScopedScanRepository{scan: providerops.ConnectionScan{ID: "scan", UserID: "target", Status: providerops.StatusProcessing, ExpiresAt: now.Add(time.Minute)}}
 	service := NewService(repository, nil, nil)
 	service.now = func() time.Time { return now }
-	if _, err := service.Poll(context.Background(), "other", "scan"); !errors.Is(err, ErrScanNotFound) {
+	if _, err := service.PollAdmin(context.Background(), "other", "scan"); !errors.Is(err, ErrScanNotFound) {
 		t.Fatalf("Poll(other profile) = %v, want ErrScanNotFound", err)
 	}
 	if repository.lastOwnerID != "other" {

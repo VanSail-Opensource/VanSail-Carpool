@@ -2198,13 +2198,6 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
-        },
-        {
-          "name": "whitelist_ip_quota",
-          "type": "bigint",
-          "notNull": true,
-          "default": "5",
-          "primaryKey": 0
         }
       ]
     },

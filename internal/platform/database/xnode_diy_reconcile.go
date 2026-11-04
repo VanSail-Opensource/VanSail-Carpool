@@ -69,10 +69,5 @@ func (s *Store) retryAttempt_SaveSystemDIY(ctx context.Context, doc xnode.DIYDoc
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	if doc.NativeChanged {
-		if _, err = tx.ExecContext(ctx, `UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1`); err != nil {
-			return err
-		}
-	}
 	return tx.Commit()
 }

@@ -28,7 +28,7 @@ function remaining(seconds: number) {
     <UTable :data="items" :columns="columns" class="admin-table" :ui="{ base: 'min-w-[1020px]' }" role="region" :aria-label="t('automaticLeases.title')" tabindex="0">
       <template #ip-cell="{ row }"><span class="font-mono text-xs">{{ row.original.ip }}</span></template>
       <template #activity-cell="{ row }">
-        <p>{{ formatDateTime(row.original.lastActive) }}</p>
+        <p>{{ row.original.lastActive ? formatDateTime(row.original.lastActive) : t('connections.notObserved') }}</p>
         <p class="text-xs text-muted">{{ t('automaticLeases.firstActive', { time: formatDateTime(row.original.firstActive) }) }}</p>
         <details class="mt-1 text-xs"><summary class="cursor-pointer">{{ t('automaticLeases.sources', { count: `${row.original.sourceCount}${row.original.sourceCountTruncated ? '+' : ''}` }) }}</summary><ul class="mt-1 grid gap-1"><li v-for="id in row.original.sourceNodeIds" :key="id" class="max-w-64 truncate" :title="id">{{ names.get(id) ?? id }}</li></ul></details>
       </template>

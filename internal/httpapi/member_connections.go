@@ -9,60 +9,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-func (s *Server) requestConnections(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-	if !s.requireOnboarded(w, r, user) {
-		return
-	}
-	key, ok := s.requireIdempotencyKey(w, r)
-	if !ok {
-		return
-	}
-	scan, err := s.deps.Connections.Request(r.Context(), user, key)
-	if err != nil {
-		s.writeConnectionError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusAccepted, scan)
-}
-
-func (s *Server) pollConnections(w http.ResponseWriter, r *http.Request) {
-	scan, err := s.deps.Connections.Poll(r.Context(), currentUser(r).ID, chiURLParam(r, "id"))
-	if err != nil {
-		if errors.Is(err, connections.ErrScanNotFound) || errors.Is(err, database.ErrNotFound) {
-			s.writeError(w, r, http.StatusNotFound, "CONNECTION_SCAN_NOT_FOUND", "The connection scan could not be found.")
-			return
-		}
-		s.writeError(w, r, http.StatusBadGateway, "CONNECTION_SCAN_UNAVAILABLE", "Connection progress is temporarily unavailable.")
-		return
-	}
-	writeJSON(w, http.StatusOK, scan)
-}
-
-func (s *Server) dropConnection(w http.ResponseWriter, r *http.Request) {
-	user := currentUser(r)
-	if !s.requireOnboarded(w, r, user) {
-		return
-	}
-	key, ok := s.requireIdempotencyKey(w, r)
-	if !ok {
-		return
-	}
-	var request struct {
-		Handle string `json:"handle"`
-	}
-	if err := decodeJSON(w, r, &request); err != nil {
-		s.writeError(w, r, http.StatusBadRequest, "INVALID_CONNECTION_HANDLE", "A valid connection handle is required.")
-		return
-	}
-	receipt, err := s.deps.ConnectionDrops.Drop(r.Context(), user.ID, request.Handle, key)
-	if err != nil {
-		s.writeConnectionError(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusAccepted, receipt)
-}
-
 func (s *Server) writeConnectionError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, xnode.ErrUnavailable), errors.Is(err, xnode.ErrNotFound), errors.Is(err, xnode.ErrInvalid):

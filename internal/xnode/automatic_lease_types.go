@@ -31,6 +31,7 @@ type automaticLeaseSource struct {
 	last time.Time
 }
 type automaticLease struct {
+	owners                      map[int64]time.Time
 	ip                          netip.Addr
 	first, last, started, until time.Time
 	renewed                     *time.Time
@@ -42,6 +43,8 @@ type automaticLease struct {
 }
 type automaticLeaseManager struct {
 	mu                                  sync.Mutex
+	ownerAssociations                   int
+	associationsTruncated               bool
 	epoch                               string
 	config                              AutomaticWhitelistConfig
 	leases                              map[netip.Addr]*automaticLease

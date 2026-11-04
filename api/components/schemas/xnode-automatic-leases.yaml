@@ -30,7 +30,10 @@
         "format": "date-time"
       },
       "lastActive": {
-        "type": "string",
+        "type": [
+          "string",
+          "null"
+        ],
         "format": "date-time"
       },
       "leaseStarted": {

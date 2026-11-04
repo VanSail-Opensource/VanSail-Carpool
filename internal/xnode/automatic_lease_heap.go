@@ -30,6 +30,7 @@ func (h *automaticLeaseHeap) Pop() any {
 func (m *automaticLeaseManager) expireLocked(now time.Time) {
 	for len(m.expiry) > 0 && !m.expiry[0].until.After(now) {
 		item := heap.Pop(&m.expiry).(*automaticLease)
+		m.ownerAssociations -= len(item.owners)
 		delete(m.leases, item.ip)
 		delete(m.pendingBans, item.ip)
 		m.expired++

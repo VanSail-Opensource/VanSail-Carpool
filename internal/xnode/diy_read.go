@@ -42,10 +42,6 @@ func (s *Service) OwnedDIY(ctx context.Context, user string) (DIYView, error) {
 		return view, err
 	}
 	view.SettingsRevision, view.Overrides = doc.Revision, settings.Overrides
-	view.Whitelist, err = s.ownedWhitelist(ctx, user, settings.Whitelist)
-	if err != nil {
-		return view, err
-	}
 	view.Routing, err = s.diyRouting(ctx, user)
 	if err != nil {
 		return view, err

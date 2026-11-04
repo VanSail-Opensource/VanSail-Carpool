@@ -44,17 +44,6 @@ func NewService(repository Repository, remote Remote, signer *Signer) *Service {
 	return &Service{repository: repository, remote: remote, signer: signer, now: time.Now}
 }
 
-// Request creates or replays one durable scan command.
-func (s *Service) Request(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
-	if _, ok := s.remote.(NativeRemote); ok {
-		return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
-	}
-	if user.ProxyUserID == nil || strings.TrimSpace(*user.ProxyUserID) == "" {
-		return Scan{}, ErrIdentityRequired
-	}
-	return s.request(ctx, user, idempotencyKey, scanFingerprint())
-}
-
 // RequestAdmin uses the existing durable scan/outbox with a native-only fingerprint.
 func (s *Service) RequestAdmin(ctx context.Context, user model.User, idempotencyKey string) (Scan, error) {
 	return s.request(ctx, user, idempotencyKey, nativeScanFingerprint())
@@ -69,11 +58,6 @@ func (s *Service) request(ctx context.Context, user model.User, idempotencyKey, 
 		return Scan{}, err
 	}
 	return projectMetadata(record), nil
-}
-
-// Poll refreshes provider progress and returns ephemeral signed IP handles.
-func (s *Service) Poll(ctx context.Context, userID, scanID string) (Scan, error) {
-	return s.poll(ctx, userID, scanID, false)
 }
 
 // PollAdmin refuses old bridge scans rather than initiating a legacy provider read.

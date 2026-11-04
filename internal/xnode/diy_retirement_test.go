@@ -40,13 +40,13 @@ func TestDIYRetirementResealsOnlyClientDocumentWithoutCharging(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"minVersion", "downloadTcpFastOpen", "tcpMptcp"} {
+	for _, key := range []string{"minVersion", "downloadTcpFastOpen", "tcpMptcp", "whitelist"} {
 		if strings.Contains(raw, key) {
 			t.Fatal("retired option persisted", key)
 		}
 	}
 	var settings xnode.DIYSettings
-	if err = json.Unmarshal([]byte(raw), &settings); err != nil || settings.Version != 2 || settings.Overrides.Fingerprint == nil || !settings.Whitelist.Enabled || len(settings.Whitelist.IPs) != 1 || len(settings.SplitProfiles) != 1 || settings.SplitProfiles[0].DownloadEndpointID != "down" {
+	if err = json.Unmarshal([]byte(raw), &settings); err != nil || settings.Version != 3 || settings.Overrides.Fingerprint == nil || len(settings.SplitProfiles) != 1 || settings.SplitProfiles[0].DownloadEndpointID != "down" {
 		t.Fatal(settings, err)
 	}
 	if err = f.service.RetireDIYOptions(ctx); err != nil {

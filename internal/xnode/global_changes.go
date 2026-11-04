@@ -10,8 +10,6 @@ func globalRuntimeKey(config GlobalConfig) [32]byte {
 	// speedtest endpoint settings are not inputs to a serving native document.
 	config.ConnectionLimit = 0
 	config.AutomaticWhitelist = nil
-	config.FirewallUnbanPrice = ""
-	config.FirewallExemptionHours = 0
 	config.SpeedtestDownloadURL = ""
 	config.SpeedtestUploadURL = ""
 	raw, _ := json.Marshal(config)
