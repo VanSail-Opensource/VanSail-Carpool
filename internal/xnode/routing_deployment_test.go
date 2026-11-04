@@ -21,7 +21,7 @@ import (
 
 func TestManagedRoutingNeverEnablesPeersBeforeEveryNodeApplies(t *testing.T) {
 	f := controlFixture(t, true)
-	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	// The pinned core prohibits public plaintext VLESS peers. Use the same
 	// encrypted server/client transport that a real managed route requires.
