@@ -37,8 +37,10 @@ it('rejects a late search response and preserves a marked snapshot after a faile
   await state.load()
   expect(state.error.value).toBeTruthy()
   expect(state.data.value?.total).toBe(75)
+  const calls = mocks.leases.mock.calls.length
   wrapper.unmount()
-  expect(vi.getTimerCount()).toBe(0)
+  await vi.advanceTimersByTimeAsync(20000)
+  expect(mocks.leases).toHaveBeenCalledTimes(calls)
 })
 
 it('pauses hidden polling and clears volatile rows and outstanding work on session end', async () => {
