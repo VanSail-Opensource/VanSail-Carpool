@@ -37,6 +37,34 @@ func (s *Store) ReplayXNodeDIY(ctx context.Context, user, key, fingerprint strin
 	return op.Receipt, true, routed, err
 }
 
+// ReplayXNodeDIYResult returns the committed revision even after later saves.
+func (s *Store) ReplayXNodeDIYResult(ctx context.Context, user, key, fingerprint string) (xnode.DIYSaveResult, bool, error) {
+	receipt, found, routed, err := s.ReplayXNodeDIY(ctx, user, key, fingerprint)
+	result := xnode.DIYSaveResult{Receipt: receipt, RoutingChanged: routed, DeploymentChanged: routed}
+	if err != nil || !found {
+		return result, found, err
+	}
+	var raw string
+	if err = s.db.QueryRowContext(ctx, `SELECT result_json FROM provider_operations WHERE id=$1`, receipt.ID).Scan(&raw); err != nil {
+		return result, false, err
+	}
+	var metadata struct {
+		Save *xnode.DIYSaveResult `json:"diySave"`
+	}
+	if raw != "" && raw != "{}" {
+		if err = json.Unmarshal([]byte(raw), &metadata); err != nil {
+			return result, false, err
+		}
+	}
+	if metadata.Save != nil {
+		result = *metadata.Save
+	} else {
+		result.Legacy = true
+	}
+	result.Receipt = receipt
+	return result, true, nil
+}
+
 // SaveXNodeDIY commits client overrides and optional routing desired state under
 // both revision fences, in the same transaction as the existing durable receipt.
 func (s *Store) retryAttempt_SaveXNodeDIY(ctx context.Context, doc xnode.DIYDocument, routingRevision int64, plan *xnode.RoutingPlan, input providerops.CreateInput, now time.Time) (model.OperationReceipt, error) {

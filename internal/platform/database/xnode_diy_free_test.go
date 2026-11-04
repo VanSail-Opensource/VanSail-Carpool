@@ -34,6 +34,10 @@ func TestDIYSaveDoesNotConsumeLookupAllowanceOrBalance(t *testing.T) {
 			if err != nil || replay.ID != receipt.ID {
 				t.Fatal("save was not replayed", replay, err)
 			}
+			result, found, err := s.ReplayXNodeDIYResult(ctx, user, input.IdempotencyKey, input.RequestFingerprint)
+			if err != nil || !found || !result.Changed || result.SettingsRevision != 1 || result.Receipt.ID != receipt.ID {
+				t.Fatal("committed save result was not replayed", result, found, err)
+			}
 			after, err := s.Balance(ctx, user)
 			if err != nil || before.Minor != after.Minor {
 				t.Fatal("DIY changed balance", before, after, err)
