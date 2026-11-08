@@ -84,14 +84,18 @@ func TestAllocatorLateNegativeAckOfOldOfferCannotReleasePendingShrink(t *testing
 	old := a.Tick(now, []Policy{policy})[0] // It may have applied, but its success ACK was lost.
 	now = now.Add(DecisionInterval)
 	feedAllocatorDemands(t, a, now, policy.Owner, peers, 1, 2)
-	actions := a.Tick(now, []Policy{policy})
+	// An unacknowledged plan stays sticky until realized or expired. An
+	// authoritative policy decrease forces a new plan with a pending shrink.
+	reduced := policy
+	reduced.RateBytesPerSecond = 500
+	actions := a.Tick(now, []Policy{reduced})
 	var shrink Grant
 	for _, grant := range actions {
 		if grant.Peer == peers[0] {
 			shrink = grant
 		}
 	}
-	if shrink.RateBytesPerSecond != 500 {
+	if shrink.RateBytesPerSecond != 250 {
 		t.Fatal("fixture did not issue a pending shrink")
 	}
 	if err := a.Acknowledge(now, Ack{Owner: old.Owner, Peer: old.Peer, Nonce: old.Nonce, Sequence: old.Sequence, Applied: false}); err != nil {
@@ -102,7 +106,7 @@ func TestAllocatorLateNegativeAckOfOldOfferCannotReleasePendingShrink(t *testing
 	}
 	now = now.Add(DecisionInterval)
 	feedAllocatorDemands(t, a, now, policy.Owner, peers, 1, 3)
-	for _, grant := range a.Tick(now, []Policy{policy}) {
+	for _, grant := range a.Tick(now, []Policy{reduced}) {
 		if grant.Peer == peers[1] && (grant.RateBytesPerSecond > 0 || grant.BurstBytes > 0) {
 			t.Fatal("another node increased while old capacity might still be draining")
 		}
