@@ -1168,3 +1168,46 @@ sealer APIs are removed. `xnode_period_retirement_test.go` covers open-period
 removal, reopen proof retention, null evidence and genuine offline dependencies.
 `xnode_period_seal_test.go` checks foreign-node cursors at zero/positive sequences
 and ensures ordinary disabled-node proof is cleared.
+
+## Hourly shared byte obligations
+
+`hourly_credit*.go` persists account-generation/UTC-day allowance, funded extra
+credit, per-agent issue sequences and original node/agent/boot/session obligations.
+`EnsureHourlyCreditDay` freezes the first accepted same-day free allowance;
+`ReserveHourlyCredit` locks the active user generation, admitting node and shared
+day before allocating a persistent agent-global sequence and reserving bytes.
+The UTC day is rechecked with PostgreSQL `clock_timestamp()` after lock waits.
+There is no hourly enrollment, wallet debit or extra-traffic purchase here;
+extra reservations can consume only already-funded bytes.
+
+`RecordHourlyCreditProgressBatch` accepts at most 128 authenticated records in
+one SQL transaction. Sorted reservation/day locks, directional maxima, aggregated
+day changes and a bulk reservation update prevent duplicate or partial usage.
+`ApplyHourlyCreditProof` verifies the canonical v1 digest and original scope.
+Normal proofs return only proven unused bytes. Recovery proofs combine saved
+admission with all-unknown agent evidence; late progress can consume that unknown
+reservation without changing the original final digest or increasing availability.
+Settlement remains available after account closure or UTC-day expiry. A normal
+final partition cannot later grow. Disconnect alone releases no credit.
+
+`UnfinalizedHourlyCredits` provides bounded issue-order reconnect discovery;
+finalized unknown obligations remain retained accounting, not new absence claims.
+Migration 42 creates empty relations and SQL guards without converting purchases.
+The models in `internal/model/hourly_credit.go` are internal accounting contracts;
+future API/wire adapters select approved fields and stringify large integers.
+Hosted `hourly_credit_*_test.go` regressions cover shared-node conservation,
+global sequencing, concurrent/reordered batches, rollback, authenticated scope,
+proof replay, signed limits, expired admission and post-closure recovery.
+
+`HourlyCreditHeldBytes` derives the current-session holding without mirroring the
+ledger; its sizing-only total saturates at MaxInt64 across free/extra pools.
+`ResolveHourlyCreditIntent` orders uncertain writes under original owner/node
+locks and proves absence only behind a permanent admission fence. Bounded,
+explicitly scoped `OutstandingHourlyCredits` includes recovery-unknown debt and
+can select historical generations with `-1`. Partial owner/node indexes support
+retirement; final node removal rejects unfinished hourly debt before token revoke.
+An exact insufficient-pool retry can additionally return
+`model.ErrHourlyCreditNotReserved` only after locked absence and checked rollback.
+This permits resizing an uncommitted RAM intent; context/network/unknown failures
+never carry that proof. Explicit Read Committed statement snapshots observe an
+earlier ambiguous COMMIT after its original owner lock releases.

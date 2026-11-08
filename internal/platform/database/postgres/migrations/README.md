@@ -122,3 +122,12 @@ closure generation. Existing closing periods remain valid at generation zero;
 the next open-to-closing transition increments it atomically. Reopen/reclose
 cannot reuse a prior participant barrier even when timestamps match. Purchase,
 traffic and financial records retain their original values.
+
+`00042_hourly_credit_obligations.sql` adds empty daily allowance/funded-credit
+projections, agent-global issue highwaters and scoped byte reservations. Foreign
+keys retain user/node accounting subjects; immutable-scope/proof and monotonic
+counter guards preserve unresolved obligations and final receipts. Recovery can
+advance its confirmed-use projection while keeping the original proof digest.
+No customer, purchase, native accounting period or wallet entry is converted.
+Hourly sales and paid-extra funding remain unavailable until their commerce and
+verified-agent compatibility gates are delivered.

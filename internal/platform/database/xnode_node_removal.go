@@ -57,6 +57,7 @@ func lockRemoval(ctx context.Context, tx *sql.Tx, id string, version int64, fini
 	checks := []struct{ query, code string }{}
 	if finish {
 		checks = append(checks, struct{ query, code string }{`SELECT EXISTS(SELECT 1 FROM xnode_period_nodes WHERE node_id=$1 AND flushed_sequence IS NULL) OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1 AND has_gaps) OR EXISTS(SELECT 1 FROM xnode_metered_probes WHERE node_id=$1 AND flushed_sequence IS NULL)`, "XNODE_REMOVAL_PENDING_ACCOUNTING"})
+		checks = append(checks, struct{ query, code string }{`SELECT EXISTS(SELECT 1 FROM hourly_credit_reservations WHERE node_id=$1 AND (final_proof_digest='' OR final_recovery AND unknown_bytes>0))`, "XNODE_REMOVAL_HOURLY_CREDIT_PENDING"})
 	}
 	for _, check := range checks {
 		var blocked bool
@@ -131,7 +132,7 @@ func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64
 // children may disappear with a never-enrolled node.
 func nodeHasHistory(ctx context.Context, tx *sql.Tx, id string) (bool, error) {
 	var used bool
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'')<>'' OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_imported_history WHERE node_id=$1) FROM xnode_nodes WHERE id=$1`, id).Scan(&used); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'')<>'' OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_imported_history WHERE node_id=$1) OR EXISTS(SELECT 1 FROM hourly_credit_reservations WHERE node_id=$1) FROM xnode_nodes WHERE id=$1`, id).Scan(&used); err != nil {
 		return false, err
 	}
 	if used {

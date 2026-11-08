@@ -154,7 +154,10 @@
     "xnode_payg_charges",
     "xnode_payg_windows",
     "xnode_traffic_streams",
-    "xnode_stream_rates"
+    "xnode_stream_rates",
+    "hourly_credit_agent_sequences",
+    "hourly_credit_days",
+    "hourly_credit_reservations"
   ],
   "tables": [
     {
@@ -2993,6 +2996,219 @@
           "type": "text",
           "notNull": true,
           "default": "'{}'",
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_credit_agent_sequences",
+      "columns": [
+        {
+          "name": "agent_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "last_issued",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_credit_days",
+      "columns": [
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "day_utc",
+          "type": "date",
+          "notNull": true,
+          "primaryKey": 3
+        },
+        {
+          "name": "free_allowance_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "free_admitted_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "free_reserved_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "extra_funded_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "extra_admitted_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "extra_reserved_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_credit_reservations",
+      "columns": [
+        {
+          "name": "reservation_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "day_utc",
+          "type": "date",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "node_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "agent_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "boot_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "session_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "kind",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "byte_ceiling",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "issue_sequence",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "admitted_upload_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "admitted_download_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "unused_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "unknown_bytes",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "final_proof_digest",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "final_recovery",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "finalized_at",
+          "type": "text",
+          "notNull": false,
           "primaryKey": 0
         }
       ]
@@ -9890,6 +10106,11 @@
     "emby_accounts_status_idx",
     "emby_setup_open_operation_idx",
     "firewall_bans_detecting_ip_active",
+    "hourly_credit_agent_issue",
+    "hourly_credit_outstanding_node",
+    "hourly_credit_outstanding_owner",
+    "hourly_credit_owner_day",
+    "hourly_credit_unfinalized_agent",
     "ip_lookup_cache",
     "ip_lookup_cache_key",
     "ip_lookup_check_report",
@@ -10071,6 +10292,9 @@
     "firewall_exemption_inventory_release",
     "firewall_inventory_insert",
     "firewall_inventory_release",
+    "hourly_credit_day_guard",
+    "hourly_credit_reservation_guard",
+    "hourly_credit_sequence_guard",
     "preference_visibility_after_transition",
     "preference_visibility_before_purchase",
     "preference_visibility_before_transition",
