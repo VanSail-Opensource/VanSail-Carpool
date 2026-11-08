@@ -42,12 +42,15 @@ type Repository interface {
 	XNodeServiceBindings(context.Context, int64) ([]ServiceBinding, error)
 	SaveXNodeServiceBinding(context.Context, ServiceBinding) error
 	XNodePeriod(context.Context, string) (Period, error)
+	BeginXNodePeriodClosure(context.Context, Period, time.Time) (Period, error)
+	SealXNodeClosingPeriodNode(context.Context, Period, string, wire.TrafficBarrier) error
+	SealXNodeRemovalPeriodNode(context.Context, Period, string, wire.TrafficBarrier) error
+	FinalizeXNodePeriod(context.Context, Period) error
 	SaveXNodePeriod(context.Context, Period) error
 	XNodePeriods(context.Context, int64) ([]Period, error)
 	XNodeClosingPeriods(context.Context, int) ([]Period, error)
 	TrackXNodePeriodNode(context.Context, string, string) error
 	XNodePeriodNodes(context.Context, string) ([]PeriodNode, error)
-	SealXNodePeriodNode(context.Context, string, string, uint64) error
 	ReopenXNodePeriod(context.Context, string) error
 	RecordXNodeTraffic(context.Context, string, string, uint64, string, wire.TrafficReport) error
 	XNodeReportSequence(context.Context, string) (uint64, error)

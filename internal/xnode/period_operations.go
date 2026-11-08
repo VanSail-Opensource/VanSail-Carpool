@@ -6,13 +6,7 @@ import (
 )
 
 func (s *Service) Quiesce(ctx context.Context, id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return err
-	}
-	return s.closeIdentityPeriod(ctx, identity)
+	return s.quiesceIdentity(ctx, id, "")
 }
 
 // CloseForReplacement retains unavailable old journals without delaying a new

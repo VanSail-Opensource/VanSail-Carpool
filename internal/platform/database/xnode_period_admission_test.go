@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
 func TestClosingPeriodRejectsNewAndRepeatedAdmissionWithoutReopening(t *testing.T) {
@@ -30,6 +31,9 @@ func TestClosingPeriodRejectsNewAndRepeatedAdmissionWithoutReopening(t *testing.
 	participants, err := store.XNodePeriodNodes(ctx, period.ID)
 	if err != nil || len(participants) != 1 || participants[0].NodeID != "node" {
 		t.Fatal(participants, err)
+	}
+	if err = store.SealXNodeClosingPeriodNode(ctx, period, "node", wire.TrafficBarrier{AgentID: "agent", AccountingPeriod: period.ID, Quiesced: true}); err != nil {
+		t.Fatal(err)
 	}
 	period.Status = "closed"
 	if err = store.FinalizeXNodePeriod(ctx, period); err != nil {

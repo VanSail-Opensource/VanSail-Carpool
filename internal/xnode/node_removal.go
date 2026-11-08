@@ -128,16 +128,7 @@ func (s *Service) removeNode(ctx context.Context, id, actor, operation string) (
 		if err != nil {
 			return false, err
 		}
-		if barrier.StreamID != "" {
-			streams, ok := s.repo.(TrafficStreamRepository)
-			if !ok {
-				return false, ErrUnavailable
-			}
-			err = streams.SealXNodeStreamPeriodNode(ctx, period.ID, id, barrier)
-		} else {
-			err = s.repo.SealXNodePeriodNode(ctx, period.ID, id, barrier.Sequence)
-		}
-		if err != nil {
+		if err = s.repo.SealXNodeRemovalPeriodNode(ctx, period, id, barrier); err != nil {
 			return false, err
 		}
 	}

@@ -48,22 +48,3 @@ func (s *Store) setXNodeStreamRate(ctx context.Context, node, agent, stream stri
 	}
 	return tx.Commit()
 }
-
-func (s *Store) SealXNodeStreamPeriodNode(ctx context.Context, period, node string, barrier wire.TrafficBarrier) error {
-	if !wire.ValidStreamID(barrier.StreamID) || barrier.Sequence > math.MaxInt64 || barrier.LegacySequence > math.MaxInt64 {
-		return xnode.ErrInvalid
-	}
-	// The original stream cursor is immutable after closure. Record only its
-	// surviving committed sequence, never a synthetic acknowledgement of loss.
-	var sequence uint64
-	var closed bool
-	err := s.db.QueryRowContext(ctx, `SELECT last_sequence,closed FROM xnode_traffic_streams WHERE agent_id=$1 AND stream_id=$2 AND node_id=$3`, barrier.AgentID, barrier.StreamID, node).Scan(&sequence, &closed)
-	if err != nil {
-		return err
-	}
-	if !closed && sequence < barrier.Sequence {
-		return xnode.ErrConflict
-	}
-	_, err = s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=$1,flushed_stream_id=$2,flushed_legacy_sequence=$3 WHERE period_id=$4 AND node_id=$5 AND flushed_sequence IS NULL`, min(sequence, barrier.Sequence), barrier.StreamID, barrier.LegacySequence, period, node)
-	return err
-}

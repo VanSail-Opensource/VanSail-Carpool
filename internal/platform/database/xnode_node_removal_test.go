@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"testing"
 	"time"
 )
@@ -46,7 +47,7 @@ func TestNodeRemovalPrunesBindingsAndRetainsHistory(t *testing.T) {
 	if _, err := s.FinishXNodeRemoval(ctx, "node", version(), identity.UserID, "pending"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("pending accounting: %v", err)
 	}
-	if err := s.SealXNodePeriodNode(ctx, period.ID, "node", 0); err != nil {
+	if err := s.SealXNodeRemovalPeriodNode(ctx, period, "node", wire.TrafficBarrier{AgentID: "agent", AccountingPeriod: period.ID, Quiesced: true}); err != nil {
 		t.Fatal(err)
 	}
 	if retired, err := s.FinishXNodeRemoval(ctx, "node", version(), identity.UserID, "finished"); err != nil || !retired {

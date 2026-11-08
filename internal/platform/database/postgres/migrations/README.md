@@ -116,3 +116,9 @@ to committed accounting. Expiry runs in bounded existing PAYG retention batches.
 Member-firewall retirement explicitly drops the exclusive quota compile trigger/function before dropping the obsolete column; broad CASCADE is not used.
 
 `00040_node_removal_admission.sql` adds a null-default durable removal fence and extends binding admission guards. No purchase, financial entry or existing account is converted. The agent reconnect credential survives until accounting drains.
+
+`00041_period_closure_generation.sql` adds a nonnegative, zero-default durable
+closure generation. Existing closing periods remain valid at generation zero;
+the next open-to-closing transition increments it atomically. Reopen/reclose
+cannot reuse a prior participant barrier even when timestamps match. Purchase,
+traffic and financial records retain their original values.

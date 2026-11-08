@@ -41,16 +41,17 @@ func (i Identity) MemberOwnerID() string {
 }
 
 type Period struct {
-	ID          string     `json:"id"`
-	ProxyUserID int64      `json:"proxyUserId,string"`
-	PurchaseID  string     `json:"purchaseId"`
-	StartedAt   time.Time  `json:"startedAt"`
-	EndedAt     *time.Time `json:"endedAt"`
-	LimitBytes  int64      `json:"limitBytes,string"`
-	Strategy    string     `json:"strategy"`
-	LastResetAt *time.Time `json:"lastResetAt"`
-	UsedBytes   int64      `json:"usedBytes,string"`
-	Status      string     `json:"status"`
+	ClosureGeneration int64      `json:"-"`
+	ID                string     `json:"id"`
+	ProxyUserID       int64      `json:"proxyUserId,string"`
+	PurchaseID        string     `json:"purchaseId"`
+	StartedAt         time.Time  `json:"startedAt"`
+	EndedAt           *time.Time `json:"endedAt"`
+	LimitBytes        int64      `json:"limitBytes,string"`
+	Strategy          string     `json:"strategy"`
+	LastResetAt       *time.Time `json:"lastResetAt"`
+	UsedBytes         int64      `json:"usedBytes,string"`
+	Status            string     `json:"status"`
 }
 
 type DailyUsage struct {

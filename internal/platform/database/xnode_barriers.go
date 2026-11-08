@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"math"
 )
 
 func (s *Store) UserByUsername(ctx context.Context, name string) (model.User, error) {
@@ -95,13 +94,6 @@ func (s *Store) XNodePeriodNodes(ctx context.Context, period string) ([]xnode.Pe
 	}
 	return out, rows.Err()
 }
-func (s *Store) SealXNodePeriodNode(ctx context.Context, period, node string, sequence uint64) error {
-	if sequence > math.MaxInt64 {
-		return xnode.ErrInvalid
-	}
-	_, err := s.db.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=$1 WHERE period_id=$2 AND node_id=$3 AND flushed_sequence IS NULL`, sequence, period, node)
-	return err
-}
 func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) error {
 
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -120,7 +112,7 @@ func (s *Store) retryAttempt_ReopenXNodePeriod(ctx context.Context, id string) e
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes SET flushed_sequence=NULL WHERE period_id=$1`, id); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE xnode_period_nodes p SET flushed_sequence=NULL,flushed_stream_id='',flushed_legacy_sequence=0 WHERE p.period_id=$1 AND NOT EXISTS(SELECT 1 FROM xnode_nodes n WHERE n.id=p.node_id AND n.enabled=0 AND (n.removing_at IS NOT NULL OR n.retired_at IS NOT NULL) AND p.flushed_sequence IS NOT NULL)`, id); err != nil {
 		return err
 	}
 	return tx.Commit()

@@ -44,23 +44,7 @@ func (s *Service) QuiescePurchaseOperation(ctx context.Context, id, purchase str
 	if purchase == "" {
 		return ErrInvalid
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return err
-	}
-	if identity.CurrentPeriodID == "" {
-		return ErrConflict
-	}
-	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil {
-		return err
-	}
-	if err := s.checkPurchaseOperation(ctx, identity, period, purchase); err != nil {
-		return err
-	}
-	return s.closePeriod(ctx, period)
+	return s.quiesceIdentity(ctx, id, purchase)
 }
 
 func (s *Service) checkPurchaseOperation(ctx context.Context, identity Identity, period Period, purchase string) error {

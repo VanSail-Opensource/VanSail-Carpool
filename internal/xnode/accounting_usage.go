@@ -47,21 +47,34 @@ func (s *Service) termPeriods(ctx context.Context, identity Identity, start, end
 
 func (s *Service) CloseAccountingPeriod(ctx context.Context, id string, start, end time.Time) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return err
-	}
-	periods, err := s.termPeriods(ctx, identity, start, end)
+	periods, err := s.fenceAccountingPeriods(ctx, id, start, end)
+	s.mu.Unlock()
 	if err != nil {
 		return err
 	}
 	for _, period := range periods {
-		if err = s.closePeriod(ctx, period); err != nil {
+		if err = s.settlePeriodClosure(ctx, period, false); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (s *Service) fenceAccountingPeriods(ctx context.Context, id string, start, end time.Time) ([]Period, error) {
+	identity, err := s.Identity(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	periods, err := s.termPeriods(ctx, identity, start, end)
+	if err != nil {
+		return nil, err
+	}
+	for i, period := range periods {
+		if periods[i], err = s.preparePeriodClosure(ctx, period); err != nil {
+			return nil, err
+		}
+	}
+	return periods, nil
 }
 
 func (s *Service) UsageSnapshot(ctx context.Context, id string, start, end time.Time) (usageaccounting.UsageSnapshot, error) {

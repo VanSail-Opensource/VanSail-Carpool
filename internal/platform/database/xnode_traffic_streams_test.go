@@ -87,8 +87,12 @@ func TestBootStreamsSeparateReplayRestartGapsAndLegacyAccounting(t *testing.T) {
 	if err := s.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
 		t.Fatal(err)
 	}
-	barrier := wire.TrafficBarrier{AgentID: "agent", StreamID: second, Sequence: 99, LegacySequence: 1}
-	if err := s.SealXNodeStreamPeriodNode(ctx, period.ID, "node", barrier); err != nil {
+	period, err = s.BeginXNodePeriodClosure(ctx, period, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	barrier := wire.TrafficBarrier{AgentID: "agent", StreamID: second, Sequence: 99, LegacySequence: 1, AccountingPeriod: period.ID, Quiesced: true}
+	if err := s.SealXNodeClosingPeriodNode(ctx, period, "node", barrier); err != nil {
 		t.Fatal(err)
 	}
 	participants, err := s.XNodePeriodNodes(ctx, period.ID)

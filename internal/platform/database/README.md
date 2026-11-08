@@ -1147,3 +1147,24 @@ announcement cleanup remains in the existing outbox queue.
 new/changed cadence before mutation and preserves legacy quota usage.
 `xnode_named_services.go` defaults new terms to `NO_RESET`, locks the authoritative
 current period for edits and never rewrites its cadence or reset evidence.
+
+`xnode_period_closure.go` atomically fences open admission with an incremented
+durable closure generation and returns the exact resulting row. Participant
+sealing locks that same generation, preserves committed stream evidence and
+retries only rolled-back transactions. `xnode_period_finalize.go` requires every
+participant barrier and the captured generation; `xnode_barriers.go` clears
+recoverable participant markers on reopen while preserving sealed proof for
+permanently disabled removing/retired nodes. Neither an identical timestamp nor a process
+restart can authorize old evidence for a newer closure.
+`xnode_period_closure_test.go` covers reopen/reclose, legacy and boot-stream
+barriers, fresh-store recovery and refused unfinished finalization.
+`xnode_period_admission_test.go` retains admission, stale-finalization and scan
+fairness coverage. See [period closure](../../../docs/period-closure.md).
+
+`xnode_period_seal.go` centralizes typed closing-generation and permanent-node
+removal proof. Both contracts check the exact period owner/purchase, native
+agent and node-bound committed legacy/boot-stream cursors; the unqualified
+sealer APIs are removed. `xnode_period_retirement_test.go` covers open-period
+removal, reopen proof retention, null evidence and genuine offline dependencies.
+`xnode_period_seal_test.go` checks foreign-node cursors at zero/positive sequences
+and ensures ordinary disabled-node proof is cleared.

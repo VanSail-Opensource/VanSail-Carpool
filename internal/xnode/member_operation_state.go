@@ -12,52 +12,39 @@ func (s *Service) MemberOperationState(ctx context.Context, id string) (purchase
 }
 
 func (s *Service) operationState(ctx context.Context, id, expectedPurchase string) (purchaseops.RemoteState, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	identity, err := s.Identity(ctx, id)
+	state, _, err := s.operationStateSnapshot(ctx, id, expectedPurchase)
+	return state, err
+}
+
+func (s *Service) operationStateSnapshot(ctx context.Context, id, expectedPurchase string) (purchaseops.RemoteState, identityClosure, error) {
+	target, err := s.captureIdentityClosure(ctx, id, expectedPurchase, true)
 	if err != nil {
-		return purchaseops.RemoteState{}, err
+		return purchaseops.RemoteState{}, target, err
 	}
-	if identity.CurrentPeriodID == "" {
-		if expectedPurchase != "" {
-			return purchaseops.RemoteState{}, ErrConflict
-		}
-		return purchaseops.RemoteState{Quiesced: true}, nil
-	}
-	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil {
-		return purchaseops.RemoteState{}, err
-	}
-	if err := s.checkPurchaseOperation(ctx, identity, period, expectedPurchase); err != nil {
-		return purchaseops.RemoteState{}, err
-	}
+	period := target.period
 	// "closing" is not settled: never allow a refund to use an unfinished count.
-	if period.Status == "closing" {
-		if err = s.closePeriod(ctx, period); err != nil {
-			return purchaseops.RemoteState{}, err
-		}
-		period, err = s.repo.XNodePeriod(ctx, period.ID)
-		if err == nil && period.Status != "closed" {
-			return purchaseops.RemoteState{}, ErrUnavailable
-		}
+	// Already-closed and empty snapshots also need a final identity/generation check.
+	if period.Status == "closing" || period.Status == "closed" || period.ID == "" {
+		period, err = s.finishIdentityClosure(ctx, target)
 	}
 	if err != nil {
-		return purchaseops.RemoteState{}, err
+		return purchaseops.RemoteState{}, target, err
 	}
-	return purchaseops.RemoteState{UsedTrafficBytes: period.UsedBytes, LastTrafficResetAt: period.LastResetAt, Quiesced: period.Status == "closed"}, nil
+	target.period = period
+	return purchaseops.RemoteState{UsedTrafficBytes: period.UsedBytes, LastTrafficResetAt: period.LastResetAt, Quiesced: period.Status == "closed" || period.ID == ""}, target, nil
 }
 
 // MemberRefundState includes every reset owned by this purchase. Reset
 // reconciliation uses MemberOperationState and is independent of older journals.
 func (s *Service) MemberRefundState(ctx context.Context, id, purchase string) (purchaseops.RemoteState, error) {
-	state, err := s.PurchaseOperationState(ctx, id, purchase)
+	if purchase == "" {
+		return purchaseops.RemoteState{}, ErrInvalid
+	}
+	state, target, err := s.operationStateSnapshot(ctx, id, purchase)
 	if err != nil {
 		return state, err
 	}
-	identity, err := s.Identity(ctx, id)
-	if err != nil {
-		return state, err
-	}
+	identity := target.identity
 	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)
 	if err != nil {
 		return state, err
@@ -71,7 +58,7 @@ func (s *Service) MemberRefundState(ctx context.Context, id, purchase string) (p
 		if item.ID == identity.CurrentPeriodID {
 			found = true
 		}
-		if item.Status == "closing" || item.Status == "review" || item.UsedBytes < 0 || used > math.MaxInt64-item.UsedBytes {
+		if state.Quiesced && item.Status != "closed" || item.Status == "closing" || item.Status == "review" || item.UsedBytes < 0 || used > math.MaxInt64-item.UsedBytes {
 			return state, ErrUnavailable
 		}
 		used += item.UsedBytes
@@ -110,6 +97,11 @@ func (s *Service) MemberRefundState(ctx context.Context, id, purchase string) (p
 		}
 		if !found {
 			return state, ErrConflict
+		}
+	}
+	if state.Quiesced {
+		if _, err = s.checkIdentityClosure(ctx, target); err != nil {
+			return purchaseops.RemoteState{}, err
 		}
 	}
 	return state, nil

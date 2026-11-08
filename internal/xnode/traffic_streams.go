@@ -12,7 +12,6 @@ type TrafficStreamRepository interface {
 	RegisterXNodeTrafficStream(context.Context, string, string, string) error
 	XNodeStreamSequence(context.Context, string, string) (uint64, bool, error)
 	SetXNodeStreamRate(context.Context, string, string, string, uint64, int64) error
-	SealXNodeStreamPeriodNode(context.Context, string, string, wire.TrafficBarrier) error
 }
 
 func (m *Master) trafficBarrierCommitted(ctx context.Context, barrier wire.TrafficBarrier) (bool, error) {

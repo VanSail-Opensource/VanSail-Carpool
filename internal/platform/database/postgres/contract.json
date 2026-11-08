@@ -9559,6 +9559,13 @@
           "notNull": true,
           "default": "'open'",
           "primaryKey": 0
+        },
+        {
+          "name": "closure_generation",
+          "type": "bigint",
+          "notNull": true,
+          "default": "0",
+          "primaryKey": 0
         }
       ]
     },

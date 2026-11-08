@@ -7,43 +7,53 @@ import (
 	"time"
 )
 
-// ApplyPurchase is idempotent for an existing term. A replacement closes the old
-// period only after all participating agents' traffic journals are acknowledged.
+// ApplyPurchase is idempotent for an existing term. A replacement fences the
+// predecessor immediately and retains unfinished journals for later settlement.
 func (s *Service) ApplyPurchase(ctx context.Context, id string, limit int64, strategy string, expires time.Time) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	target, err := s.applyPurchaseLocked(ctx, id, limit, strategy, expires)
+	s.mu.Unlock()
+	if err != nil || target == nil {
+		return err
+	}
+	_, err = s.finishIdentityClosure(ctx, *target)
+	return err
+}
+
+func (s *Service) applyPurchaseLocked(ctx context.Context, id string, limit int64, strategy string, expires time.Time) (*identityClosure, error) {
 	identity, err := s.Identity(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	purchase, err := s.requestedPurchase(ctx, identity.UserID, limit, strategy, expires)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if purchase == nil {
-		return s.closeIdentityPeriod(ctx, identity)
+		target, err := s.captureIdentityClosureLocked(ctx, identity, "", false)
+		return &target, err
 	}
 	if limit != purchase.TrafficLimitBytes || strategy != purchase.ResetStrategy || !expires.Equal(purchase.ValidUntil) {
-		return ErrConflict
+		return nil, ErrConflict
 	}
 	if identity.CurrentPeriodID != "" {
 		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if period.PurchaseID == purchase.ID && period.Status == "open" {
 			if err := s.normalizePurchaseSquads(ctx, identity, *purchase); err != nil {
-				return err
+				return nil, err
 			}
 			period.LimitBytes = limit
 			period.Strategy = strategy
-			return s.repo.SaveXNodePeriod(ctx, period)
+			return nil, s.repo.SaveXNodePeriod(ctx, period)
 		}
 		if err = s.closePeriod(ctx, period, true); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return s.startPeriod(ctx, identity, *purchase, s.now().UTC())
+	return nil, s.startPeriod(ctx, identity, *purchase, s.now().UTC())
 }
 func (s *Service) startPeriod(ctx context.Context, identity Identity, purchase model.Purchase, at time.Time, reference ...string) error {
 	if err := s.normalizePurchaseSquads(ctx, identity, purchase); err != nil {
@@ -73,14 +83,4 @@ func (s *Service) normalizePurchaseSquads(ctx context.Context, identity Identity
 		return err
 	}
 	return nil
-}
-func (s *Service) closeIdentityPeriod(ctx context.Context, identity Identity) error {
-	if identity.CurrentPeriodID == "" {
-		return nil
-	}
-	period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
-	if err != nil {
-		return err
-	}
-	return s.closePeriod(ctx, period)
 }

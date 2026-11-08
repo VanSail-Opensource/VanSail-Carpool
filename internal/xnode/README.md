@@ -1125,3 +1125,22 @@ legacy edits, periodless uncertainty and accounting preservation.
 
 `named_service_cadence_test.go` verifies omitted/new cadence, unchanged legacy
 edits and rejected changes without rewriting credentials or accounting.
+
+Strict period settlement: `period_strict_closure.go` captures the exact native
+owner, purchase, period and durable closure generation while fencing admission
+under the mutation mutex, then drops that mutex before network waits. Refund
+reconciliation and generic quiescence recheck the captured target before success.
+`period_closure.go` uses mandatory generation-bound repository methods for both
+participant sealing and finalization, including checks of closed snapshots.
+`period_strict_closure_test.go` holds native barriers across unrelated mutations,
+cancellation, reopen and concurrent successor creation. The compatibility
+fixtures and stale-closed admission regression live in
+`period_closure_fixtures_test.go`. See [period closure](../../docs/period-closure.md)
+for native guard behavior, persistent fencing and extension constraints.
+
+`member_refund_snapshot_test.go` checks real stored reopen races after closed
+capture and during refund history aggregation. Refund snapshots retain the
+original closure generation, recheck it after aggregation and reject any
+unfinished same-purchase period before returning a quiesced total. Node removal
+uses the mandatory removal-fenced sealer; it never invokes an unqualified
+legacy or stream participant write.

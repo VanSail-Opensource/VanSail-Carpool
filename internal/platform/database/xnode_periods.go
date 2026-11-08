@@ -13,13 +13,13 @@ func (s *Store) XNodePeriod(ctx context.Context, id string) (xnode.Period, error
 	return scanXNodePeriod(s.db.QueryRowContext(ctx, `SELECT `+xnodePeriodColumns+` FROM xnode_periods WHERE id=$1`, id))
 }
 
-const xnodePeriodColumns = "id,proxy_user_id,COALESCE(purchase_id,''),started_at,ended_at,limit_bytes,strategy,last_reset_at,used_bytes,status"
+const xnodePeriodColumns = "id,proxy_user_id,COALESCE(purchase_id,''),started_at,ended_at,limit_bytes,strategy,last_reset_at,used_bytes,status,closure_generation"
 
 func scanXNodePeriod(row rowScanner) (xnode.Period, error) {
 	var item xnode.Period
 	var started string
 	var ended, reset sql.NullString
-	err := row.Scan(&item.ID, &item.ProxyUserID, &item.PurchaseID, &started, &ended, &item.LimitBytes, &item.Strategy, &reset, &item.UsedBytes, &item.Status)
+	err := row.Scan(&item.ID, &item.ProxyUserID, &item.PurchaseID, &started, &ended, &item.LimitBytes, &item.Strategy, &reset, &item.UsedBytes, &item.Status, &item.ClosureGeneration)
 	if errors.Is(err, sql.ErrNoRows) {
 		return item, xnode.ErrNotFound
 	}
