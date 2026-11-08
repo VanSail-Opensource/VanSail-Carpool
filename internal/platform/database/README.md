@@ -35,6 +35,16 @@ prunes seven-day operational history at most once per minute. Active expiries
 still run on every sweep; paid exemption evidence is retained.
 `xnode_firewall_sweep_test.go` verifies shared-audience isolation, immediate
 retirement between cleanup intervals and bounded history pruning on PostgreSQL.
+`xnode_firewall_retirement.go` seeks the existing C-collated generation/source
+primary keys and limits each bank to 256 candidates before merging one 256-row
+page. The strict composite cursor still orders bans before sources; empty keys,
+released generations and bank transitions preserve the original projection.
+Every cycle wraps to the beginning, including startup/recovery; errors restore
+the cursor through `SweepFirewall`'s existing whole-transaction retry boundary.
+No admission cache, schema change, expiry shortcut or delivery-lane change is
+introduced. `xnode_firewall_seek_test.go` covers projection equivalence, a full
+expiry cycle and rollback/recovery after a partially processed page. See the
+[production measurements](../../../docs/database-performance-2026-11-08.md).
 
 `xnode_runtime_reads.go` narrows reconciliation to current funding candidates,
 connected principals (128 IDs per query), and resettable period owners. It reuses
