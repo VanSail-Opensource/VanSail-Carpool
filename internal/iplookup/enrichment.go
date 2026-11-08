@@ -2,7 +2,6 @@ package iplookup
 
 import (
 	"context"
-	"time"
 )
 
 // EnrichmentCheckpoint retains read-only enrichment recovery and provider scores.
@@ -28,14 +27,10 @@ func (w *Worker) runEnrichment(ctx context.Context, r *Report, c Config) error {
 	if stage.LiveDone {
 		return nil
 	}
-	liveCtx, cancel := context.WithTimeout(withQualityScores(ctx, stage.Scores), 60*time.Second)
-	details := w.Live.livePipeline(withLiveRequests(liveCtx), r.IP, c, func(LiveEvent) {})
-	cancel()
-	if ctx.Err() != nil {
-		return ctx.Err()
+	if err := w.refreshLive(ctx, r, c); err != nil {
+		return err
 	}
-	details.SourceIP, details.CacheMatch = r.IP, "none"
-	r.LiveDetails, stage.LiveDone = &details, true
+	stage.LiveDone = true
 	return w.repository.SaveIPLookupProgress(ctx, *r)
 }
 

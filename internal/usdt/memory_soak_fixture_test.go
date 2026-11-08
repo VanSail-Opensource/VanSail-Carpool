@@ -34,11 +34,14 @@ func soakLogs(spec usdt.NetworkSpec, n uint64) []map[string]any {
 	return logs
 }
 
-func soakRPCServer(t *testing.T) *httptest.Server {
+func soakRPCServer(t *testing.T) (*httptest.Server, func()) {
 	t.Helper()
+	var handlers sync.WaitGroup
 	var heads atomic.Uint64
 	heads.Store(2)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.Add(1)
+		defer handlers.Done()
 		if strings.HasPrefix(r.URL.Path, "/fail/") {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
@@ -93,7 +96,15 @@ func soakRPCServer(t *testing.T) *httptest.Server {
 		_ = json.NewEncoder(w).Encode(map[string]any{"id": request.ID, "result": result})
 	}))
 	t.Cleanup(server.Close)
-	return server
+	return server, func() {
+		done := make(chan struct{})
+		go func() { handlers.Wait(); close(done) }()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("mock HTTP handlers did not stop")
+		}
+	}
 }
 
 func soakSocket(w http.ResponseWriter, r *http.Request) {

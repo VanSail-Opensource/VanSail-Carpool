@@ -123,7 +123,7 @@ func TestCombinedIPCacheDoesNotReplaceNeighborEvidence(t *testing.T) {
 	if err := store.FinishIPLookupRun(ctx, r, now); err != nil {
 		t.Fatal(err)
 	}
-	q, err := service.Quote(ctx, user, "8.8.8.9", true)
+	q, err := service.Quote(ctx, user, "8.8.8.9", false)
 	if err != nil {
 		t.Fatal(err)
 	}

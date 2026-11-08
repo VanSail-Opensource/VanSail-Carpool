@@ -97,7 +97,7 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 		applyEnrichmentVerdict(&r)
 		return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
 	}
-	if err := w.refreshLive(ctx, r, c); err != nil {
+	if err := w.refreshLive(ctx, &r, c); err != nil {
 		return err
 	}
 	r = Aggregate(r, w.now().UTC())

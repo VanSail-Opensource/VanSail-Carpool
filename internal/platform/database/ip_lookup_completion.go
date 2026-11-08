@@ -67,8 +67,11 @@ func (s *Store) retryAttempt_FinishIPLookupRun(ctx context.Context, report iploo
 	if err != nil {
 		return err
 	}
-	if report.LiveDetails != nil {
-		liveStage = iplookup.LiveStage{Status: "succeeded", Attempted: true}
+	if report.LiveDetails != nil && liveStage.Status != "succeeded" && liveStage.Status != "partial" {
+		liveStage.Status, liveStage.Attempted = "succeeded", true
+		if iplookup.LivePartial(*report.LiveDetails) {
+			liveStage.Status = "partial"
+		}
 		if err := saveLiveStageTx(ctx, tx, report.ID, liveStage); err != nil {
 			return err
 		}

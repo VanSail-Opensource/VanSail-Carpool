@@ -7,13 +7,16 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
-func TestCombinedRefreshFromSubnetChargesOnceAndRecoversSnapshot(t *testing.T) {
+func TestCombinedRefreshFromExactCacheChargesOnceAndRecoversSnapshot(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 2)
 	baseline := submitIP(t, service, user, "baseline", false)
 	finishIP(t, store, baseline.ID, false)
-	q, err := service.Quote(ctx, user, "8.8.8.9", true)
+	if _, err := service.Quote(ctx, user, "8.8.8.9", true); iplookup.ErrorCode(err) != "IP_LOOKUP_REFRESH_UNAVAILABLE" {
+		t.Fatalf("neighbor authorized refresh: %v", err)
+	}
+	q, err := service.Quote(ctx, user, "8.8.8.8", true)
 	if err != nil || q.Charge.Minor != "350" || q.UseQuota {
 		t.Fatalf("refresh quote: %+v %v", q, err)
 	}

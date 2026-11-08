@@ -13,7 +13,7 @@ func TestUSDTMemorySoak(t *testing.T) {
 	if os.Getenv("VANSAIL_MEMORY_SOAK") != "1" {
 		t.Skip("hosted 256 MiB container gate")
 	}
-	server := soakRPCServer(t)
+	server, waitHandlers := soakRPCServer(t)
 	deadline := time.Now().Add(3 * time.Minute)
 	var baseline uint64
 	baselineGoroutines := 0
@@ -27,6 +27,7 @@ func TestUSDTMemorySoak(t *testing.T) {
 			t.Fatalf("verified networks=%d", repo.verifiedNetworks())
 		}
 		server.CloseClientConnections()
+		waitHandlers()
 		runtime.GC()
 		var memory runtime.MemStats
 		runtime.ReadMemStats(&memory)
