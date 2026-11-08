@@ -48,6 +48,12 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		} else if pruned {
 			continue
 		}
+		// A committed full access prune is already the desired disabled state.
+		// Regenerating its empty graph would replace revocation evidence with a
+		// new operation. Partial prunes and recoverable failures still reconcile.
+		if plan.Phase == "disabled" && plan.Reason == "routing_access_removed" && len(doc.Choices) == 0 {
+			continue
+		}
 		if plan.Phase != "active" && plan.Phase != "disabled" {
 			continue
 		}

@@ -142,3 +142,14 @@ The CI repair updates only the affected patch releases:
 [Brotli 1.2.7](https://github.com/andybalholm/brotli/releases/tag/v1.2.7) and
 [klauspost/compress 1.20.2](https://github.com/klauspost/compress/releases/tag/v1.20.2).
 The pinned X-Node protocol, compression negotiation and wire format stay unchanged.
+
+The funding commit passed all eight race shards, but the standalone routing
+deployment gate exposed a reconciliation race: after a full access prune commits
+an empty disabled plan, the next pass could queue the empty graph again and
+overwrite its revocation reason. The check could miss this short-lived state.
+The correction retains only a committed, disabled `routing_access_removed` plan
+with no choices. It avoids redundant graph/operation work and preserves durable
+revocation evidence. Partial prunes, other disabled reasons, startup inventory,
+uncertain commits and in-flight recovery keep their existing reconciliation.
+A deterministic regression repeats authoritative revision changes and checks
+that full prunes remain terminal while partial/dependency recovery still runs.

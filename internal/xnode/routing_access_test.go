@@ -1,6 +1,78 @@
 package xnode
 
-import "testing"
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
+)
+
+type prunedRoutingRepository struct {
+	*routingScopeRepository
+	version int64
+	wakes   int
+}
+
+func (r *prunedRoutingRepository) XNodeCompileVersion(context.Context, time.Time) (int64, time.Time, error) {
+	return r.version, time.Time{}, nil
+}
+func (r *prunedRoutingRepository) WakeXNodeRouting(context.Context, time.Time) error {
+	r.wakes++
+	return nil
+}
+func (r *prunedRoutingRepository) XNodeUnmanagedRoutes(context.Context, time.Time) ([]Customization, error) {
+	return nil, nil
+}
+func (r *prunedRoutingRepository) XNodeIdentity(context.Context, int64) (Identity, error) {
+	return Identity{ProxyUserID: 10, UserID: "owner"}, nil
+}
+func (r *prunedRoutingRepository) AdvanceXNodeRouting(context.Context, int64, string, string, string, time.Time) error {
+	return nil
+}
+
+type prunedRoutingSettings struct{ reads int }
+
+func (s *prunedRoutingSettings) Optional(context.Context, string) (string, error) {
+	s.reads++
+	return "", ErrUnavailable
+}
+func (*prunedRoutingSettings) PutXNodeGlobal(context.Context, string, string) error { return nil }
+
+func TestRoutingReconciliationRetainsCommittedFullAccessPrune(t *testing.T) {
+	vault, err := secret.NewVault(make([]byte, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range []struct {
+		name, phase, reason string
+		choices             []RoutingChoice
+		inputReads          int
+	}{
+		{name: "fully-pruned", phase: "disabled", reason: "routing_access_removed"},
+		{name: "dependency-recovery", phase: "disabled", reason: "routing_dependencies_changed", inputReads: 3},
+		{name: "active-empty", phase: "active", reason: "routing_access_removed", inputReads: 3},
+		{name: "partially-pruned", phase: "disabled", reason: "routing_access_removed", choices: []RoutingChoice{{ID: "keep"}}, inputReads: 3},
+	} {
+		t.Run(step.name, func(t *testing.T) {
+			plan := routingScopePlan(t, vault, 10, step.choices...)
+			plan.Phase, plan.Reason = step.phase, step.reason
+			repo := &prunedRoutingRepository{routingScopeRepository: &routingScopeRepository{plans: []RoutingPlan{plan}}}
+			settings := &prunedRoutingSettings{}
+			service := NewService(repo, settings, vault, nil, nil)
+			for range 3 {
+				// Recheck after edits/startup rather than relying on a cached skip.
+				repo.version++
+				if err := service.reconcileRoutingPlans(context.Background()); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if settings.reads != step.inputReads || repo.wakes != 3 {
+				t.Fatal("full prune regenerated or recovery skipped", settings.reads, repo.wakes)
+			}
+		})
+	}
+}
 
 func TestRoutingAccessPrunesLostNodeAndEndpointReferences(t *testing.T) {
 	a := Endpoint{ID: "a", NodeID: "a"}

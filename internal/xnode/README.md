@@ -65,6 +65,14 @@ without reusing an older snapshot. Compilation, accounting, owner data and billi
 continue to use full accounts. Hosted runtime-read and continuity regressions
 cover projection selection, current funding, expiry caps and recovery ordering.
 
+`routing_reconcile.go` retains a committed `routing_access_removed` plan when
+it is disabled and every operational choice has already been pruned. It keeps
+the revocation reason and avoids generating another empty routing operation.
+Partial prunes, dependency failures and in-flight recovery retain the existing
+reconciliation and durable delivery barriers. `routing_access_test.go` checks
+this boundary repeatedly across authoritative revision changes; the hosted
+deployment regression still verifies native peer removal and accounting safety.
+
 `ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
 upgrade-header and hello-capability negotiation. It validates authenticated agent
 ownership, canonical addresses, enabled families and the current configuration
