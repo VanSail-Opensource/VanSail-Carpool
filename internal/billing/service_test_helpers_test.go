@@ -33,6 +33,7 @@ func (r *billingRepository) CreatePaymentOrder(_ context.Context, order model.Pa
 		return model.PaymentOrder{}, r.createErr
 	}
 	order.ID = "order-1"
+	order.CreatedAt = billingTestNow()
 	r.orders[order.ID] = order
 	return order, nil
 }
@@ -135,9 +136,11 @@ func (g *billingGateway) Create(_ context.Context, request ProviderCreateRequest
 	return g.checkout, g.err
 }
 
+func billingTestNow() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
+
 func newBillingServiceForTest(repository Repository, settings Settings, gateway Gateway) *Service {
 	publicURL, _ := url.Parse("https://example.test/base")
 	service := NewService(repository, settings, gateway, publicURL, []byte("0123456789abcdef0123456789abcdef"))
-	service.now = func() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
+	service.now = billingTestNow
 	return service
 }
