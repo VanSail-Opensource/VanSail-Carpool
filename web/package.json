@@ -15,8 +15,10 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit:structure": "node scripts/check-structure.mjs",
-    "check": "npm run audit:structure && npm run lint && npm run typecheck && npm run test && vite build"
+    "audit:structure": "node scripts/check-structure.mjs && npm run audit:workflows",
+    "check": "npm run audit:structure && npm run lint && npm run typecheck && npm run test:workflows && npm run test && vite build",
+    "audit:workflows": "node scripts/check-workflows.mjs",
+    "test:workflows": "node --test scripts/workflow-policy.test.mjs"
   },
   "dependencies": {
     "@iconify-json/circle-flags": "^1.2.12",

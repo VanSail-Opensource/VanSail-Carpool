@@ -17,12 +17,14 @@ on:
       - completed
 
 permissions:
-  contents: write
-  pull-requests: write
-  checks: read
+  contents: read
 
 jobs:
   auto-merge:
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
     name: Merge eligible Dependabot PR
     if: >-
       (github.event_name == 'pull_request_target' &&
