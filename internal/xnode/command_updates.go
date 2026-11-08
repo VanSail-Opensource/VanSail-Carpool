@@ -3,7 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
-	"time"
+	"errors"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
@@ -12,34 +12,67 @@ func (s *Service) executeNodeCommand(ctx context.Context, node string, operation
 	if request.Name == "speedtest" && operation.Attempts > 1 {
 		return nil, &CommandError{CommandUncertain, ErrUnavailable}
 	}
-	update := request.Name == "update.install" || request.Name == "update.rollback"
-	// A rollback is confirmed by the running release changing away from the
-	// version observed before this attempt. A retried attempt that cannot observe
-	// the original version remains pending review instead of reporting success.
-	previous := ""
-	if update && request.Name == "update.rollback" && operation.Attempts <= 1 {
-		previous = s.master.Version(node)
-	}
-	// An interrupted update is reconciled, never blindly repeated. Other exposed
-	// commands set desired state or perform bounded reads/probes and are retry-safe.
-	if update && operation.Attempts > 1 {
-		return nil, s.waitUpdate(ctx, node, request, previous)
+	if isUpdateCommand(request.Name) {
+		return s.executeUpdate(ctx, node, operation, request, args)
 	}
 	result, err := s.master.Command(ctx, node, operation.Receipt.ID, request.Name, args)
-	if !update {
-		if err == nil && (request.Name == "runtime.reload" || request.Name == "geodata.refresh") {
-			var activation struct {
-				Applied bool `json:"applied"`
-				Ready   bool `json:"ready"`
-			}
-			if json.Unmarshal(result, &activation) != nil || !activation.Applied || !activation.Ready {
-				return nil, &CommandError{CommandFailed, ErrUnavailable}
-			}
+	if err == nil && (request.Name == "runtime.reload" || request.Name == "geodata.refresh") {
+		var activation struct {
+			Applied bool `json:"applied"`
+			Ready   bool `json:"ready"`
 		}
-		return result, err
+		if json.Unmarshal(result, &activation) != nil || !activation.Applied || !activation.Ready {
+			return nil, &CommandError{CommandFailed, ErrUnavailable}
+		}
 	}
-	if outcome, ok := err.(*CommandError); ok && outcome.Outcome != CommandUncertain {
-		return nil, err
+	return result, err
+}
+
+func (s *Service) executeUpdate(ctx context.Context, node string, operation providerops.Operation, request CommandRequest, args map[string]any) (json.RawMessage, error) {
+	expected, ok := UpdateExpectationFromResult(operation.ResultJSON)
+	if !ok || expected.Command != request.Name || (request.Name == "update.install" &&
+		(expected.TransactionID != operation.Receipt.ID || (request.Version != "" && expected.Version != request.Version))) {
+		return nil, &CommandError{CommandUncertain, ErrUpdateEvidence}
+	}
+	// Attempts and their intent survive restart. An interrupted mutation is never sent again.
+	if operation.Attempts > 1 {
+		return s.waitUpdate(ctx, node, expected)
+	}
+	var dispatchPeer *agentPeer
+	if request.Name == "update.rollback" {
+		transaction, peer, err := s.master.updateTransaction(ctx, node)
+		if err != nil {
+			return nil, &CommandError{CommandUndelivered, err}
+		}
+		if !expected.matches(transaction) {
+			return nil, &CommandError{CommandUncertain, ErrUpdateEvidence}
+		}
+		if transaction.Status == "rolled_back" {
+			return s.waitUpdate(ctx, node, expected)
+		}
+		if transaction.Status != "pending" && transaction.Status != "confirmed" {
+			return nil, &CommandError{CommandFailed, ErrUpdateEvidence}
+		}
+		dispatchPeer = peer
+	} else {
+		s.master.mu.RLock()
+		dispatchPeer = s.master.peers[node]
+		current := s.master.live[node].hello.Version
+		s.master.mu.RUnlock()
+		if dispatchPeer == nil {
+			return nil, &CommandError{CommandUndelivered, ErrUnavailable}
+		}
+		if current != expected.Previous && current != expected.Version {
+			return nil, &CommandError{CommandUncertain, ErrUpdateEvidence}
+		}
+	}
+	if dispatchPeer == nil {
+		return nil, &CommandError{CommandUndelivered, ErrUnavailable}
+	}
+	result, err := s.master.commandPeer(ctx, dispatchPeer, operation.Receipt.ID, request.Name, args)
+	var outcome *CommandError
+	if errors.As(err, &outcome) && outcome.Outcome != CommandUncertain {
+		return result, err
 	}
 	if err == nil && request.Name == "update.install" {
 		var release struct {
@@ -47,80 +80,12 @@ func (s *Service) executeNodeCommand(ctx context.Context, node string, operation
 			Current   string `json:"current"`
 			Version   string `json:"version"`
 		}
-		if json.Unmarshal(result, &release) == nil && !release.Available && s.master.updateReady(node, release.Current) {
-			return result, nil
+		if json.Unmarshal(result, &release) == nil && !release.Available && release.Current == expected.Previous &&
+			release.Version == expected.Version && (request.Version == "" || release.Current == request.Version) && s.master.updateReadyPeer(node, release.Current, dispatchPeer) {
+			// A completed, receipt-bound no-op reply is sufficient. An interrupted no-op
+			// still requires recovery evidence and can never use this branch.
+			return json.Marshal(map[string]any{"unchanged": true, "current": release.Current})
 		}
 	}
-	if err := s.waitUpdate(ctx, node, request, previous); err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-// waitUpdate reconciles an interrupted upgrade through the documented
-// update.check command. The pinned agent publishes the running and available
-// releases, not an internal transaction identifier, so completion is derived
-// from the release the agent reports together with its synchronized hello.
-func (s *Service) waitUpdate(ctx context.Context, node string, request CommandRequest, previous string) error {
-	tick := time.NewTicker(time.Second)
-	defer tick.Stop()
-	var release struct {
-		Current   string `json:"current"`
-		Available bool   `json:"available"`
-	}
-	checked := time.Time{}
-	for {
-		if s.master.Connected(node) {
-			// update.check consults the release endpoint. Cache the answer so a
-			// long restart does not exhaust the endpoint's rate limit, while the
-			// connected hello and telemetry stay the completion authority.
-			if release.Current == "" || time.Since(checked) >= 30*time.Second {
-				child, cancel := context.WithTimeout(ctx, commandDeadline("update.check")+5*time.Second)
-				raw, err := s.master.Command(child, node, "", "update.check", map[string]any{})
-				cancel()
-				checked = time.Now()
-				if err == nil {
-					var next struct {
-						Current   string `json:"current"`
-						Available bool   `json:"available"`
-					}
-					if json.Unmarshal(raw, &next) == nil {
-						release = next
-					}
-				}
-			}
-			if release.Current != "" && s.master.updateReady(node, release.Current) {
-				if request.Name == "update.rollback" {
-					if previous != "" && release.Current != previous {
-						return nil
-					}
-				} else if request.Version != "" {
-					if release.Current == request.Version {
-						return nil
-					}
-				} else if !release.Available {
-					return nil
-				}
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return &CommandError{CommandUncertain, ctx.Err()}
-		case <-tick.C:
-		}
-	}
-}
-
-func (m *Master) updateReady(node, version string) bool {
-	m.mu.RLock()
-	snapshot := m.live[node]
-	peer := m.peers[node]
-	m.mu.RUnlock()
-	if peer == nil {
-		return false
-	}
-	peer.mu.Lock()
-	revision := peer.revision
-	peer.mu.Unlock()
-	return version != "" && snapshot.hello.Version == version && !snapshot.hello.UpgradePending && snapshot.report.Ready && snapshot.report.Synchronized && revision > 0 && snapshot.report.ConfigRevision >= revision && freshSnapshot(snapshot, m.service.now(), 5)
+	return s.waitUpdate(ctx, node, expected)
 }

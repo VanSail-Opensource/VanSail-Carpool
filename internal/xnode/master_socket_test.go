@@ -17,6 +17,10 @@ const fixtureBoot = "abcdef0123456789abcdef0123456789"
 
 func agentSocket(t *testing.T, server *httptest.Server, token, agent string, revision uint64, extraCapabilities ...string) *websocket.Conn {
 	t.Helper()
+	return agentSocketVersion(t, server, token, agent, "fixture", revision, extraCapabilities...)
+}
+func agentSocketVersion(t *testing.T, server *httptest.Server, token, agent, version string, revision uint64, extraCapabilities ...string) *websocket.Conn {
+	t.Helper()
 	dialer := websocket.Dialer{Subprotocols: []string{"x-node.v1"}}
 	socket, response, err := dialer.Dial("ws"+strings.TrimPrefix(server.URL, "http"), http.Header{"Authorization": []string{"Bearer " + token}})
 	if err != nil {
@@ -24,7 +28,7 @@ func agentSocket(t *testing.T, server *httptest.Server, token, agent string, rev
 	}
 	t.Cleanup(func() { _ = socket.Close() })
 	_ = socket.SetReadDeadline(time.Now().Add(10 * time.Second))
-	if err = socket.WriteJSON(wire.New("agent.hello", "", revision, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Version: "fixture", XrayVersion: "26.10.10", ConfigRevision: revision, Capabilities: append([]string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "config_validation_v1", "measured_user_rates", "sampled_activity_v1", "authorization_expiry", "member_outbound_guards"}, extraCapabilities...)})); err != nil {
+	if err = socket.WriteJSON(wire.New("agent.hello", "", revision, wire.AgentHello{AgentID: agent, BootID: fixtureBoot, Version: version, XrayVersion: "26.10.10", ConfigRevision: revision, Capabilities: append([]string{"traffic_periods_v1", "traffic_period_barriers_v1", "volatile_connection_controls_v1", "config_validation_v1", "measured_user_rates", "sampled_activity_v1", "authorization_expiry", "member_outbound_guards"}, extraCapabilities...)})); err != nil {
 		t.Fatal(err)
 	}
 	return socket

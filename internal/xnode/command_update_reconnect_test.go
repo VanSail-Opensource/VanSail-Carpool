@@ -28,7 +28,7 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	baseline := readFrame(t, socket, "state.sync")
-	receipt, err := f.service.QueueCommand(ctx, f.user.ID, f.node.ID, "install-reconnect", xnode.CommandRequest{Name: "update.install"})
+	receipt, err := f.service.QueueCommand(ctx, f.user.ID, f.node.ID, "install-reconnect", xnode.CommandRequest{Name: "update.install", Version: "v2.0.18"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = socket.Close()
-	reconnected := agentSocket(t, server, token, fixtureAgent, baseline.Revision)
+	reconnected := agentSocketVersion(t, server, token, fixtureAgent, "v2.0.18", baseline.Revision, "update_transaction_v1")
 	_ = reconnected.SetReadDeadline(time.Now().Add(30 * time.Second))
 	if err := reconnected.WriteJSON(wire.New("state.request", "", 0, map[string]any{})); err != nil {
 		t.Fatal(err)
@@ -99,10 +99,28 @@ func TestLostUpgradeResultReconcilesTransactionAfterReconnect(t *testing.T) {
 	var request struct {
 		Name string `json:"name"`
 	}
-	if json.Unmarshal(status.Data, &request) != nil || request.Name != "update.check" {
+	if json.Unmarshal(status.Data, &request) != nil || request.Name != "update.status" {
 		t.Fatal("update was repeated instead of reconciled", status)
 	}
-	if err := reconnected.WriteJSON(wire.New("command.result", status.ID, 0, map[string]any{"id": status.ID, "command": "update.check", "status": "completed", "finished": time.Now().UTC(), "data": map[string]any{"version": "fixture", "current": "fixture", "available": false}})); err != nil {
+	for _, invalid := range []map[string]any{
+		{"id": "another-operation", "version": "v2.0.18", "previous": "fixture", "status": "confirmed"},
+		{"id": receipt.ID, "version": "v2.0.18", "previous": "other-version", "status": "confirmed"},
+		{"id": receipt.ID, "version": "v2.0.18", "previous": "fixture", "status": "pending"},
+	} {
+		invalid["deadline"] = time.Now().Add(time.Minute)
+		if err := reconnected.WriteJSON(wire.New("command.result", status.ID, 0, map[string]any{"id": status.ID, "command": "update.status", "status": "completed", "finished": time.Now().UTC(), "data": invalid})); err != nil {
+			t.Fatal(err)
+		}
+		status = readFrame(t, reconnected, "command")
+		if json.Unmarshal(status.Data, &request) != nil || request.Name != "update.status" {
+			t.Fatal("recovery repeated the mutation", status)
+		}
+		operation, err := f.store.ProviderOperationByID(ctx, receipt.ID)
+		if err != nil || operation.Receipt.Status == "succeeded" {
+			t.Fatal("unrelated/pending receipt completed update", err)
+		}
+	}
+	if err := reconnected.WriteJSON(wire.New("command.result", status.ID, 0, map[string]any{"id": status.ID, "command": "update.status", "status": "completed", "finished": time.Now().UTC(), "data": map[string]any{"id": receipt.ID, "version": "v2.0.18", "previous": "fixture", "status": "confirmed", "deadline": time.Now().Add(time.Minute)}})); err != nil {
 		t.Fatal(err)
 	}
 	for {

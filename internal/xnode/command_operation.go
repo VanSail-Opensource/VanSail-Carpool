@@ -44,7 +44,20 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 	}
 	preflight, stopPreflight := context.WithTimeout(ctx, 30*time.Second)
 	args, err := s.commandArguments(preflight, items[0].TargetID, request)
+	if err == nil {
+		operation, err = s.prepareUpdate(preflight, items[0].TargetID, operation, request, args)
+	}
 	stopPreflight()
+	if err != nil && errors.Is(err, ErrUpdateEvidence) {
+		facts, encodeErr := updateOperationResult(operation, request, items[0].TargetID, nil)
+		if encodeErr != nil {
+			return encodeErr
+		}
+		finish, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		_, err = repository.CompleteXNodeProviderOperation(finish, operation.Receipt.ID, operation.Attempts, providerops.Completion{Status: providerops.StatusPendingReview, ErrorCode: "XNODE_UPDATE_UNCONFIRMED", ResultJSON: facts}, s.now().UTC())
+		return err
+	}
 	if err != nil {
 		var capability *CapabilityError
 		if errors.Is(err, ErrInvalid) || errors.Is(err, ErrConflict) || errors.As(err, &capability) {
@@ -58,6 +71,9 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 			return finishErr
 		}
 		return err
+	}
+	if providerops.Terminal(providerops.Status(operation.Receipt.Status)) {
+		return nil
 	}
 	operation, err = repository.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, s.now().UTC())
 	if err != nil {
@@ -77,6 +93,12 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 		}
 	}
 	completion := providerops.Completion{Status: providerops.StatusSucceeded, ProviderReference: operation.Receipt.ID, ResultJSON: `{}`}
+	if isUpdateCommand(request.Name) {
+		completion.ResultJSON, err = updateOperationResult(operation, request, items[0].TargetID, result)
+		if err != nil {
+			return err
+		}
+	}
 	if commandErr != nil {
 		completion.Status = providerops.StatusPendingReview
 		completion.ErrorCode = "XNODE_COMMAND_OUTCOME_UNKNOWN"
@@ -91,7 +113,13 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 				completion.Status, completion.ErrorCode = providerops.StatusFailed, "XNODE_COMMAND_FAILED"
 			}
 		}
-	} else {
+		if errors.Is(commandErr, ErrUpdateEvidence) {
+			completion.ErrorCode = "XNODE_UPDATE_UNCONFIRMED"
+		}
+		if errors.Is(commandErr, ErrUpdateNotReady) {
+			completion.ErrorCode = "XNODE_UPDATE_READINESS_PENDING"
+		}
+	} else if !isUpdateCommand(request.Name) {
 		value := map[string]any{"command": request.Name, "nodeId": items[0].TargetID}
 		if request.Name == "speedtest" {
 			var data map[string]json.RawMessage

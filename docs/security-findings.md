@@ -13,7 +13,7 @@ The provided scan contains 13 application/design findings, separate from depende
 | 7. Release-shaped tags can expose the production signing key to repository code | X-Node | Pending |
 | 8. Masked USDT RPC API keys can be exfiltrated by reusing an endpoint ID with a new URL | Panel | Canonical network/endpoint-scoped URL resolution; inherited keys require all destinations unchanged. Rejected saves cannot reach storage or collector admission. Regressions in `internal/usdt/config_secrets_test.go`; localized editor validation covers each URL field. |
 | 9. Untrusted forwarding headers bypass and amplify authentication throttling | Panel | Bootstrap proxy CIDRs, canonical trusted-suffix resolution and spoofing/limiter regressions in `internal/httpapi/client_ip_test.go`. |
-| 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Pending |
+| 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Immutable pre-attempt intent, peer-bound `update.status` transaction matching and fresh current-revision readiness. Reconnect, mismatched/pending status, legacy uncertainty and persistence regressions; details in `docs/update-reconciliation.md`. |
 | 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Pending |
 | 12. User-scoped IP blocks are lost across authorized identity replacement | X-Node | Pending |
 | 13. Public return route mints renewable status capabilities from payment order IDs | Panel | Pending |
