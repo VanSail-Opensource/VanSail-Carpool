@@ -14,7 +14,7 @@ func TestLegacyAdmissionConflictTerminatesWithoutDebitOrNativePreparation(t *tes
 		t.Run(status, func(t *testing.T) {
 			s, user, policy, native := commerceFixture(t)
 			ctx := context.Background()
-			combo, err := s.store.SaveCombo(ctx, database.ComboInput{Name: "Grandfathered", Active: true, ValidityDays: 30, PriceTXBMinor: 0, TrafficLimitBytes: 1000, ResetStrategy: "NO_RESET"})
+			combo, err := s.store.SaveCombo(ctx, database.ComboInput{Name: "Grandfathered", Active: true, ValidityDays: 30, PriceTXBMinor: 0, TrafficLimitBytes: 1000, ResetStrategy: "MONTH_ROLLING"})
 			if err != nil {
 				t.Fatal(err)
 			}
