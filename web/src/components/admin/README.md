@@ -65,3 +65,5 @@ Combo editing accepts the API-supported empty description and zero price. Its Zo
 `AdminSectionState.vue` keeps successful slot content mounted through background refresh and errors, announces one loading status, and reserves three 5rem placeholders only before first content. `AdminSectionState.test.ts` covers draft retention, retry, and successful empty results.
 
 The retired outage workspace, navigation and review controls are removed. Generic historical entitlement operations remain available through existing audit tools.
+
+`AdminEmbyConnection.vue` provides private URL/token drafts, configuration presence, local fresh-token guidance and localized load/save/conflict errors. `AdminSettingsPanel.vue` excludes these keys from generic writes and coordinates its exposed save/loading interface with the existing Save action. Failed connection saves do not produce a global success message.

@@ -31,6 +31,7 @@ declare module 'vue' {
     AdminDrawForecast: typeof import('./src/components/admin/activity/AdminDrawForecast.vue')['default']
     AdminDrawPrizeRow: typeof import('./src/components/admin/activity/AdminDrawPrizeRow.vue')['default']
     AdminDurationField: typeof import('./src/components/admin/users/AdminDurationField.vue')['default']
+    AdminEmbyConnection: typeof import('./src/components/admin/AdminEmbyConnection.vue')['default']
     AdminEmbyPanel: typeof import('./src/components/admin/AdminEmbyPanel.vue')['default']
     AdminEntitlementEditor: typeof import('./src/components/admin/users/AdminEntitlementEditor.vue')['default']
     AdminEntitlementRefundDialog: typeof import('./src/components/admin/users/AdminEntitlementRefundDialog.vue')['default']

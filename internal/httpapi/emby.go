@@ -49,12 +49,8 @@ func mapEmbyAccount(account emby.Account) embyAccountResponse {
 }
 
 func (s *Server) embyAccount(w http.ResponseWriter, r *http.Request) {
-	configured := true
-	for _, key := range []string{"emby.base_url", "emby.api_token"} {
-		if _, err := s.deps.Settings.Plaintext(r.Context(), key); err != nil {
-			configured = false
-		}
-	}
+	_, _, connectionErr := s.deps.Settings.EmbyCredentials(r.Context())
+	configured := connectionErr == nil
 	priceMinor := int64(0)
 	if configured {
 		var priceErr error

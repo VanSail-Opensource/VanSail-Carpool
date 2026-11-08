@@ -111,6 +111,9 @@ func (s *SettingsService) Put(ctx context.Context, actorID, key, value string) e
 	return s.put(ctx, actorID, key, value)
 }
 func (s *SettingsService) put(ctx context.Context, actorID, key, value string) error {
+	if key == database.EmbyURLSetting || key == database.EmbyTokenSetting {
+		return errors.New("Emby connection settings require the dedicated atomic interface")
+	}
 	if strings.HasPrefix(key, "ip_lookup.") {
 		return errors.New("IP Lookup settings require the dedicated atomic interface")
 	}

@@ -46,3 +46,5 @@ Active firewall bans accept query/cursor/limit; CIDRs match overlap after networ
 normalization. Administrator grants accept hours=0 only with an exact active
 generation, releasing that ban without creating or altering exemptions. The
 idempotent receipt remains pending until existing delivery versions acknowledge.
+
+Emby connection changes use administrator GET/PUT `/api/v1/admin/emby-connection`. Both secrets remain write-only, updates compare the opaque version, and changing the URL requires a fresh token. Generic settings writes cannot change the two connection keys.

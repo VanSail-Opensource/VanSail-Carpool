@@ -1136,3 +1136,5 @@ Activity retirement locks the parent draw before joins, awards, edits,
 publication/cancellation and wallet changes. The cancellation claim precedes
 refunds, and completed draws never enter the retirement path. All external
 announcement cleanup remains in the existing outbox queue.
+
+`settings_emby.go` stores the existing encrypted Emby URL/token rows atomically under an advisory lock and compares an opaque pair version. Readers use one SQL snapshot. `settings_emby_retry_generated.go` retries only rolled-back transactions; `settings_emby_test.go` covers competing setup, stale writes and concurrent snapshot consistency. No new persistence or provider calls are introduced.

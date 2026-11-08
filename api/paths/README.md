@@ -289,3 +289,5 @@ retain their existing validated endpoint and write scope.
 `api-v1-subscription.yaml` describes uncached owner-scoped subscription and host links.
 
 `api-v1-admin-xnode-nodes-id-removal.yaml` queues removal. `api-v1-payg-history.yaml` returns owner history. `api-v1-subscription-connections-leases.yaml` grants a single IP.
+
+`api-v1-admin-emby-connection.yaml` maps `/api/v1/admin/emby-connection` to its administrator GET/PUT contract. Changing the URL requires a fresh token; generic settings endpoints reject the connection keys.

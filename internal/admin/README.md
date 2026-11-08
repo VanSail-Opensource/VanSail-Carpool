@@ -64,3 +64,5 @@ ledger references so repeated reasons remain separate audited operations.
 `xnode_settings.go` Registers encrypted fleet configuration with typed validation.
 
 `user_provider_commands.go` validates manual temporary restrictions; `user_provider_worker.go` executes queued changes. `user_account_commands_test.go` covers coupon, refund and restriction command validation.
+
+`settings_emby.go` owns the write-only Emby connection interface, fresh-token retarget validation, encrypted pair updates, redacted auditing and validated runtime snapshots. Generic writes reject both connection keys. `settings_emby_test.go` covers retargeting, stale drafts, token rotation and unavailable atomic storage. Extend the dedicated interface when adding coupled Emby credentials.

@@ -21,6 +21,8 @@ func (s *Server) mountAdmin(router chi.Router) {
 	router.Put("/affiliates", s.adminUpdateAffiliates)
 	router.Get("/emby-accounts", s.adminEmbyAccounts)
 	router.Post("/emby-accounts/{id}/retry", s.retryAdminEmbyAccount)
+	router.Get("/emby-connection", s.adminEmbyConnection)
+	router.Put("/emby-connection", s.adminSaveEmbyConnection)
 	router.Get("/settings", s.adminSettings)
 	router.Post("/settings", s.adminCreateSetting)
 	router.Put("/settings/{key}", s.adminUpdateSetting)

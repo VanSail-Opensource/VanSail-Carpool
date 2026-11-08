@@ -260,3 +260,7 @@ interface and its write scope. No IP persistence is introduced.
 - `api_token_resource_scope_test.go`: Hosted explicit resource checks for native subscription metadata, enrollment mutations and shared receipt polling; general administrator scopes never act as an X-Node superscope.
 
 - `client_ip.go` resolves authentication clients from the trusted right edge of `X-Forwarded-For`, with a single-IP `X-Real-IP` fallback only when that chain is absent. Only configured proxy peers can supply either. The TCP peer remains in `RemoteAddr`; unknown headers do not confer trust. `client_ip_test.go` covers spoofing, malformed prefixes, multiple lines, IPv6, canonical mapped addresses and independent limiter buckets.
+
+`admin_emby_connection.go` exposes administrator-only GET/PUT `/emby-connection`: configuration flags plus an opaque version, with typed conflict/fresh-token errors. It never returns either connection secret or calls Emby. Member readiness uses the same validated atomic credential snapshot as the queued adapter.
+
+`admin_emby_connection_test.go` exercises the actual authentication/scope middleware, secret masking, atomic connection setup, stale-version rejection and both generic-setting bypass routes on PostgreSQL.

@@ -197,3 +197,5 @@ Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composi
 Node-outage observation and its scheduler have been retired. Existing pre-retirement committed entitlement synchronization uses only the generic admin worker; it cannot create new outage decisions. `proxyInboundID` now lives in `xnode_catalog.go` as shared catalog topology logic.
 
 - `xnode_retired_reset_test.go`: Hosted regression refusing unpaid reset receipts without changing native periods. Historical paid reset fixtures and replay checks remain in the existing purchase tests.
+
+The Emby adapter resolves URL/token from `SettingsService.EmbyCredentials` in one database snapshot inside the existing upstream queue executor. Validation precedes client creation and every outbound request; independent settings reads are forbidden for this coupled credential.

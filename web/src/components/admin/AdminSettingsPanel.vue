@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, shallowRef, useTemplateRef, watch } from
 import type { AdminSetting } from '@/api/types'
 import type { ActivitySettings, ActivitySettingsWrite } from '@/api/features'
 import { featuresApi } from '@/api/features'
+import AdminEmbyConnection from '@/components/admin/AdminEmbyConnection.vue'
 import AdminActivitySettings from '@/components/admin/activity/AdminActivitySettings.vue'
 import AdminBillingAmountLimits from '@/components/admin/AdminBillingAmountLimits.vue'
 import AdminPaymentProfiles from '@/components/admin/AdminPaymentProfiles.vue'
@@ -21,8 +22,10 @@ const activityLoading = shallowRef(true)
 const activityBusy = shallowRef(false)
 const activityError = shallowRef<string | null>(null)
 const savingAll = shallowRef(false)
-type Saveable = { save: () => Promise<void>; loading: boolean }
+type Saveable = { save: () => Promise<void | boolean>; loading: boolean }
 type PaymentProfilesSaveable = { saveAll: () => Promise<void>; loading: boolean }
+const embyConnectionRef = useTemplateRef<Saveable>('embyConnection')
+const embyConnectionKeys = new Set(['emby.base_url', 'emby.api_token'])
 const activitySettingsRef = useTemplateRef<Saveable>('activitySettings')
 const billingLimitsRef = useTemplateRef<Saveable>('billingLimits')
 const paymentProfilesRef = useTemplateRef<PaymentProfilesSaveable>('paymentProfiles')
@@ -36,7 +39,7 @@ const activitySettingKeys = new Set([
 ])
 const clearableSettingKeys = new Set(['telegram.payment_announcement_chat_id', 'captcha.turnstile.site_key', 'telegram.pm.group_chat_id'])
 const legacyPaymentSetting = (key: string): boolean => key.startsWith('billing.ezpay.') || key.startsWith('billing.bepusdt.') || key.startsWith('billing.usdt.')
-const grouped = computed(() => items.value.filter((item) => !item.key.startsWith('ip_lookup.') && !activitySettingKeys.has(item.key) && !legacyPaymentSetting(item.key)).reduce<Record<string, AdminSetting[]>>((groups, item) => {
+const grouped = computed(() => items.value.filter((item) => !embyConnectionKeys.has(item.key) && !item.key.startsWith('ip_lookup.') && !activitySettingKeys.has(item.key) && !legacyPaymentSetting(item.key)).reduce<Record<string, AdminSetting[]>>((groups, item) => {
   const category = item.category
   groups[category] ??= []
   groups[category].push(item)
@@ -46,6 +49,7 @@ const categories = computed(() => Object.keys(grouped.value).map(value => ({ val
 const category = computed({ get: () => selectedCategory.value || categories.value[0]?.value || '', set: value => { selectedCategory.value = value } })
 const sectionsLoading = computed(() => loading.value
   || activityLoading.value
+  || embyConnectionRef.value?.loading === true
   || billingLimitsRef.value?.loading === true
   || paymentProfilesRef.value?.loading === true)
 const saving = computed(() => savingAll.value || busy.value || activityBusy.value)
@@ -86,30 +90,34 @@ function isBoolean(setting: AdminSetting): boolean {
 function setBoolean(key: string, value: boolean): void {
   draft[key] = value ? 'true' : 'false'
 }
-async function saveSettings(): Promise<void> {
+async function saveSettings(): Promise<boolean> {
   const values = Object.entries(draft).filter(([key, value]) => {
     const configured = items.value.some(item => item.key === key && item.configured)
-    return !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
+    return !embyConnectionKeys.has(key) && !activitySettingKeys.has(key) && !legacyPaymentSetting(key)
       && (value !== '' || (configured && clearableSettingKeys.has(key)))
   })
   const { api } = await import('@/api/client')
-  saved.visible = await perform(() => writeAdminSettings(values, api.updateAdminSetting))
-  if (saved.visible) {
+  const success = await perform(() => writeAdminSettings(values, api.updateAdminSetting))
+  if (success) {
     for (const [key, value] of values) {
       if (items.value.some(item => item.key === key && item.encrypted) && draft[key] === value) draft[key] = ''
     }
   }
+  return success
 }
 async function saveAll(): Promise<void> {
   if (saving.value || sectionsLoading.value) return
   savingAll.value = true
+  saved.visible = false
   try {
-    await Promise.all([
+    const results = await Promise.all([
+      embyConnectionRef.value?.save() ?? Promise.resolve(false),
       saveSettings(),
       activitySettings.value ? activitySettingsRef.value?.save() ?? Promise.resolve() : Promise.resolve(),
       billingLimitsRef.value?.save() ?? Promise.resolve(),
       paymentProfilesRef.value?.saveAll() ?? Promise.resolve(),
     ])
+    saved.visible = results.every(value => value !== false)
   } finally {
     savingAll.value = false
   }
@@ -141,7 +149,7 @@ onMounted(() => void loadActivitySettings())
 </script>
 <template>
   <section class="admin-panel">
-    <div class="admin-panel__heading"><div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div><UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" @click="saveAll" /></div>
+    <div class="admin-panel__heading"><div><h2>{{ t('adminSettings.title') }}</h2><p>{{ t('adminSettings.copy') }}</p></div><UButton icon="i-ph-floppy-disk" :disabled="saving || sectionsLoading" :loading="saving" :label="saving ? t('common.saving') : t('adminSettings.save')" type="submit" form="admin-runtime-settings" @click.prevent="saveAll" /></div>
     <UTabs v-model="workspace" :items="tabs" variant="link" :content="false" class="admin-workspace-tabs" />
     <InlineNotice v-if="saved.visible" tone="success" :title="t('adminSettings.saved')">{{ t('adminSettings.savedHint') }}</InlineNotice>
     <section v-show="workspace === 'activity'" class="settings-activity"><AdminActivitySettings ref="activitySettings" :settings="activitySettings" :busy="activityBusy" :save="saveActivitySettings" /><InlineNotice v-if="activityError" tone="warning">{{ activityError }}</InlineNotice></section>
@@ -149,7 +157,8 @@ onMounted(() => void loadActivitySettings())
     <div v-show="workspace === 'runtime'">
       <AdminSectionState :loading="loading" :error="error" @retry="load()">
         <div class="admin-toolbar"><USelect v-model="category" :items="categories" :aria-label="t('adminWorkspace.configuration')" /></div>
-        <form class="settings-workspace" @submit.prevent="saveAll">
+        <form id="admin-runtime-settings" class="settings-workspace" @submit.prevent="saveAll">
+          <AdminEmbyConnection v-show="category === 'emby'" ref="embyConnection" />
           <fieldset v-for="(settings, group) in grouped" v-show="category === group" :key="group" class="settings-workspace__fields">
             <legend>{{ categoryLabel(String(group)) }}</legend>
             <UFormField v-for="setting in settings" :key="setting.key" :name="setting.key" :label="settingLabel(setting)" :description="isSensitive(setting) ? t('adminSettings.secretHint') : settingHelp(setting)" :hint="setting.configured ? t('common.configured') : undefined">

@@ -28,24 +28,24 @@ func TestSettingsServiceStoresAndDecryptsSecrets(t *testing.T) {
 		t.Fatalf("plain stored setting = %+v, actor %v", plain, repository.lastActor)
 	}
 
-	if err := service.Put(ctx, "admin-1", "emby.api_token", "  bearer-secret  "); err != nil {
+	if err := service.Put(ctx, "admin-1", "billing.ezpay.key", "  bearer-secret  "); err != nil {
 		t.Fatalf("Put(secret): %v", err)
 	}
-	encrypted := repository.settings["emby.api_token"]
+	encrypted := repository.settings["billing.ezpay.key"]
 	if !encrypted.Encrypted || encrypted.Value == "bearer-secret" || !strings.HasPrefix(encrypted.Value, "v1:") {
 		t.Fatalf("secret stored in unexpected form: %+v", encrypted)
 	}
-	decrypted, err := service.Plaintext(ctx, "emby.api_token")
+	decrypted, err := service.Plaintext(ctx, "billing.ezpay.key")
 	if err != nil || decrypted != "bearer-secret" {
 		t.Fatalf("Plaintext(secret) = (%q, %v)", decrypted, err)
 	}
-	if err := service.Put(ctx, "admin-1", "emby.api_token", "  replacement-token  "); err != nil {
+	if err := service.Put(ctx, "admin-1", "billing.ezpay.key", "  replacement-token  "); err != nil {
 		t.Fatalf("Put(secret replacement): %v", err)
 	}
-	if repository.settings["emby.api_token"].Value == encrypted.Value {
+	if repository.settings["billing.ezpay.key"].Value == encrypted.Value {
 		t.Fatal("secret replacement did not update the encrypted database value")
 	}
-	decrypted, err = service.Plaintext(ctx, "emby.api_token")
+	decrypted, err = service.Plaintext(ctx, "billing.ezpay.key")
 	if err != nil || decrypted != "replacement-token" {
 		t.Fatalf("Plaintext(replaced secret) = (%q, %v)", decrypted, err)
 	}
@@ -55,7 +55,7 @@ func TestSettingsServiceStoresAndDecryptsSecrets(t *testing.T) {
 	}
 
 	putCalls := repository.putCalls
-	if err := service.Put(ctx, "admin-1", "emby.api_token", ""); err != nil {
+	if err := service.Put(ctx, "admin-1", "billing.ezpay.key", ""); err != nil {
 		t.Fatalf("Put(empty existing secret): %v", err)
 	}
 	if repository.putCalls != putCalls {
@@ -73,7 +73,7 @@ func TestSettingsServiceErrorsAndOptional(t *testing.T) {
 	if err := service.Put(ctx, "admin", "unknown.setting", "value"); err == nil {
 		t.Fatal("unknown setting unexpectedly accepted")
 	}
-	if err := service.Put(ctx, "admin", "emby.api_token", ""); err == nil {
+	if err := service.Put(ctx, "admin", "billing.ezpay.key", ""); err == nil {
 		t.Fatal("empty required secret unexpectedly accepted")
 	}
 	optional, err := service.Optional(ctx, "billing.ezpay.enabled")
@@ -86,8 +86,8 @@ func TestSettingsServiceErrorsAndOptional(t *testing.T) {
 	}
 
 	repository.getErr = nil
-	repository.settings["emby.api_token"] = database.Setting{Key: "emby.api_token", Value: "v1:invalid", Encrypted: true}
-	if _, err := service.Plaintext(ctx, "emby.api_token"); err == nil {
+	repository.settings["billing.ezpay.key"] = database.Setting{Key: "billing.ezpay.key", Value: "v1:invalid", Encrypted: true}
+	if _, err := service.Plaintext(ctx, "billing.ezpay.key"); err == nil {
 		t.Fatal("Plaintext() accepted invalid ciphertext")
 	}
 	repository.putErr = errors.New("write failure")
@@ -102,7 +102,7 @@ func TestSettingsSafeListMasksAndSorts(t *testing.T) {
 	updated := time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC)
 	repository := newAdminSettingsRepository()
 	repository.settings["telegram.group_chat_id"] = database.Setting{Key: "telegram.group_chat_id", Value: "-1001", UpdatedAt: updated}
-	repository.settings["emby.api_token"] = database.Setting{Key: "emby.api_token", Value: "ciphertext", Encrypted: true, UpdatedAt: updated}
+	repository.settings["billing.ezpay.key"] = database.Setting{Key: "billing.ezpay.key", Value: "ciphertext", Encrypted: true, UpdatedAt: updated}
 	repository.settings["not.registered"] = database.Setting{Key: "not.registered", Value: "ignored", UpdatedAt: updated}
 	service := NewSettingsService(repository, testVault(t))
 
@@ -116,7 +116,7 @@ func TestSettingsSafeListMasksAndSorts(t *testing.T) {
 	keys := make([]string, len(settings))
 	for index, setting := range settings {
 		keys[index] = setting.Key
-		if setting.Key == "emby.api_token" && (setting.Value != "" || !setting.Encrypted || !setting.Configured) {
+		if setting.Key == "billing.ezpay.key" && (setting.Value != "" || !setting.Encrypted || !setting.Configured) {
 			t.Fatalf("secret SafeList entry = %+v", setting)
 		}
 		if setting.Key == "telegram.group_chat_id" && (setting.Value != "-1001" || setting.Encrypted || !setting.Configured) {
@@ -147,7 +147,7 @@ func TestSettingsReadiness(t *testing.T) {
 	required := map[string]string{
 		"telegram.group_chat_id":   "-1001",
 		"telegram.channel_chat_id": "-1002",
-		"emby.api_token":           "secret",
+		"billing.ezpay.key":        "secret",
 		"billing.rate.txb_per_cny": "1",
 		"billing.rate.txb_per_usd": "10",
 		"billing.rate.txb_per_xtr": "0.5",

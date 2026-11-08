@@ -150,5 +150,11 @@
     "loadingContent": "Loading content.",
     "unavailable": "This section is unavailable.",
     "retry": "Retry"
+  },
+  "adminEmbyConnection": {
+    "title": "Emby connection",
+    "hint": "The address and API token are saved together. Changing the address requires a fresh token. Both values remain private; leave them blank to keep them.",
+    "freshToken": "Enter a fresh API token when changing the server address.",
+    "changed": "The connection changed in another session. Reload it, review your address and token, then save again."
   }
 }

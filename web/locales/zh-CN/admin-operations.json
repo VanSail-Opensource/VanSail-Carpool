@@ -150,5 +150,11 @@
     "loadingContent": "正在加载内容。",
     "unavailable": "此分区暂时不可用。",
     "retry": "重试"
+  },
+  "adminEmbyConnection": {
+    "title": "Emby 连接",
+    "hint": "服务器地址和 API 令牌一并保存。更改地址必须提供新的令牌。两项均不公开，留空表示保留。",
+    "freshToken": "更改服务器地址时，请输入新的 API 令牌。",
+    "changed": "连接已被其他会话更改。请重新加载，核对地址和令牌后再次保存。"
   }
 }

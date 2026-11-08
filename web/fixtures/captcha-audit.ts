@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { api } from '@/api/client'
+import { embyConnectionApi } from '@/api/embyConnection'
 import { ApiError } from '@/api/http'
 import type { Session } from '@/api/types'
 import { t, setLocale } from '@/i18n'
@@ -44,6 +45,7 @@ if (params.has('mock')) {
 }
 Object.assign(window, { __captchaAudit: state, __captchaLocale: setLocale })
 if (params.has('admin')) {
+  embyConnectionApi.get = async () => ({ version: 'a'.repeat(64), urlConfigured: false, tokenConfigured: false })
   const settings = ['enabled', 'site_key', 'secret_key'].map(suffix => ({ key: `captcha.turnstile.${suffix}`, value: suffix === 'enabled' ? 'false' : '', encrypted: suffix === 'secret_key', configured: false, category: 'captcha', updatedAt: new Date().toISOString() }))
   settings.push(...['enabled', 'group_chat_id'].map(suffix => ({ key: `telegram.pm.${suffix}`, value: suffix === 'enabled' ? 'false' : '', encrypted: false, configured: false, category: 'telegram', updatedAt: new Date().toISOString() })))
   const writes: string[] = []

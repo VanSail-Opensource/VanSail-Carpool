@@ -1,0 +1,35 @@
+get:
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
+  tags: [Admin, Emby]
+  operationId: getAdminEmbyConnection
+  summary: Read write-only Emby configuration presence and its opaque version
+  responses:
+    '200':
+      description: No plaintext or ciphertext secrets are returned.
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/EmbyConnection' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+put:
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
+  tags: [Admin, Emby]
+  operationId: saveAdminEmbyConnection
+  summary: Atomically replace the encrypted Emby connection
+  description: A changed address requires a fresh API token. Generic settings writes cannot edit either connection key. No provider requests run before validation.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/EmbyConnectionWrite' }
+  responses:
+    '200':
+      description: Updated configuration presence and version.
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/EmbyConnection' }
+    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

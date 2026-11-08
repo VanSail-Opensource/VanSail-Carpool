@@ -6,7 +6,7 @@ The provided scan contains 13 application/design findings, separate from depende
 | --- | --- | --- |
 | 1. Administrative API token scopes implicitly authorize X-Node access | Panel | Explicit resource scopes and receipt classification; regressions in `internal/apitoken/scopes_test.go` and `internal/httpapi/api_token_resource_scope_test.go`. |
 | 2. Mutable action tags execute in privileged container publication jobs | Panel | Pending |
-| 3. Write-only Emby API token can be exfiltrated by retargeting the configured base URL | Panel | Pending |
+| 3. Write-only Emby API token can be exfiltrated by retargeting the configured base URL | Panel | Atomic version-checked encrypted URL/token resource; changed addresses require a fresh token; runtime reads one validated snapshot. Regressions in `internal/admin/settings_emby_test.go` and `internal/platform/database/settings_emby_test.go`; HTTP scope/masking/bypass coverage in `internal/httpapi/admin_emby_connection_test.go`. |
 | 4. Master-controlled Xray environment can execute code in root host utilities | X-Node | Pending |
 | 5. Sample-only accounting lets authenticated users exceed per-user connection limits | X-Node | Pending |
 | 6. Large read-only command results can permanently prevent agent restart | X-Node | Pending |

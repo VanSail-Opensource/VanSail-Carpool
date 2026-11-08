@@ -72,3 +72,5 @@ Generated API compatibility regression: `openapiContract.test.ts`.
 `xnode.ts` exposes group deletion and derived admin eligibility without caching membership.
 
 `memberConnections.ts` owns private observation paging and single-IP grants.
+
+`embyConnection.ts` uses generated OpenAPI types for the atomic write-only administrator connection resource. It sends both fields and the expected version together; no credentials appear in read responses.

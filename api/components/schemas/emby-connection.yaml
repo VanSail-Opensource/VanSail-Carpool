@@ -1,0 +1,49 @@
+{
+  "EmbyConnection": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "version",
+      "urlConfigured",
+      "tokenConfigured"
+    ],
+    "properties": {
+      "version": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "urlConfigured": {
+        "type": "boolean"
+      },
+      "tokenConfigured": {
+        "type": "boolean"
+      }
+    }
+  },
+  "EmbyConnectionWrite": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "version",
+      "baseURL",
+      "apiToken"
+    ],
+    "properties": {
+      "version": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "baseURL": {
+        "type": "string",
+        "maxLength": 2048,
+        "description": "HTTPS address, write-only; blank keeps the current address. Any changed value requires a fresh token."
+      },
+      "apiToken": {
+        "type": "string",
+        "maxLength": 4096,
+        "writeOnly": true,
+        "description": "Fresh API token; blank retains it only when the address is unchanged."
+      }
+    }
+  }
+}

@@ -112,3 +112,5 @@ The optional global setting field preserves older full-document writers.
 `member-connections.yaml` defines observation and lease metadata.
 
 `ip-lookup-enhanced.yaml` now contains only the identity-free exact-address shared progress response. Inventory, probe and subnet schemas are retired; reputation and network context remain typed separately.
+
+`emby-connection.yaml` defines the write-only encrypted integration connection view and version-checked write, with explicit URL/token length limits and no secret readback.

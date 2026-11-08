@@ -44,11 +44,7 @@ func (a embyAdapter) client(ctx context.Context) (embyClient, error) {
 	if a.settings == nil {
 		return nil, errors.New("Emby settings are unavailable")
 	}
-	baseURL, err := a.settings.Plaintext(ctx, "emby.base_url")
-	if err != nil {
-		return nil, err
-	}
-	token, err := a.settings.Plaintext(ctx, "emby.api_token")
+	baseURL, token, err := a.settings.EmbyCredentials(ctx)
 	if err != nil {
 		return nil, err
 	}

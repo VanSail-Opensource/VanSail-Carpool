@@ -259,3 +259,5 @@ that historical reset rewards cannot be saved, `empty` opens a new definition,
 feedback. `zh` switches localization. Ordinary reward choices remain selectable.
 `ResetRewardAudit.vue` owns constructed editor inputs; `reset-reward-audit.ts`
 provides browser-only initialization and the forecast adapter.
+
+`EmbyConnectionAudit.vue`, `emby-connection-audit.ts` and `emby-connection-audit.html` mount the actual browser settings panel with synthetic configuration. `slow`, `empty`, `error`, `save-error`, `conflict` and `zh` exercise localized states. `__embyConnectionAudit` records only constructed writes for manual Chrome DevTools inspection; no provider is contacted.
