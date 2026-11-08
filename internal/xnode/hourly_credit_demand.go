@@ -23,19 +23,21 @@ func (m *Master) requestHourlyCredit(peer *agentPeer, items []wire.HourlyDemand)
 	}
 	now := m.service.now()
 	eligible := make([]wire.HourlyDemand, 0, len(items))
+	positive := false
 	for _, item := range items {
 		if wire.ValidateHourlyDemand(item) != nil {
 			continue
 		}
 		if _, ok := m.hourlyPolicy(item.Owner, peer.nodeID, now); ok {
 			eligible = append(eligible, item)
+			positive = positive || item.PendingBytes > 0
 		}
 	}
 	c := m.hourlyCredits
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	state := c.peers[peer]
-	if state == nil && len(items) > 0 && len(eligible) == 0 {
+	if state == nil && len(items) > 0 && !positive {
 		return
 	}
 	state = c.stateLocked(peer, now)

@@ -35,8 +35,12 @@ func TestHourlyProducerCommitsBeforeDeliveryAndNeverBlocksTrafficACK(t *testing.
 	if err = socket.SetReadDeadline(time.Now().Add(2 * time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	if ack := readFrame(t, socket, "traffic.ack"); ack.ID != report.ID {
-		t.Fatal("outstanding install blocked traffic acknowledgment", ack)
+	trafficAck := readFrame(t, socket, "traffic.ack")
+	var trafficReceipt struct {
+		ID string `json:"id"`
+	}
+	if wire.Decode(trafficAck.Data, &trafficReceipt) != nil || trafficReceipt.ID != report.ID {
+		t.Fatal("outstanding install blocked the matching traffic acknowledgment")
 	}
 	finishHourlyProductionCommand(t, socket, command, wire.HourlyCreditInstallCommand, map[string]bool{"installed": true})
 	progress := wire.HourlyCreditProgress{ReservationID: install.ReservationID, IssueSequence: install.IssueSequence, AdmittedUploadBytes: allowance / 4, AdmittedDownloadBytes: allowance * 3 / 4}

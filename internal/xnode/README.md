@@ -1202,6 +1202,8 @@ Credit delivery responsibilities:
   `hourly_credit_residual_test.go` and `hourly_credit_sizing_test.go` cover bounded
   activity, replenishment and exact residual availability.
 - `hourly_credit_clock_test.go` checks injected-clock scheduling and retry edges.
+- `hourly_credit_demand_test.go` checks cold zero/unknown-hint suppression after
+  completed scans while preserving positive-demand and financial recovery wakes.
 - `hourly_traffic_recovery_test.go` keeps complete mixed journals admissible after
   hourly storage/admission failure without enabling live grants or commands.
 
