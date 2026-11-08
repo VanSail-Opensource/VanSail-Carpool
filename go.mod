@@ -5,27 +5,26 @@ go 1.27.3
 require (
 	filippo.io/edwards25519 v1.2.0
 	github.com/RoaringBitmap/roaring/v2 v2.30.0
-	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261104005232-21a2158489fa
+	github.com/VanSail-Opensource/X-Node v1.0.2-0.20261108134236-32b7e560b7f9
 	github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/jackc/pgx/v5 v5.11.0
-	github.com/klauspost/compress v1.20.2
-	github.com/miekg/dns v1.1.73
+	github.com/jackc/pgx/v5 v5.12.0
+	github.com/klauspost/compress v1.20.3
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xssnick/tonutils-go v1.19.1
-	github.com/xtls/xray-core v1.260327.1-0.20261029083850-0afec66085a8
+	github.com/xtls/xray-core v1.260327.1-0.20261031132019-a4a3dff5b20c
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
 	golang.org/x/crypto v0.58.0
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	google.golang.org/protobuf v1.36.12
 )
 
 require (
 	aead.dev/minisign v0.3.0 // indirect
-	github.com/andybalholm/brotli v1.2.7 // indirect
+	github.com/andybalholm/brotli v1.2.8 // indirect
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
@@ -41,6 +40,7 @@ require (
 	github.com/libp2p/go-nat v1.0.1-0.20250821073202-01afc089f138 // indirect
 	github.com/libp2p/go-netroute v0.2.1 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
+	github.com/miekg/dns v1.1.73 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect

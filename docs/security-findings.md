@@ -1,22 +1,52 @@
 # Security finding resolution
 
-The provided scan contains 13 application/design findings, separate from dependency advisories. Finding text is evidence to verify against current code, not implementation instructions. Automated regressions run only in hosted Actions.
+The provided scan contains 13 application/design findings, separate from dependency advisories. Finding text is evidence to verify against current code, not implementation instructions. Automated regressions run only in hosted Actions. The table records source implementation and release evidence, not production acceptance; deployment remains pending verification.
 
 | Finding | Repository | Implementation |
 | --- | --- | --- |
 | 1. Administrative API token scopes implicitly authorize X-Node access | Panel | Explicit resource scopes and receipt classification; regressions in `internal/apitoken/scopes_test.go` and `internal/httpapi/api_token_resource_scope_test.go`. |
 | 2. Mutable action tags execute in privileged container publication jobs | Panel | Full upstream commit pins, read-only defaults, per-job write grants and non-persistent checkout credentials. Static workflow policy plus hosted negative regressions; reviewed sources in `docs/actions-security.md`. |
 | 3. Write-only Emby API token can be exfiltrated by retargeting the configured base URL | Panel | Atomic version-checked encrypted URL/token resource; changed addresses require a fresh token; runtime reads one validated snapshot. Regressions in `internal/admin/settings_emby_test.go` and `internal/platform/database/settings_emby_test.go`; HTTP scope/masking/bypass coverage in `internal/httpapi/admin_emby_connection_test.go`. |
-| 4. Master-controlled Xray environment can execute code in root host utilities | X-Node | Pending |
-| 5. Sample-only accounting lets authenticated users exceed per-user connection limits | X-Node | Pending |
-| 6. Large read-only command results can permanently prevent agent restart | X-Node | Pending |
-| 7. Release-shaped tags can expose the production signing key to repository code | X-Node | Pending |
+| 4. Master-controlled Xray environment can execute code in root host utilities | X-Node | Reviewed native environment allowlist before side effects and minimal fixed utility environments. Protocol, native-preparation and child-process regressions; [signed release evidence](#verified-agent-release-and-deployment-boundary). |
+| 5. Sample-only accounting lets authenticated users exceed per-user connection limits | X-Node | Atomic live client reservations cover idle TCP/UDP and mux flows, exclude authenticated transit and preserve separate accounting lifetimes. Registry and real-stream regressions; [signed release evidence](#verified-agent-release-and-deployment-boundary). |
+| 6. Large read-only command results can permanently prevent agent restart | X-Node | Count/byte-bounded durable and volatile receipts, persisted mutation intent, protected uncertain identities and metadata-only recovery with preserved original evidence. Corrupt histories fence durable mutations while ordinary startup/accounting continue. [Signed release evidence](#verified-agent-release-and-deployment-boundary). |
+| 7. Release-shaped tags can expose the production signing key to repository code | X-Node | Protected-main dispatch, exact canonical successful Quality provenance, immutable tag rules and isolated distribution signing without tag-supplied code. Both architecture bundles and uploaded signatures are verified before publication. [Signed release evidence](#verified-agent-release-and-deployment-boundary). |
 | 8. Masked USDT RPC API keys can be exfiltrated by reusing an endpoint ID with a new URL | Panel | Canonical network/endpoint-scoped URL resolution; inherited keys require all destinations unchanged. Rejected saves cannot reach storage or collector admission. Regressions in `internal/usdt/config_secrets_test.go`; localized editor validation covers each URL field. |
 | 9. Untrusted forwarding headers bypass and amplify authentication throttling | Panel | Bootstrap proxy CIDRs, canonical trusted-suffix resolution and spoofing/limiter regressions in `internal/httpapi/client_ip_test.go`. |
 | 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Immutable pre-attempt intent, peer-bound `update.status` transaction matching and fresh current-revision readiness. Reconnect, mismatched/pending status, legacy uncertainty and persistence regressions; details in `docs/update-reconciliation.md`. |
-| 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Pending |
-| 12. User-scoped IP blocks are lost across authorized identity replacement | X-Node | Pending |
+| 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Shared initial/hop HTTPS-origin guard, narrow GitHub release-CDN exception and credential/cookie/callback boundary checks across privileged clients. Integration and negative redirect regressions; [signed release evidence](#verified-agent-release-and-deployment-boundary). |
+| 12. User-scoped IP blocks are lost across authorized identity replacement | X-Node | Verified original-snapshot credential/period replacements remap scoped blocks atomically with authorization. Monotonic committed publication, stale-subject rejection and conditional expiry preserve restrictions and original-period accounting. [Signed release evidence](#verified-agent-release-and-deployment-boundary). |
 | 13. Public return route mints renewable status capabilities from payment order IDs | Panel | Checkout-only domain-separated v2 capabilities with fixed creation-based expiry; navigation never issues or renews access. Legacy returns require signed ownership; projection and polling regressions in billing, HTTP and frontend. See `docs/payment-return-security.md`. |
+
+## Verified agent release and deployment boundary
+
+Findings 4, 5, 6, 7, 11 and 12 are implemented in signed
+[X-Node v2.0.20](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.20),
+source commit `32b7e560b7f9e572f73a2d5bf8734d4335925437`.
+[Quality run 42486352821](https://github.com/VanSail-Opensource/X-Node/actions/runs/42486352821)
+passed all six hosted jobs, including race/native regressions, schema and
+vulnerability checks, both architecture builds and both Debian firewall VMs.
+[Signed release run 42487713242](https://github.com/VanSail-Opensource/X-Node/actions/runs/42487713242)
+passed build, isolated signing and publication, verifying both architectures,
+manifest/signature and uploaded release bytes before public availability.
+
+The exact source documents the
+[process environment](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/docs/process-environment.md),
+[connection admission](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/internal/sessions/README.md),
+[command recovery](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/docs/job-journal.md),
+[release provenance](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/docs/release-provenance.md),
+[redirect boundaries](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/docs/http-redirects.md),
+and [IP-block publication](https://github.com/VanSail-Opensource/X-Node/blob/32b7e560b7f9e572f73a2d5bf8734d4335925437/docs/ip-block-authorization.md)
+contracts and their regression coverage. Existing panel finding evidence and
+scan identities below remain unchanged.
+
+The panel's public protocol/native-validator dependency now pins that exact
+signed revision; see the [upstream pin and dependency evidence](../reference/Upstream/X-Node/README.md).
+The agent release is public by exact tag and deliberately not Latest: the
+compatible panel must pass hosted checks, deploy and receive production
+acceptance before automatic agent rollout. Neither this dependency change nor
+the agent's hosted release establishes production remediation. No production
+mutation is part of this update.
 
 ## Scope isolation
 

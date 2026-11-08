@@ -88,6 +88,12 @@ Revisions increase monotonically. A delta must name the current authorization re
 
 Users have a positive ID, credentials, eligible `inbound_tags`, and optional `active_ip_limit`, `connection_limit`, `speed_limit_mbps`, and `block_new`. Zero limits mean no configured user quota. `uuid` is used for protocol defaults; `credentials[tag]` supplies a native client/account object. The agent generates email/level and authenticated SOCKS/HTTP usernames. Transport identities bind credentials and inbound/configuration generations to prevent old mux sessions bypassing revocation.
 
+`connection_limit` is a hard shared TCP/UDP logical-client admission limit,
+including idle/new flows. Check and reservation are atomic. Authenticated transit
+does not consume client slots. Logical close releases once; unfinished native
+handlers retain separate capacity/accounting barriers. Sampled byte activity
+continues to describe telemetry and cannot relax admission.
+
 ## Reports
 
 Bandwidth settings are shared per user across upload/download and all inbounds. `speed_limit_mbps` is the normal rate; `burst_speed_limit_mbps` is the hard ceiling, always enforced. Sustained throughput above normal for `speed_limit_after_seconds` (default 10) activates the normal cap. Throughput below 90% of normal for `speed_limit_reset_seconds` (default 1) restores bursts; this small hysteresis prevents oscillation at the enforced rate. Consecutive durations use one-second windows and actual elapsed time, independent of report intervals. A below-normal window resets the high-traffic streak. Omitting the burst ceiling retains the fixed normal rate. `users.speed[userID]` reports `normal_mbps`, `burst_mbps`, `active_mbps`, and `limited` (normal cap active).
@@ -135,7 +141,18 @@ Only the matching pending batch is retired. Status and logs are disposable snaps
 {"v":1,"type":"command","id":"operation-1","data":{"name":"connections.list","args":{"limit":100}}}
 ```
 
-Commands emit `command.accepted`, optional `command.progress`, and `command.result`. Results contain `id`, `command`, `status`, optional `data/error`, and completion time. Two utility workers run concurrently. The last 128 completed results are retained across restart for request-ID deduplication; IDs must remain unique beyond this window.
+Commands emit `command.accepted`, optional `command.progress`, and `command.result`.
+Results contain `id`, `command`, `status`, optional `data/error`, and completion
+time. Two utility workers plus the existing reserved control slot execute work.
+Durable mutations persist an uncertain intent before execution. Up to 128
+durable receipts survive restart; up to 128 volatile observations remain only in
+memory. Each history is below 2 MiB and retained results are at most 64 KiB.
+Uncertain mutation IDs cannot be evicted to admit more work. IDs remain unique
+beyond the completed-receipt window. Large read results can use the transport
+frame limit but are disposable. Unverifiable journals fence durable utilities
+while recovery reads and ordinary agent startup remain available; see
+`job-journal.md`. Never treat `uncertain` as proof of failure or replay a mutation
+to obtain a cleaner result.
 
 | Command | Arguments |
 | --- | --- |
