@@ -47,8 +47,9 @@ func TestForwardingCannotBypassOrAmplifyAuthenticationBuckets(t *testing.T) {
 			prefixes = append(prefixes, netip.MustParsePrefix("192.0.2.1/32"))
 			peer = "192.0.2.1:1234"
 		}
+		expectedPeer := peer
 		handler := clientIPMiddleware(prefixes)(server.limitAuthentication(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.RemoteAddr != peer {
+			if r.RemoteAddr != expectedPeer {
 				t.Error("transport peer was overwritten")
 			}
 			w.WriteHeader(204)
@@ -78,6 +79,7 @@ func TestForwardingCannotBypassOrAmplifyAuthenticationBuckets(t *testing.T) {
 			request.RemoteAddr = peer
 			request.Header.Set("X-Forwarded-For", "not-an-ip,198.51.100.3")
 		}
+		expectedPeer = request.RemoteAddr
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, request)
 		if response.Code != 204 {
