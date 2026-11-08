@@ -1,4 +1,4 @@
-# Database pressure and bounded firewall sweeps
+# Database pressure, bounded firewall sweeps and PAYG funding reads
 
 ## Scope and baseline
 
@@ -85,10 +85,56 @@ multi-page all-node expiry, cursor wrap, partial-page rollback and recovery.
 Existing firewall regressions retain shared-audience and history-pruning checks.
 Static review includes formatting, `go vet` and the complete Git diff.
 
-PAYG reads remain the largest measured recurring query. A read-only alternative
-that delayed period lookups reduced some execution times but increased buffer
-visits; it is not part of this change. Current balances, credit expiry, pricing
-and accounting must remain authoritative before a broader PAYG optimization.
+## PAYG funding projection
+
+Further read-only analysis found that 62 of 81 active-backend observations
+were running the funded-PAYG query, versus eight running firewall sweeps.
+The 100 independent activity samples used a separate read-only transaction each;
+one long transaction would cache the activity snapshot and give false evidence.
+No blockers appeared. The longest sampled transaction was 124 ms. Pending outbox
+jobs were scheduled for future retries; none were due at that sample. Cgroup
+counters showed no CPU quota, throttling or recorded OOM events.
+
+The journal latency counter starts before `persistTraffic`, including its existing
+100 ms batch collection window. Its 124.7 ms mean is not database execution time
+alone. The batch delay, commit-before-ACK guarantee and atomic report ordering
+remain unchanged; reducing this delay would trade batching for more commits.
+
+For PAYG, forcing later per-row period lookups was rejected: fleet summed medians
+fell from 200.404 to 136.460 ms, but four of 13 nodes became slower and buffer
+visits increased. A narrower funding projection instead removes historical
+`purchased_bytes`/`used_bytes`, which admission does not consume, and the period
+join. The live schema has a validated account-to-period foreign key.
+
+Four alternating executions per query across all 13 PAYG nodes measured:
+
+| Funding read | Sum of node medians | Sum of shared buffer hits |
+| --- | --- | --- |
+| Full account projection | 226.856 ms | 8,469 |
+| Funding fields only | 93.409 ms | 4,036 |
+
+Each node had zero symmetric differences in the funding fields. These are sums
+of per-node medians, not a measured reconciliation wall time. One node's sampled
+time increased under variable production load, while all nodes used fewer buffers.
+Follow-up checks of the exact final SQL found zero full-account differences and
+zero funding-field differences across all 13 nodes. Two representative final
+queries measured 26.179 to 11.754 ms and 9.430 to 3.400 ms in four-execution medians.
+
+`Store.XNodePAYGFunding` implements a dedicated `xnode.PAYGFunding` projection.
+Shared SQL fields, predicates, scanning and prospective personal pricing preserve
+current balances, prices, disablement and exact prepaid timestamps. Private zero
+counter slots reuse the existing scanner; those slots never leave as accounting
+data. Full account reads still join periods and return exact historical counters.
+The master prefers the optional funding interface with legacy repository fallback.
+It rereads every renewal and delegates funding/expiry predicates to `PAYGAccount`.
+No admission decision is cached; startup, drift, recovery, clock caps and finance
+transactions retain their existing full reconciliation and isolation behavior.
+
+Hosted regressions cover wallet/credit changes, exact nanosecond expiry, current
+price and disablement, node isolation, unchanged accounting, fresh projection
+selection and error propagation without falling back to stale inputs.
+
+## CI dependency repair
 
 The first hosted run passed all eight race shards and the CPU profile gate,
 but `govulncheck` reported existing `GO-2026-6888` and `GO-2026-6865` findings.

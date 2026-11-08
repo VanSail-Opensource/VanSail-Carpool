@@ -6,11 +6,27 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
+const paygFundingPredicate = ` WHERE a.node_id=$1 AND b.txb_minor>=0
+ AND (b.txb_minor>=COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) OR a.credit_bytes>0 OR pricing.dynamic_enabled=1 AND pricing.personal_discounts_enabled=1)`
+
+// XNodePAYGFunding reads current authorization inputs without scanning periods.
+// The account's validated period FK preserves existence; no counters are exposed.
+func (s *Store) XNodePAYGFunding(ctx context.Context, node string) ([]xnode.PAYGFunding, error) {
+	accounts, err := s.xnodePAYGAccounts(ctx, paygFundingSelect+paygFundingPredicate, []any{node})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]xnode.PAYGFunding, 0, len(accounts))
+	for _, account := range accounts {
+		out = append(out, account.Funding())
+	}
+	return out, nil
+}
+
 // XNodePAYGFundedAccounts reads current funding candidates, never cached balances.
 // Expiry stays in Go to preserve exact nanosecond timestamps on both backends.
 func (s *Store) XNodePAYGFundedAccounts(ctx context.Context, node string) ([]xnode.PAYGAccount, error) {
-	return s.xnodePAYGAccounts(ctx, paygSelect+` WHERE a.node_id=$1 AND b.txb_minor>=0
-	 AND (b.txb_minor>=COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) OR a.credit_bytes>0 OR pricing.dynamic_enabled=1 AND pricing.personal_discounts_enabled=1)`, []any{node})
+	return s.xnodePAYGAccounts(ctx, paygSelect+paygFundingPredicate, []any{node})
 }
 
 // XNodePAYGConnectedAccounts limits observation reads to live positive counts.

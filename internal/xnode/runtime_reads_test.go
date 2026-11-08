@@ -2,11 +2,41 @@ package xnode
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
+
+type paygFundingRepository struct {
+	*paygLeaseRepository
+	funding []PAYGFunding
+	reads   int
+	err     error
+}
+
+func (r *paygFundingRepository) XNodePAYGFunding(context.Context, string) ([]PAYGFunding, error) {
+	r.reads++
+	return r.funding, r.err
+}
+
+func TestFundingReadsUseFreshProjectionAndPropagateFailure(t *testing.T) {
+	_, base, _, _ := compileCacheFixture(t)
+	r := &paygFundingRepository{paygLeaseRepository: &paygLeaseRepository{cacheTestRepository: base},
+		funding: []PAYGFunding{{ProxyUserID: 8, NodeID: "node", UnitPriceMinor: 100, BalanceMinor: 100}}}
+	for _, balance := range []int64{100, -1, 0} {
+		r.funding[0].BalanceMinor = balance
+		got, err := fundedPAYGAccounts(context.Background(), r, "node")
+		if err != nil || len(got) != 1 || got[0].BalanceMinor != balance || r.accountReads != 0 {
+			t.Fatal("funding was cached or read historical inventory", got, err, r.accountReads)
+		}
+	}
+	r.err = errors.New("funding read unavailable")
+	if _, err := fundedPAYGAccounts(context.Background(), r, "node"); !errors.Is(err, r.err) || r.reads != 4 || r.accountReads != 0 {
+		t.Fatal("failed funding read fell back to another snapshot", err, r.reads, r.accountReads)
+	}
+}
 
 func TestAbsentFundingCannotTurnPAYGIntoOrdinaryAuthorization(t *testing.T) {
 	service, base, peer, master := compileCacheFixture(t)

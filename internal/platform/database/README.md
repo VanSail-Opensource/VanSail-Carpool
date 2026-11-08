@@ -53,6 +53,15 @@ No balances, usage, admission decisions or duplicate state are persisted/cached;
 exact credit expiry and settlement remain in the X-Node service.
 `xnode_runtime_reads_test.go` checks wallet/credit changes, node isolation,
 bounded connection batches and retained cadence recovery on PostgreSQL.
+`XNodePAYGFunding` projects only authorization fields through `xnode.PAYGFunding`.
+It shares the account scanner, current price resolver and funding predicate, but
+omits the historical period join. The validated account-to-period foreign key
+preserves existence; historical counters never escape this projection. Full
+accounting reads keep exact purchased/used bytes. The master prefers this optional
+read while retaining older repository fallbacks; every renewal rereads funding,
+and exact credit expiry, readiness and lease caps remain in the service.
+`xnode_runtime_reads_test.go` verifies current wallet/price/disablement changes,
+node isolation, nanosecond expiry and intact accounting counters.
 `lockPAYGOwnersTx` selects report or observation principals in bounded batches
 before locking owners in stable order. Atomic journal and financial writes keep
 their existing isolation and retry rules.

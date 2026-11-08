@@ -54,7 +54,7 @@ func (m *Master) overlayPAYG(ctx context.Context, peer *agentPeer, config wire.C
 		return config, nil
 	}
 	now := m.service.now()
-	byID := map[int]PAYGAccount{}
+	byID := map[int]PAYGFunding{}
 	admissions := map[string]bool{}
 	for _, a := range accounts {
 		if !a.HasCredit(now) {

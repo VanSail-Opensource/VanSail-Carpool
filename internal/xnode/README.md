@@ -56,6 +56,14 @@ from authorization. Subscription inventory still contains unfunded accounts.
 PAYG from scheduled resets while retaining combo/service recovery and settlement.
 `runtime_reads_test.go` checks idle observation, PAYG reset exclusion and removal
 of unfunded PAYG authorization while preserving combo users.
+`payg_funding.go` defines the private-control-plane `PAYGFunding` projection.
+Authorization uses its fresh balance, prospective price, credit and disablement
+inputs without loading historical usage. Its predicates delegate to `PAYGAccount`
+so prepaid expiry and debt rules have one implementation. The optional repository
+read and legacy fallbacks remain in `runtime_reads.go`; read errors propagate
+without reusing an older snapshot. Compilation, accounting, owner data and billing
+continue to use full accounts. Hosted runtime-read and continuity regressions
+cover projection selection, current funding, expiry caps and recovery ordering.
 
 `ddns_changes.go` accepts bounded `ddns.changes` batches only after independent
 upgrade-header and hello-capability negotiation. It validates authenticated agent

@@ -10,7 +10,18 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
-const paygSelect = `SELECT a.proxy_user_id,a.user_id,a.group_id,a.node_id,a.period_id,a.purchased_bytes,p.used_bytes,CASE WHEN pricing.dynamic_enabled=1 AND pricing.purchase_pricing_mode='DYNAMIC' THEN a.unit_price_minor ELSE COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) END,b.txb_minor,a.credit_bytes,a.credit_started_at,(COALESCE(o.payg_state,'normal')='unavailable' OR COALESCE(prefs.payg_enabled,1)=0 OR EXISTS(SELECT 1 FROM user_disabled_payg_squads disabled WHERE disabled.user_id=a.user_id AND disabled.group_id=a.group_id)),(COALESCE(pricing.dynamic_enabled,0)=1 AND COALESCE(pricing.personal_discounts_enabled,0)=1) FROM xnode_payg_accounts a JOIN xnode_periods p ON p.id=a.period_id JOIN balances b ON b.user_id=a.user_id LEFT JOIN user_preferences prefs ON prefs.user_id=a.user_id LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id LEFT JOIN pricing_product_settings pricing ON pricing.product_type='payg' AND pricing.product_id=a.group_id`
+const paygSelectHead = `SELECT a.proxy_user_id,a.user_id,a.group_id,a.node_id,a.period_id,`
+const paygFundingFields = `CASE WHEN pricing.dynamic_enabled=1 AND pricing.purchase_pricing_mode='DYNAMIC' THEN a.unit_price_minor ELSE COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) END,b.txb_minor,a.credit_bytes,a.credit_started_at,
+ (COALESCE(o.payg_state,'normal')='unavailable' OR COALESCE(prefs.payg_enabled,1)=0 OR EXISTS(SELECT 1 FROM user_disabled_payg_squads disabled WHERE disabled.user_id=a.user_id AND disabled.group_id=a.group_id)),
+ (COALESCE(pricing.dynamic_enabled,0)=1 AND COALESCE(pricing.personal_discounts_enabled,0)=1)`
+const paygFundingJoins = ` FROM xnode_payg_accounts a JOIN balances b ON b.user_id=a.user_id
+ LEFT JOIN user_preferences prefs ON prefs.user_id=a.user_id LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
+ LEFT JOIN pricing_product_settings pricing ON pricing.product_type='payg' AND pricing.product_id=a.group_id`
+const paygSelect = paygSelectHead + `a.purchased_bytes,p.used_bytes,` + paygFundingFields + paygFundingJoins + ` JOIN xnode_periods p ON p.id=a.period_id`
+
+// Zero counter slots reuse the private scanner/price resolver. Only Funding()
+// escapes this projection; public accounting reads always use paygSelect.
+const paygFundingSelect = paygSelectHead + `0,0,` + paygFundingFields + paygFundingJoins
 
 func scanPAYG(row rowScanner) (xnode.PAYGAccount, error) {
 	var a xnode.PAYGAccount
