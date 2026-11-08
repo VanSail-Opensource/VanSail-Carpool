@@ -39,6 +39,21 @@ func (a ServiceAccess) validate() error {
 	}
 }
 
+// NamedWrite resolves omitted cadence from authoritative stored terms. Empty
+// previousStrategy means a new term, which can only use a non-resetting quota.
+func (a ServiceAccess) NamedWrite(previousStrategy string) (ServiceAccess, error) {
+	if previousStrategy == "" {
+		previousStrategy = "NO_RESET"
+	}
+	if a.Strategy == "" {
+		a.Strategy = previousStrategy
+	}
+	if a.validate() != nil || a.Strategy != previousStrategy {
+		return ServiceAccess{}, ErrInvalid
+	}
+	return a, nil
+}
+
 // Equal compares access terms without depending on group order or time zones.
 func (a ServiceAccess) Equal(b ServiceAccess) bool {
 	left, right := slices.Clone(a.GroupIDs), slices.Clone(b.GroupIDs)

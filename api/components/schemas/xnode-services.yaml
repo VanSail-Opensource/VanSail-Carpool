@@ -15,7 +15,8 @@
           "WEEK",
           "MONTH",
           "MONTH_ROLLING"
-        ]
+        ],
+        "description": "Stored cadence, retained for grandfathered or imported access. New standalone terms use NO_RESET; existing cadence cannot be changed."
       },
       "startedAt": {
         "type": "string",
@@ -103,12 +104,41 @@
         "type": "string"
       },
       "access": {
-        "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess"
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limitBytes": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/limitBytes"
+          },
+          "strategy": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/strategy"
+          },
+          "startedAt": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/startedAt"
+          },
+          "expiresAt": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/expiresAt"
+          },
+          "groupIds": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/groupIds"
+          },
+          "disabled": {
+            "$ref": "../schemas/xnode-services.yaml#/XNodeServiceAccess/properties/disabled"
+          }
+        },
+        "required": [
+          "limitBytes",
+          "startedAt",
+          "expiresAt",
+          "groupIds",
+          "disabled"
+        ]
       }
     },
     "required": [
       "name",
       "access"
-    ]
+    ],
+    "description": "Standalone access write. Cadence is optional: new terms default to NO_RESET; existing terms preserve their authoritative stored cadence. An explicit cadence must be unchanged."
   }
 }

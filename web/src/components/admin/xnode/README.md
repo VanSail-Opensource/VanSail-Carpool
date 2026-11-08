@@ -161,3 +161,12 @@ Node removal uses one confirmation and the existing receipt tracker with explici
 `XNodeRemovalDialog.vue` confirms queued removal and displays explicit blockers.
 
 Node removal remains available for bound nodes. `XNodeNodes.vue` shows durable pending removal and prevents configuration/enrollment changes; `XNodeRemovalDialog.vue` explains the cascade before admission stops and displays exact resumable dependencies. Historical accounting is retained.
+
+`XNodeServiceEditor.test.ts` checks that new terms omit cadence and legacy edits
+retain their saved strategy without exposing a reset selector. The editor still
+clones existing terms, so quota edits do not mutate the loaded service object.
+Chrome DevTools checked constructed loading, populated, empty, read-error and
+save-error states at 390 px and 1440 px in Chinese and English. Keyboard creation
+omitted cadence and defaulted to `NO_RESET`; an unchanged legacy edit retained
+`DAY`. Dialogs stayed contained, drafts survived refusal, and console/network
+checks found no errors or backend requests. Hosted Actions run the regressions.

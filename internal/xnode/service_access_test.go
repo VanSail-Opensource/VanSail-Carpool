@@ -15,11 +15,16 @@ func standaloneFixture(t *testing.T, limit, used int64, strategy string) (fixtur
 	f := controlFixture(t, false)
 	ctx := context.Background()
 	access := xnode.ServiceAccess{LimitBytes: limit, Strategy: strategy, StartedAt: time.Now().UTC().Add(-31 * 24 * time.Hour), ExpiresAt: time.Now().UTC().AddDate(1, 0, 0), GroupIDs: []string{f.group.ID}}
-	saved, err := f.service.SaveNamedService(ctx, "", "standalone", access)
+	initial := access
+	initial.Strategy = "NO_RESET"
+	saved, err := f.service.SaveNamedService(ctx, "", "standalone", initial)
 	if err != nil {
 		t.Fatal(err)
 	}
 	identity := saved.Identity
+	if strategy != "NO_RESET" {
+		identity = seedLegacyServiceCadence(t, f, identity, access)
+	}
 	if identity.ProxyUserID < 1<<52 || identity.ProxyUserID >= 1<<53 {
 		t.Fatal("invalid service namespace", identity.ProxyUserID)
 	}

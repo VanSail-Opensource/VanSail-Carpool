@@ -161,19 +161,11 @@
     "add": "Add service user",
     "edit": "Edit service user",
     "quota": "Traffic quota (bytes; 0 is unlimited)",
-    "reset": "Traffic reset",
     "expiry": "Expires",
     "groups": "Access groups",
     "disabled": "Disabled",
     "empty": "No service users.",
     "subscription": "Subscription link",
-    "rotate": "Rotate subscription link",
-    "strategies": {
-      "NO_RESET": "No reset",
-      "DAY": "Daily",
-      "WEEK": "Weekly",
-      "MONTH": "Monthly",
-      "MONTH_ROLLING": "Rolling month"
-    }
+    "rotate": "Rotate subscription link"
   }
 }

@@ -52,6 +52,7 @@
           }
         }
       }
-    }
+    },
+    "description": "Edits quota, expiry, groups or disablement without resetting usage. Omitted strategy preserves existing cadence; explicit cadence must be unchanged and match the locked current accounting period. A legacy cadence without authoritative current-period proof is rejected without changing saved terms."
   }
 }

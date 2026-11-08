@@ -85,10 +85,31 @@
       "content": {
         "application/json": {
           "schema": {
-            "$ref": "../openapi.yaml#/components/schemas/XNodeNamedServiceWrite"
+            "allOf": [
+              {
+                "$ref": "../openapi.yaml#/components/schemas/XNodeNamedServiceWrite"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "access": {
+                    "type": "object",
+                    "properties": {
+                      "strategy": {
+                        "type": "string",
+                        "enum": [
+                          "NO_RESET"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       }
-    }
+    },
+    "description": "Creates a standalone term with a non-resetting quota. Omitted strategy defaults to NO_RESET; a recurring strategy is rejected without creating an identity or accounting period."
   }
 }

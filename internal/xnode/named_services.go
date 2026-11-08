@@ -39,8 +39,15 @@ func (s *Service) NamedServices(ctx context.Context) ([]NamedService, error) {
 func (s *Service) SaveNamedService(ctx context.Context, id, name string, access ServiceAccess) (NamedService, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if access.validate() != nil || len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) {
+	if len(access.GroupIDs) == 0 || access.StartedAt.After(s.now()) || !access.ExpiresAt.After(s.now()) || !wire.ValidName(name) || strings.HasPrefix(name, "_") || strings.HasPrefix(name, paygPrefix) {
 		return NamedService{}, ErrInvalid
+	}
+	var err error
+	if id == "" {
+		access, err = access.NamedWrite("")
+		if err != nil {
+			return NamedService{}, err
+		}
 	}
 	groups, err := s.repo.XNodeGroups(ctx)
 	if err != nil {
@@ -68,6 +75,10 @@ func (s *Service) SaveNamedService(ctx context.Context, id, name string, access 
 		}
 		if previous == nil || identity.ServiceName != name {
 			return NamedService{}, ErrInvalid
+		}
+		access, err = access.NamedWrite(previous.Strategy)
+		if err != nil {
+			return NamedService{}, err
 		}
 		credentials, err = loadCredentials(s.vault, identity)
 		if err != nil {

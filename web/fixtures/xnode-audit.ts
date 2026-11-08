@@ -3,7 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
-import { xnodeApi, type XNode, type XNodeGlobal, type XNodeConfiguration, type SubscriptionTemplateConfig } from '@/api/xnode'
+import { xnodeApi, type XNode, type XNodeGlobal, type XNodeConfiguration, type SubscriptionTemplateConfig, type NamedService } from '@/api/xnode'
 import { pricingAnalysisApi } from '@/api/pricingAnalysis'
 import type { OperationReceipt } from '@/api/types'
 import { adminOperationsApi } from '@/api/adminOperations'
@@ -166,12 +166,17 @@ if (params.has('ddns') || params.has('builtin-ddns')) {
   }
 }
 
-let serviceUsers = params.has('services-empty') ? [] : [{ identity: { proxyUserId: '1099511627776', userId: '', username: 'routing-service', serviceName: 'routing-service', currentPeriodId: 'service-period', accessDisabled: false, createdAt: stamp }, access: { limitBytes: '0', strategy: 'NO_RESET' as const, startedAt: stamp, expiresAt: '2027-10-17T00:00:00Z', groupIds: ['group-one'], disabled: false } }]
+let serviceUsers: NamedService[] = params.has('services-empty') ? [] : [{ identity: { proxyUserId: '1099511627776', userId: '', username: 'routing-service', serviceName: 'routing-service', currentPeriodId: 'service-period', accessDisabled: false, createdAt: stamp }, access: { limitBytes: '0', strategy: params.has('service-legacy') ? 'DAY' : 'NO_RESET', startedAt: stamp, expiresAt: '2027-10-17T00:00:00Z', groupIds: ['group-one'], disabled: false } }]
 xnodeApi.namedServices = async () => { await check('services'); if (params.has('service-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: structuredClone(serviceUsers) } }
 xnodeApi.saveNamedService = async (id, body) => {
   await check('save-service')
   if (params.has('service-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
-  const item = { identity: { ...serviceUsers[0]?.identity, proxyUserId: id || '1099511627777', userId: '', username: body.name, serviceName: body.name, currentPeriodId: 'service-period', accessDisabled: body.access.disabled, createdAt: stamp }, access: JSON.parse(JSON.stringify(body.access)) }
+  const previous = serviceUsers.find(item => item.identity.proxyUserId === id)
+  const payload = JSON.parse(JSON.stringify(body))
+  const strategy = payload.access.strategy ?? previous?.access.strategy ?? 'NO_RESET'
+  if (strategy !== (previous?.access.strategy ?? 'NO_RESET')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
+  trace.writes.push({ namedService: { id: id ?? null, ...payload }, appliedStrategy: strategy })
+  const item: NamedService = { identity: { ...previous?.identity, proxyUserId: id || '1099511627777', userId: '', username: body.name, serviceName: body.name, currentPeriodId: 'service-period', accessDisabled: body.access.disabled, createdAt: stamp }, access: { ...payload.access, strategy } }
   serviceUsers = [...serviceUsers.filter(value => value.identity.proxyUserId !== id), item]
   return item
 }

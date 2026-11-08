@@ -161,19 +161,11 @@
     "add": "添加服务用户",
     "edit": "编辑服务用户",
     "quota": "流量额度（字节，0 为不限）",
-    "reset": "流量重置",
     "expiry": "到期时间",
     "groups": "访问组",
     "disabled": "已禁用",
     "empty": "暂无服务用户。",
     "subscription": "订阅链接",
-    "rotate": "更换订阅链接",
-    "strategies": {
-      "NO_RESET": "不重置",
-      "DAY": "每日",
-      "WEEK": "每周",
-      "MONTH": "每月",
-      "MONTH_ROLLING": "滚动月"
-    }
+    "rotate": "更换订阅链接"
   }
 }

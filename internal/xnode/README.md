@@ -1112,3 +1112,16 @@ Node-level bandwidth overrides are retired. Historical encrypted settings decode
 `node_removal_routes.go` prunes typed node choices, freezes member routing saves, retains every affected revocation participant and synchronizes applied credential revocation before final retirement. `node_removal_routes_test.go` covers saved/previous choices, unrelated plans, replay and concurrent removals. Empty plans stay disabled; surviving choices reconcile after removal.
 
 `update_receipt.go` defines bounded native transaction evidence and immutable pre-dispatch intent. `update_prepare.go` resolves a stable target once inside the existing operation worker and persists it before mutation; offline/status/release dependencies use existing outbox waits. `update_wait.go` polls documented `update.status`, matches transaction ID/version/previous release and requires fresh ready/synchronized telemetry at the current revision on that same peer. `update_result.go` retains intent and sanitized native evidence on success, failure or review; utility paths never enter receipts. `command_updates.go` never repeats interrupted mutations. Only an actual completed, receipt-bound install no-op can finish without a new native transaction. `update_receipt_test.go`, `update_readiness_test.go` and `command_update_reconnect_test.go` cover mismatched IDs/versions, pending status, legacy uncertainty, stale/unready/replaced peers and reconnect confirmation. See `docs/update-reconciliation.md` for extension constraints.
+
+Named-service quota writes default to `NO_RESET` for new terms and preserve the
+authoritative stored cadence when omitted on edits. The editor exposes no reset
+control. `ServiceAccess.NamedWrite` and the database writer reject cadence changes;
+the transaction locks the current period and updates only its quota, preserving
+usage and reset evidence. Grandfathered/imported cadence readers and purchased
+legacy schedules remain compatible. A recurring term without current-period
+proof stays untouched and rejects edits; no data conversion is performed.
+Hosted named-service cadence regressions cover new/changed writes, omitted values,
+legacy edits, periodless uncertainty and accounting preservation.
+
+`named_service_cadence_test.go` verifies omitted/new cadence, unchanged legacy
+edits and rejected changes without rewriting credentials or accounting.

@@ -10,13 +10,19 @@ import (
 // SaveXNodeNamedService commits encrypted terms, authorization and quota changes
 // together. Existing usage and settled periods can never be rewritten by edits.
 func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xnode.Identity, access xnode.ServiceAccess) (xnode.Identity, error) {
-
+	created := item.ProxyUserID == 0
+	var err error
+	if created {
+		access, err = access.NamedWrite("")
+		if err != nil {
+			return item, err
+		}
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return item, err
 	}
 	defer tx.Rollback()
-	created := item.ProxyUserID == 0
 	if created {
 		query := `SELECT GREATEST(COALESCE(MAX(proxy_user_id),0),4503599627370495)+1 FROM xnode_identities`
 
@@ -29,14 +35,19 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 			return item, xnode.ErrConflict
 		}
 	}
+	previousStrategy := ""
 	if item.CurrentPeriodID != "" {
 		var status string
-		if err = tx.QueryRowContext(ctx, `SELECT status FROM xnode_periods WHERE id=$1 AND proxy_user_id=$2`, item.CurrentPeriodID, item.ProxyUserID).Scan(&status); err != nil {
+		if err = tx.QueryRowContext(ctx, `SELECT status,strategy FROM xnode_periods WHERE id=$1 AND proxy_user_id=$2 FOR UPDATE`, item.CurrentPeriodID, item.ProxyUserID).Scan(&status, &previousStrategy); err != nil {
 			return item, err
 		}
 		if status != "open" {
 			return item, xnode.ErrConflict
 		}
+	}
+	access, err = access.NamedWrite(previousStrategy)
+	if err != nil {
+		return item, err
 	}
 	if created {
 		_, err = tx.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, item.ProxyUserID, item.ServiceName, item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, boolInt(access.Disabled), stamp(time.Now().UTC()))
@@ -67,7 +78,7 @@ func (s *Store) retryAttempt_SaveXNodeNamedService(ctx context.Context, item xno
 		}
 		_, err = tx.ExecContext(ctx, `UPDATE xnode_identities SET current_period_id=$1 WHERE proxy_user_id=$2`, item.CurrentPeriodID, item.ProxyUserID)
 	} else {
-		_, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET limit_bytes=$1,strategy=$2 WHERE id=$3`, access.LimitBytes, access.Strategy, item.CurrentPeriodID)
+		_, err = tx.ExecContext(ctx, `UPDATE xnode_periods SET limit_bytes=$1 WHERE id=$2`, access.LimitBytes, item.CurrentPeriodID)
 	}
 	if err != nil {
 		return item, err

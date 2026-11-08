@@ -267,3 +267,9 @@ provides browser-only initialization and the forecast adapter.
 Stablecoin `stored` provides a masked Ethereum RPC/WS credential to exercise fresh-key validation. `secret-rejected` returns a constructed configuration refusal after local validation; drafts remain available. All values are synthetic and no chain calls run.
 
 X-Node `commands&update-review` renders retained update uncertainty; add `not-ready` for confirmed-transaction readiness waits and `zh` for Chinese. The actual command receipt component uses constructed outcomes, with no native dispatch or production calls.
+
+`xnode-audit.html?service-legacy` supplies an existing daily-cadence service term.
+The editor has no cadence selector; `window.__xnodeAudit.writes` records successful
+`namedService` request payloads plus the mock's `appliedStrategy`. New writes omit cadence and the mock defaults to
+`NO_RESET`; existing writes retain the saved value. Combine with `services-empty`,
+`service-error`, `service-save-error`, `slow`, and `zh` for the existing states.
