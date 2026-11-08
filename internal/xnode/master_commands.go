@@ -12,6 +12,12 @@ import (
 
 // Command waits outside the outbound queue so results cannot block traffic acknowledgments.
 func (m *Master) Command(ctx context.Context, nodeID, id, name string, args any) (result json.RawMessage, commandErr error) {
+	// Financial commands require the coordinator's durable reservation and exact
+	// peer binding. Never expose them through the general command entry point.
+	switch name {
+	case wire.HourlyCreditInstallCommand, wire.HourlyCreditSealCommand, wire.HourlyCreditAckCommand:
+		return nil, ErrInvalid
+	}
 	m.mu.RLock()
 	peer := m.peers[nodeID]
 	m.mu.RUnlock()

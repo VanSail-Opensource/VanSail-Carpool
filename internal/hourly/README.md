@@ -20,6 +20,13 @@ Repeated current nonces retain that original basis, and bounded recent nonce
 history rejects superseded hints. Delayed ordered input cannot become fresh after
 its original lifetime. The agent independently validates its original nonce/start.
 
+`ObserveBatch` and `AcknowledgeBatch` process at most 128 ordered items with one
+captured allocator clock and cleanup pass. They preserve each original receipt,
+return positional errors without discarding valid neighbors, and retain the
+single-item nonce/expiry/drain checks. Oversized batches fail before mutation;
+empty batches do not advance time. The receiver coalesces hints before these
+calls, so one full node snapshot does not scan all accounts for every item.
+
 `Tick(now, policies)` receives the complete current eligible policy view. All
 generations with the same opaque account ID share the held budget. Missing or
 invalid policy never grants fresh positive capacity. Decisions occur at most once
@@ -69,4 +76,9 @@ Hosted regressions use `fixtures_test.go`, `allocator_test.go`, `replay_test.go`
 `retention_test.go`, `fairness_test.go` and `capacity_test.go`. They cover restart
 quiet, two-second admission, exact ACK ordering, reconnect/generation retention,
 paid/midnight boundaries, nonce replay, capacity and atomic datagram fairness.
+`batch.go` offers bounded ordered `ObserveBatch` and `AcknowledgeBatch` calls
+with one clock/cleanup pass. `batch_test.go` checks ordered-call parity and
+original receipt times; `batch_bounds_test.go` checks expiry, clock rollback and
+empty/oversized rejection; `batch_capacity_test.go` covers all 128 owners at the
+accepted batch limit.
 Local automated suites are prohibited; static vet and formatting remain allowed.

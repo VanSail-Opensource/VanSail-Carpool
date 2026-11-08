@@ -63,6 +63,11 @@ func (a *Allocator) Observe(now time.Time, demand Demand) error {
 	if !a.advance(now) {
 		return ErrStale
 	}
+	return a.observe(now, demand)
+}
+
+// observe runs after the caller advances time while holding a.mu.
+func (a *Allocator) observe(now time.Time, demand Demand) error {
 	if !validOwner(demand.Owner) || !validPeer(demand.Peer) || !validStream(demand.Nonce) || demand.Lifetime <= 0 || demand.Lifetime > MaxLifetime || demand.MinAtomicBytes > MaxBurstBytes || demand.PendingBytes > 1<<63-1 || demand.PendingBytes > 0 && demand.MinAtomicBytes == 0 || uint64(demand.MinAtomicBytes) > demand.PendingBytes {
 		return ErrInvalid
 	}

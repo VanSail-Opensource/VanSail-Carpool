@@ -1211,3 +1211,27 @@ An exact insufficient-pool retry can additionally return
 This permits resizing an uncommitted RAM intent; context/network/unknown failures
 never carry that proof. Explicit Read Committed statement snapshots observe an
 earlier ambiguous COMMIT after its original owner lock releases.
+
+Hourly credit persistence responsibilities:
+
+- `hourly_credit.go` validates scopes and lock order; `hourly_credit_day.go`
+  creates immutable daily allowances; `hourly_credit_reserve.go` reserves bytes
+  and assigns agent-global issue sequences in the same transaction.
+- `hourly_credit_read.go` provides exact reservation/day reads;
+  `hourly_credit_outstanding.go` supplies bounded lifecycle and holding queries.
+- `hourly_credit_progress.go` validates and batches progress;
+  `hourly_credit_progress_write.go` writes directional maxima atomically.
+- `hourly_credit_digest.go` defines canonical proof hashing;
+  `hourly_credit_proof.go` commits normal/recovery partitions without refunds
+  based merely on disconnect or an uncertain command.
+- `hourly_credit_intent.go` resolves the original immutable SQL request behind
+  owner/node locks before a producer can resize an uncommitted intent.
+- Hosted `hourly_credit_fixture_test.go`, `hourly_credit_reserve_test.go`,
+  `hourly_credit_concurrency_test.go` and `hourly_credit_retry_test.go` cover
+  transaction conservation, sequencing and replay.
+- `hourly_credit_progress_test.go`, `hourly_credit_proof_test.go`,
+  `hourly_credit_digest_test.go` and `hourly_credit_wire_test.go` cover exact
+  partitions, large integers and compatibility with the pinned agent digest.
+- `hourly_credit_boundaries_test.go`, `hourly_credit_intent_test.go`,
+  `hourly_credit_redistribution_test.go` and `hourly_credit_retirement_test.go`
+  cover UTC/lifecycle fences, uncertain commits and proven unused redistribution.

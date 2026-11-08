@@ -35,6 +35,11 @@ func (a *Allocator) Acknowledge(now time.Time, ack Ack) error {
 	if !a.advance(now) {
 		return ErrStale
 	}
+	return a.acknowledge(now, ack)
+}
+
+// acknowledge runs after the caller advances time while holding a.mu.
+func (a *Allocator) acknowledge(now time.Time, ack Ack) error {
 	if !validOwner(ack.Owner) || !validPeer(ack.Peer) || !validStream(ack.Nonce) || ack.Sequence == 0 {
 		return ErrInvalid
 	}

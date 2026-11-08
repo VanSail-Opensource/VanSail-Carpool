@@ -34,3 +34,10 @@ The `Statistics` projection in `analytics.go` carries nullable upstream `lastTra
 Canonical catalog, purchase and monetary contracts: `commerce.go`.
 
 `account_lifecycle.go` defines the private generation-fenced purge target. Lifecycle status/generation/block flags in User are internal and never serialized to browsers.
+
+## Hourly accounting
+
+`hourly_credit.go` defines internal owner/generation/day byte-credit obligations,
+directional progress and immutable proof partitions. These contracts use exact
+integers; public transports must select approved fields and encode large counts
+as decimal strings. Financial obligations outlive operational account closure.

@@ -266,3 +266,10 @@ interface and its write scope. No IP persistence is introduced.
 `admin_emby_connection.go` exposes administrator-only GET/PUT `/emby-connection`: configuration flags plus an opaque version, with typed conflict/fresh-token errors. It never returns either connection secret or calls Emby. Member readiness uses the same validated atomic credential snapshot as the queued adapter.
 
 `admin_emby_connection_test.go` exercises the actual authentication/scope middleware, secret masking, atomic connection setup, stale-version rejection and both generic-setting bypass routes on PostgreSQL.
+
+## Hourly command authorization
+
+`hourly_command_boundary_test.go` checks that general native-command HTTP, queued
+service and public master entry points reject financial credit commands before
+replay, persistence or peer lookup. Only the internal durable credit coordinator
+can issue their exact authenticated arguments through the node execution queue.

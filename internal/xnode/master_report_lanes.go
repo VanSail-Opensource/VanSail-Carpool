@@ -3,6 +3,7 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -40,6 +41,7 @@ type peerReceivers struct {
 	control   *inboundLane
 	traffic   *inboundLane
 	logs      *inboundLane
+	hourly    *hourlyInboundLane
 	telemetry chan wire.Message
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
@@ -48,6 +50,10 @@ type peerReceivers struct {
 func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 	ctx, cancel := context.WithCancel(peer.ctx)
 	r := &peerReceivers{master: m, peer: peer, compute: newInboundLane(24), control: newInboundLane(64), traffic: newInboundLane(8), logs: newInboundLane(8), telemetry: make(chan wire.Message, 1), cancel: cancel}
+	if peer.hourlySession != "" {
+		r.hourly = newHourlyInboundLane()
+		r.startHourly(ctx)
+	}
 	start := func(frames <-chan wire.Message, lane *inboundLane) {
 		r.wg.Add(1)
 		go func() {
@@ -86,6 +92,7 @@ func (m *Master) startPeerReceivers(peer *agentPeer) *peerReceivers {
 }
 
 func (r *peerReceivers) stop() {
+	defer r.drainHourly()
 	r.cancel()
 	r.wg.Wait()
 	for {
@@ -101,6 +108,9 @@ func (r *peerReceivers) stop() {
 }
 
 func (r *peerReceivers) offer(message wire.Message) error {
+	if strings.HasPrefix(message.Type, "hourly.") {
+		return r.offerHourly(message)
+	}
 	switch message.Type {
 	case "compute.claim", "compute.heartbeat", "compute.result", "compute.cancel":
 		if len(message.Data) > 96<<10 {

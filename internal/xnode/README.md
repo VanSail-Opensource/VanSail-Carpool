@@ -1,5 +1,33 @@
 # X-Node control plane
 
+`hourly_coordinator.go` runs the optional two-second account rate controller;
+`hourly_policy.go` defines the future commerce policy repository and a cloned,
+four-second eligibility cache. Missing commerce support grants no hourly access.
+`hourly_connection.go` installs authority only after the supported session offer
+and hello capability, and preserves allocation on disconnect. `hourly_receive.go`
+validates live demand/individual or batched ACKs while forwarding financial
+progress after enrollment closure. `hourly_lane.go` keeps bounded hourly database
+work separate from command results and traffic acknowledgments.
+`hourly_grant_sender.go` coalesces bounded per-peer intents; `hourly_grants.go`
+sends each frame through the existing per-node queue outside all control locks.
+The independent memory-only allocator lives in `internal/hourly`; public readiness
+uses `Master.HourlyCapable` for every source/transit participant. Full behavior and
+the capability/commerce separation are in `docs/hourly-master-enforcement.md`.
+`hourly_history.go` separately gates both live negotiation and historical receipt
+advertisement on an implemented atomic history writer. Production Store leaves
+that interface absent until Task 6; mixed reports cannot be ACKed without it.
+`hourly_history_test.go` covers false readiness and ordinary-traffic continuity.
+`hourly_history_fixture_test.go` explicitly opts the synthetic credit-only test
+repository into readiness without claiming real Store history ingestion.
+
+Hosted `hourly_fixture_test.go`, `hourly_socket_test.go`, `hourly_lane_test.go`,
+`hourly_policy_test.go`, `hourly_receive_test.go`, `hourly_grants_test.go` and
+`hourly_delivery_test.go` cover TLS negotiation, replacement sessions, blocked
+credit isolation, strict policy/ACK scope and exact serialized grant delivery.
+`../httpapi/hourly_command_boundary_test.go` covers the HTTP and service boundary:
+credit installation, sealing and proof ACKs remain private coordinator operations,
+and rejection precedes receipt replay, persistence and node reads.
+
 `firewall_records.go` defines the read-only active-record search contract.
 `firewall_filter.go` compiles bounded nested AND/OR predicates; its hosted
 `firewall_filter_test.go` covers matching and expression limits.
@@ -15,9 +43,10 @@ additive `totalConnections` API field is a nullable decimal string: all scoped
 nodes must provide fresh negotiated totals. Any observed open flow means online;
 offline requires complete fresh totals of zero. Legacy positive traffic remains
 online evidence, but legacy idle reports cannot establish offline. Expiry/error
-handling still retires stale status. Connection enforcement in `master_sync.go`
-and the agent continues using sampled `connections`; no accounting, authorization,
-queue or persistence contracts change. `member_activity_test.go` covers these
+handling still retires stale status. Compatible agents enforce hard admission
+through live non-transit reservations; sampled `connections` remain observation
+inputs for the master. Native-handler and accounting completion retain their
+separate lifetimes. `member_activity_test.go` covers these
 status and compatibility boundaries in hosted CI.
 `member_connections_test.go` checks idle presence, exact totals, legacy/stale
 unknowns, residual-rate behavior and invalid counters. The socket fixtures in
@@ -1144,3 +1173,49 @@ original closure generation, recheck it after aggregation and reject any
 unfinished same-purchase period before returning a quiesced total. Node removal
 uses the mandatory removal-fenced sealer; it never invokes an unqualified
 legacy or stream participant write.
+
+`hourly_credit_*.go` extends the established per-node queue with funded-only,
+durable shared byte reservations, adaptive delivery and exact seal/ACK recovery.
+Retirement keeps offline/unknown obligations pending and preserves agent control.
+See [hourly credit delivery](../../docs/hourly-credit-delivery.md) for repository
+interfaces, worker bounds, retry ordering and lifecycle extension points.
+
+Credit delivery responsibilities:
+
+- `hourly_credit_repository.go` defines the durable production interface;
+  `hourly_credit_receive.go` authenticates progress/proofs and commits before ACK.
+- `hourly_credit_queue.go` bounds coalesced state; `hourly_credit_worker.go`
+  schedules fair work with the service clock and bounded per-agent concurrency.
+- `hourly_credit_demand.go` filters admission hints; `hourly_credit_sizing.go`
+  derives disposable throughput estimates from confirmed usage and RPC latency.
+- `hourly_credit_producer.go` reconciles retained obligations before allocation;
+  `hourly_credit_replenish.go` reserves only free or already-funded bytes.
+- `hourly_credit_intent.go` resolves uncertain SQL outcomes;
+  `hourly_credit_order.go` discovers lower issues before installing later credit.
+- `hourly_credit_delivery.go` sends exact install/seal/ACK arguments through the
+  existing node queue; `hourly_credit_retirement.go` exposes lifecycle fences.
+- Hosted `hourly_credit_integration_fixture_test.go` and
+  `hourly_credit_integration_test.go` exercise PostgreSQL and real TLS sockets.
+- `hourly_credit_intent_test.go`, `hourly_credit_order_test.go` and
+  `hourly_credit_uncertain_test.go` cover ambiguity and predecessor ordering.
+- `hourly_credit_idle_test.go`, `hourly_credit_prefetch_test.go`,
+  `hourly_credit_residual_test.go` and `hourly_credit_sizing_test.go` cover bounded
+  activity, replenishment and exact residual availability.
+- `hourly_credit_clock_test.go` checks injected-clock scheduling and retry edges.
+- `hourly_traffic_recovery_test.go` keeps complete mixed journals admissible after
+  hourly storage/admission failure without enabling live grants or commands.
+
+Hourly inbound capacity is implemented by `hourly_lane.go` (validated routing),
+`hourly_lane_control.go` and `hourly_lane_live.go` (bounded owner coalescing and
+fair live-control batches), plus `hourly_lane_financial.go` and
+`hourly_lane_financial_worker.go` (cumulative/proof retention, bounded SQL turns
+and fair retry). `hourly_lane_control_test.go` checks full 8192-owner captures,
+receipt stability and native-drain ACK ordering. `hourly_lane_financial_test.go`
+checks capacity, cancellation, conflicting scope and exact replay;
+`hourly_lane_retry_test.go` checks poisoned-proof/progress isolation.
+`hourly_lane_capacity_test.go` sends a full owner/ACK burst through TLS while
+SQL blocks and verifies native journal/command continuity. Bounds and the agent
+replay obligations are documented in `docs/hourly-master-enforcement.md`.
+
+`hourly_receive_batch_test.go` checks batched allocator admission/ACK adapters,
+original socket receipts and owner/node policy boundaries.

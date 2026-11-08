@@ -13,6 +13,8 @@ import (
 )
 
 type Master struct {
+	hourly                 *hourlyCoordinator
+	hourlyCredits          *hourlyCreditCoordinator
 	automaticLeases        *automaticLeaseManager
 	automaticFreshness     atomic.Int64
 	automaticWake          chan struct{}
@@ -50,6 +52,10 @@ type Master struct {
 func NewMaster(service *Service, logger *slog.Logger) *Master {
 	m := &Master{service: service, logger: logger, peers: map[string]*agentPeer{}, live: map[string]liveSnapshot{}, globalBlocks: map[int]bool{}, automaticLeases: newAutomaticLeaseManager(rand.Text())}
 	m.compute = newComputePool(m)
+	if m.hourlyCreditSupported() {
+		m.hourly = newHourlyCoordinator(service.now())
+		m.hourlyCredits = newHourlyCreditCoordinator()
+	}
 	service.master = m
 	m.stateWake = make(chan struct{}, 1)
 	m.firewallWake = make(chan struct{}, 1)
@@ -71,6 +77,12 @@ func (m *Master) Start(ctx context.Context) error {
 		m.configureAutomaticLeases(global)
 	}
 	m.ctx, m.cancel = context.WithCancel(ctx)
+	if m.hourly != nil {
+		m.hourly = newHourlyCoordinator(m.service.now())
+		m.wg.Add(2)
+		go m.runHourly()
+		go m.runHourlyCredits(m.ctx)
+	}
 	m.wg.Add(1)
 	go m.runAutomaticLeases()
 	if repo, ok := m.service.repo.(TrafficBatchRepository); ok {

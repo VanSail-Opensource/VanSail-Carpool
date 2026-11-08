@@ -132,6 +132,9 @@ func (s *Service) removeNode(ctx context.Context, id, actor, operation string) (
 			return false, err
 		}
 	}
+	if err = m.CloseHourlyCreditObligations(ctx, "", -1, id); err != nil {
+		return false, err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	version, err = s.removalVersion(ctx, id)

@@ -32,7 +32,7 @@ func (m *Master) persistTraffic(ctx context.Context, item TrafficCommit, encoded
 	if batcher == nil {
 		return m.service.repo.RecordXNodeTraffic(ctx, item.NodeID, item.AgentID, item.Sequence, item.Digest, item.Report)
 	}
-	size := int64(encodedBytes + len(item.Report.Samples)*512 + len(item.Report.Traffic)*64 + 256)
+	size := int64(encodedBytes + len(item.Report.Samples)*512 + len(item.Report.HourlySamples)*1024 + len(item.Report.Traffic)*64 + 256)
 	// Previously persisted large journals keep their isolated inbound execution
 	// path. They cannot consume the modern fleet's entire batch memory allowance.
 	if item.Report.StreamID == "" && size > trafficBatchFlushBytes {

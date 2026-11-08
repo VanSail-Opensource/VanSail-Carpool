@@ -12,6 +12,8 @@ import (
 )
 
 type agentPeer struct {
+	hourlySession         string // immutable: accepted format/session offer plus hello capability
+	hourlySender          *hourlyGrantSender
 	firstSync             *appliedMemberConfig // protected by mu; membership of the exact sent revision
 	logger                *slog.Logger
 	computePool           bool         // immutable, negotiated protocol extension

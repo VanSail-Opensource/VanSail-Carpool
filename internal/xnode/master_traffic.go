@@ -62,6 +62,20 @@ func (m *Master) commitTraffic(ctx context.Context, peer *agentPeer, message wir
 	if message.ID != report.ID || report.StreamID != "" && (!peer.trafficStreams || report.StreamID != peer.bootID) {
 		return ErrInvalid
 	}
+	// Historical receipts depend on authenticated stream identity, not current
+	// admission health. Store failure/revocation cannot discard a mixed journal
+	// or stall its ordinary accounting behind unavailable hourly authority.
+	if len(report.HourlySamples) > 8192 || (len(report.HourlySamples) > 0 || report.DroppedHourlySamples > 0) && report.StreamID == "" {
+		return ErrInvalid
+	}
+	if (len(report.HourlySamples) > 0 || report.DroppedHourlySamples > 0) && !m.hourlyTrafficHistoryReady() {
+		return ErrUnavailable
+	}
+	for _, sample := range report.HourlySamples {
+		if wire.ValidateHourlySample(sample) != nil {
+			return ErrInvalid
+		}
+	}
 	if report.StreamID != "" {
 		m.mu.RLock()
 		current := m.peers[peer.nodeID] == peer

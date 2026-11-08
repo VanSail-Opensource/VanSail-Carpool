@@ -52,6 +52,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, streamSupported := m.service.repo.(TrafficStreamRepository)
 	streamOffer := streamSupported && r.Header.Get(wire.TrafficStreamHeader) == wire.TrafficStreamFormat
 	responseHeaders := http.Header{}
+	hourlyOffer := m.hourlyOffer(r, responseHeaders)
 	if activityOffer {
 		responseHeaders.Set(wire.ActivityObservationsHeader, wire.ActivityObservationsFormat)
 	}
@@ -113,6 +114,10 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer queue.Shutdown(context.Background())
 	peer := &agentPeer{logger: m.logger, nodeID: node.ID, agentID: hello.AgentID, bootID: hello.BootID, socket: socket, queue: queue, ctx: ctx, cancel: cancel, revision: message.Revision, pending: map[string]chan wire.Message{}, lastControls: map[int]bool{}}
+	if hourlyOffer != "" && containsCapability(hello.Capabilities, wire.HourlyCapability) && containsCapability(hello.Capabilities, wire.TrafficStreamCapability) && wire.ValidStreamID(hello.AgentID) && wire.ValidStreamID(hello.BootID) {
+		peer.hourlySession = hourlyOffer
+		peer.hourlySender = newHourlyGrantSender()
+	}
 	peer.computePool = r.Header.Get(wire.ComputePoolHeader) == wire.ComputePoolFormat && containsCapability(hello.Capabilities, wire.ComputePoolCapability)
 	peer.compactTelemetry = compactOffer && containsCapability(hello.Capabilities, wire.CompactTelemetryCapability)
 	peer.openConnections = openConnectionsOffer && containsCapability(hello.Capabilities, wire.OpenConnectionsCapability)
@@ -131,6 +136,7 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	m.rememberNodeIPs(peer, json.RawMessage(`{}`))
 	defer func() {
+		m.disconnectHourlyPeer(peer)
 		m.mu.Lock()
 		if m.peers[node.ID] == peer {
 			delete(m.peers, node.ID)
@@ -141,6 +147,9 @@ func (m *Master) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.mu.Unlock()
 		m.wg.Done()
 	}()
+	if err = m.connectHourlyPeer(peer); err != nil {
+		return
+	}
 	if err = socket.SetReadDeadline(time.Now().Add(90 * time.Second)); err != nil {
 		return
 	}
