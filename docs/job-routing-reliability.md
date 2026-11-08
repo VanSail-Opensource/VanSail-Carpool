@@ -8,6 +8,10 @@ deactivated, and missing private recipients are terminal notification failures;
 429 honors `retry_after`, while transient provider failures retain bounded retries.
 This delivery classification never authorizes account deletion.
 
+Protected-address bank delivery remains independent of ordinary firewall/node
+enablement: connected agents must acknowledge DDNS bypass staging even when
+ban enforcement is disabled. Only retired nodes supersede that protection work.
+
 Native period closure registers admission under the period row lock before
 sending a grant. Closing fences later registration, then synchronizes and seals
 only recorded participants. Offline participants retain unfinished accounting.

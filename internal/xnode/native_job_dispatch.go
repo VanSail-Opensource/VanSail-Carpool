@@ -37,7 +37,7 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	if err != nil {
 		return err
 	}
-	if node.RetiredAt != nil || !node.Enabled || !settings.Firewall.Enabled {
+	if node.RetiredAt != nil || input.Bank != "protected" && (!node.Enabled || !settings.Firewall.Enabled) {
 		return nil // Durable removal/disable supersedes this delivery intent.
 	}
 	if !m.Connected(input.NodeID) {
