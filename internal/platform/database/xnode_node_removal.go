@@ -132,7 +132,7 @@ func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64
 // children may disappear with a never-enrolled node.
 func nodeHasHistory(ctx context.Context, tx *sql.Tx, id string) (bool, error) {
 	var used bool
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'')<>'' OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_imported_history WHERE node_id=$1) OR EXISTS(SELECT 1 FROM hourly_credit_reservations WHERE node_id=$1) FROM xnode_nodes WHERE id=$1`, id).Scan(&used); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'')<>'' OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_imported_history WHERE node_id=$1) OR EXISTS(SELECT 1 FROM hourly_credit_reservations WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_usage_minutes WHERE node_id=$1) OR EXISTS(SELECT 1 FROM xnode_usage_coverage WHERE node_id=$1) FROM xnode_nodes WHERE id=$1`, id).Scan(&used); err != nil {
 		return false, err
 	}
 	if used {

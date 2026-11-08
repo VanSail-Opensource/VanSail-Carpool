@@ -22,13 +22,11 @@ get:
 post:
   tags: [Catalog]
   operationId: createPurchase
-  summary: Purchase or renew a combo with optional squads
+  summary: Replay a historical fixed-term checkout
   description: |
-    Prices are loaded from the current catalog and debited atomically from the
-    TXB ledger. First purchases activate immediately, same-plan renewals extend
-    from the later of now or current expiry, and plan/add-on changes queue for
-    the current term boundary. No proration is performed. Repeating the same
-    caller-owned idempotency key returns the original purchase without another debit.
+    New fixed-term sales are closed. An exact owner-scoped historical request
+    returns its original purchase without another debit. Owned renewal and
+    internal reward entry points remain separate.
   parameters:
     - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
   requestBody:
@@ -39,7 +37,7 @@ post:
           $ref: '../openapi.yaml#/components/schemas/PurchaseRequest'
   responses:
     '201':
-      description: Purchase was created and its X-Node operation was queued.
+      description: Original immutable purchase returned without another debit.
       content:
         application/json:
           schema:
@@ -56,3 +54,9 @@ post:
         application/json:
           schema:
             $ref: '../openapi.yaml#/components/schemas/ApiError'
+
+    '410':
+      description: New fixed-term sales are closed (LEGACY_PURCHASE_CLOSED).
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/ApiError' }

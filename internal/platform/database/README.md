@@ -1212,6 +1212,10 @@ This permits resizing an uncommitted RAM intent; context/network/unknown failure
 never carry that proof. Explicit Read Committed statement snapshots observe an
 earlier ambiguous COMMIT after its original owner lock releases.
 
+Hourly wallet commerce, two-phase activation, readiness guards, exact settlements,
+extra-traffic consent and legacy compatibility are documented in
+[`hourly_billing.md`](hourly_billing.md).
+
 Hourly credit persistence responsibilities:
 
 - `hourly_credit.go` validates scopes and lock order; `hourly_credit_day.go`
@@ -1235,3 +1239,62 @@ Hourly credit persistence responsibilities:
 - `hourly_credit_boundaries_test.go`, `hourly_credit_intent_test.go`,
   `hourly_credit_redistribution_test.go` and `hourly_credit_retirement_test.go`
   cover UTC/lifecycle fences, uncertain commits and proven unused redistribution.
+
+Hourly administration persistence uses `hourly_settings.go` for encrypted raw
+records, ciphertext versions and the wallet transaction's shared row fence;
+`hourly_settings_save.go` commits policy CAS and redacted audit atomically.
+`hourly_offers.go` and `hourly_offers_save.go` maintain separate explicit offers,
+typed UTC timestamps and revision CAS without deriving or changing legacy prices.
+`hourly_settings_test.go` and `hourly_offers_test.go` cover competing writes,
+wallet/configuration locking, audit atomicity and group-removal behavior.
+Decryption remains outside Store; see `docs/hourly-administration.md`.
+
+Hourly native/history persistence:
+
+- `xnode_hourly_read.go` projects current owner-generation enrollment inventory
+  and exact historical scopes; `xnode_hourly_prepare.go` associates one dormant
+  encrypted identity/NO_RESET period under owner→enrollment locks.
+- `xnode_hourly_lifecycle.go` holds the shared owner lifecycle row while applying
+  bounded RAM-only stop/resume callbacks. Idle closure is superseded by a newer
+  paid/preparing benefit; purge requires exact purging generation and excludes
+  admins. `hourly_credit_through.go` inspects only a generation upper bound.
+- `hourly_stock.go` supplies sorted group-share/stock-update locks to mutating
+  hourly and legacy admissions; read-only quotes retain advisory reads.
+- `xnode_usage_scope.go` batches original paid enrollment/node validation after
+  period locks. `xnode_usage_samples.go` records accepted combo/hourly raw bytes;
+  `xnode_usage_buffer.go` stages copied per-report history until savepoint accept,
+  then bulk-writes exact numeric counts in the existing traffic transaction.
+- `xnode_usage_coverage.go` supplies readiness, first committed history floor and
+  gap/drop evidence; `xnode_usage_read.go` exposes bounded owner-scoped history
+  and incomplete/truncated coverage. Existing retention removes only disposable
+  72-hour projections; immutable financial facts/cursors/audits remain.
+- Hosted `xnode_usage_fixture_test.go`, `xnode_usage_atomic_test.go`,
+  `xnode_usage_batch_test.go`, `xnode_usage_scope_test.go` and
+  `xnode_usage_coverage_test.go` cover replay, rollback, raw/native separation,
+  historical scope, clock offset and dropped-only journals.
+  `xnode_hourly_lifecycle_test.go` covers same-generation supersession and purge
+  generation/admin guards. No local automated suites were run.
+  `hourly_stock_test.go` covers independent hourly stock on a PAYG-marked group;
+  `xnode_usage_node_test.go` preserves raw/coverage-only node history labels.
+
+Hourly commerce source inventory (details in `hourly_billing.md`):
+
+- Contracts/reads: `hourly_billing.go`, `hourly_billing_read.go`,
+  `hourly_billing_delivery.go`, `hourly_billing_proration.go`,
+  `hourly_billing_capacity.go` and `hourly_billing_capacity_test.go`.
+- Activation: `hourly_billing_prepare.go`, `hourly_billing_activation.go`,
+  `hourly_billing_cancel.go`; settlement: `hourly_billing_settlement.go`,
+  `hourly_billing_receipts.go`, `hourly_billing_disable.go`.
+- Extras: `hourly_billing_preferences.go`, `hourly_billing_extra.go`,
+  `hourly_billing_extra_read.go`; compatibility: `hourly_billing_legacy.go`,
+  `hourly_billing_stock.go`.
+- Hosted fixtures: `hourly_billing_fixture_test.go`,
+  `hourly_billing_extra_fixture_test.go`; activation/access:
+  `hourly_billing_activation_test.go`, `hourly_billing_admission_test.go`,
+  `hourly_billing_delivery_test.go`, `hourly_billing_disable_test.go`.
+- Hosted finance: `hourly_billing_settlement_test.go`,
+  `hourly_billing_wallet_test.go`, `hourly_billing_extra_test.go`,
+  `hourly_billing_extra_boundaries_test.go`, `hourly_billing_receipts_test.go`,
+  `hourly_billing_proration_test.go`.
+- Hosted compatibility/fairness: `hourly_billing_legacy_test.go`,
+  `hourly_billing_renewal_test.go`, `hourly_billing_paging_test.go`.

@@ -109,7 +109,7 @@ func (s *Service) RevokeSubscription(ctx context.Context, id string) (string, er
 	if err != nil {
 		return "", err
 	}
-	if isPAYGIdentity(identity) {
+	if isPAYGIdentity(identity) || isHourlyIdentity(identity) {
 		return "", ErrInvalid
 	}
 	if err = s.newSubscription(&identity); err != nil {

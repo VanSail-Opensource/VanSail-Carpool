@@ -41,9 +41,12 @@ func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]mode
 const squadStockQuery = `WITH selected_purchases AS (
 	SELECT ` + purchaseSquadColumns + ` FROM purchases WHERE status IN ('activating','active','queued')
 ), ` + purchaseSquadMembershipCTE + `
-SELECT o.group_id,COUNT(DISTINCT o.user_id) FROM owned_squads o
+SELECT o.group_id,COUNT(DISTINCT o.user_id) FROM (
+ SELECT group_id,user_id FROM owned_squads
+ UNION SELECT group_id,owner_id FROM hourly_enrollments WHERE status='active'
+) o
 JOIN squad_product_overrides s ON s.group_id=o.group_id
-WHERE s.stock_limit IS NOT NULL AND s.billing_mode<>'payg'
+WHERE s.stock_limit IS NOT NULL
 GROUP BY o.group_id`
 
 func (s *Store) squadStockCounts(ctx context.Context) (map[string]int, error) {

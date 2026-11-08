@@ -27,13 +27,9 @@ type HourlyPolicyRepository interface {
 
 func (m *Master) refreshHourlyPolicies(ctx context.Context) {
 	co := m.hourly
-	var policies []HourlyAccountPolicy
-	if repo, ok := m.service.repo.(HourlyPolicyRepository); ok {
-		var err error
-		policies, err = repo.HourlyEnforcementPolicies(ctx, m.service.now())
-		if err != nil {
-			policies = nil
-		}
+	policies, err := m.service.enforcementHourlyPolicies(ctx, m.service.now())
+	if err != nil {
+		policies = nil
 	}
 	now := m.service.now()
 	next := map[string]HourlyAccountPolicy{}

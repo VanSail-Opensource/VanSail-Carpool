@@ -19,7 +19,7 @@
     "coupons": "Applicable coupons",
     "noCoupons": "No applicable coupons",
     "couponTerms": "{kind} · {mode}: {value} · cap: {cap} · expires: {expires}",
-    "scope": "Combos: {combos} · Squads: {squads}",
+    "scope": "Fixed-term plans: {combos} · Squads: {squads}",
     "all": "Unrestricted",
     "loaded": "{count} products loaded",
     "loadMore": "Load next products"

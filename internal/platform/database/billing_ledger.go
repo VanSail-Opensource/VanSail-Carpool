@@ -96,7 +96,7 @@ func insertLedgerTx(ctx context.Context, tx *sql.Tx, userID string, delta, balan
 
 func memberCommerceKind(kind string) bool {
 	switch kind {
-	case "purchase_debit", "purchase_addon_debit", "automatic_renewal", "payg_gb":
+	case "purchase_debit", "purchase_addon_debit", "automatic_renewal", "payg_gb", "hourly_charge", "hourly_extra_gb":
 		return true
 	}
 	return false

@@ -1,5 +1,13 @@
 # PostgreSQL persistence
 
+Schema 44 adds forward-only combo/hourly raw minute observations, explicit
+history-start/coverage projections and enrollment compile-revision invalidation.
+Actual clock boundaries use TIMESTAMPTZ. Historical legacy period generations
+remain NULL when they were never recorded; existing purchases are not rewritten.
+Node indexes support retirement tombstone decisions without scanning all history.
+Financial debit, native quota counters and byte-credit obligations are separate
+from these disposable presentation projections.
+
 This package owns pgx connections, serializable write transactions, forward-only
 Goose migrations, schema verification, single-master ownership and recovery
 fingerprints. SQL callers author native PostgreSQL parameters and expressions;

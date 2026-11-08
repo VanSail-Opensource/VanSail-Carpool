@@ -87,6 +87,8 @@ Dashboard:
 LedgerKind:
   type: string
   enum:
+    - hourly_charge
+    - hourly_extra_gb
     - payment_credit
     - account_closure
     - payment_courtesy_credit

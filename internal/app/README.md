@@ -1,5 +1,11 @@
 # Application composition
 
+`hourly.go` attaches the hourly commerce module to the existing provider-operation
+dispatcher and outbox, and installs the master-only extra buyer before startup.
+`app.go` exposes that same service to the HTTP dependency graph; `application.go`
+retains it for `scheduler.go`'s bounded one-second/startup admission hints. No
+second executor, native queue or financial clock is introduced.
+
 `xnode_catalog_topology.go` adapts the native revision-keyed topology snapshot to
 catalog squad/node metadata in one pass. It deduplicates published inbound tags
 and group node IDs without caching commerce, permissions or live node health.

@@ -114,9 +114,15 @@ func (s *Server) purchase(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	purchase, err := s.deps.Catalog.PurchaseWithCoupon(r.Context(), user, request.ComboID, request.AddonSquadProductIDs, request.CouponGrantID, request.SquadActivationCodes, idempotencyKey, request.QuoteVersion)
+	purchase, err := s.deps.Catalog.ReplayLegacyPurchase(r.Context(), user, database.PurchaseInput{
+		ComboID: request.ComboID, AddonSquadIDs: request.AddonSquadProductIDs,
+		CouponGrantID: request.CouponGrantID, SquadActivationCodes: request.SquadActivationCodes,
+		IdempotencyKey: idempotencyKey, QuoteVersion: request.QuoteVersion,
+	})
 	if err != nil {
 		switch {
+		case errors.Is(err, catalog.ErrLegacySalesClosed):
+			s.writeError(w, r, http.StatusGone, "LEGACY_PURCHASE_CLOSED", "New fixed-term purchases are closed. Existing purchases can still renew.")
 		case errors.Is(err, database.ErrPricingQuoteChanged):
 			s.writeError(w, r, http.StatusConflict, "PRICING_QUOTE_CHANGED", "The price changed. Review the refreshed total before confirming.")
 		case errors.Is(err, database.ErrPricingDecisionPending), errors.Is(err, database.ErrPricingComputePending):

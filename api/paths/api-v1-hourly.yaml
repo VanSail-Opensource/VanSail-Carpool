@@ -1,0 +1,30 @@
+{
+  "get": {
+    "tags": [
+      "Hourly"
+    ],
+    "operationId": "getHourlyAccount",
+    "summary": "Read hourly squads, eligibility, UTC allowance and paid credit",
+    "responses": {
+      "200": {
+        "description": "Current owner-scoped state.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/HourlyAccountView"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "503": {
+        "description": "Hourly terms or dependencies are temporarily unavailable."
+      }
+    }
+  }
+}

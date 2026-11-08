@@ -1,0 +1,62 @@
+{
+  "post": {
+    "tags": [
+      "Hourly"
+    ],
+    "operationId": "activateHourlySquad",
+    "summary": "Prepare native access and charge the remaining fraction of the UTC hour",
+    "responses": {
+      "202": {
+        "description": "Durable operation receipt. Completion requires the expected native deployment.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/OperationReceipt"
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../openapi.yaml#/components/responses/BadRequest"
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "503": {
+        "description": "Hourly terms or dependencies are temporarily unavailable."
+      }
+    },
+    "parameters": [
+      {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "description": "Owner- and account-generation-scoped action key, at most96 UTF-8 bytes. Retry an uncertain action with the same key and terms.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96
+        }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/HourlyActivationRequest"
+          }
+        }
+      }
+    }
+  }
+}

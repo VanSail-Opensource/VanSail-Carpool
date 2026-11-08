@@ -49,6 +49,9 @@ func (s *Service) hostPriceLabels(ctx context.Context, user string, proxies []su
 		}
 	}
 	for _, p := range proxies {
+		if p.BillingMode == "hourly" {
+			continue // Node multipliers and PAYG prices do not price hourly ingress.
+		}
 		if price, ok := prices[p.PrincipalID]; ok && p.PrincipalID != 0 {
 			out[p.ID] = fmt.Sprintf("%d.%02d TXB/GB", price/100, price%100)
 			continue

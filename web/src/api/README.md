@@ -1,5 +1,11 @@
 # Frontend API
 
+`hourly.ts` declares owner-scoped hourly policy, offers, enrollment, daily usage
+and consent contracts. Mutations preserve decimal-string accounting, policy
+fingerprints, offer revisions and explicit idempotency keys; access changes
+return existing durable operation receipts. Browser administration uses separate
+typed policy/offer endpoints and never the generic settings writer.
+
 `requestDeadline.ts` bounds finite requests across signing, transport and body
 reads while composing caller cancellation. Routing/DIY reads and previews use
 30 seconds; saves use 60 seconds around the backend's 45-second preparation
@@ -74,3 +80,5 @@ Generated API compatibility regression: `openapiContract.test.ts`.
 `memberConnections.ts` owns private observation paging and single-IP grants.
 
 `embyConnection.ts` uses generated OpenAPI types for the atomic write-only administrator connection resource. It sends both fields and the expected version together; no credentials appear in read responses.
+
+`hourly.ts` uses generated OpenAPI schemas for owner-only hourly enrollment, explicit extra-credit consent, and independent browser administrator policy/offer CAS requests. Large integer units remain decimal strings.

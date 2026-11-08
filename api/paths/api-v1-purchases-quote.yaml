@@ -1,22 +1,19 @@
 post:
   tags: [Catalog]
   operationId: quotePurchase
-  summary: Calculate a non-mutating authoritative purchase quote
-  description: Revalidates the live combo, coupon, add-ons, active term, and upstream squad identities without debiting balance.
+  deprecated: true
+  summary: Closed new fixed-term quote entrance
+  description: Existing purchases renew through their owned renewal controls. New hourly sales use the hourly API.
   requestBody:
     required: true
     content:
       application/json:
-        schema:
-          $ref: '../openapi.yaml#/components/schemas/PurchaseRequest'
+        schema: { $ref: '../openapi.yaml#/components/schemas/PurchaseRequest' }
   responses:
-    '200':
-      description: Current price and effective entitlement dates.
+    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '410':
+      description: New fixed-term quotes are closed (LEGACY_PURCHASE_CLOSED).
       content:
         application/json:
-          schema:
-            $ref: '../openapi.yaml#/components/schemas/PurchaseQuote'
-    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
-    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
-    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }
-    '502': { $ref: '../openapi.yaml#/components/responses/UpstreamFailure' }
+          schema: { $ref: '../openapi.yaml#/components/schemas/ApiError' }

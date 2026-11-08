@@ -5,7 +5,7 @@ import { selectionHaptic } from '@/utils/telegram'
 import { isRouteChunkError } from '@/router/recovery'
 import CatalogChunkState from './CatalogChunkState.vue'
 
-const CatalogPage = defineAsyncComponent({ loader: () => import('./CatalogPage.vue'), loadingComponent: CatalogChunkState, errorComponent: CatalogChunkState, delay: 0 })
+const HourlyPage = defineAsyncComponent({ loader: () => import('@/components/hourly/HourlyPage.vue'), loadingComponent: CatalogChunkState, errorComponent: CatalogChunkState, delay: 0 })
 const PAYGPage = defineAsyncComponent({ loader: () => import('./PAYGPage.vue'), loadingComponent: CatalogChunkState, errorComponent: CatalogChunkState, delay: 0 })
 onErrorCaptured(error => isRouteChunkError(error) ? false : undefined)
 
@@ -22,7 +22,7 @@ function selectMode(next: 'payg' | 'combo'): void {
 <template>
   <div class="page catalog-experience">
     <header class="catalog-experience__header">
-      <h1 class="sr-only">{{ t(mode === 'payg' ? 'payg.title' : 'catalog.title') }}</h1>
+      <h1 class="sr-only">{{ t(mode === 'payg' ? 'payg.title' : 'hourly.title') }}</h1>
       <div class="catalog-experience__modes" role="group" :aria-label="t('payg.mode')">
         <UButton color="neutral" :variant="mode === 'payg' ? 'solid' : 'ghost'" :aria-pressed="mode === 'payg'" :label="t('payg.title')" @click="selectMode('payg')" />
         <UButton color="neutral" :variant="mode === 'combo' ? 'solid' : 'ghost'" :aria-pressed="mode === 'combo'" :label="t('payg.combo')" @click="selectMode('combo')" />
@@ -30,7 +30,7 @@ function selectMode(next: 'payg' | 'combo'): void {
     </header>
     <div :key="mode" class="catalog-experience__content">
       <PAYGPage v-if="mode === 'payg'" />
-      <CatalogPage v-else embedded />
+      <HourlyPage v-else />
     </div>
   </div>
 </template>

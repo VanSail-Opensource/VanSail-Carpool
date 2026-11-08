@@ -79,6 +79,9 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 	}
 	defer func() { _ = tx.Rollback() }()
 	var existingID, existingFingerprint string
+	if err := lockHourlyLegacyPurchaseTx(ctx, tx, input.UserID); err != nil {
+		return model.RenewalBatch{}, err
+	}
 	fingerprint := fmt.Sprintf("%s:%d", input.PurchaseID, input.TermCount)
 	err = tx.QueryRowContext(ctx, `SELECT id,request_fingerprint FROM renewal_batches WHERE user_id=$1 AND idempotency_key=$2`, input.UserID, input.IdempotencyKey).Scan(&existingID, &existingFingerprint)
 	if err == nil {
@@ -93,8 +96,14 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 	if !errors.Is(err, sql.ErrNoRows) {
 		return model.RenewalBatch{}, err
 	}
+	if err := rejectHourlyLegacyPurchaseTx(ctx, tx, input.UserID); err != nil {
+		return model.RenewalBatch{}, err
+	}
 	quote, combo, addons, err := renewalQuoteTx(ctx, tx, input.UserID, input.PurchaseID, input.TermCount, excludedAddonIDs, now.UTC())
 	if err != nil {
+		return model.RenewalBatch{}, err
+	}
+	if err := lockLegacyHourlyStockTx(ctx, tx, input.UserID, addons); err != nil {
 		return model.RenewalBatch{}, err
 	}
 	if err := validatePricingRenewalSettlementTx(ctx, tx, input.PurchaseID, addons, false, now); err != nil {
@@ -151,8 +160,8 @@ func (s *Store) renew(ctx context.Context, input RenewalInput, excludedAddonIDs 
 		if customPrice.Valid {
 			coreGross = customPrice.Int64
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,recurring_discount_attached,idempotency_key,request_fingerprint,renewal_batch_id,renewal_index,entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`, purchaseID, input.UserID, combo.ID, quote.PricePerTerm.MinorInt64(), stamp(from), stamp(until), status, quote.CouponGrantID, quote.GrossPrice.MinorInt64(), coreGross, quote.Discount.MinorInt64(), boolInt(quote.CouponGrantID != nil), requestKey, fingerprint, batchID, index,
-			traffic, reset, squads, customPrice, 1, traffic, stamp(now), stamp(now)); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,recurring_discount_attached,idempotency_key,request_fingerprint,renewal_batch_id,renewal_index,entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at,purchased_term_seconds) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`, purchaseID, input.UserID, combo.ID, quote.PricePerTerm.MinorInt64(), stamp(from), stamp(until), status, quote.CouponGrantID, quote.GrossPrice.MinorInt64(), coreGross, quote.Discount.MinorInt64(), boolInt(quote.CouponGrantID != nil), requestKey, fingerprint, batchID, index,
+			traffic, reset, squads, customPrice, 1, traffic, stamp(now), stamp(now), int64(until.Sub(from)/time.Second)); err != nil {
 			return model.RenewalBatch{}, err
 		}
 		if err := snapshotComboSquadsTx(ctx, tx, purchaseID, combo.IncludedSquads); err != nil {

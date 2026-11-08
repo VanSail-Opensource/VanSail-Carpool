@@ -31,9 +31,11 @@ const groupUsageQuery = `WITH selected_purchases AS (
  AND COALESCE(prefs.payg_enabled,1)=1 AND s.billing_mode='payg' AND s.payg_state<>'unavailable'
  AND NOT EXISTS(SELECT 1 FROM user_disabled_payg_squads d WHERE d.user_id=a.user_id AND d.group_id=a.group_id)
  AND b.txb_minor>=CASE WHEN pricing.dynamic_enabled=1 AND pricing.purchase_pricing_mode='DYNAMIC' THEN a.unit_price_minor ELSE COALESCE(NULLIF(s.payg_price_minor,0),a.unit_price_minor) END)
+ UNION SELECT e.group_id,e.owner_id FROM hourly_enrollments e WHERE e.status='active'
 ), unfinished AS (
  SELECT o.group_id FROM owned_squads o JOIN xnode_periods p ON p.purchase_id=o.purchase_id WHERE p.status<>'closed'
  UNION SELECT a.group_id FROM xnode_payg_accounts a JOIN xnode_periods p ON p.id=a.period_id WHERE p.status IN ('closing','review')
+ UNION SELECT e.group_id FROM hourly_enrollments e JOIN xnode_periods p ON p.id=e.period_id WHERE p.status IN ('closing','review')
 )
 SELECT g.id,COUNT(DISTINCT m.user_id),EXISTS(SELECT 1 FROM unfinished f WHERE f.group_id=g.id)
 FROM xnode_groups g LEFT JOIN members m ON m.group_id=g.id GROUP BY g.id`

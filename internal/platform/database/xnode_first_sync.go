@@ -19,6 +19,7 @@ func (s *Store) ConfirmXNodeFirstSync(ctx context.Context, node string, revision
  AND EXISTS(SELECT 1 FROM xnode_nodes WHERE id=$2 AND applied_revision>=$3)
  AND owner.user_id IN(
  SELECT user_id FROM xnode_identities WHERE proxy_user_id=ANY($4::bigint[]) AND user_id IS NOT NULL
- UNION SELECT user_id FROM xnode_payg_accounts WHERE proxy_user_id=ANY($4::bigint[]))`, stamp(at), node, revision, principals)
+ UNION SELECT user_id FROM xnode_payg_accounts WHERE proxy_user_id=ANY($4::bigint[])
+ UNION SELECT e.owner_id FROM hourly_enrollments e JOIN users u ON u.id=e.owner_id AND u.account_generation=e.account_generation WHERE e.proxy_user_id=ANY($4::bigint[]))`, stamp(at), node, revision, principals)
 	return err
 }

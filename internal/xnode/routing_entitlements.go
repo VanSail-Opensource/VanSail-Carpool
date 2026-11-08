@@ -31,6 +31,10 @@ func (s *Service) routingEntitlementEndpoints(ctx context.Context, user string) 
 		return in, err
 	}
 	var accounts []PAYGAccount
+	hourly, err := s.hourlyPrincipals(ctx, user, "")
+	if err != nil {
+		return in, err
+	}
 	payg := map[string]bool{}
 	if repo, ok := s.paygRepository(); ok {
 		prefs, e := repo.XNodePAYGPreferences(ctx, user)
@@ -71,6 +75,13 @@ func (s *Service) routingEntitlementEndpoints(ctx context.Context, user string) 
 				if groupEnabled[group] && account.GroupID == group && account.NodeID == endpoint.NodeID && !account.Disabled && payg[group] {
 					copy := endpoint
 					copy.ID = paygProxyID(endpoint.ID, group)
+					in.byEndpoint[copy.ID] = copy
+				}
+			}
+			for _, principal := range hourly {
+				if groupEnabled[group] && principal.GroupID == group && principal.ProxyUserID > 0 && hourlyInventoryStatus(principal) {
+					copy := endpoint
+					copy.ID = hourlyProxyID(endpoint.ID, principal.EnrollmentID)
 					in.byEndpoint[copy.ID] = copy
 				}
 			}

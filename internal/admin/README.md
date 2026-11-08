@@ -66,3 +66,11 @@ ledger references so repeated reasons remain separate audited operations.
 `user_provider_commands.go` validates manual temporary restrictions; `user_provider_worker.go` executes queued changes. `user_account_commands_test.go` covers coupon, refund and restriction command validation.
 
 `settings_emby.go` owns the write-only Emby connection interface, fresh-token retarget validation, encrypted pair updates, redacted auditing and validated runtime snapshots. Generic writes reject both connection keys. `settings_emby_test.go` covers retargeting, stale drafts, token rotation and unavailable atomic storage. Extend the dedicated interface when adding coupled Emby credentials.
+
+`hourly_policy.go` exposes validated encrypted policy snapshots and CAS writes;
+generic settings cannot bypass that interface. `hourly_offers.go` configures
+separate squad hourly prices and checks eligibility arithmetic without changing
+legacy merchandising. `hourly_policy_test.go` and `hourly_offers_test.go` cover
+strict decoding, paused-sales enforcement terms, stale drafts and invalid prices.
+Persistence commits each configuration audit atomically. Provider composition,
+units and wallet version fences are documented in `docs/hourly-administration.md`.

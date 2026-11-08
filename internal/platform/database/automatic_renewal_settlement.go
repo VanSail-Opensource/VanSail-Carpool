@@ -46,7 +46,10 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 		}
 		return model.Purchase{}, fmt.Errorf("load automatic renewal owner: %w", err)
 	}
-	if err := lockMemberPurchaseTx(ctx, tx, userID); err != nil {
+	if err := lockHourlyLegacyPurchaseTx(ctx, tx, userID); err != nil {
+		return model.Purchase{}, err
+	}
+	if err := rejectHourlyLegacyPurchaseTx(ctx, tx, userID); err != nil {
 		return model.Purchase{}, err
 	}
 	plan, err := automaticRenewalPlanTx(ctx, tx, userID, purchaseID, excludedAddonIDs, now)
@@ -55,6 +58,9 @@ func (s *Store) commitAutoRenewal(ctx context.Context, purchaseID string, exclud
 	}
 	if !plan.Purchase.AutoRenewEnabled || plan.ScheduledAt.After(now) || plan.IneligibleReason != "" {
 		return model.Purchase{}, ErrConflict
+	}
+	if err := lockLegacyHourlyStockTx(ctx, tx, userID, plan.Addons); err != nil {
+		return model.Purchase{}, err
 	}
 	if err := validatePricingRenewalSettlementTx(ctx, tx, purchaseID, plan.Addons, true, now); err != nil {
 		return model.Purchase{}, err
@@ -114,12 +120,12 @@ func insertAutomaticRenewalSuccessorTx(ctx context.Context, tx *sql.Tx, successo
 	_, err := tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,
 		gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,recurring_discount_attached,auto_renew_source_purchase_id,request_fingerprint,
 		entitlement_traffic_limit_bytes,entitlement_reset_strategy,entitlement_squad_uuids,reward_renewal_price_minor,
-		reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,'activating',$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`, successorID, userID, plan.Combo.ID, plan.NetMinor,
+		reward_traffic_renewal,reward_renewal_traffic_limit_bytes,created_at,updated_at,purchased_term_seconds)
+		VALUES($1,$2,$3,$4,$5,$6,'activating',$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`, successorID, userID, plan.Combo.ID, plan.NetMinor,
 		stamp(plan.ScheduledAt), stamp(plan.NextCycleEndsAt), couponGrantID, plan.GrossMinor, coreGross, plan.DiscountMinor, 1,
 		boolInt(plan.Purchase.RecurringDiscountAttached), purchaseID, "automatic-renewal:"+purchaseID, plan.trafficLimitOverride, plan.resetStrategyOverride,
 		plan.squadUUIDsOverride, plan.rewardRenewalPrice, boolInt(plan.rewardTrafficRenewal),
-		plan.trafficLimitOverride, stamp(now), stamp(now))
+		plan.trafficLimitOverride, stamp(now), stamp(now), int64(plan.NextCycleEndsAt.Sub(plan.ScheduledAt)/time.Second))
 	if err != nil {
 		if isUniqueConstraint(err) {
 			return ErrConflict

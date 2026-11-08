@@ -86,7 +86,7 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 		byTag[tag] = inbound
 	}
 	for _, identity := range identities {
-		if isPAYGIdentity(identity) {
+		if isPAYGIdentity(identity) || isHourlyIdentity(identity) {
 			continue
 		}
 		if identity.UserID == "" {
@@ -138,5 +138,9 @@ func (s *Service) nodeUsers(ctx context.Context, node Node, native map[string]an
 		users = append(users, user)
 	}
 	payg, err := s.paygUsers(ctx, node, byTag)
-	return append(users, payg...), err
+	if err != nil {
+		return nil, err
+	}
+	hourly, err := s.hourlyUsers(ctx, node, byTag)
+	return append(append(users, payg...), hourly...), err
 }

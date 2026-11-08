@@ -3,6 +3,10 @@ package httpapi
 import "github.com/go-chi/chi/v5"
 
 func (s *Server) mountMemberOperations(router chi.Router) {
+	router.Get("/api/v1/hourly", s.memberHourly)
+	router.Post("/api/v1/hourly/activate", s.memberHourlyActivate)
+	router.Post("/api/v1/hourly/enrollments/{id}/disable", s.memberHourlyDisable)
+	router.Put("/api/v1/hourly/extra-traffic", s.memberHourlyExtra)
 	router.Get("/api/v1/subscription", s.memberSubscription)
 	router.Get("/api/v1/subscription/connections", s.memberConnections)
 	router.Post("/api/v1/subscription/connections/leases", s.grantMemberConnection)

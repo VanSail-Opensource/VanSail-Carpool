@@ -273,3 +273,29 @@ interface and its write scope. No IP persistence is introduced.
 service and public master entry points reject financial credit commands before
 replay, persistence or peer lookup. Only the internal durable credit coordinator
 can issue their exact authenticated arguments through the node execution queue.
+
+`admin_hourly.go` exposes typed policy and offer CAS through the existing browser
+administrator/session scopes. Configuration versions and explicit decimal units
+are validated without exposing encryption material or changing legacy pricing.
+Automation needs the resource-specific X-Node read/write scope for both hourly
+policy and offers; general administrator write scope cannot change rate policy.
+
+`member_hourly.go` and `member_hourly_preferences.go` expose the signed Mini App
+hourly snapshot, queued activation/disable and extra-traffic consent. All actions
+derive owner/generation from the session. `member_hourly_errors.go` validates
+canonical decimal strings and emits stable localized error codes. The optional
+Hourly dependency leaves existing deployments/fixtures unavailable until wired;
+member routes do not preload or call browser administrator resources.
+Hosted `member_hourly_fixture_test.go`, `member_hourly_test.go`,
+`member_hourly_preferences_test.go` and `member_hourly_view_test.go` cover signed
+sessions, owner/generation isolation, large integers, malformed units, private
+queued intents, independent offer visibility, cooldowns and opt-out on policy
+failure. These tests do not claim real native or Telegram device validation.
+
+`admin_hourly_test.go` verifies resource-specific authorization, disabled defaults, explicit integer units, stale policy conflicts, and validation failures.
+`admin_hourly_input.go` requires every replacement field explicitly, preserving
+the distinction between false/zero and omitted/null settings.
+
+`legacy_sales_http_test.go` verifies closed member checkout and quote entrances
+cannot create purchases or change the wallet. Immutable checkout replay remains
+owner-bound through the catalog; owned renewal and reward entry points stay separate.

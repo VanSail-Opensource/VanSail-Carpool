@@ -11,7 +11,7 @@
 
 - IP Lookup subnet addresses add optional `ports` (the existing port/task/finding contract, at most three entries) and the `suspected` status. Red remains `flagged`; older saved rows can omit probes. Existing quote fields express free shared work with zero charge/quota, and existing progress endpoints distinguish queued from executing checks.
 
-- Active-term squad additions use `POST /api/v1/purchases/{id}/addons/quote` and idempotent `POST /api/v1/purchases/{id}/addons`; the regular purchase route remains full-term priced.
+- Active-term squad additions use `POST /api/v1/purchases/{id}/addons/quote` and idempotent `POST /api/v1/purchases/{id}/addons`; the regular purchase route accepts historical receipt replay only after new fixed-term sales close.
 
 - `openapi.yaml` is the public OpenAPI 3.1 entry point. It registers all API paths, reusable components, and the authenticated browser request-signing requirement.
 - `paths/` contains one bounded Path Item Object per API URL and an index mapping filenames to routes.
@@ -52,3 +52,5 @@ Emby connection changes use administrator GET/PUT `/api/v1/admin/emby-connection
 Provider-return status accepts a checkout-issued v2 capability or signed owner
 authentication. Capabilities expire 30 minutes after order creation; public
 navigation forwards but never issues them. Legacy links require ownership.
+
+Hourly commerce uses independent offers and enrollments; no legacy purchase is converted. Activation/disable return existing durable operation receipts, and whole-hour renewals preserve exact paid-through authorization. All large byte and monetary accounting integers remain decimal strings.

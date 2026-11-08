@@ -40,7 +40,7 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 		return model.Purchase{}, fmt.Errorf("begin purchase: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	if err := lockMemberPurchaseTx(ctx, tx, input.UserID); err != nil {
+	if err := lockHourlyLegacyPurchaseTx(ctx, tx, input.UserID); err != nil {
 		return model.Purchase{}, err
 	}
 	var existingID, existingFingerprint string
@@ -59,9 +59,15 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if !errors.Is(loadErr, sql.ErrNoRows) {
 		return model.Purchase{}, fmt.Errorf("load purchase idempotency key: %w", loadErr)
 	}
+	if err := rejectHourlyLegacyPurchaseTx(ctx, tx, input.UserID); err != nil {
+		return model.Purchase{}, err
+	}
 
 	quote, combo, addonRows, err := s.quotePurchaseTx(ctx, tx, input, now)
 	if err != nil {
+		return model.Purchase{}, err
+	}
+	if err := lockLegacyHourlyStockTx(ctx, tx, input.UserID, combo.IncludedSquads, addonRows); err != nil {
 		return model.Purchase{}, err
 	}
 
@@ -106,9 +112,9 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if input.CouponGrantID != "" {
 		couponGrantID = input.CouponGrantID
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,recurring_discount_attached,idempotency_key,request_fingerprint,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`, purchaseID, input.UserID, combo.ID, netPrice, stamp(validFrom), stamp(validUntil), status,
-		couponGrantID, quote.GrossPriceTXBMinor, combo.PriceTXBMinor, discount.DiscountMinor, 0, boolInt(discount.Recurring), input.IdempotencyKey, fingerprint, stamp(now), stamp(now))
+	_, err = tx.ExecContext(ctx, `INSERT INTO purchases(id,user_id,combo_id,charged_txb_minor,valid_from,valid_until,status,coupon_grant_id,gross_price_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,auto_renew_enabled,recurring_discount_attached,idempotency_key,request_fingerprint,created_at,updated_at,purchased_term_seconds)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, purchaseID, input.UserID, combo.ID, netPrice, stamp(validFrom), stamp(validUntil), status,
+		couponGrantID, quote.GrossPriceTXBMinor, combo.PriceTXBMinor, discount.DiscountMinor, 0, boolInt(discount.Recurring), input.IdempotencyKey, fingerprint, stamp(now), stamp(now), int64(quote.ExpiresAt.Sub(quote.EffectiveAt)/time.Second))
 	if err != nil {
 		return model.Purchase{}, fmt.Errorf("insert purchase: %w", err)
 	}

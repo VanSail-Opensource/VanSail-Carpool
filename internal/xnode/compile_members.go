@@ -23,8 +23,8 @@ func (r *compileReads) preloadMembers(ctx context.Context, identities []Identity
 	}
 	ids := []string{}
 	for _, identity := range identities {
-		if identity.UserID != "" {
-			ids = append(ids, identity.UserID)
+		if identity.MemberOwnerID() != "" {
+			ids = append(ids, identity.MemberOwnerID())
 		}
 	}
 	if len(ids) == 0 {

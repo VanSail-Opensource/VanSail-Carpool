@@ -13,7 +13,7 @@
     "editNamed": "编辑 {name}",
     "hideNamed": "隐藏 {name}",
     "noCombos": "暂无套餐",
-    "noCombosHint": "创建首个套餐以开放目录。",
+    "noCombosHint": "配置固定期限条款，用于原有套餐续费和管理员发放权益。",
     "squads": "内部节点组",
     "squadsHint": "身份来自实时 X-Node 节点组；本地仅保存非默认展示和价格设置。",
     "refreshSquads": "刷新节点组",

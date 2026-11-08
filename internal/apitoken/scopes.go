@@ -55,7 +55,7 @@ func (p Principal) AllowsRequest(method, path string) bool {
 	if strings.HasPrefix(resource, "operations/") && !write {
 		return p.Allows("admin", false) || p.Allows("xnode", false)
 	}
-	if resource == "xnode" || strings.HasPrefix(resource, "xnode/") {
+	if resource == "xnode" || strings.HasPrefix(resource, "xnode/") || resource == "hourly-policy" || strings.HasPrefix(resource, "hourly-policy/") || resource == "hourly-offers" || strings.HasPrefix(resource, "hourly-offers/") {
 		return p.Allows("xnode", write)
 	}
 	return p.Allows("admin", write)

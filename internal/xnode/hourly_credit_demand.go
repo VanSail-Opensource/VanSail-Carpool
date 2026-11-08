@@ -12,6 +12,17 @@ const hourlyCreditDemandFreshness = 4 * time.Second
 // Hints are coalesced wakeups, never authority to buy or refund traffic. A nil
 // batch wakes initial reconnect reconciliation even without an eligible owner.
 func (m *Master) requestHourlyCredit(peer *agentPeer, items []wire.HourlyDemand) {
+	inputs := make([]hourlyInboundDemand, len(items))
+	now := m.service.now()
+	for i, item := range items {
+		inputs[i] = hourlyInboundDemand{demand: item, receivedAt: now, latestAt: now}
+	}
+	m.requestObservedHourlyCredit(peer, inputs)
+}
+
+// Keep the socket receipt through coalescing; worker delay never makes demand
+// fresh again or authorizes an extra block from a zero/activity-only hint.
+func (m *Master) requestObservedHourlyCredit(peer *agentPeer, items []hourlyInboundDemand) {
 	if !m.currentHourlyCreditPeer(peer) || m.hourlyCredits == nil {
 		return
 	}
@@ -22,14 +33,15 @@ func (m *Master) requestHourlyCredit(peer *agentPeer, items []wire.HourlyDemand)
 		return
 	}
 	now := m.service.now()
-	eligible := make([]wire.HourlyDemand, 0, len(items))
+	eligible := make([]hourlyInboundDemand, 0, len(items))
 	positive := false
-	for _, item := range items {
-		if wire.ValidateHourlyDemand(item) != nil {
+	for _, input := range items {
+		item := input.demand
+		if wire.ValidateHourlyDemand(item) != nil || input.latestAt.IsZero() || now.Before(input.latestAt) || now.Sub(input.latestAt) > hourlyCreditDemandFreshness {
 			continue
 		}
 		if _, ok := m.hourlyPolicy(item.Owner, peer.nodeID, now); ok {
-			eligible = append(eligible, item)
+			eligible = append(eligible, input)
 			positive = positive || item.PendingBytes > 0
 		}
 	}
@@ -51,7 +63,8 @@ func (m *Master) requestHourlyCredit(peer *agentPeer, items []wire.HourlyDemand)
 			c.hintCount--
 		}
 	}
-	for _, item := range eligible {
+	for _, input := range eligible {
+		item := input.demand
 		if _, exists := state.hints[item.Owner]; !exists {
 			if c.hintCount >= maxHourlyCreditDemandHints {
 				continue
@@ -60,9 +73,9 @@ func (m *Master) requestHourlyCredit(peer *agentPeer, items []wire.HourlyDemand)
 		}
 		active := state.hints[item.Owner].activeAt
 		if item.PendingBytes > 0 {
-			active = now
+			active = input.latestAt
 		}
-		state.hints[item.Owner] = hourlyCreditHint{demand: item, seenAt: now, activeAt: active}
+		state.hints[item.Owner] = hourlyCreditHint{demand: item, seenAt: input.latestAt, activeAt: active}
 	}
 	if state.work || hourlyCreditHasDemand(state, now) || len(state.pending)+len(state.intents) > 0 {
 		c.signal()

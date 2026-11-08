@@ -131,3 +131,14 @@ advance its confirmed-use projection while keeping the original proof digest.
 No customer, purchase, native accounting period or wallet entry is converted.
 Hourly sales and paid-extra funding remain unavailable until their commerce and
 verified-agent compatibility gates are delivered.
+
+`00043_hourly_commerce.sql` adds independent offers, unpaid activation intents,
+immutable UTC-hour/decimal-GB receipts and explicit opt-in preferences. Typed
+PostgreSQL timestamps avoid lexical RFC3339 fraction ordering at hour boundaries.
+Future fixed-term purchases record immutable original validity; existing NULL
+snapshots remain unknown. No existing customer, purchase or wallet is converted.
+
+`00044_hourly_usage_history.sql` adds forward-only raw traffic and coverage
+evidence. The existing journal transaction and cursor deduplicate accepted
+samples. It also invalidates disposable native compilation when hourly access
+changes; minute history never becomes an additional debit or quota source.

@@ -127,7 +127,7 @@
     "meta": "{actor} · {target} · {date}",
     "system": "系统",
     "none": "暂无审计事件",
-    "noneHint": "管理员使用控制台后，变更会显示在这里。"
+    "noneHint": "已接受或已发放的固定期限套餐会显示在这里。"
   },
   "adminEntitlements": {
     "title": "权益",
@@ -141,7 +141,7 @@
     "loadMore": "加载更多权益",
     "summary": "用户 {user} / {from} 至 {to}",
     "none": "当前视图暂无权益",
-    "noneHint": "用户选择套餐后，购买会显示在这里。",
+    "noneHint": "已接受或已发放的固定期限套餐会显示在这里。",
     "cancelTitle": "取消此权益？",
     "cancelDescription": "已收取的 TXB 金额会退回，活跃访问将通过同步任务撤销。",
     "cancelEntitlement": "取消权益"

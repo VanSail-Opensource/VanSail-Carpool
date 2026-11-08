@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
@@ -25,27 +24,7 @@ func (s *Server) purchaseQuote(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "Select a combo to continue.")
 		return
 	}
-	quote, err := s.deps.Catalog.Quote(r.Context(), user, request.ComboID, request.AddonSquadProductIDs, request.CouponGrantID)
-	if err != nil {
-		status := http.StatusConflict
-		code := "QUOTE_FAILED"
-		if errors.Is(err, database.ErrPricingDecisionPending) || errors.Is(err, database.ErrPricingComputePending) {
-			code = "PRICING_DECISION_PENDING"
-		}
-		if errors.Is(err, catalog.ErrNoAccessibleNodes) {
-			code = "NO_ACCESSIBLE_NODES"
-		}
-		if errors.Is(err, database.ErrStockUnavailable) {
-			code = "SQUAD_STOCK_UNAVAILABLE"
-		}
-		if errors.Is(err, database.ErrNotFound) {
-			status = http.StatusNotFound
-			code = "CATALOG_ITEM_NOT_FOUND"
-		}
-		s.writeError(w, r, status, code, "The selected price or entitlement is no longer available.")
-		return
-	}
-	writeJSON(w, http.StatusOK, quote)
+	s.writeError(w, r, http.StatusGone, "LEGACY_PURCHASE_CLOSED", "New fixed-term purchases are closed. Existing purchases can still renew.")
 }
 
 func (s *Server) purchases(w http.ResponseWriter, r *http.Request) {

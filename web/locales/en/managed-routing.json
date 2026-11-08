@@ -57,7 +57,7 @@
     },
     "endpointLabel": "{name} · {mode} · {address}:{port}",
     "billingModes": {
-      "combo": "Legacy combo",
+      "combo": "Legacy fixed-term plan",
       "payg": "Charge by traffic"
     }
   },

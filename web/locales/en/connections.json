@@ -5,7 +5,7 @@
     "ipPlaceholder": "IPv4 or IPv6 address",
     "grantHelp": "Add one public IP for the configured lease duration. Adding it again does not extend its expiry.",
     "add": "Add IP",
-    "grantUnavailable": "Adding an IP requires completed onboarding, an eligible account, an active combo or positive PAYG balance, and enabled automatic leases.",
+    "grantUnavailable": "Adding an IP requires completed onboarding, an eligible account, an active fixed-term plan, prepaid hourly access or positive traffic balance, and enabled automatic leases.",
     "initial": "Initial lease time",
     "observed": "Last observed",
     "expiry": "Expires",

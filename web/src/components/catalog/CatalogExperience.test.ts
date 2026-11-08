@@ -6,9 +6,9 @@ import CatalogExperience from './CatalogExperience.vue'
 const button = { props: ['label'], emits: ['click'], template: '<div role="button" tabindex="0" @click="$emit(\'click\')">{{ label }}</div>' }
 // Async wrappers cannot infer props for automatic boolean stubs. Declare the
 // child contracts explicitly and select the uniquely named stub components.
-const CatalogPage = { name: 'ComboContentStub', props: { embedded: Boolean }, emits: ['ready'], template: '<div />' }
+const HourlyPage = { name: 'HourlyContentStub', template: '<div />' }
 const PAYGPage = { name: 'PAYGContentStub', props: { entranceReady: Boolean }, emits: ['ready'], template: '<div />' }
-const stubs = { UButton: button, Button: button, CatalogPage, PAYGPage }
+const stubs = { UButton: button, Button: button, HourlyPage, PAYGPage }
 vi.mock('@/utils/telegram', () => ({ selectionHaptic: vi.fn() }))
 vi.mock('@/composables/useMotionPreferences', async () => {
   const { shallowRef } = await import('vue')
@@ -16,19 +16,18 @@ vi.mock('@/composables/useMotionPreferences', async () => {
 })
 
 describe('CatalogExperience', () => {
-  it('opens PAYG without mounting the gated combo flow and switches both ways', async () => {
+  it('opens traffic billing and mounts hourly access only when selected', async () => {
     vi.mocked(selectionHaptic).mockClear()
     const wrapper = mount(CatalogExperience, { global: { stubs } })
     await flushPromises()
     expect(wrapper.findComponent(PAYGPage).exists()).toBe(true)
-    expect(wrapper.findComponent(CatalogPage).exists()).toBe(false)
+    expect(wrapper.findComponent(HourlyPage).exists()).toBe(false)
     await wrapper.findAll('[role=button]')[0]!.trigger('click')
     expect(selectionHaptic).not.toHaveBeenCalled()
     await wrapper.findAll('[role=button]')[1]!.trigger('click')
     await flushPromises()
     expect(selectionHaptic).toHaveBeenCalledTimes(1)
-    expect(wrapper.findComponent(CatalogPage).exists()).toBe(true)
-    expect(wrapper.findComponent(CatalogPage).props('embedded')).toBe(true)
+    expect(wrapper.findComponent(HourlyPage).exists()).toBe(true)
     expect(wrapper.get('.catalog-experience__content').attributes()).not.toHaveProperty('inert')
     expect(wrapper.find('.mode-transition').exists()).toBe(false)
     await wrapper.findAll('[role=button]')[0]!.trigger('click')

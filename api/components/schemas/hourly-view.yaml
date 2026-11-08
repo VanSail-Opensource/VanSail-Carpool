@@ -1,0 +1,155 @@
+HourlyAccountUsage: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "dayUTC",
+      "freeAllowanceBytes",
+      "freeUsedBytes",
+      "freeReservedBytes",
+      "extraFundedBytes",
+      "extraUsedBytes",
+      "extraReservedBytes",
+      "extraExpiresAt",
+      "reducedRateBytesPerSecond",
+      "accountingPending"
+    ],
+    "properties": {
+      "dayUTC": {
+        "type": "string",
+        "format": "date"
+      },
+      "freeAllowanceBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "freeUsedBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "freeReservedBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "extraFundedBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "extraUsedBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "extraReservedBytes": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "extraExpiresAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "reducedRateBytesPerSecond": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "accountingPending": {
+        "type": "boolean"
+      }
+    }
+  }
+
+HourlySquadView: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "offer",
+      "squad",
+      "enrollment",
+      "ready",
+      "reasonCode",
+      "cooldownUntil",
+      "requiredBalance"
+    ],
+    "properties": {
+      "offer": {
+        "$ref": "../../openapi.yaml#/components/schemas/HourlyOffer"
+      },
+      "squad": {
+        "$ref": "../../openapi.yaml#/components/schemas/SquadProduct"
+      },
+      "enrollment": {
+        "anyOf": [
+          {
+            "$ref": "../../openapi.yaml#/components/schemas/HourlyEnrollment"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "ready": {
+        "type": "boolean"
+      },
+      "reasonCode": {
+        "type": "string"
+      },
+      "cooldownUntil": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "requiredBalance": {
+        "anyOf": [
+          {
+            "$ref": "../../openapi.yaml#/components/schemas/Money"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  }
+
+HourlyAccountView: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "policy",
+      "balance",
+      "legacyBlocked",
+      "extraPreference",
+      "usage",
+      "squads"
+    ],
+    "properties": {
+      "policy": {
+        "$ref": "../../openapi.yaml#/components/schemas/HourlyPolicySnapshot"
+      },
+      "balance": {
+        "$ref": "../../openapi.yaml#/components/schemas/Money"
+      },
+      "legacyBlocked": {
+        "type": "boolean"
+      },
+      "extraPreference": {
+        "$ref": "../../openapi.yaml#/components/schemas/HourlyExtraPreference"
+      },
+      "usage": {
+        "anyOf": [
+          {
+            "$ref": "../../openapi.yaml#/components/schemas/HourlyAccountUsage"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "squads": {
+        "type": "array",
+        "items": {
+          "$ref": "../../openapi.yaml#/components/schemas/HourlySquadView"
+        }
+      }
+    }
+  }

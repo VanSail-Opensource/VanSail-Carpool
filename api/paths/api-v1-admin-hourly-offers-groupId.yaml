@@ -1,0 +1,74 @@
+{
+  "put": {
+    "tags": [
+      "Admin"
+    ],
+    "operationId": "saveAdminHourlyOffer",
+    "summary": "Save a squad hourly offer without changing legacy purchases",
+    "responses": {
+      "200": {
+        "description": "Current owner-scoped state.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../openapi.yaml#/components/schemas/HourlyOffer"
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../openapi.yaml#/components/responses/BadRequest"
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
+      },
+      "422": {
+        "$ref": "../openapi.yaml#/components/responses/Unprocessable"
+      },
+      "503": {
+        "description": "Hourly terms or dependencies are temporarily unavailable."
+      },
+      "404": {
+        "$ref": "../openapi.yaml#/components/responses/NotFound"
+      }
+    },
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "description": "Requires xnode:read for reads or xnode:write for changes; admin:write alone does not authorize hourly control.",
+    "parameters": [
+      {
+        "name": "groupId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../openapi.yaml#/components/schemas/HourlyOfferWrite"
+          }
+        }
+      }
+    }
+  }
+}

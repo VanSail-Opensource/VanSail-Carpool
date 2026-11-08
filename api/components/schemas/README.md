@@ -114,3 +114,5 @@ The optional global setting field preserves older full-document writers.
 `ip-lookup-enhanced.yaml` now contains only the identity-free exact-address shared progress response. Inventory, probe and subnet schemas are retired; reputation and network context remain typed separately.
 
 `emby-connection.yaml` defines the write-only encrypted integration connection view and version-checked write, with explicit URL/token length limits and no secret readback.
+
+`hourly-policy.yaml`, `hourly-commerce.yaml`, and `hourly-view.yaml` define exact decimal-string accounting units, independent offers, nullable paid boundaries, explicit extra-credit consent, and owner-scoped eligibility projections.

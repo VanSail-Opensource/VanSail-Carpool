@@ -4,7 +4,7 @@ import { shallowRef, watch } from 'vue'
 import type { SquadProduct } from '@/api/types'
 
 const open = defineModel<boolean>('open', { required: true })
-const props = defineProps<{ squad: SquadProduct | null }>()
+const props = withDefaults(defineProps<{ squad: SquadProduct | null; busy?: boolean; error?: string | null }>(), { busy: false, error: null })
 const emit = defineEmits<{ submit: [code: string]; cancel: [] }>()
 const code = shallowRef('')
 
@@ -14,7 +14,7 @@ watch(open, (visible) => {
 
 function submit(): void {
   const value = code.value.trim()
-  if (!value) return
+  if (!value || props.busy) return
   emit('submit', value)
 }
 
@@ -32,12 +32,13 @@ function cancel(close: () => void): void {
         <strong>{{ props.squad?.name }}</strong>
       </div>
       <UFormField :label="$t('catalog.activationCodeLabel')" :description="$t('catalog.activationCodeHint')">
-        <UInput v-model="code" type="password" autocomplete="one-time-code" inputmode="text" autofocus />
+        <UInput v-model="code" type="password" autocomplete="one-time-code" inputmode="text" :disabled="busy" autofocus @keydown.enter.prevent="submit" />
       </UFormField>
+      <UAlert v-if="error" color="warning" variant="soft" :title="error" class="mt-4" />
     </template>
     <template #footer="{ close }">
-      <UButton color="neutral" variant="outline" :label="$t('common.cancel')" data-haptic="dismiss" @click="cancel(close)" />
-      <UButton :label="$t('catalog.activationContinue')" :disabled="!code.trim()" data-haptic="confirm" @click="submit" />
+      <UButton color="neutral" variant="outline" :label="$t('common.cancel')" :disabled="busy" data-haptic="dismiss" @click="cancel(close)" />
+      <UButton :label="$t('catalog.activationContinue')" :disabled="!code.trim() || busy" :loading="busy" data-haptic="confirm" @click="submit" />
     </template>
   </UModal>
 </template>

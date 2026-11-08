@@ -5,7 +5,7 @@
     "ipPlaceholder": "IPv4 或 IPv6 地址",
     "grantHelp": "添加单个公网 IP，租期使用已配置的时长。重复添加不会延长到期时间。",
     "add": "添加 IP",
-    "grantUnavailable": "添加 IP 需要完成引导、账户状态正常、持有生效套餐或 PAYG 余额为正，并已启用自动租约。",
+    "grantUnavailable": "添加 IP 需要完成引导、账户状态正常、持有生效的固定期限套餐、已预付费的小时权益或按流量计费余额为正，并已启用自动租约。",
     "initial": "初始租约时间",
     "observed": "最后观测时间",
     "expiry": "到期时间",

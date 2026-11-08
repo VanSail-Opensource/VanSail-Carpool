@@ -64,3 +64,7 @@ checkout continues using exact transactional admission.
 
 Automatic-renewal eligibility and preference selection independent of wallet sufficiency: `automatic_renewal.go`, `automatic_renewal_selection.go`.
 Unexpected quote or settlement errors remain retryable and are reported to the scheduler; only established business outcomes produce terminal member failure notices. Failure recording serializes with settlement, checks for a successor and retires stale preferences on superseded terms without sending a failure notice. The member failure projection hides failures from terms superseded by a later live entitlement.
+
+`legacy_sales.go` admits only exact historical member checkout replay after new fixed-term sales close. Internal rewards and owned manual/automatic renewals retain their existing coupon and accounting behavior. New storefront sales use independent hourly offers.
+
+`legacy_sales_test.go` verifies owner-bound immutable replay, conflict preservation, and denial of new member fixed-term purchases.

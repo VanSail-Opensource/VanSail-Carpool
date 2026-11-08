@@ -41,3 +41,20 @@ Canonical catalog, purchase and monetary contracts: `commerce.go`.
 directional progress and immutable proof partitions. These contracts use exact
 integers; public transports must select approved fields and encode large counts
 as decimal strings. Financial obligations outlive operational account closure.
+
+`hourly_policy.go` defines explicit administrator units, disabled-by-default
+policies and independent squad offers. `hourly_commerce.go` defines activation
+scopes, immutable hour/GB receipts and opt-in price consent. Principal IDs and
+lifecycle generations stay private; large public counts use decimal strings.
+`Purchase.PurchasedTermSeconds` records future original purchased validity;
+older terms are neither inferred nor rewritten.
+
+`hourly_validation.go` shares strict policy units and overflow-safe activation
+eligibility across administration and wallet entry points. Eligibility does not
+reserve or debit the threshold amount.
+
+`hourly_view.go` defines owner-scoped catalog, readiness and committed daily
+traffic projections without exposing credentials or live rate allocations.
+
+`hourly_validation_test.go` covers disabled defaults, explicit invalid units,
+duration and eligibility multiplication bounds, and exact decimal-string JSON.

@@ -127,7 +127,7 @@
     "meta": "{actor} · {target} · {date}",
     "system": "System",
     "none": "No audit events",
-    "noneHint": "Changes appear here as administrators use the console."
+    "noneHint": "Fixed-term purchases appear here when accepted or granted."
   },
   "adminEntitlements": {
     "title": "Entitlements",
@@ -141,7 +141,7 @@
     "loadMore": "Load more entitlements",
     "summary": "User {user} / {from} to {to}",
     "none": "No entitlements in this view",
-    "noneHint": "Purchases appear here once users select a combo.",
+    "noneHint": "Fixed-term purchases appear here when accepted or granted.",
     "cancelTitle": "Cancel this entitlement?",
     "cancelDescription": "The charged TXB amount will be credited back. Active access will be revoked through a synchronization job.",
     "cancelEntitlement": "Cancel entitlement"

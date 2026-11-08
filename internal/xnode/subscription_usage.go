@@ -30,6 +30,9 @@ func (s *Service) subscriptionUsage(ctx context.Context, identity Identity, resu
 		}
 		return nil
 	}
+	if hourly, err := s.hourlySubscriptionUsage(ctx, identity.UserID, result); err != nil || hourly {
+		return err
+	}
 	r, ok := s.paygRepository()
 	if !ok {
 		return nil

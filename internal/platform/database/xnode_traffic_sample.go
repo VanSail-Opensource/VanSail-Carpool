@@ -59,6 +59,11 @@ func recordXNodeSample(ctx context.Context, tx *sql.Tx, node string, multiplier 
 	if err != nil {
 		return err
 	}
+	if !period.payg {
+		if err = recordComboUsageTx(ctx, tx, node, sample, period, history); err != nil {
+			return err
+		}
+	}
 	if buffer != nil {
 		return buffer.stage(key, next, weighted)
 	}

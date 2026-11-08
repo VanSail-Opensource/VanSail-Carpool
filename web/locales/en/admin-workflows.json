@@ -2,7 +2,7 @@
   "adminRefundQuote": {
     "paid": "Net paid",
     "traffic": "Used / whole-term traffic",
-    "hint": "Based on unused traffic across the whole combo. You can edit the amount.",
+    "hint": "Based on unused traffic across the whole fixed-term plan. You can edit the amount.",
     "unavailable": "Traffic could not be verified. Retry or enter a refund amount manually."
   },
   "adminUserProfile": {
@@ -16,14 +16,14 @@
     "remoteId": "X-Node ID",
     "notAvailable": "Not available",
     "validity": "{from} to {to}",
-    "noActiveCombo": "No active combo",
+    "noActiveCombo": "No active fixed-term plan",
     "noActiveComboHint": "This member has no currently active entitlement.",
     "sync": {
       "synchronized": "Synchronized",
       "pending": "Sync pending",
       "failed": "Sync failed",
       "not_provisioned": "Not provisioned",
-      "payg_funded": "PAYG funded"
+      "payg_funded": "Charge by traffic funded"
     },
     "loading": "Loading member profile",
     "unavailable": "Profile unavailable",
@@ -54,7 +54,7 @@
     "refund": "Refund",
     "noEntitlements": "No entitlements",
     "noEntitlementsHint": "This member has no recorded access yet.",
-    "combo": "Combo",
+    "combo": "Fixed-term plan",
     "validFrom": "Valid from",
     "validUntil": "Valid until",
     "status": "Status",
@@ -167,7 +167,7 @@
     "title": "Extend active members",
     "copy": "Extend every matching active member and shift each queued successor by the same exact duration.",
     "orHint": "Filters use inclusive OR. Each member is counted once.",
-    "combos": "Combos",
+    "combos": "Fixed-term plans",
     "addons": "Optional squads",
     "amount": "Extension amount",
     "unit": "Unit",

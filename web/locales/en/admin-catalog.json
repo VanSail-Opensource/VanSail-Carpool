@@ -1,9 +1,9 @@
 {
   "adminCatalog": {
     "title": "Catalog",
-    "copy": "Manage live combo terms and sparse overrides for upstream X-Node squads.",
+    "copy": "Manage live fixed-term plan terms and sparse overrides for upstream X-Node squads.",
     "chooseRecord": "Choose a catalog record.",
-    "newCombo": "New combo",
+    "newCombo": "New fixed-term plan",
     "comboSummary": "{traffic} for {days} days",
     "available": "Available",
     "paused": "Paused",
@@ -12,24 +12,24 @@
     "statisticsTitle": "{name} statistics",
     "editNamed": "Edit {name}",
     "hideNamed": "Hide {name}",
-    "noCombos": "No combos",
-    "noCombosHint": "Create the first plan to open the catalog.",
+    "noCombos": "No fixed-term plans",
+    "noCombosHint": "Configure fixed-term terms for grandfathered renewals and administrator grants.",
     "squads": "Internal squads",
     "squadsHint": "Identity comes from live X-Node squads; only non-default display and price values are stored locally.",
     "refreshSquads": "Refresh squads",
     "noSquads": "No upstream squads",
     "noSquadsHint": "Refresh from X-Node to configure optional access.",
-    "hideTitle": "Hide this combo?",
-    "hideDescription": "The combo is hidden from new checkout. Existing and historical purchases keep their live reference, so later edits still affect them.",
-    "hideCombo": "Hide combo"
+    "hideTitle": "Hide this fixed-term plan?",
+    "hideDescription": "The fixed-term plan is hidden from new checkout. Existing and historical purchases keep their live reference, so later edits still affect them.",
+    "hideCombo": "Hide fixed-term plan"
   },
   "adminCatalogEditor": {
     "edit": "Edit {name}",
-    "new": "New combo",
-    "close": "Close combo editor",
+    "new": "New fixed-term plan",
+    "close": "Close fixed-term plan editor",
     "name": "Name",
     "description": "Description",
-    "descriptionPlaceholder": "Describe the combo",
+    "descriptionPlaceholder": "Describe the fixed-term plan",
     "price": "Price",
     "validityDays": "Validity days",
     "trafficLimit": "Traffic limit",
@@ -46,7 +46,7 @@
     "noSquads": "Refresh X-Node squads before assigning them.",
     "available": "Available to users",
     "liveTermsHint": "Hiding blocks new checkout. Changes to this live record affect active, queued, and historical purchases.",
-    "save": "Save combo",
+    "save": "Save fixed-term plan",
     "invalidFields": "Check the name, price, traffic, quotas and validity before saving."
   }
 }

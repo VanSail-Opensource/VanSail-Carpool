@@ -31,6 +31,7 @@ type compileReads struct {
 	periods          map[string]Period
 	disabled         map[string][]string
 	restricted       map[string]bool
+	hourly           map[string][]HourlyPrincipal
 }
 
 func (s *Service) withCompileReads(node ...string) *Service {
@@ -45,6 +46,8 @@ func (s *Service) withCompileReads(node ...string) *Service {
 	}
 	next := NewService(repo, s.settings, s.vault, s.publicURL, s.validationQueue)
 	next.master, next.now = s.master, s.now
+	next.hourlyPolicyProvider = s.hourlyPolicyProvider
+	next.hourlyExtraBuyer = s.hourlyExtraBuyer
 	next.policyAssets = s.policyAssets
 	next.routingAssets = s.routingAssets
 	next.routingOverrides = s.routingOverrides

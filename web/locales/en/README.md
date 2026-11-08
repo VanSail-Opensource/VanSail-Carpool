@@ -1,5 +1,8 @@
 # English messages
 
+- `hourly.json` owns member/admin hourly billing terms, exact units, eligibility,
+  consent, paid boundaries, cooldowns, paused sales and policy-version conflicts.
+
 - `browser.json` owns public entrance, browser preferences, access-link, session renewal and member forwarding copy.
 
 Each JSON file owns the UI copy for the domain named by its filename. Keep keys

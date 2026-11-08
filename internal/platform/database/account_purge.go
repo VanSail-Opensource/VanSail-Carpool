@@ -33,7 +33,7 @@ func (s *Store) retryAttempt_CompleteAccountPurge(ctx context.Context, id string
 	if pending {
 		return ErrConflict
 	}
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.status<>'closed' AND (i.user_id=$1 OR i.proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2)))`, id, id).Scan(&pending); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_periods p JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.status<>'closed' AND (i.user_id=$1 OR i.proxy_user_id IN (SELECT proxy_user_id FROM xnode_payg_accounts WHERE user_id=$2) OR i.proxy_user_id IN (SELECT proxy_user_id FROM hourly_enrollments WHERE owner_id=$1))) OR EXISTS(SELECT 1 FROM hourly_credit_reservations WHERE owner_id=$1 AND (final_proof_digest='' OR final_recovery AND unknown_bytes>0))`, id, id).Scan(&pending); err != nil {
 		return err
 	}
 	if pending {

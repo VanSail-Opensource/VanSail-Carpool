@@ -3,10 +3,13 @@
 The master can issue only existing free allowance or already funded extra bytes.
 An optional `HourlyPolicyRepository` supplies current owner/generation, daily
 allowance and per-node paid boundaries. Missing/expired policy creates no credit;
-this foundation neither enrolls customers nor buys extra traffic or debits wallets.
+credit issuance itself never invents funding or debits a wallet. Task 6 may attach
+an internal `HourlyExtraBuyer`, which buys one decimal GB through the established
+wallet transaction only after fresh positive socket demand and complete pool
+exhaustion with no held reservations. Activity-only prefetch never buys a block.
 Live negotiation also requires the explicit durable-history readiness contract.
-Production `Store` has no such opt-in until Task 6 adds atomic hourly history
-ingestion; existing credit settlement construction does not imply that readiness.
+Production `Store` opts in through its atomic single/batch hourly history writer;
+credit settlement construction alone does not imply that readiness.
 
 `requestHourlyCredit` coalesces at most 8192 fresh owner demand hints. The existing
 four credit workers deliver install/seal/ACK commands through each authenticated

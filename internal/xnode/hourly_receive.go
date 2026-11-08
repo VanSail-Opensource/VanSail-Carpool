@@ -20,11 +20,11 @@ func (m *Master) receiveHourly(ctx context.Context, peer *agentPeer, message wir
 		}
 		demands := make([]hourlyInboundDemand, len(batch.Demands))
 		for i, demand := range batch.Demands {
-			demands[i] = hourlyInboundDemand{demand: demand, receivedAt: receivedAt}
+			demands[i] = hourlyInboundDemand{demand: demand, receivedAt: receivedAt, latestAt: receivedAt}
 		}
 		m.observeHourlyDemands(peer, demands)
 		if len(batch.Demands) > 0 {
-			m.requestHourlyCredit(peer, batch.Demands)
+			m.requestObservedHourlyCredit(peer, demands)
 		}
 		// Financial progress remains admissible after enrollment/owner closure.
 		return m.receiveHourlyCreditProgress(ctx, peer, batch.Progress)
@@ -75,7 +75,31 @@ func (m *Master) observeHourlyDemands(peer *agentPeer, inputs []hourlyInboundDem
 	co := m.hourly
 	co.allocatorMu.Lock()
 	defer co.allocatorMu.Unlock()
-	_, _ = co.allocator.ObserveBatch(m.service.now(), demands)
+	now := m.service.now()
+	_, _ = co.allocator.ObserveBatch(now, co.currentHourlyDemands(now, demands))
+}
+
+// Recheck under allocatorMu after any queue/lock wait. A policy removed after
+// the initial lookup cannot create a retained allocator owner or a fresh grant.
+// policyMu is also taken in this order by the ordinary allocator Tick.
+func (co *hourlyCoordinator) currentHourlyDemands(now time.Time, demands []hourly.Demand) []hourly.Demand {
+	co.policyMu.RLock()
+	defer co.policyMu.RUnlock()
+	if now.Before(co.policyAt) || now.Sub(co.policyAt) > 4*time.Second {
+		return nil
+	}
+	accepted := demands[:0]
+	for _, demand := range demands {
+		policy, ok := co.policies[demand.Owner.ID]
+		if !ok || policy.AccountGeneration < 0 || uint64(policy.AccountGeneration) != demand.Owner.Generation || !policy.PaidThrough.After(now) || !policy.NodePaidThrough[demand.Peer.NodeID].After(now) {
+			continue
+		}
+		demand.Lifetime = min(demand.Lifetime, policy.PaidThrough.Sub(demand.ReceivedAt), policy.NodePaidThrough[demand.Peer.NodeID].Sub(demand.ReceivedAt)).Truncate(time.Millisecond)
+		if demand.Lifetime > 0 {
+			accepted = append(accepted, demand)
+		}
+	}
+	return accepted
 }
 
 func (m *Master) acknowledgeHourlyGrant(peer *agentPeer, ack wire.HourlyGrantAck) {

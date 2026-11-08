@@ -82,6 +82,7 @@ type Purchase struct {
 	TrafficLimitBytes         int64     `json:"-"`
 	TrafficLimit              string    `json:"trafficLimitBytes"`
 	ResetStrategy             string    `json:"resetStrategy"`
+	PurchasedTermSeconds      *int64    `json:"-"`
 	SquadUUIDs                []string  `json:"squadUuids"`
 	CreatedAt                 time.Time `json:"createdAt"`
 	UpdatedAt                 time.Time `json:"updatedAt"`

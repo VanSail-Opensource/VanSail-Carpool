@@ -15,34 +15,44 @@ type nativeUsageKey struct {
 }
 type nativeUsageValue struct{ upload, download, weighted, remainder int64 }
 type nativePeriodValue struct {
-	owner  int64
-	status string
-	used   int64
-	payg   bool
+	owner                  int64
+	status                 string
+	used                   int64
+	payg                   bool
+	historyOwner, purchase string
 }
 
 // These maps live only inside one serializable transaction. Financial/admission
 // state is never cached between commits. Each report stages independently so a
 // savepoint rollback cannot leave partial counters in Go memory.
 type nativeTrafficBuffer struct {
-	paygHistory paygNodeMinutes
-	periods     map[string]nativePeriodValue
-	daily       map[nativeUsageKey]nativeUsageValue
-	known       map[nativeUsageKey]bool
-	changed     map[nativeUsageKey]nativeUsageValue
-	used        map[string]int64
+	hourlyScopes map[hourlyUsageKey]hourlyUsageScope
+	usageHistory usageMinutes
+	paygHistory  paygNodeMinutes
+	periods      map[string]nativePeriodValue
+	daily        map[nativeUsageKey]nativeUsageValue
+	known        map[nativeUsageKey]bool
+	changed      map[nativeUsageKey]nativeUsageValue
+	used         map[string]int64
 }
 type nativeReportBuffer struct {
-	paygHistory paygNodeMinutes
-	parent      *nativeTrafficBuffer
-	daily       map[nativeUsageKey]nativeUsageValue
-	used        map[string]int64
+	usageHistory usageMinutes
+	paygHistory  paygNodeMinutes
+	parent       *nativeTrafficBuffer
+	daily        map[nativeUsageKey]nativeUsageValue
+	used         map[string]int64
 }
 
 func (b *nativeTrafficBuffer) fork() *nativeReportBuffer {
 	return &nativeReportBuffer{parent: b, daily: map[nativeUsageKey]nativeUsageValue{}, used: map[string]int64{}}
 }
 func (b *nativeReportBuffer) accept() {
+	if len(b.usageHistory) > 0 && b.parent.usageHistory == nil {
+		b.parent.usageHistory = usageMinutes{}
+	}
+	for key, value := range b.usageHistory {
+		b.parent.usageHistory.add(key, value)
+	}
 	if len(b.paygHistory) > 0 && b.parent.paygHistory == nil {
 		b.parent.paygHistory = paygNodeMinutes{}
 	}
@@ -66,7 +76,7 @@ func nativePeriodTx(ctx context.Context, tx *sql.Tx, b *nativeReportBuffer, id s
 		return value, nil
 	}
 	var value nativePeriodValue
-	err := tx.QueryRowContext(ctx, `SELECT proxy_user_id,status,used_bytes,EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.period_id=p.id) FROM xnode_periods p WHERE id=$1`, id).Scan(&value.owner, &value.status, &value.used, &value.payg)
+	err := tx.QueryRowContext(ctx, `SELECT p.proxy_user_id,p.status,p.used_bytes,EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.period_id=p.id),COALESCE(CASE WHEN i.user_id=c.user_id THEN c.user_id END,''),COALESCE(p.purchase_id,'') FROM xnode_periods p LEFT JOIN purchases c ON c.id=p.purchase_id LEFT JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.id=$1`, id).Scan(&value.owner, &value.status, &value.used, &value.payg, &value.historyOwner, &value.purchase)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = xnode.NewTrafficPeriodMissing(id)
 	}

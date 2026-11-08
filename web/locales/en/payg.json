@@ -14,8 +14,8 @@
     "truncated": "History is truncated. Shares cover only the retained node records."
   },
   "payg": {
-    "title": "Pay as you go",
-    "combo": "Combo",
+    "title": "Charge by traffic",
+    "combo": "Charge by hour",
     "mode": "Billing view",
     "automatic": "Connect freely. Pay as you go.",
     "comboIntro": "One plan. More room to explore.",
@@ -30,17 +30,17 @@
     "addBalance": "Add balance",
     "billingMode": "Billing mode",
     "price": "Price per GB",
-    "adminHint": "PAYG is automatic for all eligible members. Active and paid queued combos keep their squads until expiry; future renewals exclude them.",
+    "adminHint": "Charge by traffic is automatic for all eligible members. Active and paid queued fixed-term plans keep their squads until expiry; future renewals exclude them.",
     "status": {
       "available": "Available",
       "insufficient_balance": "Insufficient balance",
-      "combo_covered": "In combo",
-      "queued_combo": "Queued combo",
+      "combo_covered": "In fixed-term plan",
+      "queued_combo": "Queued fixed-term plan",
       "unavailable": "Unavailable",
       "sync_pending": "Syncing",
       "disabled": "Disabled"
     },
-    "disabled": "PAYG is off.",
+    "disabled": "Charge by traffic is off.",
     "comboBlocked": "Automatic renewal is enabled",
     "adminState": "Availability",
     "adminStates": {

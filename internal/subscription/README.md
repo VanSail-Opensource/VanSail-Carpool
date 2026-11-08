@@ -107,6 +107,12 @@ no authoritative host inventory, generic future-host preferences are retained.
 
 Internal `Proxy` attribution retains its published endpoint and billing principal for PAYG routing selection. These private references and credentials never enter ordinary JSON. Distinct squad credentials on one endpoint receive stable export IDs. A nonpositive wallet balance removes PAYG entries from fresh owner exports without changing internal inventory or paid Combo entries.
 
+`Proxy.BillingMode` explicitly distinguishes hourly secondary principals from
+PAYG; a nonzero principal ID alone never determines wallet/export policy. Hourly
+hosts use enrollment-scoped stable IDs and preserve already prepaid access at
+zero wallet balance. Their speed allowance is not a hard traffic quota; member
+subscription metadata uses unlimited total and the exact latest paid expiry.
+
 `template_names.go` allocates sing-box tags and Mihomo/Stash names after client
 mapping and before expanding `SubscriptionNames`. PAYG principals sharing a
 published endpoint retain their separate credentials; duplicate mapped labels

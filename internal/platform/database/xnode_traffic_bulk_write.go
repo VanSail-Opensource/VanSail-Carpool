@@ -37,5 +37,8 @@ func (b *nativeTrafficBuffer) flush(ctx context.Context, tx *sql.Tx) error {
 			return xnode.ErrInvalid
 		}
 	}
-	return b.paygHistory.flush(ctx, tx)
+	if err := b.paygHistory.flush(ctx, tx); err != nil {
+		return err
+	}
+	return b.usageHistory.flush(ctx, tx)
 }

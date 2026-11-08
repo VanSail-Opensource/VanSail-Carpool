@@ -23,3 +23,5 @@ request queue, idempotency and provider-operation receipts. Token authentication
 does not create cookies or browser/Mini App sessions. See [API usage](../../api/API_TOKENS.md).
 
 `scopes_test.go` covers resource separation, unsafe paths and credential-management exclusions.
+
+`hourly_scopes_test.go` verifies hourly policy, pricing and operation-receipt scopes, and excludes API tokens from owner commerce.

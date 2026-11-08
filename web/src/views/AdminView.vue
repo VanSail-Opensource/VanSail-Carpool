@@ -13,6 +13,7 @@ const panels: Record<string, Component> = {
   xnode: defineAsyncComponent(() => import('@/components/admin/xnode/XNodeWorkspace.vue')),
   usdt: defineAsyncComponent(() => import('@/components/admin/usdt/AdminUSDTPage.vue')),
   catalog: defineAsyncComponent(() => import('@/components/admin/AdminCatalogPanel.vue')),
+  hourly: defineAsyncComponent(() => import('@/components/admin/hourly/HourlyAdminPage.vue')),
   activity: defineAsyncComponent(() => import('@/components/admin/AdminActivityPanel.vue')),
   affiliates: defineAsyncComponent(() => import('@/components/admin/affiliates/AdminAffiliatesPanel.vue')),
   coupons: defineAsyncComponent(() => import('@/components/admin/AdminCouponsPanel.vue')),

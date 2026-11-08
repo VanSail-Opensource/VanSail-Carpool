@@ -31,7 +31,11 @@ func (s *Service) memberInventory(ctx context.Context, user string) ([]subscript
 		return nil, pending, err
 	}
 	payg, err := s.paygInventory(ctx, user)
-	return append(combo, payg...), pending, err
+	if err != nil {
+		return nil, pending, err
+	}
+	hourly, err := s.hourlyInventory(ctx, user)
+	return append(append(combo, payg...), hourly...), pending, err
 }
 
 func paygProxyID(endpoint, group string) string {
@@ -107,6 +111,7 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 			}
 			proxy.PublishedEndpointID = endpoint.ID
 			proxy.PrincipalID = a.ProxyUserID
+			proxy.BillingMode = "payg"
 			proxy.ID = paygProxyID(endpoint.ID, a.GroupID)
 			proxy.GroupIDs = []string{a.GroupID}
 			out = append(out, proxy)
@@ -130,6 +135,15 @@ func (s *Service) MemberPrincipals(ctx context.Context, user, node string) ([]in
 		}
 		for _, a := range accounts {
 			out = append(out, a.ProxyUserID)
+		}
+	}
+	hourly, err := s.hourlyPrincipals(ctx, user, node)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range hourly {
+		if p.ProxyUserID > 0 {
+			out = append(out, p.ProxyUserID)
 		}
 	}
 	return out, nil

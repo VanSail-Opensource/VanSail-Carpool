@@ -9,6 +9,7 @@ export const adminGroups = [
   { labelKey: 'adminNav.commerce', sections: [
     { value: 'pricing', labelKey: 'pricing.title', icon: 'i-ph-chart-line-bold' },
     { value: 'catalog', labelKey: 'adminNav.catalog', icon: 'i-ph-package-bold' },
+    { value: 'hourly', labelKey: 'hourly.admin.title', icon: 'i-ph-clock-bold' },
     { value: 'coupons', labelKey: 'adminNav.coupons', icon: 'i-ph-ticket-bold' },
     { value: 'usdt', labelKey: 'adminUsdt.title', icon: 'i-ph-currency-circle-dollar-bold' },
     { value: 'activity', labelKey: 'adminNav.activity', icon: 'i-ph-game-controller-bold' },

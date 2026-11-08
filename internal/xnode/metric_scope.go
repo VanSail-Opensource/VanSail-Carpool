@@ -28,7 +28,18 @@ func (s *Service) metricNodeScope(ctx context.Context, identity Identity) (map[s
 	for _, p := range payg {
 		nodes[p.NodeID] = true
 	}
-	if purchase == nil && len(payg) == 0 {
+	hourly, err := s.hourlyInventory(ctx, identity.UserID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, p := range hourly {
+		nodes[p.NodeID] = true
+	}
+	paidHourly, err := s.hasPaidHourlyBenefit(ctx, identity.UserID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if purchase == nil && len(payg) == 0 && !paidHourly {
 		reasons = append(reasons, UserLimit{Reason: "authorization_expired", Scope: "all_connections"})
 	}
 	if identity.CurrentPeriodID != "" {

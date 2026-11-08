@@ -29,7 +29,7 @@
     "recordedTotal": "Recorded total",
     "available": "Available",
     "historyTruncated": "Showing the first 128 nodes with recorded usage. Additional nodes are outside this view.",
-    "noPAYGHistory": "No per-node PAYG usage has been recorded in the past 72 hours.",
+    "noPAYGHistory": "No per-node Charge by traffic usage has been recorded in the past 72 hours.",
     "activeIPs": "Recent IP activity",
     "ipAddress": "IP address",
     "activeIPsHint": "IP observations from the past two hours refresh automatically from node reports.",

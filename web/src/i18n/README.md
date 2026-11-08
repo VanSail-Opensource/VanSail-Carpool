@@ -1,5 +1,8 @@
 # Internationalization
 
+- `../../locales/*/hourly.json` owns Charge by hour member/admin terms, consent,
+  eligibility, cooldown and conflict copy; `generated.ts` registers both locales.
+
 - `generated.ts` merges generated locale-domain modules.
 - `../../locales/*/recovery.json` owns the global render-recovery boundary copy.
 - `../../locales/*/payment-crypto.json` owns localized BEPUSDT selection and payment-instruction copy.

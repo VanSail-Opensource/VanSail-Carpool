@@ -34,6 +34,9 @@ func configurationCapabilities(config wire.Config, advertised []string) error {
 		required = append(required, "shared_domain_blocks_v1")
 	}
 	for _, user := range config.Users {
+		if user.Hourly != nil {
+			required = append(required, wire.HourlyCapability, wire.TrafficStreamCapability)
+		}
 		if user.ReplacesID != 0 {
 			required = append(required, "telegram_identity_rekey_v1")
 		}

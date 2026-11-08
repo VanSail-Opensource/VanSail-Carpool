@@ -99,7 +99,18 @@ func (m *Master) replenishHourlyOwner(ctx context.Context, peer *agentPeer, repo
 		kind, available, reserved = "extra", day.ExtraAvailableBytes(), day.ExtraReservedBytes
 	}
 	if available <= 0 {
-		return nil
+		attempted, err := m.buyDemandedHourlyExtra(ctx, peer, owner, day)
+		if err != nil || !attempted {
+			return err
+		}
+		day, err = repo.HourlyCreditDay(ctx, owner.ID, int64(owner.Generation), dayUTC)
+		if err != nil {
+			return err
+		}
+		kind, available, reserved = "extra", day.ExtraAvailableBytes(), day.ExtraReservedBytes
+		if available <= 0 {
+			return nil
+		}
 	}
 	target := m.hourlyCreditTarget(peer, owner, available+reserved)
 	if held > target/2 {

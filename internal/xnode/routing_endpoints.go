@@ -81,6 +81,8 @@ func routingEndpointView(endpoint Endpoint, available bool) RoutingEndpoint {
 	mode := "combo"
 	if strings.HasPrefix(endpoint.ID, "payg-") {
 		mode = "payg"
+	} else if strings.HasPrefix(endpoint.ID, "hourly-") {
+		mode = "hourly"
 	}
 	return RoutingEndpoint{Available: available, BillingMode: mode, ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port}
 }

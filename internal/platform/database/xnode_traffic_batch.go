@@ -17,7 +17,7 @@ func (s *Store) RecordXNodeTrafficBatch(ctx context.Context, items []xnode.Traff
 	var selected []int
 	for i, item := range items {
 		sequence, err := wire.TrafficSequence(item.AgentID, item.Report)
-		if err != nil || sequence != item.Sequence || item.NodeID == "" || item.AgentID == "" || item.Report.StreamID == "" && item.Report.DroppedSamples != 0 {
+		if err != nil || sequence != item.Sequence || item.NodeID == "" || item.AgentID == "" || item.Report.StreamID == "" && (item.Report.DroppedSamples != 0 || item.Report.DroppedHourlySamples != 0 || len(item.Report.HourlySamples) > 0) {
 			results[i] = xnode.ErrInvalid
 		} else {
 			selected = append(selected, i)

@@ -1,5 +1,15 @@
 # Constructed browser fixtures
 
+`HourlyAudit.vue`, `hourly-audit.ts`, `hourly-data.ts` and `hourly-audit.html`
+mount the actual hourly member/admin components against synthetic API state.
+Open `/fixtures/hourly-audit.html`; add `admin`, `light`, `zh`, `slow=2000`,
+`error`, `empty`, `legacy`, `paused`, `active`, `suspended`, `cooldown`,
+`activation`, `incompatible`, `extra`, `price-rise`, `no-extra`, `pending`,
+`conflict`, `queue`, `failed` or `catalog` to exercise the corresponding state.
+`window.__hourlyAudit` exposes only constructed requests, idempotency keys,
+haptic observations and fixture state. Set `recover=true` then retry to recover
+an injected read failure. Writes and receipt polling never contact production.
+
 `onboarding-admin-audit.ts` / `.html` mount the actual bilingual admin content
 editor with constructed publication receipts. `slow`, `error`, `publish-error`,
 and `zh` cover load/publication states; `__agreementAdminAudit.publishes` counts

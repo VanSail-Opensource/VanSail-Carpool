@@ -13,7 +13,7 @@
     "noLink": "An individual import link is unavailable for this host.",
     "noHosts": "No accessible hosts are available.",
     "noCombo": "No subscription hosts yet",
-    "noComboHint": "Explore available PAYG squads or activate a Combo to get connected.",
+    "noComboHint": "Explore Charge by traffic squads or enable Charge by hour to get connected.",
     "loadFailed": "Subscription data could not be loaded."
   }
 }

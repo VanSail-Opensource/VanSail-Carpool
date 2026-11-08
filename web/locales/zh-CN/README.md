@@ -1,5 +1,8 @@
 # Simplified Chinese messages
 
+- `hourly.json` owns localized member/admin hourly terms, exact units, eligibility,
+  consent, paid boundaries, cooldowns, paused sales and policy-version conflicts.
+
 - `browser.json` owns localized public entrance, browser preferences, access-link and session copy.
 
 Each JSON file mirrors its English domain. Product text belongs here rather

@@ -11,6 +11,11 @@ identities, original-receipt demand, policy, grant, acknowledgment and reservati
 types. `New(now, Limits)` creates a ten-second cold-start quiet period so all
 untracked pre-restart grants expire before new allocations. Production callers
 pass their monotonic `Clock.Now` result; clock rollback returns no fresh actions.
+`admission.go` exposes a read-only `CanAdmit` capacity proof over current paid
+policy owners plus retained allocator owners. Idle paid users keep a future
+slot; old state counts until ordinary cleanup. Readiness neither reserves an
+identity nor changes startup/expiry timing. `admission_test.go` covers that union,
+generation reuse, rollback and cold-start boundaries.
 
 `Connect` installs only authenticated negotiated peers. `Disconnect` stops new
 demand eligibility without releasing held allocation. A new session invalidates

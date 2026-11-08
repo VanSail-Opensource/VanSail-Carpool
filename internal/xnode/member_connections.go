@@ -26,6 +26,9 @@ func (s *Service) memberGrantEligible(ctx context.Context, user string) (bool, e
 	if err != nil || purchase != nil {
 		return purchase != nil && err == nil, err
 	}
+	if paid, err := s.hasPaidHourlyBenefit(ctx, user); err != nil || paid {
+		return paid, err
+	}
 	r, ok := s.paygRepository()
 	if !ok {
 		return false, ErrUnavailable

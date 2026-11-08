@@ -157,7 +157,15 @@
     "xnode_stream_rates",
     "hourly_credit_agent_sequences",
     "hourly_credit_days",
-    "hourly_credit_reservations"
+    "hourly_credit_reservations",
+    "hourly_offers",
+    "hourly_enrollments",
+    "hourly_settlements",
+    "hourly_account_preferences",
+    "hourly_extra_purchases",
+    "xnode_usage_minutes",
+    "xnode_usage_history_state",
+    "xnode_usage_coverage"
   ],
   "tables": [
     {
@@ -6770,6 +6778,12 @@
           "notNull": false,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "purchased_term_seconds",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },
@@ -10067,6 +10081,466 @@
           "primaryKey": 0
         }
       ]
+    },
+    {
+      "name": "hourly_offers",
+      "columns": [
+        {
+          "name": "group_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "enabled",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_price_minor",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_enrollments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "group_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "activation_key",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "request_fingerprint",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "activated_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "paid_through",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "disabled_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "cooldown_until",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "period_id",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_settlements",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "enrollment_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "hour_start",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_from",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "paid_until",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "hourly_price_minor",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "charged_minor",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "offer_revision",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "ledger_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_account_preferences",
+      "columns": [
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "extra_enabled",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "accepted_extra_price_minor",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "hourly_extra_purchases",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "day_utc",
+          "type": "date",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "block_index",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "byte_count",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "unit_price_minor",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "policy_version",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "ledger_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_usage_minutes",
+      "columns": [
+        {
+          "name": "owner_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "billing_mode",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "reference_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 3
+        },
+        {
+          "name": "proxy_user_id",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 4
+        },
+        {
+          "name": "period_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 5
+        },
+        {
+          "name": "node_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 6
+        },
+        {
+          "name": "minute",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 7
+        },
+        {
+          "name": "observed_from",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_through",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "upload_bytes",
+          "type": "numeric",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "download_bytes",
+          "type": "numeric",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_usage_history_state",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "boolean",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "xnode_usage_coverage",
+      "columns": [
+        {
+          "name": "node_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "agent_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "stream_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 3
+        },
+        {
+          "name": "sequence",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 4
+        },
+        {
+          "name": "digest",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 5
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "observed_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dropped_native",
+          "type": "numeric",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "dropped_hourly",
+          "type": "numeric",
+          "notNull": true,
+          "primaryKey": 0
+        }
+      ]
     }
   ],
   "indexes": [
@@ -10207,7 +10681,25 @@
     "xnode_service_bindings_expiry_idx",
     "xnode_traffic_active_stream",
     "xnode_traffic_streams_pkey",
-    "xnode_stream_rates_pkey"
+    "xnode_stream_rates_pkey",
+    "hourly_enrollments_open_squad",
+    "hourly_enrollments_due",
+    "hourly_enrollments_owner",
+    "hourly_enrollments_cooldown",
+    "hourly_settlements_cost",
+    "hourly_extra_purchases_owner",
+    "hourly_enrollments_activation_replay",
+    "hourly_enrollments_principal",
+    "hourly_enrollments_period",
+    "hourly_settlements_hour",
+    "hourly_settlements_ledger",
+    "hourly_extra_purchases_block",
+    "hourly_extra_purchases_ledger",
+    "xnode_usage_window",
+    "xnode_usage_purchase",
+    "xnode_usage_coverage_window",
+    "xnode_usage_node",
+    "xnode_usage_coverage_node"
   ],
   "triggers": [
     "account_onboarding_update",
@@ -10314,6 +10806,11 @@
     "user_notification_events_immutable",
     "xnode_group_retirement_guard",
     "xnode_service_retirement_guard",
-    "xnode_endpoint_retirement_guard"
+    "xnode_endpoint_retirement_guard",
+    "purchase_term_snapshot_guard",
+    "hourly_enrollment_scope_guard",
+    "hourly_settlement_immutable",
+    "hourly_extra_purchase_immutable",
+    "hourly_compile_revision"
   ]
 }

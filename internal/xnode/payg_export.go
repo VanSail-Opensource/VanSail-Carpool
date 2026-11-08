@@ -18,7 +18,7 @@ func (s *Service) visiblePAYGExports(ctx context.Context, user string, proxies [
 	// endpoint or group with PAYG. Avoid a balance read for combo-only exports.
 	hasPAYG := false
 	for _, proxy := range proxies {
-		if proxy.PrincipalID != 0 {
+		if isPAYGProxy(proxy) {
 			hasPAYG = true
 			break
 		}
@@ -42,8 +42,8 @@ func (s *Service) visiblePAYGExports(ctx context.Context, user string, proxies [
 	}
 	visible := make([]subscription.Proxy, 0, len(proxies))
 	for _, proxy := range proxies {
-		omit := proxy.PrincipalID != 0 && balance.MinorInt64() <= 0
-		if proxy.PrincipalID != 0 {
+		omit := isPAYGProxy(proxy) && balance.MinorInt64() <= 0
+		if isPAYGProxy(proxy) {
 			for _, group := range proxy.GroupIDs {
 				omit = omit || hidden[group]
 			}

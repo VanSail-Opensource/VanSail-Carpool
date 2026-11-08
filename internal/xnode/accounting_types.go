@@ -18,6 +18,7 @@ type Credentials struct {
 type Identity struct {
 	FirstSyncedAt      *time.Time `json:"firstSyncedAt"`
 	PAYGOwnerID        string     `json:"-"`
+	HourlyOwnerID      string     `json:"-"`
 	ProxyUserID        int64      `json:"proxyUserId,string"`
 	ReplacesID         int64      `json:"-"`
 	UserID             string     `json:"userId"`
@@ -37,7 +38,10 @@ func (i Identity) MemberOwnerID() string {
 	if i.UserID != "" {
 		return i.UserID
 	}
-	return i.PAYGOwnerID
+	if i.PAYGOwnerID != "" {
+		return i.PAYGOwnerID
+	}
+	return i.HourlyOwnerID
 }
 
 type Period struct {

@@ -1,0 +1,179 @@
+HourlyEnrollment: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id",
+      "groupId",
+      "status",
+      "activatedAt",
+      "paidThrough",
+      "disabledAt",
+      "cooldownUntil",
+      "createdAt",
+      "updatedAt"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "groupId": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "active",
+          "funding_suspended",
+          "disabled",
+          "closed"
+        ]
+      },
+      "activatedAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "paidThrough": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "disabledAt": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "cooldownUntil": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date-time"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+
+HourlyExtraPreference: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "extraEnabled",
+      "updatedAt"
+    ],
+    "properties": {
+      "extraEnabled": {
+        "type": "boolean"
+      },
+      "acceptedExtraPriceTXBMinor": {
+        "type": "string",
+        "pattern": "^[1-9][0-9]*$"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+
+HourlyActivationRequest: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "groupId",
+      "policyVersion",
+      "offerRevision"
+    ],
+    "properties": {
+      "groupId": {
+        "type": "string"
+      },
+      "policyVersion": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "offerRevision": {
+        "type": "string",
+        "pattern": "^[1-9][0-9]*$"
+      },
+      "activationCode": {
+        "type": "string"
+      }
+    }
+  }
+
+HourlyDisableRequest: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "policyVersion"
+    ],
+    "properties": {
+      "policyVersion": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+
+HourlyExtraPreferenceWrite: {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "enabled"
+    ],
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "policyVersion": {
+        "type": "string"
+      },
+      "acceptedPriceTXBMinor": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      }
+    },
+    "description": "Enabling requires explicit acceptance of the current price per 1,000,000,000-byte block. Credit expires at the next UTC midnight; a later price increase requires renewed consent. Opt-out remains available when policy is unavailable or its version is stale.",
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "enabled": {
+              "const": true
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "policyVersion",
+            "acceptedPriceTXBMinor"
+          ],
+          "properties": {
+            "policyVersion": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "acceptedPriceTXBMinor": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          }
+        }
+      }
+    ]
+  }

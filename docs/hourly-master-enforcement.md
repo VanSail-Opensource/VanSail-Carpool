@@ -1,16 +1,18 @@
 # Master hourly enforcement
 
-Task 5 adds enforcement capability while hourly commerce is unavailable. No
-existing purchase, native identity or legacy billing mode enters hourly mode.
-`HourlyPolicyRepository.HourlyEnforcementPolicies` is an optional authoritative
-commerce interface. Until implemented, its missing/empty policy view creates no
-rate or funded credit eligibility, even when transport capability is available.
+Task 5 adds enforcement capability; Task 6 supplies explicit new enrollments.
+No existing purchase, native identity or legacy billing mode enters hourly mode.
+`Service.SetHourlyPolicyProvider` attaches typed decrypted settings outside Store.
+The service composes paid enrollment rows with the global allowance/reduced rate.
+Paused sales do not revoke an existing paid hour. Missing/invalid policy creates
+no rate or funded credit eligibility, even when transport capability is available.
+The optional `HourlyPolicyRepository` remains a compatible authoritative adapter.
 
 `HourlyTrafficHistoryRepository.HourlyTrafficHistoryReady` is a separate,
 memory-only admission gate. It may be implemented only when accepted hourly
 samples and dropped-history coverage persist atomically with native traffic
-receipts and replay deduplication. Production `Store` does not implement it yet;
-Task 6 must add that writer before enabling the gate. Credit-settlement
+receipts and replay deduplication. Production `Store` now supplies that writer,
+including single/batch savepoint isolation and coverage markers. Credit-settlement
 construction remains available, but neither live hourly negotiation nor the
 historical receipt header is advertised while this contract is unavailable.
 Mixed reports are rejected before persistence/ACK, preserving their whole journal

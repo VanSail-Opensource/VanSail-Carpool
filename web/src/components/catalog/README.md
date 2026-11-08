@@ -1,5 +1,12 @@
 # Catalog components
 
+`CatalogExperience.vue` switches between Charge by traffic (`PAYGPage.vue`) and
+Charge by hour (`../hourly/HourlyPage.vue`). New fixed-term checkout is no longer
+an Explore entrance. Grandfathered purchases retain their Home renewal controls.
+`CatalogExperience.test.ts` checks lazy hourly entry and one haptic per actual
+mode change. `SquadActivationDialog.vue` is shared by the retained purchase
+reader and hourly activation, with an optional busy/error state and Enter submit.
+
 `PAYGStatusDot.vue` gives each squad an accessible semantic status marker;
 reduced-motion users receive a static dot. Hidden squads are filtered only from
 Explore cards and subscription output, while server totals include consumption

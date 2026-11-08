@@ -1,5 +1,9 @@
 # Browser entrance and admin console
 
+`router.ts` and `navigation.ts` expose `/admin/hourly`, an independent policy and
+offer editor implemented by `../components/admin/hourly/HourlyAdminPage.vue`.
+It follows console theme/session behavior and uses no Telegram interactions.
+
 Desktop-first, mobile-compatible Vue/Vite experience independent of the member
 Mini App. Shares typed clients and business workflows, but does not initialize
 the Telegram SDK or load member shell/theme assets.

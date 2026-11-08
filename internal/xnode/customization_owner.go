@@ -2,6 +2,7 @@ package xnode
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -13,8 +14,8 @@ func customizationOwner(item Customization) string {
 	return "native." + strconv.FormatInt(item.ProxyUserID, 10)
 }
 func identityCustomizationOwner(item Identity) string {
-	if item.PAYGOwnerID != "" {
-		return item.PAYGOwnerID
+	if item.MemberOwnerID() != "" {
+		return item.MemberOwnerID()
 	}
 	return customizationOwner(Customization{UserID: item.UserID, ProxyUserID: item.ProxyUserID})
 }
@@ -25,6 +26,15 @@ func (s *Service) customizationIdentity(ctx context.Context, owner, node string)
 			return identity, nil, err
 		}
 		tags, _, err := s.eligibleTags(ctx, owner, node)
+		if err == nil {
+			hourly, e := s.hourlyMemberTags(ctx, owner, node)
+			if e != nil {
+				return identity, nil, e
+			}
+			tags = append(tags, hourly...)
+			slices.Sort(tags)
+			tags = slices.Compact(tags)
+		}
 		return identity, tags, err
 	}
 	identity, err := s.Identity(ctx, strings.TrimPrefix(owner, "native."))

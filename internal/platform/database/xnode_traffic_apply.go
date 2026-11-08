@@ -89,5 +89,10 @@ func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, 
 			return xnode.ErrTrafficSampleMissing
 		}
 	}
+	for _, sample := range report.HourlySamples {
+		if err = recordHourlyUsageTx(ctx, tx, nodeID, sample, native); err != nil {
+			return err
+		}
+	}
 	return nil
 }

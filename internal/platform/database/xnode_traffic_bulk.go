@@ -45,6 +45,9 @@ func loadNativeTraffic(ctx context.Context, tx *sql.Tx, reports []xnode.TrafficC
 	b := &nativeTrafficBuffer{periods: map[string]nativePeriodValue{}, daily: map[nativeUsageKey]nativeUsageValue{}, known: map[nativeUsageKey]bool{}, changed: map[nativeUsageKey]nativeUsageValue{}, used: map[string]int64{}}
 	periods := map[string]bool{}
 	for _, item := range reports {
+		for _, sample := range item.Report.HourlySamples {
+			periods[sample.AccountingPeriod] = true
+		}
 		for _, sample := range item.Report.Samples {
 			periods[sample.AccountingPeriod] = true
 			b.known[nativeUsageKey{int64(sample.UserID), item.NodeID, sample.AccountingPeriod, sample.Through.UTC().Format(time.DateOnly)}] = true
@@ -52,14 +55,14 @@ func loadNativeTraffic(ctx context.Context, tx *sql.Tx, reports []xnode.TrafficC
 	}
 	ids := slices.Sorted(maps.Keys(periods))
 	for start := 0; start < len(ids); start += trafficSQLRows {
-		rows, err := tx.QueryContext(ctx, `SELECT p.id,p.proxy_user_id,p.status,p.used_bytes,EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.period_id=p.id) FROM xnode_periods p WHERE p.id=ANY($1::text[]) ORDER BY p.id FOR UPDATE OF p`, ids[start:min(start+trafficSQLRows, len(ids))])
+		rows, err := tx.QueryContext(ctx, `SELECT p.id,p.proxy_user_id,p.status,p.used_bytes,EXISTS(SELECT 1 FROM xnode_payg_accounts a WHERE a.period_id=p.id),COALESCE(CASE WHEN i.user_id=c.user_id THEN c.user_id END,''),COALESCE(p.purchase_id,'') FROM xnode_periods p LEFT JOIN purchases c ON c.id=p.purchase_id LEFT JOIN xnode_identities i ON i.proxy_user_id=p.proxy_user_id WHERE p.id=ANY($1::text[]) ORDER BY p.id FOR UPDATE OF p`, ids[start:min(start+trafficSQLRows, len(ids))])
 		if err != nil {
 			return nil, err
 		}
 		for rows.Next() {
 			var id string
 			var v nativePeriodValue
-			if err = rows.Scan(&id, &v.owner, &v.status, &v.used, &v.payg); err != nil {
+			if err = rows.Scan(&id, &v.owner, &v.status, &v.used, &v.payg, &v.historyOwner, &v.purchase); err != nil {
 				rows.Close()
 				return nil, err
 			}
@@ -93,5 +96,7 @@ func loadNativeTraffic(ctx context.Context, tx *sql.Tx, reports []xnode.TrafficC
 			return nil, err
 		}
 	}
-	return b, nil
+	var err error
+	b.hourlyScopes, err = loadHourlyUsageScopes(ctx, tx, reports)
+	return b, err
 }

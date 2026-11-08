@@ -22,6 +22,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/connections"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/hourlybilling"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
@@ -67,6 +68,7 @@ type Dependencies struct {
 	PurchaseOperations *purchaseops.Service
 	Statistics         *productstats.Service
 	Billing            *billing.Service
+	Hourly             *hourlybilling.Service
 	Activity           *activity.Service
 	Coupons            *coupons.Service
 	Emby               *emby.Service

@@ -3,7 +3,7 @@
 - `ActivityView.vue` delegates to games, check-in, draws, and activity history.
 - `AdminView.vue` resolves and lazy-loads the selected administrative section.
 - `AdminUserView.vue` is the thin aggregate-profile route entrance and owns native Back to the user list.
-- `CatalogView.vue` delegates to plan browsing and checkout.
+- `CatalogView.vue` delegates to Charge by traffic and Charge by hour. Existing fixed-term renewal remains in Home benefits.
 - `ConnectionsView.vue` delegates to the member connection scan and selected-IP unlink workflow.
 - `CommunityView.vue` is the thin Community route view for entitlement-gated Telegram group and channel access.
 - `EmbyView.vue` delegates to Emby setup and preference management.

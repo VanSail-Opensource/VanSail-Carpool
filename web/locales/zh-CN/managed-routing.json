@@ -5,7 +5,7 @@
     "inboundHost": "入站主机",
     "outboundHost": "出站主机",
     "traceHost": "入口主机",
-    "description": "规则在每个节点按顺序匹配。入站和出站节点均须包含在当前套餐内。",
+    "description": "规则在每个节点按顺序匹配。入站和出站节点均须属于当前可用权益。",
     "templatesTitle": "路由模板",
     "templateDescription": "为成员路由配置目标匹配条件。不同类别之间为且，同类条目之间为或。空类别匹配全部流量。域名支持 full:、domain:、keyword:、regexp: 和 geosite: 选择器。",
     "addTemplate": "添加模板",
@@ -57,7 +57,7 @@
     },
     "endpointLabel": "{name} · {mode} · {address}:{port}",
     "billingModes": {
-      "combo": "原有套餐",
+      "combo": "原有固定期限套餐",
       "payg": "按流量计费"
     }
   },

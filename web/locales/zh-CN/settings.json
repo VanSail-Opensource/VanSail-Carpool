@@ -32,7 +32,7 @@
     "showReferralUsernameHint": "在新受邀用户收到的欢迎消息中显示你的用户名。",
     "notifications": {
       "title": "通知",
-      "combos": "套餐与续费",
+      "combos": "固定期限套餐与续费",
       "combosHint": "开通、到期、续费与节点变更。",
       "traffic": "流量",
       "trafficHint": "流量用量提醒。",
@@ -57,9 +57,9 @@
       }
     },
     "payg": {
-      "enabled": "启用按量付费",
+      "enabled": "启用按流量计费",
       "hint": "关闭后停止按量访问和购买新流量，已有流量按原时间到期。",
-      "balanceRequired": "充值后可操作按量付费开关，并在订阅中显示按量节点。已保存的选择和已有流量会保留。"
+      "balanceRequired": "充值后可操作按流量计费开关，并在订阅中显示按量节点。已保存的选择和已有流量会保留。"
     }
   }
 }

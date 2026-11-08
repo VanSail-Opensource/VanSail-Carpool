@@ -10,6 +10,8 @@ import enPricing from '../../locales/en/pricing.json'
 import zhPricing from '../../locales/zh-CN/pricing.json'
 import enPAYG from '../../locales/en/payg.json'
 import zhPAYG from '../../locales/zh-CN/payg.json'
+import enHourly from '../../locales/en/hourly.json'
+import zhHourly from '../../locales/zh-CN/hourly.json'
 import enNativeMetrics from '../../locales/en/native-metrics.json'
 import enDIY from '../../locales/en/diy.json'
 import enDIYFields from '../../locales/en/diy-fields.json'
@@ -127,8 +129,8 @@ const zhCN: typeof en = {
 }
 
 export const localeMessages = {
-  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics, ...enDIY, ...enDIYFields, ...enPAYG },
-  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics, ...zhDIY, ...zhDIYFields, ...zhPAYG },
+  en: { ...en, ...enBrowser, ...enMemberNodes, ...enNodeAdmin, ...enNodeTemplates, ...enFirewall, ...enNodeForms, ...enManagedRouting, ...enNativeMetrics, ...enDIY, ...enDIYFields, ...enPAYG, ...enHourly },
+  'zh-CN': { ...zhCN, ...zhBrowser, ...zhMemberNodes, ...zhNodeAdmin, ...zhNodeTemplates, ...zhFirewall, ...zhNodeForms, ...zhManagedRouting, ...zhNativeMetrics, ...zhDIY, ...zhDIYFields, ...zhPAYG, ...zhHourly },
 } as const
 
 export type Locale = keyof typeof localeMessages

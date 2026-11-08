@@ -14,11 +14,44 @@ The independent memory-only allocator lives in `internal/hourly`; public readine
 uses `Master.HourlyCapable` for every source/transit participant. Full behavior and
 the capability/commerce separation are in `docs/hourly-master-enforcement.md`.
 `hourly_history.go` separately gates both live negotiation and historical receipt
-advertisement on an implemented atomic history writer. Production Store leaves
-that interface absent until Task 6; mixed reports cannot be ACKed without it.
+advertisement on an implemented atomic history writer. Production Store now
+implements it with the single/batch journal transaction; mixed reports cannot be
+ACKed by a repository without it.
 `hourly_history_test.go` covers false readiness and ordinary-traffic continuity.
-`hourly_history_fixture_test.go` explicitly opts the synthetic credit-only test
-repository into readiness without claiming real Store history ingestion.
+
+Hourly native entry points are `PrepareHourlyPrincipal`,
+`HourlySquadReadiness`, `PreflightHourlyEnrollment`, `SyncHourlyEnrollment`,
+`CloseHourlyOwnerIfIdle`, `CloseHourlyOwnerForPurge` and `ResumeHourlyOwner`.
+`hourly_principals.go` defines immutable enrollment projections and dormant
+credential preparation. `hourly_compile.go` applies exact paid boundaries;
+`hourly_compile_reads.go` retains owner/node-scoped reads only within one compile.
+`hourly_inventory.go` keeps distinct billing/endpoint identities for subscription
+and routing; `hourly_subscription.go` represents unmetered traffic without a hard
+quota and exposes the exact paid expiry. `hourly_readiness.go`,
+`hourly_preflight.go` and `hourly_deployment.go` require compatible source/transit
+participants, validate an unpaid local preview, and verify exact applied scope.
+`hourly_lifecycle.go` orders idle/purge retirement and resume on the shared owner
+row; actor work never re-marks newer same-generation benefits after that lock.
+`hourly_policy_provider.go` composes encrypted settings outside Store;
+`hourly_extra.go` supplies the internal fresh-demand buyer extension through the
+existing credit worker. Providers are attached before starting Master workers.
+`usage_history.go` exposes bounded owner-scoped observations and explicit
+coverage. `hourly_native_fixture_test.go` and `hourly_native_test.go` cover real TLS
+native publication, dormant preparation, exact renewal and prepaid exports.
+`hourly_capabilities_test.go` covers independent live/history native capabilities;
+`hourly_extra_test.go` checks original positive-demand freshness and prevents
+activity-only, held-credit or disconnected purchases.
+`hourly_preparation_test.go` confirms never-issued cancelled preparations without
+waiting for an offline agent or creating credentials.
+`hourly_native_agent_test.go` owns the native TLS fixture's single-writer applied
+state/telemetry loop. `hourly_demand_policy_test.go` fences hints delayed across
+policy removal. Readiness also checks the allocator's current-paid/retained-owner
+capacity union and cold-start quiet; wallet admission independently fences the
+global distinct-active-owner ceiling before charging.
+`hourly_entitlements.go` adds current paid hourly benefits to existing manual
+connection controls, owner metrics and customization tags; automatic observation
+and community membership policies remain independent and unchanged.
+See `docs/hourly-native-history.md` for lifecycle, timestamp and data-flow limits.
 
 Hosted `hourly_fixture_test.go`, `hourly_socket_test.go`, `hourly_lane_test.go`,
 `hourly_policy_test.go`, `hourly_receive_test.go`, `hourly_grants_test.go` and

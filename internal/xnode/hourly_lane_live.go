@@ -60,15 +60,15 @@ func (r *peerReceivers) runHourlyLive(ctx context.Context) {
 		}
 		r.master.acknowledgeHourlyGrants(r.peer, acks)
 		r.master.observeHourlyDemands(r.peer, demands)
-		var hints []wire.HourlyDemand
+		var hints []hourlyInboundDemand
 		now := r.master.service.now()
 		for _, item := range demands {
 			if !now.Before(item.latestAt) && now.Sub(item.latestAt) <= hourlyCreditDemandFreshness {
-				hints = append(hints, item.demand)
+				hints = append(hints, item)
 			}
 		}
 		if len(hints) > 0 {
-			r.master.requestHourlyCredit(r.peer, hints)
+			r.master.requestObservedHourlyCredit(r.peer, hints)
 		}
 	}
 }

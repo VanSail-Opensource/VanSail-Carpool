@@ -79,6 +79,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	xnodeService := xnode.NewService(store, settings, vault, cfg.PublicBaseURL, upstreams.xnodeValidation)
+	xnodeService.SetHourlyPolicyProvider(settings)
 	if err = xnodeService.RetireDIYOptions(ctx); err != nil {
 		return cleanup(fmt.Errorf("retire saved client options: %w", err))
 	}
@@ -121,6 +122,10 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	userNotificationWorker := notifications.NewWorker(queuedTelegramClient, logger, cfg.Timezone, store)
 	userNotificationScanner := notifications.NewScanner(store, provider, logger)
 	memberServices, scanWorker, blockExpiryWorker, operationDispatcher, err := newMemberWorkflows(store, provider, vault, cfg.MasterKey)
+	if err != nil {
+		return cleanup(err)
+	}
+	hourlyService, err := newHourlyWorkflows(store, settings, xnodeService, vault, operationDispatcher, outboxWorker)
 	if err != nil {
 		return cleanup(err)
 	}
@@ -233,7 +238,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		FirstEntry:  &accounts.FirstEntry{Repository: store, Settings: settings, Verifier: turnstile.New(upstreams.turnstile), Hostname: cfg.PublicBaseURL.Hostname(), AdminTelegramIDs: cfg.AdminTelegramIDs},
 		Accounts:    accountsService, Catalog: catalogService, Connections: memberServices.connections,
 		ConnectionDrops: memberServices.drops, PurchaseOperations: memberServices.purchases, Statistics: statisticsService,
-		Billing: billingService, Activity: activityService,
+		Billing: billingService, Hourly: hourlyService, Activity: activityService,
 		Coupons: couponService, Emby: embyService,
 		EmbyOperations: embyOperations, EmbyPrice: embyPrice,
 		Admin: adminService, AdminUsers: adminUserWorkflows, Settings: settings, DatabaseAdmin: databaseAdminHTTP,
@@ -255,6 +260,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
 		catalog: catalogService, billing: billingService, statistics: statisticsService, affiliates: affiliateService,
+		hourly:        hourlyService,
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		ipLookup: ipLookupWorker,
 		usdt:     usdtService,

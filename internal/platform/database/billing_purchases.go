@@ -121,16 +121,17 @@ func (s *Store) retryAttempt_CancelPurchase(ctx context.Context, purchaseID, rea
 
 const purchaseSelect = `SELECT purchases.id,purchases.user_id,purchases.combo_id,combos.name,purchases.charged_txb_minor,purchases.valid_from,purchases.valid_until,
 	purchases.status,COALESCE(purchases.entitlement_traffic_limit_bytes,combos.traffic_limit_bytes),COALESCE(purchases.entitlement_reset_strategy,combos.reset_strategy),purchases.coupon_grant_id,COALESCE(purchases.gross_price_txb_minor,purchases.charged_txb_minor),purchases.core_gross_txb_minor,purchases.coupon_discount_txb_minor,
-	purchases.auto_renew_enabled,purchases.recurring_discount_attached,purchases.created_at,purchases.updated_at FROM purchases JOIN combos ON combos.id=purchases.combo_id`
+	purchases.auto_renew_enabled,purchases.recurring_discount_attached,purchases.created_at,purchases.updated_at,purchases.purchased_term_seconds FROM purchases JOIN combos ON combos.id=purchases.combo_id`
 
 func scanPurchase(row rowScanner) (model.Purchase, error) {
 	var purchase model.Purchase
 	var validFrom, validUntil, created, updated string
 	var couponGrantID sql.NullString
+	var purchasedTermSeconds sql.NullInt64
 	var autoRenewEnabled, recurringDiscountAttached int
 	if err := row.Scan(&purchase.ID, &purchase.UserID, &purchase.ComboID, &purchase.ComboName, &purchase.PriceTXBMinor,
 		&validFrom, &validUntil, &purchase.Status, &purchase.TrafficLimitBytes, &purchase.ResetStrategy, &couponGrantID, &purchase.GrossPriceTXBMinor,
-		&purchase.CoreGrossTXBMinor, &purchase.CouponDiscountTXBMinor, &autoRenewEnabled, &recurringDiscountAttached, &created, &updated); err != nil {
+		&purchase.CoreGrossTXBMinor, &purchase.CouponDiscountTXBMinor, &autoRenewEnabled, &recurringDiscountAttached, &created, &updated, &purchasedTermSeconds); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.Purchase{}, ErrNotFound
 		}
@@ -142,6 +143,7 @@ func scanPurchase(row rowScanner) (model.Purchase, error) {
 	purchase.CouponGrantID = nullableString(couponGrantID)
 	purchase.AutoRenewEnabled = autoRenewEnabled == 1
 	purchase.RecurringDiscountAttached = recurringDiscountAttached == 1
+	purchase.PurchasedTermSeconds = int64Pointer(purchasedTermSeconds)
 	purchase.TrafficLimit = strconv.FormatInt(purchase.TrafficLimitBytes, 10)
 	var err error
 	if purchase.ValidFrom, err = parseStamp(validFrom); err != nil {

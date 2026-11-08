@@ -1,5 +1,8 @@
 # Dashboard components
 
+`EntitlementSummary.vue` labels retained purchases as grandfathered fixed-term
+benefits and keeps their existing renewal and paid-successor controls reachable.
+
 Purchase actions retain automatic renewal and eligible refunds. Manual and
 automatic paid reset controls are retired. The dashboard shows usage
 facts without purchase entrances; legacy Home add-on query links redirect to

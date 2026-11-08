@@ -15,6 +15,9 @@ import (
 )
 
 type Service struct {
+	hourlyPolicyProvider HourlyPolicyProvider
+	hourlyExtraBuyer     HourlyExtraBuyer
+	hourlyPreview        string // Validation-only dormant enrollment; never sent.
 	globalSettings       globalSettingsCache
 	topology             *topologyCache
 	routingRuntime       *routingRuntime

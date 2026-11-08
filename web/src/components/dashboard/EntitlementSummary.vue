@@ -52,7 +52,7 @@ async function cancelQueued(): Promise<void> {
 <template>
   <section v-if="currentActive || currentQueued" class="section-block home-ride">
     <div class="section-heading">
-      <h2>{{ $t('dashboard.yourRide') }}</h2>
+      <h2>{{ $t('hourly.legacyLabel') }}</h2>
       <StatusBadge v-if="currentActive" tone="success" :label="$t('common.active')" />
     </div>
 

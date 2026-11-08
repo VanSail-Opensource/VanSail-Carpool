@@ -24,7 +24,7 @@ func (s *Store) retryAttempt_RecordXNodeTraffic(ctx context.Context, nodeID, age
 
 func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, digest string, report wire.TrafficReport, batch *trafficBatchState) error {
 	parsed, parseErr := wire.TrafficSequence(agent, report)
-	if parseErr != nil || parsed != sequence || sequence > math.MaxInt64 || report.StreamID == "" && report.DroppedSamples != 0 {
+	if parseErr != nil || parsed != sequence || sequence > math.MaxInt64 || report.StreamID == "" && (report.DroppedSamples != 0 || report.DroppedHourlySamples != 0 || len(report.HourlySamples) > 0) {
 		return xnode.ErrInvalid
 	}
 
@@ -87,18 +87,23 @@ func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, ag
 	if _, err = tx.ExecContext(ctx, `RELEASE SAVEPOINT xnode_traffic_report`); err != nil {
 		return err
 	}
-	if discarded || sequence != previous+1 || report.DroppedSamples > 0 {
+	if discarded || sequence != previous+1 || report.DroppedSamples > 0 || report.DroppedHourlySamples > 0 {
 		if reason == "" {
 			reason = "sequence_gap"
 			if report.DroppedSamples > 0 {
 				reason = "volatile_buffer_loss"
+			} else if report.DroppedHourlySamples > 0 {
+				reason = "volatile_hourly_history_loss"
 			}
 		}
 		if err = recordDiscardedTrafficTx(ctx, tx, nodeID, agent, sequence, previous, digest, reason, missingPeriod, discarded, report); err != nil {
 			return err
 		}
 	}
-	if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0); err != nil {
+	if err = storeTrafficCursorTx(ctx, tx, batch, nodeID, key, sequence, digest, discarded || sequence != previous+1 || report.DroppedSamples > 0 || report.DroppedHourlySamples > 0); err != nil {
+		return err
+	}
+	if err = startUsageHistoryTx(ctx, tx); err != nil {
 		return err
 	}
 	if native != nil && !discarded {

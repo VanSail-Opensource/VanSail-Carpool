@@ -34,6 +34,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 	defer maintenanceTimer.Stop()
 	a.configureTelegram(ctx)
 	startupNow := time.Now().UTC()
+	a.enqueueHourly(ctx, startupNow)
 	if err := a.store.EnqueueAccountPurges(ctx, startupNow); err != nil {
 		a.logger.Error("resume account purges", "error", err)
 	}
@@ -89,6 +90,7 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 				a.logger.Error("notified outbox drain failed", "error", err)
 			}
 		case <-groupFactsTicker.C:
+			a.enqueueHourly(ctx, time.Now().UTC())
 			if err := a.store.FlushGroupMessageFacts(ctx); err != nil && !errors.Is(err, context.Canceled) {
 				a.logger.Error("group message fact flush failed", "error", err)
 			}

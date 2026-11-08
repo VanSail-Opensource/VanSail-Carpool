@@ -4,15 +4,15 @@
       "accessPending": "Another entitlement change is pending. These controls refresh automatically.",
       "squads": "Internal squads",
       "keepOne": "Keep at least one squad enabled.",
-      "activateTitle": "Activate queued combo early",
+      "activateTitle": "Activate queued fixed-term plan early",
       "activate": "Activate",
-      "activateHint": "Start your next combo and give up the remaining current access.",
+      "activateHint": "Start your next fixed-term plan and give up the remaining current access.",
       "forfeitWarning": "Remaining time and traffic will be lost. No refund will be issued.",
       "forfeitUntil": "Current access ends early instead of {date}.",
       "newPeriod": "New period: {start} to {end}.",
       "confirmation": "ACTIVATE NEXT COMBO",
       "confirmPrompt": "Type {text} to confirm",
-      "loadFailed": "Combo controls could not be loaded.",
+      "loadFailed": "Fixed-term plan controls could not be loaded.",
       "operationFailed": "The change could not be saved. Refresh and try again.",
       "syncPending": "Your access change is being applied.",
       "updated": "Your access is updated.",
@@ -26,18 +26,18 @@
     "community": "Community and referrals",
     "showAroundTx": "Show Around TX",
     "showActivity": "Show Activity",
-    "includeNodePrices": "Include selected nodes in combo prices",
-    "includeNodePricesHint": "Show core combo prices with your selected paid nodes. Checkout always shows the complete price.",
+    "includeNodePrices": "Include selected nodes in fixed-term plan prices",
+    "includeNodePricesHint": "Show core fixed-term plan prices with your selected paid nodes. Checkout always shows the complete price.",
     "showReferralUsername": "Show my username to invited users",
     "showReferralUsernameHint": "Include your username in the welcome message sent to new users you invite.",
     "notifications": {
       "title": "Notifications",
-      "combos": "Combos and renewal",
+      "combos": "Fixed-term plans and renewal",
       "combosHint": "Activation, expiry, renewal and node changes.",
       "traffic": "Traffic",
       "trafficHint": "Traffic usage alerts.",
       "money": "Money and refunds",
-      "moneyHint": "Top-ups, payment refunds and combo refund results.",
+      "moneyHint": "Top-ups, payment refunds and fixed-term plan refund results.",
       "activity": "Activity and referrals",
       "activityHint": "Group rewards, referral commissions and tier rewards.",
       "account": "Account and admin updates",
@@ -57,9 +57,9 @@
       }
     },
     "payg": {
-      "enabled": "Enable PAYG",
-      "hint": "Off stops PAYG access and new credit purchases. Existing credit keeps its normal expiry.",
-      "balanceRequired": "Add balance to use PAYG controls and include PAYG in your subscription. Your saved choices and existing credit are kept."
+      "enabled": "Enable Charge by traffic",
+      "hint": "Off stops Charge by traffic access and new credit purchases. Existing credit keeps its normal expiry.",
+      "balanceRequired": "Add balance to use Charge by traffic controls and include Charge by traffic in your subscription. Your saved choices and existing credit are kept."
     }
   }
 }

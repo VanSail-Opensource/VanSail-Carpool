@@ -17,6 +17,7 @@ type Proxy struct {
 	SplitXHTTP          bool                 `json:"-"`
 	PublishedEndpointID string               `json:"-"`
 	PrincipalID         int64                `json:"-"`
+	BillingMode         string               `json:"-"`
 	ID                  string               `json:"id"`
 	NodeID              string               `json:"nodeId"`
 	InboundTag          string               `json:"-"`

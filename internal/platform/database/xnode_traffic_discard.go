@@ -43,6 +43,8 @@ func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent strin
 		"previousSequence": strconv.FormatUint(previous, 10), "reason": reason,
 		"discardedReport": discarded, "sampleCount": len(report.Samples), "aggregateUsers": len(report.Traffic),
 	}
+	detail["hourlySampleCount"] = len(report.HourlySamples)
+	detail["droppedHourlySamples"] = strconv.FormatUint(report.DroppedHourlySamples, 10)
 	if report.StreamID != "" {
 		detail["streamId"] = report.StreamID
 		detail["droppedSamples"] = strconv.FormatUint(report.DroppedSamples, 10)
@@ -64,5 +66,8 @@ func recordDiscardedTrafficTx(ctx context.Context, tx *sql.Tx, node, agent strin
 	}
 	key := sha256.Sum256([]byte(identity + strconv.FormatUint(sequence, 10) + "\n" + digest))
 	_, err = tx.ExecContext(ctx, `INSERT INTO audit_events(id,actor_user_id,action,target_type,target_id,detail,created_at) VALUES($1,NULL,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING`, "traffic-discard-"+hex.EncodeToString(key[:]), "xnode_traffic_discard", "xnode_node", node, string(raw), stamp(time.Now().UTC()))
-	return err
+	if err != nil {
+		return err
+	}
+	return recordUsageCoverageTx(ctx, tx, node, agent, sequence, digest, reason, report)
 }
