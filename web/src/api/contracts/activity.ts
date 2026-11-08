@@ -7,6 +7,7 @@ export interface ValueRange {
   positiveChanceBps?: number
 }
 
+// traffic_reset is a historical result discriminator; writes reject it.
 export type RewardKind = 'none' | 'txb_delta' | 'coupon_grant' | 'subscription_extension'
   | 'entitlement_grant' | 'squad_access' | 'core_combo_switch' | 'traffic_grant'
   | 'traffic_reset' | 'balance_multiplier' | 'coupon_recurring' | 'coupon_once'
@@ -102,6 +103,9 @@ export interface LuckyDrawAdmin extends LuckyDraw {
   updatedAt: RFC3339
 }
 
+export type RewardWrite = Omit<Reward, 'kind'> & { kind: Exclude<RewardKind, 'traffic_reset'> }
+export type LuckyDrawPrizeWrite = Omit<LuckyDrawPrize, 'reward'> & { reward: RewardWrite }
+
 export interface LuckyDrawWrite {
   name: string
   description: string
@@ -112,7 +116,7 @@ export interface LuckyDrawWrite {
   threshold: number
   keyword: string
   command: string
-  prizes: LuckyDrawPrize[]
+  prizes: LuckyDrawPrizeWrite[]
 }
 
 export interface LuckyDrawForecast {

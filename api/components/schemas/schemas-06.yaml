@@ -171,7 +171,7 @@ LuckyDrawPrizeWrite:
     probabilityBps: { type: integer, minimum: 1, maximum: 10000 }
     stock: { type: integer, format: int64, minimum: 1 }
     reward:
-      $ref: '../../openapi.yaml#/components/schemas/Reward'
+      $ref: '../../openapi.yaml#/components/schemas/RewardWrite'
 
 LuckyDrawAdmin:
   type: object
@@ -265,3 +265,13 @@ CouponKind:
 CouponDiscountMode:
   type: string
   enum: [fixed, percent]
+
+RewardWrite:
+  description: Current configurable rewards; historical traffic_reset results remain read-only.
+  allOf:
+    - $ref: '../../openapi.yaml#/components/schemas/Reward'
+    - type: object
+      properties:
+        kind:
+          type: string
+          enum: [none, txb_delta, coupon_grant, subscription_extension, entitlement_grant, squad_access, core_combo_switch, traffic_grant, balance_multiplier, coupon_recurring, coupon_once]

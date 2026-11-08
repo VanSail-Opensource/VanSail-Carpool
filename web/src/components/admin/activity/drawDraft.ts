@@ -1,4 +1,4 @@
-import type { LuckyDrawAdmin, LuckyDrawPrize, LuckyDrawWrite, Reward, RewardKind, ValueRange } from '@/api/features'
+import type { LuckyDrawAdmin, LuckyDrawPrize, LuckyDrawPrizeWrite, LuckyDrawWrite, Reward, RewardWrite, RewardKind, ValueRange } from '@/api/features'
 import { createUuid } from '@/utils/browserCompatibility'
 import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 
@@ -87,8 +87,9 @@ function scaled(value: string, factor: number): number | null {
   return Number.isFinite(parsed) && Number.isSafeInteger(ticks) && Math.abs(parsed * factor - ticks) < 0.000001 ? ticks : null
 }
 
-function rewardFromDraft(prize: PrizeDraft): Reward | null {
-  if (prize.kind === 'none' || prize.kind === 'traffic_reset') return { kind: prize.kind }
+function rewardFromDraft(prize: PrizeDraft): RewardWrite | null {
+  if (prize.kind === 'traffic_reset') return null
+  if (prize.kind === 'none') return { kind: prize.kind }
   if (prize.kind === 'entitlement_grant') {
     const renewalPriceMinor = moneyFromTxbInput(prize.renewalPrice)
     const gib = Number(prize.trafficLimitGiB)
@@ -110,7 +111,7 @@ function rewardFromDraft(prize: PrizeDraft): Reward | null {
   if (crossing && (positiveChanceBps === null || positiveChanceBps < 0 || positiveChanceBps > 10000)) return null
   const range: ValueRange = { min, max, distribution: prize.distribution }
   if (crossing && positiveChanceBps !== null) range.positiveChanceBps = positiveChanceBps
-  const reward: Reward = { kind: prize.kind, range }
+  const reward: RewardWrite = { kind: prize.kind, range }
   if (prize.kind === 'traffic_grant') reward.includeInRenewal = prize.includeInRenewal
   if (prize.kind === 'coupon_once' || prize.kind === 'coupon_recurring') reward.discountMode = prize.discountMode
   return reward
@@ -124,7 +125,7 @@ export function serializeDraw(draft: DrawDraft): LuckyDrawWrite | null {
   if (draft.kind === 'raffle' && (!Number.isInteger(draft.threshold) || draft.threshold <= 0
     || !draft.keyword.trim() || !/^[a-z0-9_]{1,32}$/.test(draft.command)
     || reservedCommands.has(draft.command))) return null
-  const prizes: LuckyDrawPrize[] = []
+  const prizes: LuckyDrawPrizeWrite[] = []
   for (const prize of draft.prizes) {
     const reward = rewardFromDraft(prize)
     const probabilityBps = scaled(prize.probability, 100)

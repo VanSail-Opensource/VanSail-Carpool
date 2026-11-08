@@ -19,6 +19,9 @@ func (s *Store) retryAttempt_CompactAndPrune(ctx context.Context, cutoff7Days, c
 	}
 	defer func() { _ = tx.Rollback() }()
 	counts := make(map[string]int64)
+	if err := retireResetDrawsTx(ctx, tx, now, counts); err != nil {
+		return nil, err
+	}
 	if err := pruneCompletedOutboxTx(ctx, tx, now, counts); err != nil {
 		return nil, err
 	}

@@ -92,7 +92,7 @@ func applyDrawRewardTx(ctx context.Context, tx *sql.Tx, userID, resultID, prizeN
 		}
 		return balance, applySubscriptionExtensionHoursTx(ctx, tx, userID, int(value), "activity_draw", resultID, now)
 	case activity.RewardEntitlementGrant, activity.RewardSquadAccess, activity.RewardCoreComboSwitch,
-		activity.RewardTrafficGrant, activity.RewardTrafficReset:
+		activity.RewardTrafficGrant:
 		return balance, applyDrawEntitlementTx(ctx, tx, userID, resultID, reward, value, now)
 	case activity.RewardCouponGrant: // immutable historical results remain readable
 		coupon, err := couponByID(ctx, tx, reward.CouponID)
@@ -142,11 +142,6 @@ func applyDrawEntitlementTx(ctx context.Context, tx *sql.Tx, userID, resultID st
 		err = applyDrawCoreComboTx(ctx, tx, purchaseID, reward.ComboID, now)
 	case activity.RewardTrafficGrant:
 		err = applyDrawTrafficTx(ctx, tx, purchaseID, traffic, value, reward.IncludeInRenewal, now)
-	case activity.RewardTrafficReset:
-		_, err = tx.ExecContext(ctx, `UPDATE purchases SET status='activating',traffic_reset_phase='pending',updated_at=$1 WHERE id=$2`, stamp(now), purchaseID)
-		if err == nil {
-			return insertOutboxTx(ctx, tx, "xnode_apply_entitlement", `{"purchaseId":"`+purchaseID+`"}`, now, now)
-		}
 	}
 	if err != nil {
 		return fmt.Errorf("apply draw entitlement: %w", err)

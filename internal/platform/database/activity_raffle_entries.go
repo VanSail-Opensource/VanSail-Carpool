@@ -51,7 +51,7 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 	if err != nil {
 		return activity.RaffleEntry{}, false, err
 	}
-	draw, err := luckyDrawByID(ctx, tx, drawID, false)
+	draw, err := lockedLuckyDrawTx(ctx, tx, drawID, false)
 	if err != nil {
 		return activity.RaffleEntry{}, true, err
 	}
@@ -65,6 +65,15 @@ func (s *Store) retryAttempt_JoinRaffle(ctx context.Context, userID string, chat
 	draw.Prizes, err = luckyPrizes(ctx, tx, drawID, false)
 	if err != nil {
 		return activity.RaffleEntry{}, true, err
+	}
+	if hasRetiredResetReward(draw) {
+		if err = retireResetDrawTx(ctx, tx, &draw, now); err != nil {
+			return activity.RaffleEntry{}, true, err
+		}
+		if err = tx.Commit(); err != nil {
+			return activity.RaffleEntry{}, true, err
+		}
+		return activity.RaffleEntry{}, true, ErrConflict
 	}
 	if err = eligibleDrawParticipantTx(ctx, tx, userID, draw, now); err != nil {
 		return activity.RaffleEntry{}, true, err

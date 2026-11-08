@@ -32,7 +32,7 @@ func (s *Store) DeleteActivityGame(ctx context.Context, actorID, gameID string, 
 // refund every active seat and retain a cancelled tombstone for delivery cleanup.
 func (s *Store) DeleteLuckyDraw(ctx context.Context, actorID, drawID string, now time.Time) error {
 	return s.deleteFeature(ctx, actorID, "lucky_draw.delete", "lucky_draw", drawID, now, func(tx *sql.Tx) error {
-		draw, err := luckyDrawByID(ctx, tx, drawID, false)
+		draw, err := lockedLuckyDrawTx(ctx, tx, drawID, false)
 		if err != nil {
 			return err
 		}

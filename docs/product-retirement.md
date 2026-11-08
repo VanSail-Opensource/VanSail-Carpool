@@ -88,4 +88,23 @@ and failure states, tag save, notification switching and keyboard focus. No
 unexpected console or request failures were observed. Hosted regressions retain
 historical compensation/replay and native operation-proof coverage and add
 missing-debit rejection plus removed-route checks. Activity reward reset
-retirement is tracked separately from this paid-reset admission change.
+retirement is described below.
+
+## Activity traffic-reset rewards
+
+Removed the configurable reset reward and its executor. Current reward-write
+contracts exclude it; historical results retain an explicit historical label.
+Old draws disappear from member choices and cannot accept new charged entries.
+Unresolved raffle fees and reservations are refunded once when a queued
+settlement or new join reaches the retired definition. Backup-gated daily
+maintenance cancels untouched definitions in bounded batches and queues existing
+Telegram announcement cleanup. Completed outcomes and already committed
+entitlement jobs remain unchanged.
+
+Activity retirement validation: Go vet, frontend typecheck, ESLint,
+structure/localization audit and the production Vite build passed. Chrome
+DevTools checked supported reward saving, removed selector options, rejection
+of a historical reset draft, new/empty editor, forecast loading and error states,
+localized placeholders, contained mobile layout and desktop layout. Hosted
+regressions exercise concurrent retirement joins/settlement, exact fee plus
+reservation refunds, replay and hidden old draws without new debits.

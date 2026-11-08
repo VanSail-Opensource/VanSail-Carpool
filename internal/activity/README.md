@@ -18,3 +18,9 @@
 - `group_boost.go` defines live group eligibility, the provider interface, fail-closed check-in gating, and exact half-up scaling in TXB hundredths. Bootstrap injects the queue-backed provider; message progress uses trusted Telegram sender metadata.
 - `group_boost_test.go` covers boost multipliers, cent rounding, overflow, missing verification and settlement refusal.
 - `group_messages.go` defines boosted message-reward configuration, validation and progress/result types, split from draw configuration.
+
+Traffic-reset rewards cannot be configured or sampled. Their discriminator is
+read-only historical evidence. The database adapter blocks old definitions from
+new entry, cancels unresolved raffles with exact fee/reservation refunds and
+queues Telegram announcement cleanup. Already committed results and entitlement
+application jobs retain their original financial/accounting evidence.

@@ -30,10 +30,14 @@ func (s *Store) ListLuckyDraws(ctx context.Context, enabledOnly bool) ([]activit
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	visible := draws[:0]
 	for index := range draws {
 		draws[index].Prizes, err = luckyPrizes(ctx, s.db, draws[index].ID, false)
 		if err != nil {
 			return nil, err
+		}
+		if enabledOnly && hasRetiredResetReward(draws[index]) {
+			continue
 		}
 		if draws[index].Kind == "raffle" {
 			draws[index].Seats, err = s.RaffleProgress(ctx, draws[index].ID)
@@ -41,6 +45,7 @@ func (s *Store) ListLuckyDraws(ctx context.Context, enabledOnly bool) ([]activit
 				return nil, err
 			}
 		}
+		visible = append(visible, draws[index])
 	}
-	return draws, nil
+	return visible, nil
 }

@@ -20,12 +20,12 @@
     "stockTotal": "Stock total: {value} / {threshold}",
     "sumError": "Instant probabilities must total 100.00%. Raffle stock must equal the threshold.",
     "invalid": "Complete the price, participation settings, and every prize.",
+    "chooseReward": "Choose a reward",
     "reward": "Reward",
     "none": "No prize",
     "txb": "TXB change",
     "extension": "Subscription extension",
     "traffic": "Traffic grant",
-    "reset": "Traffic reset",
     "multiplier": "Multiply balance",
     "couponRecurring": "Recurring discount coupon",
     "couponOnce": "One-time discount coupon",
@@ -86,7 +86,7 @@
     "customCombo": "Custom combo entitlement",
     "squads": "Temporary squad access",
     "comboSwitch": "Core combo changed",
-    "reset": "Traffic reset",
+    "legacyReset": "Historical traffic reset",
     "processing": "Provider changes are being applied"
   }
 }

@@ -28,7 +28,7 @@ const rangeUnit = computed(() => {
 })
 const rewardItems = computed(() => [
   ['none', 'none'], ['txb_delta', 'txb'], ['subscription_extension', 'extension'],
-  ['traffic_grant', 'traffic'], ['traffic_reset', 'reset'], ['balance_multiplier', 'multiplier'],
+  ['traffic_grant', 'traffic'], ['balance_multiplier', 'multiplier'],
   ['coupon_recurring', 'couponRecurring'], ['coupon_once', 'couponOnce'],
   ['entitlement_grant', 'entitlement'], ['squad_access', 'squads'],
   ['core_combo_switch', 'comboSwitch'],
@@ -71,7 +71,7 @@ function patch(field: keyof PrizeDraft, value: unknown): void {
       </UFormField>
       <UFormField :label="t('adminDrawRedesign.reward')" required>
         <USelect
-          :model-value="prize.kind" class="w-full" :items="rewardItems"
+          :model-value="prize.kind === 'traffic_reset' ? undefined : prize.kind" class="w-full" :items="rewardItems" :placeholder="t('adminDrawRedesign.chooseReward')"
           @update:model-value="patch('kind', String($event) as RewardKind)"
         />
       </UFormField>

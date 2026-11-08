@@ -252,3 +252,10 @@ constructed data includes exact byte totals beyond Number integer precision.
 `browser-auth-audit.html?console` renders the actual browser console navigation with an authenticated synthetic administrator, including the absence of retired product entries.
 
 `detector-retirement-audit.html?legacy&usage` mounts the legacy quota meter without the retired node breakdown or reset display. The existing slow, empty, error and stale switches exercise section states.
+
+`reset-reward-audit.html` mounts the actual browser draw editor. `legacy` checks
+that historical reset rewards cannot be saved, `empty` opens a new definition,
+`slow`/`error` exercise forecast state, and `busy`/`save-error` exercise save
+feedback. `zh` switches localization. Ordinary reward choices remain selectable.
+`ResetRewardAudit.vue` owns constructed editor inputs; `reset-reward-audit.ts`
+provides browser-only initialization and the forecast adapter.

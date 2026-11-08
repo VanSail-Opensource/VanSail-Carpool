@@ -38,7 +38,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	} else if !errors.Is(loadErr, ErrNotFound) {
 		return activity.DrawResult{}, loadErr
 	}
-	draw, err := luckyDrawByID(ctx, tx, drawID, true)
+	draw, err := lockedLuckyDrawTx(ctx, tx, drawID, true)
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
@@ -46,7 +46,7 @@ func (s *Store) retryAttempt_PlayLuckyDraw(ctx context.Context, userID, drawID, 
 	if err != nil {
 		return activity.DrawResult{}, err
 	}
-	if len(draw.Prizes) == 0 {
+	if len(draw.Prizes) == 0 || hasRetiredResetReward(draw) {
 		return activity.DrawResult{}, ErrConflict
 	}
 	maxLoss := draw.MaximumPrizeDeduction()
@@ -129,7 +129,7 @@ func eligibleDrawParticipantTx(ctx context.Context, tx *sql.Tx, userID string, d
 	for _, prize := range draw.Prizes {
 		switch prize.Reward.Kind {
 		case activity.RewardEntitlementGrant, activity.RewardSquadAccess, activity.RewardCoreComboSwitch,
-			activity.RewardTrafficGrant, activity.RewardTrafficReset, activity.RewardSubscriptionExtension:
+			activity.RewardTrafficGrant, activity.RewardSubscriptionExtension:
 			requiresPurchase = true
 		}
 	}

@@ -12,6 +12,7 @@ func TestRewardRejectsAmbiguousAndUnsafePayloads(t *testing.T) {
 		name   string
 		reward Reward
 	}{
+		{"retired reset without payload", Reward{Kind: RewardTrafficReset}},
 		{"reset with unchecked signed range", Reward{Kind: RewardTrafficReset, Range: &ValueRange{Min: -1, Max: 1}}},
 		{"coupon with range", Reward{Kind: RewardCouponGrant, CouponID: "coupon", Range: valueRange}},
 		{"fixed and random TXB", Reward{Kind: RewardTXBDelta, TXBDeltaMinor: 1, Range: valueRange}},
@@ -34,7 +35,7 @@ func TestRewardAcceptsTypedPayloads(t *testing.T) {
 	t.Parallel()
 	valueRange := &ValueRange{Min: 1, Max: 10, Distribution: "uniform"}
 	for _, reward := range []Reward{
-		{Kind: RewardNone}, {Kind: RewardTrafficReset},
+		{Kind: RewardNone},
 		{Kind: RewardTXBDelta, TXBDeltaMinor: -10000000000},
 		{Kind: RewardTXBDelta, TXBDeltaMinor: 10000000000},
 		{Kind: RewardTXBDelta, Range: valueRange},

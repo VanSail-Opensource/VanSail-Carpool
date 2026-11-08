@@ -21,10 +21,11 @@ const (
 	RewardSquadAccess           RewardKind = "squad_access"
 	RewardCoreComboSwitch       RewardKind = "core_combo_switch"
 	RewardTrafficGrant          RewardKind = "traffic_grant"
-	RewardTrafficReset          RewardKind = "traffic_reset"
-	RewardBalanceMultiplier     RewardKind = "balance_multiplier"
-	RewardCouponRecurring       RewardKind = "coupon_recurring"
-	RewardCouponOnce            RewardKind = "coupon_once"
+	// RewardTrafficReset is retained only to decode immutable historical results.
+	RewardTrafficReset      RewardKind = "traffic_reset"
+	RewardBalanceMultiplier RewardKind = "balance_multiplier"
+	RewardCouponRecurring   RewardKind = "coupon_recurring"
+	RewardCouponOnce        RewardKind = "coupon_once"
 )
 
 // Reward is the typed payload applied by a lucky-draw prize.
@@ -89,7 +90,6 @@ func (reward Reward) Validate() error {
 		if strings.TrimSpace(reward.ComboID) == "" {
 			return fmt.Errorf("%w: combo reward needs a combo", ErrInvalidInput)
 		}
-	case RewardTrafficReset:
 	case RewardTrafficGrant:
 		if reward.Range == nil {
 			return fmt.Errorf("%w: traffic reward needs a range", ErrInvalidInput)

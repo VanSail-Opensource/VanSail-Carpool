@@ -20,12 +20,12 @@
     "stockTotal": "库存合计：{value} / {threshold}",
     "sumError": "即时抽奖概率必须合计 100.00%；社群抽奖库存必须等于门槛。",
     "invalid": "请填写费用、参与设置及所有奖项。",
+    "chooseReward": "选择奖励",
     "reward": "奖励",
     "none": "未中奖",
     "txb": "TXB 变动",
     "extension": "延长订阅",
     "traffic": "赠送流量",
-    "reset": "重置流量",
     "multiplier": "余额倍乘",
     "couponRecurring": "循环折扣券",
     "couponOnce": "一次性折扣券",
@@ -86,7 +86,7 @@
     "customCombo": "自定义套餐权益",
     "squads": "临时访问线路组",
     "comboSwitch": "已更换核心套餐",
-    "reset": "已重置流量",
+    "legacyReset": "历史流量重置",
     "processing": "上游权益正在应用"
   }
 }

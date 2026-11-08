@@ -1128,3 +1128,11 @@ reads ignore it. `legacy_reset_settlement_test.go` seeds historical obligations
 and verifies owner isolation, completion notifications and exact refund replay.
 No migration or customer conversion is performed. Immutable ledgers, current
 periods, scheduled purchased cadence and purchase-wide refund evidence remain.
+
+- `activity_retirement.go` cancels old reset-reward definitions, refunds unfinished raffle fees and reservations exactly once, and queues announcement cleanup. Member listing/admission is blocked immediately; backup-gated maintenance handles untouched definitions in bounded batches.
+- `activity_retirement_test.go` covers removed reward admission, hidden member draws, unchanged balances, pending raffle fee/reservation refunds and replay without resetting native periods.
+
+Activity retirement locks the parent draw before joins, awards, edits,
+publication/cancellation and wallet changes. The cancellation claim precedes
+refunds, and completed draws never enter the retirement path. All external
+announcement cleanup remains in the existing outbox queue.

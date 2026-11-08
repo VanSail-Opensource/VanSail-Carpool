@@ -19,11 +19,24 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 		return activity.RaffleSettlement{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	draw, err := luckyDrawByID(ctx, tx, id, false)
+	draw, err := lockedLuckyDrawTx(ctx, tx, id, false)
 	if err != nil {
 		return activity.RaffleSettlement{}, err
 	}
 	if draw.Kind == "raffle" && (draw.Status == "completed" || draw.Status == "cancelled") {
+		return activity.RaffleSettlement{Draw: draw}, nil
+	}
+	draw.Prizes, err = luckyPrizes(ctx, tx, id, false)
+	if err != nil {
+		return activity.RaffleSettlement{}, err
+	}
+	if hasRetiredResetReward(draw) {
+		if err = retireResetDrawTx(ctx, tx, &draw, now); err != nil {
+			return activity.RaffleSettlement{}, err
+		}
+		if err = tx.Commit(); err != nil {
+			return activity.RaffleSettlement{}, err
+		}
 		return activity.RaffleSettlement{Draw: draw}, nil
 	}
 	// A retry can arrive after an earlier attempt refunded an ineligible seat
@@ -33,10 +46,6 @@ func (s *Store) retryAttempt_SettleRaffle(ctx context.Context, id string, rng ac
 	}
 	if draw.Kind != "raffle" || draw.Status != "settling" {
 		return activity.RaffleSettlement{}, ErrConflict
-	}
-	draw.Prizes, err = luckyPrizes(ctx, tx, id, false)
-	if err != nil {
-		return activity.RaffleSettlement{}, err
 	}
 	tickets, err := activeRaffleTicketsTx(ctx, tx, id)
 	if err != nil {

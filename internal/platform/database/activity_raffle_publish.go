@@ -20,7 +20,7 @@ func (s *Store) retryAttempt_PublishRaffle(ctx context.Context, id string, group
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	draw, err := luckyDrawByID(ctx, tx, id, false)
+	draw, err := lockedLuckyDrawTx(ctx, tx, id, false)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (s *Store) retryAttempt_ConfirmRafflePublished(ctx context.Context, id stri
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	draw, err := luckyDrawByID(ctx, tx, id, false)
+	draw, err := lockedLuckyDrawTx(ctx, tx, id, false)
 	if err != nil {
 		return err
 	}

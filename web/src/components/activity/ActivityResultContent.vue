@@ -33,7 +33,8 @@ const rewardLabel = computed(() => {
   if (reward.kind === 'entitlement_grant') return t('activityDrawReward.customCombo')
   if (reward.kind === 'squad_access') return t('activityDrawReward.squads')
   if (reward.kind === 'core_combo_switch') return t('activityDrawReward.comboSwitch')
-  return t('activityDrawReward.reset')
+  if (reward.kind === 'traffic_reset') return t('activityDrawReward.legacyReset')
+  return t('activity.noReward')
 })
 </script>
 

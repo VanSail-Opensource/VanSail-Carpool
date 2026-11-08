@@ -35,7 +35,7 @@ func (s *Store) retryAttempt_SaveLuckyDraw(ctx context.Context, input activity.L
 			return activity.LuckyDraw{}, err
 		}
 	} else {
-		previous, loadErr := luckyDrawByID(ctx, tx, input.ID, false)
+		previous, loadErr := lockedLuckyDrawTx(ctx, tx, input.ID, false)
 		if loadErr != nil {
 			return activity.LuckyDraw{}, loadErr
 		}

@@ -142,7 +142,7 @@ func (draw LuckyDraw) RequiresActiveCombo() bool {
 	for _, prize := range draw.Prizes {
 		switch prize.Reward.Kind {
 		case RewardEntitlementGrant, RewardSquadAccess, RewardCoreComboSwitch, RewardTrafficGrant,
-			RewardTrafficReset, RewardSubscriptionExtension:
+			RewardSubscriptionExtension:
 			return true
 		}
 	}
