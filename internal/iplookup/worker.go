@@ -32,7 +32,6 @@ type Worker struct {
 	providers         map[string]Provider
 	now               func() time.Time
 	background        *backgroundRuntime
-	Enhanced          *EnhancedService
 	OnBackgroundError func(string)
 }
 
@@ -76,8 +75,8 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 		return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
 	}
 	foldLegacy(&r, c)
-	if w.Enhanced != nil && r.Checkpoint != nil && r.Checkpoint.Enhanced == nil {
-		r.Checkpoint.Enhanced = &EnhancedCheckpoint{Phase: "checking"}
+	if w.Live != nil && r.Checkpoint != nil && r.Checkpoint.Enrichment == nil {
+		r.Checkpoint.Enrichment = &EnrichmentCheckpoint{}
 	}
 	if r.Checkpoint == nil {
 		return &CodeError{"IP_LOOKUP_INVALID_RESPONSE"}
@@ -90,12 +89,12 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 	if err := w.runRPKI(ctx, &r, func(progress Report) error { return w.repository.SaveIPLookupProgress(ctx, progress) }); err != nil {
 		return err
 	}
-	if w.Enhanced != nil {
-		if err := w.runEnhanced(ctx, &r, c); err != nil {
+	if w.Live != nil {
+		if err := w.runEnrichment(ctx, &r, c); err != nil {
 			return err
 		}
 		r = Aggregate(r, w.now().UTC())
-		applyEnhancedVerdict(&r)
+		applyEnrichmentVerdict(&r)
 		return w.repository.FinishIPLookupRun(ctx, r, w.now().UTC())
 	}
 	if err := w.refreshLive(ctx, r, c); err != nil {
@@ -109,11 +108,6 @@ func (w *Worker) executeOperation(ctx context.Context, operation providerops.Ope
 // receives the report after each durable transition; repair passes nil-free
 // persistence against the frozen cache row instead of live progress.
 func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persist func(Report) error) error {
-	if w.Enhanced != nil {
-		if err := w.runInventory(ctx, r, c, persist); err != nil {
-			return err
-		}
-	}
 	reconcilePendingStages(r, c)
 	for index := range r.Checkpoint.Stages {
 		p := &r.Checkpoint.Stages[index]
@@ -158,7 +152,7 @@ func (w *Worker) runQueuedStages(ctx context.Context, r *Report, c Config, persi
 			}
 		}
 		RecordProvider(r, result, c)
-		w.recordEnhancedContext(r, result)
+		w.recordQualityScores(r, result)
 		if persist != nil {
 			if err := persist(*r); err != nil {
 				return err

@@ -11,7 +11,6 @@ are bounded; DB_MIGRATE_ON_START defaults to false for the restricted app role.
 scratch under DATA_DIR/tmp. Explicit runtime limits remain authoritative.
 `memory_cgroup.go` reads container/ancestor limits. `config_test.go`,
 `database_test.go` and `memory_test.go` cover these bootstrap contracts in hosted
-CI. Scratch remains available for assets/decoders; transient inventories live in
-session-scoped PostgreSQL tables. No database file path or upload cap is configured.
+CI. Scratch remains available for assets/decoders. No database file path or upload cap is configured.
 
 `memory_observe.go` publishes bounded runtime/metrics summaries without profiles or secrets.

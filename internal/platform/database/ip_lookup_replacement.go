@@ -17,10 +17,10 @@ func replaceIPCacheTx(ctx context.Context, tx *sql.Tx, r iplookup.Report) error 
 	}
 	// Creation order prevents a slower older run displacing a newer generation.
 	var newer int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE cache_key=$1 AND status IN ('succeeded','partial') AND record_order>(SELECT record_order FROM ip_lookup_reports WHERE id=$2)`, key, r.ID).Scan(&newer); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE ip=$1 AND status IN ('succeeded','partial') AND record_order>(SELECT record_order FROM ip_lookup_reports WHERE id=$2)`, key, r.ID).Scan(&newer); err != nil {
 		return err
 	}
-	predicate := `cache_key=$1 AND status IN ('succeeded','partial') AND id<>$2`
+	predicate := `ip=$1 AND status IN ('succeeded','partial') AND id<>$2`
 	if newer > 0 {
 		predicate = `id=$1`
 		_, err := tx.ExecContext(ctx, `DELETE FROM ip_lookup_reports WHERE `+predicate, r.ID)

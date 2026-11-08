@@ -10,8 +10,6 @@
     "announced": "正在发布路由",
     "notAnnounced": "未观察到源路由",
     "scores": "滥用比例",
-    "blockTitle": "网段报告",
-    "blockCount": "最近 {days} 天：{reported} 个被举报地址 / {capacity} 个地址",
     "ptrTitle": "反向 DNS",
     "cloudflareTitle": "Cloudflare Radar",
     "cloudflareToken": "API 令牌",
@@ -101,7 +99,6 @@
     "shodanContext": "Shodan 返回标签或漏洞时，IP 质量检查不通过。CPE 用于标识软件。数据集每周更新，漏洞匹配基于服务元数据，来源不提供单个地址的观测时间。",
     "about": "说明",
     "cacheExact": "缓存数据 · {date}",
-    "cacheSubnet": "使用同 /24 中 {ip} 的缓存数据 · {date}",
     "legacyData": "这是旧版缓存数据。刷新后可查看新的路由详情。",
     "refreshRequired": "需要刷新",
     "transfers": {
@@ -134,15 +131,11 @@
     "names": "网络名称",
     "asns": "ASN 详情",
     "scores": "滥用比例",
-    "block": "网段报告",
     "ptr": "反向 DNS",
     "shodan": "主机观测",
     "complete": "完成",
     "live": "网络数据",
     "transfers": "转移历史",
-    "rpki": "RPKI 验证",
-    "proxy": "代理检查",
-    "probes": "服务检查",
-    "subnet": "子网检查"
+    "rpki": "RPKI 验证"
   }
 }

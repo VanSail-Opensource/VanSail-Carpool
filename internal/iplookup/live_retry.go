@@ -23,7 +23,6 @@ type liveRetryRepository interface {
 type liveRetryPlan struct {
 	Topology  bool
 	Graph     bool
-	Block     bool
 	ASNs      bool
 	Scores    bool
 	PTR       bool
@@ -39,7 +38,6 @@ func liveRetryPlanOf(r LiveDetails) liveRetryPlan {
 	var plan liveRetryPlan
 	plan.Topology = liveMetaFailed(r.Topology.LiveMeta)
 	plan.Graph = plan.Topology || relationshipMetaFailed(r.Topology.RelationshipMeta) || liveMetaFailed(r.Topology.ClassificationMeta)
-	plan.Block = liveMetaFailed(r.Block.LiveMeta)
 	plan.Transfers = r.Transfers != nil && liveMetaFailed(r.Transfers.LiveMeta)
 	plan.Scores = liveMetaFailed(r.Scores.LiveMeta)
 	plan.PTR = liveMetaFailed(r.PTR.LiveMeta)
@@ -55,7 +53,7 @@ func liveRetryPlanOf(r LiveDetails) liveRetryPlan {
 }
 
 func (p liveRetryPlan) empty() bool {
-	return !p.Topology && !p.Graph && !p.Block && !p.ASNs && !p.Scores && !p.PTR && !p.Shodan && !p.Transfers
+	return !p.Topology && !p.Graph && !p.ASNs && !p.Scores && !p.PTR && !p.Shodan && !p.Transfers
 }
 
 // HandleLiveRetryOutbox refetches only the failed sections of one frozen
@@ -158,9 +156,6 @@ func (s *LiveService) repairLiveSections(ctx context.Context, details LiveDetail
 	}
 	if plan.Shodan {
 		launch(func() { r.Shodan = s.shodan(ctx, r.IP) })
-	}
-	if plan.Block {
-		launch(func() { r.Block = s.block(ctx, r.IP, c) })
 	}
 	if plan.Transfers {
 		launch(func() { v := s.transfers(ctx, r.IP); r.Transfers = &v })

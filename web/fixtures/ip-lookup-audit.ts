@@ -1,4 +1,3 @@
-import '@/styles/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -12,20 +11,24 @@ import IPLookupPage from '@/components/ip-lookup/IPLookupPage.vue'
 import AdminIPLookupPage from '@/components/admin/ip-lookup/AdminIPLookupPage.vue'
 import IPLookupAudit from './IPLookupAudit.vue'
 import { installLiveIPAudit } from './ip-lookup-live-audit'
-import { installEnhancedIPAudit } from './ip-lookup-enhanced-audit'
 import { decorateShodanAudit } from './ip-lookup-shodan-audit'
 import { decorateRatingAudit } from './ip-lookup-rating-audit'
 
+import { setExperience } from '@/utils/experience'
+import { initializeBrowserTheme } from '@/browser/theme'
+
 const params = new URLSearchParams(location.search)
-const enhancedAudit = installEnhancedIPAudit(params)
+setExperience(params.has('admin') ? 'browser' : 'miniapp')
+if (params.has('admin')) { await import('@/browser/styles.css'); initializeBrowserTheme() }
+else await import('@/styles/main.css')
 const liveCounters = installLiveIPAudit(params)
 const mode = params.get('mode') ?? 'empty'
 const ids = ['abuseipdb', 'scamalytics', 'ipapi', 'maxmind', 'ipqs', 'ip2location'] as const
 const money = (minor: number) => ({ currency: 'TXB' as const, minor: String(minor), display: `${(minor / 100).toFixed(2)} TXB` })
 const now = () => new Date().toISOString()
 const state: IPLookupState = { enabled: mode !== 'disabled', lookupFee: money(250), refreshFee: money(350), allowance: params.has('no-combo') ? null : { purchaseId: 'term', total: 2, remaining: 2, validUntil: '2026-12-01T00:00:00Z' } }
-const settings: IPLookupAdminSettings = { proxySources: [{ id: 'named-source', name: 'Community proxy inventory', url: 'https://example.net/proxies/list.txt', enabled: true, category: 'proxy_pool' }, { id: 'disabled-source', name: 'Disabled inventory', url: 'https://example.net/proxies/disabled.txt', enabled: false, category: 'abuse' }], dnsResolvers: ['1.1.1.1:53', '8.8.8.8:53'], probePorts: [443, 4430, 8443], enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: ids.map(id => ({ id, enabled: false, accountId: id === 'maxmind' ? '123456' : id === 'scamalytics' ? 'fixture-account' : '' })), geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], retry: { enabled: true, maxAttempts: 5, delaySeconds: 120 }, credentials: {}, configured: Object.fromEntries([...ids, 'cloudflare_radar'].map(id => [id, true])), comboQuotas: { standard: null, weekend: 0 } }
-let cached = params.has('cached') || mode === 'cached' || mode === 'subnet'
+const settings: IPLookupAdminSettings = { refreshQuotaCost: 1, enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: ids.map(id => ({ id, enabled: false, accountId: id === 'maxmind' ? '123456' : id === 'scamalytics' ? 'fixture-account' : '' })), geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], retry: { enabled: true, maxAttempts: 5, delaySeconds: 120 }, credentials: {}, configured: Object.fromEntries([...ids, 'cloudflare_radar'].map(id => [id, true])), comboQuotas: { standard: null, weekend: 0 } }
+let cached = params.has('cached') || mode === 'cached'
 let polls = 0
 let submitCount = 0
 let quoteCount = 0
@@ -89,7 +92,6 @@ function makeReport(ip: string): IPLookupReport {
     report.sources.latitude = report.sources.longitude = 'scamalytics:ipinfo'
   }
   if (params.has('many-refusals')) { report.verdict = 'unsuitable'; report.refusals = [{ kind: 'proxy', source: 'scamalytics:ip2proxy', value: 'Residential proxy provider with a long network name and multiple services' }, { kind: 'fraud_score', source: 'scamalytics', value: 73 }, { kind: 'vpn', source: 'ipapi', value: 'Commercial VPN organization and exit infrastructure' }, { kind: 'user_count', source: 'maxmind', value: 14 }] }
-  enhancedAudit.decorate(report)
   decorateShodanAudit(report, params)
   decorateRatingAudit(report, params)
   return report
@@ -98,7 +100,7 @@ async function pause() {
   if (mode === 'loading') await new Promise(resolve => setTimeout(resolve, 5000))
   if (mode === 'error') throw new ApiError(502, { code: 'IP_LOOKUP_FAILED', message: 'Constructed unavailable application' })
 }
-ipLookupApi.progress = enhancedAudit.progress
+ipLookupApi.progress = async () => null
 ipLookupApi.state = async () => { await pause(); return structuredClone(state) }
 ipLookupApi.settings = async () => { await pause(); return structuredClone(settings) }
 ipLookupApi.saveSettings = async value => {
@@ -111,8 +113,8 @@ ipLookupApi.saveSettings = async value => {
 ipLookupApi.quote = async (ip, refresh) => {
   quoteCount++
   const useQuota = !refresh && !cached && !!state.allowance?.remaining
-  const cachedReport = cached ? makeReport(mode === 'subnet' ? '8.8.8.7' : ip) : null
-  return { ip, refresh, charge: money(refresh ? 350 : cached || useQuota ? 0 : 250), useQuota, purchaseId: state.allowance?.purchaseId ?? '', remaining: state.allowance?.remaining ?? 0, cacheReportId: cached ? 'report-audit' : '', cacheMatch: cachedReport ? cachedReport.ip === ip ? 'exact' : 'subnet' : 'none', cachedReport, configHash: 'fixture-config', expiresAt: Math.floor(Date.now() / 1000) + 120, token: 'fixture-token' }
+  const cachedReport = cached ? makeReport(ip) : null
+  return { ip, refresh, charge: money(refresh ? 350 : cached || useQuota ? 0 : 250), useQuota, purchaseId: state.allowance?.purchaseId ?? '', remaining: state.allowance?.remaining ?? 0, cacheReportId: cached ? 'report-audit' : '', cacheMatch: cachedReport ? 'exact' : 'none', cachedReport, configHash: 'fixture-config', expiresAt: Math.floor(Date.now() / 1000) + 120, token: 'fixture-token' }
 }
 ipLookupApi.submit = async quote => {
   submitCount++; lastQuote = structuredClone(quote)

@@ -12,16 +12,11 @@ const defaultRetry = () => ({ enabled: true, maxAttempts: 3, delaySeconds: 60 })
 function normalizeRetry(settings: IPLookupAdminSettings): void {
   if (!settings.retry) settings.retry = defaultRetry()
   settings.refreshQuotaCost ??= 0
-  settings.proxySources ??= []
-  settings.proxySources.forEach(source => { source.category ??= 'proxy_pool' })
-  settings.dnsResolvers ??= ['1.1.1.1:53', '8.8.8.8:53', '9.9.9.9:53']
-  settings.probePorts ??= [443, 4430, 8443]
 }
 
 export function useAdminIPLookup() {
   const session = useSessionStore()
   const settings = reactive<IPLookupAdminSettings>({ enabled: false, lookupFeeTxb: '', refreshFeeTxb: '', providers: [], geolocationOrder: ['ip2location', 'ipapi', 'maxmind', 'scamalytics', 'abuseipdb'], retry: defaultRetry(), credentials: {}, configured: {}, comboQuotas: {} })
-  const savedSourceConfig = shallowRef('')
   const combos = shallowRef<Combo[]>([])
   const loading = shallowRef(true)
   const busy = shallowRef(false)
@@ -39,7 +34,6 @@ export function useAdminIPLookup() {
       if (disposed || current !== version || owner !== session.user?.id) return
       Object.assign(settings, value)
       normalizeRetry(settings)
-      savedSourceConfig.value = JSON.stringify({ sources: settings.proxySources, resolvers: settings.dnsResolvers })
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       combos.value = catalog.items
       errorCode.value = ''
@@ -58,7 +52,6 @@ export function useAdminIPLookup() {
       if (disposed || current !== version) return
       Object.assign(settings, value)
       normalizeRetry(settings)
-      savedSourceConfig.value = JSON.stringify({ sources: settings.proxySources, resolvers: settings.dnsResolvers })
       settings.credentials = Object.fromEntries([...value.providers.map(provider => provider.id), 'cloudflare_radar'].map(id => [id, { value: '', clear: false }]))
       saved.value = true
     } catch (error) { if (!disposed && current === version) setError(error) }
@@ -67,5 +60,5 @@ export function useAdminIPLookup() {
 
   watch(() => session.user?.id, () => { saved.value = false; busy.value = false; errorCode.value = ''; loading.value = true; void load() }, { immediate: true })
   onScopeDispose(() => { disposed = true; version++ })
-  return { settings, savedSourceConfig, combos, loading, busy, errorCode, saved, save, load }
+  return { settings, combos, loading, busy, errorCode, saved, save, load }
 }

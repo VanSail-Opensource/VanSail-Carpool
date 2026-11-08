@@ -97,20 +97,5 @@ func (m *Master) reconcileFirewall(ctx context.Context) error {
 	if err := repo.ReconcileFirewallSources(ctx, nil, m.service.Now()); err != nil {
 		return err
 	}
-	if m.firewallDetectionSink != nil {
-		version, err := repo.FirewallRevision(ctx)
-		if err != nil {
-			return err
-		}
-		if version == m.firewallDetectionVersion {
-			return nil
-		}
-		prefixes := []string{}
-		if err = repo.FirewallPrefixes(ctx, func(page []string) error { prefixes = append(prefixes, page...); return nil }); err != nil {
-			return err
-		}
-		m.firewallDetectionSink.SetDetectedPrefixes(prefixes)
-		m.firewallDetectionVersion = version
-	}
 	return nil
 }

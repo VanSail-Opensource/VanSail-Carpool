@@ -6,10 +6,10 @@ import { reportRows } from './reportPresentation'
 import { sourceText, ipLookupErrorText } from './presentation'
 
 describe('IP lookup failure localization', () => {
-  it('keeps base failures and source diagnostic failures readable in both languages', () => {
+  it('keeps known and unknown failures readable in both languages', () => {
     for (const locale of ['en', 'zh-CN'] as const) {
       setLocale(locale)
-      for (const code of ['IP_LOOKUP_FAILED', 'IP_PROXY_SOURCE_NOT_FOUND']) {
+      for (const code of ['IP_LOOKUP_FAILED', 'UNRECOGNIZED_FAILURE']) {
         const message = ipLookupErrorText(code)
         expect(message).not.toContain('ipLookup.')
         expect(message).not.toBe(code)

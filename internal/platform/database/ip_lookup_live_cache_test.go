@@ -19,7 +19,7 @@ func TestPersistentLiveCacheMatchingRestartAndCompactStorage(t *testing.T) {
 		t.Fatal(err)
 	}
 	restarted := NewStore(store.DB())
-	for _, tc := range []struct{ ip, match string }{{"1.1.1.10", "exact"}, {"1.1.1.11", "subnet"}, {"1.1.2.10", "none"}} {
+	for _, tc := range []struct{ ip, match string }{{"1.1.1.10", "exact"}, {"1.1.1.11", "none"}, {"1.1.2.10", "none"}} {
 		cached, err := restarted.CachedIPDetails(ctx, tc.ip)
 		if err != nil {
 			t.Fatal(err)
@@ -62,7 +62,7 @@ func TestLiveCacheOrdersFullTimestampThenDurableRowID(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r, err := store.CachedIPDetails(ctx, "8.8.8.9")
+	r, err := store.CachedIPDetails(ctx, "8.8.8.8")
 	if err != nil || r == nil || r.FetchedAt != base.Add(2*time.Second).Format(time.RFC3339Nano) {
 		t.Fatalf("wrong newest result: %+v %v", r, err)
 	}

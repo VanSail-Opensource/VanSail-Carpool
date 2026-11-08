@@ -16,4 +16,14 @@ Validation: Go vet, frontend typecheck, ESLint, structure/localization audit and
 
 ## Remaining retirement work
 
-The broader retirement task still includes IP sources/probes and subnet sharing, PERSONAL pricing, discretionary traffic resets and cascading node removal. These are delivered as separately audited changes because they have distinct accounting and lifecycle dependencies.
+The broader retirement task still includes PERSONAL pricing, discretionary traffic resets and cascading node removal. These are delivered as separately audited changes because they have distinct accounting and lifecycle dependencies.
+
+## IP sources, probes and subnet sharing
+
+The optional inventory cache and download/DNS workers, source diagnostics, active port/protocol scan execution, neighbor scan and AbuseIPDB block check are removed. Member and administrator UI, routes and OpenAPI no longer expose these controls or scan fields. The disposable cache configuration is retired.
+
+Reputation providers and queued RPKI/BGP/ASN/PTR/InternetDB/transfer enrichment remain. Read-only interrupted enrichment resumes using the legacy checkpoint key. Existing stored reports and frozen verdicts are historical facts; their public projection omits retired scan fields. Cache reads and refresh replacement now use the canonical exact IP, including old rows whose legacy cache key described a subnet. Receipt, allowance and monetary settlement remain unchanged.
+
+The memory gate continues to stress USDT scanners, transfer proofs and cancellation under the original memory budget. Inventory-only benchmarks are retired with the implementation. Its test package is now `internal/usdt`.
+
+IP retirement validation: Go vet, frontend typecheck/lint, structure/localization audit and Vite production build pass. Chrome DevTools inspected member/admin loading, unconfigured/empty, populated and error states; exact-IP preview; admin save; English/Chinese; desktop and 390px mobile. No reviewed console errors or API request failures. Hosted regressions remain the execution gate.

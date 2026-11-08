@@ -27,9 +27,7 @@ func ipLookupTuning(id string) ipLookupQueueTuning {
 	switch id {
 	case "checks":
 		return ipLookupQueueTuning{MinInterval: 250 * time.Millisecond, Workers: 1}
-	case "probes":
-		return ipLookupQueueTuning{MinInterval: 100 * time.Millisecond, Workers: 4}
-	case "proxy_lists", "dns":
+	case "dns":
 		return ipLookupQueueTuning{MinInterval: 50 * time.Millisecond, Workers: 4}
 	case "ipapi":
 		return ipLookupQueueTuning{MinInterval: 250 * time.Millisecond, Workers: 4}
@@ -94,12 +92,10 @@ func newIPLookupService(store *database.Store, settings *admin.SettingsService, 
 	live := iplookup.NewLiveService(settings, queues.iplookup, store)
 	worker := iplookup.NewWorker(store, providers)
 	worker.Live = live
-	worker.Enhanced = NewIPLookupEnhanced(settings, queues.iplookup, live)
 	if err := dispatcher.Register(iplookup.OperationKind, worker); err != nil {
 		return nil, nil, nil, err
 	}
 	service := iplookup.NewService(store, key)
 	service.Live = live
-	service.Enhanced = worker.Enhanced
 	return service, worker, live, nil
 }

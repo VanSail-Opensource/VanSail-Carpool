@@ -3,31 +3,15 @@ package database
 import (
 	"context"
 	"database/sql"
-	"net/netip"
-	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 )
 
-// ipCachedReportTx prefers evidence for the address itself, then a completed IPv4 /24.
-func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string, subnet bool) (*iplookup.Report, string, error) {
+// ipCachedReportTx reads evidence for this exact address only.
+func ipCachedReportTx(ctx context.Context, tx *sql.Tx, ip string) (*iplookup.Report, string, error) {
 	id, err := newestIPCacheTx(ctx, tx, "ip=$1", ip)
 	match := "exact"
-	if err != nil {
-		return nil, "none", err
-	}
-	if id == "" && subnet {
-		address, parseErr := netip.ParseAddr(ip)
-		if parseErr != nil || !address.Is4() {
-			return nil, "none", nil
-		}
-		prefix := ip[:strings.LastIndexByte(ip, '.')+1]
-		// Canonical IPv4 text in [prefix, prefix-with-slash) has this exact /24.
-		upper := strings.TrimSuffix(prefix, ".") + "/"
-		id, err = newestIPCacheTx(ctx, tx, "ip>=$1 AND ip<$2", prefix, upper)
-		match = "subnet"
-	}
 	if err != nil {
 		return nil, "none", err
 	}
@@ -100,6 +84,6 @@ func (s *Store) retryAttempt_IPLookupQuoteResponse(ctx context.Context, user, ip
 	if err != nil {
 		return iplookup.QuoteResponse{}, err
 	}
-	report, match, err := ipCachedReportTx(ctx, tx, ip, true)
+	report, match, err := ipCachedReportTx(ctx, tx, ip)
 	return iplookup.QuoteResponse{Quote: quote, CachedReport: report, CacheMatch: match}, err
 }

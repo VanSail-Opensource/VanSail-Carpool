@@ -11,16 +11,13 @@ import ProviderSettings from './ProviderSettings.vue'
 import ComboQuotas from './ComboQuotas.vue'
 import ProviderOrder from './ProviderOrder.vue'
 import RetrySettings from './RetrySettings.vue'
-import ProxyProbeSettings from './ProxyProbeSettings.vue'
 import { useAdminIPLookup } from './useAdminIPLookup'
-import { useProxySources } from './useProxySources'
 
-const { settings, savedSourceConfig, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
-const sources = useProxySources()
-async function saveSettings() { await save(); if (saved.value) await sources.load() }
+const { settings, combos, loading, busy, errorCode, saved, save, load } = useAdminIPLookup()
+async function saveSettings() { await save() }
 const { t } = useI18n()
 const workspace = shallowRef('general')
-const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'providers', label: t('ipLookup.providerHeading') }, { value: 'proxy', label: t('ipLookup.proxySettings') }, { value: 'quotas', label: t('ipLookup.quotaHeading') }])
+const tabs = computed(() => [{ value: 'general', label: t('adminWorkspace.configuration') }, { value: 'providers', label: t('ipLookup.providerHeading') }, { value: 'quotas', label: t('ipLookup.quotaHeading') }])
 const invalidConfig = computed(() => t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG'))
 const checkOrder = computed({
   get: () => settings.providers.map(provider => provider.id),
@@ -30,9 +27,6 @@ const schema = computed(() => z.object({
   lookupFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshFeeTxb: z.string().refine(value => !value || /^\d+(\.\d{1,2})?$/.test(value), t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
   refreshQuotaCost: z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(0, invalidConfig.value).max(1000000, invalidConfig.value),
-  proxySources: z.array(z.object({ id: z.string().min(1, invalidConfig.value), name: z.string().trim().min(1, invalidConfig.value).max(80, invalidConfig.value), url: z.url({ error: invalidConfig.value }).refine(value => /^https?:\/\//.test(value), invalidConfig.value), enabled: z.boolean(), category: z.enum(['proxy_pool', 'proxy_database', 'abuse'], { error: invalidConfig.value }) })).max(64, invalidConfig.value),
-  dnsResolvers: z.array(z.string().min(1, invalidConfig.value)).min(1, invalidConfig.value).max(8, invalidConfig.value),
-  probePorts: z.array(z.number({ error: invalidConfig.value }).int(invalidConfig.value).min(1, invalidConfig.value).max(65535, invalidConfig.value)).max(128, invalidConfig.value),
   retry: z.object({
     enabled: z.boolean(),
     maxAttempts: z.number().int().min(1).max(10, t('ipLookup.errors.IP_LOOKUP_INVALID_CONFIG')),
@@ -54,10 +48,10 @@ const schema = computed(() => z.object({
           <SwitchField id="ip-lookup-enabled" v-model="settings.enabled" :label="t('ipLookup.enable')" :help="t('ipLookup.enableHelp')" />
           <div class="lookup-fees"><TxbAmountField id="lookup-fee" v-model="settings.lookupFeeTxb" :label="t('ipLookup.lookupFee')" min-minor="0" /><TxbAmountField id="refresh-fee" v-model="settings.refreshFeeTxb" :label="t('ipLookup.refreshFee')" min-minor="0" /></div>
           <div class="lookup-orders"><ProviderOrder v-model="checkOrder" :title="t('ipLookup.checkOrder')" :help="t('ipLookup.checkOrderHelp')" :disabled="busy" /><ProviderOrder v-model="settings.geolocationOrder" :title="t('ipLookup.geolocationOrder')" :help="t('ipLookup.geolocationOrderHelp')" :disabled="busy" /></div>
+          <UFormField name="refreshQuotaCost" :label="t('ipLookup.refreshQuotaCost')" :help="t('ipLookup.refreshQuotaHelp')"><UInputNumber v-model="settings.refreshQuotaCost" :min="0" :max="1000000" :step="1" :disabled="busy" /></UFormField>
           <RetrySettings v-if="settings.retry" v-model="settings.retry" :disabled="busy" />
         </div>
         <ProviderSettings v-show="workspace === 'providers'" v-model="settings" />
-        <ProxyProbeSettings v-show="workspace === 'proxy'" v-model="settings" :saved-config="savedSourceConfig" :disabled="busy" :source-status="sources.status.value" :starting="sources.starting.value" :error-code="sources.errorCode.value" @refresh="sources.refreshSource" />
         <ComboQuotas v-show="workspace === 'quotas'" v-model="settings.comboQuotas" :combos="combos" />
       </UForm>
       <UButton v-if="errorCode && !settings.providers.length" color="neutral" variant="outline" :label="t('common.tryAgain')" @click="load" />

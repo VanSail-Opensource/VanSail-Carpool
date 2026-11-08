@@ -2,9 +2,6 @@ import type { components } from './generated'
 import { request } from './http'
 import { streamIPDetails, type LiveEvent } from './ipLookupStream'
 
-export type IPLookupProxySourceTest = components['schemas']['IPLookupProxySourceTest']
-export type IPLookupProxySourceCacheStatus = components['schemas']['IPLookupProxySourceCacheStatus']
-export type IPLookupProxySourcesStatus = components['schemas']['IPLookupProxySourcesStatus']
 export type IPLookupState = components['schemas']['IPLookupState']
 export type IPLookupQuote = components['schemas']['IPLookupQuoteResponse']
 type IPLookupSubmission = components['schemas']['IPLookupQuote']
@@ -23,9 +20,6 @@ export type IPLookupSharedProgress = components['schemas']['IPLookupSharedProgre
 export type IPLookupLiveEvent = LiveEvent
 
 export const ipLookupApi = {
-  sourcesStatus: (signal?: AbortSignal) => request<IPLookupProxySourcesStatus>('/api/v1/admin/ip-lookup/proxy-sources', { cache: 'no-store', signal }),
-  testSource: (id: string) => request<IPLookupProxySourceTest>(`/api/v1/admin/ip-lookup/proxy-sources/${encodeURIComponent(id)}/test`, { method: 'POST', cache: 'no-store' }),
-  sourceTest: (id: string, signal?: AbortSignal) => request<IPLookupProxySourceTest>(`/api/v1/admin/ip-lookup/proxy-source-tests/${encodeURIComponent(id)}`, { cache: 'no-store', signal }),
   progress: (ip: string, signal?: AbortSignal) => request<IPLookupSharedProgress | null>('/api/v1/ip-lookup/progress', { query: { ip }, cache: 'no-store', signal }),
   details: (ip: string, signal?: AbortSignal, refresh = false, onEvent?: (event: LiveEvent) => void) => onEvent
     ? streamIPDetails(ip, signal, refresh, onEvent)

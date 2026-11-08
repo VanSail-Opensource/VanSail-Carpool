@@ -18,9 +18,6 @@ func (s *Server) mountIPLookup(r chi.Router) {
 	r.Get("/api/v1/ip-lookup/checks/{id}", s.ipLookupCheck)
 	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup", s.adminIPLookupSettings)
 	r.With(s.requireAdmin).Put("/api/v1/admin/ip-lookup", s.adminSaveIPLookupSettings)
-	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup/proxy-sources", s.adminProxySources)
-	r.With(s.requireAdmin).Post("/api/v1/admin/ip-lookup/proxy-sources/{id}/test", s.adminTestProxySource)
-	r.With(s.requireAdmin).Get("/api/v1/admin/ip-lookup/proxy-source-tests/{testId}", s.adminProxySourceTest)
 }
 
 func (s *Server) ipLookupState(w http.ResponseWriter, r *http.Request) {
@@ -122,10 +119,6 @@ func (s *Server) adminSaveIPLookupSettings(w http.ResponseWriter, r *http.Reques
 		s.ipLookupError(w, r, err)
 		return
 	}
-	if s.deps.IPLookup != nil && s.deps.IPLookup.Enhanced != nil {
-		// The settings commit succeeded; the lifecycle also retries reconciliation.
-		_ = s.deps.IPLookup.Enhanced.ReconcileSources(r.Context())
-	}
 	s.adminIPLookupSettings(w, r)
 }
 
@@ -137,9 +130,6 @@ func (s *Server) ipLookupError(w http.ResponseWriter, r *http.Request, err error
 	}
 	if code == "IP_LOOKUP_QUOTE_CHANGED" || code == "IP_LOOKUP_BUSY" || code == "IP_LOOKUP_REFRESH_REQUIRED" {
 		status = http.StatusConflict
-	}
-	if code == "IP_PROXY_SOURCE_NOT_FOUND" {
-		status = http.StatusNotFound
 	}
 	if code == "IP_DETAILS_BUSY" {
 		status = http.StatusConflict

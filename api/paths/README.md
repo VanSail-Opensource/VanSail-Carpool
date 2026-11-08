@@ -163,7 +163,7 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-admin-ip-lookup.yaml` describes the signed IP Lookup operation and its typed responses.
 - `api-v1-ip-lookup-checks-id.yaml` describes the signed IP Lookup operation and its typed responses.
 - `api-v1-ip-lookup-checks.yaml` describes the signed IP Lookup operation and its typed responses.
-- `api-v1-ip-lookup-quote.yaml` describes a read-only signed quote with an automatic exact-IP or IPv4 `/24` cache preview; previews do not create operations or consume allowance.
+- `api-v1-ip-lookup-quote.yaml` describes a read-only signed quote with an automatic exact-IP cache preview; previews do not create operations or consume allowance.
 - `api-v1-ip-lookup.yaml` describes the signed IP Lookup operation and its typed responses.
 `api-v1-ip-lookup-details.yaml` defines GET /api/v1/ip-lookup/details and source-independent partial outcomes without financial operations.
 

@@ -36,7 +36,7 @@ func ConfigureMemory(cfg Config, logger *slog.Logger) error {
 			debug.SetMemoryLimit(limit / 8 * fraction)
 		}
 	}
-	logger.Info("process memory budget", "go_limit_bytes", debug.SetMemoryLimit(-1), "proxy_cache_bytes", cfg.ProxyCacheMaxBytes, "temporary_directory", temporary)
+	logger.Info("process memory budget", "go_limit_bytes", debug.SetMemoryLimit(-1), "temporary_directory", temporary)
 	return nil
 }
 

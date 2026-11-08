@@ -84,18 +84,18 @@ describe('IP Lookup request safety', () => {
     wrapper.unmount()
   })
 
-  it('automatically displays subnet cache without submission, quota or refresh', async () => {
+  it('automatically displays exact cache without submission, quota or refresh', async () => {
     const wrapper = mount(Harness)
     await flushPromises()
-    const cachedReport = { id: 'cached', ip: '8.8.8.7', verdict: 'unsuitable' }
-    mocks.quote.mockResolvedValue({ ...quote, cacheReportId: 'cached', cachedReport, cacheMatch: 'subnet', useQuota: false, charge: { ...quote.charge, minor: '0' } })
+    const cachedReport = { id: 'cached', ip: '8.8.8.8', verdict: 'unsuitable' }
+    mocks.quote.mockResolvedValue({ ...quote, cacheReportId: 'cached', cachedReport, cacheMatch: 'exact', useQuota: false, charge: { ...quote.charge, minor: '0' } })
     state.ip.value = quote.ip
     await vi.advanceTimersByTimeAsync(400)
     expect(state.quote.value?.charge.minor).toBe('0')
     expect(state.quote.value?.useQuota).toBe(false)
     expect(state.report.value).toEqual(cachedReport)
     expect(state.requestedIP.value).toBe('8.8.8.8')
-    expect(state.cacheMatch.value).toBe('subnet')
+    expect(state.cacheMatch.value).toBe('exact')
     expect(mocks.quote).toHaveBeenCalledTimes(2)
     expect(mocks.quote).toHaveBeenCalledWith(quote.ip, true)
     await state.submit()

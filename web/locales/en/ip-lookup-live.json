@@ -10,8 +10,6 @@
     "announced": "Originating routes",
     "notAnnounced": "No originating routes observed",
     "scores": "Abuse ratios",
-    "blockTitle": "Reported block",
-    "blockCount": "{reported} reported addresses / {capacity} addresses, last {days} days",
     "ptrTitle": "Reverse DNS",
     "cloudflareTitle": "Cloudflare Radar",
     "cloudflareToken": "API token",
@@ -101,7 +99,6 @@
     "shodanContext": "Shodan tags or vulnerabilities fail the IP quality check. CPEs identify software. The dataset updates weekly; vulnerability matches come from service metadata, and no per-host observation time is supplied.",
     "about": "Details",
     "cacheExact": "Cached data · {date}",
-    "cacheSubnet": "Cached data for {ip} in the same /24 · {date}",
     "legacyData": "Older cached data. Refresh to load the new routing details.",
     "refreshRequired": "Refresh required",
     "transfers": {
@@ -134,15 +131,11 @@
     "names": "Network names",
     "asns": "ASN details",
     "scores": "Abuse ratios",
-    "block": "Reported block",
     "ptr": "Reverse DNS",
     "shodan": "Host observations",
     "complete": "Complete",
     "live": "Network data",
     "transfers": "Transfers",
-    "rpki": "RPKI validation",
-    "proxy": "Proxy check",
-    "probes": "Service checks",
-    "subnet": "Subnet checks"
+    "rpki": "RPKI validation"
   }
 }

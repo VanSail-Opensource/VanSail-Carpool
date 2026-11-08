@@ -5,8 +5,8 @@ import "github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 
 const SettingKey = "ip_lookup.config"
 const OperationKind = "ip_reputation_lookup"
-const Version = "residential-v6"
-const RatingPolicyVersion = "ai-suitability-v1"
+const Version = "residential-v7"
+const RatingPolicyVersion = "ai-suitability-v2"
 
 // ProviderConfig is public configuration; credentials live in the secret vault.
 type ProviderConfig struct {
@@ -23,9 +23,6 @@ type Config struct {
 	Providers        []ProviderConfig `json:"providers"`
 	GeolocationOrder []string         `json:"geolocationOrder"`
 	Retry            *RetryPolicy     `json:"retry,omitempty"`
-	ProxySources     []ProxySource    `json:"proxySources,omitempty"`
-	DNSResolvers     []string         `json:"dnsResolvers,omitempty"`
-	ProbePorts       []int            `json:"probePorts,omitempty"`
 	RefreshQuotaCost int              `json:"refreshQuotaCost,omitempty"`
 }
 
@@ -146,9 +143,6 @@ type Report struct {
 	Providers      []ProviderResult  `json:"-"` // Legacy in-memory input only; never serialized.
 	RPKI           *RPKIResult       `json:"rpki,omitempty"`
 	LiveDetails    *LiveDetails      `json:"liveDetails,omitempty"`
-	Proxy          *ProxyAssessment  `json:"proxy,omitempty"`
-	Subnet         *SubnetResult     `json:"subnet,omitempty"`
-	Ports          []PortProbe       `json:"ports,omitempty"`
 }
 
 // Check is an owner-scoped paid receipt referencing one shared report.

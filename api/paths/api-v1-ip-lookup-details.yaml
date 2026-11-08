@@ -14,7 +14,7 @@ get:
       description: Deprecated. true is rejected; use a signed paid refresh through quote/checks.
   responses:
     "200":
-      description: Source-attributed persistent cache (exact IP, then IPv4 /24), or a free first fetch. Accept text/event-stream for progressive section snapshots and final completion.
+      description: Source-attributed exact-IP persistent cache, or a free first fetch. Accept text/event-stream for progressive section snapshots and final completion.
       headers:
         Cache-Control: { schema: { type: string }, description: Always no-store. }
       content:

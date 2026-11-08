@@ -23,7 +23,6 @@ type Repository interface {
 // Service signs owner-bound quotes; all financial decisions remain transactional.
 type Service struct {
 	Live       *LiveService
-	Enhanced   *EnhancedService
 	repository Repository
 	signingKey []byte
 	now        func() time.Time
@@ -80,10 +79,6 @@ func (s *Service) PreviewQuote(ctx context.Context, user, rawIP string, refresh 
 	}
 	result.ExpiresAt = s.now().Add(2 * time.Minute).Unix()
 	result.Token = s.signature(user, result.Quote)
-	if s.Enhanced != nil && result.CachedReport != nil {
-		report := s.Enhanced.EffectiveReport(*result.CachedReport, ip)
-		result.CachedReport = &report
-	}
 	return result, nil
 }
 
@@ -99,10 +94,6 @@ func (s *Service) Submit(ctx context.Context, user, key string, q Quote) (model.
 // Check reads only an operation owned by the authenticated member.
 func (s *Service) Check(ctx context.Context, user, id string) (Check, error) {
 	result, err := s.repository.IPLookupCheck(ctx, user, id)
-	if err == nil && s.Enhanced != nil && result.Report != nil {
-		report := s.Enhanced.EffectiveReport(*result.Report, result.RequestedIP)
-		result.Report = &report
-	}
 	return result, err
 }
 

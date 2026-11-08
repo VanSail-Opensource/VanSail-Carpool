@@ -80,7 +80,7 @@ func cloneTopology(t BGPTopology) BGPTopology {
 
 func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emit func(LiveEvent)) LiveDetails {
 	p := &livePipeline{result: LiveDetails{IP: ip, FetchedAt: s.now().UTC().Format(time.RFC3339Nano), ASNs: []ASNDetails{}}, finished: map[string]ProgressTask{}, active: map[string]bool{}, emit: emit}
-	for _, phase := range []string{"ptr", "scores", "shodan", "topology", "block", "transfers"} {
+	for _, phase := range []string{"ptr", "scores", "shodan", "topology", "transfers"} {
 		p.active[phase] = true
 	}
 	p.update("", "", nil, nil)
@@ -92,7 +92,6 @@ func (s *LiveService) livePipeline(ctx context.Context, ip string, c Config, emi
 		p.update("scores", "scores", v, func(r *LiveDetails) { r.Scores = v })
 	})
 	launch(func() { v := s.shodan(ctx, ip); p.update("shodan", "shodan", v, func(r *LiveDetails) { r.Shodan = v }) })
-	launch(func() { v := s.block(ctx, ip, c); p.update("block", "block", v, func(r *LiveDetails) { r.Block = v }) })
 	launch(func() {
 		v := s.transfers(ctx, ip)
 		p.update("transfers", "transfers", v, func(r *LiveDetails) { r.Transfers = &v })

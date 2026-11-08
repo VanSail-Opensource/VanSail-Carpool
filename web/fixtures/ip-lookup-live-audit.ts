@@ -28,7 +28,6 @@ export function installLiveIPAudit(params: URLSearchParams) {
         ipVersion: { ...meta, source: 'cloudflare', values: { IPv4: 58.4, IPv6: 41.6 }, startTime: '2026-10-03', endTime: '2026-10-10' },
       } }],
       scores: { ...meta, source: 'ipapi', company: { ratio: 0.0003, label: 'Low' }, asn: { ratio: 0, label: 'Very Low' } },
-      block: { ...meta, source: 'abuseipdb', prefix: '8.8.8.0/24', reportedAddresses: 0, addressCapacity: '256', windowDays: 30 },
       ptr: { ...meta, source: 'dns', domains: ['dns.google', 'resolver.google'] },
       transfers: { ...meta, source: 'ripe:transfer-history', transfers: [{ sourceResource: '8.8.0.0/16', recipientResource: '8.8.8.0/24', sourceHolderName: 'Previous network operator', recipientHolderName: 'Current network operator', sourceRegistry: 'ARIN', recipientRegistry: 'RIPE NCC', transferTime: '2025-08-12T00:00:00Z', transferType: 'POLICY' }] },
       shodan: { ...meta, source: 'shodan:internetdb', observedAt: '', hostnames: ['dns.google'], ports: [53, 443, 853] },
@@ -44,10 +43,8 @@ export function installLiveIPAudit(params: URLSearchParams) {
       result.asns = []; result.ptr = { ...result.ptr, status: 'empty', domains: [] }
       result.shodan = { ...result.shodan, status: 'empty', hostnames: [], ports: [], cpes: [], tags: [], vulns: [] }
       result.scores = { ...result.scores, status: 'unconfigured', company: { ratio: null, label: '' }, asn: { ratio: null, label: '' } }
-      result.block = { ...result.block, status: 'empty', reportedAddresses: null, addressCapacity: '' }
     }
     if (params.get('live') === 'partial') {
-      result.block = { ...result.block, status: 'restricted', reportedAddresses: null, errorCode: 'IP_DETAILS_PLAN_RESTRICTED' }
       result.ptr = { ...result.ptr, status: 'error', domains: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
       result.shodan = { ...result.shodan, status: 'error', hostnames: [], ports: [], cpes: [], tags: [], vulns: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
       for (const summary of Object.values(result.asns[0]!.traffic)) { summary.status = 'unconfigured'; summary.values = {} }
@@ -74,9 +71,8 @@ export function installLiveIPAudit(params: URLSearchParams) {
     }
     if (params.get('live') === 'large') denseTopology(result)
     if (params.get('live') === 'transfer-error') result.transfers = { ...result.transfers!, status: 'error', transfers: [], errorCode: 'IP_DETAILS_UNAVAILABLE' }
-    result.block = { ...result.block, prefix: ip.includes(':') ? '2606:4700:4700::/64' : `${ip.split('.').slice(0, 3).join('.')}.0/24`, addressCapacity: ip.includes(':') ? '18446744073709551616' : '256' }
     compactAuditTopology(result)
-    if (params.get('live') === 'legacy' && !refresh) { delete result.transfers; delete result.topology.projectionVersion; delete result.topology.routeSummaries; for (const asn of result.asns) { delete asn.abuseContacts; delete asn.website; delete asn.sources.abuseContacts; delete asn.sources.website }; result.block = { ...result.block, prefix: '', addressCapacity: '', reportedAddresses: null, status: 'empty', errorCode: 'IP_DETAILS_LEGACY' } }
+    if (params.get('live') === 'legacy' && !refresh) { delete result.transfers; delete result.topology.projectionVersion; delete result.topology.routeSummaries; for (const asn of result.asns) { delete asn.abuseContacts; delete asn.website; delete asn.sources.abuseContacts; delete asn.sources.website } }
     await publishLiveAudit(result, params, signal, params.has('baseline') ? undefined : emit)
     cache.set(ip, structuredClone(result))
     return result

@@ -237,8 +237,6 @@ jobs:
           merge-multiple: true
       - name: Require complete race coverage
         run: python3 scripts/ci/race_shards.py --verify --directory "$RUNNER_TEMP/race"
-      - name: Measure large inventory memory and lookup allocations
-        run: go test ./internal/iplookup -run '^$' -bench '^BenchmarkProxyInventory' -benchtime=1x -benchmem
       - name: Enforce domain coverage
         shell: bash
         run: |
@@ -281,8 +279,8 @@ jobs:
       - name: Compile non-race memory fixture
         env:
           CGO_ENABLED: '0'
-        run: go test -c -o "$RUNNER_TEMP/memory-soak" ./internal/iplookup
-      - name: Exercise scanners, refreshes and reader retirement without swap
+        run: go test -c -o "$RUNNER_TEMP/memory-soak" ./internal/usdt
+      - name: Exercise scanner startup, transfer proofs and shutdown without swap
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/memory-data/tmp"
@@ -293,7 +291,7 @@ jobs:
             -v "$RUNNER_TEMP/memory-data:/data:rw" \
             -e TMPDIR=/data/tmp -e POSTGRES_FIXTURE_URL \
             -e GOMEMLIMIT=160MiB -e VANSAIL_MEMORY_SOAK=1 \
-            alpine:3.24 /soak -test.run '^TestUSDTProxyMemorySoak$' -test.v \
+            alpine:3.24 /soak -test.run '^TestUSDTMemorySoak$' -test.v \
             -test.timeout=20m -test.memprofile=/data/heap.pprof \
             | tee "$RUNNER_TEMP/memory-data/soak.log"
           test "$(docker inspect -f '{{.State.OOMKilled}}' memory-soak)" = false

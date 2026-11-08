@@ -2,42 +2,11 @@
   "ipLookup": {
     "backgroundReminder": "检查将在后台继续。稍后输入此 IP 即可查看进度。",
     "progressUnavailable": "暂时无法读取进度，将自动重试。读取检查状态前无法重复发起检查。",
-    "proxyHeading": "IP 名单",
-    "noProxyMatch": "未匹配代理记录",
-    "proxyIncomplete": "代理数据库覆盖不完整",
-    "proxyCoverage": "来源覆盖",
-    "probeCoverage": "探测覆盖",
-    "subnetHeading": "/24 检查",
-    "requestedAddress": "查询 IP",
     "sharedFree": "等待共享结果 · 免费",
     "usedQuotaCount": "已使用 {count} 次免费额度",
     "refreshIncluded": "刷新 · {count} 次免费额度",
-    "proxySettings": "IP 数据源与端口探测",
-    "proxySettingsHelp": "已启用来源在启动时及每 6 小时自动刷新。单独刷新来源不会启动 IP 检查。",
-    "sourceEnabled": "启用",
-    "sourceName": "来源名称",
-    "sourceURL": "来源链接",
-    "addSource": "添加来源",
-    "removeSource": "移除来源",
-    "dnsResolvers": "DNS 服务器",
-    "dnsResolversHelp": "每行一个公网 IP:端口。查询失败时尝试其他服务器。",
-    "probePorts": "额外探测端口",
-    "probePortsHelp": "使用逗号分隔。始终包含 443、4430、8443 和 Shodan 报告的端口。",
     "refreshQuotaCost": "每次刷新消耗的免费额度",
     "refreshQuotaHelp": "0 表示使用 TXB；大于 0 时优先消耗指定额度，不足时使用 TXB。",
-    "probes": {
-      "tcp": "TCP 连接",
-      "socks5": "SOCKS5",
-      "socks4": "SOCKS4",
-      "http": "HTTP 代理",
-      "tls": "TLS / Reality",
-      "shadowsocks": "Shadowsocks",
-      "trojan_alpn": "Trojan ALPN",
-      "trojan_short": "Trojan 短请求",
-      "trojan_close": "Trojan 关闭时序",
-      "trojan_incomplete": "Trojan 不完整请求",
-      "trojan_overbuffer": "Trojan 重复请求头"
-    },
     "protocols": {
       "socks5": "SOCKS5",
       "socks4": "SOCKS4",
@@ -55,47 +24,6 @@
       "suspected": "疑似",
       "observed": "已观察",
       "unavailable": "未知"
-    },
-    "probeStatuses": {
-      "pending": "排队中",
-      "processing": "检查中",
-      "active": "检查中",
-      "success": "已完成",
-      "partial": "部分完成",
-      "error": "不可用",
-      "skipped": "已跳过",
-      "unavailable": "不可用",
-      "closed": "关闭",
-      "disabled": "未启用"
-    },
-    "subnetStates": {
-      "clean": "未发现风险",
-      "suspected": "疑似 Reality",
-      "flagged": "滥用 / 代理",
-      "unknown": "不完整"
-    },
-    "subnetSources": {
-      "proxy": "代理列表",
-      "abuse": "滥用记录",
-      "ipapi": "IPAPI"
-    },
-    "subnetSourceStates": {
-      "success": "未发现风险",
-      "partial": "不完整",
-      "error": "不可用",
-      "pending": "待检查",
-      "processing": "检查中",
-      "skipped": "已跳过",
-      "unconfigured": "未配置",
-      "restricted": "套餐限制",
-      "flagged": "已发现",
-      "empty": "无报告"
-    },
-    "subnetReasons": {
-      "ip_not_passed": "已跳过子网检查：查询 IP 未通过全部检查。",
-      "proxy_incomplete": "已跳过子网检查：代理来源覆盖不完整。",
-      "probes_incomplete": "已跳过子网检查：端口探测不完整。",
-      "ipv6": "IPv6 /64 滥用报告，不逐个枚举地址。"
     },
     "sources": {
       "proxy_lists": "IP 名单",
@@ -115,43 +43,6 @@
       "cloudflare_cdn": "发现 Cloudflare CDN"
     },
     "qualityHeading": "IP 质量",
-    "sourceSaveFirst": "刷新前请先保存来源或 DNS 更改。",
-    "inventoryIPs": "{count} 个唯一 IP/CIDR 条目",
-    "inventoryProgress": "已处理 {done}/{total} 个端点",
-    "inventorySkipped": "{count} 个无公网 IP",
-    "inventoryDNSFailed": "已跳过 {count} 个 DNS 失败域名",
-    "probeResults": {
-      "detected": "已检测到",
-      "not_detected": "未检测到",
-      "unavailable": "不可用",
-      "not_applicable": "不适用"
-    },
-    "dnsStatuses": {
-      "success": "已解析",
-      "no_address": "无公网地址",
-      "error": "不可用"
-    },
-    "sourcePhases": {
-      "download": "正在下载代理列表",
-      "parse": "正在解析端点",
-      "dns": "正在解析端点 DNS",
-      "complete": "已完成"
-    },
-    "sourceErrors": {
-      "IP_PROXY_DOWNLOAD": "无法下载代理列表。",
-      "IP_PROXY_PARSE": "代理列表超过解析限制或无法完整解析。",
-      "IP_PROXY_EMPTY": "未找到支持的端点。",
-      "IP_PROXY_LIMIT": "名单超出文件大小或 IP/CIDR 条目上限。",
-      "IP_DNS_UNAVAILABLE": "更换 DNS 服务器后，部分端点仍无法解析。",
-      "IP_PROXY_INTERRUPTED": "刷新已中断或达到时间限制。",
-      "IP_PROXY_SOURCE_NOT_FOUND": "此代理源或测试结果已不可用。"
-    },
-    "refreshSource": "刷新缓存",
-    "retrySource": "重试",
-    "cacheStale": "覆盖不完整",
-    "inventoryTotal": "已启用数据源共有 {count} 个唯一 IP/CIDR 条目",
-    "sourceUpdated": "更新于 {date}",
-    "sourceNextRefresh": "下次刷新 {date}",
     "ratings": {
       "perfect": "完美",
       "excellent": "优秀",
@@ -162,12 +53,6 @@
     },
     "warningHeading": "警告",
     "portWarning": "端口 {port}：{confidence}",
-    "sourceCategory": "类别",
-    "sourceCategories": {
-      "proxy_pool": "代理池",
-      "proxy_database": "代理数据库",
-      "abuse": "滥用名单"
-    },
     "portLabel": "端口 {port}",
     "portService": "{protocol}（{confidence}）"
   }

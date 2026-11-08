@@ -40,32 +40,15 @@ func TestLiveHTTPRequiresQueueAndRedactsFailure(t *testing.T) {
 		}
 		return 402, `{"error":"fixture-secret"}`
 	})
-	c := Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}}
-	r := s.block(context.Background(), "1.1.1.1", c)
-	if !called.Load() || r.Status != "restricted" || r.ReportedAddresses != nil || r.AddressCapacity != "256" {
-		t.Fatalf("%+v", r)
+	_, callErr := s.liveHTTP(context.Background(), "abuseipdb", "/api/v2/check", nil, nil, "fixture-secret")
+	if !called.Load() || ErrorCode(callErr) != "IP_DETAILS_PLAN_RESTRICTED" {
+		t.Fatalf("%v", callErr)
 	}
 	s.queues = map[string]*upstreamqueue.Queue{}
 	called.Store(false)
-	_, err := s.liveHTTP(context.Background(), "abuseipdb", "/api/v2/check-block", nil, nil, "secret")
+	_, err := s.liveHTTP(context.Background(), "abuseipdb", "/api/v2/check", nil, nil, "secret")
 	if called.Load() || ErrorCode(err) != "IP_DETAILS_UNAVAILABLE" {
 		t.Fatal("bypassed admission queue")
-	}
-}
-
-func TestLiveBlockCountsDistinctAndRejectsUnknown(t *testing.T) {
-	for _, tc := range []struct {
-		rows  string
-		known bool
-		count int
-	}{{`[]`, true, 0}, {`[{"ipAddress":"1.1.1.1"},{"ipAddress":"1.1.1.1"}]`, true, 1}, {`null`, false, 0}, {`[{"ipAddress":"8.8.8.8"}]`, false, 0}} {
-		s := liveTestService(t, "abuseipdb", func(*http.Request) (int, string) {
-			return 200, `{"data":{"networkAddress":"1.1.1.0","netmask":"255.255.255.0","reportedAddress":` + tc.rows + `}}`
-		})
-		r := s.block(context.Background(), "1.1.1.1", Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}})
-		if (r.ReportedAddresses != nil) != tc.known || tc.known && *r.ReportedAddresses != tc.count {
-			t.Fatalf("%s: %+v", tc.rows, r)
-		}
 	}
 }
 

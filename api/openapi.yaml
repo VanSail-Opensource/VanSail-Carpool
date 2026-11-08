@@ -49,9 +49,6 @@ paths:
   /api/v1/ip-lookup/quote: { $ref: './paths/api-v1-ip-lookup-quote.yaml' }
   /api/v1/ip-lookup/checks: { $ref: './paths/api-v1-ip-lookup-checks.yaml' }
   /api/v1/ip-lookup/checks/{id}: { $ref: './paths/api-v1-ip-lookup-checks-id.yaml' }
-  /api/v1/admin/ip-lookup/proxy-sources: { $ref: './paths/api-v1-admin-ip-lookup-sources.yaml' }
-  /api/v1/admin/ip-lookup/proxy-sources/{id}/test: { $ref: './paths/api-v1-admin-ip-lookup-source-test.yaml' }
-  /api/v1/admin/ip-lookup/proxy-source-tests/{testId}: { $ref: './paths/api-v1-admin-ip-lookup-source-test-id.yaml' }
   /api/v1/admin/ip-lookup: { $ref: './paths/api-v1-admin-ip-lookup.yaml' }
   /api/v1/subscription: { $ref: './paths/api-v1-subscription.yaml' }
   /api/v1/auth/telegram: { $ref: './paths/api-v1-auth-telegram.yaml' }
@@ -207,22 +204,7 @@ components:
     USDTCheckRequest: { $ref: './components/schemas/usdt.yaml#/USDTCheckRequest' }, USDTCheckResult: { $ref: './components/schemas/usdt.yaml#/USDTCheckResult' },
     USDTTransfer: { $ref: './components/schemas/usdt.yaml#/USDTTransfer' }, USDTReviewPage: { $ref: './components/schemas/usdt.yaml#/USDTReviewPage' },
     USDTResolutionRequest: { $ref: './components/schemas/usdt.yaml#/USDTResolutionRequest' }, USDTResolution: { $ref: './components/schemas/usdt.yaml#/USDTResolution' },
-    IPLookupDNSObservation: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupDNSObservation' },
-    IPLookupProbeDNS: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeDNS' },
-    IPLookupProxySourceTest: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceTest' },
-    IPLookupProxySourceCacheStatus: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceCacheStatus' },
-    IPLookupProxySourcesStatus: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourcesStatus' },
-    IPLookupInventorySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupInventorySource' },
-    IPLookupProxySource: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySource' },
-    IPLookupProxySourceResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxySourceResult' },
-    IPLookupProxyAssessment: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProxyAssessment' },
-    IPLookupSubnetAddress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSubnetAddress' },
-    IPLookupSubnetResult: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSubnetResult' },
-    IPLookupProbeFinding: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeFinding' },
-    IPLookupProbeTask: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupProbeTask' },
-    IPLookupPortProbe: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupPortProbe' },
     IPLookupSharedProgress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupSharedProgress' },
-    IPLookupAbuseAddress: { $ref: './components/schemas/ip-lookup-enhanced.yaml#/IPLookupAbuseAddress' },
     IPLookupProviderConfig: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupProviderConfig"},
     IPLookupCredentialEdit: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupCredentialEdit"},
     IPLookupRetryPolicy: {"$ref":"./components/schemas/ip-lookup-config.yaml#/IPLookupRetryPolicy"},
@@ -239,7 +221,6 @@ components:
     IPLookupASNDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupASNDetails' },
     IPLookupNetworkScore: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupNetworkScore' },
     IPLookupNetworkScores: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupNetworkScores' },
-    IPLookupAbuseBlock: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupAbuseBlock' },
     IPLookupPTRDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupPTRDetails' },
     IPLookupLiveDetails: { $ref: './components/schemas/ip-lookup-live.yaml#/IPLookupLiveDetails' },
     IPLookupProgress: { $ref: './components/schemas/ip-lookup-progress.yaml#/IPLookupProgress' },

@@ -63,6 +63,17 @@ func CheckProgress(r Report) *Progress {
 		}
 		p.Tasks = append(p.Tasks, task)
 	}
-	appendEnhancedProgress(p, r)
+	if stage := r.Checkpoint.Enrichment; stage != nil {
+		status := "pending"
+		if stage.LiveDone {
+			p.Completed++
+			status = "success"
+		} else if p.Completed == p.Total {
+			p.Phase = "live"
+			status = "active"
+		}
+		p.Total++
+		p.Tasks = append(p.Tasks, ProgressTask{Key: "live", Status: status})
+	}
 	return p
 }

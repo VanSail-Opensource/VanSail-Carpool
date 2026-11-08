@@ -107,9 +107,5 @@ func CompactLiveDetails(r LiveDetails) LiveDetails {
 	if r.CacheMatch == "" {
 		r.CacheMatch = "none"
 	}
-	if r.Block.Prefix != "" && r.Block.Prefix != blockPrefix(r.SourceIP) {
-		r.Block.Prefix, r.Block.AddressCapacity, r.Block.ReportedAddresses = "", "", nil
-		r.Block.Status, r.Block.ErrorCode = "empty", "IP_DETAILS_LEGACY"
-	}
 	return r
 }

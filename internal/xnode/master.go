@@ -13,40 +13,38 @@ import (
 )
 
 type Master struct {
-	automaticLeases          *automaticLeaseManager
-	automaticFreshness       atomic.Int64
-	automaticWake            chan struct{}
-	syncCursor               int
-	compute                  *computePool
-	trafficMetrics           trafficObservations
-	trafficBatcher           *trafficBatcher
-	trafficInboundBytes      atomic.Int64
-	protectedReleaseDigest   string
-	managedNodeIPs           map[string][]string
-	managedHostIPs           []string
-	ddnsProtectedIPs         []string
-	ddnsNodeIPs              map[string][]string
-	ddnsProtectionMu         sync.Mutex
-	ddnsProtectionDigest     string
-	ddnsProtectionVersion    int64
-	hostOrigins              map[string]hostOrigin
-	whitelistStates          map[string]whitelistNodeState
-	service                  *Service
-	logger                   *slog.Logger
-	ctx                      context.Context
-	cancel                   context.CancelFunc
-	mu                       sync.RWMutex
-	peers                    map[string]*agentPeer
-	live                     map[string]liveSnapshot
-	globalBlocks             map[int]bool
-	stateWake                chan struct{}
-	wg                       sync.WaitGroup
-	operations               int
-	memberOperations         int
-	firewallDetectionSink    FirewallDetectionSink
-	firewallWake             chan struct{}
-	firewallSourcesRunning   int
-	firewallDetectionVersion uint64
+	automaticLeases        *automaticLeaseManager
+	automaticFreshness     atomic.Int64
+	automaticWake          chan struct{}
+	syncCursor             int
+	compute                *computePool
+	trafficMetrics         trafficObservations
+	trafficBatcher         *trafficBatcher
+	trafficInboundBytes    atomic.Int64
+	protectedReleaseDigest string
+	managedNodeIPs         map[string][]string
+	managedHostIPs         []string
+	ddnsProtectedIPs       []string
+	ddnsNodeIPs            map[string][]string
+	ddnsProtectionMu       sync.Mutex
+	ddnsProtectionDigest   string
+	ddnsProtectionVersion  int64
+	hostOrigins            map[string]hostOrigin
+	whitelistStates        map[string]whitelistNodeState
+	service                *Service
+	logger                 *slog.Logger
+	ctx                    context.Context
+	cancel                 context.CancelFunc
+	mu                     sync.RWMutex
+	peers                  map[string]*agentPeer
+	live                   map[string]liveSnapshot
+	globalBlocks           map[int]bool
+	stateWake              chan struct{}
+	wg                     sync.WaitGroup
+	operations             int
+	memberOperations       int
+	firewallWake           chan struct{}
+	firewallSourcesRunning int
 }
 
 func NewMaster(service *Service, logger *slog.Logger) *Master {

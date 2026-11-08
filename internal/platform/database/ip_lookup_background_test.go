@@ -109,7 +109,7 @@ func TestIPLookupRefreshConsumesConfiguredUnitsAndRefundsOnce(t *testing.T) {
 	}
 }
 
-func TestCombinedIPCacheReplacementPreservesReceipt(t *testing.T) {
+func TestCombinedIPCacheDoesNotReplaceNeighborEvidence(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 0)
@@ -141,15 +141,15 @@ func TestCombinedIPCacheReplacementPreservesReceipt(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE status IN ('succeeded','partial')`).Scan(&count); err != nil || count != 1 {
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM ip_lookup_reports WHERE status IN ('succeeded','partial')`).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("cache duplicates: %d %v", count, err)
 	}
 	receipt, err := service.Check(ctx, user, first.ID)
-	if err != nil || receipt.Report != nil || receipt.Charge.Minor != "250" || receipt.RequestedIP != "8.8.8.8" {
+	if err != nil || receipt.Report == nil || receipt.Charge.Minor != "250" || receipt.RequestedIP != "8.8.8.8" {
 		t.Fatalf("receipt lost %+v %v", receipt, err)
 	}
 	preview, err := service.PreviewQuote(ctx, user, "8.8.8.8", false)
-	if err != nil || preview.CachedReport == nil || preview.CachedReport.ID != newer.ID || preview.CacheMatch != "subnet" || preview.Charge.Minor != "0" {
+	if err != nil || preview.CachedReport == nil || preview.CachedReport.ID != r.ID || preview.CacheMatch != "exact" || preview.Charge.Minor != "0" {
 		t.Fatalf("replacement %+v %v", preview, err)
 	}
 }

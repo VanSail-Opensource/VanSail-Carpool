@@ -93,7 +93,7 @@ func (s *Store) retryAttempt_CreateIPLookupCheck(ctx context.Context, user, key 
 		}
 		cacheMatch = "exact"
 		if evaluatedIP != q.IP {
-			cacheMatch = "subnet"
+			return model.OperationReceipt{}, ErrConflict
 		}
 	}
 	metadata, err := json.Marshal(map[string]any{"reportId": reportID, "usedQuota": fresh.UseQuota, "quotaConsumed": fresh.QuotaCost, "requestedIP": q.IP, "cacheMatch": cacheMatch})

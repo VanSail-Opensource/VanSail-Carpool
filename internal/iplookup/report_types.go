@@ -45,12 +45,12 @@ type GeoCandidate struct {
 
 // Checkpoint stores aggregate recovery state, never one result per provider.
 type Checkpoint struct {
-	Stages   []Stage             `json:"stages"`
-	Coverage uint8               `json:"coverage"`
-	Complete bool                `json:"complete"`
-	Usable   int                 `json:"usable"`
-	Votes    map[string][]string `json:"votes"`
-	Geo      *GeoCandidate       `json:"geo"`
-	RPKI     *Stage              `json:"rpki,omitempty"`
-	Enhanced *EnhancedCheckpoint `json:"enhanced,omitempty"`
+	Stages     []Stage               `json:"stages"`
+	Coverage   uint8                 `json:"coverage"`
+	Complete   bool                  `json:"complete"`
+	Usable     int                   `json:"usable"`
+	Votes      map[string][]string   `json:"votes"`
+	Geo        *GeoCandidate         `json:"geo"`
+	RPKI       *Stage                `json:"rpki,omitempty"`
+	Enrichment *EnrichmentCheckpoint `json:"enhanced,omitempty"`
 }

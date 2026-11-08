@@ -2,38 +2,11 @@ package iplookup
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"testing"
 )
-
-func TestBlockAlwaysMasksRequestedAddressIndependentlyOfRouting(t *testing.T) {
-	for _, tc := range []struct {
-		ip, prefix, network string
-		mask                string
-	}{{"172.127.58.147", "172.127.58.0/24", "172.127.58.0", "255.255.255.0"}, {"2606:4700:4700::1111", "2606:4700:4700::/64", "2606:4700:4700::", "ffff:ffff:ffff:ffff::"}} {
-		t.Run(tc.ip, func(t *testing.T) {
-			s := liveTestService(t, "abuseipdb", func(r *http.Request) (int, string) {
-				if r.URL.Query().Get("network") != tc.prefix || r.URL.Query().Get("maxAgeInDays") != "30" {
-					t.Errorf("wrong block query: %s", r.URL.RawQuery)
-				}
-				return 200, fmt.Sprintf(`{"data":{"networkAddress":"%s","netmask":"%s","reportedAddress":[]}}`, tc.network, tc.mask)
-			})
-			r := s.block(context.Background(), tc.ip, Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}})
-			if r.Status != "success" || r.Prefix != tc.prefix || r.ReportedAddresses == nil || *r.ReportedAddresses != 0 {
-				t.Fatalf("bad block: %+v", r)
-			}
-		})
-	}
-	s := liveTestService(t, "abuseipdb", func(*http.Request) (int, string) {
-		return 200, `{"data":{"networkAddress":"1.1.1.0","netmask":"255.255.255.128","reportedAddress":[]}}`
-	})
-	if s.block(context.Background(), "1.1.1.1", Config{Providers: []ProviderConfig{{ID: "abuseipdb", Enabled: true}}}).Status != "error" {
-		t.Fatal("accepted wrong returned mask")
-	}
-}
 
 func TestTransferHistorySortsDeduplicatesAndDistinguishesEmptyFromUnavailable(t *testing.T) {
 	for _, tc := range []struct {
@@ -85,13 +58,6 @@ func TestASNMetadataValidatesContactsAndCoalescesWebsiteQueries(t *testing.T) {
 		if safeCompanyWebsite(raw) != "" {
 			t.Errorf("unsafe website accepted: %s", raw)
 		}
-	}
-}
-
-func TestLegacyBlockProjectionDoesNotRelabelOrUpgradeEvidence(t *testing.T) {
-	r := CompactLiveDetails(LiveDetails{IP: "172.127.58.147", Block: AbuseBlock{Prefix: "172.124.0.0/14", ReportedAddresses: integerValue(1)}})
-	if r.Block.Prefix != "" || r.Block.ReportedAddresses != nil || r.Block.ErrorCode != "IP_DETAILS_LEGACY" {
-		t.Fatal("legacy broad block displayed as /24")
 	}
 }
 

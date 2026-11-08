@@ -31,7 +31,7 @@ func insertIPCache(t *testing.T, store *Store, id, ip, status string, completed 
 	return r
 }
 
-func TestIPLookupPreviewPrefersExactThenNewestCompletedSubnet(t *testing.T) {
+func TestIPLookupPreviewIsExactAndPreservesTimestampOrdering(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 2)
@@ -49,12 +49,12 @@ func TestIPLookupPreviewPrefersExactThenNewestCompletedSubnet(t *testing.T) {
 	insertIPCache(t, store, "equal-last", "8.8.12.12", "succeeded", wholeSecond)
 	for _, tc := range []struct{ ip, reportID, match string }{
 		{"8.8.8.13", "older-exact", "exact"},
-		{"8.8.8.14", "newest-completion", "subnet"},
+		{"8.8.8.14", "", "none"},
 		{"8.8.9.13", "", "none"},
 		{"8.8.9.14", "", "none"},
-		{"8.8.10.13", "later-nanoseconds", "subnet"},
+		{"8.8.10.13", "", "none"},
 		{"8.8.11.11", "later-exact-nanoseconds", "exact"},
-		{"8.8.12.13", "equal-last", "subnet"},
+		{"8.8.12.13", "", "none"},
 		{"2606:4700:4700::1111", "ipv6-exact", "exact"},
 		{"2606:4700:4700::1112", "", "none"},
 	} {
@@ -78,7 +78,7 @@ func TestIPLookupPreviewPrefersExactThenNewestCompletedSubnet(t *testing.T) {
 	}
 }
 
-func TestIPLookupQuoteBecomingSubnetCacheIsFreeAndRestoresRequestedIP(t *testing.T) {
+func TestIPLookupQuoteBecomingExactCacheIsFree(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store, service, user, _, now := ipLookupFixture(t, 2)
@@ -86,17 +86,17 @@ func TestIPLookupQuoteBecomingSubnetCacheIsFreeAndRestoresRequestedIP(t *testing
 	if err != nil || !quote.UseQuota || quote.CacheMatch != "none" {
 		t.Fatalf("initial quote=%+v %v", quote, err)
 	}
-	insertIPCache(t, store, "became-cache", "8.8.8.9", "succeeded", now)
-	op, err := service.Submit(ctx, user, "became-subnet-cache", quote.Quote)
+	insertIPCache(t, store, "became-cache", "8.8.8.8", "succeeded", now)
+	op, err := service.Submit(ctx, user, "became-exact-cache", quote.Quote)
 	if err != nil {
 		t.Fatal(err)
 	}
-	replay, err := service.Submit(ctx, user, "became-subnet-cache", quote.Quote)
+	replay, err := service.Submit(ctx, user, "became-exact-cache", quote.Quote)
 	if err != nil || replay.ID != op.ID {
 		t.Fatal("cache command replay was not idempotent")
 	}
 	check, err := service.Check(ctx, user, op.ID)
-	if err != nil || !check.Cached || check.UsedQuota || check.Charge.Minor != "0" || check.RequestedIP != "8.8.8.8" || check.CacheMatch != "subnet" || check.Report == nil || check.Report.IP != "8.8.8.9" {
+	if err != nil || !check.Cached || check.UsedQuota || check.Charge.Minor != "0" || check.RequestedIP != "8.8.8.8" || check.CacheMatch != "exact" || check.Report == nil || check.Report.IP != "8.8.8.8" {
 		t.Fatalf("cache receipt=%+v %v", check, err)
 	}
 	state, err := service.State(ctx, user)

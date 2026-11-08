@@ -1,7 +1,6 @@
 package iplookup
 
 import (
-	"net/netip"
 	"strings"
 )
 
@@ -21,7 +20,7 @@ func coreQualityPassed(r Report) bool {
 	if state := r.Checkpoint; state != nil {
 		complete = state.Complete && state.Coverage == 31 && state.Usable > 0 && eligibleNetwork(r)
 	}
-	if !complete || r.Proxy == nil || r.Proxy.Status != "success" || r.RPKI == nil || r.LiveDetails == nil {
+	if !complete || r.RPKI == nil || r.LiveDetails == nil {
 		return false
 	}
 	if !qualitySourcePassed(r.RPKI.Status) || !qualitySourcePassed(r.LiveDetails.Shodan.Status) {
@@ -40,21 +39,13 @@ func qualitySourcePassed(status string) bool { return status == "success" || sta
 func updateRating(r *Report) {
 	moveDatacenterWarnings(r)
 	r.Rating = "incomplete"
-	if len(r.Refusals) > 0 || (r.Proxy != nil && len(r.Proxy.Matches) > 0) {
+	if len(r.Refusals) > 0 {
 		r.Rating = "poor"
 		return
 	}
 	if r.RPKI != nil {
 		for _, route := range r.RPKI.Routes {
 			if route.Status == "success" && (route.Validity == "invalid_asn" || route.Validity == "invalid_length") {
-				r.Rating = "poor"
-				return
-			}
-		}
-	}
-	for _, port := range r.Ports {
-		for _, finding := range port.Findings {
-			if finding.Confidence == "confirmed" {
 				r.Rating = "poor"
 				return
 			}
@@ -71,65 +62,9 @@ func updateRating(r *Report) {
 		r.Rating = "average"
 		return
 	}
-	if businessUsage(*r) || !probesPassed(r.Ports) || requestedPortObservations(*r) {
+	if businessUsage(*r) {
 		r.Rating = "good"
 		return
 	}
 	r.Rating = "excellent"
-	if subnetPassed(*r) {
-		r.Rating = "perfect"
-	}
-}
-
-func observedPorts(ports []PortProbe) bool {
-	for _, port := range ports {
-		if port.Status == "closed" {
-			continue
-		}
-		for _, task := range port.Tasks {
-			if task.Key == "tcp" && task.Status == "success" {
-				return true
-			}
-		}
-		for _, finding := range port.Findings {
-			if finding.Confidence == "observed" || finding.Confidence == "suspected" {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func requestedPortObservations(r Report) bool {
-	if observedPorts(r.Ports) {
-		return true
-	}
-	if r.Subnet != nil {
-		for _, row := range r.Subnet.Addresses {
-			if row.IP == r.IP {
-				return observedPorts(row.Ports)
-			}
-		}
-	}
-	return false
-}
-
-func subnetPassed(r Report) bool {
-	if ip, err := netip.ParseAddr(r.IP); err == nil && ip.Is6() {
-		return true
-	}
-	if r.Subnet == nil || r.Subnet.Status != "success" {
-		return false
-	}
-	neighbors := 0
-	for _, row := range r.Subnet.Addresses {
-		if row.IP == r.IP {
-			continue
-		}
-		neighbors++
-		if row.Status != "clean" {
-			return false
-		}
-	}
-	return neighbors == 255
 }

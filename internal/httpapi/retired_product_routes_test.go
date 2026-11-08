@@ -26,3 +26,19 @@ func TestRetiredOutageControlsHaveNoAdminRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestRetiredIPSourceControlsHaveNoRoutes(t *testing.T) {
+	router := chi.NewRouter()
+	(&Server{}).mountIPLookup(router)
+	for _, target := range []struct{ method, path string }{
+		{http.MethodGet, "/api/v1/admin/ip-lookup/proxy-sources"},
+		{http.MethodPost, "/api/v1/admin/ip-lookup/proxy-sources/old/test"},
+		{http.MethodGet, "/api/v1/admin/ip-lookup/proxy-source-tests/old"},
+	} {
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, httptest.NewRequest(target.method, target.path, nil))
+		if response.Code != http.StatusNotFound {
+			t.Fatalf("retired route %s %s returned %d", target.method, target.path, response.Code)
+		}
+	}
+}

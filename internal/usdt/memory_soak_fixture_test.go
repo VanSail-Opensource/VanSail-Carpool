@@ -1,4 +1,4 @@
-package iplookup
+package usdt_test
 
 import (
 	"encoding/json"

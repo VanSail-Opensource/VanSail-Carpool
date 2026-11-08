@@ -62,9 +62,7 @@ Schema definitions are grouped into bounded sequential shards. The root componen
 `ip-lookup-live.yaml` defines source timestamps/status, bounded BGP paths/topology, ASN metrics, nullable contextual scores, block counts, PTR records, and Cloudflare traffic windows.
 - `ip-lookup-progress.yaml` describes derived check progress and typed live stream events.
 
-`ip-lookup-enhanced.yaml` defines named inventories, compact matches, per-address subnet coverage, protocol evidence, durable probe progress and the identity-free shared progress response. Coordinates remain in the report facts for map rendering.
 
-`ip-lookup-enhanced.yaml` defines independent administrator source cache status and combined unique counts. `ip-lookup-report.yaml` adds optional AI suitability ratings and datacenter warnings while retaining verdict compatibility.
 
 - `usdt.yaml` ? Typed built-in USDT administration, quota, scan and review contracts.
 
@@ -112,3 +110,5 @@ The optional global setting field preserves older full-document writers.
 `subscription.yaml` defines owner-scoped subscription hosts and their squad references without monitoring fields.
 
 `member-connections.yaml` defines observation and lease metadata.
+
+`ip-lookup-enhanced.yaml` now contains only the identity-free exact-address shared progress response. Inventory, probe and subnet schemas are retired; reputation and network context remain typed separately.

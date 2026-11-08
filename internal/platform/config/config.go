@@ -15,22 +15,21 @@ import (
 
 // Config contains the values required before encrypted dashboard settings can be read.
 type Config struct {
-	Database           DatabaseConfig
-	Port               string
-	DataDir            string
-	ProxyCacheMaxBytes int64
-	PublicBaseURL      *url.URL
-	AdminTelegramIDs   []int64
-	TelegramBotToken   string
-	MasterKey          []byte
-	Timezone           *time.Location
-	LogLevel           slog.Level
-	SessionTTL         time.Duration
-	InitDataMaxAge     time.Duration
-	ShutdownTimeout    time.Duration
-	BackupRetention    time.Duration
-	BackupHour         int
-	AllowInsecureHTTP  bool
+	Database          DatabaseConfig
+	Port              string
+	DataDir           string
+	PublicBaseURL     *url.URL
+	AdminTelegramIDs  []int64
+	TelegramBotToken  string
+	MasterKey         []byte
+	Timezone          *time.Location
+	LogLevel          slog.Level
+	SessionTTL        time.Duration
+	InitDataMaxAge    time.Duration
+	ShutdownTimeout   time.Duration
+	BackupRetention   time.Duration
+	BackupHour        int
+	AllowInsecureHTTP bool
 }
 
 // Load reads configuration from the environment and returns an actionable error for invalid input.
@@ -43,15 +42,7 @@ func Load() (Config, error) {
 	}
 	cfg.Port = envDefault("PORT", "8080")
 	cfg.DataDir = envDefault("DATA_DIR", "/data")
-	cfg.ProxyCacheMaxBytes = 1 << 30
-	if value := strings.TrimSpace(os.Getenv("PROXY_CACHE_MAX_BYTES")); value != "" {
-		maximum, err := strconv.ParseInt(value, 10, 64)
-		if err != nil || maximum < 16<<20 || maximum > 16<<30 {
-			return Config{}, fmt.Errorf("PROXY_CACHE_MAX_BYTES must be between 16777216 and 17179869184")
-		}
-		cfg.ProxyCacheMaxBytes = maximum
-	}
-	cfg.SessionTTL = 7 * 24 * time.Hour
+
 	cfg.InitDataMaxAge = 5 * time.Minute
 	cfg.ShutdownTimeout = 15 * time.Second
 	cfg.BackupRetention = 7 * 24 * time.Hour

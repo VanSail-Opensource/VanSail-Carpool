@@ -2,13 +2,9 @@ package iplookup
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"math"
-	"math/big"
 	"net"
-	"net/netip"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -58,93 +54,6 @@ func (s *LiveService) scores(ctx context.Context, ip string, c Config) NetworkSc
 	if result.Company.Ratio == nil || result.ASN.Ratio == nil {
 		result.Status = "partial"
 	}
-	return result
-}
-
-func blockPrefix(ip string) string {
-	address, err := netip.ParseAddr(ip)
-	if err != nil {
-		return ""
-	}
-	bits := 64
-	if address.Is4() {
-		bits = 24
-	}
-	return netip.PrefixFrom(address, bits).Masked().String()
-}
-
-func (s *LiveService) block(ctx context.Context, ip string, c Config) AbuseBlock {
-	prefix := blockPrefix(ip)
-	result := AbuseBlock{LiveMeta: LiveMeta{Status: "unconfigured", Source: "abuseipdb"}, Prefix: prefix, WindowDays: 30}
-	p, err := netip.ParsePrefix(prefix)
-	if err != nil {
-		result.Status = "empty"
-		return result
-	}
-	result.AddressCapacity = new(big.Int).Lsh(big.NewInt(1), uint(p.Addr().BitLen()-p.Bits())).String()
-	if deferred, _ := ctx.Value(deferBlockKey{}).(bool); deferred {
-		result.Status = "skipped"
-		return result
-	}
-	key, err := s.credential(ctx, "abuseipdb", c)
-	if err != nil {
-		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_UNAVAILABLE"})
-		return result
-	}
-	if key == "" {
-		return result
-	}
-	data, err := s.liveHTTP(ctx, "abuseipdb", "/api/v2/check-block", url.Values{"network": {prefix}, "maxAgeInDays": {"30"}}, nil, key)
-	result.LiveMeta = liveMeta("abuseipdb", err)
-	if err != nil {
-		return result
-	}
-	d := nested(liveObject(data), "data")
-	result.MinAddress, result.MaxAddress = textField(d, "minAddress"), textField(d, "maxAddress")
-	addr, err := netip.ParseAddr(textField(d, "networkAddress"))
-	if err != nil || addr != p.Masked().Addr() {
-		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
-		return result
-	}
-	mask, maskErr := netip.ParseAddr(textField(d, "netmask"))
-	ones, bits := net.IPMask(mask.AsSlice()).Size()
-	if maskErr != nil || bits != p.Addr().BitLen() || ones != p.Bits() {
-		result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
-		return result
-	}
-	if _, ok := d["reportedAddress"]; !ok {
-		result.Status = "partial"
-		return result
-	}
-	var rows []object
-	if string(d["reportedAddress"]) == "null" || json.Unmarshal(d["reportedAddress"], &rows) != nil {
-		result.Status = "partial"
-		return result
-	}
-	seen := map[string]bool{}
-	for _, row := range rows {
-		addr, err := netip.ParseAddr(textField(row, "ipAddress"))
-		if err != nil || !p.Contains(addr) {
-			result.LiveMeta = liveMeta("abuseipdb", &CodeError{"IP_DETAILS_INVALID_RESPONSE"})
-			return result
-		}
-		seen[addr.String()] = true
-		item := AbuseAddress{IP: addr.String()}
-		if count := numeric(row, "numReports"); count != nil {
-			item.Reports = int(*count)
-		} else {
-			result.Status = "partial"
-		}
-		if confidence := numeric(row, "abuseConfidenceScore"); confidence != nil {
-			item.Score = *confidence
-		} else {
-			result.Status = "partial"
-		}
-		result.Addresses = append(result.Addresses, item)
-	}
-	count := len(seen)
-	result.ReportedAddresses = &count
-	result.ObservedAt = s.now().UTC().Format(time.RFC3339)
 	return result
 }
 

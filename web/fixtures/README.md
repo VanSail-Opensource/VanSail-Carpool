@@ -55,7 +55,6 @@ mount the real browser entrance, Mini App link panel, and browser exchange view.
 exercise link-only administrator access without production requests.
 `window.__browserAuthAudit` records mock issuance, exchange, and clipboard actions.
 
-IP Lookup's `subnet-probes` query flag adds per-address TCP/Reality/Cloudflare evidence with yellow, red, gray and legacy-compatible rows. Combine it with `checking` for live subnet progress, `queued` for shared waiting, or `enhanced=categories` for a refused primary IP with visible subnet probes. These fixtures exercise the real Vue components through Chrome DevTools MCP without production requests.
 
 `PMAdminAudit.vue`, `pm-admin-audit.ts` and `pm-admin-audit.html` mount real
 administration rows and dialogs with isolated reference-only operations.
@@ -102,7 +101,7 @@ Use `mode=home&history-shares` to inspect traffic/cost aggregation, including a 
 
 - `IPLookupAudit.vue` mounts actual member/admin IP Lookup components inside the existing app shell.
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.
-- `ip-lookup-audit.html` is the browser fixture entry point; `admin`, `zh`, `no-combo` and `cached` flags select the relevant variants. `mode=cached|subnet` displays reports automatically when an IP is entered, without a submission. `risk`, `scamalytics-risk`, `maxmind-risk`, `partial`, `all-failed`, `nulls`, `zero` and `subsource` exercise compact evidence, cached API errors, source names and coordinate visibility; `loading`, `disabled`, `error`, `balance-error` and `save-error` cover recovery states. `__ipAudit.counters()` records quote/submission counts and the saved provider/geolocation order; `__ipAudit.setCached()` changes cache availability before a new address is entered.
+- `ip-lookup-audit.html` is the browser fixture entry point; `admin`, `zh`, `no-combo` and `cached` flags select the relevant variants. `mode=cached` displays reports automatically when an IP is entered, without a submission. `risk`, `scamalytics-risk`, `maxmind-risk`, `partial`, `all-failed`, `nulls`, `zero` and `subsource` exercise compact evidence, cached API errors, source names and coordinate visibility; `loading`, `disabled`, `error`, `balance-error` and `save-error` cover recovery states. `__ipAudit.counters()` records quote/submission counts and the saved provider/geolocation order; `__ipAudit.setCached()` changes cache availability before a new address is entered.
 `ip-lookup-live-audit.ts` supplies constructed live topology, origin selection, zero/unknown metrics, traffic windows, errors, slow/cancelled responses and request counters for Chrome DevTools MCP reviews of the real IP Lookup components.
 
 IP Lookup routing audits additionally support `live=transits`, `live=legacy`,
@@ -114,9 +113,8 @@ existing empty/slow/error/multiple-origin/large modes cover the new sections too
 
 - `ip-lookup-progress-audit.ts` supplies progressive, interrupted and 300-node/1,500-edge/1,000-path browser fixtures. The live fixture counts simulated upstream runs and implements a 60-second reuse window with forced refresh.
 
-`ip-lookup-enhanced-audit.ts` provides constructed named-source, subnet, full-probe progress and return-to-IP states. Use `enhanced=clean|risk|partial|skipped` and `checking` or `progress-error`; `__ipEnhancedAudit.start()` / `.finish()` control shared work without charges.
 
-`ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). The enhanced fixture supports `source-warming`, `source-partial`, `source-error` and `source-status-error` for shared admin polling/refresh; `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.
+`ip-lookup-rating-audit.ts` constructs all six report tiers (`rating=perfect|excellent|good|average|poor|incomplete`). `many-transfers` and `long-labels` exercise pagination and graph clipping. These are constructed browser evidence, not upstream collection or billing proof.
 
 - `XNodeAudit.vue`, `xnode-audit.ts` and `xnode-audit.html` provide constructed X-Node workspace and migration browser states. Query flags cover empty, slow, error, source preview, unsupported methods, pending receipts, recovery and Chinese localization. They never connect to production agents.
   `legacy-source-rule` supplies an old enabled inventory-match rule to verify

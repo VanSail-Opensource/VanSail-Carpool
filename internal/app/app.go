@@ -132,7 +132,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		return cleanup(err)
 	}
 	ipLookupWorker.OnBackgroundError = func(code string) { logger.Error("background IP lookup interrupted", "code", code) }
-	xnodeMaster.SetFirewallDetectionSink(ipLookupService.Enhanced)
 	if err = outboxWorker.Register(xnode.FirewallJob, xnodeMaster); err != nil {
 		return cleanup(err)
 	}
@@ -249,9 +248,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	httpServer := &http.Server{
 		Addr: ":" + cfg.Port, Handler: api.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
 		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20,
-	}
-	if err := ipLookupWorker.Enhanced.ConfigureInventoryCache(context.Background(), db, filepath.Join(cfg.DataDir, "cache", "proxy-inventory"), cfg.ProxyCacheMaxBytes); err != nil {
-		logger.Error("proxy inventory cache unavailable", "error", err)
 	}
 	return &Application{
 		databaseOwner: owner,

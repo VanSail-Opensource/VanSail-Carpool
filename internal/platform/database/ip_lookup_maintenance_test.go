@@ -126,8 +126,8 @@ func TestIPLookupMaintenanceCachesAttemptedProviderOutageWithoutRefund(t *testin
 	if err != nil || after.Minor != before.Minor {
 		t.Fatal("attempted outage was refunded")
 	}
-	preview, err := service.PreviewQuote(ctx, user, "8.8.8.9", false)
-	if err != nil || preview.CacheMatch != "subnet" || preview.CachedReport == nil || !iplookup.ReportAttempted(*check.Report) {
+	preview, err := service.PreviewQuote(ctx, user, "8.8.8.8", false)
+	if err != nil || preview.CacheMatch != "exact" || preview.CachedReport == nil || !iplookup.ReportAttempted(*check.Report) {
 		t.Fatalf("attempted outage not cacheable: %+v %v", preview, err)
 	}
 }

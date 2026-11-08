@@ -63,7 +63,6 @@ func partiallyFailingPTR() LiveDetails {
 		SnapshotID: "snapshot", IP: "1.1.1.1", SourceIP: "1.1.1.1", FetchedAt: "2026-10-11T00:00:00Z",
 		Topology: BGPTopology{ProjectionVersion: 2, LiveMeta: healthyMeta(), RelationshipMeta: healthyMeta(), ClassificationMeta: healthyMeta(), Prefix: "1.1.1.0/24", Origins: []uint32{13335}},
 		Scores:   NetworkScores{LiveMeta: healthyMeta()},
-		Block:    AbuseBlock{LiveMeta: healthyMeta()},
 		Shodan:   ShodanDetails{LiveMeta: healthyMeta()},
 		PTR:      PTRDetails{LiveMeta: LiveMeta{Status: "error", Source: "dns", ErrorCode: "IP_DETAILS_UNAVAILABLE"}},
 	}
@@ -73,16 +72,15 @@ func TestLiveRetryPlanCascadesTopologyFailures(t *testing.T) {
 	t.Parallel()
 	independent := partiallyFailingPTR()
 	independent.PTR.LiveMeta = healthyMeta()
-	independent.Block.LiveMeta = LiveMeta{Status: "error"}
 	independent.Shodan.LiveMeta = LiveMeta{Status: "partial"}
-	if plan := liveRetryPlanOf(independent); !plan.Block || !plan.Shodan || plan.Topology || plan.Graph || plan.ASNs || plan.PTR || plan.Scores {
+	if plan := liveRetryPlanOf(independent); !plan.Shodan || plan.Topology || plan.Graph || plan.ASNs || plan.PTR || plan.Scores {
 		t.Fatalf("independent failures misplanned: %+v", plan)
 	}
 
 	cascading := partiallyFailingPTR()
 	cascading.PTR.LiveMeta = healthyMeta()
 	cascading.Topology.LiveMeta = LiveMeta{Status: "error"}
-	if plan := liveRetryPlanOf(cascading); !plan.Topology || !plan.Graph || plan.Block || !plan.ASNs || plan.PTR || plan.Scores || plan.Shodan {
+	if plan := liveRetryPlanOf(cascading); !plan.Topology || !plan.Graph || !plan.ASNs || plan.PTR || plan.Scores || plan.Shodan {
 		t.Fatalf("topology cascade lost: %+v", plan)
 	}
 

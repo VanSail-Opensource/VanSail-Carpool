@@ -4,7 +4,6 @@ import type { IPLookupCheck, IPLookupReport } from '@/api/ipLookup'
 import { formatMoney } from '@/utils/format'
 import IPLocationMap from './IPLocationMap.vue'
 import IPRefusals from './IPRefusals.vue'
-import { portWarnings } from './probePresentation'
 import { providerName } from './presentation'
 import { reportRows } from './reportPresentation'
 import { ipLocationMap } from './map'
@@ -13,7 +12,7 @@ const props = defineProps<{ report: IPLookupReport; requestedIp: string; cacheMa
 const rows = computed(() => reportRows(props.report))
 const hasMap = computed(() => !!ipLocationMap(props.report.facts.latitude, props.report.facts.longitude))
 const rating = computed(() => props.report.rating ?? (props.report.refusals.some(item => item.kind !== 'datacenter') ? 'poor' : 'incomplete'))
-const warnings = computed(() => [...(props.report.warnings ?? []), ...portWarnings(props.report.ports ?? [])])
+const warnings = computed(() => props.report.warnings ?? [])
 const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circle' : status === 'error' || status === 'partial' ? 'i-ph-warning-circle' : 'i-ph-minus-circle'
 </script>
 
@@ -23,7 +22,6 @@ const databaseIcon = (status: string) => status === 'success' ? 'i-ph-check-circ
       <div><code>{{ requestedIp }}</code><h2 :class="`rating-${rating}`"><UIcon :name="rating === 'poor' ? 'i-ph-x-circle' : rating === 'incomplete' ? 'i-ph-question' : rating === 'average' ? 'i-ph-warning-circle' : 'i-ph-check-circle'" aria-hidden="true" />{{ $t(`ipLookup.ratings.${rating}`) }}</h2></div>
       <span class="report-cache">{{ cacheMatch !== 'none' ? $t('ipLookup.cached') : $t('ipLookup.fresh') }}</span>
     </header>
-    <p v-if="cacheMatch === 'subnet'" class="report-note">{{ $t('ipLookup.subnetCache', { ip: report.ip }) }}</p>
     <IPRefusals :refusals="report.refusals" />
     <IPRefusals :refusals="warnings" warning />
     <div class="report-content" :class="{ 'report-content-mapped': hasMap }">

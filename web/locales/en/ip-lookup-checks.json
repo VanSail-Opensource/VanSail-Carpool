@@ -2,42 +2,11 @@
   "ipLookup": {
     "backgroundReminder": "This check continues in the background. Return later and enter this IP to see progress.",
     "progressUnavailable": "Progress is temporarily unavailable. Try again shortly; a new check is disabled until its status can be read.",
-    "proxyHeading": "IP inventories",
-    "noProxyMatch": "No inventory match",
-    "proxyIncomplete": "Inventory coverage incomplete",
-    "proxyCoverage": "Source coverage",
-    "probeCoverage": "Probe coverage",
-    "subnetHeading": "/24 checks",
-    "requestedAddress": "Requested IP",
     "sharedFree": "Waiting for shared result · free",
     "usedQuotaCount": "{count} included checks used",
     "refreshIncluded": "Refresh · {count} included checks",
-    "proxySettings": "IP sources and probes",
-    "proxySettingsHelp": "Enabled sources refresh at startup and every 6 hours. Refresh one source without starting an IP check.",
-    "sourceEnabled": "Enabled",
-    "sourceName": "Source name",
-    "sourceURL": "Source URL",
-    "addSource": "Add source",
-    "removeSource": "Remove source",
-    "dnsResolvers": "DNS servers",
-    "dnsResolversHelp": "Public IP:port, one per line. Failed queries try another server.",
-    "probePorts": "Additional probe ports",
-    "probePortsHelp": "Comma-separated ports. 443, 4430, 8443 and Shodan ports are always included.",
     "refreshQuotaCost": "Included checks per refresh",
     "refreshQuotaHelp": "Zero uses TXB. Otherwise use this many included checks, falling back to TXB when insufficient.",
-    "probes": {
-      "tcp": "TCP connection",
-      "socks5": "SOCKS5",
-      "socks4": "SOCKS4",
-      "http": "HTTP proxy",
-      "tls": "TLS / Reality",
-      "shadowsocks": "Shadowsocks",
-      "trojan_alpn": "Trojan ALPN",
-      "trojan_short": "Trojan short request",
-      "trojan_close": "Trojan close timing",
-      "trojan_incomplete": "Trojan incomplete request",
-      "trojan_overbuffer": "Trojan repeated headers"
-    },
     "protocols": {
       "socks5": "SOCKS5",
       "socks4": "SOCKS4",
@@ -55,47 +24,6 @@
       "suspected": "Suspected",
       "observed": "Observed",
       "unavailable": "Unknown"
-    },
-    "probeStatuses": {
-      "pending": "Queued",
-      "processing": "Checking",
-      "active": "Checking",
-      "success": "Completed",
-      "partial": "Partial",
-      "error": "Unavailable",
-      "skipped": "Skipped",
-      "unavailable": "Unavailable",
-      "closed": "Closed",
-      "disabled": "Disabled"
-    },
-    "subnetStates": {
-      "clean": "Clean",
-      "suspected": "Suspected Reality",
-      "flagged": "Abuse / proxy",
-      "unknown": "Incomplete"
-    },
-    "subnetSources": {
-      "proxy": "Proxy list",
-      "abuse": "Abuse",
-      "ipapi": "IPAPI"
-    },
-    "subnetSourceStates": {
-      "success": "Clear",
-      "partial": "Incomplete",
-      "error": "Unavailable",
-      "pending": "Pending",
-      "processing": "Checking",
-      "skipped": "Skipped",
-      "unconfigured": "Not configured",
-      "restricted": "Plan restricted",
-      "flagged": "Detected",
-      "empty": "No reports"
-    },
-    "subnetReasons": {
-      "ip_not_passed": "Subnet checks skipped: the requested IP did not pass all checks.",
-      "proxy_incomplete": "Subnet checks skipped: proxy coverage is incomplete.",
-      "probes_incomplete": "Subnet checks skipped: port probes are incomplete.",
-      "ipv6": "IPv6 /64 abuse reports; addresses are not enumerated."
     },
     "sources": {
       "proxy_lists": "IP lists",
@@ -115,43 +43,6 @@
       "abuse_list": "Abuse"
     },
     "qualityHeading": "IP quality",
-    "sourceSaveFirst": "Save source or DNS changes before refreshing.",
-    "inventoryIPs": "{count} unique IP/CIDR entries",
-    "inventoryProgress": "{done}/{total} endpoints processed",
-    "inventorySkipped": "{count} without a public IP",
-    "inventoryDNSFailed": "{count} DNS failures skipped",
-    "probeResults": {
-      "detected": "Detected",
-      "not_detected": "Not detected",
-      "unavailable": "Unavailable",
-      "not_applicable": "Not applicable"
-    },
-    "dnsStatuses": {
-      "success": "Resolved",
-      "no_address": "No public address",
-      "error": "Unavailable"
-    },
-    "sourcePhases": {
-      "download": "Downloading inventory",
-      "parse": "Parsing endpoints",
-      "dns": "Resolving endpoints",
-      "complete": "Completed"
-    },
-    "sourceErrors": {
-      "IP_PROXY_DOWNLOAD": "The inventory could not be downloaded.",
-      "IP_PROXY_PARSE": "The inventory exceeded parsing limits or could not be fully parsed.",
-      "IP_PROXY_EMPTY": "No supported endpoints were found.",
-      "IP_PROXY_LIMIT": "The inventory exceeded its size or IP/CIDR entry limit.",
-      "IP_DNS_UNAVAILABLE": "Some endpoint DNS lookups failed after resolver failover.",
-      "IP_PROXY_INTERRUPTED": "The refresh was interrupted or reached its time limit.",
-      "IP_PROXY_SOURCE_NOT_FOUND": "This saved source or diagnostic is no longer available."
-    },
-    "refreshSource": "Refresh cache",
-    "retrySource": "Retry",
-    "cacheStale": "Coverage incomplete",
-    "inventoryTotal": "{count} unique IP/CIDR entries across enabled sources",
-    "sourceUpdated": "Updated {date}",
-    "sourceNextRefresh": "Next refresh {date}",
     "ratings": {
       "perfect": "Perfect",
       "excellent": "Excellent",
@@ -163,12 +54,6 @@
     "warningHeading": "Warnings",
     "portWarning": "Port {port}: {confidence}",
     "portLabel": "Port {port}",
-    "portService": "{protocol} ({confidence})",
-    "sourceCategory": "Category",
-    "sourceCategories": {
-      "proxy_pool": "Proxy Pool",
-      "proxy_database": "Proxy Database",
-      "abuse": "Abuse"
-    }
+    "portService": "{protocol} ({confidence})"
   }
 }

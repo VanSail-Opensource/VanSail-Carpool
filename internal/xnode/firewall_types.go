@@ -22,9 +22,6 @@ type FirewallBanView struct {
 	DetectedAt   time.Time `json:"detectedAt"`
 	PendingNodes int       `json:"pendingNodes"`
 }
-type FirewallDetectionSink interface {
-	SetDetectedPrefixes([]string)
-}
 type firewallRepository interface {
 	JoinFirewallParticipants(context.Context, string, []wire.FirewallBan, []wire.FirewallSource) error
 	FirewallRevision(context.Context) (uint64, error)
@@ -36,5 +33,4 @@ type firewallRepository interface {
 	MarkFirewallDelivered(context.Context, string, uint64, bool, bool, uint64) error
 	SweepFirewall(context.Context, time.Time) error
 	FirewallBans(context.Context, int) ([]FirewallBanView, error)
-	FirewallPrefixes(context.Context, func([]string) error) error
 }

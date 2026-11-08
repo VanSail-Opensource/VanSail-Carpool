@@ -18,7 +18,7 @@ func emitCachedDetails(r LiveDetails, emit func(LiveEvent) error) (LiveDetails, 
 
 // LivePartial reports missing/error coverage without changing the quality verdict.
 func LivePartial(r LiveDetails) bool {
-	metas := []LiveMeta{r.Topology.LiveMeta, r.Topology.ClassificationMeta, r.Scores.LiveMeta, r.Block.LiveMeta, r.PTR.LiveMeta, r.Shodan.LiveMeta}
+	metas := []LiveMeta{r.Topology.LiveMeta, r.Topology.ClassificationMeta, r.Scores.LiveMeta, r.PTR.LiveMeta, r.Shodan.LiveMeta}
 	if relationshipMetaFailed(r.Topology.RelationshipMeta) {
 		return true
 	}

@@ -1,17 +1,19 @@
 package iplookup
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
-func (w *Worker) recordEnhancedContext(r *Report, result ProviderResult) {
-	if w.Enhanced == nil {
+func (w *Worker) recordQualityScores(r *Report, result ProviderResult) {
+	if w.Live == nil {
 		return
 	}
 
-	if r.Checkpoint.Enhanced == nil {
-		r.Checkpoint.Enhanced = &EnhancedCheckpoint{Phase: "checking"}
+	if r.Checkpoint.Enrichment == nil {
+		r.Checkpoint.Enrichment = &EnrichmentCheckpoint{}
 	}
 	if result.ID == "ipapi" && (result.Status == "success" || result.Status == "partial") {
-		r.Checkpoint.Enhanced.IPAPI = &ProviderResult{ID: "ipapi", Status: result.Status, Signals: result.Signals, Complete: result.Complete}
 		scores := NetworkScores{LiveMeta: LiveMeta{Status: "success", Source: "ipapi", ObservedAt: w.now().UTC().Format(time.RFC3339)}}
 		if result.ContextScores != nil {
 			scores.Company, scores.ASN = result.ContextScores.Company, result.ContextScores.ASN
@@ -25,6 +27,12 @@ func (w *Worker) recordEnhancedContext(r *Report, result ProviderResult) {
 		if scores.Company.Ratio == nil || scores.ASN.Ratio == nil {
 			scores.Status = "partial"
 		}
-		r.Checkpoint.Enhanced.Scores = &scores
+		r.Checkpoint.Enrichment.Scores = &scores
 	}
+}
+
+type qualityScoresKey struct{}
+
+func withQualityScores(ctx context.Context, scores *NetworkScores) context.Context {
+	return context.WithValue(ctx, qualityScoresKey{}, scores)
 }

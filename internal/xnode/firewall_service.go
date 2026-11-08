@@ -54,9 +54,6 @@ func (s *Service) FirewallBans(ctx context.Context) ([]FirewallBanView, error) {
 	}
 	return repo.FirewallBans(ctx, 200)
 }
-func (m *Master) SetFirewallDetectionSink(inventory FirewallDetectionSink) {
-	m.firewallDetectionSink = inventory
-}
 func (m *Master) NotifyFirewallChanged() {
 	select {
 	case m.firewallWake <- struct{}{}:

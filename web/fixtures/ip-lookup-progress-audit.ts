@@ -14,8 +14,8 @@ export function denseTopology(result: IPLookupLiveDetails) {
 }
 
 export async function publishLiveAudit(result: IPLookupLiveDetails, params: URLSearchParams, signal?: AbortSignal, emit?: (event: IPLookupLiveEvent) => void) {
-  const sectionNames = ['topology', 'scores', 'ptr', 'block', 'asns', 'shodan', 'transfers'] as const
-  const phases = ['topology', 'scores', 'ptr', 'block', 'asns', 'relationships', 'names', 'shodan', 'transfers'] as const
+  const sectionNames = ['topology', 'scores', 'ptr', 'asns', 'shodan', 'transfers'] as const
+  const phases = ['topology', 'scores', 'ptr', 'asns', 'relationships', 'names', 'shodan', 'transfers'] as const
   // ?live=degraded completes the asns step with partial coverage to audit warning states.
   const degraded = params.get('live') === 'degraded'
   const tasks = (active: number) => phases.map((phase, index) => ({

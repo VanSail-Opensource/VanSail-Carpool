@@ -4,22 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"net/netip"
-	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
-// CachedIPDetails reads exact evidence first, then IPv4 /24, without side effects.
+// CachedIPDetails reads exact evidence without side effects.
 func (s *Store) retryAttempt_CachedIPDetails(ctx context.Context, ip string) (*iplookup.LiveDetails, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	combined, match, err := ipCachedReportTx(ctx, tx, ip, true)
+	combined, match, err := ipCachedReportTx(ctx, tx, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +32,6 @@ func (s *Store) retryAttempt_CachedIPDetails(ctx context.Context, ip string) (*i
 	match = "exact"
 	if err != nil {
 		return nil, err
-	}
-	if address, parseErr := netip.ParseAddr(ip); id == "" && parseErr == nil && address.Is4() {
-		prefix := ip[:strings.LastIndexByte(ip, '.')+1]
-		id, err = newestIPCacheTableTx(ctx, tx, "ip_lookup_live_snapshots", "ip>=$1 AND ip<$2", prefix, strings.TrimSuffix(prefix, ".")+"/")
-		match = "subnet"
 	}
 	if err != nil || id == "" {
 		return nil, err

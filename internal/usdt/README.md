@@ -129,3 +129,5 @@ are unchanged. Lifecycle logs memory and goroutines once per minute.
 `tokens_test.go` supplies hosted pinned-registry, legacy-default and token-readiness isolation regressions.
 
 `token_probe_test.go` verifies that queued native USDC probes use each pinned EVM contract and reject unexpected precision.
+
+`memory_soak_test.go`, `memory_soak_fixture_test.go` and `memory_soak_scanner_test.go` stress queued multi-network scanner startup, transfer proof batches, cancellation and cleanup in the hosted 256 MiB container gate. No retired proxy inventory code is needed.

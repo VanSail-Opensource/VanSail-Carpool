@@ -81,5 +81,5 @@ func (s *Store) IPLookupSharedProgress(ctx context.Context, ip string) (*iplooku
 	if err != nil {
 		return nil, err
 	}
-	return &iplookup.SharedProgress{IP: ip, Status: r.Status, Progress: iplookup.CheckProgress(r), Ports: r.Ports, Subnet: r.Subnet, UpdatedAt: updated}, nil
+	return &iplookup.SharedProgress{IP: ip, Status: r.Status, Progress: iplookup.CheckProgress(r), UpdatedAt: updated}, nil
 }

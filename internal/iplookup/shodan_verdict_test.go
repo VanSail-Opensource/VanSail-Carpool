@@ -21,9 +21,9 @@ func TestShodanFindingsRefuseQualityAndSurvivePersistence(t *testing.T) {
 		{"unavailable without findings", "error", "suitable", nil, nil, 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Report{ID: "shodan-quality", IP: "1.1.1.1", Status: "succeeded", Verdict: "suitable", Refusals: []Refusal{}, Proxy: &ProxyAssessment{Status: "success"}, Ports: []PortProbe{{Port: 443, Status: "closed"}}, LiveDetails: &LiveDetails{IP: "1.1.1.1", Shodan: ShodanDetails{LiveMeta: LiveMeta{Status: tc.status, Source: "shodan:internetdb"}, CPEs: []string{"cpe:/a:openbsd:openssh:7.4"}, Tags: tc.tags, Vulns: tc.vulns}}}
-			applyEnhancedVerdict(&r)
-			applyEnhancedVerdict(&r)
+			r := Report{ID: "shodan-quality", IP: "1.1.1.1", Status: "succeeded", Verdict: "suitable", Refusals: []Refusal{}, LiveDetails: &LiveDetails{IP: "1.1.1.1", Shodan: ShodanDetails{LiveMeta: LiveMeta{Status: tc.status, Source: "shodan:internetdb"}, CPEs: []string{"cpe:/a:openbsd:openssh:7.4"}, Tags: tc.tags, Vulns: tc.vulns}}}
+			applyEnrichmentVerdict(&r)
+			applyEnrichmentVerdict(&r)
 			if r.Verdict != tc.verdict || len(r.Refusals) != tc.refusals {
 				t.Fatalf("wrong quality or duplicate refusals: %+v", r)
 			}

@@ -105,7 +105,6 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 - `ip_lookup.go` composes bounded provider queues and registers the shared IP Lookup operation worker.
 - `ip_lookup_outbox.go` registers the outbox handlers that retry failed stages of partial reputation reports and partial live snapshots in the background.
 
-`ip_lookup_enhanced.go` composes shared proxy inventories and queued probes. Application startup attaches IP work to the runtime; shutdown joins it before PostgreSQL closes. Checks and probes have separate bounded upstream workers so long observations do not hold the serial outbox dispatcher.
 
 
 
@@ -137,10 +136,7 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 
 Bootstrap applies container-aware memory budgeting before application construction.
-Application wiring opens the disposable PostgreSQL TEMP proxy inventory after
-fallible service construction; cache failure degrades inventory coverage
-independently of USDT. Shutdown joins workers/readers before closing its dedicated
-connection and the authoritative database.
+Application shutdown joins queued IP lookup workers before closing the authoritative database.
 
 `retired_detector.go` registers one bounded, durable `proxy_restriction_release` compatibility job per acknowledged historical detector ban. It preserves manual restrictions and paid entitlement terms; all legacy mutations use the existing provider queue. `retired_detector_test.go` covers manual precedence, acknowledgement checks, replay and retry failures. `payment_profile_manager_test.go` retains localized payment-profile alert coverage.
 

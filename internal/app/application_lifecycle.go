@@ -150,9 +150,5 @@ func (a *Application) shutdownRuntime(cancelRun context.CancelFunc, schedulerDon
 func (a *Application) Close() error {
 	a.outbox.Shutdown()
 	queueErr := a.upstreams.shutdown(context.Background())
-	var cacheErr error
-	if a.ipLookup != nil && a.ipLookup.Enhanced != nil {
-		cacheErr = a.ipLookup.Enhanced.CloseInventoryCache()
-	}
-	return errors.Join(queueErr, cacheErr, a.store.DB().Close(), a.databaseOwner.Close())
+	return errors.Join(queueErr, a.store.DB().Close(), a.databaseOwner.Close())
 }

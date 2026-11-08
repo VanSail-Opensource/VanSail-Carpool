@@ -183,7 +183,6 @@
       "rpki_invalid_asn": "RPKI origin ASN is invalid",
       "rpki_invalid_length": "RPKI prefix length is invalid"
     },
-    "subnetCache": "/24 cache · {ip}",
     "mapTitle": "Approximate IP location",
     "mapApproximate": "Approximate · OpenStreetMap",
     "openMap": "Open map",

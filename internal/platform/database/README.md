@@ -533,10 +533,10 @@ attached-coupon policy and a unique source-successor link.
 
 
 - `ip_lookup_refunds.go` restores never-attempted costs and closes interrupted shared runs during existing operation maintenance. Attempted calls remain charged and cacheable; IP receipts are excluded from generic compensation after domain settlement.
-- `ip_lookup_cache.go` serves free compact quote previews, preferring exact-IP evidence before the newest completed IPv4 /24 report. IPv6 stays exact-only; parsed completion timestamps avoid RFC3339 text ordering errors. Quote previews create no receipt, debit, or upstream request.
+- `ip_lookup_cache.go` serves free compact quote previews, using only matching exact-IP evidence; parsed completion timestamps avoid RFC3339 text ordering errors. Quote previews create no receipt, debit, or upstream request.
 - Check metadata retains the requested address and cache match independently of the evaluated report address, including after reload. Signed submission fields exclude the display-only cached report.
 - `ip_lookup_compact.go` converts legacy report payloads in bounded migration batches through the core versioned codec. Consolidated facts and minimal pending-stage markers replace per-provider snapshots; historical statuses, receipts, ledger entries, and refunds remain intact.
-- `ip_lookup_cache_test.go` covers free previews, exact-IP precedence, IPv4 /24 boundaries, IPv6 isolation, nanosecond completion ordering, cache arrival during submission, and display fields outside quote signatures in hosted CI.
+- `ip_lookup_cache_test.go` covers free previews, exact-IP isolation from neighboring addresses, IPv6 isolation, nanosecond completion ordering, cache arrival during submission, and display fields outside quote signatures in hosted CI.
 - `ip_lookup_fixture_test.go` supplies isolated lookup configuration, balances, purchase allowances, signed submissions, and terminal report fixtures for the database regression files.
 - `ip_lookup_maintenance_test.go` covers durable receipts and the distinct settlement of never-attempted jobs versus interrupted, chargeable provider calls in hosted CI.
 - `ip_lookup_policy_test.go` covers free cache reads with available quota, charged partial/refused/all-error reports, repeat settlement, and fractional completion timestamps in hosted CI.
@@ -544,7 +544,7 @@ attached-coupon policy and a unique source-successor link.
 
 ## Persistent realtime IP evidence
 
-- `ip_lookup_live_cache.go` stores compact shared snapshots and selects exact or IPv4 /24 evidence using the same timestamp/record-order ordering as quality reports. Snapshots do not expire or depend on current credentials. Storing a partial snapshot transactionally schedules its first background section retry through the shared outbox using the current settings policy.
+- `ip_lookup_live_cache.go` stores compact shared snapshots and selects exact-address evidence using the same timestamp/record-order ordering as quality reports. Snapshots do not expire or depend on current credentials. Storing a partial snapshot transactionally schedules its first background section retry through the shared outbox using the current settings policy.
 - `ip_lookup_live_stage.go` claims the report's realtime phase, records actual queued attempts and recovers stored snapshot references before any replay. The live checkpoint is independent of quality checkpoint writes.
 - `ip_lookup_live_check.go` adds live-phase progress and the referenced final snapshot to owner-scoped receipts without exposing recovery state.
 - `ip_lookup_live_cache_test.go` covers persistent matching, restart reads, nanosecond/tie ordering and absence of original paths in hosted CI.

@@ -142,7 +142,7 @@ func TestLiveEnrichmentKeepsRequestedIPsSeparate(t *testing.T) {
 		if r.IP != ip || len(r.Topology.Origins) != 2 || len(r.ASNs) != 2 || len(r.Topology.Paths) != 0 {
 			t.Fatalf("topology/origins: %+v", r.Topology)
 		}
-		if r.Scores.Company.Ratio == nil || *r.Scores.Company.Ratio != 0 || r.Block.ReportedAddresses == nil || *r.Block.ReportedAddresses != 0 || len(r.PTR.Domains) != 1 || len(r.Shodan.Ports) != 2 {
+		if r.Scores.Company.Ratio == nil || *r.Scores.Company.Ratio != 0 || len(r.PTR.Domains) != 1 || len(r.Shodan.Ports) != 2 {
 			t.Fatal("unknown/zero data or observation lost")
 		}
 		if r.ASNs[0].RegisteredAt != "2010-07-14" || *r.ASNs[0].IPv6Prefixes != 0 || *r.ASNs[0].Peers != 0 || r.ASNs[0].Traffic.Devices.Values["other"] != 0.9 {

@@ -75,7 +75,7 @@ func ipQuoteTx(ctx context.Context, tx *sql.Tx, user, ip string, refresh bool, n
 	if err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ip_lookup_reports WHERE ip=$1 AND status='processing')`, ip).Scan(&running); err != nil {
 		return q, c, err
 	}
-	cached, _, err := ipCachedReportTx(ctx, tx, ip, true)
+	cached, _, err := ipCachedReportTx(ctx, tx, ip)
 	if err != nil {
 		return q, c, err
 	}

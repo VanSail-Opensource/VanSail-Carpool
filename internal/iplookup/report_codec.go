@@ -7,7 +7,6 @@ import "encoding/json"
 // background repair; terminal reports drop it.
 func EncodeReport(r Report) ([]byte, error) {
 	foldLegacy(&r, DefaultConfig())
-	r = withoutDetectedReport(r)
 	if r.Status != "processing" && r.Status != "partial" {
 		r.Checkpoint = nil
 	}
@@ -65,14 +64,6 @@ func ReportAttempted(r Report) bool {
 
 func normalizeReport(r *Report) {
 	moveDatacenterWarnings(r)
-	if r.Proxy != nil {
-		proxy := *r.Proxy
-		proxy.Sources = append([]ProxySourceResult{}, proxy.Sources...)
-		for i := range proxy.Sources {
-			proxy.Sources[i].Category = sourceCategory(proxy.Sources[i].Category)
-		}
-		r.Proxy = &proxy
-	}
 	if r.Sources == nil {
 		r.Sources = map[string]string{}
 	}
