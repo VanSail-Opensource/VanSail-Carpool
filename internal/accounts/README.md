@@ -1,5 +1,17 @@
 # Accounts package
 
+`account_cleanup.go` composes durable probe/evidence repositories with the queued
+Telegram adapter. `account_cleanup_identity.go` suspends admission before bot
+verification and checks the configured numeric identity. `account_cleanup_worker.go`
+reloads the committed nonce before both bounded Bot API methods; a nonblocking
+single-probe gate keeps other existing workers available. It passes paired
+classifications to the repository rather than authorizing deletion itself.
+`account_cleanup_fixture_test.go`, `account_cleanup_worker_test.go` and
+`account_cleanup_identity_test.go` cover nonce-before-network ordering, protected
+accounts, transient/contradictory evidence, identity suspension and concurrency.
+The evidence grace and retention contract is documented in
+[`docs/account-cleanup.md`](../../docs/account-cleanup.md).
+
 Trusted Telegram authentication and resumable account onboarding live here. Network and persistence dependencies are expressed as package-level interfaces so the application layer can supply adapters.
 
 ## Files
@@ -24,6 +36,6 @@ Trusted Telegram authentication and resumable account onboarding live here. Netw
 `first_entry.go` exposes authenticated bootstrap state and verification. Agreement acceptance remains the permanent trust evidence; first-entry rows only qualify never-onboarded users. Admins remain able to configure the challenge.
 `first_entry_test.go` covers enabled/disabled bootstrap, provider identity, idempotent verified retries, configuration/provider failure refusal and configured-admin exemptions in hosted domain coverage.
 
-`purge.go` owns the generation-fenced outbox cleanup worker. `purge_test.go` covers blocked/uncertain upstream cleanup and replay. Ordinary members forfeit balance/access on authenticated bot blocks; admins are protected. Upstream failures remain pending. Rejoining after unblock creates fresh credentials and benefits while canonical accounting references remain archived.
+`purge.go` owns the generation-fenced outbox cleanup worker. `purge_test.go` covers blocked/uncertain upstream cleanup and replay. Bot blocks enter the evidence grace policy; they do not immediately forfeit an ordinary member's balance or access. Administrators remain protected. Upstream failures remain pending. Rejoining after completed cleanup creates fresh credentials and benefits while canonical accounting references remain archived.
 
-Purge dependency waits retain the same durable claim without consuming delivery attempts. An uncertain Emby creation remains a terminal review failure. Native settlement has a three-minute bound and reports its specific owner/period/node dependency; offline participants are never discarded.
+Purge dependency waits retain the same durable claim without consuming delivery attempts. An uncertain Emby creation remains a review failure. Each worker turn has an eight-second bound and resumes fair native cursors; offline participants are never discarded. `purge_guard_test.go` covers admission cancellation between remote, native and final phases, protected administrators, explicit payment dependencies and fencing before a busy claimed mutation.

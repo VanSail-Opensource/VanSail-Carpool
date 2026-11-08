@@ -20,6 +20,7 @@ func TestPurgeWaitsForAccountingAndRejoinRotatesPAYG(t *testing.T) {
 	if err = s.HandleTelegramBotStatus(ctx, u.TelegramID, 50, 500, true, false, now); err != nil {
 		t.Fatal(err)
 	}
+	admitTestAccountCleanup(t, s, u, now)
 	if err = s.CompleteAccountPurge(ctx, u.ID, 1, now); !errors.Is(err, ErrConflict) {
 		t.Fatal("unfinished accounting discarded", err)
 	}

@@ -1,6 +1,8 @@
 # Session components
 
 - `AuthGate.vue` explains Telegram authentication failures, offers a light-feedback retry, and uses a local Motion status entrance without delaying the session handoff.
+- `AuthGate.test.ts` verifies that verified partial-cleanup recovery uses a
+  localized review heading and preserves retry without claiming failed identity.
 - `LoadingScreen.vue` presents outlined-to-solid lettering and a single Chinese-to-English handoff in a reserved word frame. Playback cancels on reduced motion without replay. Decorative glyphs are hidden from assistive technology; the readable identity and one localized live status remain available.
 - `SessionEntrance.vue` accepts `status`, `authenticated`, `routeReady`, and a default page slot. It releases ready permitted routes and recovery gates immediately while an inert, noninteractive cover fades for 160ms. Initial route resolution prevents an empty shell or unapproved destination from mounting. Its page wrapper never transforms fixed navigation; AppShell owns the separate 500ms, 8px content entrance.
 - `useLoadingSequence.ts` derives cover visibility from real readiness and keeps authenticated content mounted during refresh. There is no minimum introduction duration or authentication/navigation logic.

@@ -120,8 +120,12 @@ func TestFailedPMJobExpiryKeepsUncertainTopicAndNeverAttemptedRelay(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if counts["failed_synchronization_jobs"] != 1 {
-		t.Fatalf("counts=%+v", counts)
+	if counts["failed_synchronization_jobs"] != 0 {
+		t.Fatalf("uncertain PM continuation must be retained: %+v", counts)
+	}
+	var retained int
+	if err := store.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE kind='provider_operation' AND payload::jsonb->>'operationId'=$1`, receipt.ID).Scan(&retained); err != nil || retained != 1 {
+		t.Fatal("uncertain PM payload was deleted", retained, err)
 	}
 	conversation, err := store.PMConversation(ctx, id)
 	if err != nil || conversation.TopicState != "pending_review" {

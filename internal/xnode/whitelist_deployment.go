@@ -21,6 +21,7 @@ func (m *Master) recordWhitelistState(peer *agentPeer, config wire.Config, revis
 	if m.peers[peer.nodeID] != peer {
 		return
 	}
+	m.recordPurgeActivityStateLocked(peer, config, revision)
 	if m.whitelistStates == nil {
 		m.whitelistStates = map[string]whitelistNodeState{}
 	}

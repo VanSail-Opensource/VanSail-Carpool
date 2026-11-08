@@ -2,12 +2,15 @@ package xnode
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
 func (s *Service) ensurePAYGAccount(ctx context.Context, user, group, node string, price int64) error {
+	if source, ok := s.paygRepository(); ok {
+		if repo, ok := source.(paygPreparationRepository); ok {
+			return s.preparePAYGAccount(ctx, repo, user, group, node, price)
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, _ := s.paygRepository()
@@ -20,8 +23,7 @@ func (s *Service) ensurePAYGAccount(ctx context.Context, user, group, node strin
 			return s.reopenPurgedPAYG(ctx, a, price)
 		}
 	}
-	hash := sha256.Sum256([]byte(user + "\x00" + group + "\x00" + node))
-	name := paygPrefix + hex.EncodeToString(hash[:20])
+	name := PAYGAccountServiceName(user, group, node)
 	i, err := r.XNodeIdentityByService(ctx, name)
 	if err != nil && !isMissing(err) {
 		return err

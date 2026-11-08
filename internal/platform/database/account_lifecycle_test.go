@@ -28,11 +28,12 @@ func TestBlockedAccountClosesAnyBalanceAndCanRejoinFresh(t *testing.T) {
 			if err := s.HandleTelegramBotStatus(ctx, u.TelegramID, 10, 100, true, false, now); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := s.UserBySession(ctx, make([]byte, 32), now); !errors.Is(err, ErrNotFound) {
-				t.Fatal("session survived", err)
+			if current, err := s.UserBySession(ctx, make([]byte, 32), now); err != nil || current.AccountStatus != "active" || current.AccountGeneration != 0 {
+				t.Fatal("first bot block revoked ordinary account during grace", current, err)
 			}
-			if _, _, err := s.UpsertTelegramUser(ctx, model.TelegramProfile{ID: u.TelegramID}, false); !errors.Is(err, ErrAccountUnavailable) {
-				t.Fatal("blocked authentication allowed", err)
+			admitTestAccountCleanup(t, s, u, now)
+			if _, err := s.UserBySession(ctx, make([]byte, 32), now); !errors.Is(err, ErrNotFound) {
+				t.Fatal("admitted purge retained session", err)
 			}
 			if err := s.CompleteAccountPurge(ctx, u.ID, 1, now.Add(time.Second)); err != nil {
 				t.Fatal(err)
@@ -81,7 +82,7 @@ func TestBotStatusOrderingAndAdministratorExclusion(t *testing.T) {
 		}
 	}
 	got, err := s.UserByID(ctx, u.ID)
-	if err != nil || got.BotBlocked || got.AccountGeneration != 1 || got.AccountStatus != "purging" {
+	if err != nil || got.BotBlocked || got.AccountGeneration != 0 || got.AccountStatus != "active" {
 		t.Fatal(got, err)
 	}
 	admin := createTestUser(t, s, 49013)
@@ -100,11 +101,14 @@ func TestBotStatusOrderingAndAdministratorExclusion(t *testing.T) {
 func TestPurgedAccountPaymentGoesToReviewAfterFreshRegistration(t *testing.T) {
 	ctx, s := context.Background(), newTestStore(t)
 	u := createTestUser(t, s, 49014)
-	order := createTestPaymentOrder(t, s, u.ID, "ezpay", 500, time.Now().UTC())
+	// A still-live payment is a purge dependency; this exercises a callback
+	// arriving after its checkout expired and the account safely closed.
+	order := createTestPaymentOrder(t, s, u.ID, "ezpay", 500, time.Now().UTC().Add(-time.Hour))
 	now := time.Now().UTC().Add(time.Second)
 	if err := s.HandleTelegramBotStatus(ctx, u.TelegramID, 30, 300, true, false, now); err != nil {
 		t.Fatal(err)
 	}
+	admitTestAccountCleanup(t, s, u, now)
 	if err := s.CompleteAccountPurge(ctx, u.ID, 1, now); err != nil {
 		t.Fatal(err)
 	}

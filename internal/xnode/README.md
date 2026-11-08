@@ -1254,3 +1254,56 @@ replay obligations are documented in `docs/hourly-master-enforcement.md`.
 
 `hourly_receive_batch_test.go` checks batched allocator admission/ACK adapters,
 original socket receipts and owner/node policy boundaries.
+
+Account cleanup enters `CloseAccountPeriods(ctx, model.AccountPurge, jobID)` in
+`account_purge.go`. The exact purging generation and retained-generation bound
+are rechecked under the database lifecycle/evidence lock before cursor updates,
+period admission closure, barrier sealing and finalization. The existing outbox
+payload retains `nativePeriodCursor` and `nativeIPCursor`; each advances before
+its individual RPC attempt, so offline/slow periods do not monopolize retries.
+`account_purge_period.go` waits outside all account/service locks and retains
+specific offline, journal and review dependencies. `hourly_lifecycle.go` routes
+purges through this path; bare hourly purge intents cannot bypass grace evidence.
+
+`account_purge_ip.go` uses the existing per-node executor and stable command IDs
+for positive, currently applied owned subjects only. Completed zero-deadline
+unblock replies become generation-bound metadata receipts; plaintext addresses
+stay out of receipts/logs. No absent subject is recreated and no global unblock
+is sent. Opaque legacy block rows lack an authenticated original agent/deadline
+receipt, so their local scheduled expiry cannot prove remote absence: they stay
+`ACCOUNT_PURGE_IP_EVIDENCE_PENDING` until confirmed cleanup/operator evidence.
+
+`account_purge_activity.go` and `account_purge_activity_metrics.go` detach only
+captured owner associations and scrub memory presentation banks. Their bounded
+100000-scope, two-hour-plus-30-second fences admit rejoining activity only after
+a different paid native period is applied on the current connection. They use
+connection/revision authority, without a new-activity timestamp cutoff; shared
+IP lease banks and other owners remain intact. `master_activity.go` filters late
+old-scope reports before lease observation, and `whitelist_deployment.go` records
+new native authority. Native IP history lacks observation generations, so exact
+immediate erasure of all node-local two-hour presentation history is not proved;
+historical entries alone still cannot mint a lease under existing freshness rules.
+
+Hosted `account_purge_ip_test.go`, `account_purge_activity_test.go` and
+`account_purge_activity_rejoin_test.go` cover positive scope, unapplied state,
+shared-IP preservation, late reports, reconnects and skewed new activity.
+
+`payg_account_prepare.go` adds the optional typed `PAYGPreparation` store path;
+production creates principal, empty PAYG period, account and participant together
+under the exact current owner-generation lock. `payg_account_provision.go` keeps
+existing accounts on their prior read-only fast path and legacy test repositories
+compatible; compile-read wrappers resolve the authoritative store implementation.
+Encryption and entropy precede the transaction. Only a provably unpublished
+older orphan can rotate into a new preparation; uncertain exposure/accounting is
+retained. `account_rejoin.go` uses the same authoritative repository for exact
+generation-fenced renewal of purged traffic accounts.
+`payg_account_prepare_test.go` verifies compile-wrapper forwarding, encrypted
+scope and the existing-account fast path.
+
+Account purge also retires owned durable firewall exemptions through
+`ReleaseAccountPurgeExemptions` and the existing fleet-delivery outbox. It waits
+for every active member's release version and cleared full-sync requirement;
+offline members remain dependencies. Financial grant facts stay available for
+sanitized archival before operational deletion. Host-disabled members can retire,
+and same-connection re-enablement forces a fresh-epoch full replacement so an
+old persisted allowance cannot reappear after its removal tombstone is scrubbed.

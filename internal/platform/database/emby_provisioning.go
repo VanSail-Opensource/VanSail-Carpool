@@ -26,6 +26,9 @@ func (s *Store) retryAttempt_RetryEmbyProvisioning(ctx context.Context, accountI
 	if (record.Status != domain.StatusQueued && record.Status != domain.StatusPendingReview) || record.PasswordCiphertext == "" {
 		return domain.Account{}, ErrConflict
 	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, record.UserID, ""); err != nil {
+		return domain.Account{}, err
+	}
 	if record.Status == domain.StatusPendingReview {
 		if _, err := tx.ExecContext(ctx, `UPDATE emby_accounts SET status='queued',last_error='',updated_at=$1
 			WHERE id=$2 AND status='pending_review'`, stamp(now), accountID); err != nil {

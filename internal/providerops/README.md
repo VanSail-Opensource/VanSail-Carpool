@@ -10,6 +10,13 @@ handles remain short-lived service data and are never stored in these records.
 - `validation.go` canonicalizes commands and bounded JSON result objects.
 - `dispatcher.go` routes the one shared outbox lane to kind-specific handlers.
 - `dispatcher_test.go` covers kind routing without provider calls.
+- `dispatcher_fence_test.go` verifies that lifecycle-denied unfinished receipts
+  retain their outbox continuation as a dependency wait. The dispatcher does not
+  issue new mutations while fenced or infer failure from missing authorization;
+  succeeded, failed and compensated receipts remain safe no-ops.
+- `dispatcher_completion_test.go` covers durable receipt reloading after handler
+  completion. Review/partial outcomes retain encrypted targets in failed jobs
+  for operator reconciliation; unfinished receipts remain dependency waits.
 
 `telegram_pm.go` reserves relay/profile/repair kinds in the existing durable lane. Targets store conversation and Telegram message references; no message body is part of an operation.
 

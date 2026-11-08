@@ -85,6 +85,9 @@ func (s *Store) retryAttempt_SaveXNodePAYGAccount(ctx context.Context, a xnode.P
 		return err
 	}
 	defer tx.Rollback()
+	if err = lockNativeMemberIdentityTx(ctx, tx, a.UserID, a.AccountGeneration, true); err != nil {
+		return err
+	}
 	// Registration is admission; delayed traffic ingestion keeps its separate
 	// accounting path and can still record evidence after removal starts.
 	var admitting bool

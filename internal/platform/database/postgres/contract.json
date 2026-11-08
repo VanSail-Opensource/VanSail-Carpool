@@ -165,7 +165,10 @@
     "hourly_extra_purchases",
     "xnode_usage_minutes",
     "xnode_usage_history_state",
-    "xnode_usage_coverage"
+    "xnode_usage_coverage",
+    "account_cleanup_health",
+    "account_cleanup_evidence",
+    "account_cleanup_checks"
   ],
   "tables": [
     {
@@ -6556,6 +6559,12 @@
           "notNull": true,
           "default": null,
           "primaryKey": 0
+        },
+        {
+          "name": "purchased_term_seconds",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },
@@ -10541,6 +10550,225 @@
           "primaryKey": 0
         }
       ]
+    },
+    {
+      "name": "account_cleanup_health",
+      "columns": [
+        {
+          "name": "singleton",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "bot_id",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_epoch",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "verified",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "window_start",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "checked_count",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "unhealthy_count",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "paused_until",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "account_cleanup_checks",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_epoch",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "next_probe_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "private_reachable_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "health_observed_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "first_failure_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "last_failure_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "failure_count",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "pending_nonce",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "pending_started_at",
+          "type": "timestamp with time zone",
+          "notNull": false,
+          "primaryKey": 0
+        },
+        {
+          "name": "pending_final",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "admission_evidence_id",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
+        }
+      ]
+    },
+    {
+      "name": "account_cleanup_evidence",
+      "columns": [
+        {
+          "name": "nonce",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "account_generation",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_id",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "bot_epoch",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "action_class",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "chat_class",
+          "type": "text",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "qualifying",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
+          "name": "purge_generation",
+          "type": "bigint",
+          "notNull": false,
+          "primaryKey": 0
+        }
+      ]
     }
   ],
   "indexes": [
@@ -10699,7 +10927,9 @@
     "xnode_usage_purchase",
     "xnode_usage_coverage_window",
     "xnode_usage_node",
-    "xnode_usage_coverage_node"
+    "xnode_usage_coverage_node",
+    "account_cleanup_checks_due",
+    "account_cleanup_evidence_owner"
   ],
   "triggers": [
     "account_onboarding_update",
@@ -10811,6 +11041,7 @@
     "hourly_enrollment_scope_guard",
     "hourly_settlement_immutable",
     "hourly_extra_purchase_immutable",
-    "hourly_compile_revision"
+    "hourly_compile_revision",
+    "account_cleanup_evidence_guard"
   ]
 }

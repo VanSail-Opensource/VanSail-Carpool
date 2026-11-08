@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,9 +11,21 @@ import (
 
 // CreateBrowserSession adds an independent browser session without replacing Mini App or other device sessions.
 func (s *Store) CreateBrowserSession(ctx context.Context, hash []byte, userID string, now, expires time.Time) error {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	_, err := s.db.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,scope,expires_at,created_at,renewed_at) VALUES($1,$2,'browser',$3,$4,$5)`, hash, userID, stamp(expires), stamp(now), stamp(now))
+	_, err := hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (bool, error) {
+		var active bool
+		if e := tx.QueryRowContext(ctx, `SELECT account_status='active' AND bot_blocked=0 FROM users WHERE id=$1 FOR UPDATE`, userID).Scan(&active); e != nil {
+			return false, e
+		}
+		if !active {
+			return false, ErrAccountUnavailable
+		}
+		e := cancelCleanupCandidateTx(ctx, tx, userID, "authenticated", now)
+		if e != nil {
+			return false, e
+		}
+		_, e = tx.ExecContext(ctx, `INSERT INTO sessions(token_hash,user_id,scope,expires_at,created_at,renewed_at) VALUES($1,$2,'browser',$3,$4,$5)`, hash, userID, stamp(expires), stamp(now), stamp(now))
+		return true, e
+	})
 	if err != nil {
 		return fmt.Errorf("create browser session: %w", err)
 	}
@@ -23,19 +34,7 @@ func (s *Store) CreateBrowserSession(ctx context.Context, hash []byte, userID st
 
 // BrowserSession returns the owner and actual expiry of a live browser-scoped session.
 func (s *Store) BrowserSession(ctx context.Context, hash []byte, now time.Time) (model.User, time.Time, error) {
-	user, err := scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=$1 AND sessions.scope='browser' AND sessions.expires_at>$2 AND users.account_status='active' AND users.bot_blocked=0`, hash, stamp(now)))
-	if err != nil {
-		return model.User{}, time.Time{}, err
-	}
-	var raw string
-	if err = s.db.QueryRowContext(ctx, `SELECT expires_at FROM sessions WHERE token_hash=$1 AND scope='browser' AND expires_at>$2`, hash, stamp(now)).Scan(&raw); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return model.User{}, time.Time{}, ErrNotFound
-		}
-		return model.User{}, time.Time{}, err
-	}
-	expires, err := parseStamp(raw)
-	return user, expires, err
+	return s.authenticatedSession(ctx, hash, "browser", now)
 }
 
 // RenewBrowserSession extends only a live session, at most daily; the bearer and signing key remain stable.

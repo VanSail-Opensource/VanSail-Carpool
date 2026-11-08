@@ -13,6 +13,10 @@ import (
 )
 
 type Master struct {
+	purgedActivity         map[int]*purgeActivityFence // mu; bounded volatile presentation fences
+	purgeActivityScopes    int
+	purgeActivitySession   uint64
+	purgeActivitySweepAt   time.Time
 	hourly                 *hourlyCoordinator
 	hourlyCredits          *hourlyCreditCoordinator
 	automaticLeases        *automaticLeaseManager

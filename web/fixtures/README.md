@@ -1,5 +1,12 @@
 # Constructed browser fixtures
 
+`browser-auth-audit.html?recovery` mounts the actual member session bootstrap and
+`AuthGate` against a synthetic `409 ACCOUNT_RECOVERY_PENDING`; add `zh` for
+Chinese. Retry repeats only the synthetic exchange (`__browserAuthAudit.exchanges`)
+and creates no session, benefit, refund or upstream request.
+`recoveryslow=1500` exposes the actual `SessionEntrance` loading state before the
+recovery error; retry follows the same session-driven transition as the Mini App.
+
 `HourlyAudit.vue`, `hourly-audit.ts`, `hourly-data.ts` and `hourly-audit.html`
 mount the actual hourly member/admin components against synthetic API state.
 Open `/fixtures/hourly-audit.html`; add `admin`, `light`, `zh`, `slow=2000`,

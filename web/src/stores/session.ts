@@ -14,6 +14,7 @@ export const useSessionStore = defineStore('session', () => {
   const session = shallowRef<Session | null>(null)
   const status = shallowRef<SessionStatus>('idle')
   const error = shallowRef<string | null>(null)
+  const errorCode = shallowRef<string | null>(null)
 
   const user = computed(() => session.value?.user ?? null)
   const isAuthenticated = computed(() => session.value !== null)
@@ -24,6 +25,7 @@ export const useSessionStore = defineStore('session', () => {
     if (!force && (status.value === 'loading' || status.value === 'ready')) return
     status.value = 'loading'
     error.value = null
+    errorCode.value = null
 
     try {
       try {
@@ -45,6 +47,7 @@ export const useSessionStore = defineStore('session', () => {
       session.value = null
       status.value = 'error'
       error.value = localizedError(caught, 'auth.authenticationFailed')
+      errorCode.value = caught instanceof ApiError ? caught.code : null
     }
   }
 
@@ -53,6 +56,7 @@ export const useSessionStore = defineStore('session', () => {
     session.value = next
     status.value = 'ready'
     error.value = null
+    errorCode.value = null
     if (next.captcha?.required) stopSessionPreload()
     else if (changed && !isBrowserExperience()) preloadSession(next)
   }
@@ -64,12 +68,14 @@ export const useSessionStore = defineStore('session', () => {
     session.value = null
     status.value = 'idle'
     error.value = null
+    errorCode.value = null
   }
 
   return {
     session,
     status,
     error,
+    errorCode,
     user,
     isAuthenticated,
     isAdmin,

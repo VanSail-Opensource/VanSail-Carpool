@@ -1,5 +1,14 @@
 # Telegram integration
 
+`reachability.go` adds numeric-private `SendChatAction` and strict typed-response
+classification beside existing `GetChat`/`GetMe`. Unknown response shapes, method
+or HTTP/API mismatches, throttling, transport failures and partial contradictions
+remain unknown. These classifications describe bot reachability and never prove
+that a Telegram account no longer exists. `reachability_test.go` covers private
+payload bounds and negative/ambiguous response boundaries using constructed data.
+External contracts: [sendChatAction](https://core.telegram.org/bots/api#sendchataction),
+[getChat](https://core.telegram.org/bots/api#getchat), [getMe](https://core.telegram.org/bots/api#getme).
+
 This package contains the Telegram Bot API and Mini App authentication surface used by VanSail Carpool. Bot tokens remain confined to request URLs inside the transport, while returned and transport errors are sanitized before propagation.
 
 - `client.go` defines the sanitized API error, client options, injected transport, and validated client construction.

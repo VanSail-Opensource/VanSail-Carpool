@@ -52,6 +52,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	}
 	store := database.NewStore(db)
 	store.SetLogger(logger)
+	if err = store.ConfigureAccountCleanupAdmins(cfg.AdminTelegramIDs); err != nil {
+		return cleanup(err)
+	}
 	vault, err := secret.NewVault(cfg.MasterKey)
 	if err != nil {
 		return cleanup(err)
@@ -117,6 +120,10 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	adminUserWorkflows := admin.NewUserWorkflows(store, provider)
 	entitlementWorker := entitlements.NewWorker(store, provider, provider)
 	outboxWorker := outbox.NewWorker(store)
+	accountCleanup, err := newAccountCleanup(store, queuedTelegramClient, cfg.TelegramBotToken, cfg.AdminTelegramIDs, outboxWorker)
+	if err != nil {
+		return cleanup(err)
+	}
 	paymentAnnouncementWorker := billing.NewPaymentAnnouncementWorker(settings, queuedTelegramClient)
 	affiliateNotificationWorker := affiliates.NewNotificationWorker(queuedTelegramClient, store)
 	userNotificationWorker := notifications.NewWorker(queuedTelegramClient, logger, cfg.Timezone, store)
@@ -260,8 +267,9 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
 		catalog: catalogService, billing: billingService, statistics: statisticsService, affiliates: affiliateService,
-		hourly:        hourlyService,
-		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
+		hourly:         hourlyService,
+		accountCleanup: accountCleanup,
+		notifications:  userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		ipLookup: ipLookupWorker,
 		usdt:     usdtService,
 	}, nil

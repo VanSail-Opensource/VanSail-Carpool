@@ -8,5 +8,7 @@
 - `../../locales/*/payment-crypto.json` owns localized BEPUSDT selection and payment-instruction copy.
 - `index.ts` exposes locale state and translation helpers, and synchronizes the document language and localized title.
 - `index.test.ts` covers interpolation, locale persistence, and recovery copy registration.
+- `accountRecovery.test.ts` checks that verified partial-cleanup sign-in explains
+  administrator review in both locales without claiming invalid identity.
 
 - `paymentKeys.test.ts` ? Hosted checks for dotted crypto rail keys and ordinary nested lookup.

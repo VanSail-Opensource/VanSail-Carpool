@@ -2,10 +2,10 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 )
 
@@ -16,6 +16,7 @@ func TestPurgeDependencyWaitKeepsOneJobAndReviewStopsAutomaticRecovery(t *testin
 	if err := store.HandleTelegramBotStatus(ctx, user.TelegramID, 1, 1, true, false, now); err != nil {
 		t.Fatal(err)
 	}
+	admitTestAccountCleanup(t, store, user, now)
 	var original string
 	for attempt := range 12 {
 		job, err := store.ClaimOutboxJob(ctx, now)
@@ -47,6 +48,11 @@ func TestPurgeDependencyWaitKeepsOneJobAndReviewStopsAutomaticRecovery(t *testin
 	if err = store.EnqueueAccountPurges(ctx, now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
+	// Refreshing final evidence does not settle an uncertain remote mutation.
+	probe := cleanupTestProbe(t, store, user, now.Add(time.Minute), true)
+	if result := cleanupTestComplete(t, store, probe, model.AccountCleanupObservation{SendAction: "blocked", GetChat: "private"}, now.Add(time.Minute)); !result.Admitted {
+		t.Fatal(result)
+	}
 	var status string
 	var count int
 	if err = store.DB().QueryRowContext(ctx, `SELECT status FROM outbox_jobs WHERE id=$1`, original).Scan(&status); err != nil || status != "failed" {
@@ -64,6 +70,7 @@ func TestPurgeRecoveryReusesExhaustedJobAndFencesPreviousGeneration(t *testing.T
 	if err := store.HandleTelegramBotStatus(ctx, user.TelegramID, 1, 1, true, false, now); err != nil {
 		t.Fatal(err)
 	}
+	admitTestAccountCleanup(t, store, user, now)
 	var original string
 	if err := store.DB().QueryRowContext(ctx, `UPDATE outbox_jobs SET status='failed',attempts=10,last_error='offline participant' WHERE kind='account_purge' RETURNING id`).Scan(&original); err != nil {
 		t.Fatal(err)
@@ -84,7 +91,7 @@ func TestPurgeRecoveryReusesExhaustedJobAndFencesPreviousGeneration(t *testing.T
 	if err := store.EnqueueAccountPurges(ctx, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE kind='account_purge'`).Scan(&count); err != nil || count != 2 {
-		t.Fatal(fmt.Sprintf("new generation count=%d", count), err)
+	if err := store.DB().QueryRowContext(ctx, `SELECT count(*) FROM outbox_jobs WHERE kind='account_purge'`).Scan(&count); err != nil || count != 1 {
+		t.Fatal("unproved generation queued a purge", count, err)
 	}
 }

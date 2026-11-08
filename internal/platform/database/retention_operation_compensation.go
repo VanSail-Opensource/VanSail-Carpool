@@ -14,10 +14,46 @@ type staleDebit struct {
 }
 
 func compensateStaleOperationDebitsTx(ctx context.Context, tx *sql.Tx, now time.Time) error {
+	if err := retainAttemptedEmbySetupsTx(ctx, tx); err != nil {
+		return err
+	}
 	if err := compensateStaleTrafficResetsTx(ctx, tx, now); err != nil {
 		return err
 	}
 	return compensateStaleEmbySetupsTx(ctx, tx, now)
+}
+
+// Legacy provisioning has its own durable attempt marker. Match setup's
+// balance-before-account order, then prevent a racing create marker/refund.
+func retainAttemptedEmbySetupsTx(ctx context.Context, tx *sql.Tx) error {
+	queries := []string{
+		`SELECT b.user_id FROM balances b WHERE EXISTS(SELECT 1 FROM maintenance_operation_candidates c
+ JOIN provider_operations p ON p.id=c.id WHERE p.kind='emby_setup' AND p.owner_user_id=b.user_id)
+ ORDER BY b.user_id FOR UPDATE OF b`,
+		`SELECT a.id FROM emby_accounts a WHERE EXISTS(
+ SELECT 1 FROM maintenance_operation_candidates c JOIN provider_operations p ON p.id=c.id
+ WHERE p.kind='emby_setup' AND p.owner_user_id=a.user_id) ORDER BY a.id FOR UPDATE OF a`,
+	}
+	for _, query := range queries {
+		rows, err := tx.QueryContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id string
+			if err = rows.Scan(&id); err != nil {
+				rows.Close()
+				return err
+			}
+		}
+		if err = finishCompileRows(rows); err != nil {
+			return err
+		}
+	}
+	_, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates c WHERE EXISTS(
+ SELECT 1 FROM provider_operations p JOIN emby_accounts a ON a.user_id=p.owner_user_id
+ WHERE p.id=c.id AND p.kind='emby_setup' AND (a.create_attempted<>0 OR COALESCE(a.remote_user_id,'')<>''))`)
+	return err
 }
 
 func compensateStaleTrafficResetsTx(ctx context.Context, tx *sql.Tx, now time.Time) error {

@@ -30,14 +30,14 @@ func compactPurchasesTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time, 
 	_, err = tx.ExecContext(ctx, `INSERT   INTO purchase_history_tombstones(purchase_id,user_id,combo_id,status,
 		charged_txb_minor,gross_txb_minor,core_gross_txb_minor,coupon_discount_txb_minor,addon_count,
 		traffic_limit_bytes,reset_strategy,valid_from,valid_until,renewal_batch_id,renewal_index,
-		auto_renew_source_purchase_id,created_at,removed_at)
+		auto_renew_source_purchase_id,created_at,removed_at,purchased_term_seconds)
 		SELECT purchase.id,purchase.user_id,purchase.combo_id,purchase.status,purchase.charged_txb_minor,
 		COALESCE(purchase.gross_price_txb_minor,purchase.charged_txb_minor),purchase.core_gross_txb_minor,
 		purchase.coupon_discount_txb_minor,(SELECT COUNT(*) FROM purchase_addons addon WHERE addon.purchase_id=purchase.id),
 		COALESCE(purchase.entitlement_traffic_limit_bytes,combo.traffic_limit_bytes),
 		COALESCE(purchase.entitlement_reset_strategy,combo.reset_strategy),purchase.valid_from,purchase.valid_until,
 		COALESCE(purchase.renewal_batch_id,''),purchase.renewal_index,COALESCE(purchase.auto_renew_source_purchase_id,''),
-		purchase.created_at,$1
+		purchase.created_at,$1,purchase.purchased_term_seconds
 		FROM purchases purchase JOIN combos combo ON combo.id=purchase.combo_id
 		JOIN maintenance_purchase_candidates candidate ON candidate.id=purchase.id ON CONFLICT DO NOTHING `, stamp(now))
 	if err != nil {

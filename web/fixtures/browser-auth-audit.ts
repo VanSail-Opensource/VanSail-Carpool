@@ -4,6 +4,7 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { browserAccessApi, type BrowserSession } from '@/api/browserAccess'
 import { ApiError } from '@/api/http'
+import { api } from '@/api/client'
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme } from '@/browser/theme'
 import { setLocale, t } from '@/i18n'
@@ -11,11 +12,20 @@ import BrowserAuthAudit from './BrowserAuthAudit.vue'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
-setExperience(params.has('link') ? 'miniapp' : 'browser')
-if (params.has('link')) await import('@/styles/main.css')
+setExperience(params.has('link') || params.has('recovery') ? 'miniapp' : 'browser')
+if (params.has('link') || params.has('recovery')) await import('@/styles/main.css')
 else initializeBrowserTheme()
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const state = { configReads: 0, links: 0, exchanges: 0, copied: '', usedTokens: [] as string[] }
+if (params.has('recovery')) {
+  window.Telegram = { WebApp: { initData: 'synthetic-verified-sign-in', platform: 'web' } } as typeof window.Telegram
+  api.getMe = async () => { throw new ApiError(401, { code: 'UNAUTHENTICATED', message: '' }) }
+  api.authTelegram = async () => {
+    state.exchanges++
+    if (params.has('recoveryslow')) await new Promise(resolve => setTimeout(resolve, Math.min(5000, Math.max(0, Number(params.get('recoveryslow')) || 1500))))
+    throw new ApiError(409, { code: 'ACCOUNT_RECOVERY_PENDING', message: 'Synthetic recovery boundary' })
+  }
+}
 const config = { miniAppUrl: params.has('empty') ? '' : 'https://t.me/vansail_carpool_bot?startapp' }
 const admin: BrowserSession = {
   authenticated: true, kind: 'admin', expiresAt: new Date(Date.now() + 86400000).toISOString(),

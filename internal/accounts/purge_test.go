@@ -23,7 +23,19 @@ func (f *purgeFixture) CompleteAccountPurge(context.Context, string, int64, time
 	f.target = nil
 	return nil
 }
-func (f *purgeFixture) CloseAccountPeriods(context.Context, string) error {
+func (f *purgeFixture) AccountCleanupAdmissionValid(context.Context, string, int64, time.Time) (bool, error) {
+	return true, nil
+}
+func (f *purgeFixture) AccountCleanupAdmissionReason(context.Context, string, int64, time.Time) (string, error) {
+	return "", nil
+}
+func (f *purgeFixture) AccountPurgeDependency(context.Context, string, int64, time.Time) (string, error) {
+	return "", nil
+}
+func (f *purgeFixture) FenceAccountPurge(context.Context, string, int64, time.Time) error {
+	return nil
+}
+func (f *purgeFixture) CloseAccountPeriods(context.Context, model.AccountPurge, string) error {
 	f.closed++
 	return f.closeErr
 }
@@ -49,7 +61,7 @@ func TestPurgeWorkerWaitsForReliableCleanupBeforeCompleting(t *testing.T) {
 				}
 				return nil
 			}}
-			job := model.OutboxJob{Payload: `{"userId":"member","generation":1}`}
+			job := model.OutboxJob{ID: "purge-job", Payload: `{"userId":"member","generation":1}`}
 			err := w.HandleOutbox(context.Background(), job)
 			if test.name == "success" {
 				if err != nil || f.completed != 1 || f.closed != 1 || deletes != 1 {

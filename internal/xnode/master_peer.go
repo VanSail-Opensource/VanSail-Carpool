@@ -12,6 +12,7 @@ import (
 )
 
 type agentPeer struct {
+	purgeActivitySession  uint64 // Master.mu; volatile connection identity, no retained peer pointer
 	hourlySession         string // immutable: accepted format/session offer plus hello capability
 	hourlySender          *hourlyGrantSender
 	firstSync             *appliedMemberConfig // protected by mu; membership of the exact sent revision

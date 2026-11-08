@@ -8,6 +8,9 @@ post:
     and sets a seven-day Secure, HttpOnly, SameSite session cookie plus a
     JavaScript-readable request-signing companion cookie. Data from
     `initDataUnsafe` is never accepted.
+    Verified sign-in cancels account-cleanup evidence. If an earlier partial
+    cleanup needs administrator review, responds with 409
+    `ACCOUNT_RECOVERY_PENDING` and does not issue session cookies.
   security: []
   requestBody:
     required: true
@@ -35,6 +38,8 @@ post:
       $ref: '../openapi.yaml#/components/responses/BadRequest'
     '401':
       $ref: '../openapi.yaml#/components/responses/Unauthorized'
+    '409':
+      $ref: '../openapi.yaml#/components/responses/Conflict'
     '429':
       $ref: '../openapi.yaml#/components/responses/TooManyRequests'
     '503':

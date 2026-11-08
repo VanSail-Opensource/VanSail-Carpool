@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"log/slog"
 	"net/http"
 
@@ -40,6 +41,7 @@ type Application struct {
 	catalog         *catalog.Service
 	billing         *billing.Service
 	hourly          *hourlybilling.Service
+	accountCleanup  *accounts.AccountCleanupService
 	statistics      *productstats.Service
 	ipLookup        *iplookup.Worker
 	affiliates      *affiliates.Service

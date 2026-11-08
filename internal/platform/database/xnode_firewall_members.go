@@ -35,7 +35,10 @@ func (s *Store) ReconcileFirewallMember(ctx context.Context, node string, active
 			return err
 		}
 		if reconnect || previous != boolInt(active) {
-			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=$1,force_sync=GREATEST(force_sync,$2),connection_epoch=connection_epoch+$3 WHERE node_id=$4`, boolInt(active), boolInt(reconnect), boolInt(reconnect), node); err != nil {
+			// A disabled host retains its native exemption bank. Re-enabling the
+			// same socket needs a full snapshot and a fresh receipt epoch too.
+			reset := reconnect || active && previous == 0
+			if _, err = tx.ExecContext(ctx, `UPDATE xnode_firewall_members SET active=$1,force_sync=GREATEST(force_sync,$2),connection_epoch=connection_epoch+$3 WHERE node_id=$4`, boolInt(active), boolInt(reset), boolInt(reset), node); err != nil {
 				return err
 			}
 		}

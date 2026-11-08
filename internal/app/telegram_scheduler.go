@@ -13,6 +13,7 @@ import (
 )
 
 func (a *Application) configureTelegram(ctx context.Context) {
+	a.verifyAccountCleanupBot(ctx)
 	if err := a.affiliates.RefreshBotIdentity(ctx); err != nil {
 		a.logger.Warn("refresh Telegram bot identity", "error", err)
 	}

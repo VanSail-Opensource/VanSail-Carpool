@@ -6,10 +6,15 @@ import LanguageControl from '@/components/layout/LanguageControl.vue'
 import { motionDurations } from '@/composables/motionPresets'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { isTelegramWebAppDetected } from '@/utils/telegram'
+import { useI18n } from '@/i18n'
 
-const props = defineProps<{ message: string }>()
+const props = defineProps<{ message: string; code?: string }>()
 defineEmits<{ retry: [] }>()
 const authRequestFailed = computed(() => isTelegramWebAppDetected() && props.message !== '')
+const { t } = useI18n()
+const heading = computed(() => props.code === 'ACCOUNT_RECOVERY_PENDING'
+  ? t('auth.accountRecoveryPending')
+  : t(authRequestFailed.value ? 'auth.authenticationFailed' : 'auth.openInTelegram'))
 const { reducedMotion, offset } = useMotionPreferences()
 </script>
 
@@ -22,8 +27,8 @@ const { reducedMotion, offset } = useMotionPreferences()
   >
     <div class="auth-screen__copy">
       <p class="eyebrow">{{ $t('auth.telegramAccess') }}</p>
-      <h1>{{ authRequestFailed ? $t('auth.authenticationFailed') : $t('auth.openInTelegram') }}</h1>
-      <p v-if="message !== (authRequestFailed ? $t('auth.authenticationFailed') : $t('auth.openInTelegram'))">{{ message }}</p>
+      <h1>{{ heading }}</h1>
+      <p v-if="message !== heading">{{ message }}</p>
     </div>
     <UButton
       :label="$t('auth.tryAgain')"

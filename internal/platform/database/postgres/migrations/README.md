@@ -142,3 +142,5 @@ snapshots remain unknown. No existing customer, purchase or wallet is converted.
 evidence. The existing journal transaction and cursor deduplicate accepted
 samples. It also invalidates disposable native compilation when hourly access
 changes; minute history never becomes an additional debit or quota source.
+
+`00045_account_cleanup_evidence.sql` adds bot-epoch health, scheduled nonce checks, and immutable sanitized cleanup evidence. Existing blocked flags confer no grace proof. It also preserves future known purchased-term duration in financial tombstones; old terms remain unknown.

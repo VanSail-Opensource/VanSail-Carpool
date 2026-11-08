@@ -9,6 +9,18 @@ import (
 
 const maintenanceTimeoutCode = "MAINTENANCE_TIMEOUT"
 
+// Failed parents do not settle attempted children. Older maintenance releases
+// also used a timeout as a terminal outcome, without external failure evidence.
+const settledProviderOperation = `operation.status IN ('succeeded','failed','compensated')
+ AND NOT (operation.status='failed' AND (
+ EXISTS(SELECT 1 FROM provider_operation_items i WHERE i.operation_id=operation.id
+ AND (i.status IN('processing','pending_review','partial') OR
+ (i.status='queued' AND (i.attempt_started_at IS NOT NULL OR COALESCE(i.provider_reference,'')<>''))))
+ OR (operation.error_code IN('MAINTENANCE_TIMEOUT','SYNC_JOB_EXPIRED')
+ AND (operation.attempts>0 OR operation.attempt_started_at IS NOT NULL OR COALESCE(operation.provider_reference,'')<>''
+ OR EXISTS(SELECT 1 FROM provider_operation_items i WHERE i.operation_id=operation.id
+ AND (i.attempt_started_at IS NOT NULL OR COALESCE(i.provider_reference,'')<>''))))))`
+
 func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time.Time,
 	counts map[string]int64) error {
 	if _, err := tx.ExecContext(ctx, `CREATE TEMP TABLE maintenance_operation_candidates(id TEXT PRIMARY KEY)`); err != nil {
@@ -38,6 +50,15 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	if err := reconcileStaleIPLookupsTx(ctx, tx, now); err != nil {
 		return err
 	}
+	// Typed PM/IP reconciliation may retain review/checkpoint evidence. Generic
+	// age cleanup can fail or refund only an intent proven never to have begun.
+	if err := lockUnattemptedRetentionCandidatesTx(ctx, tx); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM maintenance_operation_candidates WHERE id NOT IN
+ (SELECT p.id FROM provider_operations p WHERE `+unattemptedAccountOperation+`)`); err != nil {
+		return fmt.Errorf("retain attempted provider operations: %w", err)
+	}
 	if err := compensateStaleOperationDebitsTx(ctx, tx, now); err != nil {
 		return err
 	}
@@ -66,14 +87,14 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 	}
 	if counts["provider_operation_jobs"], err = deleteCount(ctx, tx, `DELETE FROM outbox_jobs WHERE kind='provider_operation'
 		AND (CASE ((payload)::jsonb #> '{operationId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{operationId}' END) IN (SELECT id FROM provider_operations operation
-			WHERE status IN ('succeeded','failed','compensated') AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
+			WHERE `+settledProviderOperation+` AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
 			AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`)))`, stamp(now.Add(-pmReceiptRetention)), stamp(now), stamp(now), stamp(now), stamp(now)); err != nil {
 		return fmt.Errorf("prune provider operation jobs: %w", err)
 	}
 	// Keep terminal operations that durable domain records still use as their
 	// audit or state-transition link. Deleting them would violate foreign keys.
 	if counts["provider_operations"], err = deleteCount(ctx, tx, `DELETE FROM provider_operations AS operation
-		WHERE status IN ('succeeded','failed','compensated')
+		WHERE `+settledProviderOperation+`
 		AND (kind NOT ILIKE 'telegram_pm_%' OR created_at<=$1)
 		AND NOT (status='failed' AND (`+liveComboControlPredicate(2)+`))
 		AND NOT EXISTS (SELECT 1 FROM admin_temporary_bans ban
@@ -90,4 +111,23 @@ func pruneProviderOperationsTx(ctx context.Context, tx *sql.Tx, cutoff, now time
 		return fmt.Errorf("drop stale operation set: %w", err)
 	}
 	return nil
+}
+
+func lockUnattemptedRetentionCandidatesTx(ctx context.Context, tx *sql.Tx) error {
+	// Running operations may already own financial locks. Fence only the
+	// never-started intents which generic maintenance can actually supersede.
+	rows, err := tx.QueryContext(ctx, `SELECT p.id FROM provider_operations p
+ JOIN maintenance_operation_candidates c ON c.id=p.id WHERE `+unattemptedAccountOperation+`
+ ORDER BY p.id FOR UPDATE OF p`)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id string
+		if err = rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+	}
+	return finishCompileRows(rows)
 }

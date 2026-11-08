@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
@@ -11,7 +10,9 @@ import (
 // the same users-row lock as activation/renewal/resume and performs no disk or
 // network I/O. Native period settlement happens after this transaction returns.
 func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.HourlyLifecycleIntent, mark func() error) ([]xnode.HourlyPrincipal, bool, error) {
-	if intent.OwnerID == "" || intent.CurrentGeneration < 0 || intent.ThroughGeneration < 0 || intent.ThroughGeneration > intent.CurrentGeneration || intent.Purge && intent.Resume || !intent.Purge && !intent.Resume && intent.EnrollmentID == "" {
+	// A purge additionally needs final reachability admission and the durable
+	// mixed-period cursor. It must use AccountNativePurgePage/Advance instead.
+	if intent.Purge || intent.OwnerID == "" || intent.CurrentGeneration < 0 || intent.ThroughGeneration < 0 || intent.ThroughGeneration > intent.CurrentGeneration || !intent.Resume && intent.EnrollmentID == "" {
 		return nil, false, xnode.ErrInvalid
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -25,9 +26,7 @@ func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.Hourl
 		return nil, false, err
 	}
 	var allowed bool
-	if intent.Purge {
-		allowed = current == intent.CurrentGeneration && status == "purging" && role != "admin"
-	} else if intent.Resume {
+	if intent.Resume {
 		if current == intent.CurrentGeneration && status == "active" {
 			err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM hourly_enrollments WHERE owner_id=$1 AND account_generation=$2 AND status='active' AND paid_through>clock_timestamp())`, intent.OwnerID, current).Scan(&allowed)
 		}
@@ -41,11 +40,9 @@ func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.Hourl
 	}
 	query := `SELECT ` + hourlyPrincipalColumns + ` FROM hourly_enrollments e WHERE e.owner_id=$1 AND e.account_generation<=$2`
 	args := []any{intent.OwnerID, intent.ThroughGeneration}
-	if !intent.Purge && !intent.Resume {
+	if !intent.Resume {
 		query += ` AND e.id=$3 AND e.account_generation=$2 AND e.status IN('funding_suspended','disabled','closed')`
 		args = append(args, intent.EnrollmentID)
-	} else if intent.Purge {
-		query += ` AND EXISTS(SELECT 1 FROM xnode_periods p WHERE p.id=e.period_id AND p.status<>'closed')`
 	} else {
 		query += ` AND false` // Resume needs only the users-row/paid-benefit fence.
 	}
@@ -65,13 +62,8 @@ func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.Hourl
 	if err = finishCompileRows(rows); err != nil {
 		return nil, false, err
 	}
-	if !intent.Purge && !intent.Resume && len(principals) == 0 {
+	if !intent.Resume && len(principals) == 0 {
 		return nil, false, xnode.ErrConflict
-	}
-	if intent.Purge && allowed {
-		if _, err = tx.ExecContext(ctx, `UPDATE hourly_enrollments SET status='closed',updated_at=$3 WHERE owner_id=$1 AND account_generation<=$2 AND status<>'closed'`, intent.OwnerID, intent.ThroughGeneration, time.Now().UTC()); err != nil {
-			return nil, false, err
-		}
 	}
 	if allowed && mark != nil {
 		if err = mark(); err != nil {
@@ -80,9 +72,6 @@ func (s *Store) WithHourlyOwnerLifecycle(ctx context.Context, intent xnode.Hourl
 	}
 	if err = tx.Commit(); err != nil {
 		return nil, false, err
-	}
-	if intent.Purge && !allowed {
-		return nil, false, nil // A superseded purge must not close captured new state.
 	}
 	return principals, allowed, nil
 }

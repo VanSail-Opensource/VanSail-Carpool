@@ -25,6 +25,7 @@ func (m *Master) receiveActivity(peer *agentPeer, message wire.Message) error {
 		m.mu.Unlock()
 		return ErrConflict
 	}
+	report = m.filterPurgeActivityLocked(peer, report)
 	snapshot := m.live[peer.nodeID]
 	if previous := snapshot.report.Users.SampledAt; previous != nil && (report.Users.SampledAt == nil || report.Users.SampledAt.Before(*previous)) {
 		m.mu.Unlock()

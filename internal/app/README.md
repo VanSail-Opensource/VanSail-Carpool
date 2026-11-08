@@ -1,5 +1,15 @@
 # Application composition
 
+`account_cleanup.go` registers the evidence probe with the existing outbox and
+provides scheduler/bot-verification hooks. `app.go` configures protected admin IDs
+before workers and constructs the shared cleanup service; `application.go`
+retains it. `scheduler.go` admits bounded staggered work at startup and every
+30 seconds; `telegram_scheduler.go` refreshes verified bot identity every ten
+minutes. `telegram_queue_reachability.go` adapts the numeric typing action through
+the existing paced Telegram executor. `telegram_queue_reachability_test.go` checks
+queue-only execution and independent progress beside a blocked probe, while
+`account_cleanup_test.go` checks malformed bot identifiers never expose tokens.
+
 `hourly.go` attaches the hourly commerce module to the existing provider-operation
 dispatcher and outbox, and installs the master-only extra buyer before startup.
 `app.go` exposes that same service to the HTTP dependency graph; `application.go`

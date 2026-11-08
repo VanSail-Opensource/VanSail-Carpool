@@ -60,13 +60,16 @@ func (s *Store) XNodeIdentityBySubscription(ctx context.Context, hash []byte) (x
 func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xnode.Identity, error) {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if item.UserID != "" {
-		var active bool
-		if err := s.db.QueryRowContext(ctx, `SELECT account_status='active' FROM users WHERE id=$1`, item.UserID).Scan(&active); err != nil {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return item, err
+	}
+	defer tx.Rollback()
+	if owner := item.MemberOwnerID(); owner != "" {
+		// The share lock survives through INSERT/UPSERT. A lifecycle update
+		// cannot wipe credentials and then be crossed by this older active view.
+		if err := lockNativeMemberIdentityTx(ctx, tx, owner, 0, false); err != nil {
 			return item, err
-		}
-		if !active {
-			return item, ErrAccountUnavailable
 		}
 	}
 	if item.ProxyUserID == 0 {
@@ -83,20 +86,20 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 		if item.UserID != "" {
 			args = append(args, item.UserID)
 		}
-		if err := s.db.QueryRowContext(ctx, query, args...).Scan(&next); err != nil {
+		if err := tx.QueryRowContext(ctx, query, args...).Scan(&next); err != nil {
 			return item, err
 		}
 		if next >= 1<<53 {
 			return item, xnode.ErrConflict
 		}
-		_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+		_, err := tx.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, next, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 		if err != nil {
 			return item, err
 		}
 		item.ProxyUserID = next
-		return item, err
+		return item, tx.Commit()
 	}
-	result, err := s.db.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id,access_disabled=CASE WHEN xnode_identities.credentials_cipher='' THEN excluded.access_disabled ELSE xnode_identities.access_disabled END WHERE xnode_identities.user_id IS NOT DISTINCT FROM excluded.user_id AND xnode_identities.service_name IS NOT DISTINCT FROM excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
+	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_identities(proxy_user_id,user_id,service_name,credentials_cipher,subscription_hash,subscription_cipher,current_period_id,legacy_user_id,lifetime_base,access_disabled,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(proxy_user_id) DO UPDATE SET credentials_cipher=excluded.credentials_cipher,subscription_hash=excluded.subscription_hash,subscription_cipher=excluded.subscription_cipher,current_period_id=excluded.current_period_id,access_disabled=CASE WHEN xnode_identities.credentials_cipher='' THEN excluded.access_disabled ELSE xnode_identities.access_disabled END WHERE xnode_identities.user_id IS NOT DISTINCT FROM excluded.user_id AND xnode_identities.service_name IS NOT DISTINCT FROM excluded.service_name`, item.ProxyUserID, nullText(item.UserID), nullText(item.ServiceName), item.CredentialsCipher, item.SubscriptionHash, item.SubscriptionCipher, nullText(item.CurrentPeriodID), nullText(item.LegacyUserID), item.LifetimeBase, boolInt(item.AccessDisabled), identityCreatedAt(item))
 	if err != nil {
 		return item, err
 	}
@@ -104,7 +107,10 @@ func (s *Store) SaveXNodeIdentity(ctx context.Context, item xnode.Identity) (xno
 	if err == nil && count != 1 {
 		err = xnode.ErrConflict
 	}
-	return item, err
+	if err != nil {
+		return item, err
+	}
+	return item, tx.Commit()
 }
 
 func nullText(value string) any {

@@ -21,7 +21,11 @@ func (s *Service) reopenPurgedPAYG(ctx context.Context, a PAYGAccount, price int
 	if user.AccountStatus != "active" || user.AccountGeneration < 1 {
 		return ErrConflict
 	}
-	r, ok := s.repo.(interface {
+	source := s.repo
+	if reads, ok := source.(*compileReads); ok {
+		source = reads.Repository
+	}
+	r, ok := source.(interface {
 		ReopenPurgedPAYG(context.Context, Identity, Period, string, int64, int64) error
 	})
 	if !ok {

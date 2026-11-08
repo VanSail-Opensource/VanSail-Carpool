@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -56,7 +57,7 @@ func TestHourlyIdleFenceCannotRestopNewSameGenerationPreparation(t *testing.T) {
 	}
 }
 
-func TestHourlyPurgeFenceRequiresCurrentPurgingGenerationAndAdminProtection(t *testing.T) {
+func TestHourlyPurgeCannotBypassReachabilityAdmissionAndDurableCursor(t *testing.T) {
 	s, identity, _, p, _ := usageHistoryFixture(t)
 	ctx := context.Background()
 	intent := xnode.HourlyLifecycleIntent{OwnerID: identity.UserID, CurrentGeneration: 1, ThroughGeneration: 0, Purge: true}
@@ -70,7 +71,7 @@ func TestHourlyPurgeFenceRequiresCurrentPurgingGenerationAndAdminProtection(t *t
 			t.Fatal(err)
 		}
 		values, applied, err := s.WithHourlyOwnerLifecycle(ctx, intent, mark)
-		if err != nil || applied || len(values) != 0 || marks != 0 {
+		if !errors.Is(err, xnode.ErrInvalid) || applied || len(values) != 0 || marks != 0 {
 			t.Fatal("unauthorized purge fenced native scope", values, applied, marks, err)
 		}
 	}
@@ -78,11 +79,11 @@ func TestHourlyPurgeFenceRequiresCurrentPurgingGenerationAndAdminProtection(t *t
 		t.Fatal(err)
 	}
 	values, applied, err := s.WithHourlyOwnerLifecycle(ctx, intent, mark)
-	if err != nil || !applied || marks != 1 || len(values) != 1 || values[0].EnrollmentID != p.EnrollmentID {
-		t.Fatal("authorized purge failed to capture original scope", values, applied, marks, err)
+	if !errors.Is(err, xnode.ErrInvalid) || applied || marks != 0 || len(values) != 0 {
+		t.Fatal("bare purge bypassed final admission/cursor", values, applied, marks, err)
 	}
 	current, err := s.XNodeHourlyPrincipal(ctx, p.EnrollmentID)
-	if err != nil || current.Status != "closed" {
-		t.Fatal("scoped purge did not fence enrollment", current, err)
+	if err != nil || current.Status != p.Status {
+		t.Fatal("refused bare purge changed the enrollment", current, err)
 	}
 }

@@ -71,7 +71,8 @@ func TestDDNSBindingOwnershipIsAtomicAndProtectsCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
-	if err = pruneAbandonedUsersTx(ctx, tx, time.Now().Add(-24*time.Hour), map[string]int64{}); err != nil {
+	now := time.Now().UTC()
+	if err = pruneHousekeepingTx(ctx, tx, now.Add(-7*24*time.Hour), now.Add(-24*time.Hour), now, map[string]int64{}); err != nil {
 		t.Fatal("maintenance did not protect DDNS configuration owner", err)
 	}
 	if err = tx.Commit(); err != nil {

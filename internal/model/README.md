@@ -58,3 +58,8 @@ traffic projections without exposing credentials or live rate allocations.
 
 `hourly_validation_test.go` covers disabled defaults, explicit invalid units,
 duration and eligibility multiplication bounds, and exact decimal-string JSON.
+
+`account_cleanup.go` defines private bot-health, durable probe and classified
+response contracts. They carry numeric bot identity, account generation and
+nonce metadata; raw Telegram responses, tokens and account-existence claims are
+not persisted or exposed by these types.

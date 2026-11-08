@@ -16,6 +16,7 @@ const PAYGWindow = 72 * time.Hour
 const paygPrefix = "member-payg-"
 
 type PAYGAccount struct {
+	AccountGeneration                                       int64 `json:"-"` // Exact lifecycle admission for new association writes.
 	Disabled                                                bool
 	ProxyUserID                                             int64
 	UserID, GroupID, NodeID, PeriodID                       string

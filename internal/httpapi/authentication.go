@@ -9,6 +9,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/accounts"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/currencydisplay"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/requestauth"
 )
 
@@ -65,6 +66,10 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 	user, token, expiresAt, err := s.deps.Accounts.Authenticate(r.Context(), request.InitData)
 	if err != nil {
+		if errors.Is(err, database.ErrAccountCleanupRecoveryPending) {
+			s.writeError(w, r, http.StatusConflict, "ACCOUNT_RECOVERY_PENDING", "Your sign-in was verified. Cleanup is paused while an administrator reviews the earlier account changes.")
+			return
+		}
 		if errors.Is(err, accounts.ErrAuthenticationRateLimited) {
 			w.Header().Set("Retry-After", "30")
 			s.writeError(w, r, http.StatusTooManyRequests, "AUTH_RATE_LIMITED", "Too many authentication attempts. Please retry shortly.")

@@ -8,9 +8,9 @@ import (
 	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-// Purge requires the exact current purging generation; ThroughGeneration only
-// bounds historical scopes. Ordinary idle closure names its terminal enrollment
-// and refuses an owner RAM stop after a newer paid/preparing benefit appears.
+// Ordinary idle closure names its terminal enrollment and refuses an owner RAM
+// stop after a newer benefit appears. Bare Purge is rejected: account cleanup
+// additionally requires admitted evidence and the durable mixed-period cursor.
 type HourlyLifecycleIntent struct {
 	OwnerID, EnrollmentID                string
 	CurrentGeneration, ThroughGeneration int64
@@ -25,8 +25,8 @@ func (s *Service) CloseHourlyOwnerIfIdle(ctx context.Context, owner string, gene
 	return s.closeHourlyOwner(ctx, HourlyLifecycleIntent{OwnerID: owner, CurrentGeneration: generation, ThroughGeneration: generation, EnrollmentID: enrollment})
 }
 
-func (s *Service) CloseHourlyOwnerForPurge(ctx context.Context, owner string, currentGeneration, throughGeneration int64) error {
-	return s.closeHourlyOwner(ctx, HourlyLifecycleIntent{OwnerID: owner, CurrentGeneration: currentGeneration, ThroughGeneration: throughGeneration, Purge: true})
+func (s *Service) CloseHourlyOwnerForPurge(ctx context.Context, owner string, currentGeneration, throughGeneration int64, jobID string) error {
+	return s.CloseAccountPeriods(ctx, model.AccountPurge{UserID: owner, Generation: currentGeneration, ThroughGeneration: throughGeneration}, jobID)
 }
 
 func (s *Service) closeHourlyOwner(ctx context.Context, intent HourlyLifecycleIntent) error {
@@ -59,9 +59,6 @@ func (s *Service) closeHourlyOwner(ctx context.Context, intent HourlyLifecycleIn
 	}
 	if marked && s.master != nil {
 		pending = errors.Join(pending, s.master.inspectHourlyCreditThrough(ctx, intent.OwnerID, intent.ThroughGeneration))
-	}
-	if intent.Purge && len(principals) == 128 {
-		pending = errors.Join(pending, ErrAccessAccountingPending)
 	}
 	return pending
 }

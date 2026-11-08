@@ -299,3 +299,8 @@ the distinction between false/zero and omitted/null settings.
 `legacy_sales_http_test.go` verifies closed member checkout and quote entrances
 cannot create purchases or change the wallet. Immutable checkout replay remains
 owner-bound through the catalog; owned renewal and reward entry points stay separate.
+
+`authentication_recovery_test.go` covers verified sign-in during partial account
+cleanup. `authentication.go` returns `409 ACCOUNT_RECOVERY_PENDING` without a new
+session: authenticated activity cancels deletion evidence, while an administrator
+must review any earlier irreversible changes before access can resume.

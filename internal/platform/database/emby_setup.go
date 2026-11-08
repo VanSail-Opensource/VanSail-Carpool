@@ -61,6 +61,9 @@ func queueEmbySetupTx(ctx context.Context, tx *sql.Tx, input domain.QueueSetupIn
 	} else if !errors.Is(loadErr, domain.ErrNotFound) {
 		return domain.Account{}, false, loadErr
 	}
+	if err := lockProviderOperationAccountsTx(ctx, tx, input.UserID, ""); err != nil {
+		return domain.Account{}, false, err
+	}
 	newBalance, err := debitBalanceTx(ctx, tx, input.UserID, input.SetupPriceTXBMinor, now)
 	if err != nil {
 		return domain.Account{}, false, err

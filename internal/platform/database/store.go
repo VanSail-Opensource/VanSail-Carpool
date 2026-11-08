@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 )
@@ -28,6 +27,7 @@ var (
 
 // Store implements persistent repositories on PostgreSQL.
 type Store struct {
+	cleanupAdmins        atomic.Pointer[accountCleanupAdminSet]
 	periodScanMu         sync.Mutex
 	periodScanCursor     string
 	firewallPages        firewallPageCache
@@ -58,46 +58,7 @@ func NewStore(db *sql.DB) *Store {
 
 // UpsertTelegramUser creates or refreshes a user from validated Telegram data.
 func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramProfile, isAdmin bool) (model.User, bool, error) {
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-
-	now := time.Now().UTC()
-	if err := s.resumeAccountAuthentication(ctx, profile.ID, now); err != nil {
-		return model.User{}, false, err
-	}
-	role := "user"
-	if isAdmin {
-		role = "admin"
-	}
-	if profile.ID <= 0 || profile.ID >= 1<<52 {
-		return model.User{}, false, ErrConflict
-	}
-	userID := strconv.FormatInt(profile.ID, 10)
-	var existed bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE telegram_id=$1)`, profile.ID).Scan(&existed); err != nil {
-		return model.User{}, false, err
-	}
-	locale := affiliates.NormalizeLocale(profile.LanguageCode)
-	_, err := s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,0,$7,0,$8,$9) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
-		telegram_last_name=excluded.telegram_last_name,telegram_username=excluded.telegram_username,
-		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at
-		WHERE users.account_status='active' AND users.bot_blocked=0`,
-		userID, profile.ID, profile.FirstName, profile.LastName, profile.Username, role, locale, stamp(now), stamp(now))
-	if err != nil {
-		return model.User{}, false, fmt.Errorf("upsert Telegram user: %w", err)
-	}
-	user, err := s.UserByTelegramID(ctx, profile.ID)
-	if err != nil {
-		return model.User{}, false, err
-	}
-	if user.AccountStatus != "active" || user.BotBlocked {
-		return model.User{}, false, ErrAccountUnavailable
-	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO balances(user_id,txb_minor,updated_at) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING`, user.ID, 0, stamp(now)); err != nil {
-		return model.User{}, false, fmt.Errorf("initialize balance: %w", err)
-	}
-	return user, !existed, nil
+	return s.upsertAuthenticatedTelegram(ctx, profile, isAdmin)
 }
 
 // UserByID returns a user by internal ID.
@@ -182,6 +143,13 @@ func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byt
 		return fmt.Errorf("begin session replacement: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
+	var active bool
+	if err := tx.QueryRowContext(ctx, `SELECT account_status='active' AND bot_blocked=0 FROM users WHERE id=$1 FOR UPDATE`, userID).Scan(&active); err != nil {
+		return err
+	}
+	if !active {
+		return ErrAccountUnavailable
+	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=$1 AND scope='miniapp'`, userID); err != nil {
 		return fmt.Errorf("remove previous session: %w", err)
 	}
@@ -196,7 +164,8 @@ func (s *Store) retryAttempt_ReplaceSession(ctx context.Context, tokenHash []byt
 
 // UserBySession returns the owner of a non-expired session.
 func (s *Store) UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (model.User, error) {
-	return scanUser(s.db.QueryRowContext(ctx, userSelect+` JOIN sessions ON sessions.user_id=users.id WHERE sessions.token_hash=$1 AND sessions.scope='miniapp' AND sessions.expires_at>$2 AND users.account_status='active' AND users.bot_blocked=0`, tokenHash, stamp(now)))
+	user, _, err := s.authenticatedSession(ctx, tokenHash, "miniapp", now)
+	return user, err
 }
 
 // DeleteExpiredSessions removes stale session rows.

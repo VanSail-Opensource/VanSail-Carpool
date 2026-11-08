@@ -15,9 +15,11 @@ func (r dispatcherRepository) ProviderOperationByID(context.Context, string) (Op
 
 func TestDispatcherRoutesByOperationKind(t *testing.T) {
 	called := false
-	dispatcher := NewDispatcher(dispatcherRepository{operation: Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: "reset", Status: string(StatusQueued)}}})
+	repository := &dispatcherRepository{operation: Operation{Receipt: model.OperationReceipt{ID: "operation", Kind: "reset", Status: string(StatusQueued)}}}
+	dispatcher := NewDispatcher(repository)
 	if err := dispatcher.Register("reset", HandlerFunc(func(context.Context, Operation, model.OutboxJob) error {
 		called = true
+		repository.operation.Receipt.Status = string(StatusSucceeded)
 		return nil
 	})); err != nil {
 		t.Fatalf("Register(): %v", err)

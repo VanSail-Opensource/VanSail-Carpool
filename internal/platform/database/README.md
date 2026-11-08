@@ -1,5 +1,20 @@
 # Application store
 
+Account closure uses the evidence policy in `account_cleanup.md`.
+`account_purge_jobs.go` supersedes only proven unattempted operations;
+`account_purge_dependencies.go` retains unknown provider outcomes and live
+checkouts. `account_purge_operational.go` scrubs owner-scoped operational data
+after native barriers. `account_purge_extensions.go` forfeits unused extension
+benefits with an audit receipt. `account_purge_firewall_archive.go` preserves
+exact historical paid-grant facts without source addresses. Immutable ledger,
+native journal and byte-credit obligations remain intact.
+`account_purge_emby.go` locks the wallet before legacy account-attempt markers;
+`account_purge_emby_test.go` retains remote-create uncertainty even when its
+older parent receipt never recorded an attempt.
+`account_purge_outcomes_test.go`, `account_purge_scrub_test.go` and
+`account_purge_housekeeping_test.go` cover uncertain continuations, financial
+and foreign-owner isolation, operational cleanup and age-only deletion removal.
+
 Agreement publication updates content only. PostgreSQL migration 00027
 restores previously accepted members to complete without rewriting their original
 acceptance evidence. First-time acceptance still validates the latest revision.
@@ -406,6 +421,9 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   scanning, and persisted-error sanitization.
 - `purchase_sync.go` — entitlement synchronization and traffic-reset phase state.
 - `emby_setup.go` owns the shared atomic setup debit, sealed state, and optional legacy outbox transaction.
+  `emby_account_fence_test.go` and `emby_account_fence_race_test.go` cover lifecycle
+  share locks for new legacy setup/retry work, including a committed closure race;
+  existing financial replay stays read-only and never recreates a queued job.
 - `emby_operations.go` atomically binds setup and reviewed retry state to one provider-operation job.
 - `outbox_retry_operations.go` atomically reactivates a target job and completes its retry receipt.
 - `payment_refund_resolution.go` closes only open Stars refund receipts from authoritative callback evidence.
@@ -436,7 +454,18 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
   `retention_purchase_rollups.go` preserve compact activity, payment, purchase,
 - `retention_compaction.go` coordinates all backup-gated cleanup writes in one transaction.
 - `retention_native.go` prunes aged native accounting maintenance rows without removing purchase-wide financial evidence or rollback dependencies.
-- `retention_operations.go` fails stale open provider operations after 24 hours, resolves linked local state, and removes processed receipts plus their queue records.
+- `retention_operations.go` retains attempted/unknown commands and their encrypted
+  continuations. Generic expiry can fail/refund only exact never-started intents;
+  typed PM/IP reconciliation and explicitly settled compaction remain available.
+  `retention_uncertain_operations_test.go` covers review/partial/failed-parent
+  custody, old timeout evidence, exact no-refund behavior and known compaction;
+  `retention_attempt_race_test.go` covers a concurrent committed attempt while
+  maintenance waits for its candidate row lock. `retention_sync_jobs.go` retains
+  unknown failed-job targets, allowing the existing live-term recovery to transfer
+  an exact payload into fresh work before removing an older queue artifact.
+  `retention_operation_compensation.go` locks legacy Emby setup evidence before
+  compensation; `retention_emby_uncertainty_test.go` verifies that a zero-attempt
+  parent cannot override an attempted or already recorded remote creation.
 - `retention_operation_compensation.go` refunds stale traffic-reset and Emby-setup debits before their operations are removed.
 - `retention_housekeeping.go` prunes completed notification events, expired or superseded sessions, abandoned pre-username users, and old maintenance runs.
 - `continuity.go` retains native paid-successor projections and retires unclaimed legacy preparation jobs without deleting history.
@@ -1298,3 +1327,70 @@ Hourly commerce source inventory (details in `hourly_billing.md`):
   `hourly_billing_proration_test.go`.
 - Hosted compatibility/fairness: `hourly_billing_legacy_test.go`,
   `hourly_billing_renewal_test.go`, `hourly_billing_paging_test.go`.
+
+Reachability cleanup is described in [account_cleanup.md](account_cleanup.md).
+Its source inventory is `account_cleanup_admins.go`, `account_cleanup_state.go`,
+`account_cleanup_health.go`, `account_cleanup_schedule.go`,
+`account_cleanup_jobs.go`, `account_cleanup_classify.go`,
+`account_cleanup_complete.go`, `account_cleanup_admit.go`,
+`account_cleanup_admission.go`, `account_cleanup_activity.go`,
+`account_cleanup_auth.go` and `account_cleanup_operations.go`.
+Hosted coverage lives in `account_cleanup_fixture_test.go`,
+`account_cleanup_probes_test.go`, `account_cleanup_classify_test.go`,
+`account_cleanup_activity_test.go`, `account_cleanup_health_test.go`,
+`account_cleanup_schedule_test.go`, `account_cleanup_admission_test.go` and
+`account_cleanup_operations_test.go`. The existing `account_lifecycle_test.go`,
+`account_native_lifecycle_test.go` and `account_purge_recovery_test.go` now require
+the same accepted grace evidence before exercising purge/rejoin accounting.
+
+`account_cleanup_continuation_test.go` drives an attempted-unknown receipt through
+the real database, dispatcher and outbox worker; a purge fence retains its exact
+pending job, encrypted target and unresolved provider dependency.
+`xnode_account_purge_firewall.go` releases only the owner's exemption rows through
+the existing dynamic firewall revision/queue and requires confirmed member
+delivery before scrub. `xnode_account_purge_firewall_test.go` covers replay,
+offline/old-epoch waits, retained grant evidence, shared-prefix sibling grants,
+historical pending revocations and administrator protection.
+
+Native cleanup persistence is in `xnode_account_purge.go`,
+`xnode_account_purge_guard.go`, `xnode_account_purge_barrier.go` and
+`xnode_account_purge_activity.go`. One existing generation's outbox payload holds
+fair scalar drain cursors; no per-period progress table or competing queue exists.
+The lock order is cleanup health -> account -> evidence -> provider operations ->
+outbox cursor -> native period/node. Old scopes are captured before any network
+wait; financial barriers remain bound to original closure and journal generations.
+
+`xnode_account_purge_ip.go` selects bounded unproven encrypted restrictions,
+`xnode_account_purge_ip_receipt.go` records exact nonplaintext native removal
+receipts, and `xnode_account_purge_ip_final.go` prevents direct finalization from
+bypassing them. It rechecks every retained restriction, original binding, current
+agent and complete captured positive-principal set, with no queued/uncertain
+future block mutation. Local expiry alone is insufficient for opaque old rows.
+`xnode_hourly_lifecycle.go` keeps ordinary disable/resume behavior while rejecting
+bare purge intents; `xnode_identities.go` now holds a member's lifecycle share lock
+through the credential write so stale checks cannot resurrect purged secrets.
+
+Hosted coverage: `xnode_account_purge_fixture_test.go`,
+`xnode_account_purge_cursor_test.go`, `xnode_account_purge_guard_test.go`,
+`xnode_account_purge_review_test.go`, `xnode_account_purge_ip_test.go`,
+`xnode_account_purge_ip_pending_test.go`, `xnode_identity_purge_test.go`, and the
+updated `xnode_hourly_lifecycle_test.go`. They cover durable fairness, restarts,
+review uncertainty, original scopes, administrator promotion, newer joins,
+encrypted-target retention, exact IP receipts and late credential writes.
+
+`xnode_identity_lifecycle.go` shares exact owner-status/generation locks across
+native credential/association writes. `xnode_payg_prepare.go` atomically creates
+traffic-account credentials, original PAYG period and participant; it preserves
+existing account/financial replay and permits reuse only with complete absence
+of publication, participant and accounting evidence. Bare `xnode_payg_accounts.go`
+writes and `account_rejoin_payg.go` now hold the same generation fence through
+commit. `xnode_identity_purge_test.go`, `xnode_payg_prepare_fixture_test.go`,
+`xnode_payg_prepare_test.go`, `xnode_payg_prepare_purge_test.go`,
+`xnode_payg_prepare_orphan_test.go` and `xnode_payg_reopen_purge_test.go` cover
+blocked lifecycle races, concurrent preparation, full rollback and safe orphan
+rotation. `PAYGAccount.AccountGeneration` remains private to native persistence.
+
+`xnode_account_purge_firewall_reenable_test.go` checks that same-socket host
+re-enablement in `xnode_firewall_members.go` forces a new-epoch full snapshot:
+retained native bags cannot restore a purged exemption, and an old acknowledgment
+cannot clear the new delivery barrier.

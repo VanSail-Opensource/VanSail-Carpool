@@ -10,12 +10,13 @@ func purgeAccountMaterialTx(ctx context.Context, tx *sql.Tx, id string, now time
 	if err := cancelAccountQueuedJobsTx(ctx, tx, id); err != nil {
 		return err
 	}
+	if err := purgeAccountOperationalTx(ctx, tx, id, now); err != nil {
+		return err
+	}
 	queries := []struct {
 		sql  string
 		args []any
 	}{
-		{`UPDATE provider_operation_items SET status='failed',error_code='ACCOUNT_PURGED',completed_at=$1,updated_at=$2 WHERE status IN ('queued','processing','pending_review') AND operation_id IN (SELECT id FROM provider_operations WHERE actor_user_id=$3 OR owner_user_id=$4)`, []any{stamp(now), stamp(now), id, id}},
-		{`UPDATE provider_operations SET status='failed',error_code='ACCOUNT_PURGED',completed_at=$1,updated_at=$2 WHERE status IN ('queued','processing','pending_review','partial') AND (actor_user_id=$3 OR owner_user_id=$4)`, []any{stamp(now), stamp(now), id, id}},
 		{`DELETE FROM telegram_pm_payloads WHERE operation_id IN (SELECT id FROM provider_operations WHERE actor_user_id=$1 OR owner_user_id=$2)`, []any{id, id}},
 		{`DELETE FROM telegram_pm_conversations WHERE user_id=$1`, []any{id}},
 		{`DELETE FROM emby_accounts WHERE user_id=$1`, []any{id}},

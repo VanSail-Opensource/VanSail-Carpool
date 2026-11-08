@@ -64,6 +64,7 @@ onUnmounted(() => globalThis.removeEventListener(onboardingRequiredEvent, onOnbo
         <AuthGate
           v-if="sessionStore.status === 'error'"
           :message="sessionStore.error ?? $t('auth.authenticationFailed')"
+          :code="sessionStore.errorCode ?? undefined"
           @retry="sessionStore.bootstrap(true)"
         />
         <CaptchaGate v-else-if="sessionStore.session?.captcha?.required" :challenge="sessionStore.session.captcha" @verified="sessionStore.updateSession" />

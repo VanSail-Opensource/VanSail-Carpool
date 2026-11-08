@@ -15,6 +15,9 @@ func (s *Store) retryAttempt_ReopenPurgedPAYG(ctx context.Context, identity xnod
 		return err
 	}
 	defer tx.Rollback()
+	if err = lockNativeMemberIdentityTx(ctx, tx, user, generation, true, true); err != nil {
+		return err
+	}
 	var allowed bool
 	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM xnode_payg_accounts a JOIN users u ON u.id=a.user_id JOIN xnode_identities i ON i.proxy_user_id=a.proxy_user_id JOIN xnode_periods p ON p.id=a.period_id WHERE a.proxy_user_id=$1 AND a.user_id=$2 AND u.account_generation=$3 AND u.account_status='active' AND i.credentials_cipher='' AND p.status='closed' AND a.credit_bytes=0)`, identity.ProxyUserID, user, generation).Scan(&allowed); err != nil {
 		return err
