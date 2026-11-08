@@ -55,12 +55,8 @@ func (m usageMinutes) flush(ctx context.Context, tx *sql.Tx) error {
 			from, through = append(from, value.from), append(through, value.through)
 			ups, downs = append(ups, value.upload.String()), append(downs, value.download.String())
 		}
-		result, err := tx.ExecContext(ctx, `INSERT INTO xnode_usage_minutes AS h(owner_id,billing_mode,reference_id,period_id,node_id,minute,proxy_user_id,account_generation,observed_from,observed_through,upload_bytes,download_bytes) SELECT owner,mode,reference,period,node,minute,principal,NULLIF(generation,-1),observed_from,observed_through,upload::numeric,download::numeric FROM unnest($1::text[],$2::text[],$3::text[],$4::text[],$5::text[],$6::timestamptz[],$7::bigint[],$8::bigint[],$9::timestamptz[],$10::timestamptz[],$11::text[],$12::text[]) AS v(owner,mode,reference,period,node,minute,principal,generation,observed_from,observed_through,upload,download) ON CONFLICT(owner_id,billing_mode,reference_id,proxy_user_id,period_id,node_id,minute) DO UPDATE SET upload_bytes=h.upload_bytes+excluded.upload_bytes,download_bytes=h.download_bytes+excluded.download_bytes,observed_from=LEAST(h.observed_from,excluded.observed_from),observed_through=GREATEST(h.observed_through,excluded.observed_through) WHERE h.account_generation IS NOT DISTINCT FROM excluded.account_generation`, owners, modes, references, periods, nodes, minutes, principals, generations, from, through, ups, downs)
-		if err != nil {
+		if err := writeVisibleUsageMinutesTx(ctx, tx, owners, modes, references, periods, nodes, minutes, principals, generations, from, through, ups, downs); err != nil {
 			return err
-		}
-		if n, err := result.RowsAffected(); err != nil || n != int64(min(trafficSQLRows, len(keys)-start)) {
-			return ErrConflict
 		}
 	}
 	return nil

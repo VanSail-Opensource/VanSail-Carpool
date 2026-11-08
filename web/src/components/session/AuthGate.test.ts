@@ -6,8 +6,8 @@ import AuthGate from './AuthGate.vue'
 
 vi.mock('@/utils/telegram', () => ({ isTelegramWebAppDetected: () => true }))
 vi.mock('motion-v', async () => {
-  const { h } = await import('vue')
-  return { motion: { main: { setup: (_: unknown, { slots }: { slots: Slots }) => () => h('main', null, slots.default?.()) } } }
+  const { h, ref } = await import('vue')
+  return { useReducedMotion: () => ref(false), motion: { main: { setup: (_: unknown, { slots }: { slots: Slots }) => () => h('main', null, slots.default?.()) } } }
 })
 
 afterEach(() => setLocale('en'))

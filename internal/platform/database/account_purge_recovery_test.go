@@ -12,7 +12,9 @@ import (
 func TestPurgeDependencyWaitKeepsOneJobAndReviewStopsAutomaticRecovery(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	user := createTestUser(t, store, 49861)
-	now := time.Now().UTC()
+	// Admission fixtures use PostgreSQL's microsecond precision. Keep the
+	// queue's text timestamp identical when claiming its first due job.
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	if err := store.HandleTelegramBotStatus(ctx, user.TelegramID, 1, 1, true, false, now); err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +23,7 @@ func TestPurgeDependencyWaitKeepsOneJobAndReviewStopsAutomaticRecovery(t *testin
 	for attempt := range 12 {
 		job, err := store.ClaimOutboxJob(ctx, now)
 		if err != nil || job == nil || job.Kind != "account_purge" {
-			t.Fatal(job, err)
+			t.Fatal("purge claim", attempt, job, err)
 		}
 		if attempt == 0 {
 			original = job.ID

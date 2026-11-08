@@ -1394,3 +1394,22 @@ rotation. `PAYGAccount.AccountGeneration` remains private to native persistence.
 re-enablement in `xnode_firewall_members.go` forces a new-epoch full snapshot:
 retained native bags cannot restore a purged exemption, and an old acknowledgment
 cannot clear the new delivery barrier.
+
+`xnode_identities_retry_generated.go` retries the whole credential transaction
+after PostgreSQL serialization/deadlock conflicts. A write waiting behind purge
+therefore rolls back and reloads current lifecycle status before any credential
+can commit; the existing `xnode_identity_purge_test.go` keeps its strict refusal
+assertion for both first insertion and existing-identity updates.
+
+`xnode_usage_visibility.go` gates only disposable raw-history materialization in
+`xnode_usage_buffer.go`. Purged owners and hourly generations preceding an actual
+completed-purge audit are suppressed; closed enrollments or newer generations
+alone remain valid late accounting evidence. Eligibility and INSERT share the
+existing serializable transaction, with eligible/written counts retaining strict
+generation-conflict checks. No owner lock is added after native period locks.
+`xnode_usage_purge_fixture_test.go`, `xnode_usage_purge_test.go` and
+`xnode_usage_purge_race_test.go` cover single/batch late-only journals, exact cursor
+and credit-proof replay, a skipped-generation rejoin, mixed eligible rows,
+generation conflicts, and an actual insert-versus-final-purge SSI race. Suppressed
+presentation never changes wallet receipts, byte-credit obligations or journal
+acknowledgment rules.

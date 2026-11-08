@@ -36,7 +36,7 @@ func TestPurgeRetainsLegacyEmbyCreateEvidenceIndependentlyOfParentAttempt(t *tes
 			if parent {
 				op, _, err := s.CreateProviderOperation(ctx, providerops.CreateInput{
 					ActorUserID: u.ID, OwnerUserID: u.ID, Kind: "emby_setup", IdempotencyKey: "old-setup",
-					RequestFingerprint: "legacy-setup", SealedTarget: "synthetic-sealed-target",
+					RequestFingerprint: "legacy-setup-fingerprint", SealedTarget: "synthetic-sealed-target",
 					Items: []providerops.ItemInput{{Key: "emby", TargetType: "emby_user", TargetID: u.ID}},
 				}, now)
 				if err != nil {

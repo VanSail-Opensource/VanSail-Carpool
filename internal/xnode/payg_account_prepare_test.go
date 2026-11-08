@@ -15,6 +15,12 @@ type atomicPAYGRepository struct {
 	calls    int
 }
 
+func (r *atomicPAYGRepository) XNodeIdentities(context.Context) ([]Identity, error) {
+	// A compile can capture its inventory before atomic preparation creates the
+	// principal. The real repository's direct fallback loads the new identity.
+	return []Identity{}, nil
+}
+
 func (r *atomicPAYGRepository) UserByID(context.Context, string) (model.User, error) {
 	return model.User{ID: "owner", AccountStatus: "active", AccountGeneration: 7}, nil
 }

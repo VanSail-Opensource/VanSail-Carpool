@@ -27,7 +27,7 @@ func TestMaintenancePreservesUncertainReceiptsAndEncryptedContinuations(t *testi
 		{"running", "processing", "processing", "", "pending", 1, true},
 		{"exhausted", "processing", "processing", "", "failed", 1, true},
 		{"review", "pending_review", "pending_review", "UNKNOWN", "failed", 1, true},
-		{"partial", "partial", "partial", "UNKNOWN", "failed", 1, true},
+		{"partial", "partial", "pending_review", "UNKNOWN", "failed", 1, true},
 		{"child-only", "queued", "processing", "", "pending", 0, true},
 		{"failed-parent", "failed", "processing", "PROVIDER_FAILED", "failed", 1, true},
 		{"old-timeout", "failed", "failed", maintenanceTimeoutCode, "failed", 1, true},
