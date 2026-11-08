@@ -64,7 +64,7 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	if previousErr != nil && !isMissing(previousErr) {
 		return node, previousErr
 	}
-	if previousErr == nil && previous.RetiredAt != nil {
+	if previousErr == nil && (previous.RetiredAt != nil || previous.RemovingAt != nil) {
 		return node, ErrConflict
 	}
 	if previousErr == nil && previous.AgentID != "" && previous.MultiplierFP != node.MultiplierFP {

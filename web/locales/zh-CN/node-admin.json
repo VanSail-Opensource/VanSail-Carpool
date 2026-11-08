@@ -2,15 +2,16 @@
   "nodeRemoval": {
     "title": "移除 {name}",
     "remove": "移除",
-    "description": "将停止准入、核对流量账务并撤销注册凭据。历史流量和财务证据会保留。",
+    "description": "将停止准入，并移除此节点的车队绑定、入口和已保存的路由选择。空路由方案会停用。在撤销注册前完成路由凭据撤销和账务核对，历史流量和财务证据会保留。",
     "done": "已从活动节点列表移除，历史账务已保留。",
     "blockers": {
-      "XNODE_REMOVAL_BINDINGS": "请先解除所有车队绑定，包括已停用的车队。",
-      "XNODE_REMOVAL_SERVICE": "仍有有效服务或诊断依赖此节点。",
-      "XNODE_REMOVAL_ROUTING": "已保存的路由方案仍依赖此节点，请先移除相关选择。",
       "XNODE_REMOVAL_OFFLINE": "请重新连接节点以确认最终账务屏障。准入保持停用。",
-      "XNODE_REMOVAL_PENDING_ACCOUNTING": "账务仍待处理或存在未解决的缺口。准入保持停用，请核对后重试。"
-    }
+      "XNODE_REMOVAL_PENDING_ACCOUNTING": "账务仍有未完成的屏障或缺口，准入保持停止，核对后会自动继续移除。",
+      "XNODE_REMOVAL_ROUTING_PENDING": "正在等待相关节点撤销路由凭据，之后会自动继续移除。",
+      "XNODE_REMOVAL_SYNC_PENDING": "正在等待同步或最终账务，之后会自动继续移除。",
+      "XNODE_REMOVAL_INPUT_INVALID": "无法验证已保存的配置，请检查节点配置后重试。"
+    },
+    "pending": "移除待完成"
   },
   "nodeAdmin": {
     "forceReload": "强制恢复运行时",
@@ -36,16 +37,41 @@
       "speedtest": "通过对端测速"
     },
     "fields": {
-      "total": "总量", "used": "已用", "free": "空闲", "available": "可用",
-      "cached": "缓存", "buffers": "缓冲", "usedPercent": "使用率", "used_percent": "使用率",
-      "name": "名称", "hostname": "主机名", "platform": "平台", "os": "操作系统",
-      "kernelVersion": "内核版本", "uptime": "运行时间", "modelName": "处理器", "cores": "核心数",
-      "mount": "挂载点", "filesystem": "文件系统", "addresses": "地址",
-      "sent": "已发送", "received": "已接收", "upload_bps": "上传", "download_bps": "下载",
-      "memory_total": "显存总量", "memory_used": "已用显存", "utilization": "使用率", "temperature": "温度",
-      "request_latency_millis": "请求延迟", "download_bytes": "下载量", "upload_bytes": "上传量",
-      "download_mbps": "下载速度", "upload_mbps": "上传速度", "duration_millis": "耗时",
-      "command": "命令", "nodeId": "节点"
+      "total": "总量",
+      "used": "已用",
+      "free": "空闲",
+      "available": "可用",
+      "cached": "缓存",
+      "buffers": "缓冲",
+      "usedPercent": "使用率",
+      "used_percent": "使用率",
+      "name": "名称",
+      "hostname": "主机名",
+      "platform": "平台",
+      "os": "操作系统",
+      "kernelVersion": "内核版本",
+      "uptime": "运行时间",
+      "modelName": "处理器",
+      "cores": "核心数",
+      "mount": "挂载点",
+      "filesystem": "文件系统",
+      "addresses": "地址",
+      "sent": "已发送",
+      "received": "已接收",
+      "upload_bps": "上传",
+      "download_bps": "下载",
+      "memory_total": "显存总量",
+      "memory_used": "已用显存",
+      "utilization": "使用率",
+      "temperature": "温度",
+      "request_latency_millis": "请求延迟",
+      "download_bytes": "下载量",
+      "upload_bytes": "上传量",
+      "download_mbps": "下载速度",
+      "upload_mbps": "上传速度",
+      "duration_millis": "耗时",
+      "command": "命令",
+      "nodeId": "节点"
     }
   }
 }

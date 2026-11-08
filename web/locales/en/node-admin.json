@@ -2,15 +2,16 @@
   "nodeRemoval": {
     "title": "Remove {name}",
     "remove": "Remove",
-    "description": "Admission will stop, accounting will be reconciled, and enrollment will be revoked. Historical traffic and financial evidence are retained.",
+    "description": "This stops access and removes this node from squad bindings, endpoints and saved routing choices. Empty plans are disabled. Routing credentials and accounting are drained before enrollment is revoked. Historical traffic and financial evidence are retained.",
     "done": "Removed from active inventory. Historical accounting is retained.",
     "blockers": {
-      "XNODE_REMOVAL_BINDINGS": "Remove every squad binding first, including disabled squads.",
-      "XNODE_REMOVAL_SERVICE": "An active service or diagnostic still depends on this node.",
-      "XNODE_REMOVAL_ROUTING": "A saved routing plan still depends on this node. Remove its choices first.",
       "XNODE_REMOVAL_OFFLINE": "Reconnect this node to prove its final accounting barrier. Admission remains disabled.",
-      "XNODE_REMOVAL_PENDING_ACCOUNTING": "Accounting is still pending or has an unresolved gap. Admission remains disabled; reconcile it before retrying."
-    }
+      "XNODE_REMOVAL_PENDING_ACCOUNTING": "Accounting has an unfinished barrier or gap. Admission remains stopped; removal will resume after reconciliation.",
+      "XNODE_REMOVAL_ROUTING_PENDING": "Waiting for affected nodes to revoke routing credentials. Removal will resume automatically.",
+      "XNODE_REMOVAL_SYNC_PENDING": "Waiting for synchronization or final accounting. Removal will resume automatically.",
+      "XNODE_REMOVAL_INPUT_INVALID": "Removal could not validate stored configuration. Review the node configuration before retrying."
+    },
+    "pending": "Removal pending"
   },
   "nodeAdmin": {
     "command": "Node command",
@@ -36,16 +37,41 @@
       "speedtest": "Test speed through peer"
     },
     "fields": {
-      "total": "Total", "used": "Used", "free": "Free", "available": "Available",
-      "cached": "Cached", "buffers": "Buffers", "usedPercent": "Used", "used_percent": "Used",
-      "name": "Name", "hostname": "Hostname", "platform": "Platform", "os": "Operating system",
-      "kernelVersion": "Kernel version", "uptime": "Uptime", "modelName": "Processor", "cores": "Cores",
-      "mount": "Mount", "filesystem": "Filesystem", "addresses": "Addresses",
-      "sent": "Sent", "received": "Received", "upload_bps": "Upload", "download_bps": "Download",
-      "memory_total": "Total memory", "memory_used": "Used memory", "utilization": "Utilization", "temperature": "Temperature",
-      "request_latency_millis": "Request latency", "download_bytes": "Downloaded", "upload_bytes": "Uploaded",
-      "download_mbps": "Download speed", "upload_mbps": "Upload speed", "duration_millis": "Duration",
-      "command": "Command", "nodeId": "Node"
+      "total": "Total",
+      "used": "Used",
+      "free": "Free",
+      "available": "Available",
+      "cached": "Cached",
+      "buffers": "Buffers",
+      "usedPercent": "Used",
+      "used_percent": "Used",
+      "name": "Name",
+      "hostname": "Hostname",
+      "platform": "Platform",
+      "os": "Operating system",
+      "kernelVersion": "Kernel version",
+      "uptime": "Uptime",
+      "modelName": "Processor",
+      "cores": "Cores",
+      "mount": "Mount",
+      "filesystem": "Filesystem",
+      "addresses": "Addresses",
+      "sent": "Sent",
+      "received": "Received",
+      "upload_bps": "Upload",
+      "download_bps": "Download",
+      "memory_total": "Total memory",
+      "memory_used": "Used memory",
+      "utilization": "Utilization",
+      "temperature": "Temperature",
+      "request_latency_millis": "Request latency",
+      "download_bytes": "Downloaded",
+      "upload_bytes": "Uploaded",
+      "download_mbps": "Download speed",
+      "upload_mbps": "Upload speed",
+      "duration_millis": "Duration",
+      "command": "Command",
+      "nodeId": "Node"
     }
   }
 }

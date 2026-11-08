@@ -15,7 +15,7 @@ func queueXNodeRoutingTx(ctx context.Context, tx *sql.Tx, p xnode.RoutingPlan, i
 	if err != nil && !errors.Is(err, xnode.ErrNotFound) {
 		return err
 	}
-	if old.Revision != p.Revision || old.Phase != "" && old.Phase != "active" && old.Phase != "disabled" {
+	if xnode.RoutingRemovalPending(old) || old.Revision != p.Revision || old.Phase != "" && old.Phase != "active" && old.Phase != "disabled" {
 		return xnode.ErrConflict
 	}
 	phase, reason := "revoking", ""

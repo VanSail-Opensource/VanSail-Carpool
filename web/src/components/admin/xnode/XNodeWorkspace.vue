@@ -26,7 +26,7 @@ const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', '
     <div class="min-w-0 overflow-x-auto"><UTabs v-model="tab" :items="tabs" :content="false" variant="link" :ui="{ root: 'items-start', list: 'w-max min-w-full' }" /></div>
     <UAlert v-if="workspace.actionError.value" color="warning" :title="workspace.actionError.value" />
     <AdminSectionState :loading="workspace.loading.value" :error="workspace.error.value" @retry="workspace.load">
-      <XNodeNodes :groups="workspace.groups.value" @refresh="workspace.load" v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
+      <XNodeNodes @refresh="workspace.load" v-if="tab === 'nodes'" :nodes="workspace.nodes.value" :endpoints="workspace.endpoints.value" :configurations="workspace.configurations.value" :metrics="workspace.metrics.value" :busy="workspace.busy.value" :perform="workspace.perform" :save-error="workspace.actionError.value" />
       <XNodeServiceUsers v-else-if="tab === 'services'" :nodes="workspace.nodes.value" :groups="workspace.groups.value" />
       <XNodeGlobalSettings v-else-if="tab === 'global'" />
       <XNodeFirewall v-else-if="tab === 'firewall'" />

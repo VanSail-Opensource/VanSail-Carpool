@@ -18,6 +18,7 @@ var ErrUnavailable = errors.New("X-Node agent unavailable")
 var ErrInvalid = errors.New("invalid X-Node input")
 
 type Node struct {
+	RemovingAt       *time.Time `json:"removingAt,omitempty"`
 	RetiredAt        *time.Time `json:"retiredAt,omitempty"`
 	ID               string     `json:"id"`
 	Name             string     `json:"name"`

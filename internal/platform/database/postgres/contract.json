@@ -9193,6 +9193,12 @@
           "type": "text",
           "notNull": false,
           "primaryKey": 0
+        },
+        {
+          "name": "removing_at",
+          "type": "text",
+          "notNull": false,
+          "primaryKey": 0
         }
       ]
     },

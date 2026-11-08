@@ -50,6 +50,8 @@ func TestRoutingReconciliationRetainsCommittedFullAccessPrune(t *testing.T) {
 		inputReads          int
 	}{
 		{name: "fully-pruned", phase: "disabled", reason: "routing_access_removed"},
+		{name: "empty-node-removal", phase: "disabled", reason: "routing_node_removed"},
+		{name: "pending-node-removal", phase: "disabled", reason: routingRemovalPending + "node"},
 		{name: "dependency-recovery", phase: "disabled", reason: "routing_dependencies_changed", inputReads: 3},
 		{name: "active-empty", phase: "active", reason: "routing_access_removed", inputReads: 3},
 		{name: "partially-pruned", phase: "disabled", reason: "routing_access_removed", choices: []RoutingChoice{{ID: "keep"}}, inputReads: 3},

@@ -1101,3 +1101,7 @@ Migration 39 adds combos.features_json with an empty array default. Combo writes
 `xnode_period_finalize.go` atomically finalizes only the observed closing boundary; reopen and replacement boundaries reject stale network completion without changing the general period-update contract.
 
 Historical outage tables remain upgrade/audit evidence. No configuration, observation, review or approval repository API remains. Retention preserves independently committed purchase extensions and generic provider targets; its regressions seed historical facts directly.
+
+`xnode_node_removal_cascade.go` removes operational bindings, endpoint references and encrypted routing choices in the existing version-fenced node-removal transaction. Revocation evidence remains until drain completion. `xnode_node_removal_wait.go` retains resumable removal receipts with their exact dependency instead of exhausting ordinary retries. Removal blocks new admission, not late accounting.
+
+`xnode_node_removal_routes_test.go` checks atomic encrypted pruning, retained revocation proof, blocked concurrent saves, stale snapshot rollback and monotonic receipt recovery.

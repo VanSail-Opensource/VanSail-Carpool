@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
-import { xnodeApi, type XNode, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint, type XNodeGroup } from '@/api/xnode'
+import { xnodeApi, type XNode, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
 import XNodePricingCostSettings from './XNodePricingCostSettings.vue'
@@ -9,10 +9,9 @@ import XNodeCommands from './XNodeCommands.vue'
 import { createLatestRequest } from '@/utils/latestRequest'
 import { nodeMultiplierSchema } from './nodeFormOptions'
 
-const props = defineProps<{ nodes: XNode[]; groups: XNodeGroup[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
+const props = defineProps<{ nodes: XNode[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const emit = defineEmits<{ refresh: [] }>()
 const removing = shallowRef<XNode | null>(null)
-const bound = (id: string) => props.groups.some(group => group.bindings.some(binding => binding.nodeId === id))
 const { t } = useI18n()
 const editing = shallowRef(false)
 const loading = shallowRef(false)
@@ -77,8 +76,8 @@ async function enroll(node: XNode): Promise<void> {
     <p v-if="!nodes.length" class="text-muted">{{ t('xnode.noNodes') }}</p>
     <div v-for="node in nodes" :key="node.id" class="xnode-row">
       <div><strong>{{ node.name }}</strong><div class="text-xs text-muted">{{ node.countryCode }} · {{ node.multiplier }}×</div></div>
-      <UBadge :color="status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
-      <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton v-if="!bound(node.id)" variant="ghost" color="error" icon="i-ph-trash" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
+      <UBadge :color="node.removingAt ? 'warning' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(node.removingAt ? 'nodeRemoval.pending' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
+      <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="!!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="!!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :disabled="!!node.removingAt" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="!!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
     </div>
     <XNodeRemovalDialog :node="removing" @close="removing = null" @removed="emit('refresh')" />
     <UModal v-model:open="editing" :title="t(draft.id ? 'xnode.editNode' : 'xnode.addNode')" :ui="{ content: 'max-w-4xl' }">

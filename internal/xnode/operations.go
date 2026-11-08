@@ -70,7 +70,7 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	if target.RetiredAt != nil && request.Name != "node.remove" {
+	if (target.RetiredAt != nil || target.RemovingAt != nil) && request.Name != "node.remove" {
 		return model.OperationReceipt{}, ErrConflict
 	}
 	if request.Name == "runtime.reload" && s.master != nil && s.master.Connected(node) && !containsCapability(s.master.Capabilities(node), "incremental_reload_v1") {

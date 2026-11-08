@@ -3,16 +3,17 @@ package xnode
 import (
 	"context"
 	"errors"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
-	"slices"
 	"time"
 )
 
 type nodeRemovalRepository interface {
 	XNodeCompileVersion(context.Context, time.Time) (int64, time.Time, error)
-	PrepareXNodeRemoval(context.Context, string, int64) error
+	PrepareXNodeRemoval(context.Context, string, int64, ...RoutingPlan) error
 	FinishXNodeRemoval(context.Context, string, int64, string, string) (bool, error)
 	XNodeRemovalPeriods(context.Context, string) ([]Period, error)
+	WaitXNodeRemoval(context.Context, string, int, string, time.Time) error
 }
 
 func (s *Service) removalVersion(ctx context.Context, id string) (int64, error) {
@@ -23,24 +24,6 @@ func (s *Service) removalVersion(ctx context.Context, id string) (int64, error) 
 	version, _, err := repo.XNodeCompileVersion(ctx, s.now())
 	if err != nil {
 		return 0, err
-	}
-	routes, ok := s.routingRepository()
-	if !ok {
-		return 0, ErrUnavailable
-	}
-	plans, err := routes.XNodeRoutingPlans(ctx)
-	if err != nil {
-		return 0, err
-	}
-	for _, plan := range plans {
-		nodes, err := s.routingPlanNodes(plan)
-		if err != nil {
-			return 0, err
-		}
-		// Disabled plans preserve saved choices and may recover after an outage.
-		if slices.Contains(nodes, id) {
-			return 0, &PolicyError{"XNODE_REMOVAL_ROUTING", ErrConflict}
-		}
 	}
 	return version, nil
 }
@@ -62,16 +45,22 @@ func (s *Service) runNodeRemoval(ctx context.Context, operation providerops.Oper
 	if retired {
 		completion.ResultJSON = `{"removed":true,"retired":true}`
 	}
-	if removeErr != nil {
-		completion.Status = providerops.StatusFailed
-		completion.ErrorCode = "XNODE_REMOVAL_PENDING_ACCOUNTING"
+	if removeErr != nil && !errors.Is(removeErr, ErrInvalid) {
+		code := "XNODE_REMOVAL_SYNC_PENDING"
 		var policy *PolicyError
 		if errors.As(removeErr, &policy) {
-			completion.ErrorCode = policy.Code
+			code = policy.Code
 		}
-		if errors.Is(removeErr, context.Canceled) || errors.Is(removeErr, context.DeadlineExceeded) {
-			completion.Status = providerops.StatusPendingReview
+		finish, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		if err := s.repo.(nodeRemovalRepository).WaitXNodeRemoval(finish, operation.Receipt.ID, operation.Attempts, code, s.now()); err != nil {
+			return err
 		}
+		return &outbox.WaitError{Reason: code, Cause: removeErr, After: time.Minute}
+	}
+	if removeErr != nil {
+		completion.Status = providerops.StatusFailed
+		completion.ErrorCode = "XNODE_REMOVAL_INPUT_INVALID"
 	}
 	finish, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
@@ -93,11 +82,18 @@ func (s *Service) removeNode(ctx context.Context, id, actor, operation string) (
 	}
 	s.mu.Lock()
 	version, err := s.removalVersion(ctx, id)
+	var changes []RoutingPlan
 	if err == nil {
-		err = repo.PrepareXNodeRemoval(ctx, id, version)
+		changes, err = s.prepareRemovalRoutes(ctx, id)
+	}
+	if err == nil {
+		err = repo.PrepareXNodeRemoval(ctx, id, version, changes...)
 	}
 	s.mu.Unlock()
 	if err != nil {
+		return false, err
+	}
+	if err = s.drainRemovalRoutes(ctx, id); err != nil {
 		return false, err
 	}
 	m := s.master

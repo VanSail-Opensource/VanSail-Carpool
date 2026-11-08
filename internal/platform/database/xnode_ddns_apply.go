@@ -25,7 +25,7 @@ func (s *Store) retryAttempt_ApplyXNodeDDNSChange(ctx context.Context, state xno
 	if err != nil {
 		return err
 	}
-	if node.AgentID != state.AgentID || node.AgentID != in.Node.AgentID || node.SettingsCipher != in.Node.SettingsCipher {
+	if node.RemovingAt != nil || node.RetiredAt != nil || node.AgentID != state.AgentID || node.AgentID != in.Node.AgentID || node.SettingsCipher != in.Node.SettingsCipher {
 		return xnode.ErrConflict
 	}
 	var version int64

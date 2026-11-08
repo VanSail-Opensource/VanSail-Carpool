@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Store) XNodeRemovalPeriods(ctx context.Context, id string) ([]xnode.Period, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT period_id FROM xnode_period_nodes WHERE node_id=$1 AND flushed_sequence IS NULL ORDER BY period_id`, id)
+	rows, err := s.db.QueryContext(ctx, `SELECT period_id FROM xnode_period_nodes WHERE node_id=$1 AND flushed_sequence IS NULL UNION SELECT period_id FROM xnode_metered_probes WHERE node_id=$1 AND flushed_sequence IS NULL ORDER BY period_id`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -47,21 +47,16 @@ func lockRemoval(ctx context.Context, tx *sql.Tx, id string, version int64, fini
 		return xnode.ErrConflict
 	}
 	var enabled int
-	var retired sql.NullString
-	if err := tx.QueryRowContext(ctx, `SELECT enabled,retired_at FROM xnode_nodes WHERE id=$1 FOR UPDATE`, id).Scan(&enabled, &retired); err != nil {
+	var retired, removing sql.NullString
+	if err := tx.QueryRowContext(ctx, `SELECT enabled,retired_at,removing_at FROM xnode_nodes WHERE id=$1 FOR UPDATE`, id).Scan(&enabled, &retired, &removing); err != nil {
 		return err
 	}
-	if retired.Valid || finish && enabled != 0 {
+	if retired.Valid || finish && (enabled != 0 || !removing.Valid) {
 		return xnode.ErrConflict
 	}
-	checks := []struct{ query, code string }{
-		{`SELECT EXISTS(SELECT 1 FROM xnode_ddns_changes WHERE node_id=$1 AND phase IN ('staging','routes'))`, "XNODE_REMOVAL_SERVICE"},
-		{`SELECT EXISTS(SELECT 1 FROM xnode_group_bindings WHERE node_id=$1)`, "XNODE_REMOVAL_BINDINGS"},
-		{`SELECT EXISTS(SELECT 1 FROM xnode_service_bindings WHERE node_id=$1 AND valid_until::timestamptz>now())`, "XNODE_REMOVAL_SERVICE"},
-		{`SELECT EXISTS(SELECT 1 FROM xnode_metered_probes WHERE node_id=$1 AND revoked_at IS NULL AND valid_until::timestamptz>now())`, "XNODE_REMOVAL_SERVICE"},
-	}
+	checks := []struct{ query, code string }{}
 	if finish {
-		checks = append(checks, struct{ query, code string }{`SELECT EXISTS(SELECT 1 FROM xnode_period_nodes WHERE node_id=$1 AND flushed_sequence IS NULL) OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1 AND has_gaps)`, "XNODE_REMOVAL_PENDING_ACCOUNTING"})
+		checks = append(checks, struct{ query, code string }{`SELECT EXISTS(SELECT 1 FROM xnode_period_nodes WHERE node_id=$1 AND flushed_sequence IS NULL) OR EXISTS(SELECT 1 FROM xnode_traffic_streams WHERE node_id=$1 AND has_gaps) OR EXISTS(SELECT 1 FROM xnode_metered_probes WHERE node_id=$1 AND flushed_sequence IS NULL)`, "XNODE_REMOVAL_PENDING_ACCOUNTING"})
 	}
 	for _, check := range checks {
 		var blocked bool
@@ -75,7 +70,7 @@ func lockRemoval(ctx context.Context, tx *sql.Tx, id string, version int64, fini
 	return nil
 }
 
-func (s *Store) PrepareXNodeRemoval(ctx context.Context, id string, version int64) error {
+func (s *Store) PrepareXNodeRemoval(ctx context.Context, id string, version int64, plans ...xnode.RoutingPlan) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -86,7 +81,7 @@ func (s *Store) PrepareXNodeRemoval(ctx context.Context, id string, version int6
 	if err = lockRemoval(ctx, tx, id, version, false); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE xnode_nodes SET enabled=0,updated_at=$2 WHERE id=$1`, id, stamp(time.Now().UTC())); err != nil {
+	if err = pruneRemovalDependenciesTx(ctx, tx, id, plans, time.Now().UTC()); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -101,6 +96,9 @@ func (s *Store) FinishXNodeRemoval(ctx context.Context, id string, version int64
 	}
 	defer tx.Rollback()
 	if err = lockRemoval(ctx, tx, id, version, true); err != nil {
+		return false, err
+	}
+	if err := finishRemovalRoutesTx(ctx, tx, id, time.Now().UTC()); err != nil {
 		return false, err
 	}
 	historical, err := nodeHasHistory(ctx, tx, id)

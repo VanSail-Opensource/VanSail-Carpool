@@ -16,7 +16,7 @@ Validation: Go vet, frontend typecheck, ESLint, structure/localization audit and
 
 ## Remaining retirement work
 
-The broader retirement task still includes PERSONAL pricing, discretionary traffic resets and cascading node removal. These are delivered as separately audited changes because they have distinct accounting and lifecycle dependencies.
+The broader retirement task still includes PERSONAL pricing and discretionary traffic resets. These are delivered as separately audited changes because they have distinct accounting and lifecycle dependencies.
 
 ## IP sources, probes and subnet sharing
 
@@ -29,3 +29,15 @@ The memory gate continues to stress USDT scanners, transfer proofs and cancellat
 IP retirement validation: Go vet, frontend typecheck/lint, structure/localization audit and Vite production build pass. Chrome DevTools inspected member/admin loading, unconfigured/empty, populated and error states; exact-IP preview; admin save; English/Chinese; desktop and 390px mobile. No reviewed console errors or API request failures. Hosted regressions remain the execution gate.
 
 Hosted follow-up retains the original durable live-stage claim/attempt/snapshot recovery path for enrichment. Exact-address refresh checks reject neighbor-only evidence. The scanner memory gate joins mock HTTP handlers before retained-heap measurement; memory and leak thresholds are unchanged.
+
+## Cascading node removal
+
+The existing `node.remove` operation now enters a persistent admission fence. Its transaction prunes typed routing choices, group/service bindings, endpoint references, obsolete DDNS work and executable node customizations. Diagnostic credentials are revoked while their accounting references remain. Empty groups and empty routing plans are disabled. Existing purchases, PAYG credit, ledger entries, traffic and archived ciphertext remain intact.
+
+Encrypted revocation evidence includes both saved and previously applying routes. Pending routing plans reject edits until every affected participant acknowledges removal of their private credentials. Only then does retirement discard that operational proof and revoke enrollment. Surviving choices reconcile through the existing master; existing DIY cleanup removes invalid client split references. No upstream call or second queue is introduced.
+
+Schema 40 adds a null-default removal timestamp and extends binding/compile guards. An already disabled node still recompiles to stop its DDNS jobs. During a drain, old agent authentication permits reconnection for accounting; new enrollment, configuration changes and bindings are denied. Final retirement revokes the credential.
+
+Offline participants and unfinished accounting keep the same queued receipt with a specific dependency. Attempts stay monotonic so an older callback cannot complete a recovered operation. Historical traffic, financial facts and uncertain native command receipts are preserved.
+
+Node-removal validation: Go vet, typecheck, ESLint, structure/localization audit and production Vite build pass. Chrome DevTools exercised constructed bound-node removal through a succeeded receipt and refreshed list, queued accounting dependencies, pending controls, loading/empty/error/retry, English/Chinese, 390px mobile and 1440px desktop. No reviewed console or API-request failures. Hosted database/routing regressions validate runtime behavior; no local automated suites were run.

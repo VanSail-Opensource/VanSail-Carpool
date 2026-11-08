@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 )
 
 // Called only by the existing master reconciler, outside the socket reader.
@@ -35,6 +36,9 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		return err
 	}
 	for _, plan := range plans {
+		if strings.HasPrefix(plan.Reason, routingRemovalPending) {
+			continue
+		}
 		identity, err := s.repo.XNodeIdentity(ctx, plan.ProxyUserID)
 		if err != nil {
 			return err
@@ -51,7 +55,7 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		// A committed full access prune is already the desired disabled state.
 		// Regenerating its empty graph would replace revocation evidence with a
 		// new operation. Partial prunes and recoverable failures still reconcile.
-		if plan.Phase == "disabled" && plan.Reason == "routing_access_removed" && len(doc.Choices) == 0 {
+		if plan.Phase == "disabled" && (plan.Reason == "routing_access_removed" || plan.Reason == "routing_node_removed") && len(doc.Choices) == 0 {
 			continue
 		}
 		if plan.Phase != "active" && plan.Phase != "disabled" {

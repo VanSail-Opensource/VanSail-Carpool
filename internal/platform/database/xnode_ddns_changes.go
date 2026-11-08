@@ -70,7 +70,7 @@ func (s *Store) retryAttempt_AcceptXNodeDDNSChange(ctx context.Context, in xnode
 	if err != nil {
 		return false, err
 	}
-	if node.AgentID != in.Node.AgentID || node.SettingsCipher != in.Node.SettingsCipher {
+	if node.RemovingAt != nil || node.RetiredAt != nil || node.AgentID != in.Node.AgentID || node.SettingsCipher != in.Node.SettingsCipher {
 		return false, xnode.ErrConflict
 	}
 	var version int64

@@ -114,3 +114,5 @@ to committed accounting. Expiry runs in bounded existing PAYG retention batches.
 `00036_retire_member_firewall.sql` releases grants, retires jobs and queues cleanup. `00037_member_first_sync.sql` adds first-sync evidence. `00038_node_retirement.sql` adds retirement and binding guards. `00039_combo_features.sql` adds empty-default features.
 
 Member-firewall retirement explicitly drops the exclusive quota compile trigger/function before dropping the obsolete column; broad CASCADE is not used.
+
+`00040_node_removal_admission.sql` adds a null-default durable removal fence and extends binding admission guards. No purchase, financial entry or existing account is converted. The agent reconnect credential survives until accounting drains.

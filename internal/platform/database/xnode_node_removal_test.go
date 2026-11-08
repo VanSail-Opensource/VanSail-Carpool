@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestNodeRemovalRetainsHistoryAndRejectsBindings(t *testing.T) {
+func TestNodeRemovalPrunesBindingsAndRetainsHistory(t *testing.T) {
 	s, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	version := func() int64 {
@@ -22,18 +22,22 @@ func TestNodeRemovalRetainsHistoryAndRejectsBindings(t *testing.T) {
 	if err := s.SaveXNodeGroup(ctx, group); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.PrepareXNodeRemoval(ctx, "node", version()); !errors.Is(err, xnode.ErrConflict) {
-		t.Fatalf("disabled binding: %v", err)
-	}
-	group.Bindings = nil
-	if err := s.SaveXNodeGroup(ctx, group); err != nil {
+	if err := s.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.PrepareXNodeRemoval(ctx, "node", version()); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.TrackXNodePeriodNode(ctx, period.ID, "node"); err != nil {
-		t.Fatal(err)
+	groups, err := s.XNodeGroups(ctx)
+	if err != nil || len(groups) != 1 || len(groups[0].Bindings) != 0 || groups[0].Enabled {
+		t.Fatalf("bindings survived removal: %+v %v", groups, err)
+	}
+	removing, err := s.XNodeNode(ctx, "node")
+	if err != nil || removing.RemovingAt == nil || removing.Enabled {
+		t.Fatalf("missing durable admission fence: %+v %v", removing, err)
+	}
+	if err := s.TrackXNodePeriodNode(ctx, period.ID, "node"); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatalf("late admission: %v", err)
 	}
 	if _, err := s.FinishXNodeRemoval(ctx, "node", version(), identity.UserID, "pending"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("pending accounting: %v", err)
@@ -75,15 +79,18 @@ func TestUnusedNodeRemovalAndConcurrentBindingFence(t *testing.T) {
 	}
 	version, _, _ = s.XNodeCompileVersion(ctx, time.Now())
 	group := xnode.Group{ID: "race", Name: "Concurrent", Bindings: []xnode.GroupBinding{{NodeID: node.ID, InboundTag: "paid"}}}
-	if err := s.SaveXNodeGroup(ctx, group); err != nil {
+	if err := s.SaveXNodeGroup(ctx, group); err == nil {
+		t.Fatal("removing node rebound")
+	}
+	node.Enabled = true
+	if err := s.SaveXNodeNode(ctx, node); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatalf("removing node reactivated: %v", err)
+	}
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_compile_revision SET revision=revision+1 WHERE singleton=1`); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.FinishXNodeRemoval(ctx, node.ID, version, identity.UserID, "stale"); !errors.Is(err, xnode.ErrConflict) {
-		t.Fatalf("binding race: %v", err)
-	}
-	group.Bindings = nil
-	if err := s.SaveXNodeGroup(ctx, group); err != nil {
-		t.Fatal(err)
+		t.Fatalf("stale removal: %v", err)
 	}
 	version, _, _ = s.XNodeCompileVersion(ctx, time.Now())
 	if retired, err := s.FinishXNodeRemoval(ctx, node.ID, version, identity.UserID, "unused"); err != nil || retired {

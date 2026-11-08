@@ -51,7 +51,16 @@ func (s *Service) prepareOwnedRouting(ctx context.Context, identity Identity, re
 		return RoutingPlan{}, err
 	}
 	for _, a := range archived {
-		doc.LegacyNodes = append(doc.LegacyNodes, a.NodeID)
+		node, err := s.repo.XNodeNode(ctx, a.NodeID)
+		if isMissing(err) {
+			continue
+		}
+		if err != nil {
+			return plan, err
+		}
+		if node.RetiredAt == nil && node.RemovingAt == nil {
+			doc.LegacyNodes = append(doc.LegacyNodes, a.NodeID)
+		}
 	}
 	plan.Cipher, err = s.seal(fmt.Sprintf("xnode.routes.%d", identity.ProxyUserID), doc)
 	if err != nil {

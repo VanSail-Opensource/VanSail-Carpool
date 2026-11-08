@@ -63,6 +63,14 @@ func (s *Store) retryAttempt_TrackXNodePeriodNode(ctx context.Context, period, n
 	if status != "open" {
 		return xnode.ErrConflict
 	}
+	var admitting bool
+	err = tx.QueryRowContext(ctx, `SELECT removing_at IS NULL AND retired_at IS NULL FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, node).Scan(&admitting)
+	if err != nil {
+		return err
+	}
+	if !admitting {
+		return xnode.ErrConflict
+	}
 	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, period, node); err != nil {
 		return err
 	}

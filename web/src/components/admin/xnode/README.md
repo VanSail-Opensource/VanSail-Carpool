@@ -159,3 +159,5 @@ unedited lease property, preserving lease changes from another administrator.
 Node removal uses one confirmation and the existing receipt tracker with explicit blockers. Every squad binding hides removal, including disabled squads. Automatic lease paging retains metadata while loading, offers adjacent/edge controls, and clamps expired final pages. Activity charts use adaptive byte/rate units and raw bytes as secondary detail.
 
 `XNodeRemovalDialog.vue` confirms queued removal and displays explicit blockers.
+
+Node removal remains available for bound nodes. `XNodeNodes.vue` shows durable pending removal and prevents configuration/enrollment changes; `XNodeRemovalDialog.vue` explains the cascade before admission stops and displays exact resumable dependencies. Historical accounting is retained.

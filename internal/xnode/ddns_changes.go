@@ -64,6 +64,9 @@ func (s *Service) prepareDDNSChange(ctx context.Context, node, agent string, cha
 	if err != nil {
 		return nil, err
 	}
+	if current.RemovingAt != nil || current.RetiredAt != nil {
+		return nil, nil
+	}
 	if current.AgentID != agent {
 		return nil, ErrConflict
 	}

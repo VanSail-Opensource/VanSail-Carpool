@@ -1095,7 +1095,7 @@ Dependency changes compile via the existing revoke/apply/enable queue;
 legacy node-only graphs never rebind automatically after dependency changes.
 Owner PAYG history uses the existing exact recorded 72-hour per-node repository.
 
-Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, checks every squad binding including disabled groups and active service/probe dependencies, disables admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline used nodes and accounting gaps remain explicit blockers. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
+Node removal runs node.remove as an existing durable operation, never a wire command. It fences encrypted routing reads with the compile revision, prunes squad/service bindings and routing choices, fences new admission, waits for apply and committed quiescent traffic barriers, seals per-period evidence, then revokes the exact drained peer. Offline participants and accounting gaps remain explicit resumable dependencies. Historical nodes retain evidence behind retired_at; never-enrolled unreferenced nodes are deleted.
 
 `member_connection_types.go` defines private transport; `member_connection_leases_test.go` checks grants and isolation. `node_removal.go` runs queued removal. `subscription_readiness_test.go` checks exact-peer applied proof.
 
@@ -1108,3 +1108,5 @@ Period settlement and routing deployment proof: `period_closure.go` fences and s
 `native_job_dispatch.go` dispatches queued native work, completes superseded disabled-node intents, and preserves offline/capability waits without exhausting delivery attempts. Access repair retains settled/ambiguous accounting for review instead of granting another allowance.
 
 Node-level bandwidth overrides are retired. Historical encrypted settings decode without restoring these fields; saving removes them. Native per-user speed capabilities remain available for commerce policies.
+
+`node_removal_routes.go` prunes typed node choices, freezes member routing saves, retains every affected revocation participant and synchronizes applied credential revocation before final retirement. `node_removal_routes_test.go` covers saved/previous choices, unrelated plans, replay and concurrent removals. Empty plans stay disabled; surviving choices reconcile after removal.
