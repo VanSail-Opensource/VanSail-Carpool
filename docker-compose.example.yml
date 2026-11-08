@@ -25,6 +25,9 @@ services:
       ADMIN_TELEGRAM_ID: "123456789,987654321"
       TELEGRAM_BOT_TOKEN: 114514
       PUBLIC_BASE_URL: https://carpool.example.com
+      # Exact proxy peer networks only, e.g. "192.0.2.10/32,2001:db8:1::10/128".
+      # Empty means forwarding headers are ignored.
+      TRUSTED_PROXY_CIDRS: ""
       CONFIG_MASTER_KEY: "GENERATE IT WITH openssl rand -base64 32"
 
     volumes:

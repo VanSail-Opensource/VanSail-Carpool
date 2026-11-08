@@ -75,4 +75,5 @@ func setValidEnvironment(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://app:secret@db/vansail")
 	t.Setenv("DATABASE_URL_FILE", "")
 	t.Setenv("ALLOW_INSECURE_HTTP", "")
+	t.Setenv("TRUSTED_PROXY_CIDRS", "")
 }

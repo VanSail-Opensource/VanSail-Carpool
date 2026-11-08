@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"net"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -64,19 +62,11 @@ func (limiter *authLimiter) removeOldest() {
 
 func (s *Server) limitAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !s.authLimiter.allow(authenticationClientIP(r.RemoteAddr)) {
+		if !s.authLimiter.allow(requestClientIP(r)) {
 			w.Header().Set("Retry-After", "10")
 			s.writeError(w, r, http.StatusTooManyRequests, "AUTH_RATE_LIMITED", "Too many authentication attempts. Please retry shortly.")
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func authenticationClientIP(remoteAddress string) string {
-	value := strings.TrimSpace(remoteAddress)
-	if host, _, err := net.SplitHostPort(value); err == nil {
-		return host
-	}
-	return value
 }

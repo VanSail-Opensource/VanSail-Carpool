@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"time"
 
@@ -86,6 +87,7 @@ type Dependencies struct {
 	RequestSigningKey  []byte
 	SessionTTL         time.Duration
 	SecureCookies      bool
+	TrustedProxyCIDRs  []netip.Prefix
 	AdminTelegramIDs   []int64
 }
 
@@ -126,7 +128,7 @@ func New(deps Dependencies) (*Server, error) {
 		server.deps.FirstEntry = &accounts.FirstEntry{Repository: deps.Store, Settings: deps.Settings, Hostname: deps.PublicURL.Hostname(), AdminTelegramIDs: deps.AdminTelegramIDs}
 	}
 	router := chi.NewRouter()
-	router.Use(middleware.RealIP)
+	router.Use(clientIPMiddleware(deps.TrustedProxyCIDRs))
 	router.Use(middleware.RequestID)
 	router.Use(server.recoverer)
 	router.Use(server.securityHeaders)

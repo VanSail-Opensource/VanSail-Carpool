@@ -12,7 +12,7 @@ The provided scan contains 13 application/design findings, separate from depende
 | 6. Large read-only command results can permanently prevent agent restart | X-Node | Pending |
 | 7. Release-shaped tags can expose the production signing key to repository code | X-Node | Pending |
 | 8. Masked USDT RPC API keys can be exfiltrated by reusing an endpoint ID with a new URL | Panel | Pending |
-| 9. Untrusted forwarding headers bypass and amplify authentication throttling | Panel | Pending |
+| 9. Untrusted forwarding headers bypass and amplify authentication throttling | Panel | Bootstrap proxy CIDRs, canonical trusted-suffix resolution and spoofing/limiter regressions in `internal/httpapi/client_ip_test.go`. |
 | 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Pending |
 | 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Pending |
 | 12. User-scoped IP blocks are lost across authorized identity replacement | X-Node | Pending |
@@ -37,3 +37,19 @@ The provided scan contains 13 application/design findings, separate from depende
 - 11: `rf_wfr_05c610fbec630a8340ea27a120af091a702a284e97bde92e906440dc3ec243ea:wfo_02bcd96ef406bcbbbd6953ac25faffe7ebb1224a1fa4680143a29cd7b004a9b3:occ_0863a97b4048d6fba3f7852d` (observed revision `fd7995de3e6dff3142509d14c775ce8b94b9c19e`).
 - 12: `rf_wfr_05c610fbec630a8340ea27a120af091a702a284e97bde92e906440dc3ec243ea:wfo_02bcd96ef406bcbbbd6953ac25faffe7ebb1224a1fa4680143a29cd7b004a9b3:occ_bd7e8a3e1322ce5391cd7f86` (observed revision `fd7995de3e6dff3142509d14c775ce8b94b9c19e`).
 - 13: `rf_wfr_f6f238da8961b4d47cf3dccf828b2f4b3d66eb0c6255c359d0c1549d17ddad76:wfo_e43223654001ee56067b5645dc54f88b24acde84565c7960248ff2243277e46c:occ_9911cdc4fdd5cc4f09f6cdb2` (observed revision `f642e76f509b80757d5799166a3a006ce794f868`).
+
+## Proxy trust deployment
+
+Set `TRUSTED_PROXY_CIDRS` to the actual immediate proxy's IPv4 /32 and IPv6 /128
+addresses, plus any explicitly trusted intermediate proxy networks. Cloudflare
+Tunnel deployments should identify their tunnel container's private addresses;
+do not trust every container on the shared network. The default is empty. The
+resolver ignores visitor-supplied left prefixes after locating the first
+untrusted address from the right, including malformed left prefixes. It never
+rewrites the TCP peer or uses `Forwarded`/`CF-Connecting-IP` as implicit trust.
+Production network inspection is read-only; environment changes belong to the
+verified release deployment. No production mutation occurred during this audit.
+
+The forwarding-chain interpretation follows [Cloudflare's request-header
+documentation](https://developers.cloudflare.com/fundamentals/reference/http-headers/#x-forwarded-for).
+Cloudflare-specific header names alone never establish a trusted transport peer.

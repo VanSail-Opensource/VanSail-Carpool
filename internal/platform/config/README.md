@@ -14,3 +14,10 @@ scratch under DATA_DIR/tmp. Explicit runtime limits remain authoritative.
 CI. Scratch remains available for assets/decoders. No database file path or upload cap is configured.
 
 `memory_observe.go` publishes bounded runtime/metrics summaries without profiles or secrets.
+
+`trusted_proxies.go` parses at most 64 explicit `TRUSTED_PROXY_CIDRS` networks;
+empty configuration trusts no forwarding headers. Hostnames, missing prefix
+lengths and all-address networks are rejected. IPv4-mapped networks normalize to
+IPv4. `trusted_proxies_test.go` covers closed defaults and malformed bootstrap
+configuration. Configure actual immediate proxy addresses and any known proxy
+hops, rather than an entire client or Docker network.

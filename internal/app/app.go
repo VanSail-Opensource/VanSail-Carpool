@@ -240,7 +240,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		PaymentProfiles: paymentProfiles,
 		Store:           store, Affiliates: affiliateService, Telegram: queuedTelegramClient, Webhooks: paymentBridge, PublicURL: cfg.PublicBaseURL, Static: static,
 		Logger: logger, SessionTTL: cfg.SessionTTL, SecureCookies: cfg.PublicBaseURL.Scheme == "https",
-		AdminTelegramIDs: cfg.AdminTelegramIDs, RequestSigningKey: cfg.MasterKey,
+		AdminTelegramIDs: cfg.AdminTelegramIDs, RequestSigningKey: cfg.MasterKey, TrustedProxyCIDRs: cfg.TrustedProxyCIDRs,
 	})
 	if err != nil {
 		return cleanup(err)

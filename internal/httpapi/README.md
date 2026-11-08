@@ -258,3 +258,5 @@ interface and its write scope. No IP persistence is introduced.
 `retired_product_routes_test.go` verifies removed administrative outage controls return 404; no transport or dependency can recreate those decisions.
 
 - `api_token_resource_scope_test.go`: Hosted explicit resource checks for native subscription metadata, enrollment mutations and shared receipt polling; general administrator scopes never act as an X-Node superscope.
+
+- `client_ip.go` resolves authentication clients from the trusted right edge of `X-Forwarded-For`, with a single-IP `X-Real-IP` fallback only when that chain is absent. Only configured proxy peers can supply either. The TCP peer remains in `RemoteAddr`; unknown headers do not confer trust. `client_ip_test.go` covers spoofing, malformed prefixes, multiple lines, IPv6, canonical mapped addresses and independent limiter buckets.

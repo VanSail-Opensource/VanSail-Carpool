@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"net/netip"
 	"net/url"
 	"os"
 
@@ -29,6 +30,7 @@ type Config struct {
 	ShutdownTimeout   time.Duration
 	BackupRetention   time.Duration
 	BackupHour        int
+	TrustedProxyCIDRs []netip.Prefix
 	AllowInsecureHTTP bool
 }
 
@@ -48,6 +50,12 @@ func Load() (Config, error) {
 	cfg.BackupRetention = 7 * 24 * time.Hour
 	cfg.BackupHour = 2
 	cfg.AllowInsecureHTTP = strings.EqualFold(os.Getenv("ALLOW_INSECURE_HTTP"), "true")
+
+	proxies, err := parseTrustedProxyCIDRs(os.Getenv("TRUSTED_PROXY_CIDRS"))
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.TrustedProxyCIDRs = proxies
 
 	adminIDs, err := parseAdminTelegramIDs(os.Getenv("ADMIN_TELEGRAM_ID"))
 	if err != nil {
