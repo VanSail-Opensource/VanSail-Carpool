@@ -171,6 +171,10 @@ func TestStrictClosureLateBarrierPreservesConcurrentSuccessor(t *testing.T) {
 	if err := f.store.SaveXNodePeriod(ctx, next); err != nil {
 		t.Fatal(err)
 	}
+	// Usage is journal-owned; saving period policy deliberately cannot seed it.
+	if _, err := f.store.DB().ExecContext(ctx, `UPDATE xnode_periods SET used_bytes=$1 WHERE id=$2`, next.UsedBytes, next.ID); err != nil {
+		t.Fatal(err)
+	}
 	completeHeldClosure(t, socket, command, period)
 	select {
 	case err := <-done:
@@ -183,6 +187,6 @@ func TestStrictClosureLateBarrierPreservesConcurrentSuccessor(t *testing.T) {
 	current, err := f.store.XNodePeriod(ctx, next.ID)
 	owner, ownerErr := f.store.XNodeIdentityByUser(ctx, f.user.ID)
 	if err != nil || ownerErr != nil || current.Status != "open" || current.UsedBytes != 77 || owner.CurrentPeriodID != next.ID {
-		t.Fatal("old closure changed its successor", current, owner, err, ownerErr)
+		t.Fatalf("old closure changed successor: period=%s status=%s used=%d current_period=%s period_error=%v owner_error=%v", current.ID, current.Status, current.UsedBytes, owner.CurrentPeriodID, err, ownerErr)
 	}
 }
