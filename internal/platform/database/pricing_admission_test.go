@@ -102,14 +102,14 @@ func TestWalletDoesNotChangeDecisionButCouponScopeDoes(t *testing.T) {
 	if _, err = s.RedeemCoupon(ctx, u.ID, coupon.Code, "grant", now); err != nil {
 		t.Fatal(err)
 	}
-	before, err := s.PreparePersonalPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now)
+	before, err := s.PrepareCheckoutPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.AdjustBalance(ctx, u.ID, 90000, "decision-wallet", "funding", now); err != nil {
 		t.Fatal(err)
 	}
-	after, err := s.PreparePersonalPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now.Add(time.Second))
+	after, err := s.PrepareCheckoutPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now.Add(time.Second))
 	if err != nil || after.Version != before.Version || after.PersonalPrice != before.PersonalPrice {
 		t.Fatal("wallet affected decision", before, after, err)
 	}
@@ -117,7 +117,7 @@ func TestWalletDoesNotChangeDecisionButCouponScopeDoes(t *testing.T) {
 	if _, err = s.SaveCoupon(ctx, coupon.CouponInput, now.Add(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	changed, err := s.PreparePersonalPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now.Add(3*time.Second))
+	changed, err := s.PrepareCheckoutPricing(ctx, u.ID, "combo", c.ID, c.ID, nil, now.Add(3*time.Second))
 	if err != nil || changed.Version == before.Version || changed.NetPrice.Minor != "1000" {
 		t.Fatal("scope change retained coupon decision", changed, err)
 	}
@@ -144,17 +144,18 @@ func TestFutureCheckoutRequiresBothCurrentAndSelectedDecision(t *testing.T) {
 		t.Fatal("selected decision bypassed missing current decision", err)
 	}
 	tx.Rollback()
+	// Public checkout prices are derived under the transaction, rather than
+	// requiring an owner-specific persisted model decision. Historical personal
+	// decisions do not authorize or block this checkout.
 	tx, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tx.ExecContext(ctx, `DELETE FROM pricing_personal_decisions WHERE version=$1`, q.PricingDecision.Version); err != nil {
-		tx.Rollback()
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `DELETE FROM pricing_personal_decisions WHERE user_id=$1`, user.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, _, err = s.quotePurchaseTx(ctx, tx, input, now); !errors.Is(err, ErrPricingDecisionPending) {
-		tx.Rollback()
-		t.Fatal("current decision bypassed missing selected decision", err)
+	if _, _, _, err = s.quotePurchaseTx(ctx, tx, input, now); err != nil {
+		t.Fatal("historical personal decisions affected public checkout", err)
 	}
-	tx.Rollback()
 }

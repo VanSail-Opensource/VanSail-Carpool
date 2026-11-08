@@ -738,7 +738,7 @@ Terminal failed PAYG provisioning/recovery jobs share the three-day failed synch
 
 `xnode_payg_credit_window.go` and `xnode_payg_credit_window_test.go` use platform-neutral names so Go includes the rolling billing helpers and regressions on Linux as well as Windows.
 
-## Compute and personal pricing entry points
+## Compute and public pricing entry points
 
 Numerical calculations use immutable wallet-independent snapshots and the durable compute lane. Master transactions alone publish prices and settle money. Coupon cohorts and decision versions fence future checkout; live add-ons remain available. Native prepaid credit bases and historical refund/ledger facts are immutable. Owner names persist only authored display overrides.
 
@@ -748,11 +748,11 @@ Owner display preferences and prospective PAYG labels: `host_names.go`.
 
 Immutable analytical inputs, forecast vintages and measured calibration: `pricing_actuals.go`, `pricing_calibration.go`, `pricing_forecast_id.go`, `pricing_forecasts.go`, `pricing_history.go`, `pricing_models.go`, `pricing_personal_forecast.go`, `pricing_product_forecasts.go`, `pricing_user_actual.go`, `pricing_user_features.go`, `pricing_user_forecasts.go`.
 
-Versioned pricing preparation, queued kernels, applicability and publication: `pricing_addon_basis.go`, `pricing_addon_prepare.go`, `pricing_cache.go`, `pricing_catalog.go`, `pricing_change_notice.go`, `pricing_commands.go`, `pricing_compute_kernels.go`, `pricing_contract_snapshot.go`, `pricing_contracts.go`, `pricing_coupon_inputs.go`, `pricing_discounts.go`, `pricing_evaluation.go`, `pricing_fixed_renewal.go`, `pricing_funding_outcome.go`, `pricing_grant_scopes.go`, `pricing_incident_notice.go`, `pricing_incidents.go`, `pricing_offer_inputs.go`, `pricing_offers.go`, `pricing_optimization_inputs.go`, `pricing_override_activate.go`, `pricing_override_validation.go`, `pricing_payg_schedule.go`, `pricing_personal.go`, `pricing_personal_reads.go`, `pricing_personal_snapshot.go`, `pricing_publication_freeze.go`, `pricing_receipts.go`, `pricing_resolve.go`, `pricing_revenue_batch.go`, `pricing_scope_version.go`, `pricing_summary.go`, `pricing_time.go`, `pricing_user_offers.go`, `pricing_validation_gate.go`, `pricing_views.go`.
+Versioned pricing preparation, queued kernels, applicability and publication: `pricing_addon_basis.go`, `pricing_addon_prepare.go`, `pricing_cache.go`, `pricing_catalog.go`, `pricing_change_notice.go`, `pricing_commands.go`, `pricing_compute_kernels.go`, `pricing_contract_snapshot.go`, `pricing_contracts.go`, `pricing_coupon_inputs.go`, `pricing_evaluation.go`, `pricing_fixed_renewal.go`, `pricing_funding_outcome.go`, `pricing_incident_notice.go`, `pricing_incidents.go`, `pricing_offer_inputs.go`, `pricing_offers.go`, `pricing_optimization_inputs.go`, `pricing_override_activate.go`, `pricing_override_validation.go`, `pricing_payg_schedule.go`, `pricing_publication_freeze.go`, `pricing_receipts.go`, `pricing_resolve.go`, `pricing_revenue_batch.go`, `pricing_scope_version.go`, `pricing_summary.go`, `pricing_time.go`, `pricing_user_offers.go`, `pricing_validation_gate.go`, `pricing_views.go`.
 
 Bounded, scoped analytical exports and redaction: `pricing_export_redaction.go`, `pricing_export_relations.go`, `pricing_export_rows.go`, `pricing_export_scope.go`.
 
-Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_renewal_economics.go`, `pricing_renewal_model.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
+Renewal contracts, numerical snapshots, coupon economics and settlement: `pricing_renewal_budget.go`, `pricing_renewal_candidates.go`, `pricing_cost_evidence.go`, `pricing_renewal_reads.go`, `pricing_renewal_schedule.go`, `pricing_renewal_settlement.go`, `pricing_renewal_snapshot.go`.
 
 Bounded retention of settled or summarized operational records: `retention_node_events.go`, `retention_sync_jobs.go`, `retention_timestamps.go`.
 
@@ -760,11 +760,11 @@ Bounded retention of settled or summarized operational records: `retention_node_
 - `pricing_basket.go`: Complete prospective basket and best eligible owned coupon, applied once for estimates.
 - `pricing_dataset_page.go`: Opaque, scope-bound keyset pagination with visible truncation.
 - `pricing_dataset_page_test.go`: Hosted cursor ties, scope binding and typed product isolation.
-- `pricing_fixed_personal.go`: Fixed decisions without numerical work or redundant persisted snapshots.
+- `checkout_pricing.go` and `checkout_pricing_snapshot.go`: Public prices and ordinary coupon estimates; fresh transaction snapshots authorize settlement.
 - `pricing_model_support.go`: Immutable strategy-specific observed price and coupon-cohort ranges.
 - `pricing_product_readiness.go`: Batched publication readiness for administration; no settlement authorization.
 - `pricing_purchase_replay.go`: Successful purchase receipt before mutable catalog and quote validation.
-- `pricing_quote_version.go`: Authoritative basket, evidence, coupon/campaign, exact totals, validity and renewal digest.
+- `pricing_quote_version.go`: Authoritative basket, evidence, coupon, exact totals, validity and renewal digest.
 - `pricing_quote_version_test.go`: Hosted stale review, expiry and replay regression.
 - `pricing_scope_products.go`: Typed combo/addon/PAYG scope in analytical reads and exports.
 - `pricing_strategy_test.go`: Hosted shared-cost conservation and basket coupon-cap regression.
@@ -772,7 +772,7 @@ Bounded retention of settled or summarized operational records: `retention_node_
 - `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
 - `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
 - `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
-- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
+- `pricing_checkout_concurrency_test.go`: Revalidates coupon and public policy mutations before debit, consumption or paid-predecessor changes.
 - `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
 
 Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
@@ -885,7 +885,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_overhead_retry_generated.go` wraps the transactional methods in `pricing_overhead.go`.
 - `pricing_override_cancel_retry_generated.go` wraps the transactional methods in `pricing_override_cancel.go`.
 - `pricing_overrides_retry_generated.go` wraps the transactional methods in `pricing_overrides.go`.
-- `pricing_payg_offers_retry_generated.go` wraps the transactional methods in `pricing_payg_offers.go`.
 - `pricing_personal_calibration_retry_generated.go` wraps the transactional methods in `pricing_personal_calibration.go`.
 - `pricing_policy_retry_generated.go` wraps the transactional methods in `pricing_policy.go`.
 - `pricing_purchase_prepare_retry_generated.go` wraps the transactional methods in `pricing_purchase_prepare.go`.
@@ -945,7 +944,7 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `pricing_capacity_test.go`: Hosted authoritative GiB, model/lead/freshness isolation, overlapping commitments and per-node capacity regressions.
 - `pricing_lead_calibration_test.go`: Prevents one-day validation from validating all five forecast leads.
 - `pricing_renewal_strategy_test.go`: Exercises the pinned numerical receipt path and verifies single probability weighting of renewal and relationship value.
-- `pricing_checkout_concurrency_test.go`: Revalidates coupon and campaign mutations before debit, consumption or paid-predecessor changes.
+- `pricing_checkout_concurrency_test.go`: Revalidates coupon and public policy mutations before debit, consumption or paid-predecessor changes.
 - `pricing_performance_test.go`: Hosted fixed-catalog benchmarks at one and 1000 products and regression against redundant compute/persisted decisions.
 
 Provider cost metadata uses PostgreSQL forward migration 25. Cycle-based records retain their original meaning; hourly and per-GiB rates use integer millionths of TXB. Capacity-unlimited nodes retain an internal placeholder solely for compatibility with the original positive-capacity constraint. Pricing and renewal snapshots carry cost versions, while immutable cost versions retain actual payments.
@@ -1105,3 +1104,21 @@ Historical outage tables remain upgrade/audit evidence. No configuration, observ
 `xnode_node_removal_cascade.go` removes operational bindings, endpoint references and encrypted routing choices in the existing version-fenced node-removal transaction. Revocation evidence remains until drain completion. `xnode_node_removal_wait.go` retains resumable removal receipts with their exact dependency instead of exhausting ordinary retries. Removal blocks new admission, not late accounting.
 
 `xnode_node_removal_routes_test.go` checks atomic encrypted pruning, retained revocation proof, blocked concurrent saves, stale snapshot rollback and monotonic receipt recovery.
+
+## Public checkout and PERSONAL retirement
+
+`PrepareCheckoutPricing` and `ApplyCatalogPricing` use the public product policy.
+Only ordinary owned coupons affect the displayed net estimate; checkout rechecks
+its selected coupon and reviewed version while holding the existing wallet lock.
+`checkout_pricing_snapshot.go` derives exact totals and quote evidence without
+persisting personal decisions. Public numerical optimization stays in the existing
+compute lane. No upstream API calls are introduced.
+
+Dynamic renewals use the public price within the purchased contract ceiling and
+change bound. Fixed terms, attached recurring coupons, add-on terms, health gates,
+wallet locking and immutable charges remain authoritative. User behavior and
+coupon possession do not select a base price. Historical personal decisions and
+discount reservations remain financial evidence. The legacy reservation decoder
+can settle an existing obligation but cannot create a campaign.
+
+- `pricing_retirement_test.go`: Hosted rejection of legacy PERSONAL admission and exact settlement/replay of previously reserved renewal obligations.

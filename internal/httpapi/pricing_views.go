@@ -43,7 +43,7 @@ func (s *Server) pricingData(w http.ResponseWriter, r *http.Request) {
 		items := []map[string]any{}
 		for _, p := range page.Items {
 			trace, _ := json.Marshal(p)
-			items = append(items, map[string]any{"product_type": p.ProductType, "product_id": p.ProductID, "public_minor": p.PublicPrice.Minor, "eligible_minor": p.PersonalPrice.Minor, "net_minor": p.NetPrice.Minor, "state": p.Decision.Status, "reason": p.Decision.Reason, "price_version": p.Decision.Version, "trace_json": string(trace)})
+			items = append(items, map[string]any{"product_type": p.ProductType, "product_id": p.ProductID, "public_minor": p.PublicPrice.Minor, "eligible_minor": p.PublicPrice.Minor, "net_minor": p.NetPrice.Minor, "state": p.Decision.Status, "reason": p.Decision.Reason, "price_version": p.Decision.Version, "trace_json": string(trace)})
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"items": items, "limit": 100, "truncated": page.NextCursor != "", "nextCursor": page.NextCursor})
 		return

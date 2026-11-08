@@ -16,21 +16,6 @@ import (
 // queued. Fixed prices and refused adjustments produce terminal unchanged quotes.
 func (s *Store) PreparePricingRenewal(ctx context.Context, purchase string, now time.Time) (renewal.Quote, error) {
 	ctx = pricingFreshContext(ctx)
-	var product string
-	if err := s.db.QueryRowContext(ctx, `SELECT combo_id FROM purchases WHERE id=$1`, purchase).Scan(&product); err != nil {
-		return renewal.Quote{}, err
-	}
-	policy, err := s.PricingPolicy(ctx, "combo", product)
-	if err != nil {
-		return renewal.Quote{}, err
-	}
-	if policy.DynamicEnabled && policy.RenewalMode == "DYNAMIC" {
-		if err = s.TrainPricingRenewalResponse(ctx, product, now); errors.Is(err, ErrPricingComputePending) {
-			return renewal.Quote{}, ErrPricingDecisionPending
-		} else if err != nil {
-			return renewal.Quote{}, err
-		}
-	}
 	in, existing, err := s.prepareRenewalPriceSnapshot(ctx, purchase, now)
 	if err != nil {
 		return renewal.Quote{}, err
@@ -114,48 +99,19 @@ func (s *Store) retryAttempt_publishRenewalPrice(ctx context.Context, in renewal
 	if err != nil {
 		return renewal.Quote{}, err
 	}
-	if in.Coupon == nil {
-		var addonBasis int64
-		for _, a := range c.Addons {
-			addonBasis += a.Price
-		}
-		core := best.Price - addonBasis
-		personal, e := personalPricingTx(ctx, tx, c.UserID, "combo", c.ProductID, core, 1, "", false, now)
-		if e != nil {
-			return renewal.Quote{}, e
-		}
-		if personal < core {
-			personal, e = personalPricingTx(ctx, tx, c.UserID, "combo", c.ProductID, core, 1, "renewal:"+id, true, now)
-			if e != nil {
-				return renewal.Quote{}, e
-			}
-			best.Price = personal + addonBasis
-			best.Contribution = best.Probability * (float64(best.Price) - in.Cost)
-		}
-	}
-	calibration := "PRIOR_ONLY"
-	if in.Response.Samples >= 20 {
-		calibration = "UNVALIDATED"
-	}
-	if in.Validated {
-		calibration = "VALIDATED"
-	}
-	reason := "MODEL_UNVALIDATED"
-	if c.Mode == "FIXED" {
-		reason = "FIXED_PRICE"
-	}
-	if in.Validated {
-		reason = "NET_CONTRIBUTION"
+	calibration, reason := "NOT_APPLICABLE", "FIXED_PRICE"
+	if in.PublicEnabled {
+		reason = "PUBLIC_RENEWAL_PRICE"
 	}
 	status := "UNCHANGED"
 	if best.Price != c.Price {
 		status = "ADJUSTED"
 	}
-	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon, "observation": in.Observation, "costEvidence": in.CostEvidence, "expectedProviderCostMinor": in.Cost})
+	raw, err := json.Marshal(map[string]any{"strategyVersion": pricing.StrategyVersion, "snapshotHash": in.Hash, "status": status, "reason": reason, "calibrationStatus": calibration, "candidates": curve, "coupon": in.Coupon})
 	if err != nil {
 		return renewal.Quote{}, err
 	}
-	q := renewal.Quote{ID: id, PurchaseID: c.PurchaseID, ContractID: c.ID, Price: best.Price, PolicyVersion: in.Policy.Version, ContractVersion: c.Version, State: "AUTHORIZED", AuthorizedAt: &now, GeneratedAt: now, SettleAfter: in.Due, ValidUntil: in.Due.Add(72 * time.Hour), Probability: best.Probability, Contribution: best.Contribution, HealthState: in.Health, ModelVersion: in.Model, Trace: string(raw)}
+	q := renewal.Quote{ID: id, PurchaseID: c.PurchaseID, ContractID: c.ID, Price: best.Price, PolicyVersion: in.Policy.Version, ContractVersion: c.Version, State: "AUTHORIZED", AuthorizedAt: &now, GeneratedAt: now, SettleAfter: in.Due, ValidUntil: in.Due.Add(72 * time.Hour), Probability: best.Probability, Contribution: best.Contribution, HealthState: in.Health, ModelVersion: "public-renewal-v1", Trace: string(raw)}
 	_, err = tx.ExecContext(ctx, `INSERT INTO pricing_renewal_quotes(id,purchase_id,contract_id,price_minor,policy_version,contract_version,state,generated_at,authorized_at,settle_after,valid_until,probability,contribution,health_state,model_version,trace_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`, id, q.PurchaseID, c.ID, q.Price, q.PolicyVersion, c.Version, q.State, pricingStamp(now), pricingStamp(now), pricingStamp(in.Due), pricingStamp(q.ValidUntil), q.Probability, q.Contribution, q.HealthState, q.ModelVersion, q.Trace)
 	if err != nil {
 		return q, err

@@ -47,7 +47,7 @@ func (s *Store) PricingUserPricePage(ctx context.Context, user, cursor string, n
 				squads = append(squads, g.GroupID)
 			}
 		}
-		d, e := s.PreparePersonalPricing(ctx, user, kind, id, combo, squads, now)
+		d, e := s.PrepareCheckoutPricing(ctx, user, kind, id, combo, squads, now)
 		if e != nil {
 			return out, e
 		}
@@ -60,7 +60,7 @@ func (s *Store) PricingUserPricePage(ctx context.Context, user, cursor string, n
 			tx.Rollback()
 			return out, e
 		}
-		in, e := personalPriceSnapshotTx(ctx, tx, user, kind, id, combo, squads, now)
+		in, e := checkoutPriceSnapshotTx(ctx, tx, user, kind, id, combo, squads, now)
 		if e != nil {
 			tx.Rollback()
 			return out, e
@@ -69,18 +69,10 @@ func (s *Store) PricingUserPricePage(ctx context.Context, user, cursor string, n
 			d.Status = "STALE"
 			d.Reason = "VERSION_CHANGED"
 		}
-		personal := moneyMinor(d.PersonalPrice)
-		campaign := personal
-		if len(in.Coupons) == 0 {
-			campaign, e = personalPricingTx(ctx, tx, user, kind, id, personal, 1, "", false, now)
-		}
 		tx.Rollback()
-		if e != nil {
-			return out, e
-		}
-		rate := model.UserProductPrice{ProductType: kind, ProductID: id, Name: product["name"].(string), BillingMode: "combo", FixedPrice: model.TXBMoney(fixed), PublicPrice: d.PublicPrice, PersonalPrice: d.PersonalPrice, CampaignPrice: model.TXBMoney(campaign), NetPrice: d.NetPrice, Coupons: in.Coupons, Decision: d}
+		rate := model.UserProductPrice{ProductType: kind, ProductID: id, Name: product["name"].(string), BillingMode: "combo", FixedPrice: model.TXBMoney(fixed), PublicPrice: d.PublicPrice, NetPrice: d.NetPrice, Coupons: in.Coupons, Decision: d}
 		if len(in.Coupons) == 0 {
-			rate.NetPrice = rate.CampaignPrice
+			rate.NetPrice = rate.PublicPrice
 		}
 		if kind == "payg" {
 			rate.BillingMode = "payg"

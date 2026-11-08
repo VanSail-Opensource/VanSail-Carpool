@@ -16,11 +16,8 @@ func buyPAYGTx(ctx context.Context, tx *sql.Tx, a *xnode.PAYGAccount, blocks int
 	if blocks <= 0 {
 		return nil
 	}
-	public, unit, err := paygPricingTx(ctx, tx, a.UserID, a.GroupID, a.UnitPriceMinor, blocks, a.ProxyUserID, a.PurchasedBytes/xnode.PAYGGB, now)
-	if err != nil {
-		return err
-	}
-	a.UnitPriceMinor = public
+	unit := a.UnitPriceMinor
+	var err error
 	if unit <= 0 || blocks > math.MaxInt64/unit || blocks > (math.MaxInt64-a.PurchasedBytes)/xnode.PAYGGB || blocks > (math.MaxInt64-a.CreditBytes)/xnode.PAYGGB {
 		return xnode.ErrInvalid
 	}

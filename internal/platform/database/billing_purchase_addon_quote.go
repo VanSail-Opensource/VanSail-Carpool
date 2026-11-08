@@ -92,12 +92,12 @@ func quotePurchaseAddonsTx(ctx context.Context, tx *sql.Tx, input PurchaseAddonI
 		if resolveErr != nil {
 			return model.PurchaseAddonQuote{}, nil, resolveErr
 		}
-		personal, decision, resolveErr := personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, input.AddonSquadIDs, now, false)
+		public, decision, resolveErr := checkoutProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, input.AddonSquadIDs, now)
 		if resolveErr != nil {
 			return model.PurchaseAddonQuote{}, nil, resolveErr
 		}
 		product.PricingDecision = decision
-		product.PriceTXBMinor = personal
+		product.PriceTXBMinor = public
 		price, priceErr := proratedAddonPrice(product.PriceTXBMinor, remaining, original)
 		if priceErr != nil {
 			return model.PurchaseAddonQuote{}, nil, priceErr

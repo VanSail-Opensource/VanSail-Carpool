@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
@@ -38,7 +39,7 @@ func pricingRenewalFixture(t *testing.T) (*Store, model.User, model.User, model.
 	if err != nil {
 		t.Fatal(err)
 	}
-	p.DynamicEnabled, p.RenewalMode, p.PersonalDiscounts = true, "DYNAMIC", true
+	p.DynamicEnabled, p.RenewalMode = true, "DYNAMIC"
 	p.MaxIncreaseBPS, p.MaxDiscountBPS = 9000, 9000 // Caller input must not set calculated bounds.
 	p, err = s.SavePricingPolicy(ctx, actor.ID, "enable future renewals", p, now)
 	if err != nil {
@@ -51,16 +52,22 @@ func pricingRenewalFixture(t *testing.T) (*Store, model.User, model.User, model.
 	return s, user, actor, source, p, now
 }
 
-func TestPricingAutomaticRenewalPolicyAndBudgetedBatch(t *testing.T) {
-	s, user, actor, source, p, now := pricingRenewalFixture(t)
+func TestPricingAutomaticRenewalPreservesOrdinaryRecurringCoupon(t *testing.T) {
+	s, user, _, source, _, now := pricingRenewalFixture(t)
 	ctx := context.Background()
-	// An ordinary administrator can immediately apply a material discount.
-	grant, err := s.CreatePricingIntervention(ctx, actor.ID, PricingIntervention{ScopeType: "user_product", ScopeID: user.ID + ":combo:" + p.ProductID, Command: "PERSONAL_DISCOUNT", DiscountBPS: 3000, Budget: 1000, Reason: "retention campaign", ExpiresAt: now.Add(time.Hour)}, now)
-	if err != nil || grant.Status != "ACTIVE" {
+	coupon, err := s.SaveCoupon(ctx, coupons.CouponInput{Code: "RENEW30", Name: "Recurring", Kind: coupons.KindPurchaseRecurring, DiscountMode: coupons.DiscountFixed, ValueMinorOrBPS: 300, Active: true}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	grant, err := s.RedeemCoupon(ctx, user.ID, coupon.Code, "renew-grant", now)
+	if err != nil || grant.Grant == nil {
 		t.Fatal(grant, err)
 	}
+	if _, err = s.db.ExecContext(ctx, `UPDATE purchases SET coupon_grant_id=$1,recurring_discount_attached=1 WHERE id=$2`, grant.Grant.ID, source.ID); err != nil {
+		t.Fatal(err)
+	}
 	q, err := s.PreparePricingRenewal(ctx, source.ID, now)
-	if err != nil || q.State != "AUTHORIZED" || q.Price != 1000 {
+	if err != nil || q.State != "AUTHORIZED" || q.Price != 1300 {
 		t.Fatal("approval-free preparation", q, err)
 	}
 	input := RenewalInput{UserID: user.ID, PurchaseID: source.ID, TermCount: 2, IdempotencyKey: "dynamic-batch"}
@@ -71,7 +78,7 @@ func TestPricingAutomaticRenewalPolicyAndBudgetedBatch(t *testing.T) {
 	for _, term := range batch.Purchases {
 		c, e := s.PricingContract(ctx, user.ID, term.ID)
 		if e != nil || c == nil || c.Price != 1300 {
-			t.Fatal("campaign became perpetual", c, e)
+			t.Fatal("coupon changed contractual renewal basis", c, e)
 		}
 		assertRenewalAddonCharge(t, s, term.ID, 300)
 	}
@@ -80,7 +87,7 @@ func TestPricingAutomaticRenewalPolicyAndBudgetedBatch(t *testing.T) {
 		t.Fatal("idempotent replay changed", replayed, err)
 	}
 	var spent int64
-	if err = s.db.QueryRowContext(ctx, `SELECT SUM(discount_minor) FROM pricing_discount_spend WHERE status='CONSUMED'`).Scan(&spent); err != nil || spent != 600 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(discount_minor),0) FROM pricing_discount_spend WHERE status='CONSUMED'`).Scan(&spent); err != nil || spent != 0 {
 		t.Fatal(spent, err)
 	}
 	original, err := s.PurchaseByID(ctx, source.ID)
@@ -88,7 +95,7 @@ func TestPricingAutomaticRenewalPolicyAndBudgetedBatch(t *testing.T) {
 		t.Fatal("historical charge changed", original, err)
 	}
 	var notices int
-	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='pricing_change_notice'`).Scan(&notices); err != nil || notices < 2 {
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM outbox_jobs WHERE kind='pricing_change_notice'`).Scan(&notices); err != nil || notices < 1 {
 		t.Fatal("missing notification", notices, err)
 	}
 }

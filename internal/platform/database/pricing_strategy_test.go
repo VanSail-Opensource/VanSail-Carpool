@@ -5,7 +5,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
-	"math"
 	"testing"
 	"time"
 )
@@ -52,14 +51,14 @@ func TestPricingNativeAllocationConservesSharedMachineCost(t *testing.T) {
 		t.Fatal(a, b)
 	}
 }
-func TestPricingCouponCandidatesUseWholeBasketOnce(t *testing.T) {
+func TestCheckoutCouponsUseWholeBasketOnce(t *testing.T) {
 	cap := int64(300)
-	in := personalPriceInput{Public: 1000, BasketOther: 1000, Policy: pricing.DefaultPolicy("combo", "c", 1000), Support: &pricing.PriceSupport{CouponHigh: math.Log(1.2)}, Coupons: []coupons.Grant{{Coupon: coupons.Coupon{CouponInput: coupons.CouponInput{Kind: coupons.KindPurchaseOnce, DiscountMode: coupons.DiscountPercent, ValueMinorOrBPS: 5000, PercentCapMinor: &cap}}}}}
-	rows, err := personalCandidates(in)
+	in := checkoutPriceInput{Public: 1000, BasketOther: 1000, Policy: pricing.DefaultPolicy("combo", "c", 1000), Coupons: []coupons.Grant{{Coupon: coupons.Coupon{CouponInput: coupons.CouponInput{Kind: coupons.KindPurchaseOnce, DiscountMode: coupons.DiscountPercent, ValueMinorOrBPS: 5000, PercentCapMinor: &cap}}}}}
+	decision, err := checkoutDecision(in, time.Now().UTC())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rows[0].Price != 2000 || rows[0].NetPrice != 1700 {
-		t.Fatal(rows[0])
+	if decision.BasketGrossPrice == nil || decision.BasketGrossPrice.MinorInt64() != 2000 || decision.NetPrice.MinorInt64() != 1700 || decision.PersonalPrice != decision.PublicPrice {
+		t.Fatal(decision)
 	}
 }

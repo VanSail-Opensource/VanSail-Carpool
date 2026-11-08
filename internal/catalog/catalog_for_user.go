@@ -15,9 +15,9 @@ func (s *Service) CatalogForUser(ctx context.Context, user model.User) (model.Ca
 		return model.Catalog{}, err
 	}
 	if prices, ok := s.repository.(interface {
-		PersonalizePricingCatalog(context.Context, string, model.Catalog, time.Time) (model.Catalog, error)
+		ApplyCatalogPricing(context.Context, string, model.Catalog, time.Time) (model.Catalog, error)
 	}); ok {
-		catalog, err = prices.PersonalizePricingCatalog(ctx, user.ID, catalog, s.now().UTC())
+		catalog, err = prices.ApplyCatalogPricing(ctx, user.ID, catalog, s.now().UTC())
 		if err != nil {
 			return model.Catalog{}, err
 		}

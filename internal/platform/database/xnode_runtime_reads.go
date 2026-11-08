@@ -7,7 +7,7 @@ import (
 )
 
 const paygFundingPredicate = ` WHERE a.node_id=$1 AND b.txb_minor>=0
- AND (b.txb_minor>=COALESCE(NULLIF(o.payg_price_minor,0),a.unit_price_minor) OR a.credit_bytes>0 OR pricing.dynamic_enabled=1 AND pricing.personal_discounts_enabled=1)`
+ AND (b.txb_minor>=` + paygFundingPrice + ` OR a.credit_bytes>0)`
 
 // XNodePAYGFunding reads current authorization inputs without scanning periods.
 // The account's validated period FK preserves existence; no counters are exposed.

@@ -69,7 +69,7 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 		if loadErr != nil {
 			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
 		}
-		product.PriceTXBMinor, product.PricingDecision, loadErr = personalProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, pricingPurchaseSquads(combo, input.AddonSquadIDs), now, false)
+		product.PriceTXBMinor, product.PricingDecision, loadErr = checkoutProductPriceTx(ctx, tx, input.UserID, "addon", product.GroupID, combo.ID, pricingPurchaseSquads(combo, input.AddonSquadIDs), now)
 		if loadErr != nil {
 			return model.PurchaseQuote{}, model.Combo{}, nil, loadErr
 		}
@@ -98,17 +98,11 @@ func (s *Store) quotePurchaseTx(ctx context.Context, tx *sql.Tx, input PurchaseI
 			return model.PurchaseQuote{}, model.Combo{}, nil, err
 		}
 	}
-	personalPrice, decision, err := personalProductPriceTx(ctx, tx, input.UserID, "combo", combo.ID, combo.ID, selectedSquads, now, validFrom.After(now))
+	publicPrice, decision, err := checkoutProductPriceTx(ctx, tx, input.UserID, "combo", combo.ID, combo.ID, selectedSquads, now)
 	if err != nil {
 		return model.PurchaseQuote{}, model.Combo{}, nil, err
 	}
-	combo.PriceTXBMinor = personalPrice
-	if input.CouponGrantID == "" {
-		combo.PriceTXBMinor, err = personalPricingTx(ctx, tx, input.UserID, "combo", combo.ID, combo.PriceTXBMinor, 1, "", false, now)
-		if err != nil {
-			return model.PurchaseQuote{}, model.Combo{}, nil, err
-		}
-	}
+	combo.PriceTXBMinor = publicPrice
 	grossMinor := combo.PriceTXBMinor + addonPrice
 	discount := coupons.Discount{GrossMinor: grossMinor, NetMinor: grossMinor}
 	addonUUIDs := make([]string, 0, len(addonRows))

@@ -22,7 +22,7 @@ document.cookie = `txc_request_key=${'A'.repeat(43)}; path=/; SameSite=Strict`
 document.cookie = `txc_admin_request_key=${'A'.repeat(43)}; path=/; SameSite=Strict`
 const money = (minor: string) => ({ currency: 'TXB', minor, display: `${(Number(minor) / 100).toFixed(2)} TXB` })
 const stamp = '2026-10-24T00:00:00Z'
-pricingApi.policy=async(kind,id)=>({productType:kind as 'combo',productId:id,dynamicEnabled:false,purchasePricingMode:'FIXED',renewalPricingMode:'FIXED',personalDiscountsEnabled:false,fixedPriceMinor:'1000',maxIncreaseBps:0,maxDiscountBps:0,overrideStatus:'NONE',lastApprovedPriceVersion:'',version:1,updatedBy:'fixture',updatedAt:stamp})
+pricingApi.policy=async(kind,id)=>({productType:kind as 'combo',productId:id,dynamicEnabled:false,purchasePricingMode:'FIXED',renewalPricingMode:'FIXED',fixedPriceMinor:'1000',maxIncreaseBps:0,maxDiscountBps:0,overrideStatus:'NONE',lastApprovedPriceVersion:'',version:1,updatedBy:'fixture',updatedAt:stamp})
 const profile = { type: 'international_network', portMbps: 1000, countryCode: 'JP', upstreamCarriers: ['KDDI'] }
 const profiles: SquadProduct['profile'][] = [
   profile as SquadProduct['profile'],

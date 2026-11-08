@@ -8,7 +8,7 @@ import (
 func validatePricingCommandScope(ctx context.Context, tx *sql.Tx, in PricingIntervention) error {
 	allowed := map[string]map[string]bool{
 		"FREEZE":  {"global": true, "product": true, "node": true, "machine": true, "model": true},
-		"DISABLE": {"product": true}, "MANUAL_RATE": {"product": true}, "PERSONAL_DISCOUNT": {"user_product": true},
+		"DISABLE": {"product": true}, "MANUAL_RATE": {"product": true},
 		"PAUSE_ADMISSIONS": {"global": true, "product": true, "node": true, "machine": true},
 		"MAINTENANCE":      {"node": true, "machine": true}, "SUPPRESS_TELEMETRY": {"global": true, "node": true, "machine": true},
 		"RETRY_MODEL": {"product": true, "global": true, "model": true}, "RECALIBRATE": {"product": true, "global": true, "model": true},

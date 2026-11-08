@@ -98,16 +98,6 @@ func (s *Service) OwnedPAYG(ctx context.Context, user string) (PAYGView, error) 
 	total := new(big.Int)
 	spent := int64(0)
 	for _, p := range products {
-		if prices, ok := r.(interface {
-			PricingPAYGPersonalPrice(context.Context, string, string, int64, time.Time) (int64, error)
-		}); ok && p.BillingMode == "payg" {
-			p.PAYGPriceTXBMinor, err = prices.PricingPAYGPersonalPrice(ctx, user, p.GroupID, p.PAYGPriceTXBMinor, s.now().UTC())
-			if err != nil {
-				return out, err
-			}
-			money := model.TXBMoney(p.PAYGPriceTXBMinor)
-			p.PAYGPrice = &money
-		}
 		u := byGroup[p.GroupID]
 		if p.BillingMode != "payg" && u.TrafficBytes == 0 && u.SpentMinor == 0 {
 			continue

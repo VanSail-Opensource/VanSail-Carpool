@@ -83,11 +83,6 @@ func (s *Store) retryAttempt_createPurchase(ctx context.Context, input PurchaseI
 	if err != nil {
 		return model.Purchase{}, err
 	}
-	if input.CouponGrantID == "" {
-		if err := reservePurchaseDiscountTx(ctx, tx, input.UserID, "combo", combo.ID, purchaseID, combo.PriceTXBMinor, moneyMinor(quote.PricingDecision.PersonalPrice), now); err != nil {
-			return model.Purchase{}, err
-		}
-	}
 	discount := coupons.Discount{GrossMinor: quote.GrossPriceTXBMinor, NetMinor: quote.GrossPriceTXBMinor}
 	if input.CouponGrantID != "" {
 		pricedAddonIDs := make([]string, 0, len(addonRows))

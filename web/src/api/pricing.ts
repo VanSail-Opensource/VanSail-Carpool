@@ -6,7 +6,6 @@ export interface PricingPolicy {
   dynamicEnabled: boolean
   purchasePricingMode: 'FIXED' | 'DYNAMIC'
   renewalPricingMode: 'FIXED' | 'DYNAMIC'
-  personalDiscountsEnabled: boolean
   fixedPriceMinor: string
   maxIncreaseBps: number
   maxDiscountBps: number

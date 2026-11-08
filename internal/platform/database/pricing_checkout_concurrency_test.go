@@ -49,17 +49,21 @@ func TestCheckoutRevalidatesCouponBeforeConsumption(t *testing.T) {
 	}
 }
 
-func TestQueuedCheckoutRejectsChangedCampaignWithoutChangingPaidPredecessor(t *testing.T) {
+func TestRetiredPersonalCampaignCannotChangeQueuedOrPaidPurchases(t *testing.T) {
 	s, user, actor, source, policy, now := pricingRenewalFixture(t)
 	ctx := context.Background()
-	input := PurchaseInput{UserID: user.ID, ComboID: policy.ProductID, IdempotencyKey: "campaign-review"}
+	input := PurchaseInput{UserID: user.ID, ComboID: policy.ProductID, IdempotencyKey: "public-price-review"}
 	quote, err := s.QuotePurchase(ctx, input, now)
 	if err != nil || !quote.Queued {
 		t.Fatal(quote, err)
 	}
 	input.QuoteVersion = quote.QuoteVersion
-	_, err = s.CreatePricingIntervention(ctx, actor.ID, PricingIntervention{ScopeType: "user_product", ScopeID: user.ID + ":combo:" + policy.ProductID, Command: "PERSONAL_DISCOUNT", DiscountBPS: 1000, Budget: 1000, Reason: "campaign changed after review", ExpiresAt: now.Add(time.Hour)}, now)
-	if err != nil {
+	_, err = s.CreatePricingIntervention(ctx, actor.ID, PricingIntervention{ScopeType: "user_product", ScopeID: user.ID + ":combo:" + policy.ProductID, Command: "PERSONAL_DISCOUNT", Reason: "campaign changed after review", ExpiresAt: now.Add(time.Hour)}, now)
+	if !errors.Is(err, ErrConflict) {
+		t.Fatal("retired campaign accepted", err)
+	}
+	policy.DynamicEnabled, policy.RenewalMode = false, "FIXED"
+	if _, err = s.SavePricingPolicy(ctx, actor.ID, "public policy changed", policy, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = s.CreatePurchase(ctx, input, now); !errors.Is(err, ErrPricingQuoteChanged) {

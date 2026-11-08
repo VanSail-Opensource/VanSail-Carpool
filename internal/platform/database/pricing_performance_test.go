@@ -32,7 +32,7 @@ func BenchmarkPricingFixedCatalog(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result, err := s.PersonalizePricingCatalog(context.Background(), "benchmark", catalog, now)
+				result, err := s.ApplyCatalogPricing(context.Background(), "benchmark", catalog, now)
 				if err != nil || len(result.Combos) != count {
 					b.Fatal(err)
 				}
@@ -48,7 +48,7 @@ func TestFixedCatalogDoesNotPersistAnalyticalWork(t *testing.T) {
 	for i := range catalog.Combos {
 		catalog.Combos[i] = model.Combo{ID: fmt.Sprint(i), Price: model.TXBMoney(1000)}
 	}
-	if _, err := s.PersonalizePricingCatalog(ctx, "fixed-member", catalog, time.Now().UTC()); err != nil {
+	if _, err := s.ApplyCatalogPricing(ctx, "fixed-member", catalog, time.Now().UTC()); err != nil {
 		t.Fatal(err)
 	}
 	var count int

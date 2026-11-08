@@ -43,3 +43,27 @@ Offline participants and unfinished accounting keep the same queued receipt with
 Node-removal validation: Go vet, typecheck, ESLint, structure/localization audit and production Vite build pass. Chrome DevTools exercised constructed bound-node removal through a succeeded receipt and refreshed list, queued accounting dependencies, pending controls, loading/empty/error/retry, English/Chinese, 390px mobile and 1440px desktop. No reviewed console or API-request failures. Hosted database/routing regressions validate runtime behavior; no local automated suites were run.
 
 Traffic-mode account registration takes the same node admission lock before creating its period participation. This closes the separate registration race without preventing late traffic journal ingestion.
+
+## PERSONAL dynamic pricing
+
+Removed targeted campaign creation, policy controls, per-user model selection,
+PAYG discount previews and new discount reservations. Public dynamic pricing and
+ordinary coupons remain. Checkout derives public prices under its existing
+wallet transaction and version binding; coupons apply once to the basket.
+Dynamic renewals follow the public price within their purchased limits rather
+than an owner's behavior or expected profitability. Existing fixed terms and
+attached recurring coupons retain their settlement behavior.
+
+Historical personal decisions, already consumed discounts, purchase receipts and
+reserved renewal obligations are retained. No customer or purchase conversion is
+performed. The deprecated decision receipt field remains wire-compatible and is
+no longer displayed as a personal offer.
+
+Validation for PERSONAL retirement: Go vet, frontend typecheck, ESLint,
+structure/localization audit and production Vite build passed. Chrome DevTools
+checked EN/ZH policy loading, populated, load-error and save-error states, ordinary
+coupon estimates and empty member analysis, public checkout labels, keyboard
+focus and the intervention menu, mobile 390px and desktop 1440px layouts. No
+unexpected console or request failures were observed. Hosted regressions cover
+retired policy flags, command rejection, coupon scope changes, purchase replay,
+public renewal bounds and historical reserved-discount settlement.

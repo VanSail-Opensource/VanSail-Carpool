@@ -37,11 +37,11 @@ func (s *Store) retryAttempt_PreparePurchasePricing(ctx context.Context, input P
 	if err != nil {
 		return err
 	}
-	if _, err = s.PreparePersonalPricing(ctx, input.UserID, "combo", c.ID, c.ID, squads, now); err != nil {
+	if _, err = s.PrepareCheckoutPricing(ctx, input.UserID, "combo", c.ID, c.ID, squads, now); err != nil {
 		return err
 	}
 	for _, id := range uniqueSorted(input.AddonSquadIDs) {
-		if _, err = s.PreparePersonalPricing(ctx, input.UserID, "addon", id, c.ID, squads, now); err != nil {
+		if _, err = s.PrepareCheckoutPricing(ctx, input.UserID, "addon", id, c.ID, squads, now); err != nil {
 			return err
 		}
 	}
@@ -130,5 +130,5 @@ func (s *Store) queuedRenewalDecisionTx(ctx context.Context, tx *sql.Tx, user st
 	if q.Price != c.Price {
 		status = "ADJUSTED"
 	}
-	return &model.PricingDecision{DynamicEnabled: true, Calibration: evidence.Calibration, Version: q.ID, Status: status, Reason: evidence.Reason, PersonalPrice: model.TXBMoney(q.Price), PublicPrice: model.TXBMoney(in.Public), NetPrice: model.TXBMoney(net), ModelVersion: q.ModelVersion, GeneratedAt: q.GeneratedAt, ValidUntil: q.ValidUntil, Probability: &q.Probability}, nil
+	return &model.PricingDecision{DynamicEnabled: true, Calibration: evidence.Calibration, Version: q.ID, Status: status, Reason: evidence.Reason, PersonalPrice: model.TXBMoney(q.Price), PublicPrice: model.TXBMoney(in.Public), NetPrice: model.TXBMoney(net), ModelVersion: q.ModelVersion, GeneratedAt: q.GeneratedAt, ValidUntil: q.ValidUntil}, nil
 }

@@ -3,6 +3,7 @@ package model
 import "time"
 
 // PricingDecision is a versioned member offer, independent of wallet funding.
+// PersonalPrice is a deprecated receipt field; current checkout uses PublicPrice.
 type PricingDecision struct {
 	CouponFingerprint string    `json:"-"`
 	DynamicEnabled    bool      `json:"dynamicEnabled"`

@@ -6,8 +6,8 @@ in the existing database transactions; the application owns the single worker.
 
 ## Product activation and revised controls
 
-Every product starts fixed. An administrator explicitly saves purchase, renewal
-and personal campaign modes independently. The later implementation instructions
+Every product starts fixed. An administrator explicitly saves public purchase
+and renewal modes independently. The later implementation instructions
 replace user acceptance and second-person approval with automatic application
 and administrator-only queued notifications. Dynamic renewal policies apply to existing and new
 renewal chains automatically; completed charges and paid entitlements stay intact.
@@ -17,8 +17,8 @@ bounds with a bounded 101-point search over 0–2 times the reference price. Amo
 operationally feasible prices, candidates retaining at least 95% of the best
 expected contribution define the envelope. There is no claim that an observational
 model proves a true causal optimum. Without validated response and original
-forecast evidence, automatic changes are zero. Explicit administrator rates and
-budgeted campaigns take precedence over this inferred envelope and notify admins.
+forecast evidence, automatic changes are zero. Explicit administrator rates take precedence over this inferred envelope and
+notify admins.
 
 ## Statistical and operational modules
 
@@ -83,14 +83,11 @@ durable acceptance callback. Numerical output is validated before an immutable
 receipt is stored; only then is a node acknowledged. Financial publication and
 checkout remain separate master transactions with current-version checks.
 
-The coupon-aware response uses activity, prior renewals, gross relative price,
-coupon presence and effective discount fraction. Exact coupon scopes, expiry,
-caps, limits and grant state version personalized decisions. Candidate economics
-use revenue after the applicable coupon, including higher gross prices. Without
-validated evidence, the terminal decision is unchanged. Funding failures are
-censored explicitly; current balance is neither a feature nor a scheduling gate.
-Attached recurring renewal terms preserve their existing contractual availability
-rules. One-time and live-addition coupon consumption remain atomic with debit.
+Public price calculations use aggregate product evidence. Checkout uses those
+public prices and versions the selected ordinary coupon's scope, expiry, caps,
+limits and grant state independently. Recurring renewal terms preserve their
+contractual availability rules. One-time and live-addition coupon consumption
+remain atomic with debit. No owner behavior or coupon can change the base price.
 
 Future-dated checkout requires current renewal and selected future Combo decisions.
 Fixed renewal decisions use the existing renewal plan directly, without creating
@@ -172,3 +169,13 @@ configured groups with no healthy nodes still fail closed. This does not waive
 the separate cost and model evidence required to publish an optimized price.
 
 Provider metadata supports a fixed cycle or a 24-hour hourly rate plus upload-and-download usage per GiB. Rates are integer millionths of TXB. Unlimited nodes have no traffic-quota constraint; finite nodes are checked separately. Next-day cost uses the original p90 forecast, native usage attribution, and leaves unattributed traffic as overhead. Missing required forecast evidence makes estimates unavailable. Recorded payments and historical cost versions are independent immutable facts.
+
+## PERSONAL retirement
+
+New purchase and traffic offers use public product prices. Ordinary coupons are
+calculated separately once per basket. Renewal changes use the public price
+within purchased contractual bounds. Owner features, forecasts and response
+probabilities never choose an individual base price. The old personal campaign
+command, policy control and numerical selector are removed. Historical decisions,
+settled charges and reserved obligations remain immutable evidence; the database
+adapter documents their bounded settlement compatibility.

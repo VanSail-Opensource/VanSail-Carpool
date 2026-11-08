@@ -16,11 +16,10 @@ const saved = shallowRef(false)
 const reason = shallowRef('')
 const purchase = computed({ get: () => policy.value?.purchasePricingMode === 'DYNAMIC', set: value => update({ purchasePricingMode: value ? 'DYNAMIC' : 'FIXED' }) })
 const renewal = computed({ get: () => policy.value?.renewalPricingMode === 'DYNAMIC', set: value => update({ renewalPricingMode: value ? 'DYNAMIC' : 'FIXED' }) })
-const discounts = computed({ get: () => policy.value?.personalDiscountsEnabled ?? false, set: value => update({ personalDiscountsEnabled: value }) })
 function update(values: Partial<PricingPolicy>): void {
   if (!policy.value) return
   policy.value = { ...policy.value, ...values }
-  policy.value.dynamicEnabled = policy.value.purchasePricingMode === 'DYNAMIC' || policy.value.renewalPricingMode === 'DYNAMIC' || policy.value.personalDiscountsEnabled
+  policy.value.dynamicEnabled = policy.value.purchasePricingMode === 'DYNAMIC' || policy.value.renewalPricingMode === 'DYNAMIC'
   saved.value = false
 }
 watch(() => [props.kind, props.productId], async (_, __, onCleanup) => {
@@ -58,7 +57,6 @@ async function save(): Promise<void> {
       <p>{{ t('pricing.reference', { amount: pricingMoney(policy.fixedPriceMinor) }) }}</p>
       <SwitchField :id="`pricing-purchase-${productId}`" v-model="purchase" :label="t('pricing.purchaseDynamic')" />
       <SwitchField v-if="kind === 'combo'" :id="`pricing-renewal-${productId}`" v-model="renewal" :label="t('pricing.renewalDynamic')" :help="t('pricing.legacyProtected')" />
-      <SwitchField :id="`pricing-discounts-${productId}`" v-model="discounts" :label="t('pricing.discounts')" />
       <dl class="pricing-settings__limits"><div><dt>{{ t('pricing.maxIncrease') }}</dt><dd>{{ t('pricing.autoPercent', { value: policy.maxIncreaseBps / 100 }) }}</dd></div><div><dt>{{ t('pricing.maxDiscount') }}</dt><dd>{{ t('pricing.autoPercent', { value: policy.maxDiscountBps / 100 }) }}</dd></div></dl>
       <p>{{ t('pricing.automaticLimits') }}</p>
       <UFormField :label="t('pricing.reason')" required><UInput v-model="reason" :maxlength="1000" class="w-full" /></UFormField>

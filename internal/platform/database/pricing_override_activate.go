@@ -11,6 +11,9 @@ import (
 )
 
 func activatePricingOverrideTx(ctx context.Context, tx *sql.Tx, actor string, in *PricingIntervention, now time.Time) error {
+	if !pricingCommands[in.Command] {
+		return ErrConflict
+	}
 	if err := pricingCommandEffectTx(ctx, tx, *in, actor, now); err != nil {
 		return err
 	}

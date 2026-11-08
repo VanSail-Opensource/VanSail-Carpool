@@ -9,9 +9,7 @@ type UserProductPrice struct {
 	BillingMode     string           `json:"billingMode"`
 	FixedPrice      Money            `json:"fixedPrice"`
 	PublicPrice     Money            `json:"publicPrice"`
-	PersonalPrice   Money            `json:"personalPrice"`
 	NetPrice        Money            `json:"netPrice"`
-	CampaignPrice   Money            `json:"campaignPrice"`
 	Coupons         []coupons.Grant  `json:"coupons"`
 	Decision        PricingDecision  `json:"decision"`
 	RenewalDecision *PricingDecision `json:"renewalDecision"`

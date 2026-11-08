@@ -9,8 +9,8 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-// PersonalizePricingCatalog shows owner decisions without wallet-based eligibility.
-func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c model.Catalog, now time.Time) (model.Catalog, error) {
+// ApplyCatalogPricing decorates public prices with ordinary coupon eligibility.
+func (s *Store) ApplyCatalogPricing(ctx context.Context, user string, c model.Catalog, now time.Time) (model.Catalog, error) {
 	var err error
 	ctx, err = s.pricingReadContext(ctx, user, now)
 	if err != nil {
@@ -19,7 +19,7 @@ func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c mo
 	batch := ctx.Value(pricingReadBatchKey{}).(*pricingReadBatch)
 	enabled := false
 	for _, p := range batch.Policies {
-		enabled = enabled || p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
+		enabled = enabled || p.DynamicEnabled && p.PurchaseMode == "DYNAMIC"
 	}
 	if !enabled {
 		return c, nil
@@ -30,12 +30,12 @@ func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c mo
 		for _, g := range p.IncludedSquads {
 			squads = append(squads, g.GroupID)
 		}
-		d, err := s.PreparePersonalPricing(ctx, user, "combo", p.ID, p.ID, squads, now)
+		d, err := s.PrepareCheckoutPricing(ctx, user, "combo", p.ID, p.ID, squads, now)
 		if err != nil {
 			return c, err
 		}
 		p.PricingDecision = &d
-		p.PriceTXBMinor = moneyMinor(d.PersonalPrice)
+		p.PriceTXBMinor = moneyMinor(d.PublicPrice)
 		p.Price = model.TXBMoney(p.PriceTXBMinor)
 	}
 	var current string
@@ -45,50 +45,13 @@ func (s *Store) PersonalizePricingCatalog(ctx context.Context, user string, c mo
 	}
 	for i := range c.Addons {
 		p := &c.Addons[i]
-		d, e := s.PreparePersonalPricing(ctx, user, "addon", p.GroupID, current, []string{p.GroupID}, now)
+		d, e := s.PrepareCheckoutPricing(ctx, user, "addon", p.GroupID, current, []string{p.GroupID}, now)
 		if e != nil {
 			return c, e
 		}
 		p.PricingDecision = &d
-		p.PriceTXBMinor = moneyMinor(d.PersonalPrice)
+		p.PriceTXBMinor = moneyMinor(d.PublicPrice)
 		p.Price = model.TXBMoney(p.PriceTXBMinor)
 	}
-	grants, err := s.pricingGrantScopes(ctx, now)
-	if err != nil {
-		return c, err
-	}
-	if len(grants) > 0 {
-		tx, e := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
-		if e != nil {
-			return c, e
-		}
-		defer tx.Rollback()
-		for i := range c.Combos {
-			p := &c.Combos[i]
-			if grants[user+":combo:"+p.ID] && p.PricingDecision.NetPrice.Minor == p.PricingDecision.PersonalPrice.Minor {
-				p.PriceTXBMinor, e = personalPricingTx(ctx, tx, user, "combo", p.ID, p.PriceTXBMinor, 1, "", false, now)
-				if e != nil {
-					return c, e
-				}
-				p.Price = model.TXBMoney(p.PriceTXBMinor)
-			}
-		}
-	}
 	return c, nil
-}
-
-func (s *Store) retryAttempt_PricingPAYGPersonalPrice(ctx context.Context, user, group string, public int64, now time.Time) (int64, error) {
-	grants, err := s.pricingGrantScopes(ctx, now)
-	if err != nil {
-		return 0, err
-	}
-	if !grants[user+":payg:"+group] {
-		return public, nil
-	}
-	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-	return personalPricingTx(ctx, tx, user, "payg", group, public, 1, "", false, now)
 }

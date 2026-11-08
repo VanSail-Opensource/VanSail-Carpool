@@ -35,5 +35,5 @@ func (s *Store) retryAttempt_HostPAYGRate(ctx context.Context, user, group strin
 			}
 		}
 	}
-	return personalPricingTx(ctx, tx, user, "payg", group, public, 1, "", false, now)
+	return public, nil
 }

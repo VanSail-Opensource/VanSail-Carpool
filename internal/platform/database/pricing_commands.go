@@ -97,11 +97,6 @@ func (s *Store) ExecutePricingModelAction(ctx context.Context, id string, now ti
 		return err
 	}
 	for _, t := range targets {
-		if t.kind == "combo" {
-			if err = s.TrainPricingRenewalResponse(ctx, t.id, now); err != nil {
-				return err
-			}
-		}
 		if err = s.PricingOptimizeProduct(ctx, t.kind, t.id, now); err != nil {
 			return err
 		}

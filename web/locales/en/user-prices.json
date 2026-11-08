@@ -1,6 +1,6 @@
 {
   "userPrices": {
-    "title": "Personal pricing and forecasts",
+    "title": "Prices, coupons and forecasts",
     "hint": "The coupon estimate uses the best eligible owned coupon once. Checkout shows the selected coupon and authoritative final charge. Pending or stale estimates are unavailable.",
     "status": "Decision",
     "statuses": {
@@ -15,8 +15,6 @@
     "version": "Decision version",
     "fixedPrice": "Fixed reference",
     "publicPrice": "Public base",
-    "personalPrice": "Personal base",
-    "campaignPrice": "Campaign price",
     "netPrice": "Best owned coupon estimate",
     "coupons": "Applicable coupons",
     "noCoupons": "No applicable coupons",

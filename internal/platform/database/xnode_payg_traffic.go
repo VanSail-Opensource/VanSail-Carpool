@@ -159,11 +159,7 @@ func (s *Store) retryAttempt_ObserveXNodePAYGConnections(ctx context.Context, no
 			}
 			return priceErr
 		}
-		personal, e := personalPricingTx(ctx, tx, a.UserID, "payg", a.GroupID, price, 1, "", false, now)
-		if e != nil {
-			return e
-		}
-		if personal <= 0 || a.BalanceMinor < personal {
+		if price <= 0 || a.BalanceMinor < price {
 			continue
 		}
 		a.UnitPriceMinor = price

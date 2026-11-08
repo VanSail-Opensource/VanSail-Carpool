@@ -72,7 +72,7 @@ function goToBalance(): void { void router.push({ path: '/home', query: { topUp:
         </div>
         <div class="catalog-checkout__details">
           <div v-if="quote" class="catalog-checkout__line">
-            <span>{{ $t('pricing.personalGross') }}</span>
+            <span>{{ $t('pricing.publicGross') }}</span>
             <strong>{{ formatCatalogMoney(quote.grossPrice) }}</strong>
           </div>
           <div v-if="quote" class="catalog-checkout__line">

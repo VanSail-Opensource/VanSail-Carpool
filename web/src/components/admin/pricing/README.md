@@ -30,8 +30,7 @@ and stacked mobile controls. No Telegram controls or initialization are imported
 - Provider cost editing is in the X-Node node settings, using the same versioned
   pricing API; analytical datasets remain available to exports and diagnostics.
 - `PricingInterventionForm.vue` sends typed, scoped, versioned, expiring commands.
-- `PricingInterventions.vue` shows the timeline and reasoned cancellation. Edits
-  and material discounts take effect directly and send queued notifications.
+- `PricingInterventions.vue` shows the timeline and reasoned cancellation. Edits take effect directly and send queued notifications.
 - `PricingRecordList.vue` displays bounded read-only traces and source facts.
 - `PricingExports.vue` streams ZIP data through the native file picker, offers
   typed CSV/JSONL, cancellation, scope filters and sensitive-export authorization.
@@ -45,7 +44,7 @@ read-only notice; dynamic pricing requires no terms approval.
 
 - `PricingDecisionFacts.vue`: Expanded decision versions, reasons, probability, model and validity facts.
 
-- `UserPricingAnalysis.vue`: Embeds all owner-specific product bases, coupon terms and forecasts directly on the user page.
+- `UserPricingAnalysis.vue`: Embeds public product bases and ordinary owned, coupon terms and forecasts directly on the user page.
 - `AdminUserPredictions.vue`: Loads an administrator-scoped user's historical and forecast traffic, including incomplete, pending, and error states, through `api/forecasts.ts`.
 
 - `useUserPrices.ts`: Cancels obsolete reads and appends explicit bounded pages without silently dropping products.
@@ -70,3 +69,8 @@ Checkout keeps the selected basket on a quote-version conflict and requires the
 existing confirm control to submit the newly displayed total. Calculations retry
 with bounded backoff, pause while hidden and expose manual retry after two
 minutes. No analytical cache authorizes money, coupon consumption or preferences.
+
+PERSONAL pricing is retired. Product policies expose public purchase and renewal
+modes only. Interventions cannot create targeted discount campaigns. User price
+analysis shows the fixed reference, public base and ordinary coupon estimate;
+historical financial traces remain available through scoped analytical exports.

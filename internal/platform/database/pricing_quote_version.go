@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 	"github.com/VanSail-Opensource/X-Node/pkg/compute"
@@ -32,7 +31,7 @@ func quoteEvidenceTx(ctx context.Context, tx *sql.Tx, user, coupon string, compo
 		if err != nil {
 			return nil, until, false, err
 		}
-		enabled := p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
+		enabled := p.DynamicEnabled && p.PurchaseMode == "DYNAMIC"
 		dynamic = dynamic || enabled
 		if enabled && c.Decision != nil && (c.Decision.Status == "PENDING" || c.Decision.Status == "STALE" || c.Decision.Status == "FAILED") {
 			return nil, until, dynamic, ErrPricingDecisionPending
@@ -55,42 +54,7 @@ func quoteEvidenceTx(ctx context.Context, tx *sql.Tx, user, coupon string, compo
 			until = *grant.Coupon.ExpiresAt
 		}
 	}
-	args := []any{}
-	for _, c := range components {
-		args = append(args, user+":"+c.Kind+":"+c.ID)
-	}
-	if len(args) == 0 {
-		return evidence, until, dynamic, nil
-	}
-	marks := placeholders(len(args))
-	timeStart := len(args) + 1
-	args = append(args, pricingStamp(now), pricingStamp(now))
-	rows, err := tx.QueryContext(ctx, `SELECT o.id,o.proposed_json,o.expected_version,o.expires_at,COALESCE((SELECT SUM(d.discount_minor) FROM pricing_discount_spend d WHERE d.override_id=o.id AND d.status IN ('RESERVED','CONSUMED')),0) FROM pricing_admin_overrides o WHERE o.command='PERSONAL_DISCOUNT' AND o.scope_type='user_product' AND o.scope_id IN (`+marks+fmt.Sprintf(`) AND o.status='ACTIVE' AND o.starts_at<=$%d AND o.expires_at>$%d ORDER BY o.id LIMIT 4097`, timeStart, timeStart+1), args...)
-	if err != nil {
-		return nil, until, dynamic, err
-	}
-	defer rows.Close()
-	count := 0
-	for rows.Next() {
-		var id, raw, expires string
-		var version, spent int64
-		if err = rows.Scan(&id, &raw, &version, &expires, &spent); err != nil {
-			return nil, until, dynamic, err
-		}
-		count++
-		if count > 4096 {
-			return nil, until, dynamic, pricing.WorkerResourceLimit
-		}
-		evidence = append(evidence, []any{id, raw, version, expires, spent})
-		end, e := parseStamp(expires)
-		if e != nil {
-			return nil, until, dynamic, e
-		}
-		if end.Before(until) {
-			until = end
-		}
-	}
-	return evidence, until, dynamic, rows.Err()
+	return evidence, until, dynamic, nil
 }
 
 func quoteDigest(evidence []any) (string, error) {

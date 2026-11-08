@@ -21,7 +21,6 @@ type pricingReadBatch struct {
 	User            string
 	Observation     pricing.ResponseObservation
 	FeatureComplete int
-	Economics       map[string]string
 	Watermark       string
 }
 
@@ -33,7 +32,7 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		return ctx, err
 	}
 	defer tx.Rollback()
-	batch := &pricingReadBatch{Policies: map[string]pricing.Policy{}, User: user, Grants: []coupons.Grant{}, Economics: map[string]string{}}
+	batch := &pricingReadBatch{Policies: map[string]pricing.Policy{}, User: user, Grants: []coupons.Grant{}}
 	rows, err := tx.QueryContext(ctx, pricingPolicySelect+" ORDER BY product_type,product_id LIMIT 4097")
 	if err != nil {
 		return ctx, err
@@ -87,44 +86,17 @@ func (s *Store) retryAttempt_pricingReadContext(ctx context.Context, user string
 		}
 
 	}
-	enabled := false
-	for _, p := range batch.Policies {
-		enabled = enabled || p.DynamicEnabled && (p.PurchaseMode == "DYNAMIC" || p.PersonalDiscounts)
-	}
-	if enabled {
-		rows, err = tx.QueryContext(ctx, `SELECT product_type,product_id,trace_json FROM (SELECT d.product_type,d.product_id,d.trace_json,ROW_NUMBER() OVER(PARTITION BY d.product_type,d.product_id ORDER BY d.generated_at DESC,d.id DESC) AS ordinal FROM pricing_decisions d JOIN pricing_product_settings p ON p.product_type=d.product_type AND p.product_id=d.product_id AND p.version=d.policy_version WHERE d.state='PUBLISHED' AND d.generated_at>=$1) latest WHERE ordinal=1 LIMIT 4097`, pricingStamp(now.Add(-24*time.Hour)))
-		if err != nil {
-			return ctx, err
-		}
-		for rows.Next() {
-			var kind, id, raw string
-			if err = rows.Scan(&kind, &id, &raw); err != nil {
-				rows.Close()
-				return ctx, err
-			}
-			if len(batch.Economics) >= 4096 {
-				rows.Close()
-				return ctx, pricing.WorkerResourceLimit
-			}
-			batch.Economics[kind+":"+id] = raw
-		}
-		err = rows.Err()
-		rows.Close()
-		if err != nil {
-			return ctx, err
-		}
-	}
 	return context.WithValue(ctx, pricingReadBatchKey{}, batch), nil
 }
 func scanPricingPolicy(row rowScanner) (pricing.Policy, error) {
 	var p pricing.Policy
-	var enabled, personal int
+	var enabled int
 	var updated string
-	err := row.Scan(&p.ProductType, &p.ProductID, &enabled, &p.PurchaseMode, &p.RenewalMode, &personal, &p.FixedPrice, &p.MaxIncreaseBPS, &p.MaxDiscountBPS, &p.OverrideStatus, &p.LastApprovedVersion, &p.Version, &p.UpdatedBy, &updated)
+	err := row.Scan(&p.ProductType, &p.ProductID, &enabled, &p.PurchaseMode, &p.RenewalMode, &p.FixedPrice, &p.MaxIncreaseBPS, &p.MaxDiscountBPS, &p.OverrideStatus, &p.LastApprovedVersion, &p.Version, &p.UpdatedBy, &updated)
 	if err != nil {
 		return p, err
 	}
-	p.DynamicEnabled, p.PersonalDiscounts = enabled == 1, personal == 1
+	p.DynamicEnabled = enabled == 1 && (p.PurchaseMode == "DYNAMIC" || p.RenewalMode == "DYNAMIC")
 	p.UpdatedAt, err = parseStamp(updated)
 	return p, err
 }

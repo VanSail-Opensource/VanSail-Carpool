@@ -16,7 +16,6 @@ const PAYGWindow = 72 * time.Hour
 const paygPrefix = "member-payg-"
 
 type PAYGAccount struct {
-	PersonalPricing                                         bool `json:"-"`
 	Disabled                                                bool
 	ProxyUserID                                             int64
 	UserID, GroupID, NodeID, PeriodID                       string

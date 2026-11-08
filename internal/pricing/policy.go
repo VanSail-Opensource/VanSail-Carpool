@@ -19,7 +19,6 @@ type Policy struct {
 	DynamicEnabled      bool      `json:"dynamicEnabled"`
 	PurchaseMode        string    `json:"purchasePricingMode"`
 	RenewalMode         string    `json:"renewalPricingMode"`
-	PersonalDiscounts   bool      `json:"personalDiscountsEnabled"`
 	FixedPrice          int64     `json:"fixedPriceMinor,string"`
 	MaxIncreaseBPS      int64     `json:"maxIncreaseBps"`
 	MaxDiscountBPS      int64     `json:"maxDiscountBps"`

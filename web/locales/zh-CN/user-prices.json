@@ -1,6 +1,6 @@
 {
   "userPrices": {
-    "title": "个人定价与预测",
+    "title": "价格、优惠券与预测",
     "hint": "估算仅对整单使用一次持有的最优适用优惠券。结算时展示所选优惠券和最终应付金额。待计算或过期的估算不视为可用价格。",
     "status": "决策",
     "statuses": {
@@ -15,8 +15,6 @@
     "version": "决策版本",
     "fixedPrice": "固定参考价",
     "publicPrice": "公开基础价",
-    "personalPrice": "个人基础价",
-    "campaignPrice": "活动价",
     "netPrice": "持有最优优惠券估算",
     "coupons": "适用优惠券",
     "noCoupons": "无适用优惠券",

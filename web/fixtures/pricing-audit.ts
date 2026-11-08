@@ -21,7 +21,7 @@ const view = params.get('view') ?? 'policy'
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 let policy: PricingPolicy = {
   productType: 'combo', productId: 'audit-combo', dynamicEnabled: false,
-  purchasePricingMode: 'FIXED', renewalPricingMode: 'FIXED', personalDiscountsEnabled: false,
+  purchasePricingMode: 'FIXED', renewalPricingMode: 'FIXED',
   fixedPriceMinor: '1000', maxIncreaseBps: 0, maxDiscountBps: 0,
   overrideStatus: 'NONE', lastApprovedPriceVersion: '', version: 0, updatedBy: '', updatedAt: new Date().toISOString(),
 }

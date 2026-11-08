@@ -36,7 +36,10 @@ func reservePricingRenewalBatchTx(ctx context.Context, tx *sql.Tx, user, purchas
 	if err = tx.QueryRowContext(ctx, `SELECT proposed_json FROM pricing_admin_overrides WHERE id=$1 FOR UPDATE`, override).Scan(&raw); err != nil {
 		return err
 	}
-	var grant PricingIntervention
+	// Decode only the historical reservation obligation; new campaigns cannot be created.
+	var grant struct {
+		Budget int64 `json:"budgetMinor,string"`
+	}
 	if err = json.Unmarshal([]byte(raw), &grant); err != nil {
 		return err
 	}
