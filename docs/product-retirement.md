@@ -41,3 +41,5 @@ Schema 40 adds a null-default removal timestamp and extends binding/compile guar
 Offline participants and unfinished accounting keep the same queued receipt with a specific dependency. Attempts stay monotonic so an older callback cannot complete a recovered operation. Historical traffic, financial facts and uncertain native command receipts are preserved.
 
 Node-removal validation: Go vet, typecheck, ESLint, structure/localization audit and production Vite build pass. Chrome DevTools exercised constructed bound-node removal through a succeeded receipt and refreshed list, queued accounting dependencies, pending controls, loading/empty/error/retry, English/Chinese, 390px mobile and 1440px desktop. No reviewed console or API-request failures. Hosted database/routing regressions validate runtime behavior; no local automated suites were run.
+
+Traffic-mode account registration takes the same node admission lock before creating its period participation. This closes the separate registration race without preventing late traffic journal ingestion.

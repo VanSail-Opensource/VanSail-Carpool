@@ -86,6 +86,15 @@ func (s *Store) retryAttempt_SaveXNodePAYGAccount(ctx context.Context, a xnode.P
 		return err
 	}
 	defer tx.Rollback()
+	// Registration is admission; delayed traffic ingestion keeps its separate
+	// accounting path and can still record evidence after removal starts.
+	var admitting bool
+	if err = tx.QueryRowContext(ctx, `SELECT removing_at IS NULL AND retired_at IS NULL FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, a.NodeID).Scan(&admitting); err != nil {
+		return err
+	}
+	if !admitting {
+		return xnode.ErrConflict
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_payg_accounts(proxy_user_id,user_id,group_id,node_id,period_id,unit_price_minor) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,group_id,node_id) DO NOTHING`, a.ProxyUserID, a.UserID, a.GroupID, a.NodeID, a.PeriodID, a.UnitPriceMinor)
 	if err != nil {
 		return err

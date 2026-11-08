@@ -39,6 +39,10 @@ func TestNodeRemovalPrunesBindingsAndRetainsHistory(t *testing.T) {
 	if err := s.TrackXNodePeriodNode(ctx, period.ID, "node"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("late admission: %v", err)
 	}
+	account := xnode.PAYGAccount{ProxyUserID: identity.ProxyUserID, UserID: identity.UserID, GroupID: group.ID, NodeID: "node", PeriodID: period.ID, UnitPriceMinor: 100}
+	if err := s.SaveXNodePAYGAccount(ctx, account); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatalf("late traffic-mode registration: %v", err)
+	}
 	if _, err := s.FinishXNodeRemoval(ctx, "node", version(), identity.UserID, "pending"); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatalf("pending accounting: %v", err)
 	}
