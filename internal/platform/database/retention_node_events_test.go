@@ -63,7 +63,7 @@ func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
 	member, purchase := createAdminWorkflowPurchase(t, store, 31932, combo, old, squad.GroupID)
 	legacy, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{
 		ActorUserID: actor.ID, OwnerUserID: member.ID, Kind: providerops.KindLegacyOutageSync,
-		IdempotencyKey: "legacy-approved", RequestFingerprint: "legacy-approved",
+		IdempotencyKey: "legacy-approved", RequestFingerprint: "legacy-approved-fingerprint",
 		Items: []providerops.ItemInput{{Key: member.ID, TargetType: "user", TargetID: member.ID}},
 	}, old)
 	if err != nil {
