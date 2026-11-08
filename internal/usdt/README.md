@@ -131,3 +131,5 @@ are unchanged. Lifecycle logs memory and goroutines once per minute.
 `token_probe_test.go` verifies that queued native USDC probes use each pinned EVM contract and reject unexpected precision.
 
 `memory_soak_test.go`, `memory_soak_fixture_test.go` and `memory_soak_scanner_test.go` stress queued multi-network scanner startup, transfer proof batches, cancellation and cleanup in the hosted 256 MiB container gate. No retired proxy inventory code is needed.
+
+The soak compares retained heap after two stopped-worker garbage collections, so JSON/HTTP `sync.Pool` victim buffers are released consistently before sampling. The 8 MiB retained-growth limit, 224 MiB peak RSS limit, goroutine bound and 256 MiB no-swap container remain unchanged. In Actions run 42465600146, a single-GC sample was 8,957,392 bytes while the final collected profile retained about 513 KiB and peak RSS stayed 72,990,720 bytes; allocation stacks were dominated by synthetic JSON RPC generation/decoding. This is a measurement correction, not a looser memory budget.

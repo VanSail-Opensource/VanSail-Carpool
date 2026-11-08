@@ -28,6 +28,10 @@ func TestUSDTMemorySoak(t *testing.T) {
 		}
 		server.CloseClientConnections()
 		waitHandlers()
+		// A first collection moves JSON/HTTP sync.Pool buffers into victim caches;
+		// a second releases those reusable buffers. Compare retained state after
+		// both, matching testing's final heap profile, without relaxing RSS limits.
+		runtime.GC()
 		runtime.GC()
 		var memory runtime.MemStats
 		runtime.ReadMemStats(&memory)
