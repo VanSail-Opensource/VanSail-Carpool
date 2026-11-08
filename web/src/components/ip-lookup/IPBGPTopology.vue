@@ -7,21 +7,31 @@ import { nodeWidth, nodeHeight } from './bgpLayout'
 import { useBGPGraph } from './useBGPGraph'
 const props = defineProps<{ topology: IPLookupBGPTopology }>()
 const labelClip = `bgp-label-${useId()}`
+const viewportID = `bgp-viewport-${useId()}`
+const instructionID = `bgp-instructions-${useId()}`
 const viewport = useTemplateRef<globalThis.HTMLDivElement>('viewport')
-const { scale, offset, viewportSize, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, edgeGroups, visibleEdges, fit, select, focusRoute, wheel, pointerDown, pointerMove, pointerUp, keyboard } = useBGPGraph(() => props.topology, viewport)
+const { scale, offset, viewportSize, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, edgeGroups, visibleEdges, fit, zoom, select, focusRoute, interactionEnabled, setInteraction, wheel, pointerDown, pointerMove, pointerUp, keyboard } = useBGPGraph(() => props.topology, viewport)
 const selectedConnections = computed(() => layout.value.edges.filter(edge => edge.from === selectedASN.value || edge.to === selectedASN.value))
 const nameLimit = computed(() => Math.max(4, Math.floor((nodeWidth - 20) / (Math.min(20, 10 / scale.value) * 0.53))))
+function exitInteraction(event: globalThis.KeyboardEvent) {
+  if (!interactionEnabled.value) return
+  event.preventDefault(); event.stopPropagation(); setInteraction(false)
+}
 </script>
 
 <template>
-  <section class="bgp-topology">
+  <section class="bgp-topology" @keydown.esc="exitInteraction">
     <header><h3>{{ $t('ipLookupLive.bgpTitle') }}</h3><code v-if="topology.prefix">{{ topology.prefix }}</code></header>
     <template v-if="topology.nodes.length">
       <div class="graph-toolbar">
         <span>{{ $t('ipLookupLive.graph.count', { shown: layout.nodes.length, total: topology.nodes.length }) }}</span>
+        <UButton color="neutral" variant="ghost" icon="i-ph-minus" :aria-label="$t('ipLookupLive.graph.zoomOut')" :title="$t('ipLookupLive.graph.zoomOut')" data-haptic="zoom" @click="zoom(1 / 1.2)" />
+        <UButton color="neutral" variant="ghost" icon="i-ph-plus" :aria-label="$t('ipLookupLive.graph.zoomIn')" :title="$t('ipLookupLive.graph.zoomIn')" data-haptic="zoom" @click="zoom(1.2)" />
         <UButton color="neutral" variant="ghost" icon="i-ph-corners-out" :aria-label="$t('ipLookupLive.graph.reset')" :title="$t('ipLookupLive.graph.reset')" @click="fit" />
+        <UButton color="neutral" :variant="interactionEnabled ? 'soft' : 'ghost'" :label="$t(interactionEnabled ? 'ipLookupLive.graph.done' : 'ipLookupLive.graph.interact')" :aria-pressed="interactionEnabled" :aria-controls="viewportID" :data-haptic="interactionEnabled ? 'dismiss' : 'open'" @click="setInteraction(!interactionEnabled)" />
       </div>
-      <div ref="viewport" class="graph-viewport" tabindex="0" role="region" :aria-label="$t('ipLookupLive.graph.instructions')" @wheel="wheel" @pointerdown="pointerDown" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @keydown="keyboard">
+      <p :id="instructionID" class="graph-note graph-instructions" aria-live="polite">{{ $t(interactionEnabled ? 'ipLookupLive.graph.interactionHint' : 'ipLookupLive.graph.scrollHint') }}</p>
+      <div :id="viewportID" ref="viewport" class="graph-viewport" :class="{ 'graph-viewport--interactive': interactionEnabled }" tabindex="0" role="region" :aria-label="$t('ipLookupLive.bgpTitle')" :aria-describedby="instructionID" @wheel="wheel" @pointerdown="pointerDown" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @keydown="keyboard">
         <svg :viewBox="`0 0 ${viewportSize.width} ${viewportSize.height}`" :aria-label="$t('ipLookupLive.bgpTitle')">
           <defs><clipPath :id="labelClip" clipPathUnits="userSpaceOnUse"><rect x="8" y="5" :width="nodeWidth - 16" :height="nodeHeight - 10" /></clipPath></defs>
           <g class="graph-scene" :transform="`translate(${offset.x}, ${offset.y}) scale(${scale})`">
@@ -52,7 +62,9 @@ const nameLimit = computed(() => Math.max(4, Math.floor((nodeWidth - 20) / (Math
 .bgp-topology header code { font-size: 0.78rem; }
 .graph-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-block: 0.55rem; }
 .graph-toolbar > span { color: var(--text-muted); font-size: 0.7rem; margin-left: auto; white-space: nowrap; }
-.graph-viewport { height: clamp(440px, 65svh, 600px); overflow: hidden; position: relative; touch-action: none; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: grab; }
+.graph-viewport { height: clamp(440px, 65svh, 600px); overflow: hidden; position: relative; touch-action: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; cursor: grab; }
+.graph-viewport--interactive { touch-action: none; overscroll-behavior: contain; }
+.graph-instructions { margin-block: 0 0.5rem; }
 .graph-viewport:active { cursor: grabbing; }
 .graph-viewport:focus-visible { outline: 2px solid var(--ui-info); outline-offset: 2px; }
 .graph-viewport svg { display: block; width: 100%; height: 100%; user-select: none; }

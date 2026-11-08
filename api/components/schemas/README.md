@@ -1,5 +1,10 @@
 # Schema shards
 
+`usage-breakdown.yaml` defines owner-scoped raw byte history, reduced rational
+minor-unit costs, forward coverage, positive physical-node counts and preserved
+omitted totals. Unallocated hourly/extra charges and unavailable legacy terms
+remain explicit; drawing and display rounding cannot alter financial facts.
+
 `xnode-firewall-records.yaml` describes nested firewall filters, active reports,
 master-authorized bans and filter-bound paginated search results.
 

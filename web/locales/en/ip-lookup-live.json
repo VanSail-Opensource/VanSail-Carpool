@@ -62,8 +62,14 @@
     },
     "graph": {
       "reset": "Fit graph",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "interact": "Interact",
+      "done": "Done",
+      "scrollHint": "Scroll the page normally. Choose Interact to pan or pinch the graph.",
+      "interactionHint": "Drag or pinch to explore. Choose Done or press Escape to resume page scrolling.",
       "unknownName": "Name unavailable",
-      "instructions": "Scroll or pinch to zoom. Drag to pan. Keyboard: arrows, + / -, 0 to fit.",
+      "instructions": "Mouse drag pans the graph. Zoom with the controls, or choose Interact for touch and wheel gestures. Keyboard: arrows, + / -, 0 to fit; Escape exits interaction.",
       "truncated": "Results are bounded; some paths or origins were omitted.",
       "context": "The graph retains three observed hops and observed T1 endpoints. Dashed paths summarize omitted hops; they do not imply adjacency.",
       "relationship": {

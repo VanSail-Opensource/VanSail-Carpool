@@ -10,4 +10,21 @@ Network context and streaming: `IPASNDetails.vue`, `IPBGPFocus.vue`, `IPBGPTopol
 
 Feature implementation and contracts: `IPLocationMap.vue`, `IPLookupForm.vue`, `IPLookupPage.vue`, `IPLookupProgress.vue`, `IPLookupProgressTasks.vue`, `IPLookupReport.vue`, `IPRPKIStatus.vue`, `IPRefusals.vue`, `IPShodanDetails.vue`, `IPTrafficBars.vue`, `IPTransferHistory.vue`, `map.ts`, `presentation.ts`, `refusalPresentation.ts`, `reportPresentation.ts`, `useBGPGraph.ts`, `useGraphViewport.ts`, `useIPLookup.ts`, `useSharedIPProgress.ts`.
 
-Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`.
+Hosted regression coverage: `bgpGraph.test.ts`, `bgpLayout.test.ts`, `presentation.test.ts`, `refusalPresentation.test.ts`, `useGraphViewport.test.ts`, `IPBGPTopology.test.ts`, `useIPLookup.test.ts`, `useLiveIPDetails.test.ts`.
+
+`useGraphViewport.ts` leaves wheel scrolling, browser pinch zoom and touch page
+scrolling native by default. Mouse drag, centered toolbar zoom and focused
+keyboard controls remain available. `IPBGPTopology.vue` exposes a localized,
+pressed-state interaction toggle for graph touch/pinch and wheel zoom; Done,
+Escape, a new topology and disposal release pointer captures. The interaction
+class changes `touch-action` before a new gesture begins, never mid-gesture.
+`useBGPGraph.ts` owns fitting and viewport size; graph input has no global touch
+or wheel listener and does not change Telegram's swipe policy.
+
+Chrome DevTools inspection on 2026-11-09 covered mobile/desktop, EN/Chinese,
+loading/populated/empty/provider-error states, native mouse drag, toolbar/keyboard
+controls and Escape. Default wheel/touch events were not canceled; PageDown
+scrolled the sole page container from the focused graph. Explicit interaction
+contained graph wheel input while Ctrl-wheel retained browser zoom. Browser
+emulation does not verify Telegram iOS/Android/desktop host gestures; those remain
+physical-device acceptance checks. No swipe suppression was enabled speculatively.

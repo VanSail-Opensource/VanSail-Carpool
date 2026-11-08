@@ -1,5 +1,8 @@
 # Application store
 
+`usage_breakdown.md` documents the consistent member projection, exact rational
+costs, lifecycle boundaries, forward coverage and hosted regression scope.
+
 Account closure uses the evidence policy in `account_cleanup.md`.
 `account_purge_jobs.go` supersedes only proven unattempted operations;
 `account_purge_dependencies.go` retains unknown provider outcomes and live
@@ -1413,3 +1416,17 @@ and credit-proof replay, a skipped-generation rejoin, mixed eligible rows,
 generation conflicts, and an actual insert-versus-final-purge SSI race. Suppressed
 presentation never changes wallet receipts, byte-credit obligations or journal
 acknowledgment rules.
+
+`usage_breakdown.go`, `usage_breakdown_nodes.go`, `usage_breakdown_amounts.go`,
+`usage_breakdown_costs.go`, `usage_breakdown_legacy.go` and
+`usage_breakdown_coverage.go` implement the read-only owner snapshot documented
+in [usage_breakdown.md](usage_breakdown.md). Node aggregation precedes limiting;
+exact rational estimates, unallocated receipts and omitted totals conserve value.
+`usage_breakdown_fixture_test.go`, `usage_breakdown_test.go`,
+`usage_breakdown_financial_test.go`, `usage_breakdown_bounds_test.go`,
+`usage_breakdown_coverage_test.go` and `usage_breakdown_snapshot_test.go` cover
+accepted journal replay, raw modes, precise charges, unknown/zero-price terms,
+addon totals, owner/rejoin isolation, lifecycle partial minutes, coverage,
+stable truncation and concurrent snapshot consistency in hosted PostgreSQL.
+`usage_breakdown_closed_coverage_test.go` keeps loss-only closed combo/PAYG
+participants visible for their overlapping lifecycle window.

@@ -1,0 +1,74 @@
+RationalMinor:
+  type: object
+  additionalProperties: false
+  description: Exact nonnegative TXB minor units as a reduced fraction. Zero is 0/1; display rounding never changes accounting.
+  required: [numerator, denominator]
+  properties:
+    numerator: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    denominator: {type: string, pattern: '^[1-9][0-9]*$', maxLength: 1024}
+UsageCoverage:
+  type: object
+  additionalProperties: false
+  required: [since, complete, gapCount, truncated]
+  properties:
+    since: {type: [string, 'null'], format: date-time, description: First forward-observed reporting coverage; earlier minute history is not reconstructed.}
+    complete: {type: boolean}
+    gapCount: {type: string, pattern: '^[0-9]+$'}
+    truncated: {type: boolean}
+UsageBreakdownNode:
+  type: object
+  additionalProperties: false
+  required: [nodeId, name, countryCode, uploadBytes, downloadBytes, costMinor]
+  properties:
+    nodeId: {type: string}
+    name: {type: string}
+    countryCode: {type: string}
+    uploadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    downloadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    costMinor: {$ref: '#/RationalMinor', description: Actual node-attributed traffic charges plus this node's share of the current fixed-term purchase estimate.}
+UsageBreakdownTotals:
+  type: object
+  additionalProperties: false
+  required: [uploadBytes, downloadBytes, costMinor]
+  properties:
+    uploadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    downloadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    costMinor: {$ref: '#/RationalMinor'}
+UsageBreakdownPositiveNodes:
+  type: object
+  additionalProperties: false
+  description: Positive physical node counts before response limits or Others grouping. Unallocated cost is not a node.
+  required: [traffic, cost]
+  properties:
+    traffic: {type: string, pattern: '^[0-9]+$'}
+    cost: {type: string, pattern: '^[0-9]+$'}
+UsageLegacyEstimate:
+  type: object
+  additionalProperties: false
+  required: [status, amountMinor]
+  properties:
+    status: {type: string, enum: [none, available, original_term_unknown]}
+    amountMinor:
+      description: Paid price multiplied by 259200 seconds divided by original purchased term seconds. Null when no current purchase or its original duration is unknown.
+      anyOf: [{$ref: '#/RationalMinor'}, {type: 'null'}]
+UsageBreakdownCost:
+  type: object
+  additionalProperties: false
+  required: [actualMinor, legacy, knownTotalMinor, unallocatedMinor]
+  properties:
+    actualMinor: {type: string, pattern: '^[0-9]+$', maxLength: 1024, description: Exact actual rolling-window traffic, hourly and extra-credit charges.}
+    legacy: {$ref: '#/UsageLegacyEstimate'}
+    knownTotalMinor: {$ref: '#/RationalMinor', description: Actual charges plus the available fixed-term estimate; an unknown original term is explicitly excluded.}
+    unallocatedMinor: {$ref: '#/RationalMinor', description: Account-wide hourly and extra-credit charges, plus the fixed-term estimate when its purchase has no recorded traffic.}
+UsageBreakdown:
+  type: object
+  additionalProperties: false
+  required: [from, to, coverage, nodes, omitted, positiveNodes, cost]
+  properties:
+    from: {type: string, format: date-time, description: UTC lower bound; traffic retains recorded minute-bucket precision.}
+    to: {type: string, format: date-time}
+    coverage: {$ref: '#/UsageCoverage'}
+    nodes: {type: array, maxItems: 128, items: {$ref: '#/UsageBreakdownNode'}}
+    omitted: {$ref: '#/UsageBreakdownTotals', description: Exact totals beyond the first 128 stable node IDs. No artificial node identity is introduced.}
+    positiveNodes: {$ref: '#/UsageBreakdownPositiveNodes'}
+    cost: {$ref: '#/UsageBreakdownCost'}

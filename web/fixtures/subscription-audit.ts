@@ -4,7 +4,8 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { api } from '@/api/client'
-import { paygApi } from '@/api/payg'
+import { usageBreakdownApi } from '@/api/usageBreakdown'
+import { usageBreakdownFixture } from './usage-breakdown-data'
 import { pricingApi } from '@/api/pricing'
 import { ApiError } from '@/api/http'
 import { subscriptionApi, type MemberSubscription } from '@/api/subscription'
@@ -28,23 +29,18 @@ xnodeMemberApi.metrics = async () => {
   if (params.has('slow')) await new Promise(resolve => setTimeout(resolve, 1200))
   return { activityStatus: params.has('unknown') ? 'unavailable' : params.has('offline') ? 'offline' : 'online', activityExpiresAt: params.has('unknown') ? null : new Date(Date.now() + (params.has('expire') ? 1000 : 15000)).toISOString(), connections: params.has('offline') ? 0 : 3, uploadBytesPerSecond: params.has('offline') ? 0 : 1000, downloadBytesPerSecond: 0, limited: params.has('policy-expired'), incomplete: params.has('unknown'), reasons: params.has('policy-expired') ? [{ nodeId: 'hdnl', reason: 'expired', scope: 'new_connection' }] : [], fetchedAt: new Date().toISOString() }
 }
-paygApi.history = async () => {
+let usageReads = 0
+usageBreakdownApi.get = async () => {
+ usageReads++
  if (params.has('history-slow')) await new Promise(resolve => setTimeout(resolve,Number(params.get('history-slow')) || 1800))
  if (params.has('history-error')) throw new ApiError(503,{code:'XNODE_UNAVAILABLE',message:''})
- const nodes = params.has('history-shares') ? [
-  { nodeId:'major',name:'Tokyo primary',countryCode:'JP',uploadBytes:'9800',downloadBytes:'0',spentMinor:'5000' },
-  { nodeId:'threshold',name:'Osaka threshold',countryCode:'JP',uploadBytes:'100',downloadBytes:'0',spentMinor:'4900' },
-  { nodeId:'small',name:'Frankfurt small share',countryCode:'DE',uploadBytes:'99',downloadBytes:'0',spentMinor:'99' },
-  { nodeId:'tiny',name:'London tiny share',countryCode:'GB',uploadBytes:'1',downloadBytes:'0',spentMinor:'1' },
- ] : [
-  {nodeId:'tokyo',name:'Tokyo native',countryCode:'JP',uploadBytes:'9007199254740993',downloadBytes:'1024'},
-  {nodeId:'retired',name:'Frankfurt historical',countryCode:'DE',uploadBytes:'12345678900000000',downloadBytes:'5432109876543210'},
- ]
- return { from:new Date(Date.now()-72*3600000).toISOString(),to:new Date(Date.now()-(params.has('history-stale')?300000:0)).toISOString(),hours:[],truncated:params.has('history-truncated'),costAvailable:params.has('history-shares'),nodes:params.has('history-empty')?[]:nodes }
+ const flags = new URLSearchParams(params.has('history-shares') ? 'grouping' : 'large')
+ for (const [previous, next] of [['history-empty','empty'],['history-stale','stale'],['history-truncated','omitted']] as const) if (params.has(previous)) flags.set(next, '')
+ return usageBreakdownFixture(flags)
 }
 if (params.has('telegram')) Object.assign(window, { Telegram: { WebApp: { platform: 'ios', version: '9.0', initData: '', initDataUnsafe: {}, BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} } } } })
 const hostNames: Record<string, string> = {}
-const state = { reads: 0, summaryReads: 0, revocations: 0, saves: 0, checks: 0, resolves: [] as string[], savedConfig: null as unknown, failure: params.has('error') }
+const state = { reads: 0, summaryReads: 0, revocations: 0, saves: 0, checks: 0, resolves: [] as string[], savedConfig: null as unknown, failure: params.has('error'), get usageReads() { return usageReads } }
 const now = Date.now()
 const at = (offset: number) => new Date(now + offset).toISOString()
 const day = 86_400_000
@@ -67,18 +63,18 @@ subscriptionApi.subscription = async () => { state.reads++; await delay(); retur
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ eligible:false,reason:'FIXTURE',amount:{currency:'TXB',minor:'0',display:'0.00 TXB'} }) as never
 api.getAutoRenewal = async () => ({ purchaseId:'fixture-purchase',enabled:true,canEnable:true,ineligibleReason:null,grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},discount:{currency:'TXB',minor:'0',display:'0.00 TXB'},netPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},scheduledAt:at(23*day),nextCycleEndsAt:at(53*day) })
 pricingApi.renewalInfo = async () => ({ policy: { dynamicEnabled: false }, quote: null, graceSeconds: 0 }) as never
-api.getCommunityAccess = async () => ({ activeCombo: !params.has('inactive') })
+api.getCommunityAccess = async () => ({ activeCombo: !params.has('inactive') && (!params.has('zero-balance') || params.has('combo')) })
 const fixturePurchase = { id:'fixture-purchase',comboId:'fixture-combo',comboName:'Tokyo monthly',price:{currency:'TXB',minor:'1000',display:'10.00 TXB'},grossPrice:{currency:'TXB',minor:'1000',display:'10.00 TXB'},couponDiscount:{currency:'TXB',minor:'0',display:'0.00 TXB'},couponGrantId:null,validFrom:at(-7*day),validUntil:at(23*day),status:'active',autoRenewEnabled:true,trafficLimitBytes:'100000000000',resetStrategy:'MONTH_ROLLING',squadUuids:['international'],createdAt:at(-7*day),updatedAt:at(0) }
 api.getDashboard = async () => {
   if (params.has('home-slow')) await new Promise(resolve => setTimeout(resolve, 10_000))
   if (params.has('home-error')) throw new ApiError(502, { code: 'DASHBOARD_UNAVAILABLE', message: '' })
-  return ({ user: {}, balance: { currency: 'TXB', minor: '12345', display: '123.45 TXB' }, activePurchase: params.has('combo') ? fixturePurchase : null, queuedPurchase: null, statisticsStale: false, fetchedAt: at(0), subscriptionUrl: 'https://subscription.example/import', statistics: { usedTrafficBytes: '12345678900', lifetimeTrafficBytes: '22345678900', trafficLimitBytes: '100000000000', onlineAt: at(0), lastTrafficResetAt: params.has('noreset') ? null : at(-day), categories: [], sparklineData: [], topNodes: [] } }) as never
+  return ({ user: {}, balance: { currency: 'TXB', minor: params.has('zero-balance') ? '0' : '12345', display: params.has('zero-balance') ? '0.00 TXB' : '123.45 TXB' }, activePurchase: params.has('combo') ? fixturePurchase : null, queuedPurchase: null, statisticsStale: false, fetchedAt: at(0), subscriptionUrl: 'https://subscription.example/import', statistics: { usedTrafficBytes: '12345678900', lifetimeTrafficBytes: '22345678900', trafficLimitBytes: '100000000000', onlineAt: at(0), lastTrafficResetAt: params.has('noreset') ? null : at(-day), categories: [], sparklineData: [], topNodes: [] } }) as never
 }
 api.getCatalog = async () => ({ combos: [], addons: [], nodes: [] })
 api.getBalance = async () => {
   if (params.has('balance-error')) throw new ApiError(503, { code: 'UNAVAILABLE', message: '' })
   const money = (minor: string) => ({ currency: 'TXB' as const, minor, display: '' })
-  return { balance: money('12345'), paymentMethods: [], pendingPaymentOrder: null, addAmountLimits: { minimum: money('100'), maximum: money('1000000'), updatedAt: at(0) } }
+  return { balance: money(params.has('zero-balance') ? '0' : '12345'), paymentMethods: [], pendingPaymentOrder: null, addAmountLimits: { minimum: money('100'), maximum: money('1000000'), updatedAt: at(0) } }
 }
 api.revokeSubscription = async () => { state.revocations++; return { id: 'audit-revoke', kind: 'subscription_revoke', status: 'queued', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: null } }
 memberOperationsApi.getOperation = async () => ({ id: 'audit-revoke', kind: 'subscription_revoke', status: 'succeeded', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: at(0) })

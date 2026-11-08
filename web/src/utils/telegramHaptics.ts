@@ -88,10 +88,5 @@ export function notifyHaptic(type: 'error' | 'success' | 'warning'): void {
 }
 
 export function notifyBetOutcome(outcome: 'win' | 'loss'): void {
-  const app = getTelegramWebApp()
-  if (!app?.HapticFeedback || !supportsTelegramVersion('6.1')) return
-  tryTelegramCall(() => {
-    app.HapticFeedback?.impactOccurred(outcome === 'win' ? impactByIntent.confirm : impactByIntent.action)
-    app.HapticFeedback?.notificationOccurred(outcome === 'win' ? 'success' : 'warning')
-  })
+  notifyHaptic(outcome === 'win' ? 'success' : 'warning')
 }

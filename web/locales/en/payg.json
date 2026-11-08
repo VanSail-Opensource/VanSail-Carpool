@@ -1,18 +1,4 @@
 {
-  "paygHistory": {
-    "title": "PAYG usage",
-    "hint": "PAYG-only shares by node over the last 72 hours.",
-    "measure": "PAYG percentage view",
-    "trafficShare": "Traffic %",
-    "costShare": "Cost %",
-    "others": "Others",
-    "costEmpty": "No PAYG charges were recorded in this window.",
-    "costUnavailable": "Recorded PAYG costs are temporarily unavailable.",
-    "empty": "No traffic is recorded in the retained history.",
-    "loadFailed": "PAYG history could not be loaded.",
-    "stale": "Showing the last available history. Refresh to update it.",
-    "truncated": "History is truncated. Shares cover only the retained node records."
-  },
   "payg": {
     "title": "Charge by traffic",
     "combo": "Charge by hour",

@@ -1,5 +1,20 @@
 # Constructed browser fixtures
 
+`UsageBreakdownAudit.vue`, `usage-breakdown-audit.ts`, `usage-breakdown-data.ts`
+and `usage-breakdown-audit.html` mount the real member panel and Unovis chart.
+The shared signed transport intercepts only `/api/v1/usage/breakdown` with
+constructed data. `interaction-feedback.ts` provides the same bounded recording
+SDK/delegated listener used by other interaction fixtures; browser mode omits it.
+Add `zh`, `light`, `browser`, `slow=1500`, `error`, `invalid`, `invalid-total`,
+`empty`, `one`, `one-traffic`, `one-cost`, `unallocated`, `hourly-only`,
+`unknown-term`, `large`, `tiny`, `grouping`, `omitted`, `truncated`, `incomplete`,
+`no-since`, `gaps` or `stale`. `window.__usageBreakdownAudit` exposes synthetic
+calls, feedback, parameters and the last snapshot; set `recover=true` before
+retrying an injected error. No wallet, configuration or upstream service changes.
+The existing `subscription-audit.html?mode=home&zero-balance` case also requests
+the new history independently of a live purchase/wallet; `__subscriptionAudit`
+reports `usageReads`. Previous `history-*` fixture controls retain their meaning.
+
 `browser-auth-audit.html?recovery` mounts the actual member session bootstrap and
 `AuthGate` against a synthetic `409 ACCOUNT_RECOVERY_PENDING`; add `zh` for
 Chinese. Retry repeats only the synthetic exchange (`__browserAuthAudit.exchanges`)
@@ -103,6 +118,7 @@ full-width community layout with `locked`, `joined`, `slow` and `error` states.
 - `LuckyAudit.vue` mounts the member Activity page in Nuxt UI without authentication.
 - `lucky-audit.ts` supplies a local Activity overview and controllable draw response through `window.__audit`.
 - `lucky-audit.html` opens the fixture at `/fixtures/lucky-audit.html` while the Vite development server runs.
+- `interaction-feedback.ts` installs the real delegated click listener against a constructed Telegram SDK, records haptic/closing/swipe calls and disposes the listener on page exit. It stays inactive for browser administration. The lucky fixture exposes `__audit.feedback`; add `bet`, `loss` or `zh` for the actual bet flow and bilingual controls. `slow`, `empty` and `error` cover initial states; set `__audit.loadFailure=false` before retrying a read failure. `__audit.failNext` injects a result failure. One bet tap records `impact:rigid`, then one `notification:success|warning`; it must not record another result-time impact.
 - `LuckyAdminAudit.vue`, `lucky-admin-audit.ts`, and `lucky-admin-audit.html` mount the admin activity panel with constructed instant, raffle, catalog, and forecast data. Query parameters `slow`, `empty`, and `error` exercise loading and failure views.
 
 These files are for local visual audits. The production Vite build starts from the root `index.html` and does not include this page.
@@ -122,6 +138,14 @@ The balance sheet uses constructed balance/limits and empty payment methods;
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.
 - `ip-lookup-audit.html` is the browser fixture entry point; `admin`, `zh`, `no-combo` and `cached` flags select the relevant variants. `mode=cached` displays reports automatically when an IP is entered, without a submission. `risk`, `scamalytics-risk`, `maxmind-risk`, `partial`, `all-failed`, `nulls`, `zero` and `subsource` exercise compact evidence, cached API errors, source names and coordinate visibility; `loading`, `disabled`, `error`, `balance-error` and `save-error` cover recovery states. `__ipAudit.counters()` records quote/submission counts and the saved provider/geolocation order; `__ipAudit.setCached()` changes cache availability before a new address is entered.
 `ip-lookup-live-audit.ts` supplies constructed live topology, origin selection, zero/unknown metrics, traffic windows, errors, slow/cancelled responses and request counters for Chrome DevTools MCP reviews of the real IP Lookup components.
+Its constructed cache reuses exact addresses only; neighboring IPv4 addresses
+require independent simulated reads. Network prefixes remain routing context.
+The same fixture exposes `__ipAudit.feedback`. Use `live=large` (optionally `zh`),
+`live=empty`, `live=slow`, `live=error` or `live=stream-error` to inspect the graph
+inside the actual scroll shell. Default wheel/touch scroll belongs to the page;
+Interact enables graph gestures, and Done/Escape restores native scrolling.
+Browser-emulated events establish DOM behavior and SDK call counts only; real
+Telegram iOS/Android/desktop gestures and physical haptics remain device checks.
 
 IP Lookup routing audits additionally support `live=transits`, `live=legacy`,
 `live=transfer-error`, and `rpki=valid|invalid_asn|invalid_length|not_found|unavailable`.

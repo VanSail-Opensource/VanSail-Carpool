@@ -34,15 +34,17 @@ export function useBGPGraph(topology: () => IPLookupBGPTopology, viewport: Reado
     return [...groups.values()].map(group => ({ ...group, d: group.d + mergeSegments(group.segments) }))
   })
   function fit() { view.fit(layout.value.width, layout.value.height, size.value.width, size.value.height) }
+  function zoom(factor: number) { view.zoomAt(factor, { x: size.value.width / 2, y: size.value.height / 2 }) }
   let observer: ResizeObserver | undefined
   onMounted(() => {
     const resize = () => { size.value = { width: viewport.value?.clientWidth ?? 320, height: viewport.value?.clientHeight ?? 340 }; if (!view.interacted.value) fit() }
     resize()
     if (viewport.value) { observer = new ResizeObserver(resize); observer.observe(viewport.value) }
   })
-  onScopeDispose(() => observer?.disconnect())
+  onScopeDispose(() => { observer?.disconnect(); view.setInteraction(false) })
   watch(() => `${topology().prefix}:${topology().origins.join(',')}`, () => {
     selectedASN.value = null; selectedRoute.value = null; view.interacted.value = false
+    view.setInteraction(false)
   })
   watch(() => layout.value.nodes.map(node => `${node.asn}:${node.x}:${node.y}`).join('|'), async () => { await nextTick(); if (!view.interacted.value) fit() })
   function select(asn: number, keyboard = false) {
@@ -52,5 +54,5 @@ export function useBGPGraph(topology: () => IPLookupBGPTopology, viewport: Reado
   }
   function focusRoute(id: string) { selectedRoute.value = selectedRoute.value === id ? null : id }
   function keyboard(event: KeyboardEvent) { if (event.key === '0' && !(event.target as Element).closest('[data-asn]')) { event.preventDefault(); fit() } else view.keyboard(event) }
-  return { ...view, viewportSize: size, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, visibleEdges, edgeGroups, highlighted, fit, select, focusRoute, keyboard }
+  return { ...view, viewportSize: size, selectedASN, selectedRoute, focusedRoutes, layout, visibleNodes, visibleEdges, edgeGroups, highlighted, fit, zoom, select, focusRoute, keyboard }
 }

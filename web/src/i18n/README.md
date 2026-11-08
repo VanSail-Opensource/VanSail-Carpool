@@ -1,5 +1,9 @@
 # Internationalization
 
+- `../../locales/*/usage-breakdown.json` owns all-mode traffic/cost labels,
+  original-term estimate limitations, unallocated costs and coverage disclosures;
+  `generated.ts` registers both language domains.
+
 - `../../locales/*/hourly.json` owns Charge by hour member/admin terms, consent,
   eligibility, cooldown and conflict copy; `generated.ts` registers both locales.
 

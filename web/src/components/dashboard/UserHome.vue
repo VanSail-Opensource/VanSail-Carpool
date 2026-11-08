@@ -12,7 +12,7 @@ import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
 import HomeSubscriptionEntrance from '@/components/subscription/HomeSubscriptionEntrance.vue'
 import UsagePanel from './UsagePanel.vue'
-import PAYGUsagePanel from './PAYGUsagePanel.vue'
+import UsageBreakdownPanel from './UsageBreakdownPanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
 import type { ActivityStatus } from './memberActivity'
 
@@ -93,7 +93,7 @@ function consumeReissueRequest(): void {
           </div>
           <HomeSubscriptionEntrance />
           <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
-          <PAYGUsagePanel v-if="hasValidCombo || BigInt(dashboard.balance.minor) > 0n" class="home-layout__usage" />
+          <UsageBreakdownPanel class="home-layout__usage" />
           <UsagePanel
             v-if="dashboard.statistics && (hasValidCombo || BigInt(dashboard.balance.minor) <= 0n)"
             class="home-layout__usage"

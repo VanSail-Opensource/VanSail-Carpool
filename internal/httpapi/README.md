@@ -1,5 +1,14 @@
 # HTTP API transport
 
+`member_usage_breakdown.go` serves the onboarded member's private
+`GET /api/v1/usage/breakdown` projection. Owner identity comes exclusively from
+the authenticated session; query strings cannot select another account. The
+response retains decimal strings, rational costs and explicit coverage, with
+no-store headers. Administrator bearer tokens remain barred from member routes.
+`member_usage_breakdown_fixture_test.go` reuses the signed member request helper.
+`member_usage_breakdown_test.go` covers privacy, authentication, onboarding,
+unsupported projection errors and monetary transport without rounding.
+
 `xnode_provider_zones.go` serves administrator-only saved-provider discovery at
 `GET /api/v1/admin/xnode/providers/{id}/zones`, using request cancellation and
 no-store responses. It delegates all credential access and queued network work

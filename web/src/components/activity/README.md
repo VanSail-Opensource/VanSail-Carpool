@@ -15,6 +15,9 @@ selection and pending feedback remain short and haptic-aware.
 - `draw/README.md` specifies the seven result-only presentation modes, focused draw modal, local artwork, and retry/reduced-motion behavior.
 - `BetSuccessFireworks.vue` renders a bounded, non-interactive success burst and honors reduced motion.
 - `feedback.ts` centralizes result classification and Telegram notification mapping.
+  The delegated click handler owns tap impacts; a bet result emits one success
+  or warning notification without an additional impact. Draw receipt content
+  and celebrations never emit another result notification.
 - `ActivityResultDialog.test.ts`, `BetSuccessFireworks.test.ts`, and `feedback.test.ts` cover result feedback boundaries and daily check-in reward rendering.
 - `gameIcons.ts` maps server-owned icon keys to external Iconify names.
 - `ActivityResultDialog.vue`, `DailyCheckInCard.vue`, `GroupMessageRewardPanel.vue`, and `BetSuccessFireworks.vue` own completion-only Motion feedback; particle trajectories remain CSS and reduced motion uses a single success marker.

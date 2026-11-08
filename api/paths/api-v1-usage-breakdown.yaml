@@ -1,0 +1,21 @@
+get:
+  tags: [Dashboard]
+  operationId: getOwnedUsageBreakdown
+  summary: Read the current member's rolling 72-hour usage breakdown
+  description: |
+    Owner-scoped recorded traffic includes fixed-term, hourly and traffic-priced
+    usage. Actual charges remain separate from the current fixed-term estimate.
+    A single consistent database snapshot preserves totals, original purchase
+    terms and lifecycle isolation. No prior minute-level history is invented.
+    Requires an onboarded member session; administrative bearer tokens cannot
+    access member routes. The response is private and is never cached.
+  responses:
+    '200':
+      description: Exact recorded byte and monetary facts with explicit coverage, omitted nodes and unallocated costs.
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/UsageBreakdown'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}
+    '409': {$ref: '../openapi.yaml#/components/responses/Conflict'}
+    '503': {$ref: '../openapi.yaml#/components/responses/ServiceUnavailable'}

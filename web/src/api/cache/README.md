@@ -8,7 +8,7 @@ when it completes, without navigation or a document reload.
 ## Modules
 
 - `session.ts` owns experience/account/role/onboarding-scoped, in-memory JSON snapshots, isolated copies, an 8 MiB / 256-entry LRU bound, and invalidation generations.
-- `policy.ts` separates read requests from mutations and builds method/URL/query/body-specific keys. Authentication, payment capabilities, action quotes, keys, and operation/connection polling are never cached.
+- `policy.ts` separates read requests from mutations and builds method/URL/query/body-specific keys. Authentication, payment capabilities, action quotes, keys, financial usage breakdowns, and operation/connection polling are never cached.
 - `transport.ts` writes successful responses immediately, shares identical unsignalled reads in flight, rejects older writes, invalidates on mutations/auth failures, and evicts forbidden or removed resources.
 - `restore.ts` exposes typed snapshot-to-state helpers. They never skip the loader's normal backend request or authorize actions.
 - `restore.test.ts` covers stale nested shapes, compatible empty/additive responses, and contained projection errors. Snapshot restoration validates the current OpenAPI shape before mutating state and discards incompatible entries without blocking the live request.

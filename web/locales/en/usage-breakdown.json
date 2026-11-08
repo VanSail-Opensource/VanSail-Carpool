@@ -1,0 +1,33 @@
+{
+  "usageBreakdown": {
+    "title": "Usage Breakdown",
+    "hint": "Recorded upload and download across fixed-term, hourly and traffic billing over the last 72 hours.",
+    "measure": "Usage measure",
+    "traffic": "Traffic",
+    "cost": "Cost",
+    "trafficChart": "72-hour traffic shares by node",
+    "costChart": "72-hour known cost shares",
+    "trafficTotal": "Recorded traffic",
+    "costTotal": "Known 72-hour cost",
+    "actualCost": "Recorded charges: {amount}.",
+    "legacyEstimate": "Includes a three-day fixed-term estimate of {amount}, based on its paid price and original purchased duration.",
+    "legacyUnknown": "The original fixed-term duration is unavailable. Known cost excludes that plan's estimate.",
+    "unallocatedHint": "Costs without recorded node attribution remain unallocated.",
+    "others": "Others",
+    "unallocated": "Unallocated",
+    "unnamedNode": "Historical node",
+    "emptyTraffic": "No traffic is recorded in the available history.",
+    "emptyCost": "No known cost is recorded in this window.",
+    "singleNode": "Only one node has recorded usage for this measure.",
+    "noNodeAttribution": "No node comparison is available for these costs.",
+    "loadFailed": "Usage Breakdown could not be loaded.",
+    "stale": "Showing the last available history. Refresh to update it.",
+    "incomplete": "A complete 72 hours of recorded history is not yet available.",
+    "incompleteSince": "History is incomplete. Recording began {since} UTC.",
+    "gaps": "The recorded window contains {count} accounting gaps.",
+    "truncated": "Additional nodes are included in Others; totals are preserved.",
+    "approximateAmount": "about {amount}",
+    "lessThanAmount": "less than {amount}",
+    "lessThanPercent": "Less than {amount}"
+  }
+}

@@ -1,5 +1,9 @@
 # Path item shards
 
+`api-v1-usage-breakdown.yaml` serves the onboarded member's private rolling usage
+projection at GET `/api/v1/usage/breakdown`. It combines the three billing modes
+without changing the compatibility `/payg/history` or administrator projections.
+
 `api-v1-admin-xnode-firewall-records-search.yaml` describes the read-only,
 authenticated active-report and ban search endpoint.
 

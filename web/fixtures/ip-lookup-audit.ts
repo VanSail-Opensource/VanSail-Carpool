@@ -13,12 +13,14 @@ import IPLookupAudit from './IPLookupAudit.vue'
 import { installLiveIPAudit } from './ip-lookup-live-audit'
 import { decorateShodanAudit } from './ip-lookup-shodan-audit'
 import { decorateRatingAudit } from './ip-lookup-rating-audit'
+import { installInteractionFeedback } from './interaction-feedback'
 
 import { setExperience } from '@/utils/experience'
 import { initializeBrowserTheme } from '@/browser/theme'
 
 const params = new URLSearchParams(location.search)
 setExperience(params.has('admin') ? 'browser' : 'miniapp')
+const feedback = installInteractionFeedback()
 if (params.has('admin')) { await import('@/browser/styles.css'); initializeBrowserTheme() }
 else await import('@/styles/main.css')
 const liveCounters = installLiveIPAudit(params)
@@ -146,5 +148,5 @@ const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:p
 app.use(router); app.use(ui)
 setLocale(params.has('zh') ? 'zh-CN' : 'en')
 document.title = t('ipLookup.title')
-;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, seedLive: liveCounters.seed, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
+;(window as unknown as { __ipAudit: object }).__ipAudit = { state, settings, feedback, seedLive: liveCounters.seed, counters: () => ({ submitCount, quoteCount, polls, savedBody, live: liveCounters.counters() }), setCached: (value: boolean) => { cached = value } }
 void router.isReady().then(() => app.mount('#app'))

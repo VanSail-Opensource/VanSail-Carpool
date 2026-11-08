@@ -41,13 +41,39 @@ offline requires complete fresh coverage reporting no open flows.
 
 Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficUsageDetails.vue`.
 
-When no combo is active and the balance is positive, `UserHome.vue` composes
-`PAYGUsagePanel.vue` in place of the quota meter. It uses the existing visibility
-aware subscription-data reader against GET /api/v1/payg/history. PAYGUsagePie uses
-ChartContainer/Unovis and the existing chart-selection helper. Exact bytes remain
-strings/BigInt; only bounded proportional shares are numbers. Native legend
-buttons and pointer/touch slices expose identical name/traffic/percentage detail.
-Empty history does not claim historical zero use; stale/errors and truncated
-attribution remain explicit. No history is reconstructed from financial totals.
+`UserHome.vue` always composes `UsageBreakdownPanel.vue` once the member dashboard
+is available, regardless of the current wallet or purchase. The panel reuses the
+visibility-aware `useSubscriptionData` lifecycle for the owner-only no-store
+`GET /api/v1/usage/breakdown`. It retains an existing snapshot on read failure and
+labels incomplete coverage, gaps, omitted nodes and stale data without backfill.
 
-`paygHistorySegments.ts` derives bounded drawing shares from exact totals and groups nodes below 1% into one localized Others segment per metric; `paygHistorySegments.test.ts` checks precision, zero use, threshold behavior and total preservation. `PAYGUsagePie.vue` provides chart and legend selection, Nuxt UI metric tabs and Telegram selection haptics on metric changes.
+Chrome DevTools inspection on 2026-11-09 covered EN/Chinese, 390px/1440px,
+dark/light, loading, empty, single-node, errors/retry, coverage gaps, capped nodes,
+unallocated/hourly costs and large fractional totals. Twenty rapid metric clicks
+retained the same SVG, shared node paths, dimensions and distinct node colors.
+Keyboard metric/legend selection worked; browser mode emitted no Telegram calls.
+The zero-balance Home fixture requested history without an active purchase.
+No local automated suites were run; hosted regressions provide execution coverage.
+
+`UsageBreakdownPie.vue` owns only metric selection and presentation. Traffic
+includes all billing modes. Cost keeps actual charges, a clearly identified
+current fixed-term estimate, and unallocated charges separate. An unknown original
+purchase duration leaves actual costs visible and the estimate unavailable.
+`usageBreakdownFormat.ts` rounds only displayed money, never calculation inputs.
+`usageBreakdownFormat.test.ts` covers sub-minor disclosures and half-unit display
+rounding while retaining the underlying rational value.
+
+`usageBreakdownSegments.ts` preserves exact BigInt/rational totals through node
+grouping, including omitted totals in Others and retaining unallocated cost as a
+non-node segment. Server physical-node counts hide a selected pie with at most
+one node before grouping/capping; totals and disclosures remain visible. Colors
+are assigned across all node IDs before metric filtering, with a bounded 256-ID
+component-local registry for refreshes. Stable accessors, IDs, 220px dimensions and
+explicit zero duration on both Unovis components prevent animated mode updates;
+the same mounted SVG survives even when a selected measure hides the chart.
+
+`usageBreakdownSegments.test.ts` covers exact conservation, large/fractional costs,
+independent node counts, grouping, unallocated costs and stable bounded colors.
+`UsageBreakdownPie.test.ts` checks twenty mode changes without remounting, explicit
+animation settings, unknown-term disclosure, tiny positive percentages and browser
+feedback isolation. Browser fixtures exercise the real Unovis implementation.

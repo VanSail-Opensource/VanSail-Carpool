@@ -5,6 +5,10 @@ describe('live activity eligibility', () => {
   it('never persists member import keys', () => {
     expect(responseCacheKey('/api/v1/subscription')).toBeNull()
   })
+  it('keeps exact financial breakdowns out of session snapshots', () => {
+    expect(responseCacheKey('/api/v1/usage/breakdown', { cache: 'no-store' })).toBeNull()
+    expect(responseCacheKey('/api/v1/usage/breakdown?refresh=1')).toBeNull()
+  })
   it('never persists activity snapshots while retaining ordinary read caching', () => {
     expect(responseCacheKey('/api/v1/activity')).toBeNull()
     expect(responseCacheKey('/api/v1/activity?refresh=1')).toBeNull()

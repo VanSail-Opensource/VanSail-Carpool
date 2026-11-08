@@ -1,4 +1,4 @@
-import { shallowRef } from 'vue'
+import { readonly, shallowRef } from 'vue'
 
 type Point = { x: number; y: number }
 export function fitGraph(width: number, height: number, viewportWidth: number, viewportHeight: number) {
@@ -10,7 +10,9 @@ export function useGraphViewport() {
   const scale = shallowRef(1)
   const offset = shallowRef<Point>({ x: 0, y: 0 })
   const interacted = shallowRef(false)
+  const interactionEnabled = shallowRef(false)
   const pointers = new Map<number, Point>()
+  let pointerTarget: HTMLElement | null = null
   let gesture: { center: Point; distance: number; scale: number; offset: Point; drag: boolean } | null = null
   let moved = false
   const geometry = () => {
@@ -33,17 +35,27 @@ export function useGraphViewport() {
     const view = fitGraph(width, height, viewWidth, viewHeight)
     scale.value = view.scale; offset.value = view.offset
   }
+  function setInteraction(enabled: boolean) {
+    interactionEnabled.value = enabled
+    const ids = [...pointers.keys()], target = pointerTarget
+    pointers.clear(); gesture = null; pointerTarget = null; moved = false
+    for (const id of ids) if (target?.hasPointerCapture(id)) target.releasePointerCapture(id)
+  }
   function wheel(event: WheelEvent) {
+    // Ordinary scrolling and browser pinch/zoom remain native until opted in.
+    if (!interactionEnabled.value || event.ctrlKey || event.metaKey || !event.deltaY) return
     event.preventDefault()
     const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 300 : 1)
     zoomAt(Math.exp(-Math.max(-300, Math.min(300, delta)) * 0.003), local(event))
   }
   function pointerDown(event: PointerEvent) {
+    moved = false
     if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (event.pointerType !== 'mouse' && !interactionEnabled.value) return
+    pointerTarget = event.currentTarget as HTMLElement
     pointers.set(event.pointerId, local(event))
     const drag = !(event.target as Element).closest('[data-asn]')
     gesture = { ...geometry(), scale: scale.value, offset: offset.value, drag: drag || pointers.size > 1 }
-    moved = false
     if (gesture.drag) (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
   }
   function pointerMove(event: PointerEvent) {
@@ -65,11 +77,14 @@ export function useGraphViewport() {
     gesture = pointers.size ? { ...geometry(), scale: scale.value, offset: offset.value, drag: true } : null
   }
   function keyboard(event: KeyboardEvent) {
+    if (event.key === 'Escape' && interactionEnabled.value) {
+      event.preventDefault(); event.stopPropagation(); setInteraction(false); return
+    }
     if ((event.target as Element).closest('[data-asn]')) return
     const arrows: Record<string, [number, number]> = { ArrowLeft: [30, 0], ArrowRight: [-30, 0], ArrowUp: [0, 30], ArrowDown: [0, -30] }
     if (arrows[event.key]) { event.preventDefault(); const [x, y] = arrows[event.key]!; offset.value = { x: offset.value.x + x, y: offset.value.y + y }; interacted.value = true }
     const target = event.currentTarget as HTMLElement
     if (['+', '=', '-'].includes(event.key)) { event.preventDefault(); zoomAt(event.key === '-' ? 1 / 1.2 : 1.2, { x: target.clientWidth / 2, y: target.clientHeight / 2 }) }
   }
-  return { scale, offset, interacted, fit, zoomAt, wheel, pointerDown, pointerMove, pointerUp, keyboard, wasDragged: () => moved }
+  return { scale, offset, interacted, interactionEnabled: readonly(interactionEnabled), setInteraction, fit, zoomAt, wheel, pointerDown, pointerMove, pointerUp, keyboard, wasDragged: () => moved }
 }

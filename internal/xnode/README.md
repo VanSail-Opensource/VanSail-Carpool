@@ -1,5 +1,11 @@
 # X-Node control plane
 
+`usage_breakdown.go` exposes the member-owned consistent 72-hour projection.
+It forwards request cancellation, fixes the exact UTC window and preserves
+exact rational minor-unit costs from the store. It sends no external requests
+and cannot substitute current prices or invented empty history for unavailable
+records. `usage_breakdown_test.go` covers those public interface guarantees.
+
 `hourly_coordinator.go` runs the optional two-second account rate controller;
 `hourly_policy.go` defines the future commerce policy repository and a cloned,
 four-second eligibility cache. Missing commerce support grants no hourly access.

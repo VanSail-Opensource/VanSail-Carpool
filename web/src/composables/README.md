@@ -65,7 +65,8 @@ separate. Action quotes and permission decisions still await the backend.
 - `useStatistics.ts` independently loads the 30-minute aggregate snapshot and
   ten-second node cache while preserving last-good data across partial failures.
 - `useTelegramBackButton.ts` coordinates one native Telegram BackButton across route and overlay owners, adds soft navigation feedback, and removes every handler on teardown.
-- `useTelegramProtection.ts` reference-counts active destructive, busy, or dirty workflows and enables native closing confirmation plus vertical-swipe suppression only while needed.
+- `useTelegramProtection.ts` reference-counts active destructive, busy, or dirty workflows and enables capability-aware native closing confirmation only while needed. It leaves Telegram swipe gestures unchanged; gesture suppression requires a separately reproduced host conflict. Browser administration never registers an owner.
+- `useTelegramProtection.test.ts` covers overlapping owners, unmount/value cleanup, older SDKs, browser isolation and the absence of swipe calls.
 
 - `useActivity.ts` reads eligibility live, tracks refresh state and hides reward controls when verification refresh fails; a rejected check-in refreshes boost state while retaining its localized refusal.
 

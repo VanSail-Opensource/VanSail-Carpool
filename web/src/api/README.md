@@ -63,6 +63,15 @@ commands. Its mutable state and quotes always bypass response snapshots.
 
 `payg.ts` reads owner-scoped PAYG availability and minute-aligned 72-hour totals through the shared signed transport. It uses generated OpenAPI types and keeps responses out of persistent caches.
 
+`usageBreakdown.ts` reads the generated all-mode `UsageBreakdown` contract through
+the signed owner-session transport without persistent caching. The ordinary
+generated shape validator is combined with `usageBreakdownValidation.ts` for
+exact unsigned units, positive denominators, unique IDs, physical-count lower
+bounds and both cost-conservation equations. Incompatible successful responses
+become the existing localized read error before entering chart state.
+`usageBreakdown.test.ts` covers malformed units, inconsistent totals/counts and
+large exact values. Older PAYG history remains a separate compatibility read.
+
 - `pricing.ts`: Typed product modes and read-only owned renewal information.
 - `pricingAnalysis.ts`: Bounded original forecasts, statistics, provider inputs and immediate administrator commands.
 - `pricingExports.ts`: Scope-bound sensitive-export authorization and cancellable direct ZIP streams.

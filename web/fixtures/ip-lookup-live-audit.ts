@@ -10,8 +10,8 @@ export function installLiveIPAudit(params: URLSearchParams) {
   const requested: string[] = []
   const fetchDetails = async (ip: string, signal?: AbortSignal, refresh = false, emit?: Parameters<typeof ipLookupApi.details>[3]): Promise<IPLookupLiveDetails> => {
     calls++; requested.push(ip)
-    const stored = cache.get(ip) ?? (!ip.includes(':') ? [...cache.values()].find(value => value.ip.split('.').slice(0, 3).join('.') === ip.split('.').slice(0, 3).join('.')) : undefined)
-    if (!refresh && stored) { const result = { ...structuredClone(stored), ip, sourceIP: stored.ip, cacheMatch: stored.ip === ip ? 'exact' as const : 'subnet' as const }; emit?.({ type: 'complete', ip, data: result, progress: { phase: 'complete', completed: 8, total: 8 } }); return result }
+    const stored = cache.get(ip)
+    if (!refresh && stored) { const result = { ...structuredClone(stored), ip, sourceIP: stored.ip, cacheMatch: 'exact' as const }; emit?.({ type: 'complete', ip, data: result, progress: { phase: 'complete', completed: 8, total: 8 } }); return result }
     upstreamCalls++
     if (params.get('live') === 'refresh-error' && calls > 1) throw new ApiError(502, { code: 'IP_DETAILS_UNAVAILABLE', message: 'Constructed refresh failure' })
     if (params.get('live') === 'error') throw new ApiError(429, { code: 'IP_DETAILS_RATE_LIMITED', message: 'Constructed rate limit' })

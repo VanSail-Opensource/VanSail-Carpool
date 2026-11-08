@@ -63,3 +63,8 @@ duration and eligibility multiplication bounds, and exact decimal-string JSON.
 response contracts. They carry numeric bot identity, account generation and
 nonce metadata; raw Telegram responses, tokens and account-existence claims are
 not persisted or exposed by these types.
+
+`usage_breakdown.go` defines the owner Usage Breakdown contract: decimal-string
+traffic and actual charges, reduced rational minor amounts, explicit unknown
+legacy terms, unallocated money, pre-limit positive-node counts and truthful
+forward coverage. Account generations and native credentials stay private.

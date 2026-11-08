@@ -3,6 +3,8 @@ package xnode
 import (
 	"context"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // These forward observations are separate from wallet charges and immutable
@@ -13,12 +15,7 @@ type UsageHistoryRow struct {
 	Hour                                                time.Time
 }
 
-type UsageCoverage struct {
-	Since     *time.Time `json:"since"`
-	Complete  bool       `json:"complete"`
-	GapCount  string     `json:"gapCount"`
-	Truncated bool       `json:"truncated"`
-}
+type UsageCoverage = model.UsageCoverage
 
 type UsageHistory struct {
 	From, To time.Time

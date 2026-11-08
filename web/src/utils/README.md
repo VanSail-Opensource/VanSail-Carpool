@@ -1,5 +1,10 @@
 # Utilities
 
+- `usageRational.ts` supplies pure reduced BigInt arithmetic shared by Usage
+  Breakdown response validation and chart aggregation. Only bounded drawing
+  proportions become numbers; `usageRational.test.ts` covers fractional totals,
+  large integers, exact thresholds and invalid input rejection.
+
 - `purchaseValidity.ts` derives display status and current-term eligibility from raw lifecycle status and exclusive validity boundaries. It never mutates purchase or financial records; terminal statuses remain authoritative.
 - `purchaseValidity.test.ts` covers exclusive expiry, future terms, terminal states and predecessor/successor isolation in hosted CI.
 
@@ -25,6 +30,7 @@
 - `telegramLinks.ts` opens Telegram-native links with a browser fallback.
 - `telegramContext.ts` classifies the native `TelegramWebviewProxy` bridge, launch markers, SDK-captured `WebView.initParams`, platforms, and user agents before route construction, and skips the delayed-context wait for the public SDK placeholder in regular browsers.
 - `telegram.test.ts` covers Telegram capability behavior, semantic impact mapping, non-delegated selection, and listener disposal.
+- `telegramHaptics.test.ts` verifies one delegated action impact plus one bet outcome notification, older SDK behavior and safe host-call failure. `notifyBetOutcome` adds no second result-time impact.
 - `validation.ts` contains shared input validation helpers.
 - `validation.test.ts` covers validation boundaries.
 - `latestRequest.ts` supplies generation guards so disposed or superseded async
