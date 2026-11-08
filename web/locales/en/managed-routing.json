@@ -54,6 +54,11 @@
       "checking": "Checking route",
       "error": "Route unavailable",
       "disabled": "Needs review"
+    },
+    "endpointLabel": "{name} · {mode} · {address}:{port}",
+    "billingModes": {
+      "combo": "Legacy combo",
+      "payg": "Charge by traffic"
     }
   },
   "routeSpeedtest": {

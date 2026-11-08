@@ -30,12 +30,16 @@ export function useMemberRouting(options?: { initial: () => RoutingView | undefi
   const busy = computed(() => command.blocksMutations.value || command.submitting.value)
   const nodes = computed(() => current.value?.nodes.map(node => ({ value: node.id, label: node.name })) ?? [])
   const endpoints = computed(() => current.value?.endpoints ?? [])
-  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, disabled: endpoint.available === false, label: endpoint.available === false ? `${endpoint.name} (${t('memberNodes.incomplete')})` : endpoint.name })))
+  const endpointItems = computed(() => endpoints.value.map(endpoint => ({ value: endpoint.id, nodeId: endpoint.nodeId, disabled: endpoint.available === false, label: endpointLabel(endpoint) })))
+  function endpointLabel(endpoint: NonNullable<RoutingView['endpoints']>[number]) {
+    const name = endpoint.billingMode ? t('managedRouting.endpointLabel', { name: endpoint.name, mode: t(`managedRouting.billingModes.${endpoint.billingMode}`), address: endpoint.address, port: endpoint.port }) : endpoint.name
+    return endpoint.available === false ? `${name} (${t('memberNodes.incomplete')})` : name
+  }
   const traceNodes = computed(() => nodes.value.filter(node => choices.value.some(choice => choice.inboundNodeId === node.value)))
   const traceEndpoints = computed(() => endpointItems.value.filter(endpoint => choices.value.some(choice => choice.inboundNodeId === start.value && choice.inboundEndpointId === endpoint.value)))
   const templates = computed(() => current.value?.templates.map(item => ({ value: item.id, label: item.name })) ?? [])
   const locked = computed(() => busy.value || !!current.value && !['active', 'disabled'].includes(current.value.plan.phase))
-  const routeStatus = computed(() => previewError.value ? 'error' : previewing.value ? 'checking' : locked.value || JSON.stringify(choices.value) !== savedChoices ? 'draft' : current.value?.plan.phase === 'disabled' ? 'disabled' : 'active')
+  const routeStatus = computed(() => previewError.value ? 'error' : previewing.value ? 'checking' : locked.value || JSON.stringify(choices.value) !== savedChoices ? 'draft' : current.value?.plan.phase === 'disabled' || current.value?.plan.reason ? 'disabled' : 'active')
   const canSave = computed(() => !!current.value && !loading.value && !locked.value && !previewing.value && !previewError.value && !error.value && choices.value.every(c => c.inboundEndpointId && c.outboundEndpointId && c.inboundNodeId && c.outboundNodeId && c.templateId && c.inboundNodeId !== c.outboundNodeId))
   const canSpeedtest = computed(() => routeStatus.value === 'active' && !current.value?.plan.reason && !!trace.value?.rules.length && !!startEndpoint.value && !loading.value && !error.value)
   async function load() {

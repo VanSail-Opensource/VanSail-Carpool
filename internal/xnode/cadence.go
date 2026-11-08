@@ -88,12 +88,10 @@ func (s *Service) ResumeAccounting(ctx context.Context) error {
 			return errors.Join(failures, ctx.Err())
 		}
 		child, cancel := context.WithTimeout(ctx, 2*time.Second)
-		s.mu.Lock()
 		current, err := s.repo.XNodePeriod(child, period.ID)
 		if err == nil && current.Status == "closing" {
 			err = s.closePeriod(child, current)
 		}
-		s.mu.Unlock()
 		cancel()
 		failures = errors.Join(failures, err)
 	}

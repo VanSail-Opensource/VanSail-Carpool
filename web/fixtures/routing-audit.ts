@@ -35,12 +35,14 @@ const endpoints: NonNullable<RoutingView['endpoints']> = nodes.flatMap(node => [
   { available: true, id: `${node.id}-secondary`, nodeId: node.id, name: `${node.name} alternate`, address: `${node.id}-alt.proxy.example`, port: 8443 },
 ])
 if (params.has('long-names')) for (const endpoint of endpoints) endpoint.name += ' dedicated international connection for member routing'
+if (params.has('billing')) for (const endpoint of endpoints) endpoint.billingMode = endpoint.id.endsWith('primary') ? 'combo' : 'payg'
 if(params.has('renamed')) for(const endpoint of endpoints) if(endpoint.id==='b-primary'){endpoint.name='Renamed Singapore';endpoint.address='new-address.proxy.example'}
 let catalog: components['schemas']['XNodeRoutingTemplateConfig'] = { revision: 1, templates: params.has('no-templates') ? [] : [{ id: 'google-ai', name: 'Google + AI', match: { domain: ['domain:google.com', 'domain:openai.com'] } }, { id: 'google', name: 'Google', match: { domain: ['domain:google.com'] } }, { id: 'ai', name: 'AI', match: { domain: ['domain:openai.com'] } }] }
 if (params.has('geosite')) for (const template of catalog.templates) if (template.id !== 'ai') template.match.domain = ['geosite:google']
 if (params.has('unrelated-geosite')) catalog.templates.push({ id: 'unrelated', name: 'Unused streaming', match: { domain: ['geosite:youtube'] } })
 let plan: RoutingView['plan'] = { revision: 1, phase: params.has('disabled') ? 'disabled' : 'active', reason: params.has('disabled') ? 'routing_legacy_incompatible' : '', choices: params.has('empty') || params.has('no-routes') ? [] : [{ id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google-ai' }, { id: 'bc', inboundNodeId: 'b', outboundNodeId: 'c', templateId: 'google' }] }
 let failed = false, receipt: OperationReceipt | null = null
+if (params.has('stale-plan')) plan.reason = 'routing_dependencies_changed'
 if (params.has('branches')) plan.choices = [
   { id: 'ab', inboundNodeId: 'a', outboundNodeId: 'b', templateId: 'google', inboundEndpointId: 'a-primary', outboundEndpointId: 'b-primary' },
   { id: 'ac', inboundNodeId: 'a', outboundNodeId: 'c', templateId: 'ai', inboundEndpointId: 'a-primary', outboundEndpointId: 'c-primary' },

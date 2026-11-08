@@ -1,16 +1,19 @@
 package xnode
 
-import "context"
+import (
+	"context"
+	"errors"
+	"fmt"
+)
 
 // CloseAccountPeriods uses existing revocation and journal barriers for every
 // paid/PAYG principal. Offline participants keep cleanup pending, never skipped.
 func (s *Service) CloseAccountPeriods(ctx context.Context, userID string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	identities, err := s.repo.XNodeIdentities(ctx)
 	if err != nil {
 		return err
 	}
+	var failures error
 	for _, identity := range identities {
 		if identity.MemberOwnerID() != userID {
 			continue
@@ -21,9 +24,9 @@ func (s *Service) CloseAccountPeriods(ctx context.Context, userID string) error 
 		}
 		for _, period := range periods {
 			if err = s.closePeriod(ctx, period); err != nil {
-				return err
+				failures = errors.Join(failures, fmt.Errorf("owner %s period %s: %w", userID, period.ID, err))
 			}
 		}
 	}
-	return nil
+	return failures
 }

@@ -1102,3 +1102,7 @@ Node removal runs node.remove as an existing durable operation, never a wire com
 `member_connections_eligibility_test.go` checks funding, onboarding, account eligibility, automation gates, duplicate expiry and unchanged balance.
 
 `service_enrollment.go` rotates enrollment through the master lock and rejects retired nodes.
+
+Period settlement and routing deployment proof: `period_closure.go` fences and seals only recorded participants; purge and background settlement never hold the shared service mutation mutex over network waits. `routing_config_proof.go` and `routing_deployment_proof.go` validate the sent native rules, selected principals/listeners, transit generations and applied revisions. See [job and routing reliability](../../docs/job-routing-reliability.md) for constraints and incident evidence.
+
+`native_job_dispatch.go` dispatches queued native work, completes superseded disabled-node intents, and preserves offline/capability waits without exhausting delivery attempts. Access repair retains settled/ambiguous accounting for review instead of granting another allowance.

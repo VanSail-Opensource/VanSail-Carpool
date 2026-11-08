@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -33,45 +32,6 @@ func (s *Store) AccountPurge(ctx context.Context, id string, generation int64) (
 	target.EmbyUncertain = target.RemoteEmbyID == "" && attempted == 1 && status != "failed"
 	err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM outbox_jobs WHERE kind<>'account_purge' AND status='processing' AND `+accountJobTargets+`)`, id, id, id, id, id).Scan(&target.Busy)
 	return target, err
-}
-
-// EnqueueAccountPurges resumes incomplete cleanup after retries or process restarts.
-func (s *Store) EnqueueAccountPurges(ctx context.Context, now time.Time) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,account_generation FROM users WHERE account_status='purging'
- AND NOT EXISTS(SELECT 1 FROM outbox_jobs WHERE kind='account_purge' AND status IN ('pending','processing') AND (CASE ((payload)::jsonb #> '{userId}')::text WHEN 'true' THEN '1' WHEN 'false' THEN '0' ELSE (payload)::jsonb #>> '{userId}' END)=users.id) ORDER BY id LIMIT 64`)
-	if err != nil {
-		return err
-	}
-	type item struct {
-		id         string
-		generation int64
-	}
-	items := []item{}
-	for rows.Next() {
-		var i item
-		if err = rows.Scan(&i.id, &i.generation); err != nil {
-			rows.Close()
-			return err
-		}
-		items = append(items, i)
-	}
-	if err = rows.Err(); err != nil {
-		rows.Close()
-		return err
-	}
-	if err = rows.Close(); err != nil {
-		return err
-	}
-	for _, i := range items {
-		payload, err := json.Marshal(map[string]any{"userId": i.id, "generation": i.generation})
-		if err != nil {
-			return err
-		}
-		if err = s.EnqueueOutbox(ctx, "account_purge", string(payload), now); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // resumeAccountAuthentication starts a new lifecycle after an explicit unblock.

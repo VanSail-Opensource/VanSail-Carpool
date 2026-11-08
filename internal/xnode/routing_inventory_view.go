@@ -18,7 +18,7 @@ func (s *Service) appendUnavailableRoutingEndpoints(ctx context.Context, user st
 	}
 	for _, endpoint := range entitled.byEndpoint {
 		if !seen[endpoint.ID] {
-			view.Endpoints = append(view.Endpoints, RoutingEndpoint{ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port})
+			view.Endpoints = append(view.Endpoints, routingEndpointView(endpoint, false))
 		}
 		if !nodes[endpoint.NodeID] {
 			node, err := s.repo.XNodeNode(ctx, endpoint.NodeID)

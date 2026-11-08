@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 	"math"
@@ -43,9 +44,29 @@ func (s *Store) XNodePeriods(ctx context.Context, user int64) ([]xnode.Period, e
 }
 
 // Track is written before granting admission, never after a potentially successful send.
-func (s *Store) TrackXNodePeriodNode(ctx context.Context, period, node string) error {
-	_, err := s.db.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, period, node)
-	return err
+func (s *Store) retryAttempt_TrackXNodePeriodNode(ctx context.Context, period, node string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var status string
+	// This row lock serializes admission registration with the closing update.
+	// An earlier registration is visible to closure; a later grant cannot send.
+	err = tx.QueryRowContext(ctx, `SELECT status FROM xnode_periods WHERE id=$1 FOR UPDATE`, period).Scan(&status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return xnode.ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if status != "open" {
+		return xnode.ErrConflict
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_period_nodes(period_id,node_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, period, node); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 func (s *Store) XNodePeriodNodes(ctx context.Context, period string) ([]xnode.PeriodNode, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT node_id,flushed_sequence FROM xnode_period_nodes WHERE period_id=$1 ORDER BY node_id`, period)

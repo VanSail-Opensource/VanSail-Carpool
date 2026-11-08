@@ -45,7 +45,7 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 		delay := time.Second
 		var deferred interface{ RetryDelay() time.Duration }
 		if errors.As(jobErr, &deferred) {
-			delay = min(time.Minute, max(time.Second, deferred.RetryDelay()))
+			delay = min(24*time.Hour, max(time.Second, deferred.RetryDelay()))
 		}
 		_, err = tx.ExecContext(ctx, `UPDATE outbox_jobs SET status='pending',attempts=GREATEST(0,attempts-1),last_error=$1,available_at=$2,updated_at=$3 WHERE id=$4`, sanitizeError(jobErr), stamp(now.Add(delay)), stamp(now), jobID)
 		if err != nil {
@@ -54,7 +54,9 @@ func (s *Store) retryAttempt_completeOutboxClaim(ctx context.Context, jobID stri
 		return tx.Commit()
 	}
 	status := "pending"
-	if attempts >= 10 {
+	var review *outbox.ReviewError
+	var terminal *outbox.TerminalError
+	if attempts >= 10 || errors.As(jobErr, &review) || errors.As(jobErr, &terminal) {
 		status = "failed"
 	}
 	delay, err := outboxRetryDelayTx(ctx, tx, jobID, attempts)

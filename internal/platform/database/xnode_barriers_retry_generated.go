@@ -5,6 +5,15 @@ import (
 	context "context"
 )
 
+func (s *Store) TrackXNodePeriodNode(ctx context.Context, period, node string) error {
+	for retryIndex := 0; ; retryIndex++ {
+		r0 := s.retryAttempt_TrackXNodePeriodNode(ctx, period, node)
+		if !s.retryTransaction(ctx, r0, retryIndex) {
+			return r0
+		}
+	}
+}
+
 func (s *Store) ReopenXNodePeriod(ctx context.Context, id string) error {
 	for retryIndex := 0; ; retryIndex++ {
 		r0 := s.retryAttempt_ReopenXNodePeriod(ctx, id)

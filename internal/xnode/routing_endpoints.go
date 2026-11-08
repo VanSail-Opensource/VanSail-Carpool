@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 )
@@ -60,7 +61,7 @@ func (s *Service) loadRoutingEndpoints(ctx context.Context, identity Identity, i
 		}
 		in.byEndpoint[endpoint.ID] = endpoint
 		in.vertices[routingVertex(endpoint)] = endpoint.NodeID
-		in.available = append(in.available, RoutingEndpoint{Available: true, ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port})
+		in.available = append(in.available, routingEndpointView(endpoint, true))
 		if in.endpoints[endpoint.NodeID].ID == "" {
 			in.endpoints[endpoint.NodeID] = endpoint // Preserve the previous deterministic default.
 		}
@@ -74,6 +75,14 @@ func (s *Service) loadRoutingEndpoints(ctx context.Context, identity Identity, i
 	}
 	sort.Slice(in.nodes, func(i, j int) bool { return in.nodes[i].Name < in.nodes[j].Name })
 	return nil
+}
+
+func routingEndpointView(endpoint Endpoint, available bool) RoutingEndpoint {
+	mode := "combo"
+	if strings.HasPrefix(endpoint.ID, "payg-") {
+		mode = "payg"
+	}
+	return RoutingEndpoint{Available: available, BillingMode: mode, ID: endpoint.ID, NodeID: endpoint.NodeID, Name: endpoint.Name, Address: endpoint.Address, Port: endpoint.Port}
 }
 
 func (in *routingInput) resolveChoices(choices []RoutingChoice) error {

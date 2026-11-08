@@ -27,6 +27,9 @@ func (s *Service) preflightRouting(ctx context.Context, candidate, old RoutingPl
 		if err != nil {
 			return fmt.Errorf("node %s route preflight: %w", node, err)
 		}
+		if err = service.checkRoutingConfig(ctx, node, candidate, config); err != nil {
+			return fmt.Errorf("node %s route proof: %w", node, err)
+		}
 		if config.Firewall.SourceGeoIP != nil {
 			config, err = s.master.prepareCountryReference(ctx, node, config, hello.Capabilities)
 			if err != nil {

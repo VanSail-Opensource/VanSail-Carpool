@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 )
 
 // PurgeJob is handled by the existing durable outbox and upstream executors.
@@ -41,12 +42,12 @@ func (w *PurgeWorker) HandleOutbox(ctx context.Context, job model.OutboxJob) err
 		return err
 	}
 	if target.Busy {
-		return errors.New("account purge is waiting for earlier mutations")
+		return &outbox.WaitError{Reason: "account_purge_mutations_pending", After: time.Minute}
 	}
 	if target.EmbyUncertain {
-		return errors.New("account purge requires review of an uncertain Emby creation")
+		return &outbox.ReviewError{Reason: "account purge has an uncertain Emby creation"}
 	}
-	bounded, cancel := context.WithTimeout(ctx, 30*time.Second)
+	bounded, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 	if target.RemoteEmbyID != "" {
 		if err := w.DeleteEmby(bounded, target.RemoteEmbyID); err != nil {
@@ -54,7 +55,7 @@ func (w *PurgeWorker) HandleOutbox(ctx context.Context, job model.OutboxJob) err
 		}
 	}
 	if err := w.Native.CloseAccountPeriods(bounded, target.UserID); err != nil {
-		return err
+		return &outbox.WaitError{Reason: "account_purge_accounting_pending", Cause: err, After: time.Minute}
 	}
 	return w.Repository.CompleteAccountPurge(bounded, target.UserID, target.Generation, time.Now().UTC())
 }

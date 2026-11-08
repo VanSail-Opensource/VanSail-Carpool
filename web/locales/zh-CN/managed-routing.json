@@ -54,6 +54,11 @@
       "checking": "正在检查路由",
       "error": "路由不可用",
       "disabled": "需要检查"
+    },
+    "endpointLabel": "{name} · {mode} · {address}:{port}",
+    "billingModes": {
+      "combo": "原有套餐",
+      "payg": "按流量计费"
     }
   },
   "routeSpeedtest": {

@@ -20,3 +20,5 @@ native executor limits still bound actual execution. It is not a separate queue.
 admission, lock candidates with SKIP LOCKED, then release locks before providers.
 
 - `compute.go`: Independent compute execution lane using the existing durable job infrastructure.
+
+`wait.go` defines dependency waits with explicit retry delays, terminal failures and operator-review failures. Dependency waits preserve attempt counts; provider delays are bounded to 24 hours. Permanent failures retain their failed row. These classifications do not authorize account deletion or replay uncertain financial/native commands.

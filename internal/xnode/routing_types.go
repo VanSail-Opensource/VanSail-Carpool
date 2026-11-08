@@ -58,12 +58,13 @@ type RoutingNode struct {
 }
 
 type RoutingEndpoint struct {
-	Available bool   `json:"available"`
-	ID        string `json:"id"`
-	NodeID    string `json:"nodeId"`
-	Name      string `json:"name"`
-	Address   string `json:"address"`
-	Port      int    `json:"port"`
+	BillingMode string `json:"billingMode,omitempty"`
+	Available   bool   `json:"available"`
+	ID          string `json:"id"`
+	NodeID      string `json:"nodeId"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	Port        int    `json:"port"`
 }
 type routingRepository interface {
 	XNodeUnmanagedRoutes(context.Context, time.Time) ([]Customization, error)

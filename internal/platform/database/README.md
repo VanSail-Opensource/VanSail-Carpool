@@ -1102,3 +1102,7 @@ Migration 38 adds node retirement and parent-locking binding guards. xnode_node_
 Migration 39 adds combos.features_json with an empty array default. Combo writes validate shared feature limits; omitted features preserve stored order/content and an explicit empty list clears them.
 
 `combo_features_test.go` covers ordered feature preservation/clearing. `firewall_history_fixture_test.go` seeds historical financial grants. `xnode_first_sync.go` and `xnode_first_sync_test.go` persist and verify owner proof. `xnode_node_removal.go` and `xnode_node_removal_test.go` guard dependencies, retirement and history.
+
+`account_purge_resume.go` recovers one durable purge job per account generation under the account row lock; review failures require explicit operator evidence. `TrackXNodePeriodNode` serializes grants with the period status row before network delivery. Closing-period scans rotate in memory, and final closure preserves the original closing boundary. Generated adapters cover `account_purge_resume.go` and transactional admission registration in `xnode_barriers.go`.
+
+`account_purge_recovery_test.go` covers same-job dependency waits, exhausted-job recovery, generation isolation and terminal review. `xnode_period_admission_test.go` covers post-close admission refusal, stale closure fencing and rotating settlement scans. `account_purge_resume_retry_generated.go` retries the complete recovery transaction.

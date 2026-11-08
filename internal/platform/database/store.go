@@ -28,6 +28,8 @@ var (
 
 // Store implements persistent repositories on PostgreSQL.
 type Store struct {
+	periodScanMu         sync.Mutex
+	periodScanCursor     string
 	firewallPages        firewallPageCache
 	pricingExposureCache *pricing.AnalysisCache
 	pricingCache         *pricing.AnalysisCache

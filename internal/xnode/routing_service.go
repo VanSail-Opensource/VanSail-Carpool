@@ -60,7 +60,7 @@ func (s *Service) OwnedRoutingPlan(ctx context.Context, user string) (RoutingVie
 			view.Paths, err = in.graph.Paths()
 			view.Paths = in.publicPaths(view.Paths)
 		}
-		if err != nil {
+		if err != nil || in.dependencies != savedDependencies {
 			view.Plan.Reason = "routing_dependencies_changed"
 		}
 	}

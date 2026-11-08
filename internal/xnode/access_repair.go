@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
@@ -41,19 +40,23 @@ func (s *Service) RepairAccess(ctx context.Context, job model.OutboxJob) error {
 			if errors.Is(err, ErrAccessOperationPending) {
 				return &accessRepairDeferred{reason: err}
 			}
+			if errors.Is(err, ErrAccessAccountingPending) || errors.Is(err, ErrAccessAmbiguous) {
+				return &outbox.ReviewError{Reason: err.Error(), Cause: err}
+			}
 			return err
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 	}
-	return fmt.Errorf("XNODE_ACCESS_STATE_CHANGED: %w", outbox.ErrBusy)
+	return &outbox.WaitError{Reason: "XNODE_ACCESS_STATE_CHANGED", Cause: ErrConflict, After: 5 * time.Second}
 }
 
 type accessRepairDeferred struct{ reason error }
 
 func (e *accessRepairDeferred) Error() string             { return e.reason.Error() }
-func (e *accessRepairDeferred) Unwrap() error             { return outbox.ErrBusy }
+func (e *accessRepairDeferred) Unwrap() error             { return e.reason }
+func (e *accessRepairDeferred) Is(target error) bool      { return target == outbox.ErrBusy }
 func (e *accessRepairDeferred) RetryDelay() time.Duration { return time.Minute }
 
 func (s *Service) repairAccess(ctx context.Context, userID string) error {

@@ -25,3 +25,5 @@ Trusted Telegram authentication and resumable account onboarding live here. Netw
 `first_entry_test.go` covers enabled/disabled bootstrap, provider identity, idempotent verified retries, configuration/provider failure refusal and configured-admin exemptions in hosted domain coverage.
 
 `purge.go` owns the generation-fenced outbox cleanup worker. `purge_test.go` covers blocked/uncertain upstream cleanup and replay. Ordinary members forfeit balance/access on authenticated bot blocks; admins are protected. Upstream failures remain pending. Rejoining after unblock creates fresh credentials and benefits while canonical accounting references remain archived.
+
+Purge dependency waits retain the same durable claim without consuming delivery attempts. An uncertain Emby creation remains a terminal review failure. Native settlement has a three-minute bound and reports its specific owner/period/node dependency; offline participants are never discarded.

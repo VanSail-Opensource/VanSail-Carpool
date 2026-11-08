@@ -87,3 +87,5 @@ localized state and refreshes at two-second intervals; confirmed links remain
 visible during node outages because proof is durable on the owner identity.
 Routing selectors retain stable IDs and refreshed unavailable labels. Refresh
 never substitutes endpoints using names, addresses or current list ordering.
+
+Managed routing endpoint selectors display localized billing mode and address/port so identities on the same listener remain distinguishable. A dependency review reason marks the graph as needing review even when its older durable phase remains active; route testing stays disabled. The routing audit fixture supports `billing` and `stale-plan`.

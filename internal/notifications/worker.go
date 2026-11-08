@@ -2,12 +2,16 @@ package notifications
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/integrations/telegram"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/preferences"
 )
 
@@ -60,6 +64,17 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 		return fmt.Errorf("format user notification %s: %w", payload.EventKey, err)
 	}
 	if err := w.sender.SendMarkdownV2Message(ctx, payload.ChatID, 0, message); err != nil {
+		var api *telegram.APIError
+		if errors.As(err, &api) {
+			description := strings.ToLower(strings.TrimSpace(api.Description))
+			unreachable := api.ErrorCode == 403 && (description == "forbidden: bot was blocked by the user" || description == "forbidden: user is deactivated") || api.ErrorCode == 400 && description == "bad request: chat not found"
+			if unreachable {
+				return &outbox.TerminalError{Reason: "telegram_recipient_unreachable", Cause: err}
+			}
+			if api.ErrorCode == 429 && api.RetryAfter > 0 {
+				return &outbox.WaitError{Reason: "telegram_rate_limited", Cause: err, After: time.Duration(min(api.RetryAfter, 86400)) * time.Second}
+			}
+		}
 		if w.logger != nil {
 			w.logger.Warn("user notification delivery will retry", "event_key", payload.EventKey, "kind", payload.Kind,
 				"user_id", payload.UserID, "attempt", job.Attempts, "error", err)

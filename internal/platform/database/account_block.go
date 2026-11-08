@@ -23,7 +23,7 @@ func (s *Store) retryAttempt_HandleTelegramBotStatus(ctx context.Context, telegr
 	defer tx.Rollback()
 	var id, role, state string
 	var generation, previousEvent, previousUpdate int64
-	err = tx.QueryRowContext(ctx, `SELECT id,role,account_status,account_generation,bot_event_at,bot_update_id FROM users WHERE telegram_id=$1`, telegramID).Scan(&id, &role, &state, &generation, &previousEvent, &previousUpdate)
+	err = tx.QueryRowContext(ctx, `SELECT id,role,account_status,account_generation,bot_event_at,bot_update_id FROM users WHERE telegram_id=$1 FOR UPDATE`, telegramID).Scan(&id, &role, &state, &generation, &previousEvent, &previousUpdate)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -65,7 +65,7 @@ func (s *Store) retryAttempt_HandleTelegramBotStatus(ctx context.Context, telegr
 	if err != nil {
 		return err
 	}
-	if err = insertOutboxTx(ctx, tx, "account_purge", string(payload), now, now); err != nil {
+	if err = enqueueAccountPurgeTx(ctx, tx, id, generation, now); err != nil {
 		return err
 	}
 	if err = insertAuditTx(ctx, tx, fmt.Sprintf("account-purge-request:%s:%d", id, generation), nil, "account.purge_requested", "user", id, string(payload), now); err != nil {

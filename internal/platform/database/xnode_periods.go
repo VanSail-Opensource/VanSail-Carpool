@@ -60,7 +60,7 @@ func (s *Store) retryAttempt_SaveXNodePeriod(ctx context.Context, item xnode.Per
 	if item.LastResetAt != nil {
 		reset = stamp(*item.LastResetAt)
 	}
-	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS NOT DISTINCT FROM excluded.purchase_id AND NOT (xnode_periods.status IN ('closing','closed','review') AND excluded.status='open')`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
+	result, err := tx.ExecContext(ctx, `INSERT INTO xnode_periods(id,proxy_user_id,purchase_id,started_at,ended_at,limit_bytes,strategy,last_reset_at,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET ended_at=excluded.ended_at,limit_bytes=excluded.limit_bytes,strategy=excluded.strategy,last_reset_at=excluded.last_reset_at,status=excluded.status WHERE xnode_periods.proxy_user_id=excluded.proxy_user_id AND xnode_periods.purchase_id IS NOT DISTINCT FROM excluded.purchase_id AND (xnode_periods.status='open' AND excluded.status<>'closed' OR xnode_periods.status='closing' AND excluded.status IN ('closing','closed','review') AND (excluded.status<>'closed' OR xnode_periods.ended_at IS NOT DISTINCT FROM excluded.ended_at) OR xnode_periods.status=excluded.status)`, item.ID, item.ProxyUserID, nullText(item.PurchaseID), stamp(item.StartedAt), ended, item.LimitBytes, item.Strategy, reset, item.Status)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,9 @@ func (s *Store) XNodeClosingPeriods(ctx context.Context, limit int) ([]xnode.Per
 	if limit < 1 || limit > 128 {
 		return nil, xnode.ErrInvalid
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE status='closing' ORDER BY ended_at,id LIMIT $1`, limit)
+	s.periodScanMu.Lock()
+	defer s.periodScanMu.Unlock()
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM xnode_periods WHERE status='closing' ORDER BY CASE WHEN id>$1 THEN 0 ELSE 1 END,id LIMIT $2`, s.periodScanCursor, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +136,9 @@ func (s *Store) XNodeClosingPeriods(ctx context.Context, limit int) ([]xnode.Per
 			return nil, err
 		}
 		result = append(result, item)
+	}
+	if len(ids) > 0 {
+		s.periodScanCursor = ids[len(ids)-1]
 	}
 	return result, nil
 }

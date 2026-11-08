@@ -7,6 +7,27 @@ import { useMemberRouting } from './useMemberRouting'
 
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
 
+it('labels distinct billing identities and does not report stale active routes as applied', async () => {
+  vi.useFakeTimers()
+  const initial: RoutingView = {
+    plan: { revision: 2, phase: 'active', reason: 'routing_dependencies_changed', choices: [] }, nodes: [], templates: [], paths: [],
+    endpoints: [
+      { id: 'combo', nodeId: 'a', name: 'Same listener', address: 'node.example', port: 443, billingMode: 'combo' },
+      { id: 'payg', nodeId: 'a', name: 'Same listener', address: 'node.example', port: 443, billingMode: 'payg' },
+    ],
+  }
+  vi.spyOn(xnodeMemberApi, 'previewRouting').mockResolvedValue({ paths: [], trace: null })
+  const { state, wrapper } = mountRouting({ initial: () => initial, onDraft: vi.fn(), onRefresh: vi.fn() })
+  try {
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(400)
+    expect(state.routeStatus.value).toBe('disabled')
+    expect(state.canSpeedtest.value).toBe(false)
+    expect(state.endpointItems.value[0]?.label).not.toBe(state.endpointItems.value[1]?.label)
+    expect(state.endpointItems.value.map(item => item.value)).toEqual(['combo', 'payg'])
+  } finally { wrapper.unmount() }
+})
+
 function mountRouting(options: Parameters<typeof useMemberRouting>[0]) {
   let state!: ReturnType<typeof useMemberRouting>
   const wrapper = mount(defineComponent({ setup() { state = useMemberRouting(options); return () => null } }))

@@ -29,3 +29,5 @@
 
 Delivery reads current user preferences immediately before sending; suppressed jobs finish without removing financial or event audit records.
 `preferences_test.go` covers pending-delivery suppression, lookup retry and re-enablement.
+
+Private Telegram recipient-blocked/deactivated/not-found responses are terminal delivery failures, 429 respects its retry deadline, and transient or unknown errors retain bounded retries. Notification failure classification does not trigger account purge.

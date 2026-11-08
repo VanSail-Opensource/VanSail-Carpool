@@ -98,12 +98,13 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 			if err = repo.AdvanceXNodeRouting(ctx, id, operation.Receipt.ID, phase, "disabled", s.now().UTC()); err != nil {
 				return err
 			}
-			if err = s.syncRoutingNodes(ctx, nodes, id, true); err != nil {
+			plan.Phase = "disabled"
+			if err = s.syncRoutingNodes(ctx, nodes, id, true, plan); err != nil {
 				return err
 			}
 			return s.completeRoutingOperation(ctx, operation, providerops.StatusFailed, "XNODE_ROUTING_DEPENDENCIES_CHANGED")
 		}
-		if err = s.syncRoutingNodes(ctx, nodes, id, phase == "revoking"); err != nil {
+		if err = s.syncRoutingNodes(ctx, nodes, id, phase == "revoking", plan); err != nil {
 			return err
 		}
 		next := map[string]string{"revoking": "applying", "applying": "enabling", "enabling": "active"}[phase]
@@ -116,13 +117,16 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 		return err
 	}
 	if plan.Phase == "disabled" {
-		if err = s.syncRoutingNodes(ctx, nodes, id, true); err != nil {
+		if err = s.syncRoutingNodes(ctx, nodes, id, true, plan); err != nil {
 			return err
 		}
 		return s.completeRoutingOperation(ctx, operation, providerops.StatusFailed, "XNODE_ROUTING_DEPENDENCIES_CHANGED")
 	}
 	if plan.Phase != "active" {
 		return ErrConflict
+	}
+	if err = s.syncRoutingNodes(ctx, nodes, id, false, plan); err != nil {
+		return err
 	}
 	for _, next := range after {
 		if err = next(ctx); err != nil {
@@ -131,11 +135,16 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 	}
 	return s.completeRoutingOperation(ctx, operation, providerops.StatusSucceeded, "")
 }
-func (s *Service) syncRoutingNodes(ctx context.Context, nodes []string, owner int64, drain bool) error {
+func (s *Service) syncRoutingNodes(ctx context.Context, nodes []string, owner int64, drain bool, plans ...RoutingPlan) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	if err := syncDeploymentNodes(ctx, s.master, nodes); err != nil {
 		return err
+	}
+	for _, plan := range plans {
+		if err := s.checkRoutingDeployment(ctx, nodes, plan); err != nil {
+			return err
+		}
 	}
 	for _, node := range nodes {
 		if drain {
