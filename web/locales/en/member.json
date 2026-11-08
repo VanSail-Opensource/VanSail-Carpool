@@ -54,12 +54,6 @@
     "eligibleUntil": "Eligible until",
     "ineligible": "This purchase is not eligible for the selected action.",
     "quoteChanged": "Eligibility or pricing changed. Review the refreshed quote before confirming again.",
-    "automation": {
-      "label": "Automatic traffic reset",
-      "description": "Eligible combos reset when usage is above 95%. Checked about every five minutes; the normal reset price is charged if your balance covers it.",
-      "loadFailed": "The automatic reset preference is temporarily unavailable.",
-      "saveFailed": "The automatic reset preference could not be saved."
-    },
     "refund": {
       "title": "Refund this purchase?",
       "description": "Access is paused and zero usage is checked again before the original net debit is credited.",

@@ -135,7 +135,6 @@
     "noIPBlocks": "此成员没有活跃 IP 封禁。",
     "accountContext": "账户上下文",
     "accountContextHint": "保留此成员的优惠券权益和推荐结果。",
-    "trafficResetAutomation": "流量重置自动化",
     "accountUpdated": "账户更新时间",
     "enabled": "已启用",
     "disabled": "已停用",

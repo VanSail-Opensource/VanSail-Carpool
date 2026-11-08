@@ -407,11 +407,9 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `emby_operations.go` atomically binds setup and reviewed retry state to one provider-operation job.
 - `outbox_retry_operations.go` atomically reactivates a target job and completes its retry receipt.
 - `payment_refund_resolution.go` closes only open Stars refund receipts from authoritative callback evidence.
-- `member_operation_begin.go` and `member_operation_validation.go` atomically validate and create member reset/refund commands.
+- `member_operation_begin.go` and `member_operation_validation.go` atomically validate and create member refund commands.
 - `member_reset_compensation.go` credits a failed paid-reset debit exactly once with terminal receipt state.
-- `traffic_reset_automation.go` reads and immediately saves the account-wide preference.
 - `display_currency.go` saves the member-only TXB, CNY, or USD presentation preference without changing authoritative TXB values.
-- `automatic_traffic_reset.go` revalidates the preference and active purchase, deduplicates the reset period, then atomically disables-and-notifies or creates the paid provider operation, ledger debit, and gated success event.
 - `member_refund_commit.go` atomically credits a first-term refund and advances the independent queued timeline.
 - `provider_operations.go`, `provider_operation_lifecycle.go`, `provider_operation_queries.go`, and `provider_operation_items.go` persist provider-neutral receipts, items, attempts, and replay facts.
 - `provider_operation_notification_completion.go` releases pending user messages
@@ -479,7 +477,6 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `continuity_test.go` covers native successor projections without preparation jobs and idempotent legacy-job retirement.
 - `connection_scans_test.go` covers metadata-only scan lifecycle and expiry.
 - `member_operations_test.go` covers paid reset compensation and zero-usage first-term refunds.
-- `automatic_traffic_reset_test.go` covers strict transactional debit replay, provider-gated success, insufficient-balance disablement, and failure compensation notice release.
 - `display_currency_test.go` covers owner-scoped currency preference persistence and the TXB default for unrelated members.
 - `provider_operations_test.go` covers receipt state transitions, replay conflicts, and ambiguous outcomes.
 - `notification_events_test.go` covers provider-gate deduplication, reminder
@@ -814,7 +811,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `api_token_writes_retry_generated.go` wraps the transactional methods in `api_token_writes.go`.
 - `automatic_renewal_plan_retry_generated.go` wraps the transactional methods in `automatic_renewal_plan.go`.
 - `automatic_renewal_state_retry_generated.go` wraps the transactional methods in `automatic_renewal_state.go`.
-- `automatic_traffic_reset_retry_generated.go` wraps the transactional methods in `automatic_traffic_reset.go`.
 - `billing_bounds_retry_generated.go` wraps the transactional methods in `billing_bounds.go`.
 - `billing_courtesy_retry_generated.go` wraps the transactional methods in `billing_courtesy.go`.
 - `billing_ledger_retry_generated.go` wraps the transactional methods in `billing_ledger.go`.
@@ -1122,3 +1118,13 @@ discount reservations remain financial evidence. The legacy reservation decoder
 can settle an existing obligation but cannot create a campaign.
 
 - `pricing_retirement_test.go`: Hosted rejection of legacy PERSONAL admission and exact settlement/replay of previously reserved renewal obligations.
+
+## Paid traffic-reset retirement
+
+`legacy_reset_settlement.go` proves an owner-matching historical reset debit for
+the existing compatibility worker. Reset quote/admission and account automation
+are removed. New account inserts keep the unused legacy database flag disabled;
+reads ignore it. `legacy_reset_settlement_test.go` seeds historical obligations
+and verifies owner isolation, completion notifications and exact refund replay.
+No migration or customer conversion is performed. Immutable ledgers, current
+periods, scheduled purchased cadence and purchase-wide refund evidence remain.

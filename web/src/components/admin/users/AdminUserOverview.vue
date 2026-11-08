@@ -34,7 +34,6 @@ const synchronizationLabel = computed(() => props.detail.synchronization.status 
       <div><dt>{{ t('adminUserProfile.joined') }}</dt><dd>{{ formatDateTime(detail.user.createdAt) }}</dd></div>
     </dl>
     <div class="profile-overview__signals">
-      <span><UIcon name="i-ph-arrows-clockwise" />{{ t('adminUserProfile.trafficResetAutomation') }} <strong>{{ t(detail.autoTrafficResetEnabled ? 'adminUserProfile.enabled' : 'adminUserProfile.disabled') }}</strong></span>
       <span>{{ t('adminUserProfile.accountUpdated') }} <time>{{ formatDateTime(detail.user.updatedAt) }}</time></span>
     </div>
     <div class="profile-overview__subscription">

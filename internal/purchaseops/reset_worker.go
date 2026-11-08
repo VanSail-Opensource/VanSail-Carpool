@@ -16,6 +16,18 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 	if item.Status != providerops.StatusQueued && item.Status != providerops.StatusProcessing {
 		return w.finishItem(ctx, operation, item)
 	}
+	// Only a committed historical debit can authorize this compatibility worker.
+	paid, err := w.repository.LegacyTrafficResetPaid(ctx, operation.Receipt.ID, operation.OwnerUserID)
+	if err != nil {
+		return err
+	}
+	if !paid {
+		status := providerops.StatusFailed
+		if item.Status == providerops.StatusProcessing {
+			status = providerops.StatusPendingReview
+		}
+		return w.complete(ctx, operation, item, status, "RESET_RETIRED")
+	}
 	facts, user, err := w.loadTarget(ctx, operation, item)
 	if err != nil {
 		return err
@@ -52,8 +64,7 @@ func (w *Worker) handleReset(ctx context.Context, operation providerops.Operatio
 	if item.Status == providerops.StatusProcessing {
 		return w.reconcileReset(ctx, operation, item, remoteID)
 	}
-	quote, quoteErr := QuoteTrafficReset(facts, operation.OwnerUserID, w.now().UTC())
-	if quoteErr != nil || !quote.Eligible {
+	if !activeAt(facts.Purchase, w.now().UTC()) {
 		item, err = w.repository.BeginProviderOperationItemAttempt(ctx, operation.Receipt.ID, item.Key, w.now().UTC())
 		if err != nil {
 			return err

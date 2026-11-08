@@ -54,12 +54,6 @@
     "eligibleUntil": "可申请至",
     "ineligible": "当前购买不符合此操作条件。",
     "quoteChanged": "资格或价格已变化，请检查刷新后的报价再确认。",
-    "automation": {
-      "label": "自动重置流量",
-      "description": "用量严格超过 95% 后，符合条件的套餐可自动重置。约每五分钟检查一次，余额充足时按正常重置价格扣款。",
-      "loadFailed": "暂时无法获取自动重置设置。",
-      "saveFailed": "无法保存自动重置设置。"
-    },
     "refund": {
       "title": "退款此购买？",
       "description": "系统会先暂停访问并再次确认用量为零，再退回原始净扣款。",

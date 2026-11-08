@@ -1,9 +1,7 @@
 # Dashboard components
 
-Purchase actions retain automatic renewal and eligible refunds. Member manual
-traffic reset, its control and dialog are removed; automatic reset settings use
-the strict >95% five-minute scanner threshold and normal balance-backed pricing.
-
+Purchase actions retain automatic renewal and eligible refunds. Manual and
+automatic paid reset controls are retired. The dashboard shows usage
 facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
@@ -16,11 +14,10 @@ Settings. This keeps dashboard actions separate from subscription settings.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
 - `EntitlementSummary.test.ts` covers active, queued, and absent combos.
-- `TrafficResetAutomationControl.test.ts` verifies the switch remains controlled while emitting an immediate account preference update.
 
-Dashboard controls distinguish copy, open, navigation, retry, confirmation, and destructive intents. Automatic renewal and traffic-reset switches emit selection feedback only when their controlled value changes.
+Dashboard controls distinguish copy, open, navigation, retry, confirmation, and destructive intents. Automatic renewal switches emit selection feedback only when their controlled value changes.
 
-Language, currency and automatic traffic reset controls now appear on Settings. Mobile Around TX additionally requires the persisted entrance preference.
+Language and currency controls appear on Settings. Mobile Around TX additionally requires the persisted entrance preference.
 
 The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members without a combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
 
@@ -39,7 +36,7 @@ offline requires complete fresh coverage reporting no open flows.
 
 - `EntitlementSummary.vue` renders the active combo directly and keeps queued purchase controls; member usage forecasts are not requested.
 
-Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageDetails.vue`.
+Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficUsageDetails.vue`.
 
 When no combo is active and the balance is positive, `UserHome.vue` composes
 `PAYGUsagePanel.vue` in place of the quota meter. It uses the existing visibility

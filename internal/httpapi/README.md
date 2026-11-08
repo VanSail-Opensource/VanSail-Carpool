@@ -54,11 +54,10 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `authentication.go` exchanges verified Telegram init data for session and request-signing cookies.
 - `handlers.go` serves onboarding actions, dashboard, catalog, purchases, balance, and ledger history.
 - `purchases.go` serves the authenticated queued-purchase cancellation and TXB refund endpoint.
-- `member_purchase_operations.go` serves first-term refund quotes, idempotent mutations, and owner-scoped receipts. Member manual resets are not exposed; automatic and existing queued reset executors remain supported.
-- `traffic_reset_automation.go` serves the onboarded member's account-wide automatic-reset preference and strict boolean update.
+- `member_purchase_operations.go` serves first-term refund quotes, idempotent mutations, and owner-scoped receipts. Member manual resets are not exposed; only previously paid queued reset obligations remain supported.
 - `member_connections.go` preserves scan and drop-route compatibility while the signed-handle command now queues a three-day block followed by disconnect.
 - `member_ip_blocks.go` lists owner-only active blocks, queues owner unblocks, and maps ownership mismatches to not found.
-- `member_routes.go` mounts the member connection, reset automation, reset, refund, and operation resources.
+- `member_routes.go` mounts the member connection, refund, and operation resources.
 - `dashboard_usage.go` validates the authenticated member's UTC traffic range and serves the bounded per-node usage projection.
 - `statistics.go` serves the cached aggregate snapshot, on-demand shared
 - `billing_orders.go` creates, polls, and cancels member payment orders.

@@ -9,11 +9,10 @@ type copySet struct {
 
 var englishCopy = copySet{
 	titles: map[string]string{
-		"proxy_identity_conflict_refund":       "↩️ Combo access refunded",
-		"automatic_traffic_reset":              "🔄 Automatic traffic reset completed",
-		"automatic_traffic_reset_insufficient": "⏸ Automatic traffic reset disabled",
-		"automatic_traffic_reset_failed":       "↩️ Automatic traffic reset refunded",
-		"expiration":                           "🛑 Subscription expired", "expiry_reminder": "⏳ Subscription expiring soon",
+		"proxy_identity_conflict_refund": "↩️ Combo access refunded",
+		"automatic_traffic_reset":        "🔄 Automatic traffic reset completed",
+		"automatic_traffic_reset_failed": "↩️ Automatic traffic reset refunded",
+		"expiration":                     "🛑 Subscription expired", "expiry_reminder": "⏳ Subscription expiring soon",
 		"queued_activation": "🚀 Queued combo activated", "purchase_activation": "✅ Combo activated",
 		"auto_renewal": "♻️ Auto-renewed", "payment_credited": "💰 TXB added to your balance",
 		"payment_refunded":  "↩️ Payment refunded",
@@ -66,21 +65,19 @@ var englishCopy = copySet{
 		"RESET_FAILED":          "The provider could not complete the reset", "REFUND_UNAVAILABLE": "The refund could not be completed",
 	},
 	guidance: map[string]string{
-		"expiration":                           "Open VanSail Carpool to restore access.",
-		"expiry_reminder":                      "Choose a new combo in VanSail Carpool before expiry.",
-		"traffic_threshold":                    "Check your remaining traffic in VanSail Carpool.",
-		"automatic_traffic_reset_insufficient": "Add TXB, then re-enable automatic reset in VanSail Carpool.",
-		"auto_renewal_failed":                  "Open VanSail Carpool to choose a new combo.",
+		"expiration":          "Open VanSail Carpool to restore access.",
+		"expiry_reminder":     "Choose a new combo in VanSail Carpool before expiry.",
+		"traffic_threshold":   "Check your remaining traffic in VanSail Carpool.",
+		"auto_renewal_failed": "Open VanSail Carpool to choose a new combo.",
 	},
 }
 
 var chineseCopy = copySet{
 	titles: map[string]string{
-		"proxy_identity_conflict_refund":       "↩️ 套餐费用已退还",
-		"automatic_traffic_reset":              "🔄 自动流量重置已完成",
-		"automatic_traffic_reset_insufficient": "⏸ 自动流量重置已关闭",
-		"automatic_traffic_reset_failed":       "↩️ 自动流量重置已退款",
-		"expiration":                           "🛑 订阅已到期", "expiry_reminder": "⏳ 订阅即将到期",
+		"proxy_identity_conflict_refund": "↩️ 套餐费用已退还",
+		"automatic_traffic_reset":        "🔄 自动流量重置已完成",
+		"automatic_traffic_reset_failed": "↩️ 自动流量重置已退款",
+		"expiration":                     "🛑 订阅已到期", "expiry_reminder": "⏳ 订阅即将到期",
 		"queued_activation": "🚀 排队套餐已启用", "purchase_activation": "✅ 套餐已启用",
 		"auto_renewal": "♻️ 自动续费成功", "payment_credited": "💰 TXB 已到账",
 		"payment_refunded":  "↩️ 支付已退款",
@@ -134,11 +131,10 @@ var chineseCopy = copySet{
 		"RESET_FAILED":          "服务商未能完成重置", "REFUND_UNAVAILABLE": "退款未能完成",
 	},
 	guidance: map[string]string{
-		"expiration":                           "请前往 VanSail Carpool 重新开通。",
-		"expiry_reminder":                      "请在到期前前往 VanSail Carpool 选择新套餐。",
-		"traffic_threshold":                    "请前往 VanSail Carpool 查看剩余流量。",
-		"automatic_traffic_reset_insufficient": "请补充 TXB 后在 VanSail Carpool 重新开启自动重置。",
-		"auto_renewal_failed":                  "请前往 VanSail Carpool 选择新套餐。",
+		"expiration":          "请前往 VanSail Carpool 重新开通。",
+		"expiry_reminder":     "请在到期前前往 VanSail Carpool 选择新套餐。",
+		"traffic_threshold":   "请前往 VanSail Carpool 查看剩余流量。",
+		"auto_renewal_failed": "请前往 VanSail Carpool 选择新套餐。",
 	},
 }
 

@@ -26,21 +26,20 @@ type adminSynchronizationResponse struct {
 }
 
 type adminUserDetailResponse struct {
-	User                    userResponse                 `json:"user"`
-	Balance                 model.Money                  `json:"balance"`
-	Synchronization         adminSynchronizationResponse `json:"synchronization"`
-	ActiveCombo             *adminEntitlementResponse    `json:"activeCombo"`
-	Entitlements            []adminEntitlementResponse   `json:"entitlements"`
-	EmbyAccounts            []embyAccountResponse        `json:"embyAccounts"`
-	Payments                []adminPaymentResponse       `json:"payments"`
-	Refunds                 []model.Refund               `json:"refunds"`
-	Operations              []model.OperationReceipt     `json:"operations"`
-	IPBlocks                []connections.IPBlock        `json:"ipBlocks"`
-	CouponWallet            []coupons.Grant              `json:"couponWallet"`
-	AffiliateHistory        affiliates.ReferralPage      `json:"affiliateHistory"`
-	TemporaryBan            *database.AdminTemporaryBan  `json:"temporaryBan"`
-	AutoTrafficResetEnabled bool                         `json:"autoTrafficResetEnabled"`
-	PMConversation          *pmConversationResponse      `json:"pmConversation"`
+	User             userResponse                 `json:"user"`
+	Balance          model.Money                  `json:"balance"`
+	Synchronization  adminSynchronizationResponse `json:"synchronization"`
+	ActiveCombo      *adminEntitlementResponse    `json:"activeCombo"`
+	Entitlements     []adminEntitlementResponse   `json:"entitlements"`
+	EmbyAccounts     []embyAccountResponse        `json:"embyAccounts"`
+	Payments         []adminPaymentResponse       `json:"payments"`
+	Refunds          []model.Refund               `json:"refunds"`
+	Operations       []model.OperationReceipt     `json:"operations"`
+	IPBlocks         []connections.IPBlock        `json:"ipBlocks"`
+	CouponWallet     []coupons.Grant              `json:"couponWallet"`
+	AffiliateHistory affiliates.ReferralPage      `json:"affiliateHistory"`
+	TemporaryBan     *database.AdminTemporaryBan  `json:"temporaryBan"`
+	PMConversation   *pmConversationResponse      `json:"pmConversation"`
 }
 
 func mapAdminUserDetail(detail admin.UserDetail) adminUserDetailResponse {
@@ -51,8 +50,7 @@ func mapAdminUserDetail(detail admin.UserDetail) adminUserDetailResponse {
 		EmbyAccounts: make([]embyAccountResponse, 0, len(detail.EmbyAccounts)),
 		Payments:     make([]adminPaymentResponse, 0, len(detail.Payments)), Refunds: detail.Refunds,
 		Operations: detail.Operations, IPBlocks: []connections.IPBlock{}, CouponWallet: detail.CouponWallet,
-		AffiliateHistory: detail.AffiliateHistory, TemporaryBan: detail.TemporaryBan,
-		AutoTrafficResetEnabled: detail.User.AutoTrafficResetEnabled}
+		AffiliateHistory: detail.AffiliateHistory, TemporaryBan: detail.TemporaryBan}
 	for _, item := range detail.Entitlements {
 		response.Entitlements = append(response.Entitlements, adminEntitlementResponse{Purchase: item, UserID: item.UserID})
 	}

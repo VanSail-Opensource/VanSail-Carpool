@@ -7,41 +7,10 @@ import (
 	"time"
 )
 
-type scanRepositoryStub struct {
-	traffic          []TrafficUser
-	automatic        []TrafficUser
-	automaticHandled bool
-}
-
-func (r *scanRepositoryStub) ProcessAutomaticTrafficResetObservation(_ context.Context, _ string, used, limit int64,
-	reset string, lastReset *time.Time, _ time.Time) (AutomaticResetResult, error) {
-	r.automatic = append(r.automatic, TrafficUser{UsedBytes: used, LimitBytes: limit, ResetStrategy: reset, LastTrafficResetAt: lastReset})
-	return AutomaticResetResult{Handled: r.automaticHandled, EventCreated: r.automaticHandled}, nil
-}
+type scanRepositoryStub struct{ traffic []TrafficUser }
 
 func (r *scanRepositoryStub) EnqueueExpiryReminderNotifications(context.Context, time.Time) (int, error) {
 	return 0, nil
-}
-
-func TestScannerUsesStrictAutomaticResetBoundary(t *testing.T) {
-	t.Parallel()
-	if aboveNinetyFivePercent(950, 1000) {
-		t.Fatal("exactly 95% was considered above 95%")
-	}
-	if !aboveNinetyFivePercent(951, 1000) || !aboveNinetyFivePercent(math.MaxInt64, math.MaxInt64-1) {
-		t.Fatal("aboveNinetyFivePercent rejected an eligible value")
-	}
-	repository := &scanRepositoryStub{automaticHandled: true}
-	scanner := NewScanner(repository, trafficRemoteStub{users: []TrafficUser{
-		{ID: 1, UsedBytes: 950, LimitBytes: 1000},
-		{ID: 2, UsedBytes: 951, LimitBytes: 1000},
-	}}, nil)
-	if err := scanner.Scan(context.Background(), time.Now().UTC()); err != nil {
-		t.Fatalf("Scan(): %v", err)
-	}
-	if len(repository.automatic) != 1 || len(repository.traffic) != 1 {
-		t.Fatalf("automatic/generic calls = %d/%d, want 1/1", len(repository.automatic), len(repository.traffic))
-	}
 }
 
 func (r *scanRepositoryStub) EnqueueTrafficThresholdNotification(_ context.Context, remoteID string, used, limit int64,

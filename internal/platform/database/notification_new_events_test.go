@@ -98,10 +98,7 @@ func TestManualResetReportsOnlyTerminalOutcomes(t *testing.T) {
 	input := providerops.CreateInput{ActorUserID: user.ID, OwnerUserID: user.ID, Kind: purchaseops.OperationResetKind,
 		IdempotencyKey: "manual-reset", RequestFingerprint: "1111111111111111",
 		Items: []providerops.ItemInput{{Key: "purchase", TargetType: "purchase", TargetID: purchase.ID}}}
-	operation, _, err := store.BeginTrafficReset(ctx, input, purchase.ID, now.Add(time.Hour))
-	if err != nil {
-		t.Fatal(err)
-	}
+	operation := seedLegacyTrafficReset(t, store, input, 11, now.Add(time.Hour))
 	if _, err := store.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}

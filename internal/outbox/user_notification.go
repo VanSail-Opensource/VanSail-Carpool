@@ -62,7 +62,7 @@ func validateUserNotification(payload UserNotification) error {
 	switch payload.Kind {
 	case UserEventExpiration, UserEventExpiryReminder, UserEventQueuedActivation, UserEventPurchaseActivation,
 		UserEventAutoRenewal, UserEventPaymentCredited, UserEventPaymentRefunded,
-		UserEventTrafficThreshold, UserEventAutomaticReset, UserEventAutomaticResetInsufficient,
+		UserEventTrafficThreshold, UserEventAutomaticReset,
 		UserEventAutomaticResetFailed, UserEventGroupReward, UserEventAdminExtension, UserEventAdminUpdate,
 		UserEventPurchaseQueued, UserEventRenewalScheduled,
 		UserEventAddonActivated, UserEventQueuedCancellation, UserEventAutoRenewalFailed,

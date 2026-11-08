@@ -1,4 +1,4 @@
-// Package purchaseops owns member combo controls, automatic reset settlement and first-term refunds.
+// Package purchaseops owns member combo controls, legacy reset settlement and first-term refunds.
 package purchaseops
 
 import (
@@ -19,8 +19,6 @@ var (
 
 const (
 	ReasonNotActive      = "PURCHASE_NOT_ACTIVE"
-	ReasonUnsupported    = "RESET_STRATEGY_UNSUPPORTED"
-	ReasonInvalidPrice   = "RESET_PRICE_INVALID"
 	ReasonNotFirstTerm   = "REFUND_NOT_FIRST_TERM"
 	ReasonWindowExpired  = "REFUND_WINDOW_EXPIRED"
 	ReasonTrafficUsed    = "REFUND_TRAFFIC_USED"
@@ -28,26 +26,14 @@ const (
 	ReasonOperationOpen  = "OPERATION_ALREADY_OPEN"
 	OperationResetKind   = "purchase_traffic_reset"
 	OperationRefundKind  = "purchase_refund"
-	ResetOutboxKind      = "purchase_traffic_reset"
 	RefundOutboxKind     = "purchase_refund"
 	refundWindow         = 24 * time.Hour
 )
 
 // PurchaseFacts are immutable and current fields needed by member operations.
 type PurchaseFacts struct {
-	Purchase       model.Purchase
-	CoreGrossMinor int64
-	FirstTerm      bool
-}
-
-// TrafficResetQuote is the authoritative reset price and eligibility result.
-type TrafficResetQuote struct {
-	PurchaseID    string      `json:"purchaseId"`
-	Eligible      bool        `json:"eligible"`
-	ReasonCode    *string     `json:"reasonCode"`
-	Price         model.Money `json:"price"`
-	ResetStrategy string      `json:"resetStrategy"`
-	QuotedAt      time.Time   `json:"quotedAt"`
+	Purchase  model.Purchase
+	FirstTerm bool
 }
 
 // MemberRefundQuote is the authoritative refund amount and eligibility result.

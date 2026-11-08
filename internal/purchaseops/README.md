@@ -8,14 +8,14 @@ entitlement identity/reset executor, then invalidates cached dashboard usage.
 Early activation forfeits remaining access without creating financial credits,
 preserves the successor duration and shifts later terms and continuity jobs.
 
-- `types.go` owns reset/refund contracts and stable reason codes.
-- `eligibility.go` applies immutable reset pricing and refund eligibility rules.
+- `types.go` owns refund contracts and historical reset identifiers and stable reason codes.
+- `eligibility.go` applies refund eligibility rules.
 - `service.go` creates idempotent durable operations without provider calls in transactions.
 - `worker.go` owns shared durable phases and receipt completion.
-- `automation.go` owns the account preference service boundary and deterministic purchase-plus-reset-period command key.
+- `legacy_reset.go` recognizes historical scanner keys for settlement only.
 - `reset_worker.go` reconciles reset timestamps and requests once-only compensation.
 - `refund_worker.go` quiesces, rechecks usage, restores conflicts, and commits refunds.
-- `eligibility_test.go` covers cadence rounding and the strict refund boundary.
+- `eligibility_test.go` covers the strict refund boundary.
 
 Provider calls are supplied by the application adapter and always traverse the shared X-Node queue. Tests are added for CI and are not run locally.
 
@@ -30,3 +30,10 @@ Ownership, current validity, conflicts and the last enabled squad remain checked
 under the owner balance lock. Existing compile revision triggers wake normal
 native reconciliation; outbound commands retain the per-node execution queue.
 Legacy queued switch receipts remain supported by `ComboControlWorker`.
+
+Manual paid resets and automatic reset admission are retired. Only the existing
+worker may finish a reset with an owner-matching, immutable historical debit.
+Unpaid queued reset receipts fail without native mutation; uncertain attempted
+commands remain under review. Refund quotes, purchased scheduled quota cadence,
+initial period setup and renewal accounting remain separate. No new preference,
+quote or reset-debit producer remains.

@@ -7,9 +7,9 @@ import (
 	time "time"
 )
 
-func (s *Store) beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, reset bool, now time.Time) (providerops.Operation, bool, error) {
+func (s *Store) beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, now time.Time) (providerops.Operation, bool, error) {
 	for retryIndex := 0; ; retryIndex++ {
-		r0, r1, r2 := s.retryAttempt_beginMemberPurchaseOperation(ctx, input, purchaseID, reset, now)
+		r0, r1, r2 := s.retryAttempt_beginMemberPurchaseOperation(ctx, input, purchaseID, now)
 		if !s.retryTransaction(ctx, r2, retryIndex) {
 			return r0, r1, r2
 		}

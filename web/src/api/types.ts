@@ -78,7 +78,6 @@ export type ConnectionIP = DeepReadonly<components['schemas']['ConnectionIP']>
 export type ConnectionNode = DeepReadonly<components['schemas']['ConnectionNode']>
 export type ConnectionScan = DeepReadonly<components['schemas']['ConnectionScan']>
 export type IPBlock = DeepReadonly<components['schemas']['IPBlock']>
-export type TrafficResetAutomation = DeepReadonly<components['schemas']['TrafficResetAutomation']>
 export type DisplayCurrency = components['schemas']['DisplayCurrency']
 export type DisplayCurrencyPreference = DeepReadonly<components['schemas']['DisplayCurrencyPreference']>
 export type MemberRefundQuote = DeepReadonly<components['schemas']['MemberRefundQuote']>

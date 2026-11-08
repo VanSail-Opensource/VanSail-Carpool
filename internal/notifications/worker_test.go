@@ -98,3 +98,11 @@ func TestWorkerKeepsTelegramFailuresRetryable(t *testing.T) {
 		t.Fatalf("HandleOutbox() = %v, calls %d", err, sender.calls)
 	}
 }
+
+func TestWorkerAcknowledgesRetiredResetPreferenceNotice(t *testing.T) {
+	sender := &senderStub{}
+	err := NewWorker(sender, nil, time.UTC).HandleOutbox(context.Background(), model.OutboxJob{Kind: jobpayload.UserNotificationKind, Payload: `{"kind":"automatic_traffic_reset_insufficient","eventKey":"legacy-no-debit"}`})
+	if err != nil || sender.calls != 0 {
+		t.Fatal(sender.calls, err)
+	}
+}

@@ -31,3 +31,8 @@ Delivery reads current user preferences immediately before sending; suppressed j
 Private Telegram recipient-blocked/deactivated/not-found responses are terminal delivery failures, 429 respects its retry deadline, and transient or unknown errors retain bounded retries. Notification failure classification does not trigger account purge.
 
 A bounded worker tombstone acknowledges pre-retirement outage notifications without sending or formatting them. Historical delivery facts remain available to retention/audit; no new producer exists.
+
+Traffic scans emit usage reminders only; the retired automatic-reset preference
+is never read and scans cannot create a debit. Historical paid-reset completion
+and refund payloads remain readable. Old insufficient-funding notices are
+acknowledged without sending retired product instructions.

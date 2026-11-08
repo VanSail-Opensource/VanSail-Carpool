@@ -3,7 +3,6 @@ import { onMounted } from 'vue'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import LanguageControl from '@/components/layout/LanguageControl.vue'
 import CurrencyControl from '@/components/layout/CurrencyControl.vue'
-import TrafficResetAutomationControl from '@/components/dashboard/TrafficResetAutomationControl.vue'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useSessionStore } from '@/stores/session'
 import NotificationSettings from './NotificationSettings.vue'
@@ -32,8 +31,6 @@ onMounted(() => void preferences.refresh())
     <NotificationSettings />
     <section class="settings-section">
       <h2>{{ $t('settings.subscription') }}</h2>
-      <TrafficResetAutomationControl :enabled="settings.automation.value?.enabled ?? null" :loading="settings.automationLoading.value" :saving="settings.automationSaving.value" :error="settings.automationError.value" @update="settings.setAutomation" />
-      <UButton v-if="settings.automationError.value" variant="link" :label="$t('common.tryAgain')" @click="settings.loadAutomation()" />
       <SettingsComboControls />
       <SettingsPAYGControls />
     </section>

@@ -19,6 +19,7 @@ type WorkerRepository interface {
 	BeginProviderOperationItemAttempt(context.Context, string, string, time.Time) (providerops.Item, error)
 	CompleteProviderOperationItem(context.Context, string, string, providerops.Completion, time.Time) (providerops.Item, error)
 	CompleteProviderOperation(context.Context, string, providerops.Completion, time.Time) (providerops.Operation, error)
+	LegacyTrafficResetPaid(context.Context, string, string) (bool, error)
 	CompensateTrafficReset(context.Context, string, string, time.Time) error
 	FinalizeMemberRefund(context.Context, string, string, time.Time) (RefundResult, error)
 }

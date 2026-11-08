@@ -8,7 +8,7 @@ import (
 func TestAllNotificationKindsHaveExactlyOneCategory(t *testing.T) {
 	groups := [][]string{
 		{outbox.UserEventExpiration, outbox.UserEventExpiryReminder, outbox.UserEventQueuedActivation, outbox.UserEventPurchaseActivation, outbox.UserEventAutoRenewal, outbox.UserEventPurchaseQueued, outbox.UserEventRenewalScheduled, outbox.UserEventAddonActivated, outbox.UserEventQueuedCancellation, outbox.UserEventAutoRenewalFailed},
-		{outbox.UserEventTrafficThreshold, outbox.UserEventAutomaticReset, outbox.UserEventAutomaticResetInsufficient, outbox.UserEventAutomaticResetFailed, outbox.UserEventManualResetCompleted, outbox.UserEventManualResetRefunded},
+		{outbox.UserEventTrafficThreshold, outbox.UserEventAutomaticReset, outbox.UserEventAutomaticResetFailed, outbox.UserEventManualResetCompleted, outbox.UserEventManualResetRefunded},
 		{outbox.UserEventPaymentCredited, outbox.UserEventPaymentRefunded, outbox.UserEventMemberRefundCompleted, outbox.UserEventMemberRefundFailed},
 		{outbox.UserEventGroupReward, outbox.AffiliateSuccessKind, outbox.AffiliateTierUpgradeKind},
 		{outbox.UserEventAdminExtension, outbox.UserEventAdminUpdate, outbox.UserEventProvisionConflict},

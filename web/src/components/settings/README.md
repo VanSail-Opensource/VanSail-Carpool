@@ -12,10 +12,10 @@ feedback and the eligible early-start action. `useComboControls.ts` owns loading
 receipt resumption and cache invalidation; `EarlyActivationDialog.vue` owns typed
 confirmation and date preview. Ownership remains separate from enabled access.
 Add squads uses a full-width action row and the existing squad addition dialog.
-Language, currency and automatic reset share the same flat settings-row rhythm;
+Language and currency share the same flat settings-row rhythm;
 the group tag save action sits beside its input.
 
-`SettingsPage.vue` composes existing language, currency and traffic-reset controls.
+`SettingsPage.vue` composes existing language, currency and member access controls.
 It is the sole member navigation entrance to `/settings/diy`; the existing DIY
 route and in-memory drafts remain owned by the DIY module. Mini App entrances
 navigate through the Vue router instead of emitting anchors, because Telegram's
@@ -24,7 +24,7 @@ WebView treats host-level URL navigation separately from in-app history.
 `SettingsSwitchRow.vue` is a controlled, accessible row: changes are confirmed by
 the preferences store before the displayed value changes.
 `GroupMemberTagEditor.vue` edits live Telegram data, including clearing a tag.
-`useSettings.ts` isolates reset automation and canonical tag load/save/error states.
+`useSettings.ts` isolates canonical tag load/save/error states.
 The page uses the account-scoped preferences store, typed HTTP clients and queued
 Telegram APIs. Optional entrances require current server-confirmed eligibility.
 

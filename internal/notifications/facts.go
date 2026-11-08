@@ -42,7 +42,6 @@ const (
 	FactNewSquads         = "newSquads"
 	FactReason            = "reason"
 	FactCharge            = "chargeMinor"
-	FactAutomationState   = "automationState"
 	FactValidFrom         = "validFrom"
 	FactTermCount         = "termCount"
 	FactReplacement       = "replacement"

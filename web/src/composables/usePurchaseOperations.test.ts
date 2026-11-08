@@ -6,8 +6,6 @@ import type { OperationReceipt, MemberRefundQuote } from '@/api/types'
 const apiMocks = vi.hoisted(() => ({
   getOperation: vi.fn(),
   getPurchaseRefundQuote: vi.fn(),
-  getTrafficResetAutomation: vi.fn(),
-  updateTrafficResetAutomation: vi.fn(),
   refundPurchase: vi.fn(),
 }))
 const createUuid = vi.hoisted(() => vi.fn())

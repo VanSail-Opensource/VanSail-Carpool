@@ -2,7 +2,7 @@
 
 Settings is available on `/settings`, desktop/mobile navigation and the native
 Telegram Settings button. The page inherits the premium dark theme and English
-and Simplified Chinese catalogs; language, currency and reset automation reuse
+and Simplified Chinese catalogs; language and currency reuse
 their existing state and endpoints.
 
 `GET/PATCH /api/v1/me/preferences` exposes ten preference flags and sparse PAYG squad choices. Missing database
@@ -33,7 +33,7 @@ Mobile was emulated at 390 × 844 with touch; desktop at 1280 × 900.
 
 - Initial/default, loading, inactive-combo, unjoined-group, missing bot permission,
   failed preference save, translated language and currency selection were checked.
-- Partial PATCH payloads, notification toggling, automatic reset PUT, native
+- Partial PATCH payloads, notification toggling, native
   Settings navigation, tag save and empty-tag clearing were observed.
 - Around TX and Activity appeared after opt-in and disappeared after opt-out.
 - The same core combo displayed 125.00 TXB with a selected paid squad and

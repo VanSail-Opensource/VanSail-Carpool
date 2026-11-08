@@ -42,3 +42,17 @@ func TestRetiredIPSourceControlsHaveNoRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestRetiredTrafficResetControlsHaveNoMemberRoutes(t *testing.T) {
+	router := chi.NewRouter()
+	(&Server{}).mountMemberOperations(router)
+	for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodPost} {
+		for _, path := range []string{"/api/v1/me/traffic-reset-automation", "/api/v1/purchases/old/traffic-reset"} {
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, httptest.NewRequest(method, path, nil))
+			if response.Code != http.StatusNotFound {
+				t.Fatalf("retired route %s %s returned %d", method, path, response.Code)
+			}
+		}
+	}
+}

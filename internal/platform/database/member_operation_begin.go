@@ -25,7 +25,7 @@ func (s *Store) MemberPurchaseFacts(ctx context.Context, purchaseID string) (pur
 		AND NOT EXISTS(SELECT 1 FROM purchases successor WHERE successor.auto_renew_source_purchase_id=purchases.id)
 		AND NOT EXISTS(SELECT 1 FROM renewal_batches WHERE source_purchase_id=purchases.id) THEN 1 ELSE 0 END
 		FROM purchases WHERE id=$1`, purchaseID).Scan(&firstTerm)
-	return purchaseops.PurchaseFacts{Purchase: purchase, CoreGrossMinor: purchase.CoreGrossTXBMinor, FirstTerm: firstTerm == 1}, err
+	return purchaseops.PurchaseFacts{Purchase: purchase, FirstTerm: firstTerm == 1}, err
 }
 
 // ProviderOperationForActorKey checks a replay before mutable eligibility state.
@@ -44,19 +44,14 @@ func (s *Store) ProviderOperationForActorKey(ctx context.Context, actorID, kind,
 	return operation.Receipt, true, nil
 }
 
-// BeginTrafficReset debits and creates a durable reset command atomically.
-func (s *Store) BeginTrafficReset(ctx context.Context, input providerops.CreateInput, purchaseID string, now time.Time) (providerops.Operation, bool, error) {
-	return s.beginMemberPurchaseOperation(ctx, input, purchaseID, true, now)
-}
-
 // BeginMemberRefund creates a durable refund command after an atomic local recheck.
 func (s *Store) BeginMemberRefund(ctx context.Context, input providerops.CreateInput, purchaseID string, now time.Time) (providerops.Operation, bool, error) {
-	return s.beginMemberPurchaseOperation(ctx, input, purchaseID, false, now)
+	return s.beginMemberPurchaseOperation(ctx, input, purchaseID, now)
 }
 
-func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, reset bool, now time.Time) (providerops.Operation, bool, error) {
+func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, input providerops.CreateInput, purchaseID string, now time.Time) (providerops.Operation, bool, error) {
 	input, err := providerops.NormalizeCreate(input)
-	if err != nil || len(input.Items) != 1 || input.Items[0].TargetID != purchaseID {
+	if err != nil || input.Kind != purchaseops.OperationRefundKind || len(input.Items) != 1 || input.Items[0].TargetID != purchaseID {
 		return providerops.Operation{}, false, ErrConflict
 	}
 
@@ -75,7 +70,7 @@ func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, i
 	if err != nil {
 		return providerops.Operation{}, false, err
 	}
-	if !memberOperationEligible(facts, reset, now) {
+	if !memberOperationEligible(facts, now) {
 		return providerops.Operation{}, false, purchaseops.ErrIneligible
 	}
 	if open, err := openMemberOperationTx(ctx, tx, purchaseID, input.Kind); err != nil || open {
@@ -87,19 +82,6 @@ func (s *Store) retryAttempt_beginMemberPurchaseOperation(ctx context.Context, i
 	operationID, err := insertMemberOperationTx(ctx, tx, input, now)
 	if err != nil {
 		return providerops.Operation{}, false, err
-	}
-	if reset {
-		price, valid := purchaseops.ResetPriceMinor(facts.CoreGrossMinor, facts.Purchase.ResetStrategy)
-		if !valid {
-			return providerops.Operation{}, false, purchaseops.ErrIneligible
-		}
-		balance, err := changeBalanceTx(ctx, tx, input.OwnerUserID, -price, now)
-		if err != nil {
-			return providerops.Operation{}, false, err
-		}
-		if _, err := insertLedgerTx(ctx, tx, input.OwnerUserID, -price, balance, "traffic_reset_debit", operationID, "paid traffic reset", now); err != nil {
-			return providerops.Operation{}, false, err
-		}
 	}
 	operation, err := scanProviderOperation(tx.QueryRowContext(ctx, providerOperationSelect+` WHERE id=$1`, operationID))
 	if err == nil {

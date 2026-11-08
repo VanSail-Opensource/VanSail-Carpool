@@ -35,7 +35,6 @@ Member connection scans, purchase refund resources, operation receipts, statisti
 - `api-v1-auth-telegram.yaml`: `/api/v1/auth/telegram`
 - `api-v1-me.yaml`: `/api/v1/me`
 - `api-v1-me-display-currency.yaml`: `/api/v1/me/display-currency`, persisted member display preference plus current TXB-per-CNY/USD rates
-- `api-v1-me-traffic-reset-automation.yaml`: `/api/v1/me/traffic-reset-automation`, account-wide automatic reset preference
 - `api-v1-community-membership-check.yaml`: `/api/v1/community/membership/check`, with `GET` for read-only active-combo visibility and `POST` for canonical Telegram membership refresh
 - `api-v1-community-invites-kind.yaml`: `/api/v1/community/invites/{kind}`, one identity-bound group or channel invite
 - `api-v1-onboarding-username.yaml`: `/api/v1/onboarding/username`

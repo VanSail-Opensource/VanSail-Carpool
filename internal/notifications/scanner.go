@@ -23,13 +23,6 @@ type TrafficUser struct {
 type ScanRepository interface {
 	EnqueueExpiryReminderNotifications(context.Context, time.Time) (int, error)
 	EnqueueTrafficThresholdNotification(context.Context, string, int64, int64, string, *time.Time, time.Time) (bool, error)
-	ProcessAutomaticTrafficResetObservation(context.Context, string, int64, int64, string, *time.Time, time.Time) (AutomaticResetResult, error)
-}
-
-// AutomaticResetResult distinguishes disabled accounts from handled reset periods.
-type AutomaticResetResult struct {
-	Handled      bool
-	EventCreated bool
 }
 
 // TrafficRemote pages through the documented Proxy user stream.
@@ -71,19 +64,6 @@ func (s *Scanner) scanTraffic(ctx context.Context, now time.Time) (int, error) {
 			if user.ID <= 0 || !aboveNinetyPercent(user.UsedBytes, user.LimitBytes) {
 				continue
 			}
-			if aboveNinetyFivePercent(user.UsedBytes, user.LimitBytes) {
-				result, resetErr := s.repository.ProcessAutomaticTrafficResetObservation(ctx, strconv.FormatInt(user.ID, 10),
-					user.UsedBytes, user.LimitBytes, user.ResetStrategy, user.LastTrafficResetAt, now)
-				if resetErr != nil {
-					return queued, resetErr
-				}
-				if result.EventCreated {
-					queued++
-				}
-				if result.Handled {
-					continue
-				}
-			}
 			inserted, err := s.repository.EnqueueTrafficThresholdNotification(ctx, strconv.FormatInt(user.ID, 10),
 				user.UsedBytes, user.LimitBytes, user.ResetStrategy, user.LastTrafficResetAt, now)
 			if err != nil {
@@ -98,15 +78,6 @@ func (s *Scanner) scanTraffic(ctx context.Context, now time.Time) (int, error) {
 		}
 		cursor = *next
 	}
-}
-
-func aboveNinetyFivePercent(used, limit int64) bool {
-	if used < 0 || limit <= 0 {
-		return false
-	}
-	usedHi, usedLo := bits.Mul64(uint64(used), 20)
-	limitHi, limitLo := bits.Mul64(uint64(limit), 19)
-	return usedHi > limitHi || usedHi == limitHi && usedLo > limitLo
 }
 
 func aboveNinetyPercent(used, limit int64) bool {

@@ -271,7 +271,6 @@ declare module 'vue' {
     SubscriptionTuningDiagnostics: typeof import('./src/components/subscription/SubscriptionTuningDiagnostics.vue')['default']
     SwitchField: typeof import('./src/components/common/SwitchField.vue')['default']
     TrafficNodeChart: typeof import('./src/components/dashboard/TrafficNodeChart.vue')['default']
-    TrafficResetAutomationControl: typeof import('./src/components/dashboard/TrafficResetAutomationControl.vue')['default']
     TrafficUsageDetails: typeof import('./src/components/dashboard/TrafficUsageDetails.vue')['default']
     TuningCompatibilityList: typeof import('./src/components/diy/TuningCompatibilityList.vue')['default']
     TxbAmountField: typeof import('./src/components/common/TxbAmountField.vue')['default']

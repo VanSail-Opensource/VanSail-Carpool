@@ -45,7 +45,7 @@ window.fetch = async input => {
     user: { id: '99101', displayName: 'Marina', telegramId: '99101', role: 'member', createdAt: iso(-86_400_000), updatedAt: iso(0) },
     balance: money('2500'), synchronization: { status: 'synchronized', remoteUserId: null, lastError: null },
     activeCombo: items[0], entitlements: items, embyAccounts: [], payments: [], refunds: [], operations: [], ipBlocks: [], couponWallet: [],
-    affiliateHistory: { items: [], page: { nextCursor: null } }, temporaryBan: null, autoTrafficResetEnabled: false, pmConversation: null,
+    affiliateHistory: { items: [], page: { nextCursor: null } }, temporaryBan: null, pmConversation: null,
   }
   else if (url.pathname.endsWith('/automatic-renewal')) value = { enabled: false, eligible: false, ineligibleReason: 'unavailable' }
   else if (url.pathname.endsWith('/refund/eligibility')) value = { eligible: false }

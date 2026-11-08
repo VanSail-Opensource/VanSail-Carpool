@@ -45,7 +45,7 @@ func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 	var retired struct {
 		Kind string `json:"kind"`
 	}
-	if json.Unmarshal([]byte(job.Payload), &retired) == nil && retired.Kind == "node_compensation" {
+	if json.Unmarshal([]byte(job.Payload), &retired) == nil && (retired.Kind == "node_compensation" || retired.Kind == "automatic_traffic_reset_insufficient") {
 		return nil
 	}
 	payload, err := jobpayload.DecodeUserNotification(job)

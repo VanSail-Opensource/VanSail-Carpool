@@ -17,7 +17,6 @@ type Repository interface {
 	MemberPurchaseFacts(context.Context, string) (PurchaseFacts, error)
 	UserByID(context.Context, string) (model.User, error)
 	ProviderOperationForActorKey(context.Context, string, string, string, string) (model.OperationReceipt, bool, error)
-	BeginTrafficReset(context.Context, providerops.CreateInput, string, time.Time) (providerops.Operation, bool, error)
 	BeginMemberRefund(context.Context, providerops.CreateInput, string, time.Time) (providerops.Operation, bool, error)
 	ProviderOperationForPrincipal(context.Context, string, string) (model.OperationReceipt, error)
 }
@@ -41,32 +40,6 @@ type Service struct {
 // NewService creates the member purchase operation service.
 func NewService(repository Repository, remote Remote) *Service {
 	return &Service{repository: repository, remote: remote, now: time.Now}
-}
-
-// TrafficResetQuote returns the immutable core-price cadence quote.
-func (s *Service) TrafficResetQuote(ctx context.Context, userID, purchaseID string) (TrafficResetQuote, error) {
-	facts, err := s.repository.MemberPurchaseFacts(ctx, purchaseID)
-	if err != nil {
-		return TrafficResetQuote{}, err
-	}
-	return QuoteTrafficReset(facts, userID, s.now().UTC())
-}
-
-// ResetTraffic atomically debits and queues one idempotent reset operation.
-func (s *Service) ResetTraffic(ctx context.Context, userID, purchaseID, idempotencyKey string) (model.OperationReceipt, error) {
-	fingerprint := operationFingerprint(OperationResetKind, purchaseID)
-	if receipt, found, err := s.replay(ctx, userID, OperationResetKind, idempotencyKey, fingerprint); found || err != nil {
-		return receipt, err
-	}
-	quote, err := s.TrafficResetQuote(ctx, userID, purchaseID)
-	if err != nil {
-		return model.OperationReceipt{}, err
-	}
-	if !quote.Eligible {
-		return model.OperationReceipt{}, ErrIneligible
-	}
-	operation, _, err := s.repository.BeginTrafficReset(ctx, command(userID, purchaseID, OperationResetKind, idempotencyKey, fingerprint), purchaseID, s.now().UTC())
-	return operation.Receipt, err
 }
 
 // RefundQuote returns a live-usage, first-term refund quote.

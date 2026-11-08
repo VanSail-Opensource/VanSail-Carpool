@@ -23,7 +23,7 @@ func (s *Store) retryAttempt_FinalizeMemberRefund(ctx context.Context, operation
 		return purchaseops.RefundResult{}, ErrConflict
 	}
 	facts, err := memberPurchaseFactsTx(ctx, tx, purchaseID, operation.OwnerUserID)
-	if err != nil || !memberOperationEligible(facts, false, now) {
+	if err != nil || !memberOperationEligible(facts, now) {
 		return purchaseops.RefundResult{}, purchaseops.ErrIneligible
 	}
 	balance, err := changeBalanceTx(ctx, tx, operation.OwnerUserID, facts.Purchase.PriceTXBMinor, now)

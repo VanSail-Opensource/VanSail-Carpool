@@ -10,8 +10,6 @@ func (s *Server) mountMemberOperations(router chi.Router) {
 	router.Patch("/api/v1/me/preferences", s.updateUserPreferences)
 	router.Get("/api/v1/me/group-member-tag", s.groupMemberTag)
 	router.Put("/api/v1/me/group-member-tag", s.updateGroupMemberTag)
-	router.Get("/api/v1/me/traffic-reset-automation", s.trafficResetAutomation)
-	router.Put("/api/v1/me/traffic-reset-automation", s.updateTrafficResetAutomation)
 	router.Get("/api/v1/me/internal-squads", s.memberComboControls)
 	router.Put("/api/v1/me/internal-squads/{uuid}", s.memberSwitchSquad)
 	router.Get("/api/v1/purchases/{id}/early-activation", s.memberEarlyActivationQuote)

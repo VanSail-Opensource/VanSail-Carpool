@@ -67,3 +67,25 @@ focus and the intervention menu, mobile 390px and desktop 1440px layouts. No
 unexpected console or request failures were observed. Hosted regressions cover
 retired policy flags, command rejection, coupon scope changes, purchase replay,
 public renewal bounds and historical reserved-discount settlement.
+
+## Manual paid resets and account automation
+
+Removed the account preference, Settings control, admin indicator, HTTP/OpenAPI
+resources, speculative reset quote and new paid-reset debit producers. Traffic
+notifications now enqueue threshold reminders only. Old insufficient-balance
+notices are acknowledged without advertising a retired re-enable action.
+
+The existing worker can settle a historical paid reset only after verifying its
+owner-matching immutable debit. Missing-debit receipts cannot mutate native
+periods; uncertain attempted mutations remain under review. Historical financial
+completion/refund notices, initial entitlement periods and purchased scheduled
+quota resets remain supported. No purchase or customer is converted.
+
+Validation for paid reset retirement: Go vet, frontend typecheck, ESLint,
+structure/localization audit and the production Vite build passed. Chrome
+DevTools checked Settings in EN/ZH at 390px and 1440px, loading, populated, empty
+and failure states, tag save, notification switching and keyboard focus. No
+unexpected console or request failures were observed. Hosted regressions retain
+historical compensation/replay and native operation-proof coverage and add
+missing-debit rejection plus removed-route checks. Activity reward reset
+retirement is tracked separately from this paid-reset admission change.

@@ -6,7 +6,7 @@
 - `purchase_addons.go` defines the server-priced active-term squad-addition quote payload.
 
 - `model.go` documents the dependency-free shared model package.
-- `identity.go` defines Telegram identity and local user representations, including the private account-wide automatic-reset flag.
+- `identity.go` defines Telegram identity and local user representations.
 - `commerce_foundation.go` defines the global Add TXB bounds returned to members and administrators.
 - `commerce_renewals.go` retains legacy internal renewal transport types separately from the automatic-renewal contract.
 - `automatic_renewal.go` defines the owner-facing automatic-renewal state, current one-cycle price, and dashboard failure notice.
@@ -15,7 +15,6 @@
 - `operations.go` defines backup, audit, outbox, and safe setting views.
 - `provider_operations.go` defines durable provider-operation receipts and item states shared across workflows.
 - `statistics_dashboard.go` defines the persisted member-facing statistics dashboard projections.
-- `traffic_reset_automation.go` defines the public account-wide automatic-reset preference projection.
 
 `telegram_boost.go` defines the transient identity payload used by queued boost appreciation.
 

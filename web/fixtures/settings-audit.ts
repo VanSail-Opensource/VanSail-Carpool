@@ -18,6 +18,7 @@ import { xnodeMemberApi } from '@/api/xnodeMember'
 import { installDIYAudit } from './diy-audit'
 
 const params = new URLSearchParams(location.search)
+setLocale(params.has('zh') ? 'zh-CN' : 'en')
 if (params.has('reduced')) {
   const nativeMatchMedia = window.matchMedia.bind(window)
   window.matchMedia = query => {
@@ -42,7 +43,7 @@ const active = purchase('current', at(-5 * day), at(25 * day))
 const queued = { ...purchase('queued', at(25 * day), at(32 * day)), status: 'queued' as const }
 let controls: ComboControls = { activePurchase: params.has('inactive') ? null : active, queuedPurchase: params.has('inactive') || params.has('noqueued') ? null : queued, squads: params.has('inactive') ? [] : squads, mutable: !params.has('inactive') && !params.has('blocked'), operation: null }
 const receipts = new Map<string, OperationReceipt>()
-const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null, automation: true }
+const state = { loads: 0, additions: 0, additionKeys: [] as string[], switches: 0, activations: 0, polls: 0, forfeited: null as Purchase | null }
 let preferences: UserPreferences = { paygEnabled: true, paygSquads: {}, activeCombo: !params.has('inactive'), notifications: { combos: true, traffic: true, money: true, activity: true, account: true }, showAroundTx: true, showActivity: true, includeNodePrices: true, showReferralUsername: true }
 let tag: GroupMemberTag = { groupJoined: true, editable: true, tag: 'Traveler', reasonCode: null }
 async function pause(): Promise<void> {
@@ -91,10 +92,8 @@ paygApi.get = async () => {
 }
 preferencesApi.get = async () => preferences
 preferencesApi.update = async body => { if (params.has('save-error')) throw new Error('Constructed save failure'); preferences = { ...preferences, ...body, paygSquads: { ...preferences.paygSquads, ...body.paygSquads }, notifications: { ...preferences.notifications, ...body.notifications } }; return preferences }
-preferencesApi.getTag = async () => tag
-preferencesApi.updateTag = async value => { tag = { ...tag, tag: value }; return tag }
-memberOperationsApi.getTrafficResetAutomation = async () => ({ enabled: state.automation, updatedAt: at(0) })
-memberOperationsApi.updateTrafficResetAutomation = async enabled => { state.automation = enabled; return { enabled, updatedAt: at(0) } }
+preferencesApi.getTag = async () => { await pause(); return tag }
+preferencesApi.updateTag = async value => { if (params.has('save-error')) throw new Error('Constructed tag save failure'); tag = { ...tag, tag: value }; return tag }
 memberOperationsApi.getPurchaseRefundQuote = async () => ({ purchaseId: active.id, eligible: true, reasonCode: null, refund: active.price, quotedAt: at(0), eligibilityExpiresAt: at(day) })
 memberOperationsApi.refundPurchase = async () => receipt('purchase_member_refund')
 api.getAutoRenewal = async () => ({ enabled: false, canEnable: true, ineligibleReason: null, purchaseId: active.id, quotedAt: at(0) }) as never

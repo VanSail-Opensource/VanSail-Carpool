@@ -55,17 +55,13 @@ func memberPurchaseFactsTx(ctx context.Context, tx *sql.Tx, purchaseID, userID s
 	if err == nil {
 		purchase.CreatedAt, err = parseStamp(created)
 	}
-	return purchaseops.PurchaseFacts{Purchase: purchase, CoreGrossMinor: purchase.CoreGrossTXBMinor, FirstTerm: firstTerm == 1}, err
+	return purchaseops.PurchaseFacts{Purchase: purchase, FirstTerm: firstTerm == 1}, err
 }
 
-func memberOperationEligible(facts purchaseops.PurchaseFacts, reset bool, now time.Time) bool {
+func memberOperationEligible(facts purchaseops.PurchaseFacts, now time.Time) bool {
 	purchase := facts.Purchase
 	if purchase.Status != "active" || now.Before(purchase.ValidFrom) || !now.Before(purchase.ValidUntil) {
 		return false
-	}
-	if reset {
-		_, valid := purchaseops.ResetPriceMinor(facts.CoreGrossMinor, purchase.ResetStrategy)
-		return valid
 	}
 	return facts.FirstTerm && !now.Before(purchase.CreatedAt) && now.Before(purchase.CreatedAt.Add(24*time.Hour))
 }

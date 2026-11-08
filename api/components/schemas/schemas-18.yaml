@@ -135,7 +135,7 @@ AdminSynchronization:
 AdminUserDetail:
   type: object
   additionalProperties: false
-  required: [user, balance, synchronization, entitlements, embyAccounts, payments, refunds, operations, ipBlocks, couponWallet, affiliateHistory, temporaryBan, autoTrafficResetEnabled, pmConversation]
+  required: [user, balance, synchronization, entitlements, embyAccounts, payments, refunds, operations, ipBlocks, couponWallet, affiliateHistory, temporaryBan, pmConversation]
   properties:
     user: { $ref: '../../openapi.yaml#/components/schemas/User' }
     balance: { $ref: '../../openapi.yaml#/components/schemas/Money' }
@@ -164,5 +164,4 @@ AdminUserDetail:
       items: { $ref: '../../openapi.yaml#/components/schemas/CouponGrant' }
     affiliateHistory: { $ref: './schemas-20.yaml#/AffiliateReferralPage' }
     temporaryBan: { anyOf: [{ $ref: '../../openapi.yaml#/components/schemas/AdminTemporaryBan' }, { type: 'null' }] }
-    autoTrafficResetEnabled: { type: boolean }
     pmConversation: { anyOf: [{ $ref: '../../openapi.yaml#/components/schemas/PMConversation' }, { type: 'null' }] }

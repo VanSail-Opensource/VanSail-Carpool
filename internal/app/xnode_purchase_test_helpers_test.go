@@ -12,7 +12,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/secret"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/testdatabase"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
@@ -86,10 +86,26 @@ func newNativePurchaseFixture(t *testing.T) nativePurchaseFixture {
 
 func (f nativePurchaseFixture) resetReceipt(t *testing.T) model.OperationReceipt {
 	t.Helper()
-	service := purchaseops.NewService(f.store, f.provider)
-	receipt, err := service.ResetTraffic(context.Background(), f.user.ID, f.purchase.ID, "reset")
+	ctx, now := context.Background(), time.Now().UTC()
+	// Seed a paid receipt from the retired release; there is no new reset API.
+	operation, _, err := f.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: f.user.ID, OwnerUserID: f.user.ID, Kind: "purchase_traffic_reset", IdempotencyKey: "reset", RequestFingerprint: "legacy-reset-obligation", Items: []providerops.ItemInput{{Key: "purchase", TargetType: "purchase", TargetID: f.purchase.ID}}}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return receipt
+	tx, err := f.store.DB().BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	var balance int64
+	if err = tx.QueryRowContext(ctx, `UPDATE balances SET txb_minor=txb_minor-10 WHERE user_id=$1 RETURNING txb_minor`, f.user.ID).Scan(&balance); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO ledger_entries(id,user_id,delta_txb_minor,balance_after,kind,reference_id,note,created_at) VALUES($1,$2,-10,$3,'traffic_reset_debit',$4,'historical reset',$5)`, operation.Receipt.ID+":debit", f.user.ID, balance, operation.Receipt.ID, now.Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	return operation.Receipt
 }

@@ -78,14 +78,6 @@ IPBlock:
     createdAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
     expiresAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
 
-TrafficResetAutomation:
-  type: object
-  additionalProperties: false
-  required: [enabled, updatedAt]
-  properties:
-    enabled: { type: boolean }
-    updatedAt: { $ref: '../../openapi.yaml#/components/schemas/Timestamp' }
-
 DisplayCurrency:
   type: string
   enum: [TXB, CNY, USD]

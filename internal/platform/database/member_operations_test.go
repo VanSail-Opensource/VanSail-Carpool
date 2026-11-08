@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/purchaseops"
 )
 
-func TestTrafficResetDebitReplayAndCompensationAreAtomic(t *testing.T) {
+func TestLegacyTrafficResetCompensationRemainsAtomic(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	store := newTestStore(t)
@@ -32,19 +31,7 @@ func TestTrafficResetDebitReplayAndCompensationAreAtomic(t *testing.T) {
 	input := providerops.CreateInput{ActorUserID: user.ID, OwnerUserID: user.ID, Kind: purchaseops.OperationResetKind,
 		IdempotencyKey: "reset-operation", RequestFingerprint: "1111111111111111",
 		Items: []providerops.ItemInput{{Key: "purchase", TargetType: "purchase", TargetID: purchase.ID}}}
-	operation, replayed, err := store.BeginTrafficReset(ctx, input, purchase.ID, now.Add(time.Hour))
-	if err != nil || replayed {
-		t.Fatalf("BeginTrafficReset() = (%+v, %t, %v)", operation, replayed, err)
-	}
-	replay, replayed, err := store.BeginTrafficReset(ctx, input, purchase.ID, now.Add(2*time.Hour))
-	if err != nil || !replayed || replay.Receipt.ID != operation.Receipt.ID {
-		t.Fatalf("BeginTrafficReset(replay) = (%+v, %t, %v)", replay, replayed, err)
-	}
-	conflict := input
-	conflict.RequestFingerprint = "2222222222222222"
-	if _, _, err := store.BeginTrafficReset(ctx, conflict, purchase.ID, now.Add(2*time.Hour)); !errors.Is(err, ErrConflict) {
-		t.Fatalf("conflicting replay error = %v, want ErrConflict", err)
-	}
+	operation := seedLegacyTrafficReset(t, store, input, 11, now.Add(time.Hour))
 	if _, err := store.BeginProviderOperationAttempt(ctx, operation.Receipt.ID, now.Add(3*time.Hour)); err != nil {
 		t.Fatalf("BeginProviderOperationAttempt(): %v", err)
 	}

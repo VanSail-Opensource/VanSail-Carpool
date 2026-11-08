@@ -79,7 +79,7 @@ func (s *Store) UpsertTelegramUser(ctx context.Context, profile model.TelegramPr
 	}
 	locale := affiliates.NormalizeLocale(profile.LanguageCode)
 	_, err := s.db.ExecContext(ctx, `INSERT INTO users(id,telegram_id,telegram_first_name,telegram_last_name,telegram_username,role,new_user,notification_locale,auto_traffic_reset_enabled,created_at,updated_at)
-		VALUES($1,$2,$3,$4,$5,$6,0,$7,1,$8,$9) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
+		VALUES($1,$2,$3,$4,$5,$6,0,$7,0,$8,$9) ON CONFLICT(telegram_id) DO UPDATE SET telegram_first_name=excluded.telegram_first_name,
 		telegram_last_name=excluded.telegram_last_name,telegram_username=excluded.telegram_username,
 		role=excluded.role,new_user=0,notification_locale=excluded.notification_locale,updated_at=excluded.updated_at
 		WHERE users.account_status='active' AND users.bot_blocked=0`,
@@ -117,7 +117,7 @@ func (s *Store) UserByTelegramID(ctx context.Context, telegramID int64) (model.U
 const userColumns = `users.id,users.telegram_id,users.telegram_first_name,users.telegram_last_name,users.telegram_username,
 	users.role,users.onboarding_state,users.group_joined,users.channel_joined,users.policy_accepted_at,
 	users.accepted_agreement_revision,users.proxy_user_id,users.recovery_reason,users.new_user,users.inviter_id,
-	users.notification_locale,users.display_currency,users.auto_traffic_reset_enabled,users.created_at,users.updated_at,
+	users.notification_locale,users.display_currency,users.created_at,users.updated_at,
 	users.account_status,users.account_generation,users.bot_blocked`
 
 const userSelect = `SELECT ` + userColumns + ` FROM users`
@@ -132,12 +132,12 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 	var user model.User
 	var policy, recoveryReason sql.NullString
 	var proxyID sql.NullString
-	var groupJoined, channelJoined, newUser, autoTrafficReset int
+	var groupJoined, channelJoined, newUser int
 	var inviterID sql.NullInt64
 	var createdAt, updatedAt string
 	destinations := []any{&user.ID, &user.TelegramID, &user.TelegramFirstName, &user.TelegramLastName, &user.TelegramUsername,
 		&user.Role, &user.OnboardingState, &groupJoined, &channelJoined, &policy, &user.AgreementRevision, &proxyID, &recoveryReason,
-		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &autoTrafficReset, &createdAt, &updatedAt,
+		&newUser, &inviterID, &user.NotificationLocale, &user.DisplayCurrency, &createdAt, &updatedAt,
 		&user.AccountStatus, &user.AccountGeneration, &user.BotBlocked}
 	destinations = append(destinations, extra...)
 	if err := row.Scan(destinations...); err != nil {
@@ -149,7 +149,6 @@ func scanUserWith(row rowScanner, extra ...any) (model.User, error) {
 	user.GroupJoined = groupJoined == 1
 	user.ChannelJoined = channelJoined == 1
 	user.NewUser = newUser == 1
-	user.AutoTrafficResetEnabled = autoTrafficReset == 1
 	if inviterID.Valid {
 		user.InviterID = &inviterID.Int64
 	}
