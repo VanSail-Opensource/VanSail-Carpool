@@ -89,3 +89,10 @@ PAYG reads remain the largest measured recurring query. A read-only alternative
 that delayed period lookups reduced some execution times but increased buffer
 visits; it is not part of this change. Current balances, credit expiry, pricing
 and accounting must remain authoritative before a broader PAYG optimization.
+
+The first hosted run passed all eight race shards and the CPU profile gate,
+but `govulncheck` reported existing `GO-2026-6888` and `GO-2026-6865` findings.
+The CI repair updates only the affected patch releases:
+[Brotli 1.2.7](https://github.com/andybalholm/brotli/releases/tag/v1.2.7) and
+[klauspost/compress 1.20.2](https://github.com/klauspost/compress/releases/tag/v1.20.2).
+The pinned X-Node protocol, compression negotiation and wire format stay unchanged.
