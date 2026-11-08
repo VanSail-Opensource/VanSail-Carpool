@@ -57,7 +57,11 @@ func firewallSeekKeys(t *testing.T, s *Store, query string, args ...any) []strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	keys := []string{}
 	for rows.Next() {
 		var key string
