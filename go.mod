@@ -10,8 +10,8 @@ require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/jackc/pgx/v5 v5.11.0
-	github.com/klauspost/compress v1.20.2
+	github.com/jackc/pgx/v5 v5.12.0
+	github.com/klauspost/compress v1.20.3
 	github.com/miekg/dns v1.1.73
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -19,7 +19,7 @@ require (
 	github.com/xtls/xray-core v1.260327.1-0.20261029083850-0afec66085a8
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
 	golang.org/x/crypto v0.58.0
-	golang.org/x/net v0.61.0
+	golang.org/x/net v0.62.0
 	google.golang.org/protobuf v1.36.12
 )
 
