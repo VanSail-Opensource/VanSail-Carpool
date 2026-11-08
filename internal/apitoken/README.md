@@ -5,9 +5,10 @@ owner's current role/administrator allowlist, and loads metadata for browser
 administrators. `types.go` defines repository contracts and secret-free metadata.
 Only the creation response contains a secret; PostgreSQL retains a SHA-256 digest.
 
-`scopes.go` confines bearer use to administrator APIs and distinguishes `admin`,
-`xnode` and `migration` read/write scopes. Write includes read access. Migration
-does not inherit commerce, settings or database permissions. Credential
+`scopes.go` confines bearer use to administrator APIs and distinguishes `admin`
+and `xnode` read/write scopes. Write includes read access within that
+resource only. General administrator scopes never authorize native X-Node
+reads, enrollment credentials, mutations or operation receipts. Credential
 management and the retired detector are excluded from bearer authorization.
 Operation receipt reads also check resource scope and actor/owner identity.
 

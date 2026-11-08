@@ -11,7 +11,11 @@ and allowlist eligibility. Only the creation response exposes the secret.
 | `xnode:read` | Read nodes, configuration, groups, endpoints and metrics |
 | `xnode:write` | Configure X-Node and submit node commands |
 
-Write includes read access within its resource. Token management requires a
+Write includes read access within its resource. `admin:read` and `admin:write`
+do not include X-Node access; grant an explicit `xnode:read` or `xnode:write`
+scope for that resource. Combining `admin:write` with `xnode:read` still cannot
+submit X-Node mutations. Native operation receipts retain the X-Node scope
+requirement on the shared operation-polling endpoint. Token management requires a
 signed browser session. Bearer tokens do not authenticate member, browser-login,
 Mini App handoff, subscription-bearer or agent endpoints.
 

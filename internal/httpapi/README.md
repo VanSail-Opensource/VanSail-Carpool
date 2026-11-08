@@ -256,3 +256,5 @@ interface and its write scope. No IP persistence is introduced.
 `admin_ip_block_errors.go` maps administrator errors. `member_connection_observations.go` exposes owner observations and rate-limited grants. `member_payg_history.go` exposes private directional history.
 
 `retired_product_routes_test.go` verifies removed administrative outage controls return 404; no transport or dependency can recreate those decisions.
+
+- `api_token_resource_scope_test.go`: Hosted explicit resource checks for native subscription metadata, enrollment mutations and shared receipt polling; general administrator scopes never act as an X-Node superscope.

@@ -34,3 +34,35 @@ func TestScopedControlSeparatesMigrationCommerceAndCredentials(t *testing.T) {
 		}
 	}
 }
+
+func TestAdministratorScopesDoNotImplyNativeControl(t *testing.T) {
+	for _, scope := range []string{"admin:read", "admin:write"} {
+		p := Principal{Item: Token{Scopes: []string{scope}}}
+		for _, entry := range [][2]string{
+			{"GET", "/api/v1/admin/xnode/nodes"},
+			{"GET", "/api/v1/admin/xnode/service-identities/identity/subscription"},
+			{"GET", "/api/v1/admin/xnode/operations/receipt"},
+			{"POST", "/api/v1/admin/xnode/nodes/node/enrollment"},
+			{"POST", "/api/v1/admin/xnode/nodes/node/commands"},
+		} {
+			if p.AllowsRequest(entry[0], entry[1]) {
+				t.Errorf("%s crossed native boundary: %v", scope, entry)
+			}
+		}
+		for _, kind := range []string{"xnode_command", "xnode_routing", "xnode_future_operation"} {
+			if p.AllowsOperation(kind) {
+				t.Errorf("%s exposed native receipt %s", scope, kind)
+			}
+		}
+		if !p.AllowsRequest("GET", "/api/v1/admin/settings") || p.Allows("unknown", false) {
+			t.Fatal("resource scope changed", scope)
+		}
+		if p.AllowsRequest("PUT", "/api/v1/admin/settings") != (scope == "admin:write") {
+			t.Fatal("write distinction changed", scope)
+		}
+	}
+	p := Principal{Item: Token{Scopes: []string{"admin:write", "xnode:read"}}}
+	if !p.AllowsRequest("GET", "/api/v1/admin/xnode/nodes") || !p.AllowsOperation("xnode_command") || p.AllowsRequest("POST", "/api/v1/admin/xnode/nodes/node/enrollment") {
+		t.Fatal("read scope inherited write")
+	}
+}

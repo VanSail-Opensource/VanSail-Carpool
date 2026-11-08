@@ -25,11 +25,9 @@ func normalizeScopes(values []string) ([]string, error) {
 }
 
 func (p Principal) Allows(resource string, write bool) bool {
-	if slices.Contains(p.Item.Scopes, "admin:write") {
-		return true
-	}
-	if !write && slices.Contains(p.Item.Scopes, "admin:read") {
-		return true
+	// Write implies read only within the explicitly granted resource.
+	if resource != "admin" && resource != "xnode" {
+		return false
 	}
 	return slices.Contains(p.Item.Scopes, resource+":write") || !write && slices.Contains(p.Item.Scopes, resource+":read")
 }
@@ -64,10 +62,10 @@ func (p Principal) AllowsRequest(method, path string) bool {
 }
 
 func (p Principal) AllowsOperation(kind string) bool {
-	switch kind {
-	case "xnode_command", "xnode_routing":
+	// Native operations keep their namespace even when new kinds are added.
+	// They must never fall back to the general administrator scope.
+	if strings.HasPrefix(kind, "xnode_") {
 		return p.Allows("xnode", false)
-	default:
-		return p.Allows("admin", false)
 	}
+	return p.Allows("admin", false)
 }
