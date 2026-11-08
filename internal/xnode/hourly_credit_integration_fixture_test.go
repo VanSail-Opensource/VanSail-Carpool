@@ -108,13 +108,17 @@ func newHourlyProductionFixture(t *testing.T, allowance int64) hourlyProductionF
 func (f hourlyProductionFixture) connect(t *testing.T, session string) *websocket.Conn {
 	t.Helper()
 	headers := http.Header{"Authorization": []string{"Bearer " + f.token}, wire.HourlyHeader: []string{wire.HourlyFormat}, wire.HourlySessionHeader: []string{session}}
+	headers.Set(wire.TrafficStreamHeader, wire.TrafficStreamFormat)
 	dialer := websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, Subprotocols: []string{"x-node.v1"}}
-	socket, _, err := dialer.Dial("wss"+strings.TrimPrefix(f.server.URL, "https"), headers)
+	socket, response, err := dialer.Dial("wss"+strings.TrimPrefix(f.server.URL, "https"), headers)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = socket.Close() })
-	if err = socket.WriteJSON(wire.New("agent.hello", "", 0, wire.AgentHello{AgentID: fixtureAgent, BootID: fixtureBoot, Capabilities: []string{wire.HourlyCapability}})); err != nil {
+	if response.Header.Get(wire.TrafficStreamHeader) != wire.TrafficStreamFormat || response.Header.Get(wire.HourlyHeader) != wire.HourlyFormat || response.Header.Get(wire.HourlySessionHeader) != session || response.Header.Get(wire.HourlyAccountingHeader) != wire.HourlyAccountingFormat {
+		t.Fatal("credit fixture did not negotiate boot-stream accounting and the exact hourly session")
+	}
+	if err = socket.WriteJSON(wire.New("agent.hello", "", 0, wire.AgentHello{AgentID: fixtureAgent, BootID: fixtureBoot, Capabilities: []string{wire.HourlyCapability, wire.TrafficStreamCapability}})); err != nil {
 		t.Fatal(err)
 	}
 	waitHourlyProduction(t, func() bool { return f.master.HourlyCreditAdmissionReady(f.f.node.ID) })
