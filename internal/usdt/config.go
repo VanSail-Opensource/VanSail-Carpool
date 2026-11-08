@@ -165,31 +165,3 @@ func PublicConfig(c Config) Config {
 	}
 	return result
 }
-
-func mergeSecrets(next *Config, previous Config) {
-	old := map[string]Endpoint{}
-	for _, n := range previous.Networks {
-		for _, e := range n.Endpoints {
-			old[e.ID] = e
-		}
-	}
-	for i := range next.Networks {
-		for j := range next.Networks[i].Endpoints {
-			e := &next.Networks[i].Endpoints[j]
-			before := old[e.ID]
-			if e.RPCURL == "" {
-				e.RPCURL = before.RPCURL
-			}
-			if e.WSURL == "" {
-				e.WSURL = before.WSURL
-			}
-			if e.IndexerURL == "" {
-				e.IndexerURL = before.IndexerURL
-			}
-			if e.APIKey == "" {
-				e.APIKey = before.APIKey
-			}
-			e.RPCConfigured, e.WSConfigured, e.IndexerConfigured, e.KeyConfigured, e.Host = false, false, false, false, ""
-		}
-	}
-}

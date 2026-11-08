@@ -19,6 +19,8 @@
     "rpcUrl": "RPC / API URL",
     "indexerUrl": "Indexer GraphQL URL",
     "apiKey": "API key",
+    "keyScopeHint": "A stored key can be kept only while the network and server URLs stay unchanged. Enter a fresh key when changing a URL.",
+    "freshKey": "Enter a fresh API key when changing a stored server URL.",
     "keepSecret": "Stored securely; leave blank to keep",
     "useWS": "WebSocket subscriptions",
     "wsUrl": "WebSocket URL",

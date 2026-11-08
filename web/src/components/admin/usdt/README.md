@@ -41,3 +41,5 @@ disable Save until retry succeeds. All transport retains shared request signing.
 `useUSDTAdmin.test.ts` covers aborted/superseded loads, disabled writes after failed loads, successful retry and disposal guards in hosted CI.
 
 Token orders share the USD billing rate. This module has no separate rate control.
+
+The endpoint editor explains credential destination scope. `configForm.ts` requires a fresh key when a stored credential has any URL replacement draft, while fully masked unchanged saves remain valid. `configForm.test.ts` covers every URL field and the fresh-key correction. Backend validation resolves the actual stored values and remains authoritative for network/endpoint identity.

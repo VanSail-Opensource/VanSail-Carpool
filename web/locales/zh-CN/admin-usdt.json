@@ -19,6 +19,8 @@
     "rpcUrl": "RPC / API 地址",
     "indexerUrl": "索引器 GraphQL 地址",
     "apiKey": "API 密钥",
+    "keyScopeHint": "仅在网络及服务器地址均未更改时保留已保存的密钥。更改地址时，请输入新的密钥。",
+    "freshKey": "更改已保存的服务器地址时，请输入新的 API 密钥。",
     "keepSecret": "已安全保存；留空即可保留现有值",
     "useWS": "使用 WebSocket 订阅",
     "wsUrl": "WebSocket 地址",

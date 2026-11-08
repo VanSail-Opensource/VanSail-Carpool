@@ -11,7 +11,7 @@ The provided scan contains 13 application/design findings, separate from depende
 | 5. Sample-only accounting lets authenticated users exceed per-user connection limits | X-Node | Pending |
 | 6. Large read-only command results can permanently prevent agent restart | X-Node | Pending |
 | 7. Release-shaped tags can expose the production signing key to repository code | X-Node | Pending |
-| 8. Masked USDT RPC API keys can be exfiltrated by reusing an endpoint ID with a new URL | Panel | Pending |
+| 8. Masked USDT RPC API keys can be exfiltrated by reusing an endpoint ID with a new URL | Panel | Canonical network/endpoint-scoped URL resolution; inherited keys require all destinations unchanged. Rejected saves cannot reach storage or collector admission. Regressions in `internal/usdt/config_secrets_test.go`; localized editor validation covers each URL field. |
 | 9. Untrusted forwarding headers bypass and amplify authentication throttling | Panel | Bootstrap proxy CIDRs, canonical trusted-suffix resolution and spoofing/limiter regressions in `internal/httpapi/client_ip_test.go`. |
 | 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Pending |
 | 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Pending |

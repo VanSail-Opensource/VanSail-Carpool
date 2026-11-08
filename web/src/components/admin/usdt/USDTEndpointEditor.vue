@@ -25,7 +25,7 @@ const secretHint = (configured: boolean) => configured ? t('adminUsdt.keepSecret
     <div class="usdt-form-grid">
       <UFormField :name="`${prefix}.rpcUrl`" :label="t('adminUsdt.rpcUrl')" :description="t(`adminUsdt.apiKinds.${network}`)"><UInput :model-value="model.rpcUrl" type="password" autocomplete="new-password" :placeholder="secretHint(model.rpcConfigured)" @update:model-value="set('rpcUrl', String($event))" /></UFormField>
       <UFormField v-if="network === 'aptos'" :name="`${prefix}.indexerUrl`" :label="t('adminUsdt.indexerUrl')"><UInput :model-value="model.indexerUrl" type="password" autocomplete="new-password" :placeholder="secretHint(model.indexerConfigured)" @update:model-value="set('indexerUrl', String($event))" /></UFormField>
-      <UFormField :name="`${prefix}.apiKey`" :label="t('adminUsdt.apiKey')"><UInput :model-value="model.apiKey" type="password" autocomplete="new-password" :placeholder="secretHint(model.keyConfigured)" @update:model-value="set('apiKey', String($event))" /></UFormField>
+      <UFormField :name="`${prefix}.apiKey`" :label="t('adminUsdt.apiKey')" :description="t('adminUsdt.keyScopeHint')"><UInput :model-value="model.apiKey" type="password" autocomplete="new-password" :placeholder="secretHint(model.keyConfigured)" @update:model-value="set('apiKey', String($event))" /></UFormField>
     </div>
     <template v-if="supportsWS(network)">
       <SwitchField :id="`usdt-ws-${model.id}`" :model-value="model.useWs" :label="t('adminUsdt.useWS')" @update:model-value="set('useWs', $event)" />

@@ -49,7 +49,9 @@ func TestUSDTConfigMasksSecretsAndValidatesEveryNetwork(t *testing.T) {
 	if strings.Contains(string(raw), "secret") || strings.Contains(string(raw), "https://") {
 		t.Fatalf("public config leaked credentials: %s", raw)
 	}
-	mergeSecrets(&public, c)
+	if err := mergeSecrets(&public, c); err != nil {
+		t.Fatal(err)
+	}
 	if err := ValidateConfig(&public); err != nil {
 		t.Fatal(err)
 	}

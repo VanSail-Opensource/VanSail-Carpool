@@ -10,7 +10,7 @@ USDTEndpoint:
     rpcUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
     wsUrl: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous URL.' }
     indexerUrl: { type: string, maxLength: 4096, description: 'Aptos GraphQL URL; write-only.' }
-    apiKey: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous key.' }
+    apiKey: { type: string, maxLength: 4096, description: 'Write-only; blank preserves the previous key only for the same network, endpoint ID and unchanged resolved RPC/WS/indexer URLs. Changed destinations require a fresh key.' }
     useWs: { type: boolean }
     rpcConfigured: { type: boolean }
     wsConfigured: { type: boolean }

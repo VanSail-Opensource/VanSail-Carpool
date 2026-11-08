@@ -65,7 +65,9 @@ func (s *Service) SaveConfig(ctx context.Context, actor string, next Config) (Co
 	if err != nil {
 		return Config{}, err
 	}
-	mergeSecrets(&next, old)
+	if err := mergeSecrets(&next, old); err != nil {
+		return Config{}, err
+	}
 	if err := ValidateConfig(&next); err != nil {
 		return Config{}, err
 	}

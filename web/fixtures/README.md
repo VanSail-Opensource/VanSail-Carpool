@@ -261,3 +261,5 @@ feedback. `zh` switches localization. Ordinary reward choices remain selectable.
 provides browser-only initialization and the forecast adapter.
 
 `EmbyConnectionAudit.vue`, `emby-connection-audit.ts` and `emby-connection-audit.html` mount the actual browser settings panel with synthetic configuration. `slow`, `empty`, `error`, `save-error`, `conflict` and `zh` exercise localized states. `__embyConnectionAudit` records only constructed writes for manual Chrome DevTools inspection; no provider is contacted.
+
+Stablecoin `stored` provides a masked Ethereum RPC/WS credential to exercise fresh-key validation. `secret-rejected` returns a constructed configuration refusal after local validation; drafts remain available. All values are synthetic and no chain calls run.

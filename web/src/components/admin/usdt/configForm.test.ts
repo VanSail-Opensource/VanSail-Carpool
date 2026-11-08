@@ -7,6 +7,25 @@ function config(): USDTConfig {
 }
 
 describe('USDT configuration contracts', () => {
+  it('requires an explicit key for edits to a masked credential destination', () => {
+    const value = config()
+    const endpoint = value.networks[0]!.endpoints[0]!
+    endpoint.rpcUrl = ''
+    endpoint.rpcConfigured = true
+    endpoint.wsConfigured = true
+    endpoint.keyConfigured = true
+    expect(configSchema().safeParse(value).success).toBe(true)
+    for (const field of ['rpcUrl', 'wsUrl', 'indexerUrl'] as const) {
+      endpoint[field] = field === 'wsUrl' ? 'wss://changed.example/ws' : 'https://changed.example'
+      const parsed = configSchema().safeParse(value)
+      expect(parsed.success).toBe(false)
+      if (!parsed.success) expect(parsed.error.issues.some(issue => issue.path.at(-1) === 'apiKey')).toBe(true)
+      endpoint[field] = ''
+    }
+    endpoint.rpcUrl = 'https://changed.example'
+    endpoint.apiKey = 'fresh-explicit-key'
+    expect(configSchema().safeParse(value).success).toBe(true)
+  })
   it('inherits legacy modes but keeps explicit network switches authoritative', () => {
     const value = config()
     value.mode = 'both'

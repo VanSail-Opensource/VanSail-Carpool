@@ -29,6 +29,7 @@ export function configSchema() {
       if (network.enabled && (!network.addresses.length || !network.endpoints.length)) ctx.addIssue({ code: 'custom', path: ['networks', index], message: invalid })
       network.endpoints.forEach((item, endpointIndex) => {
         const path = ['networks', index, 'endpoints', endpointIndex]
+        if (item.keyConfigured && !item.apiKey && [item.rpcUrl, item.wsUrl, item.indexerUrl].some(Boolean)) ctx.addIssue({ code: 'custom', path: [...path, 'apiKey'], message: t('adminUsdt.freshKey') })
         for (const field of ['rpcUrl', 'wsUrl', 'indexerUrl'] as const) {
           if (!item[field]) continue
           try {
