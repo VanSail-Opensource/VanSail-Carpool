@@ -1,4 +1,4 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -49,6 +49,7 @@ describe('graph interaction controls', () => {
   })
   it('keeps toolbar zoom, keyboard panning and node selection available without touch capture', async () => {
     const wrapper = mountGraph()
+    await nextTick() // onMounted fitting updates the rendered transform asynchronously.
     const scene = wrapper.get('.graph-scene')
     const fitted = scene.attributes('transform')
     await wrapper.get(`button[aria-label="${t('ipLookupLive.graph.zoomIn')}"]`).trigger('click')

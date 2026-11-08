@@ -36,20 +36,31 @@ describe('graph fit and anchored gestures', () => {
     const state = useGraphViewport()
     const target = document.createElement('div')
     target.addEventListener('wheel', state.wheel)
-    const wheel = (ctrlKey = false) => new WheelEvent('wheel', { deltaY: 50, clientX: 20, clientY: 30, cancelable: true, ctrlKey })
+    const wheel = (modifier?: 'ctrlKey' | 'metaKey') => {
+      const event = new WheelEvent('wheel', { deltaY: 50, cancelable: true })
+      // Happy DOM's WheelEvent extends UIEvent, omitting inherited MouseEvent fields.
+      Object.defineProperties(event, { clientX: { value: 20 }, clientY: { value: 30 },
+        ctrlKey: { value: modifier === 'ctrlKey' }, metaKey: { value: modifier === 'metaKey' } })
+      return event
+    }
     const ordinary = wheel()
     target.dispatchEvent(ordinary)
     expect(ordinary.defaultPrevented).toBe(false)
     expect(state.scale.value).toBe(1)
     state.setInteraction(true)
-    const browserZoom = wheel(true)
-    target.dispatchEvent(browserZoom)
-    expect(browserZoom.defaultPrevented).toBe(false)
-    expect(state.scale.value).toBe(1)
+    for (const modifier of ['ctrlKey', 'metaKey'] as const) {
+      const browserZoom = wheel(modifier)
+      expect(browserZoom[modifier]).toBe(true)
+      target.dispatchEvent(browserZoom)
+      expect(browserZoom.defaultPrevented).toBe(false)
+      expect(state.scale.value).toBe(1)
+    }
     const intentional = wheel()
     target.dispatchEvent(intentional)
     expect(intentional.defaultPrevented).toBe(true)
     expect(state.scale.value).toBeLessThan(1)
+    expect((20 - state.offset.value.x) / state.scale.value).toBeCloseTo(20)
+    expect((30 - state.offset.value.y) / state.scale.value).toBeCloseTo(30)
   })
   it('leaves touch scrolling native while preserving mouse panning', () => {
     const state = useGraphViewport()

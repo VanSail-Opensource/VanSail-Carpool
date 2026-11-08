@@ -124,7 +124,7 @@ The admin API exposes domain operations plus allowlisted, schema-aware read-only
 
 ## CI and release images
 
-Pull requests enforce source line limits, per-folder file maps, locale parity, icon/control policy, generated-contract freshness, frontend lint/type/test/build checks, npm audit, Go format/vet/race/coverage checks, `govulncheck`, and a production image build. Pushes to `main` and semantic `v*.*.*` tags run the same checks before publishing SBOM/provenance-enabled `linux/amd64` and `linux/arm64` images to `ghcr.io/txyyddss/remna-user-panel` with SHA, `latest`, and semantic tags as applicable.
+Pull requests enforce source line limits, per-folder file maps, locale parity, icon/control policy, generated-contract freshness, frontend lint/type/test/build checks, npm audit, Go format/vet/race/coverage checks, `govulncheck`, and a production image build. Pushes to `main` and semantic `v*.*.*` tags run the same checks before publishing SBOM/provenance-enabled `linux/amd64` and `linux/arm64` images to `ghcr.io/vansail-opensource/vansail-carpool` with SHA, `latest`, and semantic tags as applicable.
 
 Dependabot checks the root Go module, `web` npm dependencies, Docker base images, and GitHub Actions weekly. Dependabot pull requests are eligible for squash auto-merge only after every reported check succeeds; enable repository auto-merge and protect `main` with the required checks for this policy to take effect.
 

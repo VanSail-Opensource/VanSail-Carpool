@@ -84,12 +84,11 @@ before new streams. The panel continues decoding deployed legacy report formats.
   accounts or discarding journals. See `hourly-account-limits.md` for units,
   replay, draining and recovery constraints.
 
-Hourly commerce remains unavailable in this foundation. The panel does not
-advertise hourly negotiation or receipt compatibility until its repository
-implements atomic hourly history ingestion; a transport capability is not a
-sale or a customer conversion. Existing purchases and native identities retain
-their modes. Every source/transit participant must support the new capability
-before commerce can activate hourly authorization.
+The panel now implements atomic hourly history ingestion and gated hourly
+commerce. Transport negotiation alone never enables sales or converts a customer.
+Administrator policy and offers must enable sales, and every source/transit
+participant must support the required capabilities before hourly authorization
+can activate. Existing purchases and native identities retain their modes.
 
 Ordinary commands, credentials and desired configuration retain durable
 behavior. Periodic status-file writes are replaced by a permission-restricted

@@ -25,10 +25,16 @@ const Tabs = defineComponent({
   setup: (props, { emit }) => () => h('div', props.items?.map(item => h('button', { 'data-metric': item.value, role: 'tab', onClick: () => emit('update:modelValue', item.value) }, item.label))),
 })
 const Button = defineComponent({ name: 'UButton', inheritAttrs: false, emits: ['click'], setup: (_, { slots, attrs, emit }) => () => h('button', { ...attrs, onClick: () => emit('click') }, slots.default?.()) })
+const cleanups: (() => void)[] = []
 function render(mode = '') {
-  return mount(UsageBreakdownPie, { props: { history: usageBreakdownFixture(new URLSearchParams(mode)) }, global: { stubs: { UTabs: Tabs, UButton: Button } } })
+  // Happy DOM computes v-show visibility only for connected elements.
+  const target = document.body.appendChild(document.createElement('div'))
+  // Nuxt auto-imported SFCs expose their file names to Vue Test Utils.
+  const view = mount(UsageBreakdownPie, { attachTo: target, props: { history: usageBreakdownFixture(new URLSearchParams(mode)) }, global: { stubs: { Tabs, UTabs: Tabs, Button, UButton: Button } } })
+  cleanups.push(() => { view.unmount(); target.remove() })
+  return view
 }
-afterEach(() => { vi.clearAllMocks(); setLocale('en'); setExperience('miniapp') })
+afterEach(() => { cleanups.splice(0).forEach(cleanup => cleanup()); vi.clearAllMocks(); setLocale('en'); setExperience('miniapp') })
 
 describe('Usage Breakdown mode stability', () => {
   it('keeps the same SVG through twenty mode changes, including a hidden one-node measure', async () => {
@@ -44,25 +50,21 @@ describe('Usage Breakdown mode stability', () => {
       expect(view.get('[data-usage-chart]').isVisible()).toBe(index % 2 === 0)
     }
     expect(feedback).toHaveBeenCalledTimes(20)
-    view.unmount()
   })
   it('keeps actual cost selectable when the original fixed-term duration is unknown', async () => {
     const view = render('unknown-term')
     await view.get('[data-metric="cost"]').trigger('click')
     expect(view.get('[data-usage-cost-notes]').text()).toContain(t('usageBreakdown.legacyUnknown'))
     expect(view.get('[data-usage-chart]').isVisible()).toBe(true)
-    view.unmount()
   })
   it('retains unattributed cost and labels tiny positive proportions without claiming zero', async () => {
     const unattributed = render('unallocated')
     await unattributed.get('[data-metric="cost"]').trigger('click')
     expect(unattributed.get('[data-usage-no-comparison]').text()).toBe(t('usageBreakdown.noNodeAttribution'))
     expect(unattributed.get('[data-usage-chart]').isVisible()).toBe(false)
-    unattributed.unmount()
     const tiny = render('tiny')
     await tiny.get('[data-metric="cost"]').trigger('click')
     expect(tiny.text()).toContain(t('usageBreakdown.lessThanPercent', { amount: '0.1%' }))
-    tiny.unmount()
   })
   it('never calls Telegram feedback in a browser experience', async () => {
     setExperience('browser')
@@ -70,6 +72,5 @@ describe('Usage Breakdown mode stability', () => {
     await view.get('[data-metric="cost"]').trigger('click')
     await view.get('[data-metric="cost"]').trigger('click')
     expect(feedback).not.toHaveBeenCalled()
-    view.unmount()
   })
 })
