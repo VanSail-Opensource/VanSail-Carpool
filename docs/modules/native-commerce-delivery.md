@@ -8,14 +8,14 @@ Emby and the existing payment integrations retain their separate boundaries.
 
 | Flow | Accounting and settlement boundary |
 | --- | --- |
-| Resets | Current combined native/imported counters support reset reconciliation. New reset periods retain the purchase reference; unfinished predecessor journals remain pending. Updating an entitlement changes its cadence without replacing its usage. |
+| Purchased cadence and historical resets | Purchased scheduled quota-reset periods and previously paid reset operations retain the purchase reference; unfinished predecessor journals remain pending. Manual and automatic paid-reset admission are retired. Updating an entitlement preserves its recorded usage. |
 | Renewal | Existing atomic rollover-credit/debit settlement creates one paid successor. Deferred predecessor settlement selects its own purchase periods and cannot revoke successor streams. Native calculation provenance survives the transaction. |
 | Rollover | Native purchase-owned usage is counted once, without apportioning those owned daily bytes a second time at intraday boundaries. Allowance and strict remaining thresholds retain whole-term semantics; the new calculation version is `native-term-v1`. Source exports retain their documented daily resolution. |
 | Refunds | Member zero-use checks include all same-purchase reset periods and earlier imported source history. Unfinished or overflowing accounting cannot qualify. Legacy-only checks also read term history. Administrator suggestions retain the net-paid cap and manual override. |
-| Compensation | Native readiness uses fresh ready reports. Approved extensions change expiry and queued continuity without resetting the existing combined quota. |
+| Historical outage extensions | Previously approved extensions retain expiry and queued continuity without resetting the combined quota. Outage observation, new decisions, review APIs, and administration are retired. |
 
 Refunds and rollover use purchase-owned native settlement barriers and retain imported evidence.
-Reset prechecks use the current counter and do not borrow that financial fence.
+Historical reset reconciliation retains its original operation and debit proof.
 Previously settled financial records are not repriced. Saturating arithmetic and
 exact decimal serialization prevent overflow or browser rounding from fabricating
 unused traffic. Live telemetry never enters the database.
@@ -23,7 +23,7 @@ unused traffic. Live telemetry never enters the database.
 Hosted regression sources include `xnode/commerce_test.go`,
 `app/xnode_purchase_operations_test.go`, `rollover/native_term_test.go`,
 `database/native_rollover_version_test.go` and existing reset, automatic renewal,
-refund and compensation suites. No local automated test suite was executed.
+refund and historical settlement coverage. No local automated test suite was executed.
 
 ## Retired controls
 

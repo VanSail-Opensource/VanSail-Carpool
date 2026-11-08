@@ -22,7 +22,7 @@ Numerical snapshots exclude current balance and funding eligibility. Applicable 
 
 PAYG eligible rates refresh every minute with reusable trained models. Changes apply to future prepaid blocks; existing prepaid bytes retain their purchase basis. Pricing and forecast kernels run through the durable compute lane. Nodes return bounded validated numerical results; only master transactions publish prices or settle money. See `internal/pricing/README.md` and the pinned X-Node compute protocol.
 
-Personal predictions show the last two completed UTC accounting days and five complete future days. Missing history remains unavailable. Empirical intervals, observed node-day coverage and measured original-vintage calibration are distinct. The active Combo card keeps its front face and places predictions on the reverse; PAYG-only Home shows predictions directly.
+Administrator user-detail traffic forecasts show the last two completed UTC accounting days and five complete future days. Missing history remains unavailable. Empirical intervals, observed node-day coverage and measured original-vintage calibration are distinct. These analytical views do not select an individual base price. Member Home renders purchases directly and does not request personal forecasts or display the retired prediction flip card.
 
 ## Renewal and purchase lifecycle
 

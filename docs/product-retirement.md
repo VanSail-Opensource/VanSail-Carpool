@@ -14,9 +14,9 @@ The HTTP route regression rejects all retired outage endpoints. Hosted retention
 
 Validation: Go vet, frontend typecheck, ESLint, structure/localization audit and production Vite build. Chrome DevTools checked console navigation and node editing at desktop/mobile sizes, successful node save, and quota loading/populated/empty/error/retry states with cached data. No local automated suites were run.
 
-## Remaining retirement work
+## Accounting compatibility
 
-The broader retirement task still includes PERSONAL pricing and discretionary traffic resets. These are delivered as separately audited changes because they have distinct accounting and lifecycle dependencies.
+PERSONAL pricing and discretionary paid traffic-reset admission are retired as described below. Historical decisions, charged operations, and purchased scheduled quota-reset cadence retain their accounting and settlement contracts. Administrator traffic forecasts remain analytical views and cannot select an individual base price.
 
 ## IP sources, probes and subnet sharing
 

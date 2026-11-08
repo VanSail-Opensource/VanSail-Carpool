@@ -12,8 +12,10 @@ Unlimited provider capacity still requires demand, cost and health evidence.
 
 `pricing_daily_actual_test.go` verifies daily traffic actuals and missing windows for pricing forecasts.
 `pricing_personal_freshness_test.go` distinguishes missing and pending history
-from an actually stale forecast vintage. Interactive personal forecast refreshes
+from an actually stale forecast vintage. Administrator user-traffic forecasts
 share the worker's bounded compute admission and reuse completed daily features.
+They remain analytical views; member Home does not request them, and they cannot
+select an individual base price after PERSONAL pricing retirement.
 `pricing_summary_payment_test.go` verifies that declared provider payments use
 their recording time, independently of the effective date of cost metadata.
 
@@ -408,7 +410,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `outbox_retry_operations.go` atomically reactivates a target job and completes its retry receipt.
 - `payment_refund_resolution.go` closes only open Stars refund receipts from authoritative callback evidence.
 - `member_operation_begin.go` and `member_operation_validation.go` atomically validate and create member refund commands.
-- `member_reset_compensation.go` credits a failed paid-reset debit exactly once with terminal receipt state.
+- `member_reset_compensation.go` credits a failed historical paid-reset debit exactly once with terminal receipt state; no current reset admission creates such debits.
 - `display_currency.go` saves the member-only TXB, CNY, or USD presentation preference without changing authoritative TXB values.
 - `member_refund_commit.go` atomically credits a first-term refund and advances the independent queued timeline.
 - `provider_operations.go`, `provider_operation_lifecycle.go`, `provider_operation_queries.go`, and `provider_operation_items.go` persist provider-neutral receipts, items, attempts, and replay facts.
@@ -545,7 +547,7 @@ attached-coupon policy and a unique source-successor link.
 - `ip_lookup_live_stage.go` claims the report's realtime phase, records actual queued attempts and recovers stored snapshot references before any replay. The live checkpoint is independent of quality checkpoint writes.
 - `ip_lookup_live_check.go` adds live-phase progress and the referenced final snapshot to owner-scoped receipts without exposing recovery state.
 - `ip_lookup_live_cache_test.go` covers persistent matching, restart reads, nanosecond/tie ordering and absence of original paths in hosted CI.
-- `ip_lookup_live_refresh_test.go` covers combined refresh pricing, subnet eligibility, replay-safe snapshot recovery and maintenance settlement without refund after live attempts.
+- `ip_lookup_live_refresh_test.go` covers exact-IP combined refresh pricing, replay-safe snapshot recovery and maintenance settlement without refund after live attempts.
 - `ip_lookup_retry_jobs.go` schedules delayed first repair jobs for partial reports/snapshots inside the freezing transaction (payload attempt counters keep chains deduplicated) and exposes guarded in-place repair writes: partial-only cache updates keep `completed_at` so newer paid refreshes keep winning, and missing rows map to silent chain termination.
 - `ip_lookup_retry_jobs_test.go` covers first-attempt scheduling with the default delay, no scheduling for succeeded freezes, partial-guard conflicts, unchanged completion timestamps and live section retry payloads in hosted CI.
 
@@ -555,9 +557,9 @@ run. Joined checks share one refreshed snapshot. Attempted failures settle
 partial without changing the quality verdict; pre-attempt failures retain the
 existing refund path. Ledger changes and receipt settlement remain atomic.
 
-`ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined /24 report generation, detaches historical receipt references and deletes superseded payloads. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
+`ip_lookup_background.go` projects shared progress, claims exclusive worker leases and renews heartbeats. `ip_lookup_replacement.go` atomically publishes the newest combined report for the canonical exact IP, detaches historical receipt references and deletes superseded payloads. Neighboring IP reports remain independent, including rows with legacy subnet cache keys. Checks record the exact quota quantity, including refunds; financial records survive cache removal.
 
-`ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, free shared submissions, exact refresh-unit refunds and combined-cache replacement with preserved receipts in hosted CI.
+`ip_lookup_background_test.go` covers exclusive lease recovery, identity-free progress, free same-IP shared submissions, exact refresh-unit refunds and combined-cache replacement that preserves neighboring evidence and historical receipts in hosted CI.
 
 `ip_lookup_admission_test.go` covers global FIFO admission across process owners, free cross-user same-IP joining, quote/completion races, idempotency and repair deferral without burning attempts. `ip_lookup_background.go` admits only the oldest pending report and excludes active report/live repairs. `outbox_jobs.go` excludes those repair kinds while any fresh report waits or runs, while unrelated jobs remain claimable. `retention_operations.go` protects unstarted queue entries and live leases; only admitted, abandoned IP runs enter stale settlement. No new persistence is introduced.
 
@@ -969,7 +971,7 @@ keeps pagination memory bounded and binds cursors to the filter. The hosted
 
 `provider_operation_results_test.go` protects exact large integers, nested receipt preservation, null deletion and array replacement during completion.
 
-Native report state acknowledgments use GREATEST on accepted/applied revisions. Compensation history numbers dynamic filters, cursor predicates and limits as one query; interval durations use epoch seconds. Inventory temporary-table batches use bounded scalar index probes rather than repeatedly scanning a growing anti-join input. Hosted compensation pagination and routing barriers cover these contracts.
+Native report state acknowledgments use GREATEST on accepted/applied revisions. Inventory temporary-table batches use bounded scalar index probes rather than repeatedly scanning a growing anti-join input. Hosted routing barriers cover monotonic acknowledgments and retained accounting dependencies. Historical approved outage extensions remain purchase evidence; current Compensation history and review interfaces are retired.
 
 `database_lock_test.go` checks concurrent native snapshot/write behavior.
 `postgres_concurrency_test.go` covers debit contention and stale outbox generations.
