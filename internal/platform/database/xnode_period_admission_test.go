@@ -32,12 +32,32 @@ func TestClosingPeriodRejectsNewAndRepeatedAdmissionWithoutReopening(t *testing.
 		t.Fatal(participants, err)
 	}
 	period.Status = "closed"
-	if err = store.SaveXNodePeriod(ctx, period); err != nil {
+	if err = store.FinalizeXNodePeriod(ctx, period); err != nil {
 		t.Fatal(err)
 	}
 	period.Status = "closing"
 	if err = store.SaveXNodePeriod(ctx, period); !errors.Is(err, xnode.ErrConflict) {
 		t.Fatal("stale closure reopened final accounting", err)
+	}
+}
+
+func TestPeriodFinalizationCannotOvertakeReopenedAdmission(t *testing.T) {
+	store, _, period := xnodeTrafficFixture(t)
+	ctx := context.Background()
+	at := time.Now().UTC()
+	period.Status, period.EndedAt = "closing", &at
+	if err := store.SaveXNodePeriod(ctx, period); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.ReopenXNodePeriod(ctx, period.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.FinalizeXNodePeriod(ctx, period); !errors.Is(err, xnode.ErrConflict) {
+		t.Fatal("stale barrier closed newly reopened admission", err)
+	}
+	current, err := store.XNodePeriod(ctx, period.ID)
+	if err != nil || current.Status != "open" {
+		t.Fatal(current, err)
 	}
 }
 

@@ -9,6 +9,11 @@ import (
 // A closing period admits no new participants. Registration is fenced by the
 // same database row update, before any grant can be sent to an agent.
 func (s *Service) closePeriod(ctx context.Context, period Period, allowPending ...bool) error {
+	// A settled predecessor is immutable and never needs another admission or
+	// network read when its purchase is replayed alongside a paid successor.
+	if period.Status == "closed" {
+		return nil
+	}
 	canContinue := len(allowPending) > 0 && allowPending[0]
 	current, err := s.repo.XNodePeriod(ctx, period.ID)
 	if err != nil {
@@ -76,6 +81,11 @@ func (s *Service) closePeriod(ctx context.Context, period Period, allowPending .
 		}
 	}
 	period.Status = "closed"
+	if writer, ok := s.repo.(interface {
+		FinalizeXNodePeriod(context.Context, Period) error
+	}); ok {
+		return writer.FinalizeXNodePeriod(ctx, period)
+	}
 	return s.repo.SaveXNodePeriod(ctx, period)
 }
 

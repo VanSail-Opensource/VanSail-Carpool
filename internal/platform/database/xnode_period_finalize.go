@@ -1,0 +1,27 @@
+package database
+
+import (
+	"context"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+)
+
+// FinalizeXNodePeriod seals only the closure whose participant barriers were
+// observed. Reopening or a newer closure boundary fences a stale network wait.
+func (s *Store) FinalizeXNodePeriod(ctx context.Context, period xnode.Period) error {
+	if period.EndedAt == nil {
+		return xnode.ErrConflict
+	}
+	result, err := s.db.ExecContext(ctx, `UPDATE xnode_periods SET status='closed' WHERE id=$1 AND proxy_user_id=$2 AND purchase_id IS NOT DISTINCT FROM $3 AND status='closing' AND ended_at=$4`, period.ID, period.ProxyUserID, nullText(period.PurchaseID), stamp(*period.EndedAt))
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return xnode.ErrConflict
+	}
+	return nil
+}
