@@ -12,6 +12,10 @@ TypeScript stays at 5.9.3 because `openapi-typescript` requires TypeScript 5;
 `typescript-eslint` also excludes TypeScript 6.1 and later. Use Node 26 or newer
 with the committed npm lockfile. Vue 3.5, Vite 8 and the remaining dependency
 upgrades stay within their supported peer and runtime constraints.
+The hosted Vitest runner inlines both Unovis packages through Vite because the
+Vue distribution imports directories that native Node ESM cannot resolve. This
+uses the real chart modules rather than replacing them with test stubs; see
+[Vitest's dependency configuration](https://vitest.dev/config/server.html#server-deps-inline).
 
 Security overrides scope Minimatch 11.0.5 to ESLint, `@eslint/config-array`,
 `@typescript-eslint/typescript-estree` and EditorConfig, whose matching APIs
