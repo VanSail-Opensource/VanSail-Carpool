@@ -33,9 +33,7 @@
     "noStatistics": "暂无用量数据",
     "statisticsPending": "产生流量后会显示统计。",
     "unavailable": "仪表盘不可用",
-    "loadFailed": "无法加载仪表盘数据。",
-    "lastTrafficReset": "上次流量重置",
-    "noTrafficReset": "尚无重置记录"
+    "loadFailed": "无法加载仪表盘数据。"
   },
   "operations": {
     "checkStatus": "检查状态",

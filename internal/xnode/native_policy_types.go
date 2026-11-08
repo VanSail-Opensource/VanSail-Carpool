@@ -14,14 +14,6 @@ type SourceGeoIPConfig struct {
 	Selectors []string `json:"selectors"`
 }
 
-// BandwidthPolicy reuses the agent's per-user policy on this node.
-type BandwidthPolicy struct {
-	NormalMbps   int `json:"normalMbps"`
-	BurstMbps    int `json:"burstMbps"`
-	AfterSeconds int `json:"afterSeconds"`
-	ResetSeconds int `json:"resetSeconds"`
-}
-
 var countrySelector = regexp.MustCompile(`^geoip:[a-z]{2}$`)
 
 func validateNativeGlobal(config GlobalConfig) error {
@@ -62,27 +54,4 @@ func nextMasterGeodata(config GlobalConfig, now time.Time) time.Time {
 		}
 	}
 	return time.Time{}
-}
-
-func applyBandwidth(user *wire.User, policy *BandwidthPolicy) {
-	if policy == nil {
-		return
-	}
-	user.SpeedLimitMbps, user.BurstSpeedLimitMbps = policy.NormalMbps, policy.BurstMbps
-	user.SpeedLimitAfterSeconds, user.SpeedLimitResetSeconds = policy.AfterSeconds, policy.ResetSeconds
-}
-
-func validateBandwidth(policy *BandwidthPolicy) error {
-	if policy == nil {
-		return nil
-	}
-	if policy.NormalMbps <= 0 {
-		return ErrInvalid
-	}
-	user := wire.User{ID: 1, UUID: "validation", InboundTags: []string{"validation"}}
-	applyBandwidth(&user, policy)
-	if wire.ValidateUsers([]wire.User{user}) != nil {
-		return ErrInvalid
-	}
-	return nil
 }

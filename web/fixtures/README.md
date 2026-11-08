@@ -224,7 +224,7 @@ PAYG fixtures record `paygAuditHaptics` through the real delegated feedback. Cat
 
 `pricing-audit.html`, `pricing-audit.ts` and `PricingAudit.vue` mount real pricing policy, workspace and read-only member notice components with constructed data. Query flags select `view=policy|overview|product|user|operations|exports|member`, `empty`, `error`, `slow`, `save-error` and `zh`. No production credentials, member records or external services are used.
 
-`PricingAudit.vue`, `pricing-audit.ts` and `pricing-audit.html` mount pricing components with deterministic API fixtures. `pricing-data.ts` supplies administrator-scoped user forecasts and paginated prices, including evaluated-but-unvalidated coverage. `ChartsAudit.vue` exercises line, interval, stacked, usage-bar and donut composition in both appearance modes. These fixtures support Chrome DevTools inspection and never write to production.
+`PricingAudit.vue`, `pricing-audit.ts` and `pricing-audit.html` mount pricing components with deterministic API fixtures. `pricing-data.ts` supplies administrator-scoped user forecasts and paginated prices, including evaluated-but-unvalidated coverage. `ChartsAudit.vue` exercises line, interval, stacked and donut composition in both appearance modes. These fixtures support Chrome DevTools inspection and never write to production.
 
 The X-Node audit fixture accepts `cost-hourly`, `cost-unlimited`, `cost-slow`, `cost-error`, and `cost-save-error` for provider metadata states.
 
@@ -250,3 +250,7 @@ Subscription fixtures add first-sync pending state and Home PAYG usage with
 `mode=home&inactive&payg`; `history-empty`, `history-error`, `history-slow`,
 `history-stale` and `history-truncated` exercise retained-history states. The
 constructed data includes exact byte totals beyond Number integer precision.
+
+`browser-auth-audit.html?console` renders the actual browser console navigation with an authenticated synthetic administrator, including the absence of retired product entries.
+
+`detector-retirement-audit.html?legacy&usage` mounts the legacy quota meter without the retired node breakdown or reset display. The existing slow, empty, error and stale switches exercise section states.

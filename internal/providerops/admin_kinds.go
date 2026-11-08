@@ -10,8 +10,8 @@ const (
 	KindAdminComboReplacement = "admin_combo_replacement"
 	// KindAdminBulkExtension synchronizes deduplicated active-user extensions.
 	KindAdminBulkExtension = "admin_bulk_extension"
-	// KindNodeCompensation synchronizes one reviewed outage compensation.
-	KindNodeCompensation = "node_compensation"
+	// KindLegacyOutageSync finishes pre-retirement committed entitlement changes.
+	KindLegacyOutageSync = "node_compensation"
 	// KindAdminTemporaryBan changes a profile's remote connection state.
 	KindAdminTemporaryBan = "admin_temporary_ban"
 	// KindAdminTemporaryUnban restores a profile after a manual temporary ban.

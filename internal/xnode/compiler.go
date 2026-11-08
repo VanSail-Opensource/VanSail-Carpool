@@ -74,9 +74,6 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 	if err != nil {
 		return wire.Config{}, err
 	}
-	for i := range users {
-		applyBandwidth(&users[i], settings.Bandwidth)
-	}
 	customizations, err := s.repo.XNodeCustomizations(ctx, nodeID)
 	if err != nil {
 		return wire.Config{}, err

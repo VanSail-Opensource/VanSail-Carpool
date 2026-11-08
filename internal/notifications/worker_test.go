@@ -54,6 +54,15 @@ func (s *senderStub) SendMarkdownV2Message(context.Context, int64, int64, string
 	return s.err
 }
 
+func TestWorkerAcknowledgesRetiredOutageNotificationWithoutDelivery(t *testing.T) {
+	sender := &senderStub{}
+	worker := NewWorker(sender, nil, time.UTC)
+	err := worker.HandleOutbox(context.Background(), model.OutboxJob{Kind: jobpayload.UserNotificationKind, Payload: `{"kind":"node_compensation","eventKey":"legacy-approved"}`})
+	if err != nil || sender.calls != 0 {
+		t.Fatal("retired notification was delivered or retried", sender.calls, err)
+	}
+}
+
 func TestWorkerDeliversOneSuccessfulJob(t *testing.T) {
 	payload := notificationFixture(jobpayload.UserEventExpiration, "en", map[string]string{
 		FactCombo: "Pro", FactExpired: "2026-08-20T00:00:00Z",

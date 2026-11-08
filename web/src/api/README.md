@@ -20,7 +20,6 @@ commands. Its mutable state and quotes always bypass response snapshots.
 - `adminOperations.ts` owns aggregate user profiles, facet filtering, coupon wallet actions, exact entitlement refunds, queued provider-account actions, transient connection scans, bulk extensions, operation resolution, and streamed backup upload.
 - `client.ts` exposes typed member and administrator API operations, including idempotent payment, subscription-revoke, refund, outbox-retry, and manual-maintenance commands, connection scans, renewal batches, payment profiles, dashboard usage, and cached product statistics.
 - `client.test.ts` covers client request behavior.
-- `compensation.ts` owns revisioned configuration, cursor history, and idempotent approve/dismiss requests.
 - `features.test.ts` verifies feature request construction.
 - `generated.ts` contains the compact generated OpenAPI contract.
 - `http.ts` provides authenticated HTTP and error handling primitives and records eligible responses through the session cache.

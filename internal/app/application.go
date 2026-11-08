@@ -8,7 +8,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/affiliates"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/iplookup"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/maintenance"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/notifications"
@@ -41,7 +40,6 @@ type Application struct {
 	billing         *billing.Service
 	statistics      *productstats.Service
 	ipLookup        *iplookup.Worker
-	compensation    *compensation.Service
 	affiliates      *affiliates.Service
 	notifications   *notifications.Scanner
 	upstreams       *providerQueues

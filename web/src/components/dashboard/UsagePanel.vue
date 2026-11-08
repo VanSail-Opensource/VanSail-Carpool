@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { CatalogNode, RFC3339, UsageStatistics } from '@/api/types'
+import type { RFC3339, UsageStatistics } from '@/api/types'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { formatBytes, formatDateTime } from '@/utils/format'
-import TrafficUsageBar from './TrafficUsageBar.vue'
 import type { ActivityStatus } from './memberActivity'
 
 const props = withDefaults(defineProps<{
@@ -14,8 +13,7 @@ const props = withDefaults(defineProps<{
   ratio: number
   stale: boolean
   fetchedAt: RFC3339
-  catalogNodes?: readonly CatalogNode[]
-}>(), { activity: 'unavailable', catalogNodes: () => [] })
+}>(), { activity: 'unavailable' })
 
 const percentage = computed(() => Math.min(100, Math.max(0, Math.round(props.ratio * 100))))
 const tone = computed(() => percentage.value >= 90 ? 'danger' : percentage.value >= 75 ? 'warning' : 'safe')
@@ -51,20 +49,5 @@ const remainingTraffic = computed(() => {
         <div><dt>{{ $t('dashboard.remainingTraffic') }}</dt><dd>{{ remainingTraffic }}</dd></div>
       </dl>
     </div>
-    <TrafficUsageBar
-      :nodes="statistics.topNodes"
-      :total-bytes="statistics.usedTrafficBytes"
-      :catalog-nodes="catalogNodes"
-      :use-multiplier="false"
-    />
-    <dl class="home-usage__last-reset">
-      <dt>{{ $t('dashboard.lastTrafficReset') }}</dt>
-      <dd>{{ statistics.lastTrafficResetAt ? formatDateTime(statistics.lastTrafficResetAt) : $t('dashboard.noTrafficReset') }}</dd>
-    </dl>
   </section>
 </template>
-
-<style scoped>
-.home-usage__last-reset { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem 0.75rem; margin: 0.8rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--line); color: var(--text-muted); font-size: 0.75rem; }
-.home-usage__last-reset dd { margin: 0; }
-</style>

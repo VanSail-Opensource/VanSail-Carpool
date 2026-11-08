@@ -31,7 +31,7 @@ browserAccessApi.config = async () => {
   if (params.has('error') && state.configReads === 1) throw new ApiError(503, { code: 'BROWSER_CONFIG_UNAVAILABLE', message: '' })
   return config
 }
-browserAccessApi.session = async () => ({ authenticated: false, kind: 'anonymous', miniAppUrl: config.miniAppUrl })
+browserAccessApi.session = async () => params.has('console') ? admin : ({ authenticated: false, kind: 'anonymous', miniAppUrl: config.miniAppUrl })
 browserAccessApi.renew = async () => admin
 browserAccessApi.logout = async () => undefined
 browserAccessApi.createLink = async () => {

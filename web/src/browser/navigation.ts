@@ -17,7 +17,6 @@ export const adminGroups = [
     { value: 'statistics', labelKey: 'statistics.title', icon: 'i-ph-chart-donut-bold' },
     { value: 'xnode', labelKey: 'xnode.title', icon: 'i-ph-hard-drives-bold' },
     { value: 'ip-lookup', labelKey: 'ipLookup.adminTitle', icon: 'i-ph-globe-bold' },
-    { value: 'compensation', labelKey: 'adminCompensation.nav', icon: 'i-ph-first-aid-bold' },
   ] },
   { labelKey: 'adminNav.system', sections: [
     { value: 'settings', labelKey: 'adminNav.settings', icon: 'i-ph-gear-six-bold' },

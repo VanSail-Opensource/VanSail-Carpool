@@ -20,13 +20,12 @@ describe('UsagePanel', () => {
           sparklineData: ['0', '1073741824'],
           topNodes: [],
         },
-        catalogNodes: [],
       },
     })
     expect(wrapper.text()).toContain('Last known data')
     expect(wrapper.text()).toContain('Live usage is temporarily unavailable.')
     expect(wrapper.text()).toContain('UNAVAILABLE')
-    expect(wrapper.text()).toContain('No reset recorded')
+    expect(wrapper.text()).not.toContain('No reset recorded')
     expect(wrapper.text()).toContain('25%')
     expect(wrapper.text()).toContain('25 GiB')
     expect(wrapper.text()).toContain('75 GiB')
@@ -51,11 +50,10 @@ describe('UsagePanel', () => {
           sparklineData: [],
           topNodes: [],
         },
-        catalogNodes: [],
       },
     })
     expect(wrapper.text()).toContain('ONLINE')
-    expect(wrapper.text()).toContain('Last traffic reset')
+    expect(wrapper.text()).not.toContain('Last traffic reset')
     expect(wrapper.text()).not.toContain('No reset recorded')
     wrapper.unmount()
   })

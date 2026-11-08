@@ -419,11 +419,8 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `admin_entitlement_edit.go`, `admin_entitlement_refund.go`, and `admin_combo_replacement.go` atomically persist audited administrator mutations with their provider operations.
 - `admin_coupon_grants.go` records idempotent, audited purchase-coupon wallet grants and historical discards.
 - `admin_bulk_query.go`, `admin_bulk_shift.go`, and `admin_bulk_extension.go` preview inclusive-OR active targets, deduplicate users, shift active and queued terms to the minute, and create one durable bulk job.
-- `compensation_config.go`, `compensation_observation.go`, `compensation_events.go`, `compensation_review.go`, `compensation_notification.go`, and `compensation_dismiss.go` persist revisioned outage policy, node observations, frozen snapshots, cursor-safe projections, atomic reviewed extensions, and provider-gated compensation detail cards.
 - `automatic_renewal_plan.go` and `automatic_renewal_commit.go` preserve explicit administrator entitlement overrides and edited term lengths when creating a successor.
 - `community_membership_test.go` covers legacy mapping, membership-fact persistence, and strict active-window boundaries.
-- `compensation_observation_test.go` covers persisted/missing nodes, snapshotted policy, disabled precedence, and repeated outages.
-- `compensation_review_test.go` covers inactive skips, exact minute shifts, notifications, operation linkage, stale reviews, replay, and dismissal.
 - `admin_user_operations.go` and `admin_user_refunds.go` supply the aggregate profile's open-operation and refund projections.
 - `admin_operation_resolution.go` atomically resolves review-required operations, stores replay fingerprints, and appends the audit event.
 - `admin_workflow_types.go` defines shared aggregate and administrator workflow persistence records.
@@ -832,10 +829,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `billing_retry_generated.go` wraps the transactional methods in `billing.go`.
 - `browser_access_links_retry_generated.go` wraps the transactional methods in `browser_access_links.go`.
 - `catalog_retry_generated.go` wraps the transactional methods in `catalog.go`.
-- `compensation_config_retry_generated.go` wraps the transactional methods in `compensation_config.go`.
-- `compensation_dismiss_retry_generated.go` wraps the transactional methods in `compensation_dismiss.go`.
-- `compensation_observation_retry_generated.go` wraps the transactional methods in `compensation_observation.go`.
-- `compensation_review_retry_generated.go` wraps the transactional methods in `compensation_review.go`.
 - `connection_ip_block_completion_retry_generated.go` wraps the transactional methods in `connection_ip_block_completion.go`.
 - `connection_ip_block_expiry_retry_generated.go` wraps the transactional methods in `connection_ip_block_expiry.go`.
 - `connection_ip_blocks_mutations_retry_generated.go` wraps the transactional methods in `connection_ip_blocks_mutations.go`.
@@ -983,7 +976,6 @@ keeps pagination memory bounded and binds cursors to the filter. The hosted
 
 Native report state acknowledgments use GREATEST on accepted/applied revisions. Compensation history numbers dynamic filters, cursor predicates and limits as one query; interval durations use epoch seconds. Inventory temporary-table batches use bounded scalar index probes rather than repeatedly scanning a growing anti-join input. Hosted compensation pagination and routing barriers cover these contracts.
 
-`compensation_pagination_test.go` covers combined status/cursor/limit pages.
 `database_lock_test.go` checks concurrent native snapshot/write behavior.
 `postgres_concurrency_test.go` covers debit contention and stale outbox generations.
 `xnode_traffic_sample.go` validates exact fixed-point usage after sorted period locks.
@@ -1107,3 +1099,5 @@ Migration 39 adds combos.features_json with an empty array default. Combo writes
 
 `account_purge_recovery_test.go` covers same-job dependency waits, exhausted-job recovery, generation isolation and terminal review. `xnode_period_admission_test.go` covers post-close admission refusal, stale closure fencing and rotating settlement scans. `account_purge_resume_retry_generated.go` retries the complete recovery transaction.
 `xnode_period_finalize.go` atomically finalizes only the observed closing boundary; reopen and replacement boundaries reject stale network completion without changing the general period-update contract.
+
+Historical outage tables remain upgrade/audit evidence. No configuration, observation, review or approval repository API remains. Retention preserves independently committed purchase extensions and generic provider targets; its regressions seed historical facts directly.

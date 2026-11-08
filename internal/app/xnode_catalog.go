@@ -4,7 +4,12 @@ import (
 	"context"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/admin"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
+	"github.com/google/uuid"
 )
+
+func proxyInboundID(node, tag string) string {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte("vansail:inbound:"+node+":"+tag)).String()
+}
 
 func (a proxyProvider) Dashboard(ctx context.Context, id string) (catalog.RemoteDashboard, error) {
 	statistics, link, err := a.native.Statistics(ctx, id)

@@ -10,7 +10,6 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 - `admin-activity.json` contains activity-management and lucky-draw copy.
 - `admin-draw.json` contains the redesigned draw editor, forecast, and reward-result copy.
 - `admin-catalog.json` contains catalog, squad, and coupon administration copy.
-- `admin-compensation.json` contains reviewed node-outage compensation copy.
 - `admin-core.json` contains admin navigation, users, and Emby copy.
 - `admin-onboarding.json` contains visual onboarding-editor copy.
 - `admin-data.json` contains database editor and backup-management copy.
@@ -52,7 +51,7 @@ in parity with the matching `zh-CN` file and preserve `{placeholder}` names.
 
 `firewall.json` localizes firewall reports, detection controls and paid exemptions.
 
-- `node-forms.json` localizes typed native operational settings, source filters and bandwidth controls.
+- `node-forms.json` localizes typed native operational settings, source filters.
 
 
 `managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.

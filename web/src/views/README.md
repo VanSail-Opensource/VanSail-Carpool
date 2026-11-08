@@ -1,7 +1,7 @@
 # Route views
 
 - `ActivityView.vue` delegates to games, check-in, draws, and activity history.
-- `AdminView.vue` resolves and lazy-loads the selected administrative section, including System compensation review.
+- `AdminView.vue` resolves and lazy-loads the selected administrative section.
 - `AdminUserView.vue` is the thin aggregate-profile route entrance and owns native Back to the user list.
 - `CatalogView.vue` delegates to plan browsing and checkout.
 - `ConnectionsView.vue` delegates to the member connection scan and selected-IP unlink workflow.

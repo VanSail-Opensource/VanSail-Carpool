@@ -34,7 +34,6 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminBillingAmountLimits.vue` loads the global inclusive Add TXB range and atomically saves exact minor-unit bounds.
 - `AdminCatalogEditor.vue` edits combo terms.
 - `AdminCatalogPanel.vue` manages combos and squads.
-- `AdminCompensationPanel.vue` composes the revisioned outage policy and recipient-safe event review flow, with configuration and event tabs, frozen-recipient event tables, and focused review dialogs.
 - `AdminCouponsPanel.vue` manages coupon definitions.
 - `AdminDatabasePanel.vue` browses protected database tables.
 - `AdminEmbyPanel.vue` monitors Emby provisioning.
@@ -51,7 +50,6 @@ forms preserve their drafts so an administrator can correct or retry the action.
 - `AdminStatisticsPanel.vue` presents resource statistics with contained table scrolling and exact server-calculated figures.
 - `AdminUsersPanel.vue` searches users with responsive state/combo/squad facets and adjusts balances.
 - `users/` contains the aggregate profile, wallet, provider-account, entitlement workflow, operation-resolution, and bulk-extension modules.
-- `compensation/` contains focused configuration, event-card, review-modal, and display-format modules.
 
 The editor also provides dropdowns for coupon-eligible combos and squads, a stock
 limit field for squad products, a table-name search for database recovery work,
@@ -65,3 +63,5 @@ Combo editing accepts the API-supported empty description and zero price. Its Zo
 `AdminSquadEditor.vue` edits automatic PAYG mode and exact positive per-GB pricing alongside the existing Combo fields. Stock, visibility and activation-code controls apply to Combo; conversion preserves existing paid terms and excludes future renewals. Browser editor state and theme remain independent of Mini App initialization.
 
 `AdminSectionState.vue` keeps successful slot content mounted through background refresh and errors, announces one loading status, and reserves three 5rem placeholders only before first content. `AdminSectionState.test.ts` covers draft retention, retry, and successful empty results.
+
+The retired outage workspace, navigation and review controls are removed. Generic historical entitlement operations remain available through existing audit tools.

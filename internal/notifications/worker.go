@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -39,6 +40,14 @@ func NewWorker(sender Sender, logger *slog.Logger, location *time.Location, read
 
 // HandleOutbox validates, formats, and sends one immutable event.
 func (w *Worker) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
+	// Acknowledge pre-retirement notification payloads without restoring their
+	// formatter, producer or product controls. Their audit facts remain stored.
+	var retired struct {
+		Kind string `json:"kind"`
+	}
+	if json.Unmarshal([]byte(job.Payload), &retired) == nil && retired.Kind == "node_compensation" {
+		return nil
+	}
 	payload, err := jobpayload.DecodeUserNotification(job)
 	if err != nil {
 		return err

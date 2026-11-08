@@ -97,7 +97,6 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `admin_user_connections.go` scopes durable connection scans and transient IP projections to the selected profile.
 - `admin_bulk_extensions.go` normalizes minute durations or deprecated day inputs for inclusive-OR previews and idempotent bulk-extension jobs.
 - `admin_bulk_extensions_test.go` covers minute input, legacy-day normalization, and ambiguous duration rejection.
-- `admin_compensation.go` serves revisioned policy, recipient-safe cursor history, and idempotent approve/dismiss reviews.
 - `admin_operation_resolution.go` records idempotent audited resolutions for pending-review and partial operations without provider retry.
 - `admin_payments.go` lists administrator payment and refund projections, applies refunds, and grants terminal-payment courtesy credits.
 - `admin_operations.go` manages backups, durable jobs, and audit-event listings.
@@ -257,3 +256,5 @@ private response headers apply; settings writes use the validated global
 interface and its write scope. No IP persistence is introduced.
 
 `admin_ip_block_errors.go` maps administrator errors. `member_connection_observations.go` exposes owner observations and rate-limited grants. `member_payg_history.go` exposes private directional history.
+
+`retired_product_routes_test.go` verifies removed administrative outage controls return 404; no transport or dependency can recreate those decisions.

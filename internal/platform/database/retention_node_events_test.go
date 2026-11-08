@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
@@ -51,15 +50,6 @@ func TestNodeDownRetentionUsesCreationForEveryStatusAndClearsReferences(t *testi
 	if events != 1 || refs != 0 || details != 0 || fk != 0 {
 		t.Fatalf("events/refs/details/FKs=%d/%d/%d/%d", events, refs, details, fk)
 	}
-	threshold, multiplier := 1, 10000
-	config := compensation.Config{Enabled: true, ThresholdMinutes: &threshold, MultiplierBPS: &multiplier}
-	if err := store.RecordCompensationObservation(ctx, config, []compensation.Node{{UUID: "observing-expired", Name: "Fresh window"}}, now.Add(time.Minute)); err != nil {
-		t.Fatal(err)
-	}
-	var started string
-	if err := store.DB().QueryRowContext(ctx, `SELECT offline_observed_at FROM node_compensation_events WHERE node_uuid='observing-expired'`).Scan(&started); err != nil || started != stamp(now.Add(time.Minute)) {
-		t.Fatalf("fresh window=%s,%v", started, err)
-	}
 }
 
 func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
@@ -70,10 +60,19 @@ func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
 	combo := saveTestCombo(t, store, "retained-compensation", 100, 30)
 	squad := saveTestSquad(t, store, "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", 10, true)
 	actor := createTestUser(t, store, 31931)
-	_, purchase := createAdminWorkflowPurchase(t, store, 31932, combo, old, squad.GroupID)
-	event := recoveredCompensationEvent(t, store, old, squad.GroupID, squad.Name)
-	approved, err := store.ApproveCompensationEvent(ctx, compensation.ReviewInput{EventID: event.ID, ActorUserID: actor.ID, IdempotencyKey: "retention-approval", Reason: "approved", Revision: event.Revision, ExtensionMinutes: 17}, "retention-approval-fingerprint", old.Add(3*time.Minute))
+	member, purchase := createAdminWorkflowPurchase(t, store, 31932, combo, old, squad.GroupID)
+	legacy, _, err := store.CreateProviderOperation(ctx, providerops.CreateInput{
+		ActorUserID: actor.ID, OwnerUserID: member.ID, Kind: providerops.KindLegacyOutageSync,
+		IdempotencyKey: "legacy-approved", RequestFingerprint: "legacy-approved",
+		Items: []providerops.ItemInput{{Key: member.ID, TargetType: "user", TargetID: member.ID}},
+	}, old)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.DB().ExecContext(ctx, `UPDATE purchases SET valid_until=$1 WHERE id=$2`, stamp(purchase.ValidUntil.Add(17*time.Minute)), purchase.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = store.DB().ExecContext(ctx, `INSERT INTO node_compensation_events(id,node_uuid,node_name,status,offline_observed_at,threshold_minutes,multiplier_bps,frozen_recipient_count,provider_operation_id,revision,created_at,updated_at) VALUES('legacy-approved','legacy-node','Legacy node','queued',$1,1,10000,1,$2,0,$1,$1)`, stamp(old), legacy.Receipt.ID); err != nil {
 		t.Fatal(err)
 	}
 	counts, err := store.CompactAndPrune(ctx, now.Add(-7*24*time.Hour), now.Add(-24*time.Hour), now)
@@ -87,7 +86,7 @@ func TestExpiredApprovedOutageKeepsExtensionsAndExecutableSync(t *testing.T) {
 	if err != nil || !updated.ValidUntil.Equal(purchase.ValidUntil.Add(17*time.Minute)) {
 		t.Fatalf("extension changed=%+v,%v", updated, err)
 	}
-	operation, err := store.ProviderOperationByID(ctx, approved.Operation.ID)
+	operation, err := store.ProviderOperationByID(ctx, legacy.Receipt.ID)
 	if err != nil || operation.Receipt.Status != string(providerops.StatusQueued) {
 		t.Fatalf("sync operation=%+v,%v", operation, err)
 	}

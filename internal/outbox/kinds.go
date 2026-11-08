@@ -28,7 +28,6 @@ const (
 	UserEventGroupReward                = "group_reward"
 	UserEventAdminExtension             = "admin_extension"
 	UserEventAdminUpdate                = "admin_update"
-	UserEventNodeCompensation           = "node_compensation"
 	UserEventPurchaseQueued             = "purchase_queued"
 	UserEventRenewalScheduled           = "renewal_scheduled"
 	UserEventAddonActivated             = "addon_activated"

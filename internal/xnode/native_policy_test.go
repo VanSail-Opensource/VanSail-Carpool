@@ -51,16 +51,21 @@ func TestNodeMultiplierRequiredAndExactPrecision(t *testing.T) {
 	}
 }
 
-func TestBandwidthUsesNativeUserValidation(t *testing.T) {
-	for _, policy := range []*BandwidthPolicy{nil, {NormalMbps: 100}, {NormalMbps: 100, BurstMbps: 200, AfterSeconds: 30, ResetSeconds: 60}} {
-		if err := validateBandwidth(policy); err != nil {
-			t.Fatal(err)
-		}
+func TestRetiredNodeBandwidthIsIgnored(t *testing.T) {
+	var settings NodeSettings
+	if err := json.Unmarshal([]byte(`{"bandwidth":{"normalMbps":100,"burstMbps":200,"afterSeconds":30,"resetSeconds":60}}`), &settings); err != nil {
+		t.Fatal(err)
 	}
-	for _, policy := range []*BandwidthPolicy{{NormalMbps: 0}, {NormalMbps: 100, BurstMbps: 50}, {NormalMbps: 100, AfterSeconds: 3601}} {
-		if err := validateBandwidth(policy); err == nil {
-			t.Fatal("invalid speed policy accepted")
-		}
+	raw, err := json.Marshal(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := fields["bandwidth"]; exists {
+		t.Fatal("retired node policy retained")
 	}
 }
 

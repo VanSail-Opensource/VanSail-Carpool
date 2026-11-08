@@ -10,7 +10,6 @@
 - Expiry reminders say the subscription is expiring soon because scans can run at
   any point in the 48-hour window. Renewal charges display a positive amount,
   and reset refund reasons use localized explanations.
-- `format_compensation.go` renders provider-gated outage compensation cards with
   the frozen node, squads, observation interval, applied duration, expiry change,
   review reason, and capped-calculation indicator.
 - `worker.go` delivers durable private-chat jobs through the queued Telegram sender.
@@ -24,10 +23,11 @@
 - `format_new_test.go` covers both locales for every new event, dynamic MarkdownV2 escaping, and localized failure reasons.
 - `format_test.go`, `automatic_reset_format_test.go`, `scanner_test.go`, and `worker_test.go` cover formatting,
   localized reset details, threshold behavior, and retryable delivery failures.
-- `format_compensation_test.go` covers localized compensation details and MarkdownV2 escaping.
 - `format_receipts_test.go` covers both locales for new receipts and reset failures.
 
 Delivery reads current user preferences immediately before sending; suppressed jobs finish without removing financial or event audit records.
 `preferences_test.go` covers pending-delivery suppression, lookup retry and re-enablement.
 
 Private Telegram recipient-blocked/deactivated/not-found responses are terminal delivery failures, 429 respects its retry deadline, and transient or unknown errors retain bounded retries. Notification failure classification does not trigger account purge.
+
+A bounded worker tombstone acknowledges pre-retirement outage notifications without sending or formatting them. Historical delivery facts remain available to retention/audit; no new producer exists.

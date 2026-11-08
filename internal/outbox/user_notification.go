@@ -64,7 +64,7 @@ func validateUserNotification(payload UserNotification) error {
 		UserEventAutoRenewal, UserEventPaymentCredited, UserEventPaymentRefunded,
 		UserEventTrafficThreshold, UserEventAutomaticReset, UserEventAutomaticResetInsufficient,
 		UserEventAutomaticResetFailed, UserEventGroupReward, UserEventAdminExtension, UserEventAdminUpdate,
-		UserEventNodeCompensation, UserEventPurchaseQueued, UserEventRenewalScheduled,
+		UserEventPurchaseQueued, UserEventRenewalScheduled,
 		UserEventAddonActivated, UserEventQueuedCancellation, UserEventAutoRenewalFailed,
 		UserEventManualResetCompleted, UserEventManualResetRefunded,
 		UserEventMemberRefundCompleted, UserEventMemberRefundFailed, UserEventProvisionConflict:

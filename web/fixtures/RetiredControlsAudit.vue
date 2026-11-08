@@ -2,14 +2,17 @@
 import { onMounted, shallowRef } from 'vue'
 import { en } from '@nuxt/ui/locale'
 import type { AdminUserDetail } from '@/api/adminOperations'
+import UsagePanel from '@/components/dashboard/UsagePanel.vue'
+import type { UsageStatistics } from '@/api/types'
 import type { SquadProduct } from '@/api/types'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import AdminUserProviderActions from '@/components/admin/users/AdminUserProviderActions.vue'
 import AdminSquadEditor from '@/components/admin/AdminSquadEditor.vue'
 import StatisticsNodes from '@/components/statistics/StatisticsNodes.vue'
-import SquadNodeBlocks from '@/components/catalog/SquadNodeBlocks.vue'
 
 const params = new globalThis.URLSearchParams(globalThis.location.search)
+const usage = params.has('usage')
+const statistics: UsageStatistics = { usedTrafficBytes: '26843545600', lifetimeTrafficBytes: '214748364800', trafficLimitBytes: '107374182400', onlineAt: null, lastTrafficResetAt: '2026-11-01T00:00:00Z', categories: [], sparklineData: [], topNodes: [{ uuid: 'Tokyo', name: 'Tokyo', totalBytes: '26843545600' }] }
 const loading = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const editor = shallowRef(false)
@@ -30,11 +33,13 @@ onMounted(load)
   <UApp :locale="en">
     <main class="p-5 mx-auto max-w-6xl grid gap-6 min-w-0">
       <AdminSectionState :loading="loading" :error="error" @retry="load">
-        <SquadNodeBlocks :nodes="nodes" />
-        <StatisticsNodes :snapshot="{ generatedAt: '2026-10-16T00:00:00Z', stale: false, nodes: nodes.map(item => ({ ...item, online: true, usersOnline: 3, rxBytesPerSec: '1048576', txBytesPerSec: '524288', xrayVersion: '26.10', multiplier: 1.25 })) }" :loading="false" />
-        <AdminUserProviderActions user-id="member" :detail="detail" />
-        <UButton :label="$t('common.edit')" @click="editor = true" />
-        <AdminSquadEditor v-if="editor" :squad="squad" :busy="false" @cancel="editor = false" />
+        <UsagePanel v-if="usage && !params.has('empty')" :statistics="statistics" :ratio="0.25" :stale="params.has('stale')" fetched-at="2026-11-08T00:00:00Z" />
+        <template v-if="!usage">
+          <StatisticsNodes :snapshot="{ generatedAt: '2026-10-16T00:00:00Z', stale: false, nodes: nodes.map(item => ({ ...item, online: true, usersOnline: 3, rxBytesPerSec: '1048576', txBytesPerSec: '524288', xrayVersion: '26.10', multiplier: 1.25 })) }" :loading="false" />
+          <AdminUserProviderActions user-id="member" :detail="detail" />
+          <UButton :label="$t('common.edit')" @click="editor = true" />
+          <AdminSquadEditor v-if="editor" :squad="squad" :busy="false" @cancel="editor = false" />
+        </template>
       </AdminSectionState>
     </main>
   </UApp>

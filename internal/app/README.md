@@ -134,7 +134,6 @@ Turnstile uses an independent bounded provider queue in `provider_queues.go`, wi
 
 - `xnode_usage.go`: Entry points: `NodeUsage`.
 
-- `xnode_compensation.go` qualifies native inbound identities for node compensation.
 
 
 Bootstrap applies container-aware memory budgeting before application construction.
@@ -150,9 +149,6 @@ connection and the authoritative database.
 
 `xnode_refund_state.go` routes purchase-scoped refund usage through native accounting, including frozen imported evidence.
 
-Native compensation readiness requires fresh ready reports. Extensions update
-expiry on the existing period and retain combined quota usage.
-Provider name/ID resolution accepts explicit service identities without creating a Telegram association.
 
 `xnode_admin_scan.go` starts native-only scans in the existing durable scan workflow and reads fresh eligible nodes through the per-node command executor. Ownership/freshness is checked again before projecting observations; raw source IPs stay memory-only.
 
@@ -201,3 +197,5 @@ Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composi
 `mutation_operation_composition.go` registers the shared subscription, Emby, retry, and refund workers.
 
 `account_purge.go` registers the existing outbox purge worker and the queued Emby DELETE adapter. The scheduler resumes incomplete cleanup after restart/retry exhaustion. No upstream call bypasses upstreamqueue.
+
+Node-outage observation and its scheduler have been retired. Existing pre-retirement committed entitlement synchronization uses only the generic admin worker; it cannot create new outage decisions. `proxyInboundID` now lives in `xnode_catalog.go` as shared catalog topology logic.

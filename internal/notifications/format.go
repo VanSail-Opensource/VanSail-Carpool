@@ -88,8 +88,6 @@ func notificationFields(payload jobpayload.UserNotification, copy copySet, locat
 			moneyPair("balance", FactBalance), datePair("time", FactTime, location))
 	case jobpayload.UserEventAdminExtension, jobpayload.UserEventAdminUpdate:
 		return adminFields(copy, facts, location, payload.Kind == jobpayload.UserEventAdminExtension, payload.Locale == "zh-CN")
-	case jobpayload.UserEventNodeCompensation:
-		return compensationFields(copy, facts, location, payload.Locale == "zh-CN")
 	case jobpayload.UserEventPurchaseQueued, jobpayload.UserEventRenewalScheduled,
 		jobpayload.UserEventAddonActivated, jobpayload.UserEventQueuedCancellation,
 		jobpayload.UserEventAutoRenewalFailed, jobpayload.UserEventManualResetCompleted,

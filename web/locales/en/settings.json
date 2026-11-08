@@ -41,7 +41,7 @@
       "activity": "Activity and referrals",
       "activityHint": "Group rewards, referral commissions and tier rewards.",
       "account": "Account and admin updates",
-      "accountHint": "Administrator changes, compensation, security notices and account recovery."
+      "accountHint": "Administrator changes, security notices and account recovery."
     },
     "tag": {
       "label": "Group member tag",

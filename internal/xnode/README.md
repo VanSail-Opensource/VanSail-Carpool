@@ -1106,3 +1106,5 @@ Node removal runs node.remove as an existing durable operation, never a wire com
 Period settlement and routing deployment proof: `period_closure.go` fences and seals only recorded participants; purge and background settlement never hold the shared service mutation mutex over network waits. `routing_config_proof.go` and `routing_deployment_proof.go` validate the sent native rules, selected principals/listeners, transit generations and applied revisions. See [job and routing reliability](../../docs/job-routing-reliability.md) for constraints and incident evidence.
 
 `native_job_dispatch.go` dispatches queued native work, completes superseded disabled-node intents, and preserves offline/capability waits without exhausting delivery attempts. Access repair retains settled/ambiguous accounting for review instead of granting another allowance.
+
+Node-level bandwidth overrides are retired. Historical encrypted settings decode without restoring these fields; saving removes them. Native per-user speed capabilities remain available for commerce policies.

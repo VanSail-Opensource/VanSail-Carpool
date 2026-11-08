@@ -118,7 +118,6 @@ func TestFormatUsesEveryExactLocalizedTitle(t *testing.T) {
 		jobpayload.UserEventGroupReward:        {"🎁 *Group reward received*", "🎁 *群聊奖励到账*"},
 		jobpayload.UserEventAdminExtension:     {"🎁 *Extended by admin*", "🎁 *管理员已延长订阅*"},
 		jobpayload.UserEventAdminUpdate:        {"🛠 *Balance adjusted by admin*", "🛠 *管理员已调整余额*"},
-		jobpayload.UserEventNodeCompensation:   {"🎁 *Node outage compensation received*", "🎁 *节点故障补偿已到账*"},
 	}
 	for kind, expected := range titles {
 		for index, locale := range []string{"en", "zh-CN"} {
@@ -158,10 +157,6 @@ func factsForKind(kind string) map[string]string {
 	case jobpayload.UserEventAdminExtension:
 		return map[string]string{FactAddedSeconds: "86400", FactPreviousExpiry: when,
 			FactNewExpiry: "2026-08-21T00:00:00Z", FactReason: "reason", FactTime: when}
-	case jobpayload.UserEventNodeCompensation:
-		return map[string]string{FactNode: "Node", FactAffectedSquads: "Core", FactDowntimeSeconds: "120",
-			FactOutageStarted: when, FactRecovered: "2026-08-20T00:02:00Z", FactAddedSeconds: "60", FactCombo: "Pro",
-			FactPreviousExpiry: when, FactNewExpiry: "2026-08-20T00:01:00Z", FactReason: "reason", FactTime: when}
 	default:
 		return map[string]string{FactChange: "balance_adjustment", FactAmount: "100", FactBalance: "200",
 			FactReason: "reason", FactTime: when}

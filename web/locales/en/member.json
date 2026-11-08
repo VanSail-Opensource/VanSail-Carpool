@@ -33,9 +33,7 @@
     "noStatistics": "No usage data yet",
     "statisticsPending": "Statistics appear after traffic is recorded.",
     "unavailable": "Dashboard unavailable",
-    "loadFailed": "Dashboard data could not be loaded.",
-    "lastTrafficReset": "Last traffic reset",
-    "noTrafficReset": "No reset recorded"
+    "loadFailed": "Dashboard data could not be loaded."
   },
   "operations": {
     "checkStatus": "Check status",

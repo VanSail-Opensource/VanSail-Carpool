@@ -16,7 +16,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/billing"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/browserauth"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/catalog"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/compensation"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/emby"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/entitlements"
@@ -167,7 +166,6 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	if err := registerAccountPurge(outboxWorker, store, xnodeService, newEmbyAdapter(settings, upstreams.emby)); err != nil {
 		return cleanup(err)
 	}
-	compensationService := compensation.NewService(store, provider)
 	if err := registerCoreOutboxHandlers(outboxWorker, store, entitlementWorker, xnodeService, embyService,
 		paymentAnnouncementWorker, affiliateNotificationWorker, userNotificationWorker, scanWorker, blockExpiryWorker, operationDispatcher); err != nil {
 		return cleanup(err)
@@ -239,7 +237,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		Billing: billingService, Activity: activityService,
 		Coupons: couponService, Emby: embyService,
 		EmbyOperations: embyOperations, EmbyPrice: embyPrice,
-		Admin: adminService, AdminUsers: adminUserWorkflows, Compensation: compensationService, Settings: settings, DatabaseAdmin: databaseAdminHTTP,
+		Admin: adminService, AdminUsers: adminUserWorkflows, Settings: settings, DatabaseAdmin: databaseAdminHTTP,
 		PaymentProfiles: paymentProfiles,
 		Store:           store, Affiliates: affiliateService, Telegram: queuedTelegramClient, Webhooks: paymentBridge, PublicURL: cfg.PublicBaseURL, Static: static,
 		Logger: logger, SessionTTL: cfg.SessionTTL, SecureCookies: cfg.PublicBaseURL.Scheme == "https",
@@ -260,7 +258,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 		xnodeService:  xnodeService, xnodeMaster: xnodeMaster,
 		config: cfg, logger: logger, httpServer: httpServer, store: store, outbox: outboxWorker,
 		backups: backupService, maintenance: maintenanceService, telegram: queuedTelegramClient, settings: settings,
-		catalog: catalogService, billing: billingService, statistics: statisticsService, compensation: compensationService, affiliates: affiliateService,
+		catalog: catalogService, billing: billingService, statistics: statisticsService, affiliates: affiliateService,
 		notifications: userNotificationScanner, upstreams: upstreams, paymentProfiles: paymentProfiles,
 		ipLookup: ipLookupWorker,
 		usdt:     usdtService,

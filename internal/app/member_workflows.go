@@ -46,7 +46,7 @@ func newMemberWorkflows(store *database.Store, proxy proxyProvider, vault *secre
 func registerAdminOperationHandlers(dispatcher *providerops.Dispatcher, store *database.Store, proxy proxyProvider) error {
 	worker := admin.NewUserOperationWorker(store, proxy)
 	for _, kind := range []string{providerops.KindAdminEntitlementEdit, providerops.KindAdminEntitlementRefund,
-		providerops.KindAdminComboReplacement, providerops.KindAdminBulkExtension, providerops.KindNodeCompensation} {
+		providerops.KindAdminComboReplacement, providerops.KindAdminBulkExtension, providerops.KindLegacyOutageSync} {
 		if err := dispatcher.Register(kind, worker); err != nil {
 			return err
 		}

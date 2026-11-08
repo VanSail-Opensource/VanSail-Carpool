@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import BrowserLanding from '@/browser/BrowserLanding.vue'
 import BrowserAccess from '@/browser/BrowserAccess.vue'
+import BrowserConsole from '@/browser/BrowserConsole.vue'
 import AdminAccessPanel from '@/components/settings/AdminAccessPanel.vue'
 import { useBrowserSession } from '@/browser/session'
 
@@ -14,6 +15,7 @@ onMounted(() => { if (!params.has('link') && !params.has('exchange')) void sessi
   <UApp>
     <AdminAccessPanel v-if="params.has('link')" />
     <BrowserAccess v-else-if="params.has('exchange')" />
+    <BrowserConsole v-else-if="params.has('console')"><p>{{ $t('browser.console') }}</p></BrowserConsole>
     <BrowserLanding v-else />
   </UApp>
 </template>

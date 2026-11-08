@@ -11,7 +11,7 @@ Settings. This keeps dashboard actions separate from subscription settings.
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries already carry node labels/country/multipliers. Home no longer fetches the full Explore catalog or persists duplicate squad data.
 - `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance and forwards legacy Revoke query links.
 
-`UsagePanel.vue` also displays upstream `lastTrafficResetAt` in the existing localized date/time format, with a null fallback and the existing stale-snapshot disclosure. `UsagePanel.test.ts` covers timestamp presence and absence alongside cached-data warnings.
+`UsagePanel.vue` retains the legacy quota meter and stale-data disclosure. The old per-node breakdown bar and reset controls are retired; detailed traffic belongs to Usage Breakdown.
 - `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links and renders the section only for an opted-in entrance preference and a server-confirmed valid combo; the desktop sidebar carries the same gated entry points.
 - `ComingSoonLinks.test.ts` verifies every member-tool action reaches its route while keeping the launch document URL unchanged. The retired member TX Statistics action is absent; administrator statistics stay in the browser console.
 - `UsagePanel.test.ts` verifies stale upstream data disclosure.
@@ -39,7 +39,7 @@ offline requires complete fresh coverage reporting no open flows.
 
 - `EntitlementSummary.vue` renders the active combo directly and keeps queued purchase controls; member usage forecasts are not requested.
 
-Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageBar.vue`, `TrafficUsageBarDetails.vue`, `TrafficUsageDetails.vue`.
+Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficResetAutomationControl.vue`, `TrafficUsageDetails.vue`.
 
 When no combo is active and the balance is positive, `UserHome.vue` composes
 `PAYGUsagePanel.vue` in place of the quota meter. It uses the existing visibility

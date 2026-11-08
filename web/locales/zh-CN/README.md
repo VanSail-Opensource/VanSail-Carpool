@@ -11,7 +11,6 @@ than in Vue templates, composables, or API clients.
 - `admin-draw.json` mirrors the redesigned draw editor, forecast, and reward-result copy.
 - `admin-catalog.json` contains catalog, squad, and coupon administration copy.
 - `admin-core.json` contains admin navigation, users, and Emby copy.
-- `admin-compensation.json` contains reviewed node-outage compensation copy.
 - `admin-onboarding.json` contains visual onboarding-editor copy.
 - `admin-data.json` contains database editor and backup-management copy.
 - `admin-operations.json` contains settings, audit, payment, and entitlement copy.
@@ -52,7 +51,7 @@ than in Vue templates, composables, or API clients.
 
 `firewall.json` translates firewall reports, detection controls and paid exemptions with matching placeholders.
 
-- `node-forms.json` localizes typed native operational settings, source filters and bandwidth controls.
+- `node-forms.json` localizes typed native operational settings, source filters.
 
 
 `managed-routing.json` localizes typed routes, preset fields, graph interaction and safety diagnostics.
