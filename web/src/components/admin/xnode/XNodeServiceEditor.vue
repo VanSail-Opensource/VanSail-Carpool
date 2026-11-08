@@ -7,7 +7,15 @@ const props = defineProps<{ item: NamedService | null; groups: XNodeGroup[]; bus
 const emit = defineEmits<{ save: [value: NamedServiceWrite]; close: [] }>()
 const { t } = useI18n()
 const now = new Date()
-const draft = ref<NamedServiceWrite>(props.item ? { name: props.item.identity.serviceName, access: globalThis.structuredClone(props.item.access) } : { name: '', access: { limitBytes: '0', startedAt: now.toISOString(), expiresAt: '', groupIds: [], disabled: false } })
+const previous = props.item?.access
+const draft = ref<NamedServiceWrite>({
+  name: props.item?.identity.serviceName ?? '',
+  access: previous ? {
+    limitBytes: previous.limitBytes, strategy: previous.strategy,
+    startedAt: previous.startedAt, expiresAt: previous.expiresAt,
+    groupIds: [...previous.groupIds], disabled: previous.disabled,
+  } : { limitBytes: '0', startedAt: now.toISOString(), expiresAt: '', groupIds: [], disabled: false },
+})
 const expiry = computed({ get: () => draft.value.access.expiresAt ? new Date(draft.value.access.expiresAt).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16) : '', set: value => { draft.value.access.expiresAt = value ? new Date(value).toISOString() : '' } })
 const groups = computed(() => props.groups.map(group => ({ value: group.id, label: group.name })))
 const valid = computed(() => /^[A-Za-z0-9._-]{1,128}$/.test(draft.value.name) && /^\d+$/.test(draft.value.access.limitBytes) && BigInt(draft.value.access.limitBytes) <= 9223372036854775807n && draft.value.access.groupIds.length > 0 && Date.parse(draft.value.access.expiresAt) > Date.now())

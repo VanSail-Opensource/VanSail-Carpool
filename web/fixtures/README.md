@@ -273,3 +273,5 @@ The editor has no cadence selector; `window.__xnodeAudit.writes` records success
 `namedService` request payloads plus the mock's `appliedStrategy`. New writes omit cadence and the mock defaults to
 `NO_RESET`; existing writes retain the saved value. Combine with `services-empty`,
 `service-error`, `service-save-error`, `slow`, and `zh` for the existing states.
+Add `service-reactive` to exercise reactive API results and confirm editor copies
+work without cloning a Vue proxy or mutating the loaded term.

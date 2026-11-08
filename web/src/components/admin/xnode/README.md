@@ -165,6 +165,9 @@ Node removal remains available for bound nodes. `XNodeNodes.vue` shows durable p
 `XNodeServiceEditor.test.ts` checks that new terms omit cadence and legacy edits
 retain their saved strategy without exposing a reset selector. The editor still
 clones existing terms, so quota edits do not mutate the loaded service object.
+It copies known access fields and the group-ID array explicitly, supporting
+reactive props without passing Vue proxies to `structuredClone`. Unit fixtures
+stub Nuxt UI's resolved `Modal`/field names and require the body inputs to render.
 Chrome DevTools checked constructed loading, populated, empty, read-error and
 save-error states at 390 px and 1440 px in Chinese and English. Keyboard creation
 omitted cadence and defaulted to `NO_RESET`; an unchanged legacy edit retained

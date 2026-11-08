@@ -1,5 +1,5 @@
 import { firewallApi } from '@/api/firewall'
-import { createApp } from 'vue'
+import { createApp, reactive } from 'vue'
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
@@ -167,7 +167,7 @@ if (params.has('ddns') || params.has('builtin-ddns')) {
 }
 
 let serviceUsers: NamedService[] = params.has('services-empty') ? [] : [{ identity: { proxyUserId: '1099511627776', userId: '', username: 'routing-service', serviceName: 'routing-service', currentPeriodId: 'service-period', accessDisabled: false, createdAt: stamp }, access: { limitBytes: '0', strategy: params.has('service-legacy') ? 'DAY' : 'NO_RESET', startedAt: stamp, expiresAt: '2027-10-17T00:00:00Z', groupIds: ['group-one'], disabled: false } }]
-xnodeApi.namedServices = async () => { await check('services'); if (params.has('service-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); return { items: structuredClone(serviceUsers) } }
+xnodeApi.namedServices = async () => { await check('services'); if (params.has('service-error')) throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }); const items = structuredClone(serviceUsers); return { items: params.has('service-reactive') ? reactive(items) : items } }
 xnodeApi.saveNamedService = async (id, body) => {
   await check('save-service')
   if (params.has('service-save-error')) throw new ApiError(422, { code: 'XNODE_INPUT_INVALID', message: '' })
