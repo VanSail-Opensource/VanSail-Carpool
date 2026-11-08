@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'motion-v'
 
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
 
+defineOptions({ inheritAttrs: false })
+
 const props = withDefaults(defineProps<{
   tone?: 'info' | 'warning' | 'success'
   title?: string
@@ -23,6 +25,7 @@ const { reducedMotion, offset } = useMotionPreferences()
 <template>
   <AnimatePresence :initial="false">
     <motion.div
+      v-bind="$attrs"
       key="notice"
       class="notice-motion"
       :initial="{ opacity: 0, y: offset(-5) }"

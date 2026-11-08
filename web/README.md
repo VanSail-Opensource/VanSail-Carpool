@@ -4,11 +4,30 @@ VanSail Carpool is a bilingual, mobile-first Telegram Mini App built with Vue 3.
 
 `vite.config.ts` prebundles the Nuxt editor's TipTap and ProseMirror imports together so development mode uses a single selection/plugin registry.
 
-Nuxt UI uses stable 4.11.3 rather than a PR preview. Vitest and its V8 coverage
-adapter are pinned together at 5.0.3; `clearMocks: false` preserves the previous
-mock lifecycle. TypeScript stays at 5.9 because `openapi-typescript` requires
-TypeScript 5, although newer TypeScript majors are available. Other dependencies
-are upgraded within their supported peer and runtime constraints.
+Nuxt UI uses stable 4.12.0. Vitest and its V8 coverage adapter are pinned together
+at 5.1.0, and both Unovis packages are pinned at 1.8.0 to match their exact peer
+requirements. Tailwind 4.3.5 and its Vite, PostCSS and native engine packages
+are updated together. `clearMocks: false` preserves the existing mock lifecycle.
+TypeScript stays at 5.9.3 because `openapi-typescript` requires TypeScript 5;
+`typescript-eslint` also excludes TypeScript 6.1 and later. Use Node 26 or newer
+with the committed npm lockfile. Vue 3.5, Vite 8 and the remaining dependency
+upgrades stay within their supported peer and runtime constraints.
+
+Security overrides scope Minimatch 11.0.5 to ESLint, `@eslint/config-array`,
+`@typescript-eslint/typescript-estree` and EditorConfig, whose matching APIs
+remain available. JS Beautify uses Glob 14.0.4 through its retained `globSync`
+and `hasMagic` APIs. These resolve the
+[glob amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) and
+[cancellation](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) advisories
+without replacing Redocly's API-compatible Minimatch 5.1.9. Keep the
+existing Redocly `js-yaml` and esbuild overrides when updating this graph.
+
+The November 2026 refresh was checked with Chrome DevTools on constructed member
+and administrator fixtures at 390 px and 1440 px: chart mode/keyboard selection,
+DDNS host selection, payment receipt states and paired integration-secret edits.
+Loading, empty and error states stayed contained without console errors or
+backend requests. These browser checks do not establish Telegram host gestures
+on physical devices. Hosted Actions remain the automated regression gate.
 
 ## Commands
 

@@ -75,6 +75,11 @@ api.getDashboard = async () => {
   return ({ user: {}, balance: { currency: 'TXB', minor: '12345', display: '123.45 TXB' }, activePurchase: params.has('combo') ? fixturePurchase : null, queuedPurchase: null, statisticsStale: false, fetchedAt: at(0), subscriptionUrl: 'https://subscription.example/import', statistics: { usedTrafficBytes: '12345678900', lifetimeTrafficBytes: '22345678900', trafficLimitBytes: '100000000000', onlineAt: at(0), lastTrafficResetAt: params.has('noreset') ? null : at(-day), categories: [], sparklineData: [], topNodes: [] } }) as never
 }
 api.getCatalog = async () => ({ combos: [], addons: [], nodes: [] })
+api.getBalance = async () => {
+  if (params.has('balance-error')) throw new ApiError(503, { code: 'UNAVAILABLE', message: '' })
+  const money = (minor: string) => ({ currency: 'TXB' as const, minor, display: '' })
+  return { balance: money('12345'), paymentMethods: [], pendingPaymentOrder: null, addAmountLimits: { minimum: money('100'), maximum: money('1000000'), updatedAt: at(0) } }
+}
 api.revokeSubscription = async () => { state.revocations++; return { id: 'audit-revoke', kind: 'subscription_revoke', status: 'queued', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: null } }
 memberOperationsApi.getOperation = async () => ({ id: 'audit-revoke', kind: 'subscription_revoke', status: 'succeeded', errorCode: null, createdAt: at(0), updatedAt: at(0), completedAt: at(0) })
 Object.assign(window, { __subscriptionAudit: state, __subscriptionAuditLocale: setLocale, __subscriptionSnapshot: data })

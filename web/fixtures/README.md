@@ -98,6 +98,8 @@ These files are for local visual audits. The production Vite build starts from t
 
 `SubscriptionAudit.vue`, `subscription-audit.ts` and `subscription-audit.html` render constructed member Home and Subscription states for Chrome DevTools MCP.
 Use `mode=home&history-shares` to inspect traffic/cost aggregation, including a node at exactly 1%, on the real PAYG history chart.
+The balance sheet uses constructed balance/limits and empty payment methods;
+`balance-error` exercises its warning notice without a backend request.
 
 - `IPLookupAudit.vue` mounts actual member/admin IP Lookup components inside the existing app shell.
 - `ip-lookup-audit.ts` supplies constructed allowance, provider, fee, error and admin data for Chrome DevTools MCP review.

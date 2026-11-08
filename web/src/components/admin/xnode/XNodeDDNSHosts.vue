@@ -21,7 +21,7 @@ function options(field: HostField) {
 function isMultiple(field: HostField): boolean {
   return props.builtin || (binding.value[field.key]?.length ?? 0) > 1
 }
-function modelValue(field: HostField): string | string[] | undefined {
+function selectedValue(field: HostField): string | string[] | undefined {
   const ids = binding.value[field.key] ?? []
   return isMultiple(field) ? ids : ids[0]
 }
@@ -35,7 +35,7 @@ function select(key: HostFamily, value: unknown): void {
 
 <template>
   <UFormField v-for="field in fields" :key="field.key" :label="field.label" :required="builtin && Boolean(field.source)">
-    <USelectMenu :model-value="modelValue(field)" :items="options(field)" value-key="value" :multiple="isMultiple(field)" :disabled="!field.source" :clear="!builtin" :required="builtin && Boolean(field.source)" :placeholder="t(builtin ? 'nodeForms.ddnsHostRequired' : 'nodeForms.ddnsHostNone')" :search-input="{ placeholder: t('nodeForms.discoverySearch'), autofocus: false }" class="w-full" :ui="{ value: 'min-w-0 whitespace-normal break-words text-left', itemLabel: 'whitespace-normal break-words', content: 'max-w-[calc(100vw-2rem)]' }" @update:model-value="select(field.key, $event)">
+    <USelectMenu :model-value="selectedValue(field)" :items="options(field)" value-key="value" :multiple="isMultiple(field)" :disabled="!field.source" :clear="!builtin" :required="builtin && Boolean(field.source)" :placeholder="t(builtin ? 'nodeForms.ddnsHostRequired' : 'nodeForms.ddnsHostNone')" :search-input="{ placeholder: t('nodeForms.discoverySearch'), autofocus: false }" class="w-full" :ui="{ value: 'min-w-0 whitespace-normal break-words text-left', itemLabel: 'whitespace-normal break-words', content: 'max-w-[calc(100vw-2rem)]' }" @update:model-value="select(field.key, $event)">
       <template #empty>{{ t('nodeForms.ddnsHostEmpty') }}</template>
     </USelectMenu>
   </UFormField>
