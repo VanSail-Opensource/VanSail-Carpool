@@ -11,6 +11,10 @@ exact amount: network fees are additional and must not reduce the received amoun
 - `CryptoPaymentInstructions.vue` renders the compact exact crypto amount, address QR, copy action, countdown, explicit replacement, and user cancellation without exposing a provider URL.
 - `paymentOptions.ts` owns the typed provider and channel option contracts and resolves the shared monochrome logos in `web/public/assets/payments/`. Currency and network artwork uses white foregrounds with transparent backgrounds and cutouts so every consumer has the same appearance without CSS filters. Provider glyphs use the same white foreground in `billing-02.css`; selection checks retain their semantic feedback colors. Add new channel or network logos to the existing resolver and keep their artwork monochrome.
 - `PaymentReceiptDetails.vue` renders the browser-safe provider-return receipt with localized amount, payment ID, provider, channel, status, and timing metadata using Nuxt UI surfaces; exact amounts and identifiers wrap instead of truncating.
+
+Receipt access denial clears details and stops polling through `usePaymentReturn`.
+The shared receipt exposes a native Telegram entrance link when owner
+authentication is needed; it never imports browser-admin initialization into the Mini App.
 - `BalancePaymentSheet.test.ts` verifies provider labels stay distinct from provider-owned payment channels, such as EZPay and Alipay, and verifies the two-step transition.
 
 Provider and channel changes use semantic selection feedback with a 140ms Motion check reveal and an opacity-only reduced-motion path; navigation is soft, order confirmation is rigid, retries are light, and order cancellation is heavy.

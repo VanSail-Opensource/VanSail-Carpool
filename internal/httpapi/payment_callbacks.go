@@ -1,18 +1,10 @@
 package httpapi
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 	"time"
 )
-
-const paymentReturnCapabilityTTL = 30 * time.Minute
 
 func (s *Server) ezpayWebhook(w http.ResponseWriter, r *http.Request) {
 	event, paid, err := s.deps.Webhooks.VerifyEZPay(r.Context(), r.URL.Query())
@@ -109,69 +101,4 @@ func (s *Server) bepusdtProbeWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("ok"))
-}
-
-// paymentReturn is deliberately navigation-only and never changes payment or balance state.
-func (s *Server) paymentReturn(w http.ResponseWriter, r *http.Request) {
-	provider := chiURLParam(r, "provider")
-	if provider != "ezpay" && provider != "bepusdt" {
-		s.writeError(w, r, http.StatusNotFound, "NOT_FOUND", "Payment return route not found.")
-		return
-	}
-	orderID := r.URL.Query().Get("order")
-	if pathOrderID := chiURLParam(r, "orderID"); pathOrderID != "" {
-		orderID = pathOrderID
-	}
-	query := url.Values{"paymentOrder": {orderID}, "provider": {provider}}
-	if orderID != "" {
-		query.Set("paymentCapability", s.paymentReturnCapability(provider, orderID, time.Now().UTC()))
-	}
-	target := *s.deps.PublicURL
-	target.Path = strings.TrimRight(target.Path, "/") + "/payment-result"
-	target.RawQuery = query.Encode()
-	http.Redirect(w, r, target.String(), http.StatusSeeOther)
-}
-
-func (s *Server) paymentReturnStatus(w http.ResponseWriter, r *http.Request) {
-	provider := chiURLParam(r, "provider")
-	if provider != "ezpay" && provider != "bepusdt" {
-		s.writeError(w, r, http.StatusNotFound, "NOT_FOUND", "Payment return route not found.")
-		return
-	}
-	orderID := chiURLParam(r, "orderID")
-	capability := r.URL.Query().Get("capability")
-	if orderID == "" || !s.validPaymentReturnCapability(provider, orderID, capability, time.Now().UTC()) {
-		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
-		return
-	}
-	details, err := s.deps.Billing.ReturnDetails(r.Context(), provider, orderID)
-	if err != nil {
-		s.writeError(w, r, http.StatusNotFound, "PAYMENT_NOT_FOUND", "Payment order not found.")
-		return
-	}
-	writeJSON(w, http.StatusOK, details)
-}
-
-func (s *Server) paymentReturnCapability(provider, orderID string, now time.Time) string {
-	expiresAt := now.Add(paymentReturnCapabilityTTL).Unix()
-	payload := provider + "\x00" + orderID + "\x00" + strconv.FormatInt(expiresAt, 10)
-	mac := hmac.New(sha256.New, s.deps.RequestSigningKey)
-	_, _ = mac.Write([]byte(payload))
-	return strconv.FormatInt(expiresAt, 10) + "." + hex.EncodeToString(mac.Sum(nil))
-}
-
-func (s *Server) validPaymentReturnCapability(provider, orderID, capability string, now time.Time) bool {
-	expiresText, signature, ok := strings.Cut(capability, ".")
-	if !ok || expiresText == "" || signature == "" {
-		return false
-	}
-	expiresAt, err := strconv.ParseInt(expiresText, 10, 64)
-	if err != nil || expiresAt <= now.Unix() {
-		return false
-	}
-	payload := provider + "\x00" + orderID + "\x00" + expiresText
-	mac := hmac.New(sha256.New, s.deps.RequestSigningKey)
-	_, _ = mac.Write([]byte(payload))
-	want := hex.EncodeToString(mac.Sum(nil))
-	return hmac.Equal([]byte(signature), []byte(want))
 }

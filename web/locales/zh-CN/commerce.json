@@ -141,6 +141,8 @@
     "cancelledClose": "可随时关闭此面板。",
     "added": "TXB 已到账",
     "ready": "余额已可用。",
+    "returnOwnerTitle": "请进入账户查看此收据",
+    "returnOwnerDescription": "此链接已过期或需要身份验证。请在 Telegram 中打开小程序查看付款记录。返回此页面不会改变付款状态。",
     "returnCheckingTitle": "正在核对付款",
     "returnCheckingDescription": "正在等待支付提供商确认。",
     "returnPendingDescription": "付款仍在处理中，此页面会自动更新。",

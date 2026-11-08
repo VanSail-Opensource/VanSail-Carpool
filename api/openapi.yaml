@@ -177,7 +177,7 @@ paths:
   /healthz: { $ref: './paths/healthz.yaml' }
   /readyz: { $ref: './paths/readyz.yaml' }
 components:
-  securitySchemes: { panelApiToken: { $ref: './components/security-schemes.yaml#/panelApiToken' }, browserSession: { $ref: './components/security-schemes.yaml#/browserSession' }, cookieSession: { $ref: './components/security-schemes.yaml#/cookieSession' }, requestTimestamp: { $ref: './components/security-schemes.yaml#/requestTimestamp' }, requestNonce: { $ref: './components/security-schemes.yaml#/requestNonce' }, requestSignature: { $ref: './components/security-schemes.yaml#/requestSignature' } }
+  securitySchemes: { checkoutReturnCapability: { $ref: './components/security-schemes.yaml#/checkoutReturnCapability' }, panelApiToken: { $ref: './components/security-schemes.yaml#/panelApiToken' }, browserSession: { $ref: './components/security-schemes.yaml#/browserSession' }, cookieSession: { $ref: './components/security-schemes.yaml#/cookieSession' }, requestTimestamp: { $ref: './components/security-schemes.yaml#/requestTimestamp' }, requestNonce: { $ref: './components/security-schemes.yaml#/requestNonce' }, requestSignature: { $ref: './components/security-schemes.yaml#/requestSignature' } }
   parameters: {
     ResourceID: { $ref: './components/parameters.yaml#/ResourceID' }, UserID: { $ref: './components/parameters.yaml#/UserID' },
     EntitlementID: { $ref: './components/parameters.yaml#/EntitlementID' }, OperationID: { $ref: './components/parameters.yaml#/OperationID' },

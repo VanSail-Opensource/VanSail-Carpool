@@ -1,3 +1,9 @@
+checkoutReturnCapability:
+  type: apiKey
+  in: query
+  name: capability
+  description: Order/provider-bound v2 receipt capability issued only at checkout. Expires 30 minutes after immutable order creation; return navigation never renews it. Older publicly issued capabilities are invalid.
+
 panelApiToken:
   type: http
   scheme: bearer

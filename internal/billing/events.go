@@ -167,12 +167,7 @@ func (s *Service) ReturnDetails(ctx context.Context, provider, orderID string) (
 	if !strings.EqualFold(order.Provider, provider) {
 		return model.PaymentReturnDetails{}, database.ErrNotFound
 	}
-	return model.PaymentReturnDetails{
-		ID: order.ID, Provider: order.Provider, ProviderRail: order.ProviderRail, Status: order.Status,
-		TXB: order.TXB, PayableAmount: order.PayableAmount, PayableCurrency: order.PayableCurrency,
-		ActualCryptoAmount: order.ActualCryptoAmount, ActualCryptoCurrency: order.ActualCryptoCurrency,
-		CreatedAt: order.CreatedAt, PaidAt: order.PaidAt,
-	}, nil
+	return paymentReturnDetails(order), nil
 }
 
 // Cancel stops client polling immediately and then performs provider cancellation

@@ -45,6 +45,13 @@ func (s *Service) providerCreateRequest(ctx context.Context, user model.User, or
 		ReturnURL:   s.absolute("/api/v1/payments/return/" + provider + "/" + url.PathEscape(order.ID)),
 		RedirectURL: s.absolute("/api/v1/payments/return/" + provider + "/" + url.PathEscape(order.ID)),
 	}
+	if paymentReturnProvider(provider) {
+		returnURL, err := s.checkoutReturnURL(order)
+		if err != nil {
+			return ProviderCreateRequest{}, err
+		}
+		request.ReturnURL, request.RedirectURL = returnURL, returnURL
+	}
 	if provider == "bepusdt" {
 		secret, secretErr := s.providerCredential(ctx, provider, profileID)
 		if secretErr != nil {

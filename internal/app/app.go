@@ -101,7 +101,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Application, error) {
 	databaseAdminHTTP := httpapi.NewDatabaseAdministrationHTTP(databaseEditor, backupService)
 	accountsService := accounts.NewService(store, store, initDataAdapter{verifier: verifier}, telegramBridge, provider, settings, cfg.AdminTelegramIDs, cfg.SessionTTL)
 	catalogService := catalog.NewService(store, provider, 2*time.Minute)
-	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL)
+	billingService := billing.NewService(store, settings, paymentBridge, cfg.PublicBaseURL, cfg.MasterKey)
 	billingService.SetBuiltinUSDT(usdtService)
 	activityService := newActivityService(store, settings, queuedTelegramClient)
 	couponService := coupons.NewService(store, nil)

@@ -2,7 +2,7 @@ get:
   tags: [Billing]
   operationId: returnFromPaymentProvider
   summary: Navigate back to the Mini App after provider checkout
-  description: This route never credits balance. It redirects to the client order screen, which polls durable webhook-confirmed state.
+  description: Compatibility navigation using the order query parameter. Forwards only an existing valid checkout capability unchanged. It never issues or renews access; legacy returns require owner authentication. Payment state comes from verified callbacks.
   security: []
   parameters:
     - name: provider

@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -36,7 +35,7 @@ func TestPaymentReturnAcceptsOnlyDocumentedProviders(t *testing.T) {
 			if err != nil {
 				t.Fatalf("parse redirect: %v", err)
 			}
-			if location.Path != "/miniapp/payment-result" || location.Query().Get("provider") != provider || location.Query().Get("paymentOrder") != "payment-1" || location.Query().Get("paymentCapability") == "" {
+			if location.Path != "/miniapp/payment-result" || location.Query().Get("provider") != provider || location.Query().Get("paymentOrder") != "payment-1" || location.Query().Get("paymentCapability") != "" {
 				t.Fatalf("redirect location = %q", location.String())
 			}
 		})
@@ -57,29 +56,5 @@ func TestPaymentReturnAcceptsOnlyDocumentedProviders(t *testing.T) {
 	}
 	if body.Code != "NOT_FOUND" {
 		t.Fatalf("error code = %q, want NOT_FOUND", body.Code)
-	}
-}
-
-func TestPaymentReturnCapabilityIsBoundAndExpires(t *testing.T) {
-	t.Parallel()
-
-	server := &Server{deps: Dependencies{RequestSigningKey: []byte("payment-return-test-key")}}
-	now := time.Unix(1_786_320_000, 0).UTC()
-	capability := server.paymentReturnCapability("ezpay", "payment-1", now)
-	if !server.validPaymentReturnCapability("ezpay", "payment-1", capability, now) {
-		t.Fatal("generated capability was rejected")
-	}
-	if server.validPaymentReturnCapability("bepusdt", "payment-1", capability, now) {
-		t.Fatal("capability was accepted for the wrong provider")
-	}
-	tampered := capability[:len(capability)-1] + "0"
-	if tampered == capability {
-		tampered = capability[:len(capability)-1] + "1"
-	}
-	if server.validPaymentReturnCapability("ezpay", "payment-1", tampered, now) {
-		t.Fatal("tampered capability was accepted")
-	}
-	if server.validPaymentReturnCapability("ezpay", "payment-1", capability, now.Add(paymentReturnCapabilityTTL)) {
-		t.Fatal("expired capability was accepted")
 	}
 }

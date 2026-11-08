@@ -2,6 +2,7 @@ import { effectScope, shallowRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { FeaturePaymentOrder } from '@/api/features'
+import { ApiError } from '@/api/http'
 
 const { getPaymentOrder, getPaymentReturnStatus } = vi.hoisted(() => ({ getPaymentOrder: vi.fn(), getPaymentReturnStatus: vi.fn() }))
 
@@ -53,6 +54,37 @@ describe('payment return confirmation', () => {
 
     expect(payment.state.value).toBe('confirmed')
     expect(payment.isConfirmed.value).toBe(true)
+    scope.stop()
+  })
+
+  it('attempts authenticated owner lookup for a legacy return without a capability', async () => {
+    getPaymentReturnStatus.mockResolvedValue({ ...pendingOrder, status: 'paid' })
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentReturn(shallowRef('payment-1'), {
+      browserStatus: true, provider: shallowRef('ezpay'),
+    }))!
+    await payment.refresh()
+    expect(getPaymentReturnStatus).toHaveBeenCalledWith('ezpay', 'payment-1', '')
+    expect(payment.state.value).toBe('confirmed')
+    scope.stop()
+  })
+
+  it.each([401, 403, 404])('clears a previously visible receipt and stops polling after %s', async status => {
+    vi.useFakeTimers()
+    getPaymentReturnStatus.mockResolvedValue(pendingOrder)
+    const scope = effectScope()
+    const payment = scope.run(() => usePaymentReturn(shallowRef('payment-1'), {
+      browserStatus: true, provider: shallowRef('ezpay'), capability: shallowRef('expired'),
+    }))!
+    await payment.refresh()
+    expect(payment.details.value).not.toBeNull()
+    getPaymentReturnStatus.mockRejectedValue(new ApiError(status, { code: 'DENIED', message: '' }))
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(payment.details.value).toBeNull()
+    expect(payment.authenticationRequired.value).toBe(status !== 404)
+    const calls = getPaymentReturnStatus.mock.calls.length
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(getPaymentReturnStatus.mock.calls.length).toBe(calls)
     scope.stop()
   })
 

@@ -106,11 +106,11 @@ describe('request signing', () => {
     expect(headers.has('X-TXC-Signature')).toBe(false)
   })
 
-  it('leaves the provider-return status projection unsigned', async () => {
+  it('signs the owner fallback for a provider-return receipt', async () => {
     document.cookie = `txc_request_key=${base64Url(new Uint8Array(32))}; Path=/`
     const headers = new Headers()
     await applyRequestSignature(headers, 'GET', '/api/v1/payments/return/ezpay/payment-1/status?capability=test', requestBodyBytes())
-    expect(headers.has('X-TXC-Signature')).toBe(false)
+    expect(headers.has('X-TXC-Signature')).toBe(true)
   })
 
   it('skips signing when cookie access is blocked by the WebView', async () => {

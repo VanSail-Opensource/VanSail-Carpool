@@ -16,7 +16,7 @@ The provided scan contains 13 application/design findings, separate from depende
 | 10. Interrupted X-Node updates are marked successful without matching the durable update transaction | Panel | Immutable pre-attempt intent, peer-bound `update.status` transaction matching and fresh current-revision readiness. Reconnect, mismatched/pending status, legacy uncertainty and persistence regressions; details in `docs/update-reconciliation.md`. |
 | 11. Privileged HTTP clients follow redirects outside approved HTTPS origins | X-Node | Pending |
 | 12. User-scoped IP blocks are lost across authorized identity replacement | X-Node | Pending |
-| 13. Public return route mints renewable status capabilities from payment order IDs | Panel | Pending |
+| 13. Public return route mints renewable status capabilities from payment order IDs | Panel | Checkout-only domain-separated v2 capabilities with fixed creation-based expiry; navigation never issues or renews access. Legacy returns require signed ownership; projection and polling regressions in billing, HTTP and frontend. See `docs/payment-return-security.md`. |
 
 ## Scope isolation
 

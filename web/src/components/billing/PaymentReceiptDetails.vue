@@ -16,6 +16,7 @@ const props = defineProps<{
   state: PaymentReturnState
   details: PaymentReceipt | null
   canReissue: boolean
+  ownerLink?: string
 }>()
 
 const emit = defineEmits<{
@@ -89,7 +90,7 @@ function localized(key: string, fallback: string): string {
             :description="description"
           />
 
-          <section class="payment-receipt__amount" :aria-label="$t('payment.balanceCredited')">
+          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__amount" :aria-label="$t('payment.balanceCredited')">
             <div>
               <span class="payment-receipt__label">{{ $t('payment.balanceCredited') }}</span>
               <strong>{{ creditedAmount }}</strong>
@@ -98,9 +99,9 @@ function localized(key: string, fallback: string): string {
             <UIcon name="i-ph-wallet" class="payment-receipt__amount-icon" aria-hidden="true" />
           </section>
 
-          <USeparator />
+          <USeparator v-if="details || state === 'checking' || state === 'pending'" />
 
-          <section class="payment-receipt__details" :aria-labelledby="'payment-details-heading'">
+          <section v-if="details || state === 'checking' || state === 'pending'" class="payment-receipt__details" :aria-labelledby="'payment-details-heading'">
             <div class="payment-receipt__section-heading">
               <div>
                 <p class="payment-receipt__eyebrow">{{ $t('payment.receiptLabel') }}</p>
@@ -125,8 +126,9 @@ function localized(key: string, fallback: string): string {
             </div>
           </section>
 
-          <div v-if="canReissue" class="payment-receipt__actions">
-            <UButton block color="neutral" variant="outline" trailing-icon="i-ph-arrow-clockwise" :label="$t('payment.reissue')" data-haptic="action" @click="emit('reissue')" />
+          <div v-if="canReissue || ownerLink" class="payment-receipt__actions">
+            <UButton v-if="canReissue" block color="neutral" variant="outline" trailing-icon="i-ph-arrow-clockwise" :label="$t('payment.reissue')" data-haptic="action" @click="emit('reissue')" />
+            <UButton v-if="ownerLink" block :to="ownerLink" external target="_blank" rel="noopener noreferrer" trailing-icon="i-ph-arrow-up-right-bold" :label="$t('browser.memberEntrance')" />
           </div>
         </div>
       </UCard>

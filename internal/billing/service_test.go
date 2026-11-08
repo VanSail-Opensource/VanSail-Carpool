@@ -58,10 +58,7 @@ func TestServiceCreateOrderByProvider(t *testing.T) {
 			} else if gateway.request.NotifyURL != wantNotify {
 				t.Fatalf("notify URL = %q", gateway.request.NotifyURL)
 			}
-			wantReturn := "https://example.test/base/api/v1/payments/return/" + test.provider + "/order-1"
-			if gateway.request.ReturnURL != wantReturn || gateway.request.RedirectURL != wantReturn {
-				t.Fatalf("return URLs = %q, %q, want %q", gateway.request.ReturnURL, gateway.request.RedirectURL, wantReturn)
-			}
+			assertCheckoutReturnURL(t, service, gateway.request, order)
 			if order.ExpiresAt != service.now().UTC().Add(30*time.Minute) {
 				t.Fatalf("expiry = %s", order.ExpiresAt)
 			}

@@ -118,7 +118,9 @@ onboarding, signed requests and the existing idempotent operation protections.
   existing catalog services and reads the cached statistics average for check-in copy.
 - `telegram_membership.go` refreshes membership and independently welcomes
   genuine non-bot joins in the configured group with a localized safe mention.
-- `payment_callbacks.go` handles EZPay/BEPusdt callbacks, short-lived payment-return capabilities, and navigation-only payment returns/receipt polling.
+- `payment_callbacks.go` handles verified EZPay/BEPusdt callbacks.
+- `payment_return.go` forwards checkout-issued capabilities without minting and serves narrow receipts through a capability or signed ownership; see `docs/payment-return-security.md`.
+- `payment_return_test.go` exercises checkout issuance, navigation replay, anonymous denial, signed ownership, projection privacy and unchanged settlement.
 
 ## Tests
 

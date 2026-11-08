@@ -66,13 +66,14 @@ type Service struct {
 	settings   Settings
 	gateway    Gateway
 	publicURL  *url.URL
+	returnKey  []byte
 	now        func() time.Time
 	builtin    BuiltinUSDT
 }
 
 // NewService creates a payment service.
-func NewService(repository Repository, settings Settings, gateway Gateway, publicURL *url.URL) *Service {
-	return &Service{repository: repository, settings: settings, gateway: gateway, publicURL: publicURL, now: time.Now}
+func NewService(repository Repository, settings Settings, gateway Gateway, publicURL *url.URL, returnKey []byte) *Service {
+	return &Service{repository: repository, settings: settings, gateway: gateway, publicURL: publicURL, returnKey: append([]byte(nil), returnKey...), now: time.Now}
 }
 
 // CreateOrder computes authoritative pricing, persists the attempt, then requests checkout data.

@@ -137,7 +137,7 @@ func (g *billingGateway) Create(_ context.Context, request ProviderCreateRequest
 
 func newBillingServiceForTest(repository Repository, settings Settings, gateway Gateway) *Service {
 	publicURL, _ := url.Parse("https://example.test/base")
-	service := NewService(repository, settings, gateway, publicURL)
+	service := NewService(repository, settings, gateway, publicURL, []byte("0123456789abcdef0123456789abcdef"))
 	service.now = func() time.Time { return time.Date(2026, 8, 7, 12, 0, 0, 0, time.UTC) }
 	return service
 }

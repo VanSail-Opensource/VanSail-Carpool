@@ -2,7 +2,7 @@ get:
   tags: [Billing]
   operationId: returnFromPaymentProviderWithOrder
   summary: Navigate back to a specific Mini App payment order
-  description: Compatibility return route for providers that preserve path parameters more reliably than query parameters. It never credits balance.
+  description: Forwards an existing valid checkout-issued capability unchanged to the same-origin result page. Missing, expired and legacy capabilities require owner authentication there. This public navigation route never issues a capability or changes payment state.
   security: []
   parameters:
     - name: provider

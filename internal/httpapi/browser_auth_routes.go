@@ -31,7 +31,7 @@ func browserScopedRequest(r *http.Request) bool {
 	if strings.HasPrefix(path, "/api/v1/admin/") || strings.HasPrefix(path, "/api/v1/auth/browser/") {
 		return true
 	}
-	return r.Header.Get("X-TXC-Session-Scope") == "browser" && (path == "/api/v1/me" || path == "/api/v1/me/display-currency" || strings.HasPrefix(path, "/api/v1/admin-access/") || path == "/api/v1/ip-lookup" || strings.HasPrefix(path, "/api/v1/ip-lookup/"))
+	return r.Header.Get("X-TXC-Session-Scope") == "browser" && (path == "/api/v1/me" || path == "/api/v1/me/display-currency" || strings.HasPrefix(path, "/api/v1/admin-access/") || strings.HasPrefix(path, "/api/v1/payments/return/") || path == "/api/v1/ip-lookup" || strings.HasPrefix(path, "/api/v1/ip-lookup/"))
 }
 
 func requestCookieNames(r *http.Request) (string, string) {

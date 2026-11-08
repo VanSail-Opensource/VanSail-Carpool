@@ -2,8 +2,18 @@ get:
   tags: [Billing]
   operationId: getPaymentReturnStatus
   summary: Poll a provider-return payment receipt
-  description: Returns a narrow receipt projection for a short-lived signed provider-return capability. It never exposes the owner, checkout, QR, trade, or provider payload data and never changes payment state.
-  security: []
+  description: Returns a narrow receipt projection through a checkout-issued capability expiring 30 minutes after order creation, or through the authenticated owner. Navigation cannot issue or renew capabilities. Legacy links require owner authentication. This endpoint never changes payment state or exposes owner, checkout, QR, trade, or provider payload data.
+  security:
+    - checkoutReturnCapability: []
+    - cookieSession: []
+      requestTimestamp: []
+      requestNonce: []
+      requestSignature: []
+    - browserSession: []
+      requestTimestamp: []
+      requestNonce: []
+      requestSignature: []
+    - panelApiToken: []
   parameters:
     - name: provider
       in: path
@@ -18,10 +28,10 @@ get:
         $ref: '../openapi.yaml#/components/schemas/ID'
     - name: capability
       in: query
-      required: true
+      required: false
       schema:
         type: string
-        pattern: '^[0-9]+\.[a-f0-9]{64}$'
+        pattern: '^v2\.[0-9]+\.[a-f0-9]{64}$'
   responses:
     '200':
       description: Current durable payment receipt projection.
@@ -29,5 +39,9 @@ get:
         application/json:
           schema:
             $ref: '../openapi.yaml#/components/schemas/PaymentReturnStatus'
+    '401':
+      $ref: '../openapi.yaml#/components/responses/Unauthorized'
+    '403':
+      $ref: '../openapi.yaml#/components/responses/Forbidden'
     '404':
       $ref: '../openapi.yaml#/components/responses/NotFound'

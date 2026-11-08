@@ -145,6 +145,8 @@
     "cancelledClose": "Close this sheet when ready.",
     "added": "TXB added",
     "ready": "Your balance is ready.",
+    "returnOwnerTitle": "Open your account to view this receipt",
+    "returnOwnerDescription": "This link has expired or requires authentication. Open the Mini App in Telegram to view your payments. Returning here does not change the payment status.",
     "returnCheckingTitle": "Checking payment",
     "returnCheckingDescription": "Waiting for the payment provider confirmation.",
     "returnPendingDescription": "The payment is still pending. This page will update automatically.",

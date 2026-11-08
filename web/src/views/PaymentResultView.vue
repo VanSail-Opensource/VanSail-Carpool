@@ -7,6 +7,7 @@ import PaymentReceiptDetails from '@/components/billing/PaymentReceiptDetails.vu
 import { useI18n } from '@/i18n'
 import { usePaymentReturn } from '@/composables/usePaymentReturn'
 import { isBrowserExperience } from '@/utils/experience'
+import { browserAccessApi } from '@/api/browserAccess'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +16,7 @@ const orderId = shallowRef('')
 const provider = shallowRef<PaymentReturnProvider | null>(null)
 const capability = shallowRef('')
 const browserReturn = isBrowserExperience()
+const ownerLink = shallowRef('')
 let homeTimer: ReturnType<typeof globalThis.setTimeout> | undefined
 
 watch(() => [route.query.paymentOrder, route.query.provider, route.query.paymentCapability], ([rawOrder, rawProvider, rawCapability]) => {
@@ -23,12 +25,12 @@ watch(() => [route.query.paymentOrder, route.query.provider, route.query.payment
   orderId.value = typeof rawOrder === 'string' ? rawOrder : ''
 }, { immediate: true })
 
-const { state, order, details, orderStatus, isConfirmed } = usePaymentReturn(orderId, {
+const { state, order, details, orderStatus, authenticationRequired, isConfirmed } = usePaymentReturn(orderId, {
   browserStatus: browserReturn,
   provider,
   capability,
 })
-const title = computed(() => ({
+const title = computed(() => authenticationRequired.value ? t('payment.returnOwnerTitle') : ({
   checking: t('payment.returnCheckingTitle'),
   pending: t('payment.returnCheckingTitle'),
   confirmed: t('payment.returnConfirmedTitle'),
@@ -36,10 +38,15 @@ const title = computed(() => ({
   missing: t('payment.returnMissingTitle'),
   unavailable: t('payment.returnUnavailableTitle'),
 })[state.value])
-const description = computed(() => state.value === 'terminal'
+const description = computed(() => authenticationRequired.value ? t('payment.returnOwnerDescription') : state.value === 'terminal'
   ? t('payment.returnTerminalDescription', { status: t(`payment.status.${orderStatus.value ?? details.value?.status ?? 'failed'}`) })
   : t(`payment.return${state.value[0]?.toUpperCase()}${state.value.slice(1)}Description`))
 const canReissue = computed(() => order.value?.status === 'expired' || order.value?.status === 'failed')
+watch(authenticationRequired, async required => {
+  if (!required || !browserReturn || ownerLink.value) return
+  try { ownerLink.value = (await browserAccessApi.config()).miniAppUrl }
+  catch { /* The owner can still follow the Telegram instructions. */ }
+})
 
 function reissue(): void {
   if (!canReissue.value || !order.value) return
@@ -62,6 +69,7 @@ onScopeDispose(() => {
     :state="state"
     :details="details"
     :can-reissue="canReissue"
+    :owner-link="authenticationRequired ? ownerLink : undefined"
     @reissue="reissue"
   />
 </template>

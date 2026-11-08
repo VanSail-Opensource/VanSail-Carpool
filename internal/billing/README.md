@@ -29,7 +29,9 @@ Payment-method discovery, exact decimal arithmetic, checkout creation, provider 
 - `gateway_contracts.go` defines the server-owned provider checkout/event contracts and gateway interfaces.
 - `payment_methods.go` builds the configured rail list, including coupon funding and independently selectable provider-account profiles.
 - `payment_channel_cache.go` stores the current process-local BEPUSDT currency/network rails discovered by queued readiness probes.
-- `events.go` validates and authorizes provider events, settles orders, exposes the narrow signed-return receipt projection, and handles cancellation.
+- `events.go` validates and authorizes provider events, settles orders, exposes the narrow return receipt projection, and handles cancellation.
+- `payment_return.go` issues checkout-only fixed-expiry v2 capabilities and owner-filtered legacy receipt reads; see `docs/payment-return-security.md`. Public navigation cannot renew access.
+- `payment_return_test.go` covers expiry, provider/order binding, old formats, retry immutability, missing keys and owner lookup.
 - `payment_profile_runtime.go` gates channels from stable-ID profiles and derives each BEPusdt callback capability from the selected account credential.
 - `methods.go` defines and validates canonical payment method identifiers.
 - `method_rails.go` owns provider rail names, ordering, and enabled-channel validation.
