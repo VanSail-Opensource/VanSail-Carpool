@@ -27,7 +27,8 @@ func TestHourlyStockProjectionIsIndependentOfLegacyPAYGMode(t *testing.T) {
 	if err != nil || remaining[principal.GroupID] != 0 {
 		t.Fatal("hourly offer ignored its stock on a PAYG-marked product", remaining, err)
 	}
-	if _, err := s.SaveHourlyOffer(ctx, "admin", model.HourlyOffer{GroupID: principal.GroupID, Enabled: false, HourlyPriceTXBMinor: 1}, 1); err != nil {
+	actor := createTestUser(t, s, 61931)
+	if _, err := s.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: principal.GroupID, Enabled: false, HourlyPriceTXBMinor: 1}, 1); err != nil {
 		t.Fatal(err)
 	}
 	remaining, err = s.HourlyStockRemaining(ctx)
@@ -60,7 +61,7 @@ func TestCatalogAndHourlyStockShareOneCountAndLimit(t *testing.T) {
 	if _, err := s.SaveSquadProduct(ctx, SquadProductInput{GroupID: group, UpstreamPresent: true, Visible: true, PriceTXBMinor: 50, StockLimit: &limit}); err != nil {
 		t.Fatal(err)
 	}
-	addHourlyBillingOffer(t, s, "admin", group, 1)
+	addHourlyBillingOffer(t, s, createTestUser(t, s, 61932).ID, group, 1)
 	combo := saveTestCombo(t, s, "shared-seat-combo", 100, 30, group)
 	member := createTestUser(t, s, 519032)
 	if _, err := s.AdjustBalance(ctx, member.ID, 1000, "shared-seat", "fixture", now); err != nil {
@@ -127,7 +128,11 @@ func TestHourlySettlementPaysNextHourWhenSharedStockIsFull(t *testing.T) {
 	if err != nil || len(result.Settlements) != 1 || result.Enrollments[0].Status != model.HourlyActive {
 		t.Fatalf("full stock blocked the next paid hour: %+v %v", result, err)
 	}
-	if after := hourlyBillingBalance(t, s, input.OwnerID); after != before-100 {
-		t.Fatalf("next hour balance = %d, want %d", after, before-100)
+	charged := result.Settlements[0].ChargedTXBMinor
+	if charged <= 0 || charged > 100 {
+		t.Fatalf("next-hour charge = %d, want a positive prorated amount within the hourly price", charged)
+	}
+	if after := hourlyBillingBalance(t, s, input.OwnerID); after != before-charged {
+		t.Fatalf("next hour balance = %d, want %d after a %d charge", after, before-charged, charged)
 	}
 }

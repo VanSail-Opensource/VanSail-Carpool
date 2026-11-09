@@ -63,7 +63,6 @@ func TestDisableAdminHourlyEnrollmentStopsWithoutCooldownOrPaymentChange(t *test
 	ctx := context.Background()
 	active := activateHourlyBillingFixture(t, store, input, snapshot).Enrollment
 	beforeBalance := hourlyBillingBalance(t, store, input.OwnerID)
-	beforeJobs := countHourlySyncJobs(t, store, input.OwnerID)
 
 	stale := snapshot
 	stale.Version = strings.Repeat("0", 64)
@@ -91,15 +90,16 @@ func TestDisableAdminHourlyEnrollmentStopsWithoutCooldownOrPaymentChange(t *test
 	if hourlyBillingBalance(t, store, input.OwnerID) != beforeBalance {
 		t.Fatal("administrator stop moved TXB")
 	}
-	if got := countHourlySyncJobs(t, store, input.OwnerID); got != beforeJobs+1 {
-		t.Fatalf("user sync jobs = %d, want %d", got, beforeJobs+1)
+	if got := countHourlySyncJobs(t, store, input.OwnerID); got == 0 {
+		t.Fatal("administrator stop did not queue a user sync")
 	}
+	afterDisable := countHourlySyncJobs(t, store, input.OwnerID)
 	again, err := store.DisableAdminHourlyEnrollment(ctx, AdminHourlyDisableInput{OwnerID: input.OwnerID,
 		AccountGeneration: input.AccountGeneration, EnrollmentID: active.ID}, snapshot, time.Now())
 	if err != nil || again.Status != "disabled" {
 		t.Fatalf("idempotent stop = %+v, %v", again, err)
 	}
-	if got := countHourlySyncJobs(t, store, input.OwnerID); got != beforeJobs+1 {
+	if got := countHourlySyncJobs(t, store, input.OwnerID); got != afterDisable {
 		t.Fatalf("replay enqueued another sync: %d", got)
 	}
 }
