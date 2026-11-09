@@ -1,5 +1,10 @@
 # Path item shards
 
+`api-v1-admin-xnode-endpoints-preview.yaml` validates incomplete administrator
+endpoint drafts against local native configuration with synthetic credentials,
+returning derived inbound metadata/choices and typed field/client diagnostics.
+It has no persistence, job submission or outbound API behavior.
+
 `api-v1-usage-breakdown.yaml` serves the onboarded member's private rolling usage
 projection at GET `/api/v1/usage/breakdown`. It combines the three billing modes
 without changing the compatibility `/payg/history` or administrator projections.

@@ -8,10 +8,18 @@ import (
 
 // Imported endpoint options retain the host's client transport and TLS choices.
 func applyEndpointOptions(proxy *subscription.Proxy, overrides map[string]any) error {
-	if stream, ok := overrides["streamSettings"].(map[string]any); ok {
-		for key, value := range stream {
-			proxy.Stream[key] = value
+	if value, exists := overrides["streamSettings"]; exists {
+		stream, ok := value.(map[string]any)
+		if !ok {
+			return ErrInvalid
 		}
+		if xhttp, _ := stream["xhttpSettings"].(map[string]any); xhttp != nil {
+			if _, introduced := xhttp["extra"].(map[string]any); introduced {
+				inherited, _ := proxy.Stream["xhttpSettings"].(map[string]any)
+				subscription.InheritXHTTPExtra(inherited)
+			}
+		}
+		mergeEndpointMap(proxy.Stream, stream)
 	}
 	for _, field := range []struct {
 		key    string
@@ -30,9 +38,12 @@ func applyEndpointOptions(proxy *subscription.Proxy, overrides map[string]any) e
 			target = map[string]any{}
 			proxy.Stream[field.target] = target
 		}
-		for key, value := range options {
-			target[key] = value
+		if field.target == "xhttpSettings" {
+			if _, introduced := options["extra"].(map[string]any); introduced {
+				subscription.InheritXHTTPExtra(target)
+			}
 		}
+		mergeEndpointMap(target, options)
 	}
 	legacy, _ := overrides["legacyHost"].(map[string]any)
 	if legacy == nil {
@@ -75,10 +86,36 @@ func applyEndpointOptions(proxy *subscription.Proxy, overrides map[string]any) e
 				}
 				extra = object
 			}
-			transport["extra"] = extra
+			object, ok := extra.(map[string]any)
+			if !ok {
+				return ErrInvalid
+			}
+			subscription.InheritXHTTPExtra(transport)
+			inherited, _ := transport["extra"].(map[string]any)
+			if inherited == nil {
+				inherited = map[string]any{}
+				transport["extra"] = inherited
+			}
+			mergeEndpointMap(inherited, object)
 		}
 	}
 	return nil
+}
+
+func mergeEndpointMap(target, source map[string]any) {
+	for key, value := range source {
+		child, nested := value.(map[string]any)
+		if !nested {
+			target[key] = value
+			continue
+		}
+		current, _ := target[key].(map[string]any)
+		if current == nil {
+			current = map[string]any{}
+			target[key] = current
+		}
+		mergeEndpointMap(current, child)
+	}
 }
 func stringField(object map[string]any, key string) string {
 	value, _ := object[key].(string)

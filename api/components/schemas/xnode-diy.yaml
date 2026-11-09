@@ -13,6 +13,7 @@ XNodeDIYField:
     advanced: {type: boolean}
     restrictions: {type: array, items: {type: string}}
     context: {type: string}
+    ownership: {type: string, enum: [member, administrator, shared]}
     available: {type: boolean}
     dependencies:
       type: array

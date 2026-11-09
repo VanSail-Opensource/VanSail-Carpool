@@ -17,7 +17,12 @@ func ValidateTuning(overrides ConnectionOverrides) map[string]string {
 		errors["overrides"] = "invalid"
 		return errors
 	}
-	for _, spec := range allTuningSpecs() {
+	return validateTuningValues(values, allTuningSpecs(), false)
+}
+
+func validateTuningValues(values map[string]any, specs []tuningSpec, administrator bool) map[string]string {
+	errors := map[string]string{}
+	for _, spec := range specs {
 		value, exists := values[spec.Key]
 		if !exists {
 			continue
@@ -37,7 +42,7 @@ func ValidateTuning(overrides ConnectionOverrides) map[string]string {
 		case "range":
 			r := value.(map[string]any)
 			low, high := r["min"].(float64), r["max"].(float64)
-			invalid = low < 0 || high > 2147483647 || low > high
+			invalid = low < float64(spec.Minimum) || high > float64(spec.Maximum) || low > high
 			if strings.HasSuffix(spec.Key, "XPaddingBytes") && low == 0 && high != 0 {
 				invalid = true
 			}
@@ -53,6 +58,16 @@ func ValidateTuning(overrides ConnectionOverrides) map[string]string {
 			invalid = invalid || len(value.([]any)) > 64
 		case "headers":
 			invalid = !validTuningHeaders(value.([]any))
+			if administrator {
+				invalid = !validEndpointHeaders(value.([]any))
+			}
+		case "port-ranges":
+			ports := value.([]any)
+			invalid = len(ports) > 128
+			for _, port := range ports {
+				r := port.(map[string]any)
+				invalid = invalid || r["min"].(float64) < 1 || r["max"].(float64) > 65535 || r["min"].(float64) > r["max"].(float64)
+			}
 		}
 		if invalid {
 			errors[spec.Key] = "invalid"

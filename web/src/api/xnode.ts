@@ -14,6 +14,9 @@ export type XNodeConfiguration = Schema['XNodeConfiguration']
 export type XNodeSnippet = Schema['XNodeSnippet']
 export type XNodeGroup = Schema['XNodeGroup']
 export type XNodeEndpoint = Schema['XNodeEndpoint']
+export type XNodeEndpointDraft = Schema['XNodeEndpointDraft']
+export type XNodeEndpointField = Schema['XNodeEndpointField']
+export type XNodeEndpointPreview = Schema['XNodeEndpointPreview']
 export type XNodeMetrics = Schema['XNodeMetricsSummary']
 export type XNodeValidation = Schema['XNodeValidation']
 export type XNodeEnrollment = Schema['XNodeEnrollment']
@@ -53,7 +56,8 @@ export const xnodeApi = {
   saveGroup: (body: Partial<XNodeGroup>) => request<XNodeGroup>(`${root}/groups${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
   endpoints: (signal?: AbortSignal) => request<{ items: XNodeEndpoint[] }>(`${root}/endpoints`, { cache: 'no-store', signal }),
 	deleteEndpoint: (id: string) => request<void>(`${root}/endpoints/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' }),
-  saveEndpoint: (body: Partial<XNodeEndpoint>) => request<XNodeEndpoint>(`${root}/endpoints${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
+  saveEndpoint: (body: Schema['XNodeEndpointDraft']) => request<XNodeEndpoint>(`${root}/endpoints${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
+  previewEndpoint: (body: XNodeEndpointDraft, signal?: AbortSignal) => request<XNodeEndpointPreview>(`${root}/endpoints/preview`, { method: 'POST', body, signal, cache: 'no-store' }),
   metrics: (signal?: AbortSignal) => request<XNodeMetrics>(`${root}/metrics?summary=true`, { cache: 'no-store', signal }),
   logs: (id: string, signal?: AbortSignal) => request<Schema['XNodeLogs']>(`${root}/nodes/${encodeURIComponent(id)}/logs`, { cache: 'no-store', signal }),
   command: (id: string, body: XNodeCommand, key: string = crypto.randomUUID()) => request<Schema['OperationReceipt']>(`${root}/nodes/${encodeURIComponent(id)}/commands`, { method: 'POST', body, headers: { 'Idempotency-Key': key }, cache: 'no-store' }),

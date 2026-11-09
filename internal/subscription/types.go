@@ -34,6 +34,7 @@ type Proxy struct {
 	ExcludedFormats     []string             `json:"-"`
 	XrayTemplate        json.RawMessage      `json:"-"`
 	Tuning              *ConnectionOverrides `json:"-"`
+	EndpointTuning      *EndpointOptions     `json:"-"`
 }
 
 func (p Proxy) Tag() string {
@@ -41,6 +42,9 @@ func (p Proxy) Tag() string {
 	return "proxy-" + hex.EncodeToString(digest[:16])
 }
 func (p Proxy) Outbound() (map[string]any, error) {
+	if p.EndpointTuning != nil {
+		return p.endpointDocument("xray")
+	}
 	server := map[string]any{"address": p.Address, "port": p.Port}
 	settings := map[string]any{}
 	switch p.Protocol {

@@ -1,5 +1,8 @@
 # English messages
 
+- `admin-endpoints.json` owns administrator endpoint field labels, protocol
+  context, draft validation, hopping controls and client compatibility.
+
 - `usage-breakdown.json` owns the all-mode 72-hour breakdown, original-term cost
   estimates, unallocated charges, chart controls and historical coverage copy.
 

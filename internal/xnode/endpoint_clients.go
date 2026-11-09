@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"strings"
 )
 
@@ -30,32 +29,12 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 			}
 		}
 	}
-	node, settings, err := s.Node(ctx, endpoint.NodeID)
+	node, settings, inbound, err := s.endpointInbound(ctx, endpoint.NodeID, endpoint.InboundTag)
 	if err != nil {
 		return result, err
 	}
 	if node.CountryCode != "" {
 		result.Countries = []string{node.CountryCode}
-	}
-	config, err := s.ResolveConfiguration(ctx, node.ConfigID)
-	if err != nil {
-		return result, err
-	}
-	var root map[string]any
-	if json.Unmarshal(config.Document, &root) != nil {
-		return result, ErrInvalid
-	}
-	inbounds, _ := root["inbounds"].([]any)
-	var inbound map[string]any
-	for _, raw := range inbounds {
-		item, _ := raw.(map[string]any)
-		if item["tag"] == endpoint.InboundTag {
-			inbound = item
-			break
-		}
-	}
-	if inbound == nil {
-		return result, ErrInvalid
 	}
 	raw, err := inboundCredential(inbound, credentials)
 	if err != nil {
@@ -97,7 +76,12 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 		certificate := settings.Certificates[profile]
 		result.Stream["security"] = "tls"
 		if certificate.Config.Domain != "" {
-			result.Stream["tlsSettings"] = map[string]any{"serverName": certificate.Config.Domain, "fingerprint": "chrome"}
+			tls, _ := result.Stream["tlsSettings"].(map[string]any)
+			if tls == nil {
+				tls = map[string]any{}
+				result.Stream["tlsSettings"] = tls
+			}
+			tls["serverName"], tls["fingerprint"] = certificate.Config.Domain, "chrome"
 		}
 	}
 	var overrides map[string]any
@@ -110,41 +94,33 @@ func (s *Service) endpointProxyCredentials(ctx context.Context, endpoint Endpoin
 	if err = applyEndpointClient(&result, overrides, inbound); err != nil {
 		return result, err
 	}
+	result.EndpointTuning = &subscription.EndpointOptions{}
+	if value, exists := overrides["clientOptions"]; exists {
+		encoded, err := json.Marshal(value)
+		var options subscription.EndpointOptions
+		if err != nil || json.Unmarshal(encoded, &options) != nil {
+			return result, ErrInvalid
+		}
+		result.EndpointTuning = &options
+	}
 	// Endpoint overrides are administrator-owned client transport/security fields.
 	for key, value := range overrides {
-		if key == "legacyHost" || key == "excludedGroups" || key == "allowedGroups" || key == "securityOptions" || key == "transportOptions" || key == "xrayTemplate" {
+		if key == "clientOptions" || key == "streamSettings" || key == "legacyHost" || key == "excludedGroups" || key == "allowedGroups" || key == "securityOptions" || key == "transportOptions" || key == "xrayTemplate" {
 			continue
 		}
-		if key != "streamSettings" && key != "account" {
+		if key != "account" {
 			return result, ErrInvalid
 		}
 		object, ok := value.(map[string]any)
 		if !ok {
 			return result, ErrInvalid
 		}
-		if key == "account" {
-			for name, item := range object {
-				if name != "flow" && name != "encryption" {
-					return result, ErrInvalid
-				}
-				result.Account[name] = item
+		for name, item := range object {
+			if name != "flow" && name != "encryption" {
+				return result, ErrInvalid
 			}
-		} else {
-			for name, item := range object {
-				result.Stream[name] = item
-			}
+			result.Account[name] = item
 		}
-	}
-	out, err := result.Outbound()
-	if err != nil {
-		return result, err
-	}
-	data, err := json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": []any{out}})
-	if err != nil {
-		return result, err
-	}
-	if validation := ValidateCompiled(wire.Config{Xray: data, Users: []wire.User{}}); !validation.Valid {
-		return result, rejectedCompilation("client endpoint", validation.Detail)
 	}
 	return result, nil
 }

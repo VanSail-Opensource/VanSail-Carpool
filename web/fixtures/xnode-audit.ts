@@ -18,6 +18,7 @@ import { automaticLeaseFixture } from './automaticLeaseFixture'
 import { profileMetricsFixture } from './profileMetricsFixture'
 import { firewallRangesFixture } from './firewallRangesFixture'
 import { certificateFixture } from './certificateFixture'
+import { endpointOptionsFixture } from './endpointOptionsFixture'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
@@ -209,6 +210,7 @@ firewallApi.bans = async (query = '', cursor = '') => {
   return { items: params.has('firewall-empty') || releasedBans.has(selected.prefix) || query.startsWith('9.9') ? [] : [selected], ...(params.has('firewall-pages') && !cursor && !query ? { nextCursor: 'second' } : {}) }
 }
 certificateFixture(params, trace, nodes)
+endpointOptionsFixture(params, trace, nodes, configurations)
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)

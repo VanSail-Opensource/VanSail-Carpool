@@ -1,0 +1,112 @@
+XNodeEndpointMetadata:
+  type: object
+  additionalProperties: false
+  required: [protocol, transport, security]
+  properties:
+    protocol: {type: string}
+    transport: {type: string}
+    security: {type: string}
+XNodeEndpointField:
+  type: object
+  additionalProperties: false
+  required: [key, group, kind, minimum, maximum, unit, advanced]
+  description: Administrator-owned typed client option. Port-range fields contain inclusive min/max intervals.
+  properties:
+    key: {type: string}
+    group: {type: string}
+    kind: {type: string, enum: [boolean, integer, enum-number, enum, string, strings, range, headers, fast-open, port-ranges]}
+    minimum: {type: integer}
+    maximum: {type: integer}
+    enum: {type: array, items: {type: string}}
+    unit: {type: string}
+    advanced: {type: boolean}
+    restrictions: {type: array, items: {type: string}}
+    context: {type: string}
+    available: {type: boolean}
+    ownership: {type: string, enum: [member, administrator, shared]}
+    dependencies:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [key]
+        properties:
+          key: {type: string}
+          values: {type: array, items: {type: string}}
+          notValues: {type: array, items: {type: string}}
+          inheritedValues: {type: array, items: {type: string}}
+XNodeEndpointWrite:
+  type: object
+  additionalProperties: false
+  required: [nodeId, inboundTag, name, address, port, enabled, hidden]
+  properties:
+    id: {type: string}
+    nodeId: {type: string}
+    inboundTag: {type: string}
+    name: {type: string}
+    address: {type: string}
+    port: {type: integer, minimum: 1, maximum: 65535}
+    enabled: {type: boolean}
+    hidden: {type: boolean}
+    overrides:
+      type: object
+      additionalProperties: true
+      properties:
+        clientOptions: {$ref: '../../openapi.yaml#/components/schemas/XNodeEndpointOptions'}
+XNodeEndpointDraft:
+  type: object
+  additionalProperties: false
+  description: Incomplete endpoint draft for read-only validation. No credentials or configuration output are returned.
+  properties:
+    id: {type: string}
+    nodeId: {type: string}
+    inboundTag: {type: string}
+    name: {type: string}
+    address: {type: string}
+    port: {type: integer, description: Invalid or missing draft ports return a field error; saves require 1..65535.}
+    enabled: {type: boolean}
+    hidden: {type: boolean}
+    overrides:
+      type: object
+      additionalProperties: true
+      properties:
+        clientOptions: {$ref: '../../openapi.yaml#/components/schemas/XNodeEndpointOptions'}
+XNodeEndpointPreview:
+  type: object
+  additionalProperties: false
+  required: [valid, metadata, inbounds, fields, fieldErrors, clients]
+  properties:
+    valid: {type: boolean}
+    metadata: {$ref: '#/XNodeEndpointMetadata'}
+    inbounds:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [tag, protocol, transport, security]
+        properties:
+          tag: {type: string}
+          protocol: {type: string}
+          transport: {type: string}
+          security: {type: string}
+    fields: {type: array, items: {$ref: '#/XNodeEndpointField'}}
+    fieldErrors:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [field, code]
+        properties:
+          field: {type: string}
+          code: {type: string}
+    clients:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [format, supported, reasons, omittedOptions]
+        properties:
+          format: {type: string, enum: [xray, sing-box, clash, stash, native, base64]}
+          supported: {type: boolean}
+          reasons: {type: array, items: {type: string}}
+          omittedOptions: {type: array, items: {type: string}}

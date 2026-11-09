@@ -2,35 +2,37 @@ package subscription
 
 // Xray camel-case options map to the documented Mihomo/Stash XHTTP keys.
 // Server-only admission/buffering settings never become client options.
-func yamlXHTTPOptions(source map[string]any) map[string]any {
+func yamlXHTTPOptions(source map[string]any, format string) map[string]any {
 	out := map[string]any{}
-	extra := object(source, "extra")
-	for _, field := range []string{"path", "host", "mode", "headers"} {
+	extra := effectiveXHTTP(source)
+	for _, field := range []string{"path", "host", "mode"} {
 		if value, ok := source[field]; ok {
 			out[field] = value
-		} else if value, ok := extra[field]; ok {
-			out[field] = value
 		}
+	}
+	if headers, ok := extra["headers"]; ok {
+		out["headers"] = headers
 	}
 	fields := map[string]string{
 		"noGRPCHeader": "no-grpc-header", "xPaddingBytes": "x-padding-bytes", "xPaddingObfsMode": "x-padding-obfs-mode",
 		"xPaddingKey": "x-padding-key", "xPaddingHeader": "x-padding-header", "xPaddingPlacement": "x-padding-placement", "xPaddingMethod": "x-padding-method",
-		"uplinkHTTPMethod": "uplink-http-method", "sessionPlacement": "session-placement", "sessionKey": "session-key", "sessionTable": "session-table", "sessionLength": "session-length",
+		"uplinkHTTPMethod": "uplink-http-method", "sessionIDPlacement": "session-placement", "sessionIDKey": "session-key", "sessionIDTable": "session-table", "sessionIDLength": "session-length",
 		"seqPlacement": "seq-placement", "seqKey": "seq-key", "uplinkDataPlacement": "uplink-data-placement", "uplinkDataKey": "uplink-data-key", "uplinkChunkSize": "uplink-chunk-size",
 		"scMaxEachPostBytes": "sc-max-each-post-bytes", "scMinPostsIntervalMs": "sc-min-posts-interval-ms",
 	}
 	for native, client := range fields {
+		if format == "stash" && native != "noGRPCHeader" && native != "xPaddingBytes" && native != "scMaxEachPostBytes" && native != "scMinPostsIntervalMs" {
+			continue
+		}
 		if value, ok := extra[native]; ok {
-			out[client] = value
-		} else if value, ok := source[native]; ok {
 			out[client] = value
 		}
 	}
-	if reuse := yamlXHTTPReuse(object(extra, "xmux")); len(reuse) > 0 {
+	if reuse := yamlXHTTPReuse(object(extra, "xmux")); format != "stash" && len(reuse) > 0 {
 		out["reuse-settings"] = reuse
 	}
 	if download := object(extra, "downloadSettings"); len(download) > 0 {
-		out["download-settings"] = yamlXHTTPDownload(download)
+		out["download-settings"] = yamlXHTTPDownload(download, format)
 	}
 	return out
 }
@@ -45,7 +47,7 @@ func yamlXHTTPReuse(source map[string]any) map[string]any {
 	return out
 }
 
-func yamlXHTTPDownload(source map[string]any) map[string]any {
+func yamlXHTTPDownload(source map[string]any, format string) map[string]any {
 	out := map[string]any{}
 	for native, client := range map[string]string{"address": "server", "port": "port"} {
 		if value, ok := source[native]; ok {
@@ -53,12 +55,15 @@ func yamlXHTTPDownload(source map[string]any) map[string]any {
 		}
 	}
 	settings := object(source, "xhttpSettings")
-	for _, key := range []string{"path", "host", "headers"} {
+	for _, key := range []string{"path", "host"} {
 		if value, ok := settings[key]; ok {
 			out[key] = value
 		}
 	}
-	if reuse := yamlXHTTPReuse(object(object(settings, "extra"), "xmux")); len(reuse) > 0 {
+	if headers := effectiveXHTTP(settings)["headers"]; headers != nil {
+		out["headers"] = headers
+	}
+	if reuse := yamlXHTTPReuse(object(effectiveXHTTP(settings), "xmux")); format != "stash" && len(reuse) > 0 {
 		out["reuse-settings"] = reuse
 	}
 	security := text(source, "security")

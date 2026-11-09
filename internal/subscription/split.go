@@ -9,6 +9,20 @@ import (
 // SplitModes requires two administrator hosts reaching the same XHTTP listener.
 // A node ID alone is insufficient: sessions belong to one inbound's handler.
 func SplitModes(up, down Proxy) []string {
+	if up.EndpointTuning != nil {
+		var err error
+		up, err = up.endpointProjection()
+		if err != nil {
+			return nil
+		}
+	}
+	if down.EndpointTuning != nil {
+		var err error
+		down, err = down.endpointProjection()
+		if err != nil {
+			return nil
+		}
+	}
 	if up.ID == down.ID || up.PrincipalID != down.PrincipalID || up.NodeID == "" || up.NodeID != down.NodeID || up.InboundTag == "" || up.InboundTag != down.InboundTag || up.Protocol != down.Protocol ||
 		text(up.Stream, "network") != "xhttp" || text(down.Stream, "network") != "xhttp" {
 		return nil
@@ -23,7 +37,7 @@ func SplitModes(up, down Proxy) []string {
 		return nil
 	}
 	// Custom session placement must agree, as well as the listener/path.
-	for _, key := range []string{"sessionPlacement", "sessionKey", "sessionTable", "sessionLength"} {
+	for _, key := range []string{"sessionIDPlacement", "sessionIDKey", "sessionIDTable", "sessionIDLength", "seqPlacement", "seqKey", "uplinkDataPlacement", "uplinkDataKey"} {
 		if fmt.Sprint(xhttpOption(a, key)) != fmt.Sprint(xhttpOption(b, key)) {
 			return nil
 		}
@@ -88,6 +102,7 @@ func SplitProxy(id, mode string, up, down Proxy) (Proxy, error) {
 	result.ID = "split:" + id
 	result.Name = splitProfileName(up.Name, down.Name)
 	result.Stream = stream
+	result.EndpointTuning = nil // Both administrator legs are already projected.
 	result.Tuning = &options
 	result.MapperHost = nil
 	result.ExcludedFormats = slices.Clone(up.ExcludedFormats)

@@ -5,6 +5,9 @@ import (
 )
 
 func (p Proxy) SingBox() (map[string]any, error) {
+	if p.EndpointTuning != nil {
+		return p.endpointDocument("sing-box")
+	}
 	protocol := p.Protocol
 	if protocol == "hysteria" {
 		protocol = "hysteria2"

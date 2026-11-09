@@ -132,12 +132,14 @@ func (s *Service) Endpoints(ctx context.Context) ([]Endpoint, error) {
 func (s *Service) SaveEndpoint(ctx context.Context, item Endpoint) (Endpoint, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if strings.TrimSpace(item.Name) == "" || item.Address == "" || strings.ContainsAny(item.Address, "\x00\r\n /?#@") || item.Port < 1 || item.Port > 65535 || !wire.ValidName(item.InboundTag) {
-		return item, ErrInvalid
-	}
-	if err := s.validateManagedBinding(ctx, item.NodeID, item.InboundTag); err != nil {
+	preview, err := s.PreviewEndpoint(ctx, item)
+	if err != nil {
 		return item, err
 	}
+	if !preview.Valid {
+		return item, ErrInvalid
+	}
+	item.Metadata = &preview.Metadata
 	if item.ID == "" {
 		var err error
 		item.ID, err = ids.New()
@@ -155,7 +157,6 @@ func (s *Service) SaveEndpoint(ctx context.Context, item Endpoint) (Endpoint, er
 	if _, err := filterEndpointGroups(nil, item.Overrides); err != nil {
 		return item, err
 	}
-	var err error
 	item.OverridesCipher, err = s.vault.Encrypt("xnode.endpoint."+item.ID, string(item.Overrides))
 	if err != nil {
 		return item, err

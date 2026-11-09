@@ -10,7 +10,17 @@
     }
   ],
   "put": {
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -38,7 +48,7 @@
       "content": {
         "application/json": {
           "schema": {
-            "$ref": "../openapi.yaml#/components/schemas/XNodeEndpoint"
+            "$ref": "../openapi.yaml#/components/schemas/XNodeEndpointWrite"
           }
         }
       }

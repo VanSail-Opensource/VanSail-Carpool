@@ -1,0 +1,18 @@
+post:
+  security: [{browserSession: [], requestTimestamp: [], requestNonce: [], requestSignature: []}, {panelApiToken: []}]
+  tags: [Administration]
+  operationId: previewXNodeEndpoint
+  description: Read-only validation of a full or incomplete endpoint draft using synthetic credentials and the pinned client parser. No upstream calls or persistence.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: {$ref: '../openapi.yaml#/components/schemas/XNodeEndpointDraft'}
+  responses:
+    '200':
+      description: Derived native inbound metadata, applicable client options, validation errors and export compatibility.
+      content:
+        application/json:
+          schema: {$ref: '../openapi.yaml#/components/schemas/XNodeEndpointPreview'}
+    '401': {$ref: '../openapi.yaml#/components/responses/Unauthorized'}
+    '403': {$ref: '../openapi.yaml#/components/responses/Forbidden'}

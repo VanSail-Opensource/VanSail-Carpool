@@ -75,11 +75,12 @@ func (s *Server) xnodeSaveGroup(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, item)
 }
 func (s *Server) xnodeEndpoints(w http.ResponseWriter, r *http.Request) {
-	items, err := s.deps.XNode.Endpoints(r.Context())
+	items, err := s.deps.XNode.AdminEndpoints(r.Context())
 	if err != nil {
 		s.xnodeError(w, r, err)
 		return
 	}
+	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 func (s *Server) xnodeSaveEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -96,5 +97,6 @@ func (s *Server) xnodeSaveEndpoint(w http.ResponseWriter, r *http.Request) {
 		s.xnodeError(w, r, err)
 		return
 	}
+	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, item)
 }

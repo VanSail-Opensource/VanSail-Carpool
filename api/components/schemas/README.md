@@ -1,5 +1,12 @@
 # Schema shards
 
+`xnode-endpoints.yaml` separates editable/incomplete endpoint drafts, derived
+native metadata, applicable administrator field descriptors and credential-free
+client compatibility previews. `xnode-endpoint-options.yaml` is generated from
+the tuning catalog and defines encrypted administrator-only typed option values;
+`xnode-diy-overrides.yaml` remains a separate member allowlist. Field ownership is
+accepted in `xnode-diy.yaml` without widening member keys or controls.
+
 `usage-breakdown.yaml` defines owner-scoped raw byte history, reduced rational
 minor-unit costs, forward coverage, positive physical-node counts and preserved
 omitted totals. Unallocated hourly/extra charges and unavailable legacy terms

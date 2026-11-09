@@ -1,5 +1,7 @@
 # HTTP API transport
 
+`xnode_endpoint_preview.go` exposes the browser-administrator read-only endpoint-draft preview. It returns derived inbound metadata, applicable fields, field errors and per-client compatibility with no credential-bearing render output. Endpoint lists and preview/save responses use private no-store headers. Authentication remains the existing browser-admin boundary.
+
 `member_usage_breakdown.go` serves the onboarded member's private
 `GET /api/v1/usage/breakdown` projection. Owner identity comes exclusively from
 the authenticated session; query strings cannot select another account. The

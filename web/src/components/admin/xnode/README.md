@@ -1,5 +1,47 @@
 # X-Node administration
 
+`XNodeAccessGroups.vue` retains access-group/resource ownership and composes
+`XNodeEndpointForm.vue` for endpoint drafts. The form derives metadata and the
+expanded inbound list through read-only `/endpoints/preview`, resets the inbound
+after a node change, and preserves saved tags through slow/failed discovery.
+`useEndpointPreview.ts` debounces and cancels requests, rejects late responses,
+and gates Save against the exact current submitted draft. `endpointForm.ts`
+validates catalog-shaped values with Zod, preserves opaque legacy overrides and
+keeps inactive option drafts locally while omitting them from submitted settings.
+Filtering uses the cloned payload's plain values so nested header/range objects
+never reintroduce Vue proxies at the API boundary.
+Failed saves retain the draft, show endpoint-specific copy, and refresh native
+preview/context before another save can pass validation.
+
+`XNodeEndpointOptions.vue` groups server-applicable fields into bounded tabs and
+reuses existing DIY controls. `XNodeEndpointPortRanges.vue` owns Hysteria's typed
+inclusive intervals and explicit inherit/disable choices. All XHTTP extra, header,
+XMUX and download fields use GUI controls. `endpointLabels.ts` localizes catalog
+keys/errors; `XNodeEndpointCompatibility.vue` distinguishes excluded endpoints
+from optional omitted settings for the five export families. These projections
+never expose generated credentials or add an outbound/backend queue request.
+The backend repeats validation against current native settings before encrypted
+save. Member DIY permissions remain separate from administrator option types.
+
+Hosted regressions in `endpointForm.test.ts`, `useEndpointPreview.test.ts` and
+`XNodeEndpointForm.test.ts` cover preserved drafts, context/dependency filtering,
+range/header bounds, response races, authoritative inbound selection and failed
+saves. `endpointOptionsFixture.ts` in the browser fixtures provides constructed
+protocol/error states; frontend checks must not be confused with live exports.
+
+Chrome DevTools checked endpoints at 1440px/light/English and 390px/dark/Chinese:
+derived metadata and protocol-specific TLS/REALITY, WebSocket, gRPC, HTTPUpgrade,
+XHTTP/XMUX/download and hopping controls rendered correctly. Invalid headers and
+descending ranges blocked Save; valid headers, XHTTP download settings and hopping
+1..65535 persisted typed plain payloads with opaque legacy keys. WS-to-gRPC changes
+pruned inactive submitted values, node changes cleared stale inbound selections,
+and keyboard-cleared ports showed field errors. Empty creation, loading, preview
+error/retry, native validation failures and save refusal retained drafts and
+refreshed validation. Fresh pointer interactions verified open/change/Save with
+clear consoles, contained layouts and no mock-flow fetch/XHR requests. The plain
+payload and localized retry fixes passed; earlier HMR/focus warnings were artifacts
+of inspection, absent from the final pointer flow.
+
 Node traffic multipliers are retired. `XNodeNodes.vue` has no multiplier input
 or list badge and strips any obsolete loaded value from its editable draft.
 `XNodeNodes.test.ts` covers missing, null and arbitrary legacy values, preserved

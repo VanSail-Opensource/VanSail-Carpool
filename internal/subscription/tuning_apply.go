@@ -67,6 +67,7 @@ func (p Proxy) applyTuning(format string, out map[string]any) (map[string]any, e
 		if spec.Kind == "headers" {
 			mergeTuningHeaders(result, path, value.(map[string]any))
 		} else {
+			applyXMUXChoice(result, path, spec.Key, value, values)
 			setTuningPath(result, path, value)
 		}
 	}
@@ -102,6 +103,18 @@ func setTuningPath(root map[string]any, path string, value any) {
 		current = child
 	}
 	current[parts[len(parts)-1]] = value
+}
+
+func deleteTuningPath(root map[string]any, path string) {
+	parts := strings.Split(path, ".")
+	current := root
+	for _, key := range parts[:len(parts)-1] {
+		current = object(current, key)
+		if current == nil {
+			return
+		}
+	}
+	delete(current, parts[len(parts)-1])
 }
 
 func mergeTuningHeaders(root map[string]any, path string, headers map[string]any) {

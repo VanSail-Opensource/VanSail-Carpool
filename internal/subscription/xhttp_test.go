@@ -50,7 +50,7 @@ func TestClashAndStashRenderVlessXHTTPRealityAndOmitUnsupportedHosts(t *testing.
 			if out["network"] != "xhttp" || out["tls"] != true || options["path"] != "/upload" || options["host"] != "cdn.example" || options["mode"] != "packet-up" || options["no-grpc-header"] != true || options["x-padding-bytes"] != "100-1000" || object(options, "headers")["X-Route"] != "synthetic" || reality["public-key"] != "synthetic-public-key" || reality["support-x25519mlkem768"] != true {
 				t.Fatal("XHTTP/Reality settings changed", string(raw))
 			}
-			if object(options, "reuse-settings")["max-connections"] != "2-4" || object(options, "download-settings")["server"] != "download.example" || object(options, "download-settings")["path"] != "/download" {
+			if format == "clash" && object(options, "reuse-settings")["max-connections"] != "2-4" || format == "stash" && options["reuse-settings"] != nil || object(options, "download-settings")["server"] != "download.example" || object(options, "download-settings")["path"] != "/download" {
 				t.Fatal("split download or reuse settings were lost", string(raw))
 			}
 		})

@@ -8,6 +8,9 @@ func yamlFormat(format string) bool { return format == "clash" || format == "sta
 
 func (p Proxy) Clash() (map[string]any, error) { return p.yamlProxy("clash") }
 func (p Proxy) yamlProxy(format string) (map[string]any, error) {
+	if p.EndpointTuning != nil {
+		return p.endpointDocument(format)
+	}
 	protocol := p.Protocol
 	if protocol == "shadowsocks" {
 		protocol = "ss"
@@ -62,9 +65,15 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 	source := object(p.Stream, network+"Settings")
 	switch network {
 	case "", "tcp", "raw", "hysteria":
-	case "ws":
+	case "ws", "httpupgrade":
+		if network == "httpupgrade" && format == "stash" {
+			return nil, fmt.Errorf("%w: Stash HTTPUpgrade", ErrUnsupported)
+		}
 		out["network"] = "ws"
 		options := map[string]any{"path": source["path"]}
+		if network == "httpupgrade" {
+			options["v2ray-http-upgrade"] = true
+		}
 		headers := source["headers"]
 		if headers == nil && source["host"] != nil {
 			headers = map[string]any{"Host": source["host"]}
@@ -81,7 +90,7 @@ func (p Proxy) yamlProxy(format string) (map[string]any, error) {
 			return nil, fmt.Errorf("%w: XHTTP protocol", ErrUnsupported)
 		}
 		out["network"] = "xhttp"
-		out["xhttp-opts"] = yamlXHTTPOptions(source)
+		out["xhttp-opts"] = yamlXHTTPOptions(source, format)
 	default:
 		return nil, fmt.Errorf("%w: Clash transport", ErrUnsupported)
 	}

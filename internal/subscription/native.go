@@ -17,6 +17,9 @@ func object(root map[string]any, key string) map[string]any {
 }
 func array(root map[string]any, key string) []any { value, _ := root[key].([]any); return value }
 func (p Proxy) NativeLink() (string, error) {
+	if p.EndpointTuning != nil {
+		return p.endpointNativeLink()
+	}
 	if p.Tuning != nil {
 		return p.tunedNativeLink()
 	}
@@ -39,8 +42,23 @@ func (p Proxy) NativeLink() (string, error) {
 		settings := object(p.Stream, text(p.Stream, "network")+"Settings")
 		value["path"] = settings["path"]
 		value["host"] = settings["host"]
+		if text(p.Stream, "network") == "grpc" {
+			value["path"] = settings["serviceName"]
+		}
+		if text(p.Stream, "network") == "ws" && value["host"] == nil {
+			value["host"] = object(settings, "headers")["Host"]
+		}
 		tls := object(p.Stream, "tlsSettings")
 		value["sni"] = tls["serverName"]
+		value["fp"] = tls["fingerprint"]
+		value["pcs"], value["vcn"] = tls["pinnedPeerCertSha256"], tls["verifyPeerCertByName"]
+		alpn := []string{}
+		for _, item := range array(tls, "alpn") {
+			alpn = append(alpn, fmt.Sprint(item))
+		}
+		if len(alpn) > 0 {
+			value["alpn"] = strings.Join(alpn, ",")
+		}
 		raw, err := json.Marshal(value)
 		return "vmess://" + base64.StdEncoding.EncodeToString(raw), err
 	default:
@@ -51,6 +69,16 @@ func (p Proxy) NativeLink() (string, error) {
 	}
 	link := url.URL{Scheme: scheme, Host: host, User: url.User(credential), Fragment: p.Name}
 	query := url.Values{}
+	if p.Protocol == "hysteria" {
+		if sni := text(object(p.Stream, "tlsSettings"), "serverName"); sni != "" {
+			query.Set("sni", sni)
+		}
+		if object(p.Stream, "tlsSettings")["allowInsecure"] == true {
+			query.Set("insecure", "1")
+		}
+		link.RawQuery = query.Encode()
+		return link.String(), nil
+	}
 	network := text(p.Stream, "network")
 	security := text(p.Stream, "security")
 	if scheme != "ss" {
@@ -65,7 +93,7 @@ func (p Proxy) NativeLink() (string, error) {
 	}
 	if security == "tls" || security == "reality" {
 		settings := object(p.Stream, security+"Settings")
-		for _, field := range []struct{ native, link string }{{"serverName", "sni"}, {"fingerprint", "fp"}, {"publicKey", "pbk"}, {"shortId", "sid"}, {"spiderX", "spx"}, {"mldsa65Verify", "pqv"}} {
+		for _, field := range []struct{ native, link string }{{"serverName", "sni"}, {"fingerprint", "fp"}, {"publicKey", "pbk"}, {"shortId", "sid"}, {"spiderX", "spx"}, {"mldsa65Verify", "pqv"}, {"pinnedPeerCertSha256", "pcs"}, {"verifyPeerCertByName", "vcn"}, {"echConfigList", "ech"}} {
 			if value := text(settings, field.native); value != "" {
 				query.Set(field.link, value)
 			}
@@ -101,6 +129,15 @@ func (p Proxy) NativeLink() (string, error) {
 				return "", err
 			}
 			query.Set("extra", string(raw))
+		}
+	}
+	if p.Protocol == "vless" {
+		if final := object(p.Stream, "finalmask"); len(final) > 0 {
+			raw, err := json.Marshal(final)
+			if err != nil {
+				return "", err
+			}
+			query.Set("fm", string(raw))
 		}
 	}
 	link.RawQuery = query.Encode()

@@ -52,6 +52,9 @@ func (s *Service) comboInventory(ctx context.Context, userID string) ([]subscrip
 			continue
 		}
 		proxy, err := s.endpointProxy(ctx, identity, endpoint)
+		if unusableEndpoint(err) {
+			continue
+		}
 		if err != nil {
 			return nil, false, err
 		}

@@ -99,6 +99,9 @@ func (s *Service) paygInventory(ctx context.Context, user string) ([]subscriptio
 				continue
 			}
 			proxy, e := s.endpointProxy(ctx, i, endpoint)
+			if unusableEndpoint(e) {
+				continue
+			}
 			if e != nil {
 				return nil, e
 			}

@@ -11,6 +11,30 @@ var ErrUnsupported = errors.New("client does not support this protocol or transp
 // ErrNoCompatibleProxies means selection excluded every available endpoint.
 var ErrNoCompatibleProxies = errors.New("no compatible subscription endpoints")
 
+// baselineEndpointSupported reuses each real adapter after administrator
+// canonicalization. The copy has both option pointers cleared, so adapters do
+// not recurse into endpoint compatibility or apply member preferences.
+func baselineEndpointSupported(proxy Proxy, format string) bool {
+	base, err := proxy.endpointProjection()
+	if err != nil {
+		return false
+	}
+	base.EndpointTuning, base.Tuning = nil, nil
+	switch format {
+	case "native", "base64":
+		_, err = base.NativeLink()
+	case "xray":
+		_, err = base.Outbound()
+	case "sing-box":
+		_, err = base.SingBox()
+	case "clash", "stash":
+		_, err = base.yamlProxy(format)
+	default:
+		return false
+	}
+	return err == nil
+}
+
 // CompatibleProxies shares format exclusions between metadata, previews and
 // downloads. Per-host projection failures omit that host; template/document
 // failures are handled separately and never disable compatible peers.

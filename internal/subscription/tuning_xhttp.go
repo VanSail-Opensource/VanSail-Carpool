@@ -33,10 +33,11 @@ func preserveXHTTPExtra(root map[string]any) {
 		return
 	}
 	extra := object(xhttp, "extra")
-	if extra == nil {
-		extra = map[string]any{}
-		xhttp["extra"] = extra
+	if extra != nil {
+		return // Its existence replaces all flat extras in the pinned parser.
 	}
+	extra = map[string]any{}
+	xhttp["extra"] = extra
 	for key, value := range xhttp {
 		if key == "extra" || key == "mode" || key == "host" || key == "path" {
 			continue
@@ -45,4 +46,10 @@ func preserveXHTTPExtra(root map[string]any) {
 			extra[key] = value
 		}
 	}
+}
+
+// InheritXHTTPExtra preserves currently effective flat client extras only when
+// creating extra. Existing extra remains authoritative and is never backfilled.
+func InheritXHTTPExtra(settings map[string]any) {
+	preserveXHTTPExtra(map[string]any{"streamSettings": map[string]any{"xhttpSettings": settings}})
 }

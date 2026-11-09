@@ -10,6 +10,7 @@ import (
 
 type TuningField struct {
 	Key          string             `json:"key"`
+	Ownership    string             `json:"ownership"`
 	Group        string             `json:"group"`
 	Kind         string             `json:"kind"`
 	Minimum      int64              `json:"minimum"`
@@ -30,7 +31,8 @@ type TuningDependency struct {
 }
 type tuningSpec struct {
 	TuningField
-	Mappings map[string]string
+	Mappings  map[string]string
+	Essential bool
 }
 
 var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
@@ -54,7 +56,7 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 			}
 			spec.Enum = slices.Sorted(maps.Keys(set))
 		}
-		if spec.Key == "tcpMptcp" {
+		if spec.Key == "tcpMptcp" || spec.Key == "tlsAllowInsecure" || spec.Key == "downloadTlsAllowInsecure" {
 			spec.Restrictions = []string{"fixedOff"}
 		}
 		if spec.Key == "curvePreferences" {
@@ -73,7 +75,13 @@ var cachedTuningSpecs = sync.OnceValue(func() []tuningSpec {
 	return result
 })
 
-func allTuningSpecs() []tuningSpec { return cachedTuningSpecs() }
+func allEndpointSpecs() []tuningSpec { return cachedTuningSpecs() }
+
+var memberTuningSpecs = sync.OnceValue(func() []tuningSpec {
+	return slices.DeleteFunc(slices.Clone(allEndpointSpecs()), func(spec tuningSpec) bool { return spec.Ownership == "administrator" })
+})
+
+func allTuningSpecs() []tuningSpec { return memberTuningSpecs() }
 
 func TuningFields() []TuningField {
 	items := []TuningField{}

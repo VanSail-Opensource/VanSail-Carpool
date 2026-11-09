@@ -66,6 +66,9 @@ func (s *Service) hourlyInventory(ctx context.Context, owner string) ([]subscrip
 				continue
 			}
 			proxy, e := s.endpointProxy(ctx, identity, endpoint)
+			if unusableEndpoint(e) {
+				continue
+			}
 			if e != nil {
 				return nil, e
 			}

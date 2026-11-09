@@ -111,14 +111,15 @@ type GroupBinding struct {
 }
 
 type Endpoint struct {
-	ID              string          `json:"id"`
-	NodeID          string          `json:"nodeId"`
-	InboundTag      string          `json:"inboundTag"`
-	Name            string          `json:"name"`
-	Address         string          `json:"address"`
-	Port            int             `json:"port"`
-	Enabled         bool            `json:"enabled"`
-	Hidden          bool            `json:"hidden"`
-	OverridesCipher string          `json:"-"`
-	Overrides       json.RawMessage `json:"overrides,omitempty"`
+	Metadata        *EndpointMetadata `json:"metadata,omitempty"`
+	ID              string            `json:"id"`
+	NodeID          string            `json:"nodeId"`
+	InboundTag      string            `json:"inboundTag"`
+	Name            string            `json:"name"`
+	Address         string            `json:"address"`
+	Port            int               `json:"port"`
+	Enabled         bool              `json:"enabled"`
+	Hidden          bool              `json:"hidden"`
+	OverridesCipher string            `json:"-"`
+	Overrides       json.RawMessage   `json:"overrides,omitempty"`
 }

@@ -1,5 +1,10 @@
 # Frontend API contracts
 
+Endpoint previews require derived metadata, expanded inbound choices and typed
+field/client error arrays, with no credential/configuration output. Generated
+`responseSchemas.json` and `responses.test.ts` reject missing facts, malformed
+compatibility data and unexpected credentials before a response reaches Vue.
+
 - `responseSchemas.json` contains generated response shapes from OpenAPI. `responses.ts` lazily builds Zod validators for cached and refreshed reads, accepts new optional fields, and rejects malformed required data before it reaches Vue state. `responses.test.ts` covers additive changes and malformed successful responses.
 
 Retired node traffic multiplier response properties remain constant 1. The

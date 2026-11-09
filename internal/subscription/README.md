@@ -1,5 +1,40 @@
 # Subscription rendering
 
+`endpoint_options.md` documents administrator client controls, catalog ownership,
+strict save validation and independent client-format adaptation.
+`endpoint_types.gen.go` defines the separate generated `EndpointOptions` type.
+`endpoint_values.go` provides bounded typed decoding; `endpoint_fields.go` exposes
+current inbound fields; `endpoint_validation.go` applies bounds/dependencies and
+pinned native validation. `endpoint_projection.go` merges immutable native
+streams; `endpoint_render.go` applies administrator then member export choices;
+`endpoint_compatibility.go` reports essential exclusions and optional omissions.
+`endpoint_omissions.go` removes unsupported inherited/mapped optional values so
+client output agrees with diagnostics.
+`endpoint_dependencies.go` shares effective-mode/context dependency decisions
+between save validation, runtime projection and client diagnostics.
+`endpoint_finalmask.go` excludes unrepresented essential masks per client;
+documented VLESS native finalmask remains intact.
+`endpoint_download.go` materializes safe destination/session/security defaults
+and deep-merges explicit structured download legs without recursive downloads.
+`endpoint_xmux.go` switches only an opposing inherited XMUX choice while keeping
+two explicit positive choices invalid, shared by member/admin and download merge.
+`endpoint_xmux_test.go` and `endpoint_xmux_inheritance_test.go` verify both mode
+directions, inherited defaults, explicit zero, conflicts, peer retention and
+member overlay using the pinned native stream builder without network traffic.
+`endpoint_hysteria_values.go` parses compact port/timing policy;
+`endpoint_hysteria.go` maps independent client formats.
+`endpoint_hysteria_test.go`, `endpoint_export_review_test.go` and
+`endpoint_validation_review_test.go` cover hosted export/validation boundaries.
+`endpoint_adapter_test.go` checks full Hysteria/VMess/native TLS documents, Reality
+alias precedence and optional/required finalmask compatibility.
+`endpoint_download_test.go` verifies partial download inheritance against the
+pinned memory stream/destination types and unsupported download isolation.
+`endpoint_download_compatibility_test.go` checks disabled, stale-transport and
+stream-one download applicability before essential client exclusion, plus
+metadata agreement with real protocol/transport/client-mapper adapters.
+`endpoint_tls_policy_test.go` preserves legacy source ciphertext semantics while
+projecting the pinned secure false policy on both client legs.
+
 `compatibility.go` is the shared endpoint-selection boundary for metadata,
 synthetic previews and live rendering. Explicit endpoint exclusions and typed
 unsupported client protocols/transports are reported separately from invalid

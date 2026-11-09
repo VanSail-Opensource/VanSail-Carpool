@@ -1,5 +1,19 @@
 # Constructed browser fixtures
 
+`endpointOptionsFixture.ts` adds `endpoint-options` to the X-Node audit. Open the
+Groups tab and edit Client endpoint; the default uses XHTTP with TLS and a separate
+download connection. Add `endpoint-protocol=hysteria`, `ws`, `grpc`, `httpupgrade`
+or `reality` to check relevant controls. Hysteria exposes typed hopping intervals;
+XHTTP tabs expose headers, padding/session/sequence, XMUX and download fields.
+Use `endpoint-preview-slow`, `endpoint-preview-error` (Retry recovers),
+`endpoint-validation-error`, `endpoint-save-error`, and `endpoint-empty` for
+states. Existing `zh`, appearance, loading and empty flags still apply. Check
+1440px/390px layouts, category scrolling, retained invalid text, disabled Save,
+node/inbound changes and `window.__xnodeAudit.writes` for exact typed payloads.
+All preview/save operations are constructed; no credentials or external requests
+are generated. Client diagnostics demonstrate the GUI; hosted renderer regressions
+establish adapter behavior against pinned upstream documentation.
+
 The X-Node audit's `legacy-multiplier` parameter injects an obsolete 1.25 value
 directly into its constructed node data. The list and editor must display no
 multiplier control or badge, and `window.__xnodeAudit.writes` must omit that field

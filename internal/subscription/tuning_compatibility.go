@@ -70,6 +70,9 @@ func TuningCompatibility(overrides ConnectionOverrides, proxies []Proxy) []Tunin
 }
 
 func tuningReason(p Proxy, spec tuningSpec, format string, value any, values map[string]any) string {
+	if xmuxExplicitConflict(spec.Key, values) {
+		return "conflict"
+	}
 	if !tuningDependenciesForProxy(spec.TuningField, values, p) {
 		return "dependency"
 	}

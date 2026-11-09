@@ -1,5 +1,11 @@
 # VanSail Carpool OpenAPI contract
 
+Administrator endpoint previews accept incomplete drafts and return derived
+native metadata, expanded inbound choices, applicable typed fields, field errors
+and per-client compatibility. Endpoint read metadata is never a writable native
+protocol selector. Encrypted `overrides.clientOptions` uses its generated
+administrator allowlist; member DIY types/permissions remain independent.
+
 Node traffic multipliers are retired. `XNodeNodeWrite` accepts an optional,
 unrestricted deprecated `multiplier` value solely for old-client compatibility;
 the backend ignores it, including null. Node, catalog and statistics responses

@@ -50,6 +50,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Post("/xnode/groups", s.xnodeSaveGroup)
 	router.Put("/xnode/groups/{id}", s.xnodeSaveGroup)
 	router.Delete("/xnode/groups/{id}", s.xnodeDeleteGroup)
+	router.Post("/xnode/endpoints/preview", s.xnodePreviewEndpoint)
 	router.Get("/xnode/endpoints", s.xnodeEndpoints)
 	router.Post("/xnode/endpoints", s.xnodeSaveEndpoint)
 	router.Put("/xnode/endpoints/{id}", s.xnodeSaveEndpoint)

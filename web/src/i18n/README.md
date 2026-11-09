@@ -1,5 +1,9 @@
 # Internationalization
 
+- `../../locales/*/admin-endpoints.json` owns administrator endpoint controls and
+  client diagnostics; `generated.ts` registers both locales independently of the
+  generated member option labels.
+
 - `../../locales/*/usage-breakdown.json` owns all-mode traffic/cost labels,
   original-term estimate limitations, unallocated costs and coverage disclosures;
   `generated.ts` registers both language domains.

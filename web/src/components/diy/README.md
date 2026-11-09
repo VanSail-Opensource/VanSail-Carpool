@@ -1,5 +1,15 @@
 # Member DIY Center
 
+Administrator endpoint forms reuse the typed `DIYFieldControl.vue` widgets with
+an explicit administrator label and optional inherit/reset action. Selection
+feedback passes through the existing experience gate, so browser use does not
+invoke Telegram. `DIYFieldControl.test.ts` covers that separation and pinned
+fixed-off controls. `diyStructuredValidation.ts` exports structural `clientHeaders`
+validation while retaining the stricter member protected-header policy in
+`diyHeaders`; this does not expand the member catalog or accepted member writes.
+Fields without predefined string values use the documented Nuxt SelectMenu
+custom-item UI for typed arrays such as ALPN. Curated member enums stay restricted.
+
 `useDIY.ts` refreshes every 1.5 seconds while `inventoryPending` reports queued
 PAYG provisioning, preserving option, split and routing drafts. Polling pauses
 for submission and is disposed with the view. `useDIY.test.ts` covers completion

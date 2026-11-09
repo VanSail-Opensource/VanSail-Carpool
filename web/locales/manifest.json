@@ -38,6 +38,7 @@
     "native-metrics",
     "diy",
     "diy-fields",
-    "payg"
+    "payg",
+    "admin-endpoints"
   ]
 }
