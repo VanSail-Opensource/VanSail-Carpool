@@ -208,6 +208,16 @@ Speedtests use a separate outbound-only Xray client and transfer HTTPS payloads 
 
 The configuration schema describes provider credentials, certificate profiles, inbound certificate references, DDNS jobs, resolver policy, firewall policy, outbound port ranges, asset hashes, telemetry, torrent policy and update policy. Operational defaults are one-second sampling, two-second reporting, five-minute DDNS refresh, ten-minute torrent bans and disabled automatic binary installation.
 
+Resolver selection is deprecated: native Xray DNS always handles managed
+interception. `dns.mode` accepts empty, `xray` and legacy `smartdns` inputs and
+normalizes to `xray`; unsupported values remain invalid. `Config.NormalizeDNS`
+preserves the former legacy fallback by inserting explicit native
+`dns.servers: ["127.0.0.1"]` only for legacy SmartDNS interception without native
+servers. Explicit native resolver servers always win. `ParseConfig`, cached
+state bootstrap and native preparation apply this idempotent transformation to
+detached node configuration. `dns.upstreams` remains ignored compatibility data.
+No system DNS service, firewall redirect or shared configuration is modified.
+
 Firewall range support requires `native_firewall_port_ranges_v1`. The additive
 `tcp_port_ranges`, `udp_port_ranges` and `ssh_port_ranges` arrays contain inclusive
 `from`/`to` bounds from 1 through 65535; the owning field selects the protocol, so

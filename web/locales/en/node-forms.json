@@ -1,5 +1,6 @@
 {
   "nodeForms": {
+    "nativeXrayDnsHint": "DNS resolution uses the node's Xray configuration. Edit resolver servers in its assigned configuration.",
     "portListHint": "Ports or ranges, separated by commas or newlines (for example 443, 20000-30000).",
     "prefixListHint": "IPv4 or IPv6 CIDR ranges, separated by commas or newlines.",
     "portListInvalid": "Use ports or ascending ranges from 1 to 65535, separated by commas or newlines.",
@@ -35,13 +36,7 @@
     "sourceGeoIpHint": "Requires an enabled node firewall. Applies only to non-Reality inbound listeners; source IPs are not reported.",
     "countries": "GeoIP countries",
     "countriesHint": "Country selectors separated by commas, for example geoip:cn, geoip:us.",
-    "domainBlocks": "Shared domain block list",
-    "resolver": "Resolver mode",
-    "xrayResolver": "Xray resolver",
-    "legacyResolver": "Existing resolver mode",
-    "upstreams": "Upstream resolvers",
-    "upstreamsHint": "One resolver per line. Keep native Xray DNS configuration in the configuration document.",
-    "providerType": "DNS provider",
+    "domainBlocks": "Shared domain block list",    "providerType": "DNS provider",
     "providerCredential": "{name}",
     "secretUnchanged": "Leave blank to keep the saved value",
     "noProviders": "No DNS providers configured.",

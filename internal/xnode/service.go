@@ -67,6 +67,7 @@ func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, erro
 }
 
 func normalizeNodeSettings(settings *NodeSettings) {
+	normalizeNodeDNS(settings)
 	if settings.DDNS == nil {
 		settings.DDNS = []wire.DDNSJob{}
 	}

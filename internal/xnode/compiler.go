@@ -58,6 +58,7 @@ func (s *Service) compile(ctx context.Context, nodeID string, replacement *Confi
 			return wire.Config{}, err
 		}
 	}
+	applyNodeDNS(native, settings)
 	global, err := s.Global(ctx)
 	if err != nil {
 		return wire.Config{}, err

@@ -39,6 +39,18 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 			return node, err
 		}
 	}
+	previous, previousErr := s.repo.XNodeNode(ctx, node.ID)
+	if previousErr != nil && !isMissing(previousErr) {
+		return node, previousErr
+	}
+	if previousErr == nil {
+		if previous.RetiredAt != nil || previous.RemovingAt != nil {
+			return node, ErrConflict
+		}
+		if err = s.preserveNodeDNS(previous, &settings); err != nil {
+			return node, err
+		}
+	}
 	node.MultiplierFP = int64(math.Round(node.Multiplier * float64(MultiplierScale)))
 	global, err := s.Global(ctx)
 	if err != nil {
@@ -54,7 +66,10 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 		if e != nil {
 			return node, e
 		}
-		validation.Xray = json.RawMessage(raw)
+		validation.Xray, err = nodeDNSDocument(json.RawMessage(raw), settings)
+		if err != nil {
+			return node, err
+		}
 	}
 	if err = validation.Validate(); err != nil {
 		return node, ErrInvalid
@@ -64,13 +79,6 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	node.SettingsCipher, err = s.seal("xnode.node."+node.ID, stored)
 	if err != nil {
 		return node, err
-	}
-	previous, previousErr := s.repo.XNodeNode(ctx, node.ID)
-	if previousErr != nil && !isMissing(previousErr) {
-		return node, previousErr
-	}
-	if previousErr == nil && (previous.RetiredAt != nil || previous.RemovingAt != nil) {
-		return node, ErrConflict
 	}
 	if previousErr == nil && previous.AgentID != "" && previous.MultiplierFP != node.MultiplierFP {
 		if s.master == nil {

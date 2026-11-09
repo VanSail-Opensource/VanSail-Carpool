@@ -62,7 +62,7 @@ xnodeApi.node = async id => {
   await check('node:' + id)
   if (params.has('node-load-error') && !nodeLoadFailed) { nodeLoadFailed = true; throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }
   if (params.has('stale-node')) await new Promise(resolve => setTimeout(resolve, id === nodes[0]?.id ? 1500 : 30))
-  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: params.has('no-certificates') ? {} : { primary: { provider: '', config: params.has('node-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' } : { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { mode: 'xray', redirect: false, upstreams: [id === nodes[0]?.id ? '1.1.1.1' : '8.8.8.8'] }, firewall: params.has('firewall-ranges') ? firewallRangesFixture() : { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
+  return { node: nodes.find(node => node.id === id)!, settings: { ddns: [], certificates: params.has('no-certificates') ? {} : { primary: { provider: '', config: params.has('node-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' } : { domain: 'proxy.example', cert_mode: 'http', auto_tls: true } } }, inboundCertificates: {}, dns: { mode: params.has('legacy-dns') ? 'smartdns' : 'xray', redirect: false, upstreams: [id === nodes[0]?.id ? '1.1.1.1' : '8.8.8.8'] }, firewall: params.has('firewall-ranges') ? firewallRangesFixture() : { enabled: false, protect: false, tcp_ports: [443], ssh_ports: [22], allow_prefixes: [], udp_ports: [] } } }
 }
 xnodeApi.saveNode = async (node, settings) => {
   await check('save-node')

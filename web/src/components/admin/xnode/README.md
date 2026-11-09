@@ -1,5 +1,18 @@
 # X-Node administration
 
+Chrome DevTools checked the retired DNS controls at 1440 px and 390 px, in
+English/light and Chinese/dark. Only interception and native-configuration
+guidance render; toggling interception retains legacy opaque fields for server
+migration. Save refusal keeps the editor/draft; console inspection was clear.
+
+`XNodeDNSSettings.vue` exposes the native DNS redirect switch only. Resolver
+servers belong to the assigned Xray configuration; the separate mode/upstream
+editors are retired. Redirect updates preserve the original settings document,
+including legacy fields needed by the backend's configuration-aware migration.
+`XNodeDNSSettings.test.ts` covers this preservation, default behavior and the
+absence of retired controls in hosted frontend CI. The X-Node browser fixture's
+`legacy-dns` parameter supplies a retained SmartDNS document for visual review.
+
 Firewall port editing uses `firewallPorts.ts` to read legacy singleton lists and
 native intervals, validate 1..65535 bounds, and merge overlaps/adjacency without
 expanding the range. Commas, newlines and existing whitespace separators work;

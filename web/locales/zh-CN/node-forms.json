@@ -1,5 +1,6 @@
 {
   "nodeForms": {
+    "nativeXrayDnsHint": "DNS 解析由节点的 Xray 配置管理。请在节点使用的配置中编辑解析服务器。",
     "portListHint": "输入端口或范围，用逗号或换行分隔，例如 443, 20000-30000。",
     "prefixListHint": "输入 IPv4 或 IPv6 CIDR 范围，用逗号或换行分隔。",
     "portListInvalid": "请输入 1 至 65535 的端口或递增范围，用逗号或换行分隔。",
@@ -35,13 +36,7 @@
     "sourceGeoIpHint": "需要启用节点防火墙。仅作用于非 Reality 入站端口，不上报来源 IP。",
     "countries": "GeoIP 国家",
     "countriesHint": "使用逗号分隔国家选择器，例如 geoip:cn、geoip:us。",
-    "domainBlocks": "共享域名阻止列表",
-    "resolver": "解析器模式",
-    "xrayResolver": "Xray 解析器",
-    "legacyResolver": "现有解析器模式",
-    "upstreams": "上游解析器",
-    "upstreamsHint": "每行一个解析器。原生 Xray DNS 设置仍由配置文档管理。",
-    "providerType": "DNS 服务商",
+    "domainBlocks": "共享域名阻止列表",    "providerType": "DNS 服务商",
     "providerCredential": "{name}",
     "secretUnchanged": "留空保留已保存的值",
     "noProviders": "尚未配置 DNS 服务商。",

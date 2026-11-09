@@ -1,5 +1,14 @@
 # X-Node control plane
 
+`node_dns.go` retires resolver selection at settings boundaries. Effective DNS
+always uses Xray. Its encrypted `legacyDnsLoopback` compatibility state preserves
+the old SmartDNS loopback fallback only for scoped interception; explicit native
+DNS servers take priority. `compiler.go` applies the fallback to a node-local
+compiled copy, never to the shared configuration. Older clients cannot erase
+the marker during unrelated saves. The deprecated upstream list remains unused.
+`node_dns_test.go` covers compatibility, malformed/native DNS preservation,
+non-mutating compilation and encrypted round trips in hosted CI.
+
 Node firewall port ranges use the pinned public protocol's compact interval
 normalizer before encrypted node settings are saved. Legacy singleton ports
 remain readable. Forwarding supports many-to-one and equal-length offset

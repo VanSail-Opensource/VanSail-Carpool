@@ -1,5 +1,10 @@
 # VanSail Carpool OpenAPI contract
 
+Node DNS resolver-mode and upstream fields are deprecated compatibility inputs.
+Effective DNS uses native Xray `dns.servers`. Encrypted per-node
+`legacyDnsLoopback` state retains the former loopback fallback without editing
+shared configurations or host resolver services.
+
 Node firewall settings retain legacy individual ports and add inclusive TCP,
 UDP and SSH ranges. Forwarding adds optional source/target end ports: a source
 range maps either to one target port or an equal-length target range. Range

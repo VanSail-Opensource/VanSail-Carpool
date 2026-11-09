@@ -5,6 +5,10 @@ TCP/UDP/SSH intervals, range-to-one and range-to-range forwarding. Combine with
 `slow`, `node-load-error`, `node-save-error`, `empty`, and `zh` for state/localization
 audits; `window.__xnodeAudit.writes` records saves without contacting a backend.
 
+Add `legacy-dns` to inspect the DNS redirect-only form with a retained legacy
+resolver document. Toggling redirect retains its mode/upstream evidence for the
+server migration; the fixture's recorded writes expose the original values.
+
 `UsageBreakdownAudit.vue`, `usage-breakdown-audit.ts`, `usage-breakdown-data.ts`
 and `usage-breakdown-audit.html` mount the real member panel and Unovis chart.
 The shared signed transport intercepts only `/api/v1/usage/breakdown` with

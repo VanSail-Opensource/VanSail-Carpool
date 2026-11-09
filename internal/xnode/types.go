@@ -82,6 +82,7 @@ type GlobalConfig struct {
 }
 
 type NodeSettings struct {
+	LegacyDNSLoopback   bool                       `json:"legacyDnsLoopback,omitempty"`
 	DDNSBindings        map[string]DDNSHostBinding `json:"ddnsBindings,omitempty"`
 	ddnsActor           string
 	DDNS                []wire.DDNSJob              `json:"ddns"`
