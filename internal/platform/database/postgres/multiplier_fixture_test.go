@@ -90,6 +90,13 @@ func historicalMultiplierProjection(t *testing.T, ctx context.Context, db *sql.D
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The fixture seeds at schema 45 before the retirement migration runs. Keep
+	// only columns that already exist so a later additive migration (for example
+	// hourly_offers.required_hours) is not queried before it is applied.
+	c.Tables, err = existingUpgradeProjection(ctx, db, c.Tables)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var tables []TableContract
 	for _, table := range c.Tables {
 		// Only policy/derived invalidation can change. Full native/financial facts,
