@@ -12,6 +12,10 @@ the Telegram SDK or load member shell/theme assets.
 - `BrowserApp.vue` owns localized providers, renewal, and an expiry overlay that
   preserves mounted editors while login opens in another tab.
 - `router.ts` owns browser history, protected routes, aliases, and payment returns.
+- `routeRecovery.ts` retries recognized lazy-chunk failures once at the failed
+  destination, preserves query/hash, and exposes persistent errors through the
+  existing startup retry UI. Runtime errors and unavailable session storage never
+  trigger automatic document reloads; `routeRecovery.test.ts` covers these paths.
 - `BrowserConsole.vue` composes dashboard navigation and route content.
   Breadcrumbs identify the active page; the centered workspace stays readable
   on wide displays, with wrapping action rows and contained tables on phones.

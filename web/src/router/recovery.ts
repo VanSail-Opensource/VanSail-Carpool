@@ -5,6 +5,11 @@ interface RouteRecoveryRecord {
   attempts: number
 }
 
+function localRoute(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\')
+    && ![...path].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)
+}
+
 function routeStorage(): Storage | undefined {
   try {
     return globalThis.sessionStorage
@@ -18,7 +23,7 @@ function readRecord(): RouteRecoveryRecord | undefined {
   if (!storage) return undefined
   try {
     const parsed = JSON.parse(storage.getItem(storageKey) ?? '') as Partial<RouteRecoveryRecord>
-    if (typeof parsed.path !== 'string' || !parsed.path.startsWith('/') || typeof parsed.attempts !== 'number') return undefined
+    if (typeof parsed.path !== 'string' || !localRoute(parsed.path) || typeof parsed.attempts !== 'number') return undefined
     return { path: parsed.path, attempts: parsed.attempts }
   } catch {
     return undefined
@@ -30,6 +35,7 @@ export function pendingRouteRecoveryPath(): string | undefined {
 }
 
 export function beginRouteRecovery(path: string): boolean {
+  if (!localRoute(path)) return false
   const storage = routeStorage()
   if (!storage) return false
   const previous = readRecord()

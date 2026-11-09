@@ -12,6 +12,8 @@ grants purchase permission, and catalog/quote/purchase endpoints enforce eligibi
 - `guards.test.ts` covers protected-route decisions.
 - `history.test.ts` covers Telegram and browser history selection.
 - `recovery.test.ts` covers one-shot lazy-route recovery.
+  Recovery destinations must be local absolute paths without network-path,
+  backslash or control-character redirects, including retained storage records.
 
 Telegram sessions are detected before router construction from the native
 `TelegramWebviewProxy` bridge, launch markers, WebApp data, platform, or

@@ -126,6 +126,11 @@ func spaHandler(content fs.FS) http.Handler {
 			files.ServeHTTP(w, r)
 			return
 		}
+		if strings.HasPrefix(path, "assets/") {
+			w.Header().Set("Cache-Control", "no-store")
+			http.NotFound(w, r)
+			return
+		}
 		entry := "index.html"
 		if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/") {
 			entry = "admin.html"

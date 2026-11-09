@@ -1,5 +1,6 @@
 {
   "browser": {
+    "routeLoadFailed": "无法加载请求的页面。",
     "tools": "维护",
     "table": {
       "name": "名称",

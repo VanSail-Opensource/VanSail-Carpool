@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useBrowserSession } from './session'
+import { installBrowserRouteRecovery } from './routeRecovery'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -35,5 +36,5 @@ router.beforeEach(async to => {
   if (to.name === 'browser-entry' && session.isAdmin) return '/admin/settings'
   return true
 })
-router.onError(() => window.location.reload())
+export const browserRouteRecovery = installBrowserRouteRecovery(router)
 export default router

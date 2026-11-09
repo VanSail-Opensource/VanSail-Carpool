@@ -60,6 +60,11 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `responses.go` owns compact JSON response serialization and request-correlated API errors.
 - `ip_lookup_details_test.go` covers signed-route-compatible JSON/SSE negotiation, flushed completion and the lookup-specific response deadline in hosted CI.
 - The SPA fallback revalidates `index.html` while serving hashed assets with immutable caching to avoid stale WebView bundles.
+  Missing `/assets/` files return an uncacheable 404 instead of a successful HTML
+  shell; `static_assets_test.go` covers stale hashes, real assets and admin links.
+  CDN asset rules must respect these origin cache headers and avoid caching
+  error responses. Overriding them can retain an HTML fallback for an obsolete
+  JavaScript hash during a rollback and break later lazy page loads.
 - `request_auth.go` requires the per-session HMAC contract on authenticated browser requests.
 - `request_auth_test.go` tests signed-route enforcement and session-cookie visibility rules.
 - `auth_rate_limit.go` bounds Telegram session exchange attempts by normalized client IP.

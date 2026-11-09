@@ -9,6 +9,7 @@ import BrowserConsole from './BrowserConsole.vue'
 import { useBrowserSession } from './session'
 import BrowserLoading from './BrowserLoading.vue'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
+import { browserRouteRecovery } from './router'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,13 +18,14 @@ const { reducedMotion } = useMotionPreferences()
 provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)
 const session = useBrowserSession()
 const { t, locale } = useI18n()
+const routeError = computed(() => browserRouteRecovery.error.value ? t('browser.routeLoadFailed') : session.error)
 const uiLocale = computed(() => locale.value === 'zh-CN' ? zh_cn : en)
 const accessLeaving = shallowRef(false)
 watch(() => route.name, (_next, previous) => { accessLeaving.value = previous === 'browser-access' })
 async function retryStartup(): Promise<void> {
   if (session.loading) return
   await session.bootstrap(true)
-  if (!session.error) await router.replace(startupTarget)
+  if (!session.error) await router.replace(browserRouteRecovery.target.value ?? startupTarget).catch(() => undefined)
 }
 function refresh(): void {
   if (globalThis.document.visibilityState !== 'visible') return
@@ -49,7 +51,7 @@ onUnmounted(() => {
 <template>
   <UApp :locale="uiLocale" :toaster="{ position: 'bottom-right' }">
     <Transition name="browser-startup" :css="!reducedMotion" @before-leave="element => element.setAttribute('inert', '')">
-      <BrowserLoading v-if="!route.matched.length" :error="session.error">
+      <BrowserLoading v-if="!route.matched.length || browserRouteRecovery.error.value" :error="routeError">
         <UButton :label="t('common.tryAgain')" :disabled="session.loading" @click="retryStartup" />
       </BrowserLoading>
     </Transition>

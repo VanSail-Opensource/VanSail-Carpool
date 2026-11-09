@@ -21,4 +21,10 @@ describe('route recovery', () => {
     expect(isRouteChunkError(new TypeError('Failed to fetch dynamically imported module'))).toBe(true)
     expect(isRouteChunkError(new Error('API request failed'))).toBe(false)
   })
+
+  it.each(['https://external.example/admin', '//external.example/admin', '/\\external.example/admin', '/admin\n/users'])('rejects unsafe recovery destinations: %s', path => {
+    expect(beginRouteRecovery(path)).toBe(false)
+    sessionStorage.setItem('txc-route-recovery', JSON.stringify({ path, attempts: 1 }))
+    expect(pendingRouteRecoveryPath()).toBeUndefined()
+  })
 })

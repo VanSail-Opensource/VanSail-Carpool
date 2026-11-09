@@ -1,5 +1,6 @@
 {
   "browser": {
+    "routeLoadFailed": "The requested page could not be loaded.",
     "tools": "Maintenance",
     "table": {
       "name": "Name",

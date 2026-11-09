@@ -1,5 +1,14 @@
 # Constructed browser fixtures
 
+`route-recovery-audit.html` mounts the actual browser recovery controller and
+startup failure view around a synthetic lazy user route. Open the profile control
+for client navigation, add `direct` for an initial destination failure, `permanent`
+for repeated chunk failure, or `runtime` for a module evaluation error. A transient
+failure retries once with the intended query/hash; persistent failure stops after
+one document-replacement attempt and the localized retry recovers on demand.
+Inspect `window.__routeRecoveryAudit` for attempts, replacements and captured
+errors. Add `zh` and check desktop/mobile layouts. No backend requests are made.
+
 For configuration deletion open `xnode-audit.html?configuration-deletion` and
 select Xray & snippets. Shared configuration returns an in-use conflict; the
 unused fallback can be deleted. Add `configuration-only-unused` to check the
