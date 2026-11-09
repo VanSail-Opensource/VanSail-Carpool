@@ -13,6 +13,14 @@ stored by the backend.
 - `useActivityWorkspace.ts` loads cached games, draws, and live catalog options; owns table tabs, selection, exact-minor-unit game writes, revisioned draw edits, publish/delete actions, and resource statistics loaders. `AdminActivityPanel.vue` composes this state into tables and side editors.
 
 Save failures are shown inside the game/draw editor while preserving its draft.
+Removal dialogs retain failed targets, announce errors inside the modal, and
+clear a previous target's error when a new removal opens. Removed game copy
+explains that settled bets and balance history remain retained.
+Chrome DevTools inspection on 2026-11-09 covered EN/Chinese at 390px/1440px,
+light/dark, loading/populated/empty/error states, game/draw removal and retry,
+keyboard confirmation/Escape/focus restoration, and announced modal failures.
+Browser fixtures emitted no Telegram calls or backend mutations; console checks
+were clean. Settled financial retention is covered by hosted backend regressions.
 Extension points belong in the typed draft serializer or this feature composable;
 route and bootstrap code remain composition surfaces.
 

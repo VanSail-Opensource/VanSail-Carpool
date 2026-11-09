@@ -1,13 +1,21 @@
-import '@/styles/main.css'
+import '@/browser/styles.css'
 import { createApp } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import { featuresApi } from '@/api/features'
 import { adminOperationsApi } from '@/api/adminOperations'
-import { t } from '@/i18n'
+import { setLocale, t } from '@/i18n'
+import { setExperience } from '@/utils/experience'
+import { initializeBrowserTheme, setBrowserTheme } from '@/browser/theme'
 import LuckyAdminAudit from './LuckyAdminAudit.vue'
 
 const params = new URLSearchParams(location.search)
+setExperience('browser')
+initializeBrowserTheme(); setBrowserTheme(params.has('dark') ? 'dark' : 'light')
+setLocale(params.has('zh') ? 'zh-CN' : 'en')
 const now = new Date().toISOString()
+const games = [{ id: 'game-audit', name: 'Retained coin', icon: 'coin', description: 'Constructed settled game', enabled: true,
+  winChanceBps: 5000, minimumStakeMinor: '100', maximumStakeMinor: '500', returnMultiplierBps: 20000 }]
 const draws = [
   {
     id: 'instant-audit', kind: 'instant', status: 'open', enabled: true,
@@ -30,15 +38,30 @@ const draws = [
   },
 ]
 const pause = () => params.has('slow') ? new Promise((resolve) => setTimeout(resolve, 3000)) : Promise.resolve()
+const auditState = { draws, games, recover: false, deletes: [] as { kind: 'game' | 'draw'; id: string }[] }
 featuresApi.getAdminActivityGames = async () => {
   await pause()
   if (params.has('error')) throw new Error('Constructed activity failure')
-  return { items: [] } as never
+  return { items: params.has('empty') ? [] : structuredClone(games) } as never
+}
+featuresApi.deleteAdminActivityGame = async id => {
+  auditState.deletes.push({ kind: 'game', id })
+  if (params.has('delete-error') && !auditState.recover) throw new Error('Constructed removal failure')
+  const index = games.findIndex(game => game.id === id)
+  if (index >= 0) games.splice(index, 1)
+}
+featuresApi.deleteAdminLuckyDraw = async id => {
+  auditState.deletes.push({ kind: 'draw', id })
+  if (params.has('delete-error') && !auditState.recover) throw new Error('Constructed removal failure')
+  const index = draws.findIndex(draw => draw.id === id)
+  const draw = draws[index]
+  if (draw?.kind === 'raffle') { draw.status = 'cancelled'; draw.enabled = false }
+  else if (index >= 0) draws.splice(index, 1)
 }
 featuresApi.getAdminLuckyDraws = async () => {
   await pause()
   if (params.has('error')) throw new Error('Constructed draw failure')
-  return { items: params.has('empty') ? [] : draws } as never
+  return { items: params.has('empty') ? [] : structuredClone(draws) } as never
 }
 adminOperationsApi.getCatalogOptions = async () => ({
   combos: [{ id: 'combo-basic', name: 'Basic', price: { minor: '1000', currency: 'TXB', display: '10.00 TXB' }, validityDays: 30 }],
@@ -63,9 +86,8 @@ featuresApi.publishAdminLuckyDraw = async (id) => {
   if (draw) draw.status = 'publishing'
   return undefined as never
 }
-const auditState = { draws }
 ;(window as Window & { __audit?: typeof auditState }).__audit = auditState
 const app = createApp(LuckyAdminAudit)
 app.config.globalProperties.$t = t
-app.use(ui)
+app.use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: LuckyAdminAudit }] })).use(ui)
 app.mount('#app')

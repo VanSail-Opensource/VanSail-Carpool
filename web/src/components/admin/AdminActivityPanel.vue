@@ -8,6 +8,10 @@ import SwitchField from '@/components/common/SwitchField.vue'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { txbInputFromMinor } from '@/utils/format'
 const { games, draws, editingGameId, editingDraw, loading, busy, error, gameDraft, statisticsTarget, deleting, t, activeTab, tabs, gameColumns, drawColumns, iconItems, comboItems, squadItems, loadStatistics, removeActivity, editGame, saveGame, saveDraw, publishDraw } = useActivityWorkspace()
+function requestRemoval(target: NonNullable<typeof deleting.value>): void {
+  error.value = null
+  deleting.value = target
+}
 </script>
 
 <template>
@@ -40,7 +44,7 @@ const { games, draws, editingGameId, editingDraw, loading, busy, error, gameDraf
         <template #loading><div class="admin-loading" role="status"><USkeleton class="h-10 w-full" /><span>{{ t('common.loading') }}</span></div></template>
         <template #terms-cell="{ row }">{{ t('adminActivityManagement.gameSummary', { chance: (row.original.winChanceBps / 100).toFixed(2), multiplier: (row.original.returnMultiplierBps / 10000).toFixed(2), minimum: txbInputFromMinor(row.original.minimumStakeMinor), maximum: txbInputFromMinor(row.original.maximumStakeMinor) }) }}</template>
         <template #status-cell="{ row }"><UBadge :color="row.original.enabled ? 'success' : 'neutral'" :label="t(row.original.enabled ? 'common.active' : 'adminCatalog.paused')" variant="subtle" /></template>
-        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'game', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editGame(row.original)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="deleting = { kind: 'game', id: row.original.id, name: row.original.name }" /></div></template>
+        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'game', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editGame(row.original)" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="requestRemoval({ kind: 'game', id: row.original.id, name: row.original.name })" /></div></template>
         <template #empty>{{ t('adminActivityManagement.noGames') }}</template>
       </UTable>
       <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'game'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
@@ -54,14 +58,14 @@ const { games, draws, editingGameId, editingDraw, loading, busy, error, gameDraf
         <template #type-cell="{ row }"><div class="admin-cell"><span>{{ t('adminDrawRedesign.' + row.original.kind) }}</span><small v-if="row.original.kind === 'raffle'">{{ t('adminDrawRedesign.currentSeats', { seats: row.original.seats, threshold: row.original.threshold ?? 0 }) }}</small></div></template>
         <template #price-cell="{ row }">{{ txbInputFromMinor(row.original.feeTxbMinor) }} TXB</template>
         <template #status-cell="{ row }"><UBadge color="neutral" variant="subtle" :label="t('adminDrawRedesign.' + row.original.status)" /></template>
-        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="row.original.kind === 'raffle' && row.original.status === 'draft'" variant="ghost" icon="i-ph-paper-plane-tilt" :aria-label="t('adminDrawRedesign.publish')" :disabled="busy" @click="publishDraw(row.original.id)" /><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'draw', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editingDraw = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="deleting = { kind: 'draw', id: row.original.id, name: row.original.name }" /></div></template>
+        <template #actions-cell="{ row }"><div class="admin-row-actions"><UButton v-if="row.original.kind === 'raffle' && row.original.status === 'draft'" variant="ghost" icon="i-ph-paper-plane-tilt" :aria-label="t('adminDrawRedesign.publish')" :disabled="busy" @click="publishDraw(row.original.id)" /><UButton color="neutral" variant="ghost" icon="i-ph-chart-bar" :aria-label="t('adminActivityManagement.statisticsFor', { name: row.original.name })" @click="statisticsTarget = { kind: 'draw', id: row.original.id, title: t('adminActivityManagement.statisticsTitle', { name: row.original.name }) }" /><UButton color="neutral" variant="ghost" icon="i-ph-pencil-simple" :aria-label="t('adminActivityManagement.editNamed', { name: row.original.name })" @click="editingDraw = row.original" /><UButton color="error" variant="ghost" icon="i-ph-trash" :aria-label="t('adminActivityManagement.deleteNamed', { name: row.original.name })" @click="requestRemoval({ kind: 'draw', id: row.original.id, name: row.original.name })" /></div></template>
         <template #empty>{{ t('adminActivityManagement.noDraws') }}</template>
       </UTable>
       <AdminStatisticsPanel v-if="statisticsTarget?.kind === 'draw'" :title="statisticsTarget.title" :load="loadStatistics" @close="statisticsTarget = null" />
     </section>
 
-    <UAlert v-if="error" class="admin-error" color="warning" variant="soft" icon="i-ph-warning" :description="error" />
-    <ConfirmDialog :open="Boolean(deleting)" :title="t('adminActivityManagement.deleteTitle', { name: deleting?.name ?? t('adminActivityManagement.activity') })" :description="deleting?.kind === 'draw' ? t('adminDrawRedesign.deleteHint') : t('adminActivityManagement.deleteDescription')" :confirm-label="t('adminActivityManagement.deletePermanently')" :busy="busy" danger @update:open="!$event && (deleting = null)" @confirm="removeActivity" />
+    <UAlert v-if="error && !deleting" role="alert" class="admin-error" color="warning" variant="soft" icon="i-ph-warning" :description="error" />
+    <ConfirmDialog :open="Boolean(deleting)" :title="t('adminActivityManagement.deleteTitle', { name: deleting?.name ?? t('adminActivityManagement.activity') })" :description="deleting?.kind === 'draw' ? t('adminDrawRedesign.deleteHint') : t('adminActivityManagement.deleteDescription')" :confirm-label="t('adminActivityManagement.deletePermanently')" :busy="busy" :error="error" danger @update:open="!$event && (deleting = null)" @confirm="removeActivity" />
   </section>
 </template>
 

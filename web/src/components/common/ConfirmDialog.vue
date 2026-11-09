@@ -58,7 +58,7 @@ useTelegramProtection(computed(() => open.value && (props.danger || props.busy))
         </motion.span>
       </AnimatePresence>
     </template>
-    <template v-if="error" #body><UAlert color="warning" variant="soft" :title="error" /></template>
+    <template v-if="error" #body><UAlert role="alert" color="warning" variant="soft" :title="error" /></template>
     <template #footer="{ close }">
       <UButton
         :label="t('common.cancel')"
