@@ -34,7 +34,9 @@ func (s *Service) HourlyOffer(ctx context.Context, groupID string) (model.Hourly
 // SaveHourlyOffer validates threshold arithmetic against the current policy.
 // Price/revision and its audit commit atomically through the dedicated repository.
 func (s *Service) SaveHourlyOffer(ctx context.Context, actor string, next model.HourlyOffer, expectedRevision int64) (model.HourlyOffer, error) {
-	if next.GroupID == "" || len(next.GroupID) > 128 || strings.TrimSpace(next.GroupID) != next.GroupID || expectedRevision < 0 || next.HourlyPriceTXBMinor < 0 || next.Enabled && next.HourlyPriceTXBMinor == 0 {
+	if next.GroupID == "" || len(next.GroupID) > 128 || strings.TrimSpace(next.GroupID) != next.GroupID || expectedRevision < 0 ||
+		next.HourlyPriceTXBMinor < 0 || next.RequiredHours < 0 || next.RequiredHours > model.MaxHourlyRequiredHours ||
+		next.Enabled && next.HourlyPriceTXBMinor == 0 {
 		return model.HourlyOffer{}, model.ErrHourlyPolicyInvalid
 	}
 	repo, ok := s.repository.(hourlyOfferRepository)
@@ -46,7 +48,7 @@ func (s *Service) SaveHourlyOffer(ctx context.Context, actor string, next model.
 		return model.HourlyOffer{}, err
 	}
 	if next.HourlyPriceTXBMinor > 0 {
-		if _, err = model.HourlyActivationMinimum(policy.Policy, next.HourlyPriceTXBMinor); err != nil {
+		if _, err = model.HourlyActivationMinimum(policy.Policy, next.RequiredHours, next.HourlyPriceTXBMinor); err != nil {
 			return model.HourlyOffer{}, err
 		}
 	}

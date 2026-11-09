@@ -94,7 +94,7 @@ func hourlyActivationChecksTx(ctx context.Context, tx *sql.Tx, input HourlyActiv
 	if !offer.Enabled || offer.Revision != input.ExpectedOfferRevision {
 		return offer, ErrConflict
 	}
-	minimum, err := model.HourlyActivationMinimum(snapshot.Policy, offer.HourlyPriceTXBMinor)
+	minimum, err := model.HourlyActivationMinimum(snapshot.Policy, offer.RequiredHours, offer.HourlyPriceTXBMinor)
 	if err != nil {
 		return offer, err
 	}

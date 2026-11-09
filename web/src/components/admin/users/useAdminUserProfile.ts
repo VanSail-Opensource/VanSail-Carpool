@@ -4,9 +4,14 @@ import { computed, onScopeDispose, shallowReadonly, shallowRef, toValue, watch, 
 
 import { adminOperationsApi, type AdminCatalogOptions, type AdminUserDetail } from '@/api/adminOperations'
 import { ApiError } from '@/api/http'
-import { localizedError } from '@/i18n'
+import { localizedError, t } from '@/i18n'
 import { createUuid } from '@/utils/browserCompatibility'
 import { usePurchaseValidity } from '@/composables/usePurchaseValidity'
+
+interface PerformMessages {
+  conflictKey?: string
+  conflictCodeKeys?: Record<string, string>
+}
 
 export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
   const detail = shallowRef<AdminUserDetail | null>(null)
@@ -63,7 +68,7 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
     }
   }
 
-  async function perform(action: string, task: (key: string) => Promise<unknown>): Promise<boolean> {
+  async function perform(action: string, task: (key: string) => Promise<unknown>, messages: PerformMessages = {}): Promise<boolean> {
     if (busyAction.value || loading.value || !detail.value || loadError.value) return false
     const version = identityVersion
     const target = toValue(userId)
@@ -83,7 +88,10 @@ export function useAdminUserProfile(userId: MaybeRefOrGetter<string>) {
       if (!active || version !== identityVersion) return false
       if (caught instanceof ApiError) keys.delete(actionKey)
       conflict.value = caught instanceof ApiError && caught.status === 409
-      actionError.value = localizedError(caught, conflict.value ? 'adminUserProfile.conflict' : 'adminUserProfile.actionFailed')
+      const codeKey = caught instanceof ApiError ? messages.conflictCodeKeys?.[caught.code] : undefined
+      actionError.value = codeKey
+        ? t(codeKey)
+        : localizedError(caught, conflict.value ? messages.conflictKey ?? 'adminUserProfile.conflict' : 'adminUserProfile.actionFailed')
       return false
     } finally {
       if (active && version === identityVersion) busyAction.value = null

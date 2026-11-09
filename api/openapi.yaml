@@ -145,6 +145,9 @@ paths:
   /api/v1/admin/users/{userId}/entitlements/{entitlementId}: { $ref: './paths/api-v1-admin-users-id-entitlements-entitlementid.yaml' }
   /api/v1/admin/users/{userId}/entitlements/{entitlementId}/refund: { $ref: './paths/api-v1-admin-users-id-entitlements-entitlementid-refund.yaml' }
   /api/v1/admin/users/{userId}/combo-replacement: { $ref: './paths/api-v1-admin-users-id-combo-replacement.yaml' }
+  /api/v1/admin/users/{userId}/entitlements: { $ref: './paths/api-v1-admin-users-id-entitlements.yaml' }
+  /api/v1/admin/users/{userId}/hourly: { $ref: './paths/api-v1-admin-users-id-hourly.yaml' }
+  /api/v1/admin/users/{userId}/hourly/enrollments/{enrollmentId}/disable: { $ref: './paths/api-v1-admin-users-id-hourly-enrollments-id-disable.yaml' }
   /api/v1/admin/users/{userId}/coupon-grants: { $ref: './paths/api-v1-admin-users-id-coupon-grants.yaml' }
   /api/v1/admin/users/{userId}/coupon-grants/{grantId}: { $ref: './paths/api-v1-admin-users-id-coupon-grants-grantid.yaml' }
   /api/v1/admin/users/{userId}/connections: { $ref: './paths/api-v1-admin-users-id-connections.yaml' }
@@ -300,7 +303,7 @@ components:
     EmbyPasswordRequest: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyPasswordRequest"}, EmbyAccountList: {"$ref":"./components/schemas/schemas-09.yaml#/EmbyAccountList"}, AdminSetting: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSetting"},
     AdminSettingCreate: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSettingCreate"}, AdminSettingUpdate: {"$ref":"./components/schemas/schemas-09.yaml#/AdminSettingUpdate"}, AdminUserSummary: {"$ref":"./components/schemas/schemas-09.yaml#/AdminUserSummary"},
     AdminUserPage: {"$ref":"./components/schemas/schemas-09.yaml#/AdminUserPage"}, BalanceAdjustmentRequest: {"$ref":"./components/schemas/schemas-09.yaml#/BalanceAdjustmentRequest"}, ReasonRequest: {"$ref":"./components/schemas/schemas-09.yaml#/ReasonRequest"},
-    EntitlementPage: {"$ref":"./components/schemas/schemas-09.yaml#/EntitlementPage"}, AdminEntitlement: {"$ref":"./components/schemas/schemas-09.yaml#/AdminEntitlement"}, PaymentPage: {"$ref":"./components/schemas/schemas-10.yaml#/PaymentPage"},
+    EntitlementPage: {"$ref":"./components/schemas/schemas-09.yaml#/EntitlementPage"}, AdminEntitlement: {"$ref":"./components/schemas/schemas-09.yaml#/AdminEntitlement"}, AdminEntitlementCreateRequest: {"$ref":"./components/schemas/admin-hourly.yaml#/AdminEntitlementCreateRequest"}, AdminHourlySquad: {"$ref":"./components/schemas/admin-hourly.yaml#/AdminHourlySquad"}, AdminHourlyView: {"$ref":"./components/schemas/admin-hourly.yaml#/AdminHourlyView"}, PaymentPage: {"$ref":"./components/schemas/schemas-10.yaml#/PaymentPage"},
     AdminPaymentOrder: {"$ref":"./components/schemas/schemas-10.yaml#/AdminPaymentOrder"}, PaymentReturnStatus: {"$ref":"./components/schemas/schemas-10.yaml#/PaymentReturnStatus"}, RefundRequest: {"$ref":"./components/schemas/schemas-10.yaml#/RefundRequest"},
     Refund: {"$ref":"./components/schemas/schemas-10.yaml#/Refund"}, RefundPage: {"$ref":"./components/schemas/schemas-10.yaml#/RefundPage"}, CourtesyCredit: {"$ref":"./components/schemas/schemas-13.yaml#/CourtesyCredit"},
     DatabaseColumn: {"$ref":"./components/schemas/schemas-10.yaml#/DatabaseColumn"}, DatabaseTable: {"$ref":"./components/schemas/schemas-10.yaml#/DatabaseTable"}, DatabaseTableList: {"$ref":"./components/schemas/schemas-10.yaml#/DatabaseTableList"},

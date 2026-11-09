@@ -4,7 +4,7 @@
       "Admin"
     ],
     "operationId": "getAdminHourlyOffers",
-    "summary": "Read independent hourly squad prices",
+    "summary": "Read independent hourly squad prices and required hours",
     "responses": {
       "200": {
         "description": "Hourly offers.",

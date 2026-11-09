@@ -48,7 +48,7 @@ window.fetch = async (input, init) => {
   if (url.pathname === '/api/v1/admin/squad-products') return response({ items: fixture.squads })
   if (url.pathname.startsWith('/api/v1/admin/hourly-offers/') && method === 'PUT') {
     const groupId = decodeURIComponent(url.pathname.split('/').at(-1)!)
-    const offer = { groupId, enabled: Boolean(body.enabled), hourlyPrice: hourlyMoney(String(body.hourlyPriceTXBMinor)), revision: String(BigInt(String(body.revision)) + 1n), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    const offer = { groupId, enabled: Boolean(body.enabled), hourlyPrice: hourlyMoney(String(body.hourlyPriceTXBMinor)), requiredHours: Number(body.requiredHours), revision: String(BigInt(String(body.revision)) + 1n), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     fixture.offers = [...fixture.offers.filter(value => value.groupId !== groupId), offer]
     return response(offer)
   }

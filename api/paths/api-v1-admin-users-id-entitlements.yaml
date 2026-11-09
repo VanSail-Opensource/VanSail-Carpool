@@ -1,0 +1,24 @@
+post:
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
+  tags: [Admin]
+  operationId: createAdminEntitlement
+  summary: Grant a zero-charge fixed-term entitlement with audit and provider sync
+  parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserID'
+    - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/AdminEntitlementCreateRequest' }
+  responses:
+    '201':
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/AdminEntitlement' }
+    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+    '422': { $ref: '../openapi.yaml#/components/responses/Unprocessable' }

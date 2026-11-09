@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	jobpayload "github.com/VanSail-Opensource/VanSail-Carpool/internal/outbox"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {
@@ -67,6 +69,64 @@ func TestCatalogUpdatesCannotCreateUnknownRecords(t *testing.T) {
 	if _, err := store.SaveCombo(ctx, comboInput); err != nil {
 		t.Fatalf("SaveCombo(sparse upstream identity): %v", err)
 	}
+}
+
+func TestRenewalSelectionSurvivesBillingModeAndHourlyOfferEdits(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store := newTestStore(t)
+	user := createTestUser(t, store, 20004)
+	combo := saveTestCombo(t, store, "retained-renewal", 100, 30, "retained-a", "retained-b")
+	if _, err := store.AdjustBalance(ctx, user.ID, 500, "renewal-retain-seed", "fixture", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	purchase, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID, IdempotencyKey: "retained-renewal"}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	before, err := store.AutoRenewalPlan(ctx, user.ID, purchase.ID, now)
+	if err != nil || before.IneligibleReason != "" {
+		t.Fatalf("AutoRenewalPlan(before edits) = (%+v, %v)", before, err)
+	}
+	if err := store.SaveXNodeGroup(ctx, xnode.Group{ID: "retained-a", Name: "Retained A", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "retained-a", Enabled: true, HourlyPriceTXBMinor: 1}, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.SaveHourlyOffer(ctx, user.ID, model.HourlyOffer{GroupID: "retained-a", Enabled: false, HourlyPriceTXBMinor: 2}, 1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: "retained-b", UpstreamPresent: true, BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
+		t.Fatal(err)
+	}
+	after, err := store.AutoRenewalPlan(ctx, user.ID, purchase.ID, now)
+	if err != nil || after.IneligibleReason != "" {
+		t.Fatalf("AutoRenewalPlan(after edits) = (%+v, %v)", after, err)
+	}
+	if !equalStrings(includedSquadIDs(after.Combo), []string{"retained-a", "retained-b"}) {
+		t.Fatalf("automatic renewal selection changed: %v", includedSquadIDs(after.Combo))
+	}
+	if after.NetMinor != before.NetMinor {
+		t.Fatalf("merchandising edits changed the renewal price: %d -> %d", before.NetMinor, after.NetMinor)
+	}
+	renewed, err := store.Renew(ctx, RenewalInput{UserID: user.ID, PurchaseID: purchase.ID, TermCount: 1, IdempotencyKey: "retained-renewal-commit"}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(renewed.Purchases) != 1 || !equalStrings(renewed.Purchases[0].SquadUUIDs, []string{"retained-a", "retained-b"}) {
+		t.Fatalf("committed renewal selection = %+v", renewed)
+	}
+}
+
+func includedSquadIDs(combo model.Combo) []string {
+	ids := make([]string, 0, len(combo.IncludedSquads))
+	for _, squad := range combo.IncludedSquads {
+		ids = append(ids, squad.GroupID)
+	}
+	return ids
 }
 
 func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T) {

@@ -149,3 +149,9 @@ samples. It also invalidates disposable native compilation when hourly access
 changes; minute history never becomes an additional debit or quota source.
 
 `00045_account_cleanup_evidence.sql` adds bot-epoch health, scheduled nonce checks, and immutable sanitized cleanup evidence. Existing blocked flags confer no grace proof. It also preserves future known purchased-term duration in financial tombstones; old terms remain unknown.
+
+`00047_hourly_offer_required_hours.sql` adds a per-offer funding threshold
+`required_hours` (`0..2562047`); zero inherits the account-wide
+`activationHours`, so existing offers keep their previous eligibility. It is
+additive metadata: no purchase, wallet entry, settlement receipt or native
+principal is converted.

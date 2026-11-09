@@ -73,6 +73,33 @@ func TestHourlyOffersHaveNoLegacyDefaultsAndCASCompetingEdits(t *testing.T) {
 	}
 }
 
+func TestHourlyOfferPersistsPerSquadRequiredHours(t *testing.T) {
+	ctx, store := context.Background(), newTestStore(t)
+	actor := createTestUser(t, store, 498026)
+	group := xnode.Group{ID: "hourly-required-hours", Name: "Required hours", Enabled: true}
+	if err := store.SaveXNodeGroup(ctx, group); err != nil {
+		t.Fatal(err)
+	}
+	offer, err := store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: group.ID, Enabled: true,
+		HourlyPriceTXBMinor: 100, RequiredHours: 3}, 0)
+	if err != nil || offer.RequiredHours != 3 {
+		t.Fatal("per-offer required hours were not stored", err, offer.RequiredHours)
+	}
+	read, err := store.HourlyOffer(ctx, group.ID)
+	if err != nil || read.RequiredHours != 3 {
+		t.Fatal("per-offer required hours were not read back", err, read.RequiredHours)
+	}
+	updated, err := store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: group.ID, Enabled: true,
+		HourlyPriceTXBMinor: 100}, offer.Revision)
+	if err != nil || updated.RequiredHours != 0 {
+		t.Fatal("clearing the override to inherit the policy failed", err, updated.RequiredHours)
+	}
+	if _, err := store.SaveHourlyOffer(ctx, actor.ID, model.HourlyOffer{GroupID: group.ID, Enabled: true,
+		HourlyPriceTXBMinor: 100, RequiredHours: model.MaxHourlyRequiredHours + 1}, updated.Revision); !errors.Is(err, ErrConflict) {
+		t.Fatal("out-of-range required hours reached the database", err)
+	}
+}
+
 func TestHourlyOfferRejectsMissingGroupsAndUnavailablePrices(t *testing.T) {
 	ctx, store := context.Background(), newTestStore(t)
 	actor := createTestUser(t, store, 498025)

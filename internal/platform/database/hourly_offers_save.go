@@ -17,7 +17,8 @@ import (
 // Revision zero creates a previously unconfigured offer; existing prices and
 // grandfathered billing modes are never used as defaults or rewritten.
 func (s *Store) SaveHourlyOffer(ctx context.Context, actor string, next model.HourlyOffer, expectedRevision int64) (model.HourlyOffer, error) {
-	if actor == "" || next.GroupID == "" || len(next.GroupID) > 128 || strings.TrimSpace(next.GroupID) != next.GroupID || expectedRevision < 0 || next.HourlyPriceTXBMinor < 0 || next.Enabled && next.HourlyPriceTXBMinor == 0 {
+	if actor == "" || next.GroupID == "" || len(next.GroupID) > 128 || strings.TrimSpace(next.GroupID) != next.GroupID || expectedRevision < 0 ||
+		next.HourlyPriceTXBMinor < 0 || next.RequiredHours < 0 || next.RequiredHours > model.MaxHourlyRequiredHours || next.Enabled && next.HourlyPriceTXBMinor == 0 {
 		return model.HourlyOffer{}, ErrConflict
 	}
 	return hourlyCreditTransaction(ctx, s, func(tx *sql.Tx) (model.HourlyOffer, error) {
@@ -38,7 +39,7 @@ func (s *Store) SaveHourlyOffer(ctx context.Context, actor string, next model.Ho
 			return model.HourlyOffer{}, ErrConflict
 		}
 		now := time.Now().UTC()
-		stored, err := scanHourlyOffer(tx.QueryRowContext(ctx, `INSERT INTO hourly_offers(group_id,enabled,hourly_price_minor,revision,created_at,updated_at) VALUES($1,$2,$3,1,$4,$4) ON CONFLICT(group_id) DO UPDATE SET enabled=excluded.enabled,hourly_price_minor=excluded.hourly_price_minor,revision=hourly_offers.revision+1,updated_at=excluded.updated_at RETURNING `+hourlyOfferColumns, next.GroupID, boolInt(next.Enabled), next.HourlyPriceTXBMinor, now))
+		stored, err := scanHourlyOffer(tx.QueryRowContext(ctx, `INSERT INTO hourly_offers(group_id,enabled,hourly_price_minor,required_hours,revision,created_at,updated_at) VALUES($1,$2,$3,$4,1,$5,$5) ON CONFLICT(group_id) DO UPDATE SET enabled=excluded.enabled,hourly_price_minor=excluded.hourly_price_minor,required_hours=excluded.required_hours,revision=hourly_offers.revision+1,updated_at=excluded.updated_at RETURNING `+hourlyOfferColumns, next.GroupID, boolInt(next.Enabled), next.HourlyPriceTXBMinor, next.RequiredHours, now))
 		if err != nil {
 			return model.HourlyOffer{}, err
 		}
@@ -46,7 +47,7 @@ func (s *Store) SaveHourlyOffer(ctx context.Context, actor string, next model.Ho
 		if err != nil {
 			return model.HourlyOffer{}, err
 		}
-		detail, err := json.Marshal(map[string]any{"enabled": stored.Enabled, "hourlyPriceTXBMinor": stored.HourlyPriceTXBMinor, "revision": stored.Revision})
+		detail, err := json.Marshal(map[string]any{"enabled": stored.Enabled, "hourlyPriceTXBMinor": stored.HourlyPriceTXBMinor, "requiredHours": stored.RequiredHours, "revision": stored.Revision})
 		if err != nil {
 			return model.HourlyOffer{}, err
 		}

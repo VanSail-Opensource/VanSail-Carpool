@@ -10113,6 +10113,12 @@
           "primaryKey": 0
         },
         {
+          "name": "required_hours",
+          "type": "bigint",
+          "notNull": true,
+          "primaryKey": 0
+        },
+        {
           "name": "revision",
           "type": "bigint",
           "notNull": true,

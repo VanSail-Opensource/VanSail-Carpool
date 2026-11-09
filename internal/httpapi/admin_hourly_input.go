@@ -33,8 +33,9 @@ type adminHourlyOfferInput struct {
 	Revision            *int64 `json:"revision,string"`
 	Enabled             *bool  `json:"enabled"`
 	HourlyPriceTXBMinor *int64 `json:"hourlyPriceTXBMinor,string"`
+	RequiredHours       *int64 `json:"requiredHours"`
 }
 
 func (input adminHourlyOfferInput) complete() bool {
-	return input.Revision != nil && input.Enabled != nil && input.HourlyPriceTXBMinor != nil
+	return input.Revision != nil && input.Enabled != nil && input.HourlyPriceTXBMinor != nil && input.RequiredHours != nil
 }

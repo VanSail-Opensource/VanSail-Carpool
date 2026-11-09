@@ -6,6 +6,7 @@ import type { UsageBreakdown } from '@/api/usageBreakdown'
 import { ChartContainer } from '@/components/charts'
 import { useStatisticsChartSelection } from '@/components/statistics/useStatisticsChartSelection'
 import { formatStatisticPercent } from '@/components/statistics/statisticsFormat'
+import { useMotionPreferences } from '@/composables/useMotionPreferences'
 import { t } from '@/i18n'
 import { formatBytes } from '@/utils/format'
 import { isBrowserExperience } from '@/utils/experience'
@@ -14,10 +15,15 @@ import { formatUsageCost } from './usageBreakdownFormat'
 import { assignUsageEntryColors, usageEntryIDs, usageBreakdownSegments, usageSegmentColor, usageSegmentID, usageSegmentValue, type UsageBreakdownMetric, type UsageBreakdownSegment } from './usageBreakdownSegments'
 
 const props = defineProps<{ history: UsageBreakdown }>()
+const MEASURE_SWITCH_DURATION_MS = 320
+const { reducedMotion } = useMotionPreferences()
 const metric = shallowRef<UsageBreakdownMetric>('traffic')
 const nodeColors = shallowRef(new Map<string, string>())
 watch(() => usageEntryIDs(props.history), ids => { nodeColors.value = assignUsageEntryColors(ids, nodeColors.value) }, { immediate: true })
 const plotted = computed(() => usageBreakdownSegments(props.history, metric.value, nodeColors.value))
+// Tween only while a chart is on screen. A hidden measure renders at duration 0,
+// so its zero-width frames cannot leave the arcs mid-tween when it is re-shown.
+const chartDuration = computed(() => reducedMotion.value || !plotted.value.showPie ? 0 : MEASURE_SWITCH_DURATION_MS)
 const segments = computed(() => plotted.value.segments.map(segment => ({ ...segment,
   name: segment.kind === 'node' || segment.kind === 'hourly' ? segment.name || t(segment.kind === 'hourly' ? 'usageBreakdown.unnamedHourlySquad' : 'usageBreakdown.unnamedNode') : t(`usageBreakdown.${segment.kind}`),
 })))
@@ -55,7 +61,7 @@ const events = { [Donut.selectors.segment]: {
     <p v-if="!plotted.showPie" role="status" class="py-4 text-sm text-muted" data-usage-no-comparison>{{ emptyMessage }}</p>
     <div v-show="plotted.showPie" class="usage-breakdown__body" data-usage-chart>
       <ChartContainer role="img" :config="config" :aria-label="t(metric === 'traffic' ? 'usageBreakdown.trafficChart' : 'usageBreakdown.costChart')" class="usage-breakdown__chart">
-        <VisSingleContainer :data="segments" :height="220" :duration="0"><VisDonut :id="usageSegmentID" :value="usageSegmentValue" :color="usageSegmentColor" :duration="0" :arc-width="0" :events="events" /></VisSingleContainer>
+        <VisSingleContainer :data="segments" :height="220" :duration="chartDuration"><VisDonut :id="usageSegmentID" :value="usageSegmentValue" :color="usageSegmentColor" :duration="chartDuration" :arc-width="0" :events="events" /></VisSingleContainer>
       </ChartContainer>
       <ul class="grid gap-1 min-w-0 content-start">
         <li v-for="segment in segments" :key="segment.interactionId">

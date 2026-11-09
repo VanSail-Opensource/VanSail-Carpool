@@ -63,6 +63,7 @@ HourlyOffer: {
       "groupId",
       "enabled",
       "hourlyPrice",
+      "requiredHours",
       "revision",
       "createdAt",
       "updatedAt"
@@ -76,6 +77,12 @@ HourlyOffer: {
       },
       "hourlyPrice": {
         "$ref": "../../openapi.yaml#/components/schemas/Money"
+      },
+      "requiredHours": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2562047,
+        "description": "Per-squad funding threshold in hours; zero inherits policy.activationHours."
       },
       "revision": {
         "type": "string",
@@ -99,7 +106,8 @@ HourlyOfferWrite: {
     "required": [
       "revision",
       "enabled",
-      "hourlyPriceTXBMinor"
+      "hourlyPriceTXBMinor",
+      "requiredHours"
     ],
     "properties": {
       "revision": {
@@ -112,6 +120,12 @@ HourlyOfferWrite: {
       "hourlyPriceTXBMinor": {
         "type": "string",
         "pattern": "^[0-9]+$"
+      },
+      "requiredHours": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2562047,
+        "description": "Per-squad funding threshold in hours; zero inherits policy.activationHours."
       }
     }
   }

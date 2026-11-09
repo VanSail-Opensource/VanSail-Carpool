@@ -50,7 +50,7 @@ func (s *Store) SettleHourlyOwnerAvailable(ctx context.Context, owner string, ge
 			if guard.CompileRevision <= 0 || guard.CompileRevision != revision {
 				guard = HourlyDeliveryReady{}
 			}
-			e, receipt, err := settleHourlyEnrollmentTx(ctx, tx, e, snapshot, offers[e.GroupID], guard)
+			e, receipt, err := s.settleHourlyEnrollmentTx(ctx, tx, e, snapshot, offers[e.GroupID], guard)
 			if errors.Is(err, ErrHourlyDeliveryPending) {
 				result.Enrollments = append(result.Enrollments, e)
 				result.SkippedEnrollmentIDs = append(result.SkippedEnrollmentIDs, e.ID)
@@ -98,7 +98,7 @@ func hourlyActiveEnrollmentsTx(ctx context.Context, tx *sql.Tx, owner string, ge
 	return result, nil
 }
 
-func settleHourlyEnrollmentTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment,
+func (s *Store) settleHourlyEnrollmentTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment,
 	snapshot model.HourlyPolicySnapshot, offer model.HourlyOffer, delivery HourlyDeliveryReady) (model.HourlyEnrollment, *model.HourlySettlement, error) {
 	now, err := hourlyBillingClockTx(ctx, tx)
 	if err != nil || e.PaidThrough == nil {
@@ -124,7 +124,15 @@ func settleHourlyEnrollmentTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnr
 	}
 	if errors.Is(err, ErrInsufficientBalance) {
 		e, err = suspendHourlyEnrollmentTx(ctx, tx, e, now)
-		return e, nil, err
+		if err != nil {
+			return e, nil, err
+		}
+		// The definitive stop and its member receipt share this transaction so
+		// the notification cannot claim a state the enrollment did not reach.
+		if err = s.enqueueHourlyFundingSuspendedTx(ctx, tx, e, offer, now); err != nil {
+			return e, nil, err
+		}
+		return e, nil, nil
 	}
 	if err != nil {
 		return e, nil, err

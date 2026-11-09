@@ -46,22 +46,43 @@ func TestHourlyPolicyDefaultsAndExplicitUnitBounds(t *testing.T) {
 func TestHourlyActivationEligibilityPreservesExactMoneyBounds(t *testing.T) {
 	policy := DefaultHourlyPolicy()
 	price := int64(math.MaxInt64 / 168)
-	minimum, err := HourlyActivationMinimum(policy, price)
+	minimum, err := HourlyActivationMinimum(policy, 0, price)
 	if err != nil || minimum != price*168 {
 		t.Fatal("maximum safe threshold lost exact minor units", minimum, err)
 	}
 	for _, invalid := range []int64{0, -1, price + 1, math.MaxInt64} {
-		if amount, err := HourlyActivationMinimum(policy, invalid); !errors.Is(err, ErrHourlyPolicyInvalid) || amount != 0 {
+		if amount, err := HourlyActivationMinimum(policy, 0, invalid); !errors.Is(err, ErrHourlyPolicyInvalid) || amount != 0 {
 			t.Fatal("invalid or overflowing threshold accepted", invalid, amount, err)
 		}
 	}
 	policy.ActivationHours = 1
-	if amount, err := HourlyActivationMinimum(policy, math.MaxInt64); err != nil || amount != math.MaxInt64 {
+	if amount, err := HourlyActivationMinimum(policy, 0, math.MaxInt64); err != nil || amount != math.MaxInt64 {
 		t.Fatal("exact int64 maximum was rejected", amount, err)
 	}
 	policy.ActivationHours = 0
-	if _, err := HourlyActivationMinimum(policy, 1); !errors.Is(err, ErrHourlyPolicyInvalid) {
+	if _, err := HourlyActivationMinimum(policy, 0, 1); !errors.Is(err, ErrHourlyPolicyInvalid) {
 		t.Fatal("invalid policy bypassed threshold validation", err)
+	}
+}
+
+func TestHourlyActivationUsesPerOfferRequiredHoursOrDefault(t *testing.T) {
+	policy := DefaultHourlyPolicy()
+	if amount, err := HourlyActivationMinimum(policy, 0, 101); err != nil || amount != 101*168 {
+		t.Fatal("zero required hours did not inherit the policy threshold", amount, err)
+	}
+	if amount, err := HourlyActivationMinimum(policy, 2, 101); err != nil || amount != 202 {
+		t.Fatal("per-offer required hours were ignored", amount, err)
+	}
+	if amount, err := HourlyActivationMinimum(policy, MaxHourlyRequiredHours, 1); err != nil || amount != MaxHourlyRequiredHours {
+		t.Fatal("maximum per-offer required hours were rejected", amount, err)
+	}
+	for _, invalid := range []int64{-1, MaxHourlyRequiredHours + 1, math.MaxInt64} {
+		if amount, err := HourlyActivationMinimum(policy, invalid, 101); !errors.Is(err, ErrHourlyPolicyInvalid) || amount != 0 {
+			t.Fatal("invalid per-offer required hours accepted", invalid, amount, err)
+		}
+	}
+	if _, err := HourlyActivationMinimum(policy, 2, math.MaxInt64); !errors.Is(err, ErrHourlyPolicyInvalid) {
+		t.Fatal("per-offer threshold overflow was accepted")
 	}
 }
 

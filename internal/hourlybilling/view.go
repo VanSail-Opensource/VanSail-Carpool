@@ -94,7 +94,7 @@ func (s *Service) View(ctx context.Context, user model.User) (model.HourlyAccoun
 			row.Squad.StockRemaining = &remaining
 		}
 		row.Squad.StockHeldByCurrentUser = row.Enrollment != nil && row.Enrollment.Status == model.HourlyActive
-		minimum, minimumErr := model.HourlyActivationMinimum(view.Policy.Policy, offer.HourlyPriceTXBMinor)
+		minimum, minimumErr := model.HourlyActivationMinimum(view.Policy.Policy, offer.RequiredHours, offer.HourlyPriceTXBMinor)
 		if minimumErr == nil {
 			money := model.TXBMoney(minimum)
 			row.RequiredBalance = &money

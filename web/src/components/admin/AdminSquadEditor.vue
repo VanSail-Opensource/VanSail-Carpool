@@ -100,8 +100,8 @@ function submit(): void {
         <AdminSquadFeaturesEditor v-model="draft.features" :busy="busy" :show-validation="profileAttempted" @update:model-value="featuresTouched = true" />
         <div class="squad-editor__section squad-editor__billing">
           <h3>{{ t('adminSquad.billingSection') }}</h3>
-          <UFormField name="billingMode" :label="t('payg.billingMode')">
-            <USelect v-model="draft.billingMode" :items="[{ label: t('payg.combo'), value: 'combo' }, { label: t('payg.title'), value: 'payg' }]" />
+          <UFormField name="billingMode" :label="t('payg.billingMode')" :hint="draft.billingMode === 'combo' ? t('adminSquad.hourlySeparateHint') : undefined">
+            <USelect v-model="draft.billingMode" :items="[{ label: t('adminSquad.billingModeFixedTerm'), value: 'combo' }, { label: t('payg.title'), value: 'payg' }]" />
           </UFormField>
           <UFormField v-if="draft.billingMode === 'payg'" :label="t('payg.adminState')"><USelect v-model="draft.paygState" :items="(['normal', 'hidden', 'unavailable'] as const).map(value => ({ value, label: t(`payg.adminStates.${value}`) }))" class="w-full" /></UFormField>
           <InlineNotice v-if="draft.billingMode === 'payg'">{{ t('payg.adminHint') }}</InlineNotice>

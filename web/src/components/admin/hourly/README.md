@@ -6,10 +6,13 @@ accepts human transfer units: sizes such as `1GB`/`500MiB` become exact bytes an
 speeds such as `100Mbps`/`12.5MB/s` become exact bytes per second through
 `../../../utils/transferUnits.ts`; plain integers remain exact bytes or bytes per
 second. Existing values are shown in a round-trippable unit form.
-`HourlyOfferForm.vue` configures one squad's independent hourly price without
-changing legacy modes. The offers list excludes pay-as-you-go squads
-(`billingMode: "payg"`), because Charge by traffic sells independently per GB and
-never participates in hourly access.
+`HourlyOfferForm.vue` configures one squad's independent hourly price and
+per-offer required-balance hours; it writes `requiredHours` as an integer from
+1 through 2,562,047 and shows the effective hours plus the resulting required
+balance. Loaded offers with `requiredHours: 0` display the account activation
+threshold, matching the server's effective-hours rule. The offers list excludes
+pay-as-you-go squads (`billingMode: "payg"`), because Charge by traffic sells
+independently per GB and never participates in hourly access.
 
 Policy writes carry the exact loaded ciphertext-fingerprint version; offer
 writes carry the exact revision, with zero creating an unconfigured offer.

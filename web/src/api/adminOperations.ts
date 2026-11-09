@@ -4,6 +4,9 @@ import { request } from './http'
 export type XNodeProfileMetrics = components['schemas']['XNodeProfileMetrics']
 export type AdminUserDetail = components['schemas']['AdminUserDetail']
 export type AdminEntitlement = components['schemas']['AdminEntitlement']
+export type AdminEntitlementCreateRequest = components['schemas']['AdminEntitlementCreateRequest']
+export type AdminHourlyView = components['schemas']['AdminHourlyView']
+export type AdminHourlySquad = components['schemas']['AdminHourlySquad']
 export type OperationReceipt = components['schemas']['OperationReceipt']
 export type EntitlementEditRequest = components['schemas']['EntitlementEditRequest']
 export type AdminEntitlementRefundRequest = components['schemas']['AdminEntitlementRefundRequest']
@@ -43,6 +46,16 @@ export const adminOperationsApi = {
   editEntitlement: (userId: string, entitlementId: string, body: EntitlementEditRequest, key: string) =>
     request<AdminEntitlement>(`/api/v1/admin/users/${encodeURIComponent(userId)}/entitlements/${encodeURIComponent(entitlementId)}`, {
       method: 'PUT', headers: keyHeader(key), body,
+    }),
+  createEntitlement: (userId: string, body: AdminEntitlementCreateRequest, key: string) =>
+    request<AdminEntitlement>(`/api/v1/admin/users/${encodeURIComponent(userId)}/entitlements`, {
+      method: 'POST', headers: keyHeader(key), body,
+    }),
+  getAdminHourly: (userId: string, signal?: AbortSignal) =>
+    request<AdminHourlyView>(`/api/v1/admin/users/${encodeURIComponent(userId)}/hourly`, { cache: 'no-store', signal }),
+  disableAdminHourly: (userId: string, enrollmentId: string, policyVersion: string, key: string) =>
+    request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/hourly/enrollments/${encodeURIComponent(enrollmentId)}/disable`, {
+      method: 'POST', headers: keyHeader(key), body: { policyVersion },
     }),
 	refundEntitlement: (userId: string, entitlementId: string, body: AdminEntitlementRefundRequest, key: string) =>
 		request<OperationReceipt>(`/api/v1/admin/users/${encodeURIComponent(userId)}/entitlements/${encodeURIComponent(entitlementId)}/refund`, {

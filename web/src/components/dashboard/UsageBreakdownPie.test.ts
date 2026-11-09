@@ -9,6 +9,10 @@ import { setExperience } from '@/utils/experience'
 import { usageSegmentColor, usageSegmentID, usageSegmentValue } from './usageBreakdownSegments'
 import UsageBreakdownPie from './UsageBreakdownPie.vue'
 
+const motion = vi.hoisted(() => ({ reduced: false }))
+vi.mock('@/composables/useMotionPreferences', () => ({
+  useMotionPreferences: () => ({ reducedMotion: { get value() { return motion.reduced } } }),
+}))
 const feedback = vi.hoisted(() => vi.fn())
 vi.mock('@/utils/telegramHaptics', async importOriginal => ({ ...await importOriginal<typeof import('@/utils/telegramHaptics')>(), selectionHaptic: feedback }))
 vi.mock('@unovis/vue', async importOriginal => {
@@ -34,7 +38,7 @@ function render(mode = '') {
   cleanups.push(() => { view.unmount(); target.remove() })
   return view
 }
-afterEach(() => { cleanups.splice(0).forEach(cleanup => cleanup()); vi.clearAllMocks(); setLocale('en'); setExperience('miniapp') })
+afterEach(() => { cleanups.splice(0).forEach(cleanup => cleanup()); vi.clearAllMocks(); setLocale('en'); setExperience('miniapp'); motion.reduced = false })
 
 describe('Usage Breakdown mode stability', () => {
   it('keeps the same SVG through twenty mode changes, including zero traffic and one 100% hourly cost', async () => {
@@ -48,8 +52,37 @@ describe('Usage Breakdown mode stability', () => {
       await view.get(`[data-metric="${index % 2 === 0 ? 'cost' : 'traffic'}"]`).trigger('click')
       expect(view.get('[data-chart-svg]').element).toBe(svg)
       expect(view.get('[data-usage-chart]').isVisible()).toBe(index % 2 === 0)
+      // The hidden measure settles at zero duration; the re-shown chart tweens.
+      expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: index % 2 === 0 ? 320 : 0 })
+      expect(view.getComponent(VisSingleContainer).props()).toMatchObject({ duration: index % 2 === 0 ? 320 : 0 })
     }
     expect(feedback).toHaveBeenCalledTimes(20)
+  })
+  it('tweens visible measure switches on the same mounted SVG and settles after rapid clicks', async () => {
+    const view = render()
+    const svg = view.get('[data-chart-svg]').element
+    expect(view.get('[data-usage-chart]').isVisible()).toBe(true)
+    expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: 320, id: usageSegmentID, value: usageSegmentValue, color: usageSegmentColor })
+    expect(view.getComponent(VisSingleContainer).props()).toMatchObject({ height: 220, duration: 320 })
+    for (let index = 0; index < 20; index++) {
+      await view.get(`[data-metric="${index % 2 === 0 ? 'cost' : 'traffic'}"]`).trigger('click')
+      expect(view.get('[data-chart-svg]').element).toBe(svg)
+      expect(view.get('[data-usage-chart]').isVisible()).toBe(true)
+      expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: 320 })
+      expect(view.getComponent(VisSingleContainer).props()).toMatchObject({ height: 220, duration: 320 })
+    }
+    expect(feedback).toHaveBeenCalledTimes(20)
+  })
+  it('forces a zero duration for the measure switch when reduced motion is requested', async () => {
+    motion.reduced = true
+    const view = render()
+    expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: 0 })
+    await view.get('[data-metric="cost"]').trigger('click')
+    expect(view.get('[data-usage-chart]').isVisible()).toBe(true)
+    expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: 0 })
+    expect(view.getComponent(VisSingleContainer).props()).toMatchObject({ height: 220, duration: 0 })
+    await view.get('[data-metric="traffic"]').trigger('click')
+    expect(view.getComponent(VisDonut).props()).toMatchObject({ duration: 0 })
   })
   it('keeps the chart selectable when the original fixed-term duration is unknown', async () => {
     const view = render('unknown-term')

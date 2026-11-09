@@ -4,7 +4,7 @@ import { computed, shallowRef, toRef, watch } from 'vue'
 import UserPricingAnalysis from '../pricing/UserPricingAnalysis.vue'
 import { usdtApi } from '@/api/usdt'
 import AdminPaymentCreditDialog from './AdminPaymentCreditDialog.vue'
-import { adminOperationsApi, type AdminEntitlement, type AdminEntitlementRefundRequest, type AdminUserDetail, type CourtesyCredit, type EntitlementEditRequest, type OperationReceipt, type OperationResolution } from '@/api/adminOperations'
+import { adminOperationsApi, type AdminEntitlement, type AdminEntitlementCreateRequest, type AdminEntitlementRefundRequest, type AdminUserDetail, type CourtesyCredit, type EntitlementEditRequest, type OperationReceipt, type OperationResolution } from '@/api/adminOperations'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import ConnectionUnblockDialog from './AdminIPUnblockDialog.vue'
 import { useOperationReceipt } from '@/composables/useOperationReceipt'
@@ -13,8 +13,10 @@ import { formatMoney } from '@/utils/format'
 import AdminReasonDialog from '../AdminReasonDialog.vue'
 import AdminEntitlementEditor from './AdminEntitlementEditor.vue'
 import AdminEntitlementRefundDialog from './AdminEntitlementRefundDialog.vue'
+import AdminManualEntitlementDialog from './AdminManualEntitlementDialog.vue'
 import AdminOperationResolutionDialog from './AdminOperationResolutionDialog.vue'
 import AdminUserEntitlements from './AdminUserEntitlements.vue'
+import AdminUserHourly from './AdminUserHourly.vue'
 import AdminUserAccountContext from './AdminUserAccountContext.vue'
 import AdminUserCouponActions from './AdminUserCouponActions.vue'
 import AdminUserMetrics from './AdminUserMetrics.vue'
@@ -39,6 +41,8 @@ const tabs = computed(() => [
 ])
 const editing = shallowRef<AdminEntitlement | null>(null)
 const refunding = shallowRef<AdminEntitlement | null>(null)
+const manualOpen = shallowRef(false)
+const manualMessage = shallowRef<string | null>(null)
 const refundingPayment = shallowRef<AdminUserDetail['payments'][number] | null>(null)
 const creditingPayment = shallowRef<AdminUserDetail['payments'][number] | null>(null)
 const paymentReason = shallowRef('')
@@ -59,6 +63,30 @@ async function openEditor(item: AdminEntitlement): Promise<void> {
 function openRefund(item: AdminEntitlement): void {
   profile.clearActionError()
   refunding.value = item
+}
+
+async function openManualGrant(): Promise<void> {
+  profile.clearActionError()
+  manualMessage.value = null
+  manualOpen.value = true
+  await profile.loadOptions()
+}
+
+async function createEntitlement(body: AdminEntitlementCreateRequest): Promise<void> {
+  const ok = await profile.perform(
+    'create-entitlement',
+    key => adminOperationsApi.createEntitlement(props.userId, body, key),
+    {
+      conflictKey: 'adminUserProfile.manualGrant.overlap',
+      conflictCodeKeys: {
+        ENTITLEMENT_OVERLAP: 'adminUserProfile.manualGrant.overlap',
+        HOURLY_LEGACY_ACTIVE: 'adminUserProfile.manualGrant.hourlyConflict',
+      },
+    },
+  )
+  if (!ok) return
+  manualOpen.value = false
+  manualMessage.value = t('adminUserProfile.manualGrant.notice')
 }
 
 function openPaymentRefund(payment: AdminUserDetail['payments'][number]): void {
@@ -136,6 +164,7 @@ async function resolveOperation(payload: { resolution: OperationResolution; reas
 
 function refresh(): void {
   profile.clearActionError()
+  manualMessage.value = null
   void profile.load()
 }
 
@@ -172,6 +201,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <InlineNotice v-if="profile.conflict.value" tone="warning" :title="t('adminUserProfile.conflictTitle')">{{ t('adminUserProfile.conflict') }}</InlineNotice>
     <InlineNotice v-else-if="profile.error.value" tone="warning">{{ profile.error.value }}</InlineNotice>
     <InlineNotice v-if="courtesyMessage" tone="success">{{ courtesyMessage }}</InlineNotice>
+    <InlineNotice v-if="manualMessage" tone="success">{{ manualMessage }}</InlineNotice>
     <InlineNotice v-if="queuedOperation" tone="success">{{ t('adminUserProfile.operationQueued', { id: queuedOperation.id }) }}</InlineNotice>
     <div v-if="profile.loading.value" class="admin-loading" :aria-label="t('adminUserProfile.loading')">
       <USkeleton class="h-24" /><USkeleton class="h-48" /><USkeleton class="h-36" />
@@ -180,7 +210,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
       <AdminUserOverview :detail="profile.detail.value" />
       <AdminUserBalanceAdjustment :user-id="userId" @changed="refresh" />
       <UTabs :items="tabs" default-value="entitlements" color="neutral" variant="link" class="min-w-0 w-full" :ui="{ list: 'overflow-x-auto', trigger: 'shrink-0' }">
-        <template #entitlements><AdminUserEntitlements :items="profile.detail.value.entitlements" :busy="busy" @edit="openEditor" @refund="openRefund" /></template>
+        <template #entitlements><AdminUserEntitlements :items="profile.detail.value.entitlements" :busy="busy" @add="openManualGrant" @edit="openEditor" @refund="openRefund" /><AdminUserHourly :user-id="userId" /></template>
         <template #pricing><UserPricingAnalysis :key="userId" :user-id="userId" /></template>
         <template #metrics><AdminUserMetrics :user-id="userId" /></template>
         <template #history><AdminUserHistory :detail="profile.detail.value" :busy="busy" @resolve="resolving = $event" @refund-payment="openPaymentRefund" @credit-payment="openPaymentCredit" /></template>
@@ -198,6 +228,7 @@ watch(() => unblockOperation.receipt.value, (receipt) => {
     <div v-else class="empty-inline"><div><h3>{{ t('adminUserProfile.unavailable') }}</h3><p>{{ t('adminUserProfile.unavailableHint') }}</p></div></div>
 
     <AdminEntitlementEditor :open="editing !== null" :item="editing" :combos="profile.options.value.combos" :squads="profile.options.value.squads" :busy="busy" :options-loading="profile.optionsLoading.value" :error="dialogError" @update:open="!$event && (editing = null)" @save="saveEntitlement" />
+    <AdminManualEntitlementDialog :open="manualOpen" :combos="profile.options.value.combos" :squads="profile.options.value.squads" :busy="busy" :options-loading="profile.optionsLoading.value" :error="dialogError" @update:open="!$event && (manualOpen = false)" @save="createEntitlement" />
     <AdminEntitlementRefundDialog :open="refunding !== null" :item="refunding" :busy="busy" :error="profile.error.value" @update:open="!$event && (refunding = null)" @refund="refundEntitlement" />
     <AdminReasonDialog :open="refundingPayment !== null" v-model:reason="paymentReason" :title="t('adminUserProfile.refundPaymentTitle')" :description="t('adminUserProfile.refundPaymentHint')" :confirm-label="t('adminUserProfile.issueRefundPayment')" :busy="busy" :error="profile.error.value" danger @update:open="!$event && (refundingPayment = null)" @confirm="refundPayment" />
     <AdminPaymentCreditDialog :payment="creditingPayment" :busy="busy" :error="profile.error.value" @close="creditingPayment = null" @confirm="creditPayment" />

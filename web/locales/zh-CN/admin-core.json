@@ -82,6 +82,8 @@
     "saveSquad": "保存节点组",
     "profileSection": "网络资料",
     "billingSection": "计费与可用性",
+    "billingModeFixedTerm": "固定期限套餐",
+    "hourlySeparateHint": "按小时计费在独立的小时计费工作区中配置。",
     "features": {
       "heading": "功能特点",
       "hint": "介绍节点组的特点，展示顺序与此处一致。",

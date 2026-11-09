@@ -44,7 +44,21 @@ func (s *Service) Catalog(ctx context.Context) (model.Catalog, error) {
 	return s.hydrateLiveCatalog(ctx, combos, addons)
 }
 
+// hydrateLiveCatalog is storefront hydration for new sales and add-on
+// validation: PAYG-marked products stay excluded from standalone add-ons.
 func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, overrides []model.SquadProduct) (model.Catalog, error) {
+	return s.hydrateCatalog(ctx, combos, overrides, false)
+}
+
+// hydrateOwnedCatalog is renewal hydration. It keeps every included squad and
+// add-on the member already owns even after the product was re-marked PAYG,
+// because billing mode is merchandising state and must not rewrite an owned
+// renewal. Only live-upstream availability still constrains the selection.
+func (s *Service) hydrateOwnedCatalog(ctx context.Context, combos []model.Combo, overrides []model.SquadProduct) (model.Catalog, error) {
+	return s.hydrateCatalog(ctx, combos, overrides, true)
+}
+
+func (s *Service) hydrateCatalog(ctx context.Context, combos []model.Combo, overrides []model.SquadProduct, retainOwned bool) (model.Catalog, error) {
 	var provider any = s.provider
 	if source, ok := provider.(remoteTopologyLister); ok {
 		snapshot, err := source.ListCatalogTopology(ctx)
@@ -108,7 +122,7 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 			override.AccessibleNodes = []model.CatalogNode{}
 		}
 		overrideByUUID[override.GroupID] = override
-		if override.Visible && override.BillingMode != "payg" {
+		if retainOwned || (override.Visible && override.BillingMode != "payg") {
 			addons = append(addons, override)
 		}
 	}
@@ -123,7 +137,7 @@ func (s *Service) hydrateLiveCatalog(ctx context.Context, combos []model.Combo, 
 				break
 			}
 			product, hasOverride := overrideByUUID[placeholder.GroupID]
-			if product.BillingMode == "payg" {
+			if !retainOwned && product.BillingMode == "payg" {
 				continue
 			}
 			if !hasOverride {

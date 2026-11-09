@@ -1,0 +1,28 @@
+post:
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
+  tags: [Admin]
+  operationId: disableAdminUserHourly
+  summary: Stop one hourly enrollment as an administrator without a member cooldown
+  parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserID'
+    - name: enrollmentId
+      in: path
+      required: true
+      schema: { type: string }
+    - $ref: '../openapi.yaml#/components/parameters/IdempotencyKey'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: '../openapi.yaml#/components/schemas/HourlyDisableRequest' }
+  responses:
+    '202':
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/OperationReceipt' }
+    '400': { $ref: '../openapi.yaml#/components/responses/BadRequest' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+    '409': { $ref: '../openapi.yaml#/components/responses/Conflict' }
+    '503': { $ref: '../openapi.yaml#/components/responses/ServiceUnavailable' }

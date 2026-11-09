@@ -25,6 +25,27 @@ func (r trafficRemoteStub) ListNotificationUsers(context.Context, string, int) (
 	return r.users, nil, false, nil
 }
 
+type hourlyFundingScanStub struct {
+	scanRepositoryStub
+	warnings int
+}
+
+func (r *hourlyFundingScanStub) EnqueueHourlyFundingWarnings(context.Context, time.Time) (int, error) {
+	r.warnings++
+	return 1, nil
+}
+
+func TestScannerEnqueuesHourlyFundingWarningsWhenSupported(t *testing.T) {
+	t.Parallel()
+	repository := &hourlyFundingScanStub{}
+	if err := NewScanner(repository, trafficRemoteStub{}, nil).Scan(context.Background(), time.Now().UTC()); err != nil {
+		t.Fatalf("Scan(): %v", err)
+	}
+	if repository.warnings != 1 {
+		t.Fatalf("hourly funding scan calls = %d", repository.warnings)
+	}
+}
+
 func TestScannerUsesStrictOverflowSafeTrafficBoundary(t *testing.T) {
 	t.Parallel()
 	if aboveNinetyPercent(900, 1000) {

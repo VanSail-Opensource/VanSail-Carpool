@@ -49,7 +49,7 @@
         "panelApiToken": []
       }
     ],
-    "description": "Requires xnode:read for reads or xnode:write for changes; admin:write alone does not authorize hourly control.",
+    "description": "Requires xnode:read for reads or xnode:write for changes; admin:write alone does not authorize hourly control. requiredHours sets this squad's funding threshold; zero inherits the policy activation hours.",
     "parameters": [
       {
         "name": "groupId",

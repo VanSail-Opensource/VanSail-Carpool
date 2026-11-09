@@ -27,6 +27,7 @@ var englishCopy = copySet{
 		"admin_payment_refund": "↩️ Payment refunded by admin", "admin_courtesy_credit": "🎁 Credit received",
 		"admin_entitlement_refund": "↩️ Combo refunded by admin", "admin_entitlement_cancel": "🛑 Combo cancelled by admin",
 		"admin_combo_replacement": "🛠 Combo replaced by admin", "admin_entitlement_edit": "🛠 Subscription updated by admin",
+		"hourly_funding_warning": "⏳ Hourly squad funding is low", "hourly_funding_suspended": "🛑 Hourly squad stopped",
 	},
 	labels: map[string]string{
 		"charged": "Charged", "requiredCharge": "Required charge", "currentBalance": "Current balance",
@@ -42,7 +43,7 @@ var englishCopy = copySet{
 		"newCombo": "New combo", "validFrom": "Valid from", "status": "Status", "squads": "Squads", "reason": "Reason",
 		"appliedAt": "Applied at",
 		"starts":    "Starts", "termCount": "Terms", "refundAmount": "Refunded", "noCharge": "Renewal charge",
-		"replacement": "Next combo", "addedSquads": "Added squads",
+		"replacement": "Next combo", "addedSquads": "Added squads", "squad": "Squad", "hourlyPrice": "Hourly price",
 	},
 	values: map[string]string{
 		"disabled": "Disabled", "resetFailed": "The reset could not be completed",
@@ -65,10 +66,12 @@ var englishCopy = copySet{
 		"RESET_FAILED":          "The provider could not complete the reset", "REFUND_UNAVAILABLE": "The refund could not be completed",
 	},
 	guidance: map[string]string{
-		"expiration":          "Open VanSail Carpool to restore access.",
-		"expiry_reminder":     "Choose a new combo in VanSail Carpool before expiry.",
-		"traffic_threshold":   "Check your remaining traffic in VanSail Carpool.",
-		"auto_renewal_failed": "Open VanSail Carpool to choose a new combo.",
+		"expiration":               "Open VanSail Carpool to restore access.",
+		"expiry_reminder":          "Choose a new combo in VanSail Carpool before expiry.",
+		"traffic_threshold":        "Check your remaining traffic in VanSail Carpool.",
+		"auto_renewal_failed":      "Open VanSail Carpool to choose a new combo.",
+		"hourly_funding_warning":   "Top up your balance in VanSail Carpool so the next hour can be funded.",
+		"hourly_funding_suspended": "Top up in VanSail Carpool and restart the squad to restore access.",
 	},
 }
 
@@ -92,6 +95,7 @@ var chineseCopy = copySet{
 		"admin_payment_refund": "↩️ 管理员已办理支付退款", "admin_courtesy_credit": "🎁 补偿金已到账",
 		"admin_entitlement_refund": "↩️ 管理员已退还套餐费用", "admin_entitlement_cancel": "🛑 管理员已取消套餐",
 		"admin_combo_replacement": "🛠 管理员已更换套餐", "admin_entitlement_edit": "🛠 管理员已更新订阅",
+		"hourly_funding_warning": "⏳ 按小时节点组余额不足", "hourly_funding_suspended": "🛑 按小时节点组已停止",
 	},
 	labels: map[string]string{
 		"charged": "已扣款", "requiredCharge": "所需费用", "currentBalance": "当前余额",
@@ -108,7 +112,7 @@ var chineseCopy = copySet{
 		"node":      "节点",
 		"appliedAt": "发放时间",
 		"starts":    "开始时间", "termCount": "周期数", "refundAmount": "退款", "noCharge": "续费扣款",
-		"replacement": "下个套餐", "addedSquads": "新增节点组",
+		"replacement": "下个套餐", "addedSquads": "新增节点组", "squad": "节点组", "hourlyPrice": "每小时价格",
 	},
 	values: map[string]string{
 		"disabled": "已关闭", "resetFailed": "流量重置未能完成",
@@ -131,10 +135,12 @@ var chineseCopy = copySet{
 		"RESET_FAILED":          "服务商未能完成重置", "REFUND_UNAVAILABLE": "退款未能完成",
 	},
 	guidance: map[string]string{
-		"expiration":          "请前往 VanSail Carpool 重新开通。",
-		"expiry_reminder":     "请在到期前前往 VanSail Carpool 选择新套餐。",
-		"traffic_threshold":   "请前往 VanSail Carpool 查看剩余流量。",
-		"auto_renewal_failed": "请前往 VanSail Carpool 选择新套餐。",
+		"expiration":               "请前往 VanSail Carpool 重新开通。",
+		"expiry_reminder":          "请在到期前前往 VanSail Carpool 选择新套餐。",
+		"traffic_threshold":        "请前往 VanSail Carpool 查看剩余流量。",
+		"auto_renewal_failed":      "请前往 VanSail Carpool 选择新套餐。",
+		"hourly_funding_warning":   "请前往 VanSail Carpool 充值余额，以便支付下一小时费用。",
+		"hourly_funding_suspended": "请前往 VanSail Carpool 充值并重新开通节点组以恢复访问。",
 	},
 }
 

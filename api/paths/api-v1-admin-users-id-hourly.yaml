@@ -1,0 +1,16 @@
+get:
+  security: [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}]
+  tags: [Admin]
+  operationId: getAdminUserHourly
+  summary: Read one member's hourly policy, wallet, usage, and enrollments
+  parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserID'
+  responses:
+    '200':
+      content:
+        application/json:
+          schema: { $ref: '../openapi.yaml#/components/schemas/AdminHourlyView' }
+    '401': { $ref: '../openapi.yaml#/components/responses/Unauthorized' }
+    '403': { $ref: '../openapi.yaml#/components/responses/Forbidden' }
+    '404': { $ref: '../openapi.yaml#/components/responses/NotFound' }
+    '503': { $ref: '../openapi.yaml#/components/responses/ServiceUnavailable' }

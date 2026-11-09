@@ -74,3 +74,9 @@ legacy merchandising. `hourly_policy_test.go` and `hourly_offers_test.go` cover
 strict decoding, paused-sales enforcement terms, stale drafts and invalid prices.
 Persistence commits each configuration audit atomically. Provider composition,
 units and wallet version fences are documented in `docs/hourly-administration.md`.
+
+`user_hourly.go` builds the administrator hourly projection through narrow
+optional reads and exposes no credentials, proxy/period references, generations,
+activation keys, or fingerprints. `user_entitlement_commands_test.go` covers the
+manual grant, entitlement edits, exact refunds, combo replacement, and the
+active-hourly conflict fence.

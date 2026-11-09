@@ -12,6 +12,8 @@ Emby and the existing payment integrations retain their separate boundaries.
 | Renewal | Existing atomic rollover-credit/debit settlement creates one paid successor. Deferred predecessor settlement selects its own purchase periods and cannot revoke successor streams. Native calculation provenance survives the transaction. |
 | Rollover | Native purchase-owned usage is counted once, without apportioning those owned daily bytes a second time at intraday boundaries. Allowance and strict remaining thresholds retain whole-term semantics; the new calculation version is `native-term-v1`. Source exports retain their documented daily resolution. |
 | Refunds | Member zero-use checks include all same-purchase reset periods and earlier imported source history. Unfinished or overflowing accounting cannot qualify. Legacy-only checks also read term history. Administrator suggestions retain the net-paid cap and manual override. |
+| Manual administrator grant | A zero-charge purchase snapshots exact entitlement traffic, reset strategy, and squads together with an `entitlement.create` actor audit, the existing durable `xnode_sync_user` outbox job, and a provider-gated member notice. It never debits the wallet, appends a ledger row, or creates debt; overlapping active/activating/queued terms conflict, and an owner with a preparing/active hourly enrollment is refused before any purchase is written. |
+| Administrator hourly disable | Reuses the existing `xnode_hourly_disable` provider operation with `ActorUserID` set to the administrator and `OwnerUserID` set to the member. It validates ownership, account generation, and current policy version, retains the paid hour, and records a plain disabled stop without the member's voluntary cooldown or funding-suspension classification. |
 | Historical outage extensions | Previously approved extensions retain expiry and queued continuity without resetting the combined quota. Outage observation, new decisions, review APIs, and administration are retired. |
 
 Refunds and rollover use purchase-owned native settlement barriers and retain imported evidence.
@@ -47,6 +49,14 @@ typed node commands, durable speedtest outcomes, certificate-to-inbound bindings
 feature switches and editor diagnostics. Invalid JSON cannot submit a stale parsed
 value. Save failures retain the editor and draft. Configuration previews include
 selected snippets and use the pinned Xray validator.
+
+The administrator hourly workspace reads one owner-scoped projection of policy,
+wallet, extra-traffic preference, current UTC-day accounting usage, and every
+enrollment for the current account generation. It exposes live group names,
+prices, offer availability, status, paid-through, cooldown, activation, disable,
+and creation timestamps only; credentials, proxy and period references, account
+generations, activation keys, and fingerprints never cross the API. This
+projection is read-only and creates no allowance or accounting rows.
 
 ## Subscription contracts
 

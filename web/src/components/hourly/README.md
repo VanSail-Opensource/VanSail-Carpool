@@ -1,11 +1,71 @@
 # Hourly member access
 
-`HourlyPage.vue` is the Charge by hour catalog entry. `useHourly.ts` reads live
+`HourlyPage.vue` is the Charge by hour catalog entry. It no longer renders its
+own "Charge by hour" heading (that duplicates the catalog mode switch); only a
+compact right-aligned refresh toolbar remains. `useHourly.ts` reads live
 owner-scoped state, retains request idempotency keys across uncertain responses,
 tracks the existing durable operation receipts, and refreshes confirmed changes.
-`HourlySummary.vue` presents the balance, UTC daily allowance, account speed
-ceiling and unreserved extra credit. `HourlyAllowanceGraph.vue` renders the free
-allowance as a progress bar with exact used/remaining byte values.
+`hourlyHours.ts` exposes `hourlyRequiredHours(offer, fallback)`: an offer's own
+`requiredHours` (`0` or absent inherits the account-wide `activationHours`) is
+read through an optional cast because the generated client type predates the
+server field. `HourlyPage.vue` passes that effective value to every card, so the
+required-balance hint matches the squad's own eligibility hours. The helper lives
+in its own module so the hosted `HourlyPage.test.ts` module mock of `useHourly`
+does not erase it.
+
+## Allowance and throttling
+
+`HourlySummary.vue` no longer renders the former "Combined speed after
+allowance" and "Unreserved extra credit" metric rows. `HourlyAllowanceGraph.vue`
+owns one segmented purchased-usage bar; every segment width is computed with
+`BigInt` basis points and the trailing free-remaining segment absorbs the
+sub-basis-point remainder:
+
+- Segment order: free used (`--accent`), purchased extra used (a standout green
+  with a continuous wave highlight), purchased extra remaining (the same green at
+  reduced strength), free remaining (`--line`). The green is a local
+  `--hourly-extra` derived from the theme-aware `--success` mixed with a vivid
+  green, so it stays distinct from `--warning` in both themes.
+- Extra purchases enabled: capacity is `freeAllowanceBytes + extraFundedBytes`
+  and usage is `freeUsedBytes + extraUsedBytes` (clamped to capacity). The legend
+  shows used traffic, remaining purchased extra
+  (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used) and
+  the remaining capacity. Caption and accessible `aria-valuetext` use
+  `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`.
+- Turning automatic extra purchases on (false → true) while the previous state
+  was out of allowance plays a one-off decorative green rocket from left to
+  right for ~1.3s (`data-hourly-boost`) and settles into the green purchased
+  segments. It never plays on initial load or within allowance. Reduced motion
+  shows a static green flash instead of travel.
+- Extra purchases disabled and the free allowance exhausted
+  (`freeUsedBytes >= freeAllowanceBytes`, or a zero allowance with recorded
+  usage): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
+  bar area with a depressed cool-gray card: a sagging/flattening waveform, a slow
+  dim breathing pulse and a slow dashed drift, the exact rate, and one short
+  advice line (`hourly.throttledAdvice`; a 00:00 UTC purchase-unavailable
+  variant when the extra price is 0). Reduced motion freezes the sad waveform
+  while keeping the same information.
+- Otherwise the ordinary free-allowance bar renders.
+
+All byte math stays in `BigInt`.
+
+## Fixed-term blocking (outcome 8)
+
+When the server reports `data.legacyBlocked` (active, activating or paid queued
+fixed-term purchase), `HourlyPage.vue` renders `HourlyLegacyBlock.vue` instead of
+the summary, notices and squad cards. The block is a full-bleed animated
+lock/portal that fills the component (`min-height: 12rem`): layered gradient
+surfaces, a slowly rotating conic sweep and pulsing concentric rings behind
+centred content that stays legible in both themes. Copy is intentionally limited
+to `hourly.legacyTitle` plus one short `hourly.legacyBlocked` line; there is no
+separate "why" copy and no in-block refresh button, so the compact page toolbar
+refresh remains the single refresh action. Reduced motion keeps the gradient and
+rings static without pulsing or rotation. Card and extra actions are not rendered,
+and the page guards activation, disable and extra mutations while the flag is set,
+so no hourly call can fire.
+
+## Cards, stock and funding
+
 `HourlySquadCard.vue` reuses the catalog `SquadPricingCard` presentation, so
 Charge by hour squads share the Charge by traffic card geometry, profile facts,
 price treatment and status slot while adding paid-through time, activation
@@ -14,6 +74,14 @@ eligibility, funding suspension and cooldown details. Enable/disable is a compac
 rather than a footer row; enable is green, disable is red, the active `Enabled`
 badge is omitted, and a blocked enable (cooldown, insufficient balance or other
 ineligibility) is grey with a prohibit icon.
+
+When `reasonCode === "capacity"` (shared hourly/fixed-term seat stock is full)
+the card shows the localized refusal reason. If the member already has an
+active or preparing enrollment for that squad, `capacityContinuity` makes clear
+that the next paid hour continues and only new activations are refused. A
+`funding_suspended` enrollment keeps its localized status badge and adds the
+`fundingSuspendedTitle`/`fundingSuspendedBody` notice in `HourlySummary.vue`,
+telling the member to top up and re-enable the squad.
 
 A member without an enrollment or any recorded hourly usage has not charged yet;
 `HourlyPage.vue` then shows only the squad cards, omitting the account summary
@@ -32,5 +100,31 @@ state is persisted in browser storage and no client-side estimate authorizes use
 `HourlyPage.test.ts` supplies hosted consent, disable and legacy-admission
 regressions. Copy belongs to `../../../locales/*/hourly.json`; all API methods and
 decimal-string fields are declared in `../../api/hourly.ts`. The browser-admin
-editor is independent in `../admin/hourly` and uses no Telegram controls. The
-dev-only `hourly-audit.html?first` fixture exercises the never-charged layout.
+editor is independent in `../admin/hourly` and uses no Telegram controls.
+
+## Audit fixture
+
+Open `/fixtures/hourly-audit.html` with the dev server. Existing switches keep
+their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
+`active`, `suspended`, `cooldown`, `activation`, `incompatible`, `extra`,
+`price-rise`, `no-extra`, `pending`, `conflict`, `queue`, `failed`, `first`,
+`catalog`, `legacy`). New switches:
+
+- `out-of-allowance`: free allowance exhausted, extra disabled → throttle meter.
+- `allowance-zero`: zero daily allowance with recorded usage → throttle meter.
+- `extra-off`: combine with `extra` to keep automatic purchases off while the
+  synthetic account still carries existing purchased credit.
+- `offer-hours`: per-offer required hours (24, 72, inherit 168) with matching
+  required balances.
+- `capacity`: all shared seats used and every card refused for `capacity`.
+- `capacity-preparing`: same stock state with a preparing enrollment on the first
+  squad to exercise next-hour continuity copy.
+- `reduced-motion`: overrides `matchMedia` before mount so Motion Vue reports the
+  reduced-motion branch.
+
+Use `extra` together with `out-of-allowance` to inspect the purchased-usage bar
+with `extraEnabled` true, and `zh`/`light` for locale and theme parity. The
+`out-of-allowance` fixture keeps existing purchased credit while the preference
+is off, so turning the switch on there (confirming the dialog) exercises the
+rocket boost and its settle into the green purchased segments. Add
+`reduced-motion` to see the static flash/segments instead.

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestPAYGConversionPreservesPaidTermsAndFiltersRenewal(t *testing.T) {
+func TestPAYGConversionPreservesPaidTermsAndRenewalSelection(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 	user := createTestUser(t, s, 80491)
@@ -36,8 +36,8 @@ func TestPAYGConversionPreservesPaidTermsAndFiltersRenewal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(renewed.Purchases) != 1 || !slices.Equal(renewed.Purchases[0].SquadUUIDs, []string{"kept"}) {
-		t.Fatal("renewal retained PAYG squad", renewed)
+	if len(renewed.Purchases) != 1 || !equalStrings(renewed.Purchases[0].SquadUUIDs, []string{"kept", "converted"}) {
+		t.Fatal("billing-mode edit shrank the owned renewal selection", renewed)
 	}
 }
 

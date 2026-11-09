@@ -53,7 +53,8 @@ func (s *Server) adminSaveHourlyOffer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	offer, err := s.deps.Admin.SaveHourlyOffer(r.Context(), currentUser(r).ID,
-		model.HourlyOffer{GroupID: chiURLParam(r, "groupId"), Enabled: *input.Enabled, HourlyPriceTXBMinor: *input.HourlyPriceTXBMinor}, *input.Revision)
+		model.HourlyOffer{GroupID: chiURLParam(r, "groupId"), Enabled: *input.Enabled,
+			HourlyPriceTXBMinor: *input.HourlyPriceTXBMinor, RequiredHours: *input.RequiredHours}, *input.Revision)
 	if err != nil {
 		s.hourlyAdminFailure(w, r, err)
 		return

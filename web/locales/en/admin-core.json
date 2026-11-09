@@ -82,6 +82,8 @@
     "saveSquad": "Save squad",
     "profileSection": "Network profile",
     "billingSection": "Billing and availability",
+    "billingModeFixedTerm": "Fixed-term plan",
+    "hourlySeparateHint": "Charge by hour is configured in the hourly workspace.",
     "features": {
       "heading": "Features",
       "hint": "Describe what members can expect. Features appear in the order shown.",

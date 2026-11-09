@@ -25,6 +25,8 @@ func TestNewNotificationFormatsBothLocales(t *testing.T) {
 		{jobpayload.UserEventMemberRefundCompleted, map[string]string{FactCombo: "Pro", FactAmount: "1250", FactBalance: "6250", FactTime: when}, [2]string{"Combo refunded", "套餐已退款"}},
 		{jobpayload.UserEventMemberRefundFailed, map[string]string{FactCombo: "Pro", FactReason: "REFUND_TRAFFIC_USED", FactTime: when}, [2]string{"Combo refund did not complete", "套餐退款未完成"}},
 		{jobpayload.UserEventProvisionConflict, map[string]string{FactCancelledCombos: "Pro_[1]", FactAmount: "1250", FactBalance: "5000", FactTime: when}, [2]string{"Combo access refunded", "套餐费用已退还"}},
+		{jobpayload.UserEventHourlyFundingWarning, map[string]string{FactSquad: "Squad_A", FactHourlyPrice: "100", FactBalance: "50", FactTime: when}, [2]string{"Hourly squad funding is low", "按小时节点组余额不足"}},
+		{jobpayload.UserEventHourlyFundingSuspended, map[string]string{FactSquad: "Squad_A", FactHourlyPrice: "100", FactBalance: "0", FactTime: when}, [2]string{"Hourly squad stopped", "按小时节点组已停止"}},
 	}
 	for _, test := range tests {
 		for index, locale := range []string{"en", "zh-CN"} {

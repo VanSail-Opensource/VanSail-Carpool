@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import type { HourlySquad } from '@/api/hourly'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import OperationStatusNotice from '@/components/common/OperationStatusNotice.vue'
@@ -8,6 +8,8 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import SquadActivationDialog from '@/components/catalog/SquadActivationDialog.vue'
 import { localizedError, useI18n } from '@/i18n'
 import { txbInputFromMinor } from '@/utils/format'
+import { hourlyRequiredHours } from './hourlyHours'
+import HourlyLegacyBlock from './HourlyLegacyBlock.vue'
 import HourlySummary from './HourlySummary.vue'
 import HourlySquadCard from './HourlySquadCard.vue'
 import { useHourly } from './useHourly'
@@ -35,6 +37,9 @@ function positive(value: string | undefined): boolean {
     return false
   }
 }
+function hoursFor(item: HourlySquad): number {
+  return hourlyRequiredHours(item.offer, data.value?.policy.policy.activationHours ?? 0)
+}
 const operationMessage = computed(() => {
   const receipt = hourly.operation.receipt.value
   if (!receipt) return ''
@@ -44,7 +49,16 @@ const operationMessage = computed(() => {
   const key = `hourly.result.${receipt.errorCode ?? ''}`
   return t(key) !== key ? t(key) : localizedError({ code: receipt.errorCode }, 'hourly.applicationFailed')
 })
+// A fixed-term purchase locks every hourly mutation, including stale dialogs.
+watch(() => data.value?.legacyBlocked === true, blocked => {
+  if (!blocked) return
+  codeOpen.value = false
+  extraOpen.value = false
+  activating.value = null
+  disabling.value = null
+}, { immediate: true })
 async function activate(item: HourlySquad): Promise<void> {
+  if (data.value?.legacyBlocked) return
   if (item.squad.activationRequired) { activating.value = item; codeOpen.value = true }
   else await hourly.activate(item)
 }
@@ -52,27 +66,32 @@ async function submitCode(code: string): Promise<void> {
   if (activating.value && await hourly.activate(activating.value, code)) { codeOpen.value = false; activating.value = null }
 }
 async function disable(): Promise<void> {
+  if (data.value?.legacyBlocked) return
   if (disabling.value && await hourly.disable(disabling.value)) disabling.value = null
 }
 async function extra(enabled: boolean): Promise<void> {
+  if (data.value?.legacyBlocked) return
   if (enabled) extraOpen.value = true
   else await hourly.extra(false)
 }
-async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extraOpen.value = false }
+async function enableExtra(): Promise<void> {
+  if (data.value?.legacyBlocked) return
+  if (await hourly.extra(true)) extraOpen.value = false
+}
 </script>
 
 <template>
   <section class="hourly-page" :aria-label="t('hourly.title')">
-    <header class="hourly-page__heading"><div><h2>{{ t('hourly.title') }}</h2></div><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="hourly.refreshing.value" @click="hourly.refresh()" /></header>
+    <header class="hourly-page__toolbar"><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="hourly.refreshing.value" @click="hourly.refresh()" /></header>
     <div v-if="loading" aria-busy="true"><SkeletonBlock height="12rem" /><SkeletonBlock height="9rem" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton variant="link" :label="t('common.tryAgain')" @click="hourly.refresh()" /></InlineNotice>
-    <template v-if="data">
+    <HourlyLegacyBlock v-if="data?.legacyBlocked" />
+    <template v-else-if="data">
       <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra" />
-      <InlineNotice v-if="data.legacyBlocked">{{ t('hourly.legacyBlocked') }}</InlineNotice>
-      <InlineNotice v-else-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
+      <InlineNotice v-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
       <p v-if="!data.squads.length" class="hourly-page__terms hourly-page__empty">{{ t('hourly.empty') }}</p>
       <div v-else class="hourly-page__squads">
-        <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :legacy-blocked="data.legacyBlocked" :hours="data.policy.policy.activationHours" @activate="activate(item)" @disable="disabling = item" />
+        <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :hours="hoursFor(item)" @activate="activate(item)" @disable="disabling = item" />
       </div>
     </template>
     <InlineNotice v-if="actionError" tone="warning">{{ actionError }}</InlineNotice>
@@ -84,15 +103,15 @@ async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extr
 </template>
 
 <style scoped>
-.hourly-page { display: grid; gap: .6rem; min-width: 0; }
-.hourly-page__heading { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; padding-top: .75rem; }
-h2 { margin: 0; font-size: 1.15rem; font-weight: 650; } .hourly-page__terms { margin: .4rem 0 0; color: var(--text-muted); font-size: .82rem; line-height: 1.6; }
+.hourly-page { display: grid; gap: 0.6rem; min-width: 0; }
+.hourly-page__toolbar { display: flex; justify-content: flex-end; padding-top: 0.35rem; }
+.hourly-page__terms { margin: 0.4rem 0 0; color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; }
 .hourly-page__empty { padding-block: 1.5rem; text-align: center; }
-.hourly-page__squads { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
+.hourly-page__squads { display: grid; gap: 0.45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
 .hourly-page__squads > * { animation: hourly-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
 @media (min-width: 900px) {
-  .hourly-page__squads { display: block; column-width: 20rem; column-gap: .65rem; }
-  .hourly-page__squads > * { display: flex; width: 100%; margin-bottom: .65rem; break-inside: avoid; }
+  .hourly-page__squads { display: block; column-width: 20rem; column-gap: 0.65rem; }
+  .hourly-page__squads > * { display: flex; width: 100%; margin-bottom: 0.65rem; break-inside: avoid; }
 }
 @keyframes hourly-component { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .hourly-page__squads > * { animation: none; } }

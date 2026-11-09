@@ -25,6 +25,23 @@ A worker records intent before starting a provider scan or drop. A scan-start in
 
 The active purchase card obtains server-owned refund quotes. Refund commands retain their idempotency keys until accepted, then poll the owner-scoped receipt. An eligible Refund action replaces automatic renewal; all other states keep the existing renewal control. `pending_review` and `partial` receipts block further member mutations and explicitly forbid retry while an administrator reconciles the provider outcome. Historical reset receipts remain owner-readable without restoring a reset action.
 
+## Hourly funding notices
+
+Hourly squad renewal is funded an hour at a time from the member wallet. Before
+the paid hour ends, the existing five-minute notification scan queues a
+`hourly_funding_warning` when the squad's current hourly price exceeds the
+balance; owners are not warned when the balance still covers the next hour. If
+settlement then cannot fund the interval, the same transaction that changes the
+enrollment to `funding_suspended` writes the definitive
+`hourly_funding_suspended` notice. Both notices are durable user events with
+per-enrollment/per-boundary event keys, localized EN and zh-CN copy, and facts
+limited to the squad name, hourly price, balance and time. A suspended
+enrollment cannot resume itself; the member must top up and start a new
+activation. Each offer also owns a `requiredHours` funding threshold
+(`0` inherits `policy.activationHours`), which the member view uses for
+`requiredBalance` and the activation minimum. The value is stored by migration
+`00047_hourly_offer_required_hours.sql`; older offers remain at zero.
+
 ## Verification
 
 CI owns migration, transaction-failure, idempotency-conflict, compensation, ambiguity, quiesce/restore, signed-handle, and queue-shifting tests. Local verification is limited to formatting, structure, lint, type/build, vet, and diff checks; provider and Telegram device behavior remains a deployed staging gate.

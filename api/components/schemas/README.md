@@ -130,3 +130,5 @@ The optional global setting field preserves older full-document writers.
 `emby-connection.yaml` defines the write-only encrypted integration connection view and version-checked write, with explicit URL/token length limits and no secret readback.
 
 `hourly-policy.yaml`, `hourly-commerce.yaml`, and `hourly-view.yaml` define exact decimal-string accounting units, independent offers, nullable paid boundaries, explicit extra-credit consent, and owner-scoped eligibility projections.
+
+`admin-hourly.yaml` defines the zero-charge manual grant request, the credential-free administrator hourly squad projection, and its owner-scoped view; it contains no proxy/period references, generations, activation keys, or fingerprints.

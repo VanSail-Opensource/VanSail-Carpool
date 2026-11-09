@@ -329,3 +329,10 @@ owner-bound through the catalog; owned renewal and reward entry points stay sepa
 cleanup. `authentication.go` returns `409 ACCOUNT_RECOVERY_PENDING` without a new
 session: authenticated activity cancels deletion evidence, while an administrator
 must review any earlier irreversible changes before access can resume.
+
+`admin_user_entitlements.go` serves the audited zero-charge manual grant at
+`POST /api/v1/admin/users/{userId}/entitlements`, mapping overlap and active
+hourly conflicts to explicit 409 codes without a wallet movement.
+`admin_user_hourly.go` serves the owner-scoped administrator hourly projection
+and the administrator disable receipt endpoint; neither exposes credentials,
+proxy/period references, activation keys, or Telegram controls.

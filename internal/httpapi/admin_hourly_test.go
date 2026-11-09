@@ -90,8 +90,11 @@ func TestHourlyAdministrationRequiresNativeScopeAndCurrentTerms(t *testing.T) {
 	}
 	call("PUT", "hourly-policy", writer, string(body), http.StatusUnprocessableEntity)
 	call("GET", "hourly-offers", reader, "", http.StatusOK)
-	call("PUT", "hourly-offers/missing", writer, `{"revision":0,"enabled":true,"hourlyPriceTXBMinor":"1"}`, http.StatusBadRequest)
-	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"-1"}`, http.StatusUnprocessableEntity)
+	call("PUT", "hourly-offers/missing", writer, `{"revision":0,"enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":0}`, http.StatusBadRequest)
+	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"-1","requiredHours":0}`, http.StatusUnprocessableEntity)
+	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":-1}`, http.StatusUnprocessableEntity)
+	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":2562048}`, http.StatusUnprocessableEntity)
+	call("PUT", "hourly-offers/missing", writer, `{"revision":"0","enabled":true,"hourlyPriceTXBMinor":"1","requiredHours":0}`, http.StatusNotFound)
 	// Complete replacements must distinguish explicit false/zero from omitted
 	// or null values, especially cooldown, offer availability and pricing.
 	for _, field := range []string{"salesEnabled", "dailyAllowanceBytes", "reducedRateBytesPerSecond", "extraGBPriceTXBMinor", "activationHours", "cooldownSeconds"} {
@@ -119,9 +122,9 @@ func TestHourlyAdministrationRequiresNativeScopeAndCurrentTerms(t *testing.T) {
 	for _, input := range []string{`{}`, `{"version":null,"policy":{}}`, `{"version":"","policy":null}`} {
 		call("PUT", "hourly-policy", writer, input, http.StatusBadRequest)
 	}
-	for _, field := range []string{"revision", "enabled", "hourlyPriceTXBMinor"} {
+	for _, field := range []string{"revision", "enabled", "hourlyPriceTXBMinor", "requiredHours"} {
 		for _, null := range []bool{false, true} {
-			partial := map[string]any{"revision": "0", "enabled": false, "hourlyPriceTXBMinor": "0"}
+			partial := map[string]any{"revision": "0", "enabled": false, "hourlyPriceTXBMinor": "0", "requiredHours": 0}
 			delete(partial, field)
 			if null {
 				partial[field] = nil

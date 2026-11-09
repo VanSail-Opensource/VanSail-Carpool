@@ -5,15 +5,17 @@ import SquadPricingCard from '@/components/catalog/SquadPricingCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
-const props = defineProps<{ item: HourlySquad; busy: boolean; salesEnabled: boolean; legacyBlocked: boolean; hours: number }>()
+const props = defineProps<{ item: HourlySquad; busy: boolean; salesEnabled: boolean; hours: number }>()
 defineEmits<{ activate: []; disable: [] }>()
 const { t } = useI18n()
 const enrolled = computed(() => props.item.enrollment?.status === 'active' || props.item.enrollment?.status === 'preparing')
-const canActivate = computed(() => !enrolled.value && props.salesEnabled && !props.legacyBlocked && props.item.ready && props.item.offer.enabled)
+const canActivate = computed(() => !enrolled.value && props.salesEnabled && props.item.ready && props.item.offer.enabled)
 const blocked = computed(() => !enrolled.value && !canActivate.value)
+// A preparing enrollment can coexist with a full stock limit: the paid hour
+// continues while only new activations are refused.
+const capacityContinues = computed(() => enrolled.value && props.item.reasonCode === 'capacity')
 const reason = computed(() => {
   if (props.item.cooldownUntil && Date.parse(props.item.cooldownUntil) > Date.now()) return t('hourly.cooldownUntil', { at: formatDateTime(props.item.cooldownUntil) })
-  if (props.legacyBlocked) return t('hourly.legacyShort')
   const key = `hourly.reasons.${props.item.reasonCode}`
   return props.item.reasonCode && t(key) !== key ? t(key) : t('hourly.notReady')
 })
@@ -28,7 +30,8 @@ const reason = computed(() => {
     <div class="hourly-squad__facts">
       <span v-if="item.enrollment?.paidThrough"><UIcon name="i-ph-calendar-check" aria-hidden="true" />{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</span>
       <span v-if="!enrolled && item.requiredBalance"><UIcon name="i-ph-wallet" aria-hidden="true" />{{ t('hourly.requiredBalance', { price: formatMoney(item.requiredBalance), hours }) }}</span>
-      <span v-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
+      <span v-if="capacityContinues" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ t('hourly.capacityContinuity') }}</span>
+      <span v-else-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
       <UButton
         size="sm"
         square
@@ -49,15 +52,15 @@ const reason = computed(() => {
 
 <style scoped>
 .hourly-squad { align-self: start; }
-.hourly-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
-.hourly-squad__price strong { font: 600 .95rem var(--font-mono); white-space: nowrap; }
-.hourly-squad__price small { color: var(--text-muted); font-size: .65rem; white-space: nowrap; }
-.hourly-squad__facts { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .8rem; color: var(--text-muted); font-size: .74rem; line-height: 1.45; }
-.hourly-squad__facts > span { display: inline-flex; align-items: center; gap: .28rem; min-width: 0; }
-.hourly-squad__facts > span .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: .85rem; }
+.hourly-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: 0.2rem; }
+.hourly-squad__price strong { font: 600 0.95rem var(--font-mono); white-space: nowrap; }
+.hourly-squad__price small { color: var(--text-muted); font-size: 0.65rem; white-space: nowrap; }
+.hourly-squad__facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.8rem; color: var(--text-muted); font-size: 0.74rem; line-height: 1.45; }
+.hourly-squad__facts > span { display: inline-flex; align-items: center; gap: 0.28rem; min-width: 0; }
+.hourly-squad__facts > span .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: 0.85rem; }
 .hourly-squad__reason { color: var(--warning); }
 .hourly-squad__reason .iconify { color: inherit; }
 .hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; width: 2.25rem; min-width: 2.25rem; height: 2.25rem; min-height: 2.25rem; padding: 0; }
 .hourly-squad__toggle--blocked { color: var(--text-faint); background: color-mix(in srgb, var(--text-faint) 12%, transparent); }
-.hourly-squad__toggle--blocked:disabled { opacity: .85; }
+.hourly-squad__toggle--blocked:disabled { opacity: 0.85; }
 </style>

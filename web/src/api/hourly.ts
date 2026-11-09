@@ -32,8 +32,8 @@ export const hourlyApi = {
   savePolicy: (version: string, policy: HourlyPolicy) =>
     request<HourlyPolicySnapshot>('/api/v1/admin/hourly-policy', { method: 'PUT', body: { version, policy } }),
   offers: () => request<HourlyOffer[]>('/api/v1/admin/hourly-offers', { cache: 'no-store' }),
-  saveOffer: (groupId: string, revision: string, enabled: boolean, hourlyPriceTXBMinor: string) =>
+  saveOffer: (groupId: string, revision: string, enabled: boolean, hourlyPriceTXBMinor: string, requiredHours: number) =>
     request<HourlyOffer>(`/api/v1/admin/hourly-offers/${encodeURIComponent(groupId)}`, {
-      method: 'PUT', body: { revision, enabled, hourlyPriceTXBMinor },
+      method: 'PUT', body: { revision, enabled, hourlyPriceTXBMinor, requiredHours },
     }),
 }

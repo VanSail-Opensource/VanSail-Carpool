@@ -71,6 +71,44 @@ func TestAutomaticRenewalRetainsRepricedHiddenSquads(t *testing.T) {
 	}
 }
 
+// A later billing-mode edit is merchandising, not ownership: both an included
+// squad and a purchased add-on stay in the owned renewal selection after their
+// product rows report PAYG.
+func TestRenewalRetainsOwnedSquadsAfterBillingModeEdits(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	repository := renewalTestRepository()
+	repository.quote.AddonSquadUUIDs = []string{"retained"}
+	repository.addons = []model.SquadProduct{
+		{GroupID: "core-squad", BillingMode: "payg"},
+		{GroupID: "retained", BillingMode: "payg", Visible: false},
+	}
+	remote := renewalTestRemote()
+	remote.squads = append(remote.squads, RemoteSquad{UUID: "retained", Name: "Retained"})
+	remote.accessible["retained"] = []string{"node-1"}
+	service := newCatalogServiceForTest(repository, remote)
+	user := model.User{ID: "user", OnboardingState: "complete"}
+	quote, err := service.RenewalQuote(ctx, user, "purchase", 1)
+	if err != nil || len(quote.AddonSquadUUIDs) != 1 || quote.AddonSquadUUIDs[0] != "retained" || len(quote.AccessibleNodes) != 1 {
+		t.Fatalf("RenewalQuote(owned PAYG edits) = (%+v, %v)", quote, err)
+	}
+}
+
+// New-sale visibility is unchanged: an owned renewal keeps PAYG-marked products,
+// but the storefront still hides them as standalone add-ons.
+func TestStorefrontStillExcludesPAYGAddons(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	repository := renewalTestRepository()
+	repository.addons = []model.SquadProduct{{GroupID: "payg-addon", Name: "Metered", Visible: true, BillingMode: "payg"}}
+	remote := renewalTestRemote()
+	remote.squads = append(remote.squads, RemoteSquad{UUID: "payg-addon", Name: "Metered"})
+	public, err := newCatalogServiceForTest(repository, remote).Catalog(ctx)
+	if err != nil || len(public.Addons) != 0 {
+		t.Fatalf("storefront exposed PAYG add-on: (%+v, %v)", public, err)
+	}
+}
+
 func TestRenewalNodesIncludeUnlistedOwnedSquads(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

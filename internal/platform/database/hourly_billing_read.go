@@ -123,15 +123,6 @@ func (s *Store) ListHourlyEnrollments(ctx context.Context, owner string, generat
 }
 
 func hourlyBillingOfferTx(ctx context.Context, tx *sql.Tx, group string) (model.HourlyOffer, error) {
-	var offer model.HourlyOffer
-	var enabled int
-	err := tx.QueryRowContext(ctx, `SELECT group_id,enabled,hourly_price_minor,revision,created_at,updated_at
-		FROM hourly_offers WHERE group_id=$1 FOR SHARE`, group).Scan(&offer.GroupID, &enabled, &offer.HourlyPriceTXBMinor,
-		&offer.Revision, &offer.CreatedAt, &offer.UpdatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return offer, ErrNotFound
-	}
-	offer.Enabled, offer.HourlyPrice = enabled == 1, model.TXBMoney(offer.HourlyPriceTXBMinor)
-	offer.CreatedAt, offer.UpdatedAt = offer.CreatedAt.UTC(), offer.UpdatedAt.UTC()
-	return offer, err
+	return scanHourlyOffer(tx.QueryRowContext(ctx, `SELECT `+hourlyOfferColumns+
+		` FROM hourly_offers WHERE group_id=$1 FOR SHARE`, group))
 }

@@ -57,6 +57,9 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 	case ActivateOperation:
 		return s.activateOperation(ctx, operation, item, target)
 	case DisableOperation:
+		if target.Admin {
+			return s.adminDisableOperation(ctx, operation, item, target)
+		}
 		return s.disableOperation(ctx, operation, item, target)
 	default:
 		return s.finish(ctx, operation, item, providerops.StatusFailed, "HOURLY_OPERATION_INVALID")
@@ -65,7 +68,7 @@ func (s *Service) HandleProviderOperation(ctx context.Context, operation provide
 
 func (s *Service) decode(ctx context.Context, op providerops.Operation, job model.OutboxJob) (operationTarget, error) {
 	var target operationTarget
-	if s.vault == nil || op.OwnerUserID == "" || op.OwnerUserID != op.ActorUserID {
+	if s.vault == nil || op.OwnerUserID == "" {
 		return target, database.ErrConflict
 	}
 	sealed, err := payload.TargetID(job, "sealedTarget")
@@ -79,6 +82,11 @@ func (s *Service) decode(ctx context.Context, op providerops.Operation, job mode
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	if decoder.Decode(&target) != nil || decoder.Decode(new(any)) != io.EOF || target.Generation < 0 || target.GroupID == "" || targetFingerprint(op.Receipt.Kind, op.OwnerUserID, target) != op.RequestFingerprint {
+		return target, database.ErrConflict
+	}
+	// Member commands are owner-authored. Only the narrow administrator disable
+	// may carry a distinct actor, and its sealed target must say so.
+	if op.ActorUserID != op.OwnerUserID && !(op.Receipt.Kind == DisableOperation && target.Admin) {
 		return target, database.ErrConflict
 	}
 	user, err := s.store.UserByID(ctx, op.OwnerUserID)

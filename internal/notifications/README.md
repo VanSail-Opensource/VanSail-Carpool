@@ -17,7 +17,8 @@
   TXB and instructions to choose a new username. Shared Markdown truncation keeps
   bold spans and mention links complete; migration 049 retries only known parser
   rejections that Telegram definitively did not deliver.
-- `scanner.go` evaluates the 48-hour reminder, strict 90% notice boundary, and strict-above-95% automatic-reset handoff.
+- `scanner.go` evaluates the 48-hour reminder, strict 90% notice boundary, and strict-above-95% automatic-reset handoff. It also calls the optional hourly funding scan when the repository supports it, so existing reminder/traffic mocks keep compiling.
+- Hourly funding notices name the squad and show its hourly price, current balance and the relevant time. A warning precedes the unpaid hour; a definitive suspension notice is written by the settlement transaction that stopped access. No provider or policy codes appear in the copy.
 - Automatic-reset success is provider-gated; insufficient balance disables the preference in the reset transaction, while definitive failure produces a localized refund notice.
 - Queued purchases and renewal batches acknowledge the TXB debit without claiming access is active. Add-on success waits for user sync; cancellation, manual reset, first-term refund, and automatic-renewal failure cards report final financial or access outcomes.
 - `format_new_test.go` covers both locales for every new event, dynamic MarkdownV2 escaping, and localized failure reasons.

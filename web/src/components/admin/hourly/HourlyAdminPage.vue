@@ -43,9 +43,9 @@ async function perform(action: () => Promise<void>): Promise<void> {
 function savePolicy(next: HourlyPolicy): Promise<void> {
   return perform(async () => { policy.value = await hourlyApi.savePolicy(policy.value!.version, next) })
 }
-function saveOffer(groupId: string, revision: string, enabled: boolean, minor: string): Promise<void> {
+function saveOffer(groupId: string, revision: string, enabled: boolean, minor: string, requiredHours: number): Promise<void> {
   return perform(async () => {
-    const next = await hourlyApi.saveOffer(groupId, revision, enabled, minor)
+    const next = await hourlyApi.saveOffer(groupId, revision, enabled, minor, requiredHours)
     offers.value = [...offers.value.filter(value => value.groupId !== groupId), next]
   })
 }

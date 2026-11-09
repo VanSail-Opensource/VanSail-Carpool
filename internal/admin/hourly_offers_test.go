@@ -50,9 +50,9 @@ func TestHourlyOffersStaySeparateAndDoNotRequireSalesToConfigure(t *testing.T) {
 	if err != nil || len(offers) != 0 || settingsRepo.saves != 0 {
 		t.Fatal("reading offers seeded pricing or enabled sales", err)
 	}
-	next := model.HourlyOffer{GroupID: "independent-group", Enabled: true, HourlyPriceTXBMinor: 123}
+	next := model.HourlyOffer{GroupID: "independent-group", Enabled: true, HourlyPriceTXBMinor: 123, RequiredHours: 2}
 	saved, err := service.SaveHourlyOffer(ctx, "admin", next, 0)
-	if err != nil || saved.Revision != 1 || saved.HourlyPrice.Minor != "123" || repo.saves != 1 || len(repo.savedSquadInputs) != 0 {
+	if err != nil || saved.Revision != 1 || saved.HourlyPrice.Minor != "123" || saved.RequiredHours != 2 || repo.saves != 1 || len(repo.savedSquadInputs) != 0 {
 		t.Fatal("hourly configuration mutated legacy merchandising", err)
 	}
 	read, err := service.HourlyOffer(ctx, next.GroupID)
@@ -78,13 +78,15 @@ func TestHourlyOfferValidationRejectsUnavailableAndOverflowingPrices(t *testing.
 		{GroupID: "group", Enabled: true},
 		{GroupID: "group", HourlyPriceTXBMinor: -1},
 		{GroupID: "group", Enabled: true, HourlyPriceTXBMinor: math.MaxInt64},
+		{GroupID: "group", Enabled: true, HourlyPriceTXBMinor: 1, RequiredHours: -1},
+		{GroupID: "group", Enabled: true, HourlyPriceTXBMinor: 1, RequiredHours: model.MaxHourlyRequiredHours + 1},
 		{GroupID: " ", Enabled: true, HourlyPriceTXBMinor: 1},
 	} {
 		if _, err := service.SaveHourlyOffer(ctx, "admin", next, 0); !errors.Is(err, model.ErrHourlyPolicyInvalid) || repo.saves != 0 {
 			t.Fatal("invalid offer reached persistence", err)
 		}
 	}
-	valid := model.HourlyOffer{GroupID: "group", Enabled: true, HourlyPriceTXBMinor: 1}
+	valid := model.HourlyOffer{GroupID: "group", Enabled: true, HourlyPriceTXBMinor: 1, RequiredHours: model.MaxHourlyRequiredHours}
 	if _, err := service.SaveHourlyOffer(ctx, "admin", valid, -1); !errors.Is(err, model.ErrHourlyPolicyInvalid) || repo.saves != 0 {
 		t.Fatal("negative revision reached persistence", err)
 	}

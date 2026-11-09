@@ -36,6 +36,9 @@
     "conflict": "已有其他变更先被记录。请刷新资料后重试。",
     "entitlements": "权益",
     "entitlementsHint": "活跃和排队中的访问、附加项及不可变价格依据。",
+    "addFixedTermPlan": "添加固定期限套餐",
+    "addedAt": "添加于 {date}", "listPrice": "原价 {amount}", "squadCount": "{count} 个节点组", "invalidTrafficBytes": "请输入正整数字节数。",
+    "manualGrant": { "title": "添加固定期限套餐", "hint": "立即创建零费用、可审计的套餐。不会向成员扣费。", "warning": "这是可审计的手动授予。", "warningHint": "套餐会立即记录，不产生支付或账本扣款。", "squadsHint": "留空表示授予套餐内包含的全部节点组。", "submit": "添加套餐", "notice": "固定期限套餐已添加。", "overlap": "该有效期与现有固定期限套餐重叠。请先核对成员当前套餐再重试。", "hourlyConflict": "该成员有活跃的小时计费启用。请先停用后再授予固定期限套餐。" },
     "entitlementFacts": "{traffic} 流量 / {cadence} / {squads} 个节点组",
     "entitlementStatus": {
       "activating": "激活中",
@@ -50,7 +53,7 @@
       "WEEK": "每周",
       "MONTH_ROLLING": "滚动月度"
     },
-    "edit": "编辑权益",
+    "edit": "编辑条款",
     "refund": "退款",
     "noEntitlements": "没有权益",
     "noEntitlementsHint": "该成员尚无访问记录。",

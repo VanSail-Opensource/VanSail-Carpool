@@ -35,10 +35,10 @@ func TestHourlyProrationUsesExactMinorUnits(t *testing.T) {
 		}
 	}
 	policy := model.DefaultHourlyPolicy()
-	if _, err := model.HourlyActivationMinimum(policy, math.MaxInt64); err == nil {
+	if _, err := model.HourlyActivationMinimum(policy, 0, math.MaxInt64); err == nil {
 		t.Fatal("overflowed activation threshold")
 	}
-	if got, err := model.HourlyActivationMinimum(policy, 101); err != nil || got != 16968 {
+	if got, err := model.HourlyActivationMinimum(policy, 0, 101); err != nil || got != 16968 {
 		t.Fatalf("eligibility = %d, %v", got, err)
 	}
 	local := base.Add(45 * time.Minute).In(time.FixedZone("fixture", 8*60*60))

@@ -99,6 +99,7 @@ HourlySquadView: {
         "format": "date-time"
       },
       "requiredBalance": {
+        "description": "hourlyPrice multiplied by the squad's effective required hours: offer.requiredHours when positive, otherwise policy.activationHours.",
         "anyOf": [
           {
             "$ref": "../../openapi.yaml#/components/schemas/Money"

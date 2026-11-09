@@ -49,6 +49,9 @@ func newEventFields(kind string, copy copySet, facts map[string]string, location
 	case jobpayload.UserEventProvisionConflict:
 		return requiredFields(copy, facts, pair("cancelledCombos", FactCancelledCombos), moneyPair("refunded", FactAmount),
 			moneyPair("balance", FactBalance), datePair("time", FactTime, location))
+	case jobpayload.UserEventHourlyFundingWarning, jobpayload.UserEventHourlyFundingSuspended:
+		return requiredFields(copy, facts, pair("squad", FactSquad), moneyPair("hourlyPrice", FactHourlyPrice),
+			moneyPair("balance", FactBalance), datePair("time", FactTime, location))
 	default:
 		return nil, errors.New("unsupported notification event")
 	}

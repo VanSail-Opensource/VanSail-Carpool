@@ -11,9 +11,12 @@ import (
 )
 
 // renewalAddonsTx retains purchased squad identities and prices them from the
-// current sparse overrides. Visibility controls new sales, not owned renewals;
-// an absent override means the catalog's default zero price. The catalog service
-// must still validate every retained identity against the queued live provider.
+// current sparse overrides. Visibility and billing mode control new sales, not
+// owned renewals: a purchased add-on stays in the renewal selection after its
+// product is re-marked PAYG. An absent override means the catalog's default zero
+// price; a pricing contract still supplies the accepted charged price. The
+// catalog service must still validate every retained identity against the queued
+// live provider.
 func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, excludedAddonIDs []string) ([]model.SquadProduct, error) {
 	excluded := make(map[string]struct{}, len(excludedAddonIDs))
 	for _, id := range excludedAddonIDs {
@@ -23,7 +26,7 @@ func renewalAddonsTx(ctx context.Context, tx *sql.Tx, purchaseID string, exclude
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT a.group_id,CASE WHEN EXISTS(SELECT 1 FROM pricing_contracts c WHERE c.purchase_id=a.purchase_id) THEN a.charged_txb_minor ELSE COALESCE(o.price_txb_minor,0) END
 		FROM purchase_addons a LEFT JOIN squad_product_overrides o ON o.group_id=a.group_id
-		WHERE a.purchase_id=$1 AND COALESCE(o.billing_mode,'combo')='combo' ORDER BY a.group_id`, purchaseID)
+		WHERE a.purchase_id=$1 ORDER BY a.group_id`, purchaseID)
 	if err != nil {
 		return nil, fmt.Errorf("load current renewal add-ons: %w", err)
 	}

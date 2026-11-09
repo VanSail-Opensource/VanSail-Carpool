@@ -76,9 +76,11 @@ Unallocated alone cannot invent attribution. Colors are assigned across both
 kinds before metric filtering, with a bounded 256-ID
 component-local registry for refreshes. The eight curated colors are followed by
 deterministic mint-adjacent HSL colors, so any number of squads stays distinct
-instead of repeating a palette entry. Stable accessors, IDs, 220px dimensions and
-explicit zero duration on both Unovis components prevent animated mode updates;
-the same mounted SVG survives even when a selected measure hides the chart.
+instead of repeating a palette entry. Stable accessors, IDs and 220px dimensions
+keep one mounted SVG across measure switches. Both Unovis components tween a
+visible switch over 320 ms; `useMotionPreferences().reducedMotion` forces
+duration 0, and a measure that hides the chart renders at duration 0 so
+re-showing settles from a stable measured size instead of a zero-width arc.
 
 `usageBreakdownSegments.test.ts` covers exact conservation, large/fractional costs,
 combined counts, identity collisions, named small/idle/ended squads, shared extras,
@@ -87,8 +89,9 @@ The response boundary requires exact visible positive counts when that measure
 has no omitted amount; positive omissions allow only a conservative lower bound.
 `usage-breakdown-audit.html?unallocated&invalid-positive-count` demonstrates
 rejection of invented attribution before any chart can render.
-`UsageBreakdownPie.test.ts` checks twenty mode changes without remounting, explicit
-animation settings, tiny positive percentages and browser
+`UsageBreakdownPie.test.ts` checks twenty mode changes without remounting, the
+320 ms visible-switch duration, zero duration under reduced motion and while a
+measure hides the chart, tiny positive percentages and browser
 feedback isolation. Browser fixtures exercise the real Unovis implementation.
 
 Chrome DevTools checked the final hourly graph at 1440px/light/English and

@@ -65,9 +65,18 @@ financial authority: the wallet transaction repeats ownership, current policy,
 paid access, consent and funds checks before any debit.
 
 `view.go` publishes owner-generation-scoped hourly offers, current native display
-metadata, cooldowns, readiness and committed shared-day usage. Hourly visibility
-is independent of grandfathered catalog visibility. GETs never create allowance
-rows; unresolved reservations remain visible as pending accounting. Public views
-exclude owner generations, native principal/period references and credentials.
+metadata, cooldowns, readiness and committed shared-day usage. It computes
+`requiredBalance` from each offer's `requiredHours` (zero inherits
+`policy.activationHours`), keeping the eligibility contract per squad. Hourly
+visibility is independent of grandfathered catalog visibility. GETs never create
+allowance rows; unresolved reservations remain visible as pending accounting.
+Public views exclude owner generations, native principal/period references and
+credentials.
 `preferences.go` records price-capped opt-in and preserves immediate opt-out even
 when current policy cannot be decrypted. Neither path buys traffic itself.
+
+`admin.go` queues and applies the administrator-only disable through the same
+provider-operation lane with a distinct actor and a sealed administrative
+target; the paid hour is retained and no member cooldown is created.
+`commands_test.go` covers the actor/owner split, immutable replay, and the
+administrator path without weakening member authorization.

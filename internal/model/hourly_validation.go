@@ -8,6 +8,11 @@ import (
 
 var ErrHourlyPolicyInvalid = errors.New("invalid hourly policy")
 
+// MaxHourlyRequiredHours bounds one offer's funding threshold to the same
+// duration domain as policy.ActivationHours, which also keeps the product
+// with the hourly price inside int64 minor units.
+const MaxHourlyRequiredHours int64 = 2562047
+
 // ValidateHourlyPolicy validates the same exact units for administration and
 // wallet transactions. Unconfigured defaults cannot authorize a sale.
 func ValidateHourlyPolicy(policy HourlyPolicy) error {
@@ -18,9 +23,16 @@ func ValidateHourlyPolicy(policy HourlyPolicy) error {
 }
 
 // HourlyActivationMinimum is an eligibility check, never a debit/reservation.
-func HourlyActivationMinimum(policy HourlyPolicy, hourlyPriceMinor int64) (int64, error) {
-	if ValidateHourlyPolicy(policy) != nil || hourlyPriceMinor <= 0 || hourlyPriceMinor > math.MaxInt64/policy.ActivationHours {
+// A zero requiredHours inherits policy.ActivationHours for offers configured
+// before per-squad thresholds existed.
+func HourlyActivationMinimum(policy HourlyPolicy, requiredHours, hourlyPriceMinor int64) (int64, error) {
+	hours := requiredHours
+	if hours == 0 {
+		hours = policy.ActivationHours
+	}
+	if ValidateHourlyPolicy(policy) != nil || hours < 0 || hours > MaxHourlyRequiredHours ||
+		hourlyPriceMinor <= 0 || hourlyPriceMinor > math.MaxInt64/hours {
 		return 0, ErrHourlyPolicyInvalid
 	}
-	return hourlyPriceMinor * policy.ActivationHours, nil
+	return hourlyPriceMinor * hours, nil
 }

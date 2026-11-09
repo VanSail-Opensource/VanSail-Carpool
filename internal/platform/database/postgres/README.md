@@ -25,6 +25,11 @@ reads final cursors after the table-lock wait. See
 future policy guards and exhausted cursors. `multiplier_drain_test.go` verifies
 writer drain and rejection of stale node/cursor transaction snapshots.
 
+Schema 47 adds `hourly_offers.required_hours` (`0..2562047`), a per-squad funding
+threshold where zero inherits the account-wide `activationHours`. Existing offers
+stay valid at zero, and the column is additive metadata only: no purchase, wallet
+entry or settlement receipt is converted.
+
 - `open.go` configures UTC, pool bounds and statement/lock/connect deadlines.
   `Migrate` takes the existing advisory session lock; `VerifyVersion` refuses
   incomplete or future histories. Migrate as the schema owner, then start the

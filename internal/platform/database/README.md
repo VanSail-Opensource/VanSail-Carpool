@@ -1486,3 +1486,12 @@ Certificate workers preserve those initial facts in their completion result.
 Hosted `xnode_certificate_operations_test.go` and
 `xnode_certificate_concurrency_test.go` cover replay, uncertainty, scope, atomic
 queueing, independent administrators and cancellation while locked.
+
+`admin_entitlement_create.go` and `admin_entitlement_create_test.go` implement
+the zero-charge audited manual grant with immutable replay, overlap and
+active-hourly fences, provider sync, and a gated member notification.
+`admin_user_hourly.go` and `admin_user_hourly_test.go` provide the
+credential-free administrator hourly projection and administrator-only disable.
+`notification_hourly.go` and `notification_hourly_test.go` queue one hourly
+funding warning per enrollment and paid-through boundary for the existing
+notification scan; the definitive suspension notice commits with settlement.

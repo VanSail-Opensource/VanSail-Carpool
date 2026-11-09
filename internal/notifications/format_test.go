@@ -107,17 +107,19 @@ func TestFormatHonorsTelegramBoundary(t *testing.T) {
 
 func TestFormatUsesEveryExactLocalizedTitle(t *testing.T) {
 	titles := map[string][2]string{
-		jobpayload.UserEventExpiration:         {"🛑 *Subscription expired*", "🛑 *订阅已到期*"},
-		jobpayload.UserEventExpiryReminder:     {"⏳ *Subscription expiring soon*", "⏳ *订阅即将到期*"},
-		jobpayload.UserEventQueuedActivation:   {"🚀 *Queued combo activated*", "🚀 *排队套餐已启用*"},
-		jobpayload.UserEventPurchaseActivation: {"✅ *Combo activated*", "✅ *套餐已启用*"},
-		jobpayload.UserEventAutoRenewal:        {"♻️ *Auto\\-renewed*", "♻️ *自动续费成功*"},
-		jobpayload.UserEventPaymentCredited:    {"💰 *TXB added to your balance*", "💰 *TXB 已到账*"},
-		jobpayload.UserEventPaymentRefunded:    {"↩️ *Payment refunded*", "↩️ *支付已退款*"},
-		jobpayload.UserEventTrafficThreshold:   {"⚠️ *Traffic above 90%*", "⚠️ *流量已超过 90%*"},
-		jobpayload.UserEventGroupReward:        {"🎁 *Group reward received*", "🎁 *群聊奖励到账*"},
-		jobpayload.UserEventAdminExtension:     {"🎁 *Extended by admin*", "🎁 *管理员已延长订阅*"},
-		jobpayload.UserEventAdminUpdate:        {"🛠 *Balance adjusted by admin*", "🛠 *管理员已调整余额*"},
+		jobpayload.UserEventExpiration:             {"🛑 *Subscription expired*", "🛑 *订阅已到期*"},
+		jobpayload.UserEventExpiryReminder:         {"⏳ *Subscription expiring soon*", "⏳ *订阅即将到期*"},
+		jobpayload.UserEventQueuedActivation:       {"🚀 *Queued combo activated*", "🚀 *排队套餐已启用*"},
+		jobpayload.UserEventPurchaseActivation:     {"✅ *Combo activated*", "✅ *套餐已启用*"},
+		jobpayload.UserEventAutoRenewal:            {"♻️ *Auto\\-renewed*", "♻️ *自动续费成功*"},
+		jobpayload.UserEventPaymentCredited:        {"💰 *TXB added to your balance*", "💰 *TXB 已到账*"},
+		jobpayload.UserEventPaymentRefunded:        {"↩️ *Payment refunded*", "↩️ *支付已退款*"},
+		jobpayload.UserEventTrafficThreshold:       {"⚠️ *Traffic above 90%*", "⚠️ *流量已超过 90%*"},
+		jobpayload.UserEventGroupReward:            {"🎁 *Group reward received*", "🎁 *群聊奖励到账*"},
+		jobpayload.UserEventAdminExtension:         {"🎁 *Extended by admin*", "🎁 *管理员已延长订阅*"},
+		jobpayload.UserEventAdminUpdate:            {"🛠 *Balance adjusted by admin*", "🛠 *管理员已调整余额*"},
+		jobpayload.UserEventHourlyFundingWarning:   {"⏳ *Hourly squad funding is low*", "⏳ *按小时节点组余额不足*"},
+		jobpayload.UserEventHourlyFundingSuspended: {"🛑 *Hourly squad stopped*", "🛑 *按小时节点组已停止*"},
 	}
 	for kind, expected := range titles {
 		for index, locale := range []string{"en", "zh-CN"} {
@@ -157,6 +159,8 @@ func factsForKind(kind string) map[string]string {
 	case jobpayload.UserEventAdminExtension:
 		return map[string]string{FactAddedSeconds: "86400", FactPreviousExpiry: when,
 			FactNewExpiry: "2026-08-21T00:00:00Z", FactReason: "reason", FactTime: when}
+	case jobpayload.UserEventHourlyFundingWarning, jobpayload.UserEventHourlyFundingSuspended:
+		return map[string]string{FactSquad: "Squad", FactHourlyPrice: "100", FactBalance: "50", FactTime: when}
 	default:
 		return map[string]string{FactChange: "balance_adjustment", FactAmount: "100", FactBalance: "200",
 			FactReason: "reason", FactTime: when}

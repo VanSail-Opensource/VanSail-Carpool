@@ -36,6 +36,9 @@
     "conflict": "Another change was recorded first. Refresh the profile before trying again.",
     "entitlements": "Entitlements",
     "entitlementsHint": "Active and queued access, add-ons, and immutable pricing evidence.",
+    "addFixedTermPlan": "Add fixed-term plan",
+    "addedAt": "Added {date}", "listPrice": "List {amount}", "squadCount": "{count} squads", "invalidTrafficBytes": "Enter a positive whole number of bytes.",
+    "manualGrant": { "title": "Add a fixed-term plan", "hint": "Creates a zero-charge, audited plan immediately. The member is not billed.", "warning": "This is an audited manual grant.", "warningHint": "The plan is recorded immediately with no payment or ledger debit.", "squadsHint": "Leave empty to grant every squad included in the plan.", "submit": "Add plan", "notice": "The fixed-term plan was added.", "overlap": "This term overlaps an existing fixed-term plan. Review the member's current plans before retrying.", "hourlyConflict": "The member has an active hourly enrollment. Stop it before granting a fixed-term plan." },
     "entitlementFacts": "{traffic} traffic / {cadence} / {squads} squads",
     "entitlementStatus": {
       "activating": "Activating",
@@ -50,7 +53,7 @@
       "WEEK": "Weekly",
       "MONTH_ROLLING": "Rolling monthly"
     },
-    "edit": "Edit entitlement",
+    "edit": "Edit terms",
     "refund": "Refund",
     "noEntitlements": "No entitlements",
     "noEntitlementsHint": "This member has no recorded access yet.",

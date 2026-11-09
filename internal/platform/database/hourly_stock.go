@@ -30,8 +30,12 @@ func lockSquadStockTx(ctx context.Context, tx *sql.Tx, groups []string) error {
 	return nil
 }
 
-// Hourly offers have independent stock semantics even when the grandfathered
-// product's billing mode is PAYG. Do not change the ordinary PAYG catalog view.
+// HourlyStockRemaining projects the shared seat count for every squad that has an
+// hourly offer, enabled or disabled, so the member UI can explain a capacity
+// refusal even when sales are closed. The limit is billing-mode independent: a
+// PAYG-marked product with stock_limit still limits hourly seats. Active hourly
+// members keep their own seat, and settlement never consults stock (see
+// hourly_billing_settlement.go), so only a new activation can be refused.
 func (s *Store) HourlyStockRemaining(ctx context.Context) (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
@@ -43,9 +47,9 @@ func (s *Store) HourlyStockRemaining(ctx context.Context) (map[string]int, error
 	if err != nil {
 		return nil, err
 	}
-	enabled := map[string]bool{}
+	hourly := map[string]bool{}
 	for _, offer := range offers {
-		enabled[offer.GroupID] = offer.Enabled
+		hourly[offer.GroupID] = true
 	}
 	counts, err := s.squadStockCounts(ctx)
 	if err != nil {
@@ -53,8 +57,11 @@ func (s *Store) HourlyStockRemaining(ctx context.Context) (map[string]int, error
 	}
 	result := map[string]int{}
 	for _, product := range products {
-		if enabled[product.GroupID] && product.StockLimit != nil {
-			result[product.GroupID] = max(0, *product.StockLimit-counts[product.GroupID])
+		if !hourly[product.GroupID] {
+			continue
+		}
+		if remaining := sharedStockRemaining(product.StockLimit, counts[product.GroupID]); remaining != nil {
+			result[product.GroupID] = *remaining
 		}
 	}
 	return result, nil

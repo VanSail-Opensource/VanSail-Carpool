@@ -4,7 +4,28 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
+
+// Hosted PostgreSQL only: member catalog stock and the hourly projection both
+// call sharedStockRemaining over squadStockCounts, so the bound and the count
+// semantics cannot drift.
+func TestSharedStockRemainingKeepsOneBound(t *testing.T) {
+	limit := 4
+	if remaining := sharedStockRemaining(&limit, 1); remaining == nil || *remaining != 3 {
+		t.Fatalf("sharedStockRemaining(4, 1) = %v", remaining)
+	}
+	if remaining := sharedStockRemaining(&limit, 6); remaining == nil || *remaining != 0 {
+		t.Fatalf("sharedStockRemaining clamped below zero: %v", remaining)
+	}
+	if remaining := sharedStockRemaining(nil, 6); remaining != nil {
+		t.Fatalf("sharedStockRemaining without a limit = %v", remaining)
+	}
+	if displayedCatalogStockLimit(model.SquadProduct{StockLimit: &limit, BillingMode: "payg"}) != nil {
+		t.Fatal("member catalog displayed a PAYG seat limit")
+	}
+}
 
 func TestCatalogStockUsesEntitlementSnapshots(t *testing.T) {
 	s := newTestStore(t)

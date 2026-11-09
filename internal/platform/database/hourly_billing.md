@@ -41,6 +41,14 @@ proves there is no paid receipt before cancelling an unpaid intent.
 Owner-credit retirement must be guarded against a newer paid benefit under the
 same lifecycle lock; it must not run as an unqualified late disable callback.
 
+`notification_hourly.go` owns the member funding notices. Before an active
+enrollment's paid-through boundary, the existing five-minute notification scan
+queues one warning when the current hourly price exceeds the wallet. If the
+settlement transaction then cannot fund the next hour, it inserts the definitive
+`funding_suspended` notice inside the same wallet transaction that stops access.
+Both event keys include the enrollment and paid-through boundary, so retries and
+repeated scans dedupe; no member GET path writes notifications or allowances.
+
 Extra traffic defaults off. `SetHourlyExtraPreference` captures current-price
 consent. `FundHourlyExtraGB` requires an active paid squad, fresh positive payload
 demand and confirmed exhaustion of both free and previously funded credit, with

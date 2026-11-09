@@ -90,7 +90,8 @@ func notificationFields(payload jobpayload.UserNotification, copy copySet, locat
 		jobpayload.UserEventAddonActivated, jobpayload.UserEventQueuedCancellation,
 		jobpayload.UserEventAutoRenewalFailed, jobpayload.UserEventManualResetCompleted,
 		jobpayload.UserEventManualResetRefunded, jobpayload.UserEventMemberRefundCompleted,
-		jobpayload.UserEventMemberRefundFailed, jobpayload.UserEventProvisionConflict:
+		jobpayload.UserEventMemberRefundFailed, jobpayload.UserEventProvisionConflict,
+		jobpayload.UserEventHourlyFundingWarning, jobpayload.UserEventHourlyFundingSuspended:
 		return newEventFields(payload.Kind, copy, facts, location)
 	default:
 		return nil, errors.New("unsupported notification format")

@@ -306,3 +306,5 @@ retain their existing validated endpoint and write scope.
 `api-v1-admin-emby-connection.yaml` maps `/api/v1/admin/emby-connection` to its administrator GET/PUT contract. Changing the URL requires a fresh token; generic settings endpoints reject the connection keys.
 
 `api-v1-hourly.yaml`, `api-v1-hourly-activate.yaml`, `api-v1-hourly-enrollments-id-disable.yaml`, and `api-v1-hourly-extra-traffic.yaml` expose owner-only hourly controls. `api-v1-admin-hourly-policy.yaml`, `api-v1-admin-hourly-offers.yaml`, and `api-v1-admin-hourly-offers-groupId.yaml` require resource-specific X-Node scopes and CAS versions.
+
+`api-v1-admin-users-id-entitlements.yaml`, `api-v1-admin-users-id-hourly.yaml`, and `api-v1-admin-users-id-hourly-enrollments-id-disable.yaml` expose the audited zero-charge manual grant, the administrator hourly projection, and the administrator disable receipt under the existing administrator session/API-token boundary.

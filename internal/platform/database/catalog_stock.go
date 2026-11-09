@@ -17,7 +17,7 @@ func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]mode
 	}
 	limited := false
 	for _, product := range products {
-		limited = limited || (product.StockLimit != nil && product.BillingMode != "payg")
+		limited = limited || displayedCatalogStockLimit(product) != nil
 	}
 	if !limited {
 		return products, nil
@@ -29,13 +29,35 @@ func (s *Store) ListSquadProducts(ctx context.Context, visibleOnly bool) ([]mode
 		return nil, err
 	}
 	for i := range products {
-		p := &products[i]
-		if p.StockLimit != nil && p.BillingMode != "payg" {
-			remaining := max(0, *p.StockLimit-counts[p.GroupID])
-			p.StockRemaining = &remaining
+		if limit := displayedCatalogStockLimit(products[i]); limit != nil {
+			products[i].StockRemaining = sharedStockRemaining(limit, counts[products[i].GroupID])
 		}
 	}
 	return products, nil
+}
+
+// displayedCatalogStockLimit is the member-catalog display rule. PAYG products
+// carry their own metering and are excluded from the fixed-term seat display;
+// exact checkout admission still checks any limited squad transactionally.
+func displayedCatalogStockLimit(product model.SquadProduct) *int {
+	if product.StockLimit == nil || product.BillingMode == "payg" {
+		return nil
+	}
+	return product.StockLimit
+}
+
+// sharedStockRemaining projects display stock from the one shared seat count
+// (distinct members in owned_squads plus active hourly_enrollments). This helper
+// is the only place the max(0, limit-count) arithmetic exists, so the member
+// catalog and the hourly view cannot diverge on which members count or on the
+// limit. A nil limit means the squad is unlimited; callers choose which billing
+// modes they display.
+func sharedStockRemaining(limit *int, sharedCount int) *int {
+	if limit == nil {
+		return nil
+	}
+	remaining := max(0, *limit-sharedCount)
+	return &remaining
 }
 
 const squadStockQuery = `WITH selected_purchases AS (

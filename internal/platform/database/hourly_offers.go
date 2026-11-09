@@ -8,12 +8,12 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-const hourlyOfferColumns = `group_id,enabled,hourly_price_minor,revision,created_at,updated_at`
+const hourlyOfferColumns = `group_id,enabled,hourly_price_minor,required_hours,revision,created_at,updated_at`
 
 func scanHourlyOffer(row rowScanner) (model.HourlyOffer, error) {
 	var offer model.HourlyOffer
 	var enabled int
-	err := row.Scan(&offer.GroupID, &enabled, &offer.HourlyPriceTXBMinor, &offer.Revision, &offer.CreatedAt, &offer.UpdatedAt)
+	err := row.Scan(&offer.GroupID, &enabled, &offer.HourlyPriceTXBMinor, &offer.RequiredHours, &offer.Revision, &offer.CreatedAt, &offer.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return offer, ErrNotFound
 	}

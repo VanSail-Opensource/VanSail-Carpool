@@ -39,6 +39,10 @@ func snapshotComboSquadsTx(ctx context.Context, tx *sql.Tx, purchase string, squ
 	return err
 }
 
+// renewalComboTx applies a purchase's persisted full-entitlement snapshot. It
+// deliberately keeps every included squad regardless of the product's current
+// billing mode: billing mode is merchandising state for new sales, so a later
+// edit must not shrink an owned renewal. comboSquadsTx stays sale-only.
 func renewalComboTx(ctx context.Context, tx *sql.Tx, purchase string, combo model.Combo) (model.Combo, error) {
 	var custom sql.NullString
 	if err := tx.QueryRowContext(ctx, `SELECT entitlement_squad_uuids FROM purchases WHERE id=$1`, purchase).Scan(&custom); err != nil {
@@ -54,7 +58,5 @@ func renewalComboTx(ctx context.Context, tx *sql.Tx, purchase string, combo mode
 			combo.IncludedSquads = append(combo.IncludedSquads, model.SquadProduct{ID: id, GroupID: id})
 		}
 	}
-	var err error
-	combo.IncludedSquads, err = comboSquadsTx(ctx, tx, combo.IncludedSquads)
-	return combo, err
+	return combo, nil
 }

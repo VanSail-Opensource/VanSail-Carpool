@@ -49,6 +49,23 @@ func TestHourlyViewKeepsUnavailableOwnedSquadAndCooldown(t *testing.T) {
 	}
 }
 
+func TestHourlyViewUsesPerOfferRequiredHours(t *testing.T) {
+	f := newMemberHourlyFixture(t)
+	ctx := context.Background()
+	if _, err := f.server.deps.Store.SaveHourlyOffer(ctx, f.user.ID,
+		model.HourlyOffer{GroupID: "member-hourly", Enabled: true, HourlyPriceTXBMinor: 100, RequiredHours: 2}, 1); err != nil {
+		t.Fatal(err)
+	}
+	w := f.request(t, "GET", "/api/v1/hourly", "", "", true)
+	var view model.HourlyAccountView
+	if w.Code != http.StatusOK || json.Unmarshal(w.Body.Bytes(), &view) != nil || len(view.Squads) != 1 {
+		t.Fatalf("hourly view = %d %s", w.Code, w.Body.String())
+	}
+	if view.Squads[0].Offer.RequiredHours != 2 || view.Squads[0].RequiredBalance == nil || view.Squads[0].RequiredBalance.Minor != "200" {
+		t.Fatalf("per-offer required hours were not applied: %+v", view.Squads[0])
+	}
+}
+
 func TestHourlyViewReportsPausedSalesAndAcceptedFreeLegacyTerm(t *testing.T) {
 	f := newMemberHourlyFixture(t)
 	ctx := context.Background()

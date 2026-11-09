@@ -1,0 +1,83 @@
+AdminEntitlementCreateRequest:
+  type: object
+  additionalProperties: false
+  required: [comboId, validFrom, validUntil, trafficLimitBytes, resetStrategy, squadUuids, reason]
+  properties:
+    comboId:
+      $ref: '../../openapi.yaml#/components/schemas/ID'
+    validFrom:
+      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
+    validUntil:
+      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
+    trafficLimitBytes:
+      type: string
+      pattern: '^[1-9]\d*$'
+      description: Positive exact byte count. Grants never debit the wallet.
+    resetStrategy:
+      $ref: '../../openapi.yaml#/components/schemas/ResetStrategy'
+    squadUuids:
+      type: array
+      uniqueItems: true
+      description: Entitlement squads. An empty array inherits the active combo's included squads.
+      items:
+        type: string
+        format: uuid
+    reason:
+      type: string
+      minLength: 3
+      maxLength: 500
+
+AdminHourlySquad:
+  type: object
+  additionalProperties: false
+  required: [enrollmentId, groupId, name, hourlyPrice, offerEnabled, status, paidThrough, cooldownUntil, activatedAt, disabledAt, createdAt]
+  properties:
+    enrollmentId:
+      type: string
+      description: Safe enrollment target for the administrator disable endpoint.
+    groupId:
+      type: string
+    name:
+      type: string
+    hourlyPrice:
+      $ref: '../../openapi.yaml#/components/schemas/Money'
+    offerEnabled:
+      type: boolean
+    status:
+      type: string
+      enum: [preparing, active, funding_suspended, disabled, closed]
+    paidThrough:
+      type: [string, 'null']
+      format: date-time
+    cooldownUntil:
+      type: [string, 'null']
+      format: date-time
+    activatedAt:
+      type: [string, 'null']
+      format: date-time
+    disabledAt:
+      type: [string, 'null']
+      format: date-time
+    createdAt:
+      $ref: '../../openapi.yaml#/components/schemas/Timestamp'
+
+AdminHourlyView:
+  type: object
+  additionalProperties: false
+  description: Owner-scoped administrator hourly projection without credentials, proxy or period references, generations, activation keys, or fingerprints.
+  required: [policy, balance, extraPreference, usage, squads]
+  properties:
+    policy:
+      $ref: '../../openapi.yaml#/components/schemas/HourlyPolicySnapshot'
+    balance:
+      $ref: '../../openapi.yaml#/components/schemas/Money'
+    extraPreference:
+      $ref: '../../openapi.yaml#/components/schemas/HourlyExtraPreference'
+    usage:
+      anyOf:
+        - $ref: '../../openapi.yaml#/components/schemas/HourlyAccountUsage'
+        - type: 'null'
+    squads:
+      type: array
+      items:
+        $ref: '../../openapi.yaml#/components/schemas/AdminHourlySquad'

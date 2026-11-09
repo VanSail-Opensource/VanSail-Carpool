@@ -24,9 +24,12 @@ type HourlyPolicySnapshot struct {
 }
 
 // HourlyOffer does not change grandfathered fixed-term merchandising.
+// RequiredHours is the squad-specific funding threshold; zero inherits the
+// account-wide policy so pre-existing offers keep their behavior.
 type HourlyOffer struct {
 	GroupID             string    `json:"groupId"`
 	Enabled             bool      `json:"enabled"`
+	RequiredHours       int64     `json:"requiredHours"`
 	HourlyPriceTXBMinor int64     `json:"-"`
 	HourlyPrice         Money     `json:"hourlyPrice"`
 	Revision            int64     `json:"revision,string"`

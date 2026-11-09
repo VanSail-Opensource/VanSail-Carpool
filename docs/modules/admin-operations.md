@@ -97,6 +97,50 @@ facts, ledger history, and creation time. Refund credit, cancellation, audit,
 provider receipt, and outbox insertion commit together. No-charge replacement
 changes the active combo and add-on override without appending a TXB ledger row.
 
+`POST /api/v1/admin/users/{userId}/entitlements` creates a zero-charge manual
+fixed-term grant. It requires an `Idempotency-Key` and a reason of 3-500 bytes,
+and validates that the combo is active, every requested squad exists upstream,
+the traffic snapshot is positive, the reset strategy is `DAY`/`WEEK`/
+`MONTH_ROLLING`, and `validUntil` is after `validFrom`. An omitted or empty
+`squadUuids` list inherits the combo's included squads. One transaction inserts
+a purchase with `charged_txb_minor`, gross, core gross, coupon discount, and
+ledger movement all zero; snapshots `entitlement_traffic_limit_bytes`,
+`entitlement_reset_strategy`, and `entitlement_squad_uuids`; records the
+`entitlement.create` actor audit; enqueues the existing `xnode_sync_user`
+outbox job; and inserts a provider-gated `admin_update` member notification.
+The term is `active` when `validFrom <= now` and `queued` otherwise. The wallet
+is never debited and no ledger entry or debt is created. Any overlap with an
+existing `activating`, `active`, or `queued` term returns `409` with code
+`ENTITLEMENT_OVERLAP`. An owner holding a `preparing` or `active` hourly
+enrollment for the current account generation is rejected with `409` code
+`HOURLY_LEGACY_ACTIVE` before any purchase is written; replays of an accepted
+grant remain immutable. Replaying the same actor, owner, key, and request
+fingerprint returns the original purchase; a changed fingerprint conflicts.
+
+## Administrator hourly workspace
+
+`GET /api/v1/admin/users/{userId}/hourly` returns `AdminHourlyView`:
+`policy`, `balance`, `extraPreference`, current UTC-day `usage`, and every
+enrollment for the owner's current account generation (including `disabled` and
+`closed`). Each squad row has its live group name and offer price, offer
+enabled flag, status, `enrollmentId`, `paidThrough`, `cooldownUntil`, `activatedAt`,
+`disabledAt`, and `createdAt`. The safe enrollment ID is the target for the
+disable endpoint. The projection never exposes credentials, proxy
+or period references, account generations, activation keys, or fingerprints,
+and reads never create allowance rows.
+
+`POST /api/v1/admin/users/{userId}/hourly/enrollments/{enrollmentId}/disable`
+requires `Idempotency-Key` and `{"policyVersion": "<current policy version>"}`.
+It validates enrollment ownership, the owner's current account generation, and
+the current policy version; a superseded or terminated enrollment and a stale
+policy version return `409`. The command queues the existing
+`xnode_hourly_disable` provider operation with `ActorUserID` set to the
+administrator and `OwnerUserID` set to the member, so the operator action is
+durably attributed without weakening member authorization. It retains the paid
+hour and records a plain `disabled` stop with no voluntary cooldown; it never
+classifies an operator stop as a funding suspension. The response is `202` with
+an `OperationReceipt`.
+
 Bulk extension filters use inclusive OR across combo IDs and add-on squad UUIDs.
 Only currently active purchases qualify, each user is targeted once, and every
 queued successor shifts by the same calendar-day count at both boundaries so

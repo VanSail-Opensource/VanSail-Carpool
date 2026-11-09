@@ -28,6 +28,7 @@ type operationTarget struct {
 	PolicyVersion  string `json:"policyVersion"`
 	OfferRevision  int64  `json:"offerRevision,string"`
 	ActivationCode string `json:"activationCode,omitempty"`
+	Admin          bool   `json:"admin,omitempty"`
 }
 
 // Activate records durable intent before preparing credentials or debiting.
@@ -36,7 +37,7 @@ func (s *Service) Activate(ctx context.Context, user model.User, input Activatio
 	if target.GroupID == "" || len(target.GroupID) > 128 || len(target.PolicyVersion) != 64 || target.OfferRevision <= 0 || len(target.ActivationCode) > 1024 {
 		return model.OperationReceipt{}, database.ErrConflict
 	}
-	return s.queue(ctx, user, ActivateOperation, key, target)
+	return s.queue(ctx, user.ID, user.ID, ActivateOperation, key, target)
 }
 
 // Disable retains the current paid hour and applies the reviewed cooldown.
@@ -51,12 +52,14 @@ func (s *Service) Disable(ctx context.Context, user model.User, enrollmentID, ve
 	if len(version) != 64 {
 		return model.OperationReceipt{}, database.ErrConflict
 	}
-	return s.queue(ctx, user, DisableOperation, key, operationTarget{Generation: user.AccountGeneration, GroupID: enrollment.GroupID, EnrollmentID: enrollment.ID, PolicyVersion: version})
+	return s.queue(ctx, user.ID, user.ID, DisableOperation, key, operationTarget{Generation: user.AccountGeneration, GroupID: enrollment.GroupID, EnrollmentID: enrollment.ID, PolicyVersion: version})
 }
 
-func (s *Service) queue(ctx context.Context, user model.User, kind, key string, target operationTarget) (model.OperationReceipt, error) {
+// queue records one actor/owner-scoped provider operation. Owner and actor are
+// separate so administrator commands remain attributed to the operator.
+func (s *Service) queue(ctx context.Context, actorID, ownerID, kind, key string, target operationTarget) (model.OperationReceipt, error) {
 	key = strings.TrimSpace(key)
-	if user.ID == "" || user.AccountGeneration < 0 || key == "" || len(key) > 96 || s.vault == nil {
+	if actorID == "" || ownerID == "" || target.Generation < 0 || key == "" || len(key) > 96 || s.vault == nil {
 		return model.OperationReceipt{}, database.ErrConflict
 	}
 	// Generations have separate action namespaces; old receipts cannot enable a
@@ -65,16 +68,16 @@ func (s *Service) queue(ctx context.Context, user model.User, kind, key string, 
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	sealed, err := s.vault.Encrypt(operationScope(kind, user.ID), string(encoded))
+	sealed, err := s.vault.Encrypt(operationScope(kind, ownerID), string(encoded))
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	fingerprint := targetFingerprint(kind, user.ID, target)
-	scopedKey := strings.Join([]string{strconv.FormatInt(target.Generation, 10), key}, ":")
-	if receipt, found, err := s.store.ProviderOperationForActorKey(ctx, user.ID, kind, scopedKey, fingerprint); found || err != nil {
+	fingerprint := targetFingerprint(kind, ownerID, target)
+	scopedKey := operationActionKey(target.Generation, key)
+	if receipt, found, err := s.store.ProviderOperationForActorKey(ctx, actorID, kind, scopedKey, fingerprint); found || err != nil {
 		return receipt, err
 	}
-	operation, _, err := s.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: user.ID, OwnerUserID: user.ID,
+	operation, _, err := s.store.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actorID, OwnerUserID: ownerID,
 		Kind: kind, IdempotencyKey: scopedKey, RequestFingerprint: fingerprint, SealedTarget: sealed,
 		Items: []providerops.ItemInput{{Key: "hourly", TargetType: "hourly_squad", TargetID: target.GroupID}}}, s.now().UTC())
 	return operation.Receipt, err
@@ -88,3 +91,9 @@ func targetFingerprint(kind, owner string, target operationTarget) string {
 }
 
 func operationScope(kind, owner string) string { return "hourly.operation:" + kind + ":" + owner }
+
+// operationActionKey namespaces an action by account generation so a rejoined
+// account cannot replay an old receipt.
+func operationActionKey(generation int64, key string) string {
+	return strconv.FormatInt(generation, 10) + ":" + strings.TrimSpace(key)
+}

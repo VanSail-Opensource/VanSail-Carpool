@@ -4,10 +4,78 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
+
+// AdminEntitlementCreate describes one zero-charge, administrator-owned manual
+// fixed-term grant. It never debits the wallet or creates ledger debt.
+type AdminEntitlementCreate struct {
+	Reason            string
+	ComboID           string
+	ValidFrom         time.Time
+	ValidUntil        time.Time
+	TrafficLimitBytes int64
+	ResetStrategy     string
+	SquadUUIDs        []string
+}
+
+// adminEntitlementCreator is the narrow store command used by manual grants.
+type adminEntitlementCreator interface {
+	CreateAdminEntitlement(context.Context, database.AdminEntitlementCreateInput, time.Time) (model.Purchase, error)
+}
+
+// CreateEntitlement validates a manual grant and inserts it as one audited,
+// queued, zero-charge purchase. Omitted squads inherit the combo's included
+// squads; every squad must exist upstream.
+func (s *UserWorkflows) CreateEntitlement(ctx context.Context, actorID, userID, key string, grant AdminEntitlementCreate) (model.Purchase, error) {
+	grant.Reason = strings.TrimSpace(grant.Reason)
+	if !validCommand(actorID, key, grant.Reason) || userID == "" || strings.TrimSpace(grant.ComboID) == "" ||
+		grant.ValidUntil.Sub(grant.ValidFrom) < time.Second || grant.TrafficLimitBytes <= 0 || !validResetStrategy(grant.ResetStrategy) {
+		return model.Purchase{}, errors.New("invalid entitlement grant")
+	}
+	squads, err := normalizeUUIDs(grant.SquadUUIDs)
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	grant.ComboID = strings.TrimSpace(grant.ComboID)
+	combo, err := s.repository.ComboByID(ctx, grant.ComboID, true)
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	if len(squads) == 0 {
+		for _, included := range combo.IncludedSquads {
+			squads = append(squads, included.GroupID)
+		}
+		if squads, err = normalizeUUIDs(squads); err != nil {
+			return model.Purchase{}, err
+		}
+	}
+	if err := s.validateImportedSquads(ctx, squads); err != nil {
+		return model.Purchase{}, err
+	}
+	grant.SquadUUIDs = squads
+	grant.ValidFrom, grant.ValidUntil = grant.ValidFrom.UTC(), grant.ValidUntil.UTC()
+	fingerprint, err := commandFingerprint(struct {
+		ActorID, UserID, Key string
+		Grant                AdminEntitlementCreate
+	}{actorID, userID, strings.TrimSpace(key), grant})
+	if err != nil {
+		return model.Purchase{}, err
+	}
+	creator, ok := s.repository.(adminEntitlementCreator)
+	if !ok {
+		return model.Purchase{}, errors.New("entitlement creation is unavailable")
+	}
+	return creator.CreateAdminEntitlement(ctx, database.AdminEntitlementCreateInput{
+		ActorUserID: actorID, UserID: userID, IdempotencyKey: strings.TrimSpace(key),
+		RequestFingerprint: fingerprint, Reason: grant.Reason, ComboID: grant.ComboID,
+		ValidFrom: grant.ValidFrom, ValidUntil: grant.ValidUntil, TrafficLimitBytes: grant.TrafficLimitBytes,
+		ResetStrategy: grant.ResetStrategy, SquadUUIDs: grant.SquadUUIDs,
+	}, s.now().UTC())
+}
 
 // EditEntitlement validates and atomically queues one optimistic full edit.
 func (s *UserWorkflows) EditEntitlement(ctx context.Context, actorID, userID, purchaseID, key string, edit EntitlementEdit) (model.Purchase, error) {
@@ -100,4 +168,29 @@ func validEntitlementStatus(value string) bool {
 
 func validResetStrategy(value string) bool {
 	return value == "DAY" || value == "WEEK" || value == "MONTH_ROLLING"
+}
+
+// validateImportedSquads checks freshly imported squads against the upstream
+// list. The durable command repeats group existence inside its transaction.
+func (s *UserWorkflows) validateImportedSquads(ctx context.Context, squads []string) error {
+	if len(squads) == 0 {
+		return nil
+	}
+	if s.importer == nil {
+		return errors.New("squad validation is unavailable")
+	}
+	live, err := s.importer.ListInternalSquads(ctx)
+	if err != nil {
+		return err
+	}
+	available := make(map[string]struct{}, len(live))
+	for _, squad := range live {
+		available[strings.ToLower(squad.UUID)] = struct{}{}
+	}
+	for _, squad := range squads {
+		if _, exists := available[strings.ToLower(squad)]; !exists {
+			return database.ErrNotFound
+		}
+	}
+	return nil
 }

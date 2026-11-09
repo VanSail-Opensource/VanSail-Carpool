@@ -25,6 +25,12 @@ type ScanRepository interface {
 	EnqueueTrafficThresholdNotification(context.Context, string, int64, int64, string, *time.Time, time.Time) (bool, error)
 }
 
+// HourlyFundingScanner is optional so existing ScanRepository implementations
+// keep compiling without hourly funding support.
+type HourlyFundingScanner interface {
+	EnqueueHourlyFundingWarnings(context.Context, time.Time) (int, error)
+}
+
 // TrafficRemote pages through the documented Proxy user stream.
 type TrafficRemote interface {
 	ListNotificationUsers(context.Context, string, int) ([]TrafficUser, *string, bool, error)
@@ -46,10 +52,20 @@ func NewScanner(repository ScanRepository, remote TrafficRemote, logger *slog.Lo
 func (s *Scanner) Scan(ctx context.Context, now time.Time) error {
 	reminders, reminderErr := s.repository.EnqueueExpiryReminderNotifications(ctx, now.UTC())
 	traffic, trafficErr := s.scanTraffic(ctx, now.UTC())
-	if s.logger != nil && (reminders > 0 || traffic > 0) {
-		s.logger.Info("user notification scan queued events", "expiry_reminders", reminders, "traffic_thresholds", traffic)
+	warnings, warningErr := s.scanHourlyFunding(ctx, now.UTC())
+	if s.logger != nil && (reminders > 0 || traffic > 0 || warnings > 0) {
+		s.logger.Info("user notification scan queued events", "expiry_reminders", reminders,
+			"traffic_thresholds", traffic, "hourly_funding_warnings", warnings)
 	}
-	return errors.Join(reminderErr, trafficErr)
+	return errors.Join(reminderErr, trafficErr, warningErr)
+}
+
+func (s *Scanner) scanHourlyFunding(ctx context.Context, now time.Time) (int, error) {
+	scanner, ok := s.repository.(HourlyFundingScanner)
+	if !ok {
+		return 0, nil
+	}
+	return scanner.EnqueueHourlyFundingWarnings(ctx, now)
 }
 
 func (s *Scanner) scanTraffic(ctx context.Context, now time.Time) (int, error) {

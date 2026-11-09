@@ -45,4 +45,6 @@ const (
 	FactValidFrom         = "validFrom"
 	FactTermCount         = "termCount"
 	FactReplacement       = "replacement"
+	FactSquad             = "squad"
+	FactHourlyPrice       = "hourlyPriceMinor"
 )
