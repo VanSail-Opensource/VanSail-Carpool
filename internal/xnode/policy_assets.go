@@ -23,7 +23,7 @@ func (s *Service) sourceGeoIP(ctx context.Context, config GlobalConfig, firewall
 	if !config.SourceGeoIP.Enabled || !firewall.Enabled {
 		return nil, nil
 	}
-	listeners, err := wire.SourceGeoIPListeners(native)
+	listeners, err := sourceGeoIPListeners(native)
 	if err != nil {
 		return nil, err
 	}
