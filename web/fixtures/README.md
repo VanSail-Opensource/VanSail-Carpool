@@ -8,6 +8,11 @@ profiles, a failed attempt and a still-serving certificate. Add `certificate-dns
 provider selection, PEM controls, status and original receipt recovery. Existing
 `node-save-error`, `slow`, `zh` and appearance flags remain available. Constructed
 commands and receipts remain inside the fixture; no provider request is made.
+Use `certificates&certificate-inline&certificate-providers-error` to check a
+retained inline DNS profile during global discovery failure: unrelated node
+settings can still save with opaque synthetic credentials preserved. Compare
+`certificates&certificate-dns&certificate-providers-error`, where the explicit
+global-provider reference must keep Save blocked until discovery recovers.
 
 The X-Node audit's `firewall-ranges` parameter loads mixed legacy port lists,
 TCP/UDP/SSH intervals, range-to-one and range-to-range forwarding. Combine with

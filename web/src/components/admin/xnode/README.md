@@ -5,6 +5,13 @@ fields, configured provider selection and native PEM file imports.
 `certificateForm.ts` validates fields and inbound references; the backend checks
 the actual PEM key pair and certificate hostname. Bound profiles require an
 explicit unbind before removal. Existing inline DNS credentials remain opaque.
+Inline-only legacy DNS profiles do not depend on global-provider discovery for
+unrelated saves; explicit global-provider references still wait for discovery.
+Chrome DevTools verified this during a simulated global-provider 503: at
+1440px/English, an unrelated node-name edit saved successfully while retaining
+the inline provider and opaque credentials. At 390px/Chinese, an explicit global
+reference kept its provider error and Save disabled with no writes. Layouts were
+contained and fresh consoles/mock request checks were clear.
 `XNodeCertificateStatus.vue` and `certificateStatus.ts` project only safe public
 metadata, separating failed acquisition/application from retained serving material.
 Expiry warnings do not prevent unrelated edits. Missing legacy serving state is

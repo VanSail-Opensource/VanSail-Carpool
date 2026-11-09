@@ -20,7 +20,7 @@ const fresh = computed(() => !!props.metric?.connected && !props.metric.stale)
 const capable = computed(() => props.metric?.capabilities?.includes('certificate_lifecycle_v1') === true)
 const reason = computed(() => !props.saved || !props.nodeId || !Number.isSafeInteger(props.revision) || props.revision < 1 ? t('certificates.saveFirst') : !capable.value ? t('certificates.upgradeRequired')
   : !fresh.value ? t('certificates.nodeUnavailable') : '')
-const valid = computed(() => entries.value.length <= 64 && entries.value.every(([, profile]) => !Object.keys(certificateErrors(profile, props.providers)).length && !(profile.config.cert_mode === 'dns' && props.providersLoading))
+const valid = computed(() => entries.value.length <= 64 && entries.value.every(([, profile]) => !Object.keys(certificateErrors(profile, props.providers)).length && !(profile.config.cert_mode === 'dns' && !!profile.provider && props.providersLoading))
   && certificateBindingsValid(model.value, props.inbounds) && !Object.values(busy).some(Boolean))
 watch(valid, value => emit('valid', value), { immediate: true, flush: 'sync' })
 function update(id: string, profile: CertificateProfile): void { model.value = { ...model.value, certificates: { ...model.value.certificates, [id]: profile } } }

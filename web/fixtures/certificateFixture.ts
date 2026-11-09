@@ -11,12 +11,16 @@ export function certificateFixture(params: URLSearchParams, trace: { writes: unk
   const oldNode = xnodeApi.node, oldMetrics = xnodeApi.metrics, oldCommand = xnodeApi.command, oldOperation = adminOperationsApi.getOperation, oldGlobal = xnodeApi.global
   let recoveryFailed = false, ambiguous = false
   const stamp = new Date().toISOString()
-  xnodeApi.global = async signal => { const value = await oldGlobal(signal); return { ...value, providers: { ...value.providers, cloudflare: { type: 'cloudflare', credentials: {} } } } }
+  xnodeApi.global = async signal => {
+    if (params.has('certificate-providers-error')) { trace.calls.push('certificate-providers-error'); throw new ApiError(503, { code: 'XNODE_UNAVAILABLE', message: '' }) }
+    const value = await oldGlobal(signal); return { ...value, providers: { ...value.providers, cloudflare: { type: 'cloudflare', credentials: {} } } }
+  }
   xnodeApi.node = async (id, signal) => {
     const value = await oldNode(id, signal)
     value.settings.certificates = {
-      primary: { provider: params.has('certificate-dns') ? 'cloudflare' : '', config: params.has('certificate-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' }
+      primary: { provider: params.has('certificate-dns') && !params.has('certificate-inline') ? 'cloudflare' : '', config: params.has('certificate-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' }
         : params.has('certificate-content') ? { cert_mode: 'content', domain: 'proxy.example', cert_content: '', key_content: '' }
+        : params.has('certificate-inline') ? { cert_mode: 'dns', domain: 'proxy.example', dns_provider: 'cloudflare', dns_env: { CLOUDFLARE_DNS_API_TOKEN: 'synthetic-fixture-credential' }, auto_tls: true }
         : { cert_mode: params.has('certificate-dns') ? 'dns' : 'http', domain: 'proxy.example', email: 'certificates@proxy.example', auto_tls: true } },
       failed: { config: { cert_mode: 'http', domain: 'pending.proxy.example', auto_tls: true } },
     }

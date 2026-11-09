@@ -20,6 +20,22 @@ function editor(settings: XNodeSettings, nodeId = '') {
 }
 
 describe('certificate profile references', () => {
+  it('keeps inline DNS profiles valid during global discovery outages without relaxing global references', async () => {
+    const config = { cert_mode: 'dns', domain: 'proxy.example', dns_provider: 'cloudflare', dns_env: { CLOUDFLARE_DNS_API_TOKEN: 'opaque-original-value' } }
+    const settings = { certificates: { primary: { provider: '', config } }, inboundCertificates: { paid: 'primary' } }
+    const wrapper = editor(settings)
+    await wrapper.setProps({ providersLoading: true })
+    expect(wrapper.emitted('valid')?.at(-1)).toEqual([true])
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(settings.certificates.primary.config).toEqual(config)
+    await wrapper.setProps({ modelValue: { ...settings, certificates: { primary: { provider: 'cloudflare', config } } }, providers: { cloudflare: { type: 'cloudflare', credentials: {} } } })
+    expect(wrapper.emitted('valid')?.at(-1)).toEqual([false])
+    await wrapper.setProps({ providersLoading: false })
+    expect(wrapper.emitted('valid')?.at(-1)).toEqual([true])
+    expect(settings.certificates.primary.provider).toBe('')
+    expect(config.dns_env.CLOUDFLARE_DNS_API_TOKEN).toBe('opaque-original-value')
+    wrapper.unmount()
+  })
   it('prevents bound profile deletion until the administrator explicitly unbinds it', async () => {
     const profile = { config: { cert_mode: 'self', domain: 'proxy.example' } }
     const wrapper = editor({ certificates: { primary: profile }, inboundCertificates: { paid: 'primary' } })
