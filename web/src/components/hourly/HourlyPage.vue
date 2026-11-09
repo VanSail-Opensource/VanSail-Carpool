@@ -7,7 +7,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import SquadActivationDialog from '@/components/catalog/SquadActivationDialog.vue'
 import { localizedError, useI18n } from '@/i18n'
-import { txbInputFromMinor } from '@/utils/format'
+import { displayInputFromTXBMinor } from '@/utils/displayCurrency'
 import { hourlyRequiredHours } from './hourlyHours'
 import HourlyLegacyBlock from './HourlyLegacyBlock.vue'
 import HourlySummary from './HourlySummary.vue'
@@ -98,7 +98,7 @@ async function enableExtra(): Promise<void> {
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
     <SquadActivationDialog v-model:open="codeOpen" :squad="activating?.squad ?? null" :busy="hourly.submitting.value" :error="actionError" @submit="submitCode" @cancel="activating = null" />
     <ConfirmDialog v-model:open="disableOpen" :title="t('hourly.disableTitle')" :description="t('hourly.disableWarning', { hours: cooldownHours })" :confirm-label="t('hourly.disable')" :busy="hourly.submitting.value" :error="actionError" danger @confirm="disable" />
-    <ConfirmDialog v-model:open="extraOpen" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: txbInputFromMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="enableExtra" />
+    <ConfirmDialog v-model:open="extraOpen" :title="t('hourly.extraTitle')" :description="t('hourly.extraWarning', { price: displayInputFromTXBMinor(data?.policy.policy.extraGBPriceTXBMinor ?? '0') })" :confirm-label="t('hourly.extraConfirm')" :busy="hourly.submitting.value" :error="actionError" @confirm="enableExtra" />
   </section>
 </template>
 

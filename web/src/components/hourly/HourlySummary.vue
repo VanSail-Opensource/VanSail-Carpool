@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { HourlyView } from '@/api/hourly'
 import InlineNotice from '@/components/common/InlineNotice.vue'
 import { useI18n } from '@/i18n'
-import { formatMoney, txbInputFromMinor } from '@/utils/format'
+import { displayInputFromTXBMinor, formatMemberMoney } from '@/utils/displayCurrency'
 import HourlyAllowanceGraph from './HourlyAllowanceGraph.vue'
 const props = defineProps<{ data: HourlyView; busy: boolean }>()
 defineEmits<{ extra: [enabled: boolean] }>()
@@ -14,15 +14,15 @@ const fundingSuspended = computed(() => props.data.squads.some(item => item.enro
 
 <template>
   <section class="hourly-summary" :aria-label="t('hourly.account')">
-    <div class="hourly-summary__wallet"><span>{{ t('payg.balance') }}</span><strong>{{ formatMoney(data.balance) }}</strong></div>
+    <div class="hourly-summary__wallet"><span>{{ t('payg.balance') }}</span><strong>{{ formatMemberMoney(data.balance) }}</strong></div>
     <InlineNotice v-if="fundingSuspended" class="hourly-summary__notice" tone="warning" :title="t('hourly.fundingSuspendedTitle')">{{ t('hourly.fundingSuspendedBody') }}</InlineNotice>
     <div class="hourly-summary__body">
       <HourlyAllowanceGraph :usage="data.usage" :policy="data.policy.policy" :extra-enabled="data.extraPreference.extraEnabled" />
     </div>
     <div class="hourly-summary__extra">
-      <USwitch :model-value="data.extraPreference.extraEnabled" :disabled="busy || (!data.extraPreference.extraEnabled && data.policy.policy.extraGBPriceTXBMinor === '0')" :label="t('hourly.extraTitle')" :description="t('hourly.extraRate', { price: txbInputFromMinor(data.policy.policy.extraGBPriceTXBMinor) })" @update:model-value="$emit('extra', $event)" />
+      <USwitch :model-value="data.extraPreference.extraEnabled" :disabled="busy || (!data.extraPreference.extraEnabled && data.policy.policy.extraGBPriceTXBMinor === '0')" :label="t('hourly.extraTitle')" :description="t('hourly.extraRate', { price: displayInputFromTXBMinor(data.policy.policy.extraGBPriceTXBMinor) })" @update:model-value="$emit('extra', $event)" />
       <p v-if="data.policy.policy.extraGBPriceTXBMinor === '0'" class="hourly-summary__hint">{{ t('hourly.extraUnavailable') }}</p>
-      <p v-if="data.extraPreference.extraEnabled" class="hourly-summary__hint">{{ t('hourly.acceptedPrice', { price: txbInputFromMinor(data.extraPreference.acceptedExtraPriceTXBMinor ?? '0') }) }}</p>
+      <p v-if="data.extraPreference.extraEnabled" class="hourly-summary__hint">{{ t('hourly.acceptedPrice', { price: displayInputFromTXBMinor(data.extraPreference.acceptedExtraPriceTXBMinor ?? '0') }) }}</p>
       <UButton v-if="consentChanged" color="neutral" variant="link" :disabled="busy" :label="t('hourly.reviewPrice')" @click="$emit('extra', true)" />
     </div>
     <p v-if="data.usage?.accountingPending" class="hourly-summary__hint" role="status">{{ t('hourly.accountingPending') }}</p>
