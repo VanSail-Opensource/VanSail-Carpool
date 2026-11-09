@@ -3,6 +3,8 @@ package xnode
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/routingmatch"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
 )
@@ -43,6 +45,19 @@ func guardedRoutingOutbound(proxy subscription.Proxy) (map[string]any, error) {
 	sockopt, _ := stream["sockopt"].(map[string]any)
 	if value := sockopt["dialerProxy"]; value != nil && value != "" {
 		return unknown()
+	}
+	// Client exports explicitly disable MPTCP. A managed hop uses that same
+	// native default without introducing a socket override into the agent guard.
+	// Retain every other socket field so the native permission check still sees it.
+	if sockopt["tcpMptcp"] == false {
+		out, stream, sockopt = maps.Clone(out), maps.Clone(stream), maps.Clone(sockopt)
+		delete(sockopt, "tcpMptcp")
+		if len(sockopt) == 0 {
+			delete(stream, "sockopt")
+		} else {
+			stream["sockopt"] = sockopt
+		}
+		out["streamSettings"] = stream
 	}
 	return out, nil
 }

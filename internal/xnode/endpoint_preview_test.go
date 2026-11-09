@@ -24,6 +24,15 @@ func TestEndpointPreviewIsReadOnlyAndOptionsRemainEncrypted(t *testing.T) {
 		t.Fatal(preview, err)
 	}
 	encoded, _ := json.Marshal(preview)
+	var responseFields map[string]json.RawMessage
+	if err = json.Unmarshal(encoded, &responseFields); err != nil || len(responseFields) != 6 {
+		t.Fatal("preview response changed its safe metadata boundary", err)
+	}
+	for _, field := range []string{"valid", "metadata", "inbounds", "fields", "fieldErrors", "clients"} {
+		if _, ok := responseFields[field]; !ok {
+			t.Fatal("preview response returned an unexpected field instead of", field)
+		}
+	}
 	if strings.Contains(string(encoded), "00000000-0000-4000-8000-000000000001") || strings.Contains(string(encoded), "synthetic-preview") {
 		t.Fatal("preview exposed credentials", string(encoded))
 	}

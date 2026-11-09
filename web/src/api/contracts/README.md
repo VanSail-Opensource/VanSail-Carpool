@@ -2,8 +2,10 @@
 
 Endpoint previews require derived metadata, expanded inbound choices and typed
 field/client error arrays, with no credential/configuration output. Generated
-`responseSchemas.json` and `responses.test.ts` reject missing facts, malformed
-compatibility data and unexpected credentials before a response reaches Vue.
+`responseSchemas.json` and `responses.test.ts` reject missing facts and malformed
+compatibility data while accepting future optional fields. The backend's typed
+preview response and `endpoint_preview_test.go` enforce its six safe metadata
+fields and exclude credentials or native configuration output.
 
 - `responseSchemas.json` contains generated response shapes from OpenAPI. `responses.ts` lazily builds Zod validators for cached and refreshed reads, accepts new optional fields, and rejects malformed required data before it reaches Vue state. `responses.test.ts` covers additive changes and malformed successful responses.
 

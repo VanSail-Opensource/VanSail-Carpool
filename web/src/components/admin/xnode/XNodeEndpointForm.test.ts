@@ -4,8 +4,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { XNode, XNodeConfiguration, XNodeEndpoint, XNodeEndpointPreview } from '@/api/xnode'
 const api = vi.hoisted(() => ({ previewEndpoint: vi.fn(), saveEndpoint: vi.fn() }))
+const messages = vi.hoisted(() => ({ 'endpointOptions.errors.required': 'endpoint-required-error', 'endpointOptions.errors.invalid': 'endpoint-invalid-error' }))
 vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
-vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }), t: (key: string) => key, localizedError: (_error: unknown, key: string) => key }))
+vi.mock('@/i18n', () => {
+  const t = (key: string) => messages[key as keyof typeof messages] ?? key
+  return { useI18n: () => ({ t }), t, localizedError: (_error: unknown, key: string) => key }
+})
 import XNodeEndpointForm from './XNodeEndpointForm.vue'
 const nodes: XNode[] = ['one', 'two'].map(id => ({ id, name: id, configId: id, enabled: true, multiplier: 1 }))
 const configurations: XNodeConfiguration[] = nodes.map(node => ({ id: node.id, name: node.id, revision: 1, snippetIds: [], document: { inbounds: [{ tag: 'raw-' + node.id, protocol: 'vless' }] } }))
@@ -19,7 +23,9 @@ const stubs = {
   UAlert: defineComponent({ props: { title: { type: String, default: '' } }, setup: (props, { slots }) => () => h('div', [props.title, slots.actions?.()]) }),
   USwitch: { template: '<span />' }, XNodeEndpointOptions: { template: '<span />' }, XNodeEndpointCompatibility: { template: '<span />' },
 }
-const editor = (perform: (action: () => Promise<unknown>) => Promise<boolean> = async action => { await action(); return true }) => mount(XNodeEndpointForm, { props: { item: endpoint, nodes, configurations, busy: false, perform }, global: { stubs } })
+// Nuxt's Vite imports retain bare SFC names; registered aliases may use U names.
+const namedStubs = { ...stubs, FormField: stubs.UFormField, Input: stubs.UInput, Select: stubs.USelect, Button: stubs.UButton, Alert: stubs.UAlert, Switch: stubs.USwitch }
+const editor = (perform: (action: () => Promise<unknown>) => Promise<boolean> = async action => { await action(); return true }) => mount(XNodeEndpointForm, { props: { item: endpoint, nodes, configurations, busy: false, perform }, global: { stubs: namedStubs } })
 beforeEach(() => { vi.resetAllMocks(); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }); api.previewEndpoint.mockResolvedValue(response()); api.saveEndpoint.mockResolvedValue(endpoint) })
 afterEach(() => vi.useRealTimers())
 const settle = async () => { await vi.advanceTimersByTimeAsync(300); await flushPromises() }
@@ -44,7 +50,8 @@ it('gates invalid previews and retains the entire draft after save refusal', asy
   await settle()
   await wrapper.get('form').trigger('submit')
   expect(api.saveEndpoint).not.toHaveBeenCalled()
-  expect(wrapper.text()).toContain('endpointOptions.errors.required')
+  expect(wrapper.text()).toContain(messages['endpointOptions.errors.required'])
+  expect(wrapper.text()).not.toContain(messages['endpointOptions.errors.invalid'])
   await wrapper.get('[data-label="common.name"] input').setValue('Edited entry')
   await settle()
   await wrapper.get('form').trigger('submit'); await flushPromises()

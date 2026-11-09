@@ -59,9 +59,10 @@ func TestChangedInboundKeepsCompatibleSubscriptionPeers(t *testing.T) {
 			found = found || proxy.ID == peer.ID
 			if format == "xray" {
 				out, err := proxy.Outbound()
-				raw, _ := json.Marshal(map[string]any{"outbounds": []any{out}})
-				if err != nil || !xnode.ValidateClientConfigurationDocument(raw).Valid {
-					t.Fatal("stale dependency produced an invalid native client", err)
+				raw, _ := json.Marshal(map[string]any{"inbounds": []any{}, "outbounds": []any{out}})
+				validation := xnode.ValidateClientConfigurationDocument(raw)
+				if err != nil || !validation.Valid {
+					t.Fatal("stale dependency produced an invalid native client", err, validation.Detail)
 				}
 			}
 		}

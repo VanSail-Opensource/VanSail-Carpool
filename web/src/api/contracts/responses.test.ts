@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { isResponseCompatible } from './responses'
 
 describe('rendering snapshot compatibility', () => {
-  it('validates endpoint draft previews without accepting credentials or malformed compatibility facts', () => {
+  it('validates endpoint draft preview facts while retaining additive response compatibility', () => {
     const response = { valid: false, metadata: { protocol: 'hysteria', transport: 'hysteria', security: 'tls' }, inbounds: [{ tag: 'paid', protocol: 'hysteria', transport: 'hysteria', security: 'tls' }], fields: [{ key: 'hysteriaPorts', group: 'hysteria', kind: 'port-ranges', minimum: 1, maximum: 65535, unit: '', advanced: false, ownership: 'administrator' }], fieldErrors: [{ field: 'name', code: 'required' }], clients: [{ format: 'native', supported: true, reasons: [], omittedOptions: [] }] }
     const path = '/api/v1/admin/xnode/endpoints/preview'
     expect(isResponseCompatible(path, 'POST', response)).toBe(true)
     expect(isResponseCompatible(path, 'POST', { ...response, inbounds: undefined })).toBe(false)
     expect(isResponseCompatible(path, 'POST', { ...response, clients: [{ format: 'native', supported: 'yes', reasons: [], omittedOptions: [] }] })).toBe(false)
-    expect(isResponseCompatible(path, 'POST', { ...response, credentials: { password: 'must-not-return' } })).toBe(false)
+    expect(isResponseCompatible(path, 'POST', { ...response, futureOptionalFact: 'compatible' })).toBe(true)
   })
   it('accepts fresh catalog contents without requiring a previous snapshot shape', () => {
     expect(isResponseCompatible('/api/v1/catalog', 'GET', {

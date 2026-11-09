@@ -724,6 +724,12 @@ deployment, proving replay backlog cannot block route activation.
 
 `routing_peer_guards.go` keeps generated private authentication and endpoint destinations intact through imported client mappers and refuses unmodelled dialer chains. `routing_peer_guards_test.go` guards these bindings and per-hop sniffing uncertainty. Conditional-cycle matcher proofs require fixed destination metadata: active destination overrides and protocol predicates with variable sniffing are refused for those graphs. Structurally acyclic managed graphs cannot revisit a listener, so normal server sniffing, DNS resolution and administrator proxy fallbacks remain usable. Torrent detector changes invalidate the saved graph dependency digest. Existing imported documents remain encrypted and unchanged.
 
+Managed peers omit only the neutral client-export `tcpMptcp:false` flag, using
+the native default without changing source settings or subscription policy.
+Every other socket override remains visible to the native member guard.
+`routing_endpoint_policy_test.go` covers typed endpoint projection, unchanged
+client/raw documents and rejection of real socket overrides and dialer chains.
+
 `routing_context_integration_test.go` exercises owner-scoped previews using
 valid REALITY endpoints, production-style sniffing, IPOnDemand, proxy defaults and
 administrator routing. It verifies eligible endpoint inventory before the routing
