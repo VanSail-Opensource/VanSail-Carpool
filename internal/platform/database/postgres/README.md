@@ -42,6 +42,8 @@ writer drain and rejection of stale node/cursor transaction snapshots.
   digests; `recovery_invariants.go` verifies ledger balances and associated-data
   encryption contexts. These functions never export plaintext records or mutate
   accounting. `db-schema fingerprint` exposes the bounded evidence document.
+  Boolean values retain a distinct deterministic type in these fingerprints;
+  `recovery_digest_bool_test.go` covers true/false and scalar type separation.
 
 Schema 32 replaces the live JSON checks, time/string expression indexes and paid
 access trigger functions, then drops obsolete compatibility functions without

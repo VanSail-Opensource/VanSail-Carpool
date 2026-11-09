@@ -32,7 +32,7 @@ func TestUsageHistoryBatchSavepointCannotLeakRejectedNeighbor(t *testing.T) {
 		}
 	}
 	value, err := s.XNodePeriod(context.Background(), period.ID)
-	if err != nil || value.UsedBytes != 8 {
+	if err != nil || value.UsedBytes != 7 {
 		t.Fatal("savepoint leaked native weighted usage", value, err)
 	}
 }

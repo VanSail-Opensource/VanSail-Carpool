@@ -135,6 +135,9 @@ func hashValue(h hash.Hash, value any) error {
 	switch v := value.(type) {
 	case nil:
 		kind = "n"
+	case bool:
+		kind = "t"
+		text = strconv.FormatBool(v)
 	case int64:
 		kind = "i"
 		text = strconv.FormatInt(v, 10)
