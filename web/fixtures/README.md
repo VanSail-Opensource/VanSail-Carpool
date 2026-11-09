@@ -8,6 +8,16 @@ profiles, a failed attempt and a still-serving certificate. Add `certificate-dns
 provider selection, PEM controls, status and original receipt recovery. Existing
 `node-save-error`, `slow`, `zh` and appearance flags remain available. Constructed
 commands and receipts remain inside the fixture; no provider request is made.
+Add `certificate-relative-file` with `certificates` to verify that `./tls/cert.pem`
+and `../shared/key.pem` stay editable and survive an unrelated node Save unchanged.
+`certificate-inferred-file` and `certificate-inferred-content` leave `cert_mode`
+empty to check native inference and retained raw values. Clearing one material
+field must keep its controls visible/error-marked; refilling it restores validity.
+`certificate-content-no-domain`, `certificate-content-wildcard`,
+`certificate-inferred-http`, `certificate-normalized-mode`, `certificate-idn`,
+`certificate-single-label` and `certificate-self-name` cover remaining native
+compatibility cases. PEM in these fixtures is a synthetic envelope for GUI checks;
+hosted backend regressions exercise actual key pairs and certificate names.
 Use `certificates&certificate-inline&certificate-providers-error` to check a
 retained inline DNS profile during global discovery failure: unrelated node
 settings can still save with opaque synthetic credentials preserved. Compare

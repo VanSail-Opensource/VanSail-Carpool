@@ -2,7 +2,7 @@
 import { computed, reactive, watch } from 'vue'
 import type { XNodeSettings, XNodeMetrics } from '@/api/xnode'
 import { useI18n } from '@/i18n'
-import { certificateBindingsValid, certificateBoundInbounds, certificateErrors, type CertificateProfile, type CertificateProviders } from './certificateForm'
+import { certificateBindingsValid, certificateBoundInbounds, certificateErrors, certificateMode, type CertificateProfile, type CertificateProviders } from './certificateForm'
 import { readCertificateStatus } from './certificateStatus'
 import XNodeCertificateProfile from './XNodeCertificateProfile.vue'
 import XNodeCertificateStatus from './XNodeCertificateStatus.vue'
@@ -20,7 +20,7 @@ const fresh = computed(() => !!props.metric?.connected && !props.metric.stale)
 const capable = computed(() => props.metric?.capabilities?.includes('certificate_lifecycle_v1') === true)
 const reason = computed(() => !props.saved || !props.nodeId || !Number.isSafeInteger(props.revision) || props.revision < 1 ? t('certificates.saveFirst') : !capable.value ? t('certificates.upgradeRequired')
   : !fresh.value ? t('certificates.nodeUnavailable') : '')
-const valid = computed(() => entries.value.length <= 64 && entries.value.every(([, profile]) => !Object.keys(certificateErrors(profile, props.providers)).length && !(profile.config.cert_mode === 'dns' && !!profile.provider && props.providersLoading))
+const valid = computed(() => entries.value.length <= 64 && entries.value.every(([, profile]) => !Object.keys(certificateErrors(profile, props.providers)).length && !(certificateMode(profile.config) === 'dns' && !!profile.provider && props.providersLoading))
   && certificateBindingsValid(model.value, props.inbounds) && !Object.values(busy).some(Boolean))
 watch(valid, value => emit('valid', value), { immediate: true, flush: 'sync' })
 function update(id: string, profile: CertificateProfile): void { model.value = { ...model.value, certificates: { ...model.value.certificates, [id]: profile } } }
@@ -63,7 +63,7 @@ function remove(id: string): void {
       <p v-if="bound(id).length" class="text-xs text-muted">{{ t('certificates.boundTo', { tags: bound(id).join(', ') }) }}</p>
       <XNodeCertificateProfile :model-value="profile" :id="id" :providers="providers" :providers-loading="providersLoading" :disabled="busy[id]" @update:model-value="update(id, $event)" />
       <XNodeCertificateStatus :value="status(id)" :fresh="fresh" />
-      <XNodeCertificateLifecycle v-if="nodeId && savedProfileIds.includes(id) && ['http', 'dns'].includes(profile.config.cert_mode)" :node-id="nodeId" :profile-id="id" :revision="revision" :can-run="canRun(profile)" :active="readCertificateStatus(status(id))?.active ?? false" :reason="reason" @busy="busy[id] = $event" />
+      <XNodeCertificateLifecycle v-if="nodeId && savedProfileIds.includes(id) && ['http', 'dns'].includes(certificateMode(profile.config))" :node-id="nodeId" :profile-id="id" :revision="revision" :can-run="canRun(profile)" :active="readCertificateStatus(status(id))?.active ?? false" :reason="reason" @busy="busy[id] = $event" />
       <p v-else class="text-xs text-muted">{{ t('certificates.saveToApply') }}</p>
     </div>
     <UButton type="button" variant="outline" color="neutral" icon="i-ph-plus-bold" :label="t('xnode.addCertificate')" :disabled="entries.length >= 64 || Object.values(busy).some(Boolean)" class="justify-self-start" @click="add" />

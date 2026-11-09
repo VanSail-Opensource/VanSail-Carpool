@@ -18,13 +18,21 @@ export function certificateFixture(params: URLSearchParams, trace: { writes: unk
   xnodeApi.node = async (id, signal) => {
     const value = await oldNode(id, signal)
     value.settings.certificates = {
-      primary: { provider: params.has('certificate-dns') && !params.has('certificate-inline') ? 'cloudflare' : '', config: params.has('certificate-file') ? { cert_mode: 'file', cert_file: '/etc/x-node/tls/cert.pem', key_file: '/etc/x-node/tls/key.pem' }
+      primary: { provider: params.has('certificate-dns') && !params.has('certificate-inline') ? 'cloudflare' : '', config: params.has('certificate-file') || params.has('certificate-relative-file') ? { cert_mode: 'file', cert_file: params.has('certificate-relative-file') ? './tls/cert.pem' : '/etc/x-node/tls/cert.pem', key_file: params.has('certificate-relative-file') ? '../shared/key.pem' : '/etc/x-node/tls/key.pem' }
         : params.has('certificate-content') ? { cert_mode: 'content', domain: 'proxy.example', cert_content: '', key_content: '' }
         : params.has('certificate-inline') ? { cert_mode: 'dns', domain: 'proxy.example', dns_provider: 'cloudflare', dns_env: { CLOUDFLARE_DNS_API_TOKEN: 'synthetic-fixture-credential' }, auto_tls: true }
         : { cert_mode: params.has('certificate-dns') ? 'dns' : 'http', domain: 'proxy.example', email: 'certificates@proxy.example', auto_tls: true } },
       failed: { config: { cert_mode: 'http', domain: 'pending.proxy.example', auto_tls: true } },
     }
     value.settings.inboundCertificates = { paid: 'primary' }
+    const primary = value.settings.certificates.primary!
+    if (params.has('certificate-inferred-file')) primary.config = { cert_mode: '', auto_tls: false, cert_file: './tls/cert.pem', key_file: '../shared/key.pem' }
+    if (params.has('certificate-content-no-domain') || params.has('certificate-inferred-content') || params.has('certificate-content-wildcard')) primary.config = { cert_mode: params.has('certificate-inferred-content') ? '' : 'content', domain: params.has('certificate-content-wildcard') ? '*.example.com' : '', cert_content: '-----BEGIN CERTIFICATE-----\nQUJD\n-----END CERTIFICATE-----', key_content: '-----BEGIN PRIVATE KEY-----\nQUJD\n-----END PRIVATE KEY-----' }
+    if (params.has('certificate-inferred-http')) primary.config = { cert_mode: '', auto_tls: true, domain: 'proxy.example' }
+    if (params.has('certificate-normalized-mode')) primary.config = { cert_mode: ' HTTP ', domain: 'proxy.example' }
+    if (params.has('certificate-idn')) primary.config.domain = 'b\u00fccher.example.'
+    if (params.has('certificate-single-label')) primary.config.domain = 'proxy'
+    if (params.has('certificate-self-name')) primary.config = { cert_mode: 'self', domain: 'Private service name' }
     return value
   }
   xnodeApi.metrics = async signal => {

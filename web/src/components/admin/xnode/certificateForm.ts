@@ -6,9 +6,29 @@ export type CertificateProviders = XNodeGlobal['providers']
 export type CertificateErrors = Partial<Record<keyof CertificateProfile['config'] | 'provider', string>>
 export const certificateModes = ['http', 'dns', 'file', 'content', 'self'] as const
 export const maxCertificatePEMBytes = 1024 * 1024
-const domain = z.string().max(253).regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i)
+export const maxCertificatePathLength = 4096
 const address = z.union([z.ipv4(), z.ipv6()])
-const path = z.string().regex(/^\/[^\0\r\n]+$/)
+const path = z.string().max(maxCertificatePathLength).refine(value => value.trim().length > 0 && !/[\0\r\n]/.test(value))
+
+export function certificateMode(config: CertificateProfile['config']): string {
+  const explicit = config.cert_mode?.trim().toLowerCase()
+  if (explicit) return explicit
+  if (config.auto_tls) return 'http'
+  if (config.cert_content && config.key_content) return 'content'
+  if (config.cert_file && config.key_file) return 'file'
+  return 'none'
+}
+function validDomain(value: string, wildcard = false): boolean {
+  let name = value.endsWith('.') ? value.slice(0, -1) : value
+  if (wildcard && name.startsWith('*.')) name = name.slice(2)
+  const controls = [...name].some(character => { const code = character.charCodeAt(0); return code < 32 || code >= 127 && code <= 159 })
+  if (!name || controls || /[\s\\/:?#@%]/u.test(name) || name.includes('[') || name.includes(']')) return false
+  const validASCII = (host: string) => host.length <= 253 && host.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label))
+  // Numeric ASCII labels are native-valid DNS names; URL may reinterpret them
+  // as IPv4. Only IDNA conversion needs the platform hostname parser.
+  if ([...name].every(character => character.charCodeAt(0) < 128)) return validASCII(name)
+  try { return validASCII(new URL(`https://${name}`).hostname) } catch { return false }
+}
 
 function pem(value: string | undefined, kind: 'certificate' | 'key'): boolean {
   if (!value || new TextEncoder().encode(value).length > maxCertificatePEMBytes) return false
@@ -19,15 +39,13 @@ function pem(value: string | undefined, kind: 'certificate' | 'key'): boolean {
 
 export function certificateErrors(profile: CertificateProfile, providers: CertificateProviders): CertificateErrors {
   const errors: CertificateErrors = {}, config = profile.config
-  const mode = config.cert_mode
+  const mode = certificateMode(config)
   if (!certificateModes.some(value => value === mode)) errors.cert_mode = 'modeInvalid'
-  const name = config.domain?.trim() ?? ''
-  if (mode !== 'file') {
-    const valid = mode === 'dns' ? domain.safeParse(name.replace(/^\*\./, '')).success
-      : mode === 'http' ? domain.safeParse(name).success : domain.safeParse(name).success || address.safeParse(name).success || name === 'localhost'
-    if (!valid) errors.domain = 'domainInvalid'
-  }
-  if (['http', 'dns'].includes(mode) && config.email?.trim() && !z.email().safeParse(config.email.trim()).success) errors.email = 'emailInvalid'
+  const name = config.domain ?? ''
+  if (['http', 'dns'].includes(mode) && !validDomain(name, mode === 'dns')) errors.domain = 'domainInvalid'
+  if (mode === 'self' && !name.trim()) errors.domain = 'domainInvalid'
+  if (mode === 'content' && name && !validDomain(name, true) && !address.safeParse(name.startsWith('[') && name.endsWith(']') ? name.slice(1, -1) : name).success) errors.domain = 'domainInvalid'
+  if (['http', 'dns'].includes(mode) && config.email && !z.email().safeParse(config.email).success) errors.email = 'emailInvalid'
   if (mode === 'dns' && (profile.provider ? !providers[profile.provider] : !config.dns_provider)) errors.provider = 'providerInvalid'
   if (mode === 'file') {
     if (!path.safeParse(config.cert_file).success) errors.cert_file = 'pathInvalid'

@@ -3,7 +3,21 @@
 Certificate administration uses `XNodeCertificateProfile.vue` for mode-specific
 fields, configured provider selection and native PEM file imports.
 `certificateForm.ts` validates fields and inbound references; the backend checks
-the actual PEM key pair and certificate hostname. Bound profiles require an
+the actual PEM key pair and certificate hostname.
+File profiles accept relative or absolute paths as the native agent does;
+relative paths resolve from its working directory. Validation preserves literal
+values, bounds them to 4096 characters and rejects blank paths or NUL/CR/LF.
+`certificateForm.ts` derives the native managed mode from a trimmed/case-folded
+explicit value, then AutoTLS, a complete PEM pair or a complete file pair. Reads
+and unrelated node edits preserve raw configuration; editing a profile field
+materializes its inferred mode so clearing one half keeps the relevant controls
+visible with an error. Supplied PEM can omit its name; an optional name, including
+a literal wildcard, is checked against the real certificate by the backend.
+ACME names support IDNA, one trailing dot and single labels without rewriting
+stored input. URI separators, encoded names, whitespace and controls are rejected;
+optional emails are checked without trimming. Self names require nonblank text.
+An unresolved `none` mode remains invalid for a managed certificate profile.
+Bound profiles require an
 explicit unbind before removal. Existing inline DNS credentials remain opaque.
 Inline-only legacy DNS profiles do not depend on global-provider discovery for
 unrelated saves; explicit global-provider references still wait for discovery.
@@ -246,3 +260,15 @@ save-error states at 390 px and 1440 px in Chinese and English. Keyboard creatio
 omitted cadence and defaulted to `NO_RESET`; an unchanged legacy edit retained
 `DAY`. Dialogs stayed contained, drafts survived refusal, and console/network
 checks found no errors or backend requests. Hosted Actions run the regressions.
+
+The final certificate compatibility pass used Chrome at 1440px/light/English and
+390px/dark/Chinese. Unrelated node saves preserved inferred file/content/HTTP
+modes and literal relative paths, empty content domains and IDN/trailing-dot
+names. Clearing an inferred file path kept both file controls visible, marked
+the field invalid and blocked Save; refilling restored validity and materialized
+the displayed mode only after that explicit profile edit. Normalized explicit
+modes, single-label hosts, private self-signed names and optional wildcard PEM
+names rendered correctly. The mobile optional-domain/PEM layout was inspected
+without horizontal overflow. Console checks were clear and mock fetch/XHR made
+no actual failing requests. PEM envelopes were synthetic; real key/name matching
+is covered by hosted backend regressions. No live issuance was performed.

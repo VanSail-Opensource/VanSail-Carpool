@@ -10,17 +10,18 @@ import (
 	"golang.org/x/net/idna"
 )
 
+// Match X-Node's effective-mode precedence without rewriting encrypted settings.
 func certificateMode(config wire.CertConfig) string {
-	if config.CertMode != "" {
-		return config.CertMode
+	if mode := strings.ToLower(strings.TrimSpace(config.CertMode)); mode != "" {
+		return mode
 	}
 	if config.AutoTLS {
 		return "http"
 	}
-	if config.CertContent != "" || config.KeyContent != "" {
+	if config.CertContent != "" && config.KeyContent != "" {
 		return "content"
 	}
-	if config.CertFile != "" || config.KeyFile != "" {
+	if config.CertFile != "" && config.KeyFile != "" {
 		return "file"
 	}
 	return "none"

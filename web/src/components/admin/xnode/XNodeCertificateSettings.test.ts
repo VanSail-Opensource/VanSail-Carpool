@@ -21,7 +21,7 @@ function editor(settings: XNodeSettings, nodeId = '') {
 
 describe('certificate profile references', () => {
   it('keeps inline DNS profiles valid during global discovery outages without relaxing global references', async () => {
-    const config = { cert_mode: 'dns', domain: 'proxy.example', dns_provider: 'cloudflare', dns_env: { CLOUDFLARE_DNS_API_TOKEN: 'opaque-original-value' } }
+    const config = { cert_mode: ' DNS ', domain: 'proxy.example', dns_provider: 'cloudflare', dns_env: { CLOUDFLARE_DNS_API_TOKEN: 'opaque-original-value' } }
     const settings = { certificates: { primary: { provider: '', config } }, inboundCertificates: { paid: 'primary' } }
     const wrapper = editor(settings)
     await wrapper.setProps({ providersLoading: true })
@@ -77,6 +77,9 @@ describe('certificate profile references', () => {
       providers: {}, nodeId: 'node', revision: 3, saved: true, savedProfileIds: ['primary'], metric }, global: { stubs } })
     expect(wrapper.get('[data-lifecycle]').attributes('data-can-run')).toBe('true')
     expect(wrapper.get('[data-status-phase]').attributes('data-status-phase')).toBe('failed')
+    await wrapper.setProps({ modelValue: { certificates: { primary: { config: { cert_mode: '', auto_tls: true, domain: 'proxy.example' } } } } })
+    expect(wrapper.get('[data-lifecycle]').attributes('data-can-run')).toBe('true')
+    expect(wrapper.props('modelValue').certificates?.primary?.config.cert_mode).toBe('')
     await wrapper.setProps({ metric: { ...metric, stale: true } })
     expect(wrapper.get('[data-lifecycle]').attributes('data-can-run')).toBe('false')
     wrapper.unmount()

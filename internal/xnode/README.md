@@ -5,7 +5,13 @@ the existing durable command executor and recovers the latest profile receipt.
 Its result allowlist retains safe intent, active fingerprint and activation facts
 even after failed/uncertain completion. `certificate_validation.go` checks mode
 fields, provider references and bounded matching PEM pairs locally; it never
-reads node paths or contacts a provider. `certificate_progress.go` keeps one
+reads node paths or contacts a provider. Effective mode follows X-Node: normalized
+explicit mode, automatic HTTPS, a complete PEM pair, then a complete file pair.
+Partial stale PEM fields do not hide a valid file pair; inferred or normalized
+domainless file profiles require `node_file_certificates_v1`. Raw saved settings
+remain intact, and managed profiles still reject an effective `none` mode.
+`certificate_mode_test.go` protects inference, validation and older-agent gating.
+`certificate_progress.go` keeps one
 typed advisory snapshot per active node in memory, outside terminal result slots.
 Certificate execution has a five-minute deadline, capability negotiation and
 the existing per-node queue. Cross-device uncertainty is fenced by the store's

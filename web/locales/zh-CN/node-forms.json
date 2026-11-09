@@ -84,10 +84,10 @@
   },
   "certificates": {
     "modeInvalid": "请选择支持的证书模式。",
-    "domainInvalid": "请输入有效的证书名称。通配符需要 DNS-01。",
-    "emailInvalid": "请输入有效的邮箱地址，或留空。",
+    "domainInvalid": "请输入符合此模式的证书名称。HTTP-01 不支持通配符。",
+    "emailInvalid": "请输入有效且首尾无空格的邮箱地址，或留空。",
     "providerInvalid": "请选择已配置的 DNS 服务商。",
-    "pathInvalid": "请输入节点上的绝对文件路径。",
+    "pathInvalid": "请输入节点上的非空相对或绝对文件路径，不得换行，最多 4096 个字符。",
     "certificatePEMInvalid": "请提供 PEM 格式的证书，最大 1 MiB。",
     "keyPEMInvalid": "请提供未加密的 PEM 格式私钥，最大 1 MiB。",
     "emailHint": "选填，用于接收签发机构通知。",
@@ -133,6 +133,7 @@
     "renew": "续期证书",
     "uncertain": "请求结果尚不明确。请先检查原操作状态，再发起其他操作。",
     "actionFailed": "证书操作未能完成。请检查操作状态后重试。",
-    "recoveryFailed": "无法读取原证书操作。请重试状态检查。"
+    "recoveryFailed": "无法读取原证书操作。请重试状态检查。",
+    "contentDomainHint": "选填。填写后，证书必须匹配此名称或 IP 地址。"
   }
 }
