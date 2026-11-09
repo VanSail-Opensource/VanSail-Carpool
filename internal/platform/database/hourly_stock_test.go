@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -50,29 +49,21 @@ func TestHourlyStockProjectionIsIndependentOfLegacyPAYGMode(t *testing.T) {
 // shared seat count (fixed-term owners plus active hourly owners, distinct users)
 // and the same limit arithmetic.
 func TestCatalogAndHourlyStockShareOneCountAndLimit(t *testing.T) {
-	s := newTestStore(t)
+	s, policy, input := hourlyBillingFixture(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	group := "shared-seat"
-	if err := s.SaveXNodeGroup(ctx, xnode.Group{ID: group, Name: "Shared seat", Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
+	group := input.GroupID
 	limit := 3
 	if _, err := s.SaveSquadProduct(ctx, SquadProductInput{GroupID: group, UpstreamPresent: true, Visible: true, PriceTXBMinor: 50, StockLimit: &limit}); err != nil {
 		t.Fatal(err)
 	}
-	addHourlyBillingOffer(t, s, createTestUser(t, s, 61932).ID, group, 1)
+	activateHourlyBillingFixture(t, s, input, policy)
 	combo := saveTestCombo(t, s, "shared-seat-combo", 100, 30, group)
 	member := createTestUser(t, s, 519032)
 	if _, err := s.AdjustBalance(ctx, member.ID, 1000, "shared-seat", "fixture", now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.CreatePurchase(ctx, PurchaseInput{UserID: member.ID, ComboID: combo.ID, IdempotencyKey: "shared-seat"}, now); err != nil {
-		t.Fatal(err)
-	}
-	hourlyOwner := createTestUser(t, s, 519033)
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO hourly_enrollments(id,owner_id,account_generation,group_id,activation_key,request_fingerprint,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,'active',$7,$7)`,
-		"shared-seat-hourly", hourlyOwner.ID, hourlyOwner.AccountGeneration, group, "shared-seat-key", strings.Repeat("b", 64), now); err != nil {
 		t.Fatal(err)
 	}
 	counts, err := s.squadStockCounts(ctx)
