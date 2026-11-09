@@ -3,12 +3,14 @@ package database
 import (
 	"context"
 	"fmt"
-	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 	"testing"
 	"time"
+
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	wire "github.com/VanSail-Opensource/X-Node/pkg/protocol"
 )
 
-func TestZeroNodeRateRetainsRawUsageAndSettledRateHistory(t *testing.T) {
+func TestRetiredNodeRatesCannotDiscountOrRepriceNewTraffic(t *testing.T) {
 	store, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	at := time.Now().UTC()
@@ -25,26 +27,26 @@ func TestZeroNodeRateRetainsRawUsageAndSettledRateHistory(t *testing.T) {
 	}
 	record(2, 80)
 	value, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 5 {
-		t.Fatalf("free traffic changed charged usage: %+v %v", value, err)
+	if err != nil || value.UsedBytes != 84 {
+		t.Fatalf("retired zero rate discounted traffic: %+v %v", value, err)
 	}
 	usage, err := store.XNodeUsage(ctx, identity.ProxyUserID, at, at)
-	if err != nil || len(usage) != 1 || usage[0].UploadBytes != 84 || usage[0].WeightedBytes != 5 {
-		t.Fatalf("raw free-node accounting was lost: %+v %v", usage, err)
+	if err != nil || len(usage) != 1 || usage[0].UploadBytes != 84 || usage[0].WeightedBytes != 84 {
+		t.Fatalf("raw accounting was lost: %+v %v", usage, err)
 	}
-	// A stale flush result cannot rewrite the already committed zero-price range.
+	// A stale caller cannot rewrite committed boundaries or restore multiplication.
 	if err = store.SetXNodeRate(ctx, "node", "agent", 1, 2000000); err != nil {
 		t.Fatal(err)
 	}
-	var original, free int64
+	var original, next int64
 	if err = store.db.QueryRowContext(ctx, "SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' AND from_sequence=1").Scan(&original); err != nil {
 		t.Fatal(err)
 	}
-	if err = store.db.QueryRowContext(ctx, "SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' AND from_sequence=2").Scan(&free); err != nil {
+	if err = store.db.QueryRowContext(ctx, "SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' AND from_sequence=2").Scan(&next); err != nil {
 		t.Fatal(err)
 	}
-	if original != 1250000 || free != 0 {
-		t.Fatal("settled rate boundaries were rewritten")
+	if original != xnode.MultiplierScale || next != xnode.MultiplierScale {
+		t.Fatal("retired rate was not coerced to raw bytes", original, next)
 	}
 	if err = store.SetXNodeRate(ctx, "node", "agent", 2, -1); err == nil {
 		t.Fatal("negative multiplier accepted")

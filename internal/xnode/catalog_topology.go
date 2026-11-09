@@ -102,7 +102,7 @@ func (s *Service) readCatalogTopology(ctx context.Context) (CatalogTopology, err
 	result := CatalogTopology{Nodes: make([]TopologyNode, 0, len(nodes)), Groups: groups}
 	for _, node := range nodes {
 		result.Nodes = append(result.Nodes, TopologyNode{ID: node.ID, Name: node.Name,
-			CountryCode: node.CountryCode, ProviderName: node.ProviderName, Multiplier: node.Multiplier, Enabled: node.Enabled})
+			CountryCode: node.CountryCode, ProviderName: node.ProviderName, Multiplier: 1, Enabled: node.Enabled})
 	}
 	return result, nil
 }

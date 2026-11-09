@@ -93,7 +93,7 @@ func TestPAYGTrafficIgnoresNodeMultiplierAndRateChanges(t *testing.T) {
 		t.Fatal("PAYG affected weighted combo quota", period, err)
 	}
 	var rate int64
-	if err := s.DB().QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' ORDER BY from_sequence DESC LIMIT 1`).Scan(&rate); err != nil || rate != 100_000_000 {
-		t.Fatal("PAYG changed configured multiplier", rate, err)
+	if err := s.DB().QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id='agent' ORDER BY from_sequence DESC LIMIT 1`).Scan(&rate); err != nil || rate != xnode.MultiplierScale {
+		t.Fatal("retired multiplier was not coerced to raw bytes", rate, err)
 	}
 }

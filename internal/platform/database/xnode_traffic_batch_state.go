@@ -9,13 +9,8 @@ import (
 )
 
 type trafficCursorKey struct{ agent, stream string }
-type trafficRateKey struct {
-	trafficCursorKey
-	sequence uint64
-}
 type trafficNodeValue struct {
-	agent      string
-	multiplier int64
+	agent string
 }
 type trafficCursorValue struct {
 	node, digest        string
@@ -25,23 +20,21 @@ type trafficCursorValue struct {
 type trafficBatchState struct {
 	nodes   map[string]trafficNodeValue
 	cursors map[trafficCursorKey]*trafficCursorValue
-	rates   map[trafficRateKey]int64
 	payg    map[int64]bool
 	native  *nativeTrafficBuffer
 }
 
-func trafficNodeTx(ctx context.Context, tx *sql.Tx, batch *trafficBatchState, node string) (string, int64, error) {
+func trafficNodeTx(ctx context.Context, tx *sql.Tx, batch *trafficBatchState, node string) (string, error) {
 	if batch != nil {
 		v, exists := batch.nodes[node]
 		if !exists {
-			return "", 0, xnode.ErrNotFound
+			return "", xnode.ErrNotFound
 		}
-		return v.agent, v.multiplier, nil
+		return v.agent, nil
 	}
 	var agent string
-	var multiplier int64
-	err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, node).Scan(&agent, &multiplier)
-	return agent, multiplier, err
+	err := tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=$1 FOR KEY SHARE`, node).Scan(&agent)
+	return agent, err
 }
 
 func trafficCursorTx(ctx context.Context, tx *sql.Tx, batch *trafficBatchState, node string, key trafficCursorKey) (*trafficCursorValue, error) {

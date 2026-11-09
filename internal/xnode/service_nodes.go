@@ -3,7 +3,6 @@ package xnode
 import (
 	"context"
 	"encoding/json"
-	"math"
 	"strings"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
@@ -21,7 +20,7 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	settings.Firewall.BanSeconds = 0
 	settings.Firewall.MasterControlled = false // negotiated per authenticated peer
 	settings.Firewall.SourceGeoIP = nil        // only the master may resolve this projection
-	if strings.TrimSpace(node.Name) == "" || len(node.Name) > 128 || node.ConfigID == "" || math.IsNaN(node.Multiplier) || math.IsInf(node.Multiplier, 0) || node.Multiplier < 0 || node.Multiplier > 1000 || float64(int64(math.Round(node.Multiplier*float64(MultiplierScale))))/float64(MultiplierScale) != node.Multiplier {
+	if strings.TrimSpace(node.Name) == "" || len(node.Name) > 128 || node.ConfigID == "" {
 		return node, ErrInvalid
 	}
 	if len(node.CountryCode) != 0 && len(node.CountryCode) != 2 {
@@ -51,7 +50,7 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 			return node, err
 		}
 	}
-	node.MultiplierFP = int64(math.Round(node.Multiplier * float64(MultiplierScale)))
+	node.Multiplier, node.MultiplierFP = 1, MultiplierScale
 	global, err := s.Global(ctx)
 	if err != nil {
 		return node, err
@@ -82,27 +81,6 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	node.SettingsCipher, err = s.seal("xnode.node."+node.ID, stored)
 	if err != nil {
 		return node, err
-	}
-	if previousErr == nil && previous.AgentID != "" && previous.MultiplierFP != node.MultiplierFP {
-		if s.master == nil {
-			return node, ErrUnavailable
-		}
-		barrier, err := s.master.Flush(ctx, node.ID, 0, false)
-		if err != nil {
-			return node, err
-		}
-		if barrier.StreamID != "" {
-			streams, ok := s.repo.(TrafficStreamRepository)
-			if !ok {
-				return node, ErrUnavailable
-			}
-			err = streams.SetXNodeStreamRate(ctx, node.ID, barrier.AgentID, barrier.StreamID, barrier.Sequence, node.MultiplierFP)
-		} else {
-			err = s.repo.SetXNodeRate(ctx, node.ID, barrier.AgentID, barrier.Sequence, node.MultiplierFP)
-		}
-		if err != nil {
-			return node, err
-		}
 	}
 	if err = s.persistNodeDDNS(ctx, node, settings.DDNSBindings); err != nil {
 		return node, err

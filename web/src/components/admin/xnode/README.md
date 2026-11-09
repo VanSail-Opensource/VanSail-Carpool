@@ -1,5 +1,17 @@
 # X-Node administration
 
+Node traffic multipliers are retired. `XNodeNodes.vue` has no multiplier input
+or list badge and strips any obsolete loaded value from its editable draft.
+`XNodeNodes.test.ts` covers missing, null and arbitrary legacy values, preserved
+source objects and multiplier-free create/update requests in hosted frontend CI.
+`nodeFormOptions.ts` retains only inbound selection and object coercion helpers;
+the retired multiplier validator and its obsolete tests have been removed.
+Chrome DevTools checked this flow at 1440px/light/English and 390px/dark/Chinese
+with an obsolete 1.25 fixture value. Lists/forms omitted it and successful saves
+omitted the property. Failed saves retained drafts and localized errors. Loading,
+empty and read-error retry states passed; two/one-column layouts had no body
+overflow, console warnings/errors or real mocked-flow network requests.
+
 Certificate administration uses `XNodeCertificateProfile.vue` for mode-specific
 fields, configured provider selection and native PEM file imports.
 `certificateForm.ts` validates fields and inbound references; the backend checks
@@ -158,7 +170,7 @@ Per-node bandwidth controls are retired; legacy settings decode without restorin
 loads, retained failed-save drafts and Go-validated expressions. These presets
 control member server routing; subscription client documents stay independent.
 
-`nodeFormOptions.test.ts` verifies explicit zero/max multipliers, six-decimal precision, and rejected omitted/null or over-precise input. `XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables. Status labels are localized in `locales/en/xnode.json` and `locales/zh-CN/xnode.json`.
+`XNodeMetrics.vue` keeps CPU/memory chart buffers only while the metric view is mounted; `XNodeMetricDetails.vue` uses localized metric tables. Status labels are localized in `locales/en/xnode.json` and `locales/zh-CN/xnode.json`.
 
 `useXNodeWorkspace.test.ts` verifies cancellation and late-response rejection, plus write blocking after failed reads. Workspace refreshes cancel earlier reads and metric polls; disposed observations are cleared.
 

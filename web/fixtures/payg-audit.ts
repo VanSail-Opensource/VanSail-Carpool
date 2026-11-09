@@ -39,7 +39,7 @@ const squad = (index: number): SquadProduct => ({
   features: params.has('features') ? [{ icon: 'rocket-launch', title: 'Fast regional access', detail: 'Stable routes across supported endpoints' }, ...(index%2 ? [] : [{ icon: 'lock-key' as const, title: 'Private', detail: 'Owner-scoped configuration' }])] : [],
   description: '', profile: profiles[index] ?? null, billingMode: 'payg', paygPrice: money('125'), price: money('0'),
   visible: true, upstreamPresent: true, stockHeldByCurrentUser: false, stockLimit: 100, stockRemaining: 80,
-  activationRequired: false, accessibleNodes: [{ uuid: '00000000-0000-4000-8000-000000000099', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1.5, providerName: null }],
+  activationRequired: false, accessibleNodes: [{ uuid: '00000000-0000-4000-8000-000000000099', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1, providerName: null }],
   createdAt: stamp, updatedAt: stamp,
 })
 const statuses = ['available', 'insufficient_balance', 'combo_covered', 'queued_combo', 'unavailable', 'sync_pending', 'disabled'] as const

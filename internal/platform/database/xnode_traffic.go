@@ -28,7 +28,7 @@ func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, ag
 		return xnode.ErrInvalid
 	}
 
-	bound, multiplier, err := trafficNodeTx(ctx, tx, batch, nodeID)
+	bound, err := trafficNodeTx(ctx, tx, batch, nodeID)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (s *Store) recordXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, ag
 	if batch != nil {
 		native = batch.native.fork()
 	}
-	err = applyXNodeTrafficTx(ctx, tx, nodeID, agent, sequence, multiplier, report, batch, native)
+	err = applyXNodeTrafficTx(ctx, tx, nodeID, report, batch, native)
 	reason := discardedTrafficReason(err)
 	var missing interface{ MissingTrafficPeriod() string }
 	missingPeriod := ""

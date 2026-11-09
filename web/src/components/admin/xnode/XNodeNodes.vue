@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
-import { xnodeApi, type XNode, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
+import { xnodeApi, type XNode, type XNodeWrite, type XNodeConfiguration, type XNodeSettings, type XNodeMetrics, type XNodeEnrollment, type XNodeEndpoint } from '@/api/xnode'
 import { localizedError, useI18n } from '@/i18n'
 import XNodeOperationalSettings from './XNodeOperationalSettings.vue'
 import XNodePricingCostSettings from './XNodePricingCostSettings.vue'
 import XNodeRemovalDialog from './XNodeRemovalDialog.vue'
 import XNodeCommands from './XNodeCommands.vue'
 import { createLatestRequest } from '@/utils/latestRequest'
-import { nodeMultiplierSchema } from './nodeFormOptions'
 
 const props = defineProps<{ nodes: XNode[]; endpoints: XNodeEndpoint[]; configurations: XNodeConfiguration[]; metrics: XNodeMetrics | null; busy: boolean; saveError?: string | null; perform: (action: () => Promise<unknown>) => Promise<boolean> }>()
 const emit = defineEmits<{ refresh: [] }>()
@@ -24,9 +23,7 @@ const settingsValid = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const enrollment = shallowRef<XNodeEnrollment | null>(null)
 const commanding = shallowRef<XNode | null>(null)
-const draft = reactive<Partial<XNode>>({})
-const multiplierText = shallowRef('1')
-const multiplier = computed(() => nodeMultiplierSchema().safeParse(multiplierText.value))
+const draft = reactive<Partial<XNodeWrite>>({})
 const settings = ref<XNodeSettings>({ ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } })
 const certificateBaseline = shallowRef(''), loadedConfiguration = shallowRef(''), nodeRevision = shallowRef(0)
 const savedCertificateIds = shallowRef<string[]>([])
@@ -48,8 +45,8 @@ async function edit(node?: XNode): Promise<void> {
   loading.value = false; loaded.value = !node
   for (const key of Object.keys(draft)) delete draft[key as keyof XNode]
   settingsValid.value = true
-  Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', multiplier: 1, configId: props.configurations[0]?.id ?? '' }, node ?? {})
-  multiplierText.value = String(draft.multiplier)
+  Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', configId: props.configurations[0]?.id ?? '' }, node ?? {})
+  delete draft.multiplier
   settings.value = { ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } }
   certificateBaseline.value = ''; loadedConfiguration.value = ''; nodeRevision.value = 0; savedCertificateIds.value = []
   enrollment.value = null; error.value = null; editing.value = true
@@ -60,8 +57,7 @@ async function edit(node?: XNode): Promise<void> {
   finally { if (latest.isCurrent(ticket)) loading.value = false }
 }
 async function save(): Promise<void> {
-  if (loading.value || !loaded.value || props.busy || !settingsValid.value || !multiplier.value.success) return
-  draft.multiplier = multiplier.value.data
+  if (loading.value || !loaded.value || props.busy || !settingsValid.value) return
   if (await props.perform(() => xnodeApi.saveNode(draft, settings.value))) editing.value = false
 }
 function retryLoad(): void { const node = props.nodes.find(item => item.id === draft.id); if (node) void edit(node) }
@@ -79,7 +75,7 @@ async function enroll(node: XNode): Promise<void> {
     <UAlert v-if="error" color="warning" variant="soft" :title="error" />
     <p v-if="!nodes.length" class="text-muted">{{ t('xnode.noNodes') }}</p>
     <div v-for="node in nodes" :key="node.id" class="xnode-row">
-      <div><strong>{{ node.name }}</strong><div class="text-xs text-muted">{{ node.countryCode }} · {{ node.multiplier }}×</div></div>
+      <div><strong>{{ node.name }}</strong><div v-if="node.countryCode" class="text-xs text-muted">{{ node.countryCode }}</div></div>
       <UBadge :color="node.removingAt ? 'warning' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'success' : 'neutral'" variant="subtle">{{ t(node.removingAt ? 'nodeRemoval.pending' : status(node.id)?.connected && status(node.id)?.ready && !status(node.id)?.stale ? 'xnode.online' : 'xnode.offline') }}</UBadge>
       <div class="flex gap-2"><UButton variant="ghost" color="neutral" icon="i-ph-terminal-window" :disabled="!!node.removingAt" :aria-label="t('nodeAdmin.command')" @click="commanding = node" /><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="!!node.removingAt" :aria-label="t('common.edit')" @click="edit(node)" /><UButton variant="ghost" color="neutral" icon="i-ph-key-bold" :disabled="!!node.removingAt" :aria-label="t('xnode.enroll')" @click="enroll(node)" /><UButton variant="ghost" color="error" icon="i-ph-trash" :disabled="!!node.removingAt" :aria-label="t('nodeRemoval.remove')" @click="removing = node" /></div>
     </div>
@@ -96,11 +92,10 @@ async function enroll(node: XNode): Promise<void> {
               <UFormField :label="t('xnode.configuration')"><USelect v-model="draft.configId" :items="configurations" class="w-full" /></UFormField>
               <UFormField :label="t('xnode.country')"><UInput v-model="draft.countryCode" maxlength="2" class="w-full" /></UFormField>
               <UFormField :label="t('xnode.provider')"><UInput v-model="draft.providerName" class="w-full" /></UFormField>
-              <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
               <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
             </div>
             <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" :node-id="draft.id" :revision="nodeRevision" :metric="draft.id ? status(draft.id) : undefined" :certificates-saved="certificatesSaved" :saved-certificate-ids="savedCertificateIds" @valid="settingsValid = $event" />
-            <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
+            <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || busy" :label="t('common.save')" /></div>
           </form>
           <XNodePricingCostSettings v-if="draft.id" :key="draft.id" :node-id="draft.id" />
         </template>

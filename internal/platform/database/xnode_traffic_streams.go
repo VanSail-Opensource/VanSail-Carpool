@@ -29,8 +29,7 @@ func (s *Store) registerXNodeTrafficStream(ctx context.Context, node, agent, str
 	}
 	defer tx.Rollback()
 	var bound string
-	var multiplier int64
-	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=$1 FOR UPDATE`, node).Scan(&bound, &multiplier); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT COALESCE(agent_id,'') FROM xnode_nodes WHERE id=$1 FOR UPDATE`, node).Scan(&bound); err != nil {
 		return err
 	}
 	if bound != agent {
@@ -77,7 +76,7 @@ func (s *Store) registerXNodeTrafficStream(ctx context.Context, node, agent, str
 		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_traffic_streams(agent_id,stream_id,node_id,created_at,updated_at) VALUES($1,$2,$3,$4,$4)`, agent, stream, node, now); err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_stream_rates(agent_id,stream_id,from_sequence,multiplier_fp) VALUES($1,$2,1,$3)`, agent, stream, multiplier); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_stream_rates(agent_id,stream_id,from_sequence,multiplier_fp) VALUES($1,$2,1,$3)`, agent, stream, xnode.MultiplierScale); err != nil {
 			return err
 		}
 	}

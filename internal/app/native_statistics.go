@@ -46,7 +46,7 @@ func (a nativeStatisticsProvider) Nodes(ctx context.Context) ([]stats.Node, erro
 			return nil, err
 		}
 		available := owned && node.Enabled && current.Connected && current.Ready && current.Synchronized && !current.Stale && slices.Contains(current.Capabilities, "sampled_activity_v1")
-		item := stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: node.Multiplier, Online: available, XrayVersion: current.XrayVersion}
+		item := stats.Node{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, Multiplier: 1, Online: available, XrayVersion: current.XrayVersion}
 		if available {
 			item.UsersOnline = current.UsersOnline
 			item.UsersOnlineAvailable = current.UsersOnlineAvailable

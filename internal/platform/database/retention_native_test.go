@@ -59,13 +59,13 @@ func TestNativeRetentionKeepsUnacknowledgedRateBoundaries(t *testing.T) {
 	s, _, _ := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	now := time.Now().UTC()
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES('agent','node',10,'fixture',$1)`, stamp(now)); err != nil {
-		t.Fatal(err)
-	}
 	for _, sequence := range []int{5, 11, 12} {
 		if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES('agent',$1,1000000)`, sequence); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO xnode_report_cursors(agent_id,node_id,last_sequence,last_digest,updated_at) VALUES('agent','node',10,'fixture',$1)`, stamp(now)); err != nil {
+		t.Fatal(err)
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

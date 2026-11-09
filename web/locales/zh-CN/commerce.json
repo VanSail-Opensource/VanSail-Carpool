@@ -69,7 +69,6 @@
     "continue": "继续",
     "back": "返回",
     "accessibleNodes": "可用节点",
-    "nodeMultiplier": "{multiplier}x",
     "couponStepHint": "选择一个可用优惠券，或添加兑换码。",
     "addCoupon": "添加优惠券",
     "noCouponHint": "不使用优惠券，按服务器报价结算。",

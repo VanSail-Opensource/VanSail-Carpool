@@ -88,7 +88,7 @@ type Purchase struct {
 	UpdatedAt                 time.Time `json:"updatedAt"`
 }
 
-// CatalogNode is the display-only node identity and multiplier metadata used
+// CatalogNode is the display-only node identity and compatibility metadata used
 // by the member dashboard.
 type CatalogNode struct {
 	UUID                  string   `json:"uuid"`

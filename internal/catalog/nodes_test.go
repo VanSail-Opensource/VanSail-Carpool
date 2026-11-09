@@ -47,9 +47,9 @@ func TestQuoteProjectsAccessibleNodes(t *testing.T) {
 		t.Fatalf("Quote(): %v", err)
 	}
 	wantNodes := []model.ProxyNode{
-		{UUID: "berlin", Name: "Berlin", CountryCode: "DE", ConsumptionMultiplier: 0.8, Accessible: true},
-		{UUID: "austin", Name: "Austin", CountryCode: "US", ActiveInboundUUIDs: []string{"inbound-1"}, Accessible: true},
-		{UUID: "zulu", Name: "Zulu", CountryCode: "US", ConsumptionMultiplier: 1.5, Accessible: true},
+		{UUID: "berlin", Name: "Berlin", CountryCode: "DE", ConsumptionMultiplier: 1, Accessible: true},
+		{UUID: "austin", Name: "Austin", CountryCode: "US", ActiveInboundUUIDs: []string{"inbound-1"}, ConsumptionMultiplier: 1, Accessible: true},
+		{UUID: "zulu", Name: "Zulu", CountryCode: "US", ConsumptionMultiplier: 1, Accessible: true},
 	}
 	if !reflect.DeepEqual(quote.AccessibleNodes, wantNodes) {
 		t.Fatalf("Quote().AccessibleNodes = %#v, want %#v", quote.AccessibleNodes, wantNodes)

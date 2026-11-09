@@ -1,5 +1,7 @@
 # X-Node control plane
 
+Node traffic multipliers are retired. `node_decode.go` ignores the deprecated input and serializes it as constant `1`; `SaveNode` sets the fixed-point default without an agent traffic flush. Catalog/statistics adapters retain compatibility properties at `1`. Host name `{price}` expands only the existing PAYG price, with no Combo multiplier label. Recorded weighted usage and financial evidence remain authoritative. The PostgreSQL cutover establishes acceptance-sequence boundaries before new ingestion; see the database module for deployment and preservation constraints. Hosted tests in `node_multiplier_retired_test.go` and `native_policy_test.go` cover obsolete inputs and offline node edits.
+
 `certificate_commands.go` queues revision-fenced ACME lifecycle operations through
 the existing durable command executor and recovers the latest profile receipt.
 Its result allowlist retains safe intent, active fingerprint and activation facts
@@ -662,7 +664,7 @@ covers authorized endpoint IDs, legacy order and listener-aware proofs.
 
 State requests coalesce into the existing reconciler. The socket reader never waits on native compilation or GeoIP refreshes, so queued utility results and traffic acknowledgments keep progressing during external asset work.
 
-`zero_multiplier_test.go` exercises explicit zero and six-decimal settings through the real hosted store fixture.
+`node_multiplier_retired_test.go` verifies that obsolete multiplier inputs cannot affect an offline node edit or its 1x billing default.
 
 
 ## Managed member routing

@@ -6,7 +6,7 @@ import SquadPricingCard from './SquadPricingCard.vue'
 const squad: SquadProduct = {
   id: 'squad', groupId: 'group', name: 'Pacific routes', description: '', price: { currency: 'TXB', minor: '125', display: '1.25 TXB' },
   visible: true, upstreamPresent: true, stockHeldByCurrentUser: false, activationRequired: false,
-  accessibleNodes: [{ uuid: 'node', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1.5, providerName: null }],
+  accessibleNodes: [{ uuid: 'node', name: 'Internal Tokyo server', countryCode: 'JP', consumptionMultiplier: 1, providerName: null }],
   profile: null, createdAt: '2026-10-25T00:00:00Z', updatedAt: '2026-10-25T00:00:00Z',
 }
 

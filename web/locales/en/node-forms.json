@@ -27,7 +27,6 @@
     "discoverIPv6": "Discover IPv6",
     "ddnsSourceHint": "Use an interface, or an HTTPS lookup URL for each enabled family.",
     "ddnsDistinctHosts": "IPv4 and IPv6 host selections must not overlap.",
-    "multiplierInvalid": "Enter 0 to 1000, with at most six fractional digits.",
     "legacySchedule": "Existing schedule: {value}",
     "convertSchedule": "Use hour interval",
     "refreshHours": "Refresh interval (hours)",

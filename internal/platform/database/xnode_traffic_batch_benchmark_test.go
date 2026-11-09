@@ -3,8 +3,6 @@ package database
 import (
 	"fmt"
 	"testing"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
 )
 
 func BenchmarkTrafficBatchNative(b *testing.B) {
@@ -49,7 +47,7 @@ func benchmarkTrafficBatchNative(b *testing.B, batched bool) {
 	}
 	b.StopTimer()
 	value, err := s.XNodePeriod(b.Context(), period)
-	want := int64(nodes) * (int64(b.N) * 3 * 1250000 / xnode.MultiplierScale)
+	want := int64(nodes) * int64(b.N) * 3
 	if err != nil || value.UsedBytes != want {
 		b.Fatal("benchmark accounting mismatch", value.UsedBytes, want, err)
 	}

@@ -10,19 +10,19 @@ import (
 )
 
 func prepareTrafficBatch(ctx context.Context, tx *sql.Tx, items []xnode.TrafficCommit) (*trafficBatchState, error) {
-	b := &trafficBatchState{nodes: map[string]trafficNodeValue{}, cursors: map[trafficCursorKey]*trafficCursorValue{}, rates: map[trafficRateKey]int64{}, payg: map[int64]bool{}}
+	b := &trafficBatchState{nodes: map[string]trafficNodeValue{}, cursors: map[trafficCursorKey]*trafficCursorValue{}, payg: map[int64]bool{}}
 	ids := map[string]bool{}
 	for _, item := range items {
 		ids[item.NodeID] = true
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT id,COALESCE(agent_id,''),multiplier_fp FROM xnode_nodes WHERE id=ANY($1::text[]) ORDER BY id FOR KEY SHARE`, slices.Sorted(maps.Keys(ids)))
+	rows, err := tx.QueryContext(ctx, `SELECT id,COALESCE(agent_id,'') FROM xnode_nodes WHERE id=ANY($1::text[]) ORDER BY id FOR KEY SHARE`, slices.Sorted(maps.Keys(ids)))
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var id string
 		var v trafficNodeValue
-		if err = rows.Scan(&id, &v.agent, &v.multiplier); err != nil {
+		if err = rows.Scan(&id, &v.agent); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -49,9 +49,6 @@ func prepareTrafficBatch(ctx context.Context, tx *sql.Tx, items []xnode.TrafficC
 		if cursor != nil && !cursor.closed && item.Sequence > cursor.sequence {
 			billable = append(billable, item)
 		}
-	}
-	if err = loadTrafficRates(ctx, tx, b, billable); err != nil {
-		return nil, err
 	}
 	if err = lockTrafficWallets(ctx, tx, b, billable); err != nil {
 		return nil, err

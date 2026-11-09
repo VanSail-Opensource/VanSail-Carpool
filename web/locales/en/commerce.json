@@ -69,7 +69,6 @@
     "continue": "Continue",
     "back": "Back",
     "accessibleNodes": "Accessible nodes",
-    "nodeMultiplier": "{multiplier}x",
     "couponStepHint": "Choose one eligible coupon or add a code.",
     "addCoupon": "Add coupon",
     "noCouponHint": "Use the server price without a coupon.",

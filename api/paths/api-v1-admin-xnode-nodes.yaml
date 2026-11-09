@@ -69,7 +69,7 @@
             "additionalProperties": false,
             "properties": {
               "node": {
-                "$ref": "../openapi.yaml#/components/schemas/XNodeNode"
+                "$ref": "../openapi.yaml#/components/schemas/XNodeNodeWrite"
               },
               "settings": {
                 "$ref": "../openapi.yaml#/components/schemas/XNodeSettings"

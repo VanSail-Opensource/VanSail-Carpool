@@ -79,36 +79,3 @@ func loadTrafficCursors(ctx context.Context, tx *sql.Tx, b *trafficBatchState, i
 	}
 	return nil
 }
-
-func loadTrafficRates(ctx context.Context, tx *sql.Tx, b *trafficBatchState, items []xnode.TrafficCommit) error {
-	if len(items) == 0 {
-		return nil
-	}
-	var agents, streams []string
-	var sequences []int64
-	for _, item := range items {
-		agents, streams, sequences = append(agents, item.AgentID), append(streams, item.Report.StreamID), append(sequences, int64(item.Sequence))
-	}
-	rows, err := tx.QueryContext(ctx, `SELECT q.row_no,COALESCE(s.multiplier_fp,l.multiplier_fp) FROM unnest($1::text[],$2::text[],$3::bigint[]) WITH ORDINALITY AS q(agent_id,stream_id,seq_no,row_no)
- LEFT JOIN LATERAL(SELECT multiplier_fp FROM xnode_node_rates WHERE q.stream_id='' AND agent_id=q.agent_id AND from_sequence<=q.seq_no ORDER BY from_sequence DESC LIMIT 1) l ON true
- LEFT JOIN LATERAL(SELECT multiplier_fp FROM xnode_stream_rates WHERE q.stream_id<>'' AND agent_id=q.agent_id AND stream_id=q.stream_id AND from_sequence<=q.seq_no ORDER BY from_sequence DESC LIMIT 1) s ON true`, agents, streams, sequences)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var position int
-		var rate sql.NullInt64
-		if err = rows.Scan(&position, &rate); err != nil {
-			return err
-		}
-		if position < 1 || position > len(items) {
-			return xnode.ErrInvalid
-		}
-		item := items[position-1]
-		if rate.Valid {
-			b.rates[trafficRateKey{trafficCursorKey{item.AgentID, item.Report.StreamID}, item.Sequence}] = rate.Int64
-		}
-	}
-	return rows.Err()
-}

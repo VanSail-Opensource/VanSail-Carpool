@@ -21,7 +21,6 @@
     "configuration": "Xray configuration",
     "country": "Country code",
     "provider": "Provider",
-    "multiplier": "Traffic multiplier",
     "online": "Online",
     "offline": "Offline",
     "stale": "Not current",

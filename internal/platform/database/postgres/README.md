@@ -13,6 +13,18 @@ Goose migrations, schema verification, single-master ownership and recovery
 fingerprints. SQL callers author native PostgreSQL parameters and expressions;
 the connector passes values and rows directly to pgx without dialect translation.
 
+Schema 46 retires traffic multipliers at the next uncommitted legacy/stream
+sequence after draining old writers. It refuses while the existing runtime-owner
+lock is held, versions nodes and cursors, keeps committed rate/usage/financial facts
+and fences future policy writes at 1x. Its READ COMMITTED transaction deliberately
+reads final cursors after the table-lock wait. See
+[the cutover contract](../multiplier_retirement.md) and hosted `multiplier_*_test.go`.
+`multiplier_fixture_test.go` builds an isolated populated pre-retirement database;
+`multiplier_evidence_test.go` compares complete original cursor/rate facts.
+`multiplier_upgrade_test.go` verifies ownership refusal, exact historical records,
+future policy guards and exhausted cursors. `multiplier_drain_test.go` verifies
+writer drain and rejection of stale node/cursor transaction snapshots.
+
 - `open.go` configures UTC, pool bounds and statement/lock/connect deadlines.
   `Migrate` takes the existing advisory session lock; `VerifyVersion` refuses
   incomplete or future histories. Migrate as the schema owner, then start the

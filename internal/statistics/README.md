@@ -1,5 +1,7 @@
 # Product statistics
 
+Node snapshots retain the deprecated multiplier property as constant `1`; historical traffic totals continue to use recorded accounting.
+
 Node user counts are distinct members with open connections, including idle
 flows. Paid and PAYG principals are deduplicated by owner. The separate
 usersOnlineAvailable flag preserves unknown counts for legacy or stale agents.

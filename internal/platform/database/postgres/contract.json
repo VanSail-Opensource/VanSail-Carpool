@@ -11042,6 +11042,9 @@
     "hourly_settlement_immutable",
     "hourly_extra_purchase_immutable",
     "hourly_compile_revision",
-    "account_cleanup_evidence_guard"
+    "account_cleanup_evidence_guard",
+    "xnode_multiplier_retired",
+    "xnode_legacy_rate_retired",
+    "xnode_stream_rate_retired"
   ]
 }

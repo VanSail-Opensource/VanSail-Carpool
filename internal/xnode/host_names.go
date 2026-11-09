@@ -67,7 +67,7 @@ func (s *Service) SaveOwnedHostName(ctx context.Context, user, host, name string
 	if template == "" {
 		template = selected.PublishedName
 	}
-	return HostNameCustomization{HostID: host, Name: strings.ReplaceAll(template, "{price}", selected.PriceLabel), NameOverride: name, PublishedName: selected.PublishedName, PriceLabel: selected.PriceLabel}, nil
+	return HostNameCustomization{HostID: host, Name: renderHostName(template, selected.PriceLabel, selected.Address), NameOverride: name, PublishedName: selected.PublishedName, PriceLabel: selected.PriceLabel}, nil
 }
 
 func (s *Service) presentHosts(ctx context.Context, user string, proxies []subscription.Proxy) ([]subscription.Proxy, error) {
@@ -94,7 +94,15 @@ func (s *Service) presentHosts(ctx context.Context, user string, proxies []subsc
 			template = p.NameOverride
 		}
 		p.ExportName = p.NameOverride != "" || strings.Contains(template, "{price}")
-		p.Name = strings.ReplaceAll(template, "{price}", p.PriceLabel)
+		p.Name = renderHostName(template, p.PriceLabel, p.Address)
 	}
 	return result, nil
+}
+
+func renderHostName(template, price, address string) string {
+	name := strings.TrimSpace(strings.ReplaceAll(template, "{price}", price))
+	if name == "" {
+		return address
+	}
+	return name
 }

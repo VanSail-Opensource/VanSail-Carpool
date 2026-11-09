@@ -28,7 +28,7 @@ const trace = { calls: [] as string[], copies: [] as string[], writes: [] as unk
 globalThis.addEventListener('catalog-quota-save', event => trace.writes.push((event as CustomEvent).detail))
 const stamp = '2026-10-15T00:00:00Z'
 const nodes: XNode[] = params.has('empty') ? [] : [
-  { removingAt: params.has('removing') ? new Date().toISOString() : undefined, id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', multiplier: 1.25, enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
+  { removingAt: params.has('removing') ? new Date().toISOString() : undefined, id: '11111111-1111-4111-8111-111111111111', name: 'Amsterdam', countryCode: 'NL', providerName: 'Fixture', multiplier: params.has('legacy-multiplier') ? (1.25 as 1) : 1, enabled: true, configId: 'shared', agentId: 'fixture-agent-one', desiredRevision: 3, acceptedRevision: 3, appliedRevision: 3 },
   { id: '22222222-2222-4222-8222-222222222222', name: 'Singapore', countryCode: 'SG', providerName: 'Fixture', multiplier: 1, enabled: true, configId: 'shared', desiredRevision: 0, acceptedRevision: 0, appliedRevision: 0 },
 ]
 pricingAnalysisApi.data = async (_dataset, query, signal) => {

@@ -17,8 +17,8 @@ func TestProjectCatalogNodesFiltersDeduplicatesAndSorts(t *testing.T) {
 	})
 	provider := "Provider"
 	want := []model.CatalogNode{
-		{UUID: "berlin", Name: "Berlin", CountryCode: "DE", ProviderName: &provider},
-		{UUID: "zulu", Name: "Zulu", CountryCode: "US"},
+		{UUID: "berlin", Name: "Berlin", CountryCode: "DE", ConsumptionMultiplier: 1, ProviderName: &provider},
+		{UUID: "zulu", Name: "Zulu", CountryCode: "US", ConsumptionMultiplier: 1},
 	}
 	if !reflect.DeepEqual(nodes, want) {
 		t.Fatalf("projectCatalogNodes() = %#v, want %#v", nodes, want)

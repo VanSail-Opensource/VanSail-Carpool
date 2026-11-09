@@ -27,7 +27,7 @@ func TestOwnedHostNamesKeepCredentialsAndRestorePublishedName(t *testing.T) {
 		t.Fatal("published host name includes generated identity", before.Name)
 	}
 	saved, err := f.service.SaveOwnedHostName(ctx, f.user.ID, endpoint.ID, "My {price}")
-	if err != nil || saved.Name != "My 1.0x" {
+	if err != nil || saved.Name != "My" {
 		t.Fatal(saved, err)
 	}
 	exported, err := f.service.ExportProxiesForUser(ctx, f.user.ID, proxies)
@@ -70,8 +70,12 @@ func TestOwnedHostNamesKeepCredentialsAndRestorePublishedName(t *testing.T) {
 	if _, err = f.service.SaveOwnedHostName(ctx, f.user.ID, endpoint.ID, strings.Repeat("名", 101)); !errors.Is(err, xnode.ErrInvalid) {
 		t.Fatal("unbounded name accepted", err)
 	}
+	priceOnly, err := f.service.SaveOwnedHostName(ctx, f.user.ID, endpoint.ID, "{price}")
+	if err != nil || priceOnly.Name != endpoint.Address || priceOnly.PriceLabel != "" {
+		t.Fatal("retired multiplier left an empty export name", priceOnly, err)
+	}
 	restored, err := f.service.SaveOwnedHostName(ctx, f.user.ID, endpoint.ID, "")
-	if err != nil || restored.Name != "Published 1.0x" || restored.NameOverride != "" {
+	if err != nil || restored.Name != "Published" || restored.NameOverride != "" {
 		t.Fatal(restored, err)
 	}
 	names, err := f.store.HostNameOverrides(ctx, f.user.ID)

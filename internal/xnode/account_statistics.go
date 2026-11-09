@@ -98,7 +98,7 @@ func (s *Service) accountStatistics(ctx context.Context, id string) (model.Stati
 	}
 	for _, node := range nodes {
 		if total := totals[node.ID]; total != nil && total.Sign() > 0 {
-			multiplier := node.Multiplier
+			multiplier := float64(1)
 			result.TopNodes = append(result.TopNodes, model.TopNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, TotalBytes: total.String(), ConsumptionMultiplier: &multiplier})
 		}
 	}

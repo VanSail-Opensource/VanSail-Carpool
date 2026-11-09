@@ -27,7 +27,6 @@
     "discoverIPv6": "自动获取 IPv6",
     "ddnsSourceHint": "填写网卡名称，或为每个已启用的地址协议填写 HTTPS 查询地址。",
     "ddnsDistinctHosts": "IPv4 和 IPv6 的主机选择不能重叠。",
-    "multiplierInvalid": "请输入 0 至 1000 的数值，最多保留六位小数。",
     "legacySchedule": "现有计划：{value}",
     "convertSchedule": "改用小时间隔",
     "refreshHours": "刷新间隔（小时）",

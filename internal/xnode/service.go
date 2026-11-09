@@ -49,9 +49,16 @@ func (s *Service) Now() time.Time { return s.now().UTC() }
 func (s *Service) Global(ctx context.Context) (GlobalConfig, error) {
 	return s.globalSettings.read(ctx, s.settings)
 }
-func (s *Service) Nodes(ctx context.Context) ([]Node, error) { return s.repo.XNodeNodes(ctx) }
+func (s *Service) Nodes(ctx context.Context) ([]Node, error) {
+	nodes, err := s.repo.XNodeNodes(ctx)
+	for i := range nodes {
+		nodes[i].Multiplier, nodes[i].MultiplierFP = 1, MultiplierScale
+	}
+	return nodes, err
+}
 func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, error) {
 	node, err := s.repo.XNodeNode(ctx, id)
+	node.Multiplier, node.MultiplierFP = 1, MultiplierScale
 	if err != nil {
 		return node, NodeSettings{}, err
 	}

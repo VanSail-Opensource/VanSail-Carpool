@@ -15,7 +15,7 @@ const xnodeNodeSelect = `SELECT id,name,country_code,provider_name,multiplier_fp
 const saveXNodeNodeSQL = `INSERT INTO xnode_nodes(id,name,country_code,provider_name,multiplier_fp,enabled,config_id,settings_cipher,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(id) DO UPDATE SET name=excluded.name,country_code=excluded.country_code,provider_name=excluded.provider_name,multiplier_fp=excluded.multiplier_fp,enabled=excluded.enabled,config_id=excluded.config_id,settings_cipher=excluded.settings_cipher,updated_at=excluded.updated_at WHERE xnode_nodes.retired_at IS NULL AND xnode_nodes.removing_at IS NULL`
 
 func xnodeNodeArgs(node xnode.Node) []any {
-	return []any{node.ID, node.Name, node.CountryCode, node.ProviderName, node.MultiplierFP, boolInt(node.Enabled), node.ConfigID, node.SettingsCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC())}
+	return []any{node.ID, node.Name, node.CountryCode, node.ProviderName, xnode.MultiplierScale, boolInt(node.Enabled), node.ConfigID, node.SettingsCipher, stamp(time.Now().UTC()), stamp(time.Now().UTC())}
 }
 
 func scanXNodeNode(row rowScanner) (xnode.Node, error) {
@@ -44,7 +44,7 @@ func scanXNodeNode(row rowScanner) (xnode.Node, error) {
 		}
 		node.RetiredAt = &at
 	}
-	node.Enabled, node.Multiplier = enabled == 1, float64(node.MultiplierFP)/float64(xnode.MultiplierScale)
+	node.Enabled, node.Multiplier, node.MultiplierFP = enabled == 1, 1, xnode.MultiplierScale
 	node.CreatedAt, err = time.Parse(time.RFC3339Nano, created)
 	if err != nil {
 		return node, err
@@ -122,7 +122,7 @@ func (s *Store) retryAttempt_BindXNodeAgent(ctx context.Context, id, agent strin
 	if count != 1 {
 		return xnode.ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT   INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) SELECT $1,1,multiplier_fp FROM xnode_nodes WHERE id=$2 ON CONFLICT DO NOTHING `, agent, id); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES($1,1,$2) ON CONFLICT DO NOTHING`, agent, xnode.MultiplierScale); err != nil {
 		return err
 	}
 	return tx.Commit()

@@ -61,7 +61,7 @@ func TestBootStreamsSeparateReplayRestartGapsAndLegacyAccounting(t *testing.T) {
 	commit(report(second, 2, 4), "new-rate")
 	commit(report(second, 1, 4), "new-boot")
 	value, err := s.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 28 {
+	if err != nil || value.UsedBytes != 20 {
 		t.Fatal("replay/restart repriced or fabricated usage", value.UsedBytes, err)
 	}
 	sequence, closed, err := s.XNodeStreamSequence(ctx, "agent", first)
@@ -130,7 +130,7 @@ func TestStreamCursorAndUsageRollbackTogether(t *testing.T) {
 		}
 	}
 	value, err = s.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 20 {
+	if err != nil || value.UsedBytes != 16 {
 		t.Fatal("retried transaction duplicated usage", value.UsedBytes, err)
 	}
 }

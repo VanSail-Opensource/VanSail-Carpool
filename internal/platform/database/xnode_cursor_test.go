@@ -31,7 +31,7 @@ func TestXNodeRateRacesJournalWithoutRepricingCommittedUsage(t *testing.T) {
 			t.Fatal(err)
 		}
 		after, err := s.XNodePeriod(ctx, period.ID)
-		if err != nil || before.UsedBytes != after.UsedBytes {
+		if err != nil || before.UsedBytes != int64(sequence)*4 || before.UsedBytes != after.UsedBytes {
 			t.Fatal("replay repriced committed traffic", err)
 		}
 	}

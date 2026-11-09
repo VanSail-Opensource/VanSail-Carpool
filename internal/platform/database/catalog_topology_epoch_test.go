@@ -29,7 +29,6 @@ func TestCatalogTopologyEpochTracksMetadataWithoutLiveState(t *testing.T) {
 		`UPDATE xnode_nodes SET name='Renamed' WHERE id='node'`,
 		`UPDATE xnode_nodes SET country_code='JP' WHERE id='node'`,
 		`UPDATE xnode_nodes SET provider_name='Provider' WHERE id='node'`,
-		`UPDATE xnode_nodes SET multiplier_fp=2 WHERE id='node'`,
 	} {
 		before := version()
 		if _, err := s.DB().ExecContext(ctx, statement); err != nil {
@@ -40,6 +39,13 @@ func TestCatalogTopologyEpochTracksMetadataWithoutLiveState(t *testing.T) {
 		}
 	}
 	before := version()
+	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET multiplier_fp=2 WHERE id='node'`); err != nil {
+		t.Fatal(err)
+	}
+	var multiplier int64
+	if err := s.DB().QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_nodes WHERE id='node'`).Scan(&multiplier); err != nil || multiplier != xnode.MultiplierScale || version() != before {
+		t.Fatal("retired multiplier changed catalog or persisted state", multiplier, err)
+	}
 	if _, err := s.DB().ExecContext(ctx, `UPDATE xnode_nodes SET name=name,desired_revision=desired_revision+1,updated_at=$1 WHERE id='node'`, stamp(time.Now())); err != nil {
 		t.Fatal(err)
 	}

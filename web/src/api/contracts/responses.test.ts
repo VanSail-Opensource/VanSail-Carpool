@@ -22,4 +22,13 @@ describe('rendering snapshot compatibility', () => {
   it('does not claim a contract for an unknown route', () => {
     expect(isResponseCompatible('/api/v1/future-resource', 'GET', { any: 'shape' })).toBe(true)
   })
+
+  it('accepts only the retired constant multiplier in current node response contracts', () => {
+    const node = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', multiplier: 1 }
+    expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [node] })).toBe(true)
+    for (const multiplier of [0, 1.5, null, '1']) expect(isResponseCompatible('/api/v1/admin/xnode/nodes', 'GET', { items: [{ ...node, multiplier }] })).toBe(false)
+    const catalog = { combos: [], addons: [], nodes: [{ uuid: 'node', name: 'Amsterdam', countryCode: 'NL', consumptionMultiplier: 1, providerName: null }] }
+    expect(isResponseCompatible('/api/v1/catalog', 'GET', catalog)).toBe(true)
+    expect(isResponseCompatible('/api/v1/catalog', 'GET', { ...catalog, nodes: [{ ...catalog.nodes[0], consumptionMultiplier: 2 }] })).toBe(false)
+  })
 })

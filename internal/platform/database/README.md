@@ -1,5 +1,11 @@
 # Application store
 
+`multiplier_retirement.md` documents traffic multiplier retirement, the atomic
+acceptance boundary and retained historical evidence.
+`xnode_traffic_arithmetic_test.go` preserves historical fractional/free arithmetic.
+`xnode_traffic_retirement_test.go` covers 1x offline backlog, replay, retained
+fractional carry and unchanged financial records through single/batch ingestion.
+
 `connection_ip_aliases.go` forwards bounded, owner-exact retained migration
 evidence to the shared encrypted-IP target resolver. `connection_ip_aliases_test.go`
 checks full recovery verification in a read-only transaction, owner/node/digest
@@ -116,8 +122,8 @@ hosted PostgreSQL stock regression emits EXPLAIN (ANALYZE, BUFFERS); indexes are
 added only when measured plans justify them, never to mask repeated queries.
 
 `xnode_cursor.go` provides the shared transaction cursor lock for journal commits
-and multiplier changes. Both paths retain SERIALIZABLE whole-operation retries
-with deterministic cursor locking; rates begin at the next uncommitted sequence.
+and deprecated rate compatibility calls. Both retain SERIALIZABLE whole-operation
+retries with deterministic cursor locking; all new acceptance is 1x.
 Missing period/identity references discard the entire report with a fixed audit
 reason and sequence, without storing credentials or report payloads.
 

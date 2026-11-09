@@ -21,6 +21,8 @@ func (s *Store) SetXNodeStreamRate(ctx context.Context, node, agent, stream stri
 }
 
 func (s *Store) setXNodeStreamRate(ctx context.Context, node, agent, stream string, cutoff uint64, multiplier int64) error {
+	// Retain cursor fencing for old callers, but all future acceptance is 1x.
+	multiplier = xnode.MultiplierScale
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

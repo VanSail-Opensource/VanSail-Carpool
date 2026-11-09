@@ -36,7 +36,7 @@ Operational unused-traffic credits have been retired. Forward PostgreSQL migrati
 
 Onboarding, balance changes and bounded repair work ensure identities, encrypted subscription credentials, per-owner/squad/node accounts, periods and node synchronization. Reconciliation immediately reloads newly created accounts. Links and inventory do not depend on a Combo or sufficient funds; connection admission and actual purchases retain funds, prepaid-credit, readiness and restriction checks.
 
-Owner host-name writes authorize an accessible exported host identifier. Empty input removes an override. `{price}` expands to the exported principal's current PAYG rate (`0.50 TXB/GB`) or Combo multiplier (`1.0x`). Published identifiers and collision handling remain stable. Page links, QR output and supported downloads share the export boundary; applied route/split metadata is explicit.
+Owner host-name writes authorize an accessible exported host identifier. Empty input removes an override. `{price}` expands to the exported principal's current PAYG rate (`0.50 TXB/GB`) with no Combo multiplier label. Published identifiers and collision handling remain stable. Page links, QR output and supported downloads share the export boundary; applied route/split metadata is explicit.
 
 ## Validation and extension points
 

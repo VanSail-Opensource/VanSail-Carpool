@@ -6,23 +6,12 @@ import (
 	"testing"
 )
 
-func TestNodeWriteRequiresAnExplicitBoundedSixDecimalMultiplier(t *testing.T) {
-	for _, test := range []struct {
-		input string
-		valid bool
-	}{
-		{`{}`, false}, {`{"multiplier":null}`, false}, {`{"multiplier":"1"}`, false},
-		{`{"multiplier":0}`, true}, {`{"multiplier":0.000001}`, true},
-		{`{"multiplier":1.123456}`, true}, {`{"multiplier":1000.000000}`, true},
-		{`{"multiplier":-0.000001}`, false}, {`{"multiplier":1000.000001}`, false},
-		{`{"multiplier":1.0000000}`, false}, {`{"multiplier":0.0000001}`, false},
-		{`{"multiplier":1e-7}`, false},
-	} {
-		t.Run(test.input, func(t *testing.T) {
-			var input xnode.Node
-			err := json.Unmarshal([]byte(test.input), &input)
-			if (err == nil) != test.valid {
-				t.Fatal("multiplier presence/precision boundary", test.input, err)
+func TestNodeWriteIgnoresObsoleteMultiplier(t *testing.T) {
+	for _, input := range []string{`{}`, `{"multiplier":null}`, `{"multiplier":"1"}`, `{"multiplier":0}`, `{"multiplier":-1}`, `{"multiplier":1e99}`, `{"multiplier":[2]}`} {
+		t.Run(input, func(t *testing.T) {
+			var node xnode.Node
+			if err := json.Unmarshal([]byte(input), &node); err != nil || node.Multiplier != 1 || node.MultiplierFP != xnode.MultiplierScale {
+				t.Fatal("obsolete input affected node", node, err)
 			}
 		})
 	}

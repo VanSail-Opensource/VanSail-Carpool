@@ -10,7 +10,9 @@ ProxyNode:
       pattern: '^[A-Z]{2}$'
     consumptionMultiplier:
       type: number
-      minimum: 0
+      const: 1
+      deprecated: true
+      description: Retired traffic multiplier; retained as constant 1 for compatibility.
     activeInboundUuids:
       type: array
       uniqueItems: true
@@ -233,7 +235,9 @@ TopNode:
       pattern: '^\d+$'
     consumptionMultiplier:
       type: number
-      minimum: 0
+      const: 1
+      deprecated: true
+      description: Retired traffic multiplier; retained as constant 1 for compatibility.
 
 Statistics:
   type: object

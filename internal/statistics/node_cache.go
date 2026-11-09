@@ -34,7 +34,7 @@ func (s *Service) NodeSnapshot(ctx context.Context, now time.Time) (model.Statis
 	for _, node := range nodes {
 		items = append(items, model.StatisticsNode{UUID: node.UUID, Name: node.Name, CountryCode: node.CountryCode,
 			Online: node.Online, UsersOnline: node.UsersOnline, UsersOnlineAvailable: node.UsersOnlineAvailable, RXBytesPerSecond: node.RXBytesPerSecond,
-			TXBytesPerSecond: node.TXBytesPerSecond, XrayVersion: node.XrayVersion, Multiplier: node.Multiplier})
+			TXBytesPerSecond: node.TXBytesPerSecond, XrayVersion: node.XrayVersion, Multiplier: 1})
 	}
 	s.nodes.value = model.StatisticsNodesSnapshot{GeneratedAt: now, Nodes: items}
 	return s.nodes.value, nil

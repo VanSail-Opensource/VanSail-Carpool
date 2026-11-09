@@ -9,7 +9,7 @@ facts without purchase entrances; legacy Home add-on query links redirect to
 Settings. This keeps dashboard actions separate from subscription settings.
 
 
-- `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries already carry node labels/country/multipliers. Home no longer fetches the full Explore catalog or persists duplicate squad data.
+- `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries carry node labels and country metadata. Home no longer fetches the full Explore catalog or persists duplicate squad data. Retired traffic multiplier metadata remains constant 1 only for API compatibility and is not displayed.
 - `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance and forwards legacy Revoke query links.
 
 `UsagePanel.vue` retains the legacy quota meter and stale-data disclosure. The old per-node breakdown bar and reset controls are retired; detailed traffic belongs to Usage Breakdown.

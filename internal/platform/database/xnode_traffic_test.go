@@ -19,6 +19,7 @@ func xnodeTrafficFixture(t *testing.T) (*Store, xnode.Identity, xnode.Period) {
 	if err := store.SaveXNodeConfiguration(ctx, xnode.Configuration{ID: "config", Name: "Traffic fixture", DocumentCipher: "encrypted"}); err != nil {
 		t.Fatal(err)
 	}
+	// Legacy caller input must not restore weighted accounting after retirement.
 	if err := store.SaveXNodeNode(ctx, xnode.Node{ID: "node", Name: "Traffic fixture", ConfigID: "config", Enabled: true, MultiplierFP: 1250000, SettingsCipher: "encrypted"}); err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +37,7 @@ func xnodeTrafficFixture(t *testing.T) (*Store, xnode.Identity, xnode.Period) {
 	return store, identity, period
 }
 
-func TestXNodeTrafficCommitsOnceWithExactMultiplierCarry(t *testing.T) {
+func TestXNodeTrafficCommitsRawBytesOnceDespiteLegacyMultiplier(t *testing.T) {
 	store, identity, period := xnodeTrafficFixture(t)
 	ctx := context.Background()
 	at := time.Now().UTC()
@@ -50,11 +51,11 @@ func TestXNodeTrafficCommitsOnceWithExactMultiplierCarry(t *testing.T) {
 		}
 	}
 	value, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 5 {
-		t.Fatalf("weighted counter=%d,error=%v", value.UsedBytes, err)
+	if err != nil || value.UsedBytes != 4 {
+		t.Fatalf("raw quota counter=%d,error=%v", value.UsedBytes, err)
 	}
 	rows, err := store.XNodeUsage(ctx, identity.ProxyUserID, at, at)
-	if err != nil || len(rows) != 1 || rows[0].UploadBytes != 4 || rows[0].WeightedBytes != 5 {
+	if err != nil || len(rows) != 1 || rows[0].UploadBytes != 4 || rows[0].WeightedBytes != 4 {
 		t.Fatalf("usage=%+v,error=%v", rows, err)
 	}
 }
@@ -81,7 +82,7 @@ func TestXNodeTrafficDiscardsMismatchAndCountsFutureReports(t *testing.T) {
 		t.Fatal("future traffic did not advance", sequence, err)
 	}
 	value, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 10 {
+	if err != nil || value.UsedBytes != 8 {
 		t.Fatal("unmatched report charged or valid traffic lost", value, err)
 	}
 	var audits int

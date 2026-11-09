@@ -36,18 +36,21 @@ func TestNativeGlobalRetainsLegacyScheduleAndMasterGeoIP(t *testing.T) {
 	}
 }
 
-func TestNodeMultiplierRequiredAndExactPrecision(t *testing.T) {
-	for _, value := range []string{"0", "1", "0.000001", "1.123456", "1000"} {
+func TestRetiredNodeMultiplierCannotChangeWireOutput(t *testing.T) {
+	for _, document := range []string{`{}`, `{"multiplier":null}`, `{"multiplier":-1}`, `{"multiplier":0.0000001}`, `{"multiplier":"old"}`, `{"multiplier":{"legacy":true}}`} {
 		var node Node
-		if err := json.Unmarshal([]byte(`{"multiplier":`+value+`}`), &node); err != nil {
-			t.Fatalf("valid multiplier %s: %v", value, err)
+		if err := json.Unmarshal([]byte(document), &node); err != nil || node.Multiplier != 1 || node.MultiplierFP != MultiplierScale {
+			t.Fatalf("deprecated input affected accounting: %s %+v %v", document, node, err)
 		}
 	}
-	for _, document := range []string{`{}`, `{"multiplier":null}`, `{"multiplier":-1}`, `{"multiplier":0.0000001}`, `{"multiplier":"1"}`} {
-		var node Node
-		if err := json.Unmarshal([]byte(document), &node); err == nil {
-			t.Fatalf("invalid multiplier accepted: %s", document)
-		}
+	node := Node{Multiplier: 7.5, MultiplierFP: 7_500_000, Name: "historical"}
+	raw, err := json.Marshal(node)
+	var output map[string]any
+	if err != nil || json.Unmarshal(raw, &output) != nil || output["multiplier"] != float64(1) || node.MultiplierFP != 7_500_000 {
+		t.Fatal(string(raw), err, node)
+	}
+	if json.Unmarshal([]byte(`{"unknown":1}`), &node) == nil {
+		t.Fatal("unknown node field accepted")
 	}
 }
 

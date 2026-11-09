@@ -24,8 +24,8 @@ type Node struct {
 	Name             string     `json:"name"`
 	CountryCode      string     `json:"countryCode"`
 	ProviderName     string     `json:"providerName"`
-	MultiplierFP     int64      `json:"-"`
-	Multiplier       float64    `json:"multiplier"`
+	MultiplierFP     int64      `json:"-"`          // Historical storage scale; new writes use MultiplierScale.
+	Multiplier       float64    `json:"multiplier"` // Deprecated compatibility property, always 1 on the wire.
 	Enabled          bool       `json:"enabled"`
 	ConfigID         string     `json:"configId"`
 	SettingsCipher   string     `json:"-"`

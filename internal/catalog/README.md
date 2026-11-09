@@ -1,5 +1,7 @@
 # Catalog domain
 
+Node projections retain the deprecated `consumptionMultiplier` property as constant `1`, independently of upstream metadata. Recorded usage and current prices are unchanged.
+
 `topology.go` accepts a provider's shared metadata snapshot to avoid per-squad
 full group reads, retaining the older provider interface fallback. Native snapshots
 are bounded and revision keyed in X-Node. Catalog still reads current price and

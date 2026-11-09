@@ -35,7 +35,7 @@ func (a proxyProvider) ListCatalogTopology(ctx context.Context) (catalog.RemoteT
 	}
 	for _, node := range source.Nodes {
 		out.Nodes = append(out.Nodes, catalog.RemoteNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode,
-			ConsumptionMultiplier: node.Multiplier, Disabled: !node.Enabled, ProviderName: node.ProviderName, ActiveInboundUUIDs: tags[node.ID]})
+			ConsumptionMultiplier: 1, Disabled: !node.Enabled, ProviderName: node.ProviderName, ActiveInboundUUIDs: tags[node.ID]})
 	}
 	return out, nil
 }

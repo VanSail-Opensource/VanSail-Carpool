@@ -4,6 +4,11 @@ Migrations 00001 through 00031 are immutable applied history. They remain embedd
 so both fresh installations and populated PostgreSQL upgrades follow one ordered
 chain. Do not rewrite old scripts or remove historical accounting/audit tables.
 
+All applied forward migrations remain immutable. `00046_retire_traffic_multiplier.sql` retires traffic
+multipliers transactionally: stop the old runtime before migrating, drain SQL
+writers, install 1x at final cursor+1 and fence future policy writes. It preserves
+committed history and fractional remainders; see [the cutover contract](../../multiplier_retirement.md).
+
 `00032_native_postgresql.sql` replaces dependent JSON CHECK constraints, expression
 indexes and paid-access trigger functions before dropping compatibility functions.
 It preserves stored values, ciphertext, text collation and exact timestamp text.

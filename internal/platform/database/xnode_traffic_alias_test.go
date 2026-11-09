@@ -50,7 +50,7 @@ func TestXNodeTrafficRekeyedAggregatesDoNotReplayCumulativeCounters(t *testing.T
 				at := time.Now().UTC()
 				report.Traffic[42] = [2]uint64{4, 0}
 				report.Samples = []wire.TrafficSample{{UserID: 42, AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 4}}
-				want = 5
+				want = 4
 			}
 			for range 2 {
 				if err := store.RecordXNodeTraffic(ctx, "node", "agent", 1, "mixed-rekey", report); err != nil {
@@ -113,7 +113,7 @@ func TestXNodeTrafficAliasRequiresOwnerAndPeriodNodeEvidence(t *testing.T) {
 			value, err := store.XNodePeriod(ctx, period.ID)
 			want := int64(0)
 			if accepted {
-				want = 5 // Exact 1.25 multiplier, with no aggregate double charge.
+				want = 4 // Raw bytes, with no aggregate double charge.
 			}
 			if err != nil || value.UsedBytes != want {
 				t.Fatalf("charged bytes = %d, want %d, error = %v", value.UsedBytes, want, err)

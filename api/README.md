@@ -1,5 +1,12 @@
 # VanSail Carpool OpenAPI contract
 
+Node traffic multipliers are retired. `XNodeNodeWrite` accepts an optional,
+unrestricted deprecated `multiplier` value solely for old-client compatibility;
+the backend ignores it, including null. Node, catalog and statistics responses
+retain deprecated traffic multiplier properties as constant 1. Member interfaces
+do not display them. Existing recorded usage and financial facts remain unchanged;
+PAYG/hourly prices and reward multipliers have independent contracts.
+
 Certificate lifecycle reuses node commands with `name=certificates.run`,
 `profileId`, `action=issue|renew` and `expectedRevision`. Delivery uses existing
 durable receipts; execution is bounded to five minutes. GET on the same node

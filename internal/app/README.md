@@ -1,5 +1,7 @@
 # Application composition
 
+Native node catalog and statistics adapters expose the deprecated traffic multiplier as constant `1`. The unused multiplier cache is removed. Billing uses the database acceptance cutover and retained recorded accounting, independently of display metadata.
+
 `account_cleanup.go` registers the evidence probe with the existing outbox and
 provides scheduler/bot-verification hooks. `app.go` configures protected admin IDs
 before workers and constructs the shared cleanup service; `application.go`
@@ -86,7 +88,6 @@ waits for the scheduler and provider workers to finish before returning.
 - Startup upload reconciliation receives an independent ten-minute context so a large verified candidate is not truncated by the ordinary bootstrap deadline.
 - `provider_queues.go` configures, starts, and shuts down the independent X-Node and Emby admission queues.
 - `adapters.go` implements Telegram identity/membership and payment-provider bridges used by domain services.
-- `node_multiplier_cache_test.go` covers cache expiry at the five-minute boundary.
   the narrow traffic-threshold projection.
   live counts and byte rates are rounded into the integer public contract.
 - `maintenance_operation_test.go` covers successful, failed, and active-lease maintenance receipts.
@@ -204,7 +205,7 @@ PAYG jobs use the existing durable outbox and master executor. Startup and 30-se
 
 - `xnode_accounting.go`: Adapts exact native periods and historical usage into purchase accounting.
 
-Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `node_multiplier_cache.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.
+Existing bootstrap, scheduler, native entitlement and queued Telegram/PM composition: `bootstrap_settings.go`, `pm_forum_validation.go`, `pm_profile.go`, `scheduler.go`, `telegram_queue_pm.go`, `xnode_entitlements.go`.
 
 `mutation_operation_composition.go` registers the shared subscription, Emby, retry, and refund workers.
 

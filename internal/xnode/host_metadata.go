@@ -3,8 +3,6 @@ package xnode
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/subscription"
@@ -12,14 +10,6 @@ import (
 
 func (s *Service) hostPriceLabels(ctx context.Context, user string, proxies []subscription.Proxy) (map[string]string, error) {
 	out := map[string]string{}
-	nodes, err := s.repo.XNodeNodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	multipliers := map[string]int64{}
-	for _, node := range nodes {
-		multipliers[node.ID] = node.MultiplierFP
-	}
 	prices := map[int64]int64{}
 	if r, ok := s.paygRepository(); ok && user != "" {
 		accounts, e := r.XNodePAYGAccounts(ctx, user, "")
@@ -50,21 +40,12 @@ func (s *Service) hostPriceLabels(ctx context.Context, user string, proxies []su
 	}
 	for _, p := range proxies {
 		if p.BillingMode == "hourly" {
-			continue // Node multipliers and PAYG prices do not price hourly ingress.
+			continue // Hourly ingress is priced by its enrollment.
 		}
 		if price, ok := prices[p.PrincipalID]; ok && p.PrincipalID != 0 {
 			out[p.ID] = fmt.Sprintf("%d.%02d TXB/GB", price/100, price%100)
 			continue
 		}
-		rate := multipliers[p.NodeID]
-		if rate <= 0 {
-			rate = MultiplierScale
-		}
-		value := strconv.FormatFloat(float64(rate)/float64(MultiplierScale), 'f', -1, 64)
-		if !strings.Contains(value, ".") {
-			value += ".0"
-		}
-		out[p.ID] = value + "x"
 	}
 	return out, nil
 }

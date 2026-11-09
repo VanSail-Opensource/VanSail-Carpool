@@ -70,7 +70,7 @@ func (a proxyProvider) ListCatalogNodes(ctx context.Context) ([]catalog.RemoteNo
 				}
 			}
 		}
-		out = append(out, catalog.RemoteNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, ConsumptionMultiplier: node.Multiplier, ActiveInboundUUIDs: tags, Disabled: !node.Enabled, ProviderName: node.ProviderName})
+		out = append(out, catalog.RemoteNode{UUID: node.ID, Name: node.Name, CountryCode: node.CountryCode, ConsumptionMultiplier: 1, ActiveInboundUUIDs: tags, Disabled: !node.Enabled, ProviderName: node.ProviderName})
 	}
 	return out, nil
 }

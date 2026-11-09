@@ -89,7 +89,7 @@ StatisticsNode:
     rxBytesPerSec: { type: string, pattern: '^\d+$' }
     txBytesPerSec: { type: string, pattern: '^\d+$' }
     xrayVersion: { type: string }
-    multiplier: { type: number, minimum: 0 }
+    multiplier: { type: number, const: 1, deprecated: true, description: Retired traffic multiplier; always 1. }
 
 StatisticsNodesSnapshot:
   type: object

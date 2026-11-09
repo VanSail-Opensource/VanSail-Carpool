@@ -29,8 +29,8 @@ func TestTrafficBatchIsolatesDiscardedAndMalformedReports(t *testing.T) {
 	discard.Report.Samples = append(discard.Report.Samples, wire.TrafficSample{UserID: int(identity.ProxyUserID) + 1, AccountingPeriod: period.ID, From: at, Through: at, UploadBytes: 1})
 	malformed := item(6, 1)
 	malformed.Report.Samples[0].UserID = -1
-	// Sorting preserves first receipt for equal sequences and deterministic native
-	// carry. Report 3 must not leave its first sample in the shared Go buffer.
+	// Sorting preserves the first receipt for equal sequences. Report 3 must not
+	// leave its first sample in the shared Go buffer.
 	items := []xnode.TrafficCommit{item(5, 1), item(1, 1), item(2, 1), conflict, discard, item(4, 1), malformed, item(7, 1)}
 	outcomes, err := s.RecordXNodeTrafficBatch(ctx, items)
 	if err != nil || len(outcomes) != len(items) {
@@ -46,12 +46,12 @@ func TestTrafficBatchIsolatesDiscardedAndMalformedReports(t *testing.T) {
 		}
 	}
 	value, err := s.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 6 {
+	if err != nil || value.UsedBytes != 5 {
 		t.Fatal("failed or duplicate report changed usage", value.UsedBytes, err)
 	}
 	var upload, weighted, remainder int64
-	if err := s.db.QueryRowContext(ctx, `SELECT upload_bytes,weighted_bytes,weight_remainder FROM xnode_daily_usage WHERE period_id=$1`, period.ID).Scan(&upload, &weighted, &remainder); err != nil || upload != 5 || weighted != 6 || remainder != 250000 {
-		t.Fatal("combined write lost exact carry", upload, weighted, remainder, err)
+	if err := s.db.QueryRowContext(ctx, `SELECT upload_bytes,weighted_bytes,weight_remainder FROM xnode_daily_usage WHERE period_id=$1`, period.ID).Scan(&upload, &weighted, &remainder); err != nil || upload != 5 || weighted != 5 || remainder != 0 {
+		t.Fatal("combined write changed raw accounting", upload, weighted, remainder, err)
 	}
 	sequence, closed, err := s.XNodeStreamSequence(ctx, "agent", stream)
 	if err != nil || closed || sequence != 7 {
@@ -96,7 +96,7 @@ func TestCombinedTrafficWriteFailureRollsBackEveryCursor(t *testing.T) {
 		}
 	}
 	value, err = s.XNodePeriod(ctx, period.ID)
-	if err != nil || value.UsedBytes != 21 {
+	if err != nil || value.UsedBytes != 17 {
 		t.Fatal("retry lost or duplicated usage", value.UsedBytes, err)
 	}
 }

@@ -80,9 +80,19 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	beforeAudits := captureUpgradeAudits(t, ctx, raw)
+	beforeRates := captureTrafficBoundaryEvidence(t, ctx, raw)
 	var unchanged []TableContract
 	for _, table := range contract.Tables {
-		if table.Name != "audit_events" {
+		if table.Name != "audit_events" && table.Name != "xnode_node_rates" && table.Name != "xnode_report_cursors" && table.Name != "xnode_compile_revision" {
+			if table.Name == "xnode_nodes" {
+				var columns []ColumnContract
+				for _, column := range table.Columns {
+					if column.Name != "multiplier_fp" {
+						columns = append(columns, column)
+					}
+				}
+				table.Columns = columns
+			}
 			unchanged = append(unchanged, table)
 		}
 	}
@@ -113,6 +123,7 @@ func TestPostgresForwardUpgrade(t *testing.T) {
 	}
 
 	verifyUpgradeAudits(t, ctx, db, beforeAudits)
+	verifyTrafficBoundaryEvidence(t, ctx, db, beforeRates)
 	verifyRetirementUpgrade(t, ctx, db)
 	verifyCommunityRetirement(t, ctx, db)
 	if err = VerifySchema(ctx, db); err != nil {

@@ -16,7 +16,7 @@ const statistics: UsageStatistics = { usedTrafficBytes: '26843545600', lifetimeT
 const loading = shallowRef(true)
 const error = shallowRef<string | null>(null)
 const editor = shallowRef(false)
-const node = { uuid: '373f14bc-089a-4c3a-91c3-3421e7c83367', name: 'Tokyo transit', countryCode: 'JP', consumptionMultiplier: 1.25, providerName: null }
+const node = { uuid: '373f14bc-089a-4c3a-91c3-3421e7c83367', name: 'Tokyo transit', countryCode: 'JP', consumptionMultiplier: 1 as const, providerName: null }
 const nodes = params.has('empty') ? [] : [node]
 const detail = { temporaryBan: null, synchronization: { remoteUserId: '42' } } as AdminUserDetail
 const squad = { id: 'squad', groupId: node.uuid, name: 'Tokyo transit', description: '', price: { minor: '100', currency: 'TXB', scale: 2 }, visible: true, stockLimit: null, activationRequired: false, profile: null } as unknown as SquadProduct
@@ -35,7 +35,7 @@ onMounted(load)
       <AdminSectionState :loading="loading" :error="error" @retry="load">
         <UsagePanel v-if="usage && !params.has('empty')" :statistics="statistics" :ratio="0.25" :stale="params.has('stale')" fetched-at="2026-11-08T00:00:00Z" />
         <template v-if="!usage">
-          <StatisticsNodes :snapshot="{ generatedAt: '2026-10-16T00:00:00Z', stale: false, nodes: nodes.map(item => ({ ...item, online: true, usersOnline: 3, rxBytesPerSec: '1048576', txBytesPerSec: '524288', xrayVersion: '26.10', multiplier: 1.25 })) }" :loading="false" />
+          <StatisticsNodes :snapshot="{ generatedAt: '2026-10-16T00:00:00Z', stale: false, nodes: nodes.map(item => ({ ...item, online: true, usersOnline: 3, rxBytesPerSec: '1048576', txBytesPerSec: '524288', xrayVersion: '26.10', multiplier: 1 as const })) }" :loading="false" />
           <AdminUserProviderActions user-id="member" :detail="detail" />
           <UButton :label="$t('common.edit')" @click="editor = true" />
           <AdminSquadEditor v-if="editor" :squad="squad" :busy="false" @cancel="editor = false" />

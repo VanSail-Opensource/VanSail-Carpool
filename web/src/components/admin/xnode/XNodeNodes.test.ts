@@ -1,0 +1,56 @@
+/* eslint-disable vue/one-component-per-file */
+
+import { mount, flushPromises } from '@vue/test-utils'
+import { defineComponent, h, onMounted } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { XNode, XNodeConfiguration } from '@/api/xnode'
+
+const api = vi.hoisted(() => ({ node: vi.fn(), saveNode: vi.fn() }))
+vi.mock('@/api/xnode', () => ({ xnodeApi: api }))
+vi.mock('@/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }), localizedError: (_caught: unknown, key: string) => key }))
+import XNodeNodes from './XNodeNodes.vue'
+
+const stubs = {
+  Modal: defineComponent({ props: { open: Boolean }, setup: (props, { slots }) => () => props.open ? h('div', slots.body?.()) : null }),
+  FormField: { props: { label: { type: String, default: '' } }, template: '<label :data-label="label"><slot /></label>' },
+  Input: defineComponent({ props: { modelValue: { type: String, default: '' } }, emits: ['update:modelValue'], setup: (props, { emit }) => () => h('input', { value: props.modelValue, onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value) }) }),
+  Button: defineComponent({ props: { label: { type: String, default: '' }, type: { type: String, default: 'button' }, disabled: Boolean }, setup: props => () => h('button', { type: props.type, disabled: props.disabled }, props.label) }),
+  XNodeOperationalSettings: defineComponent({ emits: ['valid'], setup: (_props, { emit }) => { onMounted(() => emit('valid', true)); return () => h('div') } }),
+  XNodePricingCostSettings: { template: '<span />' }, XNodeRemovalDialog: { template: '<span />' }, XNodeCommands: { template: '<span />' },
+  Select: { template: '<span />' }, Switch: { template: '<span />' }, Badge: { template: '<span><slot /></span>' }, Alert: { template: '<span />' }, Progress: { template: '<span />' },
+}
+const node: XNode = { id: 'node', name: 'Amsterdam', enabled: true, configId: 'config', countryCode: 'NL', providerName: '', multiplier: 1 }
+const configuration: XNodeConfiguration = { id: 'config', name: 'Xray', revision: 1, snippetIds: [], document: { inbounds: [] } }
+function editor(nodes: XNode[]) {
+  return mount(XNodeNodes, { props: { nodes, configurations: [configuration], endpoints: [], metrics: null, busy: false, perform: async action => { await action(); return true } }, global: { stubs } })
+}
+beforeEach(() => {
+  vi.clearAllMocks()
+  api.node.mockResolvedValue({ node, settings: { certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } } })
+  api.saveNode.mockResolvedValue(node)
+})
+
+describe('retired node traffic multiplier controls', () => {
+  it.each([undefined, null, 0, 2.5, 'obsolete', {}, [2]])('omits obsolete multiplier %j from display and node writes', async multiplier => {
+    const legacy = { ...node, multiplier } as unknown as XNode
+    const wrapper = editor([legacy])
+    expect(wrapper.text()).not.toContain('×')
+    await wrapper.get('[aria-label="common.edit"]').trigger('click'); await flushPromises()
+    expect(wrapper.find('[data-label="xnode.multiplier"]').exists()).toBe(false)
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    expect(api.saveNode).toHaveBeenCalledTimes(1)
+    expect(api.saveNode.mock.calls[0]?.[0]).not.toHaveProperty('multiplier')
+    expect(legacy.multiplier).toBe(multiplier)
+    wrapper.unmount()
+  })
+
+  it('creates nodes without introducing a replacement multiplier input', async () => {
+    const wrapper = editor([])
+    await wrapper.findAll('button').find(button => button.text() === 'xnode.addNode')!.trigger('click')
+    await wrapper.get('[data-label="common.name"] input').setValue('Singapore')
+    await wrapper.get('form').trigger('submit'); await flushPromises()
+    expect(api.saveNode.mock.calls[0]?.[0]).toMatchObject({ name: 'Singapore', configId: 'config' })
+    expect(api.saveNode.mock.calls[0]?.[0]).not.toHaveProperty('multiplier')
+    wrapper.unmount()
+  })
+})

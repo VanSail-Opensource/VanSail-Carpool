@@ -1,5 +1,11 @@
 # Constructed browser fixtures
 
+The X-Node audit's `legacy-multiplier` parameter injects an obsolete 1.25 value
+directly into its constructed node data. The list and editor must display no
+multiplier control or badge, and `window.__xnodeAudit.writes` must omit that field
+after saving. Normal fixtures use the compatibility value 1. Existing loading,
+read/save failure, empty, Chinese and light/dark flags apply to the same flow.
+
 `certificateFixture.ts` augments the X-Node audit with `certificates` for desired
 profiles, a failed attempt and a still-serving certificate. Add `certificate-dns`,
 `certificate-file`, `certificate-content`, `certificate-expired`,

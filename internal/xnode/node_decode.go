@@ -3,13 +3,9 @@ package xnode
 import (
 	"bytes"
 	"encoding/json"
-	"regexp"
 )
 
-var multiplierJSON = regexp.MustCompile(`^(0|[1-9][0-9]{0,3})(\.[0-9]{1,6})?$`)
-
-// UnmarshalJSON retains the required multiplier distinction between omitted,
-// null, explicit zero and a value outside the fixed-point precision.
+// The deprecated multiplier input is accepted but never affects new accounting.
 func (node *Node) UnmarshalJSON(raw []byte) error {
 	type plain Node
 	var input struct {
@@ -22,8 +18,13 @@ func (node *Node) UnmarshalJSON(raw []byte) error {
 	if err := decoder.Decode(&input); err != nil {
 		return err
 	}
-	if !multiplierJSON.Match(bytes.TrimSpace(input.Multiplier)) || json.Unmarshal(input.Multiplier, &node.Multiplier) != nil || node.Multiplier > 1000 {
-		return ErrInvalid
-	}
+	node.Multiplier, node.MultiplierFP = 1, MultiplierScale
 	return nil
+}
+
+// MarshalJSON keeps the legacy API property constant even for historical nodes.
+func (node Node) MarshalJSON() ([]byte, error) {
+	type plain Node
+	node.Multiplier = 1
+	return json.Marshal(plain(node))
 }

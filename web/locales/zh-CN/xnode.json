@@ -21,7 +21,6 @@
     "configuration": "Xray 配置",
     "country": "国家代码",
     "provider": "服务商",
-    "multiplier": "流量倍率",
     "online": "在线",
     "offline": "离线",
     "stale": "数据未更新",

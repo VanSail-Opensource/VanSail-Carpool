@@ -43,7 +43,7 @@ func projectCatalogNodes(nodes []RemoteNode) []model.CatalogNode {
 			UUID:                  node.UUID,
 			Name:                  node.Name,
 			CountryCode:           node.CountryCode,
-			ConsumptionMultiplier: node.ConsumptionMultiplier,
+			ConsumptionMultiplier: 1,
 			ProviderName:          providerName,
 			ActiveInboundUUIDs:    append([]string(nil), node.ActiveInboundUUIDs...),
 			ProviderFaviconURL:    node.ProviderFaviconURL,
@@ -172,7 +172,7 @@ func quoteAccessibleNodes(catalog model.Catalog, comboID string, addonIDs []stri
 			providerName = *node.ProviderName
 		}
 		result = append(result, model.ProxyNode{UUID: node.UUID, Name: node.Name, CountryCode: node.CountryCode,
-			ConsumptionMultiplier: node.ConsumptionMultiplier, ActiveInboundUUIDs: node.ActiveInboundUUIDs, Accessible: true,
+			ConsumptionMultiplier: 1, ActiveInboundUUIDs: node.ActiveInboundUUIDs, Accessible: true,
 			ProviderName: providerName, ProviderFaviconURL: node.ProviderFaviconURL})
 	}
 	sort.Slice(result, func(left, right int) bool {

@@ -31,8 +31,8 @@ func (s *Store) retryAttempt_SetXNodeRate(ctx context.Context, nodeID, agent str
 	if committed < cutoff || committed >= math.MaxInt64 {
 		return xnode.ErrConflict
 	}
-	// Reports committed after the flush retain their already-settled price.
-	// Only the next uncommitted sequence may adopt the new multiplier.
+	// Deprecated compatibility entry point: old callers cannot restore pricing.
+	multiplier = xnode.MultiplierScale
 	_, err = tx.ExecContext(ctx, `INSERT INTO xnode_node_rates(agent_id,from_sequence,multiplier_fp) VALUES($1,$2,$3) ON CONFLICT(agent_id,from_sequence) DO UPDATE SET multiplier_fp=excluded.multiplier_fp`, agent, committed+1, multiplier)
 	if err != nil {
 		return err

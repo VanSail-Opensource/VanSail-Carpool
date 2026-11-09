@@ -36,7 +36,7 @@ func recordProbeSample(t *testing.T, store *Store, probe xnode.MeteredProbe, seq
 	return store.RecordXNodeTraffic(context.Background(), "node", "agent", sequence, fmt.Sprint(sequence), report)
 }
 
-func TestMeteredProbeSamplesDeduplicateAndCarryMultiplier(t *testing.T) {
+func TestMeteredProbeSamplesDeduplicateAndChargeRawBytes(t *testing.T) {
 	store, owner, period := xnodeTrafficFixture(t)
 	probe := meteredProbeFixture(t, store, owner, period, "dedup")
 	for sequence := uint64(1); sequence <= 4; sequence++ {
@@ -47,11 +47,11 @@ func TestMeteredProbeSamplesDeduplicateAndCarryMultiplier(t *testing.T) {
 		}
 	}
 	value, err := store.XNodePeriod(context.Background(), period.ID)
-	if err != nil || value.UsedBytes != 5 {
+	if err != nil || value.UsedBytes != 4 {
 		t.Fatalf("owner quota: %#v, %v", value, err)
 	}
 	usage, err := store.XNodeUsage(context.Background(), owner.ProxyUserID, time.Now(), time.Now())
-	if err != nil || len(usage) != 1 || usage[0].WeightedBytes != 5 {
+	if err != nil || len(usage) != 1 || usage[0].WeightedBytes != 4 {
 		t.Fatalf("owner history: %#v, %v", usage, err)
 	}
 	usage, err = store.XNodeUsage(context.Background(), probe.ProxyUserID, time.Now(), time.Now())
@@ -104,7 +104,7 @@ func TestMeteredProbeOriginSurvivesResetRenewalAndRefundSettlement(t *testing.T)
 				t.Fatal(err)
 			}
 			old, err := store.XNodePeriod(ctx, period.ID)
-			if err != nil || old.UsedBytes != 15 {
+			if err != nil || old.UsedBytes != 12 {
 				t.Fatal("origin lost", old, err)
 			}
 			next, err := store.XNodePeriod(ctx, successor.ID)
@@ -122,7 +122,7 @@ func TestMeteredProbeOriginSurvivesResetRenewalAndRefundSettlement(t *testing.T)
 				t.Fatal("settled traffic discard failed", err)
 			}
 			old, err = store.XNodePeriod(ctx, period.ID)
-			if err != nil || old.UsedBytes != 15 {
+			if err != nil || old.UsedBytes != 12 {
 				t.Fatal("settled financial period mutated", old, err)
 			}
 			p.ProxyUserID++

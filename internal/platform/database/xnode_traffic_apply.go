@@ -9,26 +9,9 @@ import (
 	"sort"
 )
 
-func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, sequence uint64, multiplier int64, report wire.TrafficReport, batch *trafficBatchState, native *nativeReportBuffer) error {
+func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID string, report wire.TrafficReport, batch *trafficBatchState, native *nativeReportBuffer) error {
 	samples := report.Samples
-	var priced int64
 	var err error
-	if batch != nil {
-		var exists bool
-		priced, exists = batch.rates[trafficRateKey{trafficCursorKey{agent, report.StreamID}, sequence}]
-		if !exists {
-			priced = multiplier
-		}
-	} else if report.StreamID == "" {
-		err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_node_rates WHERE agent_id=$1 AND from_sequence<=$2 ORDER BY from_sequence DESC LIMIT 1`, agent, sequence).Scan(&priced)
-	} else {
-		err = tx.QueryRowContext(ctx, `SELECT multiplier_fp FROM xnode_stream_rates WHERE agent_id=$1 AND stream_id=$2 AND from_sequence<=$3 ORDER BY from_sequence DESC LIMIT 1`, agent, report.StreamID, sequence).Scan(&priced)
-	}
-	if err == nil {
-		multiplier = priced
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
 	sampled := map[int]bool{}
 	if batch == nil {
 		paygIDs := map[int64]bool{}
@@ -66,7 +49,9 @@ func applyXNodeTrafficTx(ctx context.Context, tx *sql.Tx, nodeID, agent string, 
 				continue
 			}
 		}
-		if err = recordXNodeSample(ctx, tx, nodeID, multiplier, sample, native); err != nil {
+		// Acceptance time determines retirement: even offline backlog adds raw
+		// bytes at 1x, retaining the existing historical fractional remainder.
+		if err = recordXNodeSample(ctx, tx, nodeID, xnode.MultiplierScale, sample, native); err != nil {
 			return err
 		}
 	}

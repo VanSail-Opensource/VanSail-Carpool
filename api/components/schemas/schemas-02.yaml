@@ -227,7 +227,9 @@ CatalogNode:
       pattern: '^[A-Z]{2}$'
     consumptionMultiplier:
       type: number
-      minimum: 0
+      const: 1
+      deprecated: true
+      description: Retired traffic multiplier; retained as constant 1 for compatibility.
     providerName:
       type: [string, 'null']
 

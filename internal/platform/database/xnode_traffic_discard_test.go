@@ -43,7 +43,7 @@ func TestTrafficDiscardRollsBackWholeBatchAndCountsNextBatch(t *testing.T) {
 		t.Fatal(err)
 	}
 	after, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || after.UsedBytes != 5 {
+	if err != nil || after.UsedBytes != 4 {
 		t.Fatal("future valid traffic was not charged", after, err)
 	}
 }
@@ -71,7 +71,7 @@ func TestTrafficGapAuditsMissingRangeWithoutLosingValidReport(t *testing.T) {
 		t.Fatal("gap audit does not match the missing range", evidence, err)
 	}
 	got, err := store.XNodePeriod(ctx, period.ID)
-	if err != nil || got.UsedBytes != 5 {
+	if err != nil || got.UsedBytes != 4 {
 		t.Fatal("valid report was lost or double charged", got, err)
 	}
 }
