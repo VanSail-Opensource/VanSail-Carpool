@@ -1,10 +1,10 @@
 # Pinned X-Node protocol
 
-Source: https://github.com/VanSail-Opensource/X-Node/tree/310770d6f84907ed5a8e2cc2313448967268c536
-Signed agent release: [v2.0.22](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.22).
+Source: https://github.com/VanSail-Opensource/X-Node/tree/bbe463662a0788b385183aa6ff12f87e3bec77b1
+Signed agent release: [v2.0.23](https://github.com/VanSail-Opensource/X-Node/releases/tag/v2.0.23).
 The panel protocol, native validator, compute and release-trust packages use this
 exact verified source revision, represented by Go module pseudo-version
-`v1.0.2-0.20261108185738-310770d6f849`.
+`v1.0.2-0.20261109022121-bbe463662a07`.
 
 `protocol.md` and `hourly-account-limits.md` are copied from that revision.
 `compute-pool.md` documents the
@@ -16,22 +16,22 @@ The complete public schemas and documentation are included in the signed
 
 ## Verification evidence
 
-- [Quality run 42512683257](https://github.com/VanSail-Opensource/X-Node/actions/runs/42512683257): all six hosted gates succeeded, including race, schema, memory, vulnerability, both architecture builds and Debian nftables-on/off VMs.
-- [Signed release run 42514053626](https://github.com/VanSail-Opensource/X-Node/actions/runs/42514053626): all three build, isolated signing and publication jobs succeeded.
+- [Quality run 42550599452](https://github.com/VanSail-Opensource/X-Node/actions/runs/42550599452): all six hosted gates succeeded, including race, schema, memory, vulnerability, both architecture builds and Debian nftables-on/off VMs.
+- [Signed release run 42552560368](https://github.com/VanSail-Opensource/X-Node/actions/runs/42552560368): all three build, isolated signing and publication jobs succeeded.
 - The signed manifest verified against the existing repository trust key with
-  trusted version comment `version:v2.0.22`. All eight published assets were
+  trusted version comment `version:v2.0.23`. All eight published assets were
   downloaded again; all six payload hashes, both agent/CLI ELF architectures and
-  the hourly contract/schema inside the documentation ZIP verified successfully.
+  the firewall range contract/schema inside the documentation ZIP verified successfully.
 - Both agent and both CLI binaries identify source revision
-  `310770d6f84907ed5a8e2cc2313448967268c536`, `vcs.modified=false`, Go 1.27.3,
+  `bbe463662a0788b385183aa6ff12f87e3bec77b1`, `vcs.modified=false`, Go 1.27.3,
   Linux and their
   expected amd64/arm64 architecture. The immutable annotated version tag peels
   to that same source commit.
 
 | Agent | SHA-256 |
 | --- | --- |
-| amd64 | `b9184970363b07bc82b2280dac1f965e0a6dbbfcd7488a23dbe6031fc9dec5f6` |
-| arm64 | `95d3df5d9d70e86cb6aad2b5546a085304bb4b008ccb8843851103d2a4238c93` |
+| amd64 | `9548fe38f881f8b9371f6e604800df4a2dabdba5d78a7f7040cd4c4ad8c8c8b8` |
+| arm64 | `b885e51538855b301b74e10e4017f61b2cd5ab053c512a20e74a045781ce142d` |
 
 Artifact signature, hash and metadata checks are separate from local automated
 tests. Regression suites and benchmarks run only in hosted CI.

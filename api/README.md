@@ -1,5 +1,11 @@
 # VanSail Carpool OpenAPI contract
 
+Node firewall settings retain legacy individual ports and add inclusive TCP,
+UDP and SSH ranges. Forwarding adds optional source/target end ports: a source
+range maps either to one target port or an equal-length target range. Range
+configuration requires the `native_firewall_port_ranges_v1` agent capability;
+unsupported agents retain their previous applied configuration.
+
 - Browser access uses the `browser-auth.yaml` schemas and public browser/session
   paths. All administrator paths require browser-scoped session signatures;
   `/admin-access` is the sole Mini App administrator exception. Shared `/me`,

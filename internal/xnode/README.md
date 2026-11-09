@@ -1,5 +1,16 @@
 # X-Node control plane
 
+Node firewall port ranges use the pinned public protocol's compact interval
+normalizer before encrypted node settings are saved. Legacy singleton ports
+remain readable. Forwarding supports many-to-one and equal-length offset
+mapping; invalid/conflicting mappings fail before persistence. Compilation and
+peer synchronization require `native_firewall_port_ranges_v1` whenever range
+fields are present, preserving the last applied state on older agents. This
+extends existing configuration delivery; it adds no upstream request path,
+queue or database table. The browser contract is documented in `api/README.md`.
+`capabilities_firewall_ranges_test.go` covers range capability negotiation and
+legacy singleton compatibility in hosted CI.
+
 `usage_breakdown.go` exposes the member-owned consistent 72-hour projection.
 It forwards request cancellation, fixes the exact UTC window and preserves
 exact rational minor-unit costs from the store. It sends no external requests

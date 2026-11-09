@@ -1,5 +1,26 @@
 # X-Node administration
 
+Firewall port editing uses `firewallPorts.ts` to read legacy singleton lists and
+native intervals, validate 1..65535 bounds, and merge overlaps/adjacency without
+expanding the range. Commas, newlines and existing whitespace separators work;
+spaces around a range hyphen are accepted. Singletons remain in the legacy lists,
+while contiguous intervals use the additive TCP/UDP/SSH range fields.
+`firewallForwarding.ts` validates one source interval and either one destination
+port or an equal-length destination interval. It canonicalizes IPs, deduplicates
+identical rules, rejects conflicting listeners/families and caps translated maps
+at 262,140 entries. `XNodeFirewallFields.vue` retains incomplete text locally,
+publishes valid typed policies, and propagates validity to the node save control.
+It uses existing Nuxt UI fields and the node-forms locales, without upstream calls.
+`firewallPorts.test.ts`, `firewallForwarding.test.ts`, and
+`XNodeFirewallFields.test.ts` cover interval normalization, forwarding conflicts,
+map bounds and retained invalid form drafts in hosted frontend CI only.
+Chrome DevTools checked the real node editor with constructed firewall data in
+English and Chinese at 1440 px desktop and 390 px mobile widths. Both mappings,
+invalid ACL/unequal-length errors, normalized save payloads, retained save-error
+drafts, initial/loading/empty states and read-error retry were exercised. Forms
+used two columns on desktop and one on mobile without horizontal overflow.
+Console inspection found no warnings/errors; mocked saves made no upstream calls.
+
 The Metrics connection summary displays total open flows, including idle flows.
 Unknown or incomplete negotiated coverage displays unavailable; active counts
 remain available in the API for admission limits.

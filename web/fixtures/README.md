@@ -1,5 +1,10 @@
 # Constructed browser fixtures
 
+The X-Node audit's `firewall-ranges` parameter loads mixed legacy port lists,
+TCP/UDP/SSH intervals, range-to-one and range-to-range forwarding. Combine with
+`slow`, `node-load-error`, `node-save-error`, `empty`, and `zh` for state/localization
+audits; `window.__xnodeAudit.writes` records saves without contacting a backend.
+
 `UsageBreakdownAudit.vue`, `usage-breakdown-audit.ts`, `usage-breakdown-data.ts`
 and `usage-breakdown-audit.html` mount the real member panel and Unovis chart.
 The shared signed transport intercepts only `/api/v1/usage/breakdown` with

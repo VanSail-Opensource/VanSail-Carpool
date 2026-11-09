@@ -12,6 +12,11 @@ import (
 
 func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings) (Node, error) {
 	normalizeNodeSettings(&settings)
+	var rangeErr error
+	settings.Firewall, rangeErr = settings.Firewall.NormalizePortRanges()
+	if rangeErr != nil {
+		return node, ErrInvalid
+	}
 	settings.Firewall.Rules = nil
 	settings.Firewall.BanSeconds = 0
 	settings.Firewall.MasterControlled = false // negotiated per authenticated peer

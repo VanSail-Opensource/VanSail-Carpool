@@ -208,6 +208,26 @@ Speedtests use a separate outbound-only Xray client and transfer HTTPS payloads 
 
 The configuration schema describes provider credentials, certificate profiles, inbound certificate references, DDNS jobs, resolver policy, firewall policy, outbound port ranges, asset hashes, telemetry, torrent policy and update policy. Operational defaults are one-second sampling, two-second reporting, five-minute DDNS refresh, ten-minute torrent bans and disabled automatic binary installation.
 
+Firewall range support requires `native_firewall_port_ranges_v1`. The additive
+`tcp_port_ranges`, `udp_port_ranges` and `ssh_port_ranges` arrays contain inclusive
+`from`/`to` bounds from 1 through 65535; the owning field selects the protocol, so
+their optional `network` must remain empty. Legacy singleton arrays are unioned
+with these ranges. `FirewallPolicy.NormalizePortRanges` merges adjacent and
+overlapping ranges and removes duplicate/covered singleton entries without
+enumerating individual ports. `ParseConfig` applies this normalization.
+
+Forwarding retains `port` and `target_port` as starts and adds optional
+`port_end`/`target_port_end`. Omission or zero selects the start. A source range
+may target one port, or a target range of exactly the same length: source
+`20000-20002` to target `9000-9002` maps 20000 to 9000, 20001 to 9001 and 20002 to
+9002. Endpoints are inclusive. Exact duplicate rows are normalized; new range
+policies reject source overlaps for the same network/address family and
+intersecting listen addresses. Empty or unspecified listen addresses cover that
+family. IPv4-mapped and scoped addresses are rejected in new range policies.
+Translated maps have at most 65,535 elements each and 262,140 across a policy.
+No range reaches an agent without the negotiated capability. Confirmed,
+pending and rollback state prevent unsafe downgrades that would omit ranges.
+
 DDNS provider `builtin:panel` discovers enabled `auto` IPv4/IPv6 families without
 publishing DNS records or requiring provider credentials, zone or record name.
 The master retains host bindings and supplies opaque per-job `generation` values;
