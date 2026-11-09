@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { installBrowserRouteRecovery } from './routeRecovery'
 
-afterEach(() => { sessionStorage.removeItem('txc-route-recovery'); vi.restoreAllMocks() })
+afterEach(() => { vi.restoreAllMocks(); sessionStorage.removeItem('txc-route-recovery') })
 
 function fixture(failures = 1, error: Error = new TypeError('Failed to fetch dynamically imported module')) {
   let attempts = 0
@@ -48,7 +48,7 @@ describe('browser lazy route recovery', () => {
     await broken.router.push('/admin/users/member').catch(() => undefined)
     expect(broken.replace).not.toHaveBeenCalled()
     expect(broken.recovery.error.value).toBeInstanceOf(ReferenceError)
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('storage denied') })
+    vi.spyOn(globalThis, 'sessionStorage', 'get').mockImplementation(() => { throw new Error('storage denied') })
     const blocked = fixture(Infinity)
     await blocked.router.push('/admin/users/member').catch(() => undefined)
     expect(blocked.replace).not.toHaveBeenCalled()
