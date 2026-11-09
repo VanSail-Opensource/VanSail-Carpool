@@ -59,7 +59,7 @@ describe('hourly consent and access controls', () => {
   it('blocks legacy accounts while leaving the grandfathered renewal explanation visible', () => {
     const wrapper = setup('legacy')
     expect(wrapper.text()).toContain(t('hourly.legacyBlocked'))
-    expect(wrapper.findAll('button').filter(button => button.text() === t('hourly.activate')).every(button => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findAll('button').filter(button => button.attributes('aria-label') === t('hourly.activate')).every(button => button.attributes('disabled') !== undefined)).toBe(true)
     expect(state.activate).not.toHaveBeenCalled()
     wrapper.unmount()
   })

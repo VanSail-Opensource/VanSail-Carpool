@@ -10,6 +10,7 @@ defineEmits<{ activate: []; disable: [] }>()
 const { t } = useI18n()
 const enrolled = computed(() => props.item.enrollment?.status === 'active' || props.item.enrollment?.status === 'preparing')
 const canActivate = computed(() => !enrolled.value && props.salesEnabled && !props.legacyBlocked && props.item.ready && props.item.offer.enabled)
+const blocked = computed(() => !enrolled.value && !canActivate.value)
 const reason = computed(() => {
   if (props.item.cooldownUntil && Date.parse(props.item.cooldownUntil) > Date.now()) return t('hourly.cooldownUntil', { at: formatDateTime(props.item.cooldownUntil) })
   if (props.legacyBlocked) return t('hourly.legacyShort')
@@ -20,7 +21,7 @@ const reason = computed(() => {
 
 <template>
   <SquadPricingCard :squad="item.squad" :selected="false" :included="false" :featured="false" informational class="hourly-squad">
-    <template #status><StatusBadge v-if="item.enrollment" :tone="item.enrollment.status === 'active' ? 'success' : 'neutral'" :label="t(`hourly.status.${item.enrollment.status}`)" /></template>
+    <template #status><StatusBadge v-if="item.enrollment && item.enrollment.status !== 'active'" tone="neutral" :label="t(`hourly.status.${item.enrollment.status}`)" /></template>
     <template #price>
       <span class="hourly-squad__price"><strong>{{ formatMoney(item.offer.hourlyPrice) }}</strong><small>{{ t('hourly.perHour') }}</small></span>
     </template>
@@ -28,11 +29,21 @@ const reason = computed(() => {
       <span v-if="item.enrollment?.paidThrough"><UIcon name="i-ph-calendar-check" aria-hidden="true" />{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</span>
       <span v-if="!enrolled && item.requiredBalance"><UIcon name="i-ph-wallet" aria-hidden="true" />{{ t('hourly.requiredBalance', { price: formatMoney(item.requiredBalance), hours }) }}</span>
       <span v-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
+      <UButton
+        size="sm"
+        square
+        class="hourly-squad__toggle"
+        :class="{ 'hourly-squad__toggle--blocked': blocked }"
+        :color="enrolled ? 'error' : blocked ? 'neutral' : 'success'"
+        variant="soft"
+        :icon="enrolled ? 'i-ph-stop-circle' : blocked ? 'i-ph-prohibit' : 'i-ph-play-circle'"
+        :disabled="busy || (!enrolled && !canActivate)"
+        :aria-label="enrolled ? t('hourly.disable') : t('hourly.activate')"
+        :title="enrolled ? t('hourly.disable') : t('hourly.activate')"
+        :data-haptic="enrolled ? 'open' : 'confirm'"
+        @click="enrolled ? $emit('disable') : $emit('activate')"
+      />
     </div>
-    <footer class="hourly-squad__action">
-      <UButton v-if="enrolled" color="neutral" variant="outline" :disabled="busy" :label="t('hourly.disable')" data-haptic="open" @click="$emit('disable')" />
-      <UButton v-else :disabled="busy || !canActivate" :label="t('hourly.activate')" data-haptic="confirm" @click="$emit('activate')" />
-    </footer>
   </SquadPricingCard>
 </template>
 
@@ -41,10 +52,12 @@ const reason = computed(() => {
 .hourly-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
 .hourly-squad__price strong { font: 600 .95rem var(--font-mono); white-space: nowrap; }
 .hourly-squad__price small { color: var(--text-muted); font-size: .65rem; white-space: nowrap; }
-.hourly-squad__facts { display: flex; flex-wrap: wrap; gap: .2rem .8rem; color: var(--text-muted); font-size: .74rem; line-height: 1.45; }
+.hourly-squad__facts { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .8rem; color: var(--text-muted); font-size: .74rem; line-height: 1.45; }
 .hourly-squad__facts > span { display: inline-flex; align-items: center; gap: .28rem; min-width: 0; }
-.hourly-squad__facts .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: .85rem; }
+.hourly-squad__facts > span .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: .85rem; }
 .hourly-squad__reason { color: var(--warning); }
 .hourly-squad__reason .iconify { color: inherit; }
-.hourly-squad__action { display: flex; justify-content: flex-end; padding-top: .45rem; border-top: 1px solid var(--line); }
+.hourly-squad__toggle { flex: 0 0 auto; margin-inline-start: auto; width: 2.25rem; min-width: 2.25rem; height: 2.25rem; min-height: 2.25rem; padding: 0; }
+.hourly-squad__toggle--blocked { color: var(--text-faint); background: color-mix(in srgb, var(--text-faint) 12%, transparent); }
+.hourly-squad__toggle--blocked:disabled { opacity: .85; }
 </style>

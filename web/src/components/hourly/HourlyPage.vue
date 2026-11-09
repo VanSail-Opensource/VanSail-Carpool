@@ -63,14 +63,13 @@ async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extr
 
 <template>
   <section class="hourly-page" :aria-label="t('hourly.title')">
-    <header class="hourly-page__heading"><div><h2>{{ t('hourly.title') }}</h2><p>{{ t('hourly.intro') }}</p></div><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="hourly.refreshing.value" @click="hourly.refresh()" /></header>
+    <header class="hourly-page__heading"><div><h2>{{ t('hourly.title') }}</h2></div><UButton color="neutral" variant="ghost" icon="i-ph-arrow-clockwise" :aria-label="t('common.refresh')" :loading="hourly.refreshing.value" @click="hourly.refresh()" /></header>
     <div v-if="loading" aria-busy="true"><SkeletonBlock height="12rem" /><SkeletonBlock height="9rem" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton variant="link" :label="t('common.tryAgain')" @click="hourly.refresh()" /></InlineNotice>
     <template v-if="data">
       <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra" />
       <InlineNotice v-if="data.legacyBlocked">{{ t('hourly.legacyBlocked') }}</InlineNotice>
       <InlineNotice v-else-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
-      <p v-if="hasHourlyHistory" class="hourly-page__terms">{{ t('hourly.billingTerms', { hours: data.policy.policy.activationHours }) }}</p>
       <p v-if="!data.squads.length" class="hourly-page__terms hourly-page__empty">{{ t('hourly.empty') }}</p>
       <div v-else class="hourly-page__squads">
         <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :legacy-blocked="data.legacyBlocked" :hours="data.policy.policy.activationHours" @activate="activate(item)" @disable="disabling = item" />
@@ -87,7 +86,7 @@ async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extr
 <style scoped>
 .hourly-page { display: grid; gap: .6rem; min-width: 0; }
 .hourly-page__heading { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; padding-top: .75rem; }
-h2 { margin: 0; font-size: 1.15rem; font-weight: 650; } header p, .hourly-page__terms { margin: .4rem 0 0; color: var(--text-muted); font-size: .82rem; line-height: 1.6; }
+h2 { margin: 0; font-size: 1.15rem; font-weight: 650; } .hourly-page__terms { margin: .4rem 0 0; color: var(--text-muted); font-size: .82rem; line-height: 1.6; }
 .hourly-page__empty { padding-block: 1.5rem; text-align: center; }
 .hourly-page__squads { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
 .hourly-page__squads > * { animation: hourly-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }

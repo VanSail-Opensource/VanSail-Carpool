@@ -27,11 +27,9 @@ const rate = computed(() => props.data.usage?.reducedRateBytesPerSecond ?? props
         <div><dt>{{ t('hourly.extraRemaining') }}</dt><dd>{{ formatBytes(availableExtra) }}</dd></div>
       </dl>
     </div>
-    <p class="hourly-summary__hint">{{ t('hourly.allowanceHint') }}</p>
     <div class="hourly-summary__extra">
-      <USwitch :model-value="data.extraPreference.extraEnabled" :disabled="busy || (!data.extraPreference.extraEnabled && data.policy.policy.extraGBPriceTXBMinor === '0')" :label="t('hourly.extraTitle')" :description="t('hourly.extraPrice', { price: txbInputFromMinor(data.policy.policy.extraGBPriceTXBMinor) })" @update:model-value="$emit('extra', $event)" />
+      <USwitch :model-value="data.extraPreference.extraEnabled" :disabled="busy || (!data.extraPreference.extraEnabled && data.policy.policy.extraGBPriceTXBMinor === '0')" :label="t('hourly.extraTitle')" :description="t('hourly.extraRate', { price: txbInputFromMinor(data.policy.policy.extraGBPriceTXBMinor) })" @update:model-value="$emit('extra', $event)" />
       <p v-if="data.policy.policy.extraGBPriceTXBMinor === '0'" class="hourly-summary__hint">{{ t('hourly.extraUnavailable') }}</p>
-      <p v-else class="hourly-summary__hint">{{ t('hourly.extraExpiry') }}</p>
       <p v-if="data.extraPreference.extraEnabled" class="hourly-summary__hint">{{ t('hourly.acceptedPrice', { price: txbInputFromMinor(data.extraPreference.acceptedExtraPriceTXBMinor ?? '0') }) }}</p>
       <UButton v-if="consentChanged" color="neutral" variant="link" :disabled="busy" :label="t('hourly.reviewPrice')" @click="$emit('extra', true)" />
     </div>

@@ -4,16 +4,22 @@
 owner-scoped state, retains request idempotency keys across uncertain responses,
 tracks the existing durable operation receipts, and refreshes confirmed changes.
 `HourlySummary.vue` presents the balance, UTC daily allowance, account speed
-ceiling and unreserved extra credit. `HourlyAllowanceGraph.vue` plots the free
-allowance as a used/remaining Unovis donut with exact byte legends.
+ceiling and unreserved extra credit. `HourlyAllowanceGraph.vue` renders the free
+allowance as a progress bar with exact used/remaining byte values.
 `HourlySquadCard.vue` reuses the catalog `SquadPricingCard` presentation, so
 Charge by hour squads share the Charge by traffic card geometry, profile facts,
 price treatment and status slot while adding paid-through time, activation
-eligibility, funding suspension and cooldown details.
+eligibility, funding suspension and cooldown details. Enable/disable is a compact
+36px icon control sitting at the right of the paid-through/eligibility line
+rather than a footer row; enable is green, disable is red, the active `Enabled`
+badge is omitted, and a blocked enable (cooldown, insufficient balance or other
+ineligibility) is grey with a prohibit icon.
 
 A member without an enrollment or any recorded hourly usage has not charged yet;
-`HourlyPage.vue` then shows only the intro and squad cards, omitting the account
-summary, allowance hint and billing terms until the first hourly charge exists.
+`HourlyPage.vue` then shows only the squad cards, omitting the account summary
+until the first hourly charge exists. The page is data-first: it renders labels,
+values and actions without the former intro, billing prose, allowance hint or
+extra-credit expiry copy.
 
 Activation never debits the displayed eligibility balance. The server owns exact
 proration, stock, activation codes, wallet locking and native application. The
