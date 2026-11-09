@@ -26,13 +26,22 @@ func (s *Service) accountStatistics(ctx context.Context, id string) (model.Stati
 	}
 	result := model.Statistics{UsedTrafficBytes: "0", LifetimeTrafficBytes: "0", TrafficLimitBytes: "0", Categories: []string{}, SparklineData: []string{}, TopNodes: []model.TopNode{}}
 	if identity.CurrentPeriodID != "" {
-		period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+		// Usage belongs to the active purchase. A refunded or cancelled
+		// purchase keeps its settled period for accounting, but that period is
+		// no longer a live entitlement, so it must not be shown as usage.
+		purchase, err := s.EffectivePurchase(ctx, identity.UserID)
 		if err != nil {
 			return result, Identity{}, err
 		}
-		result.UsedTrafficBytes = strconv.FormatInt(period.UsedBytes, 10)
-		result.TrafficLimitBytes = strconv.FormatInt(period.LimitBytes, 10)
-		result.LastTrafficResetAt = period.LastResetAt
+		if purchase != nil {
+			period, err := s.repo.XNodePeriod(ctx, identity.CurrentPeriodID)
+			if err != nil {
+				return result, Identity{}, err
+			}
+			result.UsedTrafficBytes = strconv.FormatInt(period.UsedBytes, 10)
+			result.TrafficLimitBytes = strconv.FormatInt(period.LimitBytes, 10)
+			result.LastTrafficResetAt = period.LastResetAt
+		}
 	}
 	periods, err := s.repo.XNodePeriods(ctx, identity.ProxyUserID)
 	if err != nil {
