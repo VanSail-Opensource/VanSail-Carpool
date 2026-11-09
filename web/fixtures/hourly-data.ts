@@ -14,16 +14,28 @@ export function hourlyFixture(params: URLSearchParams): { view: HourlyAccountVie
     stockHeldByCurrentUser: false, stockLimit: 100, stockRemaining: 80, activationRequired: params.has('activation') && index === 0,
     accessibleNodes: [], createdAt: now, updatedAt: now,
   }))
+  // The admin catalog lists Charge by traffic squads too; the hourly offer
+  // editor must filter them out. Keep them out of the member hourly view, as
+  // the server does.
+  const paygSquad: SquadProduct = {
+    id: 'squad-payg', groupId: 'group-payg', name: 'Metered Traffic', description: '', features: [], billingMode: 'payg',
+    profile: { type: 'broadband', isp: 'Fixture ISP', portMbps: 1000, dynamic: false, location: 'United States' },
+    paygPrice: hourlyMoney('100'), price: hourlyMoney('0'), visible: true, upstreamPresent: true,
+    stockHeldByCurrentUser: false, stockLimit: 100, stockRemaining: 80, activationRequired: false,
+    accessibleNodes: [], createdAt: now, updatedAt: now,
+  }
+  const adminSquads: SquadProduct[] = params.has('admin') ? [...squads, paygSquad] : squads
   const offers = squads.map((squad, index) => ({ groupId: squad.groupId, enabled: true, hourlyPrice: hourlyMoney(String((index + 1) * 5)), revision: '1', createdAt: now, updatedAt: now }))
   const enrollment = (groupId: string): HourlyEnrollment => ({ id: `enrollment-${groupId}`, groupId, status: params.has('suspended') ? 'funding_suspended' : 'active', activatedAt: now, paidThrough: boundary, disabledAt: null, cooldownUntil: null, createdAt: now, updatedAt: now })
+  const first = params.has('first')
   const view: HourlyAccountView = {
     policy, balance: hourlyMoney('100000'), legacyBlocked: params.has('legacy'), extraPreference: { extraEnabled: params.has('extra'), acceptedExtraPriceTXBMinor: params.has('price-rise') ? '100' : '125', updatedAt: now },
-    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: '10000000000', freeUsedBytes: '2500000000', freeReservedBytes: '8192', extraFundedBytes: '2000000000', extraUsedBytes: '1000000000', extraReservedBytes: '32768', extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: params.has('pending') },
-    squads: squads.map((squad, index) => ({ squad, offer: offers[index]!, enrollment: (params.has('active') || params.has('suspended')) && index === 0 ? enrollment(squad.groupId) : null, ready: !params.has('incompatible'), reasonCode: params.has('incompatible') ? 'agent_incompatible' : '', cooldownUntil: null, requiredBalance: hourlyMoney(String((index + 1) * 5 * 168)) })),
+    usage: { dayUTC: now.slice(0, 10), freeAllowanceBytes: '10000000000', freeUsedBytes: first ? '0' : '2500000000', freeReservedBytes: first ? '0' : '8192', extraFundedBytes: first ? '0' : '2000000000', extraUsedBytes: first ? '0' : '1000000000', extraReservedBytes: first ? '0' : '32768', extraExpiresAt: midnight, reducedRateBytesPerSecond: '1250000', accountingPending: params.has('pending') },
+    squads: squads.map((squad, index) => ({ squad, offer: offers[index]!, enrollment: (params.has('active') || params.has('suspended')) && index === 0 && !first ? enrollment(squad.groupId) : null, ready: !params.has('incompatible'), reasonCode: params.has('incompatible') ? 'agent_incompatible' : '', cooldownUntil: null, requiredBalance: hourlyMoney(String((index + 1) * 5 * 168)) })),
   }
   if (params.has('cooldown') && view.squads[0]) {
     view.squads[0].ready = false
     view.squads[0].cooldownUntil = new Date(Date.now() + 86400000).toISOString()
   }
-  return { view, policy, squads, offers }
+  return { view, policy, squads: adminSquads, offers }
 }

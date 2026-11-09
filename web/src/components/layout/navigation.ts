@@ -24,15 +24,18 @@ export function mobileNavigationItems(_isAdmin: boolean, showActivity = false): 
   return [...visible]
 }
 
-export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false): NavigationMenuItem[] {
-  const items: NavigationMenuItem[] = [
-    {
-      label: t('nav.home'), to: '/home', icon: 'i-ph-house', defaultOpen: true, exactQuery: true,
-      children: [
+export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true): NavigationMenuItem[] {
+  const subscriptionChildren = showSubscription
+    ? [
         { label: t('subscription.title'), to: '/subscription', icon: 'i-ph-link-bold' },
         { label: t('nav.connections'), to: '/connections', icon: 'i-ph-devices' },
         { label: t('nav.revoke'), to: { path: '/subscription', query: { revoke: '1' } }, icon: 'i-ph-trash', exactQuery: true },
-      ],
+      ]
+    : []
+  const items: NavigationMenuItem[] = [
+    {
+      label: t('nav.home'), to: '/home', icon: 'i-ph-house', defaultOpen: showSubscription, exactQuery: true,
+      ...(subscriptionChildren.length ? { children: subscriptionChildren } : {}),
     },
     { label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
     ...(showActivity ? [{ label: t('nav.activity'), to: '/activity', icon: 'i-ph-game-controller' }] : []),

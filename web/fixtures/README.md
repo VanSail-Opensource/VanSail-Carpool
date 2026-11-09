@@ -94,9 +94,12 @@ Add `zh`, `light`, `browser`, `slow=1500`, `error`, `invalid`, `invalid-total`,
 `no-since`, `gaps` or `stale`. `window.__usageBreakdownAudit` exposes synthetic
 calls, feedback, parameters and the last snapshot; set `recover=true` before
 retrying an injected error. No wallet, configuration or upstream service changes.
-The existing `subscription-audit.html?mode=home&zero-balance` case also requests
-the new history independently of a live purchase/wallet; `__subscriptionAudit`
-reports `usageReads`. Previous `history-*` fixture controls retain their meaning.
+Coverage/gap/truncation flags now only exercise response handling because the
+member panel intentionally omits that descriptive prose. The
+`subscription-audit.html?mode=home&zero-balance` case shows the add-balance guide,
+not the history; `mode=home&inactive` with its default positive balance or
+`mode=home&zero-balance&combo` still shows the member product sections. Previous
+`history-*` fixture controls retain their meaning.
 
 `browser-auth-audit.html?recovery` mounts the actual member session bootstrap and
 `AuthGate` against a synthetic `409 ACCOUNT_RECOVERY_PENDING`; add `zh` for
@@ -110,10 +113,13 @@ mount the actual hourly member/admin components against synthetic API state.
 Open `/fixtures/hourly-audit.html`; add `admin`, `light`, `zh`, `slow=2000`,
 `error`, `empty`, `legacy`, `paused`, `active`, `suspended`, `cooldown`,
 `activation`, `incompatible`, `extra`, `price-rise`, `no-extra`, `pending`,
-`conflict`, `queue`, `failed` or `catalog` to exercise the corresponding state.
-`window.__hourlyAudit` exposes only constructed requests, idempotency keys,
-haptic observations and fixture state. Set `recover=true` then retry to recover
-an injected read failure. Writes and receipt polling never contact production.
+`conflict`, `queue`, `failed`, `first` or `catalog` to exercise the corresponding
+state. `first` removes enrollment and usage so the never-charged layout shows
+squads only. The admin case also lists a pay-as-you-go squad that must not appear
+in the hourly offers. `window.__hourlyAudit` exposes only constructed requests, idempotency
+keys, haptic observations and fixture state. Set `recover=true` then retry to
+recover an injected read failure. Writes and receipt polling never contact
+production.
 
 `onboarding-admin-audit.ts` / `.html` mount the actual bilingual admin content
 editor with constructed publication receipts. `slow`, `error`, `publish-error`,

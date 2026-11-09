@@ -21,6 +21,20 @@ const codeOpen = shallowRef(false)
 const extraOpen = shallowRef(false)
 const disableOpen = computed({ get: () => disabling.value !== null, set: value => { if (!value) disabling.value = null } })
 const cooldownHours = computed(() => String((data.value?.policy.policy.cooldownSeconds ?? 86400) / 3600))
+const hasHourlyHistory = computed(() => {
+  const snapshot = data.value
+  if (!snapshot) return false
+  if (snapshot.squads.some(item => item.enrollment)) return true
+  const usage = snapshot.usage
+  return usage?.accountingPending === true || positive(usage?.freeUsedBytes) || positive(usage?.extraFundedBytes) || positive(usage?.extraUsedBytes)
+})
+function positive(value: string | undefined): boolean {
+  try {
+    return BigInt(value ?? '0') > 0n
+  } catch {
+    return false
+  }
+}
 const operationMessage = computed(() => {
   const receipt = hourly.operation.receipt.value
   if (!receipt) return ''
@@ -53,12 +67,14 @@ async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extr
     <div v-if="loading" aria-busy="true"><SkeletonBlock height="12rem" /><SkeletonBlock height="9rem" /></div>
     <InlineNotice v-if="error" tone="warning">{{ error }}<UButton variant="link" :label="t('common.tryAgain')" @click="hourly.refresh()" /></InlineNotice>
     <template v-if="data">
-      <HourlySummary :data="data" :busy="busy" @extra="extra" />
+      <HourlySummary v-if="hasHourlyHistory" :data="data" :busy="busy" @extra="extra" />
       <InlineNotice v-if="data.legacyBlocked">{{ t('hourly.legacyBlocked') }}</InlineNotice>
       <InlineNotice v-else-if="!data.policy.policy.salesEnabled">{{ t('hourly.salesPaused') }}</InlineNotice>
-      <p class="hourly-page__terms">{{ t('hourly.billingTerms', { hours: data.policy.policy.activationHours }) }}</p>
-      <p v-if="!data.squads.length" class="hourly-page__terms">{{ t('hourly.empty') }}</p>
-      <div v-else class="hourly-page__squads"><HourlySquadCard v-for="item in data.squads" :key="item.offer.groupId" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :legacy-blocked="data.legacyBlocked" :hours="data.policy.policy.activationHours" @activate="activate(item)" @disable="disabling = item" /></div>
+      <p v-if="hasHourlyHistory" class="hourly-page__terms">{{ t('hourly.billingTerms', { hours: data.policy.policy.activationHours }) }}</p>
+      <p v-if="!data.squads.length" class="hourly-page__terms hourly-page__empty">{{ t('hourly.empty') }}</p>
+      <div v-else class="hourly-page__squads">
+        <HourlySquadCard v-for="(item, index) in data.squads" :key="item.offer.groupId" :style="{ '--entry-delay': `${Math.min(index, 5) * 30}ms` }" :item="item" :busy="busy" :sales-enabled="data.policy.policy.salesEnabled" :legacy-blocked="data.legacyBlocked" :hours="data.policy.policy.activationHours" @activate="activate(item)" @disable="disabling = item" />
+      </div>
     </template>
     <InlineNotice v-if="actionError" tone="warning">{{ actionError }}</InlineNotice>
     <OperationStatusNotice :receipt="hourly.operation.receipt.value" :error="hourly.operation.error.value" :checking="hourly.operation.checking.value" :message="operationMessage" @refresh="hourly.operation.refresh" />
@@ -69,9 +85,16 @@ async function enableExtra(): Promise<void> { if (await hourly.extra(true)) extr
 </template>
 
 <style scoped>
-.hourly-page { min-width: 0; }
+.hourly-page { display: grid; gap: .6rem; min-width: 0; }
 .hourly-page__heading { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; padding-top: .75rem; }
-h2 { margin: 0; font-size: 1.15rem; font-weight: 650; } header p, .hourly-page__terms { margin: .4rem 0 .8rem; color: var(--text-muted); font-size: .85rem; line-height: 1.6; }
-.hourly-page__squads { display: grid; gap: 0 1.75rem; }
-@media (min-width: 760px) { .hourly-page__squads { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+h2 { margin: 0; font-size: 1.15rem; font-weight: 650; } header p, .hourly-page__terms { margin: .4rem 0 0; color: var(--text-muted); font-size: .82rem; line-height: 1.6; }
+.hourly-page__empty { padding-block: 1.5rem; text-align: center; }
+.hourly-page__squads { display: grid; gap: .45rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); align-items: start; }
+.hourly-page__squads > * { animation: hourly-component 220ms ease-out both; animation-delay: var(--entry-delay, 0ms); }
+@media (min-width: 900px) {
+  .hourly-page__squads { display: block; column-width: 20rem; column-gap: .65rem; }
+  .hourly-page__squads > * { display: flex; width: 100%; margin-bottom: .65rem; break-inside: avoid; }
+}
+@keyframes hourly-component { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .hourly-page__squads > * { animation: none; } }
 </style>

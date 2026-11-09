@@ -9,7 +9,7 @@ import { useSessionStore } from '@/stores/session'
 import AppShell from './AppShell.vue'
 import { desktopNavigationItems } from './navigation'
 
-const api = vi.hoisted(() => ({ getCommunityAccess: vi.fn().mockResolvedValue({ activeCombo: true }) }))
+const api = vi.hoisted(() => ({ getCommunityAccess: vi.fn().mockResolvedValue({ activeCombo: true }), getBalance: vi.fn().mockResolvedValue({ balance: { minor: '0' } }) }))
 vi.mock('@/api/client', () => ({ api }))
 
 function session(role: Session['user']['role'] = 'user'): Session {

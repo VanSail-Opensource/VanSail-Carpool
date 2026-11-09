@@ -10,7 +10,7 @@ Settings. This keeps dashboard actions separate from subscription settings.
 
 
 - `UserHome.vue` composes Home in one balance-first flow. Ordered active squad labels arrive in its owner-scoped dashboard response, and usage summaries carry node labels and country metadata. Home no longer fetches the full Explore catalog or persists duplicate squad data. Retired traffic multiplier metadata remains constant 1 only for API compatibility and is not displayed.
-- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance and forwards legacy Revoke query links.
+- `BalanceHero.vue` opens the real funding sheet from Home and refetches a provider-returned reissue order before prepopulating it; `SubscriptionPanel.vue` is reused on Subscription for the active URL and Connections/Revoke actions on both mobile and desktop. Home exposes the subscription entrance only when the account has a positive balance or a server-confirmed active combo; otherwise `AddBalanceGuide.vue` shows a localized animated icon guide that opens the same funding sheet, and `BalanceHero` hides its own action so the guide owns the only Add Balance button. The sidebar's Subscription/Connections/Revoke children follow the same access gate.
 
 `UsagePanel.vue` retains the legacy quota meter and stale-data disclosure. The old per-node breakdown bar and reset controls are retired; detailed traffic belongs to Usage Breakdown.
 - `ComingSoonLinks.vue` preserves mobile Around TX actions through Vue Router without native document links and renders the section only for an opted-in entrance preference and a server-confirmed valid combo; the desktop sidebar carries the same gated entry points.
@@ -22,7 +22,7 @@ Dashboard controls distinguish copy, open, navigation, retry, confirmation, and 
 
 Language and currency controls appear on Settings. Mobile Around TX additionally requires the persisted entrance preference.
 
-The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members without a combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
+The IP Lookup entrance in `ComingSoonLinks.vue` remains available to members with positive balance or an active combo when the feature is enabled; only its item bypasses the existing combo/preference gates.
 
 `MemberLiveMetrics.vue` polls owner-scoped, memory-only metrics every five seconds while visible, with incomplete coverage and localized limitation reasons.
 
@@ -41,24 +41,28 @@ offline requires complete fresh coverage reporting no open flows.
 
 Active purchase controls and exact traffic presentation, using the shared chart primitives for quantitative visuals: `AutoRenewalControl.vue`, `PurchaseActions.vue`, `RideSummaryFace.vue`, `TrafficNodeChart.vue`, `TrafficUsageDetails.vue`.
 
-`UserHome.vue` always composes `UsageBreakdownPanel.vue` once the member dashboard
-is available, regardless of the current wallet or purchase. The panel reuses the
-visibility-aware `useSubscriptionData` lifecycle for the owner-only no-store
+`UserHome.vue` composes `UsageBreakdownPanel.vue` only after the member has a
+positive balance or a server-confirmed active combo; a member with neither sees
+the add-balance guide instead of Subscription, live usage, usage breakdown,
+entitlement and Around TX sections. The panel reuses the visibility-aware
+`useSubscriptionData` lifecycle for the owner-only no-store
 `GET /api/v1/usage/breakdown`. It retains an existing snapshot on read failure and
-labels incomplete coverage, gaps, omitted nodes and stale data without backfill.
+shows only the chart, totals, metric tabs and stale warning; descriptive coverage,
+gap, truncation and cost-provenance prose was removed at the member's request.
 
 Earlier Chrome DevTools inspection before named hourly attribution covered EN/Chinese, 390px/1440px,
 dark/light, loading, empty, single-node, errors/retry, coverage gaps, capped nodes,
 unallocated/hourly costs and large fractional totals. Twenty rapid metric clicks
 retained the same SVG, shared node paths, dimensions and distinct node colors.
 Keyboard metric/legend selection worked; browser mode emitted no Telegram calls.
-The zero-balance Home fixture requested history without an active purchase.
-No local automated suites were run; hosted regressions provide execution coverage.
+The zero-balance Home fixture now shows the add-balance guide and no product
+entrances; a zero-balance active combo and a positive-balance inactive combo still
+show them. No local automated suites were run; hosted regressions provide
+execution coverage.
 
 `UsageBreakdownPie.vue` owns only metric selection and presentation. Traffic
-includes all billing modes. Cost keeps actual charges, a clearly identified
-current fixed-term estimate, and unallocated charges separate. An unknown original
-purchase duration leaves actual costs visible and the estimate unavailable.
+includes all billing modes. Cost keeps recorded charges; the removed explanatory
+notes are not needed to read the graph.
 `usageBreakdownFormat.ts` rounds only displayed money, never calculation inputs.
 `usageBreakdownFormat.test.ts` covers sub-minor disclosures and half-unit display
 rounding while retaining the underlying rational value.
@@ -70,7 +74,9 @@ combined capped omissions form Others; shared extra charges remain Unallocated.
 Required `positiveEntries` controls visibility, including a single 100% entry;
 Unallocated alone cannot invent attribution. Colors are assigned across both
 kinds before metric filtering, with a bounded 256-ID
-component-local registry for refreshes. Stable accessors, IDs, 220px dimensions and
+component-local registry for refreshes. The eight curated colors are followed by
+deterministic mint-adjacent HSL colors, so any number of squads stays distinct
+instead of repeating a palette entry. Stable accessors, IDs, 220px dimensions and
 explicit zero duration on both Unovis components prevent animated mode updates;
 the same mounted SVG survives even when a selected measure hides the chart.
 
@@ -82,7 +88,7 @@ has no omitted amount; positive omissions allow only a conservative lower bound.
 `usage-breakdown-audit.html?unallocated&invalid-positive-count` demonstrates
 rejection of invented attribution before any chart can render.
 `UsageBreakdownPie.test.ts` checks twenty mode changes without remounting, explicit
-animation settings, unknown-term disclosure, tiny positive percentages and browser
+animation settings, tiny positive percentages and browser
 feedback isolation. Browser fixtures exercise the real Unovis implementation.
 
 Chrome DevTools checked the final hourly graph at 1440px/light/English and

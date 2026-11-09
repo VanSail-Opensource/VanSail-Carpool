@@ -7,11 +7,10 @@ import { ChartContainer } from '@/components/charts'
 import { useStatisticsChartSelection } from '@/components/statistics/useStatisticsChartSelection'
 import { formatStatisticPercent } from '@/components/statistics/statisticsFormat'
 import { t } from '@/i18n'
-import { formatBytes, formatMoney } from '@/utils/format'
+import { formatBytes } from '@/utils/format'
 import { isBrowserExperience } from '@/utils/experience'
 import { selectionHaptic } from '@/utils/telegramHaptics'
 import { formatUsageCost } from './usageBreakdownFormat'
-import { readUsageAmount } from '@/utils/usageRational'
 import { assignUsageEntryColors, usageEntryIDs, usageBreakdownSegments, usageSegmentColor, usageSegmentID, usageSegmentValue, type UsageBreakdownMetric, type UsageBreakdownSegment } from './usageBreakdownSegments'
 
 const props = defineProps<{ history: UsageBreakdown }>()
@@ -30,8 +29,6 @@ const total = computed(() => metric.value === 'traffic' ? formatBytes(plotted.va
 const emptyMessage = computed(() => plotted.value.total.numerator === 0n
   ? t(metric.value === 'traffic' ? 'usageBreakdown.emptyTraffic' : 'usageBreakdown.emptyCost')
   : t('usageBreakdown.noAttribution'))
-const actualCost = computed(() => formatMoney({ currency: 'TXB', minor: props.history.cost.actualMinor, display: '' }))
-const legacyCost = computed(() => props.history.cost.legacy.amountMinor ? formatUsageCost(readUsageAmount(props.history.cost.legacy.amountMinor)) : '')
 const { activeItem, activate, deactivate, select, isSelected } = useStatisticsChartSelection(segments)
 const config = {}
 function feedback(): void { if (!isBrowserExperience()) selectionHaptic() }
@@ -55,12 +52,6 @@ const events = { [Donut.selectors.segment]: {
   <div class="usage-breakdown" data-usage-breakdown>
     <UTabs :model-value="metric" :items="tabs" :content="false" color="neutral" variant="pill" size="sm" :ui="{ root: 'justify-self-start', trigger: 'min-h-11 px-4' }" :aria-label="t('usageBreakdown.measure')" @update:model-value="selectMetric" />
     <dl class="flex items-baseline justify-between gap-3 text-sm"><dt class="min-w-0 text-muted">{{ t(metric === 'traffic' ? 'usageBreakdown.trafficTotal' : 'usageBreakdown.costTotal') }}</dt><dd class="min-w-0 max-w-[70%] break-all text-right font-semibold tabular-nums">{{ total }}</dd></dl>
-    <div v-if="metric === 'cost'" class="usage-breakdown__notes grid gap-1 text-xs text-muted" data-usage-cost-notes>
-      <p>{{ t('usageBreakdown.actualCost', { amount: actualCost }) }}</p>
-      <p v-if="history.cost.legacy.status === 'available'">{{ t('usageBreakdown.legacyEstimate', { amount: legacyCost }) }}</p>
-      <p v-else-if="history.cost.legacy.status === 'original_term_unknown'">{{ t('usageBreakdown.legacyUnknown') }}</p>
-      <p v-if="history.cost.unallocatedMinor.numerator !== '0'">{{ t('usageBreakdown.unallocatedHint') }}</p>
-    </div>
     <p v-if="!plotted.showPie" role="status" class="py-4 text-sm text-muted" data-usage-no-comparison>{{ emptyMessage }}</p>
     <div v-show="plotted.showPie" class="usage-breakdown__body" data-usage-chart>
       <ChartContainer role="img" :config="config" :aria-label="t(metric === 'traffic' ? 'usageBreakdown.trafficChart' : 'usageBreakdown.costChart')" class="usage-breakdown__chart">
@@ -84,7 +75,6 @@ const events = { [Donut.selectors.segment]: {
 .usage-breakdown { display: grid; gap: .6rem; min-width: 0; }
 .usage-breakdown__body { display: grid; grid-template-columns: minmax(0,1fr); gap: 1rem; }
 .usage-breakdown__chart { height: 220px; }
-.usage-breakdown__notes { overflow-wrap: anywhere; }
 .usage-breakdown__legend { display: flex; align-items: center; width: 100%; text-align: left; gap: .5rem; padding: .5rem; min-height: 44px; font-size: .8rem; border-radius: .35rem; }
 .usage-breakdown__legend--active, .usage-breakdown__legend[aria-pressed="true"] { background: var(--surface); }
 .usage-breakdown__legend:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -14,6 +14,7 @@
 - `browserClipboard.ts` isolates the clipboard API and selection fallback; `browserCompatibility.ts` re-exports `copyText` for existing callers while keeping browser capability checks focused.
 
 - `format.ts` formats authoritative money, dates, bytes, and TXB input; CNY/USD use `￥`/`$` prefixes. `displayCurrency.ts` converts member-facing TXB displays with `BigInt` fixed-point arithmetic only, falls back from a zero USD conversion to CNY and then to TXB, and supplies primary/approximate catalog price lines.
+- `transferUnits.ts` parses administrator size/speed input such as `1GB`, `500MiB`, `100Mbps`, `12.5MB/s` or exact bytes, and renders editable values that round-trip exactly. `transferUnits.test.ts` covers bit/byte conversion, binary size units and exact display.
 - `dom.ts` provides WebView-safe focus restoration.
 - `dom.test.ts` covers focus restoration behavior.
 - `format.test.ts` covers formatting and money conversions.

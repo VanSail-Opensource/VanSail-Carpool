@@ -32,6 +32,7 @@
     "previousLinkInvalid": "The previous link no longer works.",
     "noStatistics": "No usage data yet",
     "statisticsPending": "Statistics appear after traffic is recorded.",
+    "addBalanceTitle": "Add balance to start",
     "unavailable": "Dashboard unavailable",
     "loadFailed": "Dashboard data could not be loaded."
   },

@@ -11,6 +11,7 @@ import BalanceHero from './BalanceHero.vue'
 import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
 import HomeSubscriptionEntrance from '@/components/subscription/HomeSubscriptionEntrance.vue'
+import AddBalanceGuide from './AddBalanceGuide.vue'
 import UsagePanel from './UsagePanel.vue'
 import UsageBreakdownPanel from './UsageBreakdownPanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
@@ -18,13 +19,24 @@ import type { ActivityStatus } from './memberActivity'
 
 const { dashboard, loading, error, usageRatio, activeSquadNames, load } = useDashboard()
 const { activeCombo: hasValidCombo, refresh: refreshCommunityAccess } = useCommunityAccess()
+const positiveBalance = computed(() => {
+  try {
+    return dashboard.value !== null && BigInt(dashboard.value.balance.minor) > 0n
+  } catch {
+    return false
+  }
+})
+const hasAccess = computed(() => hasValidCombo.value || positiveBalance.value || dashboard.value?.activePurchase != null)
 const queuedCancellationNotice = shallowRef(false)
 const activity = shallowRef<ActivityStatus>('unavailable')
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const reissueOrderId = computed(() => typeof route.query.reissue === 'string' && route.query.reissue ? route.query.reissue : undefined)
-const topUpRequested = computed(() => route.query.topUp === '1' && !reissueOrderId.value)
+// The add-balance guide opens the sheet from local state so it never depends on
+// a router round-trip; redirected `?topUp=1` requests still work the same way.
+const localTopUpRequested = shallowRef(false)
+const topUpRequested = computed(() => localTopUpRequested.value || (route.query.topUp === '1' && !reissueOrderId.value))
 watch(() => route.query.revoke, value => { if (value === '1') void router.replace({ path: '/subscription', query: { revoke: '1' } }) }, { immediate: true })
 watch(() => route.query.addSquads, value => { if (value === '1') void router.replace({ path: '/settings', query: { addSquads: '1' } }) }, { immediate: true })
 const autoRenewalFailureMessage = computed(() => {
@@ -51,10 +63,11 @@ async function handleAutoRenewalChanged(): Promise<void> {
 
 
 function consumeTopUpRequest(): void {
-  if (!topUpRequested.value) return
+  localTopUpRequested.value = false
+  if (route.query.topUp !== '1') return
   const query = { ...route.query }
   delete query.topUp
-  void router.replace({ name: 'home', query })
+  void router.replace({ name: 'home', query }).catch(() => undefined)
 }
 
 function consumeReissueRequest(): void {
@@ -62,6 +75,10 @@ function consumeReissueRequest(): void {
   const query = { ...route.query }
   delete query.reissue
   void router.replace({ name: 'home', query })
+}
+
+function requestTopUp(): void {
+  localTopUpRequested.value = true
 }
 
 </script>
@@ -82,6 +99,7 @@ function consumeReissueRequest(): void {
           :balance="dashboard.balance"
           :open-top-up="topUpRequested"
           :reissue-order-id="reissueOrderId"
+          :show-action="hasAccess"
           @paid="handlePaid"
           @top-up-request-consumed="consumeTopUpRequest"
           @reissue-request-consumed="consumeReissueRequest"
@@ -91,29 +109,32 @@ function consumeReissueRequest(): void {
             <InlineNotice v-if="autoRenewalFailureMessage" tone="warning" :title="$t('home.autoRenewalFailureTitle')">{{ autoRenewalFailureMessage }}</InlineNotice>
             <InlineNotice v-if="queuedCancellationNotice" tone="success">{{ $t('home.queuedCancelled') }}</InlineNotice>
           </div>
-          <HomeSubscriptionEntrance />
-          <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
-          <UsageBreakdownPanel class="home-layout__usage" />
-          <UsagePanel
-            v-if="dashboard.statistics && (hasValidCombo || BigInt(dashboard.balance.minor) <= 0n)"
-            class="home-layout__usage"
-            :statistics="dashboard.statistics"
-            :activity="activity"
-            :ratio="usageRatio"
-            :stale="dashboard.statisticsStale"
-            :fetched-at="dashboard.fetchedAt"
-          />
-          <section v-else-if="hasValidCombo || BigInt(dashboard.balance.minor) <= 0n" class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
-            <div><h3>{{ $t('dashboard.noStatistics') }}</h3><p>{{ $t('dashboard.statisticsPending') }}</p></div>
-          </section>
-          <EntitlementSummary
-            :active="dashboard.activePurchase"
-            :queued="dashboard.queuedPurchase"
-            :squad-names="activeSquadNames"
-            @queued-cancelled="handleQueuedCancelled"
-            @auto-renewal-changed="handleAutoRenewalChanged"
-          />
-          <ComingSoonLinks :has-valid-combo="hasValidCombo" />
+          <template v-if="hasAccess">
+            <HomeSubscriptionEntrance />
+            <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
+            <UsageBreakdownPanel class="home-layout__usage" />
+            <UsagePanel
+              v-if="dashboard.statistics"
+              class="home-layout__usage"
+              :statistics="dashboard.statistics"
+              :activity="activity"
+              :ratio="usageRatio"
+              :stale="dashboard.statisticsStale"
+              :fetched-at="dashboard.fetchedAt"
+            />
+            <section v-else class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
+              <div><h3>{{ $t('dashboard.noStatistics') }}</h3><p>{{ $t('dashboard.statisticsPending') }}</p></div>
+            </section>
+            <EntitlementSummary
+              :active="dashboard.activePurchase"
+              :queued="dashboard.queuedPurchase"
+              :squad-names="activeSquadNames"
+              @queued-cancelled="handleQueuedCancelled"
+              @auto-renewal-changed="handleAutoRenewalChanged"
+            />
+            <ComingSoonLinks :has-valid-combo="hasValidCombo" />
+          </template>
+          <AddBalanceGuide v-else @add-balance="requestTopUp" />
         </div>
       </div>
     </template>

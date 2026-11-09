@@ -15,6 +15,7 @@ const props = defineProps<{
   balance: Money
   openTopUp?: boolean
   reissueOrderId?: string
+  showAction?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -88,7 +89,7 @@ watch(() => props.reissueOrderId, (orderId) => {
         </motion.strong>
       </AnimatePresence>
     </div>
-    <div class="home-balance__action">
+    <div v-if="showAction !== false" class="home-balance__action">
       <UButton
         class="home-balance__button"
         color="neutral"

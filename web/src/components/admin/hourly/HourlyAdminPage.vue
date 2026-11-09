@@ -25,7 +25,10 @@ async function load(): Promise<void> {
   try {
     const [nextPolicy, nextOffers, nextSquads] = await Promise.all([hourlyApi.policy(), hourlyApi.offers(), api.getAdminResource<{ items: SquadProduct[] }>('squad-products')])
     if (version !== loadVersion) return
-    policy.value = nextPolicy; offers.value = nextOffers; squads.value = nextSquads.items
+    policy.value = nextPolicy; offers.value = nextOffers
+    // Hourly access is sold only for combo squads; pay-as-you-go (charge by
+    // traffic) squads have their own per-GB offer and must not appear here.
+    squads.value = nextSquads.items.filter(squad => squad.billingMode !== 'payg')
     actionError.value = null
   } catch (caught) { if (version === loadVersion) error.value = localizedError(caught, 'hourly.loadFailed') }
   finally { if (version === loadVersion) loading.value = false }

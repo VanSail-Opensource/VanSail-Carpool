@@ -51,10 +51,9 @@ describe('Usage Breakdown mode stability', () => {
     }
     expect(feedback).toHaveBeenCalledTimes(20)
   })
-  it('keeps actual cost selectable when the original fixed-term duration is unknown', async () => {
+  it('keeps the chart selectable when the original fixed-term duration is unknown', async () => {
     const view = render('unknown-term')
     await view.get('[data-metric="cost"]').trigger('click')
-    expect(view.get('[data-usage-cost-notes]').text()).toContain(t('usageBreakdown.legacyUnknown'))
     expect(view.get('[data-usage-chart]').isVisible()).toBe(true)
   })
   it('retains unattributed cost and labels tiny positive proportions without claiming zero', async () => {

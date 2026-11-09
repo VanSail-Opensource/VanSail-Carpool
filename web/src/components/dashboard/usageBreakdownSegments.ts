@@ -13,12 +13,6 @@ export interface UsageBreakdownSegment {
   percentage: number
 }
 
-export function usageEntryColor(nodeId: string): string {
-  let hash = 2166136261
-  for (const character of nodeId) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619)
-  return statisticsColors[(hash >>> 0) % statisticsColors.length]!
-}
-
 export function assignUsageEntryColors(nodeIDs: readonly string[], previous: ReadonlyMap<string, string> = new Map()): Map<string, string> {
   const active = [...new Set(nodeIDs)].sort()
   const result = new Map(previous)
@@ -29,10 +23,12 @@ export function assignUsageEntryColors(nodeIDs: readonly string[], previous: Rea
     if (retained && !used.has(retained)) { result.set(id, retained); used.add(retained) }
     else assign.push(id)
   }
+  let cursor = 0
   for (const id of assign) {
-    const base = statisticsColors.indexOf(usageEntryColor(id) as typeof statisticsColors[number])
-    const color = statisticsColors.map((_, offset) => statisticsColors[(base + offset) % statisticsColors.length]!).find(value => !used.has(value)) ?? usageEntryColor(id)
-    result.set(id, color); used.add(color)
+    const { color, index } = availableUsageColor(cursor, used)
+    result.set(id, color)
+    used.add(color)
+    cursor = index + 1
   }
   // Retain recent identities across capped/refreshing windows without keeping
   // an unbounded account history in the mounted component.
@@ -41,9 +37,28 @@ export function assignUsageEntryColors(nodeIDs: readonly string[], previous: Rea
   return result
 }
 
+// The eight curated colors are preferred; beyond them each identity still gets
+// its own deterministic color instead of colliding with another squad.
+function paletteUsageColor(index: number): string {
+  if (index < statisticsColors.length) return statisticsColors[index]!
+  const overflow = index - statisticsColors.length
+  const hue = (overflow * 137.508 + 19) % 360
+  const saturation = 46 + (overflow % 3) * 8
+  const lightness = 58 + (Math.floor(overflow / 3) % 3) * 9
+  return `hsl(${hue.toFixed(1)} ${saturation}% ${lightness}%)`
+}
+
+function availableUsageColor(start: number, used: ReadonlySet<string>): { color: string; index: number } {
+  for (let index = Math.max(0, start); index < Math.max(0, start) + 4096; index++) {
+    const color = paletteUsageColor(index)
+    if (!used.has(color)) return { color, index }
+  }
+  return { color: paletteUsageColor(start), index: start }
+}
+
 export const usageEntryIDs = (history: UsageBreakdown): string[] => [...history.nodes.map(node => `node:${node.nodeId}`), ...history.hourlySquads.map(squad => `hourly:${squad.groupId}`)]
 export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBreakdownMetric, retainedColors?: ReadonlyMap<string, string>) {
-  const colors = retainedColors ?? assignUsageEntryColors(usageEntryIDs(history))
+  const colors = assignUsageEntryColors(usageEntryIDs(history), retainedColors)
   const entries = [...history.nodes.map(node => ({
     interactionId: `node:${node.nodeId}`, name: node.name, kind: 'node' as const,
     amount: metric === 'cost' ? readUsageAmount(node.costMinor) : usageAmount(BigInt(node.uploadBytes) + BigInt(node.downloadBytes)),
@@ -51,7 +66,7 @@ export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBre
     interactionId: `hourly:${squad.groupId}`, name: squad.name, kind: 'hourly' as const,
     amount: metric === 'cost' ? readUsageAmount(squad.costMinor) : usageAmount(BigInt(squad.uploadBytes) + BigInt(squad.downloadBytes)),
   }))]
-  const rows = entries.map(row => ({ ...row, color: colors.get(row.interactionId) ?? usageEntryColor(row.interactionId) })).filter(row => row.amount.numerator > 0n).sort((a, b) => a.interactionId < b.interactionId ? -1 : a.interactionId > b.interactionId ? 1 : 0)
+  const rows = entries.map(row => ({ ...row, color: colors.get(row.interactionId)! })).filter(row => row.amount.numerator > 0n).sort((a, b) => a.interactionId < b.interactionId ? -1 : a.interactionId > b.interactionId ? 1 : 0)
   const omitted = metric === 'cost' ? readUsageAmount(history.omitted.costMinor) : usageAmount(BigInt(history.omitted.uploadBytes) + BigInt(history.omitted.downloadBytes))
   const total = metric === 'cost' ? readUsageAmount(history.cost.knownTotalMinor) : rows.reduce((sum, row) => addUsageAmounts(sum, row.amount), omitted)
   let others = omitted

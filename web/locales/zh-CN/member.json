@@ -32,6 +32,7 @@
     "previousLinkInvalid": "旧链接已失效。",
     "noStatistics": "暂无用量数据",
     "statisticsPending": "产生流量后会显示统计。",
+    "addBalanceTitle": "添加余额即可开始",
     "unavailable": "仪表盘不可用",
     "loadFailed": "无法加载仪表盘数据。"
   },

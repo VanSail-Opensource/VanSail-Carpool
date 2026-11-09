@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { HourlySquad } from '@/api/hourly'
+import SquadPricingCard from '@/components/catalog/SquadPricingCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import SquadProfileSummary from '@/components/squad-profile/SquadProfileSummary.vue'
 import { useI18n } from '@/i18n'
 import { formatDateTime, formatMoney } from '@/utils/format'
 const props = defineProps<{ item: HourlySquad; busy: boolean; salesEnabled: boolean; legacyBlocked: boolean; hours: number }>()
@@ -19,23 +19,32 @@ const reason = computed(() => {
 </script>
 
 <template>
-  <article class="hourly-squad">
-    <header><h3>{{ item.squad.name }}</h3><StatusBadge v-if="item.enrollment" :tone="item.enrollment.status === 'active' ? 'success' : 'neutral'" :label="t(`hourly.status.${item.enrollment.status}`)" /></header>
-    <SquadProfileSummary :profile="item.squad.profile" compact />
-    <p class="hourly-squad__price">{{ t('hourly.hourPrice', { price: formatMoney(item.offer.hourlyPrice) }) }}</p>
-    <p v-if="item.enrollment?.paidThrough" class="hourly-squad__detail">{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</p>
-    <p v-if="!enrolled && item.requiredBalance" class="hourly-squad__detail">{{ t('hourly.requiredBalance', { price: formatMoney(item.requiredBalance), hours }) }}</p>
-    <p v-if="!enrolled && !canActivate" class="hourly-squad__detail">{{ reason }}</p>
-    <UButton v-if="enrolled" color="neutral" variant="outline" :disabled="busy" :label="t('hourly.disable')" data-haptic="open" @click="$emit('disable')" />
-    <UButton v-else :disabled="busy || !canActivate" :label="t('hourly.activate')" data-haptic="confirm" @click="$emit('activate')" />
-  </article>
+  <SquadPricingCard :squad="item.squad" :selected="false" :included="false" :featured="false" informational class="hourly-squad">
+    <template #status><StatusBadge v-if="item.enrollment" :tone="item.enrollment.status === 'active' ? 'success' : 'neutral'" :label="t(`hourly.status.${item.enrollment.status}`)" /></template>
+    <template #price>
+      <span class="hourly-squad__price"><strong>{{ formatMoney(item.offer.hourlyPrice) }}</strong><small>{{ t('hourly.perHour') }}</small></span>
+    </template>
+    <div class="hourly-squad__facts">
+      <span v-if="item.enrollment?.paidThrough"><UIcon name="i-ph-calendar-check" aria-hidden="true" />{{ t('hourly.paidThrough', { at: formatDateTime(item.enrollment.paidThrough) }) }}</span>
+      <span v-if="!enrolled && item.requiredBalance"><UIcon name="i-ph-wallet" aria-hidden="true" />{{ t('hourly.requiredBalance', { price: formatMoney(item.requiredBalance), hours }) }}</span>
+      <span v-if="!enrolled && !canActivate" class="hourly-squad__reason"><UIcon name="i-ph-info" aria-hidden="true" />{{ reason }}</span>
+    </div>
+    <footer class="hourly-squad__action">
+      <UButton v-if="enrolled" color="neutral" variant="outline" :disabled="busy" :label="t('hourly.disable')" data-haptic="open" @click="$emit('disable')" />
+      <UButton v-else :disabled="busy || !canActivate" :label="t('hourly.activate')" data-haptic="confirm" @click="$emit('activate')" />
+    </footer>
+  </SquadPricingCard>
 </template>
 
 <style scoped>
-.hourly-squad { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; padding: 1rem 0; border-top: 1px solid var(--border); }
-header { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-h3 { margin: 0; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
-.hourly-squad__price { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
-.hourly-squad__detail { margin: 0; color: var(--text-muted); font-size: .85rem; line-height: 1.5; }
-.hourly-squad > :last-child { margin-top: auto; }
+.hourly-squad { align-self: start; }
+.hourly-squad__price { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: flex-end; gap: .2rem; }
+.hourly-squad__price strong { font: 600 .95rem var(--font-mono); white-space: nowrap; }
+.hourly-squad__price small { color: var(--text-muted); font-size: .65rem; white-space: nowrap; }
+.hourly-squad__facts { display: flex; flex-wrap: wrap; gap: .2rem .8rem; color: var(--text-muted); font-size: .74rem; line-height: 1.45; }
+.hourly-squad__facts > span { display: inline-flex; align-items: center; gap: .28rem; min-width: 0; }
+.hourly-squad__facts .iconify { flex: 0 0 auto; color: var(--text-faint); font-size: .85rem; }
+.hourly-squad__reason { color: var(--warning); }
+.hourly-squad__reason .iconify { color: inherit; }
+.hourly-squad__action { display: flex; justify-content: flex-end; padding-top: .45rem; border-top: 1px solid var(--line); }
 </style>

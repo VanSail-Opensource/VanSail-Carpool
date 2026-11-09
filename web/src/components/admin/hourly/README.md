@@ -1,9 +1,15 @@
 # Hourly administration
 
 `HourlyAdminPage.vue` loads the encrypted-policy projection, separate offers and
-existing X-Node squads. `HourlyPolicyForm.vue` uses Nuxt UI Form with Zod for
-explicit byte, byte/second, second, hour and TXB units. `HourlyOfferForm.vue`
-configures one squad's independent hourly price without changing legacy modes.
+existing X-Node squads. `HourlyPolicyForm.vue` uses Nuxt UI Form with Zod and
+accepts human transfer units: sizes such as `1GB`/`500MiB` become exact bytes and
+speeds such as `100Mbps`/`12.5MB/s` become exact bytes per second through
+`../../../utils/transferUnits.ts`; plain integers remain exact bytes or bytes per
+second. Existing values are shown in a round-trippable unit form.
+`HourlyOfferForm.vue` configures one squad's independent hourly price without
+changing legacy modes. The offers list excludes pay-as-you-go squads
+(`billingMode: "payg"`), because Charge by traffic sells independently per GB and
+never participates in hourly access.
 
 Policy writes carry the exact loaded ciphertext-fingerprint version; offer
 writes carry the exact revision, with zero creating an unconfigured offer.

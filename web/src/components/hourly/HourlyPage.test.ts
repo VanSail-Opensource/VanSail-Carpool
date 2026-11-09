@@ -22,7 +22,7 @@ function setup(query = '') {
     activate: vi.fn().mockResolvedValue(true), disable: vi.fn().mockResolvedValue(true), extra: vi.fn().mockResolvedValue(true),
     operation: { receipt: shallowRef(query.includes('failed') ? { id: 'failed', kind: 'hourly_access', status: 'failed', errorCode: 'HOURLY_LEGACY_ACTIVE', createdAt: '', updatedAt: '', completedAt: null } satisfies OperationReceipt : null), polling: shallowRef(false), checking: shallowRef(false), error: shallowRef(null), terminal: shallowRef(false), track: vi.fn(), refresh: vi.fn(), reset: vi.fn() },
   } as unknown as ReturnType<typeof useHourly>
-  return mount(HourlyPage, { global: { stubs: { UButton: Button, ConfirmDialog: Confirm, SquadActivationDialog: Code, USwitch: true, StatusBadge: true, SquadProfileSummary: true, InlineNotice: { template: '<div><slot /></div>' }, OperationStatusNotice: { props: ['message'], template: '<p data-operation>{{ message }}</p>' } } } })
+  return mount(HourlyPage, { global: { stubs: { UButton: Button, ConfirmDialog: Confirm, SquadActivationDialog: Code, USwitch: true, StatusBadge: true, HourlyAllowanceGraph: { template: '<div />' }, SquadPricingCard: { template: '<article><slot name="status" /><slot name="price" /><slot /></article>' }, SquadProfileSummary: true, InlineNotice: { template: '<div><slot /></div>' }, OperationStatusNotice: { props: ['message'], template: '<p data-operation>{{ message }}</p>' } } } })
 }
 beforeEach(() => vi.clearAllMocks())
 

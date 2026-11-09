@@ -47,7 +47,7 @@ separate. Action quotes and permission decisions still await the backend.
 - `useIntroSequence.test.ts` covers intro timing and completion.
 - `useOnboarding.ts` coordinates the intro, username, and agreement steps, including idempotent agreement recovery for returning users.
 - `useCommunityMembership.ts` refreshes canonical Telegram membership and strict active-combo access, opens requested-space invites, and unregisters its Telegram activation refresh handler on teardown.
-- `useCommunityAccess.ts` shares the read-only server-confirmed valid-combo gate between the shell and Home Around TX entrances.
+- `useCommunityAccess.ts` shares the read-only server-confirmed valid-combo and positive-balance gate between the shell, the sidebar entrances and Home product sections. Both reads refresh together after navigation or a completed payment.
 - `useCommunityMembership.test.ts` covers invite opening, error feedback, Telegram activation refresh, and event cleanup; `useOnboarding.test.ts` covers direct intro-to-username-to-agreement progression.
 - `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states.
 - `usePaymentCountdown.ts` owns a disposal-safe one-second payment-window countdown used only for presentation and replacement prompts.
