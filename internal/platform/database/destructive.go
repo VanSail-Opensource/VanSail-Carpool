@@ -6,24 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/ids"
 )
 
-// DeleteActivityGame removes feature rows and their ledger evidence without
-// reversing any already-settled balance effects.
+// DeleteActivityGame removes current admission and catalog visibility. The
+// disabled definition, settled bets, replay keys and ledger remain evidence.
 func (s *Store) DeleteActivityGame(ctx context.Context, actorID, gameID string, now time.Time) error {
 	return s.deleteFeature(ctx, actorID, "activity_game.delete", "activity_game", gameID, now, func(tx *sql.Tx) error {
-		if err := requireRowTx(ctx, tx, `SELECT 1 FROM activity_games WHERE id=$1`, gameID); err != nil {
+		if err := requireRowTx(ctx, tx, `SELECT 1 FROM activity_games WHERE id=$1 AND `+currentActivityGame+` FOR UPDATE`, gameID); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM ledger_entries WHERE kind IN ('activity_bet_stake','activity_bet_payout') AND reference_id IN (SELECT id FROM activity_bets WHERE game_id=$1)`, gameID); err != nil {
-			return err
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM activity_bets WHERE game_id=$1`, gameID); err != nil {
-			return err
-		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM activity_games WHERE id=$1`, gameID)
+		_, err := tx.ExecContext(ctx, `UPDATE activity_games SET enabled=0,updated_at=$1 WHERE id=$2`, stamp(now.UTC()), gameID)
 		return err
 	})
 }
@@ -79,7 +71,7 @@ func (s *Store) retryAttempt_deleteFeature(ctx context.Context, actorID, action,
 	if err := mutate(tx); err != nil {
 		return err
 	}
-	auditID, err := ids.New()
+	auditID, err := featureDeletionAuditID(action, targetID)
 	if err != nil {
 		return err
 	}

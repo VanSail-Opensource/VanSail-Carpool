@@ -18,3 +18,10 @@ manual blocks due for queued cleanup. Payment, audit and ledger evidence remain.
 The X-Node module owns member observations and free volatile single-IP grants.
 
 `types.go` retains administrator contracts. `scoped_control.go` scopes administrator control. `admin_target_scan_test.go`, `block_worker_test.go`, `handles_test.go`, `native_scan_test.go`, `unblock_expiry_test.go` and `worker_test.go` cover authorization, native targets, receipts and retained offline cleanup.
+
+`block_crypto.go` uses the shared read-only historical-owner resolver for retained
+IP targets. `block_legacy_scope_test.go` and `block_legacy_expiry_test.go` verify
+that recovered targets still use the current owner's scoped native control and
+preserve ciphertext on refusal.
+Alias evidence is limited to opening the exact node/digest; native authorization
+and offline cleanup dependencies remain unchanged.

@@ -53,28 +53,37 @@ func VerifyEncryption(ctx context.Context, q queryer, key []byte) error {
 	if err != nil {
 		return fmt.Errorf("a valid CONFIG_MASTER_KEY is required for verification")
 	}
-	queries := []string{
-		`SELECT key,value FROM settings WHERE encrypted=1 AND value<>''`,
-		`SELECT 'payment-profile:'||id,credential_ciphertext FROM payment_profiles WHERE credential_ciphertext<>''`,
-		`SELECT 'xnode.config.'||id,document_cipher FROM xnode_configs WHERE document_cipher<>''`,
-		`SELECT 'xnode.snippet.'||id,document_cipher FROM xnode_snippets WHERE document_cipher<>''`,
-		`SELECT 'xnode.node.'||id,settings_cipher FROM xnode_nodes WHERE settings_cipher<>''`,
-		`SELECT 'xnode.endpoint.'||id,overrides_cipher FROM xnode_endpoints WHERE overrides_cipher<>''`,
-		`SELECT 'xnode.diy.'||user_id,cipher FROM xnode_member_diy WHERE cipher<>''`,
-		`SELECT 'xnode.outbounds.'||COALESCE(user_id,'native.'||proxy_user_id)||'.'||node_id,outbounds_cipher FROM xnode_customizations WHERE outbounds_cipher<>''`,
-		`SELECT 'xnode.routing.'||COALESCE(user_id,'native.'||proxy_user_id)||'.'||node_id,routing_cipher FROM xnode_customizations WHERE routing_cipher<>''`,
-		`SELECT 'xnode.routes.'||proxy_user_id,cipher FROM xnode_routing_plans WHERE cipher<>''`,
-		`SELECT 'xnode.routes.'||proxy_user_id,previous_cipher FROM xnode_routing_plans WHERE previous_cipher<>''`,
-		`SELECT 'xnode.routes.legacy.'||proxy_user_id,legacy_cipher FROM xnode_routing_plans WHERE legacy_cipher<>''`,
-		`SELECT 'xnode.identity.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,credentials_cipher FROM xnode_identities WHERE credentials_cipher<>''`,
-		`SELECT 'xnode.subscription.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,subscription_cipher FROM xnode_identities WHERE subscription_cipher<>''`,
-		`SELECT password_context,password_ciphertext FROM emby_accounts WHERE password_ciphertext<>''`,
-		`SELECT 'connection-ip-block:'||user_id||':'||node_uuid||':'||ip_digest,sealed_ip FROM connection_ip_blocks WHERE sealed_ip<>''`,
-		`SELECT 'telegram_pm:'||operation_id,encrypted_payload FROM telegram_pm_payloads WHERE encrypted_payload<>''`,
-		`SELECT 'xnode.command.'||o.actor_user_id||'.'||o.idempotency_key,(j.payload::jsonb->>'sealedTarget') FROM outbox_jobs j JOIN provider_operations o ON (j.payload::jsonb->>'operationId')=o.id WHERE j.kind='provider_operation' AND o.kind='xnode_command' AND (j.payload::jsonb->>'sealedTarget')<>''`,
+	checks := []struct {
+		query  string
+		verify func(context.Context, queryer, *secret.Vault) error
+	}{
+		{query: `SELECT key,value FROM settings WHERE encrypted=1 AND value<>''`},
+		{verify: verifyRecoveryPaymentProfiles},
+		{query: `SELECT 'xnode.config.'||id,document_cipher FROM xnode_configs WHERE document_cipher<>''`},
+		{query: `SELECT 'xnode.snippet.'||id,document_cipher FROM xnode_snippets WHERE document_cipher<>''`},
+		{query: `SELECT 'xnode.node.'||id,settings_cipher FROM xnode_nodes WHERE settings_cipher<>''`},
+		{query: `SELECT 'xnode.endpoint.'||id,overrides_cipher FROM xnode_endpoints WHERE overrides_cipher<>''`},
+		{query: `SELECT 'xnode.diy.'||user_id,cipher FROM xnode_member_diy WHERE cipher<>''`},
+		{query: `SELECT 'xnode.outbounds.'||COALESCE(user_id,'native.'||proxy_user_id)||'.'||node_id,outbounds_cipher FROM xnode_customizations WHERE outbounds_cipher<>''`},
+		{query: `SELECT 'xnode.routing.'||COALESCE(user_id,'native.'||proxy_user_id)||'.'||node_id,routing_cipher FROM xnode_customizations WHERE routing_cipher<>''`},
+		{query: `SELECT 'xnode.routes.'||proxy_user_id,cipher FROM xnode_routing_plans WHERE cipher<>''`},
+		{query: `SELECT 'xnode.routes.'||proxy_user_id,previous_cipher FROM xnode_routing_plans WHERE previous_cipher<>''`},
+		{query: `SELECT 'xnode.routes.legacy.'||proxy_user_id,legacy_cipher FROM xnode_routing_plans WHERE legacy_cipher<>''`},
+		{query: `SELECT 'xnode.identity.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,credentials_cipher FROM xnode_identities WHERE credentials_cipher<>''`},
+		{query: `SELECT 'xnode.subscription.'||CASE WHEN user_id IS NULL THEN 'service.'||service_name ELSE 'user.'||user_id END,subscription_cipher FROM xnode_identities WHERE subscription_cipher<>''`},
+		{query: `SELECT password_context,password_ciphertext FROM emby_accounts WHERE password_ciphertext<>''`},
+		{verify: verifyRecoveryConnectionIPBlocks},
+		{query: `SELECT 'telegram_pm:'||operation_id,encrypted_payload FROM telegram_pm_payloads WHERE encrypted_payload<>''`},
+		{query: `SELECT 'xnode.command.'||o.actor_user_id||'.'||o.idempotency_key,(j.payload::jsonb->>'sealedTarget') FROM outbox_jobs j JOIN provider_operations o ON (j.payload::jsonb->>'operationId')=o.id WHERE j.kind='provider_operation' AND o.kind='xnode_command' AND (j.payload::jsonb->>'sealedTarget')<>''`},
 	}
-	for _, query := range queries {
-		rows, e := q.QueryContext(ctx, query)
+	for _, check := range checks {
+		if check.verify != nil {
+			if err = check.verify(ctx, q, vault); err != nil {
+				return err
+			}
+			continue
+		}
+		rows, e := q.QueryContext(ctx, check.query)
 		if e != nil {
 			return e
 		}

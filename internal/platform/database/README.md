@@ -1,5 +1,10 @@
 # Application store
 
+`connection_ip_aliases.go` forwards bounded, owner-exact retained migration
+evidence to the shared encrypted-IP target resolver. `connection_ip_aliases_test.go`
+checks full recovery verification in a read-only transaction, owner/node/digest
+tampering, unchanged ciphertext and bounded foreign-owner isolation.
+
 `usage_breakdown.md` documents the consistent member projection, exact rational
 costs, lifecycle boundaries, forward coverage and hosted regression scope.
 
@@ -481,6 +486,15 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `statistics_snapshots.go` persists independent last-good statistics partitions.
 - `destructive.go` — audited feature deletion transactions.
 
+`activity_game_removal.go` uses the existing immutable deletion audit as a
+primary-keyed tombstone. Removing a game disables and hides its definition from
+both current catalogs while retaining settled bets, replay keys and every ledger
+entry. `activity_game_save.go` serializes definition edits with removal; new bet
+admission takes a shared game row lock before the wallet lock. Protected audit
+evidence survives maintenance and actor account cleanup, so raw edits to ordinary
+game fields cannot restore admission. Old financial records are never invented
+or adjusted to reconcile gaps left by earlier destructive releases.
+
 ## Test files
 
 - `store_test.go` — core users, catalog guards, and store behavior.
@@ -495,6 +509,11 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `billing_refund_test.go` — refund, cancellation, and debt behavior.
 - `billing_test_helpers_test.go` — shared billing fixtures and payment constructors.
 - `activity_bet_test.go` — atomic bet outcomes and replay.
+- `activity_game_removal_test.go` checks win/loss ledger and receipt preservation,
+  current catalog removal, replay scope and rejection of new bets/edits.
+  `activity_game_removal_race_test.go` covers a waiting editor and an already
+  admitted settlement. `activity_game_retention_test.go` checks permanent audit
+  evidence across maintenance, deleting-actor cleanup and raw game edits.
 - `activity_daily_test.go` — daily check-in reward boundaries.
 - `activity_draw_test.go` — lucky-draw prizes, extensions, and replay.
 - `activity_group_reward_test.go` — group-message counting and rewards.

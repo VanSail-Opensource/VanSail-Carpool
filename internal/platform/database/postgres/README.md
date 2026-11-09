@@ -48,6 +48,12 @@ objects and verifies idempotence. `retirement_upgrade_test.go` and
 accounting/reward evidence. `runtime_test.go` checks ownership and notifications.
 No local automated suites are permitted by repository policy.
 
+`recovery_connection_ip.go` verifies retained IP ciphertext against its canonical
+scope or exact historical-owner evidence from `member_identity_aliases`. Alias
+selection is bounded and included in the same query, so recovery works inside
+one read-only transaction without nested active pgx queries. This compatibility
+read changes neither ciphertext nor account/native identity authority.
+
 Native scalar flag projections use PostgreSQL boolean-to-integer casts explicitly; Go integer consumers do not depend on connector row coercion. Fixture users use existing Telegram identity columns and never recreate retired username fields.
 
 Schema 33 adds boot-scoped deduplication, rate boundaries and period-node seal
@@ -74,3 +80,14 @@ configuration membership is supplied by authenticated applied-state processing;
 the timestamp is written once and ordinary identity upserts preserve it.
 
 `upgrade_audit_test.go` compares original audits separately from appended retirement evidence.
+
+`recovery_payment.go` authenticates current payment-profile contexts first. The
+two migrated built-in provider IDs may use their original settings context only
+when the retained encrypted setting is byte-identical to the profile ciphertext.
+Custom IDs, changed ciphertext, missing/plaintext settings and failed original
+authentication are refused. Disabled profiles are checked too. Verification
+returns no plaintext and never reseals credentials, changes a provider or edits
+financial/operational evidence. `recovery_payment_test.go` covers exact scope,
+key, envelope and historical-proof boundaries;
+`recovery_payment_integration_test.go` exercises the complete read-only snapshot
+against isolated hosted PostgreSQL and checks retained records remain unchanged.

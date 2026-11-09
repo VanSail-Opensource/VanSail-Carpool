@@ -66,7 +66,8 @@ func (w *UnblockWorker) prepare(ctx context.Context, operation providerops.Opera
 	if err != nil {
 		return providerops.Operation{}, providerops.Item{}, IPBlockRecord{}, "", err
 	}
-	plaintext, err := w.secrets.Open(ipBlockSecretContext(block.UserID, block.NodeUUID, block.IPDigest), block.SealedIP)
+	plaintext, err := openIPBlockTarget(ctx, w.repository, w.secrets, block)
+	defer clear(plaintext)
 	if err != nil || items[0].TargetID != block.IPDigest {
 		return providerops.Operation{}, providerops.Item{}, IPBlockRecord{}, "", errors.New("connection unblock target could not be verified")
 	}

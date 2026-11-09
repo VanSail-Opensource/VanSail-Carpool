@@ -11,11 +11,8 @@ import (
 
 func activityGameByID(ctx context.Context, queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
-}, gameID string, enabledOnly bool) (activity.Game, error) {
-	query := activityGameSelect + ` WHERE id=$1`
-	if enabledOnly {
-		query += ` AND enabled=1`
-	}
+}, gameID string) (activity.Game, error) {
+	query := activityGameSelect + ` WHERE id=$1 AND ` + currentActivityGame
 	return scanActivityGame(queryer.QueryRowContext(ctx, query, gameID))
 }
 

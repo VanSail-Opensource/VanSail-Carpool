@@ -43,7 +43,8 @@ func (w *ExpiryWorker) HandleOutbox(ctx context.Context, job model.OutboxJob) er
 	if w.now().UTC().Before(block.ExpiresAt) {
 		return errors.New("connection IP block expiry ran before its deadline")
 	}
-	plaintext, err := w.secrets.Open(ipBlockSecretContext(block.UserID, block.NodeUUID, block.IPDigest), block.SealedIP)
+	plaintext, err := openIPBlockTarget(ctx, w.repository, w.secrets, block)
+	defer clear(plaintext)
 	if err == nil {
 		scoped, controlErr := scopedControl(ctx, w.remote, block.UserID, string(plaintext), block.NodeUUID, false, 0, true)
 		err = controlErr

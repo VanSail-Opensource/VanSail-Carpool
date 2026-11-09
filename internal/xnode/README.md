@@ -1313,3 +1313,9 @@ offline members remain dependencies. Financial grant facts stay available for
 sanitized archival before operational deletion. Host-disabled members can retire,
 and same-connection re-enablement forces a fresh-epoch full replacement so an
 old persisted allowance cannot reappear after its removal tombstone is scrubbed.
+
+`account_purge_ip_secret.go` opens exact owned block targets through the shared,
+bounded historical-owner AAD resolver. `account_purge_ip_secret_test.go` checks
+that wrong purge owners and altered node/digest scopes fail before native
+control. Ciphertext is never resealed; current applied subject/agent proof,
+cleanup admission and acknowledged scoped removal are still required.

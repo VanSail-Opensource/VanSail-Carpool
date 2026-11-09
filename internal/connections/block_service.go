@@ -48,12 +48,13 @@ func (s *DropService) List(ctx context.Context, userID string) ([]IPBlock, error
 	}
 	blocks := make([]IPBlock, 0, len(records))
 	for _, record := range records {
-		plaintext, openErr := s.secrets.Open(ipBlockSecretContext(record.UserID, record.NodeUUID, record.IPDigest), record.SealedIP)
+		plaintext, openErr := openIPBlockTarget(ctx, s.repository, s.secrets, record)
 		if openErr != nil {
 			return nil, openErr
 		}
 		blocks = append(blocks, IPBlock{ID: record.ID, IP: string(plaintext), NodeUUID: record.NodeUUID,
 			Status: record.Status, CreatedAt: record.CreatedAt, ExpiresAt: record.ExpiresAt})
+		clear(plaintext)
 	}
 	return blocks, nil
 }

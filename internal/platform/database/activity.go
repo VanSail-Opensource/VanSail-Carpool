@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,51 +14,12 @@ import (
 const activityGameSelect = `SELECT id,name,icon,description,enabled,win_chance_bps,minimum_stake_minor,maximum_stake_minor,
 	return_multiplier_bps,created_at,updated_at FROM activity_games`
 
-// SaveActivityGame creates or updates one betting game.
-
-func (s *Store) SaveActivityGame(ctx context.Context, input activity.GameInput, now time.Time) (activity.Game, error) {
-	if err := input.Validate(); err != nil {
-		return activity.Game{}, err
-	}
-	input.Name = strings.TrimSpace(input.Name)
-	input.Icon = strings.TrimSpace(input.Icon)
-	input.Description = strings.TrimSpace(input.Description)
-	now = now.UTC()
-	s.writeMu.Lock()
-	defer s.writeMu.Unlock()
-	var err error
-	if input.ID == "" {
-		input.ID, err = ids.New()
-		if err != nil {
-			return activity.Game{}, err
-		}
-		_, err = s.db.ExecContext(ctx, `INSERT INTO activity_games(id,name,icon,description,enabled,win_chance_bps,minimum_stake_minor,maximum_stake_minor,return_multiplier_bps,created_at,updated_at)
-			VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, input.ID, input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS, input.MinimumStakeMinor,
-			input.MaximumStakeMinor, input.ReturnMultiplierBPS, stamp(now), stamp(now))
-	} else {
-		var result sql.Result
-		result, err = s.db.ExecContext(ctx, `UPDATE activity_games SET name=$1,icon=$2,description=$3,enabled=$4,win_chance_bps=$5,minimum_stake_minor=$6,maximum_stake_minor=$7,return_multiplier_bps=$8,updated_at=$9 WHERE id=$10`,
-			input.Name, input.Icon, input.Description, boolInt(input.Enabled), input.WinChanceBPS, input.MinimumStakeMinor, input.MaximumStakeMinor, input.ReturnMultiplierBPS, stamp(now), input.ID)
-		if err == nil {
-			if affected, rowsErr := result.RowsAffected(); rowsErr != nil {
-				return activity.Game{}, rowsErr
-			} else if affected == 0 {
-				return activity.Game{}, ErrNotFound
-			}
-		}
-	}
-	if err != nil {
-		return activity.Game{}, fmt.Errorf("save activity game: %w", err)
-	}
-	return activityGameByID(ctx, s.db, input.ID, false)
-}
-
-// ListActivityGames returns enabled member games or every administrator game.
+// ListActivityGames returns current member or administrator game definitions.
 
 func (s *Store) ListActivityGames(ctx context.Context, enabledOnly bool) ([]activity.Game, error) {
-	query := activityGameSelect
+	query := activityGameSelect + ` WHERE ` + currentActivityGame
 	if enabledOnly {
-		query += ` WHERE enabled=1`
+		query += ` AND enabled=1`
 	}
 	query += ` ORDER BY name,id`
 	rows, err := s.db.QueryContext(ctx, query)
@@ -92,12 +52,15 @@ func (s *Store) retryAttempt_PlaceActivityBet(ctx context.Context, userID, gameI
 	}
 	defer func() { _ = tx.Rollback() }()
 	if existing, loadErr := activityBetByKeyTx(ctx, tx, userID, idempotencyKey); loadErr == nil {
+		if existing.GameID != gameID {
+			return activity.BetResult{}, ErrConflict
+		}
 		existing.Replayed = true
 		return existing, nil
 	} else if !errors.Is(loadErr, ErrNotFound) {
 		return activity.BetResult{}, loadErr
 	}
-	game, err := activityGameByID(ctx, tx, gameID, true)
+	game, err := lockedActivityGameTx(ctx, tx, gameID)
 	if err != nil {
 		return activity.BetResult{}, err
 	}

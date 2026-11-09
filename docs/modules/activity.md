@@ -30,7 +30,9 @@ Every debit and credit is committed with its ledger entry and a semantic referen
 
 The member interface presents probability and cost plainly, renders only whitelisted Phosphor game icon keys, shows each result in a focus-trapped dialog, and never uses streak pressure, near-miss, loss-chasing copy, or persistent celebratory loops. A successful bet may show one short fireworks burst; losses, check-ins, and draws do not. All result states respect reduced motion. Disabled games and draws cannot be invoked through a stale API request.
 
-Administrators may hard-delete games and draws when no protected processing work is running. Definitions, participation/results, prizes/snapshots, feature-linked ledger rows, and non-processing jobs are removed transactionally; already-settled balances, coupons, and extensions are not reversed. Statistics expose date-filtered daily/weekly participation, stake/fee, payout/reward, house-net, and win/loss or prize distributions.
+Deleting a game removes it from both current catalogs and rejects new bets. Its disabled definition, immutable outcomes, replay keys and ledger entries remain intact. The existing protected audit event is a permanent removal tombstone; maintenance, actor cleanup and ordinary raw definition edits cannot restore the game. Definition edits and new admissions serialize with removal through the game row lock, while settled replays continue returning their original receipt without spending or sampling again. This prevents further loss of financial evidence; it does not reconstruct ledger rows deleted by older releases.
+
+Instant draw definition removal preserves settled results and financial evidence. Raffle cancellation refunds active seats through the ledger and retains its cancellation receipt for delivery cleanup. Statistics expose date-filtered daily/weekly participation, stake/fee, payout/reward, house-net, and win/loss or prize distributions.
 
 ## Verification
 

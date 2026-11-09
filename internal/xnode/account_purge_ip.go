@@ -81,11 +81,12 @@ func (s *Service) clearAccountPurgeIPControl(ctx context.Context, guard accountN
 	if control.MutationPending || control.AgentID == "" || len(control.Principals) == 0 || s.master == nil || s.vault == nil {
 		return &PolicyError{"ACCOUNT_PURGE_IP_EVIDENCE_PENDING", ErrAccessAccountingPending}
 	}
-	raw, err := s.vault.Decrypt("connection-ip-block:"+target.UserID+":"+control.Block.NodeUUID+":"+control.Block.IPDigest, control.Block.SealedIP)
+	raw, err := s.openAccountPurgeIPTarget(ctx, target.UserID, control.Block)
 	if err != nil {
 		return &PolicyError{"ACCOUNT_PURGE_IP_TARGET_UNAVAILABLE", ErrAccessAccountingPending}
 	}
-	address, err := netip.ParseAddr(raw)
+	defer clear(raw)
+	address, err := netip.ParseAddr(string(raw))
 	if err != nil || address.IsUnspecified() || address.IsMulticast() || address.Zone() != "" {
 		return ErrInvalid
 	}
