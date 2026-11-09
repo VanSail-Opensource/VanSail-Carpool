@@ -110,6 +110,14 @@ func (a *Application) runScheduler(ctx context.Context, startupComplete chan<- s
 			if err := a.store.EnqueueXNodeAccessRepairs(ctx, now.UTC()); err != nil {
 				a.logger.Error("native access recovery scan failed", "error", err)
 			}
+			// Desired-state routing delivery is idempotent, but the outbox stops
+			// automatic delivery once a job exhausts its bounded attempts. Resume
+			// unfinished routing/DIY receipts here so a deployment that failed
+			// while participants were unavailable does not wait for an unrelated
+			// compile-epoch change, agent reconnect or process restart.
+			if err := a.store.WakeXNodeRouting(ctx, now.UTC()); err != nil {
+				a.logger.Error("routing recovery scan failed", "error", err)
+			}
 			if err := a.store.RecoverOutbox(ctx, now.UTC().Add(-2*time.Minute), now.UTC()); err != nil {
 				a.logger.Error("outbox lease recovery failed", "error", err)
 			}
