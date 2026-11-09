@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/base64"
 	"testing"
+	"time"
 )
 
 func TestLoadValidatesCanonicalPublicOrigin(t *testing.T) {
@@ -13,6 +14,9 @@ func TestLoadValidatesCanonicalPublicOrigin(t *testing.T) {
 	}
 	if cfg.PublicBaseURL.String() != "https://carpool.example" || len(cfg.AdminTelegramIDs) != 2 || cfg.AdminTelegramIDs[0] != 42 || cfg.AdminTelegramIDs[1] != 43 || len(cfg.MasterKey) != 32 {
 		t.Fatalf("config = %+v", cfg)
+	}
+	if cfg.SessionTTL < 24*time.Hour || cfg.SessionTTL <= cfg.InitDataMaxAge {
+		t.Fatalf("session lifetime %s must survive a fresh Telegram launch", cfg.SessionTTL)
 	}
 
 	tests := []struct {

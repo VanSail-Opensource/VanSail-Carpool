@@ -44,7 +44,7 @@ func Load() (Config, error) {
 	}
 	cfg.Port = envDefault("PORT", "8080")
 	cfg.DataDir = envDefault("DATA_DIR", "/data")
-
+	cfg.SessionTTL = 7 * 24 * time.Hour
 	cfg.InitDataMaxAge = 5 * time.Minute
 	cfg.ShutdownTimeout = 15 * time.Second
 	cfg.BackupRetention = 7 * 24 * time.Hour

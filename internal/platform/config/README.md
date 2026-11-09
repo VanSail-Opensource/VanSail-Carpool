@@ -7,6 +7,12 @@ embedded deployments supply this internally. Invalid/missing connections fail
 clearly without logging URL credentials. Pools and all SQL/connect/lock deadlines
 are bounded; DB_MIGRATE_ON_START defaults to false for the restricted app role.
 
+Mini App sessions retain the seven-day lifetime in `config.go`. The same value
+feeds account-session persistence and both HTTP authentication cookies; leaving
+it zero makes a successful Telegram exchange expire immediately. Browser console
+sessions keep their independent policy. Hosted configuration and HTTP lifetime
+regressions cover this bootstrap-to-cookie contract.
+
 `memory.go` derives GOMEMLIMIT from the container and resolves protected process
 scratch under DATA_DIR/tmp. Explicit runtime limits remain authoritative.
 `memory_cgroup.go` reads container/ancestor limits. `config_test.go`,

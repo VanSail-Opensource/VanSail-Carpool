@@ -67,6 +67,9 @@ onboarding, signed requests and the existing idempotent operation protections.
 - `auth_rate_limit_test.go` covers client-IP isolation, refill, and forwarded-address handling.
 - `request_validation.go` applies shared request validation, strict JSON decoding, and URL parameter normalization.
 - `authentication.go` exchanges verified Telegram init data for session and request-signing cookies.
+- `authentication_lifetime_test.go` covers real bootstrap configuration through
+  Telegram exchange, persisted expiry, browser cookie retention and a signed
+  member identity read after advancing the persistence clock in hosted CI.
 - `handlers.go` serves onboarding actions, dashboard, catalog, purchases, balance, and ledger history.
 - `purchases.go` serves the authenticated queued-purchase cancellation and TXB refund endpoint.
 - `member_purchase_operations.go` serves first-term refund quotes, idempotent mutations, and owner-scoped receipts. Member manual resets are not exposed; only previously paid queued reset obligations remain supported.
