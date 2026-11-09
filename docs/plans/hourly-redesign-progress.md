@@ -101,11 +101,12 @@ Hosted CI therefore remains pending for the commit created here.
 ### Frontend
 
 - Member hourly page: duplicate title removed, whole-page animated lock state
-  for an active fixed-term plan, funded/allowance bar with a standout-green
-  purchased segment and wave, green rocket boost when enabling automatic extra
-  traffic during throttling, a low-energy reduced-speed visual, per-squad
-  required hours, capacity/next-hour continuity copy, and the funding-suspended
-  notice.
+  for an active fixed-term plan, one purchased/allowance bar whose extra-used
+  segment keeps the normal accent base with clipped standout-green sine wave
+  lines, a single conditional legend row (purchased-extra-left when exhausted,
+  otherwise remaining), a larger green rocket on the reduced-speed card before
+  the bar swap, a low-energy reduced-speed visual, per-squad required hours,
+  capacity/next-hour continuity copy, and the funding-suspended notice.
 - Admin: redesigned Entitlements workspace with manual grant, edit, and refund
   actions; administrator hourly squad table with disable; per-offer required
   hours; corrected Fixed-term plan / Charge by traffic billing-mode labels.
@@ -128,9 +129,11 @@ Browser evidence (Vite dev server, constructed fixtures):
   message, `?large` fractional arcs; same SVG, 220 px, ~320 ms arc tween,
   console/network clean at 390 px and 1440 px.
 - Member hourly: `?out-of-allowance` (no caption, depressed animated card),
-  `?extra&out-of-allowance` (four-segment bar, standout-green extra used/remaining
-  with animated wave), confirm-enabling automatic extra traffic during reduced
-  speed (green boost observed, then purchased bar), `?suspended`, `?capacity`,
+  `?extra&out-of-allowance` (accent-base purchased segment with clipped green
+  sine wave lines and only "Purchased extra left"), `?extra` within allowance
+  (only "Remaining"), confirm-enabling automatic extra traffic during reduced
+  speed (larger rocket over the reduced-speed card, static reduced-motion flash,
+  then the purchased bar), `?suspended`, `?capacity`,
   `?capacity-preparing`, `?legacy`, `?first`, `?offer-hours`, `?zh`, `?light`,
   reduced motion, 390 px and 1440 px with no horizontal overflow.
 - Admin hourly: `?admin` per-offer required hours default 168 and save

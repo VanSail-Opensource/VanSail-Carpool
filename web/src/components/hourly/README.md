@@ -21,22 +21,27 @@ owns one segmented purchased-usage bar; every segment width is computed with
 `BigInt` basis points and the trailing free-remaining segment absorbs the
 sub-basis-point remainder:
 
-- Segment order: free used (`--accent`), purchased extra used (a standout green
-  with a continuous wave highlight), purchased extra remaining (the same green at
-  reduced strength), free remaining (`--line`). The green is a local
+- Segment order: free used (`--accent`), purchased extra used (same `--accent`
+  base with 2–3 thin, smooth standout-green sine wave lines drawn as inline SVG
+  paths and clipped inside it; the line group translates left→right on a
+  seamless 1.8s loop, and reduced motion leaves the lines static), purchased extra remaining (the accent base at reduced
+  opacity with a faint green inset wash), free remaining (`--line`). The wave
+  lines and the "Purchased extra left" legend swatch use a local
   `--hourly-extra` derived from the theme-aware `--success` mixed with a vivid
   green, so it stays distinct from `--warning` in both themes.
 - Extra purchases enabled: capacity is `freeAllowanceBytes + extraFundedBytes`
   and usage is `freeUsedBytes + extraUsedBytes` (clamped to capacity). The legend
-  shows used traffic, remaining purchased extra
-  (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used) and
-  the remaining capacity. Caption and accessible `aria-valuetext` use
+  always shows used traffic and exactly one secondary row: "Purchased extra
+  left" (`extraFunded - extraUsed - extraReserved`, never reserved bytes as used)
+  once the free allowance is exhausted, otherwise the remaining capacity. The
+  two rows are mutually exclusive. Caption and accessible `aria-valuetext` use
   `hourly.fullSpeedAllowance` and `hourly.allowanceUsedOf`.
 - Turning automatic extra purchases on (false → true) while the previous state
-  was out of allowance plays a one-off decorative green rocket from left to
-  right for ~1.3s (`data-hourly-boost`) and settles into the green purchased
-  segments. It never plays on initial load or within allowance. Reduced motion
-  shows a static green flash instead of travel.
+  was out of allowance keeps the reduced-speed card mounted and flies a one-off
+  decorative green rocket through it for ~1.2s (`data-hourly-boost` is on this
+  card-context rocket); the graph swaps to the purchased bar only when the
+  rocket finishes. It never plays on initial load or within allowance. Reduced
+  motion swaps immediately and shows a static green flash instead of travel.
 - Extra purchases disabled and the free allowance exhausted
   (`freeUsedBytes >= freeAllowanceBytes`, or a zero allowance with recorded
   usage): the caption is omitted and `HourlyThrottleMeter.vue` replaces the whole
@@ -125,6 +130,7 @@ their meaning (`admin`, `light`, `zh`, `slow`, `error`, `empty`, `paused`,
 Use `extra` together with `out-of-allowance` to inspect the purchased-usage bar
 with `extraEnabled` true, and `zh`/`light` for locale and theme parity. The
 `out-of-allowance` fixture keeps existing purchased credit while the preference
-is off, so turning the switch on there (confirming the dialog) exercises the
-rocket boost and its settle into the green purchased segments. Add
-`reduced-motion` to see the static flash/segments instead.
+is off, so turning the switch on there (confirming the dialog) keeps the
+reduced-speed card, flies the rocket through it (`[data-hourly-boost]`) and then
+swaps to the purchased bar with its green sine wave lines. Add `reduced-motion` to
+see the immediate swap and static flash/lines instead.
