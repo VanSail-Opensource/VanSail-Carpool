@@ -19,6 +19,7 @@ import { profileMetricsFixture } from './profileMetricsFixture'
 import { firewallRangesFixture } from './firewallRangesFixture'
 import { certificateFixture } from './certificateFixture'
 import { endpointOptionsFixture } from './endpointOptionsFixture'
+import { configurationDeletionFixture } from './configurationDeletionFixture'
 import '@/browser/styles.css'
 
 const params = new URLSearchParams(location.search)
@@ -211,6 +212,7 @@ firewallApi.bans = async (query = '', cursor = '') => {
 }
 certificateFixture(params, trace, nodes)
 endpointOptionsFixture(params, trace, nodes, configurations)
+configurationDeletionFixture(params, trace, nodes, configurations)
 const app = createApp(XNodeAudit)
 app.config.globalProperties.$t = t
 app.provide(operationReceiptLoaderKey, adminOperationsApi.getOperation)

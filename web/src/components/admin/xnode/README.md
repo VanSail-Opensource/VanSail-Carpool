@@ -1,5 +1,12 @@
 # X-Node administration
 
+`XNodeConfigurations.vue` exposes a resource-named delete action beside each
+configuration. It reuses the workspace mutation/reload/error flow, blocks
+duplicate actions while pending and retains failed rows for retry. The existing
+DELETE API protects every node reference, including historical nodes; shared
+snippets remain intact. `configurationDeletionFixture.ts` provides constructed
+success, last-item empty, conflict, failure/retry and slow-action browser states.
+
 `XNodeAccessGroups.vue` retains access-group/resource ownership and composes
 `XNodeEndpointForm.vue` for endpoint drafts. The form derives metadata and the
 expanded inbound list through read-only `/endpoints/preview`, resets the inbound

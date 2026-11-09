@@ -48,6 +48,7 @@ export const xnodeApi = {
   saveGlobal: (body: XNodeGlobal, part?: 'automaticWhitelist') => request<XNodeGlobal>(`${root}/global`, { method: 'PUT', body, query: { part } }),
   configurations: (signal?: AbortSignal) => request<{ items: XNodeConfiguration[] }>(`${root}/configurations`, { cache: 'no-store', signal }),
   saveConfiguration: (body: Partial<XNodeConfiguration>) => request<XNodeConfiguration>(`${root}/configurations${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),
+  deleteConfiguration: (id: string) => request<void>(`${root}/configurations/${encodeURIComponent(id)}`, { method: 'DELETE', cache: 'no-store' }),
   validate: (document: object, snippetIds: string[] = []) => request<XNodeValidation>(`${root}/configurations/validate`, { method: 'POST', body: { document, snippetIds } }),
   snippets: (signal?: AbortSignal) => request<{ items: XNodeSnippet[] }>(`${root}/snippets`, { cache: 'no-store', signal }),
   saveSnippet: (body: Partial<XNodeSnippet>) => request<XNodeSnippet>(`${root}/snippets${body.id ? `/${encodeURIComponent(body.id)}` : ''}`, { method: body.id ? 'PUT' : 'POST', body }),

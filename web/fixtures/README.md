@@ -1,5 +1,14 @@
 # Constructed browser fixtures
 
+For configuration deletion open `xnode-audit.html?configuration-deletion` and
+select Xray & snippets. Shared configuration returns an in-use conflict; the
+unused fallback can be deleted. Add `configuration-only-unused` to check the
+last-row empty state, `configuration-delete-slow` for pending controls, or
+`configuration-delete-error` for a first failure followed by successful retry.
+`configurationDeletionFixture.ts` intercepts every configuration delete in this
+fixture; no production mutation occurs. Existing `empty`, `error`, `slow`, `zh`
+and appearance flags remain available. Inspect `window.__xnodeAudit.writes`.
+
 `hourlyUsageFixture.ts` extends `usage-breakdown-data.ts` with authoritative-shaped
 named hourly slices for `fixtures/usage-breakdown-audit.html?hourly`. Use
 `hourly-one` for one 100% squad, `hourly-idle` for cost-only paid time,

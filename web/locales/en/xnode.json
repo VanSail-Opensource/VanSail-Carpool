@@ -86,6 +86,7 @@
       "self": "Self-signed"
     },
     "addConfiguration": "Add configuration",
+    "deleteConfiguration": "Delete configuration {name}",
     "addSnippet": "Add snippet",
     "snippet": "Shared snippet",
     "snippets": "Shared snippets",

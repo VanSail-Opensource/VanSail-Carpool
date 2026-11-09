@@ -1,5 +1,9 @@
 # Path item shards
 
+`api-v1-admin-xnode-configurations-id.yaml` retains administrator-only native
+configuration deletion: 204 for removal, 404 for a missing document and 409 while
+any current or historical node still references it.
+
 `api-v1-admin-xnode-endpoints-preview.yaml` validates incomplete administrator
 endpoint drafts against local native configuration with synthetic credentials,
 returning derived inbound metadata/choices and typed field/client diagnostics.

@@ -1,5 +1,9 @@
 # Frontend API
 
+`xnode.ts` exposes typed configuration deletion through the existing signed
+administrator DELETE route. A 204 response has no body; 404 and protected-use
+409 failures retain the row through the workspace error path.
+
 `hourly.ts` declares owner-scoped hourly policy, offers, enrollment, daily usage
 and consent contracts. Mutations preserve decimal-string accounting, policy
 fingerprints, offer revisions and explicit idempotency keys; access changes

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/xnode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func scanXNodeConfiguration(row rowScanner) (xnode.Configuration, error) {
@@ -110,6 +111,17 @@ func (s *Store) retryAttempt_SaveXNodeConfiguration(ctx context.Context, config 
 	return tx.Commit()
 }
 func (s *Store) DeleteXNodeConfiguration(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM xnode_configs WHERE id=$1`, id)
+	result, err := s.db.ExecContext(ctx, `DELETE FROM xnode_configs WHERE id=$1`, id)
+	if err != nil {
+		var constraint *pgconn.PgError
+		if errors.As(err, &constraint) && constraint.Code == "23503" {
+			return xnode.ErrConflict
+		}
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err == nil && count == 0 {
+		return xnode.ErrNotFound
+	}
 	return err
 }

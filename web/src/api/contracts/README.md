@@ -1,5 +1,9 @@
 # Frontend API contracts
 
+Configuration deletion retains its existing DELETE operation and now declares
+not-found and protected-use conflict responses alongside administrator access
+failures. Generated request/response types mirror these transport outcomes.
+
 Usage Breakdown requires `hourlySquads` and combined `positiveEntries`, while
 retaining deprecated physical-only `positiveNodes`. Generated shapes protect the
 typed rows; the API module additionally enforces exact conservation, combined

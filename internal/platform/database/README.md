@@ -1,5 +1,12 @@
 # Application store
 
+`xnode_configurations.go` deletes only unreferenced native configurations. The
+database foreign key remains authoritative during concurrent node changes and
+protects historical node references. Missing documents return not found; foreign
+key conflicts return the domain conflict error. Only that configuration's
+snippet bindings cascade, retaining shared snippets and unrelated documents.
+`xnode_configuration_delete_test.go` covers these deletion and retention cases.
+
 `multiplier_retirement.md` documents traffic multiplier retirement, the atomic
 acceptance boundary and retained historical evidence.
 `xnode_traffic_arithmetic_test.go` preserves historical fractional/free arithmetic.

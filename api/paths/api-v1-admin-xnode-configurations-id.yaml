@@ -53,6 +53,18 @@
     "responses": {
       "204": {
         "description": "Deleted"
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
+      },
+      "403": {
+        "$ref": "../openapi.yaml#/components/responses/Forbidden"
+      },
+      "404": {
+        "$ref": "../openapi.yaml#/components/responses/NotFound"
+      },
+      "409": {
+        "$ref": "../openapi.yaml#/components/responses/Conflict"
       }
     }
   }

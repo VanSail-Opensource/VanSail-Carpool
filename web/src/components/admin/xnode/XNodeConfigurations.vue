@@ -9,6 +9,7 @@ const props = defineProps<{ configurations: XNodeConfiguration[]; snippets: XNod
 const { t } = useI18n()
 const mode = shallowRef<'configuration' | 'snippet'>('configuration')
 const editing = shallowRef(false)
+const removingId = shallowRef<string | null>(null)
 const valid = shallowRef(true)
 const validating = shallowRef(false)
 const validation = shallowRef<{ valid: boolean; needsAgentValidation: boolean; detail?: string; errorCode?: string } | null>(null)
@@ -49,13 +50,19 @@ async function save(): Promise<void> {
     : () => xnodeApi.saveSnippet({ id: draft.id, name: draft.name, revision: draft.revision, kind: draft.kind, document: document.value as Record<string, unknown>[] })
   if (await props.perform(result)) editing.value = false
 }
+async function removeConfiguration(item: XNodeConfiguration): Promise<void> {
+  if (props.busy || removingId.value) return
+  removingId.value = item.id
+  try { await props.perform(() => xnodeApi.deleteConfiguration(item.id)) }
+  finally { removingId.value = null }
+}
 </script>
 
 <template>
   <div class="grid gap-5">
     <div class="flex flex-wrap justify-end gap-2"><UButton variant="outline" color="neutral" :label="t('nodeAdmin.ss2022')" @click="addShadowsocks" /><UButton icon="i-ph-plus-bold" :label="t('xnode.addConfiguration')" @click="editConfiguration()" /><UButton color="neutral" variant="outline" icon="i-ph-code-bold" :label="t('xnode.addSnippet')" @click="editSnippet()" /></div>
     <p v-if="!configurations.length" class="text-muted">{{ t('xnode.noConfigurations') }}</p>
-    <div v-for="item in configurations" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t('xnode.revision', { revision: item.revision }) }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editConfiguration(item)" /></div>
+    <div v-for="item in configurations" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t('xnode.revision', { revision: item.revision }) }}</span><div class="flex gap-1"><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :disabled="busy || !!removingId" :aria-label="t('common.edit')" @click="editConfiguration(item)" /><UButton variant="ghost" color="error" icon="i-ph-trash-bold" :loading="removingId === item.id" :disabled="busy || !!removingId" :aria-label="t('xnode.deleteConfiguration', { name: item.name })" @click="removeConfiguration(item)" /></div></div>
     <h3>{{ t('xnode.snippets') }}</h3>
     <p v-if="!snippets.length" class="text-muted">{{ t('xnode.noSnippets') }}</p>
     <div v-for="item in snippets" :key="item.id" class="configuration-row"><strong>{{ item.name }}</strong><span class="text-muted text-xs">{{ t(`xnode.snippetKinds.${item.kind}`) }}</span><UButton variant="ghost" color="neutral" icon="i-ph-pencil-simple-bold" :aria-label="t('common.edit')" @click="editSnippet(item)" /></div>
@@ -67,5 +74,6 @@ async function save(): Promise<void> {
 
 <style scoped>
 .configuration-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 12px; align-items: center; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.configuration-row strong { min-width: 0; overflow-wrap: anywhere; }
 h3 { margin: 8px 0 0; font-size: 15px; }
 </style>

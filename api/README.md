@@ -1,5 +1,9 @@
 # VanSail Carpool OpenAPI contract
 
+Native configuration deletion exposes 204, missing-document 404 and protected-use
+409 outcomes. Existing administrator authentication/signing remains mandatory;
+current and historical node references continue to prevent deletion.
+
 Usage Breakdown separates fixed-term/PAYG nodes from named hourly squads with
 recorded traffic and costs. The two arrays share a 128-entry cap and combined
 `positiveEntries`; physical-only `positiveNodes` remains deprecated compatibility.
