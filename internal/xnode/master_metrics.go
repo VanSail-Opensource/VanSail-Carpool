@@ -58,6 +58,10 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 			}
 		}
 		item.Firewall = snapshot.firewall
+		if connected && snapshot.certificateProgress != nil && now.Sub(snapshot.certificateProgress.ReceivedAt) < 6*time.Minute {
+			progress := *snapshot.certificateProgress
+			item.CertificateProgress = &progress
+		}
 		if fresh {
 			at := snapshot.report.Time
 			item.ReportedAt = &at
@@ -104,6 +108,7 @@ func (m *Master) Metrics(ctx context.Context, summary ...bool) (MetricsSummary, 
 	}
 	for index := range result.Nodes {
 		result.Nodes[index].Machine = BrowserMetricNumbers(result.Nodes[index].Machine)
+		result.Nodes[index].Certificates = BrowserMetricNumbers(result.Nodes[index].Certificates)
 	}
 	return result, nil
 }

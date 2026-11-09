@@ -36,6 +36,17 @@ func (s *Server) xnodeQueueCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusAccepted, receipt)
 }
+
+func (s *Server) xnodeCertificateOperation(w http.ResponseWriter, r *http.Request) {
+	operation, err := s.deps.XNode.LatestCertificateOperation(r.Context(), chiURLParam(r, "id"), r.URL.Query().Get("profileId"))
+	if err != nil {
+		s.xnodeError(w, r, err)
+		return
+	}
+	privateSubscriptionHeaders(w)
+	operation.Result = xnode.BrowserMetricNumbers(operation.Result)
+	writeJSON(w, http.StatusOK, operation)
+}
 func (s *Server) xnodeDeleteNode(w http.ResponseWriter, r *http.Request) {
 	s.xnodeDeleteResource(w, r, s.deps.XNode.DeleteNode)
 }

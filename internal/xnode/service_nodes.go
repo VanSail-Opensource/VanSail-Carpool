@@ -56,6 +56,9 @@ func (s *Service) SaveNode(ctx context.Context, node Node, settings NodeSettings
 	if err != nil {
 		return node, err
 	}
+	if err = validateCertificateSettings(settings, global.Providers); err != nil {
+		return node, err
+	}
 	if err = s.prepareDDNSSettings(ctx, node.ID, &settings); err != nil {
 		return node, err
 	}

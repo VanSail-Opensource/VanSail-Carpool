@@ -1,7 +1,17 @@
 {
   "post": {
     "description": "Queues a durable node command. Delivery acceptance is bounded to 30 seconds, with command-specific execution deadlines. Receipts distinguish undelivered, rejected, failed and uncertain outcomes using safe error codes. Upgrade completion requires durable transaction reconciliation and fresh synchronized readiness after reconnect.",
-    "security": [{"browserSession":[],"requestTimestamp":[],"requestNonce":[],"requestSignature":[]},{"panelApiToken":[]}],
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
     "tags": [
       "Administration"
     ],
@@ -49,6 +59,80 @@
             "$ref": "../openapi.yaml#/components/schemas/XNodeCommandWrite"
           }
         }
+      }
+    }
+  },
+  "get": {
+    "description": "Returns the latest durable certificate operation for a node/profile, including original action and revision for receipt recovery across administrator devices. No operation returns a null receipt.",
+    "security": [
+      {
+        "browserSession": [],
+        "requestTimestamp": [],
+        "requestNonce": [],
+        "requestSignature": []
+      },
+      {
+        "panelApiToken": []
+      }
+    ],
+    "tags": [
+      "Administration"
+    ],
+    "operationId": "getXNodeCertificateOperation",
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "profileId",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Latest certificate lifecycle receipt",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "receipt": {
+                  "oneOf": [
+                    {
+                      "$ref": "../openapi.yaml#/components/schemas/OperationReceipt"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "result": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "receipt",
+                "result"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../openapi.yaml#/components/responses/Unauthorized"
       }
     }
   }

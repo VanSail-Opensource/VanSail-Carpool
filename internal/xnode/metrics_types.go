@@ -8,29 +8,30 @@ import (
 )
 
 type NodeMetrics struct {
-	Enabled                bool                `json:"-"`
-	ReceivedAt             time.Time           `json:"-"`
-	Available              bool                `json:"available"`
-	TelemetryAvailable     bool                `json:"telemetryAvailable"`
-	Firewall               *wire.FirewallState `json:"firewall,omitempty"`
-	NodeID                 string              `json:"nodeId"`
-	Connected              bool                `json:"connected"`
-	Ready                  bool                `json:"ready"`
-	Synchronized           bool                `json:"synchronized"`
-	Stale                  bool                `json:"stale"`
-	Version                string              `json:"version"`
-	XrayVersion            string              `json:"xrayVersion"`
-	Capabilities           []string            `json:"capabilities"`
-	ReportedAt             *time.Time          `json:"reportedAt"`
-	Machine                json.RawMessage     `json:"machine"`
-	Certificates           json.RawMessage     `json:"certificates"`
-	ActiveConnections      int64               `json:"activeConnections"`
-	TotalConnections       *string             `json:"totalConnections"`
-	UsersOnline            int64               `json:"usersOnline"`
-	UsersOnlineAvailable   bool                `json:"usersOnlineAvailable"`
-	UploadBytesPerSecond   float64             `json:"uploadBytesPerSecond"`
-	DownloadBytesPerSecond float64             `json:"downloadBytesPerSecond"`
-	Logs                   []json.RawMessage   `json:"logs"`
+	CertificateProgress    *CertificateCommandProgress `json:"certificateProgress,omitempty"`
+	Enabled                bool                        `json:"-"`
+	ReceivedAt             time.Time                   `json:"-"`
+	Available              bool                        `json:"available"`
+	TelemetryAvailable     bool                        `json:"telemetryAvailable"`
+	Firewall               *wire.FirewallState         `json:"firewall,omitempty"`
+	NodeID                 string                      `json:"nodeId"`
+	Connected              bool                        `json:"connected"`
+	Ready                  bool                        `json:"ready"`
+	Synchronized           bool                        `json:"synchronized"`
+	Stale                  bool                        `json:"stale"`
+	Version                string                      `json:"version"`
+	XrayVersion            string                      `json:"xrayVersion"`
+	Capabilities           []string                    `json:"capabilities"`
+	ReportedAt             *time.Time                  `json:"reportedAt"`
+	Machine                json.RawMessage             `json:"machine"`
+	Certificates           json.RawMessage             `json:"certificates"`
+	ActiveConnections      int64                       `json:"activeConnections"`
+	TotalConnections       *string                     `json:"totalConnections"`
+	UsersOnline            int64                       `json:"usersOnline"`
+	UsersOnlineAvailable   bool                        `json:"usersOnlineAvailable"`
+	UploadBytesPerSecond   float64                     `json:"uploadBytesPerSecond"`
+	DownloadBytesPerSecond float64                     `json:"downloadBytesPerSecond"`
+	Logs                   []json.RawMessage           `json:"logs"`
 }
 
 type UserMetrics struct {
@@ -61,6 +62,7 @@ type MetricsSummary struct {
 	FetchedAt              time.Time     `json:"fetchedAt"`
 }
 type liveSnapshot struct {
+	certificateProgress      *CertificateCommandProgress
 	activityReports          bool
 	activitySampleReceivedAt time.Time
 	firewall                 *wire.FirewallState

@@ -1449,3 +1449,15 @@ addon totals, owner/rejoin isolation, lifecycle partial minutes, coverage,
 stable truncation and concurrent snapshot consistency in hosted PostgreSQL.
 `usage_breakdown_closed_coverage_test.go` keeps loss-only closed combo/PAYG
 participants visible for their overlapping lifecycle window.
+
+`xnode_certificate_operations.go` queues administrator certificate actions through
+the existing provider operation/item/outbox transaction. A PostgreSQL transaction
+advisory lock serializes node/profile intents across administrators; exact
+idempotent receipts replay before unresolved queued/processing/review/partial
+operations block new issuance. Safe command/profile/action/revision facts are
+stored in the original receipt, without certificate material or provider secrets.
+`LatestXNodeCertificateOperation` recovers the newest receipt across devices.
+Certificate workers preserve those initial facts in their completion result.
+Hosted `xnode_certificate_operations_test.go` and
+`xnode_certificate_concurrency_test.go` cover replay, uncertainty, scope, atomic
+queueing, independent administrators and cancellation while locked.

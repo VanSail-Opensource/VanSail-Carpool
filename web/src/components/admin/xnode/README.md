@@ -1,5 +1,37 @@
 # X-Node administration
 
+Certificate administration uses `XNodeCertificateProfile.vue` for mode-specific
+fields, configured provider selection and native PEM file imports.
+`certificateForm.ts` validates fields and inbound references; the backend checks
+the actual PEM key pair and certificate hostname. Bound profiles require an
+explicit unbind before removal. Existing inline DNS credentials remain opaque.
+`XNodeCertificateStatus.vue` and `certificateStatus.ts` project only safe public
+metadata, separating failed acquisition/application from retained serving material.
+Expiry warnings do not prevent unrelated edits. Missing legacy serving state is
+shown as unknown; stale reports cannot authorize lifecycle commands. Failed
+activation can still be repaired while runtime readiness is false, using a
+connected peer, fresh report, lifecycle capability and the saved revision.
+
+`XNodeCertificateLifecycle.vue` and `useCertificateLifecycle.ts` reuse durable receipt tracking for revision-checked
+ACME issue/renew actions. It restores the original operation and preserves a
+credential-free original key/action/revision in tab storage after ambiguous
+submission. That exact request is reconciled before consulting potentially older
+profile history; pending review or partial outcomes block new mutations. Session
+end clears attempts and active observers. The backend bounds each operation to
+five minutes. New profiles must be saved before lifecycle actions are available.
+`certificateAttempts.ts` owns the narrow recovery context; keys and PEM are never
+included in status output. `XNodeOperationalSettings.vue` shares the existing
+provider discovery read between DDNS and certificates, with cancellation/retry.
+The credentials link opens the existing global provider editor in another tab.
+
+Hosted frontend coverage: `certificateForm.test.ts`, `certificateStatus.test.ts`,
+`useCertificateLifecycle.test.ts`, `XNodeCertificateSettings.test.ts`, and
+`XNodeCertificateProfile.test.ts` cover native mode validation, safe metadata,
+original-key recovery, explicit bindings and bounded PEM import. No local
+automated suites are required or run for these changes.
+
+Chrome DevTools checked certificate forms and lifecycle controls using constructed data at 1440 px/light and 390 px/dark, in English and Chinese. Checks covered configured DNS providers, file/content modes, native FileReader imports, bound-profile removal, expiry, capability gating, queued and pending-review states, definitive-failure retry with a new key, original-key recovery after an ambiguous submission, and recovery errors/retry. Dialogs remained contained; console and mock network inspections were clear. File-picker automation could not access workspace files, so browser-generated synthetic PEM envelopes exercised import plumbing; hosted Go coverage validates real key pairs. Live ACME/provider issuance was not performed in these browser checks.
+
 Chrome DevTools checked the retired DNS controls at 1440 px and 390 px, in
 English/light and Chinese/dark. Only interception and native-configuration
 guidance render; toggling interception retains legacy opaque fields for server

@@ -28,6 +28,9 @@ const draft = reactive<Partial<XNode>>({})
 const multiplierText = shallowRef('1')
 const multiplier = computed(() => nodeMultiplierSchema().safeParse(multiplierText.value))
 const settings = ref<XNodeSettings>({ ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } })
+const certificateBaseline = shallowRef(''), loadedConfiguration = shallowRef(''), nodeRevision = shallowRef(0)
+const savedCertificateIds = shallowRef<string[]>([])
+const certificatesSaved = computed(() => certificateBaseline.value === JSON.stringify([settings.value.certificates ?? {}, settings.value.inboundCertificates ?? {}]) && draft.configId === loadedConfiguration.value)
 const configurations = computed(() => props.configurations.map(value => ({ label: value.name, value: value.id })))
 const ddnsHosts = computed(() => props.endpoints.filter(host => host.nodeId === draft.id))
 const status = (id: string) => props.metrics?.nodes.find(value => value.nodeId === id)
@@ -48,10 +51,11 @@ async function edit(node?: XNode): Promise<void> {
   Object.assign(draft, { id: '', name: '', enabled: true, countryCode: '', providerName: '', multiplier: 1, configId: props.configurations[0]?.id ?? '' }, node ?? {})
   multiplierText.value = String(draft.multiplier)
   settings.value = { ddns: [], certificates: {}, inboundCertificates: {}, dns: {}, firewall: { enabled: false, protect: false } }
+  certificateBaseline.value = ''; loadedConfiguration.value = ''; nodeRevision.value = 0; savedCertificateIds.value = []
   enrollment.value = null; error.value = null; editing.value = true
   if (!node) return
   loading.value = true
-  try { const value = await xnodeApi.node(node.id, controller.signal); if (latest.isCurrent(ticket)) { settings.value = value.settings; loaded.value = true } }
+  try { const value = await xnodeApi.node(node.id, controller.signal); if (latest.isCurrent(ticket)) { settings.value = value.settings; certificateBaseline.value = JSON.stringify([value.settings.certificates ?? {}, value.settings.inboundCertificates ?? {}]); loadedConfiguration.value = value.node.configId; nodeRevision.value = value.node.desiredRevision ?? 0; savedCertificateIds.value = Object.keys(value.settings.certificates ?? {}); loaded.value = true } }
   catch (caught) { if (latest.isCurrent(ticket)) error.value = localizedError(caught, 'xnode.loadFailed') }
   finally { if (latest.isCurrent(ticket)) loading.value = false }
 }
@@ -95,7 +99,7 @@ async function enroll(node: XNode): Promise<void> {
               <UFormField :label="t('xnode.multiplier')" :error="!multiplier.success && t('nodeForms.multiplierInvalid')"><UInput v-model="multiplierText" inputmode="decimal" required class="w-full" /></UFormField>
               <UFormField><USwitch v-model="draft.enabled" :label="t('common.enabled')" /></UFormField>
             </div>
-            <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" @valid="settingsValid = $event" />
+            <XNodeOperationalSettings v-model="settings" :inbounds="inbounds" :hosts="ddnsHosts" :node-id="draft.id" :revision="nodeRevision" :metric="draft.id ? status(draft.id) : undefined" :certificates-saved="certificatesSaved" :saved-certificate-ids="savedCertificateIds" @valid="settingsValid = $event" />
             <div class="flex justify-end"><UButton type="submit" :loading="busy" :disabled="!loaded || loading || !settingsValid || !multiplier.success || busy" :label="t('common.save')" /></div>
           </form>
           <XNodePricingCostSettings v-if="draft.id" :key="draft.id" :node-id="draft.id" />

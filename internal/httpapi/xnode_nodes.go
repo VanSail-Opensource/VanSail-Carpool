@@ -19,6 +19,7 @@ func (s *Server) xnodeNode(w http.ResponseWriter, r *http.Request) {
 		s.xnodeError(w, r, err)
 		return
 	}
+	privateSubscriptionHeaders(w)
 	writeJSON(w, http.StatusOK, map[string]any{"node": node, "settings": settings})
 }
 func (s *Server) xnodeSaveNode(w http.ResponseWriter, r *http.Request) {

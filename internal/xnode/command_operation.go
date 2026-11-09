@@ -35,19 +35,23 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 	if err != nil {
 		return err
 	}
-	var request CommandRequest
-	if json.Unmarshal([]byte(raw), &request) != nil || !validNodeCommand(request) {
+	var intent queuedNodeCommand
+	if json.Unmarshal([]byte(raw), &intent) != nil || !validNodeCommand(intent.CommandRequest) {
 		return ErrInvalid
 	}
+	request := intent.CommandRequest
 	if request.Name == "node.remove" {
 		return s.runNodeRemoval(ctx, operation, items[0].TargetID)
 	}
 	preflight, stopPreflight := context.WithTimeout(ctx, 30*time.Second)
-	args, err := s.commandArguments(preflight, items[0].TargetID, request)
+	args, err := s.operationArguments(preflight, items[0].TargetID, operation, intent)
 	if err == nil {
 		operation, err = s.prepareUpdate(preflight, items[0].TargetID, operation, request, args)
 	}
 	stopPreflight()
+	if errors.Is(err, errCertificateEvidence) {
+		return s.completeCertificateReview(ctx, repository, operation, items[0].TargetID, intent)
+	}
 	if err != nil && errors.Is(err, ErrUpdateEvidence) {
 		facts, encodeErr := updateOperationResult(operation, request, items[0].TargetID, nil)
 		if encodeErr != nil {
@@ -67,7 +71,14 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 			}
 			finish, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 			defer cancel()
-			_, finishErr := repository.CompleteXNodeProviderOperation(finish, operation.Receipt.ID, operation.Attempts, providerops.Completion{Status: providerops.StatusFailed, ErrorCode: code, ResultJSON: "{}"}, s.now().UTC())
+			facts := "{}"
+			if request.Name == "certificates.run" {
+				facts, err = certificateOperationResult(request, items[0].TargetID, nil, intent.AgentID)
+				if err != nil {
+					return err
+				}
+			}
+			_, finishErr := repository.CompleteXNodeProviderOperation(finish, operation.Receipt.ID, operation.Attempts, providerops.Completion{Status: providerops.StatusFailed, ErrorCode: code, ResultJSON: facts}, s.now().UTC())
 			return finishErr
 		}
 		return err
@@ -81,7 +92,7 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 	}
 	child, cancel := context.WithTimeout(ctx, commandDeadline(request.Name)+30*time.Second)
 	defer cancel()
-	result, commandErr := s.executeNodeCommand(child, items[0].TargetID, operation, request, args)
+	result, commandErr := s.executeNodeCommand(child, items[0].TargetID, operation, request, args, intent.AgentID)
 	if errors.Is(commandErr, jobqueue.ErrBusy) {
 		if repo, ok := s.repo.(interface {
 			DeferXNodeCommand(context.Context, string, int, time.Time) error
@@ -137,6 +148,12 @@ func (s *Service) runProviderOperation(ctx context.Context, operation providerop
 			return err
 		}
 		completion.ResultJSON = string(stored)
+	}
+	if request.Name == "certificates.run" {
+		completion.ResultJSON, err = certificateOperationResult(request, items[0].TargetID, result, intent.AgentID)
+		if err != nil {
+			return err
+		}
 	}
 	finish, cancelFinish := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancelFinish()

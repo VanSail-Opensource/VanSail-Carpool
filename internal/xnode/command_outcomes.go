@@ -32,6 +32,8 @@ func (e *CommandError) Unwrap() error { return e.Cause }
 // local values that match the longest documented native operation.
 func commandDeadline(name string) time.Duration {
 	switch name {
+	case "certificates.run":
+		return 5 * time.Minute
 	case "speedtest":
 		return 90 * time.Second
 	case "update.install", "update.rollback":
@@ -65,6 +67,9 @@ func waitCommand(ctx context.Context, peer *agentPeer, pending <-chan wire.Messa
 		case <-execution:
 			return nil, &CommandError{CommandUncertain, context.DeadlineExceeded}
 		case message := <-pending:
+			if message.Type == "command.progress" {
+				continue // Progress is advisory; it cannot replace terminal evidence.
+			}
 			if message.Type == "error" {
 				if accepted {
 					return nil, &CommandError{CommandUncertain, ErrUnavailable}
@@ -107,8 +112,14 @@ func waitCommand(ctx context.Context, peer *agentPeer, pending <-chan wire.Messa
 			case "completed":
 				return result.Data, nil
 			case "failed":
+				if name == "certificates.run" {
+					return result.Data, &CommandError{CommandFailed, ErrUnavailable}
+				}
 				return nil, &CommandError{CommandFailed, ErrUnavailable}
 			default:
+				if name == "certificates.run" {
+					return result.Data, &CommandError{CommandUncertain, ErrUnavailable}
+				}
 				return nil, &CommandError{CommandUncertain, ErrUnavailable}
 			}
 		}

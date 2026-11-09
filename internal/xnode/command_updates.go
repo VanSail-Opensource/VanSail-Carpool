@@ -8,14 +8,26 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/providerops"
 )
 
-func (s *Service) executeNodeCommand(ctx context.Context, node string, operation providerops.Operation, request CommandRequest, args map[string]any) (json.RawMessage, error) {
+func (s *Service) executeNodeCommand(ctx context.Context, node string, operation providerops.Operation, request CommandRequest, args map[string]any, agent ...string) (json.RawMessage, error) {
 	if request.Name == "speedtest" && operation.Attempts > 1 {
 		return nil, &CommandError{CommandUncertain, ErrUnavailable}
 	}
 	if isUpdateCommand(request.Name) {
 		return s.executeUpdate(ctx, node, operation, request, args)
 	}
-	result, err := s.master.Command(ctx, node, operation.Receipt.ID, request.Name, args)
+	var result json.RawMessage
+	var err error
+	if request.Name == "certificates.run" {
+		if len(agent) == 0 || agent[0] == "" {
+			return nil, &CommandError{CommandUncertain, errCertificateEvidence}
+		}
+		result, err = s.master.certificateCommand(ctx, node, operation.Receipt.ID, args, agent[0])
+	} else {
+		result, err = s.master.Command(ctx, node, operation.Receipt.ID, request.Name, args)
+	}
+	if err == nil && request.Name == "certificates.run" {
+		return validateCertificateResult(request, result)
+	}
 	if err == nil && (request.Name == "runtime.reload" || request.Name == "geodata.refresh") {
 		var activation struct {
 			Applied bool `json:"applied"`

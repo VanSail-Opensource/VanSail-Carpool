@@ -1,5 +1,13 @@
 # VanSail Carpool OpenAPI contract
 
+Certificate lifecycle reuses node commands with `name=certificates.run`,
+`profileId`, `action=issue|renew` and `expectedRevision`. Delivery uses existing
+durable receipts; execution is bounded to five minutes. GET on the same node
+command path with `profileId` recovers the latest safe receipt/intent across
+administrator devices, including pending/uncertain outcomes. Optional
+`certificateProgress` in node metrics is advisory and memory-only. Certificate
+status/results expose public certificate facts, never keys/provider credentials.
+
 Node DNS resolver-mode and upstream fields are deprecated compatibility inputs.
 Effective DNS uses native Xray `dns.servers`. Encrypted per-node
 `legacyDnsLoopback` state retains the former loopback fallback without editing

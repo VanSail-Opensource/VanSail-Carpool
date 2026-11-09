@@ -67,8 +67,27 @@ func (m *Master) commandPeer(ctx context.Context, peer *agentPeer, id, name stri
 		return nil, ErrConflict
 	}
 	peer.pending[id] = pending
+	if name == wire.CertificateRunCommand {
+		raw, err := json.Marshal(args)
+		var certificate wire.CertificateRunArgs
+		if err != nil || wire.Decode(raw, &certificate) != nil || certificate.Validate() != nil {
+			delete(peer.pending, id)
+			peer.mu.Unlock()
+			return nil, ErrInvalid
+		}
+		if peer.certificateCommands == nil {
+			peer.certificateCommands = map[string]wire.CertificateRunArgs{}
+		}
+		peer.certificateCommands[id] = certificate
+	}
 	peer.mu.Unlock()
-	defer func() { peer.mu.Lock(); delete(peer.pending, id); peer.mu.Unlock() }()
+	defer func() {
+		peer.mu.Lock()
+		delete(peer.pending, id)
+		delete(peer.certificateCommands, id)
+		peer.mu.Unlock()
+		m.clearCertificateProgress(peer, id)
+	}()
 	delivery, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	timer := time.NewTimer(30 * time.Second)

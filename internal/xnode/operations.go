@@ -14,11 +14,14 @@ import (
 const OperationKind = "xnode_command"
 
 type CommandRequest struct {
-	Force          bool   `json:"force,omitempty"`
-	Name           string `json:"name"`
-	JobID          string `json:"jobId,omitempty"`
-	Version        string `json:"version,omitempty"`
-	PeerEndpointID string `json:"peerEndpointId,omitempty"`
+	ProfileID        string `json:"profileId,omitempty"`
+	Action           string `json:"action,omitempty"`
+	ExpectedRevision uint64 `json:"expectedRevision,omitempty"`
+	Force            bool   `json:"force,omitempty"`
+	Name             string `json:"name"`
+	JobID            string `json:"jobId,omitempty"`
+	Version          string `json:"version,omitempty"`
+	PeerEndpointID   string `json:"peerEndpointId,omitempty"`
 }
 type operationRepository interface {
 	CreateProviderOperation(context.Context, providerops.CreateInput, time.Time) (providerops.Operation, bool, error)
@@ -29,10 +32,15 @@ type operationRepository interface {
 }
 
 func validNodeCommand(request CommandRequest) bool {
+	if request.Name != "certificates.run" && (request.ProfileID != "" || request.Action != "" || request.ExpectedRevision != 0) {
+		return false
+	}
 	if request.Force && request.Name != "runtime.reload" {
 		return false
 	}
 	switch request.Name {
+	case "certificates.run":
+		return validCertificateRequest(request)
 	case "node.remove", "update.check", "update.rollback", "runtime.reload", "geodata.refresh":
 		return request.JobID == "" && request.Version == "" && request.PeerEndpointID == ""
 	case "update.install":
@@ -73,17 +81,32 @@ func (s *Service) QueueCommand(ctx context.Context, actor, node, key string, req
 	if (target.RetiredAt != nil || target.RemovingAt != nil) && request.Name != "node.remove" {
 		return model.OperationReceipt{}, ErrConflict
 	}
+	if request.Name == "certificates.run" {
+		if _, err := s.certificateArguments(ctx, node, request, false); err != nil {
+			return model.OperationReceipt{}, err
+		}
+	}
 	if request.Name == "runtime.reload" && s.master != nil && s.master.Connected(node) && !containsCapability(s.master.Capabilities(node), "incremental_reload_v1") {
 		return model.OperationReceipt{}, &CapabilityError{Capability: "incremental_reload_v1"}
 	}
 	if (request.Name == "runtime.reload" || request.Name == "geodata.refresh") && s.master != nil && s.master.Connected(node) && !slices.Contains(s.master.Capabilities(node), "activation_commands_v1") {
 		return model.OperationReceipt{}, &CapabilityError{Capability: "activation_commands_v1"}
 	}
-	sealed, err := s.vault.Encrypt("xnode.command."+actor+"."+key, string(raw))
+	sealed, err := s.sealCommandIntent(actor, key, target, request, raw)
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
-	operation, _, err := repository.CreateProviderOperation(ctx, providerops.CreateInput{ActorUserID: actor, Kind: OperationKind, IdempotencyKey: key, RequestFingerprint: hex.EncodeToString(hash[:]), SealedTarget: sealed, Items: []providerops.ItemInput{{Key: node, TargetType: "xnode", TargetID: node}}}, s.now().UTC())
+	input := providerops.CreateInput{ActorUserID: actor, Kind: OperationKind, IdempotencyKey: key, RequestFingerprint: hex.EncodeToString(hash[:]), SealedTarget: sealed, Items: []providerops.ItemInput{{Key: node, TargetType: "xnode", TargetID: node}}}
+	if request.Name == "certificates.run" {
+		certificates, ok := s.repo.(certificateOperationRepository)
+		if !ok {
+			return model.OperationReceipt{}, ErrUnavailable
+		}
+		input.Items[0].Key = "certificate:" + request.ProfileID
+		operation, _, err := certificates.CreateXNodeCertificateOperation(ctx, input, request.ProfileID, request.Action, request.ExpectedRevision, s.now().UTC())
+		return operation.Receipt, err
+	}
+	operation, _, err := repository.CreateProviderOperation(ctx, input, s.now().UTC())
 	return operation.Receipt, err
 }
 func (s *Service) HandleProviderOperation(ctx context.Context, operation providerops.Operation, job model.OutboxJob) error {

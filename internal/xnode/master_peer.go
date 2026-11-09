@@ -51,6 +51,7 @@ type agentPeer struct {
 	revision              uint64
 	digest                string
 	pending               map[string]chan wire.Message
+	certificateCommands   map[string]wire.CertificateRunArgs
 	lastControls          map[int]bool
 	compiled              *compiledState           // protected by syncMu
 	compileFailure        *compileFailure          // protected by syncMu

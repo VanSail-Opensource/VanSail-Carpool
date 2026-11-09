@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import type { DDNSHostBinding, XNodeEndpoint, XNodeSettings } from '@/api/xnode'
+import type { DDNSHostBinding, XNodeEndpoint, XNodeSettings, XNodeGlobal } from '@/api/xnode'
 import { useI18n } from '@/i18n'
 import XNodeDDNSJob from './XNodeDDNSJob.vue'
-import { useDDNSDiscovery } from './useDDNSDiscovery'
 import { builtinDDNSProvider, validDDNSSettings } from './ddnsForm'
 
 const model = defineModel<XNodeSettings>({ required: true })
-const props = withDefaults(defineProps<{ hosts?: readonly XNodeEndpoint[] }>(), { hosts: () => [] })
+const props = withDefaults(defineProps<{ hosts?: readonly XNodeEndpoint[]; providers?: XNodeGlobal['providers']; providersLoading?: boolean }>(), { hosts: () => [], providers: () => ({}), providersLoading: false })
 const emit = defineEmits<{ valid: [value: boolean] }>()
 const { t } = useI18n()
 const jobs = computed(() => model.value.ddns ?? [])
-const discovery = useDDNSDiscovery()
 const providers = computed(() => {
-  const values = [{ value: builtinDDNSProvider, label: t('nodeForms.builtinDDNS') }, ...discovery.items.value]
+  const values = [{ value: builtinDDNSProvider, label: t('nodeForms.builtinDDNS') }, ...Object.keys(props.providers).sort().map(value => ({ value, label: value }))]
   for (const job of jobs.value) if (job.provider && !values.some(value => value.value === job.provider)) values.push({ value: job.provider, label: job.provider })
   return values
 })
@@ -43,8 +41,7 @@ function remove(index: number): void { model.value = { ...model.value, ddns: job
 
 <template>
   <div class="grid gap-4 py-4">
-    <div v-if="discovery.error.value" role="alert"><p>{{ discovery.error.value }}</p><UButton :label="t('common.tryAgain')" variant="link" @click="discovery.load" /></div>
-    <XNodeDDNSJob v-for="(job, index) in jobs" :key="job.id" v-model="jobs[index]!" :binding="model.ddnsBindings?.[job.id] ?? {}" :providers="providers" :loading="discovery.loading.value" :hosts="hosts" :used="used" @update:binding="setBinding(job.id, $event)" @remove="remove(index)" />
+    <XNodeDDNSJob v-for="(job, index) in jobs" :key="job.id" v-model="jobs[index]!" :binding="model.ddnsBindings?.[job.id] ?? {}" :providers="providers" :loading="providersLoading" :hosts="hosts" :used="used" @update:binding="setBinding(job.id, $event)" @remove="remove(index)" />
     <UButton variant="outline" color="neutral" icon="i-ph-plus-bold" :label="t('xnode.addDDNS')" class="justify-self-start" @click="add" />
   </div>
 </template>

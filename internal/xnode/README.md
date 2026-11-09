@@ -1,5 +1,23 @@
 # X-Node control plane
 
+`certificate_commands.go` queues revision-fenced ACME lifecycle operations through
+the existing durable command executor and recovers the latest profile receipt.
+Its result allowlist retains safe intent, active fingerprint and activation facts
+even after failed/uncertain completion. `certificate_validation.go` checks mode
+fields, provider references and bounded matching PEM pairs locally; it never
+reads node paths or contacts a provider. `certificate_progress.go` keeps one
+typed advisory snapshot per active node in memory, outside terminal result slots.
+Certificate execution has a five-minute deadline, capability negotiation and
+the existing per-node queue. Cross-device uncertainty is fenced by the store's
+existing operation records, without another queue or table.
+`certificate_commands_test.go`, `certificate_progress_test.go` and
+`certificate_validation_test.go` cover command isolation, safe failure evidence,
+nonblocking progress, PEM identity and mode validation in hosted CI.
+`certificate_delivery.go` binds encrypted queued intents to the original agent;
+replay keeps the original revision and command ID, while an uncertain operation
+cannot issue through a replacement agent. `certificate_delivery_test.go` covers
+this fence and encrypted private metadata without widening browser inputs.
+
 `node_dns.go` retires resolver selection at settings boundaries. Effective DNS
 always uses Xray. Its encrypted `legacyDnsLoopback` compatibility state preserves
 the old SmartDNS loopback fallback only for scoped interception; explicit native

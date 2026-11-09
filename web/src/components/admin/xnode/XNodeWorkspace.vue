@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from '@/i18n'
 import AdminSectionState from '@/components/admin/AdminSectionState.vue'
 import XNodeGlobalSettings from './XNodeGlobalSettings.vue'
@@ -16,7 +17,7 @@ import { useXNodeWorkspace } from './useXNodeWorkspace'
 
 const { t } = useI18n()
 const workspace = useXNodeWorkspace()
-const tab = shallowRef('nodes')
+const tab = shallowRef(useRoute().query.xnodeTab === 'global' ? 'global' : 'nodes')
 const tabs = computed(() => ['nodes', 'global', 'configurations', 'templates', 'routing', 'services', 'groups', 'firewall', 'leases', 'metrics'].map(value => ({ value, label: t(value === 'leases' ? 'automaticLeases.title' : value === 'routing' ? 'managedRouting.templatesTitle' : value === 'firewall' ? 'firewall.title' : value === 'templates' ? 'nodeTemplates.title' : `xnode.tabs.${value}`) })))
 </script>
 

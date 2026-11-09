@@ -1,5 +1,14 @@
 # Constructed browser fixtures
 
+`certificateFixture.ts` augments the X-Node audit with `certificates` for desired
+profiles, a failed attempt and a still-serving certificate. Add `certificate-dns`,
+`certificate-file`, `certificate-content`, `certificate-expired`,
+`certificate-old-agent`, `certificate-pending`, `certificate-recovery-error`,
+`certificate-failure`, `certificate-ambiguous`, or `certificate-replay` to inspect
+provider selection, PEM controls, status and original receipt recovery. Existing
+`node-save-error`, `slow`, `zh` and appearance flags remain available. Constructed
+commands and receipts remain inside the fixture; no provider request is made.
+
 The X-Node audit's `firewall-ranges` parameter loads mixed legacy port lists,
 TCP/UDP/SSH intervals, range-to-one and range-to-range forwarding. Combine with
 `slow`, `node-load-error`, `node-save-error`, `empty`, and `zh` for state/localization

@@ -30,6 +30,7 @@ func (s *Server) mountXNodeAdmin(router chi.Router) {
 	router.Post("/xnode/nodes", s.xnodeSaveNode)
 	router.Put("/xnode/nodes/{id}", s.xnodeSaveNode)
 	router.Get("/xnode/nodes/{id}", s.xnodeNode)
+	router.Get("/xnode/nodes/{id}/commands", s.xnodeCertificateOperation)
 	router.Get("/xnode/nodes/{id}/logs", s.xnodeNodeLogs)
 	router.Delete("/xnode/nodes/{id}", s.xnodeDeleteNode)
 	router.Post("/xnode/nodes/{id}/commands", s.xnodeQueueCommand)

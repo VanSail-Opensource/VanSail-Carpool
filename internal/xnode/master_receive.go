@@ -72,6 +72,8 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		offerCommandFrame(peer.pending[message.ID], message)
 		peer.mu.Unlock()
 		return nil
+	case "command.progress":
+		return m.receiveCertificateProgress(peer, message)
 	case "logs.report":
 		var report struct {
 			Entries []json.RawMessage `json:"entries"`
@@ -101,7 +103,7 @@ func (m *Master) receive(ctx context.Context, peer *agentPeer, message wire.Mess
 		return m.confirmFirewall(ctx, peer, message)
 	case "firewall.events":
 		return m.receiveFirewallEvents(ctx, peer, message)
-	case "command.cancelled", "command.progress", "admission.rejected", "torrent.detected", "torrent.expired", "agent.error":
+	case "command.cancelled", "admission.rejected", "torrent.detected", "torrent.expired", "agent.error":
 		return nil
 	default:
 		return ErrInvalid
