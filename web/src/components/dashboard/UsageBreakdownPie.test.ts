@@ -37,8 +37,8 @@ function render(mode = '') {
 afterEach(() => { cleanups.splice(0).forEach(cleanup => cleanup()); vi.clearAllMocks(); setLocale('en'); setExperience('miniapp') })
 
 describe('Usage Breakdown mode stability', () => {
-  it('keeps the same SVG through twenty mode changes, including a hidden one-node measure', async () => {
-    const view = render('one-traffic')
+  it('keeps the same SVG through twenty mode changes, including zero traffic and one 100% hourly cost', async () => {
+    const view = render('hourly-idle')
     const svg = view.get('[data-chart-svg]').element
     expect(view.get('[data-usage-chart]').isVisible()).toBe(false)
     const donut = view.getComponent(VisDonut)
@@ -60,11 +60,24 @@ describe('Usage Breakdown mode stability', () => {
   it('retains unattributed cost and labels tiny positive proportions without claiming zero', async () => {
     const unattributed = render('unallocated')
     await unattributed.get('[data-metric="cost"]').trigger('click')
-    expect(unattributed.get('[data-usage-no-comparison]').text()).toBe(t('usageBreakdown.noNodeAttribution'))
+    expect(unattributed.get('[data-usage-no-comparison]').text()).toBe(t('usageBreakdown.noAttribution'))
     expect(unattributed.get('[data-usage-chart]').isVisible()).toBe(false)
     const tiny = render('tiny')
     await tiny.get('[data-metric="cost"]').trigger('click')
     expect(tiny.text()).toContain(t('usageBreakdown.lessThanPercent', { amount: '0.1%' }))
+  })
+  it('shows a single hourly squad as 100% and keeps a small squad named in both legends', async () => {
+    const single = render('hourly-one')
+    expect(single.get('[data-usage-chart]').isVisible()).toBe(true)
+    expect(single.text()).toContain('100%')
+    expect(single.text()).toContain(t('usageBreakdown.hourlySquad'))
+    await single.get('[data-metric="cost"]').trigger('click')
+    expect(single.text()).toContain('100%')
+    const small = render('hourly-small')
+    expect(small.text()).toContain('Small but named hourly squad')
+    await small.get('[data-metric="cost"]').trigger('click')
+    expect(small.text()).toContain('Small but named hourly squad')
+    expect(small.text()).toContain(t('usageBreakdown.lessThanPercent', { amount: '0.1%' }))
   })
   it('never calls Telegram feedback in a browser experience', async () => {
     setExperience('browser')

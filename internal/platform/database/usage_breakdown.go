@@ -48,6 +48,9 @@ func (s *Store) XNodeUsageBreakdown(ctx context.Context, owner string, from, to 
 	if err = readUsageBreakdownNodesTx(ctx, tx, scope, legacy, unallocated, &result); err != nil {
 		return result, err
 	}
+	if err = readUsageBreakdownHourlyTx(ctx, tx, scope, &result); err != nil {
+		return result, err
+	}
 	result.Coverage.Complete = result.Coverage.Since != nil && !result.Coverage.Since.After(from) && result.Coverage.GapCount == "0" && !result.Coverage.Truncated
 	if err = tx.Commit(); err != nil {
 		return result, err
@@ -87,5 +90,15 @@ func usageBreakdownOwnerTx(ctx context.Context, tx *sql.Tx, owner string, from, 
 
 func emptyUsageBreakdown(from, to time.Time) model.UsageBreakdown {
 	zero := model.RationalMinor{Numerator: "0", Denominator: "1"}
-	return model.UsageBreakdown{From: from, To: to, Coverage: model.UsageCoverage{GapCount: "0"}, Nodes: []model.UsageBreakdownNode{}, Omitted: model.UsageBreakdownTotals{UploadBytes: "0", DownloadBytes: "0", CostMinor: zero}, PositiveNodes: model.UsageBreakdownPositiveNodes{Traffic: "0", Cost: "0"}, Cost: model.UsageBreakdownCost{ActualMinor: "0", Legacy: model.UsageLegacyEstimate{Status: model.UsageLegacyNone}, KnownTotalMinor: zero, UnallocatedMinor: zero}}
+	return model.UsageBreakdown{
+		From: from, To: to, Coverage: model.UsageCoverage{GapCount: "0"},
+		Nodes: []model.UsageBreakdownNode{}, HourlySquads: []model.UsageBreakdownHourlySquad{},
+		Omitted:         model.UsageBreakdownTotals{UploadBytes: "0", DownloadBytes: "0", CostMinor: zero},
+		PositiveNodes:   model.UsageBreakdownPositiveNodes{Traffic: "0", Cost: "0"},
+		PositiveEntries: model.UsageBreakdownPositiveNodes{Traffic: "0", Cost: "0"},
+		Cost: model.UsageBreakdownCost{
+			ActualMinor: "0", Legacy: model.UsageLegacyEstimate{Status: model.UsageLegacyNone},
+			KnownTotalMinor: zero, UnallocatedMinor: zero,
+		},
+	}
 }

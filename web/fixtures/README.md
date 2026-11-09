@@ -1,5 +1,17 @@
 # Constructed browser fixtures
 
+`hourlyUsageFixture.ts` extends `usage-breakdown-data.ts` with authoritative-shaped
+named hourly slices for `fixtures/usage-breakdown-audit.html?hourly`. Use
+`hourly-one` for one 100% squad, `hourly-idle` for cost-only paid time,
+`hourly-only` for multiple squads, `hourly-small` for named shares below 1% in
+both measures, `hourly-ended` for retained ended enrollment facts, `hourly-extra`
+for shared Unallocated charges, `hourly-large` for exact values beyond 2^53,
+`hourly-unnamed` for the localized historical name and `hourly-omitted` for the
+combined 64-node/64-squad limit plus exact omitted totals. The mixed `hourly`
+fixture deliberately reuses the same physical node/squad ID. Combine with `zh`,
+`light`, `browser`, `slow=1500`, `error`, `empty`, `gaps` or `stale` as relevant.
+For error recovery set `window.__usageBreakdownAudit.recover=true`, then Refresh.
+
 `endpointOptionsFixture.ts` adds `endpoint-options` to the X-Node audit. Open the
 Groups tab and edit Client endpoint; the default uses XHTTP with TLS and a separate
 download connection. Add `endpoint-protocol=hysteria`, `ws`, `grpc`, `httpupgrade`

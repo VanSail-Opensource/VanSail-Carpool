@@ -66,5 +66,8 @@ not persisted or exposed by these types.
 
 `usage_breakdown.go` defines the owner Usage Breakdown contract: decimal-string
 traffic and actual charges, reduced rational minor amounts, explicit unknown
-legacy terms, unallocated money, pre-limit positive-node counts and truthful
-forward coverage. Account generations and native credentials stay private.
+legacy terms, unallocated money and truthful forward coverage. Named hourly
+squads have separate group identities from physical Combo/PAYG nodes. Positive
+entry counts include both before the shared response limit; the deprecated
+positive-node counts retain their physical-node meaning. Account generations
+and native credentials stay private.

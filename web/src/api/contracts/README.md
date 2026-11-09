@@ -1,5 +1,10 @@
 # Frontend API contracts
 
+Usage Breakdown requires `hourlySquads` and combined `positiveEntries`, while
+retaining deprecated physical-only `positiveNodes`. Generated shapes protect the
+typed rows; the API module additionally enforces exact conservation, combined
+limits and separate node/squad identity uniqueness before rendering a snapshot.
+
 Endpoint previews require derived metadata, expanded inbound choices and typed
 field/client error arrays, with no credential/configuration output. Generated
 `responseSchemas.json` and `responses.test.ts` reject missing facts and malformed

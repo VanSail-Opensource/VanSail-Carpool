@@ -7,9 +7,13 @@
 the authenticated session; query strings cannot select another account. The
 response retains decimal strings, rational costs and explicit coverage, with
 no-store headers. Administrator bearer tokens remain barred from member routes.
+Physical Combo/PAYG node entries and named hourly squad entries have separate
+identities; enrollment/principal identifiers and encrypted credentials stay private.
 `member_usage_breakdown_fixture_test.go` reuses the signed member request helper.
 `member_usage_breakdown_test.go` covers privacy, authentication, onboarding,
 unsupported projection errors and monetary transport without rounding.
+`member_usage_breakdown_hourly_test.go` covers owner-only named squad attribution,
+decimal values above JavaScript's exact-integer range and private principal data.
 
 `xnode_provider_zones.go` serves administrator-only saved-provider discovery at
 `GET /api/v1/admin/xnode/providers/{id}/zones`, using request cancellation and

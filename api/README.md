@@ -1,5 +1,11 @@
 # VanSail Carpool OpenAPI contract
 
+Usage Breakdown separates fixed-term/PAYG nodes from named hourly squads with
+recorded traffic and costs. The two arrays share a 128-entry cap and combined
+`positiveEntries`; physical-only `positiveNodes` remains deprecated compatibility.
+Exact omitted totals and shared Unallocated charges preserve conservation without
+historical repricing or estimated hourly allocations.
+
 Administrator endpoint previews accept incomplete drafts and return derived
 native metadata, expanded inbound choices, applicable typed fields, field errors
 and per-client compatibility. Endpoint read metadata is never a writable native

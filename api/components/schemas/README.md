@@ -7,10 +7,12 @@ the tuning catalog and defines encrypted administrator-only typed option values;
 `xnode-diy-overrides.yaml` remains a separate member allowlist. Field ownership is
 accepted in `xnode-diy.yaml` without widening member keys or controls.
 
-`usage-breakdown.yaml` defines owner-scoped raw byte history, reduced rational
-minor-unit costs, forward coverage, positive physical-node counts and preserved
-omitted totals. Unallocated hourly/extra charges and unavailable legacy terms
-remain explicit; drawing and display rounding cannot alter financial facts.
+`usage-breakdown.yaml` defines owner-scoped physical-node and named hourly-squad
+raw byte history, reduced rational costs, forward coverage and exact combined
+omitted totals. `positiveEntries` counts both kinds before the combined 128-entry
+limit; deprecated `positiveNodes` retains physical-only compatibility counts.
+Shared extra-credit and other unattributable charges remain Unallocated. Unknown
+legacy terms and display rounding cannot alter recorded financial facts.
 
 `xnode-firewall-records.yaml` describes nested firewall filters, active reports,
 master-authorized bans and filter-bound paginated search results.

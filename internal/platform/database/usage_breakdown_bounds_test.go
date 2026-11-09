@@ -18,7 +18,7 @@ func TestUsageBreakdownAggregatesBeforeNodeLimitAndConservesOmittedValue(t *test
 	for n := 0; n < 130; n++ {
 		id := fmt.Sprintf("node-%03d", n)
 		usageBreakdownRaw(t, s, u, "combo", "current", id, 1, 2, at)
-		// Multiple references on the same node must not spend its response slot.
+		// All physical hourly legs aggregate into one separate squad identity.
 		usageBreakdownRaw(t, s, u, "hourly", "other", id, 3, 4, at)
 	}
 	usageBreakdownExec(t, s, `INSERT INTO xnode_usage_history_state(singleton,started_at) VALUES(true,$1)`, at.Add(-73*time.Hour))
@@ -26,11 +26,11 @@ func TestUsageBreakdownAggregatesBeforeNodeLimitAndConservesOmittedValue(t *test
 	if err != nil || len(value.Nodes) != 128 || !value.Coverage.Truncated || value.Coverage.Complete {
 		t.Fatal(value, err)
 	}
-	if value.Nodes[0].NodeID != "node-000" || value.Nodes[127].NodeID != "node-127" || value.Omitted.UploadBytes != "8" || value.Omitted.DownloadBytes != "12" {
+	if value.Nodes[0].NodeID != "node-000" || value.Nodes[127].NodeID != "node-127" || len(value.HourlySquads) != 0 || value.Omitted.UploadBytes != "392" || value.Omitted.DownloadBytes != "524" {
 		t.Fatal("aggregation/limit lost stable node identities", value.Omitted)
 	}
-	if value.PositiveNodes.Traffic != "130" || value.PositiveNodes.Cost != "130" {
-		t.Fatal("positive nodes counted after cap/grouping", value.PositiveNodes)
+	if value.PositiveNodes.Traffic != "130" || value.PositiveNodes.Cost != "130" || value.PositiveEntries.Traffic != "131" || value.PositiveEntries.Cost != "130" {
+		t.Fatal("positive entries counted after cap/grouping", value.PositiveNodes, value.PositiveEntries)
 	}
 	if value.Omitted.CostMinor != (model.RationalMinor{Numerator: "60", Denominator: "91"}) {
 		t.Fatal("omitted estimate rounded", value.Omitted)
@@ -42,7 +42,7 @@ func TestUsageBreakdownEmptyReadDoesNotInventFloorAndRejectsClosedOwners(t *test
 	s, u, at := usageBreakdownFixture(t)
 	ctx := context.Background()
 	value, err := s.XNodeUsageBreakdown(ctx, u.ID, at.Add(-72*time.Hour), at)
-	if err != nil || value.Nodes == nil || len(value.Nodes) != 0 || value.Coverage.Since != nil || value.Coverage.Complete || value.Cost.Legacy.Status != model.UsageLegacyNone {
+	if err != nil || value.Nodes == nil || len(value.Nodes) != 0 || value.HourlySquads == nil || len(value.HourlySquads) != 0 || value.Coverage.Since != nil || value.Coverage.Complete || value.Cost.Legacy.Status != model.UsageLegacyNone {
 		t.Fatal(value, err)
 	}
 	var count int

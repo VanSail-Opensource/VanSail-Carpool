@@ -32,22 +32,21 @@ func usageBreakdownHourlyCharges(t *testing.T, s *Store, u model.User, id string
  VALUES($1,$2,$3,$4,1,1000000000,25,$5,$1,$6)`, id+"-extra", u.ID, u.AccountGeneration, at.Format(time.DateOnly), strings.Repeat("a", 64), at)
 }
 
-func TestUsageBreakdownHourlyAndExtraChargesRemainUnallocated(t *testing.T) {
+func TestUsageBreakdownHourlyChargeBelongsToSquadAndSharedExtraRemainsUnallocated(t *testing.T) {
 	s, u, at := usageBreakdownFixture(t)
 	usageBreakdownHourlyCharges(t, s, u, "paid-hourly", at)
 	usageBreakdownRaw(t, s, u, "hourly", "paid-hourly", "first", 10, 20, at)
 	usageBreakdownRaw(t, s, u, "hourly", "paid-hourly", "second", 40, 50, at)
 	value, err := s.XNodeUsageBreakdown(context.Background(), u.ID, at.Add(-72*time.Hour), at.Add(time.Minute))
-	if err != nil || value.Cost.ActualMinor != "36" || value.Cost.UnallocatedMinor != (model.RationalMinor{Numerator: "36", Denominator: "1"}) {
+	if err != nil || value.Cost.ActualMinor != "36" || value.Cost.UnallocatedMinor != (model.RationalMinor{Numerator: "25", Denominator: "1"}) {
 		t.Fatal(value, err)
 	}
-	if len(value.Nodes) != 2 || value.PositiveNodes.Traffic != "2" || value.PositiveNodes.Cost != "0" {
+	if len(value.Nodes) != 0 || len(value.HourlySquads) != 1 || value.PositiveNodes.Traffic != "0" || value.PositiveNodes.Cost != "0" || value.PositiveEntries.Traffic != "1" || value.PositiveEntries.Cost != "1" {
 		t.Fatal(value)
 	}
-	for _, node := range value.Nodes {
-		if node.CostMinor.Numerator != "0" {
-			t.Fatal("account charge invented node attribution", node)
-		}
+	squad := value.HourlySquads[0]
+	if squad.GroupID != "paid-hourly" || squad.UploadBytes != "50" || squad.DownloadBytes != "70" || squad.CostMinor != (model.RationalMinor{Numerator: "11", Denominator: "1"}) {
+		t.Fatal("hourly receipt or multi-node traffic lost squad attribution", squad)
 	}
 	assertUsageBreakdownConservation(t, value)
 }
@@ -68,10 +67,10 @@ func TestUsageBreakdownRejoinScopesFinancialAndRawHistory(t *testing.T) {
 	// the new hourly lifecycle; its immutable debit receipt remains retained.
 	old := u
 	old.AccountGeneration = 0
-	usageBreakdownRaw(t, s, old, "hourly", "old-hourly-late", "old-late", 100, 0, lifecycle.Add(time.Minute))
+	usageBreakdownRaw(t, s, old, "hourly", "old-hourly", "old-late", 100, 0, lifecycle.Add(time.Minute))
 	through := lifecycle.Add(2 * time.Minute)
 	value, err := s.XNodeUsageBreakdown(context.Background(), u.ID, through.Add(-72*time.Hour), through)
-	if err != nil || len(value.Nodes) != 1 || value.Nodes[0].NodeID != "new-node" || value.Cost.ActualMinor != "36" || value.Coverage.Complete {
+	if err != nil || len(value.Nodes) != 0 || len(value.HourlySquads) != 1 || value.HourlySquads[0].GroupID != "new-hourly" || value.HourlySquads[0].UploadBytes != "7" || value.HourlySquads[0].DownloadBytes != "8" || value.Cost.ActualMinor != "36" || value.Coverage.Complete {
 		t.Fatal(value, err)
 	}
 	var receipts int

@@ -13,12 +13,12 @@ import (
 // traffic aggregates avoid multiplying receipts by minute samples.
 const usageBreakdownNodesSQL = `WITH raw_traffic AS (
  SELECT node_id,SUM(upload_bytes) up,SUM(download_bytes) down,
- SUM(CASE WHEN billing_mode='combo' AND reference_id=$5 THEN upload_bytes+download_bytes ELSE 0 END) legacy
- FROM xnode_usage_minutes WHERE owner_id=$1 AND minute>=$6 AND minute<=$4 AND observed_through>=$8
- AND (billing_mode<>'hourly' OR account_generation=$2) GROUP BY node_id
+ SUM(CASE WHEN billing_mode='combo' AND reference_id=$4 THEN upload_bytes+download_bytes ELSE 0 END) legacy
+ FROM xnode_usage_minutes WHERE owner_id=$1 AND minute>=$5 AND minute<=$3 AND observed_through>=$7
+ AND billing_mode='combo' GROUP BY node_id
  UNION ALL
  SELECT node_id,SUM(upload_bytes),SUM(download_bytes),0
- FROM xnode_payg_node_minutes WHERE user_id=$1 AND minute>=$7 AND minute<=$4 GROUP BY node_id
+ FROM xnode_payg_node_minutes WHERE user_id=$1 AND minute>=$6 AND minute<=$3 GROUP BY node_id
 ), traffic AS (
  SELECT node_id,SUM(up) up,SUM(down) down,SUM(legacy) legacy FROM raw_traffic GROUP BY node_id
 ), costs AS (
@@ -26,7 +26,7 @@ const usageBreakdownNodesSQL = `WITH raw_traffic AS (
  FROM xnode_payg_charges c JOIN ledger_entries l ON l.id=c.ledger_id
  JOIN xnode_payg_accounts a ON a.proxy_user_id=c.proxy_user_id
  WHERE a.user_id=$1 AND l.user_id=$1 AND l.kind='payg_gb'
- AND l.created_at::timestamptz>=$3 AND l.created_at::timestamptz<=$4 GROUP BY a.node_id
+ AND l.created_at::timestamptz>=$2 AND l.created_at::timestamptz<=$3 GROUP BY a.node_id
 ), ids AS (SELECT node_id FROM traffic UNION SELECT node_id FROM costs)
  SELECT i.node_id,COALESCE(n.name,i.node_id),COALESCE(n.country_code,''),
  COALESCE(t.up,0)::text,COALESCE(t.down,0)::text,COALESCE(t.legacy,0)::text,
@@ -35,7 +35,7 @@ const usageBreakdownNodesSQL = `WITH raw_traffic AS (
  LEFT JOIN xnode_nodes n ON n.id=i.node_id ORDER BY i.node_id COLLATE "C"`
 
 func readUsageBreakdownNodesTx(ctx context.Context, tx *sql.Tx, scope usageBreakdownScope, legacy usageLegacy, unallocated *big.Int, result *model.UsageBreakdown) error {
-	rows, err := tx.QueryContext(ctx, usageBreakdownNodesSQL, scope.owner, scope.generation, scope.from, scope.to, legacy.id, scope.rawFrom, scope.paygFrom, scope.lifecycle)
+	rows, err := tx.QueryContext(ctx, usageBreakdownNodesSQL, scope.owner, scope.from, scope.to, legacy.id, scope.rawFrom, scope.paygFrom, scope.lifecycle)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func readUsageBreakdownNodesTx(ctx context.Context, tx *sql.Tx, scope usageBreak
 			costPositive++
 		}
 		node.CostMinor = usageRational(numerator, denominator)
-		if len(result.Nodes) < model.MaxUsageBreakdownNodes {
+		if len(result.Nodes) < model.MaxUsageBreakdownEntries {
 			result.Nodes = append(result.Nodes, node)
 			continue
 		}
@@ -88,6 +88,7 @@ func readUsageBreakdownNodesTx(ctx context.Context, tx *sql.Tx, scope usageBreak
 	}
 	result.Omitted = model.UsageBreakdownTotals{UploadBytes: omittedUp.String(), DownloadBytes: omittedDown.String(), CostMinor: usageRational(omittedCost, denominator)}
 	result.PositiveNodes = model.UsageBreakdownPositiveNodes{Traffic: strconv.FormatUint(trafficPositive, 10), Cost: strconv.FormatUint(costPositive, 10)}
+	result.PositiveEntries = result.PositiveNodes
 	result.Cost = usageCostSummary(payg, unallocated, legacy, totalLegacy)
 	return nil
 }

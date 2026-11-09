@@ -47,7 +47,7 @@ visibility-aware `useSubscriptionData` lifecycle for the owner-only no-store
 `GET /api/v1/usage/breakdown`. It retains an existing snapshot on read failure and
 labels incomplete coverage, gaps, omitted nodes and stale data without backfill.
 
-Chrome DevTools inspection on 2026-11-09 covered EN/Chinese, 390px/1440px,
+Earlier Chrome DevTools inspection before named hourly attribution covered EN/Chinese, 390px/1440px,
 dark/light, loading, empty, single-node, errors/retry, coverage gaps, capped nodes,
 unallocated/hourly costs and large fractional totals. Twenty rapid metric clicks
 retained the same SVG, shared node paths, dimensions and distinct node colors.
@@ -63,17 +63,40 @@ purchase duration leaves actual costs visible and the estimate unavailable.
 `usageBreakdownFormat.test.ts` covers sub-minor disclosures and half-unit display
 rounding while retaining the underlying rational value.
 
-`usageBreakdownSegments.ts` preserves exact BigInt/rational totals through node
-grouping, including omitted totals in Others and retaining unallocated cost as a
-non-node segment. Server physical-node counts hide a selected pie with at most
-one node before grouping/capping; totals and disclosures remain visible. Colors
-are assigned across all node IDs before metric filtering, with a bounded 256-ID
+`usageBreakdownSegments.ts` preserves exact BigInt/rational totals across physical
+nodes and hourly squads. Scoped `node:`/`hourly:` identities prevent collisions;
+all named positive hourly rows remain visible below 1%. Small physical nodes and
+combined capped omissions form Others; shared extra charges remain Unallocated.
+Required `positiveEntries` controls visibility, including a single 100% entry;
+Unallocated alone cannot invent attribution. Colors are assigned across both
+kinds before metric filtering, with a bounded 256-ID
 component-local registry for refreshes. Stable accessors, IDs, 220px dimensions and
 explicit zero duration on both Unovis components prevent animated mode updates;
 the same mounted SVG survives even when a selected measure hides the chart.
 
 `usageBreakdownSegments.test.ts` covers exact conservation, large/fractional costs,
-independent node counts, grouping, unallocated costs and stable bounded colors.
+combined counts, identity collisions, named small/idle/ended squads, shared extras,
+grouping, unallocated-only costs and stable bounded colors.
+The response boundary requires exact visible positive counts when that measure
+has no omitted amount; positive omissions allow only a conservative lower bound.
+`usage-breakdown-audit.html?unallocated&invalid-positive-count` demonstrates
+rejection of invented attribution before any chart can render.
 `UsageBreakdownPie.test.ts` checks twenty mode changes without remounting, explicit
 animation settings, unknown-term disclosure, tiny positive percentages and browser
 feedback isolation. Browser fixtures exercise the real Unovis implementation.
+
+Chrome DevTools checked the final hourly graph at 1440px/light/English and
+390px/dark/Chinese, with screenshots inspected. Single hourly/physical entries
+showed 100% in both measures; named hourly shares below 0.1% remained visible.
+Mixed `node:tokyo`/`hourly:tokyo` selection survived metric changes with one read
+and no browser haptics. Idle squads showed 0 B traffic and 100% cost; ended squads
+remained visible. The combined 64-node/64-squad cap retained 64 hourly legends,
+Others and exact totals including omissions (135 B traffic/133 minor cost); large known cost
+remained exactly 18014398509481993 minor units. Twelve-second loading disabled
+Refresh until population. Empty measures, localized 503 recovery, failed-refresh
+snapshot/stale retention, invalid-rational rejection and Unallocated-only hiding
+passed. Mobile had no horizontal overflow and targets were at least 44px.
+Fresh console checks were clear; intercepted mock fetch/XHR made no actual
+failing requests. Checks interrupted by HMR were repeated after files stabilized.
+The final count guard rejected an invented Unallocated-only positive count at
+1440px/English without a chart, while valid idle cost remained 100% at 390px/Chinese.

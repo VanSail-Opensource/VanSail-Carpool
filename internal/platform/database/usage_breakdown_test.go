@@ -18,7 +18,7 @@ func TestUsageBreakdownUsesAcceptedRawJournalOnceAcrossBothModes(t *testing.T) {
 	}
 	through := at.Add(time.Second)
 	value, err := s.XNodeUsageBreakdown(context.Background(), identity.UserID, through.Add(-72*time.Hour), through)
-	if err != nil || len(value.Nodes) != 1 || value.Nodes[0].UploadBytes != "10" || value.Nodes[0].DownloadBytes != "13" {
+	if err != nil || len(value.Nodes) != 1 || value.Nodes[0].UploadBytes != "3" || value.Nodes[0].DownloadBytes != "4" || len(value.HourlySquads) != 1 || value.HourlySquads[0].GroupID != p.GroupID || value.HourlySquads[0].UploadBytes != "7" || value.HourlySquads[0].DownloadBytes != "9" {
 		t.Fatal("journal replay, multiplier or native hourly sample distorted client bytes", value, err)
 	}
 	if value.Coverage.Since == nil || value.Coverage.Complete {
@@ -45,7 +45,7 @@ func TestUsageBreakdownCombinesRawModesAndExactPurchaseAllocation(t *testing.T) 
 		t.Fatal(value, err)
 	}
 	a, b := usageBreakdownNode(t, value, "node-a"), usageBreakdownNode(t, value, "node-b")
-	if a.UploadBytes != "9" || a.DownloadBytes != "10" || b.UploadBytes != "102" {
+	if a.UploadBytes != "6" || a.DownloadBytes != "6" || b.UploadBytes != "102" || len(value.HourlySquads) != 1 || value.HourlySquads[0].GroupID != "enrollment" || value.HourlySquads[0].UploadBytes != "3" || value.HourlySquads[0].DownloadBytes != "4" {
 		t.Fatal("raw modes lost or multiplied", value.Nodes)
 	}
 	if a.CostMinor != (model.RationalMinor{Numerator: "100", Denominator: "7"}) || b.CostMinor != (model.RationalMinor{Numerator: "200", Denominator: "7"}) {
@@ -54,8 +54,8 @@ func TestUsageBreakdownCombinesRawModesAndExactPurchaseAllocation(t *testing.T) 
 	if value.Cost.Legacy.Status != model.UsageLegacyAvailable || value.Cost.Legacy.AmountMinor == nil || *value.Cost.Legacy.AmountMinor != (model.RationalMinor{Numerator: "300", Denominator: "7"}) || value.Cost.ActualMinor != "0" {
 		t.Fatal(value.Cost)
 	}
-	if value.PositiveNodes.Traffic != "2" || value.PositiveNodes.Cost != "2" {
-		t.Fatal(value.PositiveNodes)
+	if value.PositiveNodes.Traffic != "2" || value.PositiveNodes.Cost != "2" || value.PositiveEntries.Traffic != "3" || value.PositiveEntries.Cost != "2" {
+		t.Fatal(value.PositiveNodes, value.PositiveEntries)
 	}
 	assertUsageBreakdownConservation(t, value)
 }

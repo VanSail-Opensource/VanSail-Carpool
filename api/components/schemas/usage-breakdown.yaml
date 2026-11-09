@@ -26,6 +26,17 @@ UsageBreakdownNode:
     uploadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
     downloadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
     costMinor: {$ref: '#/RationalMinor', description: Actual node-attributed traffic charges plus this node's share of the current fixed-term purchase estimate.}
+UsageBreakdownHourlySquad:
+  type: object
+  additionalProperties: false
+  description: Authoritatively attributed hourly enrollment traffic and recorded charges, grouped by squad identity. No historical repricing or estimated allocation.
+  required: [groupId, name, uploadBytes, downloadBytes, costMinor]
+  properties:
+    groupId: {type: string}
+    name: {type: string}
+    uploadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    downloadBytes: {type: string, pattern: '^[0-9]+$', maxLength: 1024}
+    costMinor: {$ref: '#/RationalMinor'}
 UsageBreakdownTotals:
   type: object
   additionalProperties: false
@@ -38,6 +49,14 @@ UsageBreakdownPositiveNodes:
   type: object
   additionalProperties: false
   description: Positive physical node counts before response limits or Others grouping. Unallocated cost is not a node.
+  required: [traffic, cost]
+  properties:
+    traffic: {type: string, pattern: '^[0-9]+$'}
+    cost: {type: string, pattern: '^[0-9]+$'}
+UsageBreakdownPositiveEntries:
+  type: object
+  additionalProperties: false
+  description: Positive physical-node and hourly-squad counts before the combined 128-entry response limit or Others grouping. Unallocated cost is not an entry.
   required: [traffic, cost]
   properties:
     traffic: {type: string, pattern: '^[0-9]+$'}
@@ -59,16 +78,18 @@ UsageBreakdownCost:
     actualMinor: {type: string, pattern: '^[0-9]+$', maxLength: 1024, description: Exact actual rolling-window traffic, hourly and extra-credit charges.}
     legacy: {$ref: '#/UsageLegacyEstimate'}
     knownTotalMinor: {$ref: '#/RationalMinor', description: Actual charges plus the available fixed-term estimate; an unknown original term is explicitly excluded.}
-    unallocatedMinor: {$ref: '#/RationalMinor', description: Account-wide hourly and extra-credit charges, plus the fixed-term estimate when its purchase has no recorded traffic.}
+    unallocatedMinor: {$ref: '#/RationalMinor', description: Charges without authoritative node or squad attribution, shared extra-credit charges, and the fixed-term estimate when its purchase has no recorded traffic.}
 UsageBreakdown:
   type: object
   additionalProperties: false
-  required: [from, to, coverage, nodes, omitted, positiveNodes, cost]
+  required: [from, to, coverage, nodes, hourlySquads, omitted, positiveNodes, positiveEntries, cost]
   properties:
     from: {type: string, format: date-time, description: UTC lower bound; traffic retains recorded minute-bucket precision.}
     to: {type: string, format: date-time}
     coverage: {$ref: '#/UsageCoverage'}
-    nodes: {type: array, maxItems: 128, items: {$ref: '#/UsageBreakdownNode'}}
-    omitted: {$ref: '#/UsageBreakdownTotals', description: Exact totals beyond the first 128 stable node IDs. No artificial node identity is introduced.}
-    positiveNodes: {$ref: '#/UsageBreakdownPositiveNodes'}
+    nodes: {type: array, maxItems: 128, items: {$ref: '#/UsageBreakdownNode'}, description: Fixed-term and PAYG physical-node traffic only; excludes separately attributed hourly traffic.}
+    hourlySquads: {type: array, maxItems: 128, items: {$ref: '#/UsageBreakdownHourlySquad'}}
+    omitted: {$ref: '#/UsageBreakdownTotals', description: Exact totals beyond the combined 128-entry limit. Stable node IDs precede stable hourly group IDs; no artificial attribution identity is introduced.}
+    positiveNodes: {$ref: '#/UsageBreakdownPositiveNodes', deprecated: true, description: Compatibility physical-node counts only. Use positiveEntries for the combined graph.}
+    positiveEntries: {$ref: '#/UsageBreakdownPositiveEntries'}
     cost: {$ref: '#/UsageBreakdownCost'}

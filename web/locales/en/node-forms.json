@@ -85,6 +85,7 @@
     "modeInvalid": "Choose a supported certificate mode.",
     "domainInvalid": "Enter a supported certificate name for this mode. HTTP-01 does not allow wildcards.",
     "emailInvalid": "Enter a valid email address without surrounding spaces, or leave it blank.",
+    "contentDomainHint": "Optional. When provided, the certificate must match this name or IP address.",
     "providerInvalid": "Choose a configured DNS provider.",
     "pathInvalid": "Enter a nonblank relative or absolute file path on the node, without line breaks (up to 4096 characters).",
     "certificatePEMInvalid": "Supply a certificate in PEM format, up to 1 MiB.",
@@ -132,7 +133,6 @@
     "renew": "Renew certificate",
     "uncertain": "The request outcome is unknown. Check the original operation before starting another action.",
     "actionFailed": "The certificate action could not be completed. Check its status before retrying.",
-    "recoveryFailed": "Could not load the original certificate operation. Retry the status check.",
-    "contentDomainHint": "Optional. When provided, the certificate must match this name or IP address."
+    "recoveryFailed": "Could not load the original certificate operation. Retry the status check."
   }
 }

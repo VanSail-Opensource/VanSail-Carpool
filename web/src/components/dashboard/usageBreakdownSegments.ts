@@ -6,20 +6,20 @@ export type UsageBreakdownMetric = 'traffic' | 'cost'
 export interface UsageBreakdownSegment {
   interactionId: string
   name: string
-  kind: 'node' | 'others' | 'unallocated'
+  kind: 'node' | 'hourly' | 'others' | 'unallocated'
   amount: ExactUsageAmount
   color: string
   share: number
   percentage: number
 }
 
-export function usageNodeColor(nodeId: string): string {
+export function usageEntryColor(nodeId: string): string {
   let hash = 2166136261
   for (const character of nodeId) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619)
   return statisticsColors[(hash >>> 0) % statisticsColors.length]!
 }
 
-export function assignUsageNodeColors(nodeIDs: readonly string[], previous: ReadonlyMap<string, string> = new Map()): Map<string, string> {
+export function assignUsageEntryColors(nodeIDs: readonly string[], previous: ReadonlyMap<string, string> = new Map()): Map<string, string> {
   const active = [...new Set(nodeIDs)].sort()
   const result = new Map(previous)
   const used = new Set<string>()
@@ -30,8 +30,8 @@ export function assignUsageNodeColors(nodeIDs: readonly string[], previous: Read
     else assign.push(id)
   }
   for (const id of assign) {
-    const base = statisticsColors.indexOf(usageNodeColor(id) as typeof statisticsColors[number])
-    const color = statisticsColors.map((_, offset) => statisticsColors[(base + offset) % statisticsColors.length]!).find(value => !used.has(value)) ?? usageNodeColor(id)
+    const base = statisticsColors.indexOf(usageEntryColor(id) as typeof statisticsColors[number])
+    const color = statisticsColors.map((_, offset) => statisticsColors[(base + offset) % statisticsColors.length]!).find(value => !used.has(value)) ?? usageEntryColor(id)
     result.set(id, color); used.add(color)
   }
   // Retain recent identities across capped/refreshing windows without keeping
@@ -41,18 +41,22 @@ export function assignUsageNodeColors(nodeIDs: readonly string[], previous: Read
   return result
 }
 
+export const usageEntryIDs = (history: UsageBreakdown): string[] => [...history.nodes.map(node => `node:${node.nodeId}`), ...history.hourlySquads.map(squad => `hourly:${squad.groupId}`)]
 export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBreakdownMetric, retainedColors?: ReadonlyMap<string, string>) {
-  const colors = retainedColors ?? assignUsageNodeColors(history.nodes.map(node => node.nodeId))
-  const rows = history.nodes.map(node => ({
+  const colors = retainedColors ?? assignUsageEntryColors(usageEntryIDs(history))
+  const entries = [...history.nodes.map(node => ({
     interactionId: `node:${node.nodeId}`, name: node.name, kind: 'node' as const,
     amount: metric === 'cost' ? readUsageAmount(node.costMinor) : usageAmount(BigInt(node.uploadBytes) + BigInt(node.downloadBytes)),
-    color: colors.get(node.nodeId) ?? usageNodeColor(node.nodeId),
-  })).filter(row => row.amount.numerator > 0n).sort((a, b) => a.interactionId < b.interactionId ? -1 : a.interactionId > b.interactionId ? 1 : 0)
+  })), ...history.hourlySquads.map(squad => ({
+    interactionId: `hourly:${squad.groupId}`, name: squad.name, kind: 'hourly' as const,
+    amount: metric === 'cost' ? readUsageAmount(squad.costMinor) : usageAmount(BigInt(squad.uploadBytes) + BigInt(squad.downloadBytes)),
+  }))]
+  const rows = entries.map(row => ({ ...row, color: colors.get(row.interactionId) ?? usageEntryColor(row.interactionId) })).filter(row => row.amount.numerator > 0n).sort((a, b) => a.interactionId < b.interactionId ? -1 : a.interactionId > b.interactionId ? 1 : 0)
   const omitted = metric === 'cost' ? readUsageAmount(history.omitted.costMinor) : usageAmount(BigInt(history.omitted.uploadBytes) + BigInt(history.omitted.downloadBytes))
   const total = metric === 'cost' ? readUsageAmount(history.cost.knownTotalMinor) : rows.reduce((sum, row) => addUsageAmounts(sum, row.amount), omitted)
   let others = omitted
   const included = rows.filter(row => {
-    if (!belowOnePercent(row.amount, total)) return true
+    if (row.kind === 'hourly' || !belowOnePercent(row.amount, total)) return true
     others = addUsageAmounts(others, row.amount)
     return false
   })
@@ -64,8 +68,8 @@ export function usageBreakdownSegments(history: UsageBreakdown, metric: UsageBre
     const share = usageShare(row.amount, total)
     return { ...row, share, percentage: share * 100 }
   })
-  const positiveNodes = BigInt(history.positiveNodes[metric])
-  return { total, segments, positiveNodes, showPie: positiveNodes > 1n && total.numerator > 0n }
+  const positiveEntries = BigInt(history.positiveEntries[metric])
+  return { total, segments, positiveEntries, showPie: positiveEntries > 0n && total.numerator > 0n }
 }
 
 export const usageSegmentID = (segment: UsageBreakdownSegment): string => segment.interactionId

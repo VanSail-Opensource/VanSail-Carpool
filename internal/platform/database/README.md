@@ -1445,8 +1445,11 @@ acknowledgment rules.
 `usage_breakdown.go`, `usage_breakdown_nodes.go`, `usage_breakdown_amounts.go`,
 `usage_breakdown_costs.go`, `usage_breakdown_legacy.go` and
 `usage_breakdown_coverage.go` implement the read-only owner snapshot documented
-in [usage_breakdown.md](usage_breakdown.md). Node aggregation precedes limiting;
-exact rational estimates, unallocated receipts and omitted totals conserve value.
+in [usage_breakdown.md](usage_breakdown.md). `usage_breakdown_hourly.go` aggregates
+hourly squad traffic and immutable settlements independently;
+`usage_breakdown_hourly_totals.go` conserves exact costs and omitted totals across
+the shared node/squad cap. Shared extra GB remains unallocated; physical bytes
+exclude hourly samples, and positive combined-entry counts retain all identities.
 `usage_breakdown_fixture_test.go`, `usage_breakdown_test.go`,
 `usage_breakdown_financial_test.go`, `usage_breakdown_bounds_test.go`,
 `usage_breakdown_coverage_test.go` and `usage_breakdown_snapshot_test.go` cover
@@ -1455,6 +1458,15 @@ addon totals, owner/rejoin isolation, lifecycle partial minutes, coverage,
 stable truncation and concurrent snapshot consistency in hosted PostgreSQL.
 `usage_breakdown_closed_coverage_test.go` keeps loss-only closed combo/PAYG
 participants visible for their overlapping lifecycle window.
+`usage_breakdown_hourly_fixture_test.go` constructs exact retained activation
+facts. `usage_breakdown_hourly_test.go` covers named multi-node/re-enrollment
+aggregation, idle charges, current-price independence and unchanged evidence.
+`usage_breakdown_hourly_scope_test.go` verifies owner/generation/principal/period
+isolation and integers beyond browser precision.
+`usage_breakdown_hourly_bounds_test.go` verifies the combined cap, stable order,
+positive counts and mixed fractional omissions.
+`usage_breakdown_hourly_coverage_test.go` retains closed hourly loss-only evidence
+while excluding old unrelated periods and malformed hourly attribution.
 
 `xnode_certificate_operations.go` queues administrator certificate actions through
 the existing provider operation/item/outbox transaction. A PostgreSQL transaction

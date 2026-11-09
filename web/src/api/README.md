@@ -66,8 +66,12 @@ commands. Its mutable state and quotes always bypass response snapshots.
 `usageBreakdown.ts` reads the generated all-mode `UsageBreakdown` contract through
 the signed owner-session transport without persistent caching. The ordinary
 generated shape validator is combined with `usageBreakdownValidation.ts` for
-exact unsigned units, positive denominators, unique IDs, physical-count lower
-bounds and both cost-conservation equations. Incompatible successful responses
+exact unsigned units, positive denominators, independent node/squad identities,
+the combined 128-entry limit, combined/physical count bounds and both exact
+cost-conservation equations. `hourlySquads` carries recorded attributed traffic
+and charges; shared extra charges stay unallocated. Counts equal visible positives
+when that metric has no omitted amount; positive omissions permit unknown extra
+rows. Incompatible successful responses, including invented positive counts,
 become the existing localized read error before entering chart state.
 `usageBreakdown.test.ts` covers malformed units, inconsistent totals/counts and
 large exact values. Older PAYG history remains a separate compatibility read.

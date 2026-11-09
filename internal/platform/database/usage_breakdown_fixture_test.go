@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,8 +43,26 @@ func usageBreakdownPurchase(t *testing.T, s *Store, u model.User, id string, pri
 
 func usageBreakdownRaw(t *testing.T, s *Store, u model.User, mode, ref, node string, up, down int64, at time.Time) {
 	t.Helper()
+	principal, period := int64(1), ref
+	if mode == "hourly" {
+		var owner string
+		var generation int64
+		err := s.DB().QueryRowContext(context.Background(), `SELECT owner_id,account_generation,COALESCE(proxy_user_id,0),COALESCE(period_id,'') FROM hourly_enrollments WHERE id=$1`, ref).Scan(&owner, &generation, &principal, &period)
+		if err == sql.ErrNoRows {
+			// Raw-only projection fixtures need a legitimate scoped principal,
+			// without creating a debit. Invalid/orphan evidence uses explicit SQL.
+			usageBreakdownExec(t, s, `INSERT INTO hourly_enrollments(id,owner_id,account_generation,group_id,activation_key,request_fingerprint,status,created_at,updated_at) VALUES($1,$2,$3,$1,$1,$4,'preparing',$5,$5)`, ref, u.ID, u.AccountGeneration, strings.Repeat("a", 64), at)
+			p, createErr := s.EnsureXNodeHourlyPrincipal(context.Background(), ref, "opaque")
+			if createErr != nil {
+				t.Fatal(createErr)
+			}
+			principal, period = p.ProxyUserID, p.PeriodID
+		} else if err != nil || owner != u.ID || generation != u.AccountGeneration || principal <= 0 || period == "" {
+			t.Fatal("hourly raw fixture must reference its real owner/generation/principal", ref, err)
+		}
+	}
 	usageBreakdownExec(t, s, `INSERT INTO xnode_usage_minutes(owner_id,account_generation,billing_mode,reference_id,proxy_user_id,period_id,node_id,minute,observed_from,observed_through,upload_bytes,download_bytes)
- VALUES($1,$2,$3,$4,1,$4,$5,$6,$7,$7,$8,$9)`, u.ID, u.AccountGeneration, mode, ref, node, at.Truncate(time.Minute), at, up, down)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11)`, u.ID, u.AccountGeneration, mode, ref, principal, period, node, at.Truncate(time.Minute), at, up, down)
 }
 
 func usageBreakdownPAYGAccount(t *testing.T, s *Store, u model.User, node string, at time.Time) xnode.PAYGAccount {
@@ -93,8 +113,11 @@ func assertUsageBreakdownConservation(t *testing.T, value model.UsageBreakdown) 
 	for _, node := range value.Nodes {
 		sum.Add(sum, usageBreakdownRational(t, node.CostMinor))
 	}
+	for _, squad := range value.HourlySquads {
+		sum.Add(sum, usageBreakdownRational(t, squad.CostMinor))
+	}
 	if sum.Cmp(usageBreakdownRational(t, value.Cost.KnownTotalMinor)) != 0 {
-		t.Fatal("node/unallocated costs lost exact value", sum, value.Cost)
+		t.Fatal("entry/unallocated costs lost exact value", sum, value.Cost)
 	}
 }
 

@@ -1,4 +1,5 @@
 import type { components } from '@/api/generated'
+import { hourlyUsageFixture } from './hourlyUsageFixture'
 
 type Snapshot = components['schemas']['UsageBreakdown']
 const amount = (numerator = '0', denominator = '1') => ({ numerator, denominator })
@@ -13,8 +14,10 @@ export function usageBreakdownFixture(params = new URLSearchParams()): Snapshot 
     nodes: [node('tokyo', 'Tokyo primary', '4000000000', '2000000000', amount('200')),
       node('osaka', 'Osaka shared', '1000000000', '3000000000', amount('220', '3')),
       node('historical', 'Historical node with a deliberately long name for narrow layouts', '500000000', '500000000')],
+    hourlySquads: [],
     omitted: { uploadBytes: '0', downloadBytes: '0', costMinor: amount() },
     positiveNodes: { traffic: '3', cost: '2' },
+    positiveEntries: { traffic: '3', cost: '2' },
     cost: { actualMinor: '300', legacy, knownTotalMinor: amount('1000', '3'), unallocatedMinor: amount('60') },
   }
   function clearEstimate(): void { view.cost.legacy = { status: 'none', amountMinor: null } }
@@ -63,12 +66,11 @@ export function usageBreakdownFixture(params = new URLSearchParams()): Snapshot 
     view.positiveNodes.cost = '3'
     view.cost.actualMinor = '10000000000000000000003'; view.cost.knownTotalMinor = amount(view.cost.actualMinor); view.cost.unallocatedMinor = amount('1')
   }
-  if (params.has('empty') || params.has('unallocated') || params.has('hourly-only')) {
+  if (params.has('empty') || params.has('unallocated')) {
     clearEstimate()
-    if (!params.has('hourly-only')) view.nodes = []
-    for (const item of view.nodes) item.costMinor = amount()
-    view.positiveNodes = { traffic: params.has('hourly-only') ? '3' : '0', cost: '0' }
-    view.cost.actualMinor = params.has('hourly-only') ? '300' : '0'
+    view.nodes = []
+    view.positiveNodes = { traffic: '0', cost: '0' }
+    view.cost.actualMinor = '0'
     view.cost.knownTotalMinor = amount(params.has('empty') ? '0' : '300')
     view.cost.unallocatedMinor = amount(params.has('empty') ? '0' : '300')
     if (params.has('unallocated')) view.cost.legacy = { status: 'available', amountMinor: amount('300') }
@@ -78,5 +80,6 @@ export function usageBreakdownFixture(params = new URLSearchParams()): Snapshot 
     view.coverage.since = params.has('no-since') ? null : new Date(now - 6 * 3600000).toISOString()
     view.coverage.gapCount = params.has('gaps') ? '2' : '0'
   }
+  hourlyUsageFixture(view, params)
   return view
 }

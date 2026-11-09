@@ -50,7 +50,9 @@ legacy singleton compatibility in hosted CI.
 
 `usage_breakdown.go` exposes the member-owned consistent 72-hour projection.
 It forwards request cancellation, fixes the exact UTC window and preserves
-exact rational minor-unit costs from the store. It sends no external requests
+exact rational minor-unit costs from the store. Physical Combo/PAYG nodes and
+hourly squads are distinct projection entries; shared hourly extra purchases
+remain unallocated. It sends no external requests
 and cannot substitute current prices or invented empty history for unavailable
 records. `usage_breakdown_test.go` covers those public interface guarantees.
 

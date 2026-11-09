@@ -2,7 +2,10 @@ package model
 
 import "time"
 
-const MaxUsageBreakdownNodes = 128
+const MaxUsageBreakdownEntries = 128
+
+// MaxUsageBreakdownNodes is retained for callers of the original node contract.
+const MaxUsageBreakdownNodes = MaxUsageBreakdownEntries
 
 const (
 	UsageLegacyNone                = "none"
@@ -34,8 +37,18 @@ type UsageBreakdownNode struct {
 	CostMinor     RationalMinor `json:"costMinor"`
 }
 
+// UsageBreakdownHourlySquad aggregates one named squad across its retained
+// enrollments and physical nodes. Costs use recorded settlements only.
+type UsageBreakdownHourlySquad struct {
+	GroupID       string        `json:"groupId"`
+	Name          string        `json:"name"`
+	UploadBytes   string        `json:"uploadBytes"`
+	DownloadBytes string        `json:"downloadBytes"`
+	CostMinor     RationalMinor `json:"costMinor"`
+}
+
 // UsageBreakdownTotals also represents omitted identities without inventing a
-// physical node. It is folded into the UI's Others group after node counting.
+// physical node or hourly squad. It is folded into Others after entry counting.
 type UsageBreakdownTotals struct {
 	UploadBytes   string        `json:"uploadBytes"`
 	DownloadBytes string        `json:"downloadBytes"`
@@ -61,14 +74,19 @@ type UsageBreakdownCost struct {
 
 // UsageBreakdown contains owner-scoped recorded bytes and exact charge facts.
 // Node cost combines recorded traffic charges and allocated legacy estimates;
-// hourly/extra charges remain explicitly unallocated. Principal IDs/generations and
+// hourly settlement costs belong to squad entries; shared extras remain
+// unallocated. Principal IDs/generations and
 // credentials never enter this presentation contract.
 type UsageBreakdown struct {
-	From          time.Time                   `json:"from"`
-	To            time.Time                   `json:"to"`
-	Coverage      UsageCoverage               `json:"coverage"`
-	Nodes         []UsageBreakdownNode        `json:"nodes"`
-	Omitted       UsageBreakdownTotals        `json:"omitted"`
+	From         time.Time                   `json:"from"`
+	To           time.Time                   `json:"to"`
+	Coverage     UsageCoverage               `json:"coverage"`
+	Nodes        []UsageBreakdownNode        `json:"nodes"`
+	HourlySquads []UsageBreakdownHourlySquad `json:"hourlySquads"`
+	Omitted      UsageBreakdownTotals        `json:"omitted"`
+	// PositiveNodes retains physical-only counts for older consumers.
 	PositiveNodes UsageBreakdownPositiveNodes `json:"positiveNodes"`
-	Cost          UsageBreakdownCost          `json:"cost"`
+	// PositiveEntries counts physical nodes and hourly squads before the cap.
+	PositiveEntries UsageBreakdownPositiveNodes `json:"positiveEntries"`
+	Cost            UsageBreakdownCost          `json:"cost"`
 }

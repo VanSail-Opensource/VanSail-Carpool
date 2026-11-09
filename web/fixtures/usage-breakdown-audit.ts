@@ -29,6 +29,7 @@ window.fetch = async (input, init) => {
   let value = state.snapshot
   if (params.has('invalid')) value = { ...value, cost: { ...value.cost, knownTotalMinor: { numerator: '1', denominator: '0' } } }
   if (params.has('invalid-total')) value = { ...value, cost: { ...value.cost, actualMinor: '0' } }
+  if (params.has('invalid-positive-count')) value = { ...value, positiveEntries: { ...value.positiveEntries, cost: (BigInt(value.positiveEntries.cost) + 1n).toString() } }
   return new Response(JSON.stringify(failed ? { code: 'XNODE_UNAVAILABLE', message: 'Synthetic history failure' } : value), { status: failed ? 503 : 200, headers: { 'Content-Type': 'application/json' } })
 }
 Object.assign(window, { __usageBreakdownAudit: state })
