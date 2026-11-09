@@ -34,6 +34,10 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Local agent overrides (shared instructions live in AGENTS.md)
+AGENTS.local.md
+CLAUDE.local.md
+
 # Local reports and caches
 /.cache/
 /.tmp/

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "VanSail project MCP",
+    "description": "Connects the Nuxt UI and Vue documentation MCP servers to this workspace."
+  }
+}

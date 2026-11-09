@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "VanSail 项目 MCP",
+    "description": "为当前工作区连接 Nuxt UI 与 Vue 文档 MCP 服务器。"
+  }
+}

@@ -17,6 +17,8 @@ VanSail Carpool provides a premium-dark Telegram Mini App for member onboarding,
 
 The machine-readable HTTP contract is [api/openapi.yaml](api/openapi.yaml). Module boundaries, invariants, failure behavior, and test expectations are indexed in [docs/modules/README.md](docs/modules/README.md).
 
+Agent instructions live in [AGENTS.md](AGENTS.md). Runtime-specific MCP servers, skills, and browser validation for DeepSeek Harness and Codex are documented in [docs/agent-tooling.md](docs/agent-tooling.md).
+
 ## Architecture
 
 ```text

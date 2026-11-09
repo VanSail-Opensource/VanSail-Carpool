@@ -1,0 +1,17 @@
+# Project-scoped Codex configuration.
+#
+# Codex merges this file over ~/.codex/config.toml for trusted projects.
+# Keep machine-specific settings, credentials, and model choices in the user
+# config; only project-relevant, portable settings belong here.
+#
+# Chrome DevTools MCP is intentionally not duplicated here: it is a
+# machine-level browser dependency and is already defined in the user config.
+# See docs/agent-tooling.md for the full runtime matrix.
+
+[mcp_servers.nuxt_ui]
+url = "https://ui.nuxt.com/mcp"
+enabled = true
+
+[mcp_servers.vue-docs]
+url = "https://mcp.vue-mcp.org/mcp"
+enabled = true

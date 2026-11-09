@@ -1,0 +1,28 @@
+# Project-scoped MCP servers for the VanSail Carpool workspace.
+#
+# This is a configuration-only DSH bundle. Install it once per profile with
+# plugin_manager(action: "install_bundle", target: "<repo>/.dsh/project-mcp").
+# It is intentionally fail-open: if a remote documentation server is offline,
+# the harness still starts and the affected mcp__* tools are simply absent.
+- insert:
+    - id: mcp-nuxt-ui
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: nuxt_ui
+        transport: streamable-http
+        url: https://ui.nuxt.com/mcp
+        failOnStartupError: false
+        toolCallTimeoutMs: 60000
+        reconnect:
+          enabled: true
+
+    - id: mcp-vue-docs
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: vue-docs
+        transport: streamable-http
+        url: https://mcp.vue-mcp.org/mcp
+        failOnStartupError: false
+        toolCallTimeoutMs: 60000
+        reconnect:
+          enabled: true

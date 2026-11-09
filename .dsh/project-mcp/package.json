@@ -1,0 +1,22 @@
+{
+  "name": "@local/vansail-project-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project-scoped MCP connections for the VanSail Carpool workspace.",
+  "type": "module",
+  "exports": {
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "README.md",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
