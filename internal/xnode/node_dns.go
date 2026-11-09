@@ -17,8 +17,8 @@ func (s *Service) preserveNodeDNS(previous Node, settings *NodeSettings) error {
 	if settings.LegacyDNSLoopback || previous.SettingsCipher == "" {
 		return nil
 	}
-	var old NodeSettings
-	if err := s.open("xnode.node."+previous.ID, previous.SettingsCipher, &old); err != nil {
+	old, err := s.openNodeSettings(previous)
+	if err != nil {
 		return err
 	}
 	normalizeNodeDNS(&old)

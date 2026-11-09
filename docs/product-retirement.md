@@ -7,10 +7,10 @@ Retirement removes current producers, execution, API contracts, localization and
 - The outage observation service, scheduler, review APIs and browser console section are removed. The existing generic administrator worker may finish previously committed entitlement synchronization; it cannot create new outage decisions.
 - The notification worker acknowledges old outage payloads without sending them. Historical approved extensions remain attached to their purchases.
 - `UsagePanel` retains its quota meter, exact used/remaining bytes and cached-data warning. The old per-node bar and reset timestamp are removed. Usage Breakdown owns detailed node traffic.
-- Node settings no longer accept, persist or compile per-node bandwidth overrides. Historical encrypted settings ignore that field on decode and omit it on the next save. Native user policy support is retained for commerce.
+- Node settings no longer accept, persist or compile per-node bandwidth overrides. The private stored-settings decoder ignores only historical top-level `bandwidth`; ordinary reads leave the encrypted document unchanged and the next save omits that field. Unknown current fields and malformed types still fail, and HTTP writes reject retired bandwidth input. Node reads, DNS preservation and automatic firewall lease views use the same decoder. Native user policy support is retained for commerce.
 - Shared catalog inbound IDs preserve their exact deterministic UUID derivation after the outage adapter is removed.
 
-The HTTP route regression rejects all retired outage endpoints. Hosted retention checks verify historical extensions and their committed synchronization remain valid. The native settings regression verifies retired bandwidth data cannot reappear.
+The HTTP route regression rejects all retired outage endpoints. Hosted retention checks verify historical extensions and their committed synchronization remain valid. Encrypted node-settings regressions cover retained current policy, rejected invalid state, read-only ciphertext preservation, save-time removal and automatic lease status; transport regressions retain strict request validation. A permissive `json.Unmarshal` check alone cannot cover the strict stored-settings decoder.
 
 Validation: Go vet, frontend typecheck, ESLint, structure/localization audit and production Vite build. Chrome DevTools checked console navigation and node editing at desktop/mobile sizes, successful node save, and quota loading/populated/empty/error/retry states with cached data. No local automated suites were run.
 

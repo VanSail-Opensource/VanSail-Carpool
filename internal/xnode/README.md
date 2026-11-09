@@ -1231,7 +1231,7 @@ Period settlement and routing deployment proof: `period_closure.go` fences and s
 
 `native_job_dispatch.go` dispatches queued native work, completes superseded disabled-node intents, and preserves offline/capability waits without exhausting delivery attempts. Access repair retains settled/ambiguous accounting for review instead of granting another allowance.
 
-Node-level bandwidth overrides are retired. Historical encrypted settings decode without restoring these fields; saving removes them. Native per-user speed capabilities remain available for commerce policies.
+Node-level bandwidth overrides are retired. `node_settings.go` reads encrypted settings through a private compatibility wrapper that discards only the former top-level `bandwidth` field. `Service.Node`, DNS preservation during saves and automatic firewall lease reads share that boundary; unrelated unknown fields and invalid known types remain errors. Reads never rewrite stored state, and subsequent saves omit the retired field. The public request type remains strict. Native per-user speed capabilities remain available for commerce policies. `node_settings_test.go` covers encrypted reads, rejected malformed/foreign-node state, save round trips and populated lease status; `node_dns_test.go` retains legacy resolver compatibility when old bandwidth data exists.
 
 `node_removal_routes.go` prunes typed node choices, freezes member routing saves, retains every affected revocation participant and synchronizes applied credential revocation before final retirement. `node_removal_routes_test.go` covers saved/previous choices, unrelated plans, replay and concurrent removals. Empty plans stay disabled; surviving choices reconcile after removal.
 

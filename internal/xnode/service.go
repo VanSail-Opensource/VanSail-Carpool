@@ -62,8 +62,7 @@ func (s *Service) Node(ctx context.Context, id string) (Node, NodeSettings, erro
 	if err != nil {
 		return node, NodeSettings{}, err
 	}
-	var settings NodeSettings
-	err = s.open("xnode.node."+id, node.SettingsCipher, &settings)
+	settings, err := s.openNodeSettings(node)
 	if err == nil && len(settings.DDNS) > 0 {
 		settings.DDNSBindings, err = s.loadDDNSBindings(ctx, id)
 	}

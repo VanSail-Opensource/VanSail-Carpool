@@ -17,8 +17,8 @@ func (s *Service) AutomaticFirewallLeases(ctx context.Context, search string, pa
 	}
 	var watermarks []uint64
 	for _, node := range nodes {
-		var settings NodeSettings
-		if err := s.open("xnode.node."+node.ID, node.SettingsCipher, &settings); err != nil {
+		settings, err := s.openNodeSettings(node)
+		if err != nil {
 			return AutomaticLeasePage{}, err
 		}
 		if !settings.Firewall.Enabled {

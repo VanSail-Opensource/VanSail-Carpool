@@ -36,7 +36,7 @@ func TestNodeDNSCompatibilitySurvivesOlderClientSave(t *testing.T) {
 		t.Fatal(err)
 	}
 	service := &Service{vault: vault}
-	for _, raw := range []string{`{"dns":{"mode":"smartdns","redirect":true}}`, `{"legacyDnsLoopback":true,"dns":{"mode":"xray","redirect":true}}`} {
+	for _, raw := range []string{`{"dns":{"mode":"smartdns","redirect":true}}`, `{"legacyDnsLoopback":true,"dns":{"mode":"xray","redirect":true}}`, `{"bandwidth":{"normalMbps":100,"burstMbps":200,"afterSeconds":30,"resetSeconds":60},"dns":{"mode":"smartdns","redirect":true}}`} {
 		cipher, err := vault.Encrypt("xnode.node.node", raw)
 		if err != nil {
 			t.Fatal(err)
