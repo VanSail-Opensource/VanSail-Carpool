@@ -64,6 +64,16 @@ export function displayInputFromTXBMinor(minor: string): string {
   return converted?.replace(/^(-?)(?:￥|\$)/, '$1') ?? txbInputFromMinor(minor)
 }
 
+// A display currency can be persisted while its rate is later removed. Amount
+// inputs then keep working in TXB instead of pricing through a rate the member
+// no longer has; the app already renders TXB amounts in that state.
+export function displayInputCurrency(): DisplayCurrency {
+  const target = currency.value
+  if (target === 'TXB') return 'TXB'
+  const rate = target === 'CNY' ? rates.value.cnyTxbPerUnit : rates.value.usdTxbPerUnit
+  return rate && parseRate(rate) ? target : 'TXB'
+}
+
 export function displayInputMinimumFromTXBMinor(minor: string): string {
   const target = currency.value
   if (target === 'TXB') return txbInputFromMinor(minor)

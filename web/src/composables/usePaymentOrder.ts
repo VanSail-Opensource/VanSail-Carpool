@@ -46,7 +46,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
       localError.value = t('payment.reissueUnavailable')
       return false
     }
-    configuration.amount.value = restored.amount
+    configuration.setAmountMinor(restored.amountMinor)
     configuration.selectedMethodId.value = restored.methodId
     void target.remember(candidate)
     canReissue.value = true
@@ -59,7 +59,7 @@ export function usePaymentOrder(options: PaymentOrderOptions) {
     if (candidate.status !== 'pending') return false
     const restored = resolveOrderSelection(candidate, methods, configuration.minimumMinor.value, configuration.maximumMinor.value)
     if (restored) {
-      configuration.amount.value = restored.amount
+      configuration.setAmountMinor(restored.amountMinor)
       configuration.selectedMethodId.value = restored.methodId
     }
     canRecreate.value = (candidate.provider === 'bepusdt' || candidate.provider === 'builtin_usdt') && restored !== null

@@ -19,9 +19,11 @@ const props = withDefaults(defineProps<{
   amountValid: boolean
   canCreate: boolean
   canReissue: boolean
+  amountMinor?: string
   minimumMinor?: string
   maximumMinor?: string
 }>(), {
+  amountMinor: '',
   minimumMinor: '100',
   maximumMinor: '10000000000',
 })
@@ -165,6 +167,7 @@ watch(() => props.stage, (stage, previousStage) => {
     v-model:amount="amount"
     :channels="channelItems"
     :selected-method-id="selectedMethodId"
+    :amount-minor="amountMinor"
     :amount-valid="amountValid"
     :stage="stage"
     :error="error"

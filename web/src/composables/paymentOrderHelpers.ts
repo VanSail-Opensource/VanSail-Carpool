@@ -1,7 +1,6 @@
 import QRCode from 'qrcode'
 
 import type { FeaturePaymentMethod, FeaturePaymentOrder } from '@/api/features'
-import { moneyFromTxbInput, txbInputFromMinor } from '@/utils/format'
 
 export function isTerminalPaymentStatus(status: FeaturePaymentOrder['status']): boolean {
   return ['paid', 'cancelled', 'expired', 'failed', 'refunded'].includes(status)
@@ -16,7 +15,7 @@ export function resolveReissueCandidate(
   methods: readonly FeaturePaymentMethod[],
   minimumMinor: bigint,
   maximumMinor: bigint,
-): { amount: string, methodId: string } | null {
+): { amountMinor: string, methodId: string } | null {
   if (candidate.status !== 'expired' && candidate.status !== 'failed') return null
   return resolveOrderSelection(candidate, methods, minimumMinor, maximumMinor)
 }
@@ -26,15 +25,14 @@ export function resolveOrderSelection(
   methods: readonly FeaturePaymentMethod[],
   minimumMinor: bigint,
   maximumMinor: bigint,
-): { amount: string, methodId: string } | null {
+): { amountMinor: string, methodId: string } | null {
   const method = methods.find((item) => item.id === candidate.methodId && item.available)
-  const amount = candidate.txb.currency === 'TXB' ? txbInputFromMinor(candidate.txb.minor) : ''
-  const minor = moneyFromTxbInput(amount)
+  const minor = candidate.txb.currency === 'TXB' ? candidate.txb.minor : ''
   if (
     !method || method.provider !== candidate.provider || method.rail !== candidate.providerRail
-    || minor === '' || BigInt(minor) < minimumMinor || BigInt(minor) > maximumMinor
+    || !/^\d+$/.test(minor) || BigInt(minor) < minimumMinor || BigInt(minor) > maximumMinor
   ) return null
-  return { amount, methodId: method.id }
+  return { amountMinor: minor, methodId: method.id }
 }
 
 export function paymentQrDataUrl(order: FeaturePaymentOrder): Promise<string | null> {

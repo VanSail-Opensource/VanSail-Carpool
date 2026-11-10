@@ -33,6 +33,12 @@
     "noStatistics": "暂无用量数据",
     "statisticsPending": "产生流量后会显示统计。",
     "addBalanceTitle": "添加余额即可开始",
+    "billingTrafficTitle": "按流量计费",
+    "billingTrafficCopy": "无需激活，充值后仅按实际使用的流量付费。",
+    "billingHourlyTitle": "按小时计费",
+    "billingHourlyCopy": "按小时付费：先享免费全速额度，用完后自动降速。",
+    "billingTrafficAdvantage": "无需承诺，未使用的余额仍归你所有。",
+    "billingHourlyAdvantage": "不合适可随时停用，灵活自由，无需长期绑定。",
     "unavailable": "仪表盘不可用",
     "loadFailed": "无法加载仪表盘数据。"
   },

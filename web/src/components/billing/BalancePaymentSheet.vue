@@ -33,6 +33,7 @@ const {
   error,
   canReissue,
   canRecreate,
+  amountMinor,
   amountValid,
   canCreate,
   reset,
@@ -114,6 +115,7 @@ watch(open, (next, previous) => {
           :selected-method-id="selectedMethodId"
           :stage="stage"
           :error="error"
+          :amount-minor="amountMinor"
           :amount-valid="amountValid"
           :can-create="canCreate"
           :can-reissue="canReissue"

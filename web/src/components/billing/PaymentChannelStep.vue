@@ -6,7 +6,8 @@ import type { PaymentStage } from '@/composables/usePaymentOrder'
 import TxbAmountField from '@/components/common/TxbAmountField.vue'
 import { useI18n } from '@/i18n'
 import { useMotionPreferences } from '@/composables/useMotionPreferences'
-import { txbInputFromMinor } from '@/utils/format'
+import { displayInputCurrency, displayInputFromTXBMinor, displayInputMinimumFromTXBMinor, displayInputToTXBMinor } from '@/utils/displayCurrency'
+import { formatMoney, moneyFromTxbInput } from '@/utils/format'
 import { selectionHaptic } from '@/utils/telegram'
 import PaymentCryptoChannelPicker from './PaymentCryptoChannelPicker.vue'
 import type { PaymentChannelOption } from './paymentOptions'
@@ -14,8 +15,9 @@ import type { PaymentChannelOption } from './paymentOptions'
 const props = defineProps<{
   channels: readonly PaymentChannelOption[]
   selectedMethodId: string | null
-  amountValid: boolean
   amount: string
+  amountMinor: string
+  amountValid: boolean
   stage: PaymentStage
   error: string | null
   canCreate: boolean
@@ -34,6 +36,19 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const { reducedMotion } = useMotionPreferences()
 const isCrypto = computed(() => props.channels.some((channel) => channel.cryptoCurrency))
+const inputCurrency = computed(displayInputCurrency)
+const parseDisplayValue = computed(() => inputCurrency.value === 'TXB' ? moneyFromTxbInput : displayInputToTXBMinor)
+const displayMinimum = computed(() => displayInputMinimumFromTXBMinor(props.minimumMinor))
+const displayMaximum = computed(() => displayInputFromTXBMinor(props.maximumMinor))
+const rangeHint = computed(() => t('payment.amountRange', {
+  min: displayMinimum.value,
+  max: displayMaximum.value,
+  currency: inputCurrency.value,
+}))
+const creditedTxb = computed(() => /^\d+$/.test(props.amountMinor) && BigInt(props.amountMinor) > 0n
+  ? formatMoney({ currency: 'TXB', minor: props.amountMinor, display: '' })
+  : '')
+const showCredited = computed(() => props.amountValid && Boolean(creditedTxb.value) && inputCurrency.value !== 'TXB')
 
 function chooseMethod(id: string): void {
   if (id === props.selectedMethodId) return
@@ -48,13 +63,18 @@ function chooseMethod(id: string): void {
       id="txb-amount"
       :model-value="amount"
       :label="t('payment.amount')"
-      :hint="t('payment.amountRange', { min: txbInputFromMinor(minimumMinor), max: txbInputFromMinor(maximumMinor) })"
+      :hint="rangeHint"
       :min-minor="minimumMinor"
       :max-minor="maximumMinor"
+      :suffix="inputCurrency"
+      :display-value="displayInputFromTXBMinor"
+      :display-minimum="displayInputMinimumFromTXBMinor"
+      :parse-display-value="parseDisplayValue"
       slider
       required
       @update:model-value="emit('update:amount', String($event))"
     />
+    <p v-if="showCredited" class="payment-credit">{{ t('payment.creditEstimate', { amount: creditedTxb }) }}</p>
     <UAlert v-if="!channels.length" color="warning" variant="soft" icon="i-ph-warning-circle" :description="t('payment.noChannel')" />
     <PaymentCryptoChannelPicker
       v-else-if="isCrypto"
@@ -124,4 +144,5 @@ function chooseMethod(id: string): void {
 <style scoped>
 .payment-channel-step { display: grid; min-width: 0; gap: 0.75rem; }
 .payment-channel-step :deep(.amount-field), .payment-channel-step .provider-picker, .payment-channel-step .payment-submit { margin: 0; }
+.payment-credit { margin: -0.35rem 0 0; color: var(--text-muted); font-size: 0.78rem; }
 </style>

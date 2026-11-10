@@ -33,6 +33,12 @@
     "noStatistics": "No usage data yet",
     "statisticsPending": "Statistics appear after traffic is recorded.",
     "addBalanceTitle": "Add balance to start",
+    "billingTrafficTitle": "Charge by traffic",
+    "billingTrafficCopy": "No activation needed. Add balance, then pay only for the traffic you use.",
+    "billingHourlyTitle": "Charge by hour",
+    "billingHourlyCopy": "Pay hour by hour. A free full-speed allowance comes first, then a reduced speed.",
+    "billingTrafficAdvantage": "No commitment — unused balance stays yours.",
+    "billingHourlyAdvantage": "Stop anytime it no longer fits — flexible, with no long-term lock-in.",
     "unavailable": "Dashboard unavailable",
     "loadFailed": "Dashboard data could not be loaded."
   },
