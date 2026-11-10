@@ -14,10 +14,28 @@ protect owner admission through the native lifecycle's locked target guard.
 `schedule.go` performs rotating bounded keyset admission to the existing outbox.
 The application invokes it every second, including whole UTC hours and startup.
 Its cursor advances after each accepted enqueue, including partially timed-out
-pages. `delivery.go` checks at most eight squads concurrently in one 1.5-second
-window. `settlement.go` passes those short-lived exact compile-revision proofs
-to deterministic wallet settlement. Genuine unavailable squads remain pending;
-the database charges only a deliverable remainder and never missed intervals.
+pages. Admission includes active squads inside the bounded one-minute prefetch
+window only while the wallet currently covers the next whole hour, so an
+underfunded squad is not re-admitted on every tick and the existing
+`(kind,payload)` outbox dedupe keeps at most one pending job per owner.
+`delivery.go` checks at most eight squads concurrently in one 1.5-second window,
+including prefetch-window squads. `settlement.go` passes those short-lived exact
+compile-revision proofs to deterministic wallet settlement. Genuine unavailable
+squads remain pending; the database charges only a deliverable remainder and
+never missed intervals.
+
+Inside the prefetch window the database pays exactly one whole next UTC hour
+starting at the current aligned `paid_through`, so `paid_through` advances by one
+hour and the compiled native `ValidUntil` is replaced (trigger-bumped compile
+revision plus `xnode_sync_user`) while the member is still authorized. The
+wallet debit and ledger keep transaction time, never the future interval start.
+A missing readiness proof leaves the interval unpaid and retryable; insufficient
+funds or an unpurchasable offer skips the prepayment without moving the paid
+boundary, cancelling the paid remainder, or suspending early. Those failures are
+decided only at the boundary by the existing late path, which charges the
+current remainder and suspends with the definitive notice when the wallet cannot
+fund it. Activation proration, late/offline recovery, one receipt per
+`(enrollment_id, hour_start)` and deterministic wallet ordering are unchanged.
 `application.go` bounds native application to four callers within one four-second
 window, using the established per-node executor and retaining uncompleted work.
 `rotation.go` keeps bounded least-recently-used owner cursors so blocked head
@@ -51,6 +69,11 @@ matching the existing outbox/admission minimum) from offline/expired proofs
 new proofs and repeats all original financial and native fences.
 `settlement_scope.go` excludes unchanged skipped rows from native work; their
 already-expired native paid boundary remains authoritative during contention.
+`prefetch_test.go` proves readiness covers only active squads inside the bounded
+prefetch window; the hosted `hourly_billing_prefetch_test.go` proves one whole
+next hour before the boundary, one receipt and debit under concurrent workers,
+and a funded-insufficient skip that never cancels the paid remainder or suspends
+early.
 
 `service.go` composes the wallet repository, encrypted policy reader and native
 control plane. `commands.go` records member activation/disable intents through

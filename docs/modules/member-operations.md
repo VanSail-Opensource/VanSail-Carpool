@@ -27,18 +27,30 @@ The active purchase card obtains server-owned refund quotes. Refund commands ret
 
 ## Hourly funding notices
 
-Hourly squad renewal is funded an hour at a time from the member wallet. Before
-the paid hour ends, the existing five-minute notification scan queues a
-`hourly_funding_warning` when the squad's current hourly price exceeds the
-balance; owners are not warned when the balance still covers the next hour. If
-settlement then cannot fund the interval, the same transaction that changes the
+Hourly squad renewal is funded an hour at a time from the member wallet. The
+scheduler prepays the next whole UTC hour inside a bounded one-minute lead
+window, charging from the current hour-aligned `paid_through`, so the
+compiled-native `ValidUntil` is extended before the previous paid boundary denies
+access. A duplicate or concurrent settlement still yields exactly one receipt per
+`(enrollment, hour_start)` and at most one settled hour forward; the wallet debit
+and immutable ledger keep transaction time, never the future interval start. A
+genuine late/offline recovery keeps the prorated current-remainder path and never
+back-bills missed hours or automatically resumes a suspension. Inside the lead
+window an insufficient balance or unpurchasable offer is only a bounded skip: the
+paid remainder stays authorized and retryable, and the enrollment is not
+suspended early. At and after the boundary the existing late path decides; when
+the wallet cannot fund the interval, the same transaction that changes the
 enrollment to `funding_suspended` writes the definitive
-`hourly_funding_suspended` notice. Both notices are durable user events with
-per-enrollment/per-boundary event keys, localized EN and zh-CN copy, and facts
-limited to the squad name, hourly price, balance and time. A suspended
-enrollment cannot resume itself; the member must top up and start a new
-activation. Each offer also owns a `requiredHours` funding threshold
-(`0` inherits `policy.activationHours`), which the member view uses for
+`hourly_funding_suspended` notice. Before a paid hour ends, the existing
+five-minute notification scan queues a `hourly_funding_warning` when the squad's
+current hourly price exceeds the balance; owners are not warned when the balance
+still covers the next hour. A successful prepayment advances `paid_through`, so
+the warning event key moves to the new boundary instead of repeating. Both
+notices are durable user events with per-enrollment/per-boundary event keys,
+localized EN and zh-CN copy, and facts limited to the squad name, hourly price,
+balance and time. A suspended enrollment cannot resume itself; the member must
+top up and start a new activation. Each offer also owns a `requiredHours` funding
+threshold (`0` inherits `policy.activationHours`), which the member view uses for
 `requiredBalance` and the activation minimum. The value is stored by migration
 `00047_hourly_offer_required_hours.sql`; older offers remain at zero.
 

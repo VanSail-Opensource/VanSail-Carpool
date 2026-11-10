@@ -8,8 +8,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
+// The bounded prefetch path is disabled here (sequential, zero lead window) so
+// duplicate late workers deterministically exercise the current-remainder rule
+// instead of legitimately prepaying the next hour near a UTC boundary.
 func TestHourlyLateAndDuplicateWorkersChargeOnlyCurrentRemainder(t *testing.T) {
-	t.Parallel()
+	withHourlyPrefetchLead(t, 0)
 	s, policy, input := hourlyBillingFixture(t)
 	before := hourlyBillingNow(t, s)
 	e := makeDueHourlyBillingFixture(t, s, input, policy, before.Add(-4*time.Hour))

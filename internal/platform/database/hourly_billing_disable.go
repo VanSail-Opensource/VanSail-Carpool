@@ -75,14 +75,21 @@ func (s *Store) DueHourlyOwners(ctx context.Context, at time.Time, limit int) ([
 
 // DueHourlyOwnersPage lets the existing scheduler rotate past offline owners;
 // an old unpaid boundary can never monopolize the first bounded page forever.
+// Owners inside the bounded prefetch window are admitted early only while their
+// wallet currently covers the next whole hour, so a squad the transaction would
+// immediately skip is not re-admitted on every scheduler tick. An expired
+// boundary is always admitted so the definitive suspension still happens there.
 func (s *Store) DueHourlyOwnersPage(ctx context.Context, at time.Time, afterOwner string, limit int) ([]HourlyDueOwner, error) {
 	if limit < 1 || limit > 200 || afterOwner != "" && !validHourlyCreditName(afterOwner) {
 		return nil, ErrConflict
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT e.owner_id,e.account_generation FROM hourly_enrollments e
 		JOIN users u ON u.id=e.owner_id AND u.account_status='active' AND u.account_generation=e.account_generation
-		WHERE e.status='active' AND e.paid_through<=$1 AND e.owner_id>$2 GROUP BY e.owner_id,e.account_generation
-		ORDER BY e.owner_id LIMIT $3`, at.UTC(), afterOwner, limit)
+		WHERE e.status='active' AND (e.paid_through<=$1 OR (e.paid_through<=$2 AND EXISTS(
+		SELECT 1 FROM balances b JOIN hourly_offers o ON o.group_id=e.group_id
+		WHERE b.user_id=e.owner_id AND o.hourly_price_minor>0 AND b.txb_minor>=o.hourly_price_minor)))
+		AND e.owner_id>$3 GROUP BY e.owner_id,e.account_generation
+		ORDER BY e.owner_id LIMIT $4`, at.UTC(), at.UTC().Add(hourlyPrefetchLead), afterOwner, limit)
 	if err != nil {
 		return nil, err
 	}

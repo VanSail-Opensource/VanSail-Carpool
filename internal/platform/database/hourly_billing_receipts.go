@@ -33,8 +33,20 @@ func hourlyInitialReceiptTx(ctx context.Context, tx *sql.Tx, enrollment string) 
 	return &r, err
 }
 
+// payHourlyIntervalTx charges one deliverable interval whose transaction time is
+// also its interval start. Activation and late recovery settle from the current
+// instant, so both clocks coincide.
 func payHourlyIntervalTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment, offer model.HourlyOffer,
 	snapshot model.HourlyPolicySnapshot, from time.Time) (model.HourlySettlement, error) {
+	return payHourlyIntervalAtTx(ctx, tx, e, offer, snapshot, from, from)
+}
+
+// payHourlyIntervalAtTx separates the charged interval from the actual charge
+// instant. A bounded prefetch pays the next whole hour starting at the current
+// paid boundary while wallet stamps and the immutable ledger keep transaction
+// time, so accounting never records a future-dated debit.
+func payHourlyIntervalAtTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment, offer model.HourlyOffer,
+	snapshot model.HourlyPolicySnapshot, from, at time.Time) (model.HourlySettlement, error) {
 	until := hourlyBoundary(from)
 	amount, err := hourlyCharge(offer.HourlyPriceTXBMinor, from, until)
 	if err != nil {
@@ -44,17 +56,17 @@ func payHourlyIntervalTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollme
 	if err != nil {
 		return model.HourlySettlement{}, err
 	}
-	balance, err := debitBalanceTx(ctx, tx, e.OwnerID, amount, from)
+	balance, err := debitBalanceTx(ctx, tx, e.OwnerID, amount, at)
 	if err != nil {
 		return model.HourlySettlement{}, err
 	}
-	ledger, err := insertLedgerTx(ctx, tx, e.OwnerID, -amount, balance, "hourly_charge", id, e.GroupID, from)
+	ledger, err := insertLedgerTx(ctx, tx, e.OwnerID, -amount, balance, "hourly_charge", id, e.GroupID, at)
 	if err != nil {
 		return model.HourlySettlement{}, err
 	}
 	r := model.HourlySettlement{ID: id, EnrollmentID: e.ID, HourStart: from.UTC().Truncate(time.Hour), ChargedFrom: from,
 		PaidUntil: until, HourlyPriceTXBMinor: offer.HourlyPriceTXBMinor, ChargedTXBMinor: amount,
-		OfferRevision: offer.Revision, PolicyVersion: snapshot.Version, LedgerID: ledger, CreatedAt: from}
+		OfferRevision: offer.Revision, PolicyVersion: snapshot.Version, LedgerID: ledger, CreatedAt: at}
 	_, err = tx.ExecContext(ctx, `INSERT INTO hourly_settlements(`+hourlySettlementColumns+`)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, r.ID, r.EnrollmentID, r.HourStart, r.ChargedFrom, r.PaidUntil,
 		r.HourlyPriceTXBMinor, r.ChargedTXBMinor, r.OfferRevision, r.PolicyVersion, r.LedgerID, r.CreatedAt)

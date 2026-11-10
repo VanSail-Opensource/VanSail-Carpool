@@ -9,9 +9,11 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
-// SettleHourlyOwnerAvailable prepays only the deliverable remainder of the current UTC
-// hour. It never back-bills missed hours or automatically resumes suspension.
-// One wallet lock makes simultaneous squad renewals deterministic.
+// SettleHourlyOwnerAvailable prepays the deliverable remainder of the current UTC
+// hour after a missed boundary, or the next whole hour inside the bounded
+// prefetch window before it. It never back-bills missed hours or automatically
+// resumes suspension. One wallet lock makes simultaneous squad renewals
+// deterministic.
 func (s *Store) SettleHourlyOwnerAvailable(ctx context.Context, owner string, generation int64,
 	snapshot model.HourlyPolicySnapshot, delivery []HourlyDeliveryReady, _ time.Time) (HourlyOwnerSettlementResult, error) {
 	if !validHourlyCreditName(owner) || generation < 0 {
@@ -98,6 +100,12 @@ func hourlyActiveEnrollmentsTx(ctx context.Context, tx *sql.Tx, owner string, ge
 	return result, nil
 }
 
+// settleHourlyEnrollmentTx commits one deterministic wallet outcome. Inside the
+// bounded prefetch window it buys the next whole hour starting at the current
+// paid boundary, so the compiled native ValidUntil is extended before the old
+// boundary denies access. A genuine late/offline recovery still pays only the
+// deliverable remainder of the current UTC hour and never back-bills missed
+// hours. Nothing here resumes a funding suspension.
 func (s *Store) settleHourlyEnrollmentTx(ctx context.Context, tx *sql.Tx, e model.HourlyEnrollment,
 	snapshot model.HourlyPolicySnapshot, offer model.HourlyOffer, delivery HourlyDeliveryReady) (model.HourlyEnrollment, *model.HourlySettlement, error) {
 	now, err := hourlyBillingClockTx(ctx, tx)
@@ -107,22 +115,39 @@ func (s *Store) settleHourlyEnrollmentTx(ctx context.Context, tx *sql.Tx, e mode
 		}
 		return e, nil, err
 	}
+	from, prefetch := now, false
 	if e.PaidThrough.After(now) {
-		return e, nil, nil
+		start, ok := hourlyPrefetchStart(*e.PaidThrough, now)
+		if !ok {
+			return e, nil, nil
+		}
+		from, prefetch = start, true
 	}
 	if !hourlyDeliveryFresh(delivery, now) {
 		return e, nil, ErrHourlyDeliveryPending
 	}
 	if offer.HourlyPriceTXBMinor <= 0 {
+		if prefetch {
+			// A future interval is not purchasable right now. Skipping leaves the
+			// committed remainder intact; the boundary path decides there.
+			return e, nil, nil
+		}
 		e, err = suspendHourlyEnrollmentTx(ctx, tx, e, now)
 		return e, nil, err
 	}
+	// Probe the exact interval start of this charge, not the current hour: a
+	// prefetch closes the next hour while a late recovery closes the current one.
 	receipt, err := scanHourlySettlement(tx.QueryRowContext(ctx, `SELECT `+hourlySettlementColumns+
-		` FROM hourly_settlements WHERE enrollment_id=$1 AND hour_start=$2`, e.ID, now.Truncate(time.Hour)))
+		` FROM hourly_settlements WHERE enrollment_id=$1 AND hour_start=$2`, e.ID, from.Truncate(time.Hour)))
 	if errors.Is(err, ErrNotFound) {
-		receipt, err = payHourlyIntervalTx(ctx, tx, e, offer, snapshot, now)
+		receipt, err = payHourlyIntervalAtTx(ctx, tx, e, offer, snapshot, from, now)
 	}
 	if errors.Is(err, ErrInsufficientBalance) {
+		if prefetch {
+			// Bounded safe skip: the member keeps the paid hour and the definitive
+			// suspension still happens once the boundary passes.
+			return e, nil, nil
+		}
 		e, err = suspendHourlyEnrollmentTx(ctx, tx, e, now)
 		if err != nil {
 			return e, nil, err

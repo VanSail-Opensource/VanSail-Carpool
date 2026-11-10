@@ -7,8 +7,12 @@ import (
 	"time"
 )
 
+// The bounded prefetch path is disabled here (sequential, zero lead window) so
+// the retry observes only the late current-remainder rule; otherwise a sibling
+// boundary that legitimately falls inside the prefetch window would also be
+// skipped for its missing proof and the stale-squad assertion would be flaky.
 func TestHourlyStaleDeliverySkipsOnlyThatSquadWithoutBackbilling(t *testing.T) {
-	t.Parallel()
+	withHourlyPrefetchLead(t, 0)
 	s, policy, input := hourlyBillingFixture(t)
 	ctx := context.Background()
 	now := hourlyBillingNow(t, s)

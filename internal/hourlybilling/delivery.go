@@ -12,12 +12,16 @@ import (
 // One bounded inspection window keeps an offline or SQL-blocked squad from
 // expiring every earlier proof. It grants nothing; locked billing repeats the
 // exact compile revision and four-second freshness checks before payment.
+// Squads inside the bounded prefetch window are inspected too, so the next
+// whole hour can be compiled and applied before the old boundary denies access.
 func (s *Service) deliveryGuards(ctx context.Context, enrollments []model.HourlyEnrollment) []database.HourlyDeliveryReady {
 	child, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 	defer cancel()
+	now := s.now().UTC()
+	window := now.Add(database.HourlyPrefetchWindow)
 	due := []model.HourlyEnrollment{}
 	for _, e := range enrollments {
-		if e.Status == model.HourlyActive && e.PaidThrough != nil && !e.PaidThrough.After(s.now()) {
+		if e.Status == model.HourlyActive && e.PaidThrough != nil && !e.PaidThrough.After(window) {
 			due = append(due, e)
 		}
 	}
