@@ -23,12 +23,19 @@ const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const preferences = usePreferencesStore()
-useTelegramSettingsButton(() => { void router.push('/settings') })
 const { t } = useI18n()
-const { activeCombo: hasValidCombo, hasAccess, refresh: refreshCommunityAccess } = useCommunityAccess()
+const { activeCombo: hasValidCombo, hasAccess, loading: accessLoading, refresh: refreshCommunityAccess } = useCommunityAccess()
+
+// New users live in Home and Explore only until they hold a fixed-term combo,
+// a positive balance or administrator rights; their language and currency
+// controls move onto Home. Administrators keep Settings for the console link.
+// Wait for the access read so paying members never lose Settings for one
+// request window; a new user's navigation settles as soon as access is known.
+const isNewUser = computed(() => !sessionStore.isAdmin && !accessLoading.value && !hasAccess.value)
+useTelegramSettingsButton(() => { void router.push('/settings') }, () => !isNewUser.value)
 
 const { enabled: ipLookupEnabled, refresh: refreshIPLookupAvailability } = useIPLookupAvailability()
-const desktopItems = computed(() => desktopNavigationItems(t, sessionStore.isAdmin, hasValidCombo.value && preferences.showAroundTX, hasValidCombo.value && preferences.showActivity, ipLookupEnabled.value, hasAccess.value))
+const desktopItems = computed(() => desktopNavigationItems(t, sessionStore.isAdmin, hasValidCombo.value && preferences.showAroundTX, hasValidCombo.value && preferences.showActivity, ipLookupEnabled.value, hasAccess.value, isNewUser.value))
 const transition = usePageTransition(router, () => desktopItems.value)
 const { reducedMotion, offset } = useMotionPreferences()
 const showBackButton = computed(() => !['/', '/home'].includes(route.path))
@@ -137,6 +144,6 @@ watch(() => route.path, (_next, previous) => {
       </div>
     </UDashboardGroup>
 
-    <MobileNavigation :is-admin="sessionStore.isAdmin" />
+    <MobileNavigation :is-admin="sessionStore.isAdmin" :is-new-user="isNewUser" />
   </div>
 </template>

@@ -51,7 +51,7 @@ separate. Action quotes and permission decisions still await the backend.
 - `useCommunityMembership.test.ts` covers invite opening, error feedback, Telegram activation refresh, and event cleanup; `useOnboarding.test.ts` covers direct intro-to-username-to-agreement progression.
 - `usePaymentOrder.ts` coordinates durable checkout/cancellation receipts with payment-sheet presentation states.
 - `usePaymentCountdown.ts` owns a disposal-safe one-second payment-window countdown used only for presentation and replacement prompts.
-- `usePaymentConfiguration.ts` owns exact TXB bounds, amount conversion, and selected payment method state.
+- `usePaymentConfiguration.ts` owns exact TXB bounds, display-currency amount input, one canonical TXB-minor order amount, and selected payment method state; display switches re-render the field without repricing the order, and a missing stored rate falls back to TXB entry.
 - `usePaymentOrderOperations.ts` retains stable mutation keys and polls payment provider-operation receipts without replaying provider calls.
 - `usePaymentTarget.ts` opens accepted provider targets and read-only polls authoritative payment status.
 - `paymentOrderHelpers.ts` validates exact payment bounds and replacement candidates, classifies terminal orders, and renders address-first provider QR payloads.
@@ -70,7 +70,7 @@ separate. Action quotes and permission decisions still await the backend.
 
 - `useActivity.ts` reads eligibility live, tracks refresh state and hides reward controls when verification refresh fails; a rejected check-in refreshes boost state while retaining its localized refusal.
 
-`useTelegramSettingsButton.ts` owns the native Settings button with SDK discovery and lifecycle cleanup. Reset automation now belongs to the Settings page instead of `usePurchaseOperations.ts`.
+`useTelegramSettingsButton.ts` owns the native Settings button with SDK discovery, an optional visibility getter that hides it for members without a reachable Settings page, and lifecycle cleanup. Reset automation now belongs to the Settings page instead of `usePurchaseOperations.ts`.
 - `useIPLookupAvailability.ts` shares account-scoped feature availability across shell and Around TX entrances.
 
 `operationReceiptLoader.ts` defines the experience-owned receipt loader injection contract. `useOperationReceipt.ts` and `useDurableCommand.ts` accept injected/explicit loaders while retaining interval compatibility, disposal and retry limits. BrowserApp provides the signed admin operation reader; Mini App callers retain member-scoped reads. No session or signing state is shared between experiences.

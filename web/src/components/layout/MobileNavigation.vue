@@ -6,12 +6,12 @@ import { haptic } from '@/utils/telegram'
 import { mobileNavigationItems } from './navigation'
 import { usePreferencesStore } from '@/stores/preferences'
 
-const props = defineProps<{ isAdmin: boolean }>()
+const props = defineProps<{ isAdmin: boolean, isNewUser: boolean }>()
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const preferences = usePreferencesStore()
-const items = computed(() => mobileNavigationItems(props.isAdmin, preferences.showActivity).map(item => ({
+const items = computed(() => mobileNavigationItems(props.isAdmin, preferences.showActivity, props.isNewUser).map(item => ({
   label: t(item.labelKey), icon: item.icon, value: item.to,
 })))
 const active = computed(() => {

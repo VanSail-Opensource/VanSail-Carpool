@@ -19,12 +19,24 @@ const mobileNavigation: readonly MobileNavigationItem[] = [
 
 
 
-export function mobileNavigationItems(_isAdmin: boolean, showActivity = false): MobileNavigationItem[] {
+// A new user has no server-confirmed access yet, so the only useful member
+// routes are Home and Explore. The allow-list is authoritative so the result
+// cannot leak Settings, Activity or Around TX through stale preference flags.
+// Administrators never count as new users because their one-use console
+// entrance lives in Settings.
+export function mobileNavigationItems(_isAdmin: boolean, showActivity = false, isNewUser = false): MobileNavigationItem[] {
+  if (isNewUser) return mobileNavigation.filter(item => item.to === '/home' || item.to === '/catalog')
   const visible = mobileNavigation.filter(item => item.to !== '/activity' || showActivity)
   return [...visible]
 }
 
-export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true): NavigationMenuItem[] {
+export function desktopNavigationItems(t: Translate, _isAdmin: boolean, showAroundTX = false, showActivity = false, showIPLookup = false, showSubscription = true, isNewUser = false): NavigationMenuItem[] {
+  if (isNewUser) {
+    return [
+      { label: t('nav.home'), to: '/home', icon: 'i-ph-house', exactQuery: true },
+      { label: t('nav.explore'), to: '/catalog', icon: 'i-ph-compass' },
+    ]
+  }
   const subscriptionChildren = showSubscription
     ? [
         { label: t('subscription.title'), to: '/subscription', icon: 'i-ph-link-bold' },

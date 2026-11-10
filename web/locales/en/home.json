@@ -21,6 +21,9 @@
     "trafficChartNode": "{name}, {value} total traffic",
     "trafficChartDay": "{date}: {value}",
     "squadSeparator": " · ",
+    "preferences": {
+      "label": "Language and currency"
+    },
     "cancelQueued": "Cancel queued ride",
     "cancelQueuedTitle": "Cancel this queued ride?",
     "cancelQueuedDescription": "The queued entitlement will be cancelled and its charged price will be refunded to your balance.",

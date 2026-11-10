@@ -154,6 +154,7 @@ declare module 'vue' {
     GroupBoostPanel: typeof import('./src/components/activity/GroupBoostPanel.vue')['default']
     GroupMemberTagEditor: typeof import('./src/components/settings/GroupMemberTagEditor.vue')['default']
     GroupMessageRewardPanel: typeof import('./src/components/activity/GroupMessageRewardPanel.vue')['default']
+    HomePreferences: typeof import('./src/components/dashboard/HomePreferences.vue')['default']
     HomeSubscriptionEntrance: typeof import('./src/components/subscription/HomeSubscriptionEntrance.vue')['default']
     HostLinkRow: typeof import('./src/components/subscription/HostLinkRow.vue')['default']
     HourlyAdminPage: typeof import('./src/components/admin/hourly/HourlyAdminPage.vue')['default']

@@ -21,6 +21,9 @@
     "trafficChartNode": "{name}，流量总计 {value}",
     "trafficChartDay": "{date}：{value}",
     "squadSeparator": " · ",
+    "preferences": {
+      "label": "语言与货币"
+    },
     "cancelQueued": "取消排队套餐",
     "cancelQueuedTitle": "取消此排队套餐？",
     "cancelQueuedDescription": "此排队权益将被取消，已支付的金额将退回你的余额。",

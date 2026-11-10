@@ -7,11 +7,13 @@ import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import { useCommunityAccess } from '@/composables/useCommunityAccess'
 import { useDashboard } from '@/composables/useDashboard'
 import { useI18n } from '@/i18n'
+import { useSessionStore } from '@/stores/session'
 import BalanceHero from './BalanceHero.vue'
 import ComingSoonLinks from './ComingSoonLinks.vue'
 import EntitlementSummary from './EntitlementSummary.vue'
 import HomeSubscriptionEntrance from '@/components/subscription/HomeSubscriptionEntrance.vue'
 import AddBalanceGuide from './AddBalanceGuide.vue'
+import HomePreferences from './HomePreferences.vue'
 import UsagePanel from './UsagePanel.vue'
 import UsageBreakdownPanel from './UsageBreakdownPanel.vue'
 import MemberLiveMetrics from './MemberLiveMetrics.vue'
@@ -19,6 +21,7 @@ import type { ActivityStatus } from './memberActivity'
 
 const { dashboard, loading, error, usageRatio, activeSquadNames, load } = useDashboard()
 const { activeCombo: hasValidCombo, refresh: refreshCommunityAccess } = useCommunityAccess()
+const sessionStore = useSessionStore()
 const positiveBalance = computed(() => {
   try {
     return dashboard.value !== null && BigInt(dashboard.value.balance.minor) > 0n
@@ -27,6 +30,21 @@ const positiveBalance = computed(() => {
   }
 })
 const hasAccess = computed(() => hasValidCombo.value || positiveBalance.value || dashboard.value?.activePurchase != null)
+const isNewUser = computed(() => !sessionStore.isAdmin && !hasAccess.value)
+// The limit-based Usage meter only describes a fixed-term combo quota. A
+// pay-as-you-go-only account has no meaningful limit percentage, so the panel
+// and its empty state stay hidden while Usage Breakdown remains available.
+const hasTrafficLimit = computed(() => {
+  const limit = dashboard.value?.statistics?.trafficLimitBytes
+  if (!limit) return false
+  try {
+    return BigInt(limit) > 0n
+  } catch {
+    return false
+  }
+})
+const showUsagePanel = computed(() => hasValidCombo.value && hasTrafficLimit.value)
+const showUsageEmptyState = computed(() => hasValidCombo.value && !dashboard.value?.statistics)
 const queuedCancellationNotice = shallowRef(false)
 const activity = shallowRef<ActivityStatus>('unavailable')
 const route = useRoute()
@@ -114,7 +132,7 @@ function requestTopUp(): void {
             <MemberLiveMetrics v-if="hasValidCombo" @activity="activity = $event" />
             <UsageBreakdownPanel class="home-layout__usage" />
             <UsagePanel
-              v-if="dashboard.statistics"
+              v-if="showUsagePanel && dashboard.statistics"
               class="home-layout__usage"
               :statistics="dashboard.statistics"
               :activity="activity"
@@ -122,7 +140,7 @@ function requestTopUp(): void {
               :stale="dashboard.statisticsStale"
               :fetched-at="dashboard.fetchedAt"
             />
-            <section v-else class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
+            <section v-else-if="showUsageEmptyState" class="section-block home-usage home-usage--empty home-layout__usage empty-inline">
               <div><h3>{{ $t('dashboard.noStatistics') }}</h3><p>{{ $t('dashboard.statisticsPending') }}</p></div>
             </section>
             <EntitlementSummary
@@ -134,7 +152,10 @@ function requestTopUp(): void {
             />
             <ComingSoonLinks :has-valid-combo="hasValidCombo" />
           </template>
-          <AddBalanceGuide v-else @add-balance="requestTopUp" />
+          <template v-else>
+            <AddBalanceGuide @add-balance="requestTopUp" />
+            <HomePreferences v-if="isNewUser" />
+          </template>
         </div>
       </div>
     </template>
