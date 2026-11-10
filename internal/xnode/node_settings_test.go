@@ -66,11 +66,12 @@ func TestEncryptedNodeSettingsDiscardRetiredBandwidthWithoutChangingDesiredState
 	}
 }
 
-func TestEncryptedNodeSettingsStillRejectUnknownAndMalformedState(t *testing.T) {
+// TestEncryptedNodeSettingsStillRejectMalformedState keeps the read path strict
+// about documents it cannot trust. Unknown/retired stored keys are historical
+// evidence and are tolerated by design; see TestDecodeNodeSettingsIgnoresRetiredStoredFields.
+func TestEncryptedNodeSettingsStillRejectMalformedState(t *testing.T) {
 	for _, raw := range []string{
-		`null`, `[]`, `{`, `{} {}`,
-		`{"bandwidth":{},"future":true}`,
-		`{"bandwidth":{},"dns":{"future":true}}`,
+		`null`, `[]`, `"settings"`, `0`, `{`, `{} {}`,
 		`{"bandwidth":{},"firewall":{"enabled":"true"}}`,
 	} {
 		t.Run(raw, func(t *testing.T) {
