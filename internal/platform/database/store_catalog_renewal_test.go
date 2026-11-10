@@ -129,6 +129,123 @@ func includedSquadIDs(combo model.Combo) []string {
 	return ids
 }
 
+// TestOwnedRenewalSurvivesHiddenComboAndBundleEdits retires (hides) an owned
+// combo and then edits and reprices its live bundle. Both renewal entry points
+// must still renew the purchased selection at the current price: the purchase
+// snapshot keeps the sale-time squads, while the live bundle and the immutable
+// purchase charge stay untouched. New sales and the storefront remain active-only.
+func TestOwnedRenewalSurvivesHiddenComboAndBundleEdits(t *testing.T) {
+	t.Parallel()
+	for _, automatic := range []bool{false, true} {
+		name := "batch"
+		if automatic {
+			name = "automatic"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			ctx := context.Background()
+			store := newTestStore(t)
+			user := createTestUser(t, store, 51_010)
+			core := saveTestSquad(t, store, "hidden-core", 100, true)
+			retired := saveTestSquad(t, store, "hidden-excluded", 100, true)
+			addon := saveTestSquad(t, store, "hidden-addon", 300, true)
+			combo := saveTestCombo(t, store, "hidden-combo", 1_000, 30, core.ID, retired.ID)
+			now := time.Now().UTC()
+			if _, err := store.AdjustBalance(ctx, user.ID, 5_000, "hidden-combo-seed", "fixture", now); err != nil {
+				t.Fatal(err)
+			}
+			// PAYG-marked included squads are excluded from the sale, so this
+			// purchase records its diverged base selection in combo_squad_uuids.
+			if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: retired.ID, UpstreamPresent: true,
+				BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
+				t.Fatal(err)
+			}
+			purchase, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID,
+				AddonSquadIDs: []string{addon.ID}, IdempotencyKey: "hidden-combo-source"}, now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var snapshot string
+			if err := store.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=$1`, purchase.ID).Scan(&snapshot); err != nil || snapshot != `["hidden-core"]` {
+				t.Fatalf("purchase bundle snapshot = %q, %v", snapshot, err)
+			}
+			if err := store.DeleteCombo(ctx, combo.ID); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.DB().ExecContext(ctx, `UPDATE combos SET included_squad_uuids='["hidden-excluded"]',price_txb_minor=2000 WHERE id=$1`, combo.ID); err != nil {
+				t.Fatal(err)
+			}
+
+			plan, err := store.AutoRenewalPlan(ctx, user.ID, purchase.ID, now)
+			if err != nil || plan.IneligibleReason != "" || !equalStrings(includedSquadIDs(plan.Combo), []string{"hidden-core"}) ||
+				len(plan.Addons) != 1 || plan.Addons[0].GroupID != addon.ID || plan.GrossMinor != 2_300 || plan.NetMinor != 2_300 {
+				t.Fatalf("AutoRenewalPlan(hidden combo) = (%+v, %v), want purchased squads at the current 2300 price", plan, err)
+			}
+			quote, err := store.RenewalQuote(ctx, user.ID, purchase.ID, 1, now)
+			if err != nil || quote.ComboID != combo.ID || quote.PricePerTerm.MinorInt64() != 2_300 || !equalStrings(quote.AddonSquadUUIDs, []string{addon.ID}) {
+				t.Fatalf("RenewalQuote(hidden combo) = (%+v, %v)", quote, err)
+			}
+			owned, err := store.RenewalCombo(ctx, user.ID, purchase.ID)
+			if err != nil || owned.ID != combo.ID || !equalStrings(includedSquadIDs(owned), []string{"hidden-core"}) {
+				t.Fatalf("RenewalCombo(hidden combo) = (%+v, %v)", owned, err)
+			}
+			if _, err := store.RenewalCombo(ctx, "other-user", purchase.ID); !errors.Is(err, ErrNotFound) {
+				t.Fatalf("RenewalCombo(foreign owner) = %v, want ErrNotFound", err)
+			}
+			if _, err := store.ComboByID(ctx, combo.ID, true); !errors.Is(err, ErrNotFound) {
+				t.Fatalf("ComboByID(active only) = %v, want ErrNotFound", err)
+			}
+			if _, err := store.QuotePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID}, now); !errors.Is(err, ErrNotFound) {
+				t.Fatalf("QuotePurchase(hidden combo) = %v, want ErrNotFound", err)
+			}
+			if _, err := store.CreatePurchase(ctx, PurchaseInput{UserID: user.ID, ComboID: combo.ID,
+				IdempotencyKey: "hidden-combo-new-sale"}, now); !errors.Is(err, ErrNotFound) {
+				t.Fatalf("CreatePurchase(hidden combo) = %v, want ErrNotFound", err)
+			}
+			if _, err := store.RenewalCombo(ctx, user.ID, "missing-purchase"); !errors.Is(err, ErrNotFound) {
+				t.Fatalf("RenewalCombo(missing purchase) = %v, want ErrNotFound", err)
+			}
+
+			var successors []model.Purchase
+			wantSourceStatus := "activating"
+			if automatic {
+				wantSourceStatus = "expired"
+				if err := store.SetAutoRenewal(ctx, user.ID, purchase.ID, true, now); err != nil {
+					t.Fatal(err)
+				}
+				successor, err := store.CommitAutoRenewal(ctx, purchase.ID, purchase.ValidUntil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				successors = []model.Purchase{successor}
+			} else {
+				batch, err := store.Renew(ctx, RenewalInput{UserID: user.ID, PurchaseID: purchase.ID, TermCount: 1,
+					IdempotencyKey: "hidden-combo-batch"}, purchase.ValidUntil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				successors = batch.Purchases
+			}
+			for _, successor := range successors {
+				if !equalStrings(successor.SquadUUIDs, []string{"hidden-core"}) || successor.ComboID != combo.ID {
+					t.Fatalf("renewal selection = (%+v)", successor)
+				}
+				if successor.PriceTXBMinor != 2_300 || successor.CoreGrossTXBMinor != 2_000 ||
+					!successor.ValidFrom.Equal(purchase.ValidUntil) || !successor.ValidUntil.Equal(purchase.ValidUntil.AddDate(0, 0, 30)) {
+					t.Fatalf("renewal pricing/dates = (%+v)", successor)
+				}
+				assertRenewalAddonCharge(t, store, successor.ID, 300)
+			}
+			if balance, err := store.Balance(ctx, user.ID); err != nil || balance.MinorInt64() != 1_400 {
+				t.Fatalf("Balance() = (%+v, %v), want one renewal debit", balance, err)
+			}
+			if source, err := store.PurchaseByID(ctx, purchase.ID); err != nil || source.Status != wantSourceStatus || source.PriceTXBMinor != 1_300 {
+				t.Fatalf("source purchase = (%+v, %v)", source, err)
+			}
+		})
+	}
+}
+
 func TestDueRenewalWaitsForRolloverThenEnqueuesExactlyOneActivation(t *testing.T) {
 	t.Parallel()
 

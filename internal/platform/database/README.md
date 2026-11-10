@@ -369,6 +369,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `billing.go` — purchase normalization, quotes, creation, pricing, and debit helpers.
 - `billing_bounds.go` persists the singleton inclusive Add TXB range and atomically audits administrator updates.
 - `billing_renewal.go` — renewal quotes, contiguous batch creation, and idempotent replay.
+- `payg_catalog.go` resolves an owned renewal's own combo row (`active=0` allowed, missing row fails closed) with precedence full override > purchase base snapshot > live bundle; `RenewalCombo` exposes that same owned selection to catalog hydration, and admin combo replacement resets the snapshot so the replacement's live bundle becomes the owned baseline.
 - `renewal_addons.go` resolves owned optional-squad identities at current sparse-override prices, including hidden listings and zero-price defaults, and can exclude upstream-unavailable add-ons from either renewal path.
 - `renewal_price_changes_test.go` and `renewal_unavailable_addon_test.go` cover optional-squad repricing, hidden/default overrides, unavailable-squad exclusion, commit-time refresh, immutable source charges, and replay-safe debits.
 - `renewal_stock_price_test.go` covers current recurring-discount quotes and debits while an existing member retains a seat in a squad closed to new sales.

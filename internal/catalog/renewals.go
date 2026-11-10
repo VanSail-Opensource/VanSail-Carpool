@@ -39,7 +39,7 @@ func (s *Service) renewalQuoteWithLiveAddons(ctx context.Context, userID, purcha
 	if err != nil {
 		return model.RenewalQuote{}, nil, err
 	}
-	catalog, unavailable, reason, err := s.renewalCatalog(ctx, quote.ComboID, quote.AddonSquadUUIDs)
+	catalog, unavailable, reason, err := s.renewalCatalog(ctx, userID, purchaseID, quote.ComboID, quote.AddonSquadUUIDs)
 	if err != nil {
 		return model.RenewalQuote{}, nil, err
 	}

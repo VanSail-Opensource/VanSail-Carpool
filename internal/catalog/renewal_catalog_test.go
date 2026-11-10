@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
+	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
 func TestAutomaticRenewalRetainsRepricedHiddenSquads(t *testing.T) {
@@ -128,5 +129,63 @@ func TestRenewalNodesIncludeUnlistedOwnedSquads(t *testing.T) {
 	quote, err = service.RenewalQuote(ctx, user, "purchase", 1)
 	if err != nil || len(quote.AddonSquadUUIDs) != 0 || len(quote.AccessibleNodes) != 1 {
 		t.Fatalf("RenewalQuote(missing add-on) = (%+v, %v), want the core-only renewal", quote, err)
+	}
+}
+
+// TestOwnedRenewalHydratesHiddenCombo: a retired (inactive) combo row remains
+// renewable through both owned entry points, while the member storefront keeps
+// the active-only read.
+func TestOwnedRenewalHydratesHiddenCombo(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	repository := renewalTestRepository()
+	repository.combo.Active = false
+	repository.catalogRepository.combos = nil
+	service := newCatalogServiceForTest(repository, renewalTestRemote())
+	user := model.User{ID: "user", OnboardingState: "complete"}
+	quote, err := service.RenewalQuote(ctx, user, "purchase", 1)
+	if err != nil || len(quote.AccessibleNodes) != 1 {
+		t.Fatalf("RenewalQuote(hidden combo) = (%+v, %v)", quote, err)
+	}
+	repository.renewal = model.RenewalBatch{ID: "batch", PurchaseID: "purchase", TermCount: 1}
+	if batch, err := service.Renew(ctx, user, "purchase", 1, "hidden-combo"); err != nil || batch.ID != "batch" {
+		t.Fatalf("Renew(hidden combo) = (%+v, %v)", batch, err)
+	}
+	public, err := service.Catalog(ctx)
+	if err != nil || len(public.Combos) != 0 || !repository.catalogRepository.combosVisibleOnly {
+		t.Fatalf("storefront = (%+v, %v), visibleOnly=%t", public, err, repository.catalogRepository.combosVisibleOnly)
+	}
+}
+
+// TestOwnedRenewalFailsClosedWithoutComboRow: a purchase whose combo cannot be
+// resolved must not renew against a fallback.
+func TestOwnedRenewalFailsClosedWithoutComboRow(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	repository := renewalTestRepository()
+	repository.comboErr = database.ErrNotFound
+	service := newCatalogServiceForTest(repository, renewalTestRemote())
+	user := model.User{ID: "user", OnboardingState: "complete"}
+	if _, err := service.RenewalQuote(ctx, user, "purchase", 1); !errors.Is(err, database.ErrNotFound) {
+		t.Fatalf("RenewalQuote(missing combo) = %v, want ErrNotFound", err)
+	}
+}
+
+// TestAutomaticRenewalKeepsHiddenComboEligible: an inactive combo must not
+// become a terminal combo_unavailable failure during due settlement.
+func TestAutomaticRenewalKeepsHiddenComboEligible(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	plan := eligibleAutoRenewalPlan()
+	plan.Combo.Active = false
+	repository := dueAutoRenewalRepositoryForPlan(plan)
+	service := newCatalogServiceForTest(repository, renewalTestRemote())
+	user := model.User{ID: "user"}
+	status, err := service.AutomaticRenewal(ctx, user, plan.Purchase.ID)
+	if err != nil || !status.CanEnable || status.IneligibleReason != nil {
+		t.Fatalf("AutomaticRenewal(hidden combo) = (%+v, %v)", status, err)
+	}
+	if err := service.ProcessDueAutoRenewals(ctx, service.now()); err != nil || len(repository.commitIDs) != 1 || len(repository.failed) != 0 {
+		t.Fatalf("ProcessDueAutoRenewals = %v, commits=%v failures=%v", err, repository.commitIDs, repository.failed)
 	}
 }

@@ -174,3 +174,87 @@ func TestReplaceAdminComboMovesNoTXB(t *testing.T) {
 		t.Fatalf("replacement squads = %v, want included plus override add-on", after.SquadUUIDs)
 	}
 }
+
+// TestReplaceAdminComboResetsOwnedBundleSnapshot: an administrator replacement
+// must also replace the owned bundle baseline. The purchase's stale
+// combo_squad_uuids snapshot must not survive into the next renewal, while the
+// replacement keeps its no-TXB-movement receipt/notification contract.
+func TestReplaceAdminComboResetsOwnedBundleSnapshot(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	store := newTestStore(t)
+	now := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
+	actor := createTestUser(t, store, 41007)
+	kept := saveTestSquad(t, store, "44444444-4444-4444-8444-444444444444", 100, true)
+	retired := saveTestSquad(t, store, "55555555-5555-4555-8555-555555555555", 100, true)
+	original := saveTestCombo(t, store, "snapshot-original", 2_000, 30, kept.ID, retired.ID)
+	// PAYG-marked included squads are excluded from the sale, so the purchase
+	// records a diverged base selection that a replacement must reset.
+	if _, err := store.SaveSquadProduct(ctx, SquadProductInput{GroupID: retired.ID, UpstreamPresent: true,
+		BillingMode: "payg", PAYGPriceTXBMinor: 100}); err != nil {
+		t.Fatal(err)
+	}
+	user, purchase := createAdminWorkflowPurchase(t, store, 41008, original, now)
+	beforePlan, err := store.AutoRenewalPlan(ctx, user.ID, purchase.ID, now)
+	if err != nil || beforePlan.IneligibleReason != "" || !equalStrings(includedSquadIDs(beforePlan.Combo), []string{kept.ID}) {
+		t.Fatalf("renewal before replacement = (%+v, %v), want the purchase snapshot", beforePlan, err)
+	}
+
+	replacementIncluded := saveTestSquad(t, store, "66666666-6666-4666-8666-666666666666", 50, true)
+	replacement := saveTestCombo(t, store, "snapshot-replacement", 3_000, 45, replacementIncluded.ID)
+	beforeBalance := adminWorkflowBalance(t, store, user.ID)
+	beforeLedger, err := store.ListLedger(ctx, user.ID, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	receipt, err := store.ReplaceAdminCombo(ctx, AdminComboReplacementInput{ActorUserID: actor.ID, UserID: user.ID,
+		ComboID: replacement.ID, IdempotencyKey: "replace-snapshot-combo",
+		RequestFingerprint: "replace-snapshot-fingerprint-01", Reason: "approved replacement",
+		AddonSquadUUIDs: []string{}}, now.Add(time.Minute))
+	if err != nil {
+		t.Fatalf("ReplaceAdminCombo(): %v", err)
+	}
+	if receipt.ID == "" || receipt.Kind != "admin_combo_replacement" {
+		t.Fatalf("replacement receipt = %+v", receipt)
+	}
+	var cleared int
+	if err := store.DB().QueryRowContext(ctx, `SELECT (combo_squad_uuids IS NULL AND entitlement_squad_uuids IS NULL)::integer
+		FROM purchases WHERE id=$1`, purchase.ID).Scan(&cleared); err != nil || cleared != 1 {
+		t.Fatalf("owned baseline reset = %d, %v", cleared, err)
+	}
+	after, err := store.PurchaseByID(ctx, purchase.ID)
+	if err != nil || after.ComboID != replacement.ID || !equalStrings(after.SquadUUIDs, []string{replacementIncluded.ID}) {
+		t.Fatalf("replaced purchase = (%+v, %v)", after, err)
+	}
+	plan, err := store.AutoRenewalPlan(ctx, user.ID, purchase.ID, now.Add(time.Minute))
+	if err != nil || plan.IneligibleReason != "" || plan.Combo.ID != replacement.ID ||
+		!equalStrings(includedSquadIDs(plan.Combo), []string{replacementIncluded.ID}) || plan.GrossMinor != 3_000 {
+		t.Fatalf("AutoRenewalPlan(after replacement) = (%+v, %v)", plan, err)
+	}
+	quote, err := store.RenewalQuote(ctx, user.ID, purchase.ID, 1, now.Add(time.Minute))
+	if err != nil || quote.ComboID != replacement.ID || quote.PricePerTerm.MinorInt64() != 3_000 {
+		t.Fatalf("RenewalQuote(after replacement) = (%+v, %v)", quote, err)
+	}
+	afterLedger, err := store.ListLedger(ctx, user.ID, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if adminWorkflowBalance(t, store, user.ID) != beforeBalance || len(afterLedger) != len(beforeLedger) {
+		t.Fatal("no-charge replacement moved TXB")
+	}
+	var notices int
+	if err := store.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM user_notification_events WHERE user_id=$1 AND kind=$2`,
+		user.ID, jobpayload.UserEventAdminUpdate).Scan(&notices); err != nil || notices != 1 {
+		t.Fatalf("replacement notices = %d, %v", notices, err)
+	}
+	// New sales keep their active-only behavior: both combos remain live and the
+	// replacement combo is still priced normally for a new member.
+	if _, err := store.ComboByID(ctx, original.ID, true); err != nil {
+		t.Fatalf("original combo hidden: %v", err)
+	}
+	other := createTestUser(t, store, 41009)
+	newSale, err := store.QuotePurchase(ctx, PurchaseInput{UserID: other.ID, ComboID: replacement.ID}, now.Add(time.Minute))
+	if err != nil || newSale.ComboID != replacement.ID || newSale.NetPriceTXBMinor != 3_000 {
+		t.Fatalf("new-sale quote = (%+v, %v)", newSale, err)
+	}
+}

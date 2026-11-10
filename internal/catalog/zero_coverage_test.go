@@ -70,6 +70,8 @@ type renewalRepositoryStub struct {
 	*catalogRepository
 	quote      model.RenewalQuote
 	quoteErr   error
+	combo      model.Combo
+	comboErr   error
 	quoteInput struct {
 		userID     string
 		purchaseID string
@@ -81,6 +83,10 @@ type renewalRepositoryStub struct {
 	renewalInput database.RenewalInput
 	renewalAt    time.Time
 	excluded     []string
+}
+
+func (r *renewalRepositoryStub) RenewalCombo(context.Context, string, string) (model.Combo, error) {
+	return r.combo, r.comboErr
 }
 
 func (r *renewalRepositoryStub) RenewalQuote(_ context.Context, userID, purchaseID string, termCount int, at time.Time) (model.RenewalQuote, error) {
@@ -117,8 +123,10 @@ func (r *renewalRepositoryStub) RenewExcludingAddons(_ context.Context, input da
 }
 
 func renewalTestRepository() *renewalRepositoryStub {
+	combo := model.Combo{ID: "combo", IncludedSquads: []model.SquadProduct{{GroupID: "core-squad"}}}
 	return &renewalRepositoryStub{
-		catalogRepository: &catalogRepository{combos: []model.Combo{{ID: "combo", IncludedSquads: []model.SquadProduct{{GroupID: "core-squad"}}}}},
+		catalogRepository: &catalogRepository{combos: []model.Combo{combo}},
+		combo:             combo,
 		quote:             model.RenewalQuote{PurchaseID: "purchase", ComboID: "combo", TermCount: 2, TotalPrice: model.TXBMoney(200)},
 	}
 }

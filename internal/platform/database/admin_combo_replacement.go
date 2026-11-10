@@ -54,8 +54,11 @@ func (s *Store) retryAttempt_ReplaceAdminCombo(ctx context.Context, input AdminC
 	if err != nil {
 		return model.OperationReceipt{}, err
 	}
+	// The replacement combo's live bundle becomes the owned baseline: clearing the
+	// purchase snapshot and full override prevents the old bundle from surviving
+	// into the next owned renewal. No TXB fact is touched.
 	result, err := tx.ExecContext(ctx, `UPDATE purchases SET combo_id=$1,entitlement_traffic_limit_bytes=NULL,
-		entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,entitlement_addon_squad_uuids=$2,
+		entitlement_reset_strategy=NULL,entitlement_squad_uuids=NULL,combo_squad_uuids=NULL,entitlement_addon_squad_uuids=$2,
 		reward_renewal_price_minor=NULL,reward_traffic_renewal=1,
 		reward_renewal_traffic_limit_bytes=NULL,updated_at=$3
 		WHERE id=$4 AND user_id=$5 AND status IN ('activating','active')`, input.ComboID, string(addons), stamp(now), purchase.ID, input.UserID)

@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/pricing"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
-	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
 
 // AutoRenewalPlan returns current local pricing and availability for an owned term.
@@ -88,7 +86,10 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 	if queued == 1 {
 		plan.IneligibleReason = AutoRenewalReasonQueuedPurchase
 	}
-	combo, err := comboByIDTx(ctx, tx, purchase.ComboID, true)
+	// Owned renewal: a hidden or inactive combo stays renewable (the same
+	// resolution the manual quote uses); a missing row fails closed. The
+	// purchase's full override or recorded base snapshot decides its squads.
+	combo, err := ownedRenewalComboTx(ctx, tx, purchase.ID)
 	if errors.Is(err, ErrNotFound) {
 		plan.IneligibleReason = AutoRenewalReasonComboUnavailable
 		return plan, nil
@@ -97,21 +98,6 @@ func automaticRenewalPlanTx(ctx context.Context, tx *sql.Tx, userID, purchaseID 
 		return AutoRenewalPlan{}, err
 	}
 	plan.Combo = combo
-	// Full entitlement overrides replace the base combo's squads at renewal too.
-	if squadUUIDs.Valid {
-		var ids []string
-		if err := json.Unmarshal([]byte(squadUUIDs.String), &ids); err != nil {
-			return AutoRenewalPlan{}, fmt.Errorf("decode renewal squad overrides: %w", err)
-		}
-		plan.Combo.IncludedSquads = make([]model.SquadProduct, 0, len(ids))
-		for _, id := range uniqueSorted(ids) {
-			plan.Combo.IncludedSquads = append(plan.Combo.IncludedSquads, model.SquadProduct{ID: id, GroupID: id})
-		}
-	}
-	plan.Combo, err = renewalComboTx(ctx, tx, purchase.ID, plan.Combo)
-	if err != nil {
-		return AutoRenewalPlan{}, err
-	}
 	if plan.squadUUIDsOverride != nil {
 		value := squadJSON(plan.Combo.IncludedSquads)
 		plan.squadUUIDsOverride = &value

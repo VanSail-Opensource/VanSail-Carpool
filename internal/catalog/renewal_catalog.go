@@ -2,27 +2,38 @@ package catalog
 
 import (
 	"context"
+	"errors"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/database"
 )
 
-// renewalCatalog hydrates only an owned renewal selection. Retained add-ons
-// bypass storefront visibility, while unavailable paid squads are excluded.
-// The provider adapter keeps all live reads behind the existing queue.
-func (s *Service) renewalCatalog(ctx context.Context, comboID string, addonIDs []string) (model.Catalog, []string, string, error) {
-	combos, err := s.repository.ListCombos(ctx, true)
+// renewalComboRepository resolves the combo that one owned renewal provisions.
+type renewalComboRepository interface {
+	RenewalCombo(context.Context, string, string) (model.Combo, error)
+}
+
+// renewalCatalog hydrates only an owned renewal selection. The store resolves
+// the purchase's own combo, so a hidden or inactive combo row stays renewable and
+// the recorded purchase bundle keeps precedence over the live one. Hydration then
+// validates the same owned selection the store commits: retained add-ons bypass
+// storefront visibility, while unavailable paid squads are excluded. The provider
+// adapter keeps all live reads behind the existing queue.
+func (s *Service) renewalCatalog(ctx context.Context, userID, purchaseID, comboID string, addonIDs []string) (model.Catalog, []string, string, error) {
+	resolver, ok := s.repository.(renewalComboRepository)
+	if !ok {
+		return model.Catalog{}, nil, "", errors.New("renewal selection is unavailable")
+	}
+	combo, err := resolver.RenewalCombo(ctx, userID, purchaseID)
 	if err != nil {
 		return model.Catalog{}, nil, "", err
 	}
-	selectedCombos := make([]model.Combo, 0, 1)
-	for _, combo := range combos {
-		if combo.ID == comboID {
-			selectedCombos = append(selectedCombos, combo)
-			break
-		}
+	// A concurrent combo replacement between the quote and this resolution must
+	// not hydrate a different product than the quote priced.
+	if combo.ID != comboID {
+		return model.Catalog{}, nil, "", database.ErrNotFound
 	}
-	return s.hydrateRenewalCatalog(ctx, selectedCombos, addonIDs)
+	return s.hydrateRenewalCatalog(ctx, []model.Combo{combo}, addonIDs)
 }
 
 // hydrateRenewalCatalog validates the selected entitlement, including persisted

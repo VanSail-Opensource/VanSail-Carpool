@@ -3,11 +3,35 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/coupons"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 )
+
+// RenewalCombo resolves the combo an owned renewal will provision so catalog
+// hydration validates exactly the owned selection the store commits. A hidden
+// or inactive combo stays renewable; a missing combo row fails closed with
+// ErrNotFound.
+func (s *Store) RenewalCombo(ctx context.Context, userID, purchaseID string) (model.Combo, error) {
+	var owner, comboID string
+	if err := s.db.QueryRowContext(ctx, `SELECT user_id,combo_id FROM purchases WHERE id=$1`, purchaseID).Scan(&owner, &comboID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return model.Combo{}, ErrNotFound
+		}
+		return model.Combo{}, fmt.Errorf("load renewal combo owner: %w", err)
+	}
+	if owner != userID {
+		return model.Combo{}, ErrNotFound
+	}
+	combo, err := s.ComboByID(ctx, comboID, false)
+	if err != nil {
+		return model.Combo{}, err
+	}
+	return renewalComboTx(ctx, s.db, purchaseID, combo)
+}
 
 func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, termCount int, excludedAddonIDs []string, now time.Time) (model.RenewalQuote, model.Combo, []model.SquadProduct, error) {
 	purchase, err := scanPurchase(tx.QueryRowContext(ctx, purchaseSelect+` WHERE purchases.id=$1 AND purchases.user_id=$2`, purchaseID, userID))
@@ -17,11 +41,9 @@ func renewalQuoteTx(ctx context.Context, tx *sql.Tx, userID, purchaseID string, 
 	if purchase.Status != "active" && purchase.Status != "activating" && purchase.Status != "queued" {
 		return model.RenewalQuote{}, model.Combo{}, nil, ErrConflict
 	}
-	combo, err := comboByIDTx(ctx, tx, purchase.ComboID, true)
-	if err != nil {
-		return model.RenewalQuote{}, model.Combo{}, nil, err
-	}
-	combo, err = renewalComboTx(ctx, tx, purchaseID, combo)
+	// Owned renewal: a hidden or inactive combo stays renewable, while a missing
+	// row fails closed. The purchase's owned squad selection is then applied.
+	combo, err := ownedRenewalComboTx(ctx, tx, purchaseID)
 	if err != nil {
 		return model.RenewalQuote{}, model.Combo{}, nil, err
 	}
