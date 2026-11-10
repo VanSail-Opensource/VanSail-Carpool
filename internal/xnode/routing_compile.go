@@ -38,12 +38,24 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 	}
 	for _, plan := range plans {
 		owners[plan.ProxyUserID] = true
-		if plan.Phase == "revoking" || plan.Phase == "disabled" {
+		if plan.Phase == "disabled" {
 			continue
 		}
 		doc, err := s.routingDocument(plan)
 		if err != nil {
 			return nil, nil, nil, err
+		}
+		if plan.Phase == "revoking" {
+			// A dependency-only refresh replaces the generation, not the member's
+			// graph. Keep the applied routing compiled until the replacement is
+			// applied instead of revoking into a ruleless window. Real edits still
+			// revoke first, because their graph (and credentials) changes.
+			refresh, refreshErr := s.routingRefreshGeneration(plan)
+			if refreshErr != nil || !refresh {
+				// Unreadable refresh evidence must not fail the whole node
+				// compilation; the operation re-reads its own generation.
+				continue
+			}
 		}
 		// A plan that does not touch this node contributes no outbound or rule.
 		// Resolve member inventory only for plans that actually compile here.
@@ -55,9 +67,12 @@ func (s *Service) managedRouting(ctx context.Context, node string, users []wire.
 			return nil, nil, nil, err
 		}
 		input, err := s.routingInput(ctx, identity, doc.Choices)
-		// Invalid entitlement, endpoint, template or geosite changes disable the
-		// entire graph. Removing only one rule could expose a shadowed cycle.
-		if err != nil || input.dependencies != doc.Dependencies {
+		// Endpoint, template and context validation decides whether this graph can
+		// be applied at all. A dependency digest mismatch only means the saved
+		// digest is stale: the rules below are re-derived from the current
+		// inventory, so they stay valid and are applied while reconciliation
+		// re-prepares the generation in the background.
+		if err != nil {
 			continue
 		}
 		for _, r := range input.rules {

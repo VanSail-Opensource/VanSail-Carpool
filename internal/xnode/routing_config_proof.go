@@ -12,6 +12,18 @@ import (
 // checkRoutingConfig proves presence in the actual native projection, rather
 // than treating an unrelated applied revision as evidence for this graph.
 func (s *Service) checkRoutingConfig(ctx context.Context, node string, plan RoutingPlan, config wire.Config) error {
+	// A dependency-only refresh deliberately keeps the previous applied graph
+	// until the replacement reaches applying/enabling. Its revoking config is
+	// therefore not a revocation proof, and there is nothing to verify yet.
+	if plan.Phase == "revoking" {
+		refresh, err := s.routingRefreshGeneration(plan)
+		if err != nil {
+			return err
+		}
+		if refresh {
+			return nil
+		}
+	}
 	doc, err := s.routingDocument(plan)
 	if err != nil {
 		return err
@@ -71,9 +83,9 @@ func (s *Service) checkRoutingConfig(ctx context.Context, node string, plan Rout
 	if err != nil {
 		return err
 	}
-	if in.dependencies != doc.Dependencies {
-		return fmt.Errorf("routing_generation_changed: %w", ErrConflict)
-	}
+	// The rules below are resolved from current inventory, so they prove the
+	// applied graph even when the saved dependency digest is stale. Drift is
+	// refreshed by reconciliation; it must not fail an otherwise valid apply.
 	for _, rule := range in.rules {
 		source, target := in.sources[rule.ID], in.targets[rule.ID]
 		sourceOwner, targetOwner := in.principals[source.ID], in.principals[target.ID]

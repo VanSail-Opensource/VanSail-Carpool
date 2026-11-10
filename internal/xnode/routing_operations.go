@@ -89,12 +89,34 @@ func (s *Service) runRoutingOperation(ctx context.Context, operation providerops
 		if err != nil {
 			return err
 		}
+		if phase == "revoking" {
+			refresh, err := s.routingRefreshGeneration(plan)
+			if err != nil {
+				return err
+			}
+			if refresh {
+				// Dependency-only refresh: seal the applied generation's counters and
+				// apply the replacement directly. Crossing the revocation barrier
+				// would remove the member's rules until every node acknowledges.
+				if err = s.captureRoutingCounters(ctx, nodes, id); err != nil {
+					return err
+				}
+				if err = repo.AdvanceXNodeRouting(ctx, id, operation.Receipt.ID, phase, "applying", s.now().UTC()); err != nil {
+					return err
+				}
+				continue
+			}
+		}
 		identity, err := s.repo.XNodeIdentity(ctx, id)
 		if err != nil {
 			return err
 		}
-		input, validationErr := s.routingInput(ctx, identity, doc.Choices)
-		if validationErr != nil || input.dependencies != doc.Dependencies {
+		_, validationErr := s.routingInput(ctx, identity, doc.Choices)
+		// Only a graph that cannot be validated at all fails the generation. A
+		// digest mismatch is ordinary dependency drift: the applied rules are
+		// re-derived from the current inventory, and reconciliation re-prepares the
+		// saved generation instead of disabling the member's routing.
+		if validationErr != nil {
 			if err = repo.AdvanceXNodeRouting(ctx, id, operation.Receipt.ID, phase, "disabled", s.now().UTC()); err != nil {
 				return err
 			}

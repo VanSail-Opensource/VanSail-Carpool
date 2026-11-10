@@ -689,6 +689,11 @@ AND attribute filtering. `routing_geosite_download.go` fetches only through
 with completion scheduling and bounded failure retries. `routing_peers.go` bounds
 public endpoint DNS caching and gates maintenance by the existing compile epoch.
 `routing_reconcile.go` revalidates dependency changes outside the socket reader.
+Dependency drift is re-prepared as a new durable generation instead of disabling
+the plan; only durable access loss and node removal are terminal. One member's
+transient queue or preflight failure does not block the remaining members, and
+unprovable dependencies are retried after transient gaps. See
+[docs/routing-resilience.md](../../docs/routing-resilience.md).
 
 `routing_transit.go` derives private owner/source/destination/inbound/period-scoped
 credentials from encrypted unpredictable seeds. `routing_compile.go` adds those
@@ -779,12 +784,17 @@ new selected-only digest is first reconciled, followed by normal revalidation.
 `routing_access.go` uses authoritative endpoint/entitlement inventory to prune
 inaccessible choices during the existing master reconciliation, including pending
 or disabled plans. Read failures and transient node telemetry cannot cause
-pruning. Remaining choices are disabled for review because removing a rule can
-expose a formerly shadowed cycle. Previous operational choices and superseded
-legacy customization rows are erased; immutable encrypted conversion evidence
-and financial records remain intact. Existing compile-version triggers and
-serialized master synchronization remove routes and private peer credentials
-from connected nodes and on reconnect, without a second queue or ACK blocking.
+pruning. A paid renewal boundary is not access loss: while a successor is queued
+or activating, or an enabled automatic renewal may still settle, combo and
+legacy choices are retained while PAYG/hourly references remain governed by
+their own accounts and enrollments. Retained rows emit no rules without an
+effective entitlement. Remaining choices are disabled for review because
+removing a rule can expose a formerly shadowed cycle. Previous operational
+choices and superseded legacy customization rows are erased; immutable encrypted
+conversion evidence and financial records remain intact. Existing
+compile-version triggers and serialized master synchronization remove routes and
+private peer credentials from connected nodes and on reconnect, without a second
+queue or ACK blocking.
 `routing_access_test.go` and managed deployment coverage verify selection and
 native revocation; database tests verify ownership/revision fencing and invalidation.
 

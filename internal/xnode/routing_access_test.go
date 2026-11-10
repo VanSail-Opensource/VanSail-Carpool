@@ -87,12 +87,26 @@ func TestRoutingAccessPrunesLostNodeAndEndpointReferences(t *testing.T) {
 		{ID: "lost-host", InboundNodeID: "a", OutboundNodeID: "b", InboundEndpointID: "retired-a", OutboundEndpointID: "b"},
 		{ID: "legacy-default", InboundNodeID: "a", OutboundNodeID: "b"},
 	}
-	kept := accessibleRoutingChoices(choices, in)
+	kept := accessibleRoutingChoices(choices, in, false)
 	if len(kept) != 2 || kept[0].ID != "keep" || kept[1].ID != "legacy-default" {
 		t.Fatal(kept)
 	}
 	in.endpoints["c"], in.byEndpoint["c"] = c, c
-	if len(accessibleRoutingChoices(choices, in)) != 3 {
+	if len(accessibleRoutingChoices(choices, in, false)) != 3 {
 		t.Fatal("authorized node removed")
+	}
+	// While the effective purchase is renewing, combo and legacy choices stay:
+	// their inventory is derived from the unsettled term. PAYG/hourly references
+	// remain authoritative because their own accounts/enrollments feed them.
+	in = routingInput{endpoints: map[string]Endpoint{"a": a, "b": b}, byEndpoint: map[string]Endpoint{"a": a, "b": b}}
+	modes := []RoutingChoice{
+		{ID: "combo", InboundNodeID: "a", OutboundNodeID: "b", InboundEndpointID: "a", OutboundEndpointID: "b"},
+		{ID: "legacy", InboundNodeID: "a", OutboundNodeID: "b"},
+		{ID: "payg", InboundNodeID: "a", OutboundNodeID: "b", InboundEndpointID: "payg-lost", OutboundEndpointID: "b"},
+		{ID: "hourly", InboundNodeID: "a", OutboundNodeID: "b", InboundEndpointID: "a", OutboundEndpointID: "hourly-lost"},
+	}
+	renewing := accessibleRoutingChoices(modes, in, true)
+	if len(renewing) != 2 || renewing[0].ID != "combo" || renewing[1].ID != "legacy" {
+		t.Fatal(renewing)
 	}
 }

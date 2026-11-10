@@ -3,13 +3,16 @@ package xnode
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 // Called only by the existing master reconciler, outside the socket reader.
-// An invalid dependency removes the whole graph; a valid change receives a new
-// durable generation and passes the same revoke/apply/enable barriers.
+// Dependency drift is re-prepared as a new durable generation; it never disables
+// a member's routing. Only durable access loss (a committed access prune) or
+// node removal disables a plan. Unprovable dependencies are retried on the next
+// reconcile so transient configuration, asset or inventory gaps recover.
 func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 	repo, ok := s.routingRepository()
 	if !ok {
@@ -35,6 +38,7 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 	if err != nil {
 		return err
 	}
+	requests := []routingRefreshRequest{}
 	for _, plan := range plans {
 		if strings.HasPrefix(plan.Reason, routingRemovalPending) {
 			continue
@@ -61,30 +65,61 @@ func (s *Service) reconcileRoutingPlans(ctx context.Context) (result error) {
 		if plan.Phase != "active" && plan.Phase != "disabled" {
 			continue
 		}
+		if identity.UserID == "" {
+			// Standalone plans have no member to authorize a re-prepared generation;
+			// the compiler keeps applying their saved choices in place.
+			continue
+		}
 		input, validationErr := s.routingInput(ctx, identity, doc.Choices)
-		if validationErr != nil {
-			if plan.Phase == "active" {
-				if err = repo.AdvanceXNodeRouting(ctx, plan.ProxyUserID, plan.OperationID, "active", "disabled", s.now().UTC()); err != nil {
-					return err
-				}
+		if !routingRefreshDue(plan, doc, input.dependencies, validationErr) {
+			continue
+		}
+		requests = append(requests, routingRefreshRequest{plan: plan, identity: identity, document: doc, dependencies: input.dependencies})
+	}
+	return routingRefreshAll(requests, func(request routingRefreshRequest) error {
+		key := sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%s", request.plan.ProxyUserID, request.plan.Revision, request.dependencies)))
+		_, err := s.QueueOwnedRouting(ctx, request.identity.UserID, fmt.Sprintf("routing-refresh-%x", key[:20]), request.plan.Revision, request.document.Choices)
+		return err
+	})
+}
+
+// routingRefreshRequest is one member generation that reconcile must re-prepare.
+type routingRefreshRequest struct {
+	plan         RoutingPlan
+	identity     Identity
+	document     RoutingDocument
+	dependencies string
+}
+
+// routingRefreshAll queues each refreshed generation independently. One member's
+// transient failure (offline node preflight, missing capability, revision race)
+// must not block every other member's recovery; the joined error still lets the
+// caller apply retry backoff. A conflict means another generation already owns
+// that revision, so there is nothing to defer.
+func routingRefreshAll(requests []routingRefreshRequest, refresh func(routingRefreshRequest) error) (deferred error) {
+	for _, request := range requests {
+		if err := refresh(request); err != nil {
+			if errors.Is(err, ErrConflict) {
+				continue
 			}
-			continue
-		}
-		if plan.Phase == "active" && input.dependencies == doc.Dependencies {
-			continue
-		}
-		if !stableRoutingChoices(doc.Choices) && input.dependencies != doc.Dependencies {
-			if plan.Phase == "active" {
-				if err = repo.AdvanceXNodeRouting(ctx, plan.ProxyUserID, plan.OperationID, "active", "disabled", s.now().UTC()); err != nil {
-					return err
-				}
-			}
-			continue
-		}
-		key := sha256.Sum256([]byte(fmt.Sprintf("%d:%d:%s", plan.ProxyUserID, plan.Revision, input.dependencies)))
-		if _, err = s.QueueOwnedRouting(ctx, identity.UserID, fmt.Sprintf("routing-refresh-%x", key[:20]), plan.Revision, doc.Choices); err != nil {
-			return err
+			deferred = errors.Join(deferred, fmt.Errorf("routing refresh for %d: %w", request.plan.ProxyUserID, err))
 		}
 	}
-	return nil
+	return deferred
+}
+
+// routingRefreshDue decides whether reconcile should queue a refreshed
+// generation. It never disables: a plan whose choices cannot be resolved right
+// now is retried after the transient gap. Only dependency drift is recoverable;
+// a partial access prune keeps its surviving choices disabled for review, and
+// empty graphs or node-removal evidence stay terminal so a fully pruned or
+// removed plan is never resurrected.
+func routingRefreshDue(plan RoutingPlan, doc RoutingDocument, dependencies string, validationErr error) bool {
+	if validationErr != nil || len(doc.Choices) == 0 || plan.Reason == "routing_node_removed" {
+		return false
+	}
+	if plan.Phase == "active" {
+		return dependencies != doc.Dependencies
+	}
+	return plan.Phase == "disabled" && plan.Reason == "routing_dependencies_changed"
 }
