@@ -1354,7 +1354,8 @@ Hourly commerce source inventory (details in `hourly_billing.md`):
   `hourly_billing_extra_read.go`; compatibility: `hourly_billing_legacy.go`,
   `hourly_billing_stock.go`.
 - Hosted fixtures: `hourly_billing_fixture_test.go`,
-  `hourly_billing_extra_fixture_test.go`; activation/access:
+  `hourly_billing_prefetch_test.go` (bounded prefetch helpers and pre-boundary
+  settlement regressions), `hourly_billing_extra_fixture_test.go`; activation/access:
   `hourly_billing_activation_test.go`, `hourly_billing_admission_test.go`,
   `hourly_billing_delivery_test.go`, `hourly_billing_disable_test.go`.
 - Hosted finance: `hourly_billing_settlement_test.go`,
@@ -1362,7 +1363,8 @@ Hourly commerce source inventory (details in `hourly_billing.md`):
   `hourly_billing_extra_boundaries_test.go`, `hourly_billing_receipts_test.go`,
   `hourly_billing_proration_test.go`.
 - Hosted compatibility/fairness: `hourly_billing_legacy_test.go`,
-  `hourly_billing_renewal_test.go`, `hourly_billing_paging_test.go`.
+  `hourly_billing_renewal_test.go` (including a live offer price change repricing
+  an existing enrollment's next settled hour), `hourly_billing_paging_test.go`.
 
 Reachability cleanup is described in [account_cleanup.md](account_cleanup.md).
 Its source inventory is `account_cleanup_admins.go`, `account_cleanup_state.go`,

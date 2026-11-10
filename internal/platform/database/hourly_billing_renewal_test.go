@@ -32,6 +32,39 @@ func TestHourlyPausingNewSalesDoesNotCancelExistingRenewals(t *testing.T) {
 	}
 }
 
+func TestHourlyPriceChangeAppliesToExistingEnrollmentNextHour(t *testing.T) {
+	// The offer price is read live inside settlement, so an administrator price
+	// change must reprice the next settled hour of a pre-existing enrollment. Only
+	// an hour already prepaid inside the bounded window keeps its old price.
+	withHourlyPrefetchLead(t, 2*time.Hour)
+	s, policy, input := hourlyBillingFixture(t)
+	ctx := context.Background()
+	enrollment, boundary := prefetchHourlyBillingFixture(t, s, input, policy)
+	if _, err := s.SaveHourlyOffer(ctx, input.OwnerID, model.HourlyOffer{GroupID: input.GroupID, Enabled: true, HourlyPriceTXBMinor: 250}, 1); err != nil {
+		t.Fatal(err)
+	}
+	result, err := s.SettleHourlyOwnerAvailable(ctx, input.OwnerID, input.AccountGeneration, policy,
+		hourlyBillingDelivery(t, s, enrollment.ID), time.Time{})
+	if err != nil || len(result.Settlements) != 1 {
+		t.Fatalf("repriced settlement = %+v, %v", result, err)
+	}
+	receipt := result.Settlements[0]
+	if !receipt.HourStart.Equal(boundary) || !receipt.ChargedFrom.Equal(boundary) ||
+		!receipt.PaidUntil.Equal(boundary.Add(time.Hour)) {
+		t.Fatalf("repriced interval = %+v", receipt)
+	}
+	if receipt.HourlyPriceTXBMinor != 250 || receipt.ChargedTXBMinor != 250 || receipt.OfferRevision != 2 {
+		t.Fatalf("repriced receipt = %+v, want the live revision 2 at 250", receipt)
+	}
+	if got := hourlyBillingBalance(t, s, input.OwnerID); got != 100_000-250 {
+		t.Fatalf("repriced balance = %d, want one whole hour at the new price", got)
+	}
+	updated, err := s.HourlyEnrollment(ctx, enrollment.ID)
+	if err != nil || !updated.PaidThrough.Equal(boundary.Add(time.Hour)) {
+		t.Fatalf("repriced paid boundary = %+v, %v", updated, err)
+	}
+}
+
 func TestAutomaticLegacyRenewalPopulatesPurchasedDuration(t *testing.T) {
 	t.Parallel()
 	s := newTestStore(t)
