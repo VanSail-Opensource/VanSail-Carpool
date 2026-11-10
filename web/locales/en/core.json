@@ -88,6 +88,7 @@
     "loading": "Loading",
     "configured": "Configured",
     "enabled": "Enabled",
+    "disabled": "Disabled",
     "notScheduled": "Not scheduled",
     "notAvailable": "Not available",
     "rangeSeparator": "to",

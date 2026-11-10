@@ -95,6 +95,7 @@
     "loading": "加载中",
     "configured": "已配置",
     "enabled": "已启用",
+    "disabled": "已禁用",
     "error": "出现问题，请重试。",
     "working": "处理中",
     "currencyTxb": "TXB",

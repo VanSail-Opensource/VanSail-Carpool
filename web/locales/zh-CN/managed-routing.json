@@ -58,7 +58,8 @@
     "endpointLabel": "{name} · {mode} · {address}:{port}",
     "billingModes": {
       "combo": "原有固定期限套餐",
-      "payg": "按流量计费"
+      "payg": "按流量计费",
+      "hourly": "按小时计费"
     }
   },
   "routeSpeedtest": {
