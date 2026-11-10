@@ -31,6 +31,32 @@ show billing mode plus address/port. A changed dependency digest produces a
 review reason even while the durable reconciler still records the old active
 phase. A successful old receipt is not proof of a current routing generation.
 
+## Production synchronization-job inspection (2026-11-10)
+
+Read-only inspection of the live admin synchronization jobs through the scoped
+administrator API found 159 failed rows, all older than `2026-11-09T05:49Z`; no
+new rows had failed since. The classes were:
+
+- 74 `xnode_firewall`: eight rows failed with `invalid payload shape` while a
+  retired stored node-settings field could not be decoded (the same window that
+  introduced the narrow `bandwidth` read compatibility); 64 rows then exhausted
+  attempts because the target agents were unavailable during delivery.
+- 73 `account_purge`: offline participants and the correlated-failure pause.
+  Purge jobs remain durable evidence; generation-scoped admission re-queues the
+  same row when the account is still purging with valid final evidence.
+- 12 `xnode_access_repair`: revision conflict or pending accounting while a
+  member transition was in flight. These are resumable dependency outcomes, not
+  terminal business rejection.
+
+Repairs preserve the failed rows as evidence. Stored node settings now decode
+known fields while ignoring retired historical keys, so a retired policy can no
+longer make every firewall/protected/DDNS job for a node fail. Idempotent
+firewall delivery now maps undelivered and uncertain agent outcomes to
+`outbox.WaitError`, so a long offline/reconnect spell waits without consuming
+attempts instead of exhausting into a terminal failed row. Rejections and
+command outcomes the agent executed and reported as failed stay ordinary
+retryable failures.
+
 ## Incident baseline and verification
 
 Read-only production investigation on 2026-11-08 found image revision `f642e76`,

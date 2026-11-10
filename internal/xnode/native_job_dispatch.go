@@ -3,9 +3,11 @@ package xnode
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"time"
+
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/model"
 	"github.com/VanSail-Opensource/VanSail-Carpool/internal/platform/outbox"
-	"time"
 )
 
 func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
@@ -54,7 +56,7 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 			if peer == nil {
 				return &outbox.WaitError{Reason: "firewall_node_offline", Cause: ErrUnavailable, After: time.Minute}
 			}
-			return m.deliverProtected(ctx, peer)
+			return firewallDeliveryWait(m.deliverProtected(ctx, peer))
 		})
 	}
 	if input.Bank != "dynamic" {
@@ -75,15 +77,33 @@ func (m *Master) HandleOutbox(ctx context.Context, job model.OutboxJob) error {
 			defer func() { m.mu.Lock(); m.firewallSourcesRunning--; m.mu.Unlock() }()
 		}
 		if input.Bank == "geoip" {
-			return m.deliverCountry(call, input.NodeID)
+			return firewallDeliveryWait(m.deliverCountry(call, input.NodeID))
 		}
-		return m.deliverFirewall(call, input.NodeID, input.Bank == "sources", job.ID, job.Attempts)
+		return firewallDeliveryWait(m.deliverFirewall(call, input.NodeID, input.Bank == "sources", job.ID, job.Attempts))
 	})
 	if err != nil && input.Bank != "dynamic" { // ErrDeferred owns the slot until completion.
 		if !isDeferredFirewall(err) {
 			m.mu.Lock()
 			m.firewallSourcesRunning--
 			m.mu.Unlock()
+		}
+	}
+	return err
+}
+
+// firewallDeliveryWait classifies an idempotent desired-state firewall delivery
+// that could not be reached or acknowledged as a dependency wait. Attempts are
+// not consumed while a node is offline or reconnecting, so a long outage cannot
+// exhaust the durable delivery into a terminal failed row. A rejection or a
+// command the agent executed and reported as failed stays an ordinary error.
+func firewallDeliveryWait(err error) error {
+	if err == nil {
+		return nil
+	}
+	var failure *CommandError
+	if errors.As(err, &failure) && (failure.Outcome == CommandUndelivered || failure.Outcome == CommandUncertain) {
+		if errors.Is(failure.Cause, ErrUnavailable) || errors.Is(failure.Cause, context.Canceled) || errors.Is(failure.Cause, context.DeadlineExceeded) {
+			return &outbox.WaitError{Reason: "firewall_node_offline", Cause: ErrUnavailable, After: time.Minute}
 		}
 	}
 	return err
