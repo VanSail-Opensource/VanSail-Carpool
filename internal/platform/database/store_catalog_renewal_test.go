@@ -227,8 +227,16 @@ func TestOwnedRenewalSurvivesHiddenComboAndBundleEdits(t *testing.T) {
 				successors = batch.Purchases
 			}
 			for _, successor := range successors {
-				if !equalStrings(successor.SquadUUIDs, []string{"hidden-core"}) || successor.ComboID != combo.ID {
-					t.Fatalf("renewal selection = (%+v)", successor)
+				// The paid successor keeps the purchased base selection in its own
+				// combo snapshot, while its entitlement union also carries the paid
+				// add-on. purchaseSquadsFrom merges both by design, so renewal must
+				// never lose the add-on from the member's effective entitlements.
+				var successorSnapshot string
+				if err := store.DB().QueryRowContext(ctx, `SELECT combo_squad_uuids FROM purchases WHERE id=$1`, successor.ID).Scan(&successorSnapshot); err != nil || successorSnapshot != `["hidden-core"]` {
+					t.Fatalf("renewal bundle snapshot = %q, %v", successorSnapshot, err)
+				}
+				if !equalStrings(successor.SquadUUIDs, []string{"hidden-addon", "hidden-core"}) || successor.ComboID != combo.ID {
+					t.Fatalf("renewal entitlement union = (%+v)", successor)
 				}
 				if successor.PriceTXBMinor != 2_300 || successor.CoreGrossTXBMinor != 2_000 ||
 					!successor.ValidFrom.Equal(purchase.ValidUntil) || !successor.ValidUntil.Equal(purchase.ValidUntil.AddDate(0, 0, 30)) {
