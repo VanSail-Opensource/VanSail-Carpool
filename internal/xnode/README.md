@@ -1,5 +1,19 @@
 # X-Node control plane
 
+`credentials.go` supports administrator-authored VLESS reverse portals without a
+separate panel surface: an inbound document may carry `"reverseTag": "<tag>"`.
+The native validator requires that marker on a `vless` inbound, with a valid
+unused tag that does not shadow a static outbound. `inboundCredential` then adds
+`"reverse": {"tag": "<tag>"}` to the generated per-user account, so the bridge
+identity bound to that portal passes the pinned VLESS reverse authorization
+check while every other identity keeps an ordinary credential. The exit node
+authors the matching VLESS outbound (`settings.reverse.tag`), and its freedom
+outbound for that session needs an explicit `finalRules` allow plus a
+`dokodemo-door`/`tunnel` inbound that names the tag, because the agent admits
+reverse-mux egress only through an auxiliary listener tag. Hysteria2 listeners
+remain ordinary inbounds with `inboundCertificates` profiles. `reverse_portal_test.go`
+covers credential generation and document validation.
+
 `endpoint_inbound.go` derives administrator endpoint protocol/transport/security from the node's resolved inbound, certificate bindings and the same saved snippet expansion used by compilation. It keeps source configuration reads unchanged. `endpoint_preview.go` returns applicable typed fields, sanitized field errors and independent client compatibility for incomplete drafts using fixed synthetic credentials. Preview performs only local reads and native client analysis; it never queues external work or persists a draft. Save reuses this validation against current desired state before encrypting `overrides.clientOptions`. `endpoint_validation.go` decodes that separate administrator type and validates the client document without server runtime side effects. `endpoint_options.go` merges nested inherited XHTTP headers, XMUX and download settings before applying typed overrides. `endpoint_preview_test.go` covers read-only preview, encrypted round trips and protocol changes between preview/save; `endpoint_options_test.go` protects nested inheritance. `endpoint_inventory_compatibility_test.go` checks that inherited mode changes preserve compatible peers across all six export formats; runtime projection failures are isolated to the affected endpoint while store/credential failures remain fatal. These regressions run in hosted CI.
 
 Node traffic multipliers are retired. `node_decode.go` ignores the deprecated input and serializes it as constant `1`; `SaveNode` sets the fixed-point default without an agent traffic flush. Catalog/statistics adapters retain compatibility properties at `1`. Host name `{price}` expands only the existing PAYG price, with no Combo multiplier label. Recorded weighted usage and financial evidence remain authoritative. The PostgreSQL cutover establishes acceptance-sequence boundaries before new ingestion; see the database module for deployment and preservation constraints. Hosted tests in `node_multiplier_retired_test.go` and `native_policy_test.go` cover obsolete inputs and offline node edits.

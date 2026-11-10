@@ -59,7 +59,17 @@ func sealCredentials(vault *secret.Vault, identity Identity, credentials Credent
 func inboundCredential(inbound map[string]any, credentials Credentials) (json.RawMessage, error) {
 	tag, _ := inbound["tag"].(string)
 	if value := credentials.Inbound[tag]; len(value) > 0 {
-		return value, nil
+		if _, exists := inbound["reverseTag"]; !exists {
+			return value, nil
+		}
+		var account map[string]any
+		if json.Unmarshal(value, &account) != nil || account == nil {
+			return nil, ErrInvalid
+		}
+		if err := applyReverseTag(inbound, account); err != nil {
+			return nil, err
+		}
+		return json.Marshal(account)
 	}
 	settings, _ := inbound["settings"].(map[string]any)
 	protocol, _ := inbound["protocol"].(string)
@@ -95,8 +105,27 @@ func inboundCredential(inbound map[string]any, credentials Credentials) (json.Ra
 	default:
 		return nil, ErrInvalid
 	}
+	if err := applyReverseTag(inbound, account); err != nil {
+		return nil, err
+	}
 	if strings.HasPrefix(protocol, "_") {
 		return nil, ErrInvalid
 	}
 	return json.Marshal(account)
+}
+
+// applyReverseTag authorizes a VLESS reverse portal bridge account. The tag is
+// administrator-authored on the inbound and is consumed as the runtime outbound
+// handler name the bridge registers.
+func applyReverseTag(inbound map[string]any, account map[string]any) error {
+	raw, exists := inbound["reverseTag"]
+	if !exists {
+		return nil
+	}
+	tag, ok := raw.(string)
+	if !ok || !wire.ValidName(tag) || inbound["protocol"] != "vless" {
+		return ErrInvalid
+	}
+	account["reverse"] = map[string]any{"tag": tag}
+	return nil
 }

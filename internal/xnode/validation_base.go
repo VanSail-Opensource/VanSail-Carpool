@@ -17,6 +17,10 @@ func validateConfigurationDocument(raw json.RawMessage, validator *xrayconfig.Va
 	if json.Unmarshal(raw, &native) != nil || native == nil {
 		return invalid
 	}
+	// A VLESS reverse portal declares the administrator-owned outbound tag its
+	// bridge accounts register. Only one portal per document may own a tag, and
+	// the name must not shadow a static outbound the runtime would resolve first.
+	reverseTags := map[string]bool{}
 	if inbounds, ok := native["inbounds"].([]any); ok {
 		for _, raw := range inbounds {
 			inbound, _ := raw.(map[string]any)
@@ -27,6 +31,13 @@ func validateConfigurationDocument(raw json.RawMessage, validator *xrayconfig.Va
 					return invalid
 				}
 			}
+			if value, exists := inbound["reverseTag"]; exists {
+				tag, ok := value.(string)
+				if !ok || !wire.ValidName(tag) || inbound["protocol"] != "vless" || reverseTags[tag] {
+					return invalid
+				}
+				reverseTags[tag] = true
+			}
 		}
 	}
 	outs, ok := native["outbounds"].([]any)
@@ -36,6 +47,12 @@ func validateConfigurationDocument(raw json.RawMessage, validator *xrayconfig.Va
 	outs, hasOuts, err := expandMarker(outs, "UserOutbound", nil)
 	if err != nil {
 		return invalid
+	}
+	for _, raw := range outs {
+		out, _ := raw.(map[string]any)
+		if tag, _ := out["tag"].(string); reverseTags[tag] {
+			return invalid
+		}
 	}
 	native["outbounds"] = outs
 	routing, _ := native["routing"].(map[string]any)
