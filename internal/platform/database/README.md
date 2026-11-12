@@ -9,6 +9,11 @@ omitted credential can never be redirected to another endpoint or merchant.
 `payment_profile_credentials_test.go` and `payment_profile_evidence_test.go`
 cover credential retention, historical callbacks, missing pinned accounts and
 rollback when the audit cannot commit.
+`payment_profile_race_test.go` verifies that profile edits/deletion wait for an
+admitted order and that order admission rolls back after a concurrent profile
+deletion. The legacy direct creation path exists only in
+`billing_legacy_payment_fixture_test.go`; production uses
+`BeginPaymentOrderOperation` with its durable command and account locks.
 
 `price_arithmetic.go` bounds basket and renewal arithmetic before signed integer
 wraparound; `price_overflow_test.go` covers a four-term total that would otherwise
@@ -409,7 +414,7 @@ The persistence implementation is split by domain operation. The `_part2.go` fil
 - `billing_purchases.go` — purchase reads, cancellation, squad hydration, and
   active/queued selection.
 - `billing_purchase_summary.go` — bounded active/queued purchase projection used by the dashboard without growing the purchase-read module.
-- `billing_payments.go` — payment-order creation, checkout updates, expiry, reads,
+- `billing_payments.go` — payment checkout updates, expiry, reads,
   and row scanning.
 - `billing_purchase_cancellation.go` — owner-scoped queued cancellation with
   atomic status transition, TXB refund, and immutable ledger entry.
@@ -910,7 +915,6 @@ mutable in-memory batches. Provider requests remain outside every transaction.
 - `billing_courtesy_retry_generated.go` wraps the transactional methods in `billing_courtesy.go`.
 - `billing_ledger_retry_generated.go` wraps the transactional methods in `billing_ledger.go`.
 - `billing_payment_settlement_retry_generated.go` wraps the transactional methods in `billing_payment_settlement.go`.
-- `billing_payments_retry_generated.go` wraps the transactional methods in `billing_payments.go`.
 - `billing_purchase_addons_retry_generated.go` wraps the transactional methods in `billing_purchase_addons.go`.
 - `billing_purchase_cancellation_retry_generated.go` wraps the transactional methods in `billing_purchase_cancellation.go`.
 - `billing_purchases_retry_generated.go` wraps the transactional methods in `billing_purchases.go`.
